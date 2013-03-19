@@ -1,421 +1,101 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 01 Mar 2013 15:02:54 +0000
-Subject: Re: [PATCH] irqchip: Renesas IRQC driver
-Message-Id: <Pine.LNX.4.64.1303011555350.18776@axis700.grange>
+Date: Tue, 19 Mar 2013 12:47:39 +0000
+Subject: [PATCH 1/2] ARM: shmobile: kzm9g: SDHI0 and SDHI1 use a 3.3V power supply
+Message-Id: <Pine.LNX.4.64.1303191340060.11768@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130227081501.30706.60471.sendpatchset@w520>
-In-Reply-To: <20130227081501.30706.60471.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, tglx@linutronix.de
+To: linux-sh@vger.kernel.org
 
-On Wed, 27 Feb 2013, Magnus Damm wrote:
+kzm9g supplies 3.3V to its SDHI0 and SDHI2 interfaces. Specifying 2.8V
+prevents some (e.g. certain SDIO) cards from working. This patch fixes the
+voltage and removes redundant OCR masks from platform data.
 
-> From: Magnus Damm <damm@opensource.se>
-> 
-> This patch adds a driver for external IRQ pins connected
-> to the IRQC hardware block on recent SoCs from Renesas.
-> 
-> The IRQC hardware block is used together with more
-> recent ARM based SoCs using the GIC. As usual the GIC
-> requires external IRQ trigger setup somewhere else
-> which in this particular case happens to be IRQC.
-> 
-> This driver implements the glue code needed to configure
-> IRQ trigger and also handle mask/unmask and demux of
-> external IRQ pins hooked up from the IRQC to the GIC.
-> 
-> Tested on r8a73a4 but is designed to work with a wide
-> range of SoCs. The driver requires one GIC SPI per
-> external IRQ pin to operate.  Each driver instance
-> will handle up to 32 external IRQ pins.
-> 
-> The SoCs using this driver are currently mainly used
-> together with regular platform devices so this driver
-> allows configuration via platform data to support things
-> like static interrupt base address. DT support will
-> be added incrementally in the not so distant future.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-
-tested on kzm9g in topic/all+next branch of
-
-https://git.kernel.org/cgit/linux/kernel/git/horms/renesas.git/
-
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-
-Thanks
-Guennadi
-
-> ---
-> 
->  drivers/irqchip/Kconfig                        |    4 
->  drivers/irqchip/Makefile                       |    1 
->  drivers/irqchip/irq-renesas-irqc.c             |  298 ++++++++++++++++++++++++
->  include/linux/platform_data/irq-renesas-irqc.h |   27 ++
->  4 files changed, 330 insertions(+)
-> 
-> --- 0002/drivers/irqchip/Kconfig
-> +++ work/drivers/irqchip/Kconfig	2013-02-27 16:00:08.000000000 +0900
-> @@ -29,6 +29,10 @@ config RENESAS_INTC_IRQPIN
->  	bool
->  	select IRQ_DOMAIN
->  
-> +config RENESAS_IRQC
-> +	bool
-> +	select IRQ_DOMAIN
-> +
->  config VERSATILE_FPGA_IRQ
->  	bool
->  	select IRQ_DOMAIN
-> --- 0002/drivers/irqchip/Makefile
-> +++ work/drivers/irqchip/Makefile	2013-02-27 16:00:08.000000000 +0900
-> @@ -6,4 +6,5 @@ obj-$(CONFIG_ARCH_SPEAR3XX)		+= spear-sh
->  obj-$(CONFIG_ARM_GIC)			+= irq-gic.o
->  obj-$(CONFIG_ARM_VIC)			+= irq-vic.o
->  obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
-> +obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
->  obj-$(CONFIG_VERSATILE_FPGA_IRQ)	+= irq-versatile-fpga.o
-> --- /dev/null
-> +++ work/drivers/irqchip/irq-renesas-irqc.c	2013-02-27 17:04:02.000000000 +0900
-> @@ -0,0 +1,298 @@
-> +/*
-> + * Renesas IRQC Driver
-> + *
-> + *  Copyright (C) 2013 Magnus Damm
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; either version 2 of the License
-> + *
-> + * This program is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> + * GNU General Public License for more details.
-> + *
-> + * You should have received a copy of the GNU General Public License
-> + * along with this program; if not, write to the Free Software
-> + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-> + */
-> +
-> +#include <linux/init.h>
-> +#include <linux/platform_device.h>
-> +#include <linux/spinlock.h>
-> +#include <linux/interrupt.h>
-> +#include <linux/ioport.h>
-> +#include <linux/io.h>
-> +#include <linux/irq.h>
-> +#include <linux/irqdomain.h>
-> +#include <linux/err.h>
-> +#include <linux/slab.h>
-> +#include <linux/module.h>
-> +#include <linux/platform_data/irq-renesas-irqc.h>
-> +
-> +#define IRQC_IRQ_MAX 32 /* maximum 32 interrupts per driver instance */
-> +
-> +#define IRQC_REQ_STS 0x00
-> +#define IRQC_EN_STS 0x04
-> +#define IRQC_EN_SET 0x08
-> +#define IRQC_INT_CPU_BASE(n) (0x000 + ((n) * 0x10))
-> +#define DETECT_STATUS 0x100
-> +#define IRQC_CONFIG(n) (0x180 + ((n) * 0x04))
-> +
-> +struct irqc_irq {
-> +	int hw_irq;
-> +	int requested_irq;
-> +	int domain_irq;
-> +	struct irqc_priv *p;
-> +};
-> +
-> +struct irqc_priv {
-> +	void __iomem *iomem;
-> +	void __iomem *cpu_int_base;
-> +	struct irqc_irq irq[IRQC_IRQ_MAX];
-> +	struct renesas_irqc_config config;
-> +	unsigned int number_of_irqs;
-> +	struct platform_device *pdev;
-> +	struct irq_chip irq_chip;
-> +	struct irq_domain *irq_domain;
-> +};
-> +
-> +static void irqc_dbg(struct irqc_irq *i, char *str)
-> +{
-> +	dev_dbg(&i->p->pdev->dev, "%s (%d:%d:%d)\n",
-> +		str, i->requested_irq, i->hw_irq, i->domain_irq);
-> +}
-> +
-> +static void irqc_irq_enable(struct irq_data *d)
-> +{
-> +	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
-> +	int hw_irq = irqd_to_hwirq(d);
-> +
-> +	irqc_dbg(&p->irq[hw_irq], "enable");
-> +	iowrite32(BIT(hw_irq), p->cpu_int_base + IRQC_EN_SET);
-> +}
-> +
-> +static void irqc_irq_disable(struct irq_data *d)
-> +{
-> +	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
-> +	int hw_irq = irqd_to_hwirq(d);
-> +
-> +	irqc_dbg(&p->irq[hw_irq], "disable");
-> +	iowrite32(BIT(hw_irq), p->cpu_int_base + IRQC_EN_STS);
-> +}
-> +
-> +#define INTC_IRQ_SENSE_VALID 0x10
-> +#define INTC_IRQ_SENSE(x) (x + INTC_IRQ_SENSE_VALID)
-> +
-> +static unsigned char irqc_sense[IRQ_TYPE_SENSE_MASK + 1] = {
-> +	[IRQ_TYPE_LEVEL_LOW] = INTC_IRQ_SENSE(0x01),
-> +	[IRQ_TYPE_LEVEL_HIGH] = INTC_IRQ_SENSE(0x02),
-> +	[IRQ_TYPE_EDGE_FALLING] = INTC_IRQ_SENSE(0x04), /* Synchronous */
-> +	[IRQ_TYPE_EDGE_RISING] = INTC_IRQ_SENSE(0x08), /* Synchronous */
-> +	[IRQ_TYPE_EDGE_BOTH] = INTC_IRQ_SENSE(0x0c),  /* Synchronous */
-> +};
-> +
-> +static int irqc_irq_set_type(struct irq_data *d, unsigned int type)
-> +{
-> +	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
-> +	int hw_irq = irqd_to_hwirq(d);
-> +	unsigned char value = irqc_sense[type & IRQ_TYPE_SENSE_MASK];
-> +	unsigned long tmp;
-> +
-> +	irqc_dbg(&p->irq[hw_irq], "sense");
-> +
-> +	if (!(value & INTC_IRQ_SENSE_VALID))
-> +		return -EINVAL;
-> +
-> +	tmp = ioread32(p->iomem + IRQC_CONFIG(hw_irq));
-> +	tmp &= ~0x3f;
-> +	tmp |= value ^ INTC_IRQ_SENSE_VALID;
-> +	iowrite32(tmp, p->iomem + IRQC_CONFIG(hw_irq));
-> +	return 0;
-> +}
-> +
-> +static irqreturn_t irqc_irq_handler(int irq, void *dev_id)
-> +{
-> +	struct irqc_irq *i = dev_id;
-> +	struct irqc_priv *p = i->p;
-> +	unsigned long bit = BIT(i->hw_irq);
-> +
-> +	irqc_dbg(i, "demux1");
-> +
-> +	if (ioread32(p->iomem + DETECT_STATUS) & bit) {
-> +		iowrite32(bit, p->iomem + DETECT_STATUS);
-> +		irqc_dbg(i, "demux2");
-> +		generic_handle_irq(i->domain_irq);
-> +		return IRQ_HANDLED;
-> +	}
-> +	return IRQ_NONE;
-> +}
-> +
-> +static int irqc_irq_domain_map(struct irq_domain *h, unsigned int virq,
-> +			       irq_hw_number_t hw)
-> +{
-> +	struct irqc_priv *p = h->host_data;
-> +
-> +	p->irq[hw].domain_irq = virq;
-> +	p->irq[hw].hw_irq = hw;
-> +
-> +	irqc_dbg(&p->irq[hw], "map");
-> +	irq_set_chip_data(virq, h->host_data);
-> +	irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
-> +	set_irq_flags(virq, IRQF_VALID); /* kill me now */
-> +	return 0;
-> +}
-> +
-> +static struct irq_domain_ops irqc_irq_domain_ops = {
-> +	.map	= irqc_irq_domain_map,
-> +};
-> +
-> +static int irqc_probe(struct platform_device *pdev)
-> +{
-> +	struct renesas_irqc_config *pdata = pdev->dev.platform_data;
-> +	struct irqc_priv *p;
-> +	struct resource *io;
-> +	struct resource *irq;
-> +	struct irq_chip *irq_chip;
-> +	const char *name = dev_name(&pdev->dev);
-> +	int ret;
-> +	int k;
-> +
-> +	p = kzalloc(sizeof(*p), GFP_KERNEL);
-> +	if (!p) {
-> +		dev_err(&pdev->dev, "failed to allocate driver data\n");
-> +		ret = -ENOMEM;
-> +		goto err0;
-> +	}
-> +
-> +	/* deal with driver instance configuration */
-> +	if (pdata)
-> +		memcpy(&p->config, pdata, sizeof(*pdata));
-> +
-> +	p->pdev = pdev;
-> +	platform_set_drvdata(pdev, p);
-> +
-> +	/* get hold of manadatory IOMEM */
-> +	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> +	if (!io) {
-> +		dev_err(&pdev->dev, "not enough IOMEM resources\n");
-> +		ret = -EINVAL;
-> +		goto err1;
-> +	}
-> +
-> +	/* allow any number of IRQs between 1 and IRQC_IRQ_MAX */
-> +	for (k = 0; k < IRQC_IRQ_MAX; k++) {
-> +		irq = platform_get_resource(pdev, IORESOURCE_IRQ, k);
-> +		if (!irq)
-> +			break;
-> +
-> +		p->irq[k].p = p;
-> +		p->irq[k].requested_irq = irq->start;
-> +	}
-> +
-> +	p->number_of_irqs = k;
-> +	if (p->number_of_irqs < 1) {
-> +		dev_err(&pdev->dev, "not enough IRQ resources\n");
-> +		ret = -EINVAL;
-> +		goto err1;
-> +	}
-> +
-> +	/* ioremap IOMEM and setup read/write callbacks */
-> +	p->iomem = ioremap_nocache(io->start, resource_size(io));
-> +	if (!p->iomem) {
-> +		dev_err(&pdev->dev, "failed to remap IOMEM\n");
-> +		ret = -ENXIO;
-> +		goto err2;
-> +	}
-> +
-> +	p->cpu_int_base = p->iomem + IRQC_INT_CPU_BASE(0); /* SYS-SPI */
-> +
-> +	irq_chip = &p->irq_chip;
-> +	irq_chip->name = name;
-> +	irq_chip->irq_mask = irqc_irq_disable;
-> +	irq_chip->irq_unmask = irqc_irq_enable;
-> +	irq_chip->irq_enable = irqc_irq_enable;
-> +	irq_chip->irq_disable = irqc_irq_disable;
-> +	irq_chip->irq_set_type = irqc_irq_set_type;
-> +	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
-> +
-> +	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
-> +					      p->number_of_irqs,
-> +					      p->config.irq_base,
-> +					      &irqc_irq_domain_ops, p);
-> +	if (!p->irq_domain) {
-> +		ret = -ENXIO;
-> +		dev_err(&pdev->dev, "cannot initialize irq domain\n");
-> +		goto err2;
-> +	}
-> +
-> +	/* request interrupts one by one */
-> +	for (k = 0; k < p->number_of_irqs; k++) {
-> +		if (request_irq(p->irq[k].requested_irq, irqc_irq_handler,
-> +				0, name, &p->irq[k])) {
-> +			dev_err(&pdev->dev, "failed to request IRQ\n");
-> +			ret = -ENOENT;
-> +			goto err3;
-> +		}
-> +	}
-> +
-> +	dev_info(&pdev->dev, "driving %d irqs\n", p->number_of_irqs);
-> +
-> +	/* warn in case of mismatch if irq base is specified */
-> +	if (p->config.irq_base) {
-> +		if (p->config.irq_base != p->irq[0].domain_irq)
-> +			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
-> +				 p->config.irq_base, p->irq[0].domain_irq);
-> +	}
-> +
-> +	return 0;
-> +err3:
-> +	for (; k >= 0; k--)
-> +		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
-> +
-> +	irq_domain_remove(p->irq_domain);
-> +err2:
-> +	iounmap(p->iomem);
-> +err1:
-> +	kfree(p);
-> +err0:
-> +	return ret;
-> +}
-> +
-> +static int irqc_remove(struct platform_device *pdev)
-> +{
-> +	struct irqc_priv *p = platform_get_drvdata(pdev);
-> +	int k;
-> +
-> +	for (k = 0; k < p->number_of_irqs; k++)
-> +		free_irq(p->irq[k].requested_irq, &p->irq[k]);
-> +
-> +	irq_domain_remove(p->irq_domain);
-> +	iounmap(p->iomem);
-> +	kfree(p);
-> +	return 0;
-> +}
-> +
-> +static struct platform_driver irqc_device_driver = {
-> +	.probe		= irqc_probe,
-> +	.remove		= irqc_remove,
-> +	.driver		= {
-> +		.name	= "renesas_irqc",
-> +	}
-> +};
-> +
-> +static int __init irqc_init(void)
-> +{
-> +	return platform_driver_register(&irqc_device_driver);
-> +}
-> +postcore_initcall(irqc_init);
-> +
-> +static void __exit irqc_exit(void)
-> +{
-> +	platform_driver_unregister(&irqc_device_driver);
-> +}
-> +module_exit(irqc_exit);
-> +
-> +MODULE_AUTHOR("Magnus Damm");
-> +MODULE_DESCRIPTION("Renesas IRQC Driver");
-> +MODULE_LICENSE("GPL v2");
-> --- /dev/null
-> +++ work/include/linux/platform_data/irq-renesas-irqc.h	2013-02-27 16:12:09.000000000 +0900
-> @@ -0,0 +1,27 @@
-> +/*
-> + * Renesas IRQC Driver
-> + *
-> + *  Copyright (C) 2013 Magnus Damm
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; either version 2 of the License
-> + *
-> + * This program is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> + * GNU General Public License for more details.
-> + *
-> + * You should have received a copy of the GNU General Public License
-> + * along with this program; if not, write to the Free Software
-> + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-> + */
-> +
-> +#ifndef __IRQ_RENESAS_IRQC_H__
-> +#define __IRQ_RENESAS_IRQC_H__
-> +
-> +struct renesas_irqc_config {
-> +	unsigned int irq_base;
-> +};
-> +
-> +#endif /* __IRQ_RENESAS_IRQC_H__ */
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   12 ++++++------
+ arch/arm/mach-shmobile/board-kzm9g.c         |   10 ++++------
+ 2 files changed, 10 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 7fad4b9..cadcf30 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -36,11 +36,11 @@
+ 		regulator-boot-on;
+ 	};
+ 
+-	reg_2p8v: regulator@1 {
++	reg_3p3v: regulator@1 {
+ 		compatible = "regulator-fixed";
+-		regulator-name = "fixed-2.8V";
+-		regulator-min-microvolt = <2800000>;
+-		regulator-max-microvolt = <2800000>;
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
+ 		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
+@@ -52,7 +52,7 @@
+ 		interrupts = <0 83 4
+ 				0 84 4
+ 				0 85 4>;
+-		vmmc-supply = <&reg_2p8v>;
++		vmmc-supply = <&reg_3p3v>;
+ 		bus-width = <4>;
+ 		toshiba,mmc-has-idle-wait;
+ 	};
+@@ -63,7 +63,7 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 104 4
+ 				0 105 4>;
+-		vmmc-supply = <&reg_2p8v>;
++		vmmc-supply = <&reg_3p3v>;
+ 		bus-width = <4>;
+ 		broken-cd;
+ 		toshiba,mmc-wrprotect-disable;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 90a3428..0b19d0c 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -376,8 +376,8 @@ static struct platform_device mmc_device = {
+ 	.resource	= sh_mmcif_resources,
+ };
+ 
+-/* Fixed 2.8V regulators to be used by SDHI0 and SDHI2 */
+-static struct regulator_consumer_supply fixed2v8_power_consumers[] +/* Fixed 3.3V regulators to be used by SDHI0 and SDHI2 */
++static struct regulator_consumer_supply fixed3v3_power_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+ 	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
+@@ -391,7 +391,6 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+-	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -435,7 +434,6 @@ static struct sh_mobile_sdhi_info sdhi2_info = {
+ 			  TMIO_MMC_USE_GPIO_CD |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+-	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+ 	.cd_gpio	= 13,
+ };
+ 
+@@ -803,8 +801,8 @@ static void __init kzm_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+ 				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
+-	regulator_register_always_on(1, "fixed-2.8V", fixed2v8_power_consumers,
+-				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
++	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+ 
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+-- 
+1.7.2.5
+
