@@ -1,278 +1,91 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Mar 2013 14:32:12 +0000
-Subject: [PATCH 01/04] ARM: shmobile: Initial r8a73a4 SoC support V2
-Message-Id: <20130318143212.26687.55335.sendpatchset@w520>
+Date: Tue, 19 Mar 2013 03:22:29 +0000
+Subject: Re: [PATCH 01/04] ARM: shmobile: Initial r8a73a4 SoC support
+Message-Id: <CANqRtoTM01CNbJfCka09nz=pH+dxqizyHG6E64J05KABKdyFtw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318143203.26687.98180.sendpatchset@w520>
-In-Reply-To: <20130318143203.26687.98180.sendpatchset@w520>
+References: <20130312045559.19701.77841.sendpatchset@w520>
+ <201303121225.40230.arnd@arndb.de>
+ <CANqRtoTSN=VBV1-dNMSM5aaMwHmmXe9Ow6pFK_AVzXKuOXkFEA@mail.gmail.com>
+ <201303140906.27073.arnd@arndb.de>
+In-Reply-To: <201303140906.27073.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thu, Mar 14, 2013 at 6:06 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+> On Thursday 14 March 2013, Magnus Damm wrote:
+>> On Tue, Mar 12, 2013 at 9:25 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+>> > On Tuesday 12 March 2013, Magnus Damm wrote:
+>> >> +static struct platform_device *r8a73a4_devices[] __initdata = {
+>> >> +};
+>> >> +
+>> >> +void __init r8a73a4_add_standard_devices(void)
+>> >> +{
+>> >> +       r8a73a4_clock_init();
+>> >> +
+>> >> +       platform_add_devices(r8a73a4_devices, ARRAY_SIZE(r8a73a4_devices));
+>> >> +}
+>> >
+>> > I would suggest doing the platform_add_devices() only when you actually
+>> > add devices to the array, unless you have a number of conflicting patches
+>> > that each want to add their own devices.
+>>
+>> So you would prefer that I fold this portion into a patch later in the series?
+>
+> If you are adding the devices in a later patch of the same series, it's
+> probably better to leave it like it is. I would just like to avoid having
+> dead code in a release if you don't get around to also add the devices.
 
-Add initial support for the r8a73a4 SoC including:
- - Single Cortex-A15 CPU Core
- - GIC
- - Architecture timer
+Sure. As you may have seen, I ended up moving away from static
+platform devices in V2. So this portion of the code is gone there.
 
-No static virtual mappings are used, all the components
-make use of ioremap(). DT_MACHINE_START is still wrapped
-in CONFIG_USE_OF to match other mach-shmobile code.
+>> >> +#ifdef CONFIG_USE_OF
+>> >> +void __init r8a73a4_add_standard_devices_dt(void)
+>> >> +{
+>> >> +       of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+>> >> +}
+>> >
+>> > I have a patch that will make this function definition the default, so you
+>> > no longer have to provide an init_machine callback if you don't do anything
+>> > special. It's ok to leave it in for now, but we might want to do a follow
+>> > up patch to remove it once both patches are merged.
+>>
+>> That's very nice! I am happy to hear that. Is that patch targeting v3.10?
+>
+> Yes, I just need to produce a new version based on 3.9-rc.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+That is fine, but as you suggest below, perhaps it is easier to wait
+until post-v3.10?
 
- Changes since V1:
- - Best-effort sort of headers
- - Removed r8a73a4_devices[] and platform_add_devices()
- - Let r8a73a4_clock_init() be called directly by board code
+>> >> +static const char *r8a73a4_boards_compat_dt[] __initdata = {
+>> >> +       "renesas,r8a73a4",
+>> >> +       NULL,
+>> >> +};
+>> >> +
+>> >> +DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+>> >> +       .init_irq       = irqchip_init,
+>> >
+>> > Same thing for the default irqchip_init.
+>>
+>> Excellent! I believe the easiest is to leave it as-is for now and have
+>> a clean-up series that can be merged late in the cycle after your
+>> patch is in. I am not sure if that fits with your way of dealing with
+>> the pull requests. At least that's how we used to do it for SH. If you
+>> have any suggestion when to remove it please let me know.
+>
+> I don't want to get new patches during the merge window, but we can
+> arrange a branch in the arm-soc tree that has both changes merged
+> and the cleanup on top. We always send out pull requests for 10 to
+> 15 branches in the merge window, and the later branches can be based
+> on the earlier ones to deal with dependencies like this.
+>
+> In this particular case, it would also not hurt to do the cleanup
+> in 3.11, since the patch is only cosmetic.
 
- arch/arm/boot/dts/r8a73a4.dtsi                |   55 +++++++++++++++
- arch/arm/mach-shmobile/Kconfig                |    7 +
- arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/clock-r8a73a4.c        |   89 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    7 +
- arch/arm/mach-shmobile/setup-r8a73a4.c        |   50 ++++++++++++++
- 6 files changed, 209 insertions(+)
+I agree that targeting v3.11 for this cleanup makes most sense. So I
+kept the functions in V2.
 
---- /dev/null
-+++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-03-18 18:34:16.000000000 +0900
-@@ -0,0 +1,55 @@
-+/*
-+ * Device Tree Source for the r8a73a4 SoC
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Magnus Damm
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	compatible = "renesas,r8a73a4";
-+	interrupt-parent = <&gic>;
-+
-+	cpus {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		cpu0: cpu@0 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <0>;
-+			clock-frequency = <1500000000>;
-+		};
-+	};
-+
-+	gic: interrupt-controller@f1001000 {
-+		compatible = "arm,cortex-a15-gic";
-+		#interrupt-cells = <3>;
-+		#address-cells = <0>;
-+		interrupt-controller;
-+		reg = <0xf1001000 0x1000>,
-+			<0xf1002000 0x1000>,
-+			<0xf1004000 0x2000>,
-+			<0xf1006000 0x2000>;
-+		interrupts = <1 9 0xf04>;
-+
-+		gic-cpuif@4 {
-+			compatible = "arm,gic-cpuif";
-+			cpuif-id = <4>;
-+			cpu = <&cpu0>;
-+		};
-+	};
-+
-+	timer {
-+		compatible = "arm,armv7-timer";
-+		interrupts = <1 13 0xf08>,
-+				<1 14 0xf08>,
-+				<1 11 0xf08>,
-+				<1 10 0xf08>;
-+	};
-+};
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-03-18 18:34:15.000000000 +0900
-@@ -18,6 +18,13 @@ config ARCH_SH73A0
- 	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
- 
-+config ARCH_R8A73A4
-+	bool "R-Mobile APE6 (R8A73A40)"
-+	select ARM_GIC
-+	select CPU_V7
-+	select ARM_ARCH_TIMER
-+	select SH_CLK_CPG
-+
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-03-18 18:34:15.000000000 +0900
-@@ -8,6 +8,7 @@ obj-y				:= timer.o console.o clock.o
- # CPU objects
- obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
-+obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
- obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
---- /dev/null
-+++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-03-18 18:34:16.000000000 +0900
-@@ -0,0 +1,89 @@
-+/*
-+ * r8a73a4 clock framework support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+#include <linux/init.h>
-+#include <linux/io.h>
-+#include <linux/kernel.h>
-+#include <linux/sh_clk.h>
-+#include <linux/clkdev.h>
-+#include <mach/common.h>
-+
-+#define CPG_BASE 0xe6150000
-+#define CPG_LEN 0x270
-+
-+#define MPCKCR 0xe6150080
-+
-+static struct clk_mapping cpg_mapping = {
-+	.phys   = CPG_BASE,
-+	.len    = CPG_LEN,
-+};
-+
-+static struct clk extalr_clk = {
-+	.rate	= 32768,
-+};
-+
-+static struct clk extal1_clk = {
-+	.rate	= 26000000,
-+};
-+
-+static struct clk extal2_clk = {
-+	.rate	= 48000000,
-+	.mapping	= &cpg_mapping,
-+};
-+
-+static struct clk *main_clks[] = {
-+	&extalr_clk,
-+	&extal1_clk,
-+	&extal2_clk,
-+};
-+
-+enum { MSTP_NR };
-+static struct clk mstp_clks[MSTP_NR] = {
-+};
-+
-+static struct clk_lookup lookups[] = {
-+};
-+
-+void __init r8a73a4_clock_init(void)
-+{
-+	void __iomem *cpg_base, *reg;
-+	int k, ret = 0;
-+
-+	/* fix MPCLK to EXTAL2 for now.
-+	 * this is needed until more detailed clock topology is supported
-+	 */
-+	cpg_base = ioremap_nocache(CPG_BASE, CPG_LEN);
-+	BUG_ON(!cpg_base);
-+	reg = cpg_base + (MPCKCR - CPG_BASE);
-+	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
-+	iounmap(cpg_base);
-+
-+	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
-+		ret = clk_register(main_clks[k]);
-+
-+	if (!ret)
-+		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
-+	if (!ret)
-+		shmobile_clk_init();
-+	else
-+		panic("failed to setup r8a73a4 clocks\n");
-+}
---- /dev/null
-+++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-03-18 18:34:16.000000000 +0900
-@@ -0,0 +1,7 @@
-+#ifndef __ASM_R8A73A4_H__
-+#define __ASM_R8A73A4_H__
-+
-+void r8a73a4_add_standard_devices(void);
-+void r8a73a4_clock_init(void);
-+
-+#endif /* __ASM_R8A73A4_H__ */
---- /dev/null
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-18 21:41:35.000000000 +0900
-@@ -0,0 +1,50 @@
-+/*
-+ * r8a73a4 processor support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+#include <linux/irq.h>
-+#include <linux/irqchip.h>
-+#include <linux/kernel.h>
-+#include <linux/of_platform.h>
-+#include <mach/common.h>
-+#include <mach/irqs.h>
-+#include <mach/r8a73a4.h>
-+#include <asm/mach/arch.h>
-+
-+void __init r8a73a4_add_standard_devices(void)
-+{
-+}
-+
-+#ifdef CONFIG_USE_OF
-+void __init r8a73a4_add_standard_devices_dt(void)
-+{
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
-+
-+static const char *r8a73a4_boards_compat_dt[] __initdata = {
-+	"renesas,r8a73a4",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
-+	.init_irq	= irqchip_init,
-+	.init_machine	= r8a73a4_add_standard_devices_dt,
-+	.init_time	= shmobile_timer_init,
-+	.dt_compat	= r8a73a4_boards_compat_dt,
-+MACHINE_END
-+#endif /* CONFIG_USE_OF */
+Thanks,
+
+/ magnus
