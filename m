@@ -1,60 +1,141 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Mar 2013 05:49:01 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: sh73a0 Suspend-to-RAM
-Message-Id: <20130327054901.GQ25431@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 19 Mar 2013 17:38:50 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g-reference: fix device-tree bindings and device names
+Message-Id: <Pine.LNX.4.64.1303191827590.11768@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363872697-11267-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1363872697-11267-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Mar 21, 2013 at 02:31:35PM +0100, Bastian Hecht wrote:
-> Here is a patch for shutting down the CPU0 to Power Off mode during
-> SUSPEND-to-RAM (in which case CPU1 is already shut down to Power Off mode
-> due to CPU hotplug).
-> 
-> While patch 2/2 implements this, we face some unresolved problems with the
-> interrupt controller code. See: "[PATCH] input: st1232: Add IRQF_NO_SUSPEND flag"
-> posted on 14th of February. This problem makes us unable to use the touchscreen
-> as a wakeup source. I consider patch 2/2 sane in itself though, and we
-> should consider merging it.
-> 
-> To test Suspend-to-RAM, patch 1/2 is supplied that is a workaround to the problem.
-> 
-> When I use the gpio keys in general (and as wakeup source), I get
-> ------------[ cut here ]------------
-> WARNING: at drivers/tty/tty_buffer.c:428 flush_to_ldisc+0x44/0x1a0()
-> tty is NULL
-> I suppose this is another independent problem to this code.
-> 
-> Side note for future work: On the way to CPUIdle we might want to use
-> CPUIDLE_FLAG_COUPLED that enables us to coordinate the shutdown of both CPUs.
-> 
-> The patches are based on Simon's renesas/next branch.
+Fix several device-tree bindings, that haven't been updated for newest
+versions of respective drivers, and device names and pin numbers, left over
+from non-DT and old pinctrl versions.
 
-I'm a little reticent to accept this change with two known problems
-unless we are absolutely sure the problems are orthogonal.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-> Bastian Hecht (2):
->   input: st1232: Add IRQF_NO_SUSPEND flag
->   ARM: shmobile: sh73a0: Suspend-to-RAM Power Off mode
-> 
->  arch/arm/mach-shmobile/Makefile              |    2 +-
->  arch/arm/mach-shmobile/headsmp-sh73a0.S      |   72 ++++++++++++++++++++++++++
->  arch/arm/mach-shmobile/include/mach/common.h |    1 +
->  arch/arm/mach-shmobile/pm-sh73a0.c           |   32 ++++++++++--
->  arch/arm/mach-shmobile/smp-sh73a0.c          |    2 +-
->  drivers/input/touchscreen/st1232.c           |    2 +-
->  6 files changed, 104 insertions(+), 7 deletions(-)
->  create mode 100644 arch/arm/mach-shmobile/headsmp-sh73a0.S
-> 
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Applies on top of my previous patches from yesterday and today. In 
+principle it would be better to first fix bugs and then move device tree 
+nodes around, but the bugs are there also in the original version, so, 
+doesn't really matter in which order we do fixing and transforming. Unless 
+we want to merge fixes into original patches, that introduced the bugs.
+
+ arch/arm/boot/dts/sh73a0.dtsi                  |   12 +++++-----
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   27 +++++++++++------------
+ 2 files changed, 19 insertions(+), 20 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index c89be38..3e4d383 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -109,36 +109,36 @@
+ 	};
+ 
+ 	sdhi0: sdhi@0xee100000 {
+-		compatible = "renesas,shmobile-sdhi";
++		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee100000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 83 4
+ 				0 84 4
+ 				0 85 4>;
+-		toshiba,mmc-has-idle-wait;
++		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+ 
+ 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
+ 	sdhi1: sdhi@0xee120000 {
+-		compatible = "renesas,shmobile-sdhi";
++		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee120000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 88 4
+ 				0 89 4>;
+ 		toshiba,mmc-wrprotect-disable;
+-		toshiba,mmc-has-idle-wait;
++		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+ 
+ 	sdhi2: sdhi@0xee140000 {
+-		compatible = "renesas,shmobile-sdhi";
++		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee140000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 104 4
+ 				0 105 4>;
+ 		toshiba,mmc-wrprotect-disable;
+-		toshiba,mmc-has-idle-wait;
++		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index b21e03f..100672c 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -81,16 +81,16 @@ static unsigned long pin_pullup_conf[] = {
+ };
+ 
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "pfc-sh73a0",
+ 				  "i2c3_1", "i2c3"),
+ 	/* MMCIF */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
+ 				  "mmc0_data8_0", "mmc0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
+ 				  "mmc0_ctrl_0", "mmc0"),
+-	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
+ 				    "PORT279", pin_pullup_conf),
+-	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
+ 				      "mmc0_data8_0", pin_pullup_conf),
+ 	/* SCIFA4 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+@@ -98,18 +98,18 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+ 				  "scifa4_ctrl", "scifa4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SDHI2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
+ 				  "sdhi2_data4", "sdhi2"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
+ 				  "sdhi2_ctrl", "sdhi2"),
+ };
+ 
+@@ -124,10 +124,9 @@ static void __init kzm_init(void)
+ 
+ 	/* enable SD */
+ 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
+-	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
++	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ 
+-	gpio_request(GPIO_FN_SDHICLK2,		NULL);
+-	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
++	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+-- 
+1.7.2.5
+
