@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:05:53 +0000
+Date: Tue, 19 Mar 2013 02:19:31 +0000
 Subject: [PATCH 09/14] irqchip: intc-irqpin: GPL header for platform data
-Message-Id: <1363608358-24215-10-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1363659576-6333-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
