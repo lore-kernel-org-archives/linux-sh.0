@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:59:38 +0000
+Date: Tue, 19 Mar 2013 02:17:59 +0000
 Subject: [PATCH 11/13] ARM: shmobile: kzm9g: Trim reference DT_MACHINE_START
-Message-Id: <1363607980-22153-12-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1363659481-5922-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
