@@ -1,103 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 27 Mar 2013 19:15:43 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: marzen: Add Display Unit support
-Message-Id: <2915363.uaXXQQezT6@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 19 Mar 2013 09:35:57 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7779: Add PCIe clocks
+Message-Id: <1363685757-8159-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364407550-30652-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1364407550-30652-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Sergei,
 
-On Wednesday 27 March 2013 23:10:47 Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 03/27/2013 09:05 PM, Laurent Pinchart wrote:
-> > Support the DU0 VGA and DU1 LVDS outputs. DU1 is connected to a
-> > Mitsubishi AA104XD12 panel (10.4" XGA).
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> [...]
-> 
-> > diff --git a/arch/arm/mach-shmobile/include/mach/common.h
-> > b/arch/arm/mach-shmobile/include/mach/common.h index 4531872..03f73de
-> > 100644
-> > --- a/arch/arm/mach-shmobile/include/mach/common.h
-> > +++ b/arch/arm/mach-shmobile/include/mach/common.h
-> > @@ -68,7 +68,6 @@ extern void r8a7779_earlytimer_init(void);
-> > 
-> >   extern void r8a7779_add_early_devices(void);
-> >   extern void r8a7779_add_standard_devices(void);
-> >   extern void r8a7779_add_standard_devices_dt(void);
-> > 
-> > -extern void r8a7779_add_du_device(void *pdata);
-> 
->     Er...
-> 
-> >   extern void r8a7779_clock_init(void);
-> >   extern void r8a7779_pinmux_init(void);
-> >   extern void r8a7779_pm_init(void);
-> > 
-> > diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c
-> > b/arch/arm/mach-shmobile/setup-r8a7779.c index 2f817d8..a460ba3 100644
-> > --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> > +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> > @@ -393,29 +393,6 @@ static struct platform_device sata_device = {
-> >   	},
-> >   };
-> > 
-> > -static struct resource du_resources[] = {
-> > -	[0] = {
-> > -		.name	= "Display Unit",
-> > -		.start	= 0xfff80000,
-> > -		.end	= 0xfffb1007,
-> > -		.flags	= IORESOURCE_MEM,
-> > -	},
-> > -	[1] = {
-> > -		.start	= gic_iid(0x3f),
-> > -		.flags	= IORESOURCE_IRQ,
-> > -	},
-> > -};
-> > -
-> > -static struct platform_device du_device = {
-> > -	.name		= "rcar-du",
-> > -	.num_resources	= ARRAY_SIZE(du_resources),
-> > -	.resource	= du_resources,
-> > -	.id		= 0,
-> > -	.dev	= {
-> > -		.coherent_dma_mask = ~0,
-> > -	},
-> > -};
-> > -
-> >   static struct platform_device *r8a7779_devices_dt[] __initdata = {
-> >   	&scif0_device,
-> >   	&scif1_device,
-> > @@ -451,13 +428,6 @@ void __init r8a7779_add_standard_devices(void)
-> >   			    ARRAY_SIZE(r8a7779_late_devices));
-> >   }
-> > 
-> > -void __init r8a7779_add_du_device(void *pdata)
-> > -{
-> > -	du_device.dev.platform_data = pdata;
-> > -
-> > -	platform_device_register(&du_device);
-> > -}
-> > -
-> >   /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-> >   void __init __weak r8a7779_register_twd(void) { }
-> 
->     I didn't get this part. Why are you removing the platform device
->   and function?
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v2:
+  Rebased on renesas soc branch.
+  Removed ".0" from clock name.
 
-My bad. That wasn't meant at all. I'll resubmit.
+ arch/arm/mach-shmobile/clock-r8a7779.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index d9edeaf..a23c5eb 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,7 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ };
+ 
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+-	MSTP115,
++	MSTP116, MSTP115,
+ 	MSTP103, MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+@@ -100,6 +100,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP116] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1, 16, 0), /* PCIe */
+ 	[MSTP115] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 15, 0), /* SATA */
+ 	[MSTP103] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1,  3, 0), /* DU */
+ 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
+@@ -159,6 +160,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
+ 
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("rcar-pcie", &mstp_clks[MSTP116]), /* PCIe */
+ 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
+ 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
+ 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.5.4
 
