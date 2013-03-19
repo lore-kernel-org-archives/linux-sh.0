@@ -1,270 +1,124 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 12 Mar 2013 15:48:27 +0000
-Subject: [PATCH v3.1 1/4] sh-pfc: sh73a0: Add KEYSC pin groups and functions
-Message-Id: <1363103310-16260-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 19 Mar 2013 09:22:00 +0000
+Subject: [PATCH v2] ARM: shmobile: ape6evm: add defconfig
+Message-Id: <1363684920-2370-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add defconfig for ape6evm. This is based loosely
+on the kzm9g defconfig with fewer devices enabled.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 213 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 213 insertions(+)
+ arch/arm/configs/ape6evm_defconfig |   91 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
+ create mode 100644 arch/arm/configs/ape6evm_defconfig
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 09fcb3c..aa36aa4 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1550,6 +1550,12 @@ static struct pinmux_range pinmux_ranges[] = {
- 	{.begin = 288, .end = 309,},
- };
- 
-+/* Pin numbers for pins without a corresponding GPIO port number are computed
-+ * from the row and column numbers with a 1000 offset to avoid collisions with
-+ * GPIO port numbers.
-+ */
-+#define PIN_NUMBER(row, col)		(1000+((row)-1)*34+(col)-1)
-+
- static const unsigned int fsia_mclk_in_pins[] = {
- 	/* CK */
- 	49,
-@@ -1773,6 +1779,165 @@ static const unsigned int i2c3_2_mux[] = {
- 	PORT115_I2C_SCL3_MARK, PORT116_I2C_SDA3_MARK,
- };
- 
-+static const unsigned int keysc_in5_pins[] = {
-+	/* KEYIN[0:4] */
-+	66, 67, 68, 69, 70,
-+};
-+static const unsigned int keysc_in5_mux[] = {
-+	KEYIN0_MARK, KEYIN1_MARK, KEYIN2_MARK, KEYIN3_MARK,
-+	KEYIN4_MARK,
-+};
-+static const unsigned int keysc_in6_pins[] = {
-+	/* KEYIN[0:5] */
-+	66, 67, 68, 69, 70, 71,
-+};
-+static const unsigned int keysc_in6_mux[] = {
-+	KEYIN0_MARK, KEYIN1_MARK, KEYIN2_MARK, KEYIN3_MARK,
-+	KEYIN4_MARK, KEYIN5_MARK,
-+};
-+static const unsigned int keysc_in7_pins[] = {
-+	/* KEYIN[0:6] */
-+	66, 67, 68, 69, 70, 71, 72,
-+};
-+static const unsigned int keysc_in7_mux[] = {
-+	KEYIN0_MARK, KEYIN1_MARK, KEYIN2_MARK, KEYIN3_MARK,
-+	KEYIN4_MARK, KEYIN5_MARK, KEYIN6_MARK,
-+};
-+static const unsigned int keysc_in8_pins[] = {
-+	/* KEYIN[0:7] */
-+	66, 67, 68, 69, 70, 71, 72, 73,
-+};
-+static const unsigned int keysc_in8_mux[] = {
-+	KEYIN0_MARK, KEYIN1_MARK, KEYIN2_MARK, KEYIN3_MARK,
-+	KEYIN4_MARK, KEYIN5_MARK, KEYIN6_MARK, KEYIN7_MARK,
-+};
-+static const unsigned int keysc_out04_pins[] = {
-+	/* KEYOUT[0:4] */
-+	65, 64, 63, 62, 61,
-+};
-+static const unsigned int keysc_out04_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK, KEYOUT4_MARK,
-+};
-+static const unsigned int keysc_out5_pins[] = {
-+	/* KEYOUT5 */
-+	60,
-+};
-+static const unsigned int keysc_out5_mux[] = {
-+	KEYOUT5_MARK,
-+};
-+static const unsigned int keysc_out6_0_pins[] = {
-+	/* KEYOUT6 */
-+	59,
-+};
-+static const unsigned int keysc_out6_0_mux[] = {
-+	PORT59_KEYOUT6_MARK,
-+};
-+static const unsigned int keysc_out6_1_pins[] = {
-+	/* KEYOUT6 */
-+	131,
-+};
-+static const unsigned int keysc_out6_1_mux[] = {
-+	PORT131_KEYOUT6_MARK,
-+};
-+static const unsigned int keysc_out6_2_pins[] = {
-+	/* KEYOUT6 */
-+	143,
-+};
-+static const unsigned int keysc_out6_2_mux[] = {
-+	PORT143_KEYOUT6_MARK,
-+};
-+static const unsigned int keysc_out7_0_pins[] = {
-+	/* KEYOUT7 */
-+	58,
-+};
-+static const unsigned int keysc_out7_0_mux[] = {
-+	PORT58_KEYOUT7_MARK,
-+};
-+static const unsigned int keysc_out7_1_pins[] = {
-+	/* KEYOUT7 */
-+	132,
-+};
-+static const unsigned int keysc_out7_1_mux[] = {
-+	PORT132_KEYOUT7_MARK,
-+};
-+static const unsigned int keysc_out7_2_pins[] = {
-+	/* KEYOUT7 */
-+	144,
-+};
-+static const unsigned int keysc_out7_2_mux[] = {
-+	PORT144_KEYOUT7_MARK,
-+};
-+static const unsigned int keysc_out8_0_pins[] = {
-+	/* KEYOUT8 */
-+	PIN_NUMBER(6, 26),
-+};
-+static const unsigned int keysc_out8_0_mux[] = {
-+	KEYOUT8_MARK,
-+};
-+static const unsigned int keysc_out8_1_pins[] = {
-+	/* KEYOUT8 */
-+	136,
-+};
-+static const unsigned int keysc_out8_1_mux[] = {
-+	PORT136_KEYOUT8_MARK,
-+};
-+static const unsigned int keysc_out8_2_pins[] = {
-+	/* KEYOUT8 */
-+	138,
-+};
-+static const unsigned int keysc_out8_2_mux[] = {
-+	PORT138_KEYOUT8_MARK,
-+};
-+static const unsigned int keysc_out9_0_pins[] = {
-+	/* KEYOUT9 */
-+	137,
-+};
-+static const unsigned int keysc_out9_0_mux[] = {
-+	PORT137_KEYOUT9_MARK,
-+};
-+static const unsigned int keysc_out9_1_pins[] = {
-+	/* KEYOUT9 */
-+	139,
-+};
-+static const unsigned int keysc_out9_1_mux[] = {
-+	PORT139_KEYOUT9_MARK,
-+};
-+static const unsigned int keysc_out9_2_pins[] = {
-+	/* KEYOUT9 */
-+	149,
-+};
-+static const unsigned int keysc_out9_2_mux[] = {
-+	PORT149_KEYOUT9_MARK,
-+};
-+static const unsigned int keysc_out10_0_pins[] = {
-+	/* KEYOUT10 */
-+	132,
-+};
-+static const unsigned int keysc_out10_0_mux[] = {
-+	PORT132_KEYOUT10_MARK,
-+};
-+static const unsigned int keysc_out10_1_pins[] = {
-+	/* KEYOUT10 */
-+	142,
-+};
-+static const unsigned int keysc_out10_1_mux[] = {
-+	PORT142_KEYOUT10_MARK,
-+};
-+static const unsigned int keysc_out11_0_pins[] = {
-+	/* KEYOUT11 */
-+	131,
-+};
-+static const unsigned int keysc_out11_0_mux[] = {
-+	PORT131_KEYOUT11_MARK,
-+};
-+static const unsigned int keysc_out11_1_pins[] = {
-+	/* KEYOUT11 */
-+	143,
-+};
-+static const unsigned int keysc_out11_1_mux[] = {
-+	PORT143_KEYOUT11_MARK,
-+};
-+
- static const unsigned int lcd_data8_pins[] = {
- 	/* D[0:7] */
- 	192, 193, 194, 195, 196, 197, 198, 199,
-@@ -2387,6 +2552,28 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(i2c3_0),
- 	SH_PFC_PIN_GROUP(i2c3_1),
- 	SH_PFC_PIN_GROUP(i2c3_2),
-+	SH_PFC_PIN_GROUP(keysc_in5),
-+	SH_PFC_PIN_GROUP(keysc_in6),
-+	SH_PFC_PIN_GROUP(keysc_in7),
-+	SH_PFC_PIN_GROUP(keysc_in8),
-+	SH_PFC_PIN_GROUP(keysc_out04),
-+	SH_PFC_PIN_GROUP(keysc_out5),
-+	SH_PFC_PIN_GROUP(keysc_out6_0),
-+	SH_PFC_PIN_GROUP(keysc_out6_1),
-+	SH_PFC_PIN_GROUP(keysc_out6_2),
-+	SH_PFC_PIN_GROUP(keysc_out7_0),
-+	SH_PFC_PIN_GROUP(keysc_out7_1),
-+	SH_PFC_PIN_GROUP(keysc_out7_2),
-+	SH_PFC_PIN_GROUP(keysc_out8_0),
-+	SH_PFC_PIN_GROUP(keysc_out8_1),
-+	SH_PFC_PIN_GROUP(keysc_out8_2),
-+	SH_PFC_PIN_GROUP(keysc_out9_0),
-+	SH_PFC_PIN_GROUP(keysc_out9_1),
-+	SH_PFC_PIN_GROUP(keysc_out9_2),
-+	SH_PFC_PIN_GROUP(keysc_out10_0),
-+	SH_PFC_PIN_GROUP(keysc_out10_1),
-+	SH_PFC_PIN_GROUP(keysc_out11_0),
-+	SH_PFC_PIN_GROUP(keysc_out11_1),
- 	SH_PFC_PIN_GROUP(lcd_data8),
- 	SH_PFC_PIN_GROUP(lcd_data9),
- 	SH_PFC_PIN_GROUP(lcd_data12),
-@@ -2510,6 +2697,31 @@ static const char * const i2c3_groups[] = {
- 	"i2c3_2",
- };
- 
-+static const char * const keysc_groups[] = {
-+	"keysc_in5",
-+	"keysc_in6",
-+	"keysc_in7",
-+	"keysc_in8",
-+	"keysc_out04",
-+	"keysc_out5",
-+	"keysc_out6_0",
-+	"keysc_out6_1",
-+	"keysc_out6_2",
-+	"keysc_out7_0",
-+	"keysc_out7_1",
-+	"keysc_out7_2",
-+	"keysc_out8_0",
-+	"keysc_out8_1",
-+	"keysc_out8_2",
-+	"keysc_out9_0",
-+	"keysc_out9_1",
-+	"keysc_out9_2",
-+	"keysc_out10_0",
-+	"keysc_out10_1",
-+	"keysc_out11_0",
-+	"keysc_out11_1",
-+};
-+
- static const char * const lcd_groups[] = {
- 	"lcd_data8",
- 	"lcd_data9",
-@@ -2635,6 +2847,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(fsid),
- 	SH_PFC_FUNCTION(i2c2),
- 	SH_PFC_FUNCTION(i2c3),
-+	SH_PFC_FUNCTION(keysc),
- 	SH_PFC_FUNCTION(lcd),
- 	SH_PFC_FUNCTION(lcd2),
- 	SH_PFC_FUNCTION(mmc0),
+v2
+
+* Set ARCH=arm when running make savedefconfig so the config is for ARM :^)
+* Enable CONFIG_SWP_EMULATE. This allows the Debian armhf userspace to boot
+
+diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
+new file mode 100644
+index 0000000..1240e54
+--- /dev/null
++++ b/arch/arm/configs/ape6evm_defconfig
+@@ -0,0 +1,91 @@
++CONFIG_SYSVIPC=y
++CONFIG_POSIX_MQUEUE=y
++CONFIG_NO_HZ=y
++CONFIG_HIGH_RES_TIMERS=y
++CONFIG_BSD_PROCESS_ACCT=y
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
++CONFIG_LOG_BUF_SHIFT
++CONFIG_CGROUPS=y
++CONFIG_CGROUP_SCHED=y
++CONFIG_KALLSYMS_ALL=y
++CONFIG_EMBEDDED=y
++CONFIG_PERF_EVENTS=y
++CONFIG_SLAB=y
++# CONFIG_BLOCK is not set
++CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_R8A73A4=y
++CONFIG_MACH_APE6EVM=y
++# CONFIG_ARM_THUMB is not set
++CONFIG_CPU_BPREDICT_DISABLE=y
++CONFIG_PL310_ERRATA_588369=y
++CONFIG_ARM_ERRATA_754322=y
++CONFIG_SMP=y
++CONFIG_SCHED_MC=y
++CONFIG_HAVE_ARM_ARCH_TIMER=y
++CONFIG_NR_CPUS=8
++CONFIG_AEABI=y
++CONFIG_HIGHMEM=y
++CONFIG_HIGHPTE=y
++# CONFIG_HW_PERF_EVENTS is not set
++# CONFIG_COMPACTION is not set
++# CONFIG_CROSS_MEMORY_ATTACH is not set
++CONFIG_ARM_APPENDED_DTB=y
++CONFIG_VFP=y
++CONFIG_NEON=y
++CONFIG_BINFMT_MISC=y
++CONFIG_NET=y
++CONFIG_PACKET=y
++CONFIG_UNIX=y
++CONFIG_XFRM_USER=y
++CONFIG_NET_KEY=y
++CONFIG_NET_KEY_MIGRATE=y
++CONFIG_INET=y
++CONFIG_IP_MULTICAST=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
++# CONFIG_INET_LRO is not set
++# CONFIG_IPV6_SIT is not set
++CONFIG_NETFILTER=y
++CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++# CONFIG_FW_LOADER_USER_HELPER is not set
++CONFIG_NETDEVICES=y
++# CONFIG_NET_CADENCE is not set
++CONFIG_SMC91X=y
++CONFIG_SMSC911X=y
++# CONFIG_INPUT_MOUSEDEV is not set
++# CONFIG_INPUT_KEYBOARD is not set
++# CONFIG_INPUT_MOUSE is not set
++# CONFIG_SERIO is not set
++CONFIG_SERIAL_NONSTANDARD=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
++# CONFIG_HWMON is not set
++CONFIG_THERMAL=y
++CONFIG_RCAR_THERMAL=y
++CONFIG_REGULATOR=y
++# CONFIG_HID is not set
++# CONFIG_USB_SUPPORT is not set
++# CONFIG_IOMMU_SUPPORT is not set
++# CONFIG_DNOTIFY is not set
++CONFIG_TMPFS=y
++# CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_NFS_V3_ACL=y
++CONFIG_NFS_V4=y
++CONFIG_NFS_V4_1=y
++CONFIG_ROOT_NFS=y
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_ENABLE_DEFAULT_TRACERS=y
++CONFIG_CRYPTO_CBC=y
++CONFIG_CRYPTO_ECB=y
++CONFIG_CRYPTO_MD5=y
++CONFIG_CRYPTO_MICHAEL_MIC=y
++CONFIG_CRYPTO_TWOFISH=y
++CONFIG_CRC_CCITT=y
++CONFIG_CRC16=y
++CONFIG_CRC_T10DIF=y
++CONFIG_CRC_ITU_T=y
++CONFIG_CRC7=y
++CONFIG_LIBCRC32C=y
 -- 
-1.8.1.5
+1.7.10.4
 
