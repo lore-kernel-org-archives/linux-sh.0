@@ -1,59 +1,73 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:19:35 +0000
-Subject: [PATCH 13/14] irqchip: intc-irqpin: Initial DT support
-Message-Id: <1363659576-6333-14-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 19 Mar 2013 02:17:48 +0000
+Subject: [GIT PULL v2] Renesas ARM-based SoC board updates for v3.10
+Message-Id: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
+References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Arnd, Hi Olof,
 
-Add initial DT support to the INTC External IRQ Pin
-driver. At this point only hardware with 4-bit wide
-sense registers is supported via DT.
+The following changes since commit a9cc2c88aa9514296f868c9ea740b8addc7b8115:
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/irqchip/irq-renesas-intc-irqpin.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
+  Merge branches 'soc' and 'pinmux' into boards-base (2013-03-18 21:26:33 +0900)
 
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index 21f4602..fd5dabc 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -278,6 +278,7 @@ static int intc_irqpin_irq_domain_map(struct irq_domain *h, unsigned int virq,
- 
- static struct irq_domain_ops intc_irqpin_irq_domain_ops = {
- 	.map	= intc_irqpin_irq_domain_map,
-+	.xlate  = irq_domain_xlate_twocell,
- };
- 
- static int intc_irqpin_probe(struct platform_device *pdev)
-@@ -437,11 +438,19 @@ static int intc_irqpin_remove(struct platform_device *pdev)
- 	return 0;
- }
- 
-+static const struct of_device_id intc_irqpin_dt_ids[] = {
-+	{ .compatible = "renesas,intc-irqpin", },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, intc_irqpin_dt_ids);
-+
- static struct platform_driver intc_irqpin_device_driver = {
- 	.probe		= intc_irqpin_probe,
- 	.remove		= intc_irqpin_remove,
- 	.driver		= {
- 		.name	= "renesas_intc_irqpin",
-+		.of_match_table = intc_irqpin_dt_ids,
-+		.owner  = THIS_MODULE,
- 	}
- };
- 
--- 
-1.7.10.4
+are available in the git repository at:
 
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.10
+
+for you to fetch changes up to 48296a13e7f411402f080d0603724623fa3eee14:
+
+  ARM: shmobile: kzm9g: correct smsc regulator registration (2013-03-18 21:27:03 +0900)
+
+----------------------------------------------------------------
+Renesas ARM-based SoC board updates for v3.10
+
+This is based on a merge of the following:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-pinmux-for-v3.10
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-for-v3.10
+
+----------------------------------------------------------------
+Arnd Bergmann (1):
+      ARM: shmobile: mark mackerel sh_mmcif_device __maybe_unused
+
+Guennadi Liakhovetski (6):
+      ARM: shmobile: use GPIO SD-card detection on armadillo800eva
+      ARM: shmobile: switch SDHI0 to GPIO regulator on armadillo800eva
+      ARM: shmobile: streamline mackerel SD and MMC devices
+      ARM: shmobile: parse DT and configure pinmux early on kzm9g-reference
+      ARM: shmobile: SDHI and MMCIF interfaces to kzm9g-reference
+      ARM: shmobile: simplify kzm9g Kconfig dependencies
+
+Kuninori Morimoto (1):
+      ARM: shmobile: marzen: Use gic_iid macro for ICCIAR / interrupt ID
+
+Simon Horman (5):
+      ARM: shmobile: marzen: Reference DT implementation
+      ARM: shmobile: kzm9g: Reference DT implementation
+      ARM: shmobile: kzm9g: Remove warning about SMP
+      ARM: shmobile: kzm9g: Trim reference DT_MACHINE_START
+      ARM: shmobile: kzm9g: correct smsc regulator registration
+
+ arch/arm/boot/dts/Makefile                      |    2 +
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  |   47 +++++++++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    |   77 +++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                  |   27 ++++++
+ arch/arm/mach-shmobile/Makefile                 |    2 +
+ arch/arm/mach-shmobile/board-armadillo800eva.c  |  111 ++++++++++++++++++----
+ arch/arm/mach-shmobile/board-kzm9g-reference.c  |  108 +++++++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g.c            |    4 +-
+ arch/arm/mach-shmobile/board-mackerel.c         |  115 ++++++++++++-----------
+ arch/arm/mach-shmobile/board-marzen-reference.c |   75 +++++++++++++++
+ arch/arm/mach-shmobile/board-marzen.c           |   12 +--
+ 11 files changed, 496 insertions(+), 84 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
+ create mode 100644 arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-kzm9g-reference.c
+ create mode 100644 arch/arm/mach-shmobile/board-marzen-reference.c
