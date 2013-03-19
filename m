@@ -1,154 +1,278 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Mar 2013 15:49:44 +0000
-Subject: [PATCH 02/04] ARM: shmobile: r8a7790 SCIF support
-Message-Id: <20130327154944.10876.63305.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 19 Mar 2013 11:25:24 +0000
+Subject: Re: [PATCH v2 4/8] ARM: shmobile: move GIC and I2C devices from sh73a0 common .dtsi to reference
+Message-Id: <Pine.LNX.4.64.1303191211070.11768@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130327154925.10876.40575.sendpatchset@w520>
-In-Reply-To: <20130327154925.10876.40575.sendpatchset@w520>
+References: <1360348712-29255-5-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360348712-29255-5-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi
 
-Add SCIF serial port support to the r8a7790 SoC by
-adding platform devices for SCIFA0 -> SCIFA2 as well
-as SCIFB0 -> SCIFB2 and SCIF0 -> SCIF1 together with
-clock bindings. DT device description is excluded at
-this point since such bindings are still under
-development.
+Let me return briefly to this 1 month-old thread just to make sure we're 
+happy about the current state of kzm9g DT:
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+On Wed, 13 Feb 2013, Simon Horman wrote:
+
+> On Wed, Feb 13, 2013 at 10:59:41AM +0100, Guennadi Liakhovetski wrote:
+> > Hi Simon
+> > 
+> > On Wed, 13 Feb 2013, Simon Horman wrote:
+> > 
+> > > On Fri, Feb 08, 2013 at 07:38:28PM +0100, Guennadi Liakhovetski wrote:
+> > > > In "legacy" mode, when all devices are initialised by the board .c file,
+> > > > there is no need to install the GIC and all I2C devices from the device
+> > > > tree too. Move them to the reference implementation, that fully relies upon
+> > > > DT.
+> > > 
+> > > The motivation for placing the code in sh73a0.dtsi was so that
+> > > it would be available to the non-reference board code if/when it
+> > > moves over to using DT.
+> > > 
+> > > I'm happy to switch things around if its preferred to keep
+> > > the dts small.
+> > 
+> > As I said, I do think it is good to keep devices in a central .dtsi, 
+> > included by all, but they should be disabled by default, using the 
+> > 'status="disabled"' property, and only enabled on boards, that actually 
+> > use those devices.
+> 
+> Ok, that makes sense to me. Do you think you could update this patch
+> accordingly?
+
+Here's my understanding of the DT situation on kzm9g:
+
+1. legacy board-kzm9g.c + sh73a0-kzm9g.dts + sh73a0.dtsi: board's 
+struct machine_desc defines a .dt_compat field, this shall allow to 
+include this kzm9g support in multiarch kernels, using DT. sh73a0.dtsi 
+includes nodes for all I2C devices and the GIC interrupt controller, but 
+of_platform_populate() is never called, so, those nodes are unused.
+
+2. DT mode board-kzm9g-reference.c + sh73a0-kzm9g-reference.dts + 
+sh73a0-reference.dtsi + sh73a0.dtsi: .dt_compat is obviously used similar 
+to the above, but with a different match string, of_platform_populate() is 
+called, so i2c and gic nodes are used and respective devices are 
+instantiated.
+
+So, in principle all works as expected, but it just seems a bit unclean 
+and confusing to me, that in "legacy" mode [1] above a bunch of devices 
+are provided in DT, listed in /proc/device-tree/ but remain unused. using 
+'status="disabled"' as proposed above could be done, but having to add 
+nodes like
+
+&gic = {
+	status = "okay";
+};
+
+&i2c0...
+
+on all boards, that do use DT, seems a bit clumsy to me.
+
+Thanks
+Guennadi
+
+> > I'm just not sure what's the difference between the two 
+> > DT-"patching" syntaxes - using '&' and not using it.
+> 
+> Unfortunately I'm not sure either.
+> 
+> > Thanks
+> > Guennadi
+> > 
+> > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> > > > ---
+> > > > 
+> > > > I think, this is a fix and should be applied.
+> > > > 
+> > > >  arch/arm/boot/dts/sh73a0-reference.dtsi |   69 +++++++++++++++++++++++++++++++
+> > > >  arch/arm/boot/dts/sh73a0.dtsi           |   69 -------------------------------
+> > > >  2 files changed, 69 insertions(+), 69 deletions(-)
+> > > > 
+> > > > diff --git a/arch/arm/boot/dts/sh73a0-reference.dtsi b/arch/arm/boot/dts/sh73a0-reference.dtsi
+> > > > index d4bb012..457afc7 100644
+> > > > --- a/arch/arm/boot/dts/sh73a0-reference.dtsi
+> > > > +++ b/arch/arm/boot/dts/sh73a0-reference.dtsi
+> > > > @@ -21,4 +21,73 @@
+> > > >  			      0 141 0x4>;
+> > > >  		reg-io-width = <4>;
+> > > >  	};
+> > > > +
+> > > > +	gic: interrupt-controller@f0001000 {
+> > > > +		compatible = "arm,cortex-a9-gic";
+> > > > +		#interrupt-cells = <3>;
+> > > > +		#address-cells = <1>;
+> > > > +		interrupt-controller;
+> > > > +		reg = <0xf0001000 0x1000>,
+> > > > +		      <0xf0000100 0x100>;
+> > > > +	};
+> > > > +
+> > > > +	i2c0: i2c@0xe6820000 {
+> > > > +		#address-cells = <1>;
+> > > > +		#size-cells = <0>;
+> > > > +		compatible = "renesas,rmobile-iic";
+> > > > +		reg = <0xe6820000 0x425>;
+> > > > +		interrupt-parent = <&gic>;
+> > > > +		interrupts = <0 167 0x4
+> > > > +			      0 168 0x4
+> > > > +			      0 169 0x4
+> > > > +			      0 170 0x4>;
+> > > > +	};
+> > > > +
+> > > > +	i2c1: i2c@0xe6822000 {
+> > > > +		#address-cells = <1>;
+> > > > +		#size-cells = <0>;
+> > > > +		compatible = "renesas,rmobile-iic";
+> > > > +		reg = <0xe6822000 0x425>;
+> > > > +		interrupt-parent = <&gic>;
+> > > > +		interrupts = <0 51 0x4
+> > > > +			      0 52 0x4
+> > > > +			      0 53 0x4
+> > > > +			      0 54 0x4>;
+> > > > +	};
+> > > > +
+> > > > +	i2c2: i2c@0xe6824000 {
+> > > > +		#address-cells = <1>;
+> > > > +		#size-cells = <0>;
+> > > > +		compatible = "renesas,rmobile-iic";
+> > > > +		reg = <0xe6824000 0x425>;
+> > > > +		interrupt-parent = <&gic>;
+> > > > +		interrupts = <0 171 0x4
+> > > > +			      0 172 0x4
+> > > > +			      0 173 0x4
+> > > > +			      0 174 0x4>;
+> > > > +	};
+> > > > +
+> > > > +	i2c3: i2c@0xe6826000 {
+> > > > +		#address-cells = <1>;
+> > > > +		#size-cells = <0>;
+> > > > +		compatible = "renesas,rmobile-iic";
+> > > > +		reg = <0xe6826000 0x425>;
+> > > > +		interrupt-parent = <&gic>;
+> > > > +		interrupts = <0 183 0x4
+> > > > +			      0 184 0x4
+> > > > +			      0 185 0x4
+> > > > +			      0 186 0x4>;
+> > > > +	};
+> > > > +
+> > > > +	i2c4: i2c@0xe6828000 {
+> > > > +		#address-cells = <1>;
+> > > > +		#size-cells = <0>;
+> > > > +		compatible = "renesas,rmobile-iic";
+> > > > +		reg = <0xe6828000 0x425>;
+> > > > +		interrupt-parent = <&gic>;
+> > > > +		interrupts = <0 187 0x4
+> > > > +			      0 188 0x4
+> > > > +			      0 189 0x4
+> > > > +			      0 190 0x4>;
+> > > > +	};
+> > > >  };
+> > > > diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+> > > > index 8a59465..6837b3f 100644
+> > > > --- a/arch/arm/boot/dts/sh73a0.dtsi
+> > > > +++ b/arch/arm/boot/dts/sh73a0.dtsi
+> > > > @@ -28,73 +28,4 @@
+> > > >  			reg = <1>;
+> > > >  		};
+> > > >  	};
+> > > > -
+> > > > -	gic: interrupt-controller@f0001000 {
+> > > > -		compatible = "arm,cortex-a9-gic";
+> > > > -		#interrupt-cells = <3>;
+> > > > -		#address-cells = <1>;
+> > > > -		interrupt-controller;
+> > > > -		reg = <0xf0001000 0x1000>,
+> > > > -		      <0xf0000100 0x100>;
+> > > > -	};
+> > > > -
+> > > > -	i2c0: i2c@0xe6820000 {
+> > > > -		#address-cells = <1>;
+> > > > -		#size-cells = <0>;
+> > > > -		compatible = "renesas,rmobile-iic";
+> > > > -		reg = <0xe6820000 0x425>;
+> > > > -		interrupt-parent = <&gic>;
+> > > > -		interrupts = <0 167 0x4
+> > > > -			      0 168 0x4
+> > > > -			      0 169 0x4
+> > > > -			      0 170 0x4>;
+> > > > -	};
+> > > > -
+> > > > -	i2c1: i2c@0xe6822000 {
+> > > > -		#address-cells = <1>;
+> > > > -		#size-cells = <0>;
+> > > > -		compatible = "renesas,rmobile-iic";
+> > > > -		reg = <0xe6822000 0x425>;
+> > > > -		interrupt-parent = <&gic>;
+> > > > -		interrupts = <0 51 0x4
+> > > > -			      0 52 0x4
+> > > > -			      0 53 0x4
+> > > > -			      0 54 0x4>;
+> > > > -	};
+> > > > -
+> > > > -	i2c2: i2c@0xe6824000 {
+> > > > -		#address-cells = <1>;
+> > > > -		#size-cells = <0>;
+> > > > -		compatible = "renesas,rmobile-iic";
+> > > > -		reg = <0xe6824000 0x425>;
+> > > > -		interrupt-parent = <&gic>;
+> > > > -		interrupts = <0 171 0x4
+> > > > -			      0 172 0x4
+> > > > -			      0 173 0x4
+> > > > -			      0 174 0x4>;
+> > > > -	};
+> > > > -
+> > > > -	i2c3: i2c@0xe6826000 {
+> > > > -		#address-cells = <1>;
+> > > > -		#size-cells = <0>;
+> > > > -		compatible = "renesas,rmobile-iic";
+> > > > -		reg = <0xe6826000 0x425>;
+> > > > -		interrupt-parent = <&gic>;
+> > > > -		interrupts = <0 183 0x4
+> > > > -			      0 184 0x4
+> > > > -			      0 185 0x4
+> > > > -			      0 186 0x4>;
+> > > > -	};
+> > > > -
+> > > > -	i2c4: i2c@0xe6828000 {
+> > > > -		#address-cells = <1>;
+> > > > -		#size-cells = <0>;
+> > > > -		compatible = "renesas,rmobile-iic";
+> > > > -		reg = <0xe6828000 0x425>;
+> > > > -		interrupt-parent = <&gic>;
+> > > > -		interrupts = <0 187 0x4
+> > > > -			      0 188 0x4
+> > > > -			      0 189 0x4
+> > > > -			      0 190 0x4>;
+> > > > -	};
+> > > >  };
+> > > > -- 
+> > > > 1.7.2.5
+> > > > 
+> > > > --
+> > > > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > > > the body of a message to majordomo@vger.kernel.org
+> > > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > > > 
+> > > 
+> > 
+> > ---
+> > Guennadi Liakhovetski, Ph.D.
+> > Freelance Open-Source Software Developer
+> > http://www.open-technology.de/
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
 ---
-
- arch/arm/mach-shmobile/clock-r8a7790.c |   34 +++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7790.c |   55 ++++++++++++++++++++++++++++++++
- 2 files changed, 88 insertions(+), 1 deletion(-)
-
---- 0012/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-03-20 23:18:42.000000000 +0900
-@@ -27,19 +27,51 @@
- #define CPG_BASE 0xe6150000
- #define CPG_LEN 0x1000
- 
-+#define SMSTPCR2 0xe6150138
-+#define SMSTPCR7 0xe615014c
-+
- static struct clk_mapping cpg_mapping = {
- 	.phys   = CPG_BASE,
- 	.len    = CPG_LEN,
- };
- 
-+static struct clk p_clk = {
-+	.rate	= 65000000, /* shortcut for now */
-+	.mapping	= &cpg_mapping,
-+};
-+
-+static struct clk mp_clk = {
-+	.rate	= 52000000,  /* shortcut for now */
-+	.mapping	= &cpg_mapping,
-+};
-+
- static struct clk *main_clks[] = {
-+	&p_clk,
-+	&mp_clk,
- };
- 
--enum { MSTP_NR };
-+enum { MSTP721, MSTP720,
-+	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
-+	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
-+	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
-+	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
-+	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
-+	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
-+	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
-+	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
- };
- 
- static struct clk_lookup lookups[] = {
-+	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
-+	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
-+	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
-+	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
-+	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
-+	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP202]),
-+	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP721]),
-+	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- };
- 
- void __init r8a7790_clock_init(void)
---- 0012/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-03-20 23:15:07.000000000 +0900
-@@ -22,13 +22,68 @@
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <linux/serial_sci.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- 
-+#define SCIF_COMMON(scif_type, baseaddr, irq)			\
-+	.type		= scif_type,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
-+	.irqs		= SCIx_IRQ_MUXED(irq)
-+
-+#define SCIFA_DATA(index, baseaddr, irq)		\
-+[index] = {						\
-+	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,			\
-+	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
-+}
-+
-+#define SCIFB_DATA(index, baseaddr, irq)	\
-+[index] = {					\
-+	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,		\
-+	.scscr = SCSCR_RE | SCSCR_TE,		\
-+}
-+
-+#define SCIF_DATA(index, baseaddr, irq)		\
-+[index] = {						\
-+	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
-+	.scbrr_algo_id	= SCBRR_ALGO_2,			\
-+	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+}
-+
-+enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
-+
-+static const struct plat_sci_port scif[] = {
-+	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
-+	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
-+	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
-+	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
-+	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
-+	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
-+	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
-+	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
-+};
-+
-+static inline void r8a7790_register_scif(int idx)
-+{
-+	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
-+				      sizeof(struct plat_sci_port));
-+}
-+
- void __init r8a7790_add_standard_devices(void)
- {
-+	r8a7790_register_scif(SCIFA0);
-+	r8a7790_register_scif(SCIFA1);
-+	r8a7790_register_scif(SCIFB0);
-+	r8a7790_register_scif(SCIFB1);
-+	r8a7790_register_scif(SCIFB2);
-+	r8a7790_register_scif(SCIFA2);
-+	r8a7790_register_scif(SCIF0);
-+	r8a7790_register_scif(SCIF1);
- }
- 
- #ifdef CONFIG_USE_OF
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
