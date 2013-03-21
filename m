@@ -1,83 +1,54 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 19 Mar 2013 10:27:56 +0000
+From: Prabhakar Lad <prabhakar.csengg@gmail.com>
+Date: Thu, 21 Mar 2013 08:31:50 +0000
 Subject: Re: [PATCH v6 1/7] media: V4L2: add temporary clock helpers
-Message-Id: <Pine.LNX.4.64.1303191103310.11768@axis700.grange>
+Message-Id: <CA+V-a8vgthS2kh4bAH_pKNWkFTy+4xrAva5wdF58qT10Ni5nUg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de>
- <1363382873-20077-2-git-send-email-g.liakhovetski@gmx.de> <5147934D.2040908@gmail.com>
- <Pine.LNX.4.64.1303190821470.10482@axis700.grange> <5148355D.5070806@samsung.com>
-In-Reply-To: <5148355D.5070806@samsung.com>
+References: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de> <1363382873-20077-2-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1363382873-20077-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Cc: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, linux-samsung-soc <linux-samsung-soc@vger.kernel.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-media@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-On Tue, 19 Mar 2013, Sylwester Nawrocki wrote:
+Hi Guennadi,
 
-> >>> +	if (!IS_ERR(clk)&&  !try_module_get(clk->ops->owner))
-> >>> +		clk = ERR_PTR(-ENODEV);
-> >>> +	mutex_unlock(&clk_lock);
-> >>> +
-> >>> +	if (!IS_ERR(clk)) {
-> >>> +		clk->subdev = sd;
-> >>
-> >> Why is this needed ? It seems a strange addition that might potentially
-> >> make transition to the common clocks API more difficult.
-> > 
-> > We got rid of the v4l2_clk_bind() function and the .bind() callback. Now I 
-> > need a pointer to subdevice _before_ v4l2_clk_register() (former 
-> > v4l2_clk_bound()), that's why I have to store it here.
-> 
-> Hmm, sorry, I'm not following. How can we store a subdev pointer in the clock
-> data structure that has not been registered yet and thus cannot be found
-> with v4l2_clk_find() ?
+On Sat, Mar 16, 2013 at 2:57 AM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> Typical video devices like camera sensors require an external clock source.
+> Many such devices cannot even access their hardware registers without a
+> running clock. These clock sources should be controlled by their consumers.
+> This should be performed, using the generic clock framework. Unfortunately
+> so far only very few systems have been ported to that framework. This patch
+> adds a set of temporary helpers, mimicking the generic clock API, to V4L2.
+> Platforms, adopting the clock API, should switch to using it. Eventually
+> this temporary API should be removed.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+>
+> v6: changed clock name to just <I2C adapter ID>-<I2C address> to avoid
+> having to wait for an I2C subdevice driver to probe. Added a subdevice
+> pointer to struct v4l2_clk for subdevice and bridge binding.
+>
+>  drivers/media/v4l2-core/Makefile   |    2 +-
+>  drivers/media/v4l2-core/v4l2-clk.c |  184 ++++++++++++++++++++++++++++++++++++
+>  include/media/v4l2-clk.h           |   55 +++++++++++
+>  3 files changed, 240 insertions(+), 1 deletions(-)
+>  create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+>  create mode 100644 include/media/v4l2-clk.h
+>
+While trying out this patch I got following error (using 3.9-rc3):-
 
-sorry, I meant v4l2_async_subdev_register(), not v4l2_clk_register(), my 
-mistake. And I meant v4l2_async_subdev_bind(), v4l2_async_subdev_unbind(). 
-Before we had in the subdev driver (see imx074 example)
+drivers/media/v4l2-core/v4l2-clk.c: In function 'v4l2_clk_register':
+drivers/media/v4l2-core/v4l2-clk.c:134:2: error: implicit declaration
+of function 'kzalloc'
+drivers/media/v4l2-core/v4l2-clk.c:134:6: warning: assignment makes
+pointer from integer without a cast
+drivers/media/v4l2-core/v4l2-clk.c:162:2: error: implicit declaration
+of function 'kfree'
+make[3]: *** [drivers/media/v4l2-core/v4l2-clk.o] Error 1
+make[2]: *** [drivers/media/v4l2-core] Error 2
 
-	/* Tell the bridge the subdevice is about to bind */
-	v4l2_async_subdev_bind();
-
-	/* get a clock */
-	clk = v4l2_clk_get();
-	if (IS_ERR(clk))
-		return -EPROBE_DEFER;
-
-	/*
-	 * enable the clock - this needs a subdev pointer, that we passed 
-	 * to the bridge with v4l2_async_subdev_bind() above
-	 */
-	v4l2_clk_enable(clk);
-	do_probe();
-	v4l2_clk_disable(clk);
-
-	/* inform the bridge: binding successful */
-	v4l2_async_subdev_bound();
-
-Now we have just
-
-	/* get a clock */
-	clk = v4l2_clk_get();
-	if (IS_ERR(clk))
-		return -EPROBE_DEFER;
-
-	/*
-	 * enable the clock - this needs a subdev pointer, that we stored 
-	 * in the clock object for the bridge driver to use with 
-	 * v4l2_clk_get() above
-	 */
-	v4l2_clk_enable(clk);
-	do_probe();
-	v4l2_clk_disable(clk);
-
-	/* inform the bridge: binding successful */
-	v4l2_async_subdev_bound();
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Regards,
+--Prabhakar
