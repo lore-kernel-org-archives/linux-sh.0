@@ -1,7 +1,7 @@
-From: Marc Zyngier <marc.zyngier@arm.com>
-Date: Thu, 21 Mar 2013 11:35:49 +0000
+From: Rob Herring <robherring2@gmail.com>
+Date: Thu, 21 Mar 2013 12:52:45 +0000
 Subject: Re: [PATCH] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
-Message-Id: <514AF095.5060802@arm.com>
+Message-Id: <514B029D.1010409@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363818875-15978-1-git-send-email-robherring2@gmail.com>
  <20130321110646.GE15279@e106331-lin.cambridge.arm.com>
@@ -11,7 +11,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 21/03/13 11:06, Mark Rutland wrote:
+On 03/21/2013 06:06 AM, Mark Rutland wrote:
 > Hi Rob,
 > 
 > (adding Marc to Cc as he may have comments).
@@ -31,54 +31,9 @@ On 21/03/13 11:06, Mark Rutland wrote:
 > 
 > I have some other arch_timer patches which may clash, but they could be rebased
 > atop of this.
-> 
->>
->> Signed-off-by: Rob Herring <rob.herring@calxeda.com>
->> Cc: Russell King <linux@arm.linux.org.uk>
->> Cc: Kukjin Kim <kgene.kim@samsung.com>
->> Cc: Tony Lindgren <tony@atomide.com>
->> Cc: Simon Horman <horms@verge.net.au>
->> Cc: Magnus Damm <magnus.damm@gmail.com>
->> Cc: Catalin Marinas <catalin.marinas@arm.com>
->> Cc: Will Deacon <will.deacon@arm.com>
->> Cc: John Stultz <john.stultz@linaro.org>
->> Cc: Thomas Gleixner <tglx@linutronix.de>
->> Cc: linux-samsung-soc@vger.kernel.org
->> Cc: linux-omap@vger.kernel.org
->> Cc: linux-sh@vger.kernel.org
->> ---
->> This is dependent on my CLKSRC_OF clean-up in arm-soc, my 64-bit sched_clock
->> support series, and Arnd's default machine descriptor patch (for default
->> clocksource_of_init call). This is only compile tested on arm.
->>
->> The full series (including sp804 work) is available here:
->> git://sources.calxeda.com/kernel/linux.git arm-timers
->>
->> Rob
->>
-> 
-> [...]
-> 
->> diff --git a/arch/arm/mach-vexpress/v2m.c b/arch/arm/mach-vexpress/v2m.c
->> index d0ad789..6215717 100644
->> --- a/arch/arm/mach-vexpress/v2m.c
->> +++ b/arch/arm/mach-vexpress/v2m.c
->> @@ -1,6 +1,7 @@
->>  /*
->>   * Versatile Express V2M Motherboard Support
->>   */
->> +#include <linux/clocksource.h>
->>  #include <linux/device.h>
->>  #include <linux/amba/bus.h>
->>  #include <linux/amba/mmci.h>
->> @@ -23,7 +24,6 @@
->>  #include <linux/regulator/machine.h>
->>  #include <linux/vexpress.h>
->>
->> -#include <asm/arch_timer.h>
->>  #include <asm/mach-types.h>
->>  #include <asm/sizes.h>
->>  #include <asm/mach/arch.h>
+
+[snip]
+
 >> @@ -446,10 +446,7 @@ static void __init v2m_dt_timer_init(void)
 >>                                 irq_of_parse_and_map(node, 0));
 >>         }
@@ -105,15 +60,76 @@ On 21/03/13 11:06, Mark Rutland wrote:
 > whichever gets registered last is used as the sched_clock. As accesses to the
 > architected timer are going to have a much lower overhead, this isn't very nice
 > (and it could be better to use it even if it had a lower frequency).
+> 
+> We could move the versatile_sched_clock_init call before the
+> clocksource_of_init, but that doesn't feel like an ideal solution. We may have
+> similar problems elsewhere.
 
-Indeed. And if I look at it with my KVM hat on, it is even worse (the
-guest will exit all the way to platform emulation in userspace on each
-sched_clock read - a sure performance killer).
+The intention was that a 64-bit counter is preferred. This should fix 
+that. It would be nice if we could describe access overhead to make a decision. 
+For now, I think 32 vs. 64 bit is sufficient.
 
-Of course, emulating a VE is not the best option, but that's all we have
-so far when using QEMU as platform emulation.
+diff --git a/arch/arm/kernel/sched_clock.c b/arch/arm/kernel/sched_clock.c
+index 1708357..aa18e45 100644
+--- a/arch/arm/kernel/sched_clock.c
++++ b/arch/arm/kernel/sched_clock.c
+@@ -115,7 +115,7 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
+ 	u64 res, wrap;
+ 	char r_unit;
+ 
+-	if (cd.rate > rate)
++	if (cd.rate > rate || read_sched_clock_64)
+ 		return;
+ 
+ 	BUG_ON(bits > 32);
+@@ -168,7 +168,7 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
+ 
+ void __init setup_sched_clock_64(u64 (*read)(void), unsigned long rate)
+ {
+-	if (cd.rate > rate)
++	if (read_sched_clock_64 && (cd.rate > rate))
+ 		return;
+ 
+ 	WARN_ON(!irqs_disabled());
 
-	M.
--- 
-Jazz is not dead. It just smells funny...
+
+>> diff --git a/drivers/clocksource/arm_arch_timer.c b/drivers/clocksource/arm_arch_timer.c
+>> index d7ad425..afb70aa 100644
+>> --- a/drivers/clocksource/arm_arch_timer.c
+>> +++ b/drivers/clocksource/arm_arch_timer.c
+>> @@ -337,24 +337,11 @@ out:
+>>         return err;
+>>  }
+>>
+>> -static const struct of_device_id arch_timer_of_match[] __initconst = {
+>> -       { .compatible   = "arm,armv7-timer",    },
+>> -       { .compatible   = "arm,armv8-timer",    },
+>> -       {},
+>> -};
+>> -
+>> -int __init arch_timer_init(void)
+>> +static void __init arch_timer_init(struct device_node *np)
+>>  {
+>> -       struct device_node *np;
+>>         u32 freq;
+>>         int i;
+>>
+> 
+> If we the following here:
+> 
+> 	if (arch_timer_get_rate()) {
+> 		pr_warn("arch_timer: multiple nodes in dt, skipping\n");
+> 		return;
+> 	}
+> 
+> We may save ourselves a whole world of pain with dts which (erroneously) have
+> multiple timer nodes (though these are now disappearing). Otherwise we could
+> have a memory leak and multiple instances of the cpu0 timer registered, which
+> could lead to all sorts of weirdness. The existing code side-steps this issue
+> by only grabbing the first node, so this would keep things consistent.
+> 
+
+Okay, I'll add.
+
+Rob
 
