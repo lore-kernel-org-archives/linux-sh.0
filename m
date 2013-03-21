@@ -1,40 +1,116 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Mar 2013 01:03:14 +0000
-Subject: Re: [PATCH v2] sh-pfc: r8a73a4: Add IRQC pin groups and functions
-Message-Id: <20130328010314.GL20736@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 Mar 2013 10:02:38 +0000
+Subject: [PATCH 2/3 v3] ARM: shmobile: r8a7778 SCIF support
+Message-Id: <87620lf4ud.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5327461.n5dWakeRbN@avalon>
-In-Reply-To: <5327461.n5dWakeRbN@avalon>
+References: <87hakhrpmn.wl%kuninori.morimoto.gx@renesas.com>
+ <878v5hf4zr.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878v5hf4zr.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 28, 2013 at 01:41:36AM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 28 March 2013 09:26:51 Simon Horman wrote:
-> > On Wed, Mar 27, 2013 at 04:13:42PM +0100, Laurent Pinchart wrote:
-> > > Hi Magnus,
-> > > 
-> > > Thanks for the patch.
-> > > 
-> > > On Thursday 28 March 2013 00:16:37 Magnus Damm wrote:
-> > > > From: Magnus Damm <damm@opensource.se>
-> > > > 
-> > > > V2 of PINCTRL support for r8a73a4 IRQC hardware
-> > > > and in particular the external pins IRQ0 -> IRQ57.
-> > > > 
-> > > > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > > 
-> > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > 
-> > Laurent, I am assuming you will add this to your tree and
-> > let me know where to pull from. If not, I can take it directly.
-> 
-> You can get the patches from the pinmux/3.9/r8a73a4 branch in my git tree.
+Add SCIF serial port support to the r8a7778 SoC by
+adding platform devices together with clock bindings.
+DT device description is excluded at this point since
+such bindings are still under development.
 
-Thanks, I have cherry-picked them into my local pinmux branch and
-will push shortly.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-BTW, the way you mange your git tree saves me lots of time. Thanks.
+ - it used platform_device_register_data()
+
+ arch/arm/mach-shmobile/clock-r8a7778.c |   13 +++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7778.c |   26 ++++++++++++++++++++++++++
+ 2 files changed, 39 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 387e3b7..f1277f4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -58,16 +58,29 @@ static struct clk *main_clks[] = {
+ };
+ 
+ enum {
++	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP026] = SH_CLK_MSTP32(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
++	[MSTP025] = SH_CLK_MSTP32(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
++	[MSTP024] = SH_CLK_MSTP32(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
++	[MSTP023] = SH_CLK_MSTP32(&clkp, MSTPCR0, 23, 0), /* SCIF3 */
++	[MSTP022] = SH_CLK_MSTP32(&clkp, MSTPCR0, 22, 0), /* SCIF4 */
++	[MSTP021] = SH_CLK_MSTP32(&clkp, MSTPCR0, 21, 0), /* SCIF5 */
+ 	[MSTP016] = SH_CLK_MSTP32(&clkp, MSTPCR0, 16, 0), /* TMU0 */
+ 	[MSTP015] = SH_CLK_MSTP32(&clkp, MSTPCR0, 15, 0), /* TMU1 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
++	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
++	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
++	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
++	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
++	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
+ };
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 811ccf3..01c62be 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -25,6 +25,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+ #include <linux/irqchip.h>
++#include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+@@ -32,6 +33,26 @@
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
+ 
++/* SCIF */
++#define SCIF_INFO(baseaddr, irq)				\
++{								\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
++	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
++	.scbrr_algo_id	= SCBRR_ALGO_2,				\
++	.type		= PORT_SCIF,				\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
++}
++
++static struct plat_sci_port scif_platform_data[] = {
++	SCIF_INFO(0xffe40000, gic_iid(0x66)),
++	SCIF_INFO(0xffe41000, gic_iid(0x67)),
++	SCIF_INFO(0xffe42000, gic_iid(0x68)),
++	SCIF_INFO(0xffe43000, gic_iid(0x69)),
++	SCIF_INFO(0xffe44000, gic_iid(0x6a)),
++	SCIF_INFO(0xffe45000, gic_iid(0x6b)),
++};
++
+ /* TMU */
+ static struct resource sh_tmu0_resources[] = {
+ 	DEFINE_RES_MEM(0xffd80008, 12),
+@@ -88,6 +109,11 @@ void __init r8a7778_add_standard_devices(void)
+ 	}
+ #endif
+ 
++	for (i = 0; i < ARRAY_SIZE(scif_platform_data); i++)
++		platform_device_register_data(&platform_bus, "sh-sci", i,
++					      &scif_platform_data[i],
++					      sizeof(struct plat_sci_port));
++
+ 	for (i = 0; i < ARRAY_SIZE(platform_devinfo); i++)
+ 		platform_device_register_full(&platform_devinfo[i]);
+ }
+-- 
+1.7.9.5
+
