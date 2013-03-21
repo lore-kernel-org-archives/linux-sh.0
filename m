@@ -1,171 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:14 +0000
-Subject: [PATCH 018/142] sh-pfc: Share the PORT_10_REV, PORT_32 and PORT_32_REV definitions
-Message-Id: <1363604838-29359-19-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 21 Mar 2013 13:31:36 +0000
+Subject: [Workaround 1/2] input: st1232: Add IRQF_NO_SUSPEND flag
+Message-Id: <1363872697-11267-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This is temporary workaround. Don't merge. See cover-letter
+"[PATCH 0/2] ARM: shmobile: sh73a0 Suspend-to-RAM" for more information.
 
-The macros are defined identically and used in two SoC-specific files,
-share them.
+When registering the interrupt handler we add the IRQF_NO_SUSPEND flag
+to save the IRQ line from being disabled during suspension. This way we
+keep the ability to use the device as a wakeup source.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Not-signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   34 ++++++++--------------------------
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  |   31 +++++++------------------------
- drivers/pinctrl/sh-pfc/sh_pfc.h      |   17 +++++++++++++++++
- 3 files changed, 32 insertions(+), 50 deletions(-)
+ drivers/input/touchscreen/st1232.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 0e53674..e9a7ead 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -23,11 +23,6 @@
+diff --git a/drivers/input/touchscreen/st1232.c b/drivers/input/touchscreen/st1232.c
+index d9d05e2..4f37199 100644
+--- a/drivers/input/touchscreen/st1232.c
++++ b/drivers/input/touchscreen/st1232.c
+@@ -180,7 +180,7 @@ static int st1232_ts_probe(struct i2c_client *client,
+ 	input_set_abs_params(input_dev, ABS_MT_POSITION_Y, MIN_Y, MAX_Y, 0, 0);
  
- #include "sh_pfc.h"
- 
--#define CPU_32_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
--	PORT_1(fn, pfx##31, sfx)
--
- #define CPU_32_PORT6(fn, pfx, sfx)				\
- 	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
- 	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
-@@ -36,12 +31,12 @@
- 	PORT_1(fn, pfx##8, sfx)
- 
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
--	CPU_32_PORT(fn, pfx##_0_, sfx),				\
--	CPU_32_PORT(fn, pfx##_1_, sfx),				\
--	CPU_32_PORT(fn, pfx##_2_, sfx),				\
--	CPU_32_PORT(fn, pfx##_3_, sfx),				\
--	CPU_32_PORT(fn, pfx##_4_, sfx),				\
--	CPU_32_PORT(fn, pfx##_5_, sfx),				\
-+	PORT_32(fn, pfx##_0_, sfx),				\
-+	PORT_32(fn, pfx##_1_, sfx),				\
-+	PORT_32(fn, pfx##_2_, sfx),				\
-+	PORT_32(fn, pfx##_3_, sfx),				\
-+	PORT_32(fn, pfx##_4_, sfx),				\
-+	PORT_32(fn, pfx##_5_, sfx),				\
- 	CPU_32_PORT6(fn, pfx##_6_, sfx)
- 
- #define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
-@@ -55,21 +50,8 @@
- #define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
- #define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
- 
--
--#define PORT_10_REV(fn, pfx, sfx)				\
--	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
--	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
--	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
--	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
--	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
--
--#define CPU_32_PORT_REV(fn, pfx, sfx)					\
--	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),		\
--	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
--	PORT_10_REV(fn, pfx, sfx)
--
--#define GP_INOUTSEL(bank) CPU_32_PORT_REV(_GP_INOUTSEL, _##bank##_, unused)
--#define GP_INDT(bank) CPU_32_PORT_REV(_GP_INDT, _##bank##_, unused)
-+#define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
-+#define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
- 
- #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
- #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index 20c44dd..99ea220 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -14,11 +14,6 @@
- 
- #include "sh_pfc.h"
- 
--#define CPU_32_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
--	PORT_1(fn, pfx##31, sfx)
--
- #define CPU_32_PORT5(fn, pfx, sfx)				\
- 	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
- 	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
-@@ -29,11 +24,11 @@
- 
- /* GPSR0 - GPSR5 */
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
--	CPU_32_PORT(fn, pfx##_0_, sfx),			\
--	CPU_32_PORT(fn, pfx##_1_, sfx),				\
--	CPU_32_PORT(fn, pfx##_2_, sfx),				\
--	CPU_32_PORT(fn, pfx##_3_, sfx),				\
--	CPU_32_PORT(fn, pfx##_4_, sfx),				\
-+	PORT_32(fn, pfx##_0_, sfx),			\
-+	PORT_32(fn, pfx##_1_, sfx),				\
-+	PORT_32(fn, pfx##_2_, sfx),				\
-+	PORT_32(fn, pfx##_3_, sfx),				\
-+	PORT_32(fn, pfx##_4_, sfx),				\
- 	CPU_32_PORT5(fn, pfx##_5_, sfx)
- 
- #define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
-@@ -47,20 +42,8 @@
- #define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
- #define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
- 
--#define PORT_10_REV(fn, pfx, sfx)	\
--	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
--	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
--	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
--	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
--	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
--
--#define CPU_32_PORT_REV(fn, pfx, sfx)	\
--	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),	\
--	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
--	PORT_10_REV(fn, pfx, sfx)
--
--#define GP_INOUTSEL(bank) CPU_32_PORT_REV(_GP_INOUTSEL, _##bank##_, unused)
--#define GP_INDT(bank) CPU_32_PORT_REV(_GP_INDT, _##bank##_, unused)
-+#define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
-+#define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
- 
- #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
- #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index f9d4480..43c858d 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -138,6 +138,23 @@ enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
- 	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
- 	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
- 
-+#define PORT_10_REV(fn, pfx, sfx)	\
-+	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
-+	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
-+	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
-+	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
-+	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
-+
-+#define PORT_32(fn, pfx, sfx)					\
-+	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
-+	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
-+	PORT_1(fn, pfx##31, sfx)
-+
-+#define PORT_32_REV(fn, pfx, sfx)					\
-+	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),		\
-+	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
-+	PORT_10_REV(fn, pfx, sfx)
-+
- #define PORT_90(fn, pfx, sfx) \
- 	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),	\
- 	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),	\
+ 	error = request_threaded_irq(client->irq, NULL, st1232_ts_irq_handler,
+-				     IRQF_ONESHOT, client->name, ts);
++			IRQF_ONESHOT | IRQF_NO_SUSPEND, client->name, ts);
+ 	if (error) {
+ 		dev_err(&client->dev, "Failed to register interrupt\n");
+ 		goto err_free_mem;
 -- 
-1.7.10.4
+1.7.9.5
 
