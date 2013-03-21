@@ -1,35 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 05 Mar 2013 05:31:10 +0000
-Subject: Re: [PATCH 1/3] ARM: shmobile: r8a7779: fixup dtsi typo
-Message-Id: <20130305053108.GC22698@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 21 Mar 2013 16:05:44 +0000
+Subject: [PATCH 3/3] ARM: shmobile: kzm9g-reference: add ethernet support
+Message-Id: <Pine.LNX.4.64.1303211704370.32438@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8738wbr664.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8738wbr664.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1303211659580.32438@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1303211659580.32438@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Mar 03, 2013 at 11:11:03PM -0800, Kuninori Morimoto wrote:
-> r8a7779 is not r8a7740 chip
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/boot/dts/r8a7779.dtsi |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> index 0016302..c73eb37 100644
-> --- a/arch/arm/boot/dts/r8a7779.dtsi
-> +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> @@ -1,5 +1,5 @@
->  /*
-> - * Device Tree Source for Renesas r8a7740
-> + * Device Tree Source for Renesas r8a7779
->   *
->   * Copyright (C) 2013 Renesas Solutions Corp.
->   * Copyright (C) 2013 Simon Horman
+Add a DT node for the SMSC 9221 ethernet chip, found on kzm9g, to its
+reference implementation.
 
-Thanks, applied to the soc5 branch of the renesas tree
-and thus included in its next branch and queued up for v3.10.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index f33b5cc..5972abb 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -44,6 +44,19 @@
+ 		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
++
++	lan9220@10000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x10000000 0x100>;
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <3 0>;	/* active low */
++		reg-io-width = <4>;
++		smsc,irq-push-pull;
++		smsc,save-mac-address;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
++	};
+ };
+ 
+ &mmcif {
+-- 
+1.7.2.5
 
