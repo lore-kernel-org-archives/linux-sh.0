@@ -1,45 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 06 Mar 2013 07:55:40 +0000
-Subject: Re: [PATCH] ARM: shmobile: Make r8a7779 INTC irqpin platform data static
-Message-Id: <20130306075539.GC29060@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 Mar 2013 09:59:20 +0000
+Subject: Re: [PATCH 0/3 v3] ARM: shmobile: add R8A7778 Bock-W board support v3
+Message-Id: <878v5hf4zr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130306061006.4880.33317.sendpatchset@w520>
-In-Reply-To: <20130306061006.4880.33317.sendpatchset@w520>
+References: <87hakhrpmn.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87hakhrpmn.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 06, 2013 at 03:10:06PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> The platform data for the INTC irq pin driver
-> seems to be global symbols, make it static to
-> allow multi-soc build.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-I have added this to topic/intc-external-irq with the related patches.
-The holding-pen for INTC.
+Hi Simon, Magnus, Arnd
 
-> ---
-> 
->  arch/arm/mach-shmobile/intc-r8a7779.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/intc-r8a7779.c
-> +++ work/arch/arm/mach-shmobile/intc-r8a7779.c	2013-03-06 15:04:35.000000000 +0900
-> @@ -42,7 +42,7 @@
->  #define INT2NTSR0 IOMEM(0xfe700060)
->  #define INT2NTSR1 IOMEM(0xfe700064)
->  
-> -struct renesas_intc_irqpin_config irqpin0_platform_data = {
-> +static struct renesas_intc_irqpin_config irqpin0_platform_data = {
->  	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
->  	.sense_bitfield_width = 2,
->  };
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+These are v3 patch set of R8A7778 R-Car M1 SoC/board support
+This SoC/board support have limited DT only.
+(TMU/SCIF can't use DT at this point)
+
+I will work for external IRQ and SMSC support
+if these are accepted.
+
+These patches are based on simon/next branch
+
+Kuninori Morimoto (3):
+      ARM: shmobile: add R8A7778 basis support
+      ARM: shmobile: r8a7778 SCIF support
+      ARM: shmobile: add R-Car M1A Bock-W platform support
+
+ arch/arm/boot/dts/Makefile                    |    1 +
+ arch/arm/boot/dts/r8a7778-bockw.dts           |   32 ++++
+ arch/arm/boot/dts/r8a7778.dtsi                |   35 +++++
+ arch/arm/configs/bockw_defconfig              |   66 +++++++++
+ arch/arm/mach-shmobile/Kconfig                |   12 ++
+ arch/arm/mach-shmobile/Makefile               |    2 +
+ arch/arm/mach-shmobile/board-bockw.c          |   43 ++++++
+ arch/arm/mach-shmobile/clock-r8a7778.c        |  104 +++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |   28 ++++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |  193 +++++++++++++++++++++++++
+ 10 files changed, 516 insertions(+)
+
+This is my command for DT uImage
+
+PC> make bockw_defconfig
+PC> make menuconfig
+PC> make zImage
+PC> make dtbs
+PC> duImage r8a7778-bockw-reference
+PC> cp arch/sh/boot/duImage ${PATH}
+
+---- duImage --------------------------------
+#! /bin/sh
+
+# create zImage + dtb = dzImage
+cat arch/arm/boot/zImage arch/arm/boot/dts/${1}.dtb > arch/arm/boot/dzImage
+
+# create duImage
+DUIMAGE=`cut -f 3- -d ' ' < arch/arm/boot/.uImage.cmd | sed -e "s/zImage/dzImage/" | sed -e "s/uImage/duImage/"`
+${DUIMAGE}%
+----------------------------------------------
+
+Best regards
+---
+Kuninori Morimoto
