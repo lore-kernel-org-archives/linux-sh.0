@@ -1,51 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:17:59 +0000
-Subject: [PATCH 11/13] ARM: shmobile: kzm9g: Trim reference DT_MACHINE_START
-Message-Id: <1363659481-5922-12-git-send-email-horms+renesas@verge.net.au>
+From: Paul Bolle <pebolle@tiscali.nl>
+Date: Thu, 21 Mar 2013 09:27:56 +0000
+Subject: [PATCH] memblock: kill "config MAX_ACTIVE_REGIONS"
+Message-Id: <1363858076.1390.104.camel@x61.thuisdomein>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: James Hogan <james.hogan@imgtec.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Paul Mundt <lethal@linux-sh.org>
+Cc: Tejun Heo <tj@kernel.org>, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Remove .init_late and .restart from DT_MACHINE_START
-for kzm9g reference as these are not necessary to
-bring the board up which is the main aim of kzm9g reference.
+The Kconfig symbol MAX_ACTIVE_REGIONS is unused. Commit
+0ee332c1451869963626bf9cac88f165a90990e1 ("memblock: Kill
+early_node_map[]") removed the only place were it was actually used. But
+it did not remove its Kconfig entries (for powerpc and sh).
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Remove those two entries (and the entry for metag, that popped up in
+v3.9-rc1).
+
+Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
 ---
- arch/arm/mach-shmobile/board-kzm9g-reference.c |    9 ---------
- 1 file changed, 9 deletions(-)
+0) Eyeball tested again.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 4da3501..e93473c 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -91,13 +91,6 @@ static void __init kzm_init(void)
- #endif
- }
+1) It felt silly to split this clean up patch into three patches. But if
+the maintainers involved disagree I'm happy to split and resend it. 
+
+ arch/metag/mm/Kconfig | 5 -----
+ arch/powerpc/Kconfig  | 5 -----
+ arch/sh/mm/Kconfig    | 7 -------
+ 3 files changed, 17 deletions(-)
+
+diff --git a/arch/metag/mm/Kconfig b/arch/metag/mm/Kconfig
+index 794f26a..03fb8f1 100644
+--- a/arch/metag/mm/Kconfig
++++ b/arch/metag/mm/Kconfig
+@@ -93,11 +93,6 @@ config ARCH_SPARSEMEM_ENABLE
+ config ARCH_SPARSEMEM_DEFAULT
+ 	def_bool y
  
--static void kzm9g_restart(char mode, const char *cmd)
--{
--#define RESCNT2 IOMEM(0xe6188020)
--	/* Do soft power on reset */
--	writel((1 << 31), RESCNT2);
--}
+-config MAX_ACTIVE_REGIONS
+-	int
+-	default "2" if SPARSEMEM
+-	default "1"
 -
- static const char *kzm9g_boards_compat_dt[] __initdata = {
- 	"renesas,kzm9g-reference",
- 	NULL,
-@@ -110,8 +103,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= irqchip_init,
- 	.init_machine	= kzm_init,
--	.init_late	= shmobile_init_late,
- 	.init_time	= shmobile_timer_init,
--	.restart	= kzm9g_restart,
- 	.dt_compat	= kzm9g_boards_compat_dt,
- MACHINE_END
+ config ARCH_SELECT_MEMORY_MODEL
+ 	def_bool y
+ 
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 867ace7..b674397 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -427,11 +427,6 @@ config NODES_SHIFT
+ 	default "4"
+ 	depends on NEED_MULTIPLE_NODES
+ 
+-config MAX_ACTIVE_REGIONS
+-	int
+-	default "256" if PPC64
+-	default "32"
+-
+ config ARCH_SELECT_MEMORY_MODEL
+ 	def_bool y
+ 	depends on PPC64
+diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
+index 5a43a87..dba285e 100644
+--- a/arch/sh/mm/Kconfig
++++ b/arch/sh/mm/Kconfig
+@@ -137,13 +137,6 @@ config ARCH_SPARSEMEM_ENABLE
+ config ARCH_SPARSEMEM_DEFAULT
+ 	def_bool y
+ 
+-config MAX_ACTIVE_REGIONS
+-	int
+-	default "6" if (CPU_SUBTYPE_SHX3 && SPARSEMEM)
+-	default "2" if SPARSEMEM && (CPU_SUBTYPE_SH7722 || \
+-		       CPU_SUBTYPE_SH7785)
+-	default "1"
+-
+ config ARCH_SELECT_MEMORY_MODEL
+ 	def_bool y
+ 
 -- 
-1.7.10.4
+1.7.11.7
 
