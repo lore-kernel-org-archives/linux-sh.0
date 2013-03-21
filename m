@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Mar 2013 12:16:58 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 21 Mar 2013 17:01:03 +0000
 Subject: Re: [GIT PULL] Renesas ARM-based SoC updates for v3.10
-Message-Id: <20130318121658.GC24552@verge.net.au>
+Message-Id: <201303211701.03882.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,9 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Mar 18, 2013 at 08:46:52PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
+On Monday 18 March 2013, Simon Horman wrote:
 > The following changes since commit f6161aa153581da4a3867a2d1a7caf4be19b6ec9:
 > 
 >   Linux 3.9-rc2 (2013-03-10 16:54:19 -0700)
@@ -28,6 +26,8 @@ On Mon, Mar 18, 2013 at 08:46:52PM +0900, Simon Horman wrote:
 > ----------------------------------------------------------------
 > Renesas ARM-based SoC updates for v3.10
 
-One of the patches appears to have an incorrect commit message.
-I will correct this and send a revised pull request.
+Pulled into next/soc, thanks!
 
+It would be nice to have a bit more verbose changelog text in the tag here.
+
+	Arnd
