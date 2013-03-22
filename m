@@ -1,24 +1,30 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 22 Mar 2013 12:40:53 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 22 Mar 2013 13:52:17 +0000
 Subject: Re: [GIT PULL v2] Renesas ARM-based SoC board updates for v3.10
-Message-Id: <201303221240.53835.arnd@arndb.de>
+Message-Id: <20130322135217.GB4220@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
- <201303211718.32981.arnd@arndb.de> <20130322005815.GG1689@verge.net.au>
-In-Reply-To: <20130322005815.GG1689@verge.net.au>
+ <201303211718.32981.arnd@arndb.de>
+ <20130322005815.GG1689@verge.net.au>
+ <201303221240.53835.arnd@arndb.de>
+In-Reply-To: <201303221240.53835.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Friday 22 March 2013, Simon Horman wrote:
-> Sorry about sending so many all at once. There were quite a few changes
-> queued up and it might have been better if I flushed some of them out
-> a bit earlier.
+On Fri, Mar 22, 2013 at 12:40:53PM +0000, Arnd Bergmann wrote:
+> On Friday 22 March 2013, Simon Horman wrote:
+> > Sorry about sending so many all at once. There were quite a few changes
+> > queued up and it might have been better if I flushed some of them out
+> > a bit earlier.
+> > 
+> > Of the batch that I sent last week, I think you are missing the following one:
+> > 
 > 
-> Of the batch that I sent last week, I think you are missing the following one:
-> 
+> Right, I've pulled it into next/drivers now. Thanks for checking this.
 
-Right, I've pulled it into next/drivers now. Thanks for checking this.
+Thanks. I now have no outstanding pull requests.
 
-	Arnd
+I do have a few new patches in my tree.
+I plan to let a few more accumulate before sending the next pull request(s).
