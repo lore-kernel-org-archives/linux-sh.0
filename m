@@ -1,78 +1,126 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:01 +0000
-Subject: [PATCH 065/142] sh-pfc: sh73a0: Add IrDA pin groups and functions
-Message-Id: <1363604838-29359-66-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 22 Mar 2013 13:24:25 +0000
+Subject: [PATCH/RFC 1/2] ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
+Message-Id: <Pine.LNX.4.64.1303221422500.12375@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On r-/sh-mobile SoCs MSTP clocks are used by the runtime PM to dynamically
+enable and disable peripheral clocks. To make sure the clock has really
+started we have to read back its status register until it confirms success.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ drivers/sh/clk/cpg.c   |   38 ++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h |   29 +++++++++++++++++------------
+ 2 files changed, 55 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 61c682a..8fc5eb0 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2169,6 +2169,21 @@ static const unsigned int i2c3_2_pins[] = {
- static const unsigned int i2c3_2_mux[] = {
- 	PORT115_I2C_SCL3_MARK, PORT116_I2C_SDA3_MARK,
- };
-+/* - IrDA ------------------------------------------------------------------- */
-+static const unsigned int irda_0_pins[] = {
-+	/* OUT, IN, FIRSEL */
-+	241, 242, 243,
-+};
-+static const unsigned int irda_0_mux[] = {
-+	PORT241_IRDA_OUT_MARK, PORT242_IRDA_IN_MARK, PORT243_IRDA_FIRSEL_MARK,
-+};
-+static const unsigned int irda_1_pins[] = {
-+	/* OUT, IN, FIRSEL */
-+	49, 53, 54,
-+};
-+static const unsigned int irda_1_mux[] = {
-+	PORT49_IRDA_OUT_MARK, PORT53_IRDA_IN_MARK, PORT54_IRDA_FIRSEL_MARK,
-+};
- /* - KEYSC ------------------------------------------------------------------ */
- static const unsigned int keysc_in5_pins[] = {
- 	/* KEYIN[0:4] */
-@@ -2963,6 +2978,8 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(i2c3_0),
- 	SH_PFC_PIN_GROUP(i2c3_1),
- 	SH_PFC_PIN_GROUP(i2c3_2),
-+	SH_PFC_PIN_GROUP(irda_0),
-+	SH_PFC_PIN_GROUP(irda_1),
- 	SH_PFC_PIN_GROUP(keysc_in5),
- 	SH_PFC_PIN_GROUP(keysc_in6),
- 	SH_PFC_PIN_GROUP(keysc_in7),
-@@ -3125,6 +3142,11 @@ static const char * const i2c3_groups[] = {
- 	"i2c3_2",
- };
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 1ebe67c..7442bc1 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -36,9 +36,47 @@ static void sh_clk_write(int value, struct clk *clk)
+ 		iowrite32(value, clk->mapped_reg);
+ }
  
-+static const char * const irda_groups[] = {
-+	"irda_0",
-+	"irda_1",
-+};
++static unsigned int r8(const void __iomem *addr)
++{
++	return ioread8(addr);
++}
 +
- static const char * const keysc_groups[] = {
- 	"keysc_in5",
- 	"keysc_in6",
-@@ -3280,6 +3302,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(fsid),
- 	SH_PFC_FUNCTION(i2c2),
- 	SH_PFC_FUNCTION(i2c3),
-+	SH_PFC_FUNCTION(irda),
- 	SH_PFC_FUNCTION(keysc),
- 	SH_PFC_FUNCTION(lcd),
- 	SH_PFC_FUNCTION(lcd2),
++static unsigned int r16(const void __iomem *addr)
++{
++	return ioread16(addr);
++}
++
++static unsigned int r32(const void __iomem *addr)
++{
++	return ioread32(addr);
++}
++
+ static int sh_clk_mstp_enable(struct clk *clk)
+ {
+ 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
++	if (clk->status_reg) {
++		unsigned int (*read)(const void __iomem *addr);
++		int i;
++		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
++			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
++
++		if (clk->flags & CLK_ENABLE_REG_8BIT)
++			read = r8;
++		else if (clk->flags & CLK_ENABLE_REG_16BIT)
++			read = r16;
++		else
++			read = r32;
++
++		for (i = 1000;
++		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
++		     i--)
++			cpu_relax();
++		if (!i) {
++			pr_err("cpg: failed to enable %p[%d]\n",
++			       clk->enable_reg, clk->enable_bit);
++			return -ETIMEDOUT;
++		}
++	}
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 60c7239..e85bf79 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -52,6 +52,7 @@ struct clk {
+ 	unsigned long		flags;
+ 
+ 	void __iomem		*enable_reg;
++	void __iomem		*status_reg;
+ 	unsigned int		enable_bit;
+ 	void __iomem		*mapped_reg;
+ 
+@@ -116,22 +117,26 @@ long clk_round_parent(struct clk *clk, unsigned long target,
+ 		      unsigned long *best_freq, unsigned long *parent_freq,
+ 		      unsigned int div_min, unsigned int div_max);
+ 
+-#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _flags)		\
+-{									\
+-	.parent		= _parent,					\
+-	.enable_reg	= (void __iomem *)_enable_reg,			\
+-	.enable_bit	= _enable_bit,					\
+-	.flags		= _flags,					\
++#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _status_reg, _flags)	\
++{										\
++	.parent		= _parent,						\
++	.enable_reg	= (void __iomem *)_enable_reg,				\
++	.enable_bit	= _enable_bit,						\
++	.status_reg	= _status_reg,						\
++	.flags		= _flags,						\
+ }
+ 
+-#define SH_CLK_MSTP32(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_32BIT)
++#define SH_CLK_MSTP32(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_32BIT)
+ 
+-#define SH_CLK_MSTP16(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_16BIT)
++#define SH_CLK_MSTP32_STS(_p, _r, _b, _s, _f)			\
++	SH_CLK_MSTP(_p, _r, _b, _s, _f | CLK_ENABLE_REG_32BIT)
+ 
+-#define SH_CLK_MSTP8(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_8BIT)
++#define SH_CLK_MSTP16(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_16BIT)
++
++#define SH_CLK_MSTP8(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_8BIT)
+ 
+ int sh_clk_mstp_register(struct clk *clks, int nr);
+ 
 -- 
-1.7.10.4
+1.7.2.5
 
