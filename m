@@ -1,72 +1,176 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:18 +0000
-Subject: [PATCH v4 73/88] ARM: shmobile: sh73a0: Remove FSI function GPIOs
-Message-Id: <1363215633-4264-74-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 22 Mar 2013 01:23:48 +0000
+Subject: [PATCH 2/6] ARM: shmobile: sh73a0: move SDHI and MMCIF DT nodes to sh73a0.dtsi
+Message-Id: <1363915432-21720-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+To avoid having to repeat common DT node properties in all .dts files
+move them to SoC's .dtsi file, setting their status to "disabled."
+Individual boards will pick up devices, that they want to use and
+change their DT node status to enabled.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/sh73a0.h | 31 ++++++++--------------------
- 1 file changed, 9 insertions(+), 22 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   41 +++++++++---------------
+ arch/arm/boot/dts/sh73a0-reference.dtsi      |   24 --------------
+ arch/arm/boot/dts/sh73a0.dtsi                |   44 ++++++++++++++++++++++++++
+ 3 files changed, 59 insertions(+), 50 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/sh73a0-reference.dtsi
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index 3d7950c..563a48d 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -105,7 +105,7 @@ enum {
- 	GPIO_FN_GPI7,
- 	GPIO_FN_GPO7, GPIO_FN_MFG0_OUT2,
- 	GPIO_FN_GPO6, GPIO_FN_MFG1_OUT2,
--	GPIO_FN_GPO5, GPIO_FN_FSICOSLDT3,
-+	GPIO_FN_GPO5,
- 	GPIO_FN_PORT16_VIO_CKOR,
- 	GPIO_FN_PORT19_VIO_CKO2,
- 	GPIO_FN_GPO0,
-@@ -123,29 +123,16 @@ enum {
- 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
- 	GPIO_FN_SIM_D, GPIO_FN_PORT31_IROUT,
- 	GPIO_FN_XWUP,
--	GPIO_FN_FSIBOBT, GPIO_FN_FSIBIBT,
--	GPIO_FN_FSIBOLR, GPIO_FN_FSIBILR,
--	GPIO_FN_FSIBOSLD,
--	GPIO_FN_FSIBISLD,
- 	GPIO_FN_VACK,
- 	GPIO_FN_XTAL1L,
--	GPIO_FN_FSICOSLDT2,
--	GPIO_FN_FSICOSLDT1,
--	GPIO_FN_FSICOBT, GPIO_FN_FSICIBT, GPIO_FN_FSIDOBT, GPIO_FN_FSIDIBT,
--	GPIO_FN_FSICOLR, GPIO_FN_FSICILR, GPIO_FN_FSIDOLR, GPIO_FN_FSIDILR,
--	GPIO_FN_FSICOSLD, GPIO_FN_PORT47_FSICSPDIF,
--	GPIO_FN_FSICISLD, GPIO_FN_FSIDISLD,
--	GPIO_FN_FSIACK, GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT, \
--	GPIO_FN_FSIAOMC,
--	GPIO_FN_FSIAOLR, GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2, GPIO_FN_FSIAILR,
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index cadcf30..f33b5cc 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -12,7 +12,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "sh73a0-reference.dtsi"
++/include/ "sh73a0.dtsi"
+ 
+ / {
+ 	model = "KZM-A9-GT";
+@@ -44,34 +44,23 @@
+ 		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
 -
--	GPIO_FN_FSIAOBT, GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3, GPIO_FN_FSIAIBT,
--	GPIO_FN_FSIAOSLD, GPIO_FN_BBIF2_TXD2,
--	GPIO_FN_FSIASPDIF, GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3, \
--	GPIO_FN_FSIBSPDIF, GPIO_FN_PORT53_FSICSPDIF,
--	GPIO_FN_FSIBCK, GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2, \
--	GPIO_FN_FSIBOMC, GPIO_FN_FSICCK, GPIO_FN_FSICOMC,
--	GPIO_FN_FSIAISLD, GPIO_FN_TPU0TO0,
-+	GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT,
-+	GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2,
+-	sdhi0: sdhi@0xee100000 {
+-		compatible = "renesas,shmobile-sdhi";
+-		reg = <0xee100000 0x100>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 83 4
+-				0 84 4
+-				0 85 4>;
+-		vmmc-supply = <&reg_3p3v>;
+-		bus-width = <4>;
+-		toshiba,mmc-has-idle-wait;
+-	};
+-
+-	sdhi2: sdhi@0xee140000 {
+-		compatible = "renesas,shmobile-sdhi";
+-		reg = <0xee140000 0x100>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 104 4
+-				0 105 4>;
+-		vmmc-supply = <&reg_3p3v>;
+-		bus-width = <4>;
+-		broken-cd;
+-		toshiba,mmc-wrprotect-disable;
+-		toshiba,mmc-has-idle-wait;
+-	};
+ };
+ 
+ &mmcif {
+ 	bus-width = <8>;
+ 	vmmc-supply = <&reg_1p8v>;
++	status = "okay";
++};
 +
-+	GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3,
-+	GPIO_FN_BBIF2_TXD2,
-+	GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3,
-+	GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2,
-+	GPIO_FN_TPU0TO0,
- 	GPIO_FN_A0, GPIO_FN_BS_,
- 	GPIO_FN_A12, GPIO_FN_PORT58_KEYOUT7, GPIO_FN_TPU4TO2,
- 	GPIO_FN_A13, GPIO_FN_PORT59_KEYOUT6, GPIO_FN_TPU0TO1,
++&sdhi0 {
++	vmmc-supply = <&reg_3p3v>;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&sdhi2 {
++	vmmc-supply = <&reg_3p3v>;
++	bus-width = <4>;
++	broken-cd;
++	status = "okay";
+ };
+diff --git a/arch/arm/boot/dts/sh73a0-reference.dtsi b/arch/arm/boot/dts/sh73a0-reference.dtsi
+deleted file mode 100644
+index d4bb012..0000000
+--- a/arch/arm/boot/dts/sh73a0-reference.dtsi
++++ /dev/null
+@@ -1,24 +0,0 @@
+-/*
+- * Device Tree Source for the SH73A0 SoC
+- *
+- * Copyright (C) 2012 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/include/ "sh73a0.dtsi"
+-
+-/ {
+-	compatible = "renesas,sh73a0";
+-
+-	mmcif: mmcif@0x10010000 {
+-		compatible = "renesas,sh-mmcif";
+-		reg = <0xe6bd0000 0x100>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 140 0x4
+-			      0 141 0x4>;
+-		reg-io-width = <4>;
+-	};
+-};
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 8a59465..c89be38 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -97,4 +97,48 @@
+ 			      0 189 0x4
+ 			      0 190 0x4>;
+ 	};
++
++	mmcif: mmcif@0x10010000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0xe6bd0000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 140 0x4
++			      0 141 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	sdhi0: sdhi@0xee100000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xee100000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 83 4
++				0 84 4
++				0 85 4>;
++		toshiba,mmc-has-idle-wait;
++		status = "disabled";
++	};
++
++	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
++	sdhi1: sdhi@0xee120000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xee120000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 88 4
++				0 89 4>;
++		toshiba,mmc-wrprotect-disable;
++		toshiba,mmc-has-idle-wait;
++		status = "disabled";
++	};
++
++	sdhi2: sdhi@0xee140000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xee140000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 104 4
++				0 105 4>;
++		toshiba,mmc-wrprotect-disable;
++		toshiba,mmc-has-idle-wait;
++		status = "disabled";
++	};
+ };
 -- 
-1.8.1.5
+1.7.10.4
 
