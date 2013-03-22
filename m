@@ -1,109 +1,128 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Tue, 19 Mar 2013 10:19:38 +0000
-Subject: Re: [PATCH v3 1/7] ARM: shmobile: Define DT bindings for timer devices
-Message-Id: <CABYn4swepOahUXUR3sfj1NG4am5RWo9FzY+X_Jxr_US2_9tZbA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 22 Mar 2013 01:23:49 +0000
+Subject: [PATCH 3/6] ARM: shmobile: armadillo800eva: add a fixed voltage regulator for SDHI1
+Message-Id: <1363915432-21720-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
- <20130319032822.GB18272@verge.net.au>
-In-Reply-To: <20130319032822.GB18272@verge.net.au>
+References: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Simon!
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-2013/3/19 Simon Horman <horms@verge.net.au>:
-> On Sun, Mar 17, 2013 at 04:43:45PM +0100, Bastian Hecht wrote:
->> The SH mobile series currently features 3 timer devices in the kernel:
->> Compare Match Timer (CMT), Timer Unit (TMU) and MTU2. These devices
->> share register layout characteristics amongst each that enable us to
->> define common DT bindings for them.
->
-> Bastian, could you comment on the status of these changes.
-> I see no outstanding objections to them.
+The SDHI1 power supply on armadillo800eva can be switched on and off. In
+the current version this is not used and the regulator is hard-wired to
+"on." This patch switches SDHI1 to a proper fixed-voltage regulator,
+using a GPIO to enable and disable it. Both SDHI0 and SDHI1 ports shall
+now be specifying the MMC_CAP_POWER_OFF_CARD MMC capability. Both
+interfaces tested with an SDIO card.
 
-Yes I think they are fine as they are now and ready to be merged.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   45 +++++++++++++++++++-----
+ 1 file changed, 36 insertions(+), 9 deletions(-)
 
-Thanks,
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index f322a18..7a78f94 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -559,8 +559,6 @@ static struct platform_device gpio_keys_device = {
+ 
+ /* Fixed 3.3V regulator to be used by SDHI1, MMCIF */
+ static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
+-	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
+-	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
+ 	REGULATOR_SUPPLY("vmmc", "sh_mmcif"),
+ 	REGULATOR_SUPPLY("vqmmc", "sh_mmcif"),
+ };
+@@ -645,6 +643,35 @@ static struct platform_device vccq_sdhi0 = {
+ 	},
+ };
+ 
++/* Fixed 3.3V regulator to be used by SDHI1 */
++static struct regulator_consumer_supply vcc_sdhi1_consumers[] = {
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++};
++
++static struct regulator_init_data vcc_sdhi1_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi1_consumers),
++	.consumer_supplies      = vcc_sdhi1_consumers,
++};
++
++static struct fixed_voltage_config vcc_sdhi1_info = {
++	.supply_name = "SDHI1 Vcc",
++	.microvolts = 3300000,
++	.gpio = GPIO_PORT16,
++	.enable_high = 1,
++	.init_data = &vcc_sdhi1_init_data,
++};
++
++static struct platform_device vcc_sdhi1 = {
++	.name = "reg-fixed-voltage",
++	.id   = 2,
++	.dev  = {
++		.platform_data = &vcc_sdhi1_info,
++	},
++};
++
+ /* SDHI0 */
+ /*
+  * FIXME
+@@ -658,7 +685,8 @@ static struct platform_device vccq_sdhi0 = {
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+ 	.cd_gpio	= GPIO_PORT167,
+ };
+@@ -699,7 +727,8 @@ static struct platform_device sdhi0_device = {
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+ 	/* Port72 cannot generate IRQs, will be used in polling mode. */
+ 	.cd_gpio	= GPIO_PORT72,
+@@ -992,6 +1021,8 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
++	&vcc_sdhi0,
++	&vccq_sdhi0,
+ 	&sdhi0_device,
+ 	&sh_mmcif_device,
+ 	&hdmi_device,
+@@ -1002,8 +1033,6 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&fsi_wm8978_device,
+ 	&fsi_hdmi_device,
+ 	&i2c_gpio_device,
+-	&vcc_sdhi0,
+-	&vccq_sdhi0,
+ };
+ 
+ static const struct pinctrl_map eva_pinctrl_map[] = {
+@@ -1198,9 +1227,7 @@ static void __init eva_init(void)
+ 		pinctrl_register_mappings(eva_sdhi1_pinctrl_map,
+ 					  ARRAY_SIZE(eva_sdhi1_pinctrl_map));
+ 
+-		/* SDSLOT2_PON */
+-		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
+-
++		platform_device_register(&vcc_sdhi1);
+ 		platform_device_register(&sdhi1_device);
+ 	}
+ 
+-- 
+1.7.10.4
 
- Bastian
-
-
-> Magnus, ditto.
->
-> Paul, how do you want to handle merging these?
-> There are several shmobile changes so it could
-> be logical for me request arm-soc to take them.
->
->> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
->> ---
->> v3: same (only patch 0003 changed)
->>
->>  .../devicetree/bindings/timer/renesas,timer.txt    |   45 ++++++++++++++++++++
->>  1 file changed, 45 insertions(+)
->>  create mode 100644 Documentation/devicetree/bindings/timer/renesas,timer.txt
->>
->> diff --git a/Documentation/devicetree/bindings/timer/renesas,timer.txt b/Documentation/devicetree/bindings/timer/renesas,timer.txt
->> new file mode 100644
->> index 0000000..2c001bf
->> --- /dev/null
->> +++ b/Documentation/devicetree/bindings/timer/renesas,timer.txt
->> @@ -0,0 +1,45 @@
->> +* Renesas SH Mobile Timer
->> +
->> +Bindings for several timer devices from Renesas including CMT, TMU and MTU2.
->> +
->> +Required properties:
->> +- compatible : Should be "renesas,{device}-timer",
->> +  whereas device is "cmt", "tmu" or "mtu2".
->> +- reg : Address and length of the register set for the device
->> +- interrupts : Timer interrupt
->> +- renesas,device-id : The ID of the timer device
->> +- renesas,channel-id : The channel ID of the timer device
->> +- renesas,source-quality : The viability to use this device as a free
->> +  running clock. From 0 (do not use) to 10 (best possible clock).
->> +- renesas,event-quality : The viability to use this device as an event
->> +  generator. From 0 (do not use) to 10 (best possible clock).
->> +
->> +The properties renesas,{source,event}-quality reflect the situation that the
->> +usability of the timer devices depend on the location within their SoCs. E.g.
->> +the power domain affinty affects power management, some mux-ed lines might be
->> +preferred to be assigned to other functions and other constraints.
->> +
->> +Example for CMT1 channel 0 on the R8A7740 SoC:
->> +
->> +     timer@e6138010 {
->> +             compatible = "renesas,cmt-timer";
->> +             interrupt-parent = <&intca>;
->> +             reg = <0xe6138010 0xc>;
->> +             interrupts = <0x0b00>;
->> +             renesas,device-id = <1>;
->> +             renesas,channel-id = <0>;
->> +             renesas,source-quality = <3>;
->> +             renesas,event-quality = <3>;
->> +     };
->> +
->> +Example for TMU0 channel 1 on the SH7372 SoC:
->> +     timer@fff60014 {
->> +             compatible = "renesas,tmu-timer";
->> +             interrupt-parent = <&intcs>;
->> +             reg = <0xfff60014 0xc>;
->> +             interrupts = <0xea0>;
->> +             renesas,device-id = <0>;
->> +             renesas,channel-id = <1>;
->> +             renesas,source-quality = <4>;
->> +             renesas,event-quality = <0>;
->> +     };
->> --
->> 1.7.9.5
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
