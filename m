@@ -1,185 +1,106 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Mar 2013 18:35:58 +0000
-Subject: [PATCH 19/23] sh-pfc: Use proper error codes
-Message-Id: <1362940562-8570-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 22 Mar 2013 01:23:47 +0000
+Subject: [PATCH 1/6] ARM: shmobile: kzm9g: SDHI0 and SDHI1 use a 3.3V power supply
+Message-Id: <1363915432-21720-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Return proper error codes instead of -1, and propagate the error codes.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+kzm9g supplies 3.3V to its SDHI0 and SDHI2 interfaces. Specifying 2.8V
+prevents some (e.g. certain SDIO) cards from working. This patch fixes the
+voltage and removes redundant OCR masks from platform data.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/core.c    | 19 ++++++++++---------
- drivers/pinctrl/sh-pfc/gpio.c    | 13 ++++---------
- drivers/pinctrl/sh-pfc/pinctrl.c | 24 +++++++++++-------------
- 3 files changed, 25 insertions(+), 31 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   12 ++++++------
+ arch/arm/mach-shmobile/board-kzm9g.c         |   10 ++++------
+ 2 files changed, 10 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 3a94946..a04c497 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -93,7 +93,7 @@ int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin)
- 		offset += range->end - range->begin + 1;
- 	}
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 7fad4b9..cadcf30 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -36,11 +36,11 @@
+ 		regulator-boot-on;
+ 	};
  
--	return -1;
-+	return -EINVAL;
- }
+-	reg_2p8v: regulator@1 {
++	reg_3p3v: regulator@1 {
+ 		compatible = "regulator-fixed";
+-		regulator-name = "fixed-2.8V";
+-		regulator-min-microvolt = <2800000>;
+-		regulator-max-microvolt = <2800000>;
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
+ 		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
+@@ -52,7 +52,7 @@
+ 		interrupts = <0 83 4
+ 				0 84 4
+ 				0 85 4>;
+-		vmmc-supply = <&reg_2p8v>;
++		vmmc-supply = <&reg_3p3v>;
+ 		bus-width = <4>;
+ 		toshiba,mmc-has-idle-wait;
+ 	};
+@@ -63,7 +63,7 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 104 4
+ 				0 105 4>;
+-		vmmc-supply = <&reg_2p8v>;
++		vmmc-supply = <&reg_3p3v>;
+ 		bus-width = <4>;
+ 		broken-cd;
+ 		toshiba,mmc-wrprotect-disable;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index d2ace3a..e924b81 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -375,8 +375,8 @@ static struct platform_device mmc_device = {
+ 	.resource	= sh_mmcif_resources,
+ };
  
- static int sh_pfc_enum_in_range(pinmux_enum_t enum_id,
-@@ -233,7 +233,7 @@ static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
- 		k++;
- 	}
+-/* Fixed 2.8V regulators to be used by SDHI0 and SDHI2 */
+-static struct regulator_consumer_supply fixed2v8_power_consumers[] +/* Fixed 3.3V regulators to be used by SDHI0 and SDHI2 */
++static struct regulator_consumer_supply fixed3v3_power_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+ 	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
+@@ -390,7 +390,6 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+-	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+ };
  
--	return -1;
-+	return -EINVAL;
- }
+ static struct resource sdhi0_resources[] = {
+@@ -434,7 +433,6 @@ static struct sh_mobile_sdhi_info sdhi2_info = {
+ 			  TMIO_MMC_USE_GPIO_CD |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+-	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+ 	.cd_gpio	= 13,
+ };
  
- static int sh_pfc_mark_to_enum(struct sh_pfc *pfc, pinmux_enum_t mark, int pos,
-@@ -255,7 +255,7 @@ static int sh_pfc_mark_to_enum(struct sh_pfc *pfc, pinmux_enum_t mark, int pos,
- 	}
+@@ -716,8 +714,8 @@ static void __init kzm_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+ 				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
+-	regulator_register_always_on(1, "fixed-2.8V", fixed2v8_power_consumers,
+-				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
++	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
  
- 	pr_err("cannot locate data/mark enum_id for mark %d\n", mark);
--	return -1;
-+	return -EINVAL;
- }
- 
- int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
-@@ -264,6 +264,7 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 	pinmux_enum_t enum_id;
- 	const struct pinmux_range *range;
- 	int in_range, pos, field, value;
-+	int ret;
- 
- 	switch (pinmux_type) {
- 
-@@ -288,7 +289,7 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 		break;
- 
- 	default:
--		return -1;
-+		return -EINVAL;
- 	}
- 
- 	pos = 0;
-@@ -297,8 +298,8 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 	value = 0;
- 	while (1) {
- 		pos = sh_pfc_mark_to_enum(pfc, mark, pos, &enum_id);
--		if (pos <= 0)
--			return -1;
-+		if (pos < 0)
-+			return pos;
- 
- 		if (!enum_id)
- 			break;
-@@ -341,9 +342,9 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 		if (!in_range)
- 			continue;
- 
--		if (sh_pfc_get_config_reg(pfc, enum_id, &cr,
--					  &field, &value) != 0)
--			return -1;
-+		ret = sh_pfc_get_config_reg(pfc, enum_id, &cr, &field, &value);
-+		if (ret < 0)
-+			return ret;
- 
- 		sh_pfc_write_config_reg(pfc, cr, field, value);
- 	}
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 480beae..e299f14 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -276,22 +276,17 @@ static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
- 	struct sh_pfc *pfc = gpio_to_pfc(gc);
- 	unsigned int mark = pfc->info->func_gpios[offset].enum_id;
- 	unsigned long flags;
--	int ret = -EINVAL;
-+	int ret;
- 
- 	pr_notice_once("Use of GPIO API for function requests is deprecated, convert to pinctrl\n");
- 
- 	if (mark = 0)
--		return ret;
-+		return -EINVAL;
- 
- 	spin_lock_irqsave(&pfc->lock, flags);
--
--	if (sh_pfc_config_mux(pfc, mark, PINMUX_TYPE_FUNCTION))
--		goto done;
--
--	ret = 0;
--
--done:
-+	ret = sh_pfc_config_mux(pfc, mark, PINMUX_TYPE_FUNCTION);
- 	spin_unlock_irqrestore(&pfc->lock, flags);
-+
- 	return ret;
- }
- 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 7f405ea..28e575c 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -114,18 +114,16 @@ static int sh_pfc_func_enable(struct pinctrl_dev *pctldev, unsigned selector,
- 	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
- 	unsigned long flags;
- 	unsigned int i;
--	int ret = -EINVAL;
-+	int ret = 0;
- 
- 	spin_lock_irqsave(&pfc->lock, flags);
- 
- 	for (i = 0; i < grp->nr_pins; ++i) {
--		if (sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION))
--			goto done;
-+		ret = sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION);
-+		if (ret < 0)
-+			break;
- 	}
- 
--	ret = 0;
--
--done:
- 	spin_unlock_irqrestore(&pfc->lock, flags);
- 	return ret;
- }
-@@ -144,7 +142,7 @@ static int sh_pfc_reconfig_pin(struct sh_pfc_pinctrl *pmx, unsigned offset,
- 	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
- 	unsigned int mark = pin->enum_id;
- 	unsigned long flags;
--	int ret = -EINVAL;
-+	int ret;
- 
- 	spin_lock_irqsave(&pfc->lock, flags);
- 
-@@ -156,17 +154,17 @@ static int sh_pfc_reconfig_pin(struct sh_pfc_pinctrl *pmx, unsigned offset,
- 	case PINMUX_TYPE_INPUT_PULLDOWN:
- 		break;
- 	default:
--		goto err;
-+		ret = -EINVAL;
-+		goto done;
- 	}
- 
--	if (sh_pfc_config_mux(pfc, mark, new_type) != 0)
--		goto err;
-+	ret = sh_pfc_config_mux(pfc, mark, new_type);
-+	if (ret < 0)
-+		goto done;
- 
- 	cfg->type = new_type;
- 
--	ret = 0;
--
--err:
-+done:
- 	spin_unlock_irqrestore(&pfc->lock, flags);
- 
- 	return ret;
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
 -- 
-1.8.1.5
+1.7.10.4
 
