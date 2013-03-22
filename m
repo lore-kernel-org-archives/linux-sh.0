@@ -1,148 +1,123 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 21 Mar 2013 16:32:09 +0000
-Subject: Re: [PATCH/RFC 1/2] ARM: shmobile: armadillo800eva: add a fixed voltage regulator for SDHI1
-Message-Id: <Pine.LNX.4.64.1303211717580.32438@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 22 Mar 2013 07:14:42 +0000
+Subject: [RFC][PATCH 1/3] ARM: shmobile: define PLATFORM_xxx_INFO()
+Message-Id: <87y5dfewip.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1303181925280.4980@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1303181925280.4980@axis700.grange>
+References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon
+platform_device_register_xxx() are needed until
+DT supports of all drivers are completed.
+This PLATFORM_xxx_INFO() macro is useful for it
+and is possible to reduce code.
+This patch put it ot common.h
 
-On Thu, 21 Mar 2013, Simon Horman wrote:
-
-> On Mon, Mar 18, 2013 at 07:26:40PM +0100, Guennadi Liakhovetski wrote:
-> > The SDHI1 power supply on armadillo800eva can be switched on and off. In
-> > the current version this is not used and the regulator is hard-wired to
-> > "on." This patch switches SDHI1 to a proper fixed-voltage regulator,
-> > using a GPIO to enable and disable it. Both SDHI0 and SDHI1 ports shall
-> > now be specifying the MMC_CAP_POWER_OFF_CARD MMC capability. Both
-> > interfaces tested with an SDIO card.
-> 
-> This seems reasonable to me.
-> Is there any reason this and the next patch are marked RFC?
-
-Just trying to be prudent, I guess :) This isn't fixing any bugs, and I 
-don't know about any user, needing this feature, and this is a change in 
-behaviour, so, being a bit careful doesn't hurt, I think. But in theory it 
-should be an improvement, it should help save power in some cases, so, 
-taking it might be a good idea unless there are any objections.
-
-Thanks
-Guennadi
-
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> >  arch/arm/mach-shmobile/board-armadillo800eva.c |   45 +++++++++++++++++++-----
-> >  1 files changed, 36 insertions(+), 9 deletions(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > index f322a18..7a78f94 100644
-> > --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > @@ -559,8 +559,6 @@ static struct platform_device gpio_keys_device = {
-> >  
-> >  /* Fixed 3.3V regulator to be used by SDHI1, MMCIF */
-> >  static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
-> > -	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-> > -	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
-> >  	REGULATOR_SUPPLY("vmmc", "sh_mmcif"),
-> >  	REGULATOR_SUPPLY("vqmmc", "sh_mmcif"),
-> >  };
-> > @@ -645,6 +643,35 @@ static struct platform_device vccq_sdhi0 = {
-> >  	},
-> >  };
-> >  
-> > +/* Fixed 3.3V regulator to be used by SDHI1 */
-> > +static struct regulator_consumer_supply vcc_sdhi1_consumers[] = {
-> > +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-> > +};
-> > +
-> > +static struct regulator_init_data vcc_sdhi1_init_data = {
-> > +	.constraints = {
-> > +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-> > +	},
-> > +	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi1_consumers),
-> > +	.consumer_supplies      = vcc_sdhi1_consumers,
-> > +};
-> > +
-> > +static struct fixed_voltage_config vcc_sdhi1_info = {
-> > +	.supply_name = "SDHI1 Vcc",
-> > +	.microvolts = 3300000,
-> > +	.gpio = GPIO_PORT16,
-> > +	.enable_high = 1,
-> > +	.init_data = &vcc_sdhi1_init_data,
-> > +};
-> > +
-> > +static struct platform_device vcc_sdhi1 = {
-> > +	.name = "reg-fixed-voltage",
-> > +	.id   = 2,
-> > +	.dev  = {
-> > +		.platform_data = &vcc_sdhi1_info,
-> > +	},
-> > +};
-> > +
-> >  /* SDHI0 */
-> >  /*
-> >   * FIXME
-> > @@ -658,7 +685,8 @@ static struct platform_device vccq_sdhi0 = {
-> >  static struct sh_mobile_sdhi_info sdhi0_info = {
-> >  	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-> >  	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
-> > -	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-> > +	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-> > +			  MMC_CAP_POWER_OFF_CARD,
-> >  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
-> >  	.cd_gpio	= GPIO_PORT167,
-> >  };
-> > @@ -699,7 +727,8 @@ static struct platform_device sdhi0_device = {
-> >  static struct sh_mobile_sdhi_info sdhi1_info = {
-> >  	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
-> >  	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
-> > -	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-> > +	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-> > +			  MMC_CAP_POWER_OFF_CARD,
-> >  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
-> >  	/* Port72 cannot generate IRQs, will be used in polling mode. */
-> >  	.cd_gpio	= GPIO_PORT72,
-> > @@ -992,6 +1021,8 @@ static struct platform_device *eva_devices[] __initdata = {
-> >  	&lcdc0_device,
-> >  	&gpio_keys_device,
-> >  	&sh_eth_device,
-> > +	&vcc_sdhi0,
-> > +	&vccq_sdhi0,
-> >  	&sdhi0_device,
-> >  	&sh_mmcif_device,
-> >  	&hdmi_device,
-> > @@ -1002,8 +1033,6 @@ static struct platform_device *eva_devices[] __initdata = {
-> >  	&fsi_wm8978_device,
-> >  	&fsi_hdmi_device,
-> >  	&i2c_gpio_device,
-> > -	&vcc_sdhi0,
-> > -	&vccq_sdhi0,
-> >  };
-> >  
-> >  static const struct pinctrl_map eva_pinctrl_map[] = {
-> > @@ -1198,9 +1227,7 @@ static void __init eva_init(void)
-> >  		pinctrl_register_mappings(eva_sdhi1_pinctrl_map,
-> >  					  ARRAY_SIZE(eva_sdhi1_pinctrl_map));
-> >  
-> > -		/* SDSLOT2_PON */
-> > -		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
-> > -
-> > +		platform_device_register(&vcc_sdhi1);
-> >  		platform_device_register(&sdhi1_device);
-> >  	}
-> >  
-> > -- 
-> > 1.7.2.5
-> > 
-> 
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/include/mach/common.h |   20 +++++++++++
+ arch/arm/mach-shmobile/setup-r8a7778.c       |   48 +++++++++++---------------
+ 2 files changed, 41 insertions(+), 27 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 03f73de..6a066a3 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -94,4 +94,24 @@ static inline void __init shmobile_init_late(void)
+ 	shmobile_cpuidle_init();
+ }
+ 
++#define PLATFORM_FULL_INFO(n, i, m)			\
++{							\
++	.parent		= &platform_bus,		\
++	.name		= n,				\
++	.id		= i,				\
++	.res		= m ## _resources,		\
++	.num_res	= ARRAY_SIZE(m ##_resources),	\
++	.data		= &m ##_platform_data,		\
++	.size_data	= sizeof(m ## _platform_data),	\
++}
++
++#define PLATFORM_DATA_INFO(n, i, m)			\
++{							\
++	.parent		= &platform_bus,		\
++	.name		= n,				\
++	.id		= i,				\
++	.data		= &m ##_platform_data,		\
++	.size_data	= sizeof(m ## _platform_data),	\
++}
++
+ #endif /* __ARCH_MACH_COMMON_H */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 01c62be..45a1a53 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -44,14 +44,18 @@
+ 	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ }
+ 
+-static struct plat_sci_port scif_platform_data[] = {
+-	SCIF_INFO(0xffe40000, gic_iid(0x66)),
+-	SCIF_INFO(0xffe41000, gic_iid(0x67)),
+-	SCIF_INFO(0xffe42000, gic_iid(0x68)),
+-	SCIF_INFO(0xffe43000, gic_iid(0x69)),
+-	SCIF_INFO(0xffe44000, gic_iid(0x6a)),
+-	SCIF_INFO(0xffe45000, gic_iid(0x6b)),
+-};
++static struct plat_sci_port scif0_platform_data +	SCIF_INFO(0xffe40000, gic_iid(0x66));
++static struct plat_sci_port scif1_platform_data +	SCIF_INFO(0xffe41000, gic_iid(0x67));
++static struct plat_sci_port scif2_platform_data +	SCIF_INFO(0xffe42000, gic_iid(0x68));
++static struct plat_sci_port scif3_platform_data +	SCIF_INFO(0xffe43000, gic_iid(0x69));
++static struct plat_sci_port scif4_platform_data +	SCIF_INFO(0xffe44000, gic_iid(0x6a));
++static struct plat_sci_port scif5_platform_data +	SCIF_INFO(0xffe45000, gic_iid(0x6b));
+ 
+ /* TMU */
+ static struct resource sh_tmu0_resources[] = {
+@@ -78,20 +82,15 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 	.clocksource_rating	= 200,
+ };
+ 
+-#define PLATFORM_INFO(n, i)					\
+-{								\
+-	.parent		= &platform_bus,			\
+-	.name		= #n,					\
+-	.id		= i,					\
+-	.res		= n ## i ## _resources,			\
+-	.num_res	= ARRAY_SIZE(n ## i ##_resources),	\
+-	.data		= &n ## i ##_platform_data,		\
+-	.size_data	= sizeof(n ## i ## _platform_data),	\
+-}
+-
+-struct platform_device_info platform_devinfo[] = {
+-	PLATFORM_INFO(sh_tmu, 0),
+-	PLATFORM_INFO(sh_tmu, 1),
++static struct platform_device_info platform_devinfo[] = {
++	PLATFORM_DATA_INFO("sh-sci", 0, scif0),
++	PLATFORM_DATA_INFO("sh-sci", 1, scif1),
++	PLATFORM_DATA_INFO("sh-sci", 2, scif2),
++	PLATFORM_DATA_INFO("sh-sci", 3, scif3),
++	PLATFORM_DATA_INFO("sh-sci", 4, scif4),
++	PLATFORM_DATA_INFO("sh-sci", 5, scif5),
++	PLATFORM_FULL_INFO("sh_tmu", 0, sh_tmu0),
++	PLATFORM_FULL_INFO("sh_tmu", 1, sh_tmu1),
+ };
+ 
+ void __init r8a7778_add_standard_devices(void)
+@@ -109,11 +108,6 @@ void __init r8a7778_add_standard_devices(void)
+ 	}
+ #endif
+ 
+-	for (i = 0; i < ARRAY_SIZE(scif_platform_data); i++)
+-		platform_device_register_data(&platform_bus, "sh-sci", i,
+-					      &scif_platform_data[i],
+-					      sizeof(struct plat_sci_port));
+-
+ 	for (i = 0; i < ARRAY_SIZE(platform_devinfo); i++)
+ 		platform_device_register_full(&platform_devinfo[i]);
+ }
+-- 
+1.7.9.5
+
