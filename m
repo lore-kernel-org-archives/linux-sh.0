@@ -1,79 +1,140 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:43 +0000
-Subject: [PATCH 107/142] sh-pfc: sh73a0: Remove I2C function GPIOS
-Message-Id: <1363604838-29359-108-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 22 Mar 2013 01:23:51 +0000
+Subject: [PATCH 5/6] ARM: shmobile: kzm9g-reference: fix device-tree bindings and device names
+Message-Id: <1363915432-21720-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-All sh73a0 platforms now use the pinctrl API to control the I2C pins,
-the corresponding function GPIOS are unused. Remove them.
+Fix several device-tree bindings, that haven't been updated for newest
+versions of respective drivers, and device names and pin numbers, left over
+from non-DT and old pinctrl versions.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   12 ------------
- 1 file changed, 12 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi                  |   12 +++++------
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   27 ++++++++++++------------
+ 2 files changed, 19 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 6d36ebb..13bd138 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -3354,13 +3354,9 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VINT),
- 	GPIO_FN(TCKON),
- 	GPIO_FN(XDVFS1), \
--	GPIO_FN(PORT27_I2C_SCL2), \
--	GPIO_FN(PORT27_I2C_SCL3), \
- 	GPIO_FN(MFG0_OUT1), \
- 	GPIO_FN(PORT27_IROUT),
- 	GPIO_FN(XDVFS2), \
--	GPIO_FN(PORT28_I2C_SDA2), \
--	GPIO_FN(PORT28_I2C_SDA3), \
- 	GPIO_FN(PORT28_TPU1TO1),
- 	GPIO_FN(SIM_RST), \
- 	GPIO_FN(PORT29_TPU1TO1),
-@@ -3517,12 +3513,8 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(BBIF1_TXD),
- 	GPIO_FN(HSI_RX_READY), \
- 	GPIO_FN(BBIF1_RSCK), \
--	GPIO_FN(PORT115_I2C_SCL2), \
--	GPIO_FN(PORT115_I2C_SCL3),
- 	GPIO_FN(HSI_RX_WAKE), \
- 	GPIO_FN(BBIF1_RSYNC), \
--	GPIO_FN(PORT116_I2C_SDA2), \
--	GPIO_FN(PORT116_I2C_SDA3),
- 	GPIO_FN(HSI_RX_FLAG), \
- 	GPIO_FN(BBIF1_SS1), \
- 	GPIO_FN(BBIF1_FLOW),
-@@ -3670,9 +3662,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(MFG1_IN2), \
- 	GPIO_FN(VIO2_VD2), \
- 	GPIO_FN(MSIOF1_MCK0), \
--	GPIO_FN(PORT236_I2C_SDA2),
- 	GPIO_FN(MSIOF1_MCK1), \
--	GPIO_FN(PORT237_I2C_SCL2),
- 	GPIO_FN(MSIOF1_SS1), \
- 	GPIO_FN(VIO2_FIELD2), \
- 	GPIO_FN(MSIOF1_SS2), \
-@@ -3695,11 +3685,9 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(TPU3TO1),
- 	GPIO_FN(MFG2_OUT1), \
- 	GPIO_FN(TPU2TO0), \
--	GPIO_FN(PORT248_I2C_SCL3), \
- 	GPIO_FN(MSIOF2R_TSCK),
- 	GPIO_FN(PORT249_IROUT), \
- 	GPIO_FN(MFG4_IN1), \
--	GPIO_FN(PORT249_I2C_SDA3), \
- 	GPIO_FN(MSIOF2R_TSYNC),
- 	GPIO_FN(SDHICLK0),
- 	GPIO_FN(SDHICD0),
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index c89be38..3e4d383 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -109,36 +109,36 @@
+ 	};
+ 
+ 	sdhi0: sdhi@0xee100000 {
+-		compatible = "renesas,shmobile-sdhi";
++		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee100000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 83 4
+ 				0 84 4
+ 				0 85 4>;
+-		toshiba,mmc-has-idle-wait;
++		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+ 
+ 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
+ 	sdhi1: sdhi@0xee120000 {
+-		compatible = "renesas,shmobile-sdhi";
++		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee120000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 88 4
+ 				0 89 4>;
+ 		toshiba,mmc-wrprotect-disable;
+-		toshiba,mmc-has-idle-wait;
++		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+ 
+ 	sdhi2: sdhi@0xee140000 {
+-		compatible = "renesas,shmobile-sdhi";
++		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee140000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 104 4
+ 				0 105 4>;
+ 		toshiba,mmc-wrprotect-disable;
+-		toshiba,mmc-has-idle-wait;
++		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index e93473c..aefa50d 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -40,16 +40,16 @@ static unsigned long pin_pullup_conf[] = {
+ };
+ 
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "pfc-sh73a0",
+ 				  "i2c3_1", "i2c3"),
+ 	/* MMCIF */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
+ 				  "mmc0_data8_0", "mmc0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
+ 				  "mmc0_ctrl_0", "mmc0"),
+-	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
+ 				    "PORT279", pin_pullup_conf),
+-	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
+ 				      "mmc0_data8_0", pin_pullup_conf),
+ 	/* SCIFA4 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+@@ -57,18 +57,18 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+ 				  "scifa4_ctrl", "scifa4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SDHI2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
+ 				  "sdhi2_data4", "sdhi2"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
+ 				  "sdhi2_ctrl", "sdhi2"),
+ };
+ 
+@@ -80,10 +80,9 @@ static void __init kzm_init(void)
+ 
+ 	/* enable SD */
+ 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
+-	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
++	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ 
+-	gpio_request(GPIO_FN_SDHICLK2,		NULL);
+-	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
++	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
 -- 
 1.7.10.4
 
