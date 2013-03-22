@@ -1,31 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Mar 2013 04:20:54 +0000
-Subject: Re: [PATCH 3/3 v2] ARM: shmobile: add R-Car M1A Bock-W platform support
-Message-Id: <20130319042053.GF21444@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 22 Mar 2013 07:13:31 +0000
+Subject: [PATCH 0/3] ARM: shmobile: Add SMSC support on Bock-W
+Message-Id: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2v5rpck.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d2v5rpck.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 14, 2013 at 01:55:47AM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Sergei
-> 
-> > > +/ {
-> > > +	model = "bockw";
-> > > +	compatible = "renesas,bockw", "renesas,r8a7778";
-> > 
-> >     Shouldn't the above coincide with the below?
-> (snip)
-> > > +static const char *bockw_boards_compat_dt[] __initdata = {
-> > > +	"renesas,bockw-reference",
-> > > +	NULL,
-> > > +};
-> 
-> Thank you for pointing it.
-> It will be fixed in v2
 
-This is v2 :^)
+Hi Arnd, Simon, Magnus
+
+These patch set add extpin support on r8a7778,
+and enable SMSC ether on Bock-W board
+
+This patch set is based on simon/next + my previous Bock-W patch set
+
+Kuninori Morimoto (3):
+      ARM: shmobile: define PLATFORM_xxx_INFO()
+      ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
+      ARM: shmobile: bockw: add SMSC ethernet support
+
+ arch/arm/boot/dts/r8a7778-bockw.dts           |    2 +-
+ arch/arm/configs/bockw_defconfig              |   34 ++++++++-
+ arch/arm/mach-shmobile/Kconfig                |    1 +
+ arch/arm/mach-shmobile/board-bockw.c          |   37 ++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h  |   20 ++++++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   92 +++++++++++++++++--------
+ 7 files changed, 156 insertions(+), 31 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
