@@ -1,25 +1,36 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 08:17:53 +0000
-Subject: Re: [PATCH 15/25] sh-pfc: Drop unused support for 1:1 physical to virtual memory mappings
-Message-Id: <CACRpkdZJ=PhF4AUP4FBWhvn672MC4V=ZXH4WPwpULLrENu_euw@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 24 Mar 2013 19:27:32 +0000
+Subject: [PATCH v4 0/3] CPUFreq for sh73a0 / kzm9g, using cpufreq-cpu0
+Message-Id: <1364153255-20664-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363214384-3870-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363214384-3870-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 11:39 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+The cpufreq-cpu0 CPUFreq driver has been recently been converted to a 
+platform driver, which made v3 of this patch set non-functional. This 
+version performs the necessary update and also modifies kzm9g-reference 
+AS3711 support to be suitable for the mainline by removing LCDC hacks.
 
-> Now that all PFC platform devices provide memory resources support for
-> registers without an associated memory resource isn't used anymore. Drop
-> it.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Guennadi Liakhovetski (3):
+  ARM: shmobile: sh73a0: add support for adjusting CPU frequency
+  ARM: shmobile: add framebuffer and backlight support to
+    kzm9g-reference
+  ARM: shmobile: kzm9g-reference: add CPUFreq support
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   86 +++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig               |    2 +
+ arch/arm/mach-shmobile/clock-sh73a0.c        |   95 +++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/setup-sh73a0.c        |    5 ++
+ 4 files changed, 186 insertions(+), 2 deletions(-)
 
-Yours,
-Linus Walleij
+-- 
+1.7.2.5
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
