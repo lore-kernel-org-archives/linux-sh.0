@@ -1,85 +1,156 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 26 Mar 2013 23:09:15 +0000
-Subject: Re: [PATCH v6 1/7] media: V4L2: add temporary clock helpers
-Message-Id: <2434380.WAg9HcVhPF@avalon>
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Sun, 24 Mar 2013 15:41:43 +0000
+Subject: [PATCH 2/2] cpufreq: drivers: Remove unnecessary assignments of policy-> members
+Message-Id: <07b96c5b68470001197445fb3d28786ad9acdbe0.1364138740.git.viresh.kumar@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de> <5148355D.5070806@samsung.com> <Pine.LNX.4.64.1303191103310.11768@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1303191103310.11768@axis700.grange>
+References: <2ece6d9fe8dfb6882a1c83a1cb2404bacc40b22d.1364138740.git.viresh.kumar@linaro.org>
+In-Reply-To: <2ece6d9fe8dfb6882a1c83a1cb2404bacc40b22d.1364138740.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, linux-samsung-soc <linux-samsung-soc@vger.kernel.org>
+To: rjw@sisk.pl
+Cc: arvind.chauhan@arm.com, robin.randhawa@arm.com, Steve.Bannister@arm.com, Liviu.Dudau@arm.com, charles.garcia-tobin@arm.com, cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, linaro-kernel@lists.linaro.org, Viresh Kumar <viresh.kumar@linaro.org>, Sekhar Nori <nsekhar@ti.com>, Sascha Hauer <kernel@pengutronix.de>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-omap@vger.kernel.org
 
-Hi Guennadi,
+Some assignments of policy-> min/max/cur/cpuinfo.min_freq/cpuinfo.max_freq
+aren't required as part of it is done by cpufreq driver or cpufreq core.
 
-On Tuesday 19 March 2013 11:27:56 Guennadi Liakhovetski wrote:
-> On Tue, 19 Mar 2013, Sylwester Nawrocki wrote:
-> > >>> +	if (!IS_ERR(clk)&&  !try_module_get(clk->ops->owner))
-> > >>> +		clk = ERR_PTR(-ENODEV);
-> > >>> +	mutex_unlock(&clk_lock);
-> > >>> +
-> > >>> +	if (!IS_ERR(clk)) {
-> > >>> +		clk->subdev = sd;
-> > >> 
-> > >> Why is this needed ? It seems a strange addition that might potentially
-> > >> make transition to the common clocks API more difficult.
-> > > 
-> > > We got rid of the v4l2_clk_bind() function and the .bind() callback. Now
-> > > I need a pointer to subdevice _before_ v4l2_clk_register() (former
-> > > v4l2_clk_bound()), that's why I have to store it here.
-> > 
-> > Hmm, sorry, I'm not following. How can we store a subdev pointer in the
-> > clock data structure that has not been registered yet and thus cannot be
-> > found with v4l2_clk_find() ?
-> 
-> sorry, I meant v4l2_async_subdev_register(), not v4l2_clk_register(), my
-> mistake. And I meant v4l2_async_subdev_bind(), v4l2_async_subdev_unbind().
-> Before we had in the subdev driver (see imx074 example)
-> 
-> 	/* Tell the bridge the subdevice is about to bind */
-> 	v4l2_async_subdev_bind();
-> 
-> 	/* get a clock */
-> 	clk = v4l2_clk_get();
-> 	if (IS_ERR(clk))
-> 		return -EPROBE_DEFER;
-> 
-> 	/*
-> 	 * enable the clock - this needs a subdev pointer, that we passed
-> 	 * to the bridge with v4l2_async_subdev_bind() above
-> 	 */
-> 	v4l2_clk_enable(clk);
-> 	do_probe();
-> 	v4l2_clk_disable(clk);
-> 
-> 	/* inform the bridge: binding successful */
-> 	v4l2_async_subdev_bound();
-> 
-> Now we have just
-> 
-> 	/* get a clock */
-> 	clk = v4l2_clk_get();
-> 	if (IS_ERR(clk))
-> 		return -EPROBE_DEFER;
-> 
-> 	/*
-> 	 * enable the clock - this needs a subdev pointer, that we stored
-> 	 * in the clock object for the bridge driver to use with
-> 	 * v4l2_clk_get() above
-> 	 */
-> 	v4l2_clk_enable(clk);
-> 	do_probe();
-> 	v4l2_clk_disable(clk);
+Remove them.
 
-I'm sorry, but I still don't understand why you need a pointer to the subdev 
-in the clock provider implementation of v4l2_clk_enable/disable() :-)
+At some places we merge multiple lines together too.
 
-> 	/* inform the bridge: binding successful */
-> 	v4l2_async_subdev_bound();
+Cc: Sekhar Nori <nsekhar@ti.com>
+Cc: Sascha Hauer <kernel@pengutronix.de>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-omap@vger.kernel.org
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+---
+ Documentation/cpu-freq/cpu-drivers.txt | 5 +++--
+ arch/arm/mach-davinci/cpufreq.c        | 4 ----
+ arch/arm/mach-imx/cpufreq.c            | 3 ---
+ arch/sh/kernel/cpufreq.c               | 9 +++------
+ drivers/cpufreq/cpufreq-nforce2.c      | 6 ++----
+ drivers/cpufreq/omap-cpufreq.c         | 4 +---
+ 6 files changed, 9 insertions(+), 22 deletions(-)
 
+diff --git a/Documentation/cpu-freq/cpu-drivers.txt b/Documentation/cpu-freq/cpu-drivers.txt
+index 72f70b1..c94383f 100644
+--- a/Documentation/cpu-freq/cpu-drivers.txt
++++ b/Documentation/cpu-freq/cpu-drivers.txt
+@@ -108,8 +108,9 @@ policy->governor		must contain the "default policy" for
+ 				cpufreq_driver.target is called with
+ 				these values.
+ 
+-For setting some of these values, the frequency table helpers might be
+-helpful. See the section 2 for more information on them.
++For setting some of these values (cpuinfo.min[max]_freq, policy->min[max]), the
++frequency table helpers might be helpful. See the section 2 for more information
++on them.
+ 
+ SMP systems normally have same clock source for a group of cpus. For these the
+ .init() would be called only once for the first online cpu. Here the .init()
+diff --git a/arch/arm/mach-davinci/cpufreq.c b/arch/arm/mach-davinci/cpufreq.c
+index 8fb0c2a..ff46862 100644
+--- a/arch/arm/mach-davinci/cpufreq.c
++++ b/arch/arm/mach-davinci/cpufreq.c
+@@ -149,10 +149,6 @@ static int davinci_cpu_init(struct cpufreq_policy *policy)
+ 		policy->cpuinfo.max_freq = policy->max;
+ 	}
+ 
+-	policy->min = policy->cpuinfo.min_freq;
+-	policy->max = policy->cpuinfo.max_freq;
+-	policy->cur = davinci_getspeed(0);
+-
+ 	/*
+ 	 * Time measurement across the target() function yields ~1500-1800us
+ 	 * time taken with no drivers on notification list.
+diff --git a/arch/arm/mach-imx/cpufreq.c b/arch/arm/mach-imx/cpufreq.c
+index cfce5e3..387dc4c 100644
+--- a/arch/arm/mach-imx/cpufreq.c
++++ b/arch/arm/mach-imx/cpufreq.c
+@@ -144,14 +144,11 @@ static int mxc_cpufreq_init(struct cpufreq_policy *policy)
+ 	imx_freq_table[i].frequency = CPUFREQ_TABLE_END;
+ 
+ 	policy->cur = clk_get_rate(cpu_clk) / 1000;
+-	policy->min = policy->cpuinfo.min_freq = cpu_freq_khz_min;
+-	policy->max = policy->cpuinfo.max_freq = cpu_freq_khz_max;
+ 
+ 	/* Manual states, that PLL stabilizes in two CLK32 periods */
+ 	policy->cpuinfo.transition_latency = 2 * NANOSECOND / CLK32_FREQ;
+ 
+ 	ret = cpufreq_frequency_table_cpuinfo(policy, imx_freq_table);
+-
+ 	if (ret < 0) {
+ 		printk(KERN_ERR "%s: failed to register i.MXC CPUfreq with error code %d\n",
+ 		       __func__, ret);
+diff --git a/arch/sh/kernel/cpufreq.c b/arch/sh/kernel/cpufreq.c
+index 0fdf64b..88c8fee 100644
+--- a/arch/sh/kernel/cpufreq.c
++++ b/arch/sh/kernel/cpufreq.c
+@@ -116,7 +116,7 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
+ 		return PTR_ERR(cpuclk);
+ 	}
+ 
+-	policy->cur = policy->min = policy->max = sh_cpufreq_get(cpu);
++	policy->cur = sh_cpufreq_get(cpu);
+ 
+ 	freq_table = cpuclk->nr_freqs ? cpuclk->freq_table : NULL;
+ 	if (freq_table) {
+@@ -129,15 +129,12 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
+ 		dev_notice(dev, "no frequency table found, falling back "
+ 			   "to rate rounding.\n");
+ 
+-		policy->cpuinfo.min_freq +		policy->min = policy->cpuinfo.min_freq  			(clk_round_rate(cpuclk, 1) + 500) / 1000;
+-		policy->cpuinfo.max_freq +		policy->max = policy->cpuinfo.max_freq  			(clk_round_rate(cpuclk, ~0UL) + 500) / 1000;
+ 	}
+ 
+-	policy->min = policy->cpuinfo.min_freq;
+-	policy->max = policy->cpuinfo.max_freq;
+-
+ 	policy->cpuinfo.transition_latency = CPUFREQ_ETERNAL;
+ 
+ 	dev_info(dev, "CPU Frequencies - Minimum %u.%03u MHz, "
+diff --git a/drivers/cpufreq/cpufreq-nforce2.c b/drivers/cpufreq/cpufreq-nforce2.c
+index 224a478..af1542d 100644
+--- a/drivers/cpufreq/cpufreq-nforce2.c
++++ b/drivers/cpufreq/cpufreq-nforce2.c
+@@ -359,12 +359,10 @@ static int nforce2_cpu_init(struct cpufreq_policy *policy)
+ 		min_fsb = NFORCE2_MIN_FSB;
+ 
+ 	/* cpuinfo and default policy values */
+-	policy->cpuinfo.min_freq = min_fsb * fid * 100;
+-	policy->cpuinfo.max_freq = max_fsb * fid * 100;
++	policy->min = policy->cpuinfo.min_freq = min_fsb * fid * 100;
++	policy->max = policy->cpuinfo.max_freq = max_fsb * fid * 100;
+ 	policy->cpuinfo.transition_latency = CPUFREQ_ETERNAL;
+ 	policy->cur = nforce2_get(policy->cpu);
+-	policy->min = policy->cpuinfo.min_freq;
+-	policy->max = policy->cpuinfo.max_freq;
+ 
+ 	return 0;
+ }
+diff --git a/drivers/cpufreq/omap-cpufreq.c b/drivers/cpufreq/omap-cpufreq.c
+index b610edd..ad7549c 100644
+--- a/drivers/cpufreq/omap-cpufreq.c
++++ b/drivers/cpufreq/omap-cpufreq.c
+@@ -177,7 +177,7 @@ static int __cpuinit omap_cpu_init(struct cpufreq_policy *policy)
+ 		goto fail_ck;
+ 	}
+ 
+-	policy->cur = policy->min = policy->max = omap_getspeed(policy->cpu);
++	policy->cur = omap_getspeed(policy->cpu);
+ 
+ 	if (!freq_table)
+ 		result = opp_init_cpufreq_table(mpu_dev, &freq_table);
+@@ -196,8 +196,6 @@ static int __cpuinit omap_cpu_init(struct cpufreq_policy *policy)
+ 
+ 	cpufreq_frequency_table_get_attr(freq_table, policy->cpu);
+ 
+-	policy->min = policy->cpuinfo.min_freq;
+-	policy->max = policy->cpuinfo.max_freq;
+ 	policy->cur = omap_getspeed(policy->cpu);
+ 
+ 	/*
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.12.rc2.18.g61b472e
 
