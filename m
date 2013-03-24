@@ -1,285 +1,170 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 04 Mar 2013 07:19:15 +0000
-Subject: [PATCH 5/5] ARM: shmobile: add R-Car M1A Bock-W platform support
-Message-Id: <87r4jvpr80.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 24 Mar 2013 19:27:33 +0000
+Subject: [PATCH v4 1/3] ARM: shmobile: sh73a0: add support for adjusting CPU frequency
+Message-Id: <1364153255-20664-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364153255-20664-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1364153255-20664-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On SH73A0 the output of PLL0 is supplied to two dividers, feeding clock to
+the CPU core and SGX. Lower CPU frequencies allow the use of lower supply
+voltages and thus reduce power consumption.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/configs/bockw_defconfig     |   95 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig       |    6 ++
- arch/arm/mach-shmobile/Makefile      |    1 +
- arch/arm/mach-shmobile/board-bockw.c |  126 ++++++++++++++++++++++++++++++++++
- 4 files changed, 228 insertions(+)
- create mode 100644 arch/arm/configs/bockw_defconfig
- create mode 100644 arch/arm/mach-shmobile/board-bockw.c
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-new file mode 100644
-index 0000000..d92384c
---- /dev/null
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -0,0 +1,95 @@
-+# CONFIG_ARM_PATCH_PHYS_VIRT is not set
-+CONFIG_EXPERIMENTAL=y
-+CONFIG_KERNEL_LZMA=y
-+CONFIG_IKCONFIG=y
-+CONFIG_IKCONFIG_PROC=y
-+CONFIG_LOG_BUF_SHIFT
-+CONFIG_SYSCTL_SYSCALL=y
-+CONFIG_EMBEDDED=y
-+CONFIG_SLAB=y
-+# CONFIG_IOSCHED_CFQ is not set
-+CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_R8A7778=y
-+CONFIG_MACH_BOCKW=y
-+CONFIG_MEMORY_START=0x60000000
-+CONFIG_MEMORY_SIZE=0x10000000
-+CONFIG_SHMOBILE_TIMER_HZ24
-+# CONFIG_SH_TIMER_CMT is not set
-+# CONFIG_EM_TIMER_STI is not set
-+CONFIG_ARM_ERRATA_430973=y
-+CONFIG_ARM_ERRATA_458693=y
-+CONFIG_ARM_ERRATA_460075=y
-+CONFIG_ARM_ERRATA_743622=y
-+CONFIG_ARM_ERRATA_754322=y
-+CONFIG_NO_HZ=y
-+CONFIG_AEABI=y
-+# CONFIG_OABI_COMPAT is not set
-+CONFIG_HIGHMEM=y
-+CONFIG_ZBOOT_ROM_TEXT=0x0
-+CONFIG_ZBOOT_ROM_BSS=0x0
-+CONFIG_CMDLINE="console=ttySC0,115200 earlyprintk=sh-sci.0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
-+CONFIG_CMDLINE_FORCE=y
-+# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
-+# CONFIG_SUSPEND is not set
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
-+# CONFIG_INET_XFRM_MODE_TUNNEL is not set
-+# CONFIG_INET_XFRM_MODE_BEET is not set
-+# CONFIG_INET_LRO is not set
-+# CONFIG_INET_DIAG is not set
-+# CONFIG_IPV6 is not set
-+# CONFIG_WIRELESS is not set
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
-+# CONFIG_STANDALONE is not set
-+# CONFIG_PREVENT_FIRMWARE_BUILD is not set
-+# CONFIG_FW_LOADER is not set
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CHELSIO is not set
-+# CONFIG_NET_VENDOR_CIRRUS is not set
-+# CONFIG_NET_VENDOR_FARADAY is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+CONFIG_SMSC911X=y
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_WLAN is not set
-+# CONFIG_INPUT is not set
-+# CONFIG_SERIO is not set
-+# CONFIG_VT is not set
-+# CONFIG_LEGACY_PTYS is not set
-+# CONFIG_DEVKMEM is not set
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS=6
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+# CONFIG_HW_RANDOM is not set
-+CONFIG_GPIO_SYSFS=y
-+# CONFIG_HWMON is not set
-+# CONFIG_USB_SUPPORT is not set
-+CONFIG_UIO=y
-+CONFIG_UIO_PDRV_GENIRQ=y
-+# CONFIG_IOMMU_SUPPORT is not set
-+# CONFIG_DNOTIFY is not set
-+# CONFIG_INOTIFY_USER is not set
-+CONFIG_TMPFS=y
-+# CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_V3=y
-+CONFIG_NFS_V4=y
-+CONFIG_ROOT_NFS=y
-+# CONFIG_ENABLE_WARN_DEPRECATED is not set
-+# CONFIG_ENABLE_MUST_CHECK is not set
-+# CONFIG_SCHED_DEBUG is not set
-+# CONFIG_DEBUG_BUGVERBOSE is not set
-+# CONFIG_FTRACE is not set
-+# CONFIG_ARM_UNWIND is not set
-+CONFIG_AVERAGE=y
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 6150cd8..84696c4 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -102,6 +102,12 @@ config MACH_ARMADILLO800EVA
- 	select SND_SOC_WM8978 if SND_SIMPLE_CARD
- 	select USE_OF
+v4: update Z-clock lookup name for the new version of the cpufreq-cpu0 
+driver.
+
+ arch/arm/mach-shmobile/clock-sh73a0.c |   95 ++++++++++++++++++++++++++++++++-
+ 1 files changed, 93 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index c992600..509be3e 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -282,6 +282,11 @@ enum { DIV4_I, DIV4_ZG, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
  
-+config MACH_BOCKW
-+	bool "BOCK-W platform"
-+	depends on ARCH_R8A7778
-+	select ARCH_REQUIRE_GPIOLIB
-+	help
-+
- config MACH_MARZEN
- 	bool "MARZEN board"
- 	depends on ARCH_R8A7779
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index cc3ccff..8f33255 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -38,6 +38,7 @@ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
- obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
-+obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-new file mode 100644
-index 0000000..4f46ebd
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -0,0 +1,126 @@
-+/*
-+ * Bock-W board support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/irq.h>
-+#include <linux/gpio.h>
-+#include <linux/platform_device.h>
-+#include <linux/smsc911x.h>
-+#include <mach/irqs.h>
-+#include <mach/common.h>
-+#include <mach/r8a7778.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+#include <asm/mach/map.h>
-+
-+/* FPGA is mapped to 0xe0000000 */
-+#define FPGA(x) (((x) & 0x0FFFFFFF) + 0xe0000000)
-+
-+static struct map_desc bockw_io_desc[] __initdata = {
-+	/* FPGA / AREA0 from 0x18200000 */
-+	{
-+		.virtual	= FPGA(0x18200000),
-+		.pfn		= __phys_to_pfn(0x18200000),
-+		.length		= SZ_1M,
-+		.type		= MT_DEVICE_NONSHARED
-+	},
-+};
-+
-+static void __init bockw_map_io(void)
-+{
-+	iotable_init(bockw_io_desc, ARRAY_SIZE(bockw_io_desc));
-+
-+	r8a7778_map_io();
-+}
-+
-+static struct smsc911x_platform_config bockw_smsc911x_config = {
-+	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
-+	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
-+	.flags		= SMSC911X_USE_32BIT,
-+	.phy_interface	= PHY_INTERFACE_MODE_MII,
-+};
-+
-+static struct resource bockw_smsc911x_resources[] = {
-+	{
-+		.start	= 0x18300000,
-+		.end	= 0x18301000 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		.start	= gic_iid(0x3B), /* IRQ 0 */
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device smsc911x_device = {
-+	.name		= "smsc911x",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &bockw_smsc911x_config,
-+	},
-+	.num_resources	= ARRAY_SIZE(bockw_smsc911x_resources),
-+	.resource	= bockw_smsc911x_resources,
-+};
-+
-+static struct platform_device *bockw_devices[] __initdata = {
-+	&smsc911x_device,
-+};
-+
-+#define IRQ0MR		IOMEM(FPGA(0x18200030))
-+static void __init bockw_init(void)
-+{
-+	u16 val;
-+
-+	r8a7778_pinmux_init();
-+
-+	/* SCIF 0 */
-+	gpio_request(GPIO_FN_SCIF_CLK,	NULL);
-+	gpio_request(GPIO_FN_TX0_A,	NULL);
-+	gpio_request(GPIO_FN_RX0_A,	NULL);
-+	gpio_request(GPIO_FN_RTS0_A,	NULL);
-+	gpio_request(GPIO_FN_CTS0_A,	NULL);
-+
+ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_I] = DIV4(FRQCRA, 20, 0xdff, CLK_ENABLE_ON_INIT),
 +	/*
-+	 * CAUTION
-+	 *
-+	 * IRQ0/1 is cascaded interrupt from FPGA.
-+	 * it should be cared in the future
-+	 * Now, it is assuming IRQ0 was used only from SMSC.
++	 * ZG clock is dividing PLL0 frequency to supply SGX. Make sure not to
++	 * exceed maximum frequencies of 201.5MHz for VDD_DVFS=1.175 and
++	 * 239.2MHz for VDD_DVFS=1.315V.
 +	 */
+ 	[DIV4_ZG] = SH_CLK_DIV4(&pll0_clk, FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
+ 	[DIV4_M3] = DIV4(FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_B] = DIV4(FRQCRA, 8, 0xdff, CLK_ENABLE_ON_INIT),
+@@ -308,6 +313,85 @@ static struct clk twd_clk = {
+ 	.ops = &twd_clk_ops,
+ };
+ 
++static int (*div4_set_rate)(struct clk *clk, unsigned long rate);
++static unsigned long (*div4_recalc)(struct clk *clk);
++static long (*div4_round_rate)(struct clk *clk, unsigned long rate);
 +
-+	/* interrupt mask on IRQ0 */
-+	val = ioread16(IRQ0MR);
-+	val &= ~(1 << 4); /* enable SMSC911x */
-+	iowrite16(val, IRQ0MR);
++static int zclk_set_rate(struct clk *clk, unsigned long rate)
++{
++	int ret;
 +
-+	r8a7778_add_standard_devices();
-+	platform_add_devices(bockw_devices, ARRAY_SIZE(bockw_devices));
++	if (!clk->parent || !__clk_get(clk->parent))
++		return -ENODEV;
++
++	if (readl(FRQCRB) & (1 << 31))
++		return -EBUSY;
++
++	if (rate = clk_get_rate(clk->parent)) {
++		/* 1:1 - switch off divider */
++		__raw_writel(__raw_readl(FRQCRB) & ~(1 << 28), FRQCRB);
++		/* nullify the divider to prepare for the next time */
++		ret = div4_set_rate(clk, rate / 2);
++		if (!ret)
++			ret = frqcr_kick();
++		if (ret > 0)
++			ret = 0;
++	} else {
++		/* Enable the divider */
++		__raw_writel(__raw_readl(FRQCRB) | (1 << 28), FRQCRB);
++
++		ret = frqcr_kick();
++		if (ret >= 0)
++			/*
++			 * set the divider - call the DIV4 method, it will kick
++			 * FRQCRB too
++			 */
++			ret = div4_set_rate(clk, rate);
++		if (ret < 0)
++			goto esetrate;
++	}
++
++esetrate:
++	__clk_put(clk->parent);
++	return ret;
 +}
 +
-+MACHINE_START(BOCKW, "bockw")
-+	.map_io		= bockw_map_io,
-+	.init_early	= r8a7778_add_early_devices,
-+	.nr_irqs	= NR_IRQS_LEGACY,
-+	.init_irq	= r8a7778_init_irq,
-+	.init_machine	= bockw_init,
-+	.init_late	= shmobile_init_late,
-+	.init_time	= r8a7778_earlytimer_init,
-+MACHINE_END
++static long zclk_round_rate(struct clk *clk, unsigned long rate)
++{
++	unsigned long div_freq = div4_round_rate(clk, rate),
++		parent_freq = clk_get_rate(clk->parent);
++
++	if (rate > div_freq && abs(parent_freq - rate) < rate - div_freq)
++		return parent_freq;
++
++	return div_freq;
++}
++
++static unsigned long zclk_recalc(struct clk *clk)
++{
++	/*
++	 * Must recalculate frequencies in case PLL0 has been changed, even if
++	 * the divisor is unused ATM!
++	 */
++	unsigned long div_freq = div4_recalc(clk);
++
++	if (__raw_readl(FRQCRB) & (1 << 28))
++		return div_freq;
++
++	return clk_get_rate(clk->parent);
++}
++
++static void zclk_extend(void)
++{
++	/* We extend the DIV4 clock with a 1:1 pass-through case */
++	div4_set_rate = div4_clks[DIV4_Z].ops->set_rate;
++	div4_round_rate = div4_clks[DIV4_Z].ops->round_rate;
++	div4_recalc = div4_clks[DIV4_Z].ops->recalc;
++	div4_clks[DIV4_Z].ops->set_rate = zclk_set_rate;
++	div4_clks[DIV4_Z].ops->round_rate = zclk_round_rate;
++	div4_clks[DIV4_Z].ops->recalc = zclk_recalc;
++}
++
+ enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+ 	DIV6_FLCTL, DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
+ 	DIV6_FSIA, DIV6_FSIB, DIV6_SUB,
+@@ -506,7 +590,7 @@ static struct clk *late_main_clks[] = {
+ };
+ 
+ enum { MSTP001,
+-	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
++	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP112, MSTP100,
+ 	MSTP219, MSTP218, MSTP217,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+ 	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323, MSTP322,
+@@ -527,6 +611,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP125] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 25, MSTPSR1, 0), /* TMU0 */
+ 	[MSTP118] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 18, MSTPSR1, 0), /* DSITX0 */
+ 	[MSTP116] = MSTP(&div4_clks[DIV4_HP], SMSTPCR1, 16, MSTPSR1, 0), /* IIC0 */
++	[MSTP112] = MSTP(&div4_clks[DIV4_ZG], SMSTPCR1, 12, MSTPSR1, 0), /* SGX */
+ 	[MSTP100] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 0, MSTPSR1, 0), /* LCDC0 */
+ 	[MSTP219] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 19, MSTPSR2, 0), /* SCIFA7 */
+ 	[MSTP218] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 18, MSTPSR2, 0), /* SY-DMAC */
+@@ -569,6 +654,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("r_clk", &r_clk),
+ 	CLKDEV_DEV_ID("smp_twd", &twd_clk), /* smp_twd */
+ 
++	/* DIV4 clocks */
++	CLKDEV_DEV_ID("cpufreq-cpu0", &div4_clks[DIV4_Z]),
++
+ 	/* DIV6 clocks */
+ 	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
+ 	CLKDEV_CON_ID("vck2_clk", &div6_clks[DIV6_VCK2]),
+@@ -660,8 +748,11 @@ void __init sh73a0_clock_init(void)
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
+-	if (!ret)
++	if (!ret) {
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++		if (!ret)
++			zclk_extend();
++	}
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
 -- 
-1.7.9.5
+1.7.2.5
 
