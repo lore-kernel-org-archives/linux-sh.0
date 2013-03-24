@@ -1,315 +1,180 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:55:57 +0000
-Subject: [PATCH v4 16/29] sh-pfc: Rename struct pinmux_pin to struct sh_pfc_pin
-Message-Id: <1362740170-19073-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Sun, 24 Mar 2013 13:49:11 +0000
+Subject: [PATCH 2/2] cpufreq: Don't check if cpu is online/offline for cpufreq callbacks
+Message-Id: <ebbe8178fab5739c7322745b3a7ba05955477761.1364132845.git.viresh.kumar@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <981c23bd4b2a14c346820685e1203ab7054378f8.1364132845.git.viresh.kumar@linaro.org>
+In-Reply-To: <981c23bd4b2a14c346820685e1203ab7054378f8.1364132845.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: rjw@sisk.pl
+Cc: cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, arvind.chauhan@arm.com, robin.randhawa@arm.com, Steve.Bannister@arm.com, Liviu.Dudau@arm.com, charles.garcia-tobin@arm.com, linaro-kernel@lists.linaro.org, Viresh Kumar <viresh.kumar@linaro.org>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, "David S. Miller" <davem@davemloft.net>, Thomas Renninger <trenn@suse.de>, Borislav Petkov <bp@alien8.de>, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-And drop the pinmux_flag_t typedef.
+cpufreq layer doesn't call cpufreq driver's callback for any offline cpu and so
+checking that isn't useful.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Lets get rid of it.
+
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: David S. Miller <davem@davemloft.net>
+Cc: Thomas Renninger <trenn@suse.de>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: linux-mips@linux-mips.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 ---
- drivers/pinctrl/sh-pfc/core.c        | 4 ++--
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 +-
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7203.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7264.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7269.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7720.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7722.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7723.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7724.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7757.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7785.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7786.c  | 2 +-
- drivers/pinctrl/sh-pfc/pfc-shx3.c    | 2 +-
- drivers/pinctrl/sh-pfc/pinctrl.c     | 2 +-
- drivers/pinctrl/sh-pfc/sh_pfc.h      | 7 +++----
- 19 files changed, 22 insertions(+), 23 deletions(-)
+ arch/mips/kernel/cpufreq/loongson2_cpufreq.c | 6 ------
+ arch/sh/kernel/cpufreq.c                     | 6 ------
+ arch/sparc/kernel/us2e_cpufreq.c             | 6 ------
+ arch/sparc/kernel/us3_cpufreq.c              | 6 ------
+ drivers/cpufreq/p4-clockmod.c                | 3 +--
+ drivers/cpufreq/powernow-k8.c                | 3 ---
+ drivers/cpufreq/speedstep-centrino.c         | 4 ----
+ 7 files changed, 1 insertion(+), 33 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 6cf3943..f94d80c 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -235,7 +235,7 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+diff --git a/arch/mips/kernel/cpufreq/loongson2_cpufreq.c b/arch/mips/kernel/cpufreq/loongson2_cpufreq.c
+index bafda70..8488957 100644
+--- a/arch/mips/kernel/cpufreq/loongson2_cpufreq.c
++++ b/arch/mips/kernel/cpufreq/loongson2_cpufreq.c
+@@ -61,9 +61,6 @@ static int loongson2_cpufreq_target(struct cpufreq_policy *policy,
+ 	struct cpufreq_freqs freqs;
+ 	unsigned int freq;
  
- static int sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
+-	if (!cpu_online(cpu))
+-		return -ENODEV;
+-
+ 	cpus_allowed = current->cpus_allowed;
+ 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
+ 
+@@ -109,9 +106,6 @@ static int loongson2_cpufreq_cpu_init(struct cpufreq_policy *policy)
+ 	unsigned long rate;
+ 	int ret;
+ 
+-	if (!cpu_online(policy->cpu))
+-		return -ENODEV;
+-
+ 	cpuclk = clk_get(NULL, "cpu_clk");
+ 	if (IS_ERR(cpuclk)) {
+ 		printk(KERN_ERR "cpufreq: couldn't get CPU clk\n");
+diff --git a/arch/sh/kernel/cpufreq.c b/arch/sh/kernel/cpufreq.c
+index 2c7bd94..0fdf64b 100644
+--- a/arch/sh/kernel/cpufreq.c
++++ b/arch/sh/kernel/cpufreq.c
+@@ -51,9 +51,6 @@ static int sh_cpufreq_target(struct cpufreq_policy *policy,
+ 	struct device *dev;
+ 	long freq;
+ 
+-	if (!cpu_online(cpu))
+-		return -ENODEV;
+-
+ 	cpus_allowed = current->cpus_allowed;
+ 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
+ 
+@@ -111,9 +108,6 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
+ 	struct cpufreq_frequency_table *freq_table;
+ 	struct device *dev;
+ 
+-	if (!cpu_online(cpu))
+-		return -ENODEV;
+-
+ 	dev = get_cpu_device(cpu);
+ 
+ 	cpuclk = clk_get(dev, "cpu_clk");
+diff --git a/arch/sparc/kernel/us2e_cpufreq.c b/arch/sparc/kernel/us2e_cpufreq.c
+index abe963d..306ae46 100644
+--- a/arch/sparc/kernel/us2e_cpufreq.c
++++ b/arch/sparc/kernel/us2e_cpufreq.c
+@@ -234,9 +234,6 @@ static unsigned int us2e_freq_get(unsigned int cpu)
+ 	cpumask_t cpus_allowed;
+ 	unsigned long clock_tick, estar;
+ 
+-	if (!cpu_online(cpu))
+-		return 0;
+-
+ 	cpumask_copy(&cpus_allowed, tsk_cpus_allowed(current));
+ 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
+ 
+@@ -257,9 +254,6 @@ static void us2e_set_cpu_divider_index(struct cpufreq_policy *policy,
+ 	cpumask_t cpus_allowed;
+ 	struct cpufreq_freqs freqs;
+ 
+-	if (!cpu_online(cpu))
+-		return;
+-
+ 	cpumask_copy(&cpus_allowed, tsk_cpus_allowed(current));
+ 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
+ 
+diff --git a/arch/sparc/kernel/us3_cpufreq.c b/arch/sparc/kernel/us3_cpufreq.c
+index 7ceb9c8..c71ee14 100644
+--- a/arch/sparc/kernel/us3_cpufreq.c
++++ b/arch/sparc/kernel/us3_cpufreq.c
+@@ -82,9 +82,6 @@ static unsigned int us3_freq_get(unsigned int cpu)
+ 	unsigned long reg;
+ 	unsigned int ret;
+ 
+-	if (!cpu_online(cpu))
+-		return 0;
+-
+ 	cpumask_copy(&cpus_allowed, tsk_cpus_allowed(current));
+ 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
+ 
+@@ -104,9 +101,6 @@ static void us3_set_cpu_divider_index(struct cpufreq_policy *policy,
+ 	cpumask_t cpus_allowed;
+ 	struct cpufreq_freqs freqs;
+ 
+-	if (!cpu_online(cpu))
+-		return;
+-
+ 	cpumask_copy(&cpus_allowed, tsk_cpus_allowed(current));
+ 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
+ 
+diff --git a/drivers/cpufreq/p4-clockmod.c b/drivers/cpufreq/p4-clockmod.c
+index 4b2e773..421ef37 100644
+--- a/drivers/cpufreq/p4-clockmod.c
++++ b/drivers/cpufreq/p4-clockmod.c
+@@ -58,8 +58,7 @@ static int cpufreq_p4_setdc(unsigned int cpu, unsigned int newstate)
  {
--	struct pinmux_pin *gpiop = &pfc->info->pins[gpio];
-+	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
- 	struct pinmux_data_reg *data_reg;
- 	int k, n;
+ 	u32 l, h;
  
-@@ -292,7 +292,7 @@ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
- int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 			struct pinmux_data_reg **drp, int *bitp)
- {
--	struct pinmux_pin *gpiop = &pfc->info->pins[gpio];
-+	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
- 	int k, n;
+-	if (!cpu_online(cpu) ||
+-	    (newstate > DC_DISABLE) || (newstate = DC_RESV))
++	if ((newstate > DC_DISABLE) || (newstate = DC_RESV))
+ 		return -EINVAL;
  
- 	if (!sh_pfc_gpio_is_pin(pfc, gpio))
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index a22763e..ccf9161 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -1654,7 +1654,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(TRACEAUD_FROM_MEMC_MARK,			MSEL5CR_30_1,	MSEL5CR_29_0),
- };
+ 	rdmsr_on_cpu(cpu, MSR_IA32_THERM_STATUS, &l, &h);
+diff --git a/drivers/cpufreq/powernow-k8.c b/drivers/cpufreq/powernow-k8.c
+index 52137a3..b828efe 100644
+--- a/drivers/cpufreq/powernow-k8.c
++++ b/drivers/cpufreq/powernow-k8.c
+@@ -1102,9 +1102,6 @@ static int __cpuinit powernowk8_cpu_init(struct cpufreq_policy *pol)
+ 	struct init_on_cpu init_on_cpu;
+ 	int rc;
  
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	GPIO_PORT_ALL(),
- };
+-	if (!cpu_online(pol->cpu))
+-		return -ENODEV;
+-
+ 	smp_call_function_single(pol->cpu, check_supported_cpu, &rc, 1);
+ 	if (rc)
+ 		return -ENODEV;
+diff --git a/drivers/cpufreq/speedstep-centrino.c b/drivers/cpufreq/speedstep-centrino.c
+index 3dbbcc3..618e6f4 100644
+--- a/drivers/cpufreq/speedstep-centrino.c
++++ b/drivers/cpufreq/speedstep-centrino.c
+@@ -481,10 +481,6 @@ static int centrino_target (struct cpufreq_policy *policy,
+ 	for_each_cpu(j, policy->cpus) {
+ 		int good_cpu;
  
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index f771239..0e53674 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1450,7 +1450,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_IPSR_MODSEL_DATA(IP12_17_15, SCK4_B, SEL_SCIF4_1),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	PINMUX_GPIO_GP_ALL(),
- };
- 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7203.c b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-index 17e2d06..fc4a128 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-@@ -703,7 +703,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SSCK0_PF_MARK, PF0MD_11),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 
- 	/* PA */
- 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-index b927440..c03365c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-@@ -1072,7 +1072,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SD_D2_MARK, PK0MD_10),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 
- 	/* Port A */
- 	PINMUX_GPIO(GPIO_PA3, PA3_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-index 8f9b975..1fa0950 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-@@ -1452,7 +1452,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(PWM1A_MARK, PJ0MD_100),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* Port A */
- 	PINMUX_GPIO(GPIO_PA1, PA1_DATA),
- 	PINMUX_GPIO(GPIO_PA0, PA0_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 3a1961b..b15a16a 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -929,7 +929,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(MFIv4_MARK,		MSEL4CR_6_1),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	GPIO_PORT_ALL(),
- };
- 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 02cb1dc..ca1e97a 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1539,7 +1539,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(FSIAISLD_PU_MARK, PORT55_FN1, PORT55_IN_PU),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	GPIO_PORT_ALL(),
- };
- 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7720.c b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-index 9952a7c2..0b3078b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-@@ -606,7 +606,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SIM_CLK_MARK, PSELD_1_0_10, PTV0_FN),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PTA */
- 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
- 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7722.c b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-index d561737..3a8d95f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-@@ -787,7 +787,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(KEYOUT5_IN5_MARK, HIZA14_KEYSC, KEYOUT5_IN5),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PTA */
- 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
- 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7723.c b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-index 60831bf..d8797ff 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-@@ -923,7 +923,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SIUBISLD_MARK, PSD1_PSD0_FN2, PTZ0_FN),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PTA */
- 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
- 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7724.c b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-index 0b9d16e..40f430b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-@@ -1192,7 +1192,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SCIF3_I_TXD_MARK,	PSB14_1, PTZ3_FN),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PTA */
- 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
- 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index e3bfeff..20c44dd 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -1384,7 +1384,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_IPSR_DATA(IP11_28, ST_CLKOUT),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	PINMUX_GPIO_GP_ALL(),
- };
- 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7757.c b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-index 6e78358..e81ab0e 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-@@ -1114,7 +1114,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(ON_DQ0_MARK, PS8_8_FN2, PTZ0_FN),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PTA */
- 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
- 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7785.c b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-index cce232d..6049f59 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-@@ -702,7 +702,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(IRQOUT_MARK, P2MSEL2_1),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PA */
- 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
- 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7786.c b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-index 74a0e11..526e784 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-@@ -427,7 +427,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SSI3_SCK_MARK,	P2MSEL6_1, P2MSEL5_1, PJ1_FN),
- };
- 
--static struct pinmux_pin pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PA */
- 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
- 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-index eeecffc..93d60cd 100644
---- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-@@ -306,7 +306,7 @@ static pinmux_enum_t shx3_pinmux_data[] = {
- 	PINMUX_DATA(IRQOUT_MARK,	PH0_FN),
- };
- 
--static struct pinmux_pin shx3_pinmux_pins[] = {
-+static struct sh_pfc_pin shx3_pinmux_pins[] = {
- 	/* PA */
- 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
- 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 7759290..d420d99 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -307,7 +307,7 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 
- 	for (i = 0; i < pmx->nr_pads; i++) {
- 		struct pinctrl_pin_desc *pin = pmx->pads + i;
--		struct pinmux_pin *gpio = pfc->info->pins + i;
-+		struct sh_pfc_pin *gpio = pfc->info->pins + i;
- 
- 		pin->number = i;
- 		pin->name = gpio->name;
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 940170a..dae9e15 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -15,7 +15,6 @@
- #include <asm-generic/gpio.h>
- 
- typedef unsigned short pinmux_enum_t;
--typedef unsigned short pinmux_flag_t;
- 
- enum {
- 	PINMUX_TYPE_NONE,
-@@ -35,9 +34,9 @@ enum {
- #define PINMUX_FLAG_DREG_SHIFT      10
- #define PINMUX_FLAG_DREG            (0x3f << PINMUX_FLAG_DREG_SHIFT)
- 
--struct pinmux_pin {
-+struct sh_pfc_pin {
- 	const pinmux_enum_t enum_id;
--	pinmux_flag_t flags;
-+	unsigned short flags;
- 	const char *name;
- };
- 
-@@ -110,7 +109,7 @@ struct sh_pfc_soc_info {
- 	struct pinmux_range output;
- 	struct pinmux_range function;
- 
--	struct pinmux_pin *pins;
-+	struct sh_pfc_pin *pins;
- 	unsigned int nr_pins;
- 	struct pinmux_func *func_gpios;
- 	unsigned int nr_func_gpios;
+-		/* cpufreq holds the hotplug lock, so we are safe here */
+-		if (!cpu_online(j))
+-			continue;
+-
+ 		/*
+ 		 * Support for SMP systems.
+ 		 * Make sure we are running on CPU that wants to change freq
 -- 
-1.8.1.5
+1.7.12.rc2.18.g61b472e
 
