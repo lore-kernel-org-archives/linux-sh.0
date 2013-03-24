@@ -1,245 +1,132 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:05 +0000
-Subject: [PATCH 009/142] sh-pfc: Remove unused sh_pfc_soc_info reserved_id field
-Message-Id: <1363604838-29359-10-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 24 Mar 2013 19:27:34 +0000
+Subject: [PATCH v4 2/3] ARM: shmobile: kzm9g-reference: add AS3711 and CPUFreq DT bindings
+Message-Id: <1364153255-20664-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+References: <1364153255-20664-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1364153255-20664-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds Dt bindings for an AS3711 PMIC, used for supplying power to the
+CPU, some peripherals and the backlight, as well as extends the cpu0 DT
+node with OPPs and a reference to the PMIC to support the CPUFreq and
+CPU DVFS functions.
 
-The field is unused, remove it.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c |    1 -
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7203.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7264.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7269.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7720.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7722.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7723.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7724.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7757.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7785.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7786.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-shx3.c    |    1 -
- drivers/pinctrl/sh-pfc/sh_pfc.h      |    1 -
- 17 files changed, 17 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index f1ef9f7..957502e 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -2581,7 +2581,6 @@ static struct pinmux_irq pinmux_irqs[] = {
+v4: remove the LCDC hack
+
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   86 ++++++++++++++++++++++++++
+ 1 files changed, 86 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 5972abb..dd1cd80 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -18,6 +18,19 @@
+ 	model = "KZM-A9-GT";
+ 	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
  
- struct sh_pfc_soc_info r8a7740_pinmux_info = {
- 	.name		= "r8a7740_pfc",
--	.reserved_id	= PINMUX_RESERVED,
- 	.input		= { PINMUX_INPUT_BEGIN,
- 			    PINMUX_INPUT_END },
- 	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index c8018ce..bd5a70d 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2605,7 +2605,6 @@ struct sh_pfc_soc_info r8a7779_pinmux_info = {
++	cpus {
++		cpu@0 {
++			cpu0-supply = <&vdd_dvfs>;
++			operating-points = <
++				/* kHz  uV */
++				1196000 1315000
++				 598000 1175000
++				 398667 1065000
++			>;
++			voltage-tolerance = <1>; /* 1% */
++		};
++	};
++
+ 	chosen {
+ 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
+ 	};
+@@ -59,6 +72,79 @@
+ 	};
+ };
  
- 	.unlock_reg = 0xfffc0000, /* PMMR */
- 
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7203.c b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-index 07377e4..ee972f0 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-@@ -1573,7 +1573,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7203_pinmux_info = {
- 	.name = "sh7203_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-index 21b5899..44066de 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-@@ -2112,7 +2112,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7264_pinmux_info = {
- 	.name = "sh7264_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-index b722de1..072c7d5 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-@@ -2815,7 +2815,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7269_pinmux_info = {
- 	.name = "sh7269_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 0c56f57..c112074 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1634,7 +1634,6 @@ static struct pinmux_irq pinmux_irqs[] = {
- 
- struct sh_pfc_soc_info sh7372_pinmux_info = {
- 	.name = "sh7372_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 6573dba..e41aa21 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2770,7 +2770,6 @@ static struct pinmux_irq pinmux_irqs[] = {
- 
- struct sh_pfc_soc_info sh73a0_pinmux_info = {
- 	.name = "sh73a0_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7720.c b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-index 4877177..294b758 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-@@ -1215,7 +1215,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7720_pinmux_info = {
- 	.name = "sh7720_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7722.c b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-index 7cedac6..e7eadaf 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-@@ -1758,7 +1758,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7722_pinmux_info = {
- 	.name = "sh7722_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7723.c b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-index 160edf0..06b1d73 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-@@ -1883,7 +1883,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7723_pinmux_info = {
- 	.name = "sh7723_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7724.c b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-index 269f33d..41160a3 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-@@ -2205,7 +2205,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7724_pinmux_info = {
- 	.name = "sh7724_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index be5cca6..df32e71 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -2456,7 +2456,6 @@ struct sh_pfc_soc_info sh7734_pinmux_info = {
- 
- 	.unlock_reg = 0xFFFC0000,
- 
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7757.c b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-index d95f5b8..dd32f34 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-@@ -2262,7 +2262,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7757_pinmux_info = {
- 	.name = "sh7757_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7785.c b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-index 0d4c6de..447bd92 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-@@ -1284,7 +1284,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7785_pinmux_info = {
- 	.name = "sh7785_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7786.c b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-index 2981d0b..dee3cfb 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-@@ -817,7 +817,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7786_pinmux_info = {
- 	.name = "sh7786_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-index e985099..e59da79 100644
---- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-@@ -564,7 +564,6 @@ static struct pinmux_data_reg shx3_pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info shx3_pinmux_info = {
- 	.name		= "shx3_pfc",
--	.reserved_id	= PINMUX_RESERVED,
- 	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
- 	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
- 			    PINMUX_INPUT_PULLUP_END },
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index c50fb51..2627a89 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -90,7 +90,6 @@ struct pinmux_range {
- 
- struct sh_pfc_soc_info {
- 	char *name;
--	pinmux_enum_t reserved_id;
- 	struct pinmux_range input;
- 	struct pinmux_range input_pd;
- 	struct pinmux_range input_pu;
++&i2c0 {
++	as3711@40 {
++		compatible = "ams,as3711";
++		reg = <0x40>;
++
++		regulators {
++			sd1 {
++				regulator-name = "1.315V CPU";
++				regulator-min-microvolt = <1315000>;
++				regulator-max-microvolt = <1335000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			sd2 {
++				regulator-name = "1.8V";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			sd4 {
++				regulator-name = "1.215V";
++				regulator-min-microvolt = <1215000>;
++				regulator-max-microvolt = <1235000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo2 {
++				regulator-name = "2.8V CPU";
++				regulator-min-microvolt = <2800000>;
++				regulator-max-microvolt = <2800000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo3 {
++				regulator-name = "3.0V CPU";
++				regulator-min-microvolt = <3000000>;
++				regulator-max-microvolt = <3000000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo4 {
++				regulator-name = "2.8V";
++				regulator-min-microvolt = <2800000>;
++				regulator-max-microvolt = <2800000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo5 {
++				regulator-name = "2.8V #2";
++				regulator-min-microvolt = <2800000>;
++				regulator-max-microvolt = <2800000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo7 {
++				regulator-name = "1.15V CPU";
++				regulator-min-microvolt = <1150000>;
++				regulator-max-microvolt = <1150000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++			ldo8 {
++				regulator-name = "1.15V CPU #2";
++				regulator-min-microvolt = <1150000>;
++				regulator-max-microvolt = <1150000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++		};
++	};
++};
++
+ &mmcif {
+ 	bus-width = <8>;
+ 	vmmc-supply = <&reg_1p8v>;
 -- 
-1.7.10.4
+1.7.2.5
 
