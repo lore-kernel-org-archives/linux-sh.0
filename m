@@ -1,50 +1,28 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Mon, 25 Mar 2013 21:28:10 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 25 Mar 2013 22:36:23 +0000
 Subject: Re: [PATCH] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
-Message-Id: <5150C16A.3040208@gmail.com>
+Message-Id: <201303252236.23270.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363818875-15978-1-git-send-email-robherring2@gmail.com>
- <20130321110646.GE15279@e106331-lin.cambridge.arm.com>
- <20130325172633.GP30923@n2100.arm.linux.org.uk>
-In-Reply-To: <20130325172633.GP30923@n2100.arm.linux.org.uk>
+ <20130325172633.GP30923@n2100.arm.linux.org.uk> <5150C16A.3040208@gmail.com>
+In-Reply-To: <5150C16A.3040208@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 03/25/2013 12:26 PM, Russell King - ARM Linux wrote:
-> On Thu, Mar 21, 2013 at 11:06:47AM +0000, Mark Rutland wrote:
->> On TC2 this series leads to using the vexpress 24MHz clock as the sched clock
->> in preference to the architected timer:
->>
->>   Architected local timer running at 24.00MHz (virt).
->>   Switching to timer-based delay loop
->>   Registered arch_counter_get_cntvct+0x0/0x14 as sched_clock source
->>   sched_clock: 32 bits at 24MHz, resolution 41ns, wraps every 178956ms
->>   Registered versatile_read_sched_clock+0x0/0x28 as sched_clock source
->>
->> As they both have the same frequency, neither overrides the other, and
->> whichever gets registered last is used as the sched_clock. As accesses
->> to the architected timer are going to have a much lower overhead, this
->> isn't very nice (and it could be better to use it even if it had a lower
->> frequency).
-> 
-> I'll remind people that sched_clock() is supposed to be functional at
-> the point in the boot sequence where the call to sched_init() is called.
-> That is after setup_arch() and *before* time_init() is called.
+On Monday 25 March 2013, Rob Herring wrote:
+> I count integrator-cp, realview, versatile and non-DT VExpress that do
+> this (not surprisingly) and 25 platforms or timer implementations plus
+> arm64 that do sched_clock setup in time_init. What's broken by not
+> moving these earlier?
 
-I count integrator-cp, realview, versatile and non-DT VExpress that do
-this (not surprisingly) and 25 platforms or timer implementations plus
-arm64 that do sched_clock setup in time_init. What's broken by not
-moving these earlier?
+timekeeping_init() will leave the persistent_clock_exist variable as "false",
+which is read in rtc_suspend() and timekeeping_inject_sleeptime().
 
-We could probably fix arch timers relatively easily, but supporting the
-numerous memory-mapped timers will be harder. Most timers are also
-dependent on the clocks being initialized. That's really an orthogonal
-issue to what this patch series solves. This series is about selecting
-the best sched_clock when multiple timers are present. Perhaps one that
-is setup in init_early should be preferred over one setup in init_time.
-I'm not sure how to detect that.
+For all I can tell, you will get a little jitter every time you
+do a suspend in that case. Or perhaps it means the system clock
+will be forwarded by the amount of time spent in suspend twice
+after wakeup, but I'm probably misreading the code for that case.
 
-Rob
-
+	Arnd
