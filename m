@@ -1,31 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Mar 2013 12:55:15 +0000
-Subject: Re: [PATCH v2 4/8] ARM: shmobile: move GIC and I2C devices from sh73a0 common .dtsi to reference
-Message-Id: <20130319125515.GA17678@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Mar 2013 14:12:47 +0000
+Subject: [PATCH 02/03 v2] ARM: shmobile: APE6EVM PFC support
+Message-Id: <20130326141247.19958.35056.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360348712-29255-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360348712-29255-5-git-send-email-g.liakhovetski@gmx.de>
+References: <20130326141228.19958.93081.sendpatchset@w520>
+In-Reply-To: <20130326141228.19958.93081.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 19, 2013 at 01:49:11PM +0100, Guennadi Liakhovetski wrote:
-> On Tue, 19 Mar 2013, Simon Horman wrote:
-> 
-> > On Tue, Mar 19, 2013 at 09:14:16PM +0900, Simon Horman wrote:
-> 
-> [snip]
-> 
-> > > My preference would be to remove sh73a0-kzm9g.dts, moving its
-> > > contents into sh73a0.dtsi.
-> > 
-> > Sorry, s/sh73a0-kzm9g.dts/sh73a0-reference.dts/
-> 
-> May all our wishes be fulfilled as easily as this one :-) (the patch was 
-> already ready in my tree as I received this mail from you :-) )
+From: Magnus Damm <damm@opensource.se>
 
-That does sound good :)
+Start using the r8a73a4 PFC on the APE6EVM board
+and configure the SCIFA0 console signals in the
+PFC via PINCTRL.
 
-I will dig it up on Thursday (jet lag is eating by brain this evening
-and tomorrow is a holiday).
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Changes since V1:
+ -  Use PINCTRL instead of function GPIOs
+
+ arch/arm/mach-shmobile/board-ape6evm.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- 0012/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-03-26 18:56:46.000000000 +0900
+@@ -21,15 +21,25 @@
+ #include <linux/interrupt.h>
+ #include <linux/irqchip.h>
+ #include <linux/kernel.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <mach/common.h>
+ #include <mach/r8a73a4.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++static const struct pinctrl_map ape6evm_pinctrl_map[] = {
++	/* SCIFA0 console */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
++				  "scifa0_data", "scifa0"),
++};
++
+ static void __init ape6evm_add_standard_devices(void)
+ {
+ 	r8a73a4_clock_init();
++	pinctrl_register_mappings(ape6evm_pinctrl_map,
++				  ARRAY_SIZE(ape6evm_pinctrl_map));
++	r8a73a4_pinmux_init();
+ 	r8a73a4_add_standard_devices();
+ }
+ 
