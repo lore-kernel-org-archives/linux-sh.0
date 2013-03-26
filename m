@@ -1,213 +1,774 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:17:53 +0000
-Subject: [PATCH 05/13] ARM: shmobile: marzen: Reference DT implementation
-Message-Id: <1363659481-5922-6-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Mar 2013 13:51:34 +0000
+Subject: [PATCH 11/13] sh-pfc: r8a73a4: Remove function GPIOs
+Message-Id: <20130326135134.31366.54473.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Provide alternate board code for the marzen to demonstrate
-how DT may be used given the current state of driver
-device tree support. This is intended to act as a reference
-for mach-shmobile developers.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+All r8a73a4 platforms use the pinctrl API to control
+pin functions. Function GPIOs are no longer needed.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/Makefile                      |    1 +
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  |   47 ++++++++++++++
- arch/arm/mach-shmobile/Kconfig                  |   13 ++++
- arch/arm/mach-shmobile/Makefile                 |    1 +
- arch/arm/mach-shmobile/board-marzen-reference.c |   75 +++++++++++++++++++++++
- 5 files changed, 137 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-marzen-reference.c
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 9c62558..7965b9a 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -136,6 +136,7 @@ dtb-$(CONFIG_ARCH_U8500) += snowball.dtb \
- 	ccu9540.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva.dtb \
-+	r8a7779-marzen-reference.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-new file mode 100644
-index 0000000..72be4c8
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -0,0 +1,47 @@
-+/*
-+ * Reference Device Tree Source for the Marzen board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Simon Horman
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r8a7779.dtsi"
-+
-+/ {
-+	model = "marzen";
-+	compatible = "renesas,marzen-reference", "renesas,r8a7779";
-+
-+	chosen {
-+		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
-+	};
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x60000000 0x40000000>;
-+	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+
-+	lan0@18000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x18000000 0x100>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 28 0x4>;
-+		reg-io-width = <4>;
-+		vddvario-supply = <&fixedregulator3v3>;
-+		vdd33a-supply = <&fixedregulator3v3>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 9255546..b15d4ff 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -102,6 +102,19 @@ config MACH_MARZEN
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  737 ----------------------------------
+ 1 file changed, 737 deletions(-)
+
+--- 0014/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ work/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c	2013-03-26 21:22:08.000000000 +0900
+@@ -2043,740 +2043,6 @@ static const struct sh_pfc_function pinm
+ 	SH_PFC_FUNCTION(irqc),
+ };
  
-+config MACH_MARZEN_REFERENCE
-+	bool "MARZEN board - Reference Device Tree Implementation"
-+	depends on ARCH_R8A7779
-+	select ARCH_REQUIRE_GPIOLIB
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select USE_OF
-+	---help---
-+	   Use reference implementation of Marzen board support
-+	   which makes use of device tree at the expense
-+	   of not supporting a number of devices.
-+
-+	   This is intended to aid developers
-+
- config MACH_KZM9D
- 	bool "KZM9D board"
- 	depends on ARCH_EMEV2
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index b646ff4..3705d4f 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -38,6 +38,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
- obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
-+obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-new file mode 100644
-index 0000000..480d882
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -0,0 +1,75 @@
-+/*
-+ * marzen board support - Reference DT implementation
-+ *
-+ * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011  Magnus Damm
-+ * Copyright (C) 2013  Simon Horman
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/pinctrl/machine.h>
-+#include <mach/r8a7779.h>
-+#include <mach/common.h>
-+#include <mach/irqs.h>
-+#include <asm/irq.h>
-+#include <asm/mach/arch.h>
-+
-+static const struct pinctrl_map marzen_pinctrl_map[] = {
-+	/* SCIF2 (CN18: DEBUG0) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
-+				  "scif2_data_c", "scif2"),
-+	/* SCIF4 (CN19: DEBUG1) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
-+				  "scif4_data", "scif4"),
-+	/* SDHI0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+				  "sdhi0_cd", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+				  "sdhi0_wp", "sdhi0"),
-+	/* SMSC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+				  "intc_irq1_b", "intc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+				  "lbsc_ex_cs0", "lbsc"),
-+};
-+
-+static void __init marzen_init(void)
-+{
-+	pinctrl_register_mappings(marzen_pinctrl_map,
-+				  ARRAY_SIZE(marzen_pinctrl_map));
-+	r8a7779_pinmux_init();
-+
-+	r8a7779_add_standard_devices_dt();
-+}
-+
-+static const char *marzen_boards_compat_dt[] __initdata = {
-+	"renesas,marzen-reference",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(MARZEN, "marzen")
-+	.smp		= smp_ops(r8a7779_smp_ops),
-+	.map_io		= r8a7779_map_io,
-+	.init_early	= r8a7779_init_delay,
-+	.nr_irqs	= NR_IRQS_LEGACY,
-+	.init_irq	= r8a7779_init_irq_dt,
-+	.init_machine	= marzen_init,
-+	.init_time	= shmobile_timer_init,
-+	.dt_compat	= marzen_boards_compat_dt,
-+MACHINE_END
--- 
-1.7.10.4
-
+-#define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+-
+-static const struct pinmux_func pinmux_func_gpios[] = {
+-	/* Port0 */
+-	GPIO_FN(LCDD0),
+-	GPIO_FN(PDM2_CLK_0),
+-	GPIO_FN(DU0_DR0),
+-
+-	/* Port1 */
+-	GPIO_FN(LCDD1),
+-	GPIO_FN(PDM2_DATA_1),
+-	GPIO_FN(DU0_DR19),
+-
+-	/* Port2 */
+-	GPIO_FN(LCDD2),
+-	GPIO_FN(PDM3_CLK_2),
+-	GPIO_FN(DU0_DR2),
+-
+-	/* Port3 */
+-	GPIO_FN(LCDD3),
+-	GPIO_FN(PDM3_DATA_3),
+-	GPIO_FN(DU0_DR3),
+-
+-	/* Port4 */
+-	GPIO_FN(LCDD4),
+-	GPIO_FN(PDM4_CLK_4),
+-	GPIO_FN(DU0_DR4),
+-
+-	/* Port5 */
+-	GPIO_FN(LCDD5),
+-	GPIO_FN(PDM4_DATA_5),
+-	GPIO_FN(DU0_DR5),
+-
+-	/* Port6 */
+-	GPIO_FN(LCDD6),
+-	GPIO_FN(PDM0_OUTCLK_6),
+-	GPIO_FN(DU0_DR6),
+-
+-	/* Port7 */
+-	GPIO_FN(LCDD7),
+-	GPIO_FN(PDM0_OUTDATA_7),
+-	GPIO_FN(DU0_DR7),
+-
+-	/* Port8 */
+-	GPIO_FN(LCDD8),
+-	GPIO_FN(PDM1_OUTCLK_8),
+-	GPIO_FN(DU0_DG0),
+-
+-	/* Port9 */
+-	GPIO_FN(LCDD9),
+-	GPIO_FN(PDM1_OUTDATA_9),
+-	GPIO_FN(DU0_DG1),
+-
+-	/* Port10 */
+-	GPIO_FN(LCDD10),
+-	GPIO_FN(FSICCK),
+-	GPIO_FN(DU0_DG2),
+-
+-	/* Port11 */
+-	GPIO_FN(LCDD11),
+-	GPIO_FN(FSICISLD),
+-	GPIO_FN(DU0_DG3),
+-
+-	/* Port12 */
+-	GPIO_FN(LCDD12),
+-	GPIO_FN(FSICOMC),
+-	GPIO_FN(DU0_DG4),
+-
+-	/* Port13 */
+-	GPIO_FN(LCDD13),
+-	GPIO_FN(FSICOLR),
+-	GPIO_FN(FSICILR),
+-	GPIO_FN(DU0_DG5),
+-
+-	/* Port14 */
+-	GPIO_FN(LCDD14),
+-	GPIO_FN(FSICOBT),
+-	GPIO_FN(FSICIBT),
+-	GPIO_FN(DU0_DG6),
+-
+-	/* Port15 */
+-	GPIO_FN(LCDD15),
+-	GPIO_FN(FSICOSLD),
+-	GPIO_FN(DU0_DG7),
+-
+-	/* Port16 */
+-	GPIO_FN(LCDD16),
+-	GPIO_FN(TPU1TO1),
+-	GPIO_FN(DU0_DB0),
+-
+-	/* Port17 */
+-	GPIO_FN(LCDD17),
+-	GPIO_FN(SF_IRQ_00),
+-	GPIO_FN(DU0_DB1),
+-
+-	/* Port18 */
+-	GPIO_FN(LCDD18),
+-	GPIO_FN(SF_IRQ_01),
+-	GPIO_FN(DU0_DB2),
+-
+-	/* Port19 */
+-	GPIO_FN(LCDD19),
+-	GPIO_FN(DU0_DB3),
+-
+-	/* Port20 */
+-	GPIO_FN(LCDD20),
+-	GPIO_FN(DU0_DB4),
+-
+-	/* Port21 */
+-	GPIO_FN(LCDD21),
+-	GPIO_FN(DU0_DB5),
+-
+-	/* Port22 */
+-	GPIO_FN(LCDD22),
+-	GPIO_FN(DU0_DB6),
+-
+-	/* Port23 */
+-	GPIO_FN(LCDD23),
+-	GPIO_FN(DU0_DB7),
+-
+-	/* Port24 */
+-	GPIO_FN(LCDHSYN),
+-	GPIO_FN(LCDCS),
+-	GPIO_FN(DU0_EXHSYNC_N_CSYNC_N_HSYNC_N),
+-
+-	/* Port25 */
+-	GPIO_FN(LCDVSYN),
+-	GPIO_FN(DU0_EXVSYNC_N_VSYNC_N_CSYNC_N),
+-
+-	/* Port26 */
+-	GPIO_FN(LCDDCK),
+-	GPIO_FN(LCDWR),
+-	GPIO_FN(DU0_DOTCLKIN),
+-
+-	/* Port27 */
+-	GPIO_FN(LCDDISP),
+-	GPIO_FN(LCDRS),
+-	GPIO_FN(DU0_DOTCLKOUT),
+-
+-	/* Port28 */
+-	GPIO_FN(LCDRD_N),
+-	GPIO_FN(DU0_DOTCLKOUTB),
+-
+-	/* Port29 */
+-	GPIO_FN(LCDLCLK),
+-	GPIO_FN(SF_IRQ_02),
+-	GPIO_FN(DU0_DISP_CSYNC_N_DE),
+-
+-	/* Port30 */
+-	GPIO_FN(LCDDON),
+-	GPIO_FN(SF_IRQ_03),
+-	GPIO_FN(DU0_ODDF_N_CLAMP),
+-
+-	/* Port32 */
+-	GPIO_FN(SIM0_DET),
+-	GPIO_FN(CSCIF0_RTS),
+-
+-	/* Port33 */
+-	GPIO_FN(SIM1_DET),
+-	GPIO_FN(CSCIF0_CTS),
+-
+-	/* Port34 */
+-	GPIO_FN(SIM0_PWRON),
+-	GPIO_FN(CSCIF0_SCK),
+-
+-	/* Port35 */
+-	GPIO_FN(CSCIF1_RTS),
+-
+-	/* Port36 */
+-	GPIO_FN(CSCIF1_CTS),
+-
+-	/* Port37 */
+-	GPIO_FN(CSCIF1_SCK),
+-
+-	/* Port38 */
+-	GPIO_FN(TPU0TO1),
+-	GPIO_FN(CHSCIF0_HRTS),
+-
+-	/* Port39 */
+-	GPIO_FN(TPU0TO2),
+-	GPIO_FN(CHSCIF0_HCTS),
+-
+-	/* Port40 */
+-	GPIO_FN(TPU0TO3),
+-	GPIO_FN(CHSCIF0_HSCK),
+-
+-	/* Port64 */
+-	GPIO_FN(PDM0_DATA),
+-
+-	/* Port65 */
+-	GPIO_FN(PDM1_DATA),
+-
+-	/* Port66 */
+-	GPIO_FN(HSI_RX_WAKE),
+-	GPIO_FN(MSIOF3_SYNC),
+-	GPIO_FN(GenIO4),
+-
+-	/* Port67 */
+-	GPIO_FN(HSI_RX_READY),
+-	GPIO_FN(GIO_OUT3_67),
+-	GPIO_FN(CHSCIF1_HTX),
+-
+-	/* Port68 */
+-	GPIO_FN(HSI_RX_FLAG),
+-	GPIO_FN(MSIOF3_TXD),
+-	GPIO_FN(GIO_OUT4_68),
+-
+-	/* Port69 */
+-	GPIO_FN(HSI_RX_DATA),
+-	GPIO_FN(MSIOF3_RXD),
+-	GPIO_FN(GIO_OUT5_69),
+-
+-	/* Port70 */
+-	GPIO_FN(HSI_TX_FLAG),
+-	GPIO_FN(GIO_OUT1_70),
+-	GPIO_FN(HSIC_TSTCLK0),
+-	GPIO_FN(CHSCIF1_HRTS),
+-
+-	/* Port71 */
+-	GPIO_FN(HSI_TX_DATA),
+-	GPIO_FN(GIO_OUT2_71),
+-	GPIO_FN(HSIC_TSTCLK1),
+-	GPIO_FN(CHSCIF1_HCTS),
+-
+-	/* Port72 */
+-	GPIO_FN(HSI_TX_WAKE),
+-	GPIO_FN(GenIO8),
+-	GPIO_FN(CHSCIF1_HRX),
+-
+-	/* Port73 */
+-	GPIO_FN(HSI_TX_READY),
+-	GPIO_FN(MSIOF3_SCK),
+-	GPIO_FN(GIO_OUT0_73),
+-
+-	/* Port74 - Port85 */
+-	GPIO_FN(IRDA_OUT),
+-	GPIO_FN(IRDA_IN),
+-	GPIO_FN(IRDA_FIRSEL),
+-	GPIO_FN(TPU0TO0),
+-	GPIO_FN(DIGRFEN),
+-	GPIO_FN(GPS_TIMESTAMP),
+-	GPIO_FN(TXP),
+-	GPIO_FN(TXP2),
+-	GPIO_FN(COEX_0),
+-	GPIO_FN(COEX_1),
+-
+-	/* Port96 - Port101 */
+-	GPIO_FN(KEYIN0),
+-	GPIO_FN(KEYIN1),
+-	GPIO_FN(KEYIN2),
+-	GPIO_FN(KEYIN3),
+-	GPIO_FN(KEYIN4),
+-	GPIO_FN(KEYIN5),
+-
+-	/* Port102 */
+-	GPIO_FN(KEYIN6),
+-
+-	/* Port103 */
+-	GPIO_FN(KEYIN7),
+-
+-	/* Port104 - Port108 */
+-	GPIO_FN(KEYOUT0),
+-	GPIO_FN(KEYOUT1),
+-	GPIO_FN(KEYOUT2),
+-	GPIO_FN(KEYOUT3),
+-	GPIO_FN(KEYOUT4),
+-
+-	/* Port109 */
+-	GPIO_FN(KEYOUT5),
+-
+-	/* Port110 */
+-	GPIO_FN(KEYOUT6),
+-
+-	/* Port111 */
+-	GPIO_FN(KEYOUT7),
+-	GPIO_FN(RFANAEN),
+-
+-	/* Port112 */
+-	GPIO_FN(KEYIN8),
+-	GPIO_FN(KEYOUT8),
+-	GPIO_FN(SF_IRQ_04),
+-
+-	/* Port113 */
+-	GPIO_FN(KEYIN9),
+-	GPIO_FN(KEYOUT9),
+-	GPIO_FN(SF_IRQ_05),
+-
+-	/* Port114 */
+-	GPIO_FN(KEYIN10),
+-	GPIO_FN(KEYOUT10),
+-	GPIO_FN(SF_IRQ_06),
+-
+-	/* Port115 */
+-	GPIO_FN(KEYIN11),
+-	GPIO_FN(KEYOUT11),
+-	GPIO_FN(SF_IRQ_07),
+-
+-	/* Port116 */
+-	GPIO_FN(CSCIF0_TX),
+-
+-	/* Port117 */
+-	GPIO_FN(CSCIF0_RX),
+-
+-	/* Port118 */
+-	GPIO_FN(CSCIF1_TX),
+-
+-	/* Port119 */
+-	GPIO_FN(CSCIF1_RX),
+-
+-	/* Port120 */
+-	GPIO_FN(SF_PORT_1_120),
+-	GPIO_FN(DU0_CDE),
+-
+-	/* Port121 */
+-	GPIO_FN(SF_PORT_0_121),
+-
+-	/* Port122 */
+-	GPIO_FN(CHSCIF0_HTX),
+-
+-	/* Port123 */
+-	GPIO_FN(CHSCIF0_HRX),
+-
+-	/* Port124 */
+-	GPIO_FN(ISP_STROBE_124),
+-
+-	/* Port125 */
+-	GPIO_FN(STP_ISD_0),
+-	GPIO_FN(PDM4_CLK_125),
+-	GPIO_FN(MSIOF2_TXD),
+-	GPIO_FN(SIM0_VOLTSEL0),
+-
+-	/* Port126 */
+-	GPIO_FN(TS_SDEN),
+-	GPIO_FN(MSIOF7_SYNC),
+-	GPIO_FN(STP_ISEN_1),
+-
+-	/* Port128 */
+-	GPIO_FN(STP_ISEN_0),
+-	GPIO_FN(PDM1_OUTDATA_128),
+-	GPIO_FN(MSIOF2_SYNC),
+-	GPIO_FN(SIM1_VOLTSEL1),
+-
+-	/* Port129 */
+-	GPIO_FN(TS_SPSYNC),
+-	GPIO_FN(MSIOF7_RXD),
+-	GPIO_FN(STP_ISSYNC_1),
+-
+-	/* Port130 */
+-	GPIO_FN(STP_ISSYNC_0),
+-	GPIO_FN(PDM4_DATA_130),
+-	GPIO_FN(MSIOF2_RXD),
+-	GPIO_FN(SIM0_VOLTSEL1),
+-
+-	/* Port131 */
+-	GPIO_FN(STP_OPWM_0),
+-	GPIO_FN(SIM1_PWRON),
+-
+-	/* Port132 */
+-	GPIO_FN(TS_SCK),
+-	GPIO_FN(MSIOF7_SCK),
+-	GPIO_FN(STP_ISCLK_1),
+-
+-	/* Port133 */
+-	GPIO_FN(STP_ISCLK_0),
+-	GPIO_FN(PDM1_OUTCLK_133),
+-	GPIO_FN(MSIOF2_SCK),
+-	GPIO_FN(SIM1_VOLTSEL0),
+-
+-	/* Port134 */
+-	GPIO_FN(TS_SDAT),
+-	GPIO_FN(MSIOF7_TXD),
+-	GPIO_FN(STP_ISD_1),
+-
+-	/* Port160 - Port178 */
+-	GPIO_FN(MMCD0_0),
+-	GPIO_FN(MMCD0_1),
+-	GPIO_FN(MMCD0_2),
+-	GPIO_FN(MMCD0_3),
+-	GPIO_FN(MMCD0_4),
+-	GPIO_FN(MMCD0_5),
+-	GPIO_FN(MMCD0_6),
+-	GPIO_FN(MMCD0_7),
+-	GPIO_FN(MMCCMD0),
+-	GPIO_FN(MMCCLK0),
+-	GPIO_FN(MMCRST),
+-
+-	/* Port192 - Port200 FN1 */
+-	GPIO_FN(A10),
+-	GPIO_FN(A9),
+-	GPIO_FN(A8),
+-	GPIO_FN(A7),
+-	GPIO_FN(A6),
+-	GPIO_FN(A5),
+-	GPIO_FN(A4),
+-	GPIO_FN(A3),
+-	GPIO_FN(A2),
+-
+-	/* Port192 - Port200 FN2 */
+-	GPIO_FN(MMCD1_7),
+-	GPIO_FN(MMCD1_6),
+-	GPIO_FN(MMCD1_5),
+-	GPIO_FN(MMCD1_4),
+-	GPIO_FN(MMCD1_3),
+-	GPIO_FN(MMCD1_2),
+-	GPIO_FN(MMCD1_1),
+-	GPIO_FN(MMCD1_0),
+-	GPIO_FN(MMCCMD1),
+-
+-	/* Port192 - Port200 IRQ */
+-
+-	/* Port201 */
+-	GPIO_FN(A1),
+-
+-	/* Port202 */
+-	GPIO_FN(A0),
+-	GPIO_FN(BS),
+-
+-	/* Port203 */
+-	GPIO_FN(CKO),
+-	GPIO_FN(MMCCLK1),
+-
+-	/* Port204 */
+-	GPIO_FN(CS0_N),
+-	GPIO_FN(SIM0_GPO1),
+-
+-	/* Port205 */
+-	GPIO_FN(CS2_N),
+-	GPIO_FN(SIM0_GPO2),
+-
+-	/* Port206 */
+-	GPIO_FN(CS4_N),
+-	GPIO_FN(VIO_VD),
+-	GPIO_FN(SIM1_GPO0),
+-
+-	/* Port207 - Port212 FN1 */
+-	GPIO_FN(D15),
+-	GPIO_FN(D14),
+-	GPIO_FN(D13),
+-	GPIO_FN(D12),
+-	GPIO_FN(D11),
+-	GPIO_FN(D10),
+-
+-	/* Port207 - Port212 FN5 */
+-	GPIO_FN(GIO_OUT15),
+-	GPIO_FN(GIO_OUT14),
+-	GPIO_FN(GIO_OUT13),
+-	GPIO_FN(GIO_OUT12),
+-	GPIO_FN(WGM_TXP2),
+-	GPIO_FN(WGM_GPS_TIMEM_ASK_RFCLK),
+-
+-	/* Port213 - Port222 FN1 */
+-	GPIO_FN(D9),
+-	GPIO_FN(D8),
+-	GPIO_FN(D7),
+-	GPIO_FN(D6),
+-	GPIO_FN(D5),
+-	GPIO_FN(D4),
+-	GPIO_FN(D3),
+-	GPIO_FN(D2),
+-	GPIO_FN(D1),
+-	GPIO_FN(D0),
+-
+-	/* Port213 - Port222 FN2 */
+-	GPIO_FN(VIO_D9),
+-	GPIO_FN(VIO_D8),
+-	GPIO_FN(VIO_D7),
+-	GPIO_FN(VIO_D6),
+-	GPIO_FN(VIO_D5),
+-	GPIO_FN(VIO_D4),
+-	GPIO_FN(VIO_D3),
+-	GPIO_FN(VIO_D2),
+-	GPIO_FN(VIO_D1),
+-	GPIO_FN(VIO_D0),
+-
+-	/* Port213 - Port222 FN5 */
+-	GPIO_FN(GIO_OUT9),
+-	GPIO_FN(GIO_OUT8),
+-	GPIO_FN(GIO_OUT7),
+-	GPIO_FN(GIO_OUT6),
+-	GPIO_FN(GIO_OUT5_217),
+-	GPIO_FN(GIO_OUT4_218),
+-	GPIO_FN(GIO_OUT3_219),
+-	GPIO_FN(GIO_OUT2_220),
+-	GPIO_FN(GIO_OUT1_221),
+-	GPIO_FN(GIO_OUT0_222),
+-
+-	/* Port224 */
+-	GPIO_FN(RDWR_224),
+-	GPIO_FN(VIO_HD),
+-	GPIO_FN(SIM1_GPO2),
+-
+-	/* Port225 */
+-	GPIO_FN(RD_N),
+-
+-	/* Port226 */
+-	GPIO_FN(WAIT_N),
+-	GPIO_FN(VIO_CLK),
+-	GPIO_FN(SIM1_GPO1),
+-
+-	/* Port227 */
+-	GPIO_FN(WE0_N),
+-	GPIO_FN(RDWR_227),
+-
+-	/* Port228 */
+-	GPIO_FN(WE1_N),
+-	GPIO_FN(SIM0_GPO0),
+-
+-	/* Port229 */
+-	GPIO_FN(PWMO),
+-	GPIO_FN(VIO_CKO1_229),
+-
+-	/* Port230 */
+-	GPIO_FN(SLIM_CLK),
+-	GPIO_FN(VIO_CKO4_230),
+-
+-	/* Port231 */
+-	GPIO_FN(SLIM_DATA),
+-	GPIO_FN(VIO_CKO5_231),
+-
+-	/* Port232 */
+-	GPIO_FN(VIO_CKO2_232),
+-	GPIO_FN(SF_PORT_0_232),
+-
+-	/* Port233 */
+-	GPIO_FN(VIO_CKO3_233),
+-	GPIO_FN(SF_PORT_1_233),
+-
+-	/* Port234 */
+-	GPIO_FN(FSIACK),
+-	GPIO_FN(PDM3_CLK_234),
+-	GPIO_FN(ISP_IRIS1_234),
+-
+-	/* Port235 */
+-	GPIO_FN(FSIAISLD),
+-	GPIO_FN(PDM3_DATA_235),
+-
+-	/* Port236 */
+-	GPIO_FN(FSIAOMC),
+-	GPIO_FN(PDM0_OUTCLK_236),
+-	GPIO_FN(ISP_IRIS0_236),
+-
+-	/* Port237 */
+-	GPIO_FN(FSIAOLR),
+-	GPIO_FN(FSIAILR),
+-
+-	/* Port238 */
+-	GPIO_FN(FSIAOBT),
+-	GPIO_FN(FSIAIBT),
+-
+-	/* Port239 */
+-	GPIO_FN(FSIAOSLD),
+-	GPIO_FN(PDM0_OUTDATA_239),
+-
+-	/* Port240 */
+-	GPIO_FN(FSIBISLD),
+-
+-	/* Port241 */
+-	GPIO_FN(FSIBOLR),
+-	GPIO_FN(FSIBILR),
+-
+-	/* Port242 */
+-	GPIO_FN(FSIBOMC),
+-	GPIO_FN(ISP_SHUTTER1_242),
+-
+-	/* Port243 */
+-	GPIO_FN(FSIBOBT),
+-	GPIO_FN(FSIBIBT),
+-
+-	/* Port244 */
+-	GPIO_FN(FSIBOSLD),
+-	GPIO_FN(FSIASPDIF),
+-
+-	/* Port245 */
+-	GPIO_FN(FSIBCK),
+-	GPIO_FN(ISP_SHUTTER0_245),
+-
+-	/* Port246 - Port250 FN1 */
+-	GPIO_FN(ISP_IRIS1_246),
+-	GPIO_FN(ISP_IRIS0_247),
+-	GPIO_FN(ISP_SHUTTER1_248),
+-	GPIO_FN(ISP_SHUTTER0_249),
+-	GPIO_FN(ISP_STROBE_250),
+-
+-	/* Port256 - Port258 */
+-	GPIO_FN(MSIOF0_SYNC),
+-	GPIO_FN(MSIOF0_RXD),
+-	GPIO_FN(MSIOF0_SCK),
+-
+-	/* Port259 */
+-	GPIO_FN(MSIOF0_SS2),
+-	GPIO_FN(VIO_CKO3_259),
+-
+-	/* Port260 */
+-	GPIO_FN(MSIOF0_TXD),
+-
+-	/* Port261 */
+-	GPIO_FN(CHSCIF1_HSCK),
+-
+-	/* Port262 */
+-
+-	/* Port263 - Port266 FN1 */
+-	GPIO_FN(MSIOF1_SS2),
+-	GPIO_FN(MSIOF1_TXD),
+-	GPIO_FN(MSIOF1_RXD),
+-	GPIO_FN(MSIOF1_SS1),
+-
+-	/* Port263 - Port266 FN4 */
+-	GPIO_FN(MSIOF5_SS2),
+-	GPIO_FN(MSIOF5_TXD),
+-	GPIO_FN(MSIOF5_RXD),
+-	GPIO_FN(MSIOF5_SS1),
+-
+-	/* Port267 */
+-	GPIO_FN(MSIOF0_SS1),
+-
+-	/* Port268 */
+-	GPIO_FN(MSIOF1_SCK),
+-	GPIO_FN(MSIOF5_SCK),
+-
+-	/* Port269 */
+-	GPIO_FN(MSIOF1_SYNC),
+-	GPIO_FN(MSIOF5_SYNC),
+-
+-	/* Port270 - Port273 FN1 */
+-	GPIO_FN(MSIOF2_SS1),
+-	GPIO_FN(MSIOF2_SS2),
+-	GPIO_FN(MSIOF3_SS2),
+-	GPIO_FN(MSIOF3_SS1),
+-
+-	/* Port270 - Port273 FN3 */
+-	GPIO_FN(VIO_CKO5_270),
+-	GPIO_FN(VIO_CKO2_271),
+-	GPIO_FN(VIO_CKO1_272),
+-	GPIO_FN(VIO_CKO4_273),
+-
+-	/* Port274 */
+-	GPIO_FN(MSIOF4_SS2),
+-	GPIO_FN(TPU1TO0),
+-
+-	/* Port275 - Port280 */
+-	GPIO_FN(IC_DP),
+-	GPIO_FN(SIM0_RST),
+-	GPIO_FN(IC_DM),
+-	GPIO_FN(SIM0_BSICOMP),
+-	GPIO_FN(SIM0_CLK),
+-	GPIO_FN(SIM0_IO),
+-
+-	/* Port281 */
+-	GPIO_FN(SIM1_IO),
+-	GPIO_FN(PDM2_DATA_281),
+-
+-	/* Port282 */
+-	GPIO_FN(SIM1_CLK),
+-	GPIO_FN(PDM2_CLK_282),
+-
+-	/* Port283 */
+-	GPIO_FN(SIM1_RST),
+-
+-	/* Port289 */
+-	GPIO_FN(SDHID1_0),
+-	GPIO_FN(STMDATA0_2),
+-
+-	/* Port290 */
+-	GPIO_FN(SDHID1_1),
+-	GPIO_FN(STMDATA1_2),
+-
+-	/* Port291 - Port294 FN1 */
+-	GPIO_FN(SDHID1_2),
+-	GPIO_FN(SDHID1_3),
+-	GPIO_FN(SDHICLK1),
+-	GPIO_FN(SDHICMD1),
+-
+-	/* Port291 - Port294 FN3 */
+-	GPIO_FN(STMDATA2_2),
+-	GPIO_FN(STMDATA3_2),
+-	GPIO_FN(STMCLK_2),
+-	GPIO_FN(STMSIDI_2),
+-
+-	/* Port295 */
+-	GPIO_FN(SDHID2_0),
+-	GPIO_FN(MSIOF4_TXD),
+-	GPIO_FN(MSIOF6_TXD),
+-
+-	/* Port296 */
+-	GPIO_FN(SDHID2_1),
+-	GPIO_FN(MSIOF6_SS2),
+-
+-	/* Port297 - Port300 FN1 */
+-	GPIO_FN(SDHID2_2),
+-	GPIO_FN(SDHID2_3),
+-	GPIO_FN(SDHICLK2),
+-	GPIO_FN(SDHICMD2),
+-
+-	/* Port297 - Port300 FN2 */
+-	GPIO_FN(MSIOF4_RXD),
+-	GPIO_FN(MSIOF4_SYNC),
+-	GPIO_FN(MSIOF4_SCK),
+-	GPIO_FN(MSIOF4_SS1),
+-
+-	/* Port297 - Port300 FN3 */
+-
+-	/* Port297 - Port300 FN4 */
+-	GPIO_FN(MSIOF6_RXD),
+-	GPIO_FN(MSIOF6_SYNC),
+-	GPIO_FN(MSIOF6_SCK),
+-	GPIO_FN(MSIOF6_SS1),
+-
+-	/* Port301 */
+-	GPIO_FN(SDHICD0),
+-
+-	/* Port302 - Port306 FN1 */
+-	GPIO_FN(SDHID0_0),
+-	GPIO_FN(SDHID0_1),
+-	GPIO_FN(SDHID0_2),
+-	GPIO_FN(SDHID0_3),
+-	GPIO_FN(SDHICMD0),
+-
+-	/* Port302 - Port306 FN3 */
+-	GPIO_FN(STMDATA0_1),
+-	GPIO_FN(STMDATA1_1),
+-	GPIO_FN(STMDATA2_1),
+-	GPIO_FN(STMDATA3_1),
+-	GPIO_FN(STMSIDI_1),
+-
+-	/* Port307 */
+-	GPIO_FN(SDHIWP0),
+-
+-	/* Port308 */
+-	GPIO_FN(SDHICLK0),
+-	GPIO_FN(STMCLK_1),
+-
+-	/* Port320 - Port329 */
+-};
+-
+ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 
+ 	PORTCR(0, 0xe6050000),
+@@ -3457,9 +2723,6 @@ const struct sh_pfc_soc_info r8a73a4_pin
+ 	.functions = pinmux_functions,
+ 	.nr_functions = ARRAY_SIZE(pinmux_functions),
+ 
+-	.func_gpios = pinmux_func_gpios,
+-	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
+-
+ 	.cfg_regs	= pinmux_config_regs,
+ 	.data_regs	= pinmux_data_regs,
+ 
