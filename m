@@ -1,73 +1,90 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:02:13 +0000
-Subject: [PATCH v3 53/64] ARM: shmobile: sh73a0: Remove I2C function GPIOs
-Message-Id: <1362740544-19164-54-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Jiang Liu <liuj97@gmail.com>
+Date: Tue, 26 Mar 2013 15:54:50 +0000
+Subject: [PATCH v3, part4 31/39] mm/SH: prepare for removing num_physpages and simplify mem_init()
+Message-Id: <1364313298-17336-32-git-send-email-jiang.liu@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364313298-17336-1-git-send-email-jiang.liu@huawei.com>
+In-Reply-To: <1364313298-17336-1-git-send-email-jiang.liu@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, David Rientjes <rientjes@google.com>
+Cc: Jiang Liu <jiang.liu@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, James Bottomley <James.Bottomley@HansenPartnership.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, David Howells <dhowells@redhat.com>, Mark Salter <msalter@redhat.com>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+Prepare for removing num_physpages and simplify mem_init().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Wen Congyang <wency@cn.fujitsu.com>
+Cc: Tang Chen <tangchen@cn.fujitsu.com>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 ---
- arch/arm/mach-shmobile/include/mach/sh73a0.h | 18 ++++++++----------
- 1 file changed, 8 insertions(+), 10 deletions(-)
+Hi all,
+	Sorry for my mistake that my previous patch series has been screwed up.
+So I regenerate a third version and also set up a git tree at:
+	git://github.com/jiangliu/linux.git mem_init
+	Any help to review and test are welcomed!
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index b843cd7..3d7950c 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -115,9 +115,9 @@ enum {
- 	GPIO_FN_GPO4, GPIO_FN_STATUS2,
- 	GPIO_FN_VINT,
- 	GPIO_FN_TCKON,
--	GPIO_FN_XDVFS1, GPIO_FN_PORT27_I2C_SCL2, GPIO_FN_PORT27_I2C_SCL3, \
-+	GPIO_FN_XDVFS1,
- 	GPIO_FN_MFG0_OUT1, GPIO_FN_PORT27_IROUT,
--	GPIO_FN_XDVFS2, GPIO_FN_PORT28_I2C_SDA2, GPIO_FN_PORT28_I2C_SDA3, \
-+	GPIO_FN_XDVFS2,
- 	GPIO_FN_PORT28_TPU1TO1,
- 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
- 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
-@@ -203,10 +203,8 @@ enum {
- 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
- 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
- 	GPIO_FN_HSI_TX_READY, GPIO_FN_BBIF1_TXD,
--	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK, GPIO_FN_PORT115_I2C_SCL2, \
--	GPIO_FN_PORT115_I2C_SCL3,
--	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC, GPIO_FN_PORT116_I2C_SDA2, \
--	GPIO_FN_PORT116_I2C_SDA3,
-+	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK,
-+	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC,
- 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
- 	GPIO_FN_HSI_TX_FLAG,
- 	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
-@@ -292,8 +290,8 @@ enum {
- 	GPIO_FN_MSIOF1_RXD,
- 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
- 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
--	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
--	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
-+	GPIO_FN_MSIOF1_MCK0,
-+	GPIO_FN_MSIOF1_MCK1,
- 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
- 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
- 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
-@@ -310,9 +308,9 @@ enum {
- 	GPIO_FN_TPU3TO1,
- 	GPIO_FN_MFG2_OUT1,
- 	GPIO_FN_TPU2TO0,
--	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
-+	GPIO_FN_MSIOF2R_TSCK,
- 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
--	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
-+	GPIO_FN_MSIOF2R_TSYNC,
- 	GPIO_FN_SDHICLK0,
- 	GPIO_FN_SDHICD0,
- 	GPIO_FN_SDHID0_0,
+	Regards!
+	Gerry
+---
+ arch/sh/mm/init.c |   25 ++++---------------------
+ 1 file changed, 4 insertions(+), 21 deletions(-)
+
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index aecd913..3826596 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -407,24 +407,18 @@ unsigned int mem_init_done = 0;
+ 
+ void __init mem_init(void)
+ {
+-	int codesize, datasize, initsize;
+-	int nid;
++	pg_data_t *pgdat;
+ 
+ 	iommu_init();
+ 
+-	num_physpages = 0;
+ 	high_memory = NULL;
+ 
+-	for_each_online_node(nid) {
+-		pg_data_t *pgdat = NODE_DATA(nid);
++	for_each_online_pgdat(pgdat) {
+ 		void *node_high_memory;
+ 
+-		num_physpages += pgdat->node_present_pages;
+-
+ 		if (pgdat->node_spanned_pages)
+ 			free_all_bootmem_node(pgdat);
+ 
+-
+ 		node_high_memory = (void *)__va((pgdat->node_start_pfn +
+ 						 pgdat->node_spanned_pages) <<
+ 						 PAGE_SHIFT);
+@@ -441,19 +435,8 @@ void __init mem_init(void)
+ 
+ 	vsyscall_init();
+ 
+-	codesize =  (unsigned long) &_etext - (unsigned long) &_text;
+-	datasize =  (unsigned long) &_edata - (unsigned long) &_etext;
+-	initsize =  (unsigned long) &__init_end - (unsigned long) &__init_begin;
+-
+-	printk(KERN_INFO "Memory: %luk/%luk available (%dk kernel code, "
+-	       "%dk data, %dk init)\n",
+-		nr_free_pages() << (PAGE_SHIFT-10),
+-		num_physpages << (PAGE_SHIFT-10),
+-		codesize >> 10,
+-		datasize >> 10,
+-		initsize >> 10);
+-
+-	printk(KERN_INFO "virtual kernel memory layout:\n"
++	mem_init_print_info(NULL);
++	pr_info("virtual kernel memory layout:\n"
+ 		"    fixmap  : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+ #ifdef CONFIG_HIGHMEM
+ 		"    pkmap   : 0x%08lx - 0x%08lx   (%4ld kB)\n"
 -- 
-1.8.1.5
+1.7.9.5
 
