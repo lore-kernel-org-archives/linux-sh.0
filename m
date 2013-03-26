@@ -1,73 +1,97 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:17 +0000
-Subject: [PATCH v4 72/88] ARM: shmobile: sh73a0: Remove I2C function GPIOs
-Message-Id: <1363215633-4264-73-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 26 Mar 2013 06:08:10 +0000
+Subject: [PATCH 1/2 v2] thermal: rcar: tidyup registration failure case
+Message-Id: <87ppymith5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87620gqbbe.wl%kuninori.morimoto.gx@renesas.com>
+	<874ng0qb9f.wl%kuninori.morimoto.gx@renesas.com>
+	<1364200856.2465.48.camel@rzhang1-mobl4>
+	<871ub3j9r3.wl%kuninori.morimoto.gx@renesas.com>
+	<87sj3iiu5m.wl%kuninori.morimoto.gx@renesas.com>
+	<87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Zhang Rui <rui.zhang@intel.com>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-pm@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+Current rcar_thermal driver didn't care about rcar_theraml_irq_disable()
+when registration failure case on _probe(), and _remove().
+And, it returns without unregistering thermal zone when
+registration failure case on _probe().
+This patch fixes these issue.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh73a0.h | 18 ++++++++----------
- 1 file changed, 8 insertions(+), 10 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index b843cd7..3d7950c 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -115,9 +115,9 @@ enum {
- 	GPIO_FN_GPO4, GPIO_FN_STATUS2,
- 	GPIO_FN_VINT,
- 	GPIO_FN_TCKON,
--	GPIO_FN_XDVFS1, GPIO_FN_PORT27_I2C_SCL2, GPIO_FN_PORT27_I2C_SCL3, \
-+	GPIO_FN_XDVFS1,
- 	GPIO_FN_MFG0_OUT1, GPIO_FN_PORT27_IROUT,
--	GPIO_FN_XDVFS2, GPIO_FN_PORT28_I2C_SDA2, GPIO_FN_PORT28_I2C_SDA3, \
-+	GPIO_FN_XDVFS2,
- 	GPIO_FN_PORT28_TPU1TO1,
- 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
- 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
-@@ -203,10 +203,8 @@ enum {
- 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
- 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
- 	GPIO_FN_HSI_TX_READY, GPIO_FN_BBIF1_TXD,
--	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK, GPIO_FN_PORT115_I2C_SCL2, \
--	GPIO_FN_PORT115_I2C_SCL3,
--	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC, GPIO_FN_PORT116_I2C_SDA2, \
--	GPIO_FN_PORT116_I2C_SDA3,
-+	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK,
-+	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC,
- 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
- 	GPIO_FN_HSI_TX_FLAG,
- 	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
-@@ -292,8 +290,8 @@ enum {
- 	GPIO_FN_MSIOF1_RXD,
- 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
- 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
--	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
--	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
-+	GPIO_FN_MSIOF1_MCK0,
-+	GPIO_FN_MSIOF1_MCK1,
- 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
- 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
- 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
-@@ -310,9 +308,9 @@ enum {
- 	GPIO_FN_TPU3TO1,
- 	GPIO_FN_MFG2_OUT1,
- 	GPIO_FN_TPU2TO0,
--	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
-+	GPIO_FN_MSIOF2R_TSCK,
- 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
--	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
-+	GPIO_FN_MSIOF2R_TSYNC,
- 	GPIO_FN_SDHICLK0,
- 	GPIO_FN_SDHICD0,
- 	GPIO_FN_SDHID0_0,
+ - same as v1
+
+ drivers/thermal/rcar_thermal.c |   20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index c490aa5..c199623 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -421,13 +421,15 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 		priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 		if (!priv) {
+ 			dev_err(dev, "Could not allocate priv\n");
+-			return -ENOMEM;
++			ret = -ENOMEM;
++			goto error_unregister;
+ 		}
+ 
+ 		priv->base = devm_request_and_ioremap(dev, res);
+ 		if (!priv->base) {
+ 			dev_err(dev, "Unable to ioremap priv register\n");
+-			return -ENOMEM;
++			ret = -ENOMEM;
++			goto error_unregister;
+ 		}
+ 
+ 		priv->common = common;
+@@ -447,10 +449,10 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 			goto error_unregister;
+ 		}
+ 
+-		list_move_tail(&priv->list, &common->head);
+-
+ 		if (rcar_has_irq_support(priv))
+ 			rcar_thermal_irq_enable(priv);
++
++		list_move_tail(&priv->list, &common->head);
+ 	}
+ 
+ 	platform_set_drvdata(pdev, common);
+@@ -460,8 +462,11 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 	return 0;
+ 
+ error_unregister:
+-	rcar_thermal_for_each_priv(priv, common)
++	rcar_thermal_for_each_priv(priv, common) {
+ 		thermal_zone_device_unregister(priv->zone);
++		if (rcar_has_irq_support(priv))
++			rcar_thermal_irq_disable(priv);
++	}
+ 
+ 	return ret;
+ }
+@@ -471,8 +476,11 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
+ 	struct rcar_thermal_priv *priv;
+ 
+-	rcar_thermal_for_each_priv(priv, common)
++	rcar_thermal_for_each_priv(priv, common) {
+ 		thermal_zone_device_unregister(priv->zone);
++		if (rcar_has_irq_support(priv))
++			rcar_thermal_irq_disable(priv);
++	}
+ 
+ 	platform_set_drvdata(pdev, NULL);
+ 
 -- 
-1.8.1.5
+1.7.9.5
 
