@@ -1,76 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Mar 2013 10:41:29 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Mar 2013 14:19:05 +0000
 Subject: Re: [PATCH 0/3 v3] ARM: shmobile: add R8A7778 Bock-W board support v3
-Message-Id: <20130321104127.GH2348@verge.net.au>
+Message-Id: <CANqRtoTRPN8esU-iiQNtr3f6gZ1gAiXHMHZzXw2cFoBEPNW1VA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87hakhrpmn.wl%kuninori.morimoto.gx@renesas.com>
  <878v5hf4zr.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878v5hf4zr.wl%kuninori.morimoto.gx@renesas.com>
+ <20130321104127.GH2348@verge.net.au>
+In-Reply-To: <20130321104127.GH2348@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 21, 2013 at 06:59:20PM +0900, Kuninori Morimoto wrote:
-> 
-> Hi Simon, Magnus, Arnd
-> 
-> These are v3 patch set of R8A7778 R-Car M1 SoC/board support
-> This SoC/board support have limited DT only.
-> (TMU/SCIF can't use DT at this point)
-> 
-> I will work for external IRQ and SMSC support
-> if these are accepted.
-> 
-> These patches are based on simon/next branch
+Hi Simon, Morimoto-san,
 
-Good choice :^)
+On Thu, Mar 21, 2013 at 7:41 PM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Mar 21, 2013 at 06:59:20PM +0900, Kuninori Morimoto wrote:
+>>
+>> Hi Simon, Magnus, Arnd
+>>
+>> These are v3 patch set of R8A7778 R-Car M1 SoC/board support
+>> This SoC/board support have limited DT only.
+>> (TMU/SCIF can't use DT at this point)
+>>
+>> I will work for external IRQ and SMSC support
+>> if these are accepted.
+>>
+>> These patches are based on simon/next branch
+>
+> Good choice :^)
+>
+> I have no objections to these changes at this point
+> but I would appreciate an ack from Magnus before applying them.
 
-I have no objections to these changes at this point
-but I would appreciate an ack from Magnus before applying them.
+I've looked through this series and they look good to me.
 
-> Kuninori Morimoto (3):
->       ARM: shmobile: add R8A7778 basis support
->       ARM: shmobile: r8a7778 SCIF support
->       ARM: shmobile: add R-Car M1A Bock-W platform support
-> 
->  arch/arm/boot/dts/Makefile                    |    1 +
->  arch/arm/boot/dts/r8a7778-bockw.dts           |   32 ++++
->  arch/arm/boot/dts/r8a7778.dtsi                |   35 +++++
->  arch/arm/configs/bockw_defconfig              |   66 +++++++++
->  arch/arm/mach-shmobile/Kconfig                |   12 ++
->  arch/arm/mach-shmobile/Makefile               |    2 +
->  arch/arm/mach-shmobile/board-bockw.c          |   43 ++++++
->  arch/arm/mach-shmobile/clock-r8a7778.c        |  104 +++++++++++++
->  arch/arm/mach-shmobile/include/mach/r8a7778.h |   28 ++++
->  arch/arm/mach-shmobile/setup-r8a7778.c        |  193 +++++++++++++++++++++++++
->  10 files changed, 516 insertions(+)
-> 
-> This is my command for DT uImage
-> 
-> PC> make bockw_defconfig
-> PC> make menuconfig
-> PC> make zImage
-> PC> make dtbs
-> PC> duImage r8a7778-bockw-reference
-> PC> cp arch/sh/boot/duImage ${PATH}
-> 
-> ---- duImage --------------------------------
-> #! /bin/sh
-> 
-> # create zImage + dtb = dzImage
-> cat arch/arm/boot/zImage arch/arm/boot/dts/${1}.dtb > arch/arm/boot/dzImage
-> 
-> # create duImage
-> DUIMAGE=`cut -f 3- -d ' ' < arch/arm/boot/.uImage.cmd | sed -e "s/zImage/dzImage/" | sed -e "s/uImage/duImage/"`
-> ${DUIMAGE}%
-> ----------------------------------------------
-> 
-> Best regards
-> ---
-> Kuninori Morimoto
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Acked-by: Magnus Damm <damm@opensource.se>
