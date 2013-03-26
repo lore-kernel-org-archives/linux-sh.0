@@ -1,48 +1,34 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:39:22 +0000
-Subject: [PATCH 03/25] sh: sh7269: Add pin control resources
-Message-Id: <1363214384-3870-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 26 Mar 2013 02:20:15 +0000
+Subject: [PATCH 2/2] sh: sh7269: Fix compilation by adding missing includes
+Message-Id: <1364264415-6020-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
-
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
+struct resource is defined in linux/ioport.h. Include it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-index dc2a868..1825b0b 100644
+index 1825b0b..4c17fb6 100644
 --- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
 +++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-@@ -13,8 +13,17 @@
+@@ -9,7 +9,9 @@
+  * for more details.
+  */
+ 
++#include <linux/bug.h>
+ #include <linux/init.h>
++#include <linux/ioport.h>
  #include <linux/kernel.h>
  #include <cpu/pfc.h>
  
-+static struct resource sh7269_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xfffe3800,
-+		.end	= 0xfffe391f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
- static int __init plat_pinmux_setup(void)
- {
--	return sh_pfc_register("pfc-sh7269", NULL, 0);
-+	return sh_pfc_register("pfc-sh7269", sh7269_pfc_resources,
-+			       ARRAY_SIZE(sh7269_pfc_resources));
- }
- arch_initcall(plat_pinmux_setup);
 -- 
 1.8.1.5
 
