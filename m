@@ -1,70 +1,65 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 05 Mar 2013 04:27:20 +0000
-Subject: Re: [RFC][PATCH] ARM: shmobile: bockw: Reference DT implementation
-Message-Id: <CANqRtoT07meOckc=f7XWtTZQYehToqe+_EMRky3a7m-7Hn2YzQ@mail.gmail.com>
+Date: Tue, 26 Mar 2013 13:49:59 +0000
+Subject: [PATCH 02/13] sh-pfc: r8a73a4: Support sparse GPIO numbers
+Message-Id: <20130326134959.31366.93833.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ppzfpr3b.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ppzfpr3b.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Mar 4, 2013 at 4:22 PM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
->
-> I'm trying to support R-Car M1 Bock-W DT, but it still doesn't work.
-> (There is no output when I boot it)
-> Your feedback is very helpful for me...
+From: Magnus Damm <damm@opensource.se>
 
-Morimoto-san, perhaps you should aim slightly lower to get DT going?
+The r8a73a4 SoC has sparse GPIO numbers. Declare ranges for
+pin numbers in the PFC SoC data. Pin numbers shall be used
+with the GPIO API from this point on.
 
-> --- /dev/null
-> +++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> @@ -0,0 +1,41 @@
-> +/*
-> + * Reference Device Tree Source for the Bock-W board
-> + *
-> + * Copyright (C) 2013  Renesas Solutions Corp.
-> + * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> + *
-> + * based on r8a7779
-> + *
-> + * Copyright (C) 2013 Renesas Solutions Corp.
-> + * Copyright (C) 2013 Simon Horman
-> + *
-> + * This file is licensed under the terms of the GNU General Public License
-> + * version 2.  This program is licensed "as is" without any warranty of any
-> + * kind, whether express or implied.
-> + */
-> +
-> +/dts-v1/;
-> +/include/ "r8a7778.dtsi"
-> +
-> +/ {
-> +       model = "bockw";
-> +       compatible = "renesas,bockw-reference", "renesas,r8a7778";
-> +
-> +       chosen {
-> +               bootargs = "console=ttySC0,115200 earlyprintk=sh-sci.0,115200 ignore_loglevel root=/dev/nfs ip=on";
-> +       };
-> +
-> +       memory {
-> +               device_type = "memory";
-> +               reg = <0x60000000 0x40000000>;
-> +       };
-> +
-> +       lan0@18000000 {
-> +               compatible = "smsc,lan9220", "smsc,lan9115";
-> +               reg = <0x18300000 0x100>;
-> +               phy-mode = "mii";
-> +               interrupt-parent = <&gic>;
-> +               interrupts = <0 0x3b 0x4>;
-> +               reg-io-width = <4>;
-> +       };
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-You want to use the external IRQ pin interrupt here, not the GIC.
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c          |   16 ++++++++++++++++
+ 2 files changed, 17 insertions(+), 1 deletion(-)
 
-Thanks,
-
-/ magnus
+--- 0007/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-03-26 20:20:54.000000000 +0900
+@@ -86,7 +86,7 @@ enum {
+ 	GPIO_PORT325, GPIO_PORT326, GPIO_PORT327, GPIO_PORT328, GPIO_PORT329,
+ 
+ 	/* Port0 */
+-	GPIO_FN_LCDD0,
++	GPIO_FN_LCDD0 = 330,
+ 	GPIO_FN_PDM2_CLK_0,
+ 	GPIO_FN_DU0_DR0,
+ 	GPIO_FN_IRQ0,
+--- 0007/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ work/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c	2013-03-26 21:12:07.000000000 +0900
+@@ -1424,6 +1424,20 @@ static struct sh_pfc_pin pinmux_pins[]  	GPIO_PORT_ALL(),
+ };
+ 
++static const struct pinmux_range pinmux_ranges[] = {
++	{.begin = 0, .end = 30,},
++	{.begin = 32, .end = 40,},
++	{.begin = 64, .end = 85,},
++	{.begin = 96, .end = 126,},
++	{.begin = 128, .end = 134,},
++	{.begin = 160, .end = 178,},
++	{.begin = 192, .end = 222,},
++	{.begin = 224, .end = 250,},
++	{.begin = 256, .end = 283,},
++	{.begin = 288, .end = 308,},
++	{.begin = 320, .end = 329,},
++};
++
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+ 
+ static const struct pinmux_func pinmux_func_gpios[] = {
+@@ -2815,6 +2829,8 @@ const struct sh_pfc_soc_info r8a73a4_pin
+ 
+ 	.pins = pinmux_pins,
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
++	.ranges = pinmux_ranges,
++	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
+ 	.func_gpios = pinmux_func_gpios,
+ 	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
+ 
