@@ -1,68 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:02:10 +0000
-Subject: [PATCH v3 50/64] ARM: shmobile: sh7372: Remove SDHI and MMCIF function GPIOs
-Message-Id: <1362740544-19164-51-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 26 Mar 2013 06:08:52 +0000
+Subject: [PATCH 2/2 v2] thermal: rcar: add pm_runtime_xxx() support
+Message-Id: <87obe6itfy.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87620gqbbe.wl%kuninori.morimoto.gx@renesas.com>
+	<874ng0qb9f.wl%kuninori.morimoto.gx@renesas.com>
+	<1364200856.2465.48.camel@rzhang1-mobl4>
+	<871ub3j9r3.wl%kuninori.morimoto.gx@renesas.com>
+	<87sj3iiu5m.wl%kuninori.morimoto.gx@renesas.com>
+	<87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Zhang Rui <rui.zhang@intel.com>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-pm@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+Current rcar_thermal() didn't care about own power.
+Without this patch, rcar_thermal doesn't work on APE6 board
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh7372.h | 29 ----------------------------
- 1 file changed, 29 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index b582fac..7ded4eb 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -294,21 +294,6 @@ enum {
- 	GPIO_FN_D12_NAF12,	GPIO_FN_D13_NAF13,	GPIO_FN_D14_NAF14,
- 	GPIO_FN_D15_NAF15,
+ - fixup pm_runtime_xxx() timing
+ - fixup compile error
+
+ drivers/thermal/rcar_thermal.c |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index c199623..0f0f951 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -24,6 +24,7 @@
+ #include <linux/io.h>
+ #include <linux/module.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/reboot.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+@@ -377,6 +378,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 	spin_lock_init(&common->lock);
+ 	common->dev = dev;
  
--	/*
--	 * MMCIF(1)		(PORT 84, 85, 86, 87, 88, 89,
--	 *			      90, 91, 92, 99)
--	 */
--	GPIO_FN_MMCD0_0,	GPIO_FN_MMCD0_1,	GPIO_FN_MMCD0_2,
--	GPIO_FN_MMCD0_3,	GPIO_FN_MMCD0_4,	GPIO_FN_MMCD0_5,
--	GPIO_FN_MMCD0_6,	GPIO_FN_MMCD0_7,
--	GPIO_FN_MMCCMD0,	GPIO_FN_MMCCLK0,
--
--	/* MMCIF(2)		(PORT 54, 55, 56, 57, 58, 59, 60, 61, 66, 67) */
--	GPIO_FN_MMCD1_0,	GPIO_FN_MMCD1_1,	GPIO_FN_MMCD1_2,
--	GPIO_FN_MMCD1_3,	GPIO_FN_MMCD1_4,	GPIO_FN_MMCD1_5,
--	GPIO_FN_MMCD1_6,	GPIO_FN_MMCD1_7,
--	GPIO_FN_MMCCLK1,	GPIO_FN_MMCCMD1,
--
- 	/* SPU2		(PORT 65) */
- 	GPIO_FN_VINT_I,
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++
+ 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+ 	if (irq) {
+ 		int ret;
+@@ -468,12 +472,16 @@ error_unregister:
+ 			rcar_thermal_irq_disable(priv);
+ 	}
  
-@@ -416,20 +401,6 @@ enum {
- 	/* HDMI		(PORT 169, 170) */
- 	GPIO_FN_HDMI_HPD,	GPIO_FN_HDMI_CEC,
++	pm_runtime_put_sync(dev);
++	pm_runtime_disable(dev);
++
+ 	return ret;
+ }
  
--	/* SDHI0	(PORT 171, 172, 173, 174, 175, 176, 177, 178) */
--	GPIO_FN_SDHICLK0,	GPIO_FN_SDHICD0,
--	GPIO_FN_SDHICMD0,	GPIO_FN_SDHIWP0,
--	GPIO_FN_SDHID0_0,	GPIO_FN_SDHID0_1,
--	GPIO_FN_SDHID0_2,	GPIO_FN_SDHID0_3,
--
--	/* SDHI1	(PORT 179, 180, 181, 182, 183, 184) */
--	GPIO_FN_SDHICLK1,	GPIO_FN_SDHICMD1,	GPIO_FN_SDHID1_0,
--	GPIO_FN_SDHID1_1,	GPIO_FN_SDHID1_2,	GPIO_FN_SDHID1_3,
--
--	/* SDHI2	(PORT 185, 186, 187, 188, 189, 190) */
--	GPIO_FN_SDHICLK2,	GPIO_FN_SDHICMD2,	GPIO_FN_SDHID2_0,
--	GPIO_FN_SDHID2_1,	GPIO_FN_SDHID2_2,	GPIO_FN_SDHID2_3,
--
- 	/* SDENC	see MSEL4CR 19 */
- 	GPIO_FN_SDENC_CPG,
- 	GPIO_FN_SDENC_DV_CLKI,
+ static int rcar_thermal_remove(struct platform_device *pdev)
+ {
+ 	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
++	struct device *dev = &pdev->dev;
+ 	struct rcar_thermal_priv *priv;
+ 
+ 	rcar_thermal_for_each_priv(priv, common) {
+@@ -484,6 +492,9 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, NULL);
+ 
++	pm_runtime_put_sync(dev);
++	pm_runtime_disable(dev);
++
+ 	return 0;
+ }
+ 
 -- 
-1.8.1.5
+1.7.9.5
 
