@@ -1,432 +1,845 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:19:25 +0000
-Subject: [PATCH 03/14] ARM: shmobile: INTC External IRQ pin driver on sh73a0
-Message-Id: <1363659576-6333-4-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Mar 2013 13:51:43 +0000
+Subject: [PATCH 12/13] ARM: shmobile: r8a73a4: Remove all GPIO enums
+Message-Id: <20130326135143.31366.75267.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Adjust the sh73a0 IRQ code to make use of the
-INTC External IRQ pin driver for external
-interrupt pins IRQ0 -> IRQ31.
-
-This removes quite a bit of special-case code
-in intc-sh73a0.c but the number of lines get
-replaced with platform device information in
-setup-sh73a0.c. The PFC code is also adjusted
-to make gpio_to_irq() return the correct
-interrupt number.
-
-At this point the DT reference implementations
-are not covered. In the future such code shall
-tie in the INTC External IRQ pin driver via
-DT, so this kind of verbose code is not needed
-for the long term DT case.
+Function GPIOs are not used anymore, and all code use the
+GPIO numbers directly. Remove the GPIOs enumeration.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig        |    1 +
- arch/arm/mach-shmobile/board-kzm9g.c  |   14 ++--
- arch/arm/mach-shmobile/intc-sh73a0.c  |  117 ------------------------------
- arch/arm/mach-shmobile/setup-sh73a0.c |  126 +++++++++++++++++++++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c   |    6 +-
- 5 files changed, 137 insertions(+), 127 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 9255546..f964accb 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -16,6 +16,7 @@ config ARCH_SH73A0
- 	select CPU_V7
- 	select I2C
- 	select SH_CLK_CPG
-+	select RENESAS_INTC_IRQPIN
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |  815 -------------------------
+ 1 file changed, 815 deletions(-)
+
+--- 0016/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-03-26 21:42:56.000000000 +0900
+@@ -1,821 +1,6 @@
+ #ifndef __ASM_R8A73A4_H__
+ #define __ASM_R8A73A4_H__
  
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 7f3a6b7..d34d12a 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -81,7 +81,7 @@ static struct resource smsc9221_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= intcs_evt2irq(0x260), /* IRQ3 */
-+		.start	= irq_pin(3), /* IRQ3 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -115,7 +115,7 @@ static struct resource usb_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= intcs_evt2irq(0x220), /* IRQ1 */
-+		.start	= irq_pin(1), /* IRQ1 */
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -138,7 +138,7 @@ struct usbhs_private {
- 	struct renesas_usbhs_platform_info info;
- };
- 
--#define IRQ15			intcs_evt2irq(0x03e0)
-+#define IRQ15			irq_pin(15)
- #define USB_PHY_MODE		(1 << 4)
- #define USB_PHY_INT_EN		((1 << 3) | (1 << 2))
- #define USB_PHY_ON		(1 << 1)
-@@ -563,25 +563,25 @@ static struct i2c_board_info i2c0_devices[] = {
- 	},
- 	{
- 		I2C_BOARD_INFO("ak8975", 0x0c),
--		.irq = intcs_evt2irq(0x3380), /* IRQ28 */
-+		.irq = irq_pin(28), /* IRQ28 */
- 	},
- 	{
- 		I2C_BOARD_INFO("adxl34x", 0x1d),
--		.irq = intcs_evt2irq(0x3340), /* IRQ26 */
-+		.irq = irq_pin(26), /* IRQ26 */
- 	},
- };
- 
- static struct i2c_board_info i2c1_devices[] = {
- 	{
- 		I2C_BOARD_INFO("st1232-ts", 0x55),
--		.irq = intcs_evt2irq(0x300), /* IRQ8 */
-+		.irq = irq_pin(8), /* IRQ8 */
- 	},
- };
- 
- static struct i2c_board_info i2c3_devices[] = {
- 	{
- 		I2C_BOARD_INFO("pcf8575", 0x20),
--		.irq		= intcs_evt2irq(0x3260), /* IRQ19 */
-+		.irq = irq_pin(19), /* IRQ19 */
- 		.platform_data = &pcf8575_pdata,
- 	},
- };
-diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-index a81a1d8..19a26f4 100644
---- a/arch/arm/mach-shmobile/intc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-@@ -260,108 +260,6 @@ static int sh73a0_set_wake(struct irq_data *data, unsigned int on)
- 	return 0; /* always allow wakeup */
- }
- 
--#define RELOC_BASE 0x1200
+-/*
+- * Pin Function Controller:
+- *	GPIO_FN_xx - GPIO used to select pin function
+- *	GPIO_PORTxx - GPIO mapped to real I/O pin on CPU
+- */
+-enum {
 -
--/* INTCA IRQ pins at INTCS + RELOC_BASE to make space for GIC+INTC handling */
--#define INTCS_VECT_RELOC(n, vect) INTCS_VECT((n), (vect) + RELOC_BASE)
+-	/* PORT */
+-	GPIO_PORT0, GPIO_PORT1, GPIO_PORT2, GPIO_PORT3, GPIO_PORT4,
+-	GPIO_PORT5, GPIO_PORT6, GPIO_PORT7, GPIO_PORT8, GPIO_PORT9,
 -
--INTC_IRQ_PINS_32(intca_irq_pins, 0xe6900000,
--		 INTCS_VECT_RELOC, "sh73a0-intca-irq-pins");
+-	GPIO_PORT10, GPIO_PORT11, GPIO_PORT12, GPIO_PORT13, GPIO_PORT14,
+-	GPIO_PORT15, GPIO_PORT16, GPIO_PORT17, GPIO_PORT18, GPIO_PORT19,
 -
--static int to_gic_irq(struct irq_data *data)
--{
--	unsigned int vect = irq2evt(data->irq) - INTCS_VECT_BASE;
+-	GPIO_PORT20, GPIO_PORT21, GPIO_PORT22, GPIO_PORT23, GPIO_PORT24,
+-	GPIO_PORT25, GPIO_PORT26, GPIO_PORT27, GPIO_PORT28, GPIO_PORT29,
 -
--	if (vect >= 0x3200)
--		vect -= 0x3000;
--	else
--		vect -= 0x0200;
+-	GPIO_PORT30, GPIO_PORT32, GPIO_PORT33, GPIO_PORT34,
+-	GPIO_PORT35, GPIO_PORT36, GPIO_PORT37, GPIO_PORT38, GPIO_PORT39,
 -
--	return gic_spi((vect >> 5) + 1);
--}
+-	GPIO_PORT40, GPIO_PORT64,
+-	GPIO_PORT65, GPIO_PORT66, GPIO_PORT67, GPIO_PORT68, GPIO_PORT69,
 -
--static int to_intca_reloc_irq(struct irq_data *data)
--{
--	return data->irq + (RELOC_BASE >> 5);
--}
+-	GPIO_PORT70, GPIO_PORT71, GPIO_PORT72, GPIO_PORT73, GPIO_PORT74,
+-	GPIO_PORT75, GPIO_PORT76, GPIO_PORT77, GPIO_PORT78, GPIO_PORT79,
 -
--#define irq_cb(cb, irq) irq_get_chip(irq)->cb(irq_get_irq_data(irq))
--#define irq_cbp(cb, irq, p...) irq_get_chip(irq)->cb(irq_get_irq_data(irq), p)
+-	GPIO_PORT80, GPIO_PORT81, GPIO_PORT82, GPIO_PORT83, GPIO_PORT84,
+-	GPIO_PORT85, GPIO_PORT96, GPIO_PORT97, GPIO_PORT98, GPIO_PORT99,
 -
--static void intca_gic_enable(struct irq_data *data)
--{
--	irq_cb(irq_unmask, to_intca_reloc_irq(data));
--	irq_cb(irq_unmask, to_gic_irq(data));
--}
+-	GPIO_PORT100, GPIO_PORT101, GPIO_PORT102, GPIO_PORT103, GPIO_PORT104,
+-	GPIO_PORT105, GPIO_PORT106, GPIO_PORT107, GPIO_PORT108, GPIO_PORT109,
 -
--static void intca_gic_disable(struct irq_data *data)
--{
--	irq_cb(irq_mask, to_gic_irq(data));
--	irq_cb(irq_mask, to_intca_reloc_irq(data));
--}
+-	GPIO_PORT110, GPIO_PORT111, GPIO_PORT112, GPIO_PORT113, GPIO_PORT114,
+-	GPIO_PORT115, GPIO_PORT116, GPIO_PORT117, GPIO_PORT118, GPIO_PORT119,
 -
--static void intca_gic_mask_ack(struct irq_data *data)
--{
--	irq_cb(irq_mask, to_gic_irq(data));
--	irq_cb(irq_mask_ack, to_intca_reloc_irq(data));
--}
+-	GPIO_PORT120, GPIO_PORT121, GPIO_PORT122, GPIO_PORT123, GPIO_PORT124,
+-	GPIO_PORT125, GPIO_PORT126, GPIO_PORT128, GPIO_PORT129,
 -
--static void intca_gic_eoi(struct irq_data *data)
--{
--	irq_cb(irq_eoi, to_gic_irq(data));
--}
+-	GPIO_PORT130, GPIO_PORT131, GPIO_PORT132, GPIO_PORT133, GPIO_PORT134,
 -
--static int intca_gic_set_type(struct irq_data *data, unsigned int type)
--{
--	return irq_cbp(irq_set_type, to_intca_reloc_irq(data), type);
--}
+-	GPIO_PORT160, GPIO_PORT161, GPIO_PORT162, GPIO_PORT163, GPIO_PORT164,
+-	GPIO_PORT165, GPIO_PORT166, GPIO_PORT167, GPIO_PORT168, GPIO_PORT169,
 -
--#ifdef CONFIG_SMP
--static int intca_gic_set_affinity(struct irq_data *data,
--				  const struct cpumask *cpumask,
--				  bool force)
--{
--	return irq_cbp(irq_set_affinity, to_gic_irq(data), cpumask, force);
--}
--#endif
+-	GPIO_PORT170, GPIO_PORT171, GPIO_PORT172, GPIO_PORT173, GPIO_PORT174,
+-	GPIO_PORT175, GPIO_PORT176, GPIO_PORT177, GPIO_PORT178,
 -
--struct irq_chip intca_gic_irq_chip = {
--	.name			= "INTCA-GIC",
--	.irq_mask		= intca_gic_disable,
--	.irq_unmask		= intca_gic_enable,
--	.irq_mask_ack		= intca_gic_mask_ack,
--	.irq_eoi		= intca_gic_eoi,
--	.irq_enable		= intca_gic_enable,
--	.irq_disable		= intca_gic_disable,
--	.irq_shutdown		= intca_gic_disable,
--	.irq_set_type		= intca_gic_set_type,
--	.irq_set_wake		= sh73a0_set_wake,
--#ifdef CONFIG_SMP
--	.irq_set_affinity	= intca_gic_set_affinity,
--#endif
+-	GPIO_PORT192, GPIO_PORT193, GPIO_PORT194,
+-	GPIO_PORT195, GPIO_PORT196, GPIO_PORT197, GPIO_PORT198, GPIO_PORT199,
+-
+-	GPIO_PORT200, GPIO_PORT201, GPIO_PORT202, GPIO_PORT203, GPIO_PORT204,
+-	GPIO_PORT205, GPIO_PORT206, GPIO_PORT207, GPIO_PORT208, GPIO_PORT209,
+-
+-	GPIO_PORT210, GPIO_PORT211, GPIO_PORT212, GPIO_PORT213, GPIO_PORT214,
+-	GPIO_PORT215, GPIO_PORT216, GPIO_PORT217, GPIO_PORT218, GPIO_PORT219,
+-
+-	GPIO_PORT220, GPIO_PORT221, GPIO_PORT222, GPIO_PORT224,
+-	GPIO_PORT225, GPIO_PORT226, GPIO_PORT227, GPIO_PORT228, GPIO_PORT229,
+-
+-	GPIO_PORT230, GPIO_PORT231, GPIO_PORT232, GPIO_PORT233, GPIO_PORT234,
+-	GPIO_PORT235, GPIO_PORT236, GPIO_PORT237, GPIO_PORT238, GPIO_PORT239,
+-
+-	GPIO_PORT240, GPIO_PORT241, GPIO_PORT242, GPIO_PORT243, GPIO_PORT244,
+-	GPIO_PORT245, GPIO_PORT246, GPIO_PORT247, GPIO_PORT248, GPIO_PORT249,
+-
+-	GPIO_PORT250, GPIO_PORT256, GPIO_PORT257, GPIO_PORT258, GPIO_PORT259,
+-
+-	GPIO_PORT260, GPIO_PORT261, GPIO_PORT262, GPIO_PORT263, GPIO_PORT264,
+-	GPIO_PORT265, GPIO_PORT266, GPIO_PORT267, GPIO_PORT268, GPIO_PORT269,
+-
+-	GPIO_PORT270, GPIO_PORT271, GPIO_PORT272, GPIO_PORT273, GPIO_PORT274,
+-	GPIO_PORT275, GPIO_PORT276, GPIO_PORT277, GPIO_PORT278, GPIO_PORT279,
+-
+-	GPIO_PORT280, GPIO_PORT281, GPIO_PORT282, GPIO_PORT283,
+-	GPIO_PORT288, GPIO_PORT289,
+-
+-	GPIO_PORT290, GPIO_PORT291, GPIO_PORT292, GPIO_PORT293, GPIO_PORT294,
+-	GPIO_PORT295, GPIO_PORT296, GPIO_PORT297, GPIO_PORT298, GPIO_PORT299,
+-
+-	GPIO_PORT300, GPIO_PORT301, GPIO_PORT302, GPIO_PORT303, GPIO_PORT304,
+-	GPIO_PORT305, GPIO_PORT306, GPIO_PORT307, GPIO_PORT308,
+-
+-	GPIO_PORT320, GPIO_PORT321, GPIO_PORT322, GPIO_PORT323, GPIO_PORT324,
+-	GPIO_PORT325, GPIO_PORT326, GPIO_PORT327, GPIO_PORT328, GPIO_PORT329,
+-
+-	/* Port0 */
+-	GPIO_FN_LCDD0 = 330,
+-	GPIO_FN_PDM2_CLK_0,
+-	GPIO_FN_DU0_DR0,
+-
+-	/* Port1 */
+-	GPIO_FN_LCDD1,
+-	GPIO_FN_PDM2_DATA_1,
+-	GPIO_FN_DU0_DR19,
+-
+-	/* Port2 */
+-	GPIO_FN_LCDD2,
+-	GPIO_FN_PDM3_CLK_2,
+-	GPIO_FN_DU0_DR2,
+-
+-	/* Port3 */
+-	GPIO_FN_LCDD3,
+-	GPIO_FN_PDM3_DATA_3,
+-	GPIO_FN_DU0_DR3,
+-
+-	/* Port4 */
+-	GPIO_FN_LCDD4,
+-	GPIO_FN_PDM4_CLK_4,
+-	GPIO_FN_DU0_DR4,
+-
+-	/* Port5 */
+-	GPIO_FN_LCDD5,
+-	GPIO_FN_PDM4_DATA_5,
+-	GPIO_FN_DU0_DR5,
+-
+-	/* Port6 */
+-	GPIO_FN_LCDD6,
+-	GPIO_FN_PDM0_OUTCLK_6,
+-	GPIO_FN_DU0_DR6,
+-
+-	/* Port7 */
+-	GPIO_FN_LCDD7,
+-	GPIO_FN_PDM0_OUTDATA_7,
+-	GPIO_FN_DU0_DR7,
+-
+-	/* Port8 */
+-	GPIO_FN_LCDD8,
+-	GPIO_FN_PDM1_OUTCLK_8,
+-	GPIO_FN_DU0_DG0,
+-
+-	/* Port9 */
+-	GPIO_FN_LCDD9,
+-	GPIO_FN_PDM1_OUTDATA_9,
+-	GPIO_FN_DU0_DG1,
+-
+-	/* Port10 */
+-	GPIO_FN_LCDD10,
+-	GPIO_FN_FSICCK,
+-	GPIO_FN_DU0_DG2,
+-
+-	/* Port11 */
+-	GPIO_FN_LCDD11,
+-	GPIO_FN_FSICISLD,
+-	GPIO_FN_DU0_DG3,
+-
+-	/* Port12 */
+-	GPIO_FN_LCDD12,
+-	GPIO_FN_FSICOMC,
+-	GPIO_FN_DU0_DG4,
+-
+-	/* Port13 */
+-	GPIO_FN_LCDD13,
+-	GPIO_FN_FSICOLR,
+-	GPIO_FN_FSICILR,
+-	GPIO_FN_DU0_DG5,
+-
+-	/* Port14 */
+-	GPIO_FN_LCDD14,
+-	GPIO_FN_FSICOBT,
+-	GPIO_FN_FSICIBT,
+-	GPIO_FN_DU0_DG6,
+-
+-	/* Port15 */
+-	GPIO_FN_LCDD15,
+-	GPIO_FN_FSICOSLD,
+-	GPIO_FN_DU0_DG7,
+-
+-	/* Port16 */
+-	GPIO_FN_LCDD16,
+-	GPIO_FN_TPU1TO1,
+-	GPIO_FN_DU0_DB0,
+-
+-	/* Port17 */
+-	GPIO_FN_LCDD17,
+-	GPIO_FN_SF_IRQ_00,
+-	GPIO_FN_DU0_DB1,
+-
+-	/* Port18 */
+-	GPIO_FN_LCDD18,
+-	GPIO_FN_SF_IRQ_01,
+-	GPIO_FN_DU0_DB2,
+-
+-	/* Port19 */
+-	GPIO_FN_LCDD19,
+-	GPIO_FN_DU0_DB3,
+-
+-	/* Port20 */
+-	GPIO_FN_LCDD20,
+-	GPIO_FN_DU0_DB4,
+-
+-	/* Port21 */
+-	GPIO_FN_LCDD21,
+-	GPIO_FN_DU0_DB5,
+-
+-	/* Port22 */
+-	GPIO_FN_LCDD22,
+-	GPIO_FN_DU0_DB6,
+-
+-	/* Port23 */
+-	GPIO_FN_LCDD23,
+-	GPIO_FN_DU0_DB7,
+-
+-	/* Port24 */
+-	GPIO_FN_LCDHSYN,
+-	GPIO_FN_LCDCS,
+-	GPIO_FN_DU0_EXHSYNC_N_CSYNC_N_HSYNC_N,
+-
+-	/* Port25 */
+-	GPIO_FN_LCDVSYN,
+-	GPIO_FN_DU0_EXVSYNC_N_VSYNC_N_CSYNC_N,
+-
+-	/* Port26 */
+-	GPIO_FN_LCDDCK,
+-	GPIO_FN_LCDWR,
+-	GPIO_FN_DU0_DOTCLKIN,
+-
+-	/* Port27 */
+-	GPIO_FN_LCDDISP,
+-	GPIO_FN_LCDRS,
+-	GPIO_FN_DU0_DOTCLKOUT,
+-
+-	/* Port28 */
+-	GPIO_FN_LCDRD_N,
+-	GPIO_FN_DU0_DOTCLKOUTB,
+-
+-	/* Port29 */
+-	GPIO_FN_LCDLCLK,
+-	GPIO_FN_SF_IRQ_02,
+-	GPIO_FN_DU0_DISP_CSYNC_N_DE,
+-
+-	/* Port30 */
+-	GPIO_FN_LCDDON,
+-	GPIO_FN_SF_IRQ_03,
+-	GPIO_FN_DU0_ODDF_N_CLAMP,
+-
+-	/* Port32 */
+-	GPIO_FN_SIM0_DET,
+-	GPIO_FN_CSCIF0_RTS,
+-
+-	/* Port33 */
+-	GPIO_FN_SIM1_DET,
+-	GPIO_FN_CSCIF0_CTS,
+-
+-	/* Port34 */
+-	GPIO_FN_SIM0_PWRON,
+-	GPIO_FN_CSCIF0_SCK,
+-
+-	/* Port35 */
+-	GPIO_FN_CSCIF1_RTS,
+-
+-	/* Port36 */
+-	GPIO_FN_CSCIF1_CTS,
+-
+-	/* Port37 */
+-	GPIO_FN_CSCIF1_SCK,
+-
+-	/* Port38 */
+-	GPIO_FN_TPU0TO1,
+-	GPIO_FN_CHSCIF0_HRTS,
+-
+-	/* Port39 */
+-	GPIO_FN_TPU0TO2,
+-	GPIO_FN_CHSCIF0_HCTS,
+-
+-	/* Port40 */
+-	GPIO_FN_TPU0TO3,
+-	GPIO_FN_CHSCIF0_HSCK,
+-
+-	/* Port64 */
+-	GPIO_FN_PDM0_DATA,
+-
+-	/* Port65 */
+-	GPIO_FN_PDM1_DATA,
+-
+-	/* Port66 */
+-	GPIO_FN_HSI_RX_WAKE,
+-	GPIO_FN_MSIOF3_SYNC,
+-	GPIO_FN_GenIO4,
+-
+-	/* Port67 */
+-	GPIO_FN_HSI_RX_READY,
+-	GPIO_FN_GIO_OUT3_67,
+-	GPIO_FN_CHSCIF1_HTX,
+-
+-	/* Port68 */
+-	GPIO_FN_HSI_RX_FLAG,
+-	GPIO_FN_MSIOF3_TXD,
+-	GPIO_FN_GIO_OUT4_68,
+-
+-	/* Port69 */
+-	GPIO_FN_HSI_RX_DATA,
+-	GPIO_FN_MSIOF3_RXD,
+-	GPIO_FN_GIO_OUT5_69,
+-
+-	/* Port70 */
+-	GPIO_FN_HSI_TX_FLAG,
+-	GPIO_FN_GIO_OUT1_70,
+-	GPIO_FN_HSIC_TSTCLK0,
+-	GPIO_FN_CHSCIF1_HRTS,
+-
+-	/* Port71 */
+-	GPIO_FN_HSI_TX_DATA,
+-	GPIO_FN_GIO_OUT2_71,
+-	GPIO_FN_HSIC_TSTCLK1,
+-	GPIO_FN_CHSCIF1_HCTS,
+-
+-	/* Port72 */
+-	GPIO_FN_HSI_TX_WAKE,
+-	GPIO_FN_GenIO8,
+-	GPIO_FN_CHSCIF1_HRX,
+-
+-	/* Port73 */
+-	GPIO_FN_HSI_TX_READY,
+-	GPIO_FN_MSIOF3_SCK,
+-	GPIO_FN_GIO_OUT0_73,
+-
+-	/* Port74 - Port85 */
+-	GPIO_FN_IRDA_OUT,
+-	GPIO_FN_IRDA_IN,
+-	GPIO_FN_IRDA_FIRSEL,
+-	GPIO_FN_TPU0TO0,
+-	GPIO_FN_DIGRFEN,
+-	GPIO_FN_GPS_TIMESTAMP,
+-	GPIO_FN_TXP,
+-	GPIO_FN_TXP2,
+-	GPIO_FN_COEX_0,
+-	GPIO_FN_COEX_1,
+-
+-	/* Port96 - Port101 */
+-	GPIO_FN_KEYIN0,
+-	GPIO_FN_KEYIN1,
+-	GPIO_FN_KEYIN2,
+-	GPIO_FN_KEYIN3,
+-	GPIO_FN_KEYIN4,
+-	GPIO_FN_KEYIN5,
+-
+-	/* Port102 */
+-	GPIO_FN_KEYIN6,
+-
+-	/* Port103 */
+-	GPIO_FN_KEYIN7,
+-
+-	/* Port104 - Port108 */
+-	GPIO_FN_KEYOUT0,
+-	GPIO_FN_KEYOUT1,
+-	GPIO_FN_KEYOUT2,
+-	GPIO_FN_KEYOUT3,
+-	GPIO_FN_KEYOUT4,
+-
+-	/* Port109 */
+-	GPIO_FN_KEYOUT5,
+-
+-	/* Port110 */
+-	GPIO_FN_KEYOUT6,
+-
+-	/* Port111 */
+-	GPIO_FN_KEYOUT7,
+-	GPIO_FN_RFANAEN,
+-
+-	/* Port112 */
+-	GPIO_FN_KEYIN8,
+-	GPIO_FN_KEYOUT8,
+-	GPIO_FN_SF_IRQ_04,
+-
+-	/* Port113 */
+-	GPIO_FN_KEYIN9,
+-	GPIO_FN_KEYOUT9,
+-	GPIO_FN_SF_IRQ_05,
+-
+-	/* Port114 */
+-	GPIO_FN_KEYIN10,
+-	GPIO_FN_KEYOUT10,
+-	GPIO_FN_SF_IRQ_06,
+-
+-	/* Port115 */
+-	GPIO_FN_KEYIN11,
+-	GPIO_FN_KEYOUT11,
+-	GPIO_FN_SF_IRQ_07,
+-
+-	/* Port116 */
+-	GPIO_FN_CSCIF0_TX,
+-
+-	/* Port117 */
+-	GPIO_FN_CSCIF0_RX,
+-
+-	/* Port118 */
+-	GPIO_FN_CSCIF1_TX,
+-
+-	/* Port119 */
+-	GPIO_FN_CSCIF1_RX,
+-
+-	/* Port120 */
+-	GPIO_FN_SF_PORT_1_120,
+-	GPIO_FN_DU0_CDE,
+-
+-	/* Port121 */
+-	GPIO_FN_SF_PORT_0_121,
+-
+-	/* Port122 */
+-	GPIO_FN_CHSCIF0_HTX,
+-
+-	/* Port123 */
+-	GPIO_FN_CHSCIF0_HRX,
+-
+-	/* Port124 */
+-	GPIO_FN_ISP_STROBE_124,
+-
+-	/* Port125 */
+-	GPIO_FN_STP_ISD_0,
+-	GPIO_FN_PDM4_CLK_125,
+-	GPIO_FN_MSIOF2_TXD,
+-	GPIO_FN_SIM0_VOLTSEL0,
+-
+-	/* Port126 */
+-	GPIO_FN_TS_SDEN,
+-	GPIO_FN_MSIOF7_SYNC,
+-	GPIO_FN_STP_ISEN_1,
+-
+-	/* Port128 */
+-	GPIO_FN_STP_ISEN_0,
+-	GPIO_FN_PDM1_OUTDATA_128,
+-	GPIO_FN_MSIOF2_SYNC,
+-	GPIO_FN_SIM1_VOLTSEL1,
+-
+-	/* Port129 */
+-	GPIO_FN_TS_SPSYNC,
+-	GPIO_FN_MSIOF7_RXD,
+-	GPIO_FN_STP_ISSYNC_1,
+-
+-	/* Port130 */
+-	GPIO_FN_STP_ISSYNC_0,
+-	GPIO_FN_PDM4_DATA_130,
+-	GPIO_FN_MSIOF2_RXD,
+-	GPIO_FN_SIM0_VOLTSEL1,
+-
+-	/* Port131 */
+-	GPIO_FN_STP_OPWM_0,
+-	GPIO_FN_SIM1_PWRON,
+-
+-	/* Port132 */
+-	GPIO_FN_TS_SCK,
+-	GPIO_FN_MSIOF7_SCK,
+-	GPIO_FN_STP_ISCLK_1,
+-
+-	/* Port133 */
+-	GPIO_FN_STP_ISCLK_0,
+-	GPIO_FN_PDM1_OUTCLK_133,
+-	GPIO_FN_MSIOF2_SCK,
+-	GPIO_FN_SIM1_VOLTSEL0,
+-
+-	/* Port134 */
+-	GPIO_FN_TS_SDAT,
+-	GPIO_FN_MSIOF7_TXD,
+-	GPIO_FN_STP_ISD_1,
+-
+-	/* Port160 - Port178 */
+-	GPIO_FN_MMCD0_0,
+-	GPIO_FN_MMCD0_1,
+-	GPIO_FN_MMCD0_2,
+-	GPIO_FN_MMCD0_3,
+-	GPIO_FN_MMCD0_4,
+-	GPIO_FN_MMCD0_5,
+-	GPIO_FN_MMCD0_6,
+-	GPIO_FN_MMCD0_7,
+-	GPIO_FN_MMCCMD0,
+-	GPIO_FN_MMCCLK0,
+-	GPIO_FN_MMCRST,
+-
+-	/* Port192 - Port200 FN1 */
+-	GPIO_FN_A10,
+-	GPIO_FN_A9,
+-	GPIO_FN_A8,
+-	GPIO_FN_A7,
+-	GPIO_FN_A6,
+-	GPIO_FN_A5,
+-	GPIO_FN_A4,
+-	GPIO_FN_A3,
+-	GPIO_FN_A2,
+-
+-	/* Port192 - Port200 FN2 */
+-	GPIO_FN_MMCD1_7,
+-	GPIO_FN_MMCD1_6,
+-	GPIO_FN_MMCD1_5,
+-	GPIO_FN_MMCD1_4,
+-	GPIO_FN_MMCD1_3,
+-	GPIO_FN_MMCD1_2,
+-	GPIO_FN_MMCD1_1,
+-	GPIO_FN_MMCD1_0,
+-	GPIO_FN_MMCCMD1,
+-
+-	/* Port192 - Port200 IRQ */
+-
+-	/* Port201 */
+-	GPIO_FN_A1,
+-
+-	/* Port202 */
+-	GPIO_FN_A0,
+-	GPIO_FN_BS,
+-
+-	/* Port203 */
+-	GPIO_FN_CKO,
+-	GPIO_FN_MMCCLK1,
+-
+-	/* Port204 */
+-	GPIO_FN_CS0_N,
+-	GPIO_FN_SIM0_GPO1,
+-
+-	/* Port205 */
+-	GPIO_FN_CS2_N,
+-	GPIO_FN_SIM0_GPO2,
+-
+-	/* Port206 */
+-	GPIO_FN_CS4_N,
+-	GPIO_FN_VIO_VD,
+-	GPIO_FN_SIM1_GPO0,
+-
+-	/* Port207 - Port212 FN1 */
+-	GPIO_FN_D15,
+-	GPIO_FN_D14,
+-	GPIO_FN_D13,
+-	GPIO_FN_D12,
+-	GPIO_FN_D11,
+-	GPIO_FN_D10,
+-
+-	/* Port207 - Port212 FN5 */
+-	GPIO_FN_GIO_OUT15,
+-	GPIO_FN_GIO_OUT14,
+-	GPIO_FN_GIO_OUT13,
+-	GPIO_FN_GIO_OUT12,
+-	GPIO_FN_WGM_TXP2,
+-	GPIO_FN_WGM_GPS_TIMEM_ASK_RFCLK,
+-
+-	/* Port213 - Port222 FN1 */
+-	GPIO_FN_D9,
+-	GPIO_FN_D8,
+-	GPIO_FN_D7,
+-	GPIO_FN_D6,
+-	GPIO_FN_D5,
+-	GPIO_FN_D4,
+-	GPIO_FN_D3,
+-	GPIO_FN_D2,
+-	GPIO_FN_D1,
+-	GPIO_FN_D0,
+-
+-	/* Port213 - Port222 FN2 */
+-	GPIO_FN_VIO_D9,
+-	GPIO_FN_VIO_D8,
+-	GPIO_FN_VIO_D7,
+-	GPIO_FN_VIO_D6,
+-	GPIO_FN_VIO_D5,
+-	GPIO_FN_VIO_D4,
+-	GPIO_FN_VIO_D3,
+-	GPIO_FN_VIO_D2,
+-	GPIO_FN_VIO_D1,
+-	GPIO_FN_VIO_D0,
+-
+-	/* Port213 - Port222 FN5 */
+-	GPIO_FN_GIO_OUT9,
+-	GPIO_FN_GIO_OUT8,
+-	GPIO_FN_GIO_OUT7,
+-	GPIO_FN_GIO_OUT6,
+-	GPIO_FN_GIO_OUT5_217,
+-	GPIO_FN_GIO_OUT4_218,
+-	GPIO_FN_GIO_OUT3_219,
+-	GPIO_FN_GIO_OUT2_220,
+-	GPIO_FN_GIO_OUT1_221,
+-	GPIO_FN_GIO_OUT0_222,
+-
+-	/* Port224 */
+-	GPIO_FN_RDWR_224,
+-	GPIO_FN_VIO_HD,
+-	GPIO_FN_SIM1_GPO2,
+-
+-	/* Port225 */
+-	GPIO_FN_RD_N,
+-
+-	/* Port226 */
+-	GPIO_FN_WAIT_N,
+-	GPIO_FN_VIO_CLK,
+-	GPIO_FN_SIM1_GPO1,
+-
+-	/* Port227 */
+-	GPIO_FN_WE0_N,
+-	GPIO_FN_RDWR_227,
+-
+-	/* Port228 */
+-	GPIO_FN_WE1_N,
+-	GPIO_FN_SIM0_GPO0,
+-
+-	/* Port229 */
+-	GPIO_FN_PWMO,
+-	GPIO_FN_VIO_CKO1_229,
+-
+-	/* Port230 */
+-	GPIO_FN_SLIM_CLK,
+-	GPIO_FN_VIO_CKO4_230,
+-
+-	/* Port231 */
+-	GPIO_FN_SLIM_DATA,
+-	GPIO_FN_VIO_CKO5_231,
+-
+-	/* Port232 */
+-	GPIO_FN_VIO_CKO2_232,
+-	GPIO_FN_SF_PORT_0_232,
+-
+-	/* Port233 */
+-	GPIO_FN_VIO_CKO3_233,
+-	GPIO_FN_SF_PORT_1_233,
+-
+-	/* Port234 */
+-	GPIO_FN_FSIACK,
+-	GPIO_FN_PDM3_CLK_234,
+-	GPIO_FN_ISP_IRIS1_234,
+-
+-	/* Port235 */
+-	GPIO_FN_FSIAISLD,
+-	GPIO_FN_PDM3_DATA_235,
+-
+-	/* Port236 */
+-	GPIO_FN_FSIAOMC,
+-	GPIO_FN_PDM0_OUTCLK_236,
+-	GPIO_FN_ISP_IRIS0_236,
+-
+-	/* Port237 */
+-	GPIO_FN_FSIAOLR,
+-	GPIO_FN_FSIAILR,
+-
+-	/* Port238 */
+-	GPIO_FN_FSIAOBT,
+-	GPIO_FN_FSIAIBT,
+-
+-	/* Port239 */
+-	GPIO_FN_FSIAOSLD,
+-	GPIO_FN_PDM0_OUTDATA_239,
+-
+-	/* Port240 */
+-	GPIO_FN_FSIBISLD,
+-
+-	/* Port241 */
+-	GPIO_FN_FSIBOLR,
+-	GPIO_FN_FSIBILR,
+-
+-	/* Port242 */
+-	GPIO_FN_FSIBOMC,
+-	GPIO_FN_ISP_SHUTTER1_242,
+-
+-	/* Port243 */
+-	GPIO_FN_FSIBOBT,
+-	GPIO_FN_FSIBIBT,
+-
+-	/* Port244 */
+-	GPIO_FN_FSIBOSLD,
+-	GPIO_FN_FSIASPDIF,
+-
+-	/* Port245 */
+-	GPIO_FN_FSIBCK,
+-	GPIO_FN_ISP_SHUTTER0_245,
+-
+-	/* Port246 - Port250 FN1 */
+-	GPIO_FN_ISP_IRIS1_246,
+-	GPIO_FN_ISP_IRIS0_247,
+-	GPIO_FN_ISP_SHUTTER1_248,
+-	GPIO_FN_ISP_SHUTTER0_249,
+-	GPIO_FN_ISP_STROBE_250,
+-
+-	/* Port256 - Port258 */
+-	GPIO_FN_MSIOF0_SYNC,
+-	GPIO_FN_MSIOF0_RXD,
+-	GPIO_FN_MSIOF0_SCK,
+-
+-	/* Port259 */
+-	GPIO_FN_MSIOF0_SS2,
+-	GPIO_FN_VIO_CKO3_259,
+-
+-	/* Port260 */
+-	GPIO_FN_MSIOF0_TXD,
+-
+-	/* Port261 */
+-	GPIO_FN_CHSCIF1_HSCK,
+-
+-	/* Port262 */
+-
+-	/* Port263 - Port266 FN1 */
+-	GPIO_FN_MSIOF1_SS2,
+-	GPIO_FN_MSIOF1_TXD,
+-	GPIO_FN_MSIOF1_RXD,
+-	GPIO_FN_MSIOF1_SS1,
+-
+-	/* Port263 - Port266 FN4 */
+-	GPIO_FN_MSIOF5_SS2,
+-	GPIO_FN_MSIOF5_TXD,
+-	GPIO_FN_MSIOF5_RXD,
+-	GPIO_FN_MSIOF5_SS1,
+-
+-	/* Port267 */
+-	GPIO_FN_MSIOF0_SS1,
+-
+-	/* Port268 */
+-	GPIO_FN_MSIOF1_SCK,
+-	GPIO_FN_MSIOF5_SCK,
+-
+-	/* Port269 */
+-	GPIO_FN_MSIOF1_SYNC,
+-	GPIO_FN_MSIOF5_SYNC,
+-
+-	/* Port270 - Port273 FN1 */
+-	GPIO_FN_MSIOF2_SS1,
+-	GPIO_FN_MSIOF2_SS2,
+-	GPIO_FN_MSIOF3_SS2,
+-	GPIO_FN_MSIOF3_SS1,
+-
+-	/* Port270 - Port273 FN3 */
+-	GPIO_FN_VIO_CKO5_270,
+-	GPIO_FN_VIO_CKO2_271,
+-	GPIO_FN_VIO_CKO1_272,
+-	GPIO_FN_VIO_CKO4_273,
+-
+-	/* Port274 */
+-	GPIO_FN_MSIOF4_SS2,
+-	GPIO_FN_TPU1TO0,
+-
+-	/* Port275 - Port280 */
+-	GPIO_FN_IC_DP,
+-	GPIO_FN_SIM0_RST,
+-	GPIO_FN_IC_DM,
+-	GPIO_FN_SIM0_BSICOMP,
+-	GPIO_FN_SIM0_CLK,
+-	GPIO_FN_SIM0_IO,
+-
+-	/* Port281 */
+-	GPIO_FN_SIM1_IO,
+-	GPIO_FN_PDM2_DATA_281,
+-
+-	/* Port282 */
+-	GPIO_FN_SIM1_CLK,
+-	GPIO_FN_PDM2_CLK_282,
+-
+-	/* Port283 */
+-	GPIO_FN_SIM1_RST,
+-
+-	/* Port289 */
+-	GPIO_FN_SDHID1_0,
+-	GPIO_FN_STMDATA0_2,
+-
+-	/* Port290 */
+-	GPIO_FN_SDHID1_1,
+-	GPIO_FN_STMDATA1_2,
+-
+-	/* Port291 - Port294 FN1 */
+-	GPIO_FN_SDHID1_2,
+-	GPIO_FN_SDHID1_3,
+-	GPIO_FN_SDHICLK1,
+-	GPIO_FN_SDHICMD1,
+-
+-	/* Port291 - Port294 FN3 */
+-	GPIO_FN_STMDATA2_2,
+-	GPIO_FN_STMDATA3_2,
+-	GPIO_FN_STMCLK_2,
+-	GPIO_FN_STMSIDI_2,
+-
+-	/* Port295 */
+-	GPIO_FN_SDHID2_0,
+-	GPIO_FN_MSIOF4_TXD,
+-	GPIO_FN_MSIOF6_TXD,
+-
+-	/* Port296 */
+-	GPIO_FN_SDHID2_1,
+-	GPIO_FN_MSIOF6_SS2,
+-
+-	/* Port297 - Port300 FN1 */
+-	GPIO_FN_SDHID2_2,
+-	GPIO_FN_SDHID2_3,
+-	GPIO_FN_SDHICLK2,
+-	GPIO_FN_SDHICMD2,
+-
+-	/* Port297 - Port300 FN2 */
+-	GPIO_FN_MSIOF4_RXD,
+-	GPIO_FN_MSIOF4_SYNC,
+-	GPIO_FN_MSIOF4_SCK,
+-	GPIO_FN_MSIOF4_SS1,
+-
+-	/* Port297 - Port300 FN3 */
+-
+-	/* Port297 - Port300 FN4 */
+-	GPIO_FN_MSIOF6_RXD,
+-	GPIO_FN_MSIOF6_SYNC,
+-	GPIO_FN_MSIOF6_SCK,
+-	GPIO_FN_MSIOF6_SS1,
+-
+-	/* Port301 */
+-	GPIO_FN_SDHICD0,
+-
+-	/* Port302 - Port306 FN1 */
+-	GPIO_FN_SDHID0_0,
+-	GPIO_FN_SDHID0_1,
+-	GPIO_FN_SDHID0_2,
+-	GPIO_FN_SDHID0_3,
+-	GPIO_FN_SDHICMD0,
+-
+-	/* Port302 - Port306 FN3 */
+-	GPIO_FN_STMDATA0_1,
+-	GPIO_FN_STMDATA1_1,
+-	GPIO_FN_STMDATA2_1,
+-	GPIO_FN_STMDATA3_1,
+-	GPIO_FN_STMSIDI_1,
+-
+-	/* Port307 */
+-	GPIO_FN_SDHIWP0,
+-
+-	/* Port308 */
+-	GPIO_FN_SDHICLK0,
+-	GPIO_FN_STMCLK_1,
+-
+-	/* Port320 - Port329 */
 -};
 -
--static int to_intc_vect(int irq)
--{
--	unsigned int irq_pin = irq - gic_spi(1);
--	unsigned int offs;
--
--	if (irq_pin < 16)
--		offs = 0x0200;
--	else
--		offs = 0x3000;
--
--	return offs + (irq_pin << 5);
--}
--
--static irqreturn_t sh73a0_irq_pin_demux(int irq, void *dev_id)
--{
--	generic_handle_irq(intcs_evt2irq(to_intc_vect(irq)));
--	return IRQ_HANDLED;
--}
--
--static struct irqaction sh73a0_irq_pin_cascade[32];
--
- #define PINTER0_PHYS 0xe69000a0
- #define PINTER1_PHYS 0xe69000a4
- #define PINTER0_VIRT IOMEM(0xe69000a0)
-@@ -422,13 +320,11 @@ void __init sh73a0_init_irq(void)
- 	void __iomem *gic_dist_base = IOMEM(0xf0001000);
- 	void __iomem *gic_cpu_base = IOMEM(0xf0000100);
- 	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
--	int k, n;
- 
- 	gic_init(0, 29, gic_dist_base, gic_cpu_base);
- 	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
- 
- 	register_intc_controller(&intcs_desc);
--	register_intc_controller(&intca_irq_pins_desc);
- 	register_intc_controller(&intc_pint0_desc);
- 	register_intc_controller(&intc_pint1_desc);
- 
-@@ -438,19 +334,6 @@ void __init sh73a0_init_irq(void)
- 	sh73a0_intcs_cascade.dev_id = intevtsa;
- 	setup_irq(gic_spi(50), &sh73a0_intcs_cascade);
- 
--	/* IRQ pins require special handling through INTCA and GIC */
--	for (k = 0; k < 32; k++) {
--		sh73a0_irq_pin_cascade[k].name = "INTCA-GIC cascade";
--		sh73a0_irq_pin_cascade[k].handler = sh73a0_irq_pin_demux;
--		setup_irq(gic_spi(1 + k), &sh73a0_irq_pin_cascade[k]);
--
--		n = intcs_evt2irq(to_intc_vect(gic_spi(1 + k)));
--		WARN_ON(irq_alloc_desc_at(n, numa_node_id()) != n);
--		irq_set_chip_and_handler_name(n, &intca_gic_irq_chip,
--					      handle_level_irq, "level");
--		set_irq_flags(n, IRQF_VALID); /* yuck */
--	}
--
- 	/* PINT pins are sanely tied to the GIC as SPI */
- 	sh73a0_pint0_cascade.name = "PINT0 cascade";
- 	sh73a0_pint0_cascade.handler = sh73a0_pint0_demux;
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 2257a91..638735f 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -33,6 +33,7 @@
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
- #include <linux/platform_data/sh_ipmmu.h>
-+#include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <mach/dma-register.h>
- #include <mach/hardware.h>
- #include <mach/irqs.h>
-@@ -811,6 +812,127 @@ static struct platform_device ipmmu_device = {
- 	.num_resources  = ARRAY_SIZE(ipmmu_resources),
- };
- 
-+struct renesas_intc_irqpin_config irqpin0_platform_data = {
-+	.irq_base = irq_pin(0), /* IRQ0 -> IRQ7 */
-+};
-+
-+static struct resource irqpin0_resources[] = {
-+	DEFINE_RES_MEM(0xe6900000, 4), /* ICR1A */
-+	DEFINE_RES_MEM(0xe6900010, 4), /* INTPRI00A */
-+	DEFINE_RES_MEM(0xe6900020, 1), /* INTREQ00A */
-+	DEFINE_RES_MEM(0xe6900040, 1), /* INTMSK00A */
-+	DEFINE_RES_MEM(0xe6900060, 1), /* INTMSKCLR00A */
-+	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ0 */
-+	DEFINE_RES_IRQ(gic_spi(2)), /* IRQ1 */
-+	DEFINE_RES_IRQ(gic_spi(3)), /* IRQ2 */
-+	DEFINE_RES_IRQ(gic_spi(4)), /* IRQ3 */
-+	DEFINE_RES_IRQ(gic_spi(5)), /* IRQ4 */
-+	DEFINE_RES_IRQ(gic_spi(6)), /* IRQ5 */
-+	DEFINE_RES_IRQ(gic_spi(7)), /* IRQ6 */
-+	DEFINE_RES_IRQ(gic_spi(8)), /* IRQ7 */
-+};
-+
-+static struct platform_device irqpin0_device = {
-+	.name		= "renesas_intc_irqpin",
-+	.id		= 0,
-+	.resource	= irqpin0_resources,
-+	.num_resources	= ARRAY_SIZE(irqpin0_resources),
-+	.dev		= {
-+		.platform_data	= &irqpin0_platform_data,
-+	},
-+};
-+
-+struct renesas_intc_irqpin_config irqpin1_platform_data = {
-+	.irq_base = irq_pin(8), /* IRQ8 -> IRQ15 */
-+	.control_parent = true, /* Disable spurious IRQ10 */
-+};
-+
-+static struct resource irqpin1_resources[] = {
-+	DEFINE_RES_MEM(0xe6900004, 4), /* ICR2A */
-+	DEFINE_RES_MEM(0xe6900014, 4), /* INTPRI10A */
-+	DEFINE_RES_MEM(0xe6900024, 1), /* INTREQ10A */
-+	DEFINE_RES_MEM(0xe6900044, 1), /* INTMSK10A */
-+	DEFINE_RES_MEM(0xe6900064, 1), /* INTMSKCLR10A */
-+	DEFINE_RES_IRQ(gic_spi(9)), /* IRQ8 */
-+	DEFINE_RES_IRQ(gic_spi(10)), /* IRQ9 */
-+	DEFINE_RES_IRQ(gic_spi(11)), /* IRQ10 */
-+	DEFINE_RES_IRQ(gic_spi(12)), /* IRQ11 */
-+	DEFINE_RES_IRQ(gic_spi(13)), /* IRQ12 */
-+	DEFINE_RES_IRQ(gic_spi(14)), /* IRQ13 */
-+	DEFINE_RES_IRQ(gic_spi(15)), /* IRQ14 */
-+	DEFINE_RES_IRQ(gic_spi(16)), /* IRQ15 */
-+};
-+
-+static struct platform_device irqpin1_device = {
-+	.name		= "renesas_intc_irqpin",
-+	.id		= 1,
-+	.resource	= irqpin1_resources,
-+	.num_resources	= ARRAY_SIZE(irqpin1_resources),
-+	.dev		= {
-+		.platform_data	= &irqpin1_platform_data,
-+	},
-+};
-+
-+struct renesas_intc_irqpin_config irqpin2_platform_data = {
-+	.irq_base = irq_pin(16), /* IRQ16 -> IRQ23 */
-+};
-+
-+static struct resource irqpin2_resources[] = {
-+	DEFINE_RES_MEM(0xe6900008, 4), /* ICR3A */
-+	DEFINE_RES_MEM(0xe6900018, 4), /* INTPRI20A */
-+	DEFINE_RES_MEM(0xe6900028, 1), /* INTREQ20A */
-+	DEFINE_RES_MEM(0xe6900048, 1), /* INTMSK20A */
-+	DEFINE_RES_MEM(0xe6900068, 1), /* INTMSKCLR20A */
-+	DEFINE_RES_IRQ(gic_spi(17)), /* IRQ16 */
-+	DEFINE_RES_IRQ(gic_spi(18)), /* IRQ17 */
-+	DEFINE_RES_IRQ(gic_spi(19)), /* IRQ18 */
-+	DEFINE_RES_IRQ(gic_spi(20)), /* IRQ19 */
-+	DEFINE_RES_IRQ(gic_spi(21)), /* IRQ20 */
-+	DEFINE_RES_IRQ(gic_spi(22)), /* IRQ21 */
-+	DEFINE_RES_IRQ(gic_spi(23)), /* IRQ22 */
-+	DEFINE_RES_IRQ(gic_spi(24)), /* IRQ23 */
-+};
-+
-+static struct platform_device irqpin2_device = {
-+	.name		= "renesas_intc_irqpin",
-+	.id		= 2,
-+	.resource	= irqpin2_resources,
-+	.num_resources	= ARRAY_SIZE(irqpin2_resources),
-+	.dev		= {
-+		.platform_data	= &irqpin2_platform_data,
-+	},
-+};
-+
-+struct renesas_intc_irqpin_config irqpin3_platform_data = {
-+	.irq_base = irq_pin(24), /* IRQ24 -> IRQ31 */
-+};
-+
-+static struct resource irqpin3_resources[] = {
-+	DEFINE_RES_MEM(0xe690000c, 4), /* ICR4A */
-+	DEFINE_RES_MEM(0xe690001c, 4), /* INTPRI30A */
-+	DEFINE_RES_MEM(0xe690002c, 1), /* INTREQ30A */
-+	DEFINE_RES_MEM(0xe690004c, 1), /* INTMSK30A */
-+	DEFINE_RES_MEM(0xe690006c, 1), /* INTMSKCLR30A */
-+	DEFINE_RES_IRQ(gic_spi(25)), /* IRQ24 */
-+	DEFINE_RES_IRQ(gic_spi(26)), /* IRQ25 */
-+	DEFINE_RES_IRQ(gic_spi(27)), /* IRQ26 */
-+	DEFINE_RES_IRQ(gic_spi(28)), /* IRQ27 */
-+	DEFINE_RES_IRQ(gic_spi(29)), /* IRQ28 */
-+	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ29 */
-+	DEFINE_RES_IRQ(gic_spi(31)), /* IRQ30 */
-+	DEFINE_RES_IRQ(gic_spi(32)), /* IRQ31 */
-+};
-+
-+static struct platform_device irqpin3_device = {
-+	.name		= "renesas_intc_irqpin",
-+	.id		= 3,
-+	.resource	= irqpin3_resources,
-+	.num_resources	= ARRAY_SIZE(irqpin3_resources),
-+	.dev		= {
-+		.platform_data	= &irqpin3_platform_data,
-+	},
-+};
-+
- static struct platform_device *sh73a0_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -839,6 +961,10 @@ static struct platform_device *sh73a0_late_devices[] __initdata = {
- 	&dma0_device,
- 	&mpdma0_device,
- 	&pmu_device,
-+	&irqpin0_device,
-+	&irqpin1_device,
-+	&irqpin2_device,
-+	&irqpin3_device,
- };
- 
- #define SRCR2          IOMEM(0xe61580b0)
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 709008e..6f15c03 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2733,9 +2733,9 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 	{ },
- };
- 
--/* IRQ pins through INTCS with IRQ0->15 from 0x200 and IRQ16-31 from 0x3200 */
--#define EXT_IRQ16L(n) intcs_evt2irq(0x200 + ((n) << 5))
--#define EXT_IRQ16H(n) intcs_evt2irq(0x3200 + ((n - 16) << 5))
-+/* External IRQ pins mapped at IRQPIN_BASE */
-+#define EXT_IRQ16L(n) irq_pin(n)
-+#define EXT_IRQ16H(n) irq_pin(n)
- 
- static struct pinmux_irq pinmux_irqs[] = {
- 	PINMUX_IRQ(EXT_IRQ16H(19), PORT9_FN0),
--- 
-1.7.10.4
-
+ void r8a73a4_add_standard_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
