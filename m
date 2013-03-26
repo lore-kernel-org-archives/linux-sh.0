@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Mar 2013 14:32:22 +0000
-Subject: [PATCH 02/04] ARM: shmobile: r8a73a4 SCIF support V2
-Message-Id: <20130318143222.26687.79780.sendpatchset@w520>
+Date: Tue, 26 Mar 2013 01:34:33 +0000
+Subject: [PATCH 02/04] ARM: shmobile: r8a73a4 SCIF support V3
+Message-Id: <20130326013433.11796.74393.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318143203.26687.98180.sendpatchset@w520>
-In-Reply-To: <20130318143203.26687.98180.sendpatchset@w520>
+References: <20130326013414.11796.9937.sendpatchset@w520>
+In-Reply-To: <20130326013414.11796.9937.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,27 +12,29 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add SCIF serial port support to the r8a73a4 SoC by
-adding platform devices for SCIFA0 -> SCIFA1 as well
-as SCIFB0 -> SCIFB3 together with clock bindings. DT
-device description is excluded at this point since
-such bindings are still under development.
+V3 of SCIF serial port support for the r8a73a4 SoC.
+This is done by adding platform devices for SCIFA0
+-> SCIFA1 as well as SCIFB0 -> SCIFB3 together with
+clock bindings. DT device description is excluded at
+this point since such bindings are still under
+development.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
+ Changes since V2:
+ - Fixed a bug where PORT_SCIFA was always selected regardless of port type
+
  Changes since V1:
  - Replaced static platform devices with array of platform data
    together with a call to platform_device_register_data()
-
- This version is about 70 lines smaller than V1. 
 
  arch/arm/mach-shmobile/clock-r8a73a4.c |   15 ++++++++++-
  arch/arm/mach-shmobile/setup-r8a73a4.c |   43 ++++++++++++++++++++++++++++++++
  2 files changed, 57 insertions(+), 1 deletion(-)
 
 --- 0003/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-03-18 21:42:19.000000000 +0900
++++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-03-26 10:14:50.000000000 +0900
 @@ -28,6 +28,7 @@
  #define CPG_LEN 0x270
  
@@ -41,7 +43,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  
  static struct clk_mapping cpg_mapping = {
  	.phys   = CPG_BASE,
-@@ -53,11 +54,23 @@ static struct clk *main_clks[] = {
+@@ -55,11 +56,23 @@ static struct clk *main_clks[] = {
  	&extal2_clk,
  };
  
@@ -67,7 +69,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  
  void __init r8a73a4_clock_init(void)
 --- 0003/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-18 21:43:19.000000000 +0900
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-26 10:15:08.000000000 +0900
 @@ -21,13 +21,56 @@
  #include <linux/irqchip.h>
  #include <linux/kernel.h>
@@ -79,7 +81,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  #include <asm/mach/arch.h>
  
 +#define SCIF_COMMON(scif_type, baseaddr, irq)			\
-+	.type		= PORT_SCIFA,				\
++	.type		= scif_type,				\
 +	.mapbase	= baseaddr,				\
 +	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
 +	.scbrr_algo_id	= SCBRR_ALGO_4,				\
