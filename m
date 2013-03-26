@@ -1,88 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 20 Mar 2013 15:28:29 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Mar 2013 04:04:25 +0000
 Subject: Re: [PATCH/RFC] ARM: shmobile: Disallow PINCTRL without GPIOLIB
-Message-Id: <7840344.mRAPGty7WD@avalon>
+Message-Id: <CANqRtoR+xVFx6ytvjcHxNcQ3X=avXs49-pR-XCr7ApqOq_WFRQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130318135818.23765.51686.sendpatchset@w520>
-In-Reply-To: <20130318135818.23765.51686.sendpatchset@w520>
+ <7840344.mRAPGty7WD@avalon>
+In-Reply-To: <7840344.mRAPGty7WD@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Hi Laurent,
 
-Thanks for the patch.
-
-On Monday 18 March 2013 22:58:18 Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Modify mach-shmobile to only select PINCTRL in case of
-> ARCH_WANT_OPTIONAL_GPIOLIB is set.
-> 
-> This fixes a build error triggered when adding a new SoC
-> lacking GPIO software support (ARCH_WANT_OPTIONAL_GPIOLIB=n):
-> 
->  CC      drivers/tty/vt/keyboard.o
-> In file included from drivers/pinctrl/core.c:30:0:
-> include/asm-generic/gpio.h: In function 'gpio_get_value_cansleep':
-> include/asm-generic/gpio.h:270:2: error: implicit declaration of function
-> '__gpio_get_value'
-> include/asm-generic/gpio.h: In function 'gpio_set_value_cansleep':
-> include/asm-generic/gpio.h:276:2: error: implicit declaration of function
-> '__gpio_set_value'
-> drivers/pinctrl/core.c: In function 'pinctrl_ready_for_gpio_range':
-> drivers/pinctrl/core.c:297:9: error: implicit declaration of function
-> 'gpio_to_chip'
-> drivers/pinctrl/core.c:297:27: warning: initialization makes pointer from
-> integer without a cast
-> drivers/pinctrl/core.c:304:45: error: dereferencing pointer to incomplete
-> type
-> drivers/pinctrl/core.c:305:26: error: dereferencing pointer to incomplete
-> type
-> drivers/pinctrl/core.c:305:39: error: dereferencing pointer to incomplete
-> type
-> make[2]: *** [drivers/pinctrl/core.o] Error 1
-> make[1]: *** [drivers/pinctrl] Error 2
-> make[1]: *** Waiting for unfinished jobs....
->   LD      drivers/sh/built-in.o
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+On Thu, Mar 21, 2013 at 12:28 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
 >
-> ---
-> 
->  Using renesas.git "next" 811689afc214564c4a5f238ecf4d8bdc0e52b615
-> 
->  Trigger using the r8a73a4 patches that lack GPIO and PFC support.
-> 
->  I am more than happy to replace this patch with something cleaner.
+> Thanks for the patch.
+>
+> On Monday 18 March 2013 22:58:18 Magnus Damm wrote:
+>> From: Magnus Damm <damm@opensource.se>
+>>
+>> Modify mach-shmobile to only select PINCTRL in case of
+>> ARCH_WANT_OPTIONAL_GPIOLIB is set.
+>>
+>> This fixes a build error triggered when adding a new SoC
+>> lacking GPIO software support (ARCH_WANT_OPTIONAL_GPIOLIB=n):
+>>
+>>  CC      drivers/tty/vt/keyboard.o
+>> In file included from drivers/pinctrl/core.c:30:0:
+>> include/asm-generic/gpio.h: In function 'gpio_get_value_cansleep':
+>> include/asm-generic/gpio.h:270:2: error: implicit declaration of function
+>> '__gpio_get_value'
+>> include/asm-generic/gpio.h: In function 'gpio_set_value_cansleep':
+>> include/asm-generic/gpio.h:276:2: error: implicit declaration of function
+>> '__gpio_set_value'
+>> drivers/pinctrl/core.c: In function 'pinctrl_ready_for_gpio_range':
+>> drivers/pinctrl/core.c:297:9: error: implicit declaration of function
+>> 'gpio_to_chip'
+>> drivers/pinctrl/core.c:297:27: warning: initialization makes pointer from
+>> integer without a cast
+>> drivers/pinctrl/core.c:304:45: error: dereferencing pointer to incomplete
+>> type
+>> drivers/pinctrl/core.c:305:26: error: dereferencing pointer to incomplete
+>> type
+>> drivers/pinctrl/core.c:305:39: error: dereferencing pointer to incomplete
+>> type
+>> make[2]: *** [drivers/pinctrl/core.o] Error 1
+>> make[1]: *** [drivers/pinctrl] Error 2
+>> make[1]: *** Waiting for unfinished jobs....
+>>   LD      drivers/sh/built-in.o
+>>
+>> Signed-off-by: Magnus Damm <damm@opensource.se>
+>>
+>> ---
+>>
+>>  Using renesas.git "next" 811689afc214564c4a5f238ecf4d8bdc0e52b615
+>>
+>>  Trigger using the r8a73a4 patches that lack GPIO and PFC support.
+>>
+>>  I am more than happy to replace this patch with something cleaner.
+>
+> If I'm not mistaken your patch fixes the compilation breakage by unselecting
+> PINCTRL and making it possible no to select GPIOLIB. I'm fine with that as an
+> interim solution, but I wonder whether we shouldn't just force PINCTRL and
+> GPIOLIB for ARCH_SHMOBILE at some point.
 
-If I'm not mistaken your patch fixes the compilation breakage by unselecting 
-PINCTRL and making it possible no to select GPIOLIB. I'm fine with that as an 
-interim solution, but I wonder whether we shouldn't just force PINCTRL and 
-GPIOLIB for ARCH_SHMOBILE at some point.
+Thanks for your comments. I'm quite fine with any approach myself. My
+main concern is to have to the mach-shmobile code in a state so it is
+possible to add SoC support incrementally and start without any PFC or
+GPIO and then add them one by one. Or add them together. Please note
+that EMEV2 supports GPIO but not yet PINCTRL.
 
-> 
->  arch/arm/Kconfig |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> --- 0001/arch/arm/Kconfig
-> +++ work/arch/arm/Kconfig	2013-03-18 14:56:17.000000000 +0900
-> @@ -725,7 +725,7 @@ config ARCH_SHMOBILE
->  	select MULTI_IRQ_HANDLER
->  	select NEED_MACH_MEMORY_H
->  	select NO_IOPORT
-> -	select PINCTRL
-> +	select PINCTRL if ARCH_WANT_OPTIONAL_GPIOLIB
+About this issue, the fact that selecting PINCTRL without GPIO results
+in compile error makes me think that something needs slight adjustment
+in the PFC code. Or perhaps PINCTRL without GPIO isn't a valid
+combination? But if so, why do we have separate Kconfig entries?
 
+Thanks,
 
-
->  	select PM_GENERIC_DOMAINS if PM
->  	select SPARSE_IRQ
->  	help
-
--- 
-Regards,
-
-Laurent Pinchart
-
+/ magnus
