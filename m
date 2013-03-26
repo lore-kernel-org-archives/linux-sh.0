@@ -1,29 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Mar 2013 10:43:39 +0000
-Subject: Re: [PATCH 02/02] sh-pfc: Add r8a73a4 GPIO IRQ support
-Message-Id: <20130327104144.GA413@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 26 Mar 2013 02:20:13 +0000
+Subject: [PATCH 0/2] PFC compilation fixes for v3.10
+Message-Id: <1364264415-6020-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318145049.26761.35712.sendpatchset@w520>
-In-Reply-To: <20130318145049.26761.35712.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Mar 27, 2013 at 11:23:43AM +0100, Linus Walleij wrote:
-> On Mon, Mar 18, 2013 at 3:50 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> 
-> > From: Magnus Damm <damm@opensource.se>
-> >
-> > Add GPIO -> IRQ mappings to the PFC table for
-> > the r8a73a4 SoC. Requires the IRQs to be mapped
-> > at a fixed location. The actual IRQs are not
-> > handled by the PFC, instead IRQC is used.
-> >
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> 
-> This will go in with Simon's enormous patch queue I guess?
+Hello,
 
-Yes, that is the plan.
+Here are two fixes for compilation warning and error introduced in the PFC
+patches scheduled for v3.10.
+
+Simon, could you please pick these two patches and push them upstream ?
+
+Laurent Pinchart (2):
+  sh-pfc: Fix compiler warning when BUG()
+  sh: sh7269: Fix compilation by adding missing includes
+
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c | 2 ++
+ drivers/pinctrl/sh-pfc/core.c           | 1 +
+ 2 files changed, 3 insertions(+)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
