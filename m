@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Mar 2013 14:32:41 +0000
+Date: Tue, 26 Mar 2013 01:34:52 +0000
 Subject: [PATCH 04/04] ARM: shmobile: r8a73a4 PFC support
-Message-Id: <20130318143241.26687.75018.sendpatchset@w520>
+Message-Id: <20130326013452.11796.62159.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318143203.26687.98180.sendpatchset@w520>
-In-Reply-To: <20130318143203.26687.98180.sendpatchset@w520>
+References: <20130326013414.11796.9937.sendpatchset@w520>
+In-Reply-To: <20130326013414.11796.9937.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
