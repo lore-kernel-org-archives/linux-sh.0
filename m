@@ -1,123 +1,24 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Mon, 25 Mar 2013 16:57:33 +0000
-Subject: [PATCH 6/9] sh: cpufreq:  move cpufreq driver to drivers/cpufreq
-Message-Id: <ce8e1eec94acecba053f9c2e2b5caa48ce989777.1364229828.git.viresh.kumar@linaro.org>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 26 Mar 2013 09:29:33 +0000
+Subject: Re: [PATCH 6/9] sh: cpufreq:  move cpufreq driver to drivers/cpufreq
+Message-Id: <20130326092932.GA23796@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1364229828.git.viresh.kumar@linaro.org>
-In-Reply-To: <cover.1364229828.git.viresh.kumar@linaro.org>
+ <ce8e1eec94acecba053f9c2e2b5caa48ce989777.1364229828.git.viresh.kumar@linaro.org>
+In-Reply-To: <ce8e1eec94acecba053f9c2e2b5caa48ce989777.1364229828.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rjw@sisk.pl
-Cc: arvind.chauhan@arm.com, robin.randhawa@arm.com, Steve.Bannister@arm.com, Liviu.Dudau@arm.com, charles.garcia-tobin@arm.com, cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, linaro-kernel@lists.linaro.org, arnd.bergmann@linaro.org, Viresh Kumar <viresh.kumar@linaro.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: Viresh Kumar <viresh.kumar@linaro.org>
+Cc: rjw@sisk.pl, arvind.chauhan@arm.com, robin.randhawa@arm.com, Steve.Bannister@arm.com, Liviu.Dudau@arm.com, charles.garcia-tobin@arm.com, cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, linaro-kernel@lists.linaro.org, arnd.bergmann@linaro.org, linux-sh@vger.kernel.org
 
-This patch moves cpufreq driver of SUPERH architecture to drivers/cpufreq.
+On Mon, Mar 25, 2013 at 10:24:42PM +0530, Viresh Kumar wrote:
+> This patch moves cpufreq driver of SUPERH architecture to drivers/cpufreq.
+> 
+> Cc: Paul Mundt <lethal@linux-sh.org>
+> Cc: linux-sh@vger.kernel.org
+> Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
----
- arch/sh/Kconfig                                        | 18 ------------------
- arch/sh/kernel/Makefile                                |  1 -
- drivers/cpufreq/Kconfig                                | 18 ++++++++++++++++++
- drivers/cpufreq/Makefile                               |  1 +
- .../kernel/cpufreq.c => drivers/cpufreq/sh-cpufreq.c   |  2 --
- 5 files changed, 19 insertions(+), 21 deletions(-)
- rename arch/sh/kernel/cpufreq.c => drivers/cpufreq/sh-cpufreq.c (99%)
+Looks ok to me.
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 5e85963..06e3163 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -624,25 +624,7 @@ config SH_CLK_CPG_LEGACY
- endmenu
- 
- menu "CPU Frequency scaling"
--
- source "drivers/cpufreq/Kconfig"
--
--config SH_CPU_FREQ
--	tristate "SuperH CPU Frequency driver"
--	depends on CPU_FREQ
--	select CPU_FREQ_TABLE
--	help
--	  This adds the cpufreq driver for SuperH. Any CPU that supports
--	  clock rate rounding through the clock framework can use this
--	  driver. While it will make the kernel slightly larger, this is
--	  harmless for CPUs that don't support rate rounding. The driver
--	  will also generate a notice in the boot log before disabling
--	  itself if the CPU in question is not capable of rate rounding.
--
--	  For details, take a look at <file:Documentation/cpu-freq>.
--
--	  If unsure, say N.
--
- endmenu
- 
- source "arch/sh/drivers/Kconfig"
-diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
-index f259b37..261c8bf 100644
---- a/arch/sh/kernel/Makefile
-+++ b/arch/sh/kernel/Makefile
-@@ -31,7 +31,6 @@ obj-$(CONFIG_VSYSCALL)		+= vsyscall/
- obj-$(CONFIG_SMP)		+= smp.o
- obj-$(CONFIG_SH_STANDARD_BIOS)	+= sh_bios.o
- obj-$(CONFIG_KGDB)		+= kgdb.o
--obj-$(CONFIG_SH_CPU_FREQ)	+= cpufreq.o
- obj-$(CONFIG_MODULES)		+= sh_ksyms_$(BITS).o module.o
- obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
- obj-$(CONFIG_CRASH_DUMP)	+= crash_dump.o
-diff --git a/drivers/cpufreq/Kconfig b/drivers/cpufreq/Kconfig
-index 5030df5..602d5db 100644
---- a/drivers/cpufreq/Kconfig
-+++ b/drivers/cpufreq/Kconfig
-@@ -258,5 +258,23 @@ depends on PPC32 || PPC64
- source "drivers/cpufreq/Kconfig.powerpc"
- endmenu
- 
-+menu "SH CPU Frequency scaling"
-+depends on SUPERH
-+config SH_CPU_FREQ
-+	tristate "SuperH CPU Frequency driver"
-+	select CPU_FREQ_TABLE
-+	help
-+	  This adds the cpufreq driver for SuperH. Any CPU that supports
-+	  clock rate rounding through the clock framework can use this
-+	  driver. While it will make the kernel slightly larger, this is
-+	  harmless for CPUs that don't support rate rounding. The driver
-+	  will also generate a notice in the boot log before disabling
-+	  itself if the CPU in question is not capable of rate rounding.
-+
-+	  For details, take a look at <file:Documentation/cpu-freq>.
-+
-+	  If unsure, say N.
-+endmenu
-+
- endif
- endmenu
-diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
-index a245559..e572211 100644
---- a/drivers/cpufreq/Makefile
-+++ b/drivers/cpufreq/Makefile
-@@ -84,3 +84,4 @@ obj-$(CONFIG_CRIS_MACH_ARTPEC3)		+= cris-artpec3-cpufreq.o
- obj-$(CONFIG_ETRAXFS)			+= cris-etraxfs-cpufreq.o
- obj-$(CONFIG_IA64_ACPI_CPUFREQ)		+= ia64-acpi-cpufreq.o
- obj-$(CONFIG_LOONGSON2_CPUFREQ)		+= loongson2_cpufreq.o
-+obj-$(CONFIG_SH_CPU_FREQ)		+= sh-cpufreq.o
-diff --git a/arch/sh/kernel/cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
-similarity index 99%
-rename from arch/sh/kernel/cpufreq.c
-rename to drivers/cpufreq/sh-cpufreq.c
-index 88c8fee..73adb64 100644
---- a/arch/sh/kernel/cpufreq.c
-+++ b/drivers/cpufreq/sh-cpufreq.c
-@@ -1,6 +1,4 @@
- /*
-- * arch/sh/kernel/cpufreq.c
-- *
-  * cpufreq driver for the SuperH processors.
-  *
-  * Copyright (C) 2002 - 2012 Paul Mundt
--- 
-1.7.12.rc2.18.g61b472e
-
+Acked-by: Paul Mundt <lethal@linux-sh.org>
