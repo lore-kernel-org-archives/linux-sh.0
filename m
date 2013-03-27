@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Mar 2013 12:09:15 +0000
+Date: Wed, 27 Mar 2013 12:10:24 +0000
 Subject: Re: [PATCH 0/1] ARM: shmobile: r8a73a4 thermal support
-Message-Id: <20130327120915.GM413@verge.net.au>
+Message-Id: <20130327121023.GA15520@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130326013414.11796.9937.sendpatchset@w520>
  <87mwtqit29.wl%kuninori.morimoto.gx@renesas.com>
@@ -43,17 +43,11 @@ On Wed, Mar 27, 2013 at 06:17:24PM +0900, Magnus Damm wrote:
 > >>
 > >> fb84d9907f0ff0e3f7d70d55039ddf0f78d2a472
 > >> (thermal: rcar_thermal: propagate return value of thermal_zone_device_register)
-
-These are both in v3.9-rc4, which I can use as a base.
-
+> >>
 > >> And, my previous
 > >>       thermal: rcar: tidyup registration failure case
 > >>       thermal: rcar: add pm_runtime_xxx() support
-
-I'm not sure that this patch (ARM: shmobile: r8a73a4 thermal support)
-actually depends on the above two patches. I would be quite convenient for
-me if they didn't.
-
+> >>
 > >> Simon, please let me know if you need my help
 > >
 > > I think that I need to get a branch to base my changes on.
@@ -81,8 +75,5 @@ me if they didn't.
 > As Morimoto-san explained, there are some runtime dependencies related
 > to various bug fixes in the thermal driver. But for merging and
 > compiling I believe the above should be enough.
-> 
-> Thanks,
-> 
-> / magnus
-> 
+
+Ok, I think that should be fine. I will do as you suggest.
