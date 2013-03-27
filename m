@@ -1,112 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:38 +0000
-Subject: [PATCH 28/43] ARM: shmobile: Update r8a7779 to check SCU for hotplug
-Message-Id: <1363609973-31086-29-git-send-email-horms+renesas@verge.net.au>
+From: Ed Cashin <ecashin@coraid.com>
+Date: Wed, 27 Mar 2013 18:06:57 +0000
+Subject: Re: ERROR: "min_low_pfn" [drivers/block/aoe/aoe.ko] undefined!
+Message-Id: <9EA8F092-4957-4A05-9C2C-359F0F133E8C@coraid.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+[Cc linux-sh@vger.kernel.org]
 
-Update the r8a7779 CPU Hotplug code to use SCU PSR
-to wait for the target CPU core. Previously the
-shared code in hotplug.c was used to let cpu_kill()
-wait for cpu_die(). With this change in place the
-r8a7779 SMP code does not depend on hotplug.c anymore.
+Do you think that's from virt_addr_valid, used in aoeblk_open?
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/smp-r8a7779.c |   38 ++++++++++++++++++++++++++++------
- 1 file changed, 32 insertions(+), 6 deletions(-)
+I see that when CONFIG_FLATMEM is defined, arch/sh/includ/asm/page.h
+defines pfn_valid in terms of the undefined variables {min,max}_low_pfn, 
+and virt_addr_valid in terms of pfn_valid.
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index e69ce25..63c8db9 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -26,6 +26,7 @@
- #include <linux/irqchip/arm-gic.h>
- #include <mach/common.h>
- #include <mach/r8a7779.h>
-+#include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
- #include <asm/smp_twd.h>
-@@ -68,6 +69,16 @@ void __init r8a7779_register_twd(void)
- }
- #endif
- 
-+static int r8a7779_scu_psr_core_disabled(int cpu)
-+{
-+	unsigned long mask = 3 << (cpu * 8);
-+
-+	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
-+		return 1;
-+
-+	return 0;
-+}
-+
- static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
- {
- 	void __iomem *scu_base = shmobile_scu_base;
-@@ -89,9 +100,6 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
- 
- 	cpu = cpu_logical_map(cpu);
- 
--	/* disable cache coherency */
--	modify_scu_cpu_psr(3 << (cpu * 8), 0);
--
- 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
- 		ch = r8a7779_ch_cpu[cpu];
- 
-@@ -110,7 +118,7 @@ static int __maybe_unused r8a7779_cpu_kill(unsigned int cpu)
- 	 * finish before asking SoC-specific code to power off the CPU core.
- 	 */
- 	for (k = 0; k < 1000; k++) {
--		if (shmobile_cpu_is_dead(cpu))
-+		if (r8a7779_scu_psr_core_disabled(cpu))
- 			return r8a7779_platform_cpu_kill(cpu);
- 
- 		mdelay(1);
-@@ -119,6 +127,24 @@ static int __maybe_unused r8a7779_cpu_kill(unsigned int cpu)
- 	return 0;
- }
- 
-+static void __maybe_unused r8a7779_cpu_die(unsigned int cpu)
-+{
-+	dsb();
-+	flush_cache_all();
-+
-+	/* disable cache coherency */
-+	modify_scu_cpu_psr(3 << (cpu * 8), 0);
-+
-+	/* Endless loop until power off from r8a7779_cpu_kill() */
-+	while (1)
-+		cpu_do_idle();
-+}
-+
-+static int __maybe_unused r8a7779_cpu_disable(unsigned int cpu)
-+{
-+	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
-+	return cpu = 0 ? -EPERM : 0;
-+}
- 
- static void __cpuinit r8a7779_secondary_init(unsigned int cpu)
- {
-@@ -179,7 +205,7 @@ struct smp_operations r8a7779_smp_ops  __initdata = {
- 	.smp_boot_secondary	= r8a7779_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
- 	.cpu_kill		= r8a7779_cpu_kill,
--	.cpu_die		= shmobile_cpu_die,
--	.cpu_disable		= shmobile_cpu_disable,
-+	.cpu_die		= r8a7779_cpu_die,
-+	.cpu_disable		= r8a7779_cpu_disable,
- #endif
- };
+On Mar 27, 2013, at 3:55 AM, Fengguang Wu wrote:
+
+> 
+> Hi Ed,
+> 
+> I'm not sure if it's a good bisect.. Anyway, here is an aoe build error.
+> 
+> tree:   git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux master
+> head:   de55eb1d60d2ed0f1ba5e13226d91b3bfbe1c108
+> commit: e52a29326462badd9ceec90a9eb2ac2a8550e02e aoe: avoid races between device destruction and discovery
+> date:   3 months ago
+> config: make ARCH=sh titan_defconfig
+> 
+> All error/warnings:
+> 
+>   ERROR: "bio_alloc" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "__user_walk_fd" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "__up" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "remove_suid" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "__alloc_pages" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "get_unused_fd" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "d_alloc_root" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "__down_trylock" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "open_bdev_excl" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "sysctl_intvec" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "__ashrdi3" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "__create_workqueue_key" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "kmem_cache_size" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "init_waitqueue_head" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "__down" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "init_timer" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "kthread_create" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "get_sb_bdev" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "vmtruncate" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "block_sync_page" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "sync_page_range" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "d_alloc_anon" [fs/xfs/xfs.ko] undefined!
+>   ERROR: "close_bdev_excl" [fs/xfs/xfs.ko] undefined!
+>>> ERROR: "min_low_pfn" [drivers/block/aoe/aoe.ko] undefined!
+>>> ERROR: "max_low_pfn" [drivers/block/aoe/aoe.ko] undefined!
+> 
+> ---
+> 0-DAY kernel build testing backend              Open Source Technology Center
+> http://lists.01.org/mailman/listinfo/kbuild                 Intel Corporation
+
 -- 
-1.7.10.4
+  Ed Cashin
+  ecashin@coraid.com
+
 
