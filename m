@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Mar 2013 14:36:24 +0000
+Date: Wed, 27 Mar 2013 15:49:44 +0000
 Subject: [PATCH 02/04] ARM: shmobile: r8a7790 SCIF support
-Message-Id: <20130320143624.32377.18473.sendpatchset@w520>
+Message-Id: <20130327154944.10876.63305.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130320143604.32377.32634.sendpatchset@w520>
-In-Reply-To: <20130320143604.32377.32634.sendpatchset@w520>
+References: <20130327154925.10876.40575.sendpatchset@w520>
+In-Reply-To: <20130327154925.10876.40575.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
