@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Mar 2013 05:04:37 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 27 Mar 2013 06:12:42 +0000
 Subject: Re: [PATCH v3 2/2] ARM: shmobile: r8a7740: Migrate from INTC to GIC
-Message-Id: <20130327050437.GI25431@verge.net.au>
+Message-Id: <87ehf1id61.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364296699-20919-1-git-send-email-hechtb+renesas@gmail.com>
  <1364296699-20919-2-git-send-email-hechtb+renesas@gmail.com>
@@ -11,7 +11,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 26, 2013 at 12:18:19PM +0100, Bastian Hecht wrote:
+
+Hi
+
 > With the added capabilty of the intc_irqpin driver to handle shared
 > external IRQs, all prerequisites are fulfilled and we are ready to
 > migrate completely to GIC. This includes the following steps:
@@ -36,11 +38,10 @@ On Tue, Mar 26, 2013 at 12:18:19PM +0100, Bastian Hecht wrote:
 > 
 > In setup-r8a7740.c: Swapped two gic_spi entries of DMA3.
 
-Hi Bastian,
+gic value was solved on this patch :)
 
-I am having a little trouble applying this patch.
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Could you please either let me know which commit id in the renesas
-tree this is based on; or rebase it on the next branch in the renesas tree.
-
-Thanks.
+Best regards
+---
+Kuninori Morimoto
