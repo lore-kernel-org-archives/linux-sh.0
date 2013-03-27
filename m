@@ -1,8 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Mar 2013 11:06:30 +0000
+Date: Wed, 27 Mar 2013 06:11:14 +0000
 Subject: [PATCH] gpio: em: Make use of devm functions
-Message-Id: <20130313110630.30040.20743.sendpatchset@w520>
+Message-Id: <20130327061114.3356.57465.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130313110630.30040.20743.sendpatchset@w520>
+In-Reply-To: <20130313110630.30040.20743.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,7 +20,7 @@ the code more compact.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Written on top of:
+ Applies to linux-next tag next-20130327, written on top of:
  [PATCH] gpio: em: Add Device Tree support
 
  drivers/gpio/gpio-em.c |   53 +++++++++++++++++-------------------------------
