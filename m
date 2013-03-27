@@ -1,94 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 15 Mar 2013 15:41:07 +0000
-Subject: Re: [ANNOUNCE] Renesas branch refresh
-Message-Id: <20130315154107.GC16561@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Mar 2013 19:21:11 +0000
+Subject: [PATCH v2 0/2]  Add R-Car Display Unit support for the Marzen board
+Message-Id: <1364412073-12322-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130313154630.GB2755@verge.net.au>
-In-Reply-To: <20130313154630.GB2755@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Mar 13, 2013 at 04:46:31PM +0100, Simon Horman wrote:
-> Hi,
-> 
-> I would like to announce that I have pushed fresh branches to
-> the renesas tree on kernel.org which for the basis of what I intend
-> to request arm-soc to pull for v3.10.
-> 
-> The new/rebased branches are as follows:
-> 
-> * next-for-v3.10
-> 
->   A merge of fixes, defconfig, soc, pinmux and boards.
->   I have not named this next at this time primarily because
->   it includes the pinmux branch which is based on a branch of
->   Linus Walleij's linux-pinctrl tree and I would like his approval
->   to use that in linux-next and request it to be pulled into arm-soc first.
-> 
-> * fixes
-> 
->   Critical fixes targeted at inclusion in v3.9.
->   Based on v3.9-rc1.
-> 
-> * defconfig
-> 
->   defconfig changes.
->   Based on v3.9-rc2.
-> 
-> * soc
-> 
->   SoC changes.
->   Based on v3.9-rc2.
-> 
-> * pinmux
-> 
->   pinmux changes, a.k.a Laurent's work
->   Based on pinmux-base, a merge of: fixes and the devel branch of
->   Linus Walleij's linux-pinctrl tree on kernel.org
+Hello,
 
-Laurent has rebased his tree and I have re-pushed the pinmux branch
-accordingly.
+Here's the second version of the r8a7779 and marzen patches that add support
+for the display unit, based on the pinctrl API.
 
-> * boards
-> 
->   Branch for board changes.
->   Based on boards-base, a merge of the pinmux and soc branches.
+Compared to v1, the second patch was fixed not to revert the first patch
+(which was totally unintentional).
 
-I have rebased this on the fresh pinmux branch.
+The patches are not meant to be merged yet, they will be submitted with the
+next version of the DU driver.
 
-> 
-> 
-> Old/unmodified branches. Not targeted at inclusion in arm-soc at this time.
-> 
-> * next
-> 
->   This is present-in linux-next
->   It is based on v3.8-rc3.
->   I intend to replace it with next-for-v3.10 in the near future.
+Laurent Pinchart (2):
+  ARM: mach-shmobile: r8a7779: Add DU support
+  ARM: shmobile: marzen: Add Display Unit support
 
-I have now pushed a rebased version of this branch as next
-and it should appear in linux-next in the not to distant future.
+ arch/arm/configs/marzen_defconfig            |  2 ++
+ arch/arm/mach-shmobile/board-marzen.c        | 51 ++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c       | 30 ++++++++++++++++
+ 4 files changed, 84 insertions(+)
 
-> 
-> * topic/*
-> 
->   These are based on v3.8-rc3.
->   The only ones that still seem relevant are:
->   * topic/intc-of
->   * topic/r-car-du-drm
->   * topic/sh_eth
->   I intend the rebase the branches listed immediately above and
->   remove the rest. I do not believe there is any need for
->   topic/all+next at this point and I plan to remove it too.
+-- 
+Regards,
 
-I have removed all the topic/branches other than those listed with a '*'
-above. The rebase of those branches is still pending.
+Laurent Pinchart
 
-> Deleted branches:
-> 
-> * boards3: Rebased and renamed boards
-> * soc5: Rebased and renamed soc
-> * pfc: Included in v3.9-rc2
-> * boards-kzm9g-reference: Merged into soc and boards branches
