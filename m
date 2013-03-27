@@ -1,63 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 13:02:28 +0000
-Subject: [PATCH 02/12] clocksource: sh_cmt: Initialize 'max_match_value' and 'lock' in sh_cmt_setup()
-Message-Id: <1363611758-6655-3-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Mar 2013 07:11:50 +0000
+Subject: [PATCH 00/02] ARM: shmobile: EMEV2 SMP DT reference code (once more!)
+Message-Id: <20130327071150.32741.20085.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+ARM: shmobile: EMEV2 SMP DT reference code (once more!)
 
-Move the setup of spinlock and max_match_value to sh_cmt_setup().
-There's no need to defer those steps until sh_cmt_register().
+[PATCH 01/02] ARM: shmobile: Temporarily use C to setup EMEV2 clocks
+[PATCH 02/02] ARM: shmobile: Temporarily use emev2_map_io() for SMP
 
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This series is a small silly SMP DT reference implementation meant
+to give the other shmobile DT SMP platforms a kick in the butt.
+
+None of the patches in the series should be merged as-is, but they
+can instead be used to boot EMEV2 using DT with SMP support.
+
+I've used the following steps to build an uImage for the KZM9D board:
+
+make -j9 ARCH=arm CROSS_COMPILE=_ uImage
+./scripts/dtc/dtc -I dts -O dtb arch/arm/boot/dts/emev2-kzm9d.dts -o arch/arm/boot/dts/emev2-kzm9d.dtb
+rm arch/arm/boot/zImage arch/arm/boot/uImage
+make -j9 ARCH=arm CROSS_COMPILE=_ zImage
+cat arch/arm/boot/dts/emev2-kzm9d.dtb >> arch/arm/boot/zImage 
+$(cut -f 3- -d ' ' < arch/arm/boot/.uImage.cmd)
+
+The above sequence works well for me and is obviously much better and
+easier than making use of any static mach-type number.
+
+As for build configuration, use the following two on KZM9D DT-only:
+CONFIG_ARCH_EMEV2=y
+CONFIG_MACH_KZM9D=n
+
+The current state of EMEV2 and KZM9D DT is that you can get serial
+ports and the STI timer running with DT-only. The GPIO bits still
+lack DT bindings. This means no ethernet, so initramfs is needed.
+
+Not-even-remotely-signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/clocksource/sh_cmt.c |   16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 4b8d296..2e49684 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -625,14 +625,6 @@ static int sh_cmt_register(struct sh_cmt_priv *p, char *name,
- 			   unsigned long clockevent_rating,
- 			   unsigned long clocksource_rating)
- {
--	if (p->width = (sizeof(p->max_match_value) * 8))
--		p->max_match_value = ~0;
--	else
--		p->max_match_value = (1 << p->width) - 1;
--
--	p->match_value = p->max_match_value;
--	raw_spin_lock_init(&p->lock);
--
- 	if (clockevent_rating)
- 		sh_cmt_register_clockevent(p, name, clockevent_rating);
- 
-@@ -703,6 +695,14 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 		p->clear_bits = ~0xc000;
- 	}
- 
-+	if (p->width = (sizeof(p->max_match_value) * 8))
-+		p->max_match_value = ~0;
-+	else
-+		p->max_match_value = (1 << p->width) - 1;
-+
-+	p->match_value = p->max_match_value;
-+	raw_spin_lock_init(&p->lock);
-+
- 	ret = sh_cmt_register(p, (char *)dev_name(&p->pdev->dev),
- 			      cfg->clockevent_rating,
- 			      cfg->clocksource_rating);
--- 
-1.7.10.4
+ Tested on top of renesas.git tag renesas-next-20130321
 
+ arch/arm/mach-shmobile/setup-emev2.c |    3 +++
+ 1 file changed, 3 insertions(+)
