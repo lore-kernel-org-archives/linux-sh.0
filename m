@@ -1,37 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:53:19 +0000
-Subject: [PATCH 7/9] ARM: mach-shmobile: kzm9g: do not enable REGULATOR_DUMMY in defconfig
-Message-Id: <1363607601-20366-8-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Mar 2013 07:12:08 +0000
+Subject: [PATCH 02/02] ARM: shmobile: Temporarily use emev2_map_io() for SMP
+Message-Id: <20130327071208.32741.96050.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Don't enable REGULATOR_DUMMY, it is only intended for development / testing.
-There doesn't seem to be any value in setting it here and doing
-so was an error on my part.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+To run SMP together with DT we need to use emev2_map_io
+on EMEV2. This due to some early requirements for ioremap().
+
+Instead of blindly applying this I believe we should spend
+time looking into why the common ARM ioremap() code dies
+early instead of behaving sanely and returning NULL.
+
+So for now I prefer not to merge this. Anyone wanting
+to use and/or develop code for KZM9D can instead make
+use of the code in board-kzm9d.c.
+
+Not-at-all-signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/configs/kzm9g_defconfig |    1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index 84ac68c..f6e585b 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -85,7 +85,6 @@ CONFIG_I2C_SH_MOBILE=y
- CONFIG_GPIO_PCF857X=y
- # CONFIG_HWMON is not set
- CONFIG_REGULATOR=y
--CONFIG_REGULATOR_DUMMY=y
- CONFIG_FB=y
- CONFIG_FB_SH_MOBILE_LCDC=y
- CONFIG_FRAMEBUFFER_CONSOLE=y
--- 
-1.7.10.4
+ arch/arm/mach-shmobile/setup-emev2.c |    1 +
+ 1 file changed, 1 insertion(+)
 
+--- 0002/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-02-13 17:08:33.000000000 +0900
+@@ -454,6 +454,7 @@ static const char *emev2_boards_compat_d
+ 
+ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
++	.map_io		= emev2_map_io,
+ 	.init_early	= emev2_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= irqchip_init,
