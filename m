@@ -1,163 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 04 Mar 2013 07:18:42 +0000
-Subject: [PATCH 2/5] ARM: shmobile: add R8A7778 clock support
-Message-Id: <87vc97pr8x.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 27 Mar 2013 03:46:56 +0000
+Subject: [PATCH 1/2] ARM: shmobile: marzen: defconfig: add GPIO RCAR driver support
+Message-Id: <1364356017-25890-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364356017-25890-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364356017-25890-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-based on v1.0 datasheet
+This enables the driver added in "gpio: Renesas R-Car GPIO driver V3"
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Makefile              |    2 +-
- arch/arm/mach-shmobile/clock-r8a7778.c       |  109 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- 3 files changed, 111 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm/mach-shmobile/clock-r8a7778.c
+ arch/arm/configs/marzen_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index d866f30..0f50a3c 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -9,7 +9,7 @@ obj-y				:= timer.o console.o clock.o
- obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
--obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
-+obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
- 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-new file mode 100644
-index 0000000..4e779444b
---- /dev/null
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -0,0 +1,109 @@
-+/*
-+ * r8a7778 clock framework support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * based on r8a7779
-+ *
-+ * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/io.h>
-+#include <linux/sh_clk.h>
-+#include <linux/clkdev.h>
-+#include <mach/common.h>
-+
-+#define FRQMR   0xffc80014
-+#define MSTPCR0 0xffc80030
-+#define MSTPCR1 0xffc80034
-+#define MSTPCR3 0xffc8003c
-+#define MSTPSR1 0xffc80044
-+#define MSTPSR4 0xffc80048
-+#define MSTPSR6 0xffc8004c
-+#define MSTPCR4 0xffc80050
-+#define MSTPCR5 0xffc80054
-+#define MSTPCR6 0xffc80058
-+
-+/* ioremap() through clock mapping mandatory to avoid
-+ * collision with ARM coherent DMA virtual memory range.
-+ */
-+
-+static struct clk_mapping cpg_mapping = {
-+	.phys	= 0xffc80000,
-+	.len	= 0x80,
-+};
-+
-+static struct clk clkp = {
-+	.rate   = 62500000, /* FIXME: shortcut */
-+	.flags  = CLK_ENABLE_ON_INIT,
-+	.mapping = &cpg_mapping,
-+};
-+
-+static struct clk *main_clks[] = {
-+	&clkp,
-+};
-+
-+enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-+	MSTP016, MSTP015, MSTP014,
-+	MSTP_NR };
-+
-+#define MSTP(_parent, _reg, _bit, _flags) \
-+	SH_CLK_MSTP32(_parent, _reg, _bit, _flags)
-+
-+static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP026] = MSTP(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
-+	[MSTP025] = MSTP(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
-+	[MSTP024] = MSTP(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
-+	[MSTP023] = MSTP(&clkp, MSTPCR0, 23, 0), /* SCIF3 */
-+	[MSTP022] = MSTP(&clkp, MSTPCR0, 22, 0), /* SCIF4 */
-+	[MSTP021] = MSTP(&clkp, MSTPCR0, 21, 0), /* SCIF5 */
-+	[MSTP016] = MSTP(&clkp, MSTPCR0, 16, 0), /* TMU0 */
-+	[MSTP015] = MSTP(&clkp, MSTPCR0, 15, 0), /* TMU1 */
-+	[MSTP014] = MSTP(&clkp, MSTPCR0, 14, 0), /* TMU2 */
-+};
-+
-+static struct clk_lookup lookups[] = {
-+	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
-+	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
-+	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
-+	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
-+	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
-+	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
-+	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
-+	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-+};
-+
-+void __init r8a7778_clock_init(void)
-+{
-+	int k, ret = 0;
-+
-+	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
-+		ret = clk_register(main_clks[k]);
-+
-+	if (!ret)
-+		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
-+	if (!ret)
-+		shmobile_clk_init();
-+	else
-+		panic("failed to setup r8a7778 clocks\n");
-+}
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 23b1d4f..e01fa1a 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -62,6 +62,7 @@ extern void r8a7778_add_early_devices(void);
- extern void r8a7778_earlytimer_init(void);
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_map_io(void);
-+extern void r8a7778_clock_init(void);
- 
- extern void r8a7779_init_delay(void);
- extern void r8a7779_init_irq(void);
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index afb17d6..4b183d1 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -75,6 +75,7 @@ CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_SH_HSPI=y
+ CONFIG_GPIO_SYSFS=y
++CONFIG_GPIO_RCAR=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
 -- 
-1.7.9.5
+1.7.10.4
 
