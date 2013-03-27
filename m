@@ -1,53 +1,40 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:48 +0000
-Subject: [PATCH v3 28/64] ARM: shmobile: kzm9g: Register pinctrl mappings for FSI
-Message-Id: <1362740544-19164-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Mar 2013 19:07:32 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7779: Add GP_PIN macro
+Message-Id: <1364411253-12170-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based FSI pinmux configuration by pinctrl mappings.
+Pins are numbered in the r8a7779 documentation using a bank number and a
+pin number in the bank. As the pinctrl pin number space is linear, this
+is flattened by multiplying the bank number by 32 and adding the pin
+number. The resulting pin number has no direct relationship with the
+documentation, making it error-prone.
+
+Add a GP_PIN macro for board code to convert from the documentation pin
+number space to the linear pinctrl space.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c | 15 ++++++++-------
- 1 file changed, 8 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index d54cc35..68f67c2 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -601,6 +601,14 @@ static struct platform_device *kzm_devices[] __initdata = {
- };
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 5896922..53db188 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -6,6 +6,8 @@
  
- static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_mclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_out", "fsia"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
- 				  "i2c3_1", "i2c3"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-@@ -724,13 +732,6 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
- 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ struct platform_device;
  
--	/* enable FSI2 port A (ak4648) */
--	gpio_request(GPIO_FN_FSIACK,	NULL);
--	gpio_request(GPIO_FN_FSIAILR,	NULL);
--	gpio_request(GPIO_FN_FSIAIBT,	NULL);
--	gpio_request(GPIO_FN_FSIAISLD,	NULL);
--	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--
- 	/* enable USB */
- 	gpio_request(GPIO_FN_VBUS_0,	NULL);
- 
++#define GP_PIN(bank, pin)	(((bank) * 32) + (pin))
++
+ struct r8a7779_pm_ch {
+ 	unsigned long chan_offs;
+ 	unsigned int chan_bit;
 -- 
 1.8.1.5
 
