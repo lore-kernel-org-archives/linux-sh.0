@@ -1,26 +1,30 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 08:16:53 +0000
-Subject: Re: [PATCH 13/25] sh-pfc: Move GPIO registers access functions to gpio.c
-Message-Id: <CACRpkdZ05NnCdToHBH2UWyKdsvzB8zeRQe4nYNiDjFmP0-HpHA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 27 Mar 2013 03:46:55 +0000
+Subject: [PATCH 0/2] ARM: shmobile: marzen: defconfig updates for v3.10
+Message-Id: <1364356017-25890-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363214384-3870-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363214384-3870-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 11:39 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+Hi,
 
-> Move the sh_pfc_setup_data_regs(), sh_pfc_setup_data_reg(),
-> sh_pfc_get_data_reg(), sh_pfc_read_bit() and sh_pfc_write_bit()
-> function to gpio.c as they belong to the GPIO implementation. Inline
-> sh_pfc_read_bit() and sh_pfc_write_bit() in their only call location.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+the this short series updates the defconfig for marzen for changes
+made by the following patches which I plan to queue-up for v3.10 shortly.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+1. ARM: shmobile: marzen: Add GPIO LEDs
+2. gpio: Renesas R-Car GPIO driver V3
 
-Yours,
-Linus Walleij
+The patches in this series are:
+
+Simon Horman (2):
+  ARM: shmobile: marzen: defconfig: add GPIO RCAR driver support
+  ARM: shmobile: marzen: defconfig: enable GPIO LEDs driver
+
+ arch/arm/configs/marzen_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+-- 
+1.7.10.4
+
