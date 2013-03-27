@@ -1,58 +1,95 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:26 +0000
-Subject: [PATCH 030/142] sh: sh7203: Add pin control resources
-Message-Id: <1363604838-29359-31-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 27 Mar 2013 07:55:41 +0000
+Subject: [PATCH 3/8] ARM: shmobile: add struct clk_ratio and fixed ratio clock macro
+Message-Id: <8738vhi8ee.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Renesas chip has many clocks inside,
+and some of them are using fixed ratio via parent clock.
+Current shmobile clock code is using own divX_recalc function
+and divX_clk_ops.
+This patch can reduce these code
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
-
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock.c              |   13 +++++++++
+ arch/arm/mach-shmobile/include/mach/clock.h |   39 +++++++++++++++++++++++++++
+ 2 files changed, 52 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/clock.h
 
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-index 96c6c26..eef17dc 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-@@ -8,12 +8,23 @@
-  * for more details.
-  */
- 
-+#include <linux/bug.h>
+diff --git a/arch/arm/mach-shmobile/clock.c b/arch/arm/mach-shmobile/clock.c
+index e816ca9..ad7df62 100644
+--- a/arch/arm/mach-shmobile/clock.c
++++ b/arch/arm/mach-shmobile/clock.c
+@@ -23,6 +23,19 @@
  #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/ioport.h>
- #include <cpu/pfc.h>
- 
-+static struct resource sh7203_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xfffe3800,
-+		.end	= 0xfffe3a9f,
-+		.flags	= IORESOURCE_MEM,
-+	},
+ #include <linux/sh_clk.h>
+ #include <linux/export.h>
++#include <mach/clock.h>
++#include <mach/common.h>
++
++unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk)
++{
++	struct clk_ratio *p = clk->priv;
++
++	return clk->parent->rate / p->div * p->mul;
 +};
 +
- static int __init plat_pinmux_setup(void)
++struct sh_clk_ops shmobile_fixed_ratio_clk_ops = {
++	.recalc	= shmobile_fixed_ratio_clk_recalc,
++};
+ 
+ int __init shmobile_clk_init(void)
  {
--	return sh_pfc_register("pfc-sh7203", NULL, 0);
-+	return sh_pfc_register("pfc-sh7203", sh7203_pfc_resources,
-+			       ARRAY_SIZE(sh7203_pfc_resources));
- }
- arch_initcall(plat_pinmux_setup);
+diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
+new file mode 100644
+index 0000000..76ac612
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/clock.h
+@@ -0,0 +1,39 @@
++#ifndef CLOCK_H
++#define CLOCK_H
++
++unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
++extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
++
++/* clock ratio */
++struct clk_ratio {
++	int mul;
++	int div;
++};
++
++#define SH_CLK_RATIO(name, m, d)		\
++static struct clk_ratio name ##_ratio = {	\
++	.mul = m,				\
++	.div = d,				\
++}
++
++#define SH_FIXED_RATIO_CLKg(name, p, r)	\
++struct clk name = {			\
++	.parent	= &p,				\
++	.ops	= &shmobile_fixed_ratio_clk_ops,\
++	.priv	= &r ## _ratio,			\
++}
++
++#define SH_FIXED_RATIO_CLK(name, p, r)		\
++static SH_FIXED_RATIO_CLKg(name, p, r);
++
++#define SH_FIXED_RATIO_CLK_SET(name, p, m, d)	\
++	SH_CLK_RATIO(name, m, d);		\
++	SH_FIXED_RATIO_CLK(name, p, name);
++
++#define SH_CLK_SET_RATIO(p, m, d)	\
++{			\
++	(p)->mul = m;	\
++	(p)->div = d;	\
++}
++
++#endif
 -- 
-1.7.10.4
+1.7.9.5
 
