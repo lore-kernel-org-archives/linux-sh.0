@@ -1,54 +1,98 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 13:02:34 +0000
-Subject: [PATCH 08/12] clocksource: sh_cmt: Add CMT register layout comment
-Message-Id: <1363611758-6655-9-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 27 Mar 2013 07:55:54 +0000
+Subject: [PATCH 4/8] ARM: shmobile: sh7372: use fixed ratio clock
+Message-Id: <871ub1i8e1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Current clock-sh7372 is using own implement
+for each divX clocks.
+This patch switches to use fixed ratio clock,
+and was tesed on mackerel board.
 
-Add a comment about different register layouts
-supported by the CMT driver.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/clocksource/sh_cmt.c |   15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ arch/arm/mach-shmobile/clock-sh7372.c |   44 ++++++---------------------------
+ 1 file changed, 7 insertions(+), 37 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 7108963..b72b724 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -66,6 +66,21 @@ struct sh_cmt_priv {
- 			    unsigned long value);
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 6c23e3f..7e10593 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -21,6 +21,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ 
+ /* SH7372 registers */
+@@ -83,39 +84,12 @@ struct clk sh7372_extal2_clk = {
+ 	.rate		= 48000000,
  };
  
-+/* Examples of supported CMT timer register layouts and I/O access widths:
-+ *
-+ * "16-bit counter and 16-bit control" as found on sh7263:
-+ * CMSTR 0xfffec000 16-bit
-+ * CMCSR 0xfffec002 16-bit
-+ * CMCNT 0xfffec004 16-bit
-+ * CMCOR 0xfffec006 16-bit
-+ *
-+ * "32-bit counter and 16-bit control" as found on sh7372, sh73a0, r8a7740:
-+ * CMSTR 0xffca0000 16-bit
-+ * CMCSR 0xffca0060 16-bit
-+ * CMCNT 0xffca0064 32-bit
-+ * CMCOR 0xffca0068 32-bit
-+ */
-+
- static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
- {
- 	return ioread16(base + (offs << 1));
+-/* A fixed divide-by-2 block */
+-static unsigned long div2_recalc(struct clk *clk)
+-{
+-	return clk->parent->rate / 2;
+-}
+-
+-static struct sh_clk_ops div2_clk_ops = {
+-	.recalc		= div2_recalc,
+-};
++SH_CLK_RATIO(div2, 1, 2);
+ 
+-/* Divide dv_clki by two */
+-struct clk sh7372_dv_clki_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &sh7372_dv_clki_clk,
+-};
+-
+-/* Divide extal1 by two */
+-static struct clk extal1_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &sh7372_extal1_clk,
+-};
+-
+-/* Divide extal2 by two */
+-static struct clk extal2_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &sh7372_extal2_clk,
+-};
+-
+-/* Divide extal2 by four */
+-static struct clk extal2_div4_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &extal2_div2_clk,
+-};
++SH_FIXED_RATIO_CLKg(sh7372_dv_clki_div2_clk,	sh7372_dv_clki_clk,	div2);
++SH_FIXED_RATIO_CLK(extal1_div2_clk,		sh7372_extal1_clk,	div2);
++SH_FIXED_RATIO_CLK(extal2_div2_clk,		sh7372_extal2_clk,	div2);
++SH_FIXED_RATIO_CLK(extal2_div4_clk,		extal2_div2_clk,	div2);
+ 
+ /* PLLC0 and PLLC1 */
+ static unsigned long pllc01_recalc(struct clk *clk)
+@@ -147,10 +121,7 @@ static struct clk pllc1_clk = {
+ };
+ 
+ /* Divide PLLC1 by two */
+-static struct clk pllc1_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &pllc1_clk,
+-};
++SH_FIXED_RATIO_CLK(pllc1_div2_clk,	pllc1_clk,	div2);
+ 
+ /* PLLC2 */
+ 
+@@ -650,5 +621,4 @@ void __init sh7372_clock_init(void)
+ 		shmobile_clk_init();
+ 	else
+ 		panic("failed to setup sh7372 clocks\n");
+-
+ }
 -- 
-1.7.10.4
+1.7.9.5
 
