@@ -1,37 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 27 Mar 2013 13:59:39 +0000
-Subject: [GIT PULL] Renesas fbdev fixes for v3.9
-Message-Id: <1364392780-3847-1-git-send-email-horms+renesas@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 27 Mar 2013 18:44:11 +0000
+Subject: Re: [GIT PULL] Renesas fbdev fixes for v3.9
+Message-Id: <201303271844.11717.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364392780-3847-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364392780-3847-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd, Hi Olof,
+On Wednesday 27 March 2013, Simon Horman wrote:
+> Hi Arnd, Hi Olof,
+> 
+> The following changes since commit f6161aa153581da4a3867a2d1a7caf4be19b6ec9:
+> 
+>   Linux 3.9-rc2 (2013-03-10 16:54:19 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fbdev-fixes-for-v3.9
+> 
+> for you to fetch changes up to 9beb09f1cadf33145c307c504f844ae24686c872:
+> 
+>   fbdev: sh_mobile_lcdc: fixup B side hsync adjust settings (2013-03-27 22:47:24 +0900)
+> 
 
-The following changes since commit f6161aa153581da4a3867a2d1a7caf4be19b6ec9:
+Applied to fixes branch, thanks!
 
-  Linux 3.9-rc2 (2013-03-10 16:54:19 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fbdev-fixes-for-v3.9
-
-for you to fetch changes up to 9beb09f1cadf33145c307c504f844ae24686c872:
-
-  fbdev: sh_mobile_lcdc: fixup B side hsync adjust settings (2013-03-27 22:47:24 +0900)
-
-----------------------------------------------------------------
-Renesas fbdev fixes for v3.9
-
-A fix from Morimoto-san to correct the horizontal location of output.
-
-I apologise for this being posted late in the cycle.
-
-----------------------------------------------------------------
-Kuninori Morimoto (1):
-      fbdev: sh_mobile_lcdc: fixup B side hsync adjust settings
-
- drivers/video/sh_mobile_lcdcfb.c |    1 +
- 1 file changed, 1 insertion(+)
+	Arnd
