@@ -1,189 +1,183 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:17:50 +0000
-Subject: [PATCH 02/13] ARM: shmobile: switch SDHI0 to GPIO regulator on armadillo800eva
-Message-Id: <1363659481-5922-3-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 27 Mar 2013 13:54:03 +0000
+Subject: [PATCH v4 1/2] irqchip: intc-irqpin: Add support for shared interrupt lines
+Message-Id: <1364392444-25181-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+On some hardware we don't have a 1-1 mapping from the external
+interrupts coming from INTC to the GIC SPI pins. We can however
+share lines to demux incoming IRQs on these SoCs.
 
-When regulators are used with MMC devices, explicitly provided OCR masks
-are ignored, they can be removed from platform data. Also switch SDHI0
-from fixed regulator with hard-wired GPIO levels to a proper GPIO regulator
-instance to enable dynamic voltage switching.
+This patch enables the intc_irqpin driver to detect requests for shared
+interrupt lines and demuxes them properly by querying the INTC INTREQx0A
+registers.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+If you need multiple shared intc_irqpin device instances, be sure to mask
+out all interrupts on the INTC that share the one line before you start
+to register them. Else you run into IRQ floods that would be caused by
+interrupts for which no handler has been set up yet when the first
+intc_irqpin device is registered.
+
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |  101 ++++++++++++++++++++----
- 1 file changed, 86 insertions(+), 15 deletions(-)
+v4: rebased on next
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 60694e8..f322a18 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -28,8 +28,10 @@
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
-+#include <linux/regulator/driver.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/regulator/fixed.h>
-+#include <linux/regulator/gpio-regulator.h>
- #include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
- #include <linux/videodev2.h>
-@@ -555,17 +557,94 @@ static struct platform_device gpio_keys_device = {
- 	},
+ drivers/irqchip/irq-renesas-intc-irqpin.c |   90 ++++++++++++++++++++++++++---
+ 1 file changed, 83 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 82bbe8f..a5a9413 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -76,6 +76,8 @@ struct intc_irqpin_priv {
+ 	struct platform_device *pdev;
+ 	struct irq_chip irq_chip;
+ 	struct irq_domain *irq_domain;
++	bool shared_irqs;
++	u8 shared_irq_mask;
  };
  
--/* Fixed 3.3V regulator to be used by SDHI0, SDHI1, MMCIF */
--static struct regulator_consumer_supply fixed3v3_power_consumers[] -{
--	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
--	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+/* Fixed 3.3V regulator to be used by SDHI1, MMCIF */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
- 	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
- 	REGULATOR_SUPPLY("vmmc", "sh_mmcif"),
- 	REGULATOR_SUPPLY("vqmmc", "sh_mmcif"),
- };
+ static unsigned long intc_irqpin_read32(void __iomem *iomem)
+@@ -195,6 +197,28 @@ static void intc_irqpin_irq_disable(struct irq_data *d)
+ 	intc_irqpin_irq_write_hwirq(p, INTC_IRQPIN_REG_MASK, hw_irq);
+ }
  
-+/* Fixed 3.3V regulator to be used by SDHI0 */
-+static struct regulator_consumer_supply vcc_sdhi0_consumers[] = {
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+};
++static void intc_irqpin_shared_irq_enable(struct irq_data *d)
++{
++	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
++	int hw_irq = irqd_to_hwirq(d);
 +
-+static struct regulator_init_data vcc_sdhi0_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
-+	.consumer_supplies      = vcc_sdhi0_consumers,
-+};
++	intc_irqpin_dbg(&p->irq[hw_irq], "shared enable");
++	intc_irqpin_irq_write_hwirq(p, INTC_IRQPIN_REG_CLEAR, hw_irq);
 +
-+static struct fixed_voltage_config vcc_sdhi0_info = {
-+	.supply_name = "SDHI0 Vcc",
-+	.microvolts = 3300000,
-+	.gpio = GPIO_PORT75,
-+	.enable_high = 1,
-+	.init_data = &vcc_sdhi0_init_data,
-+};
++	p->shared_irq_mask &= ~BIT(hw_irq);
++}
 +
-+static struct platform_device vcc_sdhi0 = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 1,
-+	.dev  = {
-+		.platform_data = &vcc_sdhi0_info,
-+	},
-+};
++static void intc_irqpin_shared_irq_disable(struct irq_data *d)
++{
++	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
++	int hw_irq = irqd_to_hwirq(d);
 +
-+/* 1.8 / 3.3V SDHI0 VccQ regulator */
-+static struct regulator_consumer_supply vccq_sdhi0_consumers[] = {
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
++	intc_irqpin_dbg(&p->irq[hw_irq], "shared disable");
++	intc_irqpin_irq_write_hwirq(p, INTC_IRQPIN_REG_MASK, hw_irq);
 +
-+static struct regulator_init_data vccq_sdhi0_init_data = {
-+	.constraints = {
-+		.input_uV	= 3300000,
-+		.min_uV		= 1800000,
-+		.max_uV         = 3300000,
-+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-+				  REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(vccq_sdhi0_consumers),
-+	.consumer_supplies      = vccq_sdhi0_consumers,
-+};
++	p->shared_irq_mask |= BIT(hw_irq);
++}
 +
-+static struct gpio vccq_sdhi0_gpios[] = {
-+	{GPIO_PORT17, GPIOF_OUT_INIT_LOW, "vccq-sdhi0" },
-+};
-+
-+static struct gpio_regulator_state vccq_sdhi0_states[] = {
-+	{ .value = 3300000, .gpios = (0 << 0) },
-+	{ .value = 1800000, .gpios = (1 << 0) },
-+};
-+
-+static struct gpio_regulator_config vccq_sdhi0_info = {
-+	.supply_name = "vqmmc",
-+
-+	.enable_gpio = GPIO_PORT74,
-+	.enable_high = 1,
-+	.enabled_at_boot = 0,
-+
-+	.gpios = vccq_sdhi0_gpios,
-+	.nr_gpios = ARRAY_SIZE(vccq_sdhi0_gpios),
-+
-+	.states = vccq_sdhi0_states,
-+	.nr_states = ARRAY_SIZE(vccq_sdhi0_states),
-+
-+	.type = REGULATOR_VOLTAGE,
-+	.init_data = &vccq_sdhi0_init_data,
-+};
-+
-+static struct platform_device vccq_sdhi0 = {
-+	.name = "gpio-regulator",
-+	.id   = -1,
-+	.dev  = {
-+		.platform_data = &vccq_sdhi0_info,
-+	},
-+};
-+
- /* SDHI0 */
- /*
-  * FIXME
-@@ -580,7 +659,6 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
--	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	.cd_gpio	= GPIO_PORT167,
- };
-@@ -622,7 +700,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
--	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	/* Port72 cannot generate IRQs, will be used in polling mode. */
- 	.cd_gpio	= GPIO_PORT72,
-@@ -673,7 +750,6 @@ static const struct pinctrl_map eva_sdhi1_pinctrl_map[] = {
- /* MMCIF */
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.sup_pclk	= 0,
--	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
- 			  MMC_CAP_NONREMOVABLE,
-@@ -926,6 +1002,8 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&fsi_wm8978_device,
- 	&fsi_hdmi_device,
- 	&i2c_gpio_device,
-+	&vcc_sdhi0,
-+	&vccq_sdhi0,
- };
+ static void intc_irqpin_irq_enable_force(struct irq_data *d)
+ {
+ 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+@@ -267,6 +291,25 @@ static irqreturn_t intc_irqpin_irq_handler(int irq, void *dev_id)
+ 	return IRQ_NONE;
+ }
  
- static const struct pinctrl_map eva_pinctrl_map[] = {
-@@ -1060,13 +1138,6 @@ static void __init eva_init(void)
- 		usb = &usbhsf_device;
++static irqreturn_t intc_irqpin_shared_irq_handler(int irq, void *dev_id)
++{
++	struct intc_irqpin_priv *p = dev_id;
++	unsigned int reg_source = intc_irqpin_read(p, INTC_IRQPIN_REG_SOURCE);
++	irqreturn_t status = IRQ_NONE;
++	int k;
++
++	for (k = 0; k < 8; k++) {
++		if (reg_source & BIT(7 - k)) {
++			if (BIT(k) & p->shared_irq_mask)
++				continue;
++
++			status |= intc_irqpin_irq_handler(irq, &p->irq[k]);
++		}
++	}
++
++	return status;
++}
++
+ static int intc_irqpin_irq_domain_map(struct irq_domain *h, unsigned int virq,
+ 				      irq_hw_number_t hw)
+ {
+@@ -298,6 +341,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	void (*enable_fn)(struct irq_data *d);
+ 	void (*disable_fn)(struct irq_data *d);
+ 	const char *name = dev_name(&pdev->dev);
++	int ref_irq;
+ 	int ret;
+ 	int k;
+ 
+@@ -385,13 +429,29 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 		p->config.control_parent = of_property_read_bool(pdev->dev.of_node,
+ 								 "control-parent");
+ 
++	/* clear all pending interrupts */
++	intc_irqpin_write(p, INTC_IRQPIN_REG_SOURCE, 0x0);
++
++	/* scan for shared interrupt lines */
++	ref_irq = p->irq[0].requested_irq;
++	p->shared_irqs = true;
++	for (k = 1; k < p->number_of_irqs; k++) {
++		if (ref_irq != p->irq[k].requested_irq) {
++			p->shared_irqs = false;
++			break;
++		}
++	}
++
+ 	/* use more severe masking method if requested */
+ 	if (p->config.control_parent) {
+ 		enable_fn = intc_irqpin_irq_enable_force;
+ 		disable_fn = intc_irqpin_irq_disable_force;
+-	} else {
++	} else if (!p->shared_irqs) {
+ 		enable_fn = intc_irqpin_irq_enable;
+ 		disable_fn = intc_irqpin_irq_disable;
++	} else {
++		enable_fn = intc_irqpin_shared_irq_enable;
++		disable_fn = intc_irqpin_shared_irq_disable;
  	}
  
--	/* SDHI0 */
--	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
--	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
--	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
--
--	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
--
- 	/* CEU0 */
- 	gpio_request(GPIO_FN_VIO0_D7,		NULL);
- 	gpio_request(GPIO_FN_VIO0_D6,		NULL);
+ 	irq_chip = &p->irq_chip;
+@@ -413,18 +473,34 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
+-	/* request and set priority on interrupts one by one */
+-	for (k = 0; k < p->number_of_irqs; k++) {
+-		if (devm_request_irq(&pdev->dev, p->irq[k].requested_irq,
+-				     intc_irqpin_irq_handler,
+-				     0, name, &p->irq[k])) {
++	if (p->shared_irqs) {
++		/* request one shared interrupt */
++		if (devm_request_irq(&pdev->dev, p->irq[0].requested_irq,
++				intc_irqpin_shared_irq_handler,
++				IRQF_SHARED, name, p)) {
+ 			dev_err(&pdev->dev, "failed to request low IRQ\n");
+ 			ret = -ENOENT;
+ 			goto err1;
+ 		}
+-		intc_irqpin_mask_unmask_prio(p, k, 0);
++	} else {
++		/* request interrupts one by one */
++		for (k = 0; k < p->number_of_irqs; k++) {
++			if (devm_request_irq(&pdev->dev,
++					p->irq[k].requested_irq,
++					intc_irqpin_irq_handler,
++					0, name, &p->irq[k])) {
++				dev_err(&pdev->dev,
++					"failed to request low IRQ\n");
++				ret = -ENOENT;
++				goto err1;
++			}
++		}
+ 	}
+ 
++	/* unmask all interrupts on prio level */
++	for (k = 0; k < p->number_of_irqs; k++)
++		intc_irqpin_mask_unmask_prio(p, k, 0);
++
+ 	dev_info(&pdev->dev, "driving %d irqs\n", p->number_of_irqs);
+ 
+ 	/* warn in case of mismatch if irq base is specified */
 -- 
-1.7.10.4
+1.7.9.5
 
