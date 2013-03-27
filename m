@@ -1,36 +1,32 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 22 Mar 2013 07:13:31 +0000
-Subject: [PATCH 0/3] ARM: shmobile: Add SMSC support on Bock-W
-Message-Id: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 27 Mar 2013 05:34:56 +0000
+Subject: Re: [PATCH 0/3] ARM: shmobile: Add SMSC support on Bock-W
+Message-Id: <20130327053454.GP25431@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Fri, Mar 22, 2013 at 12:13:31AM -0700, Kuninori Morimoto wrote:
+> 
+> Hi Arnd, Simon, Magnus
+> 
+> These patch set add extpin support on r8a7778,
+> and enable SMSC ether on Bock-W board
+> 
+> This patch set is based on simon/next + my previous Bock-W patch set
 
-Hi Arnd, Simon, Magnus
+Which Magnus has Acked and I will queue up for v3.10.
 
-These patch set add extpin support on r8a7778,
-and enable SMSC ether on Bock-W board
+> Kuninori Morimoto (3):
+>       ARM: shmobile: define PLATFORM_xxx_INFO()
+>       ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
+>       ARM: shmobile: bockw: add SMSC ethernet support
 
-This patch set is based on simon/next + my previous Bock-W patch set
+Magnus, I think these are the only outstanding Bock-W patches
+that are awaiting your review.
 
-Kuninori Morimoto (3):
-      ARM: shmobile: define PLATFORM_xxx_INFO()
-      ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
-      ARM: shmobile: bockw: add SMSC ethernet support
-
- arch/arm/boot/dts/r8a7778-bockw.dts           |    2 +-
- arch/arm/configs/bockw_defconfig              |   34 ++++++++-
- arch/arm/mach-shmobile/Kconfig                |    1 +
- arch/arm/mach-shmobile/board-bockw.c          |   37 ++++++++++
- arch/arm/mach-shmobile/include/mach/common.h  |   20 ++++++
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   92 +++++++++++++++++--------
- 7 files changed, 156 insertions(+), 31 deletions(-)
-
-
-Best regards
----
-Kuninori Morimoto
+I have looked over them and don't have any objections at this stage.
