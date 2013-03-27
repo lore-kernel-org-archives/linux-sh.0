@@ -1,33 +1,82 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 29 Mar 2013 21:05:47 +0000
-Subject: [PATCH v3 0/5] ARM: shmobile: mackerel: streamline SD and MMC devices
-Message-Id: <1364591152-4780-1-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Mar 2013 19:21:12 +0000
+Subject: [PATCH v2 1/2] ARM: mach-shmobile: r8a7779: Add DU support
+Message-Id: <1364412073-12322-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch series is a split of a previous monolithic patch with no changes
-of the content.
+Add a function to register the DU device with board-specific platform
+data.
 
-Guennadi Liakhovetski (5):
-  ARM: shmobile: mackerel: SDHI resources do not have to be numbered
-  ARM: shmobile: mackerel: remove OCR masks, where regulators are used
-  ARM: shmobile: mackerel: switch SDHI and MMCIF interfaces to
-    slot-gpio
-  ARM: shmobile: mackerel: add interrupt names for SDHI0
-  ARM: shmobile: mackerel: clean up MMCIF vs. SDHI1 selection
-
- arch/arm/mach-shmobile/board-mackerel.c |  111 +++++++++++--------------------
- 1 files changed, 40 insertions(+), 71 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/include/mach/common.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c       | 30 ++++++++++++++++++++++++++++
+ 2 files changed, 31 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 03f73de..4531872 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -68,6 +68,7 @@ extern void r8a7779_earlytimer_init(void);
+ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
++extern void r8a7779_add_du_device(void *pdata);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index a460ba3..2f817d8 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -393,6 +393,29 @@ static struct platform_device sata_device = {
+ 	},
+ };
+ 
++static struct resource du_resources[] = {
++	[0] = {
++		.name	= "Display Unit",
++		.start	= 0xfff80000,
++		.end	= 0xfffb1007,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_iid(0x3f),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device du_device = {
++	.name		= "rcar-du",
++	.num_resources	= ARRAY_SIZE(du_resources),
++	.resource	= du_resources,
++	.id		= 0,
++	.dev	= {
++		.coherent_dma_mask = ~0,
++	},
++};
++
+ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -428,6 +451,13 @@ void __init r8a7779_add_standard_devices(void)
+ 			    ARRAY_SIZE(r8a7779_late_devices));
+ }
+ 
++void __init r8a7779_add_du_device(void *pdata)
++{
++	du_device.dev.platform_data = pdata;
++
++	platform_device_register(&du_device);
++}
++
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
+-- 
+1.8.1.5
+
