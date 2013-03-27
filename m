@@ -1,26 +1,29 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Mar 2013 12:11:05 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a73a4: add thermal driver support
-Message-Id: <20130327121103.GB15520@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 27 Mar 2013 15:13:42 +0000
+Subject: Re: [PATCH v2] sh-pfc: r8a73a4: Add IRQC pin groups and functions
+Message-Id: <5327461.n5dWakeRbN@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130326013414.11796.9937.sendpatchset@w520>
- <87mwtqit29.wl%kuninori.morimoto.gx@renesas.com>
- <87li9ait0c.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87li9ait0c.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Mar 25, 2013 at 11:18:15PM -0700, Kuninori Morimoto wrote:
-> You can get current thermal by
-> > cat /sys/class/thermal/thermal_zone?/temp
+Hi Magnus,
+
+Thanks for the patch.
+
+On Thursday 28 March 2013 00:16:37 Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/boot/dts/r8a73a4.dtsi         |    7 +++++++
->  arch/arm/mach-shmobile/clock-r8a73a4.c |   13 ++++++++++++-
->  arch/arm/mach-shmobile/setup-r8a73a4.c |   15 +++++++++++++++
->  3 files changed, 34 insertions(+), 1 deletion(-)
+> V2 of PINCTRL support for r8a73a4 IRQC hardware
+> and in particular the external pins IRQ0 -> IRQ57.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Queued up for v3.10 in the soc branch.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+-- 
+Regards,
+
+Laurent Pinchart
+
