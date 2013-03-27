@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 26 Mar 2013 01:34:24 +0000
-Subject: [PATCH 01/04] ARM: shmobile: Initial r8a73a4 SoC support V3
-Message-Id: <20130326013424.11796.39370.sendpatchset@w520>
+Date: Wed, 27 Mar 2013 15:49:34 +0000
+Subject: [PATCH 01/04] ARM: shmobile: Initial r8a7790 SoC support
+Message-Id: <20130327154934.10876.32748.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130326013414.11796.9937.sendpatchset@w520>
-In-Reply-To: <20130326013414.11796.9937.sendpatchset@w520>
+References: <20130327154925.10876.40575.sendpatchset@w520>
+In-Reply-To: <20130327154925.10876.40575.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,7 +12,7 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-V3 of initial support for the r8a73a4 SoC including:
+Add initial support for the r8a7790 SoC including:
  - Single Cortex-A15 CPU Core
  - GIC
  - Architecture timer
@@ -24,25 +24,21 @@ in CONFIG_USE_OF to match other mach-shmobile code.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Changes since V2:
- - Tied in cpg_mapping on all currently supported root clocks
-
- arch/arm/boot/dts/r8a73a4.dtsi                |   55 +++++++++++++++
- arch/arm/mach-shmobile/Kconfig                |    7 +
+ arch/arm/boot/dts/r8a7790.dtsi                |   54 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                |    7 ++
  arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/clock-r8a73a4.c        |   91 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    7 +
- arch/arm/mach-shmobile/setup-r8a73a4.c        |   50 +++++++++++++
- 6 files changed, 211 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c        |   61 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    7 ++
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   51 ++++++++++++++++++++
+ 6 files changed, 181 insertions(+)
 
 --- /dev/null
-+++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-03-26 09:26:54.000000000 +0900
-@@ -0,0 +1,55 @@
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-03-20 23:05:42.000000000 +0900
+@@ -0,0 +1,54 @@
 +/*
-+ * Device Tree Source for the r8a73a4 SoC
++ * Device Tree Source for the r8a7790 SoC
 + *
 + * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Magnus Damm
 + *
 + * This file is licensed under the terms of the GNU General Public License
 + * version 2.  This program is licensed "as is" without any warranty of any
@@ -52,7 +48,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +/include/ "skeleton.dtsi"
 +
 +/ {
-+	compatible = "renesas,r8a73a4";
++	compatible = "renesas,r8a7790";
 +	interrupt-parent = <&gic>;
 +
 +	cpus {
@@ -63,7 +59,7 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +			device_type = "cpu";
 +			compatible = "arm,cortex-a15";
 +			reg = <0>;
-+			clock-frequency = <1500000000>;
++			clock-frequency = <1300000000>;
 +		};
 +	};
 +
@@ -93,37 +89,37 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +				<1 10 0xf08>;
 +	};
 +};
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-03-26 09:26:53.000000000 +0900
-@@ -18,6 +18,13 @@ config ARCH_SH73A0
- 	select SH_CLK_CPG
+--- 0011/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-03-20 23:05:41.000000000 +0900
+@@ -43,6 +43,13 @@ config ARCH_R8A7779
+ 	select USB_ARCH_HAS_OHCI
  	select RENESAS_INTC_IRQPIN
  
-+config ARCH_R8A73A4
-+	bool "R-Mobile APE6 (R8A73A40)"
++config ARCH_R8A7790
++	bool "R-Car H2 (R8A77900)"
 +	select ARM_GIC
 +	select CPU_V7
 +	select ARM_ARCH_TIMER
 +	select SH_CLK_CPG
 +
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
  	select ARCH_WANT_OPTIONAL_GPIOLIB
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-03-26 09:26:53.000000000 +0900
-@@ -8,6 +8,7 @@ obj-y				:= timer.o console.o clock.o
- # CPU objects
- obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
-+obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
+--- 0009/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-03-20 23:05:41.000000000 +0900
+@@ -11,6 +11,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
  obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
  obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
++obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o clock-r8a7790.o
  obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+ 
+ # SMP objects
 --- /dev/null
-+++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-03-26 10:13:44.000000000 +0900
-@@ -0,0 +1,91 @@
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-03-20 23:05:42.000000000 +0900
+@@ -0,0 +1,61 @@
 +/*
-+ * r8a73a4 clock framework support
++ * r8a7790 clock framework support
 + *
 + * Copyright (C) 2013  Renesas Solutions Corp.
 + * Copyright (C) 2013  Magnus Damm
@@ -149,34 +145,14 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +#include <mach/common.h>
 +
 +#define CPG_BASE 0xe6150000
-+#define CPG_LEN 0x270
-+
-+#define MPCKCR 0xe6150080
++#define CPG_LEN 0x1000
 +
 +static struct clk_mapping cpg_mapping = {
 +	.phys   = CPG_BASE,
 +	.len    = CPG_LEN,
 +};
 +
-+static struct clk extalr_clk = {
-+	.rate	= 32768,
-+	.mapping	= &cpg_mapping,
-+};
-+
-+static struct clk extal1_clk = {
-+	.rate	= 26000000,
-+	.mapping	= &cpg_mapping,
-+};
-+
-+static struct clk extal2_clk = {
-+	.rate	= 48000000,
-+	.mapping	= &cpg_mapping,
-+};
-+
 +static struct clk *main_clks[] = {
-+	&extalr_clk,
-+	&extal1_clk,
-+	&extal2_clk,
 +};
 +
 +enum { MSTP_NR };
@@ -186,19 +162,9 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +static struct clk_lookup lookups[] = {
 +};
 +
-+void __init r8a73a4_clock_init(void)
++void __init r8a7790_clock_init(void)
 +{
-+	void __iomem *cpg_base, *reg;
 +	int k, ret = 0;
-+
-+	/* fix MPCLK to EXTAL2 for now.
-+	 * this is needed until more detailed clock topology is supported
-+	 */
-+	cpg_base = ioremap_nocache(CPG_BASE, CPG_LEN);
-+	BUG_ON(!cpg_base);
-+	reg = cpg_base + (MPCKCR - CPG_BASE);
-+	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
-+	iounmap(cpg_base);
 +
 +	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
 +		ret = clk_register(main_clks[k]);
@@ -211,23 +177,23 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 +	if (!ret)
 +		shmobile_clk_init();
 +	else
-+		panic("failed to setup r8a73a4 clocks\n");
++		panic("failed to setup r8a7790 clocks\n");
 +}
 --- /dev/null
-+++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-03-26 09:26:54.000000000 +0900
++++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2013-03-20 23:14:00.000000000 +0900
 @@ -0,0 +1,7 @@
-+#ifndef __ASM_R8A73A4_H__
-+#define __ASM_R8A73A4_H__
++#ifndef __ASM_R8A7790_H__
++#define __ASM_R8A7790_H__
 +
-+void r8a73a4_add_standard_devices(void);
-+void r8a73a4_clock_init(void);
++void r8a7790_add_standard_devices(void);
++void r8a7790_clock_init(void);
 +
-+#endif /* __ASM_R8A73A4_H__ */
++#endif /* __ASM_R8A7790_H__ */
 --- /dev/null
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-26 09:26:54.000000000 +0900
-@@ -0,0 +1,50 @@
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-03-20 23:05:42.000000000 +0900
+@@ -0,0 +1,51 @@
 +/*
-+ * r8a73a4 processor support
++ * r8a7790 processor support
 + *
 + * Copyright (C) 2013  Renesas Solutions Corp.
 + * Copyright (C) 2013  Magnus Damm
@@ -245,34 +211,35 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 + * along with this program; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 + */
++
 +#include <linux/irq.h>
 +#include <linux/irqchip.h>
 +#include <linux/kernel.h>
 +#include <linux/of_platform.h>
 +#include <mach/common.h>
 +#include <mach/irqs.h>
-+#include <mach/r8a73a4.h>
++#include <mach/r8a7790.h>
 +#include <asm/mach/arch.h>
 +
-+void __init r8a73a4_add_standard_devices(void)
++void __init r8a7790_add_standard_devices(void)
 +{
 +}
 +
 +#ifdef CONFIG_USE_OF
-+void __init r8a73a4_add_standard_devices_dt(void)
++void __init r8a7790_add_standard_devices_dt(void)
 +{
 +	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
 +}
 +
-+static const char *r8a73a4_boards_compat_dt[] __initdata = {
-+	"renesas,r8a73a4",
++static const char *r8a7790_boards_compat_dt[] __initdata = {
++	"renesas,r8a7790",
 +	NULL,
 +};
 +
-+DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
++DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
 +	.init_irq	= irqchip_init,
-+	.init_machine	= r8a73a4_add_standard_devices_dt,
++	.init_machine	= r8a7790_add_standard_devices_dt,
 +	.init_time	= shmobile_timer_init,
-+	.dt_compat	= r8a73a4_boards_compat_dt,
++	.dt_compat	= r8a7790_boards_compat_dt,
 +MACHINE_END
 +#endif /* CONFIG_USE_OF */
