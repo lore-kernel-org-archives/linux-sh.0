@@ -1,141 +1,137 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:47 +0000
-Subject: [PATCH 37/43] ARM: shmobile: r8a7779: use gic_iid macro
-Message-Id: <1363609973-31086-38-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Mar 2013 10:06:37 +0000
+Subject: [PATCH] sh-pfc: r8a7779: Split DU input and output pixel clocks
+Message-Id: <1364378797-29376-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The output pixel clocks can be used without the input pixel clocks.
+Split them in different groups.
 
-"ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID"
-enabled to use gic_iid macro.
-This patch exchange current GIC interrupt setting
-from gic_spi() to gic_iid()
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[ horms+renesas@verge.net.au: Updated git commit id in changelog ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c |   24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 60 +++++++++++++++++++++++-------------
+ 1 file changed, 39 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 9322858..0068b9f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -92,7 +92,7 @@ static struct plat_sci_port scif0_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(88)),
-+	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
+Simon,
+
+This is needed for DU support on R8A7779. Could you please queue this patch for
+v3.10 ?
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index e448ff1..62dcdcd 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1498,19 +1498,26 @@ static const unsigned int du0_rgb888_mux[] = {
+ 	DU0_DB7_MARK, DU0_DB6_MARK, DU0_DB5_MARK, DU0_DB4_MARK,
+ 	DU0_DB3_MARK, DU0_DB2_MARK, DU0_DB1_MARK, DU0_DB0_MARK,
  };
- 
- static struct platform_device scif0_device = {
-@@ -109,7 +109,7 @@ static struct plat_sci_port scif1_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(89)),
-+	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
+-static const unsigned int du0_clk_0_pins[] = {
+-	/* CLKIN, CLKOUT */
+-	29, 180,
++static const unsigned int du0_clk_in_pins[] = {
++	/* CLKIN */
++	29,
  };
- 
- static struct platform_device scif1_device = {
-@@ -126,7 +126,7 @@ static struct plat_sci_port scif2_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(90)),
-+	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
+-static const unsigned int du0_clk_0_mux[] = {
+-	DU0_DOTCLKIN_MARK, DU0_DOTCLKOUT0_MARK,
++static const unsigned int du0_clk_in_mux[] = {
++	DU0_DOTCLKIN_MARK,
  };
- 
- static struct platform_device scif2_device = {
-@@ -143,7 +143,7 @@ static struct plat_sci_port scif3_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(91)),
-+	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
+-static const unsigned int du0_clk_1_pins[] = {
+-	/* CLKIN, CLKOUT */
+-	29, 30,
++static const unsigned int du0_clk_out_0_pins[] = {
++	/* CLKOUT */
++	180,
  };
- 
- static struct platform_device scif3_device = {
-@@ -160,7 +160,7 @@ static struct plat_sci_port scif4_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(92)),
-+	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
+-static const unsigned int du0_clk_1_mux[] = {
+-	DU0_DOTCLKIN_MARK, DU0_DOTCLKOUT1_MARK,
++static const unsigned int du0_clk_out_0_mux[] = {
++	DU0_DOTCLKOUT0_MARK,
++};
++static const unsigned int du0_clk_out_1_pins[] = {
++	/* CLKOUT */
++	30,
++};
++static const unsigned int du0_clk_out_1_mux[] = {
++	DU0_DOTCLKOUT1_MARK,
  };
- 
- static struct platform_device scif4_device = {
-@@ -177,7 +177,7 @@ static struct plat_sci_port scif5_platform_data = {
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
- 	.scbrr_algo_id	= SCBRR_ALGO_2,
- 	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(93)),
-+	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
+ static const unsigned int du0_sync_0_pins[] = {
+ 	/* VSYNC, HSYNC, DISP */
+@@ -1571,12 +1578,19 @@ static const unsigned int du1_rgb888_mux[] = {
+ 	DU1_DB7_MARK, DU1_DB6_MARK, DU1_DB5_MARK, DU1_DB4_MARK,
+ 	DU1_DB3_MARK, DU1_DB2_MARK, DU1_DB1_MARK, DU1_DB0_MARK,
  };
- 
- static struct platform_device scif5_device = {
-@@ -204,7 +204,7 @@ static struct resource tmu00_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(32),
-+		.start	= gic_iid(0x40),
- 		.flags	= IORESOURCE_IRQ,
- 	},
+-static const unsigned int du1_clk_pins[] = {
+-	/* CLKIN, CLKOUT */
+-	58, 59,
++static const unsigned int du1_clk_in_pins[] = {
++	/* CLKIN */
++	58,
++};
++static const unsigned int du1_clk_in_mux[] = {
++	DU1_DOTCLKIN_MARK,
++};
++static const unsigned int du1_clk_out_pins[] = {
++	/* CLKOUT */
++	59,
  };
-@@ -234,7 +234,7 @@ static struct resource tmu01_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(33),
-+		.start	= gic_iid(0x41),
- 		.flags	= IORESOURCE_IRQ,
- 	},
+-static const unsigned int du1_clk_mux[] = {
+-	DU1_DOTCLKIN_MARK, DU1_DOTCLKOUT_MARK,
++static const unsigned int du1_clk_out_mux[] = {
++	DU1_DOTCLKOUT_MARK,
  };
-@@ -256,7 +256,7 @@ static struct resource rcar_i2c0_res[] = {
- 		.end    = 0xffc70fff,
- 		.flags  = IORESOURCE_MEM,
- 	}, {
--		.start  = gic_spi(79),
-+		.start  = gic_iid(0x6f),
- 		.flags  = IORESOURCE_IRQ,
- 	},
- };
-@@ -274,7 +274,7 @@ static struct resource rcar_i2c1_res[] = {
- 		.end    = 0xffc71fff,
- 		.flags  = IORESOURCE_MEM,
- 	}, {
--		.start  = gic_spi(82),
-+		.start  = gic_iid(0x72),
- 		.flags  = IORESOURCE_IRQ,
- 	},
- };
-@@ -292,7 +292,7 @@ static struct resource rcar_i2c2_res[] = {
- 		.end    = 0xffc72fff,
- 		.flags  = IORESOURCE_MEM,
- 	}, {
--		.start  = gic_spi(80),
-+		.start  = gic_iid(0x70),
- 		.flags  = IORESOURCE_IRQ,
- 	},
- };
-@@ -310,7 +310,7 @@ static struct resource rcar_i2c3_res[] = {
- 		.end    = 0xffc73fff,
- 		.flags  = IORESOURCE_MEM,
- 	}, {
--		.start  = gic_spi(81),
-+		.start  = gic_iid(0x71),
- 		.flags  = IORESOURCE_IRQ,
- 	},
- };
+ static const unsigned int du1_sync_0_pins[] = {
+ 	/* VSYNC, HSYNC, DISP */
+@@ -2369,15 +2383,17 @@ static const unsigned int usb2_mux[] = {
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(du0_rgb666),
+ 	SH_PFC_PIN_GROUP(du0_rgb888),
+-	SH_PFC_PIN_GROUP(du0_clk_0),
+-	SH_PFC_PIN_GROUP(du0_clk_1),
++	SH_PFC_PIN_GROUP(du0_clk_in),
++	SH_PFC_PIN_GROUP(du0_clk_out_0),
++	SH_PFC_PIN_GROUP(du0_clk_out_1),
+ 	SH_PFC_PIN_GROUP(du0_sync_0),
+ 	SH_PFC_PIN_GROUP(du0_sync_1),
+ 	SH_PFC_PIN_GROUP(du0_oddf),
+ 	SH_PFC_PIN_GROUP(du0_cde),
+ 	SH_PFC_PIN_GROUP(du1_rgb666),
+ 	SH_PFC_PIN_GROUP(du1_rgb888),
+-	SH_PFC_PIN_GROUP(du1_clk),
++	SH_PFC_PIN_GROUP(du1_clk_in),
++	SH_PFC_PIN_GROUP(du1_clk_out),
+ 	SH_PFC_PIN_GROUP(du1_sync_0),
+ 	SH_PFC_PIN_GROUP(du1_sync_1),
+ 	SH_PFC_PIN_GROUP(du1_oddf),
+@@ -2492,8 +2508,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ static const char * const du0_groups[] = {
+ 	"du0_rgb666",
+ 	"du0_rgb888",
+-	"du0_clk_0",
+-	"du0_clk_1",
++	"du0_clk_in",
++	"du0_clk_out_0",
++	"du0_clk_out_1",
+ 	"du0_sync_0",
+ 	"du0_sync_1",
+ 	"du0_oddf",
+@@ -2503,7 +2520,8 @@ static const char * const du0_groups[] = {
+ static const char * const du1_groups[] = {
+ 	"du1_rgb666",
+ 	"du1_rgb888",
+-	"du1_clk",
++	"du1_clk_in",
++	"du1_clk_out",
+ 	"du1_sync_0",
+ 	"du1_sync_1",
+ 	"du1_oddf",
 -- 
-1.7.10.4
+Regards,
+
+Laurent Pinchart
 
