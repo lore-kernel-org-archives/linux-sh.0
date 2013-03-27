@@ -1,157 +1,33 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Mar 2013 06:11:14 +0000
-Subject: [PATCH] gpio: em: Make use of devm functions
-Message-Id: <20130327061114.3356.57465.sendpatchset@w520>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 27 Mar 2013 08:28:49 +0000
+Subject: Re: [PATCH] gpio: em: Make use of devm functions
+Message-Id: <CACRpkdYjWOk---EwS1mQfKbSskxAvV=RbephQxJhg5r44UQQQg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130313110630.30040.20743.sendpatchset@w520>
 In-Reply-To: <20130313110630.30040.20743.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: grant.likely@secretlab.ca, Magnus Damm <magnus.damm@gmail.com>, horms@verge.net.au, linus.walleij@linaro.org, linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-kernel@vger.kernel.org, grant.likely@secretlab.ca, horms@verge.net.au, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Mar 13, 2013 at 12:06 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
 
-Update the Emma Mobile GPIO driver to make use of devm
-functions. This simplifies the error handling and makes
-the code more compact.
+> From: Magnus Damm <damm@opensource.se>
+>
+> Update the Emma Mobile GPIO driver to make use of devm
+> functions. This simplifies the error handling and makes
+> the code more compact.
+>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+>
+>  Written on top of:
+>  [PATCH] gpio: em: Add Device Tree support
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Patch applied, hm git am complains that the patch is broken
+on line 137, then when I use patch -p1 < magnus.patch
+everything works fine. Weird.
 
- Applies to linux-next tag next-20130327, written on top of:
- [PATCH] gpio: em: Add Device Tree support
-
- drivers/gpio/gpio-em.c |   53 +++++++++++++++++-------------------------------
- 1 file changed, 19 insertions(+), 34 deletions(-)
-
---- 0002/drivers/gpio/gpio-em.c
-+++ work/drivers/gpio/gpio-em.c	2013-03-13 18:52:14.000000000 +0900
-@@ -245,7 +245,7 @@ static int em_gio_probe(struct platform_
- 	const char *name = dev_name(&pdev->dev);
- 	int ret;
- 
--	p = kzalloc(sizeof(*p), GFP_KERNEL);
-+	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
- 	if (!p) {
- 		dev_err(&pdev->dev, "failed to allocate driver data\n");
- 		ret = -ENOMEM;
-@@ -264,21 +264,23 @@ static int em_gio_probe(struct platform_
- 	if (!io[0] || !io[1] || !irq[0] || !irq[1]) {
- 		dev_err(&pdev->dev, "missing IRQ or IOMEM\n");
- 		ret = -EINVAL;
--		goto err1;
-+		goto err0;
- 	}
- 
--	p->base0 = ioremap_nocache(io[0]->start, resource_size(io[0]));
-+	p->base0 = devm_ioremap_nocache(&pdev->dev, io[0]->start,
-+					resource_size(io[0]));
- 	if (!p->base0) {
- 		dev_err(&pdev->dev, "failed to remap low I/O memory\n");
- 		ret = -ENXIO;
--		goto err1;
-+		goto err0;
- 	}
- 
--	p->base1 = ioremap_nocache(io[1]->start, resource_size(io[1]));
-+	p->base1 = devm_ioremap_nocache(&pdev->dev, io[1]->start,
-+				   resource_size(io[1]));
- 	if (!p->base1) {
- 		dev_err(&pdev->dev, "failed to remap high I/O memory\n");
- 		ret = -ENXIO;
--		goto err2;
-+		goto err0;
- 	}
- 
- 	if (!pdata) {
-@@ -289,13 +291,13 @@ static int em_gio_probe(struct platform_
- 					 &pdata->number_of_pins)) {
- 			dev_err(&pdev->dev, "Missing ngpios OF property\n");
- 			ret = -EINVAL;
--			goto err3;
-+			goto err0;
- 		}
- 
- 		ret = of_alias_get_id(pdev->dev.of_node, "gpio");
- 		if (ret < 0) {
- 			dev_err(&pdev->dev, "Couldn't get OF id\n");
--			goto err3;
-+			goto err0;
- 		}
- 		pdata->gpio_base = ret * 32; /* 32 GPIOs per instance */
- 	}
-@@ -327,40 +329,32 @@ static int em_gio_probe(struct platform_
- 	if (!p->irq_domain) {
- 		ret = -ENXIO;
- 		dev_err(&pdev->dev, "cannot initialize irq domain\n");
--		goto err3;
-+		goto err0;
- 	}
- 
--	if (request_irq(irq[0]->start, em_gio_irq_handler, 0, name, p)) {
-+	if (devm_request_irq(&pdev->dev, irq[0]->start,
-+			     em_gio_irq_handler, 0, name, p)) {
- 		dev_err(&pdev->dev, "failed to request low IRQ\n");
- 		ret = -ENOENT;
--		goto err4;
-+		goto err1;
- 	}
- 
--	if (request_irq(irq[1]->start, em_gio_irq_handler, 0, name, p)) {
-+	if (devm_request_irq(&pdev->dev, irq[1]->start,
-+			     em_gio_irq_handler, 0, name, p)) {
- 		dev_err(&pdev->dev, "failed to request high IRQ\n");
- 		ret = -ENOENT;
--		goto err5;
-+		goto err1;
- 	}
- 
- 	ret = gpiochip_add(gpio_chip);
- 	if (ret) {
- 		dev_err(&pdev->dev, "failed to add GPIO controller\n");
--		goto err6;
-+		goto err1;
- 	}
- 	return 0;
- 
--err6:
--	free_irq(irq[1]->start, pdev);
--err5:
--	free_irq(irq[0]->start, pdev);
--err4:
--	irq_domain_remove(p->irq_domain);
--err3:
--	iounmap(p->base1);
--err2:
--	iounmap(p->base0);
- err1:
--	kfree(p);
-+	irq_domain_remove(p->irq_domain);
- err0:
- 	return ret;
- }
-@@ -368,22 +362,13 @@ err0:
- static int em_gio_remove(struct platform_device *pdev)
- {
- 	struct em_gio_priv *p = platform_get_drvdata(pdev);
--	struct resource *irq[2];
- 	int ret;
- 
- 	ret = gpiochip_remove(&p->gpio_chip);
- 	if (ret)
- 		return ret;
- 
--	irq[0] = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
--	irq[1] = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
--
--	free_irq(irq[1]->start, pdev);
--	free_irq(irq[0]->start, pdev);
- 	irq_domain_remove(p->irq_domain);
--	iounmap(p->base1);
--	iounmap(p->base0);
--	kfree(p);
- 	return 0;
- }
- 
+Thanks!
+Linus Walleij
