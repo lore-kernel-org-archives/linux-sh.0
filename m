@@ -1,53 +1,82 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:39 +0000
-Subject: [PATCH v3 19/64] ARM: shmobile: ag5evm: Register pinctrl mappings for FSI
-Message-Id: <1362740544-19164-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Mar 2013 18:05:49 +0000
+Subject: [PATCH 1/2] ARM: mach-shmobile: r8a7779: Add DU support
+Message-Id: <1364407550-30652-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based FSI pinmux configuration by pinctrl mappings.
+Add a function to register the DU device with board-specific platform
+data.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c | 15 ++++++++-------
- 1 file changed, 8 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c       | 30 ++++++++++++++++++++++++++++
+ 2 files changed, 31 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index af7b427..914136b 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -552,6 +552,14 @@ static struct platform_device *ag5evm_devices[] __initdata = {
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 03f73de..4531872 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -68,6 +68,7 @@ extern void r8a7779_earlytimer_init(void);
+ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
++extern void r8a7779_add_du_device(void *pdata);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index a460ba3..2f817d8 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -393,6 +393,29 @@ static struct platform_device sata_device = {
+ 	},
  };
  
- static const struct pinctrl_map ag5evm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_mclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_out", "fsia"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.2", "pfc-sh73a0",
- 				  "i2c2_0", "i2c2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
-@@ -611,13 +619,6 @@ static void __init ag5evm_init(void)
- 	gpio_request_one(144, GPIOF_IN, NULL); /* PINTA2 */
- 	gpio_request_one(145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
++static struct resource du_resources[] = {
++	[0] = {
++		.name	= "Display Unit",
++		.start	= 0xfff80000,
++		.end	= 0xfffb1007,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_iid(0x3f),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device du_device = {
++	.name		= "rcar-du",
++	.num_resources	= ARRAY_SIZE(du_resources),
++	.resource	= du_resources,
++	.id		= 0,
++	.dev	= {
++		.coherent_dma_mask = ~0,
++	},
++};
++
+ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -428,6 +451,13 @@ void __init r8a7779_add_standard_devices(void)
+ 			    ARRAY_SIZE(r8a7779_late_devices));
+ }
  
--	/* FSI A */
--	gpio_request(GPIO_FN_FSIACK, NULL);
--	gpio_request(GPIO_FN_FSIAILR, NULL);
--	gpio_request(GPIO_FN_FSIAIBT, NULL);
--	gpio_request(GPIO_FN_FSIAISLD, NULL);
--	gpio_request(GPIO_FN_FSIAOSLD, NULL);
--
- 	/* IrDA */
- 	gpio_request(GPIO_FN_PORT241_IRDA_OUT, NULL);
- 	gpio_request(GPIO_FN_PORT242_IRDA_IN,  NULL);
++void __init r8a7779_add_du_device(void *pdata)
++{
++	du_device.dev.platform_data = pdata;
++
++	platform_device_register(&du_device);
++}
++
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
 -- 
 1.8.1.5
 
