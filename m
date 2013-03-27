@@ -1,33 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:26 +0000
-Subject: [PATCH v4 81/88] ARM: shmobile: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
-Message-Id: <1363215633-4264-82-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Mar 2013 15:49:25 +0000
+Subject: [PATCH 00/04 v2] ARM: shmobile: r8a7790 SoC
+Message-Id: <20130327154925.10876.40575.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The function is not documented in the r8a7779 datasheet. Remove it.
+ARM: shmobile: r8a7790 SoC (V2)
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[PATCH 01/04] ARM: shmobile: Initial r8a7790 SoC support
+[PATCH 02/04] ARM: shmobile: r8a7790 SCIF support
+[PATCH 03/04] ARM: shmobile: r8a7790 IRQC support
+[PATCH 04/04] ARM: shmobile: r8a7790 PFC support
+
+This series is V2 of initial support for the r8a7790 SoC. The SoC
+is known as r8a7790 which is built around Cortex-A15 and makes use
+of SCIF for serial and IRQC interrupt controller for external IRQs.
+
+Changes in V2:
+- Added PFC platform device
+
+Future r8a7790 PFC and Lager board series will depend on this one.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 8ab0cd6..badba57 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -308,7 +308,7 @@ enum {
- 	GPIO_FN_SD2_CD, GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
- 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_SD2_WP, GPIO_FN_MT0_PWM,
- 	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
--	GPIO_FN_DU1_DOTCLKOUT1, GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
-+	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
- 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
- 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B, GPIO_FN_RX2,
- 	GPIO_FN_HRTS0_B,
--- 
-1.8.1.5
+ Written on top of renesas-next-20130327
 
+ arch/arm/boot/dts/r8a7790.dtsi                |   63 +++++++++++
+ arch/arm/mach-shmobile/Kconfig                |    9 +
+ arch/arm/mach-shmobile/Makefile               |    1 
+ arch/arm/mach-shmobile/clock-r8a7790.c        |   95 +++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    8 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        |  137 +++++++++++++++++++++++++
+ 6 files changed, 312 insertions(+), 1 deletion(-)
