@@ -1,64 +1,75 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Mar 2013 15:10:12 +0000
-Subject: [PATCH 02/03] ARM: shmobile: APE6EVM PFC support
-Message-Id: <20130318151012.28231.95680.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 28 Mar 2013 08:48:30 +0000
+Subject: [PATCH 2/4] ARM: shmobile: sh73a0: move global functions to sh73a0.h
+Message-Id: <87wqsrlxk5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318150953.28231.73454.sendpatchset@w520>
-In-Reply-To: <20130318150953.28231.73454.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+There is no reason each CPU's own function has to exist in common.h.
+sh73a0_xxx() go to sh73a0.h
 
-Start using the r8a73a4 PFC on the APE6EVM board
-and configure the SCIFA0 console signals using
-the PFC.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/include/mach/common.h |   16 ----------------
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |   15 +++++++++++++++
+ 2 files changed, 15 insertions(+), 16 deletions(-)
 
- Written against "next" renesas.git 811689afc214564c4a5f238ecf4d8bdc0e52b615
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index d01a551..48eeca9 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -19,22 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
+ 			      struct cpuidle_driver *drv, int index);
+ extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
  
- Depends on the following two series:
- [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V2
- [PATCH 00/02] sh-pfc: Initial r8a73a4 PFC support
+-extern void sh73a0_init_delay(void);
+-extern void sh73a0_init_irq(void);
+-extern void sh73a0_init_irq_dt(void);
+-extern void sh73a0_map_io(void);
+-extern void sh73a0_earlytimer_init(void);
+-extern void sh73a0_add_early_devices(void);
+-extern void sh73a0_add_standard_devices(void);
+-extern void sh73a0_add_standard_devices_dt(void);
+-extern void sh73a0_clock_init(void);
+-extern void sh73a0_pinmux_init(void);
+-extern void sh73a0_pm_init(void);
+-extern struct clk sh73a0_extal1_clk;
+-extern struct clk sh73a0_extal2_clk;
+-extern struct clk sh73a0_extcki_clk;
+-extern struct clk sh73a0_extalr_clk;
+-
+ extern void r8a7740_meram_workaround(void);
+ extern void r8a7740_init_irq(void);
+ extern void r8a7740_map_io(void);
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index fbc1584..eb7a432 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -444,6 +444,21 @@ enum {
+ #define SH73A0_PINT0_IRQ(irq) ((irq) + 700)
+ #define SH73A0_PINT1_IRQ(irq) ((irq) + 732)
+ 
++extern void sh73a0_init_delay(void);
++extern void sh73a0_init_irq(void);
++extern void sh73a0_init_irq_dt(void);
++extern void sh73a0_map_io(void);
++extern void sh73a0_earlytimer_init(void);
++extern void sh73a0_add_early_devices(void);
++extern void sh73a0_add_standard_devices(void);
++extern void sh73a0_add_standard_devices_dt(void);
++extern void sh73a0_clock_init(void);
++extern void sh73a0_pinmux_init(void);
++extern void sh73a0_pm_init(void);
++extern struct clk sh73a0_extal1_clk;
++extern struct clk sh73a0_extal2_clk;
++extern struct clk sh73a0_extcki_clk;
++extern struct clk sh73a0_extalr_clk;
+ extern struct smp_operations sh73a0_smp_ops;
+ 
+ #endif /* __ASM_SH73A0_H__ */
+-- 
+1.7.9.5
 
- arch/arm/mach-shmobile/Kconfig         |    1 +
- arch/arm/mach-shmobile/board-ape6evm.c |    7 +++++++
- 2 files changed, 8 insertions(+)
-
---- 0009/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-03-18 22:12:56.000000000 +0900
-@@ -82,6 +82,7 @@ config MACH_AG5EVM
- config MACH_APE6EVM
- 	bool "APE6EVM board"
- 	depends on ARCH_R8A73A4
-+	select ARCH_REQUIRE_GPIOLIB
- 	select USE_OF
- 
- config MACH_MACKEREL
---- 0009/arch/arm/mach-shmobile/board-ape6evm.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-03-18 22:05:03.000000000 +0900
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/gpio.h>
- #include <linux/interrupt.h>
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
-@@ -30,6 +31,12 @@
- static void __init ape6evm_add_standard_devices(void)
- {
- 	r8a73a4_clock_init();
-+	r8a73a4_pinmux_init();
-+
-+	/* SCIFA0 console */
-+	gpio_request(GPIO_FN_SCIFA0_TXD, NULL);
-+	gpio_request(GPIO_FN_SCIFA0_RXD, NULL);
-+
- 	r8a73a4_add_standard_devices();
- }
- 
