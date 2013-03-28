@@ -1,105 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:40 +0000
-Subject: [PATCH v3 20/64] ARM: shmobile: ap4evb: Register pinctrl mappings for SDHI and MMCIF
-Message-Id: <1362740544-19164-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 28 Mar 2013 08:49:15 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7740: move global functions to r8a7740.h
+Message-Id: <87vc8blxiw.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
-mappings
+There is no reason each CPU's own function has to exist in common.h. 
+r8a7740_xxx() go to r8a7740.h
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 52 +++++++++++++++--------------------
- 1 file changed, 22 insertions(+), 30 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h  |    9 ---------
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    9 +++++++++
+ 2 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 0a2b6e4..c8947e0 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -34,6 +34,7 @@
- #include <linux/i2c.h>
- #include <linux/i2c/tsc2007.h>
- #include <linux/io.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-@@ -1084,6 +1085,25 @@ static struct i2c_board_info i2c1_devices[] = {
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 48eeca9..4d5410d 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -19,15 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
+ 			      struct cpuidle_driver *drv, int index);
+ extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+ 
+-extern void r8a7740_meram_workaround(void);
+-extern void r8a7740_init_irq(void);
+-extern void r8a7740_map_io(void);
+-extern void r8a7740_add_early_devices(void);
+-extern void r8a7740_add_standard_devices(void);
+-extern void r8a7740_clock_init(u8 md_ck);
+-extern void r8a7740_pinmux_init(void);
+-extern void r8a7740_pm_init(void);
+-
+ extern void r8a7779_init_delay(void);
+ extern void r8a7779_init_irq(void);
+ extern void r8a7779_init_irq_extpin(int irlm);
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index c258361..abdc4d4 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -532,6 +532,15 @@ enum {
+ 	SHDMA_SLAVE_USBHS_RX,
  };
  
- 
-+static const struct pinctrl_map ap4evb_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
-+				  "mmc0_data8_0", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
-+				  "mmc0_ctrl_0", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
-+				  "sdhi0_cd", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
-+				  "sdhi0_wp", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
-+				  "sdhi1_data4", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
-+				  "sdhi1_ctrl", "sdhi1"),
-+};
++extern void r8a7740_meram_workaround(void);
++extern void r8a7740_init_irq(void);
++extern void r8a7740_map_io(void);
++extern void r8a7740_add_early_devices(void);
++extern void r8a7740_add_standard_devices(void);
++extern void r8a7740_clock_init(u8 md_ck);
++extern void r8a7740_pinmux_init(void);
++extern void r8a7740_pm_init(void);
 +
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
- #define GPIO_PORT10CR	IOMEM(0xE605100A)
- #define USCCR1		IOMEM(0xE6058144)
-@@ -1110,6 +1130,8 @@ static void __init ap4evb_init(void)
- 	/* External clock source */
- 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
- 
-+	pinctrl_register_mappings(ap4evb_pinctrl_map,
-+				  ARRAY_SIZE(ap4evb_pinctrl_map));
- 	sh7372_pinmux_init();
- 
- 	/* enable SCIFA0 */
-@@ -1126,36 +1148,6 @@ static void __init ap4evb_init(void)
- 	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
- 	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
- 
--	/* SDHI0 */
--	gpio_request(GPIO_FN_SDHICD0, NULL);
--	gpio_request(GPIO_FN_SDHIWP0, NULL);
--	gpio_request(GPIO_FN_SDHICMD0, NULL);
--	gpio_request(GPIO_FN_SDHICLK0, NULL);
--	gpio_request(GPIO_FN_SDHID0_3, NULL);
--	gpio_request(GPIO_FN_SDHID0_2, NULL);
--	gpio_request(GPIO_FN_SDHID0_1, NULL);
--	gpio_request(GPIO_FN_SDHID0_0, NULL);
--
--	/* SDHI1 */
--	gpio_request(GPIO_FN_SDHICMD1, NULL);
--	gpio_request(GPIO_FN_SDHICLK1, NULL);
--	gpio_request(GPIO_FN_SDHID1_3, NULL);
--	gpio_request(GPIO_FN_SDHID1_2, NULL);
--	gpio_request(GPIO_FN_SDHID1_1, NULL);
--	gpio_request(GPIO_FN_SDHID1_0, NULL);
--
--	/* MMCIF */
--	gpio_request(GPIO_FN_MMCD0_0, NULL);
--	gpio_request(GPIO_FN_MMCD0_1, NULL);
--	gpio_request(GPIO_FN_MMCD0_2, NULL);
--	gpio_request(GPIO_FN_MMCD0_3, NULL);
--	gpio_request(GPIO_FN_MMCD0_4, NULL);
--	gpio_request(GPIO_FN_MMCD0_5, NULL);
--	gpio_request(GPIO_FN_MMCD0_6, NULL);
--	gpio_request(GPIO_FN_MMCD0_7, NULL);
--	gpio_request(GPIO_FN_MMCCMD0, NULL);
--	gpio_request(GPIO_FN_MMCCLK0, NULL);
--
- 	/* USB enable */
- 	gpio_request(GPIO_FN_VBUS0_1,    NULL);
- 	gpio_request(GPIO_FN_IDIN_1_18,  NULL);
+ #ifdef CONFIG_PM
+ extern void __init r8a7740_init_pm_domains(void);
+ #else
 -- 
-1.8.1.5
+1.7.9.5
 
