@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 27 Mar 2013 18:18:30 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 28 Mar 2013 00:23:17 +0000
 Subject: Re: [PATCH/RFC 10/12] ARM: shmobile: r8a7779: Remove all GPIOs
-Message-Id: <4405687.lWj6yX9hcJ@avalon>
+Message-Id: <20130328002316.GC20736@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1362941928-18115-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1362941928-18115-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,14 +10,14 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
-
-On Wednesday 27 March 2013 23:30:49 Magnus Damm wrote:
-> On Mon, Mar 11, 2013 at 3:58 AM, Laurent Pinchart wrote:
+On Wed, Mar 27, 2013 at 11:30:49PM +0900, Magnus Damm wrote:
+> Hi Laurent,
+> 
+> On Mon, Mar 11, 2013 at 3:58 AM, Laurent Pinchart
+> <laurent.pinchart+renesas@ideasonboard.com> wrote:
 > > All code use the GPIO numbers directly.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
+> >
+> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 > > ---
 > 
 > Thanks for your work on this. I am late to the party as usual.
@@ -27,6 +27,11 @@ On Wednesday 27 March 2013 23:30:49 Magnus Damm wrote:
 > However, I have one comment related to this patch. I think you should
 > keep these patches as is, but I hope you can make an incremental fix,
 > please see my proposal below.
+
+I was perhaps a little hasty, but I have queued-up this patch already.
+So I would also prefer an incremental change if there are any changes
+to be made.
+
 > 
 > [snip]
 > 
@@ -58,15 +63,15 @@ On Wednesday 27 March 2013 23:30:49 Magnus Damm wrote:
 > 
 > Would it be possible to introduce a macro like GPIO_GP(n, m) that on
 > selected SoCs allows us to use the same style as before?
-
-We've discussed that before, and I totally agree. I will submit patches to do 
-so.
-
+> 
 > I suppose the same style could be used with the DT preprocessor. It's
 > funny, DT gains a preprocessor and we stop using it in C...
-
--- 
-Regards,
-
-Laurent Pinchart
-
+> 
+> Thanks,
+> 
+> / magnus
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
