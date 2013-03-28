@@ -1,56 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Mar 2013 12:42:28 +0000
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Thu, 28 Mar 2013 18:24:02 +0000
 Subject: Re: [PATCH 2/2] ARM: remove mach .init_irq for irqchip_init users
-Message-Id: <20130328124228.GA29616@verge.net.au>
+Message-Id: <51548AC2.1010802@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364463704-13692-1-git-send-email-maxime.ripard@free-electrons.com>
  <1364463704-13692-3-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1364463704-13692-3-git-send-email-maxime.ripard@free-electrons.com>
+ <20130328124228.GA29616@verge.net.au>
+In-Reply-To: <20130328124228.GA29616@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 28, 2013 at 10:41:44AM +0100, Maxime Ripard wrote:
-> Now that the arm core code calls irqchip_init, we can remove it from all
-> the machines that were using it.
-> 
-> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> ---
->  arch/arm/mach-bcm/board_bcm.c                  |    1 -
->  arch/arm/mach-msm/board-dt-8660.c              |    1 -
->  arch/arm/mach-msm/board-dt-8960.c              |    1 -
->  arch/arm/mach-nomadik/cpu-8815.c               |    1 -
->  arch/arm/mach-picoxcell/common.c               |    1 -
->  arch/arm/mach-prima2/common.c                  |    1 -
->  arch/arm/mach-shmobile/board-kzm9g-reference.c |    1 -
->  arch/arm/mach-shmobile/setup-emev2.c           |    1 -
->  arch/arm/mach-shmobile/setup-sh73a0.c          |    1 -
->  arch/arm/mach-spear/spear1310.c                |    1 -
->  arch/arm/mach-spear/spear1340.c                |    1 -
->  arch/arm/mach-spear/spear300.c                 |    1 -
->  arch/arm/mach-spear/spear310.c                 |    1 -
->  arch/arm/mach-spear/spear320.c                 |    1 -
->  arch/arm/mach-spear/spear6xx.c                 |    1 -
->  arch/arm/mach-vexpress/v2m.c                   |    1 -
->  arch/arm/mach-virt/virt.c                      |    1 -
->  arch/arm/mach-zynq/common.c                    |    1 -
->  18 files changed, 18 deletions(-)
+Hi Simon,
 
-mach-shmobile portion:
+Le 28/03/2013 13:42, Simon Horman a =E9crit :
+> On Thu, Mar 28, 2013 at 10:41:44AM +0100, Maxime Ripard wrote:
+>> Now that the arm core code calls irqchip_init, we can remove it from all
+>> the machines that were using it.
+>>
+>> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+>> ---
+>>  arch/arm/mach-bcm/board_bcm.c                  |    1 -
+>>  arch/arm/mach-msm/board-dt-8660.c              |    1 -
+>>  arch/arm/mach-msm/board-dt-8960.c              |    1 -
+>>  arch/arm/mach-nomadik/cpu-8815.c               |    1 -
+>>  arch/arm/mach-picoxcell/common.c               |    1 -
+>>  arch/arm/mach-prima2/common.c                  |    1 -
+>>  arch/arm/mach-shmobile/board-kzm9g-reference.c |    1 -
+>>  arch/arm/mach-shmobile/setup-emev2.c           |    1 -
+>>  arch/arm/mach-shmobile/setup-sh73a0.c          |    1 -
+>>  arch/arm/mach-spear/spear1310.c                |    1 -
+>>  arch/arm/mach-spear/spear1340.c                |    1 -
+>>  arch/arm/mach-spear/spear300.c                 |    1 -
+>>  arch/arm/mach-spear/spear310.c                 |    1 -
+>>  arch/arm/mach-spear/spear320.c                 |    1 -
+>>  arch/arm/mach-spear/spear6xx.c                 |    1 -
+>>  arch/arm/mach-vexpress/v2m.c                   |    1 -
+>>  arch/arm/mach-virt/virt.c                      |    1 -
+>>  arch/arm/mach-zynq/common.c                    |    1 -
+>>  18 files changed, 18 deletions(-)
+>=20
+> mach-shmobile portion:
+>=20
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Thanks!
 
-I have some new users of this queued up for v3.10.
-How should we handle that?
+>=20
+> I have some new users of this queued up for v3.10.
+> How should we handle that?
 
-In particular:
+Since the old behaviour is preserved, I guess it doesn't matter much,
+and one of us can always make a followup patch on top of these patches.
 
-arch/arm/mach-shmobile/setup-r8a73a4.c
-arch/arm/mach-shmobile/intc-r8a7779.c
-arch/arm/mach-shmobile/setup-r8a7778.c
+Maxime
 
-You can find these in the renesas-next-20130328 tag of
-my renesas tree on kernel.org. They are or will soon
-be in linux-next.
-
+--=20
+Maxime Ripard, Free Electrons
+Embedded Linux, Kernel and Android engineering
+http://free-electrons.com
