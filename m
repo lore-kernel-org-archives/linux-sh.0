@@ -1,64 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:33 +0000
-Subject: [PATCH v4 88/88] ARM: shmobile: r8a7779: Remove INTC function GPIOs
-Message-Id: <1363215633-4264-89-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 28 Mar 2013 08:49:27 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a7779: move global functions to r8a7779.h
+Message-Id: <87txnvlxik.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+There is no reason each CPU's own function has to exist in common.h. 
+r8a7779_xxx() go to r8a7779.h
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h  |   14 --------------
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |   13 +++++++++++++
+ 2 files changed, 13 insertions(+), 14 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 4d5410d..e002cfd 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -19,20 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
+ 			      struct cpuidle_driver *drv, int index);
+ extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+ 
+-extern void r8a7779_init_delay(void);
+-extern void r8a7779_init_irq(void);
+-extern void r8a7779_init_irq_extpin(int irlm);
+-extern void r8a7779_init_irq_dt(void);
+-extern void r8a7779_map_io(void);
+-extern void r8a7779_earlytimer_init(void);
+-extern void r8a7779_add_early_devices(void);
+-extern void r8a7779_add_standard_devices(void);
+-extern void r8a7779_add_standard_devices_dt(void);
+-extern void r8a7779_clock_init(void);
+-extern void r8a7779_pinmux_init(void);
+-extern void r8a7779_pm_init(void);
+-extern void r8a7779_register_twd(void);
+-
+ #ifdef CONFIG_SUSPEND
+ int shmobile_suspend_init(void);
+ #else
 diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 688c0d2..8ea0ad1 100644
+index 5896922..945299e 100644
 --- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
 +++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -213,12 +213,12 @@ enum {
- 	/* IPSR7 */
- 	GPIO_FN_SSI_WS6, GPIO_FN_ADICHS1, GPIO_FN_CAN0_RX, GPIO_FN_IETX_B,
- 	GPIO_FN_SSI_SDATA6, GPIO_FN_ADICHS2, GPIO_FN_CAN_CLK, GPIO_FN_IECLK_B,
--	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13, GPIO_FN_IRQ0_B,
-+	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13,
- 	GPIO_FN_SSI_SCK9_B, GPIO_FN_SSI_WS78,
--	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_IRQ1_B, GPIO_FN_SSI_WS9_B,
-+	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_SSI_WS9_B,
- 	GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
--	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C,
--	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B,
-+	GPIO_FN_TCLK1_C,
-+	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP,
- 	GPIO_FN_ATACS01,
- 	GPIO_FN_ATACS11, GPIO_FN_CC5_TDO,
- 	GPIO_FN_ATADIR1, GPIO_FN_CC5_TRST,
-@@ -256,8 +256,8 @@ enum {
- 	GPIO_FN_VI0_DATA5_VI0_B5, GPIO_FN_VI0_DATA6_VI0_B6,
- 	GPIO_FN_ARM_TRACEDATA_0, GPIO_FN_VI0_DATA7_VI0_B7,
- 	GPIO_FN_ARM_TRACEDATA_1, GPIO_FN_VI0_G0,
--	GPIO_FN_SSI_SCK78_C, GPIO_FN_IRQ0, GPIO_FN_ARM_TRACEDATA_2,
--	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C, GPIO_FN_IRQ1,
-+	GPIO_FN_SSI_SCK78_C, GPIO_FN_ARM_TRACEDATA_2,
-+	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C,
- 	GPIO_FN_ARM_TRACEDATA_3, GPIO_FN_VI0_G2, GPIO_FN_ETH_TXD1,
- 	GPIO_FN_ARM_TRACEDATA_4, GPIO_FN_TS_SPSYNC0,
- 	GPIO_FN_VI0_G3, GPIO_FN_ETH_CRS_DV,
-@@ -273,8 +273,8 @@ enum {
- 	GPIO_FN_ARM_TRACEDATA_10, GPIO_FN_DREQ0_C, GPIO_FN_VI0_R1,
- 	GPIO_FN_SSI_SDATA8_C, GPIO_FN_DACK1_B, GPIO_FN_ARM_TRACEDATA_11,
- 	GPIO_FN_DACK0_C, GPIO_FN_DRACK0_C, GPIO_FN_VI0_R2, GPIO_FN_ETH_LINK,
--	GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
--	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_IRQ3,
-+	GPIO_FN_ARM_TRACEDATA_12,
-+	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC,
- 	GPIO_FN_ARM_TRACEDATA_13, GPIO_FN_VI0_R4, GPIO_FN_ETH_REFCLK,
- 	GPIO_FN_ARM_TRACEDATA_14,
- 	GPIO_FN_MT1_CLK, GPIO_FN_TS_SCK0, GPIO_FN_VI0_R5, GPIO_FN_ETH_TXD0,
+@@ -22,6 +22,19 @@ static inline struct r8a7779_pm_ch *to_r8a7779_ch(struct generic_pm_domain *d)
+ 	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
+ }
+ 
++extern void r8a7779_init_delay(void);
++extern void r8a7779_init_irq(void);
++extern void r8a7779_init_irq_extpin(int irlm);
++extern void r8a7779_init_irq_dt(void);
++extern void r8a7779_map_io(void);
++extern void r8a7779_earlytimer_init(void);
++extern void r8a7779_add_early_devices(void);
++extern void r8a7779_add_standard_devices(void);
++extern void r8a7779_add_standard_devices_dt(void);
++extern void r8a7779_clock_init(void);
++extern void r8a7779_pinmux_init(void);
++extern void r8a7779_pm_init(void);
++extern void r8a7779_register_twd(void);
+ extern int r8a7779_sysc_power_down(struct r8a7779_pm_ch *r8a7779_ch);
+ extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
+ 
 -- 
-1.8.1.5
+1.7.9.5
 
