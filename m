@@ -1,32 +1,198 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 20 Mar 2013 13:41:01 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC fixes for v3.9
-Message-Id: <20130320134101.GO16436@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 28 Mar 2013 20:50:06 +0000
+Subject: [PATCH 2/2] sh_eth: add R-Car support for real
+Message-Id: <201303290051.32106.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362757104-7498-1-git-send-email-horms+renesas@verge.net.au>
- <201303181057.21955.arnd@arndb.de>
- <20130319021649.GB4946@verge.net.au>
- <201303190840.41141.arnd@arndb.de>
-In-Reply-To: <201303190840.41141.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com
 
-On Tue, Mar 19, 2013 at 08:40:40AM +0000, Arnd Bergmann wrote:
-> On Tuesday 19 March 2013, Simon Horman wrote:
-> 
-> > > 
-> > > Upon closer inspection, you seem to have missed the tag name. I have
-> > > pulled your renesas-fixes-for-v3.9 tag into the arm-soc fixes branch
-> > > now and will include it in my pull request to Linus today.
-> > 
-> > Sorry about that. I must have sent the pull request before the
-> > tag hit kernel.org and failed to notice that the tag was missing
-> > from the above email message.
-> > 
-> 
-> No worries, it made it in, and I just screwed up in a similar way
-> when sending a pull request to Linus ....
+Commit d0418bb7123f44b23d69ac349eec7daf9103472f (net: sh_eth: Add eth support
+for R8A7779 device) was a failed attempt to add support for one of members of
+the R-Car SoC family.  That's for three reasons: it treated R8A7779 the  same
+as SH7724 except including quite dirty hack adding ECMR_ELB  bit  to the mask
+in sh_eth_set_rate() while not removing ECMR_RTM bit (despite it's reserved in
+R-Car Ether), and it didn't add a new register offset array despite the closest
+SH_ETH_REG_FAST_SH4 mapping differs by 0x200 to the offsets all the R-Car Ether
+registers have, and also some of the registers in this old mapping don't exist
+on R-Car Ether (due to this, SH7724's 'sh_eth_my_cpu_data' structure is not
+adequeate for R-Car too).  Fix all these shortcomings, restoring the SH7724
+related section to its pristine state...
 
-:^)
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against the David Miller's 'net-next.git' repo.
+
+Support for the other members of R-Car family such as R8A7778 and R8A7790 should
+probably be added when they hit mainline (support for the former is already in
+the 'next' branch of Simon Horman's 'renesas.git' repo).
+
+ drivers/net/ethernet/renesas/sh_eth.c |  107 +++++++++++++++++++++++++++++++---
+ include/linux/sh_eth.h                |    1 
+ 2 files changed, 100 insertions(+), 8 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2,7 +2,8 @@
+  *  SuperH Ethernet device driver
+  *
+  *  Copyright (C) 2006-2012 Nobuhiro Iwamatsu
+- *  Copyright (C) 2008-2012 Renesas Solutions Corp.
++ *  Copyright (C) 2008-2013 Renesas Solutions Corp.
++ *  Copyright (C) 2013 Cogent Embedded, Inc.
+  *
+  *  This program is free software; you can redistribute it and/or modify it
+  *  under the terms and conditions of the GNU General Public License,
+@@ -147,6 +148,51 @@ static const u16 sh_eth_offset_gigabit[S
+ 	[FWALCR1]	= 0x00b4,
+ };
+ 
++static const u16 sh_eth_offset_fast_rcar[SH_ETH_MAX_REGISTER_OFFSET] = {
++	[ECMR]		= 0x0300,
++	[RFLR]		= 0x0308,
++	[ECSR]		= 0x0310,
++	[ECSIPR]	= 0x0318,
++	[PIR]		= 0x0320,
++	[PSR]		= 0x0328,
++	[RDMLR]		= 0x0340,
++	[IPGR]		= 0x0350,
++	[APR]		= 0x0354,
++	[MPR]		= 0x0358,
++	[RFCF]		= 0x0360,
++	[TPAUSER]	= 0x0364,
++	[TPAUSECR]	= 0x0368,
++	[MAHR]		= 0x03c0,
++	[MALR]		= 0x03c8,
++	[TROCR]		= 0x03d0,
++	[CDCR]		= 0x03d4,
++	[LCCR]		= 0x03d8,
++	[CNDCR]		= 0x03dc,
++	[CEFCR]		= 0x03e4,
++	[FRECR]		= 0x03e8,
++	[TSFRCR]	= 0x03ec,
++	[TLFRCR]	= 0x03f0,
++	[RFCR]		= 0x03f4,
++	[MAFCR]		= 0x03f8,
++
++	[EDMR]		= 0x0200,
++	[EDTRR]		= 0x0208,
++	[EDRRR]		= 0x0210,
++	[TDLAR]		= 0x0218,
++	[RDLAR]		= 0x0220,
++	[EESR]		= 0x0228,
++	[EESIPR]	= 0x0230,
++	[TRSCER]	= 0x0238,
++	[RMFCR]		= 0x0240,
++	[TFTR]		= 0x0248,
++	[FDR]		= 0x0250,
++	[RMCR]		= 0x0258,
++	[TFUCR]		= 0x0264,
++	[RFOCR]		= 0x0268,
++	[FCFTR]		= 0x0270,
++	[TRIMD]		= 0x027c,
++};
++
+ static const u16 sh_eth_offset_fast_sh4[SH_ETH_MAX_REGISTER_OFFSET] = {
+ 	[ECMR]		= 0x0100,
+ 	[RFLR]		= 0x0108,
+@@ -296,7 +342,7 @@ static void sh_eth_select_mii(struct net
+ #endif
+ 
+ /* There is CPU dependent code */
+-#if defined(CONFIG_CPU_SUBTYPE_SH7724) || defined(CONFIG_ARCH_R8A7779)
++#if defined(CONFIG_ARCH_R8A7779)
+ #define SH_ETH_RESET_DEFAULT	1
+ static void sh_eth_set_duplex(struct net_device *ndev)
+ {
+@@ -311,18 +357,60 @@ static void sh_eth_set_duplex(struct net
+ static void sh_eth_set_rate(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	unsigned int bits = ECMR_RTM;
+ 
+-#if defined(CONFIG_ARCH_R8A7779)
+-	bits |= ECMR_ELB;
+-#endif
++	switch (mdp->speed) {
++	case 10: /* 10BASE */
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_ELB, ECMR);
++		break;
++	case 100:/* 100BASE */
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_ELB, ECMR);
++		break;
++	default:
++		break;
++	}
++}
++
++/* R8A7779 */
++static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
++	.set_duplex	= sh_eth_set_duplex,
++	.set_rate	= sh_eth_set_rate,
++
++	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
++	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
++	.eesipr_value	= 0x01ff009f,
++
++	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
++			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++	.tx_error_check	= EESR_TWB | EESR_TABT | EESR_TDE | EESR_TFE,
++
++	.apr		= 1,
++	.mpr		= 1,
++	.tpauser	= 1,
++	.hw_swap	= 1,
++};
++#elif defined(CONFIG_CPU_SUBTYPE_SH7724)
++#define SH_ETH_RESET_DEFAULT	1
++static void sh_eth_set_duplex(struct net_device *ndev)
++{
++	struct sh_eth_private *mdp = netdev_priv(ndev);
++
++	if (mdp->duplex) /* Full */
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
++	else		/* Half */
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
++}
++
++static void sh_eth_set_rate(struct net_device *ndev)
++{
++	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+ 	switch (mdp->speed) {
+ 	case 10: /* 10BASE */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~bits, ECMR);
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_RTM, ECMR);
+ 		break;
+ 	case 100:/* 100BASE */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | bits, ECMR);
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_RTM, ECMR);
+ 		break;
+ 	default:
+ 		break;
+@@ -2521,6 +2609,9 @@ static const u16 *sh_eth_get_register_of
+ 	case SH_ETH_REG_GIGABIT:
+ 		reg_offset = sh_eth_offset_gigabit;
+ 		break;
++	case SH_ETH_REG_FAST_RCAR:
++		reg_offset = sh_eth_offset_fast_rcar;
++		break;
+ 	case SH_ETH_REG_FAST_SH4:
+ 		reg_offset = sh_eth_offset_fast_sh4;
+ 		break;
+Index: net-next/include/linux/sh_eth.h
+=================================--- net-next.orig/include/linux/sh_eth.h
++++ net-next/include/linux/sh_eth.h
+@@ -6,6 +6,7 @@
+ enum {EDMAC_LITTLE_ENDIAN, EDMAC_BIG_ENDIAN};
+ enum {
+ 	SH_ETH_REG_GIGABIT,
++	SH_ETH_REG_FAST_RCAR,
+ 	SH_ETH_REG_FAST_SH4,
+ 	SH_ETH_REG_FAST_SH3_SH2
+ };
