@@ -1,43 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:53:18 +0000
-Subject: [PATCH 6/9] ARM: shmobile: armadillo800eva: enable NEON on defconfig
-Message-Id: <1363607601-20366-7-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 29 Mar 2013 07:59:52 +0000
+Subject: [PATCH 00/03 v4] ARM: shmobile: r8a73a4 APE6EVM board support
+Message-Id: <20130329075952.15748.6290.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ARM: shmobile: r8a73a4 APE6EVM board support (V4)
 
-The application / library will be stopped by illegal instruction
-on current Armaddilo800eva board,
-since defconfig doesn't have CONFIG_NEON.
-This patch enabled it.
-Special thanks to Ishiyama-san
+[PATCH 01/03 v3] ARM: shmobile: APE6EVM base support
+[PATCH 02/03 v2] ARM: shmobile: APE6EVM PFC support
+[PATCH 03/03 v3] ARM: shmobile: APE6EVM LAN9220 support
 
-Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This series is V4 of initial support for the APE6EVM board.
+
+The APE6EVM board makes use of the r8a73a4 SoC and has a
+couple of different I/O devices on board, but with this
+series only support for the SCIFA0 UART and the Ethernet
+chip is included.
+
+In the future support for more I/O devices will be added as
+incremental feature patches.
+
+Changes since V3:
+- Make use of 64-bit DT addresses
+
+Changes since V2:
+- Use PINCTRL instead of function GPIOs.
+- Modify bootargs to enable DHCP and NFS root.
+- Now depends on r8a73a4 PFC V2
+
+Changes since V1:
+- Went from single patch to series
+- Use ape6evm_add_standard_devices() to setup SoC devices and clocks
+- Use PFC to configure SCIFA0
+- Add Ethernet support including PFC support
+
+For more details please see the individual patches.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/configs/armadillo800eva_defconfig |    1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index c402294..468c616 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -36,6 +36,7 @@ CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
- CONFIG_KEXEC=y
- CONFIG_VFP=y
-+CONFIG_NEON=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
--- 
-1.7.10.4
+ Written against renesas-next-20130329 in renesas.git
+ 
+ Depends on the following patch:
+ [PATCH] ARM: shmobile: r8a73a4 SoC 64-bit DT support
 
+ arch/arm/boot/dts/Makefile             |    1 
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   54 ++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig         |    8 ++
+ arch/arm/mach-shmobile/Makefile        |    1 
+ arch/arm/mach-shmobile/board-ape6evm.c |   94 ++++++++++++++++++++++++++++++++
+ 5 files changed, 156 insertions(+), 2 deletions(-)
