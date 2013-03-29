@@ -1,51 +1,112 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:55 +0000
-Subject: [PATCH v3 35/64] ARM: shmobile: marzen: Register pinctrl mappings for INTC
-Message-Id: <1362740544-19164-36-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 29 Mar 2013 21:05:50 +0000
+Subject: [PATCH v3 3/5] ARM: shmobile: mackerel: switch SDHI and MMCIF interfaces to slot-gpio
+Message-Id: <1364591152-4780-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based INTC pinmux configuration by pinctrl mappings.
+Both SDHI and MMCIF drivers can use the standard slot-gpio card-detection
+functions. Switch mackerel to using them instead of platform callbacks.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c |   39 +++++++++---------------------
+ 1 files changed, 12 insertions(+), 27 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 053b957..df91271 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -25,7 +25,6 @@
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/io.h>
--#include <linux/gpio.h>
- #include <linux/dma-mapping.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/regulator/fixed.h>
-@@ -350,6 +349,8 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
- 				  "sdhi0_wp", "sdhi0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+				  "intc_irq1_b", "intc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
- 				  "lbsc_ex_cs0", "lbsc"),
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 734565d..a47a1116 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -963,15 +963,6 @@ static struct platform_device nand_flash_device = {
+ 	},
  };
  
-@@ -364,9 +365,6 @@ static void __init marzen_init(void)
- 				  ARRAY_SIZE(marzen_pinctrl_map));
- 	r8a7779_pinmux_init();
- 
--	/* LAN89218 */
--	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+-/*
+- * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO 41).
+- */
+-static int slot_cn7_get_cd(struct platform_device *pdev)
+-{
+-	return !gpio_get_value(41);
+-}
 -
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
+ /* SDHI0 */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+@@ -1011,13 +1002,15 @@ static struct platform_device sdhi0_device = {
+ 
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SDHI1 */
++
++/* GPIO 41 can trigger IRQ8, but it is used by USBHS1, we have to poll */
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.get_cd		= slot_cn7_get_cd,
++	.cd_gpio	= 41,
+ };
+ 
+ static struct resource sdhi1_resources[] = {
+@@ -1052,23 +1045,19 @@ static struct platform_device sdhi1_device = {
+ };
+ #endif
+ 
++/* SDHI2 */
++
+ /*
+  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
+- * connected to GPIO SCIFB_SCK of SH7372 (162).
++ * connected to GPIO SCIFB_SCK of SH7372 (GPIO 162).
+  */
+-static int slot_cn23_get_cd(struct platform_device *pdev)
+-{
+-	return !gpio_get_value(162);
+-}
+-
+-/* SDHI2 */
+ static struct sh_mobile_sdhi_info sdhi2_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.get_cd		= slot_cn23_get_cd,
++	.cd_gpio	= 162,
+ };
+ 
+ static struct resource sdhi2_resources[] = {
+@@ -1127,7 +1116,9 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.get_cd		= slot_cn7_get_cd,
++	.use_cd_gpio	= true,
++	/* card detect pin for SD/MMC slot (CN7) */
++	.cd_gpio	= 41,
+ 	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
+ 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
+ };
+@@ -1475,12 +1466,6 @@ static void __init mackerel_init(void)
+ 	/* SDHI0 PORT172 card-detect IRQ26 */
+ 	gpio_request(GPIO_FN_IRQ26_172, NULL);
+ 
+-	/* card detect pin for MMC slot (CN7) */
+-	gpio_request_one(41, GPIOF_IN, NULL);
+-
+-	/* card detect pin for microSD slot (CN23) */
+-	gpio_request_one(162, GPIOF_IN, NULL);
+-
+ 	/* FLCTL */
+ 	gpio_request(GPIO_FN_D0_NAF0, NULL);
+ 	gpio_request(GPIO_FN_D1_NAF1, NULL);
 -- 
-1.8.1.5
+1.7.2.5
 
