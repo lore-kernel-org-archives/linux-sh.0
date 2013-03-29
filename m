@@ -1,44 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Mar 2013 13:25:23 +0000
-Subject: Re: [PATCH v3 1/3] ARM: shmobile: sh73a0: wait for completion when kicking the clock
-Message-Id: <20130321132522.GA22565@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 29 Mar 2013 06:56:46 +0000
+Subject: [GIT PULL] Update for Renesas INTC External IRQ pin driver for v3.10
+Message-Id: <1364540207-7699-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362054120-8600-1-git-send-email-g.liakhovetski@gmx.de>
- <1362054120-8600-2-git-send-email-g.liakhovetski@gmx.de>
- <20130301025222.GA32306@verge.net.au>
- <20130319034214.GB21444@verge.net.au>
- <CANqRtoSk9PQWsU2E5b_CuO9AaE69fZ7GMzSjUz7DjjCY+Xcr2g@mail.gmail.com>
-In-Reply-To: <CANqRtoSk9PQWsU2E5b_CuO9AaE69fZ7GMzSjUz7DjjCY+Xcr2g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 19, 2013 at 02:15:29PM +0900, Magnus Damm wrote:
-> On Tue, Mar 19, 2013 at 12:42 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Fri, Mar 01, 2013 at 11:52:25AM +0900, Simon Horman wrote:
-> >> On Thu, Feb 28, 2013 at 01:21:58PM +0100, Guennadi Liakhovetski wrote:
-> >> > To reconfigure clocks, controlled by FRQCRA and FRQCRB, a kick bit has to
-> >> > be set and to make sure the setting has taken effect, it has to be read
-> >> > back repeatedly until it is cleared by the hardware. This patch adds the
-> >> > waiting part, that was missing until now.
-> >> >
-> >> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> >>
-> >> This patch seems to be ready to be applied.
-> >>
-> >> Magnus, could I get a review from you?
-> >
-> > Magnus, ping.
-> 
-> Thanks for the ping. This patch looks good to me.
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+Hi Arnd, Hi Olof,
 
-Thanks, applied to the soc branch.
+The following changes since commit 3b8dfa7c2f8af7613dae28ac0f3419bf75ead5d0:
 
-> Now if we could do the same thing for the MSTP bits too then that
-> would be excellent...
-> 
-> / magnus
-> 
+  irqchip: irqc: Add DT support (2013-03-18 21:26:07 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-intc-external-irq2-for-v3.10
+
+for you to fetch changes up to 427cc720277c140e6a63a03237f9bf37d8076ac3:
+
+  irqchip: intc-irqpin: Add support for shared interrupt lines (2013-03-28 16:39:46 +0900)
+
+----------------------------------------------------------------
+Update for Renesas INTC External IRQ pin driver for v3.10
+
+This adds support for shared interrupt lines to the
+Renesas INTC External IRQ pin driver which has already
+been queued up for v3.10 (tag renesas-intc-external-irq-for-v3.10).
+
+----------------------------------------------------------------
+Bastian Hecht (1):
+      irqchip: intc-irqpin: Add support for shared interrupt lines
+
+ drivers/irqchip/irq-renesas-intc-irqpin.c |   90 ++++++++++++++++++++++++++---
+ 1 file changed, 83 insertions(+), 7 deletions(-)
