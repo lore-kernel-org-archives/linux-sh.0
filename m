@@ -1,44 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:46 +0000
-Subject: [PATCH v4 41/88] ARM: shmobile: kzm9g: Register pinctrl mappings for BSC
-Message-Id: <1363215633-4264-42-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 29 Mar 2013 07:49:17 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790 SoC 64-bit DT support
+Message-Id: <20130329074917.15695.92956.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based BSC pinmux configuration by pinctrl mappings.
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The r8a7790 SoC supports LPAE and has memory window up to
+0x2ffffffff. Convert to 64-bit addresses by enlarging
+#addr-cells and #size-cells to 2.
+
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 335bdbb..7427041 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -651,6 +651,9 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
- 				  "sdhi2_data4", "sdhi2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
- 				  "sdhi2_ctrl", "sdhi2"),
-+	/* SMSC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
-+				  "bsc_cs4", "bsc"),
- };
+ arch/arm/boot/dts/r8a7790.dtsi |   14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+--- 0008/arch/arm/boot/dts/r8a7790.dtsi
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-03-29 16:35:32.000000000 +0900
+@@ -8,11 +8,11 @@
+  * kind, whether express or implied.
+  */
  
- /*
-@@ -718,9 +721,6 @@ static void __init kzm_init(void)
- 
- 	sh73a0_pinmux_init();
- 
--	/* CS4 for SMSC/USB */
--	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
+-/include/ "skeleton.dtsi"
 -
- 	/* SMSC */
- 	gpio_request_one(224, GPIOF_IN, NULL); /* IRQ3 */
+ / {
+ 	compatible = "renesas,r8a7790";
+ 	interrupt-parent = <&gic>;
++	#address-cells = <2>;
++	#size-cells = <2>;
  
--- 
-1.8.1.5
-
+ 	cpus {
+ 		#address-cells = <1>;
+@@ -31,10 +31,10 @@
+ 		#interrupt-cells = <3>;
+ 		#address-cells = <0>;
+ 		interrupt-controller;
+-		reg = <0xf1001000 0x1000>,
+-			<0xf1002000 0x1000>,
+-			<0xf1004000 0x2000>,
+-			<0xf1006000 0x2000>;
++		reg = <0 0xf1001000 0 0x1000>,
++			<0 0xf1002000 0 0x1000>,
++			<0 0xf1004000 0 0x2000>,
++			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 0xf04>;
+ 
+ 		gic-cpuif@4 {
+@@ -56,7 +56,7 @@
+ 		compatible = "renesas,irqc";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+-		reg = <0xe61c0000 0x200>;
++		reg = <0 0xe61c0000 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
+ 	};
