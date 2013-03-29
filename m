@@ -1,188 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:22 +0000
-Subject: [PATCH 026/142] ARM: shmobile: armadillo: Replace GPIO_PORTx enum with GPIO port numbers
-Message-Id: <1363604838-29359-27-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 29 Mar 2013 07:45:56 +0000
+Subject: [PATCH] ARM: shmobile: r8a73a4 SoC 64-bit DT support
+Message-Id: <20130329074556.15428.88694.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
 
-The PFC GPIO API implementation moved to using port numbers. Replace all
-GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
-enum values are identical to the port number on this platform.
+The r8a73a4 SoC supports LPAE and has memory window up to
+0x2ffffffff. Convert to 64-bit addresses by enlarging
+#addr-cells and #size-cells to 2.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   58 ++++++++++++------------
- 1 file changed, 29 insertions(+), 29 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f2ec077..92d7991 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -227,7 +227,7 @@ static void usbhsf_power_ctrl(struct platform_device *pdev,
- 
- static int usbhsf_get_vbus(struct platform_device *pdev)
- {
--	return gpio_get_value(GPIO_PORT209);
-+	return gpio_get_value(209);
- }
- 
- static irqreturn_t usbhsf_interrupt(int irq, void *data)
-@@ -535,10 +535,10 @@ static struct platform_device hdmi_lcdc_device = {
- 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, __VA_ARGS__ }
- 
- static struct gpio_keys_button gpio_buttons[] = {
--	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW3", .wakeup = 1),
--	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW4"),
--	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW5"),
--	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW6"),
-+	GPIO_KEY(KEY_POWER,	99,	"SW3", .wakeup = 1),
-+	GPIO_KEY(KEY_BACK,	100,	"SW4"),
-+	GPIO_KEY(KEY_MENU,	97,	"SW5"),
-+	GPIO_KEY(KEY_HOME,	98,	"SW6"),
- };
- 
- static struct gpio_keys_platform_data gpio_key_info = {
-@@ -708,9 +708,9 @@ static int mt9t111_power(struct device *dev, int mode)
- 		/* video1 (= CON1 camera) expect 24MHz */
- 		clk_set_rate(mclk, clk_round_rate(mclk, 24000000));
- 		clk_enable(mclk);
--		gpio_set_value(GPIO_PORT158, 1);
-+		gpio_set_value(158, 1);
- 	} else {
--		gpio_set_value(GPIO_PORT158, 0);
-+		gpio_set_value(158, 0);
- 		clk_disable(mclk);
- 	}
- 
-@@ -864,8 +864,8 @@ static struct platform_device fsi_hdmi_device = {
- 
- /* RTC: RTC connects i2c-gpio. */
- static struct i2c_gpio_platform_data i2c_gpio_data = {
--	.sda_pin	= GPIO_PORT208,
--	.scl_pin	= GPIO_PORT91,
-+	.sda_pin	= 208,
-+	.scl_pin	= 91,
- 	.udelay		= 5, /* 100 kHz */
- };
- 
-@@ -1000,12 +1000,12 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
- 	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
- 
--	gpio_request_one(GPIO_PORT61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
--	gpio_request_one(GPIO_PORT202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
-+	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
-+	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
- 
- 	/* Touchscreen */
- 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
--	gpio_request_one(GPIO_PORT166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-+	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
- 
- 	/* GETHER */
- 	gpio_request(GPIO_FN_ET_CRS,		NULL);
-@@ -1028,12 +1028,12 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
- 	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
- 
--	gpio_request_one(GPIO_PORT18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
-+	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
- 
- 	/* USB */
--	gpio_request_one(GPIO_PORT159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
-+	gpio_request_one(159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
- 
--	if (gpio_get_value(GPIO_PORT159)) {
-+	if (gpio_get_value(159)) {
- 		/* USB Host */
- 	} else {
- 		/* USB Func */
-@@ -1042,10 +1042,10 @@ static void __init eva_init(void)
- 		 * OTOH, usbhs interrupt needs its value (HI/LOW) to decide
- 		 * USB connection/disconnection (usbhsf_get_vbus()).
- 		 * This means we needs to select GPIO_FN_IRQ7_PORT209 first,
--		 * and select GPIO_PORT209 here
-+		 * and select GPIO 209 here
- 		 */
- 		gpio_request(GPIO_FN_IRQ7_PORT209, NULL);
--		gpio_request_one(GPIO_PORT209, GPIOF_IN, NULL);
-+		gpio_request_one(209, GPIOF_IN, NULL);
- 
- 		platform_device_register(&usbhsf_device);
- 		usb = &usbhsf_device;
-@@ -1060,9 +1060,9 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_SDHI0_D3, NULL);
- 	gpio_request(GPIO_FN_SDHI0_WP, NULL);
- 
--	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
--	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
--	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
-+	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
-+	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
-+	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
- 
- 	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
- 
-@@ -1099,10 +1099,10 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_VIO_CKO,		NULL);
- 
- 	/* CON1/CON15 Camera */
--	gpio_request_one(GPIO_PORT173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
--	gpio_request_one(GPIO_PORT172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
-+	gpio_request_one(173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
-+	gpio_request_one(172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
- 	/* see mt9t111_power() */
--	gpio_request_one(GPIO_PORT158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
-+	gpio_request_one(158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
- 
- 	/* FSI-WM8978 */
- 	gpio_request(GPIO_FN_FSIAIBT,		NULL);
-@@ -1111,8 +1111,8 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
- 	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
- 
--	gpio_request(GPIO_PORT7, NULL);
--	gpio_request(GPIO_PORT8, NULL);
-+	gpio_request(7, NULL);
-+	gpio_request(8, NULL);
- 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
- 
-@@ -1129,14 +1129,14 @@ static void __init eva_init(void)
- 	 * DBGMD/LCDC0/FSIA MUX
- 	 * DBGMD_SELECT_B should be set after setting PFC Function.
- 	 */
--	gpio_request_one(GPIO_PORT176, GPIOF_OUT_INIT_HIGH, NULL);
-+	gpio_request_one(176, GPIOF_OUT_INIT_HIGH, NULL);
- 
- 	/*
- 	 * We can switch CON8/CON14 by SW1.5,
- 	 * but it needs after DBGMD_SELECT_B
- 	 */
--	gpio_request_one(GPIO_PORT6, GPIOF_IN, NULL);
--	if (gpio_get_value(GPIO_PORT6)) {
-+	gpio_request_one(6, GPIOF_IN, NULL);
-+	if (gpio_get_value(6)) {
- 		/* CON14 enable */
- 	} else {
- 		/* CON8 (SDHI1) enable */
-@@ -1150,7 +1150,7 @@ static void __init eva_init(void)
- 		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
- 
- 		/* SDSLOT2_PON */
--		gpio_request_one(GPIO_PORT16, GPIOF_OUT_INIT_HIGH, NULL);
-+		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
- 
- 		platform_device_register(&sdhi1_device);
- 	}
--- 
-1.7.10.4
+ Depends on the following series:
+ [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V3
 
+ arch/arm/boot/dts/r8a73a4.dtsi |   20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+--- 0001/arch/arm/boot/dts/r8a73a4.dtsi
++++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-03-29 16:02:06.000000000 +0900
+@@ -9,11 +9,11 @@
+  * kind, whether express or implied.
+  */
+ 
+-/include/ "skeleton.dtsi"
+-
+ / {
+ 	compatible = "renesas,r8a73a4";
+ 	interrupt-parent = <&gic>;
++	#address-cells = <2>;
++	#size-cells = <2>;
+ 
+ 	cpus {
+ 		#address-cells = <1>;
+@@ -32,10 +32,10 @@
+ 		#interrupt-cells = <3>;
+ 		#address-cells = <0>;
+ 		interrupt-controller;
+-		reg = <0xf1001000 0x1000>,
+-			<0xf1002000 0x1000>,
+-			<0xf1004000 0x2000>,
+-			<0xf1006000 0x2000>;
++		reg = <0 0xf1001000 0 0x1000>,
++			<0 0xf1002000 0 0x1000>,
++			<0 0xf1004000 0 0x2000>,
++			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 0xf04>;
+ 
+ 		gic-cpuif@4 {
+@@ -57,7 +57,7 @@
+ 		compatible = "renesas,irqc";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+-		reg = <0xe61c0000 0x200>;
++		reg = <0 0xe61c0000 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>,
+ 				<0 4 4>, <0 5 4>, <0 6 4>, <0 7 4>,
+@@ -73,7 +73,7 @@
+ 		compatible = "renesas,irqc";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+-		reg = <0xe61c0200 0x200>;
++		reg = <0 0xe61c0200 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 32 4>, <0 33 4>, <0 34 4>, <0 35 4>,
+ 				<0 36 4>, <0 37 4>, <0 38 4>, <0 39 4>,
+@@ -86,8 +86,8 @@
+ 
+ 	thermal@e61f0000 {
+ 		compatible = "renesas,rcar-thermal";
+-		reg = <0xe61f0000 0x14>, <0xe61f0100 0x38>,
+-			 <0xe61f0200 0x38>, <0xe61f0300 0x38>;
++		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
++			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 69 4>;
+ 	};
