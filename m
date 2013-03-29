@@ -1,86 +1,169 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 29 Mar 2013 07:45:56 +0000
-Subject: [PATCH] ARM: shmobile: r8a73a4 SoC 64-bit DT support
-Message-Id: <20130329074556.15428.88694.sendpatchset@w520>
+Date: Fri, 29 Mar 2013 07:54:09 +0000
+Subject: [PATCH 01/03 v3] ARM: shmobile: APE6EVM base support
+Message-Id: <20130329080002.15748.90879.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130329075952.15748.6290.sendpatchset@w520>
+In-Reply-To: <20130329075952.15748.6290.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-The r8a73a4 SoC supports LPAE and has memory window up to
-0x2ffffffff. Convert to 64-bit addresses by enlarging
-#addr-cells and #size-cells to 2.
+V3 of APE6EVM base board support making use of
+1 GiB of memory, the SCIFA0 serial port and 
+ARM architected timer.
 
-Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Depends on the following series:
- [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V3
+ Changes since V2:
+ - Use 64-bit DT addresses
 
- arch/arm/boot/dts/r8a73a4.dtsi |   20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ Changes since V1:
+ - Sorted headers
+ - Use ape6evm_add_standard_devices() to setup SoC devices and clocks
 
---- 0001/arch/arm/boot/dts/r8a73a4.dtsi
-+++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-03-29 16:02:06.000000000 +0900
-@@ -9,11 +9,11 @@
-  * kind, whether express or implied.
-  */
+ arch/arm/boot/dts/Makefile             |    1 
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   31 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig         |    8 ++++-
+ arch/arm/mach-shmobile/Makefile        |    1 
+ arch/arm/mach-shmobile/board-ape6evm.c |   46 ++++++++++++++++++++++++++++++++
+ 5 files changed, 86 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2013-03-29 16:03:33.000000000 +0900
+@@ -140,6 +140,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm
+ 	r8a7779-marzen-reference.dtb \
+ 	sh73a0-kzm9g.dtb \
+ 	sh73a0-kzm9g-reference.dtb \
++	r8a73a4-ape6evm.dtb \
+ 	sh7372-mackerel.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
+ 	socfpga_vt.dtb
+--- /dev/null
++++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts	2013-03-29 16:18:19.000000000 +0900
+@@ -0,0 +1,31 @@
++/*
++ * Device Tree Source for the APE6EVM board
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++/include/ "r8a73a4.dtsi"
++
++/ {
++	model = "APE6EVM";
++	compatible = "renesas,ape6evm", "renesas,r8a73a4";
++
++	chosen {
++		bootargs = "console=ttySC0,115200 ignore_loglevel";
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++
++	lbsc {
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++};
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-03-29 16:03:33.000000000 +0900
+@@ -87,6 +87,11 @@ config MACH_AG5EVM
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SH_LCD_MIPI_DSI
  
--/include/ "skeleton.dtsi"
--
- / {
- 	compatible = "renesas,r8a73a4";
- 	interrupt-parent = <&gic>;
-+	#address-cells = <2>;
-+	#size-cells = <2>;
++config MACH_APE6EVM
++	bool "APE6EVM board"
++	depends on ARCH_R8A73A4
++	select USE_OF
++
+ config MACH_MACKEREL
+ 	bool "mackerel board"
+ 	depends on ARCH_SH7372
+@@ -180,7 +185,7 @@ config MEMORY_START
+ 	hex "Physical memory start address"
+ 	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
+ 				MACH_MACKEREL || MACH_BONITO || \
+-				MACH_ARMADILLO800EVA
++				MACH_ARMADILLO800EVA || MACH_APE6EVM
+ 	default "0x41000000" if MACH_KOTA2
+ 	default "0x00000000"
+ 	---help---
+@@ -190,6 +195,7 @@ config MEMORY_START
  
- 	cpus {
- 		#address-cells = <1>;
-@@ -32,10 +32,10 @@
- 		#interrupt-cells = <3>;
- 		#address-cells = <0>;
- 		interrupt-controller;
--		reg = <0xf1001000 0x1000>,
--			<0xf1002000 0x1000>,
--			<0xf1004000 0x2000>,
--			<0xf1006000 0x2000>;
-+		reg = <0 0xf1001000 0 0x1000>,
-+			<0 0xf1002000 0 0x1000>,
-+			<0 0xf1004000 0 0x2000>,
-+			<0 0xf1006000 0 0x2000>;
- 		interrupts = <1 9 0xf04>;
- 
- 		gic-cpuif@4 {
-@@ -57,7 +57,7 @@
- 		compatible = "renesas,irqc";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
--		reg = <0xe61c0000 0x200>;
-+		reg = <0 0xe61c0000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>,
- 				<0 4 4>, <0 5 4>, <0 6 4>, <0 7 4>,
-@@ -73,7 +73,7 @@
- 		compatible = "renesas,irqc";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
--		reg = <0xe61c0200 0x200>;
-+		reg = <0 0xe61c0200 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 32 4>, <0 33 4>, <0 34 4>, <0 35 4>,
- 				<0 36 4>, <0 37 4>, <0 38 4>, <0 39 4>,
-@@ -86,8 +86,8 @@
- 
- 	thermal@e61f0000 {
- 		compatible = "renesas,rcar-thermal";
--		reg = <0xe61f0000 0x14>, <0xe61f0100 0x38>,
--			 <0xe61f0200 0x38>, <0xe61f0300 0x38>;
-+		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
-+			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 69 4>;
- 	};
+ config MEMORY_SIZE
+ 	hex "Physical memory size"
++	default "0x40000000" if MACH_APE6EVM
+ 	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
+ 				MACH_ARMADILLO800EVA
+ 	default "0x1e000000" if MACH_KOTA2
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-03-29 16:03:33.000000000 +0900
+@@ -36,6 +36,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ # Board objects
+ obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4evb.o
+ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
++obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
+ obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
+--- /dev/null
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-03-29 16:03:34.000000000 +0900
+@@ -0,0 +1,46 @@
++/*
++ * APE6EVM board support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/interrupt.h>
++#include <linux/irqchip.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <mach/common.h>
++#include <mach/r8a73a4.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++static void __init ape6evm_add_standard_devices(void)
++{
++	r8a73a4_clock_init();
++	r8a73a4_add_standard_devices();
++}
++
++static const char *ape6evm_boards_compat_dt[] __initdata = {
++	"renesas,ape6evm",
++	NULL,
++};
++
++DT_MACHINE_START(APE6EVM_DT, "ape6evm")
++	.init_irq	= irqchip_init,
++	.init_time	= shmobile_timer_init,
++	.init_machine	= ape6evm_add_standard_devices,
++	.dt_compat	= ape6evm_boards_compat_dt,
++MACHINE_END
