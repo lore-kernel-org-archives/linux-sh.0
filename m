@@ -1,53 +1,76 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:14 +0000
-Subject: [PATCH 04/43] ARM: shmobile: Remove sh73a0_get_core_count()
-Message-Id: <1363609973-31086-5-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 31 Mar 2013 20:11:04 +0000
+Subject: [PATCH] sh_eth: make 'link' field of 'struct sh_eth_private' *int*
+Message-Id: <201304010011.04950.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The 'link' field of 'struct sh_eth_private' has type 'enum phy_state' while the
+'link' field of 'struct phy_device' is merely *int* (having values 0 and 1) and
+the former field gets assigned from the latter. Make the field match, getting
+rid of incorrectly used PHY_DOWN value in assignments/comparisons.  
 
-Reduce the number of lines of code in smp-sh73a0.c
-by getting rid of the sh73a0_get_core_count() function.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-sh73a0.c |    9 +--------
- 1 file changed, 1 insertion(+), 8 deletions(-)
+The patch is against David Miller's 'net-next.git' repo.
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index acb46a9..81c0f4b 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -52,13 +52,6 @@ void __init sh73a0_register_twd(void)
- }
- #endif
- 
--static unsigned int __init sh73a0_get_core_count(void)
--{
--	void __iomem *scu_base = scu_base_addr();
--
--	return scu_get_core_count(scu_base);
--}
--
- static void __cpuinit sh73a0_secondary_init(unsigned int cpu)
- {
- 	gic_secondary_init(0);
-@@ -90,7 +83,7 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- 
- static void __init sh73a0_smp_init_cpus(void)
- {
--	unsigned int ncores = sh73a0_get_core_count();
-+	unsigned int ncores = scu_get_core_count(scu_base_addr());
- 
- 	shmobile_smp_init_cpus(ncores);
- }
--- 
-1.7.10.4
+ drivers/net/ethernet/renesas/sh_eth.c |    8 ++++----
+ drivers/net/ethernet/renesas/sh_eth.h |    2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1674,7 +1674,7 @@ static void sh_eth_adjust_link(struct ne
+ 	struct phy_device *phydev = mdp->phydev;
+ 	int new_state = 0;
+ 
+-	if (phydev->link != PHY_DOWN) {
++	if (phydev->link) {
+ 		if (phydev->duplex != mdp->duplex) {
+ 			new_state = 1;
+ 			mdp->duplex = phydev->duplex;
+@@ -1688,7 +1688,7 @@ static void sh_eth_adjust_link(struct ne
+ 			if (mdp->cd->set_rate)
+ 				mdp->cd->set_rate(ndev);
+ 		}
+-		if (mdp->link = PHY_DOWN) {
++		if (!mdp->link) {
+ 			sh_eth_write(ndev,
+ 				(sh_eth_read(ndev, ECMR) & ~ECMR_TXF), ECMR);
+ 			new_state = 1;
+@@ -1696,7 +1696,7 @@ static void sh_eth_adjust_link(struct ne
+ 		}
+ 	} else if (mdp->link) {
+ 		new_state = 1;
+-		mdp->link = PHY_DOWN;
++		mdp->link = 0;
+ 		mdp->speed = 0;
+ 		mdp->duplex = -1;
+ 	}
+@@ -1715,7 +1715,7 @@ static int sh_eth_phy_init(struct net_de
+ 	snprintf(phy_id, sizeof(phy_id), PHY_ID_FMT,
+ 		mdp->mii_bus->id , mdp->phy_id);
+ 
+-	mdp->link = PHY_DOWN;
++	mdp->link = 0;
+ 	mdp->speed = 0;
+ 	mdp->duplex = -1;
+ 
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -503,7 +503,7 @@ struct sh_eth_private {
+ 	u32 phy_id;					/* PHY ID */
+ 	struct mii_bus *mii_bus;	/* MDIO bus control */
+ 	struct phy_device *phydev;	/* PHY device control */
+-	enum phy_state link;
++	int link;
+ 	phy_interface_t phy_interface;
+ 	int msg_enable;
+ 	int speed;
