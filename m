@@ -1,61 +1,227 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Apr 2013 15:35:39 +0000
-Subject: Re: [PATCH v3] ARM: shmobile: r8a7779: Add PCIe clocks
-Message-Id: <20130409153539.GB13831@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 01 Apr 2013 05:01:53 +0000
+Subject: [PATCH] ARM: shmobile: r8a7778: use fixed ratio clock
+Message-Id: <877gkm6dz6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365518115-4410-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1365518115-4410-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 09, 2013 at 03:35:15PM +0100, Phil Edworthy wrote:
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+R-Car M1 has many clocks, and it is possible to
+read/use clock ratio of these clocks from FRQMRx.
+But, these ratio are fixed value and
+these are decided by MD pin status.
 
-Thanks, this time I really queued it up.
-It is in the soc-r8a7779 branch.
+This patch reads MD pin status,
+and used fixed ratio clock for all clocks.
+It was tesed on bock-w board.
 
-> ---
-> v3:
->   Rebased on renesas soc branch again.
-> v2:
->   Rebased on renesas soc branch.
->   Removed ".0" from clock name.
-> 
->  arch/arm/mach-shmobile/clock-r8a7779.c |    4 +++-
->  1 files changed, 3 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-> index 7d86bfb..f66cf85 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-> @@ -93,7 +93,7 @@ static struct clk *main_clks[] = {
->  };
->  
->  enum { MSTP323, MSTP322, MSTP321, MSTP320,
-> -	MSTP115,
-> +	MSTP116, MSTP115,
->  	MSTP103, MSTP101, MSTP100,
->  	MSTP030,
->  	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-> @@ -106,6 +106,7 @@ static struct clk mstp_clks[MSTP_NR] = {
->  	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
->  	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
->  	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
-> +	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
->  	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
->  	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
->  	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
-> @@ -141,6 +142,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_CON_ID("peripheral_clk",	&clkp_clk),
->  
->  	/* MSTP32 clocks */
-> +	CLKDEV_DEV_ID("rcar-pcie", &mstp_clks[MSTP116]), /* PCIe */
->  	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
->  	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
->  	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
-> -- 
-> 1.7.5.4
-> 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+
+>> Simon
+
+This patch is based on latest simon/next branch
+
+ arch/arm/mach-shmobile/clock-r8a7778.c |  147 +++++++++++++++++++++++++++++---
+ 1 file changed, 135 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index f1277f4..d577d1d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -23,9 +23,23 @@
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+ 
++/*
++ *     MD      MD      MD      MD       PLLA   PLLB    EXTAL   clki    clkz
++ *     19      18      12      11                      (HMz)   (MHz)   (MHz)
++ *----------------------------------------------------------------------------
++ *     1       0       0       0       x21     x21     38.00   800     800
++ *     1       0       0       1       x24     x24     33.33   800     800
++ *     1       0       1       0       x28     x28     28.50   800     800
++ *     1       0       1       1       x32     x32     25.00   800     800
++ *     1       1       0       1       x24     x21     33.33   800     700
++ *     1       1       1       0       x28     x21     28.50   800     600
++ *     1       1       1       1       x32     x24     25.00   800     600
++ */
++
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ 
+ #define MSTPCR0		IOMEM(0xffc80030)
+@@ -37,6 +51,9 @@
+ #define MSTPCR4		IOMEM(0xffc80050)
+ #define MSTPCR5		IOMEM(0xffc80054)
+ #define MSTPCR6		IOMEM(0xffc80058)
++#define MODEMR		0xFFCC0020
++
++#define MD(nr)	BIT(nr)
+ 
+ /* ioremap() through clock mapping mandatory to avoid
+  * collision with ARM coherent DMA virtual memory range.
+@@ -47,14 +64,42 @@ static struct clk_mapping cpg_mapping = {
+ 	.len	= 0x80,
+ };
+ 
+-static struct clk clkp = {
+-	.rate   = 62500000, /* FIXME: shortcut */
+-	.flags  = CLK_ENABLE_ON_INIT,
++static struct clk extal_clk = {
++	/* .rate will be updated on r8a7778_clock_init() */
+ 	.mapping = &cpg_mapping,
+ };
+ 
++/*
++ * clock ratio of these clock will be updated
++ * on r8a7778_clock_init()
++ */
++SH_FIXED_RATIO_CLK_SET(plla_clk,	extal_clk, 1, 1);
++SH_FIXED_RATIO_CLK_SET(pllb_clk,	extal_clk, 1, 1);
++SH_FIXED_RATIO_CLK_SET(i_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(s_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(s1_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(s3_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(s4_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(b_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(out_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(p_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(g_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(z_clk,		pllb_clk,  1, 1);
++
+ static struct clk *main_clks[] = {
+-	&clkp,
++	&extal_clk,
++	&plla_clk,
++	&pllb_clk,
++	&i_clk,
++	&s_clk,
++	&s1_clk,
++	&s3_clk,
++	&s4_clk,
++	&b_clk,
++	&out_clk,
++	&p_clk,
++	&g_clk,
++	&z_clk,
+ };
+ 
+ enum {
+@@ -63,14 +108,14 @@ enum {
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP026] = SH_CLK_MSTP32(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
+-	[MSTP025] = SH_CLK_MSTP32(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
+-	[MSTP024] = SH_CLK_MSTP32(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
+-	[MSTP023] = SH_CLK_MSTP32(&clkp, MSTPCR0, 23, 0), /* SCIF3 */
+-	[MSTP022] = SH_CLK_MSTP32(&clkp, MSTPCR0, 22, 0), /* SCIF4 */
+-	[MSTP021] = SH_CLK_MSTP32(&clkp, MSTPCR0, 21, 0), /* SCIF5 */
+-	[MSTP016] = SH_CLK_MSTP32(&clkp, MSTPCR0, 16, 0), /* TMU0 */
+-	[MSTP015] = SH_CLK_MSTP32(&clkp, MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
++	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
++	[MSTP024] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 24, 0), /* SCIF2 */
++	[MSTP023] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 23, 0), /* SCIF3 */
++	[MSTP022] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 22, 0), /* SCIF4 */
++	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
++	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
++	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+@@ -87,8 +132,86 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a7778_clock_init(void)
+ {
++	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++	u32 mode;
+ 	int k, ret = 0;
+ 
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	switch (mode & (MD(19) | MD(18) | MD(12) | MD(11))) {
++	case MD(19):
++		extal_clk.rate = 38000000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	21, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	21, 1);
++		break;
++	case MD(19) | MD(11):
++		extal_clk.rate = 33333333;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	24, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	24, 1);
++		break;
++	case MD(19) | MD(12):
++		extal_clk.rate = 28500000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	28, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	28, 1);
++		break;
++	case MD(19) | MD(12) | MD(11):
++		extal_clk.rate = 25000000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	32, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	32, 1);
++		break;
++	case MD(19) | MD(18) | MD(11):
++		extal_clk.rate = 33333333;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	24, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	21, 1);
++		break;
++	case MD(19) | MD(18) | MD(12):
++		extal_clk.rate = 28500000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	28, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	21, 1);
++		break;
++	case MD(19) | MD(18) | MD(12) | MD(11):
++		extal_clk.rate = 25000000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	32, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	24, 1);
++		break;
++	default:
++		BUG();
++	}
++
++	if (mode & MD(1)) {
++		SH_CLK_SET_RATIO(&i_clk_ratio,	1, 1);
++		SH_CLK_SET_RATIO(&s_clk_ratio,	1, 3);
++		SH_CLK_SET_RATIO(&s1_clk_ratio,	1, 6);
++		SH_CLK_SET_RATIO(&s3_clk_ratio,	1, 4);
++		SH_CLK_SET_RATIO(&s4_clk_ratio,	1, 8);
++		SH_CLK_SET_RATIO(&p_clk_ratio,	1, 12);
++		SH_CLK_SET_RATIO(&g_clk_ratio,	1, 12);
++		if (mode & MD(2)) {
++			SH_CLK_SET_RATIO(&b_clk_ratio,		1, 18);
++			SH_CLK_SET_RATIO(&out_clk_ratio,	1, 18);
++		} else {
++			SH_CLK_SET_RATIO(&b_clk_ratio,		1, 12);
++			SH_CLK_SET_RATIO(&out_clk_ratio,	1, 12);
++		}
++	} else {
++		SH_CLK_SET_RATIO(&i_clk_ratio,	1, 1);
++		SH_CLK_SET_RATIO(&s_clk_ratio,	1, 4);
++		SH_CLK_SET_RATIO(&s1_clk_ratio,	1, 8);
++		SH_CLK_SET_RATIO(&s3_clk_ratio,	1, 4);
++		SH_CLK_SET_RATIO(&s4_clk_ratio,	1, 8);
++		SH_CLK_SET_RATIO(&p_clk_ratio,	1, 16);
++		SH_CLK_SET_RATIO(&g_clk_ratio,	1, 12);
++		if (mode & MD(2)) {
++			SH_CLK_SET_RATIO(&b_clk_ratio,		1, 16);
++			SH_CLK_SET_RATIO(&out_clk_ratio,	1, 16);
++		} else {
++			SH_CLK_SET_RATIO(&b_clk_ratio,		1, 12);
++			SH_CLK_SET_RATIO(&out_clk_ratio,	1, 12);
++		}
++	}
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
+-- 
+1.7.9.5
+
