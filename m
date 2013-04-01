@@ -1,67 +1,116 @@
-From: Felipe Balbi <balbi@TI.COM>
-Date: Wed, 10 Apr 2013 08:59:05 +0000
-Subject: Re: [PATCH v3 6/9] rcar-phy: correct base address
-Message-Id: <20130410085905.GN7983@arwen.pp.htv.fi>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="NKtYx2Ppz7d1tORf"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 01 Apr 2013 22:04:54 +0000
+Subject: [PATCH 1/2] ARM: shmobile: R8A7779: add Ether support
+Message-Id: <201304020204.54546.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304100236.50822.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304100236.50822.sergei.shtylyov@cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
---NKtYx2Ppz7d1tORf
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Add Ether clock and platform device for R8A7779 SoC; add a function to register
+this device with board-specific platform data.
 
-Hi,
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Wed, Apr 10, 2013 at 02:36:50AM +0400, Sergei Shtylyov wrote:
-> The memory region that is used by the driver overlaps EHCI and OHCI  regi=
-ster
-> regions for absolutely no reason now  -- fix it  by adding offset of 0x80=
-0 to
-> the base address, changing the register #define's accordingly. This has e=
-xtra
-> positive effect that we now can use devm_ioremap_resource()...
->=20
-> Note that the driver and the SoC code have to be in one patch to keep the=
- code
-> bisectable...
->=20
-> The patch has been tested on the Marzen board.
->=20
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+---
+This patch is atop of the 'next' branch of Simon Horman's renesas.git.
 
-Acked-by: Felipe Balbi <balbi@ti.com>
+ arch/arm/mach-shmobile/clock-r8a7779.c        |    4 ++-
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    1 
+ arch/arm/mach-shmobile/setup-r8a7779.c        |   29 +++++++++++++++++++++++++-
+ 3 files changed, 32 insertions(+), 2 deletions(-)
 
-This will conflict with latest phy changes but it's only a rename issue.
-
---=20
-balbi
-
---NKtYx2Ppz7d1tORf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJRZSnZAAoJEIaOsuA1yqREjk8P/iAD15DkoHIF4f58Wu2X2CTD
-+CAXlTqvd9gMh6MRgJEHfnlyc03O41vM7obCBwutIsAOIDZqq+6UWyWIxf5LLDFn
-ucuY6p2rVHislvPWk+E0mBBNOrX3/Kipcs0KEw3pT1cihuG8GRttJe3aqXgKnzvQ
-y/rr9QQb5oaeT5nUxSyIxuJyGXKarqsGl3R9ciyQVFxoepTGLhxkkrdGTF5w26Y8
-VZALCwQLj2Tl9dozNNpugXQg5M/r4ix/y5HA/wXiObu9QT9W2Svztp009IVYcJ6/
-IEalQykCh7IZGMW/Fttb8rQ6by0o6rHV7Y242obgmu/lVhO8rMx2mQZgmr/Nmq+W
-O0KJahSHAiKxHjZUuUSZrkk8AWYoLJ5uOH9Bo1ouq1914t0IohYo/QwfOrhN2TuQ
-Hz2eTHx92l6MPxXgFe+wneRAcafHdJmUoT1WGVj3k8v0OA4WIak3SUuET6FCdnfv
-kt7KYiPNPb+eERMClEsHZR0AtlXTl9c6y4YMwPOYPsKBJN3HxuwIf+07TUOUW/Kd
-JBi0UhTR1YufJJfE191pQvB6nCEHYOMv348MjzPVF//JWA/Z3Kk4ba2Q2+lOBuif
-zV+DIxYF0IOaGJVfBPGxh7uaZRzHHBXC1Utrabebnly4rGx6b8NflS153148+gHc
-3BAJUhInrzAdXM+e0JEZ
-=P6/0
------END PGP SIGNATURE-----
-
---NKtYx2Ppz7d1tORf--
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -93,7 +93,7 @@ static struct clk *main_clks[] = {
+ };
+ 
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+-	MSTP115,
++	MSTP115, MSTP114,
+ 	MSTP103, MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+@@ -107,6 +107,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
+ 	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
++	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
+ 	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
+ 	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
+ 	[MSTP100] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  0, 0), /* USB0/1 */
+@@ -143,6 +144,7 @@ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
+ 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
++	CLKDEV_DEV_ID("sh-eth", &mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
+ 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
+ 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -31,6 +31,7 @@ extern void r8a7779_earlytimer_init(void
+ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
++extern void r8a7779_add_ether_device(void *pdata);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -1,8 +1,9 @@
+ /*
+  * r8a7779 processor support
+  *
+- * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
+  * Copyright (C) 2011  Magnus Damm
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -369,6 +370,25 @@ static struct platform_device i2c3_devic
+ 	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
+ };
+ 
++/* Ether */
++static struct resource ether_resources[] = {
++	{
++		.start	= 0xfde00000,
++		.end	= 0xfde003ff,
++		.flags	= IORESOURCE_MEM,
++	}, {
++		.start	= gic_iid(0xb4),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ether_device = {
++	.name		= "sh-eth",
++	.id		= -1,
++	.resource	= ether_resources,
++	.num_resources	= ARRAY_SIZE(ether_resources),
++};
++
+ static struct resource sata_resources[] = {
+ 	[0] = {
+ 		.name	= "rcar-sata",
+@@ -428,6 +448,13 @@ void __init r8a7779_add_standard_devices
+ 			    ARRAY_SIZE(r8a7779_late_devices));
+ }
+ 
++void __init r8a7779_add_ether_device(void *pdata)
++{
++	ether_device.dev.platform_data = pdata;
++
++	platform_device_register(&ether_device);
++}
++
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
