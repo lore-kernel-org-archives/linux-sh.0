@@ -1,35 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 19 Apr 2013 02:15:30 +0000
-Subject: Re: [PATCH 4/4] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
-Message-Id: <20130419021530.GD25718@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 01 Apr 2013 13:53:26 +0000
+Subject: Re: [PATCH 2/2] sh_eth: workaround for spurious ECI interrupt
+Message-Id: <51599156.7000802@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304180206.39465.sergei.shtylyov@cogentembedded.com>
- <201304180217.28176.sergei.shtylyov@cogentembedded.com>
- <20130418133022.GD20929@verge.net.au>
- <51700158.101@cogentembedded.com>
-In-Reply-To: <51700158.101@cogentembedded.com>
+References: <201303312354.20695.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201303312354.20695.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-On Thu, Apr 18, 2013 at 06:21:12PM +0400, Sergei Shtylyov wrote:
-> On 18-04-2013 17:30, Simon Horman wrote:
-> 
-> >>From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> 
-> >>Add the VIN and ADV7180 drivers to 'marzen_defconfig'.
-> 
-> >>Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>---
-> >>  arch/arm/configs/marzen_defconfig |    7 +++++++
-> >>  1 file changed, 7 insertions(+)
-> 
-> >Thanks, queued-up for v3.11 in the defconfig-marzen branch.
-> 
->    That seems somewhat premature as CONFIG_VIDEO_RCAR_VIN is not
-> defined yet (it's defined in the patch #1 of this series).
+Hello.
 
-Sorry about that, I have dropped the patch.
+On 31-03-2013 23:54, Sergei Shtylyov wrote:
+
+> At least on Renesas R8A7778, EESR.ECI interrupt seems to fire regardless of its
+> mask in EESIPR register. I can 100% reproduce it with the following scenario:
+> target is booted with 'ip=on' option, and so IP-Config opens SoC Ether device
+> but doesn't get a proper reply and then succeeds with on-board SMC chip; then
+> I login and try to bring up the SoC Ether device with 'ifconfig', and I get
+> an ECI interrupt once request_irq() is called by sh_eth_open() (while interrupt
+> mask in EESIPR register is all 0), if that interrupt is accompanied by a pending
+> EESR.FRC (frame receive completion) interrupt, I get kernel oops in sh_eth_rx()
+> because sh_eth_ring_init() hasn't been called yet!
+
+> The solution I worked out is the following: in sh_eth_interrupt(), mask the
+> interrupt status from EESR register with the interrupt mask from EESIPR register
+> in order not to handle the disabled interrupts -- but forcing EESIPR.M_ECI bit
+> in this mask set because we always need to fully handle EESR.ECI interrupt in
+> sh_eth_error() in order to quench it (as it doesn't get cleared by just writing
+> 1 to the this bit as all the other interrupts).
+
+> While at it, remove unneeded initializer for 'intr_status' variable and give it
+> *unsigned long* type, matching the type of sh_eth_read()'s result; fix comment.
+
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Reviewed-by: Max Filippov <max.filippov@cogentembedded.com>
+
+    Though maybe writing 0 to ECSIPR (feLic interrupt mask) register in 
+sh_eth_close() could have prevented the spurious interrupts too, masking all 
+its primary sources -- I should have tried it beforehand. Still can try though...
+
+WBR, Sergei
+
