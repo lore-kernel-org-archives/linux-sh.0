@@ -1,103 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Apr 2013 00:06:02 +0000
-Subject: [PATCH 2/9] sh-pfc: r8a7740: Add TPU pin groups and functions
-Message-Id: <1366761969-16759-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 01 Apr 2013 02:25:39 +0000
+Subject: Re: [PATCH 0/3 v2] ARM: shmobile: Add SMSC support on Bock-W
+Message-Id: <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Hi Arnd, Simon, Magnus
+
+These patches are v2 of extpin support on r8a7778,
+and enable SMSC ether support on Bock-W board
+
+This patch set is based latest simon/next
+
+Kuninori Morimoto (3):
+      ARM: shmobile: r8a7778: remove pointless PLATFORM_INFO()
+      ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
+      ARM: shmobile: bockw: add SMSC ethernet support
+
+ arch/arm/boot/dts/r8a7778-bockw.dts           |    2 +-
+ arch/arm/configs/bockw_defconfig              |   34 ++++++++++--
+ arch/arm/mach-shmobile/Kconfig                |    1 +
+ arch/arm/mach-shmobile/board-bockw.c          |   38 ++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   70 +++++++++++++++++++------
+ 6 files changed, 125 insertions(+), 21 deletions(-)
+
+Best regards
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 50 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 50 insertions(+)
-
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index e5ef587..f6ea47c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -2745,6 +2745,42 @@ static const unsigned int sdhi2_wp_1_pins[] = {
- static const unsigned int sdhi2_wp_1_mux[] = {
- 	SDHI2_WP_PORT25_MARK,
- };
-+/* - TPU0 ------------------------------------------------------------------- */
-+static const unsigned int tpu0_to0_pins[] = {
-+	/* TO */
-+	23,
-+};
-+static const unsigned int tpu0_to0_mux[] = {
-+	TPU0TO0_MARK,
-+};
-+static const unsigned int tpu0_to1_pins[] = {
-+	/* TO */
-+	21,
-+};
-+static const unsigned int tpu0_to1_mux[] = {
-+	TPU0TO1_MARK,
-+};
-+static const unsigned int tpu0_to2_0_pins[] = {
-+	/* TO */
-+	66,
-+};
-+static const unsigned int tpu0_to2_0_mux[] = {
-+	TPU0TO2_PORT66_MARK,
-+};
-+static const unsigned int tpu0_to2_1_pins[] = {
-+	/* TO */
-+	202,
-+};
-+static const unsigned int tpu0_to2_1_mux[] = {
-+	TPU0TO2_PORT202_MARK,
-+};
-+static const unsigned int tpu0_to3_pins[] = {
-+	/* TO */
-+	180,
-+};
-+static const unsigned int tpu0_to3_mux[] = {
-+	TPU0TO3_MARK,
-+};
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(bsc_data8),
-@@ -2926,6 +2962,11 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_wp_0),
- 	SH_PFC_PIN_GROUP(sdhi2_cd_1),
- 	SH_PFC_PIN_GROUP(sdhi2_wp_1),
-+	SH_PFC_PIN_GROUP(tpu0_to0),
-+	SH_PFC_PIN_GROUP(tpu0_to1),
-+	SH_PFC_PIN_GROUP(tpu0_to2_0),
-+	SH_PFC_PIN_GROUP(tpu0_to2_1),
-+	SH_PFC_PIN_GROUP(tpu0_to3),
- };
- 
- static const char * const bsc_groups[] = {
-@@ -3176,6 +3217,14 @@ static const char * const sdhi2_groups[] = {
- 	"sdhi2_wp_1",
- };
- 
-+static const char * const tpu0_groups[] = {
-+	"tpu0_to0",
-+	"tpu0_to1",
-+	"tpu0_to2_0",
-+	"tpu0_to2_1",
-+	"tpu0_to3",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(ceu0),
-@@ -3200,6 +3249,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(tpu0),
- };
- 
- #undef PORTCR
--- 
-1.8.1.5
-
+Kuninori Morimoto
