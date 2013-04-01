@@ -1,83 +1,104 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 15 Apr 2013 10:32:52 +0000
-Subject: Re: [PATCH v8 0/7] V4L2 clock and async patches and soc-camera example
-Message-Id: <1962227.hTcMcUbvyo@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 01 Apr 2013 22:06:51 +0000
+Subject: [PATCH 2/2] ARM: shmobile: R8A7778: add Ether support
+Message-Id: <201304020206.52313.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365433538-15975-1-git-send-email-g.liakhovetski@gmx.de> <Pine.LNX.4.64.1304120733030.1727@axis700.grange> <51680291.3080303@samsung.com>
-In-Reply-To: <51680291.3080303@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Add Ether clock and platform device for R8A7778 SoC; add a function to register
+this device with board-specific platform data.
 
-On Friday 12 April 2013 14:48:17 Sylwester Nawrocki wrote:
-> On 04/12/2013 08:13 AM, Guennadi Liakhovetski wrote:
-> > On Thu, 11 Apr 2013, Sylwester Nawrocki wrote:
-> >> On 04/11/2013 11:59 AM, Guennadi Liakhovetski wrote:
-> >>> On Mon, 8 Apr 2013, Guennadi Liakhovetski wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-[snip]
+---
+This patch is atop of the 'next' branch of Simon Horman's renesas.git.
 
-> >> A significant blocking point IMHO is that this API is bound to the
-> >> circular dependency issue between a sub-device and the host driver. I
-> >> think we should have at least some specific ideas on how to resolve it
-> >> before pushing the API upstream. Or are there any already ?
-> > 
-> > Of course there is at least one. I wouldn't propose (soc-camera) patches,
-> > that lock modules hard into memory, once probing is complete.
-> 
-> Alright then, maybe I should have more carefully analysed you last patch
-> series.
-> 
-> >> One of the ideas I had was to make a sub-device driver drop the reference
-> >> it has to the clock provider module (the host) as soon as it gets
-> >> registered to it. But it doesn't seem straightforward with the common
-> >> clock API.
-> > 
-> > It isn't.
-> > 
-> >> Other option is a sysfs attribute at a host driver that would allow to
-> >> release its sub-device(s). But it sounds a bit strange to me to require
-> >> userspace to touch some sysfs attributes before being able to remove some
-> >> modules.
-> >> 
-> >> Something probably needs to be changed at the high level design to avoid
-> >> this circular dependency.
-> > 
-> > Here's what I do in my soc-camera patches atm: holding a reference to a
-> > (V4L2) clock doesn't increment bridge driver's use-count (for this
-> > discussion I describe the combined soc-camera host and soc-camera core
-> > functionality as a bridge driver, because that's what most non soc-camera
-> > drivers will look like). So, it can be unloaded. Once unloaded, it
-> > unregisters its V4L2 async notifier. Inside that the v4l2-async framework
-> > first detaches the subdevice driver, then calls the notifier's .unbind()
-> > method, which should now unregister the clock. Then, back in
-> > v4l2_async_notifier_unregister() the subdevice driver is re-probed, this
-> > time with no clock available, so, it re-enters the deferred probing state.
-> 
-> Ok, it looks better than I thought initially.. :)
-> 
-> Still, aren't there races possible, when the host driver gets unregistered
-> while subdev holds a reference to the clock, and before it gets registered
-> to the host ? The likelihood of that seems very low, but I fail to find
-> any prove it can't happen either.
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    3 +++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   21 +++++++++++++++++++++
+ 3 files changed, 25 insertions(+)
 
-That was the concern I was about to raise as well, before reading your e-mail. 
-Holding a reference to an object that can disappear at any time is asking for 
-trouble. The method currently implemented should work, but is racy in my 
-opinion. The bridge module could be unloaded after the subdev gets a reference 
-to the clock but before it registers itself with v4l2_async_register_subdev(). 
-The clock would then be freed by the bridge, resulting in a crash.
-
-I'm not sure if the circular dependency problem can be solved without an 
-explicit way to break the dependency, possibly from userspace (although I'm 
-not sure if that's the best solution).
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -58,11 +58,13 @@ static struct clk *main_clks[] = {
+ };
+ 
+ enum {
++	MSTP114,
+ 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP114] = SH_CLK_MSTP32(&clkp, MSTPCR1, 14, 0), /* Ether */
+ 	[MSTP026] = SH_CLK_MSTP32(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
+@@ -75,6 +77,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -20,6 +20,7 @@
+ 
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
++extern void r8a7778_add_ether_device(void *pdata);
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+ extern void r8a7778_init_irq_dt(void);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -78,6 +79,19 @@ static struct sh_timer_config sh_tmu1_pl
+ 	.clocksource_rating	= 200,
+ };
+ 
++/* Ether */
++static struct resource ether_resources[] = {
++	DEFINE_RES_MEM(0xfde00000, 0x400),
++	DEFINE_RES_IRQ(gic_iid(0x89)),
++};
++
++static struct platform_device ether_device = {
++	.name		= "sh-eth",
++	.id		= -1,
++	.resource	= ether_resources,
++	.num_resources	= ARRAY_SIZE(ether_resources),
++};
++
+ #define PLATFORM_INFO(n, i)					\
+ {								\
+ 	.parent		= &platform_bus,			\
+@@ -118,6 +132,13 @@ void __init r8a7778_add_standard_devices
+ 		platform_device_register_full(&platform_devinfo[i]);
+ }
+ 
++void __init r8a7778_add_ether_device(void *pdata)
++{
++	ether_device.dev.platform_data = pdata;
++
++	platform_device_register(&ether_device);
++}
++
+ #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
+ #define INT2SMSKCR1	0x8228c /* 0xfe78228c */
+ 
