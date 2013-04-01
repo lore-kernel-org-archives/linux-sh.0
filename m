@@ -1,29 +1,72 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 12 Apr 2013 07:40:10 +0000
-Subject: [PATCH 0/4 v2] ARM: shmobile: r8a7790 clock update
-Message-Id: <87wqs8nqnd.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 01 Apr 2013 02:26:31 +0000
+Subject: [PATCH 1/3 v2] ARM: shmobile: r8a7778: remove pointless PLATFORM_INFO()
+Message-Id: <87ehev56lo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+ <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+remove pointless PLATFORM_INFO() macro from setup-r8a7778,
+and, used original platform_device_register_xxx()
 
-Hi Simon, Magnus
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-These are v2 of r8a7790 clocks update patches.
-v1 patch set had datasheet <--> real machine mismatch,
-but this v2 solved that issue.
+ - removed PLATFORM_INFO()
 
-These are based on renesas-next-20130411v2 tags
+ arch/arm/mach-shmobile/setup-r8a7778.c |   26 +++++++++-----------------
+ 1 file changed, 9 insertions(+), 17 deletions(-)
 
-Kuninori Morimoto (4):
-      ARM: shmobile: use do{ }while() on SH_CLK_SET_RATIO()
-      ARM: shmobile: r8a7790: add main clock
-      ARM: shmobile: r8a7790: add div4 clocks
-      ARM: shmobile: r8a7790: add div6 clocks
-
- arch/arm/mach-shmobile/clock-r8a7790.c      |  227 ++++++++++++++++++++++++++-
- arch/arm/mach-shmobile/include/mach/clock.h |    4 +-
- 2 files changed, 224 insertions(+), 7 deletions(-)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 01c62be..57d6b0e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -78,21 +78,13 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 	.clocksource_rating	= 200,
+ };
+ 
+-#define PLATFORM_INFO(n, i)					\
+-{								\
+-	.parent		= &platform_bus,			\
+-	.name		= #n,					\
+-	.id		= i,					\
+-	.res		= n ## i ## _resources,			\
+-	.num_res	= ARRAY_SIZE(n ## i ##_resources),	\
+-	.data		= &n ## i ##_platform_data,		\
+-	.size_data	= sizeof(n ## i ## _platform_data),	\
+-}
+-
+-struct platform_device_info platform_devinfo[] = {
+-	PLATFORM_INFO(sh_tmu, 0),
+-	PLATFORM_INFO(sh_tmu, 1),
+-};
++#define r8a7778_register_tmu(idx)			\
++	platform_device_register_resndata(		\
++		&platform_bus, "sh_tmu", idx,		\
++		sh_tmu##idx##_resources,		\
++		ARRAY_SIZE(sh_tmu##idx##_resources),	\
++		&sh_tmu##idx##_platform_data,		\
++		sizeof(sh_tmu##idx##_platform_data))
+ 
+ void __init r8a7778_add_standard_devices(void)
+ {
+@@ -114,8 +106,8 @@ void __init r8a7778_add_standard_devices(void)
+ 					      &scif_platform_data[i],
+ 					      sizeof(struct plat_sci_port));
+ 
+-	for (i = 0; i < ARRAY_SIZE(platform_devinfo); i++)
+-		platform_device_register_full(&platform_devinfo[i]);
++	r8a7778_register_tmu(0);
++	r8a7778_register_tmu(1);
+ }
+ 
+ #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
+-- 
+1.7.9.5
 
