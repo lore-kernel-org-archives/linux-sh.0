@@ -1,46 +1,105 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 23 Apr 2013 10:51:09 +0000
-Subject: Re: [PATCH 01/37] sh-pfc: r8a7740: Add SCIF pin groups and functions
-Message-Id: <15021318.76Wlbse3Yt@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 01 Apr 2013 02:27:01 +0000
+Subject: [PATCH 2/3 v2] ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
+Message-Id: <87d2uf56kt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366671618-8796-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366671618-8796-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+ <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+This patch adds r8a7778_init_irq_extpin() for IRQ0 - IRQ3.
+But this patch doesn't enable DT settings on r8a7778.dts,
+because R8A7778 chip external IRQ depends on
+IRQ0 - IRQ3 pin encoding which came from platform board
+implementation.
 
-On Monday 22 April 2013 18:25:22 Kuninori Morimoto wrote:
-> Hi Laurent
-> 
-> Thank you for your hard work
-> 
-> > +/* - SCIFA0
-> > ----------------------------------------------------------------- */
-> > +static const unsigned int scifa0_data_pins[] = {
-> > +	/* RXD, TXD */
-> > +	197, 198,
-> > +};
-> 
-> I guess these numbers mean PORT197, PORT198,
-> but,this kind of "direct numbering" is difficult to read/understand
-> for non-expert people IMO.
-> But, it is easy to understand that it is "GPIO PORT something" if there is
-> ...
-> 
-> #define SH_GPIO_PORT(nr)	(nr)
-> 
-> This is just my opinion, and I'm not sure other people.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-On R-Car platforms with banked GPIOs I totally agreed that the RCAR_GP_PIN() 
-macro improved readability. In this particular case were the datasheet uses 
-port numbers directly I don't think there's a need for a macro, as developers 
-who touch this code are expected to at least know what a port number is :-)
+ - not based on PLATFORM_INFO()
 
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   44 +++++++++++++++++++++++++
+ 2 files changed, 45 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index a755dca..e0c6205 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -24,5 +24,6 @@ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+ extern void r8a7778_init_irq_dt(void);
+ extern void r8a7778_clock_init(void);
++extern void r8a7778_init_irq_extpin(int irlm);
+ 
+ #endif /* __ASM_R8A7778_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 57d6b0e..2882305 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -23,6 +23,7 @@
+ #include <linux/irqchip/arm-gic.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/platform_device.h>
+ #include <linux/irqchip.h>
+ #include <linux/serial_sci.h>
+@@ -110,6 +111,49 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_tmu(1);
+ }
+ 
++static struct renesas_intc_irqpin_config irqpin_platform_data = {
++	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
++	.sense_bitfield_width = 2,
++};
++
++static struct resource irqpin_resources[] = {
++	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
++	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
++	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
++	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
++	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
++	DEFINE_RES_IRQ(gic_iid(0x3b)), /* IRQ0 */
++	DEFINE_RES_IRQ(gic_iid(0x3c)), /* IRQ1 */
++	DEFINE_RES_IRQ(gic_iid(0x3d)), /* IRQ2 */
++	DEFINE_RES_IRQ(gic_iid(0x3e)), /* IRQ3 */
++};
++
++void __init r8a7778_init_irq_extpin(int irlm)
++{
++	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
++	unsigned long tmp;
++
++	if (!icr0) {
++		pr_warn("r8a7778: unable to setup external irq pin mode\n");
++		return;
++	}
++
++	tmp = ioread32(icr0);
++	if (irlm)
++		tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
++	else
++		tmp &= ~(1 << 23); /* IRL mode - not supported */
++	tmp |= (1 << 21); /* LVLMODE = 1 */
++	iowrite32(tmp, icr0);
++	iounmap(icr0);
++
++	if (irlm)
++		platform_device_register_resndata(
++			&platform_bus, "renesas_intc_irqpin", -1,
++			irqpin_resources, ARRAY_SIZE(irqpin_resources),
++			&irqpin_platform_data, sizeof(irqpin_platform_data));
++}
++
+ #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
+ #define INT2SMSKCR1	0x8228c /* 0xfe78228c */
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
