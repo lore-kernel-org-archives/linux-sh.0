@@ -1,38 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 04 Apr 2013 07:08:31 +0000
-Subject: Re: APE6EVM and Runtime PM
-Message-Id: <87r4iqepsk.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:09 +0000
+Subject: [PATCH 01/28] sh-pfc: Fix compiler warning when BUG()
+Message-Id: <1364879376-10020-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130404020019.GA7163@verge.net.au>
- <87wqsjdlhv.wl%kuninori.morimoto.gx@renesas.com>
- <20130404044101.GG28297@verge.net.au>
- <uy5cy7tkp.wl%kuninori.morimoto.gx@renesas.com>
- <20130404061429.GJ28297@verge.net.au>
-In-Reply-To: <20130404061429.GJ28297@verge.net.au>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Hi Simon
+The sh_pfc_phys_to_virt() function ends with a BUG() statement without a
+return. When CONFIG_BUG isn't set the function will thus have no return
+value. Fix it.
 
-> > I didn't check real board,
-> > but I guess current SMSC IRQ came from IRQC,
-> > and this IRQC needs MSTP 407.
-> > But IRQC driver seems doesn't support PM_RUNTIME at this point.
-> > 
-> > Does your issue solve by adding MSTP 407 with CLK_ENABLE_ON_INIT ?
-> > I'm not sure this is good solution, but quick-hack
-> 
-> Thanks!
-> 
-> I will post a patch to add pm_runtime support to the IRQC Driver.
-> It seems to allow SMSC + RUNTIME_PM to function on the APE6EVM.
-
-Cool !!
-Thanks
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
+ drivers/pinctrl/sh-pfc/core.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index feef897..97e6ea3 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -72,6 +72,7 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+ 	}
+ 
+ 	BUG();
++	return NULL;
+ }
+ 
+ int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin)
+-- 
+1.7.10.4
+
