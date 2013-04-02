@@ -1,156 +1,115 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Apr 2013 15:40:31 +0000
-Subject: [PATCH v9 11/20] sh-mobile-ceu-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1365781240-16149-12-git-send-email-g.liakhovetski@gmx.de>
+From: Zhang Rui <rui.zhang@intel.com>
+Date: Tue, 02 Apr 2013 13:17:27 +0000
+Subject: Re: [PATCH 1/2 v2] thermal: rcar: tidyup registration failure case
+Message-Id: <1364908647.2190.39.camel@rzhang1-mobl4>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+References: <87620gqbbe.wl%kuninori.morimoto.gx@renesas.com>
+	 <874ng0qb9f.wl%kuninori.morimoto.gx@renesas.com>
+	 <1364200856.2465.48.camel@rzhang1-mobl4>
+	 <871ub3j9r3.wl%kuninori.morimoto.gx@renesas.com>
+	 <87sj3iiu5m.wl%kuninori.morimoto.gx@renesas.com>
+	 <87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
+	 <87ppymith5.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ppymith5.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-pm@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
 
-When adding and removing a client, the sh-mobile-ceu-camera driver activates
-and, respectively, deactivates its camera interface and, if necessary, the
-CSI2 controller. Only handling of the CSI2 interface is client-specific and
-is only needed, when a data-exchange with the client is taking place. Move
-the rest to .clock_start() and .clock_stop() callbacks.
+On Mon, 2013-03-25 at 23:08 -0700, Kuninori Morimoto wrote:
+> Current rcar_thermal driver didn't care about rcar_theraml_irq_disable()
+> when registration failure case on _probe(), and _remove().
+> And, it returns without unregistering thermal zone when
+> registration failure case on _probe().
+> This patch fixes these issue.
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+rebased on thermal -next and applied.
+please make a double check.
+
+From 1dc20828e674a781635286072bae909dc4e5c377 Mon Sep 17 00:00:00 2001
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 26 Mar 2013 06:08:10 +0000
+Subject: [PATCH] thermal: rcar: tidyup registration failure case
+
+Current rcar_thermal driver didn't care about rcar_theraml_irq_disable()
+when registration failure case on _probe(), and _remove().
+And, it returns without unregistering thermal zone when
+registration failure case on _probe().
+This patch fixes these issue.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Zhang Rui <rui.zhang@intel.com>
 ---
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |   58 ++++++++++++--------
- 1 files changed, 35 insertions(+), 23 deletions(-)
+ drivers/thermal/rcar_thermal.c |   23 ++++++++++++++++-------
+ 1 file changed, 16 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-index 5b7d8e1..9037472 100644
---- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-+++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-@@ -162,7 +162,6 @@ static u32 ceu_read(struct sh_mobile_ceu_dev *priv, unsigned long reg_offs)
- static int sh_mobile_ceu_soft_reset(struct sh_mobile_ceu_dev *pcdev)
- {
- 	int i, success = 0;
--	struct soc_camera_device *icd = pcdev->ici.icd;
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 2cc5b61..4d6095b 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -419,12 +419,15 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 		priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 		if (!priv) {
+ 			dev_err(dev, "Could not allocate priv\n");
+-			return -ENOMEM;
++			ret = -ENOMEM;
++			goto error_unregister;
+ 		}
  
- 	ceu_write(pcdev, CAPSR, 1 << 16); /* reset */
+ 		priv->base = devm_ioremap_resource(dev, res);
+-		if (IS_ERR(priv->base))
+-			return PTR_ERR(priv->base);
++		if (IS_ERR(priv->base)) {
++			ret = PTR_ERR(priv->base);
++			goto error_unregister;
++		}
  
-@@ -186,7 +185,7 @@ static int sh_mobile_ceu_soft_reset(struct sh_mobile_ceu_dev *pcdev)
+ 		priv->common = common;
+ 		priv->id = i;
+@@ -443,10 +446,10 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 			goto error_unregister;
+ 		}
  
- 
- 	if (2 != success) {
--		dev_warn(icd->pdev, "soft reset time out\n");
-+		dev_warn(pcdev->ici.v4l2_dev.dev, "soft reset time out\n");
- 		return -EIO;
- 	}
- 
-@@ -543,35 +542,21 @@ static struct v4l2_subdev *find_csi2(struct sh_mobile_ceu_dev *pcdev)
- 	return NULL;
- }
- 
--/* Called with .host_lock held */
- static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
- {
- 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct sh_mobile_ceu_dev *pcdev = ici->priv;
--	struct v4l2_subdev *csi2_sd;
-+	struct v4l2_subdev *csi2_sd = find_csi2(pcdev);
- 	int ret;
- 
--	dev_info(icd->parent,
--		 "SuperH Mobile CEU driver attached to camera %d\n",
--		 icd->devnum);
+-		list_move_tail(&priv->list, &common->head);
 -
--	pm_runtime_get_sync(ici->v4l2_dev.dev);
--
--	pcdev->buf_total = 0;
--
--	ret = sh_mobile_ceu_soft_reset(pcdev);
--
--	csi2_sd = find_csi2(pcdev);
- 	if (csi2_sd) {
- 		csi2_sd->grp_id = soc_camera_grp_id(icd);
- 		v4l2_set_subdev_hostdata(csi2_sd, icd);
- 	}
- 
- 	ret = v4l2_subdev_call(csi2_sd, core, s_power, 1);
--	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV) {
--		pm_runtime_put(ici->v4l2_dev.dev);
-+	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV)
- 		return ret;
--	}
- 
- 	/*
- 	 * -ENODEV is special: either csi2_sd = NULL or the CSI-2 driver
-@@ -580,19 +565,48 @@ static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
- 	if (ret = -ENODEV && csi2_sd)
- 		csi2_sd->grp_id = 0;
- 
-+	dev_info(icd->parent,
-+		 "SuperH Mobile CEU driver attached to camera %d\n",
-+		 icd->devnum);
+ 		if (rcar_has_irq_support(priv))
+ 			rcar_thermal_irq_enable(priv);
 +
++		list_move_tail(&priv->list, &common->head);
+ 	}
+ 
+ 	platform_set_drvdata(pdev, common);
+@@ -456,8 +459,11 @@ static int rcar_thermal_probe(struct platform_device *pdev)
  	return 0;
+ 
+ error_unregister:
+-	rcar_thermal_for_each_priv(priv, common)
++	rcar_thermal_for_each_priv(priv, common) {
+ 		thermal_zone_device_unregister(priv->zone);
++		if (rcar_has_irq_support(priv))
++			rcar_thermal_irq_disable(priv);
++	}
+ 
+ 	return ret;
  }
+@@ -467,8 +473,11 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
+ 	struct rcar_thermal_priv *priv;
  
--/* Called with .host_lock held */
- static void sh_mobile_ceu_remove_device(struct soc_camera_device *icd)
- {
- 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct sh_mobile_ceu_dev *pcdev = ici->priv;
- 	struct v4l2_subdev *csi2_sd = find_csi2(pcdev);
+-	rcar_thermal_for_each_priv(priv, common)
++	rcar_thermal_for_each_priv(priv, common) {
+ 		thermal_zone_device_unregister(priv->zone);
++		if (rcar_has_irq_support(priv))
++			rcar_thermal_irq_disable(priv);
++	}
  
-+	dev_info(icd->parent,
-+		 "SuperH Mobile CEU driver detached from camera %d\n",
-+		 icd->devnum);
-+
- 	v4l2_subdev_call(csi2_sd, core, s_power, 0);
- 	if (csi2_sd)
- 		csi2_sd->grp_id = 0;
-+}
-+
-+/* Called with .host_lock held */
-+static int sh_mobile_ceu_clock_start(struct soc_camera_host *ici)
-+{
-+	struct sh_mobile_ceu_dev *pcdev = ici->priv;
-+	int ret;
-+
-+	pm_runtime_get_sync(ici->v4l2_dev.dev);
-+
-+	pcdev->buf_total = 0;
-+
-+	ret = sh_mobile_ceu_soft_reset(pcdev);
-+
-+	return 0;
-+}
-+
-+/* Called with .host_lock held */
-+static void sh_mobile_ceu_clock_stop(struct soc_camera_host *ici)
-+{
-+	struct sh_mobile_ceu_dev *pcdev = ici->priv;
-+
- 	/* disable capture, disable interrupts */
- 	ceu_write(pcdev, CEIER, 0);
- 	sh_mobile_ceu_soft_reset(pcdev);
-@@ -607,10 +621,6 @@ static void sh_mobile_ceu_remove_device(struct soc_camera_device *icd)
- 	spin_unlock_irq(&pcdev->lock);
+ 	platform_set_drvdata(pdev, NULL);
  
- 	pm_runtime_put(ici->v4l2_dev.dev);
--
--	dev_info(icd->parent,
--		 "SuperH Mobile CEU driver detached from camera %d\n",
--		 icd->devnum);
- }
- 
- /*
-@@ -2027,6 +2037,8 @@ static struct soc_camera_host_ops sh_mobile_ceu_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= sh_mobile_ceu_add_device,
- 	.remove		= sh_mobile_ceu_remove_device,
-+	.clock_start	= sh_mobile_ceu_clock_start,
-+	.clock_stop	= sh_mobile_ceu_clock_stop,
- 	.get_formats	= sh_mobile_ceu_get_formats,
- 	.put_formats	= sh_mobile_ceu_put_formats,
- 	.get_crop	= sh_mobile_ceu_get_crop,
 -- 
-1.7.2.5
+1.7.9.5
+
+
 
