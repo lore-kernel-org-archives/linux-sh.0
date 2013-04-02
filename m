@@ -1,108 +1,238 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 30 Apr 2013 12:17:13 +0000
-Subject: Re: [PATCH/RFC 0/4] dmaengine: add DT support for DMA multiplexers
-Message-Id: <Pine.LNX.4.64.1304301405510.1489@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:36 +0000
+Subject: [PATCH 28/28] sh-pfc: r8a73a4: Remove unused GPIO bias data
+Message-Id: <1364879376-10020-29-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
- <20130430104354.GF1960@intel.com>
-In-Reply-To: <20130430104354.GF1960@intel.com>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Tony Lindgren <tony@atomide.com>, devicetree-discuss@lists.ozlabs.org, linux-kernel@vger.kernel.org, Russell King <linux@arm.linux.org.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-(added Russell to CC, sorry for not including initially)
+From: Magnus Damm <damm@opensource.se>
 
-Hi Vinod
+Remove unused pull-up/down data from the r8a73a4 PFC code.
 
-On Tue, 30 Apr 2013, Vinod Koul wrote:
-
-> On Tue, Apr 30, 2013 at 09:11:19AM +0200, Guennadi Liakhovetski wrote:
-> > Previously an issue has been discussed, arising on sh-/r-mobile ARM-based 
-> > systems. There we typically have multiple DMA controller instances with 
-> > exactly equal or very similar capabilities. Each of them can serve the same 
-> > slaves, using the same slave identifiers (request line IDs). With the 
-> > present DMA DT implementation _each_ such DMA slave would have to reference 
-> > _each_ of those DMA controllers in its DMA bindings, e.g.
-> But why... if that is the case then we havent define DT-bindings clearly enough
-
-Sorry, what do you mean "why?" Why each slave has to reference each DMA 
-controller? We have discussed this A LOT before... My understanding is, 
-that we decided, that the sh-/r-mobile case of multiple equal DMA 
-controllers is an exception and that we don't want to punish everyone for 
-it. So, the design includes only explicit requesting of specific DMA 
-request lines on specific DMA controllers, no wild-cards. If a slave DMA 
-channel can be provided by several DMA controllers we decided to list them 
-all explicitly too. And for the sh-/r-mobile case a DMA-mux DT node has 
-been proposed. This is exactly what this patch series is implementing. Is 
-my understanding wrong?
-
-> And we havent merged that yet, so why not fix that in first set itself
-
-Sorry, don't understand. The series isn't merged yet, that's right. That's 
-why I explicitly mention this dependency here. But this isn't a fix. This 
-is a new feature. The first patch-series only touches a specific DMA 
-controller driver and relevant platforms. No core changes, so, it's not 
-that intrusive and can be applied quickly. Whereas this series affects the 
-core and might need a more careful consideration, discussion, etc.
-
-Thanks
-Guennadi
-
-> --
-> ~Vinod
-> > 
-> > 	mmc0: mmc@10000000 {
-> > 		...
-> > 		dmas = <&dma0 0x10
-> > 			&dma1 0x10
-> > 			&dma2 0x10
-> > 			&dma3 0x10
-> > 			&dma0 0x11
-> > 			&dma1 0x11
-> > 			&dma2 0x11
-> > 			&dma3 0x11>;
-> > 		dma-names = "tx", "tx", "tx", "tx",
-> > 			"rx", "rx", "rx", "rx";
-> > 	};
-> > 
-> > Which certainly isn't pretty. To avoid such redundancy it has been proposed 
-> > to implement a DMA multiplexer DT node. That way slaves would just 
-> > reference the multiplexer and one of DMA controller instances in it would 
-> > be picked up automatically to provide DMA channels to slaves. Patches 1-3 
-> > in this series propose such an implementation. Patch 4 is just a minor 
-> > clean up, can be applied independently.
-> > 
-> > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > 
-> > Guennadi Liakhovetski (4):
-> >   OF: add a new phandle parsing function for grouped nodes
-> >   dmaengine: add support for DMA multiplexer DT nodes
-> >   ARM: shmobile: move r8a7740 DMA controller DT node under a "dma-mux"
-> >     node
-> >   OF: modify function stubs to match proper function declarations.
-> > 
-> >  Documentation/devicetree/bindings/dma/dma.txt      |   44 ++++++++++++++++++++
-> >  .../boot/dts/r8a7740-armadillo800eva-reference.dts |   12 +++---
-> >  arch/arm/boot/dts/r8a7740.dtsi                     |   43 +++++++++++--------
-> >  drivers/dma/of-dma.c                               |   39 +++++++++++++----
-> >  drivers/of/base.c                                  |   28 +++++++++++-
-> >  include/linux/of.h                                 |   20 ++++++++-
-> >  6 files changed, 147 insertions(+), 39 deletions(-)
-> > 
-> > -- 
-> > 1.7.2.5
-> > 
-> > Thanks
-> > Guennadi
-> > ---
-> > Guennadi Liakhovetski, Ph.D.
-> > Freelance Open-Source Software Developer
-> > http://www.open-technology.de/
-> 
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  176 +++-------------------------------
+ 1 file changed, 15 insertions(+), 161 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+index 464c5f9..bbff559 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+@@ -115,16 +115,6 @@ enum {
+ 	PORT_ALL(IN),
+ 	PINMUX_INPUT_END,
+ 
+-	/* PORT0_IN_PU -> PORT329_IN_PU */
+-	PINMUX_INPUT_PULLUP_BEGIN,
+-	PORT_ALL(IN_PU),
+-	PINMUX_INPUT_PULLUP_END,
+-
+-	/* PORT0_IN_PD -> PORT329_IN_PD */
+-	PINMUX_INPUT_PULLDOWN_BEGIN,
+-	PORT_ALL(IN_PD),
+-	PINMUX_INPUT_PULLDOWN_END,
+-
+ 	/* PORT0_OUT -> PORT329_OUT */
+ 	PINMUX_OUTPUT_BEGIN,
+ 	PORT_ALL(OUT),
+@@ -438,156 +428,12 @@ enum {
+ 	PINMUX_MARK_END,
+ };
+ 
++#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
++#define PINMUX_DATA_ALL()    CPU_ALL_PORT(_PORT_DATA, , unused)
++
+ static const pinmux_enum_t pinmux_data[] = {
+ 	/* specify valid pin states for each pin in GPIO mode */
+-
+-	PORT_DATA_IO_PU_PD(0), PORT_DATA_IO_PU_PD(1),
+-	PORT_DATA_IO_PU_PD(2), PORT_DATA_IO_PU_PD(3),
+-	PORT_DATA_IO_PU_PD(4), PORT_DATA_IO_PU_PD(5),
+-	PORT_DATA_IO_PU_PD(6), PORT_DATA_IO_PU_PD(7),
+-	PORT_DATA_IO_PU_PD(8), PORT_DATA_IO_PU_PD(9),
+-
+-	PORT_DATA_IO_PU_PD(10), PORT_DATA_IO_PU_PD(11),
+-	PORT_DATA_IO_PU_PD(12), PORT_DATA_IO_PU_PD(13),
+-	PORT_DATA_IO_PU_PD(14),	PORT_DATA_IO_PU_PD(15),
+-	PORT_DATA_IO_PU_PD(16), PORT_DATA_IO_PU_PD(17),
+-	PORT_DATA_IO_PU_PD(18), PORT_DATA_IO_PU_PD(19),
+-
+-	PORT_DATA_IO_PU_PD(20), PORT_DATA_IO_PU_PD(21),
+-	PORT_DATA_IO_PU_PD(22), PORT_DATA_IO_PU_PD(23),
+-	PORT_DATA_IO_PU_PD(24),	PORT_DATA_IO_PU_PD(25),
+-	PORT_DATA_IO_PU_PD(26), PORT_DATA_IO_PU_PD(27),
+-	PORT_DATA_IO_PU_PD(28), PORT_DATA_IO_PU_PD(29),
+-
+-	PORT_DATA_IO_PU_PD(30), PORT_DATA_IO_PU_PD(32),
+-	PORT_DATA_IO_PU_PD(33), PORT_DATA_IO_PU_PD(34),
+-	PORT_DATA_IO_PU_PD(35), PORT_DATA_IO_PU_PD(36),
+-	PORT_DATA_IO_PU_PD(37), PORT_DATA_IO_PU_PD(38),
+-	PORT_DATA_IO_PU_PD(39), PORT_DATA_IO_PU_PD(40),
+-
+-	PORT_DATA_IO_PU_PD(64),	PORT_DATA_IO_PU_PD(65),
+-	PORT_DATA_IO_PU_PD(66), PORT_DATA_IO_PU_PD(67),
+-	PORT_DATA_IO_PU_PD(68), PORT_DATA_IO_PU_PD(69),
+-
+-	PORT_DATA_IO_PU_PD(70), PORT_DATA_IO_PU_PD(71),
+-	PORT_DATA_IO_PU_PD(72), PORT_DATA_IO_PU_PD(73),
+-	PORT_DATA_O(74), PORT_DATA_IO_PU_PD(75),
+-	PORT_DATA_IO_PU_PD(76), PORT_DATA_IO_PU_PD(77),
+-	PORT_DATA_IO_PU_PD(78), PORT_DATA_IO_PU_PD(79),
+-
+-	PORT_DATA_IO_PU_PD(80), PORT_DATA_IO_PU_PD(81),
+-	PORT_DATA_IO_PU_PD(82), PORT_DATA_IO_PU_PD(83),
+-	PORT_DATA_IO_PU_PD(84), PORT_DATA_IO_PU_PD(85),
+-
+-	PORT_DATA_IO_PU_PD(96), PORT_DATA_IO_PU_PD(97),
+-	PORT_DATA_IO_PU_PD(98), PORT_DATA_IO_PU_PD(99),
+-
+-	PORT_DATA_IO_PU_PD(100), PORT_DATA_IO_PU_PD(101),
+-	PORT_DATA_IO_PU_PD(102), PORT_DATA_IO_PU_PD(103),
+-	PORT_DATA_IO_PU_PD(104), PORT_DATA_IO_PU_PD(105),
+-	PORT_DATA_IO_PU_PD(106), PORT_DATA_IO_PU_PD(107),
+-	PORT_DATA_IO_PU_PD(108), PORT_DATA_IO_PU_PD(109),
+-
+-	PORT_DATA_IO_PU_PD(110), PORT_DATA_IO_PU_PD(111),
+-	PORT_DATA_IO_PU_PD(112), PORT_DATA_IO_PU_PD(113),
+-	PORT_DATA_IO_PU_PD(114), PORT_DATA_IO_PU_PD(115),
+-	PORT_DATA_IO_PU_PD(116), PORT_DATA_IO_PU_PD(117),
+-	PORT_DATA_IO_PU_PD(118), PORT_DATA_IO_PU_PD(119),
+-
+-	PORT_DATA_IO_PU_PD(120), PORT_DATA_IO_PU_PD(121),
+-	PORT_DATA_IO_PU_PD(122), PORT_DATA_IO_PU_PD(123),
+-	PORT_DATA_IO_PU_PD(124), PORT_DATA_IO_PU_PD(125),
+-	PORT_DATA_IO_PU_PD(126),
+-	PORT_DATA_IO_PU_PD(128), PORT_DATA_IO_PU_PD(129),
+-
+-	PORT_DATA_IO_PU_PD(130), PORT_DATA_IO_PU_PD(131),
+-	PORT_DATA_IO_PU_PD(132), PORT_DATA_IO_PU_PD(133),
+-	PORT_DATA_IO_PU_PD(134),
+-
+-	PORT_DATA_IO_PU_PD(160), PORT_DATA_IO_PU_PD(161),
+-	PORT_DATA_IO_PU_PD(162), PORT_DATA_IO_PU_PD(163),
+-	PORT_DATA_IO_PU_PD(164), PORT_DATA_IO_PU_PD(165),
+-	PORT_DATA_IO_PU_PD(166), PORT_DATA_IO_PU_PD(167),
+-	PORT_DATA_IO_PU_PD(168), PORT_DATA_IO_PU_PD(169),
+-
+-	PORT_DATA_IO_PU_PD(170), PORT_DATA_IO_PU_PD(171),
+-	PORT_DATA_IO_PU_PD(172), PORT_DATA_IO_PU_PD(173),
+-	PORT_DATA_IO_PU_PD(174), PORT_DATA_IO_PU_PD(175),
+-	PORT_DATA_IO_PU_PD(176), PORT_DATA_IO_PU_PD(177),
+-	PORT_DATA_IO_PU_PD(178),
+-
+-	PORT_DATA_IO_PU_PD(192), PORT_DATA_IO_PU_PD(193),
+-	PORT_DATA_IO_PU_PD(194), PORT_DATA_IO_PU_PD(195),
+-	PORT_DATA_IO_PU_PD(196), PORT_DATA_IO_PU_PD(197),
+-	PORT_DATA_IO_PU_PD(198), PORT_DATA_IO_PU_PD(199),
+-
+-	PORT_DATA_IO_PU_PD(200), PORT_DATA_IO_PU_PD(201),
+-	PORT_DATA_IO_PU_PD(202), PORT_DATA_IO_PU_PD(203),
+-	PORT_DATA_IO_PU_PD(204), PORT_DATA_IO_PU_PD(205),
+-	PORT_DATA_IO_PU_PD(206), PORT_DATA_IO_PU_PD(207),
+-	PORT_DATA_IO_PU_PD(208), PORT_DATA_IO_PU_PD(209),
+-
+-	PORT_DATA_IO_PU_PD(210), PORT_DATA_IO_PU_PD(211),
+-	PORT_DATA_IO_PU_PD(212), PORT_DATA_IO_PU_PD(213),
+-	PORT_DATA_IO_PU_PD(214), PORT_DATA_IO_PU_PD(215),
+-	PORT_DATA_IO_PU_PD(216), PORT_DATA_IO_PU_PD(217),
+-	PORT_DATA_IO_PU_PD(218), PORT_DATA_IO_PU_PD(219),
+-
+-	PORT_DATA_IO_PU_PD(220), PORT_DATA_IO_PU_PD(221),
+-	PORT_DATA_IO_PU_PD(222), PORT_DATA_IO_PU_PD(224),
+-	PORT_DATA_IO_PU_PD(225), PORT_DATA_IO_PU_PD(226),
+-	PORT_DATA_IO_PU_PD(227), PORT_DATA_IO_PU_PD(228),
+-	PORT_DATA_IO_PU_PD(229),
+-
+-	PORT_DATA_IO_PU_PD(230), PORT_DATA_IO_PU_PD(231),
+-	PORT_DATA_IO_PU_PD(232), PORT_DATA_IO_PU_PD(233),
+-	PORT_DATA_IO_PU_PD(234), PORT_DATA_IO_PU_PD(235),
+-	PORT_DATA_IO_PU_PD(236), PORT_DATA_IO_PU_PD(237),
+-	PORT_DATA_IO_PU_PD(238), PORT_DATA_IO_PU_PD(239),
+-
+-	PORT_DATA_IO_PU_PD(240), PORT_DATA_IO_PU_PD(241),
+-	PORT_DATA_IO_PU_PD(242), PORT_DATA_IO_PU_PD(243),
+-	PORT_DATA_IO_PU_PD(244), PORT_DATA_IO_PU_PD(245),
+-	PORT_DATA_IO_PU_PD(246), PORT_DATA_IO_PU_PD(247),
+-	PORT_DATA_IO_PU_PD(248), PORT_DATA_IO_PU_PD(249),
+-
+-	PORT_DATA_IO_PU_PD(250),
+-	PORT_DATA_IO_PU_PD(256), PORT_DATA_IO_PU_PD(257),
+-	PORT_DATA_IO_PU_PD(258), PORT_DATA_IO_PU_PD(259),
+-
+-	PORT_DATA_IO_PU_PD(260), PORT_DATA_IO_PU_PD(261),
+-	PORT_DATA_IO_PU_PD(262), PORT_DATA_IO_PU_PD(263),
+-	PORT_DATA_IO_PU_PD(264), PORT_DATA_IO_PU_PD(265),
+-	PORT_DATA_IO_PU_PD(266), PORT_DATA_IO_PU_PD(267),
+-	PORT_DATA_IO_PU_PD(268), PORT_DATA_IO_PU_PD(269),
+-
+-	PORT_DATA_IO_PU_PD(270), PORT_DATA_IO_PU_PD(271),
+-	PORT_DATA_IO_PU_PD(272), PORT_DATA_IO_PU_PD(273),
+-	PORT_DATA_IO_PU_PD(274), PORT_DATA_IO_PU_PD(275),
+-	PORT_DATA_IO_PU_PD(276), PORT_DATA_IO_PU_PD(277),
+-	PORT_DATA_IO_PU_PD(278), PORT_DATA_IO_PU_PD(279),
+-
+-	PORT_DATA_IO_PU_PD(280), PORT_DATA_IO_PU_PD(281),
+-	PORT_DATA_IO_PU_PD(282), PORT_DATA_IO_PU_PD(283),
+-	PORT_DATA_O(288), PORT_DATA_IO_PU_PD(289),
+-
+-	PORT_DATA_IO_PU_PD(290), PORT_DATA_IO_PU_PD(291),
+-	PORT_DATA_IO_PU_PD(292), PORT_DATA_IO_PU_PD(293),
+-	PORT_DATA_IO_PU_PD(294), PORT_DATA_IO_PU_PD(295),
+-	PORT_DATA_IO_PU_PD(296), PORT_DATA_IO_PU_PD(297),
+-	PORT_DATA_IO_PU_PD(298), PORT_DATA_IO_PU_PD(299),
+-
+-	PORT_DATA_IO_PU_PD(300), PORT_DATA_IO_PU_PD(301),
+-	PORT_DATA_IO_PU_PD(302), PORT_DATA_IO_PU_PD(303),
+-	PORT_DATA_IO_PU_PD(304), PORT_DATA_IO_PU_PD(305),
+-	PORT_DATA_IO_PU_PD(306), PORT_DATA_IO_PU_PD(307),
+-	PORT_DATA_IO_PU_PD(308),
+-
+-	PORT_DATA_IO_PU_PD(320), PORT_DATA_IO_PU_PD(321),
+-	PORT_DATA_IO_PU_PD(322), PORT_DATA_IO_PU_PD(323),
+-	PORT_DATA_IO_PU_PD(324), PORT_DATA_IO_PU_PD(325),
+-	PORT_DATA_IO_PU_PD(326), PORT_DATA_IO_PU_PD(327),
+-	PORT_DATA_IO_PU_PD(328), PORT_DATA_IO_PU_PD(329),
++	PINMUX_DATA_ALL(),
+ 
+ 	/* Port0 */
+ 	PINMUX_DATA(LCDD0_MARK,		PORT0_FN1),
+@@ -2042,8 +1888,18 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scifb3),
+ };
+ 
+-static const struct pinmux_cfg_reg pinmux_config_regs[] = {
++#undef PORTCR
++#define PORTCR(nr, reg)							\
++	{								\
++		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
++			_PCRH(PORT##nr##_IN, 0, 0, PORT##nr##_OUT),	\
++				PORT##nr##_FN0, PORT##nr##_FN1,		\
++				PORT##nr##_FN2, PORT##nr##_FN3,		\
++				PORT##nr##_FN4, PORT##nr##_FN5,		\
++				PORT##nr##_FN6, PORT##nr##_FN7 }	\
++	}
+ 
++static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	PORTCR(0, 0xe6050000),
+ 	PORTCR(1, 0xe6050001),
+ 	PORTCR(2, 0xe6050002),
+@@ -2706,8 +2562,6 @@ const struct sh_pfc_soc_info r8a73a4_pinmux_info = {
+ 	.ops		= &r8a73a4_pinmux_ops,
+ 
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+-	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+-	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-- 
+1.7.10.4
+
