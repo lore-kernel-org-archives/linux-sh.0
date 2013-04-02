@@ -1,83 +1,124 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Wed, 17 Apr 2013 13:32:57 +0000
-Subject: [PATCH 4/4] SH: cpuidle: check error code at init
-Message-Id: <1366205577-11632-4-git-send-email-daniel.lezcano@linaro.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 02 Apr 2013 11:06:32 +0000
+Subject: [PATCH 2/6] ARM: shmobile: r8a73a4: add main clock
+Message-Id: <878v515gzv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366205577-11632-1-git-send-email-daniel.lezcano@linaro.org>
-In-Reply-To: <1366205577-11632-1-git-send-email-daniel.lezcano@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: lethal@linux-sh.org, rjw@sisk.pl
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, patches@linaro.org
+To: linux-sh@vger.kernel.org
 
-Registering the driver, or the device, can fail, let's check the return code
-and return the error code to the PM layer.
+Almost all clock needs main clock which is basis clock on r8a73a4.
+This patch adds it, and, set parent clock via CKSCR register.
 
-Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/include/asm/suspend.h         |    4 ++--
- arch/sh/kernel/cpu/shmobile/cpuidle.c |   11 ++++++++---
- arch/sh/kernel/cpu/shmobile/pm.c      |    3 +--
- 3 files changed, 11 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   53 ++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
-diff --git a/arch/sh/include/asm/suspend.h b/arch/sh/include/asm/suspend.h
-index e14567a..70ae0b2 100644
---- a/arch/sh/include/asm/suspend.h
-+++ b/arch/sh/include/asm/suspend.h
-@@ -14,9 +14,9 @@ struct swsusp_arch_regs {
- void sh_mobile_call_standby(unsigned long mode);
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index e710c00..42942b4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -22,6 +22,7 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
  
- #ifdef CONFIG_CPU_IDLE
--void sh_mobile_setup_cpuidle(void);
-+int sh_mobile_setup_cpuidle(void);
- #else
--static inline void sh_mobile_setup_cpuidle(void) {}
-+static inline int sh_mobile_setup_cpuidle(void) { return 0; }
- #endif
+ #define CPG_BASE 0xe6150000
+@@ -31,6 +32,8 @@
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR5 0xe6150144
  
- /* notifier chains for pre/post sleep hooks */
-diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-index f024acf..fdfe57f4 100644
---- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
-+++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-@@ -90,14 +90,19 @@ static struct cpuidle_driver cpuidle_driver = {
- 	.state_count = 3,
++#define CKSCR		0xE61500C0
++
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+ 	.len    = CPG_LEN,
+@@ -51,10 +54,32 @@ static struct clk extal2_clk = {
+ 	.mapping	= &cpg_mapping,
  };
  
--void sh_mobile_setup_cpuidle(void)
-+int __init sh_mobile_setup_cpuidle(void)
- {
-+	int ret;
++static struct sh_clk_ops followparent_clk_ops = {
++	.recalc	= followparent_recalc,
++};
 +
- 	if (sh_mobile_sleep_supported & SUSP_SH_SF)
- 		cpuidle_driver.states[1].disabled = false;
- 
- 	if (sh_mobile_sleep_supported & SUSP_SH_STANDBY)
- 		cpuidle_driver.states[2].disabled = false;
- 
--	if (!cpuidle_register_driver(&cpuidle_driver))
--		cpuidle_register_device(&cpuidle_dev);
-+	ret = cpuidle_register_driver(&cpuidle_driver);
-+	if (ret)
-+		return ret;
++static struct clk main_clk = {
++	/* .parent will be set r8a73a4_clock_init */
++	.ops	= &followparent_clk_ops,
++};
 +
-+	return cpuidle_register_device(&cpuidle_dev);
- }
-diff --git a/arch/sh/kernel/cpu/shmobile/pm.c b/arch/sh/kernel/cpu/shmobile/pm.c
-index 08d27fa..ac37b72 100644
---- a/arch/sh/kernel/cpu/shmobile/pm.c
-+++ b/arch/sh/kernel/cpu/shmobile/pm.c
-@@ -150,8 +150,7 @@ static const struct platform_suspend_ops sh_pm_ops = {
- static int __init sh_pm_init(void)
- {
- 	suspend_set_ops(&sh_pm_ops);
--	sh_mobile_setup_cpuidle();
--	return 0;
-+	return sh_mobile_setup_cpuidle();
- }
++SH_CLK_RATIO(div2,	1, 2);
++SH_CLK_RATIO(div4,	1, 4);
++
++SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
++SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
++SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
++SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
++
+ static struct clk *main_clks[] = {
+ 	&extalr_clk,
+ 	&extal1_clk,
++	&extal1_div2_clk,
+ 	&extal2_clk,
++	&extal2_div2_clk,
++	&extal2_div4_clk,
++	&main_clk,
++	&main_div2_clk,
+ };
  
- late_initcall(sh_pm_init);
+ enum {
+@@ -74,6 +99,13 @@ static struct clk mstp_clks[MSTP_NR] = {
+ };
+ 
+ static struct clk_lookup lookups[] = {
++	/* main clock */
++	CLKDEV_CON_ID("extal1",			&extal1_clk),
++	CLKDEV_CON_ID("extal1_div2",		&extal1_div2_clk),
++	CLKDEV_CON_ID("extal2",			&extal2_clk),
++	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
++	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
++
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+@@ -90,6 +122,7 @@ void __init r8a73a4_clock_init(void)
+ {
+ 	void __iomem *cpg_base, *reg;
+ 	int k, ret = 0;
++	u32 ckscr;
+ 
+ 	/* fix MPCLK to EXTAL2 for now.
+ 	 * this is needed until more detailed clock topology is supported
+@@ -100,6 +133,26 @@ void __init r8a73a4_clock_init(void)
+ 	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
+ 	iounmap(cpg_base);
+ 
++	reg = ioremap_nocache(CKSCR, PAGE_SIZE);
++	BUG_ON(!reg);
++	ckscr = ioread32(reg);
++	iounmap(reg);
++
++	switch ((ckscr >> 28) & 0x3) {
++	case 0:
++		main_clk.parent = &extal1_clk;
++		break;
++	case 1:
++		main_clk.parent = &extal1_div2_clk;
++		break;
++	case 2:
++		main_clk.parent = &extal2_clk;
++		break;
++	case 3:
++		main_clk.parent = &extal2_div2_clk;
++		break;
++	}
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
 -- 
 1.7.9.5
 
