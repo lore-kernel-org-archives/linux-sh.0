@@ -1,66 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:10 +0000
-Subject: [PATCH 29/37] ARM: shmobile: r8a7740: Remove INTC function GPIOs
-Message-Id: <1366671618-8796-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:24 +0000
+Subject: [PATCH 28/30] ARM: shmobile: r8a7790 PFC support
+Message-Id: <1364879246-9470-29-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add a platform device for the r8a7790 PFC.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 34 ---------------------------
- 1 file changed, 34 deletions(-)
+ arch/arm/mach-shmobile/Kconfig                |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   10 ++++++++++
+ 3 files changed, 12 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 2656a6d..ef6ddb6 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -100,40 +100,6 @@ enum {
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index ccaea6a..ff674c5 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -53,6 +53,7 @@ config ARCH_R8A7779
  
- 	GPIO_PORT210, GPIO_PORT211,
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select ARM_ARCH_TIMER
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index f38ded6..9bd6f5c 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -3,5 +3,6 @@
  
--	/* IRQ */
--	GPIO_FN_IRQ0_PORT2,	GPIO_FN_IRQ0_PORT13,
--	GPIO_FN_IRQ1,
--	GPIO_FN_IRQ2_PORT11,	GPIO_FN_IRQ2_PORT12,
--	GPIO_FN_IRQ3_PORT10,	GPIO_FN_IRQ3_PORT14,
--	GPIO_FN_IRQ4_PORT15,	GPIO_FN_IRQ4_PORT172,
--	GPIO_FN_IRQ5_PORT0,	GPIO_FN_IRQ5_PORT1,
--	GPIO_FN_IRQ6_PORT121,	GPIO_FN_IRQ6_PORT173,
--	GPIO_FN_IRQ7_PORT120,	GPIO_FN_IRQ7_PORT209,
--	GPIO_FN_IRQ8,
--	GPIO_FN_IRQ9_PORT118,	GPIO_FN_IRQ9_PORT210,
--	GPIO_FN_IRQ10,
--	GPIO_FN_IRQ11,
--	GPIO_FN_IRQ12_PORT42,	GPIO_FN_IRQ12_PORT97,
--	GPIO_FN_IRQ13_PORT64,	GPIO_FN_IRQ13_PORT98,
--	GPIO_FN_IRQ14_PORT63,	GPIO_FN_IRQ14_PORT99,
--	GPIO_FN_IRQ15_PORT62,	GPIO_FN_IRQ15_PORT100,
--	GPIO_FN_IRQ16_PORT68,	GPIO_FN_IRQ16_PORT211,
--	GPIO_FN_IRQ17,
--	GPIO_FN_IRQ18,
--	GPIO_FN_IRQ19,
--	GPIO_FN_IRQ20,
--	GPIO_FN_IRQ21,
--	GPIO_FN_IRQ22,
--	GPIO_FN_IRQ23,
--	GPIO_FN_IRQ24,
--	GPIO_FN_IRQ25,
--	GPIO_FN_IRQ26_PORT58,	GPIO_FN_IRQ26_PORT81,
--	GPIO_FN_IRQ27_PORT57,	GPIO_FN_IRQ27_PORT168,
--	GPIO_FN_IRQ28_PORT56,	GPIO_FN_IRQ28_PORT169,
--	GPIO_FN_IRQ29_PORT50,	GPIO_FN_IRQ29_PORT170,
--	GPIO_FN_IRQ30_PORT49,	GPIO_FN_IRQ30_PORT171,
--	GPIO_FN_IRQ31_PORT41,	GPIO_FN_IRQ31_PORT167,
--
- 	/* Function */
+ void r8a7790_add_standard_devices(void);
+ void r8a7790_clock_init(void);
++void r8a7790_pinmux_init(void);
  
- 	/* DBGT */
+ #endif /* __ASM_R8A7790_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 9b4ccd7..481201a 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -29,6 +29,16 @@
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
++static const struct resource pfc_resources[] = {
++	DEFINE_RES_MEM(0xe6060000, 0x250),
++};
++
++void __init r8a7790_pinmux_init(void)
++{
++	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources,
++					ARRAY_SIZE(pfc_resources));
++}
++
+ #define SCIF_COMMON(scif_type, baseaddr, irq)			\
+ 	.type		= scif_type,				\
+ 	.mapbase	= baseaddr,				\
 -- 
-1.8.1.5
+1.7.10.4
 
