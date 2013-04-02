@@ -1,35 +1,115 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 11 Apr 2013 02:52:23 +0000
-Subject: Re: [PATCH] sh-pfc: Remove dependency on GPIOLIB
-Message-Id: <20130411025222.GE21037@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:19 +0000
+Subject: [PATCH 11/28] sh-pfc: Skip gpiochip registration when no GPIO resource is found
+Message-Id: <1364879376-10020-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365516361-7544-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1365516361-7544-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 10, 2013 at 10:04:46PM +0200, Laurent Pinchart wrote:
-> Hi Linus,
-> 
-> On Wednesday 10 April 2013 22:03:56 Linus Walleij wrote:
-> > On Tue, Apr 9, 2013 at 4:06 PM, Laurent Pinchart
-> > 
-> > <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > > Make GPIO support optional for platforms that don't support GPIOLIB.
-> > > 
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> > 
-> > Just guessing this needs to go into Simon's tree?
-> > 
-> > Tell me if I should apply it to the pinctrl tree.
-> 
-> It will go through Simon's tree, yes.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks. I have queued this up for v3.11 in the pinmux branch
-of my renesas tree. I expect it to appear in linux-next in
-the not to distant future.
+Boards/platforms that register dedicated GPIO devices will not supply a
+memory resource for GPIOs. Try to locate the GPIO memory resource at
+initialization time, and skip registration of the gpiochip if the
+resource can't be found.
+
+This is a temporary modification to ease the transition to separate GPIO
+drivers. It should be reverted when all boards and platforms will have
+been moved.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/pinctrl/sh-pfc/gpio.c |   39 +++++++++++++++++++++------------------
+ 1 file changed, 21 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 317cebb..d37efa7 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -101,24 +101,9 @@ static void gpio_setup_data_reg(struct sh_pfc_chip *chip, unsigned gpio)
+ static int gpio_setup_data_regs(struct sh_pfc_chip *chip)
+ {
+ 	struct sh_pfc *pfc = chip->pfc;
+-	unsigned long addr = pfc->info->data_regs[0].reg;
+ 	const struct pinmux_data_reg *dreg;
+ 	unsigned int i;
+ 
+-	/* Find the window that contain the GPIO registers. */
+-	for (i = 0; i < pfc->num_windows; ++i) {
+-		struct sh_pfc_window *window = &pfc->window[i];
+-
+-		if (addr >= window->phys && addr < window->phys + window->size)
+-			break;
+-	}
+-
+-	if (i = pfc->num_windows)
+-		return -EINVAL;
+-
+-	/* GPIO data registers must be in the first memory resource. */
+-	chip->mem = &pfc->window[i];
+-
+ 	/* Count the number of data registers, allocate memory and initialize
+ 	 * them.
+ 	 */
+@@ -319,7 +304,8 @@ static int gpio_function_setup(struct sh_pfc_chip *chip)
+  */
+ 
+ static struct sh_pfc_chip *
+-sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *))
++sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
++		    struct sh_pfc_window *mem)
+ {
+ 	struct sh_pfc_chip *chip;
+ 	int ret;
+@@ -328,6 +314,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *))
+ 	if (unlikely(!chip))
+ 		return ERR_PTR(-ENOMEM);
+ 
++	chip->mem = mem;
+ 	chip->pfc = pfc;
+ 
+ 	ret = setup(chip);
+@@ -357,8 +344,24 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	if (pfc->info->data_regs = NULL)
+ 		return 0;
+ 
++	/* Find the memory window that contain the GPIO registers. Boards that
++	 * register a separate GPIO device will not supply a memory resource
++	 * that covers the data registers. In that case don't try to handle
++	 * GPIOs.
++	 */
++	for (i = 0; i < pfc->num_windows; ++i) {
++		struct sh_pfc_window *window = &pfc->window[i];
++
++		if (pfc->info->data_regs[0].reg >= window->phys &&
++		    pfc->info->data_regs[0].reg < window->phys + window->size)
++			break;
++	}
++
++	if (i = pfc->num_windows)
++		return 0;
++
+ 	/* Register the real GPIOs chip. */
+-	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
++	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup, &pfc->window[i]);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+ 
+@@ -390,7 +393,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	if (pfc->info->nr_func_gpios = 0)
+ 		return 0;
+ 
+-	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
++	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup, NULL);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+ 
+-- 
+1.7.10.4
+
