@@ -1,63 +1,77 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Apr 2013 22:01:57 +0000
-Subject: [PATCH v5 7/9] rcar-phy: add platform data
-Message-Id: <201304200201.58386.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:17 +0000
+Subject: [PATCH 21/30] ARM: shmobile: sh7372: move global functions to sh7372.h
+Message-Id: <1364879246-9470-22-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong since this
-register contains board-specific USB ports configuration and so its value should
-be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file with
-the 'struct rcar_phy_platform_data' containing various bit fields describing
-USB pin configuration.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+There is no reason each CPU's own function has to exist in common.h.
+sh7372_xxx() go to sh7372.h
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since version 3:
-- moved USBPCTRL0 register bit #define's to patch #9;
-- replaced USBPCTRL0 register value in the platform data structure by a set of
-  bit fields describing the configuration of the board, rewrote changelog;
+ arch/arm/mach-shmobile/include/mach/common.h |   15 ---------------
+ arch/arm/mach-shmobile/include/mach/sh7372.h |   12 ++++++++++++
+ 2 files changed, 12 insertions(+), 15 deletions(-)
 
-Changes since version 2:
-- added #include <linux/types.h>;
-- added ACKs from Simon Horman and Kuninori Morimoto.
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 03f73de..d01a551 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -19,21 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
+ 			      struct cpuidle_driver *drv, int index);
+ extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+ 
+-extern void sh7372_init_irq(void);
+-extern void sh7372_map_io(void);
+-extern void sh7372_earlytimer_init(void);
+-extern void sh7372_add_early_devices(void);
+-extern void sh7372_add_standard_devices(void);
+-extern void sh7372_add_early_devices_dt(void);
+-extern void sh7372_add_standard_devices_dt(void);
+-extern void sh7372_clock_init(void);
+-extern void sh7372_pinmux_init(void);
+-extern void sh7372_pm_init(void);
+-extern void sh7372_resume_core_standby_sysc(void);
+-extern int sh7372_do_idle_sysc(unsigned long sleep_mode);
+-extern struct clk sh7372_extal1_clk;
+-extern struct clk sh7372_extal2_clk;
+-
+ extern void sh73a0_init_delay(void);
+ extern void sh73a0_init_irq(void);
+ extern void sh73a0_init_irq_dt(void);
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index b582fac..f0ea60d 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -478,6 +478,18 @@ extern struct clk sh7372_dv_clki_clk;
+ extern struct clk sh7372_dv_clki_div2_clk;
+ extern struct clk sh7372_pllc2_clk;
+ 
++extern void sh7372_init_irq(void);
++extern void sh7372_map_io(void);
++extern void sh7372_earlytimer_init(void);
++extern void sh7372_add_early_devices(void);
++extern void sh7372_add_standard_devices(void);
++extern void sh7372_add_early_devices_dt(void);
++extern void sh7372_add_standard_devices_dt(void);
++extern void sh7372_clock_init(void);
++extern void sh7372_pinmux_init(void);
++extern void sh7372_pm_init(void);
++extern void sh7372_resume_core_standby_sysc(void);
++extern int  sh7372_do_idle_sysc(unsigned long sleep_mode);
+ extern void sh7372_intcs_suspend(void);
+ extern void sh7372_intcs_resume(void);
+ extern void sh7372_intca_suspend(void);
+-- 
+1.7.10.4
 
- include/linux/usb/rcar-phy.h |   26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
-
-Index: renesas/include/linux/usb/rcar-phy.h
-=================================--- /dev/null
-+++ renesas/include/linux/usb/rcar-phy.h
-@@ -0,0 +1,26 @@
-+/*
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#ifndef __RCAR_PHY_H
-+#define __RCAR_PHY_H
-+
-+#include <linux/types.h>
-+
-+struct rcar_phy_platform_data {
-+	bool port1_func:1;	/* true: port 1 used by function, false: host */
-+	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
-+	struct {		/* Overcurrent pin control for ports 0..2 */
-+		bool select_3_3v:1; /* true: USB_OVCn pin, false: OVCn pin */
-+				/* Set to false on port 1 in function mode */
-+		bool active_high:1; /* true: active  high, false: active low */
-+				/* Set to true  on port 1 in function mode */
-+	} ovc_pin[3];
-+};
-+
-+#endif /* __RCAR_PHY_H */
