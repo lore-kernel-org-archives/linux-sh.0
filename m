@@ -1,59 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 22:59:59 +0000
-Subject: [PATCH 18/37] ARM: shmobile: bonito: Register pinctrl mapping for INTC
-Message-Id: <1366671618-8796-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:05 +0000
+Subject: [PATCH 09/30] ARM: shmobile: Disallow PINCTRL without GPIOLIB
+Message-Id: <1364879246-9470-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based INTC pinmux configuration by a pinctrl mapping.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Modify mach-shmobile to only select PINCTRL in case of
+ARCH_WANT_OPTIONAL_GPIOLIB is set.
+
+This fixes a build error triggered when adding a new SoC
+lacking GPIO software support (ARCH_WANT_OPTIONAL_GPIOLIB=n):
+
+ CC      drivers/tty/vt/keyboard.o
+In file included from drivers/pinctrl/core.c:30:0:
+include/asm-generic/gpio.h: In function 'gpio_get_value_cansleep':
+include/asm-generic/gpio.h:270:2: error: implicit declaration of function '__gpio_get_value'
+include/asm-generic/gpio.h: In function 'gpio_set_value_cansleep':
+include/asm-generic/gpio.h:276:2: error: implicit declaration of function '__gpio_set_value'
+drivers/pinctrl/core.c: In function 'pinctrl_ready_for_gpio_range':
+drivers/pinctrl/core.c:297:9: error: implicit declaration of function 'gpio_to_chip'
+drivers/pinctrl/core.c:297:27: warning: initialization makes pointer from integer without a cast
+drivers/pinctrl/core.c:304:45: error: dereferencing pointer to incomplete type
+drivers/pinctrl/core.c:305:26: error: dereferencing pointer to incomplete type
+drivers/pinctrl/core.c:305:39: error: dereferencing pointer to incomplete type
+make[2]: *** [drivers/pinctrl/core.o] Error 1
+make[1]: *** [drivers/pinctrl] Error 2
+make[1]: *** Waiting for unfinished jobs....
+  LD      drivers/sh/built-in.o
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bonito.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+ arch/arm/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index b6620662..5076f4d 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -369,6 +369,17 @@ static void __init bonito_map_io(void)
- #define VCCQ1CR		IOMEM(0xE6058140)
- #define VCCQ1LCDCR	IOMEM(0xE6058186)
- 
-+/*
-+ * HACK: The FPGA mappings should be associated with the FPGA device, but we
-+ * don't have one at the moment. Associate them with the PFC device to make
-+ * sure they will be applied.
-+ */
-+static const struct pinctrl_map fpga_pinctrl_map[] = {
-+	/* FPGA */
-+	PIN_MAP_MUX_GROUP_DEFAULT("pfc-r8a7740", "pfc-r8a7740",
-+				  "intc_irq10", "intc"),
-+};
-+
- static const struct pinctrl_map scifa5_pinctrl_map[] = {
- 	/* SCIFA5 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.5", "pfc-r8a7740",
-@@ -381,6 +392,8 @@ static void __init bonito_init(void)
- 
- 	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
- 
-+	pinctrl_register_mappings(fpga_pinctrl_map,
-+				  ARRAY_SIZE(fpga_pinctrl_map));
- 	r8a7740_pinmux_init();
- 	bonito_fpga_init();
- 
-@@ -412,7 +425,6 @@ static void __init bonito_init(void)
- 		gpio_request(GPIO_FN_CS5B,		NULL);
- 		gpio_request(GPIO_FN_CS6A,		NULL);
- 		gpio_request(GPIO_FN_CS5A_PORT105,	NULL);
--		gpio_request(GPIO_FN_IRQ10,		NULL);
- 
- 		val = bonito_fpga_read(BVERR);
- 		pr_info("bonito version: cpu %02x, base %02x\n",
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 5b71469..b63902e 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -725,7 +725,7 @@ config ARCH_SHMOBILE
+ 	select MULTI_IRQ_HANDLER
+ 	select NEED_MACH_MEMORY_H
+ 	select NO_IOPORT
+-	select PINCTRL
++	select PINCTRL if ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PM_GENERIC_DOMAINS if PM
+ 	select SPARSE_IRQ
+ 	help
 -- 
-1.8.1.5
+1.7.10.4
 
