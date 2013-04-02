@@ -1,194 +1,268 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Apr 2013 23:11:15 +0000
-Subject: [PATCH v6 1/3] rcar-phy: add R8A7778 support
-Message-Id: <201305010311.16062.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:21 +0000
+Subject: [PATCH 25/30] ARM: shmobile: Initial r8a7790 SoC support
+Message-Id: <1364879246-9470-26-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The driver currently only supports R8A7779 SoC. Compared to it, R8A7778 USB-PHY
-has extra register range containing two high-speed signal quality characteristic
-control registers which should be set up  during USB-PHY  startup depending on
-whether a ferrite bead is in use or not.  So, we now handle an optional second
-memory range in the driver's probe method, add the 'ferrite_bead' field to the
-driver's platform data, and add an extra (optional) step to the USB-PHY startup
-routine which sets up the extended registers.
+From: Magnus Damm <damm@opensource.se>
 
-Also mark in the driver's Kconfig section  that R8A7778 is  now supported and
-generally clarify that section, uppercasing the word "phy", while at it... 
+Add initial support for the r8a7790 SoC including:
+ - Single Cortex-A15 CPU Core
+ - GIC
+ - Architecture timer
 
-The patch has been tested on the Marzen and BOCK-W boards.
+No static virtual mappings are used, all the components
+make use of ioremap(). DT_MACHINE_START is still wrapped
+in CONFIG_USE_OF to match other mach-shmobile code.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Felipe Balbi <balbi@ti.com>
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since version 5:
-- renamed the header file into <linux/platform_data/usb-rcar-phy.h>.
+ arch/arm/boot/dts/r8a7790.dtsi                |   54 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                |    7 +++
+ arch/arm/mach-shmobile/Makefile               |    1 +
+ arch/arm/mach-shmobile/clock-r8a7790.c        |   61 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    7 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   51 +++++++++++++++++++++
+ 6 files changed, 181 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7790.dtsi
+ create mode 100644 arch/arm/mach-shmobile/clock-r8a7790.c
+ create mode 100644 arch/arm/mach-shmobile/include/mach/r8a7790.h
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7790.c
 
-Changes since version 3:
-- removed stray debugging printk() call.
-
-Changes since version 2:
-- moved 'ferrite_bead' bitfield to the start of 'struct rcar_phy_platform_data'
-  which allowed to cut the size of the structure from 8 bytes back to 4;
-- added a comment about only 2 USB ports on R8A7778'
-- added an ACK from Felipe Balbi.
-
-Changes since the original posting:
-- made the necessary changes atop of the R8A7779/Marzen pathset version 4.
-
- drivers/usb/phy/Kconfig                    |    8 +++---
- drivers/usb/phy/rcar-phy.c                 |   37 ++++++++++++++++++++++++-----
- include/linux/platform_data/usb-rcar-phy.h |    4 ++-
- 3 files changed, 38 insertions(+), 11 deletions(-)
-
-Index: renesas/drivers/usb/phy/Kconfig
-=================================--- renesas.orig/drivers/usb/phy/Kconfig
-+++ renesas/drivers/usb/phy/Kconfig
-@@ -55,13 +55,13 @@ config MV_U3D_PHY
- 	  SoC.
- 
- config USB_RCAR_PHY
--	tristate "Renesas R-Car USB phy support"
-+	tristate "Renesas R-Car USB PHY support"
- 	depends on USB || USB_GADGET
- 	select USB_OTG_UTILS
- 	help
--	  Say Y here to add support for the Renesas R-Car USB phy driver.
--	  This chip is typically used as USB phy for USB host, gadget.
--	  This driver supports: R8A7779
-+	  Say Y here to add support for the Renesas R-Car USB common PHY driver.
-+	  This device is typically used as USB PHY for USB host, gadget.
-+	  This driver supports R8A7778 and R8A7779.
- 
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called rcar-phy.
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -26,15 +26,21 @@
- #define USBOH0		0x1C
- #define USBCTL0		0x58
- 
-+/* High-speed signal quality characteristic control registers (R8A7778 only) */
-+#define HSQCTL1		0x24
-+#define HSQCTL2		0x28
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+new file mode 100644
+index 0000000..1c58ffb
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -0,0 +1,54 @@
++/*
++ * Device Tree Source for the r8a7790 SoC
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
- /* USBPCTRL0 */
--#define OVC2		(1 << 10) /* Switches the OVC input pin for port 2: */
-+#define OVC2		(1 << 10) /* (R8A7779 only)			*/
-+				/* Switches the OVC input pin for port 2: */
- 				/* 1: USB_OVC2, 0: OVC2			*/
- #define OVC1_VBUS1	(1 << 9) /* Switches the OVC input pin for port 1: */
- 				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
- 				/* Function mode: set to 0		*/
- #define OVC0		(1 << 8) /* Switches the OVC input pin for port 0: */
- 				/* 1: USB_OVC0 pin, 0: OVC0		*/
--#define OVC2_ACT 	(1 << 6) /* Host mode: OVC2 polarity:		*/
-+#define OVC2_ACT 	(1 << 6) /* (R8A7779 only)			*/
-+				/* Host mode: OVC2 polarity:		*/
- 				/* 1: active-high, 0: active-low	*/
- #define PENC		(1 << 4) /* Function mode: output level of PENC1 pin: */
- 				/* 1: high, 0: low			*/
-@@ -59,6 +65,7 @@ struct rcar_usb_phy_priv {
- 	spinlock_t lock;
- 
- 	void __iomem *reg0;
-+	void __iomem *reg1;
- 	int counter;
- };
- 
-@@ -78,6 +85,7 @@ static int rcar_usb_phy_init(struct usb_
- 	struct device *dev = phy->dev;
- 	struct rcar_phy_platform_data *pdata = dev->platform_data;
- 	void __iomem *reg0 = priv->reg0;
-+	void __iomem *reg1 = priv->reg1;
- 	const u8 ovcn_act[] = { OVC0_ACT, OVC1_ACT, OVC2_ACT };
- 	int i;
- 	u32 val;
-@@ -96,7 +104,16 @@ static int rcar_usb_phy_init(struct usb_
- 		/* (2) start USB-PHY internal PLL */
- 		iowrite32(PHY_ENB | PLL_ENB, (reg0 + USBPCTRL1));
- 
--		/* (3) USB module status check */
-+		/* (3) set USB-PHY in accord with the conditions of usage */
-+		if (reg1) {
-+			u32 hsqctl1 = pdata->ferrite_bead ? 0x41 : 0;
-+			u32 hsqctl2 = pdata->ferrite_bead ? 0x0d : 7;
++/include/ "skeleton.dtsi"
 +
-+			iowrite32(hsqctl1, reg1 + HSQCTL1);
-+			iowrite32(hsqctl2, reg1 + HSQCTL2);
-+		}
++/ {
++	compatible = "renesas,r8a7790";
++	interrupt-parent = <&gic>;
 +
-+		/* (4) USB module status check */
- 		for (i = 0; i < 1024; i++) {
- 			udelay(10);
- 			val = ioread32(reg0 + USBST);
-@@ -109,7 +126,7 @@ static int rcar_usb_phy_init(struct usb_
- 			goto phy_init_end;
- 		}
- 
--		/* (4) USB-PHY reset clear */
-+		/* (5) USB-PHY reset clear */
- 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
- 
- 		/* Board specific port settings */
-@@ -162,9 +179,9 @@ static void rcar_usb_phy_shutdown(struct
- static int rcar_usb_phy_probe(struct platform_device *pdev)
- {
- 	struct rcar_usb_phy_priv *priv;
--	struct resource *res0;
-+	struct resource *res0, *res1;
- 	struct device *dev = &pdev->dev;
--	void __iomem *reg0;
-+	void __iomem *reg0, *reg1 = NULL;
- 	int ret;
- 
- 	if (!pdev->dev.platform_data) {
-@@ -182,6 +199,13 @@ static int rcar_usb_phy_probe(struct pla
- 	if (IS_ERR(reg0))
- 		return PTR_ERR(reg0);
- 
-+	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-+	if (res1) {
-+		reg1 = devm_ioremap_resource(dev, res1);
-+		if (IS_ERR(reg1))
-+			return PTR_ERR(reg1);
-+	}
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
 +
- 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
- 	if (!priv) {
- 		dev_err(dev, "priv data allocation error\n");
-@@ -189,6 +213,7 @@ static int rcar_usb_phy_probe(struct pla
- 	}
- 
- 	priv->reg0		= reg0;
-+	priv->reg1		= reg1;
- 	priv->counter		= 0;
- 	priv->phy.dev		= dev;
- 	priv->phy.label		= dev_name(dev);
-Index: renesas/include/linux/platform_data/usb-rcar-phy.h
-=================================--- renesas.orig/include/linux/platform_data/usb-rcar-phy.h
-+++ renesas/include/linux/platform_data/usb-rcar-phy.h
-@@ -13,6 +13,8 @@
- #include <linux/types.h>
- 
- struct rcar_phy_platform_data {
-+	bool ferrite_bead:1;	/* (R8A7778 only)			*/
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <0>;
++			clock-frequency = <1300000000>;
++		};
++	};
 +
- 	bool port1_func:1;	/* true: port 1 used by function, false: host */
- 	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
- 	struct {		/* Overcurrent pin control for ports 0..2 */
-@@ -20,7 +22,7 @@ struct rcar_phy_platform_data {
- 				/* Set to false on port 1 in function mode */
- 		bool active_high:1; /* true: active  high, false: active low */
- 				/* Set to true  on port 1 in function mode */
--	} ovc_pin[3];
-+	} ovc_pin[3];		/* (R8A7778 only has 2 ports)		*/
- };
++	gic: interrupt-controller@f1001000 {
++		compatible = "arm,cortex-a15-gic";
++		#interrupt-cells = <3>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xf1001000 0x1000>,
++			<0xf1002000 0x1000>,
++			<0xf1004000 0x2000>,
++			<0xf1006000 0x2000>;
++		interrupts = <1 9 0xf04>;
++
++		gic-cpuif@4 {
++			compatible = "arm,gic-cpuif";
++			cpuif-id = <4>;
++			cpu = <&cpu0>;
++		};
++	};
++
++	timer {
++		compatible = "arm,armv7-timer";
++		interrupts = <1 13 0xf08>,
++				<1 14 0xf08>,
++				<1 11 0xf08>,
++				<1 10 0xf08>;
++	};
++};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index d569c34..749dfb4 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -51,6 +51,13 @@ config ARCH_R8A7779
+ 	select USB_ARCH_HAS_OHCI
+ 	select RENESAS_INTC_IRQPIN
  
- #endif /* __USB_RCAR_PHY_H */
++config ARCH_R8A7790
++	bool "R-Car H2 (R8A77900)"
++	select ARM_GIC
++	select CPU_V7
++	select ARM_ARCH_TIMER
++	select SH_CLK_CPG
++
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 2d42de4..709b9b4 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -12,6 +12,7 @@ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
++obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o clock-r8a7790.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+ 
+ # SMP objects
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+new file mode 100644
+index 0000000..6869798
+--- /dev/null
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -0,0 +1,61 @@
++/*
++ * r8a7790 clock framework support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/sh_clk.h>
++#include <linux/clkdev.h>
++#include <mach/common.h>
++
++#define CPG_BASE 0xe6150000
++#define CPG_LEN 0x1000
++
++static struct clk_mapping cpg_mapping = {
++	.phys   = CPG_BASE,
++	.len    = CPG_LEN,
++};
++
++static struct clk *main_clks[] = {
++};
++
++enum { MSTP_NR };
++static struct clk mstp_clks[MSTP_NR] = {
++};
++
++static struct clk_lookup lookups[] = {
++};
++
++void __init r8a7790_clock_init(void)
++{
++	int k, ret = 0;
++
++	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
++		ret = clk_register(main_clks[k]);
++
++	if (!ret)
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++
++	if (!ret)
++		shmobile_clk_init();
++	else
++		panic("failed to setup r8a7790 clocks\n");
++}
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+new file mode 100644
+index 0000000..f38ded6
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -0,0 +1,7 @@
++#ifndef __ASM_R8A7790_H__
++#define __ASM_R8A7790_H__
++
++void r8a7790_add_standard_devices(void);
++void r8a7790_clock_init(void);
++
++#endif /* __ASM_R8A7790_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+new file mode 100644
+index 0000000..af432ba
+--- /dev/null
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -0,0 +1,51 @@
++/*
++ * r8a7790 processor support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/kernel.h>
++#include <linux/of_platform.h>
++#include <mach/common.h>
++#include <mach/irqs.h>
++#include <mach/r8a7790.h>
++#include <asm/mach/arch.h>
++
++void __init r8a7790_add_standard_devices(void)
++{
++}
++
++#ifdef CONFIG_USE_OF
++void __init r8a7790_add_standard_devices_dt(void)
++{
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
++
++static const char *r8a7790_boards_compat_dt[] __initdata = {
++	"renesas,r8a7790",
++	NULL,
++};
++
++DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
++	.init_irq	= irqchip_init,
++	.init_machine	= r8a7790_add_standard_devices_dt,
++	.init_time	= shmobile_timer_init,
++	.dt_compat	= r8a7790_boards_compat_dt,
++MACHINE_END
++#endif /* CONFIG_USE_OF */
+-- 
+1.7.10.4
 
