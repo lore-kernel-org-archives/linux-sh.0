@@ -1,51 +1,94 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 25 Apr 2013 00:19:37 +0000
-Subject: Re: [PATCH v3 1/2] ARM: shmobile: r8a7740: Add Suspend-To-RAM A3SM
-Message-Id: <20130425001937.GA7857@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:08 +0000
+Subject: [GIT PULL] Renesas ARM and SH based SoC pinmux updates for v3.10 #2
+Message-Id: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366196190-14011-1-git-send-email-hechtb+renesas@gmail.com>
- <20130424074904.GG847@verge.net.au>
- <CABYn4swtOdJG18833FLXifeuVsL4R5vUzGjAg5Fv8r==CT5HBw@mail.gmail.com>
- <20130424100759.GA19399@verge.net.au>
-In-Reply-To: <20130424100759.GA19399@verge.net.au>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 24, 2013 at 07:07:59PM +0900, Simon Horman wrote:
-> On Wed, Apr 24, 2013 at 11:36:33AM +0200, Bastian Hecht wrote:
-> > 2013/4/24 Simon Horman <horms@verge.net.au>:
-> > > On Wed, Apr 17, 2013 at 12:56:29PM +0200, Bastian Hecht wrote:
-> > >> We add 2 Suspend to RAM modes:
-> > >> - A3SM PLL0 on/off:     Power domain A3SM that contains the ARM core
-> > >>                         and the 2nd level cache with either PLL0 on
-> > >>                         or off
-> > >>
-> > >> As the suspend to memory mechanism we use A3SM PLL off. A3SM PLL on
-> > >> is included here too, so CPUIdle can use both power down modes (not
-> > >> included in this patch).
-> > >>
-> > >> The setup of the SYSC regarding the external IRQs is taken from
-> > >> pm-sh7372.c from Magnus Damm.
-> > >>
-> > >> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> > >> ---
-> > >> v3:
-> > >>
-> > >> We now stubbornly loop until the SoC really shuts down when we issue
-> > >> the WFI command.
-> > >
-> > > Hi Bastian,
-> > >
-> > > could you let me know what the status of this series is.
-> > > Is it ready to be queued-up for v3.11?
-> > 
-> > Hello Simon!
-> > 
-> > I consider it stable and as there are no more comments, I would be
-> > happy if you queued it up.
-> 
-> Thanks, I will see about doing so tomorrow.
+Hi Arnd, Hi Olof,
 
-Done, they are queued-up in the soc-r8a7740 branch.
+The following changes since commit 809609a5d8427b0025304dbb69a84a692d11c4f9:
+
+  Merge branch 'soc' into pinmux-base (2013-04-02 11:08:34 +0900)
+
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux2-for-v3.10
+
+for you to fetch changes up to bae8c3e07e37c7a8106435fbfe62bd3d7ec2212a:
+
+  sh-pfc: r8a73a4: Remove unused GPIO bias data (2013-04-02 11:11:16 +0900)
+
+----------------------------------------------------------------
+Second round of Renesas ARM and SH based SoC pinmux updates for v3.10
+
+Highlights:
+
+* Compilation fixes for sh7269 and for when CONFIG_BUG is not set
+* sh-pfc Support for r8a73a4 SoC
+* Move GPIOs handling from the PFC device to separate GPIO devices
+  on the r8a7779 SoC
+
+This pull request is based on a merge of:
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-pinmux-for-v3.10
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-soc2-for-v3.10
+
+----------------------------------------------------------------
+Laurent Pinchart (14):
+      sh-pfc: Fix compiler warning when BUG()
+      sh: sh7269: Fix compilation by adding missing includes
+      sh-pfc: r8a7779: Remove function GPIOs
+      sh-pfc: r8a7779: Don't use GPIO enum entries
+      ARM: shmobile: r8a7779: Remove all GPIOs
+      gpio-rcar: Add pinctrl support
+      ARM: shmobile: marzen: Add GPIO LEDs
+      sh-pfc: Make function GPIOs support optional
+      sh-pfc: Make GPIO support optional
+      sh-pfc: Skip gpiochip registration when no GPIO resource is found
+      sh-pfc: Configure pins as GPIOs at request time when handled externally
+      ARM: shmobile: r8a7779: Register GPIO devices
+      sh-pfc: r8a7779: Remove GPIO data
+      sh-pfc: r8a7779: Split DU input and output pixel clocks
+
+Magnus Damm (14):
+      gpio: Renesas R-Car GPIO driver V3
+      sh-pfc: Add r8a73a4 pinmux support
+      sh-pfc: r8a73a4: Support sparse GPIO numbers
+      sh-pfc: r8a73a4: GPIO IRQ support
+      sh-pfc: r8a73a4: Add bias (pull-up/down) pinconf support
+      sh-pfc: r8a73a4: Add SCIF pin groups and functions
+      sh-pfc: r8a73a4: Add IRQC pin groups and functions
+      sh-pfc: r8a73a4: Remove SCIF function GPIOS
+      sh-pfc: r8a73a4: Remove IRQC function GPIOS
+      ARM: shmobile: r8a73a4: Remove SCIF function GPIOs
+      ARM: shmobile: r8a73a4: Remove IRQC function GPIOs
+      sh-pfc: r8a73a4: Remove function GPIOs
+      ARM: shmobile: r8a73a4: Remove all GPIO enums
+      sh-pfc: r8a73a4: Remove unused GPIO bias data
+
+ arch/arm/mach-shmobile/board-marzen.c         |   32 +
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  317 ---
+ arch/arm/mach-shmobile/setup-r8a7779.c        |   58 +-
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c       |    2 +
+ drivers/gpio/Kconfig                          |    6 +
+ drivers/gpio/Makefile                         |    1 +
+ drivers/gpio/gpio-rcar.c                      |  396 ++++
+ drivers/pinctrl/sh-pfc/Kconfig                |    5 +
+ drivers/pinctrl/sh-pfc/Makefile               |    1 +
+ drivers/pinctrl/sh-pfc/core.c                 |   41 +-
+ drivers/pinctrl/sh-pfc/core.h                 |    1 +
+ drivers/pinctrl/sh-pfc/gpio.c                 |   45 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c          | 2587 +++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c          |  479 +----
+ drivers/pinctrl/sh-pfc/pinctrl.c              |   11 +
+ include/linux/platform_data/gpio-rcar.h       |   26 +
+ 16 files changed, 3274 insertions(+), 734 deletions(-)
+ create mode 100644 drivers/gpio/gpio-rcar.c
+ create mode 100644 drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+ create mode 100644 include/linux/platform_data/gpio-rcar.h
