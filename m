@@ -1,7 +1,7 @@
 From: Stephane Grosjean <s.grosjean@peak-system.com>
-Date: Tue, 02 Apr 2013 07:47:40 +0000
+Date: Tue, 02 Apr 2013 14:04:00 +0000
 Subject: Re: drivers/net/can/sja1000/peak_pcmcia.c:626:2: error: implicit declaration of function 'ioport_unm
-Message-Id: <515A8D1C.5010308@peak-system.com>
+Message-Id: <515AE550.2030605@peak-system.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130327083110.GB11489@localhost>
 In-Reply-To: <20130327083110.GB11489@localhost>
@@ -10,7 +10,6 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi Marc,
 
 Le 27/03/2013 11:22, Marc Kleine-Budde a =E9crit :
 > On 03/27/2013 10:41 AM, Paul Mundt wrote:
@@ -46,22 +45,31 @@ akes pointer from integer without a cast [enabled by default]
 >>>
 >> This would no doubt be due to the defconfig selecting NO_IOPORT. This
 >> driver probably needs a HAS_IOPORT depends.
-
 > Stephane, can we use pcmcia_map_mem_page() instead of ioport_map() like
 > in the ems_pcmcia driver?
 >
 > http://lxr.free-electrons.com/source/drivers/net/can/sja1000/ems_pcmcia.c=
 #L286
 
+I'm afraid we won't! Unfortunately, the PCAN-PCCARD doesn't use the=20
+common memory area at all. I did use the ioport_map() function because=20
+of the iomem * type of the reg_base member of the sja1000_priv struct.
+Moreover, the access to the SJA1000 registers is available only if i/o=20
+signals are set. So, I see two solutions:
 
-Ok, I'll have a look to that asap.
-Meanwhile, adding the HAS_IOPORT depends in=20
-drivers/net/can/sja1000/Kconfig does the trick. What do you think about=20
-that?
+1. rewriting peak_pcmcia.c much more like=20
+"drivers/net/can/sja1000/tscan1.c" (and casting from "iomem *" to=20
+"unsigned long")
+2. or counting on HAS_IOPORT flags (but how does manage=20
+drivers/net/wireless/libertas/if_cs.c driver to compile without any=20
+error nor warning?)
 
-BR,
+What is your opinion,  please?
+
+Regards,
 
 St=E9phane
+
 > Marc
 >
 
