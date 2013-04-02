@@ -1,94 +1,120 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:06 +0000
-Subject: [PATCH 03/35] sh-pfc: sh7372: Add FLCTL pin groups and functions
-Message-Id: <1366671758-8954-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:04 +0000
+Subject: [PATCH 08/30] ARM: shmobile: sh73a0: add irqpin DT nodes
+Message-Id: <1364879246-9470-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Add DT nodes for the 4 irqpin interrupt controllers on sh73a0. We add them
+to sh73a0.dtsi, which is also used by configurations, doing all their
+device instantiation from board the .c code. We rely on the fact, that
+such configurations don't instantiate devices from the device-tree.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 44 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+ arch/arm/boot/dts/sh73a0.dtsi |   81 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 81 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 3da8319..9948699 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1081,6 +1081,38 @@ static const unsigned int ceu_field_pins[] = {
- static const unsigned int ceu_field_mux[] = {
- 	VIO_FIELD_MARK,
- };
-+/* - FLCTL ------------------------------------------------------------------ */
-+static const unsigned int flctl_data_pins[] = {
-+	/* NAF[0:15] */
-+	46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
-+};
-+static const unsigned int flctl_data_mux[] = {
-+	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
-+	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
-+	D8_NAF8_MARK, D9_NAF9_MARK, D10_NAF10_MARK, D11_NAF11_MARK,
-+	D12_NAF12_MARK, D13_NAF13_MARK, D14_NAF14_MARK, D15_NAF15_MARK,
-+};
-+static const unsigned int flctl_ce0_pins[] = {
-+	/* CE */
-+	68,
-+};
-+static const unsigned int flctl_ce0_mux[] = {
-+	FCE0_MARK,
-+};
-+static const unsigned int flctl_ce1_pins[] = {
-+	/* CE */
-+	66,
-+};
-+static const unsigned int flctl_ce1_mux[] = {
-+	FCE1_MARK,
-+};
-+static const unsigned int flctl_ctrl_pins[] = {
-+	/* FCDE, FOE, FSC, FWE, FRB */
-+	24, 23, 69, 70, 73,
-+};
-+static const unsigned int flctl_ctrl_mux[] = {
-+	A5_FCDE_MARK, A4_FOE_MARK, RD_FSC_MARK, WE0_FWE_MARK, FRB_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_0_pins[] = {
- 	/* D[0] */
-@@ -1242,6 +1274,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(ceu_clk_2),
- 	SH_PFC_PIN_GROUP(ceu_sync),
- 	SH_PFC_PIN_GROUP(ceu_field),
-+	SH_PFC_PIN_GROUP(flctl_data),
-+	SH_PFC_PIN_GROUP(flctl_ce0),
-+	SH_PFC_PIN_GROUP(flctl_ce1),
-+	SH_PFC_PIN_GROUP(flctl_ctrl),
- 	SH_PFC_PIN_GROUP(mmc0_data1_0),
- 	SH_PFC_PIN_GROUP(mmc0_data4_0),
- 	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1288,6 +1324,13 @@ static const char * const ceu_groups[] = {
- 	"ceu_field",
- };
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 8a59465..7e71e3a 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -38,6 +38,87 @@
+ 		      <0xf0000100 0x100>;
+ 	};
  
-+static const char * const flctl_groups[] = {
-+	"flctl_data",
-+	"flctl_ce0",
-+	"flctl_ce1",
-+	"flctl_ctrl",
-+};
++	irqpin0: irqpin@e6900000 {
++		compatible = "renesas,intc-irqpin";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xe6900000 4>,
++			<0xe6900010 4>,
++			<0xe6900020 1>,
++			<0xe6900040 1>,
++			<0xe6900060 1>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 1 0x4
++			      0 2 0x4
++			      0 3 0x4
++			      0 4 0x4
++			      0 5 0x4
++			      0 6 0x4
++			      0 7 0x4
++			      0 8 0x4>;
++	};
 +
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1_0",
- 	"mmc0_data4_0",
-@@ -1322,6 +1365,7 @@ static const char * const sdhi2_groups[] = {
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(ceu),
-+	SH_PFC_FUNCTION(flctl),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
++	irqpin1: irqpin@e6900004 {
++		compatible = "renesas,intc-irqpin";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xe6900004 4>,
++			<0xe6900014 4>,
++			<0xe6900024 1>,
++			<0xe6900044 1>,
++			<0xe6900064 1>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 9 0x4
++			      0 10 0x4
++			      0 11 0x4
++			      0 12 0x4
++			      0 13 0x4
++			      0 14 0x4
++			      0 15 0x4
++			      0 16 0x4>;
++		control-parent;
++	};
++
++	irqpin2: irqpin@e6900008 {
++		compatible = "renesas,intc-irqpin";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xe6900008 4>,
++			<0xe6900018 4>,
++			<0xe6900028 1>,
++			<0xe6900048 1>,
++			<0xe6900068 1>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 17 0x4
++			      0 18 0x4
++			      0 19 0x4
++			      0 20 0x4
++			      0 21 0x4
++			      0 22 0x4
++			      0 23 0x4
++			      0 24 0x4>;
++	};
++
++	irqpin3: irqpin@e690000c {
++		compatible = "renesas,intc-irqpin";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xe690000c 4>,
++			<0xe690001c 4>,
++			<0xe690002c 1>,
++			<0xe690004c 1>,
++			<0xe690006c 1>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 25 0x4
++			      0 26 0x4
++			      0 27 0x4
++			      0 28 0x4
++			      0 29 0x4
++			      0 30 0x4
++			      0 31 0x4
++			      0 32 0x4>;
++	};
++
+ 	i2c0: i2c@0xe6820000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
 -- 
-1.8.1.5
+1.7.10.4
 
