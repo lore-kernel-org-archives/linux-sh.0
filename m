@@ -1,45 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 05 Apr 2013 00:40:20 +0000
-Subject: Re: [PATCH v4 3/3] ARM: shmobile: kzm9g-reference: add CPUFreq support
-Message-Id: <20130405004020.GM29203@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:17 +0000
+Subject: [PATCH 09/28] sh-pfc: Make function GPIOs support optional
+Message-Id: <1364879376-10020-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364153255-20664-1-git-send-email-g.liakhovetski@gmx.de>
- <1364153255-20664-4-git-send-email-g.liakhovetski@gmx.de>
- <20130404043746.GD28297@verge.net.au>
- <Pine.LNX.4.64.1304042352180.21548@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304042352180.21548@axis700.grange>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 04, 2013 at 11:54:20PM +0200, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> Thanks for the review
-> 
-> On Thu, 4 Apr 2013, Simon Horman wrote:
-> 
-> > On Sun, Mar 24, 2013 at 08:27:35PM +0100, Guennadi Liakhovetski wrote:
-> > > This patch enables the use of the generic cpufreq-cpu0 driver on kzm9g.
-> > > Providing a regulator, a list of OPPs in DT, combined with a virtual
-> > > cpufreq-cpu0 platform device and a clock, attached to it is everything,
-> > > the cpufreq-cpu0 driver needs.
-> > 
-> > I wonder if it would be possible to re-arange this patch a little.
-> > 
-> > 1) vdd_dvfs is added in this patch but it appears to be used in the
-> >    previous patch in the series. I wonder if this can be resolved
-> >    by re-ordering the patches.
-> 
-> Right, I'll change that.
-> 
-> > 2) It includes both kzm9g board and sh73a0 SoC changes.
-> >    I would prefer if the sh73a0 SoC portion (setup-sh73a0.c)
-> >    was moved into a separate patch. The arm-soc people
-> >    like to have separate board and SoC branches.
-> 
-> Yes, I'll probably just merge the sh73a0-kzm9g-reference.dts hunk into the 
-> previous patch.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks, I think that approach should work well.
+The target is to get rid of function GPIOs completely. To reach this,
+make function GPIOs support optional by skipping the function GPIO chip
+registration if no function GPIOS are defined in SoC data.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/pinctrl/sh-pfc/gpio.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index d7acb06..7a54ec7 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -384,6 +384,9 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	}
+ 
+ 	/* Register the function GPIOs chip. */
++	if (pfc->info->nr_func_gpios = 0)
++		return 0;
++
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+-- 
+1.7.10.4
+
