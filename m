@@ -1,117 +1,136 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Apr 2013 03:29:52 +0000
-Subject: [RFC/PATCH 6/7] ARM: shmobile: defconfig: Remove kzm9d defconfig
-Message-Id: <1365046193-19369-7-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:13 +0000
+Subject: [PATCH 17/30] ARM: shmobile: sh73a0: use fixed ratio clock
+Message-Id: <1364879246-9470-18-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Remove kzm9d defconfig as the shmobile defconfig may now be used instead.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+Current clock-sh73a0 is using own implement
+for each divX clocks.
+This patch switches to use fixed ratio clock,
+and was tesed on kzm9g board.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/kzm9d_defconfig |   88 --------------------------------------
- 1 file changed, 88 deletions(-)
- delete mode 100644 arch/arm/configs/kzm9d_defconfig
+ arch/arm/mach-shmobile/clock-sh73a0.c |   72 ++++++---------------------------
+ 1 file changed, 12 insertions(+), 60 deletions(-)
 
-diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-deleted file mode 100644
-index 6c37f4a..0000000
---- a/arch/arm/configs/kzm9d_defconfig
-+++ /dev/null
-@@ -1,88 +0,0 @@
--# CONFIG_ARM_PATCH_PHYS_VIRT is not set
--CONFIG_EXPERIMENTAL=y
--CONFIG_SYSVIPC=y
--CONFIG_NO_HZ=y
--CONFIG_IKCONFIG=y
--CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
--CONFIG_CC_OPTIMIZE_FOR_SIZE=y
--CONFIG_SYSCTL_SYSCALL=y
--CONFIG_EMBEDDED=y
--CONFIG_PERF_EVENTS=y
--CONFIG_SLAB=y
--# CONFIG_BLK_DEV_BSG is not set
--# CONFIG_IOSCHED_DEADLINE is not set
--# CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
--CONFIG_ARCH_EMEV2=y
--CONFIG_MACH_KZM9D=y
--CONFIG_MEMORY_START=0x40000000
--CONFIG_MEMORY_SIZE=0x10000000
--# CONFIG_SH_TIMER_TMU is not set
--# CONFIG_SWP_EMULATE is not set
--# CONFIG_CACHE_L2X0 is not set
--CONFIG_SMP=y
--CONFIG_NR_CPUS=2
--CONFIG_HOTPLUG_CPU=y
--# CONFIG_LOCAL_TIMERS is not set
--CONFIG_AEABI=y
--# CONFIG_OABI_COMPAT is not set
--# CONFIG_CROSS_MEMORY_ATTACH is not set
--CONFIG_FORCE_MAX_ZONEORDER
--CONFIG_ZBOOT_ROM_TEXT=0x0
--CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_ARM_APPENDED_DTB=y
--CONFIG_VFP=y
--# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
--CONFIG_PM_RUNTIME=y
--CONFIG_NET=y
--CONFIG_PACKET=y
--CONFIG_UNIX=y
--CONFIG_INET=y
--CONFIG_IP_PNP=y
--CONFIG_IP_PNP_DHCP=y
--# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
--# CONFIG_INET_XFRM_MODE_TUNNEL is not set
--# CONFIG_INET_XFRM_MODE_BEET is not set
--# CONFIG_INET_LRO is not set
--# CONFIG_INET_DIAG is not set
--# CONFIG_IPV6 is not set
--# CONFIG_WIRELESS is not set
--CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--# CONFIG_BLK_DEV is not set
--CONFIG_NETDEVICES=y
--# CONFIG_NET_VENDOR_BROADCOM is not set
--# CONFIG_NET_VENDOR_CHELSIO is not set
--# CONFIG_NET_VENDOR_CIRRUS is not set
--# CONFIG_NET_VENDOR_FARADAY is not set
--# CONFIG_NET_VENDOR_INTEL is not set
--# CONFIG_NET_VENDOR_MARVELL is not set
--# CONFIG_NET_VENDOR_MICREL is not set
--# CONFIG_NET_VENDOR_NATSEMI is not set
--# CONFIG_NET_VENDOR_SEEQ is not set
--CONFIG_SMSC911X=y
--# CONFIG_NET_VENDOR_STMICRO is not set
--# CONFIG_NET_VENDOR_WIZNET is not set
--# CONFIG_WLAN is not set
--# CONFIG_INPUT_MOUSEDEV is not set
--# CONFIG_INPUT_KEYBOARD is not set
--# CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
--# CONFIG_LEGACY_PTYS is not set
--# CONFIG_DEVKMEM is not set
--CONFIG_SERIAL_8250=y
--CONFIG_SERIAL_8250_CONSOLE=y
--CONFIG_SERIAL_8250_EM=y
--# CONFIG_HW_RANDOM is not set
--CONFIG_GPIOLIB=y
--CONFIG_GPIO_EM=y
--# CONFIG_HWMON is not set
--# CONFIG_HID_SUPPORT is not set
--# CONFIG_USB_SUPPORT is not set
--# CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_DNOTIFY is not set
--CONFIG_TMPFS=y
--# CONFIG_MISC_FILESYSTEMS is not set
--CONFIG_NFS_FS=y
--CONFIG_ROOT_NFS=y
--# CONFIG_FTRACE is not set
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 26a5803..784fbaa 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -22,6 +22,7 @@
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+ #include <asm/processor.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ 
+ #define FRQCRA		IOMEM(0xe6150000)
+@@ -83,61 +84,16 @@ struct clk sh73a0_extal2_clk = {
+ 	.rate		= 48000000,
+ };
+ 
+-/* A fixed divide-by-2 block */
+-static unsigned long div2_recalc(struct clk *clk)
+-{
+-	return clk->parent->rate / 2;
+-}
+-
+-static struct sh_clk_ops div2_clk_ops = {
+-	.recalc		= div2_recalc,
+-};
+-
+-static unsigned long div7_recalc(struct clk *clk)
+-{
+-	return clk->parent->rate / 7;
+-}
+-
+-static struct sh_clk_ops div7_clk_ops = {
+-	.recalc		= div7_recalc,
+-};
+-
+-static unsigned long div13_recalc(struct clk *clk)
+-{
+-	return clk->parent->rate / 13;
+-}
+-
+-static struct sh_clk_ops div13_clk_ops = {
+-	.recalc		= div13_recalc,
+-};
+-
+-/* Divide extal1 by two */
+-static struct clk extal1_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &sh73a0_extal1_clk,
+-};
+-
+-/* Divide extal2 by two */
+-static struct clk extal2_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &sh73a0_extal2_clk,
+-};
+-
+ static struct sh_clk_ops main_clk_ops = {
+ 	.recalc		= followparent_recalc,
+ };
+ 
+ /* Main clock */
+ static struct clk main_clk = {
++	/* .parent wll be set on sh73a0_clock_init() */
+ 	.ops		= &main_clk_ops,
+ };
+ 
+-/* Divide Main clock by two */
+-static struct clk main_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &main_clk,
+-};
+-
+ /* PLL0, PLL1, PLL2, PLL3 */
+ static unsigned long pll_recalc(struct clk *clk)
+ {
+@@ -193,21 +149,17 @@ static struct clk pll3_clk = {
+ 	.enable_bit	= 3,
+ };
+ 
+-/* Divide PLL */
+-static struct clk pll1_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &pll1_clk,
+-};
+-
+-static struct clk pll1_div7_clk = {
+-	.ops		= &div7_clk_ops,
+-	.parent		= &pll1_clk,
+-};
++/* A fixed divide block */
++SH_CLK_RATIO(div2,  1, 2);
++SH_CLK_RATIO(div7,  1, 7);
++SH_CLK_RATIO(div13, 1, 13);
+ 
+-static struct clk pll1_div13_clk = {
+-	.ops		= &div13_clk_ops,
+-	.parent		= &pll1_clk,
+-};
++SH_FIXED_RATIO_CLK(extal1_div2_clk,	sh73a0_extal1_clk,	div2);
++SH_FIXED_RATIO_CLK(extal2_div2_clk,	sh73a0_extal2_clk,	div2);
++SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
++SH_FIXED_RATIO_CLK(pll1_div2_clk,	pll1_clk,		div2);
++SH_FIXED_RATIO_CLK(pll1_div7_clk,	pll1_clk,		div7);
++SH_FIXED_RATIO_CLK(pll1_div13_clk,	pll1_clk,		div13);
+ 
+ /* External input clock */
+ struct clk sh73a0_extcki_clk = {
 -- 
 1.7.10.4
 
