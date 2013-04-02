@@ -1,155 +1,110 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 16 Apr 2013 10:56:31 +0000
-Subject: Re: [PATCH v6 2/2] sudmac: add support for SUDMAC
-Message-Id: <516D2E5F.8060802@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:21 +0000
+Subject: [PATCH 13/28] ARM: shmobile: r8a7779: Register GPIO devices
+Message-Id: <1364879376-10020-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51664159.7080407@renesas.com>
-In-Reply-To: <51664159.7080407@renesas.com>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Vinod,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thank you for the review.
+Move GPIOs handling from the PFC device to separate GPIO devices.
 
-(2013/04/16 2:09), Vinod Koul wrote:> On Thu, Apr 11, 2013 at 01:51:37PM +0900, Shimoda, Yoshihiro wrote:
->> --- /dev/null
->> +++ b/drivers/dma/sh/sudmac.c
->> @@ -0,0 +1,428 @@
->> +/*
->> + * Renesas SUDMAC support
->> + *
->> + * Copyright (C) 2012 Renesas Solutions Corp.
-> 2013?
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c |   58 ++++++++++++++++++++++++++++----
+ 1 file changed, 52 insertions(+), 6 deletions(-)
 
-I will fix it.
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 042df35..a460ba3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -22,6 +22,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/input.h>
+@@ -68,11 +69,6 @@ static struct resource r8a7779_pfc_resources[] = {
+ 		.end	= 0xfffc023b,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+-	[1] = {
+-		.start	= 0xffc40000,
+-		.end	= 0xffc46fff,
+-		.flags	= IORESOURCE_MEM,
+-	}
+ };
+ 
+ static struct platform_device r8a7779_pfc_device = {
+@@ -82,9 +78,59 @@ static struct platform_device r8a7779_pfc_device = {
+ 	.num_resources	= ARRAY_SIZE(r8a7779_pfc_resources),
+ };
+ 
++#define R8A7779_GPIO(idx, npins) \
++static struct resource r8a7779_gpio##idx##_resources[] = {		\
++	[0] = {								\
++		.start	= 0xffc40000 + 0x1000 * (idx),			\
++		.end	= 0xffc4002b + 0x1000 * (idx),			\
++		.flags	= IORESOURCE_MEM,				\
++	},								\
++	[1] = {								\
++		.start	= gic_iid(0xad + (idx)),			\
++		.flags	= IORESOURCE_IRQ,				\
++	}								\
++};									\
++									\
++static struct gpio_rcar_config r8a7779_gpio##idx##_platform_data = {	\
++	.gpio_base	= 32 * (idx),					\
++	.irq_base	= 0,						\
++	.number_of_pins	= npins,					\
++	.pctl_name	= "pfc-r8a7779",				\
++};									\
++									\
++static struct platform_device r8a7779_gpio##idx##_device = {		\
++	.name		= "gpio_rcar",					\
++	.id		= idx,						\
++	.resource	= r8a7779_gpio##idx##_resources,		\
++	.num_resources	= ARRAY_SIZE(r8a7779_gpio##idx##_resources),	\
++	.dev		= {						\
++		.platform_data	= &r8a7779_gpio##idx##_platform_data,	\
++	},								\
++}
++
++R8A7779_GPIO(0, 32);
++R8A7779_GPIO(1, 32);
++R8A7779_GPIO(2, 32);
++R8A7779_GPIO(3, 32);
++R8A7779_GPIO(4, 32);
++R8A7779_GPIO(5, 32);
++R8A7779_GPIO(6, 9);
++
++static struct platform_device *r8a7779_pinctrl_devices[] __initdata = {
++	&r8a7779_pfc_device,
++	&r8a7779_gpio0_device,
++	&r8a7779_gpio1_device,
++	&r8a7779_gpio2_device,
++	&r8a7779_gpio3_device,
++	&r8a7779_gpio4_device,
++	&r8a7779_gpio5_device,
++	&r8a7779_gpio6_device,
++};
++
+ void __init r8a7779_pinmux_init(void)
+ {
+-	platform_device_register(&r8a7779_pfc_device);
++	platform_add_devices(r8a7779_pinctrl_devices,
++			    ARRAY_SIZE(r8a7779_pinctrl_devices));
+ }
+ 
+ static struct plat_sci_port scif0_platform_data = {
+-- 
+1.7.10.4
 
->> +/* SUDMAC register */
->> +#define CH0CFG		0x00
->> +#define CH0BA		0x10
->> +#define CH0BBC		0x18
->> +#define CH0CA		0x20
->> +#define CH0CBC		0x28
->> +#define CH0DEN		0x30
->> +#define DSTSCLR		0x38
->> +#define DBUFCTRL	0x3C
->> +#define DINTCTRL	0x40
->> +#define DINTSTS		0x44
->> +#define DINTSTSCLR	0x48
->> +#define CH0SHCTRL	0x50
-> Can you pls namespace these aptly
-
-Yes, I will add namespace like "SUDMAC_CH0CFG".
-
->> +static void sudmac_setup_xfer(struct shdma_chan *schan, int slave_id)
->> +{
->> +}
-> dead code?
-
-No, the current shdma-base.c needs this call-back anyway.
-
->> +static int sudmac_set_slave(struct shdma_chan *schan, int slave_id, bool try)
->> +{
->> +	struct sudmac_chan *sc = to_chan(schan);
->> +	const struct sudmac_slave_config *cfg = sudmac_find_slave(sc, slave_id);
->> +
->> +	if (!cfg)
->> +		return -ENODEV;
->> +
->> +	return 0;
->> +}
-> this doesnt seem to set anything...
-
-The currenct shdma-base.c also needs this call-back.
-
->> +
->> +static void sudmac_dma_halt(struct sudmac_chan *sc)
->> +{
->> +	u32 dintctrl = sudmac_readl(sc, DINTCTRL);
->> +
->> +	sudmac_writel(sc, 0, CH0DEN + sc->offset);
->> +	sudmac_writel(sc, dintctrl & ~sc->dint_end_bit, DINTCTRL);
->> +	sudmac_writel(sc, sc->dint_end_bit, DINTSTSCLR);
->> +}
-> how about making this inline
-
-Does this comment mean I should write "static inline void sudmac_dma_halt..."?
-If so, I will modify it.
-
->> +static void sudmac_halt(struct shdma_chan *schan)
->> +{
->> +	struct sudmac_chan *sc = to_chan(schan);
->> +
->> +	sudmac_dma_halt(sc);
->> +}
-> could be inline
-
-The sudmac_halt() is used as the call-back of shdma-base driver.
-So, this function could not be inline, I think.
-
->> +
->> +static bool sudmac_chan_irq(struct shdma_chan *schan, int irq)
->> +{
->> +	struct sudmac_chan *sc = to_chan(schan);
->> +	u32 dintsts = sudmac_readl(sc, DINTSTS);
->> +
->> +	if (!(dintsts & sc->dint_end_bit))
->> +		return false;
->> +
->> +	/* DMA stop */
->> +	sudmac_dma_halt(sc);
->> +
->> +	return true;
->> +}
-> why should irq stop the channel, sorry not following the logic here.
-
-I imitated the shdma.c.
-This function should do clearing the irq flag, disabling irq, and etc, I think.
-
->> +
->> +static size_t sudmac_get_partial(struct shdma_chan *schan,
->> +				 struct shdma_desc *sdesc)
->> +{
->> +	struct sudmac_chan *sc = to_chan(schan);
->> +	struct sudmac_desc *sd = to_desc(sdesc);
->> +	u32 cbc = sudmac_readl(sc, CH0CBC + sc->offset);
-> user friendly variables pls
-
-I will fix this variable name.
-
->> +static bool sudmac_desc_completed(struct shdma_chan *schan,
->> +				  struct shdma_desc *sdesc)
->> +{
->> +	struct sudmac_chan *sc = to_chan(schan);
->> +	struct sudmac_desc *sd = to_desc(sdesc);
->> +	u32 ca = sudmac_readl(sc, CH0CA + sc->offset);
-> ditto
-
-I got it.
-
->> +static dma_addr_t sudmac_slave_addr(struct shdma_chan *schan)
->> +{
->> +	/* SUDMAC doesn't need the address */
->> +	return 0;
->> +}
-> why is that? This is a slave driver right?
-
-This is because this DMAC knows slave address internally.
-In other works, the DMAC doesn't have a register for slave address.
-
->> + * Copyright (C) 2012 Renesas Solutions Corp.
-> 13 ?
-
-Yes, I will fix it.
-
->> + *
->> + * based on include/linux/sh_dma.h:
->> + * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> No need to mention original copyright,
-
-I got it.
-
-Best regards,
-Yoshihiro Shimoda
