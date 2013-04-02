@@ -1,41 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Apr 2013 12:42:46 +0000
-Subject: Re: [PATCH 00/02] ARM: shmobile: r8a7790 Lager arch timer fixes
-Message-Id: <20130409124245.GE15412@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:11:16 +0000
+Subject: [PATCH 04/11] ARM: shmobile: APE6EVM PFC support
+Message-Id: <1364879483-11144-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130408012318.13555.58237.sendpatchset@w520>
- <87r4ilolmh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r4ilolmh.wl%kuninori.morimoto.gx@renesas.com>
+References: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Apr 07, 2013 at 06:29:46PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi
-> 
-> > ARM: shmobile: r8a7790 Lager arch timer fixes
-> > 
-> > [PATCH 01/02] ARM: shmobile: force enable of r8a7790 arch timer 
-> > [PATCH 02/02] ARM: shmobile: use r8a7790 timer setup code on Lager
-> > 
-> > This mini-series contains fixes to start the arch timer on
-> > r8a7790 and the Lager board regardless of boot loader setting.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > ---
-> 
-> I guess shmobile_timer_init() will be conflict (or compile error)
-> on next (?) merge window thought...
-> but, for current code/branch
+From: Magnus Damm <damm@opensource.se>
 
-[ discussed in another sub-thread ]
+Start using the r8a73a4 PFC on the APE6EVM board
+and configure the SCIFA0 console signals in the
+PFC via PINCTRL.
 
-> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-ape6evm.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-Thanks.
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 9234d4f..33a8a62 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -21,15 +21,25 @@
+ #include <linux/interrupt.h>
+ #include <linux/irqchip.h>
+ #include <linux/kernel.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <mach/common.h>
+ #include <mach/r8a73a4.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++static const struct pinctrl_map ape6evm_pinctrl_map[] = {
++	/* SCIFA0 console */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
++				  "scifa0_data", "scifa0"),
++};
++
+ static void __init ape6evm_add_standard_devices(void)
+ {
+ 	r8a73a4_clock_init();
++	pinctrl_register_mappings(ape6evm_pinctrl_map,
++				  ARRAY_SIZE(ape6evm_pinctrl_map));
++	r8a73a4_pinmux_init();
+ 	r8a73a4_add_standard_devices();
+ }
+ 
+-- 
+1.7.10.4
 
-01/02 queued up in the soc-r8a7790 branch
-02/02 queue up in the boards-lager branch,
-      which is a merge of renesas-boards3-for-v3.10 and soc-r8a7790
