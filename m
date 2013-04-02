@@ -1,106 +1,298 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:09 +0000
-Subject: [PATCH 28/37] ARM: shmobile: r8a7740: Remove SCIF function GPIOs
-Message-Id: <1366671618-8796-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:06:57 +0000
+Subject: [PATCH 01/30] ARM: shmobile: Initial r8a73a4 SoC support V3
+Message-Id: <1364879246-9470-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+V3 of initial support for the r8a73a4 SoC including:
+ - Single Cortex-A15 CPU Core
+ - GIC
+ - Architecture timer
+
+No static virtual mappings are used, all the components
+make use of ioremap(). DT_MACHINE_START is still wrapped
+in CONFIG_USE_OF to match other mach-shmobile code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 74 ---------------------------
- 1 file changed, 74 deletions(-)
+ arch/arm/boot/dts/r8a73a4.dtsi                |   55 +++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                |    7 ++
+ arch/arm/mach-shmobile/Makefile               |    1 +
+ arch/arm/mach-shmobile/clock-r8a73a4.c        |   91 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    7 ++
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |   50 ++++++++++++++
+ 6 files changed, 211 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a73a4.dtsi
+ create mode 100644 arch/arm/mach-shmobile/clock-r8a73a4.c
+ create mode 100644 arch/arm/mach-shmobile/include/mach/r8a73a4.h
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a73a4.c
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 1cf6869..2656a6d 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -165,80 +165,6 @@ enum {
- 	GPIO_FN_FMSOOBT,	GPIO_FN_FMSOSLD,
- 	GPIO_FN_FMSOCK,
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+new file mode 100644
+index 0000000..72c58c1
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -0,0 +1,55 @@
++/*
++ * Device Tree Source for the r8a73a4 SoC
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Magnus Damm
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/include/ "skeleton.dtsi"
++
++/ {
++	compatible = "renesas,r8a73a4";
++	interrupt-parent = <&gic>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <0>;
++			clock-frequency = <1500000000>;
++		};
++	};
++
++	gic: interrupt-controller@f1001000 {
++		compatible = "arm,cortex-a15-gic";
++		#interrupt-cells = <3>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xf1001000 0x1000>,
++			<0xf1002000 0x1000>,
++			<0xf1004000 0x2000>,
++			<0xf1006000 0x2000>;
++		interrupts = <1 9 0xf04>;
++
++		gic-cpuif@4 {
++			compatible = "arm,gic-cpuif";
++			cpuif-id = <4>;
++			cpu = <&cpu0>;
++		};
++	};
++
++	timer {
++		compatible = "arm,armv7-timer";
++		interrupts = <1 13 0xf08>,
++				<1 14 0xf08>,
++				<1 11 0xf08>,
++				<1 10 0xf08>;
++	};
++};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 75d413c..663d27b 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -18,6 +18,13 @@ config ARCH_SH73A0
+ 	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
  
--	/* SCIFA0 */
--	GPIO_FN_SCIFA0_SCK,	GPIO_FN_SCIFA0_CTS,
--	GPIO_FN_SCIFA0_RTS,	GPIO_FN_SCIFA0_RXD,
--	GPIO_FN_SCIFA0_TXD,
--
--	/* SCIFA1 */
--	GPIO_FN_SCIFA1_CTS,	GPIO_FN_SCIFA1_SCK,
--	GPIO_FN_SCIFA1_RXD,	GPIO_FN_SCIFA1_TXD,
--	GPIO_FN_SCIFA1_RTS,
--
--	/* SCIFA2 */
--	GPIO_FN_SCIFA2_SCK_PORT22, /* SCIFA2_SCK Port 22/199 */
--	GPIO_FN_SCIFA2_SCK_PORT199,
--	GPIO_FN_SCIFA2_RXD,	GPIO_FN_SCIFA2_TXD,
--	GPIO_FN_SCIFA2_CTS,	GPIO_FN_SCIFA2_RTS,
--
--	/* SCIFA3 */
--	GPIO_FN_SCIFA3_RTS_PORT105, /* MSEL5CR_8_0 */
--	GPIO_FN_SCIFA3_SCK_PORT116,
--	GPIO_FN_SCIFA3_CTS_PORT117,
--	GPIO_FN_SCIFA3_RXD_PORT174,
--	GPIO_FN_SCIFA3_TXD_PORT175,
--
--	GPIO_FN_SCIFA3_RTS_PORT161, /* MSEL5CR_8_1 */
--	GPIO_FN_SCIFA3_SCK_PORT158,
--	GPIO_FN_SCIFA3_CTS_PORT162,
--	GPIO_FN_SCIFA3_RXD_PORT159,
--	GPIO_FN_SCIFA3_TXD_PORT160,
--
--	/* SCIFA4 */
--	GPIO_FN_SCIFA4_RXD_PORT12, /* MSEL5CR[12:11] = 00 */
--	GPIO_FN_SCIFA4_TXD_PORT13,
--
--	GPIO_FN_SCIFA4_RXD_PORT204, /* MSEL5CR[12:11] = 01 */
--	GPIO_FN_SCIFA4_TXD_PORT203,
--
--	GPIO_FN_SCIFA4_RXD_PORT94, /* MSEL5CR[12:11] = 10 */
--	GPIO_FN_SCIFA4_TXD_PORT93,
--
--	GPIO_FN_SCIFA4_SCK_PORT21, /* SCIFA4_SCK Port 21/205 */
--	GPIO_FN_SCIFA4_SCK_PORT205,
--
--	/* SCIFA5 */
--	GPIO_FN_SCIFA5_TXD_PORT20, /* MSEL5CR[15:14] = 00 */
--	GPIO_FN_SCIFA5_RXD_PORT10,
--
--	GPIO_FN_SCIFA5_RXD_PORT207, /* MSEL5CR[15:14] = 01 */
--	GPIO_FN_SCIFA5_TXD_PORT208,
--
--	GPIO_FN_SCIFA5_TXD_PORT91, /* MSEL5CR[15:14] = 10 */
--	GPIO_FN_SCIFA5_RXD_PORT92,
--
--	GPIO_FN_SCIFA5_SCK_PORT23, /* SCIFA5_SCK Port 23/206 */
--	GPIO_FN_SCIFA5_SCK_PORT206,
--
--	/* SCIFA6 */
--	GPIO_FN_SCIFA6_SCK,	GPIO_FN_SCIFA6_RXD,	GPIO_FN_SCIFA6_TXD,
--
--	/* SCIFA7 */
--	GPIO_FN_SCIFA7_TXD,	GPIO_FN_SCIFA7_RXD,
--
--	/* SCIFAB */
--	GPIO_FN_SCIFB_SCK_PORT190, /* MSEL5CR_17_0 */
--	GPIO_FN_SCIFB_RXD_PORT191,
--	GPIO_FN_SCIFB_TXD_PORT192,
--	GPIO_FN_SCIFB_RTS_PORT186,
--	GPIO_FN_SCIFB_CTS_PORT187,
--
--	GPIO_FN_SCIFB_SCK_PORT2, /* MSEL5CR_17_1 */
--	GPIO_FN_SCIFB_RXD_PORT3,
--	GPIO_FN_SCIFB_TXD_PORT4,
--	GPIO_FN_SCIFB_RTS_PORT172,
--	GPIO_FN_SCIFB_CTS_PORT173,
--
- 	/* LCD0 */
- 	GPIO_FN_LCDC0_SELECT,
- 
++config ARCH_R8A73A4
++	bool "R-Mobile APE6 (R8A73A40)"
++	select ARM_GIC
++	select CPU_V7
++	select ARM_ARCH_TIMER
++	select SH_CLK_CPG
++
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index b646ff4..c5a43ef 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -8,6 +8,7 @@ obj-y				:= timer.o console.o clock.o
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
++obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+new file mode 100644
+index 0000000..15d479d
+--- /dev/null
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -0,0 +1,91 @@
++/*
++ * r8a73a4 clock framework support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/sh_clk.h>
++#include <linux/clkdev.h>
++#include <mach/common.h>
++
++#define CPG_BASE 0xe6150000
++#define CPG_LEN 0x270
++
++#define MPCKCR 0xe6150080
++
++static struct clk_mapping cpg_mapping = {
++	.phys   = CPG_BASE,
++	.len    = CPG_LEN,
++};
++
++static struct clk extalr_clk = {
++	.rate	= 32768,
++	.mapping	= &cpg_mapping,
++};
++
++static struct clk extal1_clk = {
++	.rate	= 26000000,
++	.mapping	= &cpg_mapping,
++};
++
++static struct clk extal2_clk = {
++	.rate	= 48000000,
++	.mapping	= &cpg_mapping,
++};
++
++static struct clk *main_clks[] = {
++	&extalr_clk,
++	&extal1_clk,
++	&extal2_clk,
++};
++
++enum { MSTP_NR };
++static struct clk mstp_clks[MSTP_NR] = {
++};
++
++static struct clk_lookup lookups[] = {
++};
++
++void __init r8a73a4_clock_init(void)
++{
++	void __iomem *cpg_base, *reg;
++	int k, ret = 0;
++
++	/* fix MPCLK to EXTAL2 for now.
++	 * this is needed until more detailed clock topology is supported
++	 */
++	cpg_base = ioremap_nocache(CPG_BASE, CPG_LEN);
++	BUG_ON(!cpg_base);
++	reg = cpg_base + (MPCKCR - CPG_BASE);
++	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
++	iounmap(cpg_base);
++
++	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
++		ret = clk_register(main_clks[k]);
++
++	if (!ret)
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++
++	if (!ret)
++		shmobile_clk_init();
++	else
++		panic("failed to setup r8a73a4 clocks\n");
++}
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a73a4.h b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+new file mode 100644
+index 0000000..6db3495
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+@@ -0,0 +1,7 @@
++#ifndef __ASM_R8A73A4_H__
++#define __ASM_R8A73A4_H__
++
++void r8a73a4_add_standard_devices(void);
++void r8a73a4_clock_init(void);
++
++#endif /* __ASM_R8A73A4_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+new file mode 100644
+index 0000000..69156bc
+--- /dev/null
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -0,0 +1,50 @@
++/*
++ * r8a73a4 processor support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/kernel.h>
++#include <linux/of_platform.h>
++#include <mach/common.h>
++#include <mach/irqs.h>
++#include <mach/r8a73a4.h>
++#include <asm/mach/arch.h>
++
++void __init r8a73a4_add_standard_devices(void)
++{
++}
++
++#ifdef CONFIG_USE_OF
++void __init r8a73a4_add_standard_devices_dt(void)
++{
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
++
++static const char *r8a73a4_boards_compat_dt[] __initdata = {
++	"renesas,r8a73a4",
++	NULL,
++};
++
++DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
++	.init_irq	= irqchip_init,
++	.init_machine	= r8a73a4_add_standard_devices_dt,
++	.init_time	= shmobile_timer_init,
++	.dt_compat	= r8a73a4_boards_compat_dt,
++MACHINE_END
++#endif /* CONFIG_USE_OF */
 -- 
-1.8.1.5
+1.7.10.4
 
