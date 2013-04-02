@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 05 Apr 2013 04:22:16 +0000
-Subject: [PATCH 3/5 v2] ARM: shmobile: r8a73a4: add div4 clocks
-Message-Id: <87mwtdk3nv.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 02 Apr 2013 11:06:50 +0000
+Subject: [PATCH 4/6] ARM: shmobile: r8a73a4: add div4 clocks
+Message-Id: <8762055gzd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -12,15 +12,11 @@ DIV4 clocks control each core clocks.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
-
- - removed DIV4_ZT* (debug clock)
-
- arch/arm/mach-shmobile/clock-r8a73a4.c |   45 ++++++++++++++++++++++++++++++++
- 1 file changed, 45 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   48 ++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
 diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 2be592f..147314a 100644
+index 09fe317..0149bbf 100644
 --- a/arch/arm/mach-shmobile/clock-r8a73a4.c
 +++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
 @@ -32,6 +32,8 @@
@@ -32,7 +28,7 @@ index 2be592f..147314a 100644
  #define CKSCR		0xE61500C0
  #define PLLECR		0xE61500D0
  #define PLL1CR		0xE6150028
-@@ -175,6 +177,46 @@ static struct clk *main_clks[] = {
+@@ -178,6 +180,49 @@ static struct clk *pll_clks[] = {
  	&pll2h_clk,
  };
  
@@ -61,7 +57,7 @@ index 2be592f..147314a 100644
 +
 +enum {
 +	DIV4_I, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
-+	DIV4_ZX, DIV4_ZS, DIV4_HP,
++	DIV4_ZTR, DIV4_ZT, DIV4_ZX, DIV4_ZS, DIV4_HP,
 +	DIV4_NR };
 +
 +static struct clk div4_clks[DIV4_NR] = {
@@ -70,6 +66,9 @@ index 2be592f..147314a 100644
 +	[DIV4_B]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT),
 +	[DIV4_M1]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  4, 0x1dff, 0),
 +	[DIV4_M2]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  0, 0x1dff, 0),
++	/* ignore ZGFC */
++	[DIV4_ZTR]	= SH_CLK_DIV4(&pll1_clk, FRQCRB, 20, 0x0dff, 0),
++	[DIV4_ZT]	= SH_CLK_DIV4(&pll1_clk, FRQCRB, 16, 0x0dff, 0),
 +	[DIV4_ZX]	= SH_CLK_DIV4(&pll1_clk, FRQCRB, 12, 0x0dff, 0),
 +	[DIV4_ZS]	= SH_CLK_DIV4(&pll1_clk, FRQCRB,  8, 0x0dff, 0),
 +	[DIV4_HP]	= SH_CLK_DIV4(&pll1_clk, FRQCRB,  4, 0x0dff, 0),
@@ -79,8 +78,8 @@ index 2be592f..147314a 100644
  enum {
  	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
  	MSTP522,
-@@ -258,6 +300,9 @@ void __init r8a73a4_clock_init(void)
- 		ret = clk_register(main_clks[k]);
+@@ -264,6 +309,9 @@ void __init r8a73a4_clock_init(void)
+ 		ret = sh_clk_reparent_register(pll_clks[k]);
  
  	if (!ret)
 +		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
