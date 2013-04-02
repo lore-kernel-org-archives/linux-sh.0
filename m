@@ -1,106 +1,58 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 02 Apr 2013 04:19:37 +0000
-Subject: [PATCH 2/5 v3] ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
-Message-Id: <87ppyd5zu2.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 02 Apr 2013 11:07:08 +0000
+Subject: [PATCH 6/6] ARM: shmobile: ape6evm: MP clock parent become EXTAL2
+Message-Id: <8738v95gyv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
- <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
- <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds r8a7778_init_irq_extpin() for IRQ0 - IRQ3.
-But this patch doesn't enable DT settings on r8a7778.dts,
-because R8A7778 chip external IRQ depends on
-IRQ0 - IRQ3 pin encoding which came from platform board
-implementation.
+The orignal commit 3263e09d287fbaa8a9424b5e69396599a3bbd518
+(ARM: shmobile: Initial r8a73a4 SoC support V3)
+put MP clock parent as EXTAL2, but its code was removed
+on DIV6 clock support commit.
+this patch makes it consistent.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v2 -> v3
+ arch/arm/mach-shmobile/board-ape6evm.c |   15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
- - no change
-
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   44 +++++++++++++++++++++++++
- 2 files changed, 45 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index a755dca..e0c6205 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -24,5 +24,6 @@ extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
- extern void r8a7778_init_irq_dt(void);
- extern void r8a7778_clock_init(void);
-+extern void r8a7778_init_irq_extpin(int irlm);
- 
- #endif /* __ASM_R8A7778_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 57d6b0e..2882305 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -23,6 +23,7 @@
- #include <linux/irqchip/arm-gic.h>
- #include <linux/of.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/irq-renesas-intc-irqpin.h>
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 55b8c9f..0dc6f9e 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -26,6 +26,7 @@
  #include <linux/platform_device.h>
- #include <linux/irqchip.h>
- #include <linux/serial_sci.h>
-@@ -110,6 +111,49 @@ void __init r8a7778_add_standard_devices(void)
- 	r8a7778_register_tmu(1);
- }
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
++#include <linux/sh_clk.h>
+ #include <linux/smsc911x.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -65,7 +66,21 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
  
-+static struct renesas_intc_irqpin_config irqpin_platform_data = {
-+	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
-+	.sense_bitfield_width = 2,
-+};
+ static void __init ape6evm_add_standard_devices(void)
+ {
 +
-+static struct resource irqpin_resources[] = {
-+	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
-+	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
-+	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
-+	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
-+	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
-+	DEFINE_RES_IRQ(gic_iid(0x3b)), /* IRQ0 */
-+	DEFINE_RES_IRQ(gic_iid(0x3c)), /* IRQ1 */
-+	DEFINE_RES_IRQ(gic_iid(0x3d)), /* IRQ2 */
-+	DEFINE_RES_IRQ(gic_iid(0x3e)), /* IRQ3 */
-+};
++	struct clk *parent;
++	struct clk *mp;
 +
-+void __init r8a7778_init_irq_extpin(int irlm)
-+{
-+	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
-+	unsigned long tmp;
+ 	r8a73a4_clock_init();
 +
-+	if (!icr0) {
-+		pr_warn("r8a7778: unable to setup external irq pin mode\n");
-+		return;
-+	}
++	/* MP clock parent = extal2 */
++	parent      = clk_get(NULL, "extal2_clk");
++	mp          = clk_get(NULL, "mp");
++	BUG_ON(!parent || !mp);
 +
-+	tmp = ioread32(icr0);
-+	if (irlm)
-+		tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
-+	else
-+		tmp &= ~(1 << 23); /* IRL mode - not supported */
-+	tmp |= (1 << 21); /* LVLMODE = 1 */
-+	iowrite32(tmp, icr0);
-+	iounmap(icr0);
++	clk_set_parent(mp, parent);
++	clk_put(parent);
++	clk_put(mp);
 +
-+	if (irlm)
-+		platform_device_register_resndata(
-+			&platform_bus, "renesas_intc_irqpin", -1,
-+			irqpin_resources, ARRAY_SIZE(irqpin_resources),
-+			&irqpin_platform_data, sizeof(irqpin_platform_data));
-+}
-+
- #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
- #define INT2SMSKCR1	0x8228c /* 0xfe78228c */
- 
+ 	pinctrl_register_mappings(ape6evm_pinctrl_map,
+ 				  ARRAY_SIZE(ape6evm_pinctrl_map));
+ 	r8a73a4_pinmux_init();
 -- 
 1.7.9.5
 
