@@ -1,116 +1,30 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Apr 2013 21:59:18 +0000
-Subject: [PATCH v5 4/9] rcar-phy: remove EHCI internal buffer setup
-Message-Id: <201304200159.18768.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 02 Apr 2013 01:13:34 +0000
+Subject: Re: [PATCH 00/03 v4] ARM: shmobile: r8a73a4 APE6EVM board support
+Message-Id: <20130402011333.GB19813@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130329075952.15748.6290.sendpatchset@w520>
+In-Reply-To: <20130329075952.15748.6290.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that the EHCI internal  buffer setup is done by the platform code, we  can
-remove  such code from this driver as it  never  really belonged here.  We also
-no longer need the 2nd memory region now (2nd EHCI controller is simply missing
-in e.g. R8A7778 SoC).
+On Fri, Mar 29, 2013 at 04:59:52PM +0900, Magnus Damm wrote:
+> ARM: shmobile: r8a73a4 APE6EVM board support (V4)
+> 
+> [PATCH 01/03 v3] ARM: shmobile: APE6EVM base support
+> [PATCH 02/03 v2] ARM: shmobile: APE6EVM PFC support
+> [PATCH 03/03 v3] ARM: shmobile: APE6EVM LAN9220 support
+> 
+> This series is V4 of initial support for the APE6EVM board.
+> 
+> The APE6EVM board makes use of the r8a73a4 SoC and has a
+> couple of different I/O devices on board, but with this
+> series only support for the SCIFA0 UART and the Ethernet
+> chip is included.
+> 
+> In the future support for more I/O devices will be added as
+> incremental feature patches.
 
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
----
-Changes since version 2:
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- split R8A7779 SoC file change to a separate patch.
-
- drivers/usb/phy/rcar-phy.c |   28 ++++------------------------
- 1 file changed, 4 insertions(+), 24 deletions(-)
-
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -23,8 +23,6 @@
- #define USBEH0		0x080C
- #define USBOH0		0x081C
- #define USBCTL0		0x0858
--#define EIIBC1		0x0094
--#define EIIBC2		0x009C
- 
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
-@@ -40,7 +38,6 @@ struct rcar_usb_phy_priv {
- 	spinlock_t lock;
- 
- 	void __iomem *reg0;
--	void __iomem *reg1;
- 	int counter;
- };
- 
-@@ -59,7 +56,6 @@ static int rcar_usb_phy_init(struct usb_
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
- 	void __iomem *reg0 = priv->reg0;
--	void __iomem *reg1 = priv->reg1;
- 	int i;
- 	u32 val;
- 	unsigned long flags;
-@@ -97,19 +93,6 @@ static int rcar_usb_phy_init(struct usb_
- 		iowrite32(0x00000000, (reg0 + USBPCTRL0));
- 
- 		/*
--		 * EHCI IP internal buffer setting
--		 * EHCI IP internal buffer enable
--		 *
--		 * These are recommended value of a datasheet
--		 * see [USB :: EHCI internal buffer setting]
--		 */
--		iowrite32(0x00ff0040, (reg0 + EIIBC1));
--		iowrite32(0x00ff0040, (reg1 + EIIBC1));
--
--		iowrite32(0x00000001, (reg0 + EIIBC2));
--		iowrite32(0x00000001, (reg1 + EIIBC2));
--
--		/*
- 		 * Bus alignment settings
- 		 */
- 
-@@ -145,14 +128,13 @@ static void rcar_usb_phy_shutdown(struct
- static int rcar_usb_phy_probe(struct platform_device *pdev)
- {
- 	struct rcar_usb_phy_priv *priv;
--	struct resource *res0, *res1;
-+	struct resource *res0;
- 	struct device *dev = &pdev->dev;
--	void __iomem *reg0, *reg1;
-+	void __iomem *reg0;
- 	int ret;
- 
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
--	if (!res0 || !res1) {
-+	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
- 		return -EINVAL;
- 	}
-@@ -164,8 +146,7 @@ static int rcar_usb_phy_probe(struct pla
- 	 * this driver can't use devm_request_and_ioremap(dev, res) here
- 	 */
- 	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
--	reg1 = devm_ioremap_nocache(dev, res1->start, resource_size(res1));
--	if (!reg0 || !reg1) {
-+	if (!reg0) {
- 		dev_err(dev, "ioremap error\n");
- 		return -ENOMEM;
- 	}
-@@ -177,7 +158,6 @@ static int rcar_usb_phy_probe(struct pla
- 	}
- 
- 	priv->reg0		= reg0;
--	priv->reg1		= reg1;
- 	priv->counter		= 0;
- 	priv->phy.dev		= dev;
- 	priv->phy.label		= dev_name(dev);
+Thanks, queued up for v3.10 in the boards branch.
