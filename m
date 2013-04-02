@@ -1,217 +1,123 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 11 Apr 2013 11:23:59 +0000
-Subject: [PATCH v4 3/7] clocksource: sh_tmu: Add OF support
-Message-Id: <1365679443-25456-3-git-send-email-hechtb+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:06 +0000
+Subject: [PATCH 10/30] ARM: shmobile: r8a73a4: add thermal driver support
+Message-Id: <1364879246-9470-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-We add the capabilty to probe SH CMT timer devices using Device Tree
-setup.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+You can get current thermal by
+> cat /sys/class/thermal/thermal_zone?/temp
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v4:
-Moved the assignments of p->channel_offset and p->timer_bit so that
-they are ready as soon as setup_irq() is called.
+ arch/arm/boot/dts/r8a73a4.dtsi         |    7 +++++++
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   13 ++++++++++++-
+ arch/arm/mach-shmobile/setup-r8a73a4.c |   15 +++++++++++++++
+ 3 files changed, 34 insertions(+), 1 deletion(-)
 
- drivers/clocksource/sh_tmu.c |   96 +++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 85 insertions(+), 11 deletions(-)
-
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 78b8dae..17bb607 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -34,10 +34,13 @@
- #include <linux/module.h>
- #include <linux/pm_domain.h>
- #include <linux/pm_runtime.h>
-+#include <linux/of.h>
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 4c68ba1..7db5b50 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -84,4 +84,11 @@
+ 				<0 56 4>, <0 57 4>;
+ 	};
  
- struct sh_tmu_priv {
- 	void __iomem *mapbase;
- 	struct clk *clk;
-+	long channel_offset;
-+	int timer_bit;
- 	struct irqaction irqaction;
- 	struct platform_device *pdev;
- 	unsigned long rate;
-@@ -57,12 +60,11 @@ static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
++	thermal@e61f0000 {
++		compatible = "renesas,rcar-thermal";
++		reg = <0xe61f0000 0x14>, <0xe61f0100 0x38>,
++			 <0xe61f0200 0x38>, <0xe61f0300 0x38>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 69 4>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 037713b..e710c00 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -29,6 +29,7 @@
  
- static inline unsigned long sh_tmu_read(struct sh_tmu_priv *p, int reg_nr)
- {
--	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
- 	void __iomem *base = p->mapbase;
- 	unsigned long offs;
+ #define MPCKCR 0xe6150080
+ #define SMSTPCR2 0xe6150138
++#define SMSTPCR5 0xe6150144
  
- 	if (reg_nr = TSTR)
--		return ioread8(base - cfg->channel_offset);
-+		return ioread8(base - p->channel_offset);
- 
- 	offs = reg_nr << 2;
- 
-@@ -75,12 +77,11 @@ static inline unsigned long sh_tmu_read(struct sh_tmu_priv *p, int reg_nr)
- static inline void sh_tmu_write(struct sh_tmu_priv *p, int reg_nr,
- 				unsigned long value)
- {
--	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
- 	void __iomem *base = p->mapbase;
- 	unsigned long offs;
- 
- 	if (reg_nr = TSTR) {
--		iowrite8(value, base - cfg->channel_offset);
-+		iowrite8(value, base - p->channel_offset);
- 		return;
- 	}
- 
-@@ -94,7 +95,6 @@ static inline void sh_tmu_write(struct sh_tmu_priv *p, int reg_nr,
- 
- static void sh_tmu_start_stop_ch(struct sh_tmu_priv *p, int start)
- {
--	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
- 	unsigned long flags, value;
- 
- 	/* start stop register shared by multiple timer channels */
-@@ -102,9 +102,9 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_priv *p, int start)
- 	value = sh_tmu_read(p, TSTR);
- 
- 	if (start)
--		value |= 1 << cfg->timer_bit;
-+		value |= 1 << p->timer_bit;
- 	else
--		value &= ~(1 << cfg->timer_bit);
-+		value &= ~(1 << p->timer_bit);
- 
- 	sh_tmu_write(p, TSTR, value);
- 	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
-@@ -421,15 +421,83 @@ static int sh_tmu_register(struct sh_tmu_priv *p, char *name,
- 	return 0;
- }
- 
--static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
-+static const struct of_device_id of_sh_tmu_match[] = {
-+	{ .compatible = "renesas,tmu-timer" },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, of_sh_tmu_match);
-+
-+#define TMU_OFFSET_MULTIPLIER	0xc
-+#define TMU_MAX_CHANNELS	3
-+
-+static struct sh_timer_config *sh_tmu_parse_dt(struct device *dev)
-+{
-+	struct sh_timer_config *cfg;
-+	struct device_node *np = dev->of_node;
-+	u32 channel_id, rating;
-+
-+	if (!IS_ENABLED(CONFIG_OF) || !np)
-+		return NULL;
-+
-+	cfg = devm_kzalloc(dev, sizeof(struct sh_timer_config), GFP_KERNEL);
-+	if (!cfg) {
-+		dev_err(dev, "failed to allocate DT config data\n");
-+		return NULL;
-+	}
-+
-+	if (of_property_read_u32(np, "renesas,channel-id", &channel_id)) {
-+		dev_err(dev, "channel id missing\n");
-+		return NULL;
-+	}
-+	if (channel_id >= TMU_MAX_CHANNELS) {
-+		dev_err(dev, "invalid channel id\n");
-+		return NULL;
-+	}
-+
-+	cfg->channel_offset = channel_id * TMU_OFFSET_MULTIPLIER + 4;
-+	cfg->timer_bit = channel_id;
-+
-+	/*
-+	 * We convert the {source,event}-quality DT properties to linux specific
-+	 * clock{source,event}_ratings.
-+	 */
-+	if (!of_property_read_u32(np, "renesas,source-quality", &rating)) {
-+		if (rating > 10) {
-+			dev_err(dev, "invalid source-quality\n");
-+			return NULL;
-+		}
-+		if (rating)
-+			cfg->clocksource_rating = rating * 50 - 1;
-+	}
-+
-+	if (!of_property_read_u32(np, "renesas,event-quality", &rating)) {
-+		if (rating > 10) {
-+			dev_err(dev, "invalid event-quality\n");
-+			return NULL;
-+		}
-+		if (rating)
-+			cfg->clockevent_rating = rating * 50 - 1;
-+	}
-+
-+	if (!cfg->clocksource_rating && !cfg->clockevent_rating) {
-+		dev_err(dev, "source- and event-quality 0, timer is unused\n");
-+		return NULL;
-+	}
-+
-+	return cfg;
-+}
-+
-+static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev,
-+						struct sh_timer_config *cfg)
- {
--	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	struct resource *res;
- 	int irq, ret;
- 	ret = -ENXIO;
- 
- 	memset(p, 0, sizeof(*p));
- 	p->pdev = pdev;
-+	p->channel_offset = cfg->channel_offset;
-+	p->timer_bit = cfg->timer_bit;
- 
- 	if (!cfg) {
- 		dev_err(&p->pdev->dev, "missing platform data\n");
-@@ -487,7 +555,7 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
- static int sh_tmu_probe(struct platform_device *pdev)
- {
- 	struct sh_tmu_priv *p = platform_get_drvdata(pdev);
--	struct sh_timer_config *cfg = pdev->dev.platform_data;
-+	struct sh_timer_config *cfg;
- 	int ret;
- 
- 	if (!is_early_platform_device(pdev)) {
-@@ -495,6 +563,11 @@ static int sh_tmu_probe(struct platform_device *pdev)
- 		pm_runtime_enable(&pdev->dev);
- 	}
- 
-+	if (pdev->dev.of_node)
-+		cfg = sh_tmu_parse_dt(&pdev->dev);
-+	else
-+		cfg = pdev->dev.platform_data;
-+
- 	if (p) {
- 		dev_info(&pdev->dev, "kept as earlytimer\n");
- 		goto out;
-@@ -506,7 +579,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 	}
- 
--	ret = sh_tmu_setup(p, pdev);
-+	ret = sh_tmu_setup(p, pdev, cfg);
- 	if (ret) {
- 		kfree(p);
- 		platform_set_drvdata(pdev, NULL);
-@@ -535,6 +608,7 @@ static struct platform_driver sh_tmu_device_driver = {
- 	.remove		= sh_tmu_remove,
- 	.driver		= {
- 		.name	= "sh_tmu",
-+		.of_match_table = of_sh_tmu_match,
- 	}
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+@@ -56,7 +57,12 @@ static struct clk *main_clks[] = {
+ 	&extal2_clk,
  };
  
+-enum { MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP_NR };
++enum {
++	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
++	MSTP522,
++	MSTP_NR
++};
++
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP204] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
+@@ -64,6 +70,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP207] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP216] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP217] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 17, 0), /* SCIFB3 */
++	[MSTP522] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR5, 22, 0), /* Thermal */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+@@ -73,6 +80,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
++	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
++
++	/* for DT */
++	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ };
+ 
+ void __init r8a73a4_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index c2d86f3..c5a75a7 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -155,6 +155,20 @@ static const struct resource irqc1_resources[] = {
+ 					  &irqc##idx##_data,		\
+ 					  sizeof(struct renesas_irqc_config))
+ 
++/* Thermal0 -> Thermal2 */
++static const struct resource thermal0_resources[] = {
++	DEFINE_RES_MEM(0xe61f0000, 0x14),
++	DEFINE_RES_MEM(0xe61f0100, 0x38),
++	DEFINE_RES_MEM(0xe61f0200, 0x38),
++	DEFINE_RES_MEM(0xe61f0300, 0x38),
++	DEFINE_RES_IRQ(gic_spi(69)),
++};
++
++#define r8a73a4_register_thermal()					\
++	platform_device_register_simple("rcar_thermal", -1,		\
++					thermal0_resources,		\
++					ARRAY_SIZE(thermal0_resources))
++
+ void __init r8a73a4_add_standard_devices(void)
+ {
+ 	r8a73a4_register_scif(SCIFA0);
+@@ -165,6 +179,7 @@ void __init r8a73a4_add_standard_devices(void)
+ 	r8a73a4_register_scif(SCIFB3);
+ 	r8a73a4_register_irqc(0);
+ 	r8a73a4_register_irqc(1);
++	r8a73a4_register_thermal();
+ }
+ 
+ #ifdef CONFIG_USE_OF
 -- 
-1.7.9.5
+1.7.10.4
 
