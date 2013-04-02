@@ -1,80 +1,146 @@
-From: Stephane Grosjean <s.grosjean@peak-system.com>
-Date: Tue, 02 Apr 2013 14:04:00 +0000
-Subject: Re: drivers/net/can/sja1000/peak_pcmcia.c:626:2: error: implicit declaration of function 'ioport_unm
-Message-Id: <515AE550.2030605@peak-system.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:12 +0000
+Subject: [PATCH 04/28] sh-pfc: r8a7779: Don't use GPIO enum entries
+Message-Id: <1364879376-10020-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130327083110.GB11489@localhost>
-In-Reply-To: <20130327083110.GB11489@localhost>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Le 27/03/2013 11:22, Marc Kleine-Budde a =E9crit :
-> On 03/27/2013 10:41 AM, Paul Mundt wrote:
->> On Wed, Mar 27, 2013 at 04:31:10PM +0800, Fengguang Wu wrote:
->>> Hi Stephane,
->>>
->>> FYI, kernel build failed on
->>>
->>> tree:   git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux ma=
-ster
->>> head:   de55eb1d60d2ed0f1ba5e13226d91b3bfbe1c108
->>> commit: 2b61972b74219d21ef1e91178349bdb840357688 can: sja1000: add supp=
-ort for PEAK-System PCMCIA card
->>> date:   1 year, 1 month ago
->>> config: make ARCH=3Dsh allyesconfig
->>>
->>> All error/warnings:
->>>
->>>     In file included from drivers/net/can/sja1000/peak_pcmcia.c:28:0:
->>>     drivers/net/can/sja1000/sja1000.h:59:0: warning: "REG_SR" redefined=
- [enabled by default]
->>>     arch/sh/include/asm/ptrace_32.h:25:0: note: this is the location of=
- the previous definition
->>>     drivers/net/can/sja1000/peak_pcmcia.c: In function 'pcan_free':
->>>>> drivers/net/can/sja1000/peak_pcmcia.c:626:2: error: implicit declarat=
-ion of function 'ioport_unmap' [-Werror=3Dimplicit-function-declaration]
->>>     drivers/net/can/sja1000/peak_pcmcia.c: In function 'pcan_probe':
->>>>> drivers/net/can/sja1000/peak_pcmcia.c:672:2: error: implicit declarat=
-ion of function 'ioport_map' [-Werror=3Dimplicit-function-declaration]
->>>     drivers/net/can/sja1000/peak_pcmcia.c:672:20: warning: assignment m=
-akes pointer from integer without a cast [enabled by default]
->>>     cc1: some warnings being treated as errors
->>>
->> This would no doubt be due to the defconfig selecting NO_IOPORT. This
->> driver probably needs a HAS_IOPORT depends.
-> Stephane, can we use pcmcia_map_mem_page() instead of ioport_map() like
-> in the ems_pcmcia driver?
->
-> http://lxr.free-electrons.com/source/drivers/net/can/sja1000/ems_pcmcia.c=
-#L286
+Refactor the GPIO macro magic to use GPIO numbers directly instead of
+the GPIO_GP_x_y enum entries. This will allow removing the GPIO enum
+entries from the mach/r8a7779.h header.
 
-I'm afraid we won't! Unfortunately, the PCAN-PCCARD doesn't use the=20
-common memory area at all. I did use the ioport_map() function because=20
-of the iomem * type of the reg_base member of the sja1000_priv struct.
-Moreover, the access to the SJA1000 registers is available only if i/o=20
-signals are set. So, I see two solutions:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  104 ++++++++++++++++++++++++----------
+ 1 file changed, 74 insertions(+), 30 deletions(-)
 
-1. rewriting peak_pcmcia.c much more like=20
-"drivers/net/can/sja1000/tscan1.c" (and casting from "iomem *" to=20
-"unsigned long")
-2. or counting on HAS_IOPORT flags (but how does manage=20
-drivers/net/wireless/libertas/if_cs.c driver to compile without any=20
-error nor warning?)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 4db9944..41d8bda 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -19,39 +19,83 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <mach/r8a7779.h>
+ 
+ #include "sh_pfc.h"
+ 
+-#define CPU_32_PORT6(fn, pfx, sfx)				\
+-	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
+-	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
+-	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
+-	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
+-	PORT_1(fn, pfx##8, sfx)
+-
+-#define CPU_ALL_PORT(fn, pfx, sfx)				\
+-	PORT_32(fn, pfx##_0_, sfx),				\
+-	PORT_32(fn, pfx##_1_, sfx),				\
+-	PORT_32(fn, pfx##_2_, sfx),				\
+-	PORT_32(fn, pfx##_3_, sfx),				\
+-	PORT_32(fn, pfx##_4_, sfx),				\
+-	PORT_32(fn, pfx##_5_, sfx),				\
+-	CPU_32_PORT6(fn, pfx##_6_, sfx)
+-
+-#define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
+-#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
+-				       GP##pfx##_IN, GP##pfx##_OUT)
+-
+-#define _GP_INOUTSEL(pfx, sfx) GP##pfx##_IN, GP##pfx##_OUT
+-#define _GP_INDT(pfx, sfx) GP##pfx##_DATA
+-
+-#define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
+-#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
+-#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
+-
+-#define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
+-#define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
++#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
++
++#define PORT_GP_32(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
++	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
++	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
++	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
++	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
++	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
++	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
++	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
++	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
++	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
++	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
++	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
++	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
++	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
++	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
++	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
++
++#define PORT_GP_32_9(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0, fn, sfx), PORT_GP_1(bank, 1, fn, sfx),	\
++	PORT_GP_1(bank, 2, fn, sfx), PORT_GP_1(bank, 3, fn, sfx),	\
++	PORT_GP_1(bank, 4, fn, sfx), PORT_GP_1(bank, 5, fn, sfx),	\
++	PORT_GP_1(bank, 6, fn, sfx), PORT_GP_1(bank, 7, fn, sfx),	\
++	PORT_GP_1(bank, 8, fn, sfx)
++
++#define PORT_GP_32_REV(bank, fn, sfx)					\
++	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
++	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
++	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
++	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
++	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
++	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
++	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
++	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
++	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
++	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
++	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
++	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
++	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
++	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
++	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
++	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
++
++#define CPU_ALL_PORT(fn, sfx)						\
++	PORT_GP_32(0, fn, sfx),						\
++	PORT_GP_32(1, fn, sfx),						\
++	PORT_GP_32(2, fn, sfx),						\
++	PORT_GP_32(3, fn, sfx),						\
++	PORT_GP_32(4, fn, sfx),						\
++	PORT_GP_32(5, fn, sfx),						\
++	PORT_GP_32_9(6, fn, sfx)
++
++#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
++
++#define _GP_GPIO(bank, pin, _name, sfx)					\
++	[(bank * 32) + pin] = {						\
++		.name = __stringify(_name),				\
++		.enum_id = _name##_DATA,				\
++	}
++
++#define _GP_DATA(bank, pin, name, sfx)					\
++	PINMUX_DATA(name##_DATA, name##_FN, name##_IN, name##_OUT)
++
++#define _GP_INOUTSEL(bank, pin, name, sfx)	name##_IN, name##_OUT
++#define _GP_INDT(bank, pin, name, sfx)		name##_DATA
++
++#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
++#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
++#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
++
++#define GP_INOUTSEL(bank) PORT_GP_32_REV(bank, _GP_INOUTSEL, unused)
++#define GP_INDT(bank) PORT_GP_32_REV(bank, _GP_INDT, unused)
+ 
+ #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
+ #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+-- 
+1.7.10.4
 
-What is your opinion,  please?
-
-Regards,
-
-St=E9phane
-
-> Marc
->
-
---
-PEAK-System Technik GmbH, Otto-Roehm-Strasse 69, D-64293 Darmstadt=20
-Geschaeftsleitung: A.Gach/U.Wilhelm,St.Nr.:007/241/13586 FA Darmstadt=20
-HRB-9183 Darmstadt, Ust.IdNr.:DE 202220078, WEE-Reg.-Nr.: DE39305391=20
-Tel.+49 (0)6151-817320 / Fax:+49 (0)6151-817329, info@peak-system.com
