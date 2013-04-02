@@ -1,40 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 18 Apr 2013 13:14:31 +0000
-Subject: Re: [PATCH v2 5/6] ARM: shmobile: r8a7740: Prepare for reference DT setup
-Message-Id: <20130418131429.GA20929@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:11:14 +0000
+Subject: [PATCH 02/11] ARM: shmobile: kzm9g-reference: add ethernet support
+Message-Id: <1364879483-11144-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366194847-9879-5-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1366194847-9879-5-git-send-email-hechtb+renesas@gmail.com>
+References: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 17, 2013 at 12:34:05PM +0200, Bastian Hecht wrote:
-> We need three steps to prepare for the new Armadillo reference DT board code:
->  - Split the device list into r8a7740_early_devices used by the old platform
->    data setup (board-armadillo.c) and r8a7740_devices_dt used by both
->    setup variants.
->  - Introduce new r8a7740_init_delay() to be more flexible about calling
->    shmobile_setup_delay().
->  - For the generic r8a7740 support, we switch to device tree setup for
->    the GIC, the irqpin devices and the I2C controllers.
-> 
-> This is slightly similar to commit 3b00f9342623a5ebc
-> "ARM: shmobile: sh73a0: Do not use early devices with DT reference"
-> 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> ---
-> v2:
-> 
->  - add device list r8a7740_devices_dt to r8a7740_add_early_devices() (fix)
->  - reworked code flow for the generic case (fix)
->  - added some devices to r8a7740.dtsi and switched to OF for generic case
->    (see commit message)
-> 
->  arch/arm/boot/dts/r8a7740.dtsi                |  117 +++++++++++++++++++++++++
->  arch/arm/mach-shmobile/include/mach/r8a7740.h |    2 +
->  arch/arm/mach-shmobile/setup-r8a7740.c        |   53 +++++------
->  3 files changed, 147 insertions(+), 25 deletions(-)
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Thanks, queued-up for v3.11 in the soc-r8a7740 branch.
+Add a DT node for the SMSC 9221 ethernet chip, found on kzm9g, to its
+reference implementation.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index f33b5cc..5972abb 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -44,6 +44,19 @@
+ 		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
++
++	lan9220@10000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x10000000 0x100>;
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <3 0>;	/* active low */
++		reg-io-width = <4>;
++		smsc,irq-push-pull;
++		smsc,save-mac-address;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
++	};
+ };
+ 
+ &mmcif {
+-- 
+1.7.10.4
+
