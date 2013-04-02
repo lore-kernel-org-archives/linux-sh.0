@@ -1,50 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 05 Apr 2013 02:07:17 +0000
-Subject: Re: [PATCH 00/04] ARM: shmobile: pinmux platform device cleanups
-Message-Id: <20130405020717.GY29203@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 04:31:31 +0000
+Subject: [GIT PULL] Renesas ARM based SoC defconfig updates for v3.10 #2
+Message-Id: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130403063246.2500.65318.sendpatchset@w520>
- <11100532.ubSdK9L5P1@avalon>
-In-Reply-To: <11100532.ubSdK9L5P1@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 04, 2013 at 12:24:15PM +0200, Laurent Pinchart wrote:
-> Hi Magnus,
-> 
-> Thanks for the patches.
-> 
-> On Wednesday 03 April 2013 15:32:46 Magnus Damm wrote:
-> > ARM: shmobile: pinmux platform device cleanups
-> > 
-> > [PATCH 01/04] ARM: shmobile: r8a7740 pinmux platform device cleanup
-> > [PATCH 02/04] ARM: shmobile: r8a7779 pinmux platform device cleanup
-> > [PATCH 03/04] ARM: shmobile: sh7372 pinmux platform device cleanup
-> > [PATCH 04/04] ARM: shmobile: sh73a0 pinmux platform device cleanup
-> > 
-> > This series simply cleans up the pinmux platform device handling
-> > to save a couple of lines. Compile time tested on each SoC.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> Except for 2/4,
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Hi Arnd, Hi Olof,
 
-Thanks.
+The following changes since commit db30abdf3c07c564d4af0f991bb7f38b728f9035:
 
-1/4: queued up in soc-r8a7740 branch
-3/4: queued up in soc-sh7372 branch
-4/4: queued up in soc-sh73a0 branch
+  ARM: mach-shmobile: marzen: add SATA support (2013-03-14 10:28:07 +0100)
 
-> > ---
-> > 
-> >  Written against renesas-next-20130403 in renesas.git
-> > 
-> >  arch/arm/mach-shmobile/setup-r8a7740.c |   24 +++++-------------------
-> >  arch/arm/mach-shmobile/setup-r8a7779.c |   19 ++++---------------
-> >  arch/arm/mach-shmobile/setup-sh7372.c  |   24 +++++-------------------
-> >  arch/arm/mach-shmobile/setup-sh73a0.c  |   25 ++++++-------------------
-> >  4 files changed, 20 insertions(+), 72 deletions(-)
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.10
+
+for you to fetch changes up to 03d409a5c4f8b590caaebd8c99e8977227c3dee7:
+
+  ARM: shmobile: ape6evm: add defconfig (2013-04-01 17:52:07 +0900)
+
+----------------------------------------------------------------
+Second round of Renesas ARM based SoC defconfig updates for v3.10
+
+* Add defconfig for ape6evm board
+* GPIO updates for marzen
+
+----------------------------------------------------------------
+Simon Horman (3):
+      ARM: shmobile: marzen: defconfig: add GPIO RCAR driver support
+      ARM: shmobile: marzen: defconfig: enable GPIO LEDs driver
+      ARM: shmobile: ape6evm: add defconfig
+
+ arch/arm/configs/ape6evm_defconfig |   95 ++++++++++++++++++++++++++++++++++++
+ arch/arm/configs/marzen_defconfig  |    4 ++
+ 2 files changed, 99 insertions(+)
+ create mode 100644 arch/arm/configs/ape6evm_defconfig
