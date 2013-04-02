@@ -1,152 +1,93 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 17:10:59 +0000
-Subject: [PATCH v3 2/4] ARM: shmobile: r8a7779: add VIN support
-Message-Id: <201304232110.59718.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 02 Apr 2013 01:13:30 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a73a4 SoC 64-bit DT support
+Message-Id: <20130402011329.GA19813@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
+References: <20130329074556.15428.88694.sendpatchset@w520>
+In-Reply-To: <20130329074556.15428.88694.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+On Fri, Mar 29, 2013 at 04:45:56PM +0900, Magnus Damm wrote:
+> From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+> 
+> The r8a73a4 SoC supports LPAE and has memory window up to
+> 0x2ffffffff. Convert to 64-bit addresses by enlarging
+> #addr-cells and #size-cells to 2.
+> 
+> Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Add VIN clocks and platform devices for R8A7779 SoC; add function to register
-the VIN platform devices.
+Thanks, queued up for v3.10 in the soc branch.
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: added 'id' parameter check to r8a7779_add_vin_device(), renamed some
-variables, annotated vin[01]_resources[] and 'vin[01]_info' as '__initdata'.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
----
-Changes since version 2:
-- annotated vin[01]_resources[] and 'vin[01]_info' as '__initdata' since they're
-  kmemdup()'ed while registering the platform devices anyway;
-
-Changes since the original posting:
-- added 'id' parameter check to r8a7779_add_vin_device().
-
- arch/arm/mach-shmobile/clock-r8a7779.c        |   10 ++++++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        |   38 ++++++++++++++++++++++++++
- 3 files changed, 51 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/clock-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -112,7 +112,9 @@ static struct clk *main_clks[] = {
- };
- 
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP120,
- 	MSTP116, MSTP115, MSTP114,
-+	MSTP110, MSTP109, MSTP108,
- 	MSTP103, MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -125,9 +127,13 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP120] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 20, 0), /* VIN3 */
- 	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
- 	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
- 	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
-+	[MSTP110] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 10, 0), /* VIN0 */
-+	[MSTP109] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  9, 0), /* VIN1 */
-+	[MSTP108] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  8, 0), /* VIN2 */
- 	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
- 	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
- 	[MSTP100] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  0, 0), /* USB0/1 */
-@@ -162,10 +168,14 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&clkp_clk),
- 
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("rcar_vin.3", &mstp_clks[MSTP120]), /* VIN3 */
- 	CLKDEV_DEV_ID("rcar-pcie", &mstp_clks[MSTP116]), /* PCIe */
- 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
- 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
- 	CLKDEV_DEV_ID("sh-eth", &mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("rcar_vin.0", &mstp_clks[MSTP110]), /* VIN0 */
-+	CLKDEV_DEV_ID("rcar_vin.1", &mstp_clks[MSTP109]), /* VIN1 */
-+	CLKDEV_DEV_ID("rcar_vin.2", &mstp_clks[MSTP108]), /* VIN2 */
- 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
- 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -5,6 +5,7 @@
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
- #include <linux/usb/rcar-phy.h>
-+#include <linux/platform_data/camera-rcar.h>
- 
- struct platform_device;
- 
-@@ -35,6 +36,8 @@ extern void r8a7779_add_standard_devices
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
-+extern void r8a7779_add_vin_device(int idx,
-+				   struct rcar_vin_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -559,6 +559,33 @@ static struct resource ether_resources[]
- 	},
- };
- 
-+#define R8A7779_VIN(idx) \
-+static struct resource vin##idx##_resources[] __initdata = {		\
-+	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
-+	DEFINE_RES_IRQ(gic_iid(0x5f + (idx))),				\
-+};									\
-+									\
-+static struct platform_device_info vin##idx##_info __initdata = {	\
-+	.parent		= &platform_bus,				\
-+	.name		= "rcar_vin",					\
-+	.id		= idx,						\
-+	.res		= vin##idx##_resources,				\
-+	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
-+	.dma_mask	= DMA_BIT_MASK(32),				\
-+}
-+
-+R8A7779_VIN(0);
-+R8A7779_VIN(1);
-+R8A7779_VIN(2);
-+R8A7779_VIN(3);
-+
-+static struct platform_device_info *vin_info_table[] __initdata = {
-+	&vin0_info,
-+	&vin1_info,
-+	&vin2_info,
-+	&vin3_info,
-+};
-+
- static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -610,6 +637,17 @@ void __init r8a7779_add_usb_phy_device(s
- 					  pdata, sizeof(*pdata));
- }
- 
-+void __init r8a7779_add_vin_device(int id,
-+				   struct rcar_vin_platform_data *pdata)
-+{
-+	BUG_ON(id < 0 || id > 3);
-+
-+	vin_info_table[id]->data = pdata;
-+	vin_info_table[id]->size_data = sizeof(struct rcar_vin_platform_data);
-+
-+	platform_device_register_full(vin_info_table[id]);
-+}
-+
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
- 
+> ---
+> 
+>  Depends on the following series:
+>  [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V3
+> 
+>  arch/arm/boot/dts/r8a73a4.dtsi |   20 ++++++++++----------
+>  1 file changed, 10 insertions(+), 10 deletions(-)
+> 
+> --- 0001/arch/arm/boot/dts/r8a73a4.dtsi
+> +++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-03-29 16:02:06.000000000 +0900
+> @@ -9,11 +9,11 @@
+>   * kind, whether express or implied.
+>   */
+>  
+> -/include/ "skeleton.dtsi"
+> -
+>  / {
+>  	compatible = "renesas,r8a73a4";
+>  	interrupt-parent = <&gic>;
+> +	#address-cells = <2>;
+> +	#size-cells = <2>;
+>  
+>  	cpus {
+>  		#address-cells = <1>;
+> @@ -32,10 +32,10 @@
+>  		#interrupt-cells = <3>;
+>  		#address-cells = <0>;
+>  		interrupt-controller;
+> -		reg = <0xf1001000 0x1000>,
+> -			<0xf1002000 0x1000>,
+> -			<0xf1004000 0x2000>,
+> -			<0xf1006000 0x2000>;
+> +		reg = <0 0xf1001000 0 0x1000>,
+> +			<0 0xf1002000 0 0x1000>,
+> +			<0 0xf1004000 0 0x2000>,
+> +			<0 0xf1006000 0 0x2000>;
+>  		interrupts = <1 9 0xf04>;
+>  
+>  		gic-cpuif@4 {
+> @@ -57,7 +57,7 @@
+>  		compatible = "renesas,irqc";
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> -		reg = <0xe61c0000 0x200>;
+> +		reg = <0 0xe61c0000 0 0x200>;
+>  		interrupt-parent = <&gic>;
+>  		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>,
+>  				<0 4 4>, <0 5 4>, <0 6 4>, <0 7 4>,
+> @@ -73,7 +73,7 @@
+>  		compatible = "renesas,irqc";
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> -		reg = <0xe61c0200 0x200>;
+> +		reg = <0 0xe61c0200 0 0x200>;
+>  		interrupt-parent = <&gic>;
+>  		interrupts = <0 32 4>, <0 33 4>, <0 34 4>, <0 35 4>,
+>  				<0 36 4>, <0 37 4>, <0 38 4>, <0 39 4>,
+> @@ -86,8 +86,8 @@
+>  
+>  	thermal@e61f0000 {
+>  		compatible = "renesas,rcar-thermal";
+> -		reg = <0xe61f0000 0x14>, <0xe61f0100 0x38>,
+> -			 <0xe61f0200 0x38>, <0xe61f0300 0x38>;
+> +		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
+> +			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
+>  		interrupt-parent = <&gic>;
+>  		interrupts = <0 69 4>;
+>  	};
+> 
