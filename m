@@ -1,32 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 18 Apr 2013 00:34:43 +0000
-Subject: Re: [PATCH 4/6] ARM: shmobile: r8a7740: Prepare for reference DT setup
-Message-Id: <87txn4smlb.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:18 +0000
+Subject: [PATCH 10/28] sh-pfc: Make GPIO support optional
+Message-Id: <1364879376-10020-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365083144-16085-4-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365083144-16085-4-git-send-email-hechtb+renesas@gmail.com>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Hi Bastian
+When implemented as a separate IP block, GPIOs should be handled by a
+separate driver. To make this possible GPIO support needs to be optional
+in the sh-pfc driver.
 
-> >> thanks for pointing out the differences of the board codes, I will
-> >> have a look and see if it's appropriate to apply (partially) the new
-> >> style or go with the old one.
-> >
-> > Thank you for your help !!
-> 
-> I've decided to repost the patch series more or less at it is as I've
-> got limited resources for it and if I would need to convert both board
-> files to use the new style we would never get it. So better old style
-> then nothing.
+If no GPIO data registers are supplied in the SoC information structure
+skip registration of the gpiochip.
 
-Thank you for your report.
-OK, no problem for me
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
+ drivers/pinctrl/sh-pfc/gpio.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 7a54ec7..317cebb 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -354,6 +354,9 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	unsigned int i;
+ 	int ret;
+ 
++	if (pfc->info->data_regs = NULL)
++		return 0;
++
+ 	/* Register the real GPIOs chip. */
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
+ 	if (IS_ERR(chip))
+-- 
+1.7.10.4
+
