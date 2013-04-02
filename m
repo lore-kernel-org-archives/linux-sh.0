@@ -1,72 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 25 Apr 2013 10:19:31 +0000
-Subject: Re: [PATCH 0/4] sh73a0: Expose the PFC-controller SDHI power gate as a regulator
-Message-Id: <2383729.NyfcNBAiP0@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 02 Apr 2013 11:06:15 +0000
+Subject: [PATCH 1/6] clk: sh: add sh_clk_reparent_register()
+Message-Id: <87a9ph5h0c.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366672585-9098-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366672585-9098-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Some SuperH clocks need to decide its parent clock from
+specified register.
+This patch adds sh_clk_reparent_register() for this purpose
 
-On Thursday 25 April 2013 09:23:57 Simon Horman wrote:
-> On Wed, Apr 24, 2013 at 04:40:22PM +0900, Simon Horman wrote:
-> > On Tue, Apr 23, 2013 at 01:16:21AM +0200, Laurent Pinchart wrote:
-> > > Hello,
-> > > 
-> > > The sh73a0 has an internal power gate on the VCCQ power supply for the
-> > > SDHI0 device that is controlled (for some strange reason) by a bit in a
-> > > PFC register.
-> > > 
-> > > This patch set exposes the power gate as a regulator. As the only
-> > > currently supported board (kzm9g) has the VCCQ_MC0 pins directly
-> > > connected to an always on 3.3V supply, the code assumes that the
-> > > external VCCQ power supply can't be controlled. This could be fixed
-> > > later by setting the regulator supply name.
-> > > 
-> > > As this series turns the power off when not needed it might bring
-> > > additional power saving, but this hasn't been measured. If the patches
-> > > are considered too complex a simpler approach would be to turn the
-> > > power gate on when the SDHI function is selected.
-> > > 
-> > > The patches are based on tags/renesas-next-20130422. They have been
-> > > tested on kzm9g.
-> > > 
-> > > Laurent Pinchart (4):
-> > >   sh-pfc: Add support for SoC-specific initialization
-> > >   sh-pfc: sh73a0: Add VCCQ MC0 regulator
-> > >   ARM: shmobile: kzm9g: Remove the VCCQ MC0 function GPIO
-> > >   ARM: shmobile: kzm9g-reference: Remove the VCCQ MC0 function GPIO
-> > >  
-> > >  arch/arm/mach-shmobile/board-kzm9g-reference.c |   1 -
-> > >  arch/arm/mach-shmobile/board-kzm9g.c           |   3 -
-> > >  drivers/pinctrl/sh-pfc/Kconfig                 |   1 +
-> > >  drivers/pinctrl/sh-pfc/core.c                  |  16 ++-
-> > >  drivers/pinctrl/sh-pfc/core.h                  |   1 +
-> > >  drivers/pinctrl/sh-pfc/pfc-sh73a0.c            | 134 ++++++++++++++++++
-> > >  drivers/pinctrl/sh-pfc/sh_pfc.h                |   2 +
-> > >  7 files changed, 153 insertions(+), 5 deletions(-)
-> > 
-> > I have rebased the pinmux branch on renesas-boards3-for-v3.10 to
-> > supply dependencies. That tag includes the renesas-pinmux2-for-v3.10
-> > tag which the pinmux branch was previously based on.
-> > 
-> > I have applied this entire series on the resulting pinmux branch.
-> > 
-> > I plan to push this when I tag renesas-next-20130424 later today.
-> > If not I will tag and push renesas-next-20130425 tomorrow.
-> 
-> As there was subsequently some discussion of this series
-> and a v2 posted I have dropped these changes for now.
-> Please ping me when you feel they are ready.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/sh/clk/cpg.c   |   15 ++++++++++++---
+ include/linux/sh_clk.h |    1 +
+ 2 files changed, 13 insertions(+), 3 deletions(-)
 
-Sure. I will wait for Mark Brown's ack first.
-
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 1ebe67c..54e3e32 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -200,6 +200,17 @@ static int __init sh_clk_init_parent(struct clk *clk)
+ 	return 0;
+ }
+ 
++int __init sh_clk_reparent_register(struct clk *clk)
++{
++	int ret;
++
++	ret = clk_register(clk);
++	if (ret = 0)
++		ret = sh_clk_init_parent(clk);
++
++	return ret;
++}
++
+ static int __init sh_clk_div_register_ops(struct clk *clks, int nr,
+ 			struct clk_div_table *table, struct sh_clk_ops *ops)
+ {
+@@ -226,9 +237,7 @@ static int __init sh_clk_div_register_ops(struct clk *clks, int nr,
+ 		clkp->freq_table = freq_table + (k * freq_table_size);
+ 		clkp->freq_table[nr_divs].frequency = CPUFREQ_TABLE_END;
+ 
+-		ret = clk_register(clkp);
+-		if (ret = 0)
+-			ret = sh_clk_init_parent(clkp);
++		ret = sh_clk_reparent_register(clkp);
+ 	}
+ 
+ 	return ret;
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 60c7239..aa349d6 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -192,6 +192,7 @@ int sh_clk_div4_reparent_register(struct clk *clks, int nr,
+ 	.flags		= _flags | CLK_MASK_DIV_ON_DISABLE,	\
+ }
+ 
++int sh_clk_reparent_register(struct clk *clk);
+ int sh_clk_div6_register(struct clk *clks, int nr);
+ int sh_clk_div6_reparent_register(struct clk *clks, int nr);
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
