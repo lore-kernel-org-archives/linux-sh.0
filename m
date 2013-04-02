@@ -1,138 +1,122 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 10 Apr 2013 18:51:45 +0000
-Subject: Re: [PATCH v3 7/9] rcar-phy: add platform data
-Message-Id: <5165B4C1.80203@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:20 +0000
+Subject: [PATCH 12/28] sh-pfc: Configure pins as GPIOs at request time when handled externally
+Message-Id: <1364879376-10020-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304100237.50334.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304100237.50334.sergei.shtylyov@cogentembedded.com>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 04/10/2013 10:40 PM, Felipe Balbi wrote:
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
->
->>>>>> Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong since this
->>>>>> register contains board-specific USB ports configuration and so its value should
->>>>>> be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file with
->>>>>> the USBPCTRL0 bit #define's and 'struct rcar_phy_platform_data' containing the
->>>>>> value to be set by the driver to that register.
->>>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>>>> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->>>>>> Acked-by: Simon Horman <horms+renesas@verge.net.au>
->>>>>> ---
->>>>>> Changes since version 2:
->>>>>> - added #include <linux/types.h>;
->>>>>> - added ACKs from Simon Horman and Kuninori Morimoto.
->>>>>>   include/linux/usb/rcar-phy.h |   40 ++++++++++++++++++++++++++++++++++++++++
->>>>>>   1 file changed, 40 insertions(+)
->>>>>> Index: renesas/include/linux/usb/rcar-phy.h
->>>>>> =================================>>>>>> --- /dev/null
->>>>>> +++ renesas/include/linux/usb/rcar-phy.h
->>>>>> @@ -0,0 +1,40 @@
->>>>>> +/*
->>>>>> + * Copyright (C) 2013 Renesas Solutions Corp.
->>>>>> + * Copyright (C) 2013 Cogent Embedded, Inc.
->>>>>> + *
->>>>>> + * This program is free software; you can redistribute it and/or modify
->>>>>> + * it under the terms of the GNU General Public License version 2 as
->>>>>> + * published by the Free Software Foundation.
->>>>>> + */
->>>>>> +
->>>>>> +#ifndef __RCAR_PHY_H
->>>>>> +#define __RCAR_PHY_H
->>>>>> +
->>>>>> +#include <linux/bitops.h>
->>>>>> +#include <linux/types.h>
->>>>>> +
->>>>>> +/* USBPCTRL0 register bits */
->>>>>> +#define USBPCTRL0_OVC2	BIT(10)	/* Switches the OVC input pin for port 2: */
->>>>>> +				/* 1: USB_OVC2, 0: OVC2			*/
->>>>>> +#define USBPCTRL0_OVC1_VBUS1 BIT(9) /* Switches the OVC input pin for port 1: */
->>>>>> +				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
->>>>>> +#define USBPCTRL0_OVC0	BIT(8)	/* Switches the OVC input pin for port 0: */
->>>>>> +				/* 1: USB_OVC0 pin, 0: OVC0		*/
->>>>>> +#define USBPCTRL0_OVC2_ACT BIT(6) /* Host mode: OVC2 polarity:		*/
->>>>>> +				/* 1: active-high, 0: active-low	*/
->>>>>> +				/* Function mode: be sure to set to 1	*/
->>>>>> +#define USBPCTRL0_PENC	BIT(4)	/* Function mode: output level of PENC1 pin: */
->>>>>> +				/* 1: high, 0: low			*/
->>>>>> +#define USBPCTRL0_OVC0_ACT BIT(3) /* Host mode: OVC0 polarity:		*/
->>>>>> +				/* 1: active-high, 0: active-low	*/
->>>>>> +#define USBPCTRL0_OVC1_ACT BIT(1) /* Host mode: OVC1 polarity:		*/
->>>>>> +				/* 1: active-high, 0: active-low	*/
->>>>>> +				/* Function mode: be sure to set to 1	*/
->>>>>> +#define USBPCTRL0_PORT1	BIT(0)	/* Selects port 1 mode:			*/
->>>>>> +				/* 1: function, 0: host			*/
->>>>>> +
->>>>>> +struct rcar_phy_platform_data {
->>>>>> +	u32 usbpctrl0;		/* USBPCTRL0 register value */
->>>>>> +};
->>>>> looks really wrong to me to pass register contents via pdata. You should
->>>>> pass flags which would aid the driver into figuring out how to program
->>>>> that register.
->>>>     That was my first thought (and implementation) but this didn't
->>>> look good either (and even worse with the device tree approach) as we
->>>> couldn't come up with the clear names for the bitfields. Also, not
->>>> all these bits are present in R8A7778 support for which I'm adding in
->>>> the later patchset.
->>>>     Besides, IMO this little differs from having a flags field with
->>>> the flags bits #define'd beforehand. Or did you mean that I should
->>>> have surely used *bool* bitfields?
->>> How about:
->>      Er, I was asking you about the platform data only, not the DT
->> representation yet. :-)
-> easy(-ish) to translate, just needs more fields in your structure.
+When a GPIO is handled by a separate driver the pinmux
+gpio_set_direction() handler won't be called. The pin mux type then need
+to be configured to GPIO at request time.
 
-    That's clear , about more fields. :-)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/pinctrl/sh-pfc/core.c    |   37 ++++++++++++++++---------------------
+ drivers/pinctrl/sh-pfc/pinctrl.c |   11 +++++++++++
+ 2 files changed, 27 insertions(+), 21 deletions(-)
 
->
->>> rcar {
->>> 	compatible ...
->>> 	reg...
->>>
->>> 	/* switch OVC for all three ports */
->>> 	renesas,rcar-ovc-port-config = <2 "high",
->>> 					1  "low",
->>> 					0  "high" >;
->>      Hm, 'dtc' allows mixed type properties now?
->>      Also, we need to describe the multiplexing of the OVCn pins (5V
->> or 3.3V input),
->> not only the active level.
-> fair enough, it can now be pre-processed so you can have defines, then
-> you can:
->
-> #define PORT_HIGH	1
-> #define PORT_LOW	0
->
-> #define MUX_ABC		foo
-> #define MUX_XYZ		bar
-> #define MUX_MNO		baz
->
-> ...-port-config = <2 PORT_HIGH MUX_ABC,
-> 		   1 PORT_LOW MUX_XYZ,
-> 		   0 PORT_HIGH MUX_MNO>;
-
-    Ah, didn't know about that (although have seen some named entities
-like these in the device tree excerpts. OK, it's getting clearer now...
-
->>> Would this work for you ?
->>      I should try... All this surely looks more complex than we would
->> hope...
-> passing register contents will hurt you in the future if some other
-> device comes up with more bits
-
-    It's already there: R8A7779 vs R8A7778. An it will hurt anyway, as 
-I'll have to
-add the new fields for the new bits...
-
-> or a slightly different layout
-
-    Don't think that'll be the case. Though you never know...
-
-> and stuff like that.
->
-
-WBR, Sergei
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 97e6ea3..ced9a95 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -268,7 +268,7 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
+ 	int ret;
+ 
+ 	switch (pinmux_type) {
+-
++	case PINMUX_TYPE_GPIO:
+ 	case PINMUX_TYPE_FUNCTION:
+ 		range = NULL;
+ 		break;
+@@ -297,6 +297,8 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
+ 	enum_id = 0;
+ 	field = 0;
+ 	value = 0;
++
++	/* Iterate over all the configuration fields we need to update. */
+ 	while (1) {
+ 		pos = sh_pfc_mark_to_enum(pfc, mark, pos, &enum_id);
+ 		if (pos < 0)
+@@ -305,18 +307,20 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
+ 		if (!enum_id)
+ 			break;
+ 
+-		/* first check if this is a function enum */
++		/* Check if the configuration field selects a function. If it
++		 * doesn't, skip the field if it's not applicable to the
++		 * requested pinmux type.
++		 */
+ 		in_range = sh_pfc_enum_in_range(enum_id, &pfc->info->function);
+ 		if (!in_range) {
+-			/* not a function enum */
+-			if (range) {
+-				/*
+-				 * other range exists, so this pin is
+-				 * a regular GPIO pin that now is being
+-				 * bound to a specific direction.
+-				 *
+-				 * for this case we only allow function enums
+-				 * and the enums that match the other range.
++			if (pinmux_type = PINMUX_TYPE_FUNCTION) {
++				/* Functions are allowed to modify all
++				 * fields.
++				 */
++				in_range = 1;
++			} else if (pinmux_type != PINMUX_TYPE_GPIO) {
++				/* Input/output types can only modify fields
++				 * that correspond to their respective ranges.
+ 				 */
+ 				in_range = sh_pfc_enum_in_range(enum_id, range);
+ 
+@@ -327,17 +331,8 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
+ 				 */
+ 				if (in_range && enum_id = range->force)
+ 					continue;
+-			} else {
+-				/*
+-				 * no other range exists, so this pin
+-				 * must then be of the function type.
+-				 *
+-				 * allow function type pins to select
+-				 * any combination of function/in/out
+-				 * in their MARK lists.
+-				 */
+-				in_range = 1;
+ 			}
++			/* GPIOs are only allowed to modify function fields. */
+ 		}
+ 
+ 		if (!in_range)
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index aef268b..3492ec9 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -182,6 +182,17 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 		goto done;
+ 	}
+ 
++	if (!pfc->gpio) {
++		/* If GPIOs are handled externally the pin mux type need to be
++		 * set to GPIO here.
++		 */
++		const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
++
++		ret = sh_pfc_config_mux(pfc, pin->enum_id, PINMUX_TYPE_GPIO);
++		if (ret < 0)
++			goto done;
++	}
++
+ 	cfg->type = PINMUX_TYPE_GPIO;
+ 
+ 	ret = 0;
+-- 
+1.7.10.4
 
