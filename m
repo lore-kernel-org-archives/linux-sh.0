@@ -1,73 +1,118 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 04 Apr 2013 10:15:36 +0000
-Subject: Re: [PATCH 02/04] ARM: shmobile: r8a7779 pinmux platform device cleanup
-Message-Id: <3291720.vtipCVFTtu@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:11:21 +0000
+Subject: [PATCH 09/11] ARM: shmobile: mackerel: switch SDHI and MMCIF interfaces to slot-gpio
+Message-Id: <1364879483-11144-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130403063246.2500.65318.sendpatchset@w520>
- <20130403063308.2500.76867.sendpatchset@w520>
-In-Reply-To: <20130403063308.2500.76867.sendpatchset@w520>
+References: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Thanks for the patch.
+Both SDHI and MMCIF drivers can use the standard slot-gpio card-detection
+functions. Switch mackerel to using them instead of platform callbacks.
 
-On Wednesday 03 April 2013 15:33:08 Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Use DEFINE_RES_MEM() to save a couple of lines of code.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/setup-r8a7779.c |   19 ++++---------------
->  1 file changed, 4 insertions(+), 15 deletions(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
-> +++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2013-04-03
-> 15:30:16.000000000 +0900 @@ -63,12 +63,8 @@ void __init
-> r8a7779_map_io(void)
->  	iotable_init(r8a7779_io_desc, ARRAY_SIZE(r8a7779_io_desc));
->  }
-> 
-> -static struct resource r8a7779_pfc_resources[] = {
-> -	[0] = {
-> -		.start	= 0xfffc0000,
-> -		.end	= 0xfffc023b,
-> -		.flags	= IORESOURCE_MEM,
-> -	},
-> +static const struct resource r8a7779_pfc_resources[] = {
-> +	DEFINE_RES_MEM(0xfffc0000, 0x023c),
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |   39 ++++++++++---------------------
+ 1 file changed, 12 insertions(+), 27 deletions(-)
 
-This generates a compilation warning, as the resources pointer in struct 
-platform_device isn't const.
-
->  };
-> 
->  static struct platform_device r8a7779_pfc_device = {
-> @@ -80,15 +76,8 @@ static struct platform_device r8a7779_pf
-> 
->  #define R8A7779_GPIO(idx, npins) \
->  static struct resource r8a7779_gpio##idx##_resources[] = {		\
-> -	[0] = {								\
-> -		.start	= 0xffc40000 + 0x1000 * (idx),			\
-> -		.end	= 0xffc4002b + 0x1000 * (idx),			\
-> -		.flags	= IORESOURCE_MEM,				\
-> -	},								\
-> -	[1] = {								\
-> -		.start	= gic_iid(0xad + (idx)),			\
-> -		.flags	= IORESOURCE_IRQ,				\
-> -	}								\
-> +	DEFINE_RES_MEM(0xffc40000 + (0x1000 * (idx)), 0x002c),		\
-> +	DEFINE_RES_IRQ(gic_iid(0xad + (idx))),				\
->  };									\
->  									\
->  static struct gpio_rcar_config r8a7779_gpio##idx##_platform_data = {	\
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 734565d..a47a1116 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -963,15 +963,6 @@ static struct platform_device nand_flash_device = {
+ 	},
+ };
+ 
+-/*
+- * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO 41).
+- */
+-static int slot_cn7_get_cd(struct platform_device *pdev)
+-{
+-	return !gpio_get_value(41);
+-}
+-
+ /* SDHI0 */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+@@ -1011,13 +1002,15 @@ static struct platform_device sdhi0_device = {
+ 
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SDHI1 */
++
++/* GPIO 41 can trigger IRQ8, but it is used by USBHS1, we have to poll */
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.get_cd		= slot_cn7_get_cd,
++	.cd_gpio	= 41,
+ };
+ 
+ static struct resource sdhi1_resources[] = {
+@@ -1052,23 +1045,19 @@ static struct platform_device sdhi1_device = {
+ };
+ #endif
+ 
++/* SDHI2 */
++
+ /*
+  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
+- * connected to GPIO SCIFB_SCK of SH7372 (162).
++ * connected to GPIO SCIFB_SCK of SH7372 (GPIO 162).
+  */
+-static int slot_cn23_get_cd(struct platform_device *pdev)
+-{
+-	return !gpio_get_value(162);
+-}
+-
+-/* SDHI2 */
+ static struct sh_mobile_sdhi_info sdhi2_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.get_cd		= slot_cn23_get_cd,
++	.cd_gpio	= 162,
+ };
+ 
+ static struct resource sdhi2_resources[] = {
+@@ -1127,7 +1116,9 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.get_cd		= slot_cn7_get_cd,
++	.use_cd_gpio	= true,
++	/* card detect pin for SD/MMC slot (CN7) */
++	.cd_gpio	= 41,
+ 	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
+ 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
+ };
+@@ -1475,12 +1466,6 @@ static void __init mackerel_init(void)
+ 	/* SDHI0 PORT172 card-detect IRQ26 */
+ 	gpio_request(GPIO_FN_IRQ26_172, NULL);
+ 
+-	/* card detect pin for MMC slot (CN7) */
+-	gpio_request_one(41, GPIOF_IN, NULL);
+-
+-	/* card detect pin for microSD slot (CN23) */
+-	gpio_request_one(162, GPIOF_IN, NULL);
+-
+ 	/* FLCTL */
+ 	gpio_request(GPIO_FN_D0_NAF0, NULL);
+ 	gpio_request(GPIO_FN_D1_NAF1, NULL);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
