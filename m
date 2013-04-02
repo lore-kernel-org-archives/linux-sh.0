@@ -1,45 +1,72 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 16 Apr 2013 22:36:49 +0000
-Subject: Re: [PATCH v3 1/4] rcar-phy: add R8A7778 support
-Message-Id: <516DD281.2060402@cogentembedded.com>
+From: Stephane Grosjean <s.grosjean@peak-system.com>
+Date: Tue, 02 Apr 2013 07:47:40 +0000
+Subject: Re: drivers/net/can/sja1000/peak_pcmcia.c:626:2: error: implicit declaration of function 'ioport_unm
+Message-Id: <515A8D1C.5010308@peak-system.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304170132.43232.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304170132.43232.sergei.shtylyov@cogentembedded.com>
+References: <20130327083110.GB11489@localhost>
+In-Reply-To: <20130327083110.GB11489@localhost>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On 04/17/2013 01:32 AM, I wrote:
+Hi Marc,
 
-> The driver currently only supports R8A7779 SoC. Compared to it, R8A7778 USB-PHY
-> has extra register range containing two high-speed signal quality characteristic
-> control registers which should be set up  during USB-PHY  startup depending on
-> whether a ferrite bead is in use or not.  So, we now handle an optional second
-> memory range in the driver's probe method, add the 'ferrite_bead' field to the
-> driver's platform data, and add an extra (optional) step to the USB-PHY startup
-> routine which sets up the extended registers.
+Le 27/03/2013 11:22, Marc Kleine-Budde a =E9crit :
+> On 03/27/2013 10:41 AM, Paul Mundt wrote:
+>> On Wed, Mar 27, 2013 at 04:31:10PM +0800, Fengguang Wu wrote:
+>>> Hi Stephane,
+>>>
+>>> FYI, kernel build failed on
+>>>
+>>> tree:   git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux ma=
+ster
+>>> head:   de55eb1d60d2ed0f1ba5e13226d91b3bfbe1c108
+>>> commit: 2b61972b74219d21ef1e91178349bdb840357688 can: sja1000: add supp=
+ort for PEAK-System PCMCIA card
+>>> date:   1 year, 1 month ago
+>>> config: make ARCH=3Dsh allyesconfig
+>>>
+>>> All error/warnings:
+>>>
+>>>     In file included from drivers/net/can/sja1000/peak_pcmcia.c:28:0:
+>>>     drivers/net/can/sja1000/sja1000.h:59:0: warning: "REG_SR" redefined=
+ [enabled by default]
+>>>     arch/sh/include/asm/ptrace_32.h:25:0: note: this is the location of=
+ the previous definition
+>>>     drivers/net/can/sja1000/peak_pcmcia.c: In function 'pcan_free':
+>>>>> drivers/net/can/sja1000/peak_pcmcia.c:626:2: error: implicit declarat=
+ion of function 'ioport_unmap' [-Werror=3Dimplicit-function-declaration]
+>>>     drivers/net/can/sja1000/peak_pcmcia.c: In function 'pcan_probe':
+>>>>> drivers/net/can/sja1000/peak_pcmcia.c:672:2: error: implicit declarat=
+ion of function 'ioport_map' [-Werror=3Dimplicit-function-declaration]
+>>>     drivers/net/can/sja1000/peak_pcmcia.c:672:20: warning: assignment m=
+akes pointer from integer without a cast [enabled by default]
+>>>     cc1: some warnings being treated as errors
+>>>
+>> This would no doubt be due to the defconfig selecting NO_IOPORT. This
+>> driver probably needs a HAS_IOPORT depends.
+
+> Stephane, can we use pcmcia_map_mem_page() instead of ioport_map() like
+> in the ems_pcmcia driver?
 >
-> Also mark in the driver's Kconfig section  that R8A7778 is  now supported and
-> generally clarify that section, uppercasing the word "phy", while at it...
+> http://lxr.free-electrons.com/source/drivers/net/can/sja1000/ems_pcmcia.c=
+#L286
+
+
+Ok, I'll have a look to that asap.
+Meanwhile, adding the HAS_IOPORT depends in=20
+drivers/net/can/sja1000/Kconfig does the trick. What do you think about=20
+that?
+
+BR,
+
+St=E9phane
+> Marc
 >
-> The patch has been tested on the Marzen and BOCK-W boards.
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Acked-by: Felipe Balbi <balbi@ti.com>
-[...]
-> @@ -109,10 +126,11 @@ static int rcar_usb_phy_init(struct usb_
->   			goto phy_init_end;
->   		}
->   
-> -		/* (4) USB-PHY reset clear */
-> +		/* (5) USB-PHY reset clear */
->   		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
->   
->   		/* Board specific port settings */
-> +		printk("sizeof(*pdata) = %d\n", sizeof(*pdata));
 
-    Shoot! I thought I'd killed that... :-(
-
-WBR, Sergei
-
+--
+PEAK-System Technik GmbH, Otto-Roehm-Strasse 69, D-64293 Darmstadt=20
+Geschaeftsleitung: A.Gach/U.Wilhelm,St.Nr.:007/241/13586 FA Darmstadt=20
+HRB-9183 Darmstadt, Ust.IdNr.:DE 202220078, WEE-Reg.-Nr.: DE39305391=20
+Tel.+49 (0)6151-817320 / Fax:+49 (0)6151-817329, info@peak-system.com
