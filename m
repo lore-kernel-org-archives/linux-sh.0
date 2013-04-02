@@ -1,174 +1,104 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:04 +0000
-Subject: [PATCH 01/35] sh-pfc: sh7372: Add BSC pin groups and functions
-Message-Id: <1366671758-8954-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 02 Apr 2013 04:20:02 +0000
+Subject: [PATCH 3/5 v3] ARM: shmobile: bockw: add SMSC ethernet support
+Message-Id: <87obdx5ztd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+ <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
+ <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds SMSC ethernet support on Bock-W
+
+Bock-W SMSC needs FPGA settings which enables interrupt.
+This patch does it on bockw_init() function.
+As notes for future, this FPGA settings should be updated,
+since this FPGA is using cascaded interrupt.
+Current code is assuming that this FPGA interrupt user is only SMSC.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 124 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 124 insertions(+)
+v2 -> v3
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index df0ae21..9545b3c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -933,6 +933,102 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 	GPIO_PORT_ALL(),
- };
+ - C code only
+
+ arch/arm/mach-shmobile/Kconfig       |    1 +
+ arch/arm/mach-shmobile/board-bockw.c |   38 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 39 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 9125e14..b2219bd 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -119,6 +119,7 @@ config MACH_BOCKW
+ 	bool "BOCK-W platform"
+ 	depends on ARCH_R8A7778
+ 	select ARCH_REQUIRE_GPIOLIB
++	select RENESAS_INTC_IRQPIN
+ 	select USE_OF
  
-+/* - BSC -------------------------------------------------------------------- */
-+static const unsigned int bsc_data8_pins[] = {
-+	/* D[0:7] */
-+	46, 47, 48, 49, 50, 51, 52, 53,
-+};
-+static const unsigned int bsc_data8_mux[] = {
-+	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
-+	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
-+};
-+static const unsigned int bsc_data16_pins[] = {
-+	/* D[0:15] */
-+	46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
-+};
-+static const unsigned int bsc_data16_mux[] = {
-+	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
-+	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
-+	D8_NAF8_MARK, D9_NAF9_MARK, D10_NAF10_MARK, D11_NAF11_MARK,
-+	D12_NAF12_MARK, D13_NAF13_MARK, D14_NAF14_MARK, D15_NAF15_MARK,
-+};
-+static const unsigned int bsc_cs0_pins[] = {
-+	/* CS */
-+	62,
-+};
-+static const unsigned int bsc_cs0_mux[] = {
-+	CS0_MARK,
-+};
-+static const unsigned int bsc_cs2_pins[] = {
-+	/* CS */
-+	63,
-+};
-+static const unsigned int bsc_cs2_mux[] = {
-+	CS2_MARK,
-+};
-+static const unsigned int bsc_cs4_pins[] = {
-+	/* CS */
-+	64,
-+};
-+static const unsigned int bsc_cs4_mux[] = {
-+	CS4_MARK,
-+};
-+static const unsigned int bsc_cs5a_pins[] = {
-+	/* CS */
-+	65,
-+};
-+static const unsigned int bsc_cs5a_mux[] = {
-+	CS5A_MARK,
-+};
-+static const unsigned int bsc_cs5b_pins[] = {
-+	/* CS */
-+	66,
-+};
-+static const unsigned int bsc_cs5b_mux[] = {
-+	CS5B_MARK,
-+};
-+static const unsigned int bsc_cs6a_pins[] = {
-+	/* CS */
-+	67,
-+};
-+static const unsigned int bsc_cs6a_mux[] = {
-+	CS6A_MARK,
-+};
-+static const unsigned int bsc_rd_we8_pins[] = {
-+	/* RD, WE[0] */
-+	69, 70,
-+};
-+static const unsigned int bsc_rd_we8_mux[] = {
-+	RD_FSC_MARK, WE0_FWE_MARK,
-+};
-+static const unsigned int bsc_rd_we16_pins[] = {
-+	/* RD, WE[0:1] */
-+	69, 70, 71,
-+};
-+static const unsigned int bsc_rd_we16_mux[] = {
-+	RD_FSC_MARK, WE0_FWE_MARK, WE1_MARK,
-+};
-+static const unsigned int bsc_bs_pins[] = {
-+	/* BS */
-+	19,
-+};
-+static const unsigned int bsc_bs_mux[] = {
-+	BS_MARK,
-+};
-+static const unsigned int bsc_rdwr_pins[] = {
-+	/* RDWR */
-+	75,
-+};
-+static const unsigned int bsc_rdwr_mux[] = {
-+	RDWR_MARK,
-+};
-+static const unsigned int bsc_wait_pins[] = {
-+	/* WAIT */
-+	74,
-+};
-+static const unsigned int bsc_wait_mux[] = {
-+	WAIT_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_0_pins[] = {
- 	/* D[0] */
-@@ -1075,6 +1171,18 @@ static const unsigned int sdhi2_ctrl_mux[] = {
- };
+ config MACH_MARZEN
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 56ab56e..38e5e50 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -19,14 +19,52 @@
+  */
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(bsc_data8),
-+	SH_PFC_PIN_GROUP(bsc_data16),
-+	SH_PFC_PIN_GROUP(bsc_cs0),
-+	SH_PFC_PIN_GROUP(bsc_cs2),
-+	SH_PFC_PIN_GROUP(bsc_cs4),
-+	SH_PFC_PIN_GROUP(bsc_cs5a),
-+	SH_PFC_PIN_GROUP(bsc_cs5b),
-+	SH_PFC_PIN_GROUP(bsc_cs6a),
-+	SH_PFC_PIN_GROUP(bsc_rd_we8),
-+	SH_PFC_PIN_GROUP(bsc_rd_we16),
-+	SH_PFC_PIN_GROUP(bsc_bs),
-+	SH_PFC_PIN_GROUP(bsc_rdwr),
- 	SH_PFC_PIN_GROUP(mmc0_data1_0),
- 	SH_PFC_PIN_GROUP(mmc0_data4_0),
- 	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1096,6 +1204,21 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
- };
+ #include <linux/platform_device.h>
++#include <linux/smsc911x.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+ #include <asm/mach/arch.h>
  
-+static const char * const bsc_groups[] = {
-+	"bsc_data8",
-+	"bsc_data16",
-+	"bsc_cs0",
-+	"bsc_cs2",
-+	"bsc_cs4",
-+	"bsc_cs5a",
-+	"bsc_cs5b",
-+	"bsc_cs6a",
-+	"bsc_rd_we8",
-+	"bsc_rd_we16",
-+	"bsc_bs",
-+	"bsc_rdwr",
++static struct smsc911x_platform_config smsc911x_data = {
++	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
++	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
++	.flags		= SMSC911X_USE_32BIT,
++	.phy_interface	= PHY_INTERFACE_MODE_MII,
 +};
 +
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1_0",
- 	"mmc0_data4_0",
-@@ -1128,6 +1251,7 @@ static const char * const sdhi2_groups[] = {
- };
++static struct resource smsc911x_resources[] = {
++	DEFINE_RES_MEM(0x18300000, 0x1000),
++	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
++};
++
++#define IRQ0MR	0x30
+ static void __init bockw_init(void)
+ {
++	void __iomem *fpga;
++
+ 	r8a7778_clock_init();
++	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
++
++	fpga = ioremap_nocache(0x18200000, SZ_1M);
++	if (fpga) {
++		/*
++		 * CAUTION
++		 *
++		 * IRQ0/1 is cascaded interrupt from FPGA.
++		 * it should be cared in the future
++		 * Now, it is assuming IRQ0 was used only from SMSC.
++		 */
++		u16 val = ioread16(fpga + IRQ0MR);
++		val &= ~(1 << 4); /* enable SMSC911x */
++		iowrite16(val, fpga + IRQ0MR);
++		iounmap(fpga);
++
++		platform_device_register_resndata(
++			&platform_bus, "smsc911x", -1,
++			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
++			&smsc911x_data, sizeof(smsc911x_data));
++	}
+ }
  
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
+ static const char *bockw_boards_compat_dt[] __initdata = {
 -- 
-1.8.1.5
+1.7.9.5
 
