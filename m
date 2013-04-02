@@ -1,45 +1,104 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Apr 2013 17:54:58 +0000
-Subject: Re: [PATCH v2 0/9] Reorganize R8A7779/Marzen USB code
-Message-Id: <517184F2.8070009@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:12 +0000
+Subject: [PATCH 16/30] ARM: shmobile: sh7372: use fixed ratio clock
+Message-Id: <1364879246-9470-17-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304090110.50154.sergei.shtylyov@cogentembedded.com>
- <87zjx89rfb.wl%kuninori.morimoto.gx@renesas.com>
- <51640D21.3090800@cogentembedded.com>
- <87txnfjhmu.wl%kuninori.morimoto.gx@renesas.com>
- <51689399.5090203@cogentembedded.com> <51689488.7040109@cogentembedded.com>
- <87mwsydklg.wl%kuninori.morimoto.gx@renesas.com>
- <87a9ov74ao.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a9ov74ao.wl%kuninori.morimoto.gx@renesas.com>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 04/19/2013 04:27 AM, Kuninori Morimoto wrote:
+Current clock-sh7372 is using own implement
+for each divX clocks.
+This patch switches to use fixed ratio clock,
+and was tesed on mackerel board.
 
->>>>>>       I'm going to post R8A7778/BOCK-W series following this one, and
->>>>>> all the
->>>>>> patches in 1st series should additionally be tested on BOCK-W. Well, I
->>>>>> probably can hold up posting version 3 until I have the second
->>>>>> series verified.
->>>>>>       BTW, about R8A7778/BOCK-W, R-Car M1A user manual talks about a
->>>>>> ferrite
->>>>>> bead in 49.4.1 (3) Setting USB-PHY. Do you know for sure if it's
->>>>>> used or not
->>>>>> on BOCK-W board? PHY initialization seems to work with either
->>>>>> settings...
->>>>> I can ask it to HW team if you want me.
->>>      Yes, ask them please.
->> Now, I'm asking it to HW team
->> Please wait
-> According to HW team,
-> this setting is for some kind of USB compliance test (?).
-> So, in general, we can use "No ferrite bead".
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-sh7372.c |   44 ++++++---------------------------
+ 1 file changed, 7 insertions(+), 37 deletions(-)
 
-    Thanks, I'll change it.
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 6c23e3f..7e10593 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -21,6 +21,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ 
+ /* SH7372 registers */
+@@ -83,39 +84,12 @@ struct clk sh7372_extal2_clk = {
+ 	.rate		= 48000000,
+ };
+ 
+-/* A fixed divide-by-2 block */
+-static unsigned long div2_recalc(struct clk *clk)
+-{
+-	return clk->parent->rate / 2;
+-}
+-
+-static struct sh_clk_ops div2_clk_ops = {
+-	.recalc		= div2_recalc,
+-};
++SH_CLK_RATIO(div2, 1, 2);
+ 
+-/* Divide dv_clki by two */
+-struct clk sh7372_dv_clki_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &sh7372_dv_clki_clk,
+-};
+-
+-/* Divide extal1 by two */
+-static struct clk extal1_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &sh7372_extal1_clk,
+-};
+-
+-/* Divide extal2 by two */
+-static struct clk extal2_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &sh7372_extal2_clk,
+-};
+-
+-/* Divide extal2 by four */
+-static struct clk extal2_div4_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &extal2_div2_clk,
+-};
++SH_FIXED_RATIO_CLKg(sh7372_dv_clki_div2_clk,	sh7372_dv_clki_clk,	div2);
++SH_FIXED_RATIO_CLK(extal1_div2_clk,		sh7372_extal1_clk,	div2);
++SH_FIXED_RATIO_CLK(extal2_div2_clk,		sh7372_extal2_clk,	div2);
++SH_FIXED_RATIO_CLK(extal2_div4_clk,		extal2_div2_clk,	div2);
+ 
+ /* PLLC0 and PLLC1 */
+ static unsigned long pllc01_recalc(struct clk *clk)
+@@ -147,10 +121,7 @@ static struct clk pllc1_clk = {
+ };
+ 
+ /* Divide PLLC1 by two */
+-static struct clk pllc1_div2_clk = {
+-	.ops		= &div2_clk_ops,
+-	.parent		= &pllc1_clk,
+-};
++SH_FIXED_RATIO_CLK(pllc1_div2_clk,	pllc1_clk,	div2);
+ 
+ /* PLLC2 */
+ 
+@@ -650,5 +621,4 @@ void __init sh7372_clock_init(void)
+ 		shmobile_clk_init();
+ 	else
+ 		panic("failed to setup sh7372 clocks\n");
+-
+ }
+-- 
+1.7.10.4
 
