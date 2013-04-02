@@ -1,57 +1,47 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:08:19 +0000
-Subject: [PATCH 04/11] ARM: shmobile: APE6EVM PFC support
-Message-Id: <1364954906-16014-5-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:11:20 +0000
+Subject: [PATCH 08/11] ARM: shmobile: mackerel: remove OCR masks, where regulators are used
+Message-Id: <1364879483-11144-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
+References: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Start using the r8a73a4 PFC on the APE6EVM board
-and configure the SCIFA0 console signals in the
-PFC via PINCTRL.
+Both SDHI and MMCIF drivers ignore their OCR platform values, when
+available voltages can be retrieved from regulators.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c |   10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/mach-shmobile/board-mackerel.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 9234d4f..33a8a62 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -21,15 +21,25 @@
- #include <linux/interrupt.h>
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <mach/common.h>
- #include <mach/r8a73a4.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index c4f80d4..734565d 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1014,7 +1014,6 @@ static struct platform_device sdhi0_device = {
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_ocr_mask	= MMC_VDD_165_195,
+ 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+@@ -1125,7 +1124,6 @@ static struct resource sh_mmcif_resources[] = {
  
-+static const struct pinctrl_map ape6evm_pinctrl_map[] = {
-+	/* SCIFA0 console */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
-+				  "scifa0_data", "scifa0"),
-+};
-+
- static void __init ape6evm_add_standard_devices(void)
- {
- 	r8a73a4_clock_init();
-+	pinctrl_register_mappings(ape6evm_pinctrl_map,
-+				  ARRAY_SIZE(ape6evm_pinctrl_map));
-+	r8a73a4_pinmux_init();
- 	r8a73a4_add_standard_devices();
- }
- 
+ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.sup_pclk	= 0,
+-	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NEEDS_POLL,
 -- 
 1.7.10.4
 
