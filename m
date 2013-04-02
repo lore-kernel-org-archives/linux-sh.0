@@ -1,68 +1,73 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 05 Apr 2013 04:24:27 +0000
-Subject: [PATCH 5/5 v2] ARM: shmobile: ape6evm: MP clock parent become EXTAL2
-Message-Id: <87k3ohk3k8.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 02 Apr 2013 04:19:17 +0000
+Subject: [PATCH 1/5 v3] ARM: shmobile: r8a7778: remove pointless PLATFORM_INFO()
+Message-Id: <87r4it5zum.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+ <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
+ <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The orignal commit 3263e09d287fbaa8a9424b5e69396599a3bbd518
-(ARM: shmobile: Initial r8a73a4 SoC support V3)
-put MP clock parent as EXTAL2, but its code was removed
-on DIV6 clock support commit.
-This patch makes it consistent.
+remove pointless PLATFORM_INFO() macro from setup-r8a7778,
+and, used original platform_device_register_xxx()
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
+v2 -> v3
 
- - it used IS_ERR() for checking
+ - no change
 
->> Simon
+ arch/arm/mach-shmobile/setup-r8a7778.c |   26 +++++++++-----------------
+ 1 file changed, 9 insertions(+), 17 deletions(-)
 
-I guess we don't need this patch,
-because MP default parent is EXTAL2...
-I'm not sure why Magnus set it in original patch
-
- arch/arm/mach-shmobile/board-ape6evm.c |   15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 55b8c9f..5eb0caa 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -26,6 +26,7 @@
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-+#include <linux/sh_clk.h>
- #include <linux/smsc911x.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -65,7 +66,21 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 01c62be..57d6b0e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -78,21 +78,13 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 	.clocksource_rating	= 200,
+ };
  
- static void __init ape6evm_add_standard_devices(void)
+-#define PLATFORM_INFO(n, i)					\
+-{								\
+-	.parent		= &platform_bus,			\
+-	.name		= #n,					\
+-	.id		= i,					\
+-	.res		= n ## i ## _resources,			\
+-	.num_res	= ARRAY_SIZE(n ## i ##_resources),	\
+-	.data		= &n ## i ##_platform_data,		\
+-	.size_data	= sizeof(n ## i ## _platform_data),	\
+-}
+-
+-struct platform_device_info platform_devinfo[] = {
+-	PLATFORM_INFO(sh_tmu, 0),
+-	PLATFORM_INFO(sh_tmu, 1),
+-};
++#define r8a7778_register_tmu(idx)			\
++	platform_device_register_resndata(		\
++		&platform_bus, "sh_tmu", idx,		\
++		sh_tmu##idx##_resources,		\
++		ARRAY_SIZE(sh_tmu##idx##_resources),	\
++		&sh_tmu##idx##_platform_data,		\
++		sizeof(sh_tmu##idx##_platform_data))
+ 
+ void __init r8a7778_add_standard_devices(void)
  {
-+
-+	struct clk *parent;
-+	struct clk *mp;
-+
- 	r8a73a4_clock_init();
-+
-+	/* MP clock parent = extal2 */
-+	parent      = clk_get(NULL, "extal2");
-+	mp          = clk_get(NULL, "mp");
-+	BUG_ON(IS_ERR(parent) || IS_ERR(mp));
-+
-+	clk_set_parent(mp, parent);
-+	clk_put(parent);
-+	clk_put(mp);
-+
- 	pinctrl_register_mappings(ape6evm_pinctrl_map,
- 				  ARRAY_SIZE(ape6evm_pinctrl_map));
- 	r8a73a4_pinmux_init();
+@@ -114,8 +106,8 @@ void __init r8a7778_add_standard_devices(void)
+ 					      &scif_platform_data[i],
+ 					      sizeof(struct plat_sci_port));
+ 
+-	for (i = 0; i < ARRAY_SIZE(platform_devinfo); i++)
+-		platform_device_register_full(&platform_devinfo[i]);
++	r8a7778_register_tmu(0);
++	r8a7778_register_tmu(1);
+ }
+ 
+ #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
 -- 
 1.7.9.5
 
