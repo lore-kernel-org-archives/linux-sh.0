@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:17 +0000
-Subject: [PATCH 21/30] ARM: shmobile: sh7372: move global functions to sh7372.h
-Message-Id: <1364879246-9470-22-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:10 +0000
+Subject: [PATCH 14/30] ARM: shmobile: sh7372: remove DIV4_ZT* clocks
+Message-Id: <1364879246-9470-15-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,66 +12,47 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-There is no reason each CPU's own function has to exist in common.h.
-sh7372_xxx() go to sh7372.h
+DIV4_ZT* clocks are for debugging and trace bus clock.
+It is not necessary to control it from Linux/Software.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |   15 ---------------
- arch/arm/mach-shmobile/include/mach/sh7372.h |   12 ++++++++++++
- 2 files changed, 12 insertions(+), 15 deletions(-)
+ arch/arm/mach-shmobile/clock-sh7372.c |    6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 03f73de..d01a551 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -19,21 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
- 			      struct cpuidle_driver *drv, int index);
- extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 45d21fe..6c23e3f 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -342,7 +342,7 @@ static struct clk_div4_table div4_table = {
+ };
  
--extern void sh7372_init_irq(void);
--extern void sh7372_map_io(void);
--extern void sh7372_earlytimer_init(void);
--extern void sh7372_add_early_devices(void);
--extern void sh7372_add_standard_devices(void);
--extern void sh7372_add_early_devices_dt(void);
--extern void sh7372_add_standard_devices_dt(void);
--extern void sh7372_clock_init(void);
--extern void sh7372_pinmux_init(void);
--extern void sh7372_pm_init(void);
--extern void sh7372_resume_core_standby_sysc(void);
--extern int sh7372_do_idle_sysc(unsigned long sleep_mode);
--extern struct clk sh7372_extal1_clk;
--extern struct clk sh7372_extal2_clk;
--
- extern void sh73a0_init_delay(void);
- extern void sh73a0_init_irq(void);
- extern void sh73a0_init_irq_dt(void);
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index b582fac..f0ea60d 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -478,6 +478,18 @@ extern struct clk sh7372_dv_clki_clk;
- extern struct clk sh7372_dv_clki_div2_clk;
- extern struct clk sh7372_pllc2_clk;
+ enum { DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_CSIR,
+-       DIV4_ZTR, DIV4_ZT, DIV4_ZX, DIV4_HP,
++       DIV4_ZX, DIV4_HP,
+        DIV4_ISPB, DIV4_S, DIV4_ZB, DIV4_ZB3, DIV4_CP,
+        DIV4_DDRP, DIV4_NR };
  
-+extern void sh7372_init_irq(void);
-+extern void sh7372_map_io(void);
-+extern void sh7372_earlytimer_init(void);
-+extern void sh7372_add_early_devices(void);
-+extern void sh7372_add_standard_devices(void);
-+extern void sh7372_add_early_devices_dt(void);
-+extern void sh7372_add_standard_devices_dt(void);
-+extern void sh7372_clock_init(void);
-+extern void sh7372_pinmux_init(void);
-+extern void sh7372_pm_init(void);
-+extern void sh7372_resume_core_standby_sysc(void);
-+extern int  sh7372_do_idle_sysc(unsigned long sleep_mode);
- extern void sh7372_intcs_suspend(void);
- extern void sh7372_intcs_resume(void);
- extern void sh7372_intca_suspend(void);
+@@ -355,8 +355,6 @@ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_B] = DIV4(FRQCRA, 8, 0x6fff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_M1] = DIV4(FRQCRA, 4, 0x6fff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_CSIR] = DIV4(FRQCRA, 0, 0x6fff, 0),
+-	[DIV4_ZTR] = DIV4(FRQCRB, 20, 0x6fff, 0),
+-	[DIV4_ZT] = DIV4(FRQCRB, 16, 0x6fff, 0),
+ 	[DIV4_ZX] = DIV4(FRQCRB, 12, 0x6fff, 0),
+ 	[DIV4_HP] = DIV4(FRQCRB, 4, 0x6fff, 0),
+ 	[DIV4_ISPB] = DIV4(FRQCRC, 20, 0x6fff, 0),
+@@ -516,8 +514,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("b_clk", &div4_clks[DIV4_B]),
+ 	CLKDEV_CON_ID("m1_clk", &div4_clks[DIV4_M1]),
+ 	CLKDEV_CON_ID("csir_clk", &div4_clks[DIV4_CSIR]),
+-	CLKDEV_CON_ID("ztr_clk", &div4_clks[DIV4_ZTR]),
+-	CLKDEV_CON_ID("zt_clk", &div4_clks[DIV4_ZT]),
+ 	CLKDEV_CON_ID("zx_clk", &div4_clks[DIV4_ZX]),
+ 	CLKDEV_CON_ID("hp_clk", &div4_clks[DIV4_HP]),
+ 	CLKDEV_CON_ID("ispb_clk", &div4_clks[DIV4_ISPB]),
 -- 
 1.7.10.4
 
