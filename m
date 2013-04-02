@@ -1,82 +1,77 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 15:17:47 +0000
-Subject: [PATCH v6 2/9] ehci-platform: add pre_setup() method to platform data
-Message-Id: <201304231917.48349.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:07:20 +0000
+Subject: [PATCH 24/30] ARM: shmobile: r8a7779: move global functions to r8a7779.h
+Message-Id: <1364879246-9470-25-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
+References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Sometimes there is a need  to initialize some non-standard registers mapped to
-the EHCI region before accessing the standard EHCI registers.  Add pre_setup()
-method with 'struct usb_hcd *' parameter to be called just before ehci_setup()
-to the 'ehci-platform'  driver's platform data for this purpose...
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-While at it, add the missing incomplete declaration of 'struct platform_device'
-to <linux/usb/ehci_pdriver.h>...
+There is no reason each CPU's own function has to exist in common.h.
+r8a7779_xxx() go to r8a7779.h
 
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Suggested-by: Alan Stern <stern@rowland.harvard.edu>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Alan Stern <stern@rowland.harvard.edu>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since version 3:
-- added ACK from Alan Stern.
+ arch/arm/mach-shmobile/include/mach/common.h  |   14 --------------
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |   13 +++++++++++++
+ 2 files changed, 13 insertions(+), 14 deletions(-)
 
-Changes since version 2:
-- replaced #include with incomplete declarations of 'struct platform_device' and
-  'struct usb_hcd';
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- changed init() method to pre_setup() with different parameters and call site.
-
- drivers/usb/host/ehci-platform.c |    6 ++++++
- include/linux/usb/ehci_pdriver.h |    4 ++++
- 2 files changed, 10 insertions(+)
-
-Index: renesas/drivers/usb/host/ehci-platform.c
-=================================--- renesas.orig/drivers/usb/host/ehci-platform.c
-+++ renesas/drivers/usb/host/ehci-platform.c
-@@ -46,6 +46,12 @@ static int ehci_platform_reset(struct us
- 	ehci->big_endian_desc = pdata->big_endian_desc;
- 	ehci->big_endian_mmio = pdata->big_endian_mmio;
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 4d5410d..e002cfd 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -19,20 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
+ 			      struct cpuidle_driver *drv, int index);
+ extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
  
-+	if (pdata->pre_setup) {
-+		retval = pdata->pre_setup(hcd);
-+		if (retval < 0)
-+			return retval;
-+	}
-+
- 	ehci->caps = hcd->regs + pdata->caps_offset;
- 	retval = ehci_setup(hcd);
- 	if (retval)
-Index: renesas/include/linux/usb/ehci_pdriver.h
-=================================--- renesas.orig/include/linux/usb/ehci_pdriver.h
-+++ renesas/include/linux/usb/ehci_pdriver.h
-@@ -19,6 +19,9 @@
- #ifndef __USB_CORE_EHCI_PDRIVER_H
- #define __USB_CORE_EHCI_PDRIVER_H
+-extern void r8a7779_init_delay(void);
+-extern void r8a7779_init_irq(void);
+-extern void r8a7779_init_irq_extpin(int irlm);
+-extern void r8a7779_init_irq_dt(void);
+-extern void r8a7779_map_io(void);
+-extern void r8a7779_earlytimer_init(void);
+-extern void r8a7779_add_early_devices(void);
+-extern void r8a7779_add_standard_devices(void);
+-extern void r8a7779_add_standard_devices_dt(void);
+-extern void r8a7779_clock_init(void);
+-extern void r8a7779_pinmux_init(void);
+-extern void r8a7779_pm_init(void);
+-extern void r8a7779_register_twd(void);
+-
+ #ifdef CONFIG_SUSPEND
+ int shmobile_suspend_init(void);
+ #else
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 8ab0cd6..af38750 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -343,6 +343,19 @@ static inline struct r8a7779_pm_ch *to_r8a7779_ch(struct generic_pm_domain *d)
+ 	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
+ }
  
-+struct platform_device;
-+struct usb_hcd;
-+
- /**
-  * struct usb_ehci_pdata - platform_data for generic ehci driver
-  *
-@@ -50,6 +53,7 @@ struct usb_ehci_pdata {
- 	/* Turn on only VBUS suspend power and hotplug detection,
- 	 * turn off everything else */
- 	void (*power_suspend)(struct platform_device *pdev);
-+	int (*pre_setup)(struct usb_hcd *hcd);
- };
++extern void r8a7779_init_delay(void);
++extern void r8a7779_init_irq(void);
++extern void r8a7779_init_irq_extpin(int irlm);
++extern void r8a7779_init_irq_dt(void);
++extern void r8a7779_map_io(void);
++extern void r8a7779_earlytimer_init(void);
++extern void r8a7779_add_early_devices(void);
++extern void r8a7779_add_standard_devices(void);
++extern void r8a7779_add_standard_devices_dt(void);
++extern void r8a7779_clock_init(void);
++extern void r8a7779_pinmux_init(void);
++extern void r8a7779_pm_init(void);
++extern void r8a7779_register_twd(void);
+ extern int r8a7779_sysc_power_down(struct r8a7779_pm_ch *r8a7779_ch);
+ extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
  
- #endif /* __USB_CORE_EHCI_PDRIVER_H */
+-- 
+1.7.10.4
+
