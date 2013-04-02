@@ -1,77 +1,41 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Apr 2013 15:40:39 +0000
-Subject: [PATCH v9 19/20] imx074: support asynchronous probing
-Message-Id: <1365781240-16149-20-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 02 Apr 2013 04:20:29 +0000
+Subject: [PATCH 4/5 v3] ARM: shmobile: bockw: enable network settings on bootargs
+Message-Id: <87mwth5zsm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+ <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
+ <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Both synchronous and asynchronous imx074 subdevice probing is supported by
-this patch.
+"ip" and "root" settings are useful for development
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/i2c/soc_camera/imx074.c |   22 +++++++++++++++++++---
- 1 files changed, 19 insertions(+), 3 deletions(-)
+v2 -> v3
 
-diff --git a/drivers/media/i2c/soc_camera/imx074.c b/drivers/media/i2c/soc_camera/imx074.c
-index a6a5060..c0eed84 100644
---- a/drivers/media/i2c/soc_camera/imx074.c
-+++ b/drivers/media/i2c/soc_camera/imx074.c
-@@ -18,6 +18,7 @@
- #include <linux/module.h>
+ - dts only
+
+ arch/arm/boot/dts/r8a7778-bockw.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 735c964..0076b1e 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -22,7 +22,7 @@
+ 	compatible = "renesas,bockw", "renesas,r8a7778";
  
- #include <media/soc_camera.h>
-+#include <media/v4l2-async.h>
- #include <media/v4l2-clk.h>
- #include <media/v4l2-subdev.h>
- #include <media/v4l2-chip-ident.h>
-@@ -455,14 +456,27 @@ static int imx074_probe(struct i2c_client *client,
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel";
++		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs";
+ 	};
  
- 	priv->fmt	= &imx074_colour_fmts[0];
- 
-+	priv->subdev.dev = &client->dev;
-+
- 	priv->clk = v4l2_clk_get(&client->dev, "mclk");
--	if (IS_ERR(priv->clk))
--		return PTR_ERR(priv->clk);
-+	if (IS_ERR(priv->clk)) {
-+		dev_info(&client->dev, "Error %ld getting clock\n", PTR_ERR(priv->clk));
-+		return -EPROBE_DEFER;
-+	}
-+
-+	ret = soc_camera_power_init(&client->dev, ssdd);
-+	if (ret < 0)
-+		goto epwrinit;
- 
- 	ret = imx074_video_probe(client);
- 	if (ret < 0)
--		v4l2_clk_put(priv->clk);
-+		goto eprobe;
- 
-+	return v4l2_async_register_subdev(&priv->subdev);
-+
-+epwrinit:
-+eprobe:
-+	v4l2_clk_put(priv->clk);
- 	return ret;
- }
- 
-@@ -471,7 +485,9 @@ static int imx074_remove(struct i2c_client *client)
- 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
- 	struct imx074 *priv = to_imx074(client);
- 
-+	v4l2_async_unregister_subdev(&priv->subdev);
- 	v4l2_clk_put(priv->clk);
-+
- 	if (ssdd->free_bus)
- 		ssdd->free_bus(ssdd);
- 
+ 	memory {
 -- 
-1.7.2.5
+1.7.9.5
 
