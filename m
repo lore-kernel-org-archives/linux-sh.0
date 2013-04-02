@@ -1,34 +1,82 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 26 Apr 2013 03:57:40 +0000
-Subject: Re: [PATCH v2 0/4] sh73a0: Expose the PFC-controller SDHI power gate as a regulator
-Message-Id: <20130426035739.GA29426@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Apr 2013 05:09:16 +0000
+Subject: [PATCH 08/28] ARM: shmobile: marzen: Add GPIO LEDs
+Message-Id: <1364879376-10020-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366840828-17335-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366840828-17335-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Apr 26, 2013 at 11:04:09AM +0900, Simon Horman wrote:
-> On Thu, Apr 25, 2013 at 10:03:31PM +0900, Simon Horman wrote:
-> > On Thu, Apr 25, 2013 at 02:34:32PM +0200, Laurent Pinchart wrote:
-> > > Hi Simon,
-> > > 
-> > > Could you please apply those patches ? For your convenience I've added Mark's 
-> > > ack to 2/4 and pushed the result to
-> > > 
-> > > 	git://linuxtv.org/pinchartl/fbdev.git pinmux/3.9/sh73a0
-> >
-> > Thanks Laurent,
-> > 
-> > I should be able to add them tomorrow.
-> 
-> I have queued-up the version with Linus's ack in the pinmux branch.
-> I will push it and a renesas-next-20130426 tag once my build-tests
-> complete (successfully!).
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Done.
+The board has 3 LEDs connected to GPIOs. Add a led-gpio device to
+support them.
 
-BTW, Monday is a public holiday in Japan and as a result I am
-not planning to queue-up any more patches until Tuesday.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen.c |   32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 5852331..a88f7f3 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -25,6 +25,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
++#include <linux/leds.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+@@ -168,12 +169,43 @@ static struct platform_device usb_phy_device = {
+ 	.num_resources	= ARRAY_SIZE(usb_phy_resources),
+ };
+ 
++/* LEDS */
++static struct gpio_led marzen_leds[] = {
++	{
++		.name		= "led2",
++		.gpio		= 157,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led3",
++		.gpio		= 158,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led4",
++		.gpio		= 159,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},
++};
++
++static struct gpio_led_platform_data marzen_leds_pdata = {
++	.leds		= marzen_leds,
++	.num_leds	= ARRAY_SIZE(marzen_leds),
++};
++
++static struct platform_device leds_device = {
++	.name	= "leds-gpio",
++	.id	= 0,
++	.dev	= {
++		.platform_data  = &marzen_leds_pdata,
++	},
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
+ 	&thermal_device,
+ 	&hspi_device,
+ 	&usb_phy_device,
++	&leds_device,
+ };
+ 
+ /* USB */
+-- 
+1.7.10.4
+
