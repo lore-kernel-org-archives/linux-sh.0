@@ -1,57 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Apr 2013 02:11:21 +0000
-Subject: Re: [PATCH v2] sh-pfc: Add entries for INTC external IRQs
-Message-Id: <20130410021121.GJ11105@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 03 Apr 2013 06:32:46 +0000
+Subject: [PATCH 00/04] ARM: shmobile: pinmux platform device cleanups
+Message-Id: <20130403063246.2500.65318.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365504530-32232-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365504530-32232-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 09, 2013 at 03:28:16PM +0200, Laurent Pinchart wrote:
-> Hi Bastian,
-> 
-> Thanks for the patch.
-> 
-> On Tuesday 09 April 2013 12:48:50 Bastian Hecht wrote:
-> > We add all necessary entries to support the external IRQs from the INTC.
-> > 
-> > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ARM: shmobile: pinmux platform device cleanups
 
-Thanks, queued-up in the pinmux branch.
+[PATCH 01/04] ARM: shmobile: r8a7740 pinmux platform device cleanup
+[PATCH 02/04] ARM: shmobile: r8a7779 pinmux platform device cleanup
+[PATCH 03/04] ARM: shmobile: sh7372 pinmux platform device cleanup
+[PATCH 04/04] ARM: shmobile: sh73a0 pinmux platform device cleanup
 
-> > ---
-> > v2:
-> > - massive sorting
-> > - introduction of index instead of pointing by port number
-> > 
-> >  drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  174 +++++++++++++++++++++++++++++++
-> >  1 file changed, 174 insertions(+)
-> > 
-> > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-> > b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c index 21ff7f2..4753f54 100644
-> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-> > @@ -1658,6 +1674,59 @@ static struct sh_pfc_pin pinmux_pins[] = {
-> 
-> [snip]
-> 
-> > +IRQC_PINS_MUX(9, 1, 210);
-> 
-> [snip]
-> 
-> > +IRQC_PINS_MUX(16, 1, 211);
-> 
-> My version of the datasheet doesn't include pins 210 and 211 in the list of 
-> multiplexed pins, so I'll trust you on these two. I've checked all the other 
-> pins.
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+This series simply cleans up the pinmux platform device handling
+to save a couple of lines. Compile time tested on each SoC.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas-next-20130403 in renesas.git
+ 
+ arch/arm/mach-shmobile/setup-r8a7740.c |   24 +++++-------------------
+ arch/arm/mach-shmobile/setup-r8a7779.c |   19 ++++---------------
+ arch/arm/mach-shmobile/setup-sh7372.c  |   24 +++++-------------------
+ arch/arm/mach-shmobile/setup-sh73a0.c  |   25 ++++++-------------------
+ 4 files changed, 20 insertions(+), 72 deletions(-)
