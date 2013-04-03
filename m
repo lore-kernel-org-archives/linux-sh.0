@@ -1,55 +1,87 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 18 Apr 2013 12:04:01 +0000
-Subject: Re: [PATCH 2/6] ARM: shmobile: r8a7778: add SDHI clock support
-Message-Id: <20130418120400.GA13101@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 03 Apr 2013 16:13:55 +0000
+Subject: [PATCH/RFC 2/3] ARM: shmobile: initialise clock early on kzm9g-reference
+Message-Id: <1365005636-17526-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2ttenxv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d2ttenxv.wl%kuninori.morimoto.gx@renesas.com>
+References: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 16, 2013 at 10:17:04PM -0700, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To prepare to enable TWD on kzm9g-reference, clock initialisation has to be
+done early. Move it from .init_machine to .init_time stage.
 
-Thanks, I have queued this up for v3.11 in the soc-r8a7778 branch.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    8 +++++++-
+ arch/arm/mach-shmobile/setup-sh73a0.c          |   13 +++++++++----
+ 2 files changed, 16 insertions(+), 5 deletions(-)
 
-> ---
->  arch/arm/mach-shmobile/clock-r8a7778.c |    7 +++++++
->  1 file changed, 7 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-> index 5cc271e..b251e4d 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7778.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-> @@ -103,12 +103,16 @@ static struct clk *main_clks[] = {
->  };
->  
->  enum {
-> +	MSTP323, MSTP322, MSTP321,
->  	MSTP114,
->  	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
->  	MSTP016, MSTP015,
->  	MSTP_NR };
->  
->  static struct clk mstp_clks[MSTP_NR] = {
-> +	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
-> +	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
-> +	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
->  	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
->  	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
->  	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
-> @@ -122,6 +126,9 @@ static struct clk mstp_clks[MSTP_NR] = {
->  
->  static struct clk_lookup lookups[] = {
->  	/* MSTP32 clocks */
-> +	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
-> +	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
-> +	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
->  	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
->  	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
->  	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
-> -- 
-> 1.7.9.5
-> 
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index aefa50d..0f9b276 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -90,6 +90,12 @@ static void __init kzm_init(void)
+ #endif
+ }
+ 
++static void __init timer_init(void)
++{
++	sh73a0_clock_init();
++	shmobile_timer_init();
++}
++
+ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	"renesas,kzm9g-reference",
+ 	NULL,
+@@ -102,6 +108,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= irqchip_init,
+ 	.init_machine	= kzm_init,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= timer_init,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 0469e84..8a1bc1c 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -1018,9 +1018,6 @@ void __init sh73a0_add_standard_devices_dt(void)
+ {
+ 	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
+ 
+-	/* clocks are setup late during boot in the case of DT */
+-	sh73a0_clock_init();
+-
+ 	platform_add_devices(sh73a0_devices_dt,
+ 			     ARRAY_SIZE(sh73a0_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table,
+@@ -1030,6 +1027,14 @@ void __init sh73a0_add_standard_devices_dt(void)
+ 	platform_device_register_full(&devinfo);
+ }
+ 
++static void __init add_standard_devices(void)
++{
++	/* clocks are setup late during boot in the case of DT */
++	sh73a0_clock_init();
++
++	sh73a0_add_standard_devices_dt();
++}
++
+ static const char *sh73a0_boards_compat_dt[] __initdata = {
+ 	"renesas,sh73a0",
+ 	NULL,
+@@ -1041,7 +1046,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.init_early	= sh73a0_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= irqchip_init,
+-	.init_machine	= sh73a0_add_standard_devices_dt,
++	.init_machine	= add_standard_devices,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
+-- 
+1.7.2.5
+
