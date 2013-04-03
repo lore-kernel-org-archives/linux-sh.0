@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:11:15 +0000
+Date: Wed, 03 Apr 2013 02:08:18 +0000
 Subject: [PATCH 03/11] ARM: shmobile: APE6EVM base support
-Message-Id: <1364879483-11144-4-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1364954906-16014-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
+References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
