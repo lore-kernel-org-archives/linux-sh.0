@@ -1,58 +1,65 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 02 Apr 2013 20:25:03 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 03 Apr 2013 00:57:09 +0000
 Subject: Re: [GIT PULL] Renesas ARM SoC updates for v3.10 #2
-Message-Id: <20130402202503.GC8015@quad.lixom.net>
+Message-Id: <20130403005707.GA30263@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+ <20130402202503.GC8015@quad.lixom.net>
+In-Reply-To: <20130402202503.GC8015@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 02, 2013 at 02:06:56PM +0900, Simon Horman wrote:
-> Hi Arnd, Hi Olof,
+On Tue, Apr 02, 2013 at 01:25:03PM -0700, Olof Johansson wrote:
+> On Tue, Apr 02, 2013 at 02:06:56PM +0900, Simon Horman wrote:
+> > Hi Arnd, Hi Olof,
+> > 
+> > The following changes since commit 4c82e452732784419fd616cf1acf2bc9b004aae1:
+> > 
+> >   Merge tag 'renesas-intc-external-irq2-for-v3.10' into soc-base (2013-04-02 10:55:57 +0900)
+> > 
+> > are available in the git repository at:
+> > 
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.10
+> > 
+> > for you to fetch changes up to 8585deb18580d04209a2986430aa0959ef38fce2:
+> > 
+> >   ARM: shmobile: r8a7790 SoC 64-bit DT support (2013-04-02 11:02:21 +0900)
+> > 
+> > ----------------------------------------------------------------
+> > Second round of Renesas ARM SoC updates for v3.10
+> > 
+> > Some Highlights:
+> > 
+> > * Add r8a7790 SoC
+> > * Add r8a73a4 SoC
+> > * Migrate r8a7740 SoC from INTC to GIC
+> > * Add thermal driver support to r8a73a4 SoC
+> > * Add irqpin DT nodes to sh73a0 SoC
+> > * Add SCIF support to r8a7778 SoC
+> > 
+> > This pull request is based on a merge of:
+> > git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-soc-for-v3.10
+> > git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-intc-external-irq2-for-v3.10
 > 
-> The following changes since commit 4c82e452732784419fd616cf1acf2bc9b004aae1:
-> 
->   Merge tag 'renesas-intc-external-irq2-for-v3.10' into soc-base (2013-04-02 10:55:57 +0900)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.10
-> 
-> for you to fetch changes up to 8585deb18580d04209a2986430aa0959ef38fce2:
-> 
->   ARM: shmobile: r8a7790 SoC 64-bit DT support (2013-04-02 11:02:21 +0900)
-> 
-> ----------------------------------------------------------------
-> Second round of Renesas ARM SoC updates for v3.10
-> 
-> Some Highlights:
-> 
-> * Add r8a7790 SoC
-> * Add r8a73a4 SoC
-> * Migrate r8a7740 SoC from INTC to GIC
-> * Add thermal driver support to r8a73a4 SoC
-> * Add irqpin DT nodes to sh73a0 SoC
-> * Add SCIF support to r8a7778 SoC
-> 
-> This pull request is based on a merge of:
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-soc-for-v3.10
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-intc-external-irq2-for-v3.10
+> Ugh. So, the irq branch depends on the old soc branch, and now this depends on
+> the irq branch (and it is soc code). That's a circular dependency.
+>
+> I'll add this as a next/soc2 branch in arm-soc, but please think about these
+> kind of circular dependencies in the future, and try to avoid them if you can
+> by splitting the branch contents in separate topics if possible.
 
-Ugh. So, the irq branch depends on the old soc branch, and now this depends on
-the irq branch (and it is soc code). That's a circular dependency.
+Sorry about that. I have been having a bit of trouble managing the
+dependencies and some assumptions I made with earlier branches
+turned out to be invalid as new patches came in. I'll try to be
+more careful in future.
 
-I'll add this as a next/soc2 branch in arm-soc, but please think about these
-kind of circular dependencies in the future, and try to avoid them if you can
-by splitting the branch contents in separate topics if possible.
+> Likewise, there's a bunch of patches in this branch such as the fixed
+> divisor clock patches that could be considered cleanup. Not a big deal to
+> group them with the soc code, but if you're already doing cleanup
+> branches it'd be just as well to put them in those.
 
-Likewise, there's a bunch of patches in this branch such as the fixed divisor
-clock patches that could be considered cleanup. Not a big deal to group them
-with the soc code, but if you're already doing cleanup branches it'd be just as
-well to put them in those.
-
-
--Olof
+I'm not carrying any cleanup branches at this time.
+I will keep in in mind for future patches of this nature.
