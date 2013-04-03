@@ -1,22 +1,48 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Mon, 15 Apr 2013 16:30:48 +0000
-Subject: Re: [PATCH] input: st1232: Convert to devm_* infrastructure
-Message-Id: <20130415162554.GB27693@core.coreip.homeip.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 03 Apr 2013 07:20:59 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779: add each clocks ratio on comment area
+Message-Id: <87ip44cc6g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365585027-8123-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1365585027-8123-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-input@vger.kernel.org, Bastian Hecht <hechtb@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Apr 10, 2013 at 11:10:27AM +0200, Laurent Pinchart wrote:
-> Use the devm_* managed functions to allocate resources.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
-Applied, thank you.
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 7d86bfb..5436b51 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -26,6 +26,25 @@
+ #include <mach/clock.h>
+ #include <mach/common.h>
+ 
++/*
++ *		MD1 = 1			MD1 = 0
++ *		(PLLA = 1500)		(PLLA = 1600)
++ *		(MHz)			(MHz)
++ *------------------------------------------------+--------------------
++ * clkz		1000   (2/3)		800   (1/2)
++ * clkzs	 250   (1/6)		200   (1/8)
++ * clki		 750   (1/2)		800   (1/2)
++ * clks		 250   (1/6)		200   (1/8)
++ * clks1	 125   (1/12)		100   (1/16)
++ * clks3	 187.5 (1/8)		200   (1/8)
++ * clks4	  93.7 (1/16)		100   (1/16)
++ * clkp		  62.5 (1/24)		 50   (1/32)
++ * clkg		  62.5 (1/24)		 66.6 (1/24)
++ * clkb, CLKOUT
++ * (MD2 = 0)	  62.5 (1/24)		 66.6 (1/24)
++ * (MD2 = 1)	  41.6 (1/36)		 50   (1/32)
++*/
++
+ #define MD(nr)	BIT(nr)
+ 
+ #define FRQMR		IOMEM(0xffc80014)
 -- 
-Dmitry
+1.7.9.5
+
