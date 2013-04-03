@@ -1,20 +1,215 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Apr 2013 04:34:15 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: Initial r8a7790 Lager board support
-Message-Id: <20130402043414.GF1696@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 03 Apr 2013 07:30:17 +0000
+Subject: [RFC][PATCH 1/3] ARM: shmobile: r8a7790: add main clocks
+Message-Id: <87d2uccbqy.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130329084937.16365.8698.sendpatchset@w520>
-In-Reply-To: <20130329084937.16365.8698.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Mar 29, 2013 at 05:49:37PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Lager base board support making use of 2 GiB of memory,
-> the r8a7790 SoC with the SCIF0 serial port and CA15 with
-> ARM architected timer.
+Almost all clock needs main clock which is basis clock on r8a7790.
+This patch adds it, and, set its parent/ratio via MD pin.
+This patch is based on Rev 0.05 datasheet.
 
-Thanks, queued up for v3.10 in the boards branch.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c |  143 ++++++++++++++++++++++++++++++--
+ 1 file changed, 138 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index bad9bf2..e7282ef 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -22,32 +22,106 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ 
++/*
++ *   MD		EXTAL
++ * 14 13 19	(MHz)		PLL0	PLL1	PLL3
++ *---------------------------------------------------
++ * 0  0  0	15 x 1		x172	x208	x106
++ * 0  0  1	15 x 1		x172	x208	x88
++ * 0  1  0	20 x 1		x130	x156	x80
++ * 0  1  1	20 x 1		x130	x156	x66
++ * 1  0  0	26 / 2		x200	x240	x122
++ * 1  0  1	26 / 2		x200	x240	x102
++ * 1  1  0	30 / 2		x172	x208	x106
++ * 1  1  1	30 / 2		x172	x208	x88
++ */
++
++#define MD(nr)	(1 << nr)
++
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x1000
+ 
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR7 0xe615014c
+ 
++#define MODEMR		0xE6160060
++
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+ 	.len    = CPG_LEN,
+ };
+ 
+-static struct clk p_clk = {
+-	.rate	= 65000000, /* shortcut for now */
++static struct clk extal_clk = {
++	/* .rate will be updated on r8a7790_clock_init() */
+ 	.mapping	= &cpg_mapping,
+ };
+ 
+-static struct clk mp_clk = {
+-	.rate	= 52000000,  /* shortcut for now */
+-	.mapping	= &cpg_mapping,
++static struct sh_clk_ops followparent_clk_ops = {
++	.recalc	= followparent_recalc,
++};
++
++static struct clk main_clk = {
++	/* .parent will be set r8a73a4_clock_init */
++	.ops	= &followparent_clk_ops,
+ };
+ 
++/*
++ * clock ratio of these clock will be updated
++ * on r8a7790_clock_init()
++ */
++SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
++SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
++
++/* fixed ratio clock */
++SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
++SH_FIXED_RATIO_CLK_SET(cp_clk,			extal_clk,	1, 2);
++SH_FIXED_RATIO_CLK_SET(pll1_div2_clk,		pll1_clk,	1, 2);
++SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 6);
++SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 6);
++SH_FIXED_RATIO_CLK_SET(zs_clk,			pll1_clk,	1, 12);
++SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 24);
++SH_FIXED_RATIO_CLK_SET(i_clk,			pll1_clk,	1, 4);
++SH_FIXED_RATIO_CLK_SET(b_clk,			pll1_clk,	1, 24);
++SH_FIXED_RATIO_CLK_SET(lb_clk,			pll1_clk,	1, 48);
++SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 48);
++SH_FIXED_RATIO_CLK_SET(cl_clk,			pll1_clk,	1, 96);
++SH_FIXED_RATIO_CLK_SET(m2_clk,			pll1_clk,	1, 16);
++SH_FIXED_RATIO_CLK_SET(imp_clk,			pll1_clk,	1, 8);
++SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (96 * 1024));
++SH_FIXED_RATIO_CLK_SET(oscclk_clk,		pll1_clk,	1, (24 * 1024));
++SH_FIXED_RATIO_CLK_SET(zb3_clk,			pll3_clk,	1, 4);
++SH_FIXED_RATIO_CLK_SET(zb3d2_clk,		pll3_clk,	1, 8);
++SH_FIXED_RATIO_CLK_SET(ddr_clk,			pll3_clk,	1, 8);
++SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 30);
++
+ static struct clk *main_clks[] = {
++	&extal_clk,
++	&extal_div2_clk,
++	&main_clk,
++	&pll1_clk,
++	&pll1_div2_clk,
++	&pll3_clk,
++	&zg_clk,
++	&zx_clk,
++	&zs_clk,
++	&hp_clk,
++	&i_clk,
++	&b_clk,
++	&lb_clk,
+ 	&p_clk,
++	&cl_clk,
++	&m2_clk,
++	&imp_clk,
++	&rclk_clk,
++	&oscclk_clk,
++	&zb3_clk,
++	&zb3d2_clk,
++	&ddr_clk,
+ 	&mp_clk,
++	&cp_clk,
+ };
+ 
+ enum { MSTP721, MSTP720,
+@@ -64,6 +138,34 @@ static struct clk mstp_clks[MSTP_NR] = {
+ };
+ 
+ static struct clk_lookup lookups[] = {
++
++	/* main clocks */
++	CLKDEV_CON_ID("extal",		&extal_clk),
++	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
++	CLKDEV_CON_ID("main",		&main_clk),
++	CLKDEV_CON_ID("pll1",		&pll1_clk),
++	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
++	CLKDEV_CON_ID("pll3",		&pll3_clk),
++	CLKDEV_CON_ID("zg",		&zg_clk),
++	CLKDEV_CON_ID("zx",		&zx_clk),
++	CLKDEV_CON_ID("zs",		&zs_clk),
++	CLKDEV_CON_ID("hp",		&hp_clk),
++	CLKDEV_CON_ID("i",		&i_clk),
++	CLKDEV_CON_ID("b",		&b_clk),
++	CLKDEV_CON_ID("lb",		&lb_clk),
++	CLKDEV_CON_ID("p",		&p_clk),
++	CLKDEV_CON_ID("cl",		&cl_clk),
++	CLKDEV_CON_ID("m2",		&m2_clk),
++	CLKDEV_CON_ID("imp",		&imp_clk),
++	CLKDEV_CON_ID("rclk",		&rclk_clk),
++	CLKDEV_CON_ID("oscclk",		&oscclk_clk),
++	CLKDEV_CON_ID("zb3",		&zb3_clk),
++	CLKDEV_CON_ID("zb3d2",		&zb3d2_clk),
++	CLKDEV_CON_ID("ddr",		&ddr_clk),
++	CLKDEV_CON_ID("mp",		&mp_clk),
++	CLKDEV_CON_ID("cp",		&cp_clk),
++
++	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+@@ -74,10 +176,41 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ };
+ 
++#define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
++	extal_clk.rate	= e * 1000 * 1000;			\
++	main_clk.parent	= m;					\
++	SH_CLK_SET_RATIO(&pll1_clk_ratio, p1, 1);		\
++	if (mode & MD(19)) {					\
++		SH_CLK_SET_RATIO(&pll3_clk_ratio, p31, 1);	\
++	} else {						\
++		SH_CLK_SET_RATIO(&pll3_clk_ratio, p30, 1)	\
++	}
++
+ void __init r8a7790_clock_init(void)
+ {
++	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++	u32 mode;
+ 	int k, ret = 0;
+ 
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	switch (mode & (MD(14) | MD(13))) {
++	case 0:
++		R8A7790_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
++		break;
++	case MD(13):
++		R8A7790_CLOCK_ROOT(20, &extal_clk, 130, 156, 80, 66);
++		break;
++	case MD(14):
++		R8A7790_CLOCK_ROOT(26, &extal_div2_clk, 200, 240, 122, 102);
++		break;
++	case MD(13) | MD(14):
++		R8A7790_CLOCK_ROOT(30, &extal_div2_clk, 172, 208, 106, 88);
++		break;
++	}
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
+-- 
+1.7.9.5
+
