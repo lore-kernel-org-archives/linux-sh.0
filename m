@@ -1,158 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 05 Apr 2013 04:21:39 +0000
-Subject: [PATCH 2/5 v2] ARM: shmobile: r8a73a4: add pll clocks
-Message-Id: <87obdtk3ow.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 03 Apr 2013 06:33:28 +0000
+Subject: [PATCH 04/04] ARM: shmobile: sh73a0 pinmux platform device cleanup
+Message-Id: <20130403063328.2500.86264.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130403063246.2500.65318.sendpatchset@w520>
+In-Reply-To: <20130403063246.2500.65318.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-PLL clocks are basis clock for other clock.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Use DEFINE_RES_MEM() and platform_device_register_simple()
+to save a couple of lines of code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-v1 -> v2
 
- - pll clocks become main_clks[]
- - didn't use pll register API
+ arch/arm/mach-shmobile/setup-sh73a0.c |   25 ++++++-------------------
+ 1 file changed, 6 insertions(+), 19 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a73a4.c |  101 ++++++++++++++++++++++++++++++++
- 1 file changed, 101 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 42942b4..2be592f 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -33,6 +33,14 @@
- #define SMSTPCR5 0xe6150144
+--- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-04-03 15:19:37.000000000 +0900
+@@ -61,29 +61,16 @@ void __init sh73a0_map_io(void)
+ 	iotable_init(sh73a0_io_desc, ARRAY_SIZE(sh73a0_io_desc));
+ }
  
- #define CKSCR		0xE61500C0
-+#define PLLECR		0xE61500D0
-+#define PLL1CR		0xE6150028
-+#define PLL2CR		0xE615002C
-+#define PLL2SCR		0xE61501F4
-+#define PLL2HCR		0xE61501E4
-+
-+
-+#define CPG_MAP(o) ((o - CPG_BASE) + cpg_mapping.base)
- 
- static struct clk_mapping cpg_mapping = {
- 	.phys   = CPG_BASE,
-@@ -71,6 +79,86 @@ SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
- SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
- SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
- 
-+/*
-+ *		PLL clocks
-+ */
-+static struct clk *pll_parent_main[] = {
-+	[0] = &main_clk,
-+	[1] = &main_div2_clk
-+};
-+
-+static struct clk *pll_parent_main_extal[8] = {
-+	[0] = &main_div2_clk,
-+	[1] = &extal2_div2_clk,
-+	[3] = &extal2_div4_clk,
-+	[4] = &main_clk,
-+	[5] = &extal2_clk,
-+};
-+
-+static unsigned long pll_recalc(struct clk *clk)
-+{
-+	unsigned long mult = 1;
-+
-+	if (ioread32(CPG_MAP(PLLECR)) & (1 << clk->enable_bit))
-+		mult = (((ioread32(clk->mapped_reg) >> 24) & 0x7f) + 1);
-+
-+	return clk->parent->rate * mult;
-+}
-+
-+static int pll_set_parent(struct clk *clk, struct clk *parent)
-+{
-+	u32 val;
-+	int i, ret;
-+
-+	if (!clk->parent_table || !clk->parent_num)
-+		return -EINVAL;
-+
-+	/* Search the parent */
-+	for (i = 0; i < clk->parent_num; i++)
-+		if (clk->parent_table[i] = parent)
-+			break;
-+
-+	if (i = clk->parent_num)
-+		return -ENODEV;
-+
-+	ret = clk_reparent(clk, parent);
-+	if (ret < 0)
-+		return ret;
-+
-+	val = ioread32(clk->mapped_reg) &
-+		~(((1 << clk->src_width) - 1) << clk->src_shift);
-+
-+	iowrite32(val | i << clk->src_shift, clk->mapped_reg);
-+
-+	return 0;
-+}
-+
-+static struct sh_clk_ops pll_clk_ops = {
-+	.recalc		= pll_recalc,
-+	.set_parent	= pll_set_parent,
-+};
-+
-+#define PLL_CLOCK(name, p, pt, w, s, reg, e)		\
-+	static struct clk name = {			\
-+		.ops		= &pll_clk_ops,		\
-+		.flags		= CLK_ENABLE_ON_INIT,	\
-+		.parent		= p,			\
-+		.parent_table	= pt,			\
-+		.parent_num	= ARRAY_SIZE(pt),	\
-+		.src_width	= w,			\
-+		.src_shift	= s,			\
-+		.enable_reg	= (void __iomem *)reg,	\
-+		.enable_bit	= e,			\
-+		.mapping	= &cpg_mapping,		\
-+	}
-+
-+PLL_CLOCK(pll1_clk,  &main_clk,      pll_parent_main,       1, 7, PLL1CR,  1);
-+PLL_CLOCK(pll2_clk,  &main_div2_clk, pll_parent_main_extal, 3, 5, PLL2CR,  2);
-+PLL_CLOCK(pll2s_clk, &main_div2_clk, pll_parent_main_extal, 3, 5, PLL2SCR, 4);
-+PLL_CLOCK(pll2h_clk, &main_div2_clk, pll_parent_main_extal, 3, 5, PLL2HCR, 5);
-+
-+SH_FIXED_RATIO_CLK(pll1_div2_clk,	pll1_clk,	div2);
-+
- static struct clk *main_clks[] = {
- 	&extalr_clk,
- 	&extal1_clk,
-@@ -80,6 +168,11 @@ static struct clk *main_clks[] = {
- 	&extal2_div4_clk,
- 	&main_clk,
- 	&main_div2_clk,
-+	&pll1_clk,
-+	&pll1_div2_clk,
-+	&pll2_clk,
-+	&pll2s_clk,
-+	&pll2h_clk,
+-static struct resource sh73a0_pfc_resources[] = {
+-	[0] = {
+-		.start	= 0xe6050000,
+-		.end	= 0xe6057fff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 0xe605801c,
+-		.end	= 0xe6058027,
+-		.flags	= IORESOURCE_MEM,
+-	}
+-};
+-
+-static struct platform_device sh73a0_pfc_device = {
+-	.name		= "pfc-sh73a0",
+-	.id		= -1,
+-	.resource	= sh73a0_pfc_resources,
+-	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
++/* PFC */
++static const struct resource pfc_resources[] = {
++	DEFINE_RES_MEM(0xe6050000, 0x8000),
++	DEFINE_RES_MEM(0xe605801c, 0x000c),
  };
  
- enum {
-@@ -106,6 +199,14 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
- 	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
+ void __init sh73a0_pinmux_init(void)
+ {
+-	platform_device_register(&sh73a0_pfc_device);
++	platform_device_register_simple("pfc-sh73a0", -1, pfc_resources,
++					ARRAY_SIZE(pfc_resources));
+ }
  
-+	/* pll clock */
-+	CLKDEV_CON_ID("pll1",			&pll1_clk),
-+	CLKDEV_CON_ID("pll1_div2",		&pll1_div2_clk),
-+	CLKDEV_CON_ID("pll2",			&pll2_clk),
-+	CLKDEV_CON_ID("pll2s",			&pll2s_clk),
-+	CLKDEV_CON_ID("pll2h",			&pll2h_clk),
-+
-+	/* MSTP */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
--- 
-1.7.9.5
-
+ static struct plat_sci_port scif0_platform_data = {
