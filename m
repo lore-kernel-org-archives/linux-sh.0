@@ -1,28 +1,28 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Tue, 30 Apr 2013 10:33:17 +0000
-Subject: Re: [PATCH v8 1/2] dma: sh: add Kconfig
-Message-Id: <20130430102117.GC1960@intel.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 03 Apr 2013 09:18:57 +0000
+Subject: [PATCH/RFC 0/2] ARM: shmobile: DT irqpin for r8a7779 and marzen-reference
+Message-Id: <Pine.LNX.4.64.1304031103590.10531@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <517669B6.7040801@renesas.com>
-In-Reply-To: <517669B6.7040801@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 23, 2013 at 08:00:06PM +0900, Shimoda, Yoshihiro wrote:
-> This patch adds Kconfig in the drivers/dma/sh. This patch also adds
-> a new config "SH_DMAE_BASE" and the "config SH_DMAE" depends on it.
-> Since some drivers (e.g. sh_mmcif.c) depends on shdma-base.c if
-> CONFIG_DMA_ENGINE=y, the "config SH_DMAE_BASE" is set as "bool".
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Applied, both with checkpath fix for
-WARNING: please, no space before tabs
-#661: FILE: drivers/dma/sh/sudmac.c:416:
-+^I.driver ^I= {$
+Hi
 
-You _should_ run checkpatch _always_ before sending the patches
+This 2 patches add DT irqpin support on marzen-reference. Only 
+compile-tested due to the lack of hardware. The patches can go 
+independently via their respective trees. irqpin on marzen will not work 
+if patch 2 is applied before patch 1, but as long as there are no devices, 
+using irqpin interrupts, no breakage will be caused.
 
---
-~Vinod
+Guennadi Liakhovetski (2):
+      irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
+      ARM: shmobile: marzen-reference: add irqpin support in DT
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
