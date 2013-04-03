@@ -1,24 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 16:12:57 +0000
-Subject: [PATCH v3 0/1] Add I2C support to R8A7778/BOCK-W
-Message-Id: <201304232012.57619.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 03 Apr 2013 16:13:56 +0000
+Subject: [PATCH/RFC 3/3] ARM: shmobile: kzm9g-reference: add a TWD DT node
+Message-Id: <1365005636-17526-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+This patch enables the use of TWD on kzm9g-reference.
 
-   Here's the patch against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130422' tag and my recent yet unapplied USB patches.
-Here we add I2C support to the R8A7778 platform code. This will be
-important in the future for the VIN driver since the video decoder chip is
-controlled via I2C bus #0 on BOCK-W. 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-[1/1] ARM: shmobile: r8a7778: add I2C support
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index b6f759e..ed9dd45 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -40,6 +40,13 @@
+ 		reg = <0x41000000 0x1e800000>;
+ 	};
+ 
++	timer@f0000600 {
++		compatible = "arm,cortex-a9-twd-timer";
++		reg = <0xf0000600 0x20>;
++		interrupt-parent = <&gic>;
++		interrupts = <1 13 0x4>;
++	};
++
+ 	reg_1p8v: regulator@0 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "fixed-1.8V";
+-- 
+1.7.2.5
 
-The patch #2 (ARM: shmobile: BOCK-W: enable I2C in defconfig) has been
-already merged, and so not reposted.
-
-WBR, Sergei
