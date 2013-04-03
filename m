@@ -1,48 +1,85 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Apr 2013 15:12:55 +0000
-Subject: Re: [RFC][PATCH 2/4] ARM: shmobile: r8a7778: fixup Ether setup code position
-Message-Id: <20130409151255.GD27787@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 03 Apr 2013 02:08:15 +0000
+Subject: [GIT PULL v2] Renesas ARM SoC board updates for v3.10 #3
+Message-Id: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874nfgb74b.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874nfgb74b.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 09, 2013 at 04:19:16PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 09-04-2013 11:59, Simon Horman wrote:
-> 
-> >>Ether setup code position was scattering.
-> >>This patch fixes it up
-> 
-> >Thanks, queued-up in the shc-r8a7778 branch.
-> 
-> >>Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >>---
-> >>  arch/arm/mach-shmobile/setup-r8a7778.c |   28 ++++++++++++++--------------
-> >>  1 file changed, 14 insertions(+), 14 deletions(-)
-> 
-> >>diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-> >>index 30b4a33..d6ee521 100644
-> >>--- a/arch/arm/mach-shmobile/setup-r8a7778.c
-> >>+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-> >>@@ -80,12 +80,6 @@ static struct sh_timer_config sh_tmu1_platform_data = {
-> [...]
-> >>+/* Ether */
-> >>+static struct resource ether_resources[] = {
-> >>+	DEFINE_RES_MEM(0xfde00000, 0x400),
-> >>+	DEFINE_RES_IRQ(gic_iid(0x89)),
-> >>+};
-> >>+
-> >>+void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
-> >>+{
-> >>+	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
-> 
-> >BTW, s/sh_eth/sh-eth/ ? Also for r8a7778?
-> 
->    Yes, sorry for this mistake, I'll fix it. Unfortunately, I couldn't test it...
+Hi Olof, Hi Arnd,
 
-No problem, its an easy mistake to make.
+The following changes since commit eb0ae7280939fda741ad6ae9b108725517652f56:
+
+  Merge tag 'renesas-pinmux2-for-v3.10' into boards-base (2013-04-03 10:49:18 +0900)
+
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards3-for-v3.10
+
+for you to fetch changes up to 00ae962f8051bb143fa1c43c6a9c8274c3a9c593:
+
+  ARM: shmobile: mackerel: clean up MMCIF vs. SDHI1 selection (2013-04-03 10:50:44 +0900)
+
+----------------------------------------------------------------
+Third round of  Renesas ARM SoC board updates for v3.10
+
+Highlights:
+
+* Add Lager board support
+* Add ape6evm board support
+* Add Bock-W board support
+* Mackerel MMCIF/SDHI clean ups
+* Add ethernet support to kzm9g-reference
+
+This pull request is based on a merge of:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-pinmux2-for-v3.10
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-boards2-for-v3.10
+
+The merge with renesas-pinmux2-for-v3.10 was made to provide
+run-time dependencies for the following changes:
+
+ARM: shmobile: APE6EVM LAN9220 support
+ARM: shmobile: APE6EVM PFC support
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (6):
+      ARM: shmobile: kzm9g-reference: add ethernet support
+      ARM: shmobile: mackerel: SDHI resources do not have to be numbered
+      ARM: shmobile: mackerel: remove OCR masks, where regulators are used
+      ARM: shmobile: mackerel: switch SDHI and MMCIF interfaces to slot-gpio
+      ARM: shmobile: mackerel: add interrupt names for SDHI0
+      ARM: shmobile: mackerel: clean up MMCIF vs. SDHI1 selection
+
+Kuninori Morimoto (1):
+      ARM: shmobile: add R-Car M1A Bock-W platform support
+
+Magnus Damm (4):
+      ARM: shmobile: APE6EVM base support
+      ARM: shmobile: APE6EVM PFC support
+      ARM: shmobile: APE6EVM LAN9220 support
+      ARM: shmobile: Initial r8a7790 Lager board support
+
+ arch/arm/boot/dts/Makefile                   |    3 +
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts        |   52 ++++++++++++
+ arch/arm/boot/dts/r8a7778-bockw.dts          |   32 ++++++++
+ arch/arm/boot/dts/r8a7790-lager.dts          |   31 +++++++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   13 +++
+ arch/arm/configs/bockw_defconfig             |   66 +++++++++++++++
+ arch/arm/mach-shmobile/Kconfig               |   21 ++++-
+ arch/arm/mach-shmobile/Makefile              |    3 +
+ arch/arm/mach-shmobile/board-ape6evm.c       |   94 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-bockw.c         |   43 ++++++++++
+ arch/arm/mach-shmobile/board-lager.c         |   46 +++++++++++
+ arch/arm/mach-shmobile/board-mackerel.c      |  111 ++++++++++----------------
+ 12 files changed, 443 insertions(+), 72 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm.dts
+ create mode 100644 arch/arm/boot/dts/r8a7778-bockw.dts
+ create mode 100644 arch/arm/boot/dts/r8a7790-lager.dts
+ create mode 100644 arch/arm/configs/bockw_defconfig
+ create mode 100644 arch/arm/mach-shmobile/board-ape6evm.c
+ create mode 100644 arch/arm/mach-shmobile/board-bockw.c
+ create mode 100644 arch/arm/mach-shmobile/board-lager.c
