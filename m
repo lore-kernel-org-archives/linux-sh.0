@@ -1,73 +1,53 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Apr 2013 02:09:37 +0000
-Subject: Re: [PATCH] ARM: shmobile: Include all 2 GiB of memory on APE6EVM
-Message-Id: <20130410020936.GI11105@verge.net.au>
+Date: Wed, 03 Apr 2013 07:46:05 +0000
+Subject: Re: [PATCH v3 1/2] irqchip: intc-irqpin: Add support for shared interrupt lines
+Message-Id: <20130403074604.GC30989@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130408014444.18767.64441.sendpatchset@w520>
- <20130409123433.GD15412@verge.net.au>
- <20130409161410.GA16003@verge.net.au>
- <CANqRtoTCYVY9Q6-2wUshSxZzXNsUx4xdY+phf2ZyHmwSyj4SRw@mail.gmail.com>
- <20130410003535.GA2462@verge.net.au>
- <CANqRtoSvoyCDGMtLof68y2q1feiEtE=HXMi1=sTi-rOKexAuhQ@mail.gmail.com>
-In-Reply-To: <CANqRtoSvoyCDGMtLof68y2q1feiEtE=HXMi1=sTi-rOKexAuhQ@mail.gmail.com>
+References: <1364296699-20919-1-git-send-email-hechtb+renesas@gmail.com>
+ <20130327045942.GH25431@verge.net.au>
+ <CABYn4sx_pRxgdM3kD3okmt8xbCFas+T0cczQO=RF75Q8Bt2e_Q@mail.gmail.com>
+In-Reply-To: <CABYn4sx_pRxgdM3kD3okmt8xbCFas+T0cczQO=RF75Q8Bt2e_Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 10, 2013 at 10:38:49AM +0900, Magnus Damm wrote:
-> Hi Simon, Arnd,
+On Wed, Mar 27, 2013 at 02:50:05PM +0100, Bastian Hecht wrote:
+> Hi Simon,
 > 
-> On Wed, Apr 10, 2013 at 9:35 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Apr 10, 2013 at 07:27:41AM +0900, Magnus Damm wrote:
-> >> Hi Simon,
+> 2013/3/27 Simon Horman <horms@verge.net.au>:
+> > On Tue, Mar 26, 2013 at 12:18:18PM +0100, Bastian Hecht wrote:
+> >> On some hardware we don't have a 1-1 mapping from the external
+> >> interrupts coming from INTC to the GIC SPI pins. We can however
+> >> share lines to demux incoming IRQs on these SoCs.
 > >>
-> >> On Wed, Apr 10, 2013 at 1:14 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> > On Tue, Apr 09, 2013 at 09:34:34PM +0900, Simon Horman wrote:
-> >> >> On Mon, Apr 08, 2013 at 10:44:44AM +0900, Magnus Damm wrote:
-> >> >> > From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-> >> >> >
-> >> >> > Add 1GiB of DRAM at 0x2_0000_0000
-> >> >> >
-> >> >> > Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-> >> >> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> >>
-> >> >> Thanks, queued up in the boards-ape6evm branch.
-> >> >
-> >> > I have dropped this patch as it appears to prevent
-> >> > the board from booting.
+> >> This patch enables the intc_irqpin driver to detect requests for shared
+> >> interrupt lines and demuxes them properly by querying the INTC INTREQx0A
+> >> registers.
 > >>
-> >> Is it possible that LPAE=n and HIGHMEM=y in your particular kernel
-> >> configuration?
+> >> If you need multiple shared intc_irqpin device instances, be sure to mask
+> >> out all interrupts on the INTC that share the one line before you start
+> >> to register them. Else you run into IRQ floods that would be caused by
+> >> interrupts for which no handler has been set up yet when the first
+> >> intc_irqpin device is registered.
+> >>
+> >> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+> >> Acked-by: Magnus Damm <damm@opensource.se>
 > >
-> > Yes, I have confirmed that is what using the ape6evm_defconfig results in.
-oup >
-> >> >From what I can tell HIGHMEM is broken in cases of large amounts of
-> >> memory. Try disabling that as a short-term workaround. Then of course
-> >> someone needs to track down why the generic code doesn't work as
-> >> expected.
+> > Thanks, I will see about queuing up these changes for v3.10.
 > >
-> > I have confirmed that disabling HIGHMEM allows the board to boot
-> > with this patch applied.
+> >
+> > I believe that with these changes it should be possible to rebase/rework
+> > armadillo800eva-reference so that it no longer uses the unmerged INTC
+> > DT bindings. Would it be possible for you to see about making a fresh
+> > version of armadillo800eva-reference that is based on the next branch
+> > in the Renesas tree plus this series of two patches?
 > 
-> Thanks for checking.
-> 
-> So HIGHMEM without LPAE seems busted on boards using more than 32-bits
-> for memory.
-> 
-> I'd like to help out fixing this issue, but I'd like to make sure that
-> no one else is working on this.
-> 
-> Arnd, are you aware on any work related to making HIGHMEM work without LPAE?
-> 
-> > Should I prepare a patch to the defconfig to accompany this patch?
-> 
-> I believe that would affect a bunch of boards so I don't think that is
-> necessary at this point. Thanks anyway.
-> 
-> Would it be possible for you to queue up this change in a APE6EVM topic branch?
+> yes ok, I'll prepare a new armadillo reference version. The patches
+> were based on all+next, but I'll post a v4 rebased on next.
+> I'll post a separate patch series for the reference code if you don't
+> mind, as this might take a few days to be done.
 
-Sure, I have pushed topic/ape6evm-2gb.
+Hi Bastian,
 
-I also plan to push topic/ape6evm-2gb+renesas-next-20130410v2
-once I have finalised renesas-next-20130410v2.
+gentle nudge with regards to a fresh armadillo-reference.
