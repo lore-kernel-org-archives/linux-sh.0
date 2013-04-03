@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:09:15 +0000
+Date: Wed, 03 Apr 2013 02:04:45 +0000
 Subject: [PATCH 07/28] gpio-rcar: Add pinctrl support
-Message-Id: <1364879376-10020-8-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1364954706-14727-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879376-10020-1-git-send-email-horms+renesas@verge.net.au>
+References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
