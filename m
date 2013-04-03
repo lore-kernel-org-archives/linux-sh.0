@@ -1,71 +1,85 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 05 Apr 2013 06:12:02 +0000
-Subject: [PATCH 1/3] ARM: shmobile: r8a7778: remove pointless PLATFORM_INFO()
-Message-Id: <1365142324-7286-2-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 03 Apr 2013 07:30:28 +0000
+Subject: [RFC][PATCH 2/3] ARM: shmobile: r8a7790: add div4 clocks
+Message-Id: <87bo9wcbqn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365142324-7286-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365142324-7286-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-remove pointless PLATFORM_INFO() macro from setup-r8a7778,
-and, used original platform_device_register_xxx()
+DIV4 clocks control SD* core clocks.
+This patch is based on Rev 0.05 datasheet.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c |   26 +++++++++-----------------
- 1 file changed, 9 insertions(+), 17 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c |   32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 01c62be..57d6b0e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -78,21 +78,13 @@ static struct sh_timer_config sh_tmu1_platform_data = {
- 	.clocksource_rating	= 200,
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index e7282ef..f50229c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -48,6 +48,7 @@
+ #define SMSTPCR7 0xe615014c
+ 
+ #define MODEMR		0xE6160060
++#define SDCKCR		0xE6150074
+ 
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+@@ -124,6 +125,29 @@ static struct clk *main_clks[] = {
+ 	&cp_clk,
  };
  
--#define PLATFORM_INFO(n, i)					\
--{								\
--	.parent		= &platform_bus,			\
--	.name		= #n,					\
--	.id		= i,					\
--	.res		= n ## i ## _resources,			\
--	.num_res	= ARRAY_SIZE(n ## i ##_resources),	\
--	.data		= &n ## i ##_platform_data,		\
--	.size_data	= sizeof(n ## i ## _platform_data),	\
--}
--
--struct platform_device_info platform_devinfo[] = {
--	PLATFORM_INFO(sh_tmu, 0),
--	PLATFORM_INFO(sh_tmu, 1),
--};
-+#define r8a7778_register_tmu(idx)			\
-+	platform_device_register_resndata(		\
-+		&platform_bus, "sh_tmu", idx,		\
-+		sh_tmu##idx##_resources,		\
-+		ARRAY_SIZE(sh_tmu##idx##_resources),	\
-+		&sh_tmu##idx##_platform_data,		\
-+		sizeof(sh_tmu##idx##_platform_data))
++/* SDHI (DIV4) clock */
++static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
++
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors = divisors,
++	.nr_divisors = ARRAY_SIZE(divisors),
++};
++
++static struct clk_div4_table div4_table = {
++	.div_mult_table = &div4_div_mult_table,
++};
++
++enum {
++	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
++};
++
++struct clk div4_clks[DIV4_NR] = {
++	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
++	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
++	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
++};
++
++/* MSTP */
+ enum { MSTP721, MSTP720,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -165,6 +189,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("mp",		&mp_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
  
- void __init r8a7778_add_standard_devices(void)
- {
-@@ -114,8 +106,8 @@ void __init r8a7778_add_standard_devices(void)
- 					      &scif_platform_data[i],
- 					      sizeof(struct plat_sci_port));
++	/* DIV4 */
++	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
++	CLKDEV_CON_ID("sd0",		&div4_clks[DIV4_SD0]),
++	CLKDEV_CON_ID("sd1",		&div4_clks[DIV4_SD1]),
++
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+@@ -215,6 +244,9 @@ void __init r8a7790_clock_init(void)
+ 		ret = clk_register(main_clks[k]);
  
--	for (i = 0; i < ARRAY_SIZE(platform_devinfo); i++)
--		platform_device_register_full(&platform_devinfo[i]);
-+	r8a7778_register_tmu(0);
-+	r8a7778_register_tmu(1);
- }
+ 	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
  
- #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -- 
-1.7.10.4
+1.7.9.5
 
