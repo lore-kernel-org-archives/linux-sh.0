@@ -1,104 +1,45 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 01 Apr 2013 22:06:51 +0000
-Subject: [PATCH 2/2] ARM: shmobile: R8A7778: add Ether support
-Message-Id: <201304020206.52313.sergei.shtylyov@cogentembedded.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 04 Apr 2013 13:45:40 +0000
+Subject: [PATCH 2/6] ARM: shmobile: Armadillo800EVA: Convert SCIFA1 to pinctrl
+Message-Id: <1365083144-16085-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add Ether clock and platform device for R8A7778 SoC; add a function to register
-this device with board-specific platform data.
+We use the new pinctrl framework now.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
-This patch is atop of the 'next' branch of Simon Horman's renesas.git.
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a7778.c        |    3 +++
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   21 +++++++++++++++++++++
- 3 files changed, 25 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -58,11 +58,13 @@ static struct clk *main_clks[] = {
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 81db74a..2914b6e 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1036,6 +1036,9 @@ static struct platform_device *eva_devices[] __initdata = {
  };
  
- enum {
-+	MSTP114,
- 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015,
- 	MSTP_NR };
+ static const struct pinctrl_map eva_pinctrl_map[] = {
++	/* SCIFA1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
++				  "scifa1_data", "scifa1"),
+ 	/* LCD0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
+ 				  "lcd0_data24_0", "lcd0"),
+@@ -1109,10 +1112,6 @@ static void __init eva_init(void)
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
  
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP114] = SH_CLK_MSTP32(&clkp, MSTPCR1, 14, 0), /* Ether */
- 	[MSTP026] = SH_CLK_MSTP32(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
-@@ -75,6 +77,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+-	/* SCIFA1 */
+-	gpio_request(GPIO_FN_SCIFA1_RXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA1_TXD, NULL);
+-
+ 	/* LCDC0 */
+ 	gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
  
- static struct clk_lookup lookups[] = {
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -20,6 +20,7 @@
- 
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
-+extern void r8a7778_add_ether_device(void *pdata);
- extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
- extern void r8a7778_init_irq_dt(void);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2013  Renesas Solutions Corp.
-  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -78,6 +79,19 @@ static struct sh_timer_config sh_tmu1_pl
- 	.clocksource_rating	= 200,
- };
- 
-+/* Ether */
-+static struct resource ether_resources[] = {
-+	DEFINE_RES_MEM(0xfde00000, 0x400),
-+	DEFINE_RES_IRQ(gic_iid(0x89)),
-+};
-+
-+static struct platform_device ether_device = {
-+	.name		= "sh-eth",
-+	.id		= -1,
-+	.resource	= ether_resources,
-+	.num_resources	= ARRAY_SIZE(ether_resources),
-+};
-+
- #define PLATFORM_INFO(n, i)					\
- {								\
- 	.parent		= &platform_bus,			\
-@@ -118,6 +132,13 @@ void __init r8a7778_add_standard_devices
- 		platform_device_register_full(&platform_devinfo[i]);
- }
- 
-+void __init r8a7778_add_ether_device(void *pdata)
-+{
-+	ether_device.dev.platform_data = pdata;
-+
-+	platform_device_register(&ether_device);
-+}
-+
- #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
- #define INT2SMSKCR1	0x8228c /* 0xfe78228c */
- 
+-- 
+1.7.9.5
+
