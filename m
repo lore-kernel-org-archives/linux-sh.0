@@ -1,37 +1,43 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 03 Apr 2013 06:30:59 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 04 Apr 2013 03:33:39 +0000
 Subject: Re: [GIT PULL v2] Renesas ARM SoC board updates for v3.10 #3
-Message-Id: <20130403063059.GB29601@quad.lixom.net>
+Message-Id: <20130404033338.GB28297@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
+ <20130403063059.GB29601@quad.lixom.net>
+In-Reply-To: <20130403063059.GB29601@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
-
-On Wed, Apr 03, 2013 at 11:08:15AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
+On Tue, Apr 02, 2013 at 11:30:59PM -0700, Olof Johansson wrote:
+> Hi,
 > 
-> The following changes since commit eb0ae7280939fda741ad6ae9b108725517652f56:
+> On Wed, Apr 03, 2013 at 11:08:15AM +0900, Simon Horman wrote:
+> > Hi Olof, Hi Arnd,
+> > 
+> > The following changes since commit eb0ae7280939fda741ad6ae9b108725517652f56:
+> > 
+> >   Merge tag 'renesas-pinmux2-for-v3.10' into boards-base (2013-04-03 10:49:18 +0900)
+> > 
+> > are available in the git repository at:
+> > 
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards3-for-v3.10
 > 
->   Merge tag 'renesas-pinmux2-for-v3.10' into boards-base (2013-04-03 10:49:18 +0900)
+> Pulled in in a next/boards2 since it depends on next/soc2.
 > 
-> are available in the git repository at:
+> >  arch/arm/configs/bockw_defconfig             |   66 +++++++++++++++
 > 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards3-for-v3.10
+> shmobile is now up to 11 defconfigs in arch/arm/configs. It'd be nice if
+> you could move towards what OMAP and many other platforms have started
+> doing for a while now, with one superset defconfig for the platform
+> (well, one for v4/v5 harware and one for v6+).
 
-Pulled in in a next/boards2 since it depends on next/soc2.
+The not so good news is that there is one more in the pipeline for
+the lager board.
 
->  arch/arm/configs/bockw_defconfig             |   66 +++++++++++++++
+The more positive news is that this morning I sent out a series
+to try and kick of consolidation. I have CCed you on that series.
 
-shmobile is now up to 11 defconfigs in arch/arm/configs. It'd be nice if
-you could move towards what OMAP and many other platforms have started
-doing for a while now, with one superset defconfig for the platform
-(well, one for v4/v5 harware and one for v6+).
-
-
--Olof
