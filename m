@@ -1,46 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Apr 2013 00:36:20 +0000
-Subject: Re: [PATCH v2 2/2] ARM: sh-mobile: r8a7790: Make private clock arrays static
-Message-Id: <20130417003620.GA16092@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Apr 2013 23:05:14 +0000
+Subject: [PATCH 5/8] rcar-phy: correct base address
+Message-Id: <201304050305.15517.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366125380-14528-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366125380-14528-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 16, 2013 at 05:16:20PM +0200, Laurent Pinchart wrote:
-> Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
-> non-static. Compiling support for both SoCs thus result in a symbol
-> redefinition. Fix it by defining the arrays as static.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The memory region that is used by the driver overlaps EHCI and OHCI register
+regions for absolutely no reason now  -- fix it by adding offset of 0x800 to
+the base address, changing the register #define's accordingly. This has extra
+positive effect that we now can use devm_ioremap_resource().
 
-Thanks, queued-up for v3.11 in the soc-r8a7790 branch.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> ---
->  arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-> index a481003..bedd20c 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-> @@ -154,7 +154,7 @@ enum {
->  	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
->  };
->  
-> -struct clk div4_clks[DIV4_NR] = {
-> +static struct clk div4_clks[DIV4_NR] = {
->  	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
->  	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
->  	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
-> -- 
-> 1.8.1.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
+ drivers/usb/phy/rcar-phy.c             |   28 ++++++++++------------------
+ 2 files changed, 11 insertions(+), 19 deletions(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -401,7 +401,7 @@ static struct platform_device sata_devic
+ /* USB PHY */
+ static struct resource usb_phy_resources[] = {
+ 	[0] = {
+-		.start		= 0xffe70000,
++		.start		= 0xffe70800,
+ 		.end		= 0xffe70900 - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+Index: renesas/drivers/usb/phy/rcar-phy.c
+=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
++++ renesas/drivers/usb/phy/rcar-phy.c
+@@ -16,13 +16,13 @@
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
+ 
+-/* USBH common register */
+-#define USBPCTRL0	0x0800
+-#define USBPCTRL1	0x0804
+-#define USBST		0x0808
+-#define USBEH0		0x080C
+-#define USBOH0		0x081C
+-#define USBCTL0		0x0858
++/* REGS block */
++#define USBPCTRL0	0x00
++#define USBPCTRL1	0x04
++#define USBST		0x08
++#define USBEH0		0x0C
++#define USBOH0		0x1C
++#define USBCTL0		0x58
+ 
+ /* USBPCTRL1 */
+ #define PHY_RST		(1 << 2)
+@@ -139,17 +139,9 @@ static int rcar_usb_phy_probe(struct pla
+ 		return -EINVAL;
+ 	}
+ 
+-	/*
+-	 * CAUTION
+-	 *
+-	 * Because this phy address is also mapped under OHCI/EHCI address area,
+-	 * this driver can't use devm_request_and_ioremap(dev, res) here
+-	 */
+-	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
+-	if (!reg0) {
+-		dev_err(dev, "ioremap error\n");
+-		return -ENOMEM;
+-	}
++	reg0 = devm_ioremap_resource(dev, res0);
++	if (IS_ERR(reg0))
++		return PTR_ERR(reg0);
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv) {
