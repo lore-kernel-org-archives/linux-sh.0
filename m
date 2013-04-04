@@ -1,72 +1,63 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Mon, 08 Apr 2013 15:38:38 +0000
-Subject: Re: [PATCH v7 2/7] media: V4L2: support asynchronous subdevice registration
-Message-Id: <5162E47E.8010306@samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Apr 2013 03:29:46 +0000
+Subject: [RFC/PATCH 0/7] ARCH: shmobile: defconfig consolidation
+Message-Id: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
- <1365419231-14830-3-git-send-email-g.liakhovetski@gmx.de>
- <5162C934.90808@samsung.com> <Pine.LNX.4.64.1304081548360.29945@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304081548360.29945@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-media@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On 04/08/2013 03:55 PM, Guennadi Liakhovetski wrote:
-> On Mon, 8 Apr 2013, Sylwester Nawrocki wrote:
->> On 04/08/2013 01:07 PM, Guennadi Liakhovetski wrote:
-[...]
->>> +static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
->>> +						    struct v4l2_async_subdev_list *asdl)
->>> +{
->>> +	struct v4l2_async_subdev *asd = NULL;
->>> +	bool (*match)(struct device *,
->>> +		      struct v4l2_async_hw_device *);
->>> +
->>> +	list_for_each_entry (asd, &notifier->waiting, list) {
->>> +		struct v4l2_async_hw_device *hw = &asd->hw;
->>> +		switch (hw->bus_type) {
->>> +		case V4L2_ASYNC_BUS_SPECIAL:
->>> +			match = hw->match.special.match;
->>> +			if (!match)
->>> +				/* Match always */
->>> +				return asd;
->>> +			break;
->>> +		case V4L2_ASYNC_BUS_PLATFORM:
->>> +			match = match_platform;
->>> +			break;
->>> +		case V4L2_ASYNC_BUS_I2C:
->>> +			match = match_i2c;
->>> +			break;
->>> +		default:
->>> +			/* Oops */
->>> +			match = NULL;
->>> +			dev_err(notifier->v4l2_dev ? notifier->v4l2_dev->dev : NULL,
->>> +				"Invalid bus-type %u on %p\n", hw->bus_type, asd);
->>> +		}
->>> +
->>> +		if (match && match(asdl->dev, hw))
->>> +			break;
->>
->> Since we maintain various lists of sub-devices, couldn't we match them e.g. by
->> name instead ? What would be preventing this ?
-> 
-> Do you have a specific case where your proposal would work, whereas mine 
-> wouldn't? This can be changed at any time, we can leave it until there's a 
-> real use-case, for which this implementation wouldn't work.
+Hi,
 
-No, don't have any specific case in mind. Just was wondering if we don't
-happen to be over-engineering things a bit. And yes, this seems something
-that could be changed later if required.
+this is a first pass at consolidating the defconfigs of shmobile.
 
->> And additionally provide an API to override the matching method?
-> 
-> Override - that's what the "SPECIAL" (CUSTOM) is for.
+It covers the mackerel, amradillo800eva and kzm9d boards which meet
+the following criteria:
 
-Yes, I wanted to emphasize the idea to have a possibility for custom subdev
-matching was good.
+* Have the same base memory address (0x40000000).
+* Work with RUNTIME_PM, it is desirable to have that a common defconfig
+* Are booted via DT, enabling the command line to be supplied in the dts.
+  This is important to allow serial console and early printk settings,
+  which vary wildly between boards, to be supplied.
+* Boards I have to test.
+  This didn't eliminate any candidates that met the above criteria.
 
+I believe it should also be possible to add support for the APE6EVM
+board to the consolidated defconfig once problems with RUNTIME_PM
+have been isolated and resolved. I have send an email about this
+in a separate thread "APE6EVM and Runtime PM".
 
-Regards,
-Sylwester
+I believe it may be possible to add support for the lager board
+to the consolidated defconfig once I am able to bring that board up,
+which should be rather soon. The lager board does not currently
+have a defconfig.
+
+Morimoto-san, I suspect it may be possible to add support for the
+bockw board to the consolidated defconfig if its boot loader supports
+booting using a zImage. In this case even though the base memory address
+is not the same as the boards above it should be possible to specify
+the base address from the boot loader. As I do not have a bockw board
+I am wondering if you could investigate this.
+
+Simon Horman (7):
+  ARM: shmobile: prune defconfig
+  ARM: shmobile: make defconfig canonical
+  ARM: shmobile: Add kzm9d to consolidated defconfig
+  ARM: shmobile: Add mackerel to consolidated defconfig
+  ARM: shmobile: defconfig: Remove armadillo800eva defconfig
+  ARM: shmobile: defconfig: Remove kzm9d defconfig
+  ARM: shmobile: defconfig: Remove mackerel defconfig
+
+ arch/arm/configs/armadillo800eva_defconfig |  153 ---------------------------
+ arch/arm/configs/kzm9d_defconfig           |   88 ----------------
+ arch/arm/configs/mackerel_defconfig        |  156 ----------------------------
+ arch/arm/configs/shmobile_defconfig        |   51 +++++----
+ 4 files changed, 28 insertions(+), 420 deletions(-)
+ delete mode 100644 arch/arm/configs/armadillo800eva_defconfig
+ delete mode 100644 arch/arm/configs/kzm9d_defconfig
+ delete mode 100644 arch/arm/configs/mackerel_defconfig
+
+-- 
+1.7.10.4
+
