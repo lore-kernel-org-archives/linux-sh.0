@@ -1,37 +1,83 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 08 Apr 2013 21:26:27 +0000
-Subject: [PATCH v2 5/9] ARM: shmobile: R8A7779: remove USB PHY 2nd memory resource
-Message-Id: <201304090126.27827.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Apr 2013 03:29:48 +0000
+Subject: [RFC/PATCH 2/7] ARM: shmobile: make defconfig canonical
+Message-Id: <1365046193-19369-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that 'drivers/usb/phy/rcar-phy.c' doesn't require the second memory resource
-anymore, we can remove it from the R8A7779's USB PHY platform device.
+Use make savedefconfig to update the defconfig to the current
+canonical form.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This is to aid the process of adding support for other boards.
 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since the original posting:
-- new patch in this version, split from the previous one.
+ arch/arm/configs/shmobile_defconfig |   11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
 
- arch/arm/mach-shmobile/setup-r8a7779.c |    5 -----
- 1 file changed, 5 deletions(-)
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 90f5600..fd1c074 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -1,4 +1,3 @@
+-CONFIG_EXPERIMENTAL=y
+ CONFIG_SYSVIPC=y
+ CONFIG_IKCONFIG=y
+ CONFIG_IKCONFIG_PROC=y
+@@ -13,8 +12,6 @@ CONFIG_ARCH_SHMOBILE=y
+ CONFIG_ARCH_R8A7740=y
+ CONFIG_MACH_ARMADILLO800EVA=y
+ # CONFIG_SH_TIMER_TMU is not set
+-CONFIG_ARM_THUMB=y
+-CONFIG_CACHE_L2X0=y
+ CONFIG_ARM_ERRATA_430973=y
+ CONFIG_ARM_ERRATA_458693=y
+ CONFIG_ARM_ERRATA_460075=y
+@@ -58,7 +55,6 @@ CONFIG_MD=y
+ CONFIG_BLK_DEV_DM=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+-# CONFIG_NET_VENDOR_CHELSIO is not set
+ # CONFIG_NET_VENDOR_CIRRUS is not set
+ # CONFIG_NET_VENDOR_FARADAY is not set
+ # CONFIG_NET_VENDOR_INTEL is not set
+@@ -89,16 +85,14 @@ CONFIG_I2C_SH_MOBILE=y
+ # CONFIG_HWMON is not set
+ CONFIG_REGULATOR=y
+ CONFIG_MEDIA_SUPPORT=y
+-CONFIG_VIDEO_DEV=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
+ CONFIG_V4L_PLATFORM_DRIVERS=y
+ CONFIG_SOC_CAMERA=y
+-CONFIG_SOC_CAMERA_MT9T112=y
+ CONFIG_VIDEO_SH_MOBILE_CEU=y
++CONFIG_SOC_CAMERA_MT9T112=y
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FB_SH_MOBILE_HDMI=y
+-CONFIG_LCD_CLASS_DEVICE=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
+ CONFIG_LOGO=y
+@@ -109,12 +103,11 @@ CONFIG_LOGO=y
+ # CONFIG_SND_DRIVERS is not set
+ # CONFIG_SND_ARM is not set
+ CONFIG_SND_SOC_SH4_FSI=y
+-# CONFIG_HID_SUPPORT is not set
+ CONFIG_USB=y
+ CONFIG_USB_RENESAS_USBHS=y
+ CONFIG_USB_GADGET=y
+ CONFIG_USB_RENESAS_USBHS_UDC=y
+-CONFIG_USB_ETH=m
++CONFIG_USB_ETH=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_MMC_SH_MMCIF=y
+-- 
+1.7.10.4
 
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -405,11 +405,6 @@ static struct resource usb_phy_resources
- 		.end		= 0xffe70900 - 1,
- 		.flags		= IORESOURCE_MEM,
- 	},
--	[1] = {
--		.start		= 0xfff70000,
--		.end		= 0xfff70900 - 1,
--		.flags		= IORESOURCE_MEM,
--	},
- };
- 
- static struct platform_device usb_phy_device = {
