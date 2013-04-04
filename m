@@ -1,53 +1,49 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Wed, 17 Apr 2013 13:32:55 +0000
-Subject: [PATCH 2/4] SH: cpuidle: remove CPUIDLE_DRIVER_STATE_START usage
-Message-Id: <1366205577-11632-2-git-send-email-daniel.lezcano@linaro.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Apr 2013 23:01:59 +0000
+Subject: [PATCH 3/8] ARM: shmobile: R8A7779: setup EHCI internal buffer
+Message-Id: <201304050301.59961.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366205577-11632-1-git-send-email-daniel.lezcano@linaro.org>
-In-Reply-To: <1366205577-11632-1-git-send-email-daniel.lezcano@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: lethal@linux-sh.org, rjw@sisk.pl
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, patches@linaro.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Daniel Lezcano <daniel.lezcano@linaro.or>
+Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
+registers) using the init() method in 'struct usb_ehci_pdata'.
 
-The CPUIDLE_DRIVER_STATE_START constant is only set when the kernel compilation
-option CONFIG_ARCH_HAS_CPU_RELAX is set, but this is only relatated to x86, so
-it is always zero.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Remove the reference to this constant in the code.
-
-Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 ---
- arch/sh/kernel/cpu/shmobile/cpuidle.c |    6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-index 5b44af9..36374cc 100644
---- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
-+++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-@@ -62,9 +62,7 @@ void sh_mobile_setup_cpuidle(void)
- 	struct cpuidle_device *dev = &cpuidle_dev;
- 	struct cpuidle_driver *drv = &cpuidle_driver;
- 	struct cpuidle_state *state;
--	int i;
--
--	i = CPUIDLE_DRIVER_STATE_START;
-+	int i = 0;
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -445,10 +445,26 @@ static void usb_power_off(struct platfor
+ 	pm_runtime_disable(&pdev->dev);
+ }
  
- 	state = &drv->states[i++];
- 	snprintf(state->name, CPUIDLE_NAME_LEN, "C1");
-@@ -76,7 +74,7 @@ void sh_mobile_setup_cpuidle(void)
- 	state->flags |= CPUIDLE_FLAG_TIME_VALID;
- 	state->enter = cpuidle_sleep_enter;
++static int ehci_init_internal_buffer(struct platform_device *pdev,
++				     void __iomem *regs)
++{
++	/*
++	 * Below are recommended values from the datasheet;
++	 * see [USB :: Setting of EHCI Internal Buffer].
++	 */
++	/* EHCI IP internal buffer setting */
++	iowrite32(0x00ff0040, regs + 0x0094);
++	/* EHCI IP internal buffer enable */
++	iowrite32(0x00000001, regs + 0x009C);
++
++	return 0;
++}
++
+ static struct usb_ehci_pdata ehcix_pdata = {
+ 	.power_on	= usb_power_on,
+ 	.power_off	= usb_power_off,
+ 	.power_suspend	= usb_power_off,
++	.init		= ehci_init_internal_buffer,
+ };
  
--	drv->safe_state_index = i-1;
-+	drv->safe_state_index = 0;
- 
- 	if (sh_mobile_sleep_supported & SUSP_SH_SF) {
- 		state = &drv->states[i++];
--- 
-1.7.9.5
-
+ static struct resource ehci0_resources[] = {
