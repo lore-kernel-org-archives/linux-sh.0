@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 04 Apr 2013 00:27:02 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 04 Apr 2013 03:32:00 +0000
 Subject: Re: [PATCH/RFC 2/3] ARM: shmobile: initialise clock early on kzm9g-reference
-Message-Id: <87zjxfdtt8.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20130404033158.GA28297@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
  <1365005636-17526-3-git-send-email-g.liakhovetski@gmx.de>
@@ -11,34 +11,88 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Guennadi
-
+On Wed, Apr 03, 2013 at 06:13:55PM +0200, Guennadi Liakhovetski wrote:
 > To prepare to enable TWD on kzm9g-reference, clock initialisation has to be
 > done early. Move it from .init_machine to .init_time stage.
+
+I'm pretty surprised by this given how much effort has
+been made to avoid early clock initialisation.
+
 > 
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 > ---
-(snip)
+>  arch/arm/mach-shmobile/board-kzm9g-reference.c |    8 +++++++-
+>  arch/arm/mach-shmobile/setup-sh73a0.c          |   13 +++++++++----
+>  2 files changed, 16 insertions(+), 5 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+> index aefa50d..0f9b276 100644
+> --- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
+> +++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+> @@ -90,6 +90,12 @@ static void __init kzm_init(void)
+>  #endif
+>  }
+>  
 > +static void __init timer_init(void)
 > +{
 > +	sh73a0_clock_init();
 > +	shmobile_timer_init();
 > +}
-
-I'm not sure detail,
-but, shmobile_timer_init() will be removed.
-
-Can you check these patch/email on SH-ML or ARM ML ?
-
-Subject: [PATCH v2 02/13] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
-Date:	Mon,  1 Apr 2013 17:21:12 -0500
-
-Subject: [PATCH v2 02/13] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
-Date:	Mon,  1 Apr 2013 17:21:12 -0500
-
-
-
-Best regards
----
-Kuninori Morimoto
+> +
+>  static const char *kzm9g_boards_compat_dt[] __initdata = {
+>  	"renesas,kzm9g-reference",
+>  	NULL,
+> @@ -102,6 +108,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+>  	.nr_irqs	= NR_IRQS_LEGACY,
+>  	.init_irq	= irqchip_init,
+>  	.init_machine	= kzm_init,
+> -	.init_time	= shmobile_timer_init,
+> +	.init_time	= timer_init,
+>  	.dt_compat	= kzm9g_boards_compat_dt,
+>  MACHINE_END
+> diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+> index 0469e84..8a1bc1c 100644
+> --- a/arch/arm/mach-shmobile/setup-sh73a0.c
+> +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+> @@ -1018,9 +1018,6 @@ void __init sh73a0_add_standard_devices_dt(void)
+>  {
+>  	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
+>  
+> -	/* clocks are setup late during boot in the case of DT */
+> -	sh73a0_clock_init();
+> -
+>  	platform_add_devices(sh73a0_devices_dt,
+>  			     ARRAY_SIZE(sh73a0_devices_dt));
+>  	of_platform_populate(NULL, of_default_bus_match_table,
+> @@ -1030,6 +1027,14 @@ void __init sh73a0_add_standard_devices_dt(void)
+>  	platform_device_register_full(&devinfo);
+>  }
+>  
+> +static void __init add_standard_devices(void)
+> +{
+> +	/* clocks are setup late during boot in the case of DT */
+> +	sh73a0_clock_init();
+> +
+> +	sh73a0_add_standard_devices_dt();
+> +}
+> +
+>  static const char *sh73a0_boards_compat_dt[] __initdata = {
+>  	"renesas,sh73a0",
+>  	NULL,
+> @@ -1041,7 +1046,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+>  	.init_early	= sh73a0_init_delay,
+>  	.nr_irqs	= NR_IRQS_LEGACY,
+>  	.init_irq	= irqchip_init,
+> -	.init_machine	= sh73a0_add_standard_devices_dt,
+> +	.init_machine	= add_standard_devices,
+>  	.init_time	= shmobile_timer_init,
+>  	.dt_compat	= sh73a0_boards_compat_dt,
+>  MACHINE_END
+> -- 
+> 1.7.2.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
