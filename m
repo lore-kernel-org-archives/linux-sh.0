@@ -1,33 +1,52 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 03 Apr 2013 13:27:00 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 04 Apr 2013 06:34:10 +0000
 Subject: Re: [PATCH 1/2] ARM: shmobile: R8A7779: add Ether support
-Message-Id: <515C2E24.1080108@cogentembedded.com>
+Message-Id: <20130404063410.GP28297@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201304020204.54546.sergei.shtylyov@cogentembedded.com>
- <87y5d16b1d.wl%kuninori.morimoto.gx@renesas.com>
- <515AC4C8.1080803@cogentembedded.com>
- <87sj38cvfn.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sj38cvfn.wl%kuninori.morimoto.gx@renesas.com>
+ <87wqsl6ale.wl%kuninori.morimoto.gx@renesas.com>
+ <515AC546.90905@cogentembedded.com>
+ <87txnocw6n.wl%kuninori.morimoto.gx@renesas.com>
+ <515C2D0E.8010607@cogentembedded.com>
+In-Reply-To: <515C2D0E.8010607@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Wed, Apr 03, 2013 at 05:22:22PM +0400, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 03-04-2013 4:08, Kuninori Morimoto wrote:
+> 
+> >>>Then, this (void *pdata) should be
+> >>>(struct sh_eth_plat_data *pdata) IMO
+> 
+> >>     ether_device.dev.platform_data is 'void *'. I didn't want to bring in
+> >>extra header for the little use.
+> 
+> >Not enough reason for me.
+> 
+> >"void *" means there is no pointer check,
+> >and extra header is just 1 line. No ?
+> 
+>    There's no pointer check either if we just initialize the 'platform_data'
+> member as part of the platfrom device initializer, so we can
+> actually stuff pointer to any nonsense there. Why make this case
+> different?
+> 
+> >If you want to use this style,
+> >then, additional extra header is fate, IMO
+> 
+>    We can agree to disagree here. :-)
 
-On 03-04-2013 4:25, Kuninori Morimoto wrote:
+I would like void * changed to struct sh_eth_plat_data * so
+that callers of r8a7779_add_ether_device() will get a warning
+if they pass an argument of the wrong type.
 
->>> Current ARM SoC is trying to not use platform_device_register()
->>> Please use platform_device_register_xxx()
->>> Same comment for [2/2]
+Other than that I believe that I am happy with this patch.
 
->>      Is there some rationale to it? I don't find platform_device_register_xxx()
->> especially handy to use.
+Ditto for the similar patch for the R8A7778.
 
-> http://www.spinics.net/lists/linux-sh/msg16871.html
-
-    I don't see there actual Greg KH's rationale for not using 
-platform_register_device().
-
-WBR, Sergei
+Thanks
 
