@@ -1,55 +1,71 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Apr 2013 12:34:51 +0000
-Subject: Re: [PATCH v3 0/5] ARM: shmobile: mackerel: streamline SD and MMC devices
-Message-Id: <20130402123450.GA506@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 04 Apr 2013 14:54:51 +0000
+Subject: Re: [PATCH v2 1/2] ARM: mach-shmobile: r8a7779: Add DU support
+Message-Id: <4114102.zxcS0L0yqK@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364591152-4780-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1364591152-4780-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1364412073-12322-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1364412073-12322-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 02, 2013 at 09:01:12PM +0900, Simon Horman wrote:
-> Hi Guennadi,
-> 
-> On Tue, Apr 02, 2013 at 11:13:03AM +0200, Guennadi Liakhovetski wrote:
-> > Hi Simon
-> > 
-> > On Tue, 2 Apr 2013, Simon Horman wrote:
-> > 
-> > > On Fri, Mar 29, 2013 at 10:05:47PM +0100, Guennadi Liakhovetski wrote:
-> > > > This patch series is a split of a previous monolithic patch with no changes
-> > > > of the content.
-> > > > 
-> > > > Guennadi Liakhovetski (5):
-> > > >   ARM: shmobile: mackerel: SDHI resources do not have to be numbered
-> > > >   ARM: shmobile: mackerel: remove OCR masks, where regulators are used
-> > > >   ARM: shmobile: mackerel: switch SDHI and MMCIF interfaces to
-> > > >     slot-gpio
-> > > >   ARM: shmobile: mackerel: add interrupt names for SDHI0
-> > > >   ARM: shmobile: mackerel: clean up MMCIF vs. SDHI1 selection
-> > > > 
-> > > >  arch/arm/mach-shmobile/board-mackerel.c |  111 +++++++++++--------------------
-> > > 
-> > > Thanks Guennadi,
-> > > 
-> > > queued up for v3.10 in the boards branch.
-> > 
-> > Thanks for taking the patches. Are you aware off the top of your head of 
-> > any patches that are still pending updated versions from me (apart from 
-> > those, that Magnus wanted to discuss with me first)?
-> 
-> Not off the top of my head, other the ones that are pending
-> discussion with Magnus.
-> 
-> If you see anything missing as of renesas-next-20130402 then please
-> let me know.
+Hi Sergei,
 
-I did remember one thing, which is I'm wondering
-if you could wire up the r8a7779/marzen-reference to use irqpin via DT.
-Something similar to what you did for sh73a0/kzm9g-reference. I believe
-this would allow access to the SMSC ethernet on marzen-reference
-as it did on kzm9g-reference.
+On Thursday 28 March 2013 21:45:49 Sergei Shtylyov wrote:
+> On 03/28/2013 05:42 PM, Laurent Pinchart wrote:
+> >>> Add a function to register the DU device with board-specific platform
+> >>> data.
+> >>> 
+> >>> Signed-off-by: Laurent Pinchart
+> >>> <laurent.pinchart+renesas@ideasonboard.com>
+> >>> ---
+> >>> 
+> >>>    arch/arm/mach-shmobile/include/mach/common.h |  1 +
+> >>>    arch/arm/mach-shmobile/setup-r8a7779.c       | 30
+> >>>    ++++++++++++++++++++++
+> >>>    2 files changed, 31 insertions(+)
+> >>> 
+> >>> diff --git a/arch/arm/mach-shmobile/include/mach/common.h
+> >>> b/arch/arm/mach-shmobile/include/mach/common.h index 03f73de..4531872
+> >>> 100644
+> >>> --- a/arch/arm/mach-shmobile/include/mach/common.h
+> >>> +++ b/arch/arm/mach-shmobile/include/mach/common.h
+> >>> @@ -68,6 +68,7 @@ extern void r8a7779_earlytimer_init(void);
+> >>> 
+> >>>    extern void r8a7779_add_early_devices(void);
+> >>>    extern void r8a7779_add_standard_devices(void);
+> >>>    extern void r8a7779_add_standard_devices_dt(void);
+> >>> 
+> >>> +extern void r8a7779_add_du_device(void *pdata);
+> >>> 
+> >>      Maybe r8a7779_add_du0_device()?
+> > 
+> > There's a single DU device on the r8a7779, with two display outputs named
+> > DU0 and DU1. I agree that's a bit confusing.
+> > 
+> >>> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c
+> >>> b/arch/arm/mach-shmobile/setup-r8a7779.c index a460ba3..2f817d8 100644
+> >>> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
+> >>> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+> >>> @@ -393,6 +393,29 @@ static struct platform_device sata_device = {
+> >> 
+> >> [...]
+> >> 
+> >>> +static struct platform_device du_device = {
+> >>> +	.name		= "rcar-du",
+> >>> +	.num_resources	= ARRAY_SIZE(du_resources),
+> >>> +	.resource	= du_resources,
+> >>> +	.id		= 0,
+> >>> 
+> >>      You probably should have written in the subject "add DU0 support".
+> 
+> If there's only single display device, why you're not using 'id' of -1?
 
-I can give you remote access to a marzen board if that would help.
+Good point. I'll fix that.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
