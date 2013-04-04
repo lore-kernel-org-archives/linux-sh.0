@@ -1,62 +1,45 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 04 Apr 2013 06:47:22 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 04 Apr 2013 07:02:18 +0000
 Subject: Re: [PATCH/RFC 2/3] ARM: shmobile: initialise clock early on kzm9g-reference
-Message-Id: <Pine.LNX.4.64.1304040830380.21548@axis700.grange>
+Message-Id: <87vc82eq2x.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
  <1365005636-17526-3-git-send-email-g.liakhovetski@gmx.de>
  <87zjxfdtt8.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zjxfdtt8.wl%kuninori.morimoto.gx@renesas.com>
+ <Pine.LNX.4.64.1304040830380.21548@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1304040830380.21548@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san
 
-On Wed, 3 Apr 2013, Kuninori Morimoto wrote:
+Hi Guennadi
 
-> Hi Guennadi
-> 
-> > To prepare to enable TWD on kzm9g-reference, clock initialisation has to be
-> > done early. Move it from .init_machine to .init_time stage.
+> > Subject: [PATCH v2 02/13] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
+> > Date:	Mon,  1 Apr 2013 17:21:12 -0500
 > > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> (snip)
-> > +static void __init timer_init(void)
-> > +{
-> > +	sh73a0_clock_init();
-> > +	shmobile_timer_init();
-> > +}
+> > Subject: [PATCH v2 02/13] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
+> > Date:	Mon,  1 Apr 2013 17:21:12 -0500
 > 
-> I'm not sure detail,
-> but, shmobile_timer_init() will be removed.
+> Did you mean two different patches or was the duplication an accident? 
+
+Sorry, it was my copy-paste fault
+
+> Anyway, thanks for a heads-up! I checked that patch, interesting. At least 
+> it's conflicting with this patch from Magnus:
 > 
-> Can you check these patch/email on SH-ML or ARM ML ?
+> "ARM: shmobile: Register DT TWD from timer.c"
+> https://patchwork.kernel.org/patch/2222551/
 > 
-> Subject: [PATCH v2 02/13] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
-> Date:	Mon,  1 Apr 2013 17:21:12 -0500
-> 
-> Subject: [PATCH v2 02/13] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
-> Date:	Mon,  1 Apr 2013 17:21:12 -0500
+> I know those patches are on a hold, but I was using the one above locally. 
+> If shmobile_timer_init() is removed, this won't be a huge problem for this 
+> work, I'll just have to call twd_local_timer_of_register() directly from 
+> .init_time, but whether these patches are good for upstream at all is 
+> another question, I'll expand on it a bit in a reply to Simon's mail.
 
-Did you mean two different patches or was the duplication an accident? 
-Anyway, thanks for a heads-up! I checked that patch, interesting. At least 
-it's conflicting with this patch from Magnus:
+Thank you for your help !
 
-"ARM: shmobile: Register DT TWD from timer.c"
-https://patchwork.kernel.org/patch/2222551/
-
-I know those patches are on a hold, but I was using the one above locally. 
-If shmobile_timer_init() is removed, this won't be a huge problem for this 
-work, I'll just have to call twd_local_timer_of_register() directly from 
-.init_time, but whether these patches are good for upstream at all is 
-another question, I'll expand on it a bit in a reply to Simon's mail.
-
-Thanks
-Guennadi
+Best regards
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Kuninori Morimoto
