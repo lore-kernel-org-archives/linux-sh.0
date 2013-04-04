@@ -1,117 +1,117 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 21 Apr 2013 18:42:02 +0000
-Subject: [PATCH v2 3/5] ARM: shmobile: r8a7778: add VIN support
-Message-Id: <201304212242.03076.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Apr 2013 03:29:52 +0000
+Subject: [RFC/PATCH 6/7] ARM: shmobile: defconfig: Remove kzm9d defconfig
+Message-Id: <1365046193-19369-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Remove kzm9d defconfig as the shmobile defconfig may now be used instead.
 
-Add VIN clocks and platform devices on R8A7778 SoC; add function to register
-the VIN platform devices.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: added 'id' parameter check to r8a7779_add_vin_device(), used '*pdata'
-in *sizeof* operator there, renamed some variables, marked 'vin[01]_info' as
-'__initdata'.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c        |    5 +++
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    3 ++
- arch/arm/mach-shmobile/setup-r8a7778.c        |   33 ++++++++++++++++++++++++++
- 3 files changed, 41 insertions(+)
+ arch/arm/configs/kzm9d_defconfig |   88 --------------------------------------
+ 1 file changed, 88 deletions(-)
+ delete mode 100644 arch/arm/configs/kzm9d_defconfig
 
-Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -106,6 +106,7 @@ static struct clk *main_clks[] = {
- enum {
- 	MSTP323, MSTP322, MSTP321,
- 	MSTP114,
-+	MSTP110, MSTP109,
- 	MSTP100,
- 	MSTP030, MSTP029,
- 	MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -117,6 +118,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
-+	[MSTP110] = SH_CLK_MSTP32(&s_clk, MSTPCR1, 10, 0), /* VIN0 */
-+	[MSTP109] = SH_CLK_MSTP32(&s_clk, MSTPCR1,  9, 0), /* VIN1 */
- 	[MSTP100] = SH_CLK_MSTP32(&p_clk, MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
- 	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
-@@ -140,6 +143,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("rcar_vin.0", &mstp_clks[MSTP110]), /* VIN0 */
-+	CLKDEV_DEV_ID("rcar_vin.1", &mstp_clks[MSTP109]), /* VIN1 */
- 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -21,11 +21,14 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/sh_eth.h>
- #include <linux/usb/rcar-phy.h>
-+#include <linux/platform_data/camera-rcar.h>
- 
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7778_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
-+extern void r8a7778_add_vin_device(int id,
-+				   struct rcar_vin_platform_data *pdata);
- extern void r8a7778_init_late(void);
- extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -265,6 +265,39 @@ void __init r8a7778_sdhi_init(int id,
- 		info, sizeof(*info));
- }
- 
-+/* VIN */
-+#define R8A7778_VIN(idx)						\
-+static struct resource vin##idx##_resources[] = {			\
-+	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
-+	DEFINE_RES_IRQ(gic_iid(0x5a)),					\
-+};									\
-+									\
-+static struct platform_device_info vin##idx##_info __initdata = {	\
-+	.parent		= &platform_bus,				\
-+	.name		= "rcar_vin",					\
-+	.id		= idx,						\
-+	.res		= vin##idx##_resources,				\
-+	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
-+	.dma_mask	= DMA_BIT_MASK(32),				\
-+}
-+
-+R8A7778_VIN(0);
-+R8A7778_VIN(1);
-+
-+static struct platform_device_info *vin_info_table[] __initdata = {
-+	&vin0_info,
-+	&vin1_info,
-+};
-+
-+void __init r8a7778_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
-+{
-+	BUG_ON(id < 0 || id > 1);
-+
-+	vin_info_table[id]->data = pdata;
-+	vin_info_table[id]->size_data = sizeof(*pdata);
-+	platform_device_register_full(vin_info_table[id]);
-+}
-+
- void __init r8a7778_add_standard_devices(void)
- {
- 	int i;
+diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
+deleted file mode 100644
+index 6c37f4a..0000000
+--- a/arch/arm/configs/kzm9d_defconfig
++++ /dev/null
+@@ -1,88 +0,0 @@
+-# CONFIG_ARM_PATCH_PHYS_VIRT is not set
+-CONFIG_EXPERIMENTAL=y
+-CONFIG_SYSVIPC=y
+-CONFIG_NO_HZ=y
+-CONFIG_IKCONFIG=y
+-CONFIG_IKCONFIG_PROC=y
+-CONFIG_LOG_BUF_SHIFT
+-CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+-CONFIG_SYSCTL_SYSCALL=y
+-CONFIG_EMBEDDED=y
+-CONFIG_PERF_EVENTS=y
+-CONFIG_SLAB=y
+-# CONFIG_BLK_DEV_BSG is not set
+-# CONFIG_IOSCHED_DEADLINE is not set
+-# CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
+-CONFIG_ARCH_EMEV2=y
+-CONFIG_MACH_KZM9D=y
+-CONFIG_MEMORY_START=0x40000000
+-CONFIG_MEMORY_SIZE=0x10000000
+-# CONFIG_SH_TIMER_TMU is not set
+-# CONFIG_SWP_EMULATE is not set
+-# CONFIG_CACHE_L2X0 is not set
+-CONFIG_SMP=y
+-CONFIG_NR_CPUS=2
+-CONFIG_HOTPLUG_CPU=y
+-# CONFIG_LOCAL_TIMERS is not set
+-CONFIG_AEABI=y
+-# CONFIG_OABI_COMPAT is not set
+-# CONFIG_CROSS_MEMORY_ATTACH is not set
+-CONFIG_FORCE_MAX_ZONEORDER
+-CONFIG_ZBOOT_ROM_TEXT=0x0
+-CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_ARM_APPENDED_DTB=y
+-CONFIG_VFP=y
+-# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-CONFIG_PM_RUNTIME=y
+-CONFIG_NET=y
+-CONFIG_PACKET=y
+-CONFIG_UNIX=y
+-CONFIG_INET=y
+-CONFIG_IP_PNP=y
+-CONFIG_IP_PNP_DHCP=y
+-# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
+-# CONFIG_INET_XFRM_MODE_TUNNEL is not set
+-# CONFIG_INET_XFRM_MODE_BEET is not set
+-# CONFIG_INET_LRO is not set
+-# CONFIG_INET_DIAG is not set
+-# CONFIG_IPV6 is not set
+-# CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-# CONFIG_BLK_DEV is not set
+-CONFIG_NETDEVICES=y
+-# CONFIG_NET_VENDOR_BROADCOM is not set
+-# CONFIG_NET_VENDOR_CHELSIO is not set
+-# CONFIG_NET_VENDOR_CIRRUS is not set
+-# CONFIG_NET_VENDOR_FARADAY is not set
+-# CONFIG_NET_VENDOR_INTEL is not set
+-# CONFIG_NET_VENDOR_MARVELL is not set
+-# CONFIG_NET_VENDOR_MICREL is not set
+-# CONFIG_NET_VENDOR_NATSEMI is not set
+-# CONFIG_NET_VENDOR_SEEQ is not set
+-CONFIG_SMSC911X=y
+-# CONFIG_NET_VENDOR_STMICRO is not set
+-# CONFIG_NET_VENDOR_WIZNET is not set
+-# CONFIG_WLAN is not set
+-# CONFIG_INPUT_MOUSEDEV is not set
+-# CONFIG_INPUT_KEYBOARD is not set
+-# CONFIG_INPUT_MOUSE is not set
+-# CONFIG_SERIO is not set
+-# CONFIG_LEGACY_PTYS is not set
+-# CONFIG_DEVKMEM is not set
+-CONFIG_SERIAL_8250=y
+-CONFIG_SERIAL_8250_CONSOLE=y
+-CONFIG_SERIAL_8250_EM=y
+-# CONFIG_HW_RANDOM is not set
+-CONFIG_GPIOLIB=y
+-CONFIG_GPIO_EM=y
+-# CONFIG_HWMON is not set
+-# CONFIG_HID_SUPPORT is not set
+-# CONFIG_USB_SUPPORT is not set
+-# CONFIG_IOMMU_SUPPORT is not set
+-# CONFIG_DNOTIFY is not set
+-CONFIG_TMPFS=y
+-# CONFIG_MISC_FILESYSTEMS is not set
+-CONFIG_NFS_FS=y
+-CONFIG_ROOT_NFS=y
+-# CONFIG_FTRACE is not set
+-- 
+1.7.10.4
+
