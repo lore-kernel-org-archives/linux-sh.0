@@ -1,91 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 05 Apr 2013 02:56:23 +0000
-Subject: [PATCH] ARM: shmobile: bockw: enable SMSC ethernet on defconfig
-Message-Id: <1365130583-11257-2-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Apr 2013 23:07:50 +0000
+Subject: [PATCH 6/8] rcar-phy: add platform data
+Message-Id: <201304050307.51360.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365130583-11257-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365130583-11257-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong since this
+register contains board-specific USB ports configuration and so its value should
+be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file with
+the USBPCTRL0 bit #define's and 'struct rcar_phy_platform_data' containing the
+value to be set by the driver to that register.
 
-This patch adds SMSC ethernet support on Bock-W defconfig
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/bockw_defconfig |   34 +++++++++++++++++++++++++++++++---
- 1 file changed, 31 insertions(+), 3 deletions(-)
+ include/linux/usb/rcar-phy.h |   39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 6037705..6524cdf 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -27,16 +27,40 @@ CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
--CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel"
-+CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
- CONFIG_CMDLINE_FORCE=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- # CONFIG_SUSPEND is not set
-+CONFIG_NET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
-+# CONFIG_INET_XFRM_MODE_TUNNEL is not set
-+# CONFIG_INET_XFRM_MODE_BEET is not set
-+# CONFIG_INET_LRO is not set
-+# CONFIG_INET_DIAG is not set
-+# CONFIG_IPV6 is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
- CONFIG_DEVTMPFS=y
- CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_CADENCE is not set
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CIRRUS is not set
-+# CONFIG_NET_VENDOR_FARADAY is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+CONFIG_SMSC911X=y
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_NET_VENDOR_WIZNET is not set
- # CONFIG_INPUT is not set
- # CONFIG_SERIO is not set
- # CONFIG_VT is not set
-@@ -55,12 +79,16 @@ CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_INOTIFY_USER is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_V3_ACL=y
-+CONFIG_NFS_V4=y
-+CONFIG_NFS_SWAP=y
-+CONFIG_NFS_V4_1=y
-+CONFIG_ROOT_NFS=y
- # CONFIG_ENABLE_WARN_DEPRECATED is not set
- # CONFIG_ENABLE_MUST_CHECK is not set
- # CONFIG_SCHED_DEBUG is not set
- # CONFIG_DEBUG_BUGVERBOSE is not set
- # CONFIG_FTRACE is not set
- # CONFIG_ARM_UNWIND is not set
--CONFIG_KEYS=y
--CONFIG_CRYPTO=y
- CONFIG_AVERAGE=y
--- 
-1.7.10.4
-
+Index: renesas/include/linux/usb/rcar-phy.h
+=================================--- /dev/null
++++ renesas/include/linux/usb/rcar-phy.h
+@@ -0,0 +1,39 @@
++/*
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Cogent Embedded, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef __RCAR_PHY_H
++#define __RCAR_PHY_H
++
++#include <linux/bitops.h>
++
++/* USBPCTRL0 register bits */
++#define USBPCTRL0_OVC2	BIT(10)	/* Switches the OVC input pin for port 2: */
++				/* 1: USB_OVC2, 0: OVC2			*/
++#define USBPCTRL0_OVC1_VBUS1 BIT(9) /* Switches the OVC input pin for port 1: */
++				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
++#define USBPCTRL0_OVC0	BIT(8)	/* Switches the OVC input pin for port 0: */
++				/* 1: USB_OVC0 pin, 0: OVC0		*/
++#define USBPCTRL0_OVC2_ACT BIT(6) /* Host mode: OVC2 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++				/* Function mode: be sure to set to 1	*/
++#define USBPCTRL0_PENC	BIT(4)	/* Function mode: output level of PENC1 pin: */
++				/* 1: high, 0: low			*/
++#define USBPCTRL0_OVC0_ACT BIT(3) /* Host mode: OVC0 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++#define USBPCTRL0_OVC1_ACT BIT(1) /* Host mode: OVC1 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++				/* Function mode: be sure to set to 1	*/
++#define USBPCTRL0_PORT1	BIT(0)	/* Selects port 1 mode:			*/
++				/* 1: function, 0: host			*/
++
++struct rcar_phy_platform_data {
++	u32 usbpctrl0;		/* USBPCTRL0 register value */
++};
++
++#endif /* __RCAR_PHY_H */
