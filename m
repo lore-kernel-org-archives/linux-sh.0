@@ -1,71 +1,50 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Apr 2013 10:53:44 +0000
-Subject: Re: [PATCH v6 3/7] media: soc-camera: switch I2C subdevice drivers to use v4l2-clk
-Message-Id: <Pine.LNX.4.64.1304081250200.29945@axis700.grange>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Apr 2013 22:59:50 +0000
+Subject: [PATCH 2/8] ehci-platform: add init() method to platform data
+Message-Id: <201304050259.51025.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de>
- <1363382873-20077-4-git-send-email-g.liakhovetski@gmx.de> <3250836.ovo27np6Xb@avalon>
-In-Reply-To: <3250836.ovo27np6Xb@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-sh@vger.kernel.org
 
-On Wed, 27 Mar 2013, Laurent Pinchart wrote:
+Sometimes there is a need to initialize some non-standard registers mapped to
+the EHCI region before accessing the standard EHCI registers.  Add the init()
+method to the 'ehci-platform' platform data for this purpose.
 
-> Hi Guennadi,
-> 
-> Thanks for the patch.
-> 
-> On Friday 15 March 2013 22:27:49 Guennadi Liakhovetski wrote:
-> > Instead of centrally enabling and disabling subdevice master clocks in
-> > soc-camera core, let subdevice drivers do that themselves, using the
-> > V4L2 clock API and soc-camera convenience wrappers.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> [snip]
-> 
-> > diff --git a/drivers/media/platform/soc_camera/soc_camera.c
-> > b/drivers/media/platform/soc_camera/soc_camera.c index 4e626a6..01cd5a0
-> > 100644
-> > --- a/drivers/media/platform/soc_camera/soc_camera.c
-> > +++ b/drivers/media/platform/soc_camera/soc_camera.c
-> > @@ -30,6 +30,7 @@
-> >  #include <linux/vmalloc.h>
-> > 
-> >  #include <media/soc_camera.h>
-> > +#include <media/v4l2-clk.h>
-> >  #include <media/v4l2-common.h>
-> >  #include <media/v4l2-ioctl.h>
-> >  #include <media/v4l2-dev.h>
-> > @@ -50,13 +51,19 @@ static LIST_HEAD(hosts);
-> >  static LIST_HEAD(devices);
-> >  static DEFINE_MUTEX(list_lock);		/* Protects the list of hosts */
-> > 
-> > -int soc_camera_power_on(struct device *dev, struct soc_camera_subdev_desc
-> > *ssdd)
-> > +int soc_camera_power_on(struct device *dev, struct soc_camera_subdev_desc
-> > *ssdd,
-> > +			struct v4l2_clk *clk)
-> >  {
-> > -	int ret = regulator_bulk_enable(ssdd->num_regulators,
-> > +	int ret = clk ? v4l2_clk_enable(clk) : 0;
-> > +	if (ret < 0) {
-> > +		dev_err(dev, "Cannot enable clock\n");
-> > +		return ret;
-> > +	}
-> 
-> Will that work for all devices ? Aren't there devices that would need the 
-> clock to be turned on after the power supply is stable ?
+Suggested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Swapping the order would be a functionality change. Let's not do that 
-unless proven to be needed.
-
-Thanks
-Guennadi
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/usb/host/ehci-platform.c |    7 +++++++
+ include/linux/usb/ehci_pdriver.h |    1 +
+ 2 files changed, 8 insertions(+)
+
+Index: renesas/drivers/usb/host/ehci-platform.c
+=================================--- renesas.orig/drivers/usb/host/ehci-platform.c
++++ renesas/drivers/usb/host/ehci-platform.c
+@@ -110,6 +110,13 @@ static int ehci_platform_probe(struct pl
+ 		err = PTR_ERR(hcd->regs);
+ 		goto err_put_hcd;
+ 	}
++
++	if (pdata->init) {
++		err = pdata->init(dev, hcd->regs);
++		if (err < 0)
++			goto err_put_hcd;
++	}
++
+ 	err = usb_add_hcd(hcd, irq, IRQF_SHARED);
+ 	if (err)
+ 		goto err_put_hcd;
+Index: renesas/include/linux/usb/ehci_pdriver.h
+=================================--- renesas.orig/include/linux/usb/ehci_pdriver.h
++++ renesas/include/linux/usb/ehci_pdriver.h
+@@ -50,6 +50,7 @@ struct usb_ehci_pdata {
+ 	/* Turn on only VBUS suspend power and hotplug detection,
+ 	 * turn off everything else */
+ 	void (*power_suspend)(struct platform_device *pdev);
++	int (*init)(struct platform_device *pdev, void __iomem *regs);
+ };
+ 
+ #endif /* __USB_CORE_EHCI_PDRIVER_H */
