@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Apr 2013 06:24:42 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 04 Apr 2013 10:24:15 +0000
 Subject: Re: [PATCH 00/04] ARM: shmobile: pinmux platform device cleanups
-Message-Id: <20130404062441.GN28297@verge.net.au>
+Message-Id: <11100532.ubSdK9L5P1@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130403063246.2500.65318.sendpatchset@w520>
 In-Reply-To: <20130403063246.2500.65318.sendpatchset@w520>
@@ -10,7 +10,11 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 03, 2013 at 03:32:46PM +0900, Magnus Damm wrote:
+Hi Magnus,
+
+Thanks for the patches.
+
+On Wednesday 03 April 2013 15:32:46 Magnus Damm wrote:
 > ARM: shmobile: pinmux platform device cleanups
 > 
 > [PATCH 01/04] ARM: shmobile: r8a7740 pinmux platform device cleanup
@@ -23,4 +27,22 @@ On Wed, Apr 03, 2013 at 03:32:46PM +0900, Magnus Damm wrote:
 > 
 > Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Laurent, could you review this series?
+Except for 2/4,
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+> 
+>  Written against renesas-next-20130403 in renesas.git
+> 
+>  arch/arm/mach-shmobile/setup-r8a7740.c |   24 +++++-------------------
+>  arch/arm/mach-shmobile/setup-r8a7779.c |   19 ++++---------------
+>  arch/arm/mach-shmobile/setup-sh7372.c  |   24 +++++-------------------
+>  arch/arm/mach-shmobile/setup-sh73a0.c  |   25 ++++++-------------------
+>  4 files changed, 20 insertions(+), 72 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
