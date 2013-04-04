@@ -1,24 +1,24 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 05 Apr 2013 02:57:48 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7779: add each clocks ratio on comment area
-Message-Id: <1365130669-11662-2-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 04 Apr 2013 07:07:14 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7779: add each clocks ratio on comment area
+Message-Id: <87sj36epup.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365130669-11662-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365130669-11662-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
 Adding comment describing the r8a7779 clock frequencies depending on
 MD pin settings.
 
 Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+v1 -> v2
+
+ - git log area was updated
+ - add Magnus's Acked-by
+
  arch/arm/mach-shmobile/clock-r8a7779.c |   19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
@@ -53,5 +53,5 @@ index 7d86bfb..5436b51 100644
  
  #define FRQMR		IOMEM(0xffc80014)
 -- 
-1.7.10.4
+1.7.9.5
 
