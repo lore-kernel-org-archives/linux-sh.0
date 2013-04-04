@@ -1,17 +1,20 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Apr 2013 07:56:47 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: remove ";" from SH_FIXED_RATIO_CLK*() macro
-Message-Id: <20130404075645.GB24963@verge.net.au>
+Date: Thu, 04 Apr 2013 02:00:20 +0000
+Subject: APE6EVM and Runtime PM
+Message-Id: <20130404020019.GA7163@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87txnmepx9.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87txnmepx9.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 04, 2013 at 12:05:42AM -0700, Kuninori Morimoto wrote:
-> Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Magnus,
 
-Thanks, queued up in the soc branch.
+in the course of looking look at consolidating our defconfigs I
+noticed that SMSC ethernet and rcar_thermal seem seem to not work when
+runtime PM is enabled.
+
+I'm wondering if you have any ideas of what might be the cause of this
+or if you could give me some guidance on investigating this problem.
+
+I assume that it relates to a clock or clocks not being enabled.
