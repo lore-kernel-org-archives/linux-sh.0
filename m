@@ -1,39 +1,60 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:39 +0000
-Subject: [PATCH 01/28] sh-pfc: Fix compiler warning when BUG()
-Message-Id: <1364954706-14727-2-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 04 Apr 2013 06:21:06 +0000
+Subject: [PATCH] irqchip: irqc: Add runtime PM support
+Message-Id: <1365056466-23710-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This was tested using the SMSC LAN on the APE6EVM board.
 
-The sh_pfc_phys_to_virt() function ends with a BUG() statement without a
-return. When CONFIG_BUG isn't set the function will thus have no return
-value. Fix it.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/core.c |    1 +
- 1 file changed, 1 insertion(+)
+ drivers/irqchip/irq-renesas-irqc.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index feef897..97e6ea3 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -72,6 +72,7 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+index 927bff3..649cd69 100644
+--- a/drivers/irqchip/irq-renesas-irqc.c
++++ b/drivers/irqchip/irq-renesas-irqc.c
+@@ -19,6 +19,7 @@
+ 
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+ #include <linux/ioport.h>
+@@ -181,6 +182,9 @@ static int irqc_probe(struct platform_device *pdev)
+ 		goto err1;
  	}
  
- 	BUG();
-+	return NULL;
- }
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
+ 	/* allow any number of IRQs between 1 and IRQC_IRQ_MAX */
+ 	for (k = 0; k < IRQC_IRQ_MAX; k++) {
+ 		irq = platform_get_resource(pdev, IORESOURCE_IRQ, k);
+@@ -255,6 +259,8 @@ err3:
+ err2:
+ 	iounmap(p->iomem);
+ err1:
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	kfree(p);
+ err0:
+ 	return ret;
+@@ -270,6 +276,8 @@ static int irqc_remove(struct platform_device *pdev)
  
- int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin)
+ 	irq_domain_remove(p->irq_domain);
+ 	iounmap(p->iomem);
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	kfree(p);
+ 	return 0;
+ }
 -- 
 1.7.10.4
 
