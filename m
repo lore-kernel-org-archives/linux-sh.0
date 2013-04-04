@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Apr 2013 07:44:28 +0000
-Subject: [RFC/PATCH 8/7] ARCH: shmobile: defconfig consolidation
-Message-Id: <1365061468-24235-1-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 04 Apr 2013 07:46:44 +0000
+Subject: [RFC/PATCH 8/7] ARCH: shmobile: defconfig consolidation (repost)
+Message-Id: <1365061604-24808-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
+References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,6 +14,8 @@ Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/configs/shmobile_defconfig |    2 ++
  1 file changed, 2 insertions(+)
+
+Reposted with correct In-Reply-To header (hopefully!)
 
 diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
 index 9b6219a..7dba53f 100644
