@@ -1,59 +1,55 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Apr 2013 22:13:26 +0000
-Subject: [PATCH v4 3/3] ARM: shmobile: BOCK-W: add USB support
-Message-Id: <201304200213.27342.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 04 Apr 2013 03:29:47 +0000
+Subject: [RFC/PATCH 1/7] ARM: shmobile: prune defconfig
+Message-Id: <1365046193-19369-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Register the USB PHY device from bockw_init(), passing the platform  data to it.
-Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
-get registered too...
+Remove a number of lines from the shmobile defconfig as they seem to
+be orthogonal to shmobile, not necessary for booting boards,
+and as far as I know not present in a number of the shmobile
+board defconfigs.
 
-The patch has been tested on the BOCK-W board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since version 3:
-- removed initializer for 'usb_phy_platform_data' letting it be set to all 0s;
-- refreshed the patch.
+ arch/arm/configs/shmobile_defconfig |   12 ------------
+ 1 file changed, 12 deletions(-)
 
-Changes since version 2:
-- refreshed the patch.
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 0f2d80d..90f5600 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -3,15 +3,9 @@ CONFIG_SYSVIPC=y
+ CONFIG_IKCONFIG=y
+ CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT
+-# CONFIG_UTS_NS is not set
+-# CONFIG_IPC_NS is not set
+-# CONFIG_PID_NS is not set
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+-CONFIG_MODULES=y
+-CONFIG_MODULE_UNLOAD=y
+-CONFIG_MODULE_FORCE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+@@ -145,9 +139,3 @@ CONFIG_NLS_ISO8859_1=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
+-CONFIG_CRYPTO=y
+-CONFIG_CRYPTO_CBC=y
+-CONFIG_CRYPTO_MD5=y
+-CONFIG_CRYPTO_DES=y
+-CONFIG_CRYPTO_ANSI_CPRNG=y
+-CONFIG_XZ_DEC=y
+-- 
+1.7.10.4
 
-Changes since the original posting:
-- removed initializer for no longer existing field in 'usb_phy_platform_data',
-  modified the comment to the 'ferrite_bead' field initializer.
-
- arch/arm/mach-shmobile/board-bockw.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -54,6 +54,8 @@ static struct resource smsc911x_resource
- 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
- };
- 
-+static struct rcar_phy_platform_data usb_phy_platform_data;
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-@@ -71,6 +73,7 @@ static void __init bockw_init(void)
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
- 
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
-@@ -111,4 +114,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_machine	= bockw_init,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
-+	.init_late      = r8a7778_init_late,
- MACHINE_END
