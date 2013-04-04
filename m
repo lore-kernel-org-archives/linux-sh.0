@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 04 Apr 2013 17:27:46 +0000
+Date: Thu, 04 Apr 2013 19:17:59 +0000
 Subject: Re: [PATCH v2 1/2] ARM: mach-shmobile: r8a7779: Add DU support
-Message-Id: <515DB812.5000109@cogentembedded.com>
+Message-Id: <515DD1E7.1080907@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364412073-12322-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1364412073-12322-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -12,34 +12,39 @@ To: linux-sh@vger.kernel.org
 
 Hello.
 
-On 04/04/2013 06:54 PM, Laurent Pinchart wrote:
+On 03/27/2013 10:21 PM, Laurent Pinchart wrote:
 
->>>>> Add a function to register the DU device with board-specific platform
->>>>> data.
->>>>>
->>>>> Signed-off-by: Laurent Pinchart
->>>>> <laurent.pinchart+renesas@ideasonboard.com>
-[...]
->>>
->>>>> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c
->>>>> b/arch/arm/mach-shmobile/setup-r8a7779.c index a460ba3..2f817d8 100644
->>>>> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
->>>>> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
->>>>> @@ -393,6 +393,29 @@ static struct platform_device sata_device = {
->>>> [...]
->>>>
->>>>> +static struct platform_device du_device = {
->>>>> +	.name		= "rcar-du",
->>>>> +	.num_resources	= ARRAY_SIZE(du_resources),
->>>>> +	.resource	= du_resources,
->>>>> +	.id		= 0,
->>>>>
->>>>       You probably should have written in the subject "add DU0 support".
->> If there's only single display device, why you're not using 'id' of -1?
-> Good point. I'll fix that.
+> Add a function to register the DU device with board-specific platform
+> data.
 >
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[...]
+> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+> index a460ba3..2f817d8 100644
+> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+[...]
+> @@ -428,6 +451,13 @@ void __init r8a7779_add_standard_devices(void)
+>   			    ARRAY_SIZE(r8a7779_late_devices));
+>   }
+>   
+> +void __init r8a7779_add_du_device(void *pdata)
 
-    Note that the DU clock entry already has "rcar-du.0".
+    Just to repeat the criticism that your patch have somehow eluded
+(but mine 2, with analogous approach, has not :-), you can't have 'void *'
+here -- you should declare the function with the actual platform data
+type pointer as an argument.
+
+> +{
+> +	du_device.dev.platform_data = pdata;
+> +
+> +	platform_device_register(&du_device);
+
+    That function should also be avoided like plague (according to
+Greg KH and Arnd Bergmann). I suggest you use
+
+platform_device_register_resndata() instead, it's more preferable along with
+all the platform_device_register_*() family.
 
 WBR, Sergei
 
