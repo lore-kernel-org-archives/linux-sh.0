@@ -1,23 +1,91 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Apr 2013 04:33:37 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790 SoC 64-bit DT support
-Message-Id: <20130402043337.GD1696@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 05 Apr 2013 02:56:23 +0000
+Subject: [PATCH] ARM: shmobile: bockw: enable SMSC ethernet on defconfig
+Message-Id: <1365130583-11257-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130329074917.15695.92956.sendpatchset@w520>
-In-Reply-To: <20130329074917.15695.92956.sendpatchset@w520>
+References: <1365130583-11257-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365130583-11257-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 29, 2013 at 04:49:17PM +0900, Magnus Damm wrote:
-> From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-> 
-> The r8a7790 SoC supports LPAE and has memory window up to
-> 0x2ffffffff. Convert to 64-bit addresses by enlarging
-> #addr-cells and #size-cells to 2.
-> 
-> Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, queued up for v3.10 in the soc branch.
+This patch adds SMSC ethernet support on Bock-W defconfig
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/bockw_defconfig |   34 +++++++++++++++++++++++++++++++---
+ 1 file changed, 31 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index 6037705..6524cdf 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -27,16 +27,40 @@ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
+-CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel"
++CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
+ CONFIG_CMDLINE_FORCE=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ # CONFIG_SUSPEND is not set
++CONFIG_NET=y
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
++# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
++# CONFIG_INET_XFRM_MODE_TUNNEL is not set
++# CONFIG_INET_XFRM_MODE_BEET is not set
++# CONFIG_INET_LRO is not set
++# CONFIG_INET_DIAG is not set
++# CONFIG_IPV6 is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
++CONFIG_NETDEVICES=y
++# CONFIG_NET_CADENCE is not set
++# CONFIG_NET_VENDOR_BROADCOM is not set
++# CONFIG_NET_VENDOR_CIRRUS is not set
++# CONFIG_NET_VENDOR_FARADAY is not set
++# CONFIG_NET_VENDOR_INTEL is not set
++# CONFIG_NET_VENDOR_MARVELL is not set
++# CONFIG_NET_VENDOR_MICREL is not set
++# CONFIG_NET_VENDOR_NATSEMI is not set
++# CONFIG_NET_VENDOR_SEEQ is not set
++CONFIG_SMSC911X=y
++# CONFIG_NET_VENDOR_STMICRO is not set
++# CONFIG_NET_VENDOR_WIZNET is not set
+ # CONFIG_INPUT is not set
+ # CONFIG_SERIO is not set
+ # CONFIG_VT is not set
+@@ -55,12 +79,16 @@ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_INOTIFY_USER is not set
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_NFS_V3_ACL=y
++CONFIG_NFS_V4=y
++CONFIG_NFS_SWAP=y
++CONFIG_NFS_V4_1=y
++CONFIG_ROOT_NFS=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_SCHED_DEBUG is not set
+ # CONFIG_DEBUG_BUGVERBOSE is not set
+ # CONFIG_FTRACE is not set
+ # CONFIG_ARM_UNWIND is not set
+-CONFIG_KEYS=y
+-CONFIG_CRYPTO=y
+ CONFIG_AVERAGE=y
+-- 
+1.7.10.4
+
