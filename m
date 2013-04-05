@@ -1,86 +1,128 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Apr 2013 15:40:32 +0000
-Subject: [PATCH v9 12/20] soc-camera: make .clock_{start,stop} compulsory, .add / .remove optional
-Message-Id: <1365781240-16149-13-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 05 Apr 2013 04:20:40 +0000
+Subject: [PATCH 1/5 v2] ARM: shmobile: r8a73a4: add main clock
+Message-Id: <87ppy9k3qi.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-sh@vger.kernel.org
 
-All existing soc-camera host drivers use .clock_start() and .clock_stop()
-callbacks to activate and deactivate their camera interfaces, whereas
-.add() and .remove() callbacks are usually dummy. Make the former two
-compulsory and the latter two optional.
+Almost all clock needs main clock which is basis clock on r8a73a4.
+This patch adds it, and, set parent clock via CKSCR register.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/platform/soc_camera/soc_camera.c |   27 +++++++++++------------
- 1 files changed, 13 insertions(+), 14 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
-index 2f81af5..507f539 100644
---- a/drivers/media/platform/soc_camera/soc_camera.c
-+++ b/drivers/media/platform/soc_camera/soc_camera.c
-@@ -513,23 +513,22 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
- 	if (ici->icd)
- 		return -EBUSY;
+ - no change
+
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   53 ++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index e710c00..42942b4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -22,6 +22,7 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
  
--	if (ici->ops->clock_start) {
--		ret = ici->ops->clock_start(ici);
-+	ret = ici->ops->clock_start(ici);
-+	if (ret < 0)
-+		return ret;
+ #define CPG_BASE 0xe6150000
+@@ -31,6 +32,8 @@
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR5 0xe6150144
+ 
++#define CKSCR		0xE61500C0
 +
-+	if (ici->ops->add) {
-+		ret = ici->ops->add(icd);
- 		if (ret < 0)
--			return ret;
-+			goto eadd;
- 	}
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+ 	.len    = CPG_LEN,
+@@ -51,10 +54,32 @@ static struct clk extal2_clk = {
+ 	.mapping	= &cpg_mapping,
+ };
  
--	ret = ici->ops->add(icd);
--	if (ret < 0)
--		goto eadd;
--
- 	ici->icd = icd;
++static struct sh_clk_ops followparent_clk_ops = {
++	.recalc	= followparent_recalc,
++};
++
++static struct clk main_clk = {
++	/* .parent will be set r8a73a4_clock_init */
++	.ops	= &followparent_clk_ops,
++};
++
++SH_CLK_RATIO(div2,	1, 2);
++SH_CLK_RATIO(div4,	1, 4);
++
++SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
++SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
++SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
++SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
++
+ static struct clk *main_clks[] = {
+ 	&extalr_clk,
+ 	&extal1_clk,
++	&extal1_div2_clk,
+ 	&extal2_clk,
++	&extal2_div2_clk,
++	&extal2_div4_clk,
++	&main_clk,
++	&main_div2_clk,
+ };
  
- 	return 0;
+ enum {
+@@ -74,6 +99,13 @@ static struct clk mstp_clks[MSTP_NR] = {
+ };
  
- eadd:
--	if (ici->ops->clock_stop)
--		ici->ops->clock_stop(ici);
-+	ici->ops->clock_stop(ici);
- 	return ret;
- }
+ static struct clk_lookup lookups[] = {
++	/* main clock */
++	CLKDEV_CON_ID("extal1",			&extal1_clk),
++	CLKDEV_CON_ID("extal1_div2",		&extal1_div2_clk),
++	CLKDEV_CON_ID("extal2",			&extal2_clk),
++	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
++	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
++
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+@@ -90,6 +122,7 @@ void __init r8a73a4_clock_init(void)
+ {
+ 	void __iomem *cpg_base, *reg;
+ 	int k, ret = 0;
++	u32 ckscr;
  
-@@ -540,9 +539,9 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
- 	if (WARN_ON(icd != ici->icd))
- 		return;
+ 	/* fix MPCLK to EXTAL2 for now.
+ 	 * this is needed until more detailed clock topology is supported
+@@ -100,6 +133,26 @@ void __init r8a73a4_clock_init(void)
+ 	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
+ 	iounmap(cpg_base);
  
--	ici->ops->remove(icd);
--	if (ici->ops->clock_stop)
--		ici->ops->clock_stop(ici);
-+	if (ici->ops->remove)
-+		ici->ops->remove(icd);
-+	ici->ops->clock_stop(ici);
- 	ici->icd = NULL;
- }
++	reg = ioremap_nocache(CKSCR, PAGE_SIZE);
++	BUG_ON(!reg);
++	ckscr = ioread32(reg);
++	iounmap(reg);
++
++	switch ((ckscr >> 28) & 0x3) {
++	case 0:
++		main_clk.parent = &extal1_clk;
++		break;
++	case 1:
++		main_clk.parent = &extal1_div2_clk;
++		break;
++	case 2:
++		main_clk.parent = &extal2_clk;
++		break;
++	case 3:
++		main_clk.parent = &extal2_div2_clk;
++		break;
++	}
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
  
-@@ -1413,8 +1412,8 @@ int soc_camera_host_register(struct soc_camera_host *ici)
- 	    ((!ici->ops->init_videobuf ||
- 	      !ici->ops->reqbufs) &&
- 	     !ici->ops->init_videobuf2) ||
--	    !ici->ops->add ||
--	    !ici->ops->remove ||
-+	    !ici->ops->clock_start ||
-+	    !ici->ops->clock_stop ||
- 	    !ici->ops->poll ||
- 	    !ici->v4l2_dev.dev)
- 		return -EINVAL;
 -- 
-1.7.2.5
+1.7.9.5
 
