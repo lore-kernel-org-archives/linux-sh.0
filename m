@@ -1,71 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 05 Apr 2013 03:08:07 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 05 Apr 2013 10:07:23 +0000
 Subject: Re: [RFC/PATCH 0/7] ARCH: shmobile: defconfig consolidation
-Message-Id: <20130405030805.GA13760@verge.net.au>
+Message-Id: <3815682.nYPUHoztul@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
+ <2243996.H0VQ4NfsDe@avalon> <20130405004931.GR29203@verge.net.au>
+In-Reply-To: <20130405004931.GR29203@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 04, 2013 at 12:29:46PM +0900, Simon Horman wrote:
-> Hi,
-> 
-> this is a first pass at consolidating the defconfigs of shmobile.
-> 
-> It covers the mackerel, amradillo800eva and kzm9d boards which meet
-> the following criteria:
-> 
-> * Have the same base memory address (0x40000000).
-> * Work with RUNTIME_PM, it is desirable to have that a common defconfig
-> * Are booted via DT, enabling the command line to be supplied in the dts.
->   This is important to allow serial console and early printk settings,
->   which vary wildly between boards, to be supplied.
-> * Boards I have to test.
->   This didn't eliminate any candidates that met the above criteria.
-> 
-> I believe it should also be possible to add support for the APE6EVM
-> board to the consolidated defconfig once problems with RUNTIME_PM
-> have been isolated and resolved. I have send an email about this
-> in a separate thread "APE6EVM and Runtime PM".
-> 
-> I believe it may be possible to add support for the lager board
-> to the consolidated defconfig once I am able to bring that board up,
-> which should be rather soon. The lager board does not currently
-> have a defconfig.
-> 
-> Morimoto-san, I suspect it may be possible to add support for the
-> bockw board to the consolidated defconfig if its boot loader supports
-> booting using a zImage. In this case even though the base memory address
-> is not the same as the boards above it should be possible to specify
-> the base address from the boot loader. As I do not have a bockw board
-> I am wondering if you could investigate this.
-> 
-> Simon Horman (7):
->   ARM: shmobile: prune defconfig
->   ARM: shmobile: make defconfig canonical
->   ARM: shmobile: Add kzm9d to consolidated defconfig
->   ARM: shmobile: Add mackerel to consolidated defconfig
->   ARM: shmobile: defconfig: Remove armadillo800eva defconfig
->   ARM: shmobile: defconfig: Remove kzm9d defconfig
->   ARM: shmobile: defconfig: Remove mackerel defconfig
-> 
->  arch/arm/configs/armadillo800eva_defconfig |  153 ---------------------------
->  arch/arm/configs/kzm9d_defconfig           |   88 ----------------
->  arch/arm/configs/mackerel_defconfig        |  156 ----------------------------
->  arch/arm/configs/shmobile_defconfig        |   51 +++++----
->  4 files changed, 28 insertions(+), 420 deletions(-)
->  delete mode 100644 arch/arm/configs/armadillo800eva_defconfig
->  delete mode 100644 arch/arm/configs/kzm9d_defconfig
->  delete mode 100644 arch/arm/configs/mackerel_defconfig
+Hi Simon,
 
-Magnus,
+On Friday 05 April 2013 09:49:31 Simon Horman wrote:
+> On Fri, Apr 05, 2013 at 02:37:38AM +0200, Laurent Pinchart wrote:
+> > On Friday 05 April 2013 09:30:27 Simon Horman wrote:
+> > > On Thu, Apr 04, 2013 at 01:20:44PM +0200, Laurent Pinchart wrote:
+> > > > On Thursday 04 April 2013 12:29:46 Simon Horman wrote:
+> > > > > Hi,
+> > > > > 
+> > > > > this is a first pass at consolidating the defconfigs of shmobile.
+> > > > > 
+> > > > > It covers the mackerel, amradillo800eva and kzm9d boards which meet
+> > > > > the following criteria:
+> > > > > 
+> > > > > * Have the same base memory address (0x40000000).
+> > > > 
+> > > > Do you know if there's any work being done on getting rid of the base
+> > > > memory address as a kernel config option ? It seriously hinders
+> > > > cross-SoC kernel testing.
+> > > 
+> > > As I understand things the main limitation is uImage which uses
+> > > the base memory address. There is some talk of creating uImages
+> > > at install time rather than build time. Which I believe would
+> > > remove most if not all the problem. However, its entirely unclear
+> > > to me what such an install process would look like. A new build target?
+> > > In tree script? Out of tree script? It seems very undefined to me.
+> > > 
+> > > Another, arguably better though not backwards compatible, option
+> > > is to boot using zImage (or even just Image) which do not rely
+> > > on the base address.
+> > 
+> > Don't we also need to get rid of CONFIG_MEMORY_START ? It's used in
+> > headsmp.S and headsmp-scu.S (through PLAT_PHYS_OFFSET).
+> 
+> Yes, I think so. Sorry for glossing over that.
+> 
+> I think it should be possible to remove that by evaluating it at runtime
+> somehow. But I have not though deeply about this.
 
-ideally I would like to queue-up this series and request
-it be included in v3.10 as a path to add defconfig support for the lager
-baord (added as an 8th patch after my original posting of the series).
+It would be really nice if someone could give it a try :-)
 
-Can I get some feedback from you?
+-- 
+Regards,
+
+Laurent Pinchart
 
