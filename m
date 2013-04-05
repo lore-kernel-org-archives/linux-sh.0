@@ -1,132 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:13 +0000
-Subject: [PATCH 10/35] sh-pfc: sh7372: Add USB pin groups and functions
-Message-Id: <1366671758-8954-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 05 Apr 2013 06:12:02 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7778: remove pointless PLATFORM_INFO()
+Message-Id: <1365142324-7286-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365142324-7286-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365142324-7286-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+remove pointless PLATFORM_INFO() macro from setup-r8a7778,
+and, used original platform_device_register_xxx()
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 82 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7778.c |   26 +++++++++-----------------
+ 1 file changed, 9 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 46466bb..4dc2ccb 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1680,6 +1680,64 @@ static const unsigned int sdhi2_ctrl_pins[] = {
- static const unsigned int sdhi2_ctrl_mux[] = {
- 	SDHICMD2_MARK, SDHICLK2_MARK,
- };
-+/* - USB0 ------------------------------------------------------------------- */
-+static const unsigned int usb0_vbus_pins[] = {
-+	/* VBUS */
-+	167,
-+};
-+static const unsigned int usb0_vbus_mux[] = {
-+	VBUS0_0_MARK,
-+};
-+static const unsigned int usb0_otg_id_pins[] = {
-+	/* IDIN */
-+	113,
-+};
-+static const unsigned int usb0_otg_id_mux[] = {
-+	IDIN_0_MARK,
-+};
-+static const unsigned int usb0_otg_ctrl_pins[] = {
-+	/* PWEN, EXTLP, OVCN, OVCN2 */
-+	116, 114, 117, 115,
-+};
-+static const unsigned int usb0_otg_ctrl_mux[] = {
-+	PWEN_0_MARK, EXTLP_0_MARK, OVCN_0_MARK, OVCN2_0_MARK,
-+};
-+/* - USB1 ------------------------------------------------------------------- */
-+static const unsigned int usb1_vbus_pins[] = {
-+	/* VBUS */
-+	168,
-+};
-+static const unsigned int usb1_vbus_mux[] = {
-+	VBUS0_1_MARK,
-+};
-+static const unsigned int usb1_otg_id_0_pins[] = {
-+	/* IDIN */
-+	113,
-+};
-+static const unsigned int usb1_otg_id_0_mux[] = {
-+	IDIN_1_113_MARK,
-+};
-+static const unsigned int usb1_otg_id_1_pins[] = {
-+	/* IDIN */
-+	18,
-+};
-+static const unsigned int usb1_otg_id_1_mux[] = {
-+	IDIN_1_18_MARK,
-+};
-+static const unsigned int usb1_otg_ctrl_0_pins[] = {
-+	/* PWEN, EXTLP, OVCN, OVCN2 */
-+	115, 116, 114, 117, 113,
-+};
-+static const unsigned int usb1_otg_ctrl_0_mux[] = {
-+	PWEN_1_115_MARK, EXTLP_1_MARK, OVCN_1_114_MARK, OVCN2_1_MARK,
-+};
-+static const unsigned int usb1_otg_ctrl_1_pins[] = {
-+	/* PWEN, EXTLP, OVCN, OVCN2 */
-+	138, 116, 162, 117, 18,
-+};
-+static const unsigned int usb1_otg_ctrl_1_mux[] = {
-+	PWEN_1_138_MARK, EXTLP_1_MARK, OVCN_1_162_MARK, OVCN2_1_MARK,
-+};
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(bsc_data8),
-@@ -1822,6 +1880,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_data1),
- 	SH_PFC_PIN_GROUP(sdhi2_data4),
- 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
-+	SH_PFC_PIN_GROUP(usb0_vbus),
-+	SH_PFC_PIN_GROUP(usb0_otg_id),
-+	SH_PFC_PIN_GROUP(usb0_otg_ctrl),
-+	SH_PFC_PIN_GROUP(usb1_vbus),
-+	SH_PFC_PIN_GROUP(usb1_otg_id_0),
-+	SH_PFC_PIN_GROUP(usb1_otg_id_1),
-+	SH_PFC_PIN_GROUP(usb1_otg_ctrl_0),
-+	SH_PFC_PIN_GROUP(usb1_otg_ctrl_1),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 01c62be..57d6b0e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -78,21 +78,13 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 	.clocksource_rating	= 200,
  };
  
- static const char * const bsc_groups[] = {
-@@ -2024,6 +2090,20 @@ static const char * const sdhi2_groups[] = {
- 	"sdhi2_ctrl",
- };
+-#define PLATFORM_INFO(n, i)					\
+-{								\
+-	.parent		= &platform_bus,			\
+-	.name		= #n,					\
+-	.id		= i,					\
+-	.res		= n ## i ## _resources,			\
+-	.num_res	= ARRAY_SIZE(n ## i ##_resources),	\
+-	.data		= &n ## i ##_platform_data,		\
+-	.size_data	= sizeof(n ## i ## _platform_data),	\
+-}
+-
+-struct platform_device_info platform_devinfo[] = {
+-	PLATFORM_INFO(sh_tmu, 0),
+-	PLATFORM_INFO(sh_tmu, 1),
+-};
++#define r8a7778_register_tmu(idx)			\
++	platform_device_register_resndata(		\
++		&platform_bus, "sh_tmu", idx,		\
++		sh_tmu##idx##_resources,		\
++		ARRAY_SIZE(sh_tmu##idx##_resources),	\
++		&sh_tmu##idx##_platform_data,		\
++		sizeof(sh_tmu##idx##_platform_data))
  
-+static const char * const usb0_groups[] = {
-+	"usb0_vbus",
-+	"usb0_otg_id",
-+	"usb0_otg_ctrl",
-+};
-+
-+static const char * const usb1_groups[] = {
-+	"usb1_vbus",
-+	"usb1_otg_id_0",
-+	"usb1_otg_id_1",
-+	"usb1_otg_ctrl_0",
-+	"usb1_otg_ctrl_1",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(ceu),
-@@ -2045,6 +2125,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(usb0),
-+	SH_PFC_FUNCTION(usb1),
- };
+ void __init r8a7778_add_standard_devices(void)
+ {
+@@ -114,8 +106,8 @@ void __init r8a7778_add_standard_devices(void)
+ 					      &scif_platform_data[i],
+ 					      sizeof(struct plat_sci_port));
  
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+-	for (i = 0; i < ARRAY_SIZE(platform_devinfo); i++)
+-		platform_device_register_full(&platform_devinfo[i]);
++	r8a7778_register_tmu(0);
++	r8a7778_register_tmu(1);
+ }
+ 
+ #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
 -- 
-1.8.1.5
+1.7.10.4
 
