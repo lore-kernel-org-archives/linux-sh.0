@@ -1,56 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Apr 2013 09:04:39 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: R8A7779: add Ether support
-Message-Id: <20130404090439.GC23848@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 05 Apr 2013 02:57:48 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7779: add each clocks ratio on comment area
+Message-Id: <1365130669-11662-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304020204.54546.sergei.shtylyov@cogentembedded.com>
- <87wqsl6ale.wl%kuninori.morimoto.gx@renesas.com>
- <515AC546.90905@cogentembedded.com>
- <87txnocw6n.wl%kuninori.morimoto.gx@renesas.com>
- <515C2D0E.8010607@cogentembedded.com>
- <20130404063410.GP28297@verge.net.au>
-In-Reply-To: <20130404063410.GP28297@verge.net.au>
+References: <1365130669-11662-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365130669-11662-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 04, 2013 at 03:34:10PM +0900, Simon Horman wrote:
-> On Wed, Apr 03, 2013 at 05:22:22PM +0400, Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> > On 03-04-2013 4:08, Kuninori Morimoto wrote:
-> > 
-> > >>>Then, this (void *pdata) should be
-> > >>>(struct sh_eth_plat_data *pdata) IMO
-> > 
-> > >>     ether_device.dev.platform_data is 'void *'. I didn't want to bring in
-> > >>extra header for the little use.
-> > 
-> > >Not enough reason for me.
-> > 
-> > >"void *" means there is no pointer check,
-> > >and extra header is just 1 line. No ?
-> > 
-> >    There's no pointer check either if we just initialize the 'platform_data'
-> > member as part of the platfrom device initializer, so we can
-> > actually stuff pointer to any nonsense there. Why make this case
-> > different?
-> > 
-> > >If you want to use this style,
-> > >then, additional extra header is fate, IMO
-> > 
-> >    We can agree to disagree here. :-)
-> 
-> I would like void * changed to struct sh_eth_plat_data * so
-> that callers of r8a7779_add_ether_device() will get a warning
-> if they pass an argument of the wrong type.
-> 
-> Other than that I believe that I am happy with this patch.
->
-> Ditto for the similar patch for the R8A7778.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-As mentioned in a subsequent email in another subthread,
-I would also like you to update the patches to not use
-platform_register_device().
+Adding comment describing the r8a7779 clock frequencies depending on
+MD pin settings.
+
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 7d86bfb..5436b51 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -26,6 +26,25 @@
+ #include <mach/clock.h>
+ #include <mach/common.h>
+ 
++/*
++ *		MD1 = 1			MD1 = 0
++ *		(PLLA = 1500)		(PLLA = 1600)
++ *		(MHz)			(MHz)
++ *------------------------------------------------+--------------------
++ * clkz		1000   (2/3)		800   (1/2)
++ * clkzs	 250   (1/6)		200   (1/8)
++ * clki		 750   (1/2)		800   (1/2)
++ * clks		 250   (1/6)		200   (1/8)
++ * clks1	 125   (1/12)		100   (1/16)
++ * clks3	 187.5 (1/8)		200   (1/8)
++ * clks4	  93.7 (1/16)		100   (1/16)
++ * clkp		  62.5 (1/24)		 50   (1/32)
++ * clkg		  62.5 (1/24)		 66.6 (1/24)
++ * clkb, CLKOUT
++ * (MD2 = 0)	  62.5 (1/24)		 66.6 (1/24)
++ * (MD2 = 1)	  41.6 (1/36)		 50   (1/32)
++*/
++
+ #define MD(nr)	BIT(nr)
+ 
+ #define FRQMR		IOMEM(0xffc80014)
+-- 
+1.7.10.4
 
