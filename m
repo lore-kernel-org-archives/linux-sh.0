@@ -1,27 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Apr 2013 02:08:22 +0000
-Subject: Re: [PATCH] ARM: shmobile: sh73a0: Use DEFINE_RES_MEM*() everywhere
-Message-Id: <20130430020822.GA5021@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 05 Apr 2013 02:56:22 +0000
+Subject: [GIT PULL] Renesas ARM based SoC bockw defconfig updates for v3.10
+Message-Id: <1365130583-11257-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366684035-6882-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1366684035-6882-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 23, 2013 at 11:27:15AM +0900, Simon Horman wrote:
-> Convert code to use DEFINE_RES_MEM*() macros.
-> These macros were already used in this file,
-> this change makes their usage consistent throughout the file.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> ---
-> 
-> v2
-> * As suggested by Sergei Shtylyov:
->   Correct change log to refer to DEFINE_RES_MEM* instead of
->   IORESOURCE_MEM_*.
+Hi Olof, Hi Arnd,
 
-Queued-up for v3.11 in the soc-sh73a0 branch.
+The following changes since commit 00ae962f8051bb143fa1c43c6a9c8274c3a9c593:
+
+  ARM: shmobile: mackerel: clean up MMCIF vs. SDHI1 selection (2013-04-03 10:50:44 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas tags/renesas-defconfig-bockw-for-v3.10
+
+for you to fetch changes up to e2f77f6ff54865870870aaff0c07e2c35c4e0cfa:
+
+  ARM: shmobile: bockw: enable SMSC ethernet on defconfig (2013-04-04 15:51:12 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC bockw defconfig updates for v3.10
+
+An update to the defconfig for the bockw board to enable SMSC ethernet.
+
+This is based on:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-boards3-for-v3.10
+
+The reason for using that base is that the bockw defconfig was added
+in the boards branch instead of the defconfig branch, which was not ideal.
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      ARM: shmobile: bockw: enable SMSC ethernet on defconfig
+
+ arch/arm/configs/bockw_defconfig |   34 +++++++++++++++++++++++++++++++---
+ 1 file changed, 31 insertions(+), 3 deletions(-)
