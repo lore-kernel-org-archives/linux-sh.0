@@ -1,118 +1,102 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 08 Apr 2013 21:33:44 +0000
-Subject: [PATCH v2 8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-Message-Id: <201304090133.45312.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 05 Apr 2013 03:04:29 +0000
+Subject: [PATCH 1/2] ARM: shmobile: bockw: add SMSC ethernet support
+Message-Id: <1365131070-13142-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365131070-13142-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365131070-13142-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
-platform data, we now need a way to pass those platform data from the board file
-to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
-r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
-passed platform data using platform_device_register_resndata() call; creating
-this function envolves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
-so that it will no longer be registered for the generic R8A7779 machine (where
-we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
-to load as well.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-For the Marzen board, this new function will be called from marzen_init() to
-register the USB PHY device early enough.
+This patch adds SMSC ethernet support on Bock-W
 
-Note that the board and the SoC code have to be in one patch to keep the code
-bisectable...
+Bock-W SMSC needs FPGA settings which enables interrupt.
+This patch does it on bockw_init() function.
+As notes for future, this FPGA settings should be updated,
+since this FPGA is using cascaded interrupt.
+Current code is assuming that this FPGA interrupt user is only SMSC.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since the original posting:
-- added a note about bisectability to the changelog.
+ arch/arm/mach-shmobile/Kconfig       |    1 +
+ arch/arm/mach-shmobile/board-bockw.c |   38 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 39 insertions(+)
 
- arch/arm/mach-shmobile/board-marzen.c         |    5 +++++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        |   16 ++++++++--------
- 3 files changed, 15 insertions(+), 8 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/board-marzen.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
-+++ renesas/arch/arm/mach-shmobile/board-marzen.c
-@@ -56,6 +56,10 @@ static struct regulator_consumer_supply 
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 549e059..1a517e2 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -133,6 +133,7 @@ config MACH_BOCKW
+ 	bool "BOCK-W platform"
+ 	depends on ARCH_R8A7778
+ 	select ARCH_REQUIRE_GPIOLIB
++	select RENESAS_INTC_IRQPIN
+ 	select USE_OF
  
-+static struct rcar_phy_platform_data usb_phy_platform_data = {
-+	.usbpctrl0	= 0,
+ config MACH_MARZEN
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 56ab56e..38e5e50 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -19,14 +19,52 @@
+  */
+ 
+ #include <linux/platform_device.h>
++#include <linux/smsc911x.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+ #include <asm/mach/arch.h>
+ 
++static struct smsc911x_platform_config smsc911x_data = {
++	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
++	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
++	.flags		= SMSC911X_USE_32BIT,
++	.phy_interface	= PHY_INTERFACE_MODE_MII,
 +};
 +
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
- 	[0] = {
-@@ -230,6 +234,7 @@ static void __init marzen_init(void)
- 	r8a7779_pinmux_init();
- 
- 	r8a7779_add_standard_devices();
-+	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -4,6 +4,7 @@
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
-+#include <linux/usb/rcar-phy.h>
- 
- struct platform_device;
- 
-@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(vo
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
-+extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -407,13 +407,6 @@ static struct resource usb_phy_resources
- 	},
- };
- 
--static struct platform_device usb_phy_device = {
--	.name		= "rcar_usb_phy",
--	.id		= -1,
--	.resource	= usb_phy_resources,
--	.num_resources	= ARRAY_SIZE(usb_phy_resources),
--};
--
- /* USB */
- static struct usb_phy *phy;
- 
-@@ -585,7 +578,6 @@ static struct platform_device *r8a7779_d
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
--	&usb_phy_device,
- };
- 
- static struct platform_device *r8a7779_standard_devices[] __initdata = {
-@@ -620,6 +612,14 @@ void __init r8a7779_add_ether_device(str
- 					  pdata, sizeof(*pdata));
- }
- 
-+void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
-+{
-+	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
-+					  usb_phy_resources,
-+					  ARRAY_SIZE(usb_phy_resources),
-+					  pdata, sizeof(*pdata));
-+}
++static struct resource smsc911x_resources[] = {
++	DEFINE_RES_MEM(0x18300000, 0x1000),
++	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
++};
 +
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
++#define IRQ0MR	0x30
+ static void __init bockw_init(void)
+ {
++	void __iomem *fpga;
++
+ 	r8a7778_clock_init();
++	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
++
++	fpga = ioremap_nocache(0x18200000, SZ_1M);
++	if (fpga) {
++		/*
++		 * CAUTION
++		 *
++		 * IRQ0/1 is cascaded interrupt from FPGA.
++		 * it should be cared in the future
++		 * Now, it is assuming IRQ0 was used only from SMSC.
++		 */
++		u16 val = ioread16(fpga + IRQ0MR);
++		val &= ~(1 << 4); /* enable SMSC911x */
++		iowrite16(val, fpga + IRQ0MR);
++		iounmap(fpga);
++
++		platform_device_register_resndata(
++			&platform_bus, "smsc911x", -1,
++			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
++			&smsc911x_data, sizeof(smsc911x_data));
++	}
+ }
  
+ static const char *bockw_boards_compat_dt[] __initdata = {
+-- 
+1.7.10.4
+
