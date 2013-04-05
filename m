@@ -1,62 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Apr 2013 07:58:56 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7779: add each clocks ratio on comment area
-Message-Id: <20130404075854.GC24963@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 05 Apr 2013 06:12:01 +0000
+Subject: [GIT PULL] Renesas ARM r8a7778 SoC update for v3.10
+Message-Id: <1365142324-7286-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sj36epup.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sj36epup.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 04, 2013 at 12:07:14AM -0700, Kuninori Morimoto wrote:
-> Adding comment describing the r8a7779 clock frequencies depending on
-> MD pin settings.
+Hi Olof, Hi Arnd,
 
-Thanks, queued up in the soc-r8a7779 branch.
+The following changes since commit 8585deb18580d04209a2986430aa0959ef38fce2:
 
-> Acked-by: Magnus Damm <damm@opensource.se>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
-> 
->  - git log area was updated
->  - add Magnus's Acked-by
-> 
->  arch/arm/mach-shmobile/clock-r8a7779.c |   19 +++++++++++++++++++
->  1 file changed, 19 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-> index 7d86bfb..5436b51 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-> @@ -26,6 +26,25 @@
->  #include <mach/clock.h>
->  #include <mach/common.h>
->  
-> +/*
-> + *		MD1 = 1			MD1 = 0
-> + *		(PLLA = 1500)		(PLLA = 1600)
-> + *		(MHz)			(MHz)
-> + *------------------------------------------------+--------------------
-> + * clkz		1000   (2/3)		800   (1/2)
-> + * clkzs	 250   (1/6)		200   (1/8)
-> + * clki		 750   (1/2)		800   (1/2)
-> + * clks		 250   (1/6)		200   (1/8)
-> + * clks1	 125   (1/12)		100   (1/16)
-> + * clks3	 187.5 (1/8)		200   (1/8)
-> + * clks4	  93.7 (1/16)		100   (1/16)
-> + * clkp		  62.5 (1/24)		 50   (1/32)
-> + * clkg		  62.5 (1/24)		 66.6 (1/24)
-> + * clkb, CLKOUT
-> + * (MD2 = 0)	  62.5 (1/24)		 66.6 (1/24)
-> + * (MD2 = 1)	  41.6 (1/36)		 50   (1/32)
-> +*/
-> +
->  #define MD(nr)	BIT(nr)
->  
->  #define FRQMR		IOMEM(0xffc80014)
-> -- 
-> 1.7.9.5
-> 
+  ARM: shmobile: r8a7790 SoC 64-bit DT support (2013-04-02 11:02:21 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas tags/renesas-soc-r8a7778-for-v3.10
+
+for you to fetch changes up to 524219146a89aee5366326c225ccd71231419d89:
+
+  ARM: shmobile: R8A7778: add Ether support (2013-04-05 10:57:05 +0900)
+
+----------------------------------------------------------------
+Renesas ARM r8a7778 SoC update for v3.10
+
+Update to the r8a7778 SoC:
+* Add SH Ethernet support
+* Add r8a7778_init_irq_extpin() to allow configuration of IRQ0 - IRQ3
+  - This is a requirement for SMSC ethernet support
+* Cleanup: remove PLATFORM_INFO macro
+
+This pull request is based on:
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-soc2-for-v3.10
+
+----------------------------------------------------------------
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7778: remove pointless PLATFORM_INFO()
+      ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
+
+Sergei Shtylyov (1):
+      ARM: shmobile: R8A7778: add Ether support
+
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    3 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    4 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   83 ++++++++++++++++++++-----
+ 3 files changed, 74 insertions(+), 16 deletions(-)
