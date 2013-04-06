@@ -1,47 +1,87 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 09 Apr 2013 16:54:38 +0000
-Subject: Re: [PATCH v2 2/9] ehci-platform: add pre_setup() method to platform data
-Message-Id: <516447CE.3020308@cogentembedded.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sat, 06 Apr 2013 14:01:29 +0000
+Subject: [RFC] ARM: shmobile: Armadillo800EVA: Replace GPIO function request
+Message-Id: <1365260483-25556-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304090120.00626.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304090120.00626.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+We move to the new pinctrl framework to set up the function for the
+touchscreen IRQ.
 
-On 04/09/2013 07:27 PM, Alan Stern wrote:
+This is an RFC related to the discussion at
+[PATCH 6/6] ARM: shmobile: Armadillo800EVA: Reference DT implementation
 
->
->>>>>> --- renesas.orig/include/linux/usb/ehci_pdriver.h
->>>>>> +++ renesas/include/linux/usb/ehci_pdriver.h
->>>>>> @@ -19,6 +19,8 @@
->>>>>>    #ifndef __USB_CORE_EHCI_PDRIVER_H
->>>>>>    #define __USB_CORE_EHCI_PDRIVER_H
->>>>>> +#include <linux/usb/hcd.h>
->>>>> This isn't needed in the .h file, right?  Only the .c file, if it hasn't
->>>>> already included it (hint, I bet it has...)
->>>>      No, it hasn't. And I wouldn't want to include this header in the
->>>> platform code.
->>> Then you don't need it in this .h file either, please remove it.
->>       I do need it in the platform .c file. Well, long live multiple
->> redeclarations
->> of the same thing!
-> If you do remove that line from ehci_pdriver.h, you should add a
-> declaration of struct usb_hcd.  Like this:
->
-> struct usb_hcd;
->
-> Otherwise the compiler will complain when it sees this structure
-> mentioned for the first time in the parameter list of a
-> function-pointer declaration.
+Not-signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    6 +++---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c           |   13 +++++++++++++
+ 2 files changed, 16 insertions(+), 3 deletions(-)
 
-    That's what I did, thanks. I've also added 'struct platform_device;' 
-line for the same reason.
-
-> Alan Stern
->
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index d82e67a..a1891f4 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1064,6 +1064,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 				  "sdhi0_ctrl", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7740",
+ 				  "sdhi0_wp", "sdhi0"),
++	/* ST1232 */
++	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.0", "pfc-r8a7740",
++				  "intc_irq10", "intc"),
+ };
+ 
+ static void __init eva_clock_init(void)
+@@ -1124,9 +1127,6 @@ static void __init eva_init(void)
+ 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
+ 
+-	/* Touchscreen */
+-	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
+-
+ 	/* GETHER */
+ 	gpio_request(GPIO_FN_ET_CRS,		NULL);
+ 	gpio_request(GPIO_FN_ET_MDC,		NULL);
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 21ff7f2..1810e56 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1658,6 +1658,14 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
+ };
+ 
++/* - INTC ------------------------------------------------------------------- */
++static const unsigned int intc_irq10_pins[] = {
++	/* IRQ */
++	19,
++};
++static const unsigned int intc_irq10_mux[] = {
++	IRQ10_MARK,
++};
+ /* - LCD0 ------------------------------------------------------------------- */
+ static const unsigned int lcd0_data8_pins[] = {
+ 	/* D[0:7] */
+@@ -2062,6 +2070,7 @@ static const unsigned int sdhi2_wp_1_mux[] = {
+ };
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(intc_irq10),
+ 	SH_PFC_PIN_GROUP(lcd0_data8),
+ 	SH_PFC_PIN_GROUP(lcd0_data9),
+ 	SH_PFC_PIN_GROUP(lcd0_data12),
+@@ -2112,6 +2121,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_wp_1),
+ };
+ 
++static const char * const intc_groups[] = {
++	"intc_irq10",
++};
++
+ static const char * const lcd0_groups[] = {
+ 	"lcd0_data8",
+ 	"lcd0_data9",
+-- 
+1.7.9.5
 
