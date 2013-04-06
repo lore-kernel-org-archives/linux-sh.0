@@ -1,53 +1,81 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:35 +0000
-Subject: [PATCH 32/35] ARM: shmobile: ap4evb: Register pinctrl mapping for USBHS
-Message-Id: <1366671758-8954-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Jiang Liu <liuj97@gmail.com>
+Date: Sat, 06 Apr 2013 14:32:33 +0000
+Subject: [PATCH v4, part3 34/41] mm/SH: prepare for removing num_physpages and simplify mem_init()
+Message-Id: <1365258760-30821-35-git-send-email-jiang.liu@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365258760-30821-1-git-send-email-jiang.liu@huawei.com>
+In-Reply-To: <1365258760-30821-1-git-send-email-jiang.liu@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Jiang Liu <jiang.liu@huawei.com>, David Rientjes <rientjes@google.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, James Bottomley <James.Bottomley@HansenPartnership.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, David Howells <dhowells@redhat.com>, Mark Salter <msalter@redhat.com>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
 
-Replace the GPIO-based USBHS pinmux configuration by a pinctrl mapping.
+Prepare for removing num_physpages and simplify mem_init().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Wen Congyang <wency@cn.fujitsu.com>
+Cc: Tang Chen <tangchen@cn.fujitsu.com>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 15 +++++++--------
- 1 file changed, 7 insertions(+), 8 deletions(-)
+ arch/sh/mm/init.c |   25 ++++---------------------
+ 1 file changed, 4 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 152a5f7..297bf5e 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1137,6 +1137,13 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
- 	PIN_MAP_MUX_GROUP_DEFAULT("1-0048", "pfc-sh7372",
- 				  "intc_irq7_0", "intc"),
- #endif
-+	/* USBHS1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
-+				  "usb1_vbus", "usb1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
-+				  "usb1_otg_id_0", "usb1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
-+				  "usb1_otg_ctrl_0", "usb1"),
- };
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index aecd913..3826596 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -407,24 +407,18 @@ unsigned int mem_init_done = 0;
  
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
-@@ -1175,14 +1182,6 @@ static void __init ap4evb_init(void)
- 	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
- 	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ void __init mem_init(void)
+ {
+-	int codesize, datasize, initsize;
+-	int nid;
++	pg_data_t *pgdat;
  
--	/* USB enable */
--	gpio_request(GPIO_FN_VBUS0_1,    NULL);
--	gpio_request(GPIO_FN_IDIN_1_18,  NULL);
--	gpio_request(GPIO_FN_PWEN_1_115, NULL);
--	gpio_request(GPIO_FN_OVCN_1_114, NULL);
--	gpio_request(GPIO_FN_EXTLP_1,    NULL);
--	gpio_request(GPIO_FN_OVCN2_1,    NULL);
+ 	iommu_init();
+ 
+-	num_physpages = 0;
+ 	high_memory = NULL;
+ 
+-	for_each_online_node(nid) {
+-		pg_data_t *pgdat = NODE_DATA(nid);
++	for_each_online_pgdat(pgdat) {
+ 		void *node_high_memory;
+ 
+-		num_physpages += pgdat->node_present_pages;
 -
- 	/* setup USB phy */
- 	__raw_writew(0x8a0a, IOMEM(0xE6058130));	/* USBCR4 */
+ 		if (pgdat->node_spanned_pages)
+ 			free_all_bootmem_node(pgdat);
  
+-
+ 		node_high_memory = (void *)__va((pgdat->node_start_pfn +
+ 						 pgdat->node_spanned_pages) <<
+ 						 PAGE_SHIFT);
+@@ -441,19 +435,8 @@ void __init mem_init(void)
+ 
+ 	vsyscall_init();
+ 
+-	codesize =  (unsigned long) &_etext - (unsigned long) &_text;
+-	datasize =  (unsigned long) &_edata - (unsigned long) &_etext;
+-	initsize =  (unsigned long) &__init_end - (unsigned long) &__init_begin;
+-
+-	printk(KERN_INFO "Memory: %luk/%luk available (%dk kernel code, "
+-	       "%dk data, %dk init)\n",
+-		nr_free_pages() << (PAGE_SHIFT-10),
+-		num_physpages << (PAGE_SHIFT-10),
+-		codesize >> 10,
+-		datasize >> 10,
+-		initsize >> 10);
+-
+-	printk(KERN_INFO "virtual kernel memory layout:\n"
++	mem_init_print_info(NULL);
++	pr_info("virtual kernel memory layout:\n"
+ 		"    fixmap  : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+ #ifdef CONFIG_HIGHMEM
+ 		"    pkmap   : 0x%08lx - 0x%08lx   (%4ld kB)\n"
 -- 
-1.8.1.5
+1.7.9.5
 
