@@ -1,93 +1,61 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 03 Apr 2013 01:36:04 +0000
-Subject: Re: Renesas ARM SoC board updates for v3.10 #3
-Message-Id: <20130403013604.GA7202@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sat, 06 Apr 2013 12:20:05 +0000
+Subject: [PATCH 2/2] ARM: shmobile: Armadillo800EVA: Move st1232 reset pin handling
+Message-Id: <1365254327-10408-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879483-11144-1-git-send-email-horms+renesas@verge.net.au>
+References: <1365254327-10408-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1365254327-10408-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-input@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi,
+We no longer need to set up the reset pin for the st1232 in the board
+code, but can pass the GPIO number via the platform data to the driver.
+This results in a cleaner grouping of the device setup.
 
-Olof pointed out that there are some attribution problems in
-renesas-pinmux2-for-v3.10. I will resolve them, rebase and re-send
-this pull request (renesas-boards3-for-v3.10).
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-On Tue, Apr 02, 2013 at 02:11:12PM +0900, Simon Horman wrote:
-> Hi Arnd, Hi Olof,
-> 
-> The following changes since commit df16da03fc60fcfbc7f4b0cb849f9c1fc956a991:
-> 
->   Merge branch 'pinmux' into boards-base (2013-04-02 13:21:54 +0900)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards3-for-v3.10
-> 
-> for you to fetch changes up to b9a2f94954622b8fab222b1029fbfcdbed558b44:
-> 
->   ARM: shmobile: mackerel: clean up MMCIF vs. SDHI1 selection (2013-04-02 13:22:54 +0900)
-> 
-> ----------------------------------------------------------------
-> Third round of  Renesas ARM SoC board updates for v3.10
-> 
-> Highlights:
-> 
-> * Add Lager board support
-> * Add ape6evm board support
-> * Add Bock-W board support
-> * Mackerel MMCIF/SDHI clean ups
-> * Add ethernet support to kzm9g-reference
-> 
-> This pull request is based on a merge of:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-pinmux2-for-v3.10
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-boards2-for-v3.10
-> 
-> ----------------------------------------------------------------
-> Guennadi Liakhovetski (6):
->       ARM: shmobile: kzm9g-reference: add ethernet support
->       ARM: shmobile: mackerel: SDHI resources do not have to be numbered
->       ARM: shmobile: mackerel: remove OCR masks, where regulators are used
->       ARM: shmobile: mackerel: switch SDHI and MMCIF interfaces to slot-gpio
->       ARM: shmobile: mackerel: add interrupt names for SDHI0
->       ARM: shmobile: mackerel: clean up MMCIF vs. SDHI1 selection
-> 
-> Kuninori Morimoto (1):
->       ARM: shmobile: add R-Car M1A Bock-W platform support
-> 
-> Magnus Damm (4):
->       ARM: shmobile: APE6EVM base support
->       ARM: shmobile: APE6EVM PFC support
->       ARM: shmobile: APE6EVM LAN9220 support
->       ARM: shmobile: Initial r8a7790 Lager board support
-> 
->  arch/arm/boot/dts/Makefile                   |    3 +
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts        |   52 ++++++++++++
->  arch/arm/boot/dts/r8a7778-bockw.dts          |   32 ++++++++
->  arch/arm/boot/dts/r8a7790-lager.dts          |   31 +++++++
->  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   13 +++
->  arch/arm/configs/bockw_defconfig             |   66 +++++++++++++++
->  arch/arm/mach-shmobile/Kconfig               |   21 ++++-
->  arch/arm/mach-shmobile/Makefile              |    3 +
->  arch/arm/mach-shmobile/board-ape6evm.c       |   94 ++++++++++++++++++++++
->  arch/arm/mach-shmobile/board-bockw.c         |   43 ++++++++++
->  arch/arm/mach-shmobile/board-lager.c         |   46 +++++++++++
->  arch/arm/mach-shmobile/board-mackerel.c      |  111 ++++++++++----------------
->  12 files changed, 443 insertions(+), 72 deletions(-)
->  create mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm.dts
->  create mode 100644 arch/arm/boot/dts/r8a7778-bockw.dts
->  create mode 100644 arch/arm/boot/dts/r8a7790-lager.dts
->  create mode 100644 arch/arm/configs/bockw_defconfig
->  create mode 100644 arch/arm/mach-shmobile/board-ape6evm.c
->  create mode 100644 arch/arm/mach-shmobile/board-bockw.c
->  create mode 100644 arch/arm/mach-shmobile/board-lager.c
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index bf4c3d2..d82e67a 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -24,6 +24,7 @@
+ #include <linux/err.h>
+ #include <linux/kernel.h>
+ #include <linux/input.h>
++#include <linux/input/st1232_pdata.h>
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+@@ -997,10 +998,15 @@ static struct platform_device i2c_gpio_device = {
+ };
+ 
+ /* I2C */
++static struct st1232_pdata st1232_i2c0_pdata = {
++	.reset_pin = 166,
++};
++
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("st1232-ts", 0x55),
+ 		.irq = irq_pin(10),
++		.platform_data = &st1232_i2c0_pdata,
+ 	},
+ 	{
+ 		I2C_BOARD_INFO("wm8978", 0x1a),
+@@ -1120,7 +1126,6 @@ static void __init eva_init(void)
+ 
+ 	/* Touchscreen */
+ 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 
+ 	/* GETHER */
+ 	gpio_request(GPIO_FN_ET_CRS,		NULL);
+-- 
+1.7.9.5
+
