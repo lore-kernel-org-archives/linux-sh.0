@@ -1,94 +1,40 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 04 Apr 2013 16:00:44 +0000
-Subject: Re: [PATCH 1/6] sh-pfc: r8a7740: Add SCIFA1 data group
-Message-Id: <CABYn4swpturOoK=wnvNfdbnJwYHZF2ambTF080mhhBwT00Ds6g@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Apr 2013 01:44:44 +0000
+Subject: [PATCH] ARM: shmobile: Include all 2 GiB of memory on APE6EVM
+Message-Id: <20130408014444.18767.64441.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365083144-16085-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365083144-16085-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
 
-2013/4/4 Laurent Pinchart <laurent.pinchart@ideasonboard.com>:
-> Hi Bastian,
->
-> Thanks for the patch.
->
-> On Thursday 04 April 2013 15:45:39 Bastian Hecht wrote:
->> Add SCIFA1 as preparation to switch to pinctrl in board files.
->>
->> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
->> ---
->>  drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   15 +++++++++++++++
->>  1 file changed, 15 insertions(+)
->>
->> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
->> b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c index bbd87d2..6f62ab5 100644
->> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
->> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
->> @@ -1658,6 +1658,14 @@ static struct sh_pfc_pin pinmux_pins[] = {
->>       GPIO_PORT_ALL(),
->>  };
->>
->> +/* - SCIFA1 ------------------------------------------------------------ */
->> +static const unsigned int scifa1_data_pins[] = {
->> +     /* RXD, TXD */
->> +     195, 196,
->> +};
->> +static const unsigned int scifa1_data_mux[] = {
->> +     SCIFA1_RXD_MARK, SCIFA1_TXD_MARK,
->> +};
->
-> Please keep the entries alphabetically sorted (here and below). The patch
-> looks good otherwise.
->
+Add 1GiB of DRAM at 0x2_0000_0000
 
-Oh yes sure, will correct it in v2.
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
->>  /* - LCD0 -------------------------------------------------------------- */
->> static const unsigned int lcd0_data8_pins[] = {
->>       /* D[0:7] */
->> @@ -2054,6 +2062,7 @@ static const unsigned int sdhi2_wp_1_mux[] = {
->>  };
->>
->>  static const struct sh_pfc_pin_group pinmux_groups[] = {
->> +     SH_PFC_PIN_GROUP(scifa1_data),
->>       SH_PFC_PIN_GROUP(lcd0_data8),
->>       SH_PFC_PIN_GROUP(lcd0_data9),
->>       SH_PFC_PIN_GROUP(lcd0_data12),
->> @@ -2103,7 +2112,12 @@ static const struct sh_pfc_pin_group pinmux_groups[]
->> = { SH_PFC_PIN_GROUP(sdhi2_wp_1),
->>  };
->>
->> +static const char * const scifa1_groups[] = {
->> +     "scifa1_data",
->> +};
->> +
->>  static const char * const lcd0_groups[] = {
->> +     "scifa1_data",
+ This patch simply updates the DTS to describe the actual board
+ hardware. If we want to make use of the memory we also need to
+ enable LPAE in the kernel configuration, but that is seen as a
+ separate step.
 
-and I better remove the line above...
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts |    5 +++++
+ 1 file changed, 5 insertions(+)
 
->>       "lcd0_data8",
->>       "lcd0_data9",
->>       "lcd0_data12",
->> @@ -2169,6 +2183,7 @@ static const char * const sdhi2_groups[] = {
->>  };
->>
->>  static const struct sh_pfc_function pinmux_functions[] = {
->> +     SH_PFC_FUNCTION(scifa1),
->>       SH_PFC_FUNCTION(lcd0),
->>       SH_PFC_FUNCTION(lcd1),
->>       SH_PFC_FUNCTION(mmc0),
-> --
-> Regards,
->
-> Laurent Pinchart
->
-
-Thanks!
-
- Bastian
+--- 0001/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts	2013-04-08 10:27:20.000000000 +0900
+@@ -24,6 +24,11 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
+ 
++	memory@200000000 {
++		device_type = "memory";
++		reg = <2 0x00000000 0 0x40000000>;
++	};
++
+ 	ape6evm_fixed_3v3: fixedregulator@0 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "3V3";
