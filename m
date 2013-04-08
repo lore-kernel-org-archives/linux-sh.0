@@ -1,69 +1,118 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Apr 2013 23:00:30 +0000
-Subject: [PATCH v7 7/9] rcar-phy: add platform data
-Message-Id: <201305010300.31009.sergei.shtylyov@cogentembedded.com>
+Date: Mon, 08 Apr 2013 21:33:44 +0000
+Subject: [PATCH v2 8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
+Message-Id: <201304090133.45312.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Currently the driver hard-codes  USBPCTRL0 register to 0. It is wrong since this
-register contains board-specific USB ports configuration and so its value should
-be somehow passed via the platform data.  Add the global header file containing
-'struct rcar_phy_platform_data' consisting of the various bit fields describing
-USB ports' pin configuration.
+Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
+platform data, we now need a way to pass those platform data from the board file
+to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
+r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
+passed platform data using platform_device_register_resndata() call; creating
+this function envolves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
+so that it will no longer be registered for the generic R8A7779 machine (where
+we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
+to load as well.
+
+For the Marzen board, this new function will be called from marzen_init() to
+register the USB PHY device early enough.
+
+Note that the board and the SoC code have to be in one patch to keep the code
+bisectable...
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
 ---
-Changes since version 6:
-- renamed the header file into <linux/platform_data/usb-rcar-phy.h>, renamed the
-  guarding #define accordingly;
-- rephrased the changelog.
+Changes since the original posting:
+- added a note about bisectability to the changelog.
 
-Changes since version 3:
-- moved USBPCTRL0 register bit #define's to patch #9;
-- replaced USBPCTRL0 register value in the platform data structure by a set of
-  bit fields describing the configuration of the board, rewrote changelog;
+ arch/arm/mach-shmobile/board-marzen.c         |    5 +++++
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7779.c        |   16 ++++++++--------
+ 3 files changed, 15 insertions(+), 8 deletions(-)
 
-Changes since version 2:
-- added #include <linux/types.h>;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
- include/linux/platform_data/usb-rcar-phy.h |   26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
-
-Index: renesas/include/linux/platform_data/usb-rcar-phy.h
-=================================--- /dev/null
-+++ renesas/include/linux/platform_data/usb-rcar-phy.h
-@@ -0,0 +1,26 @@
-+/*
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#ifndef __USB_RCAR_PHY_H
-+#define __USB_RCAR_PHY_H
-+
-+#include <linux/types.h>
-+
-+struct rcar_phy_platform_data {
-+	bool port1_func:1;	/* true: port 1 used by function, false: host */
-+	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
-+	struct {		/* Overcurrent pin control for ports 0..2 */
-+		bool select_3_3v:1; /* true: USB_OVCn pin, false: OVCn pin */
-+				/* Set to false on port 1 in function mode */
-+		bool active_high:1; /* true: active  high, false: active low */
-+				/* Set to true  on port 1 in function mode */
-+	} ovc_pin[3];
+Index: renesas/arch/arm/mach-shmobile/board-marzen.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
++++ renesas/arch/arm/mach-shmobile/board-marzen.c
+@@ -56,6 +56,10 @@ static struct regulator_consumer_supply 
+ 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+ };
+ 
++static struct rcar_phy_platform_data usb_phy_platform_data = {
++	.usbpctrl0	= 0,
 +};
 +
-+#endif /* __USB_RCAR_PHY_H */
-
+ /* SMSC LAN89218 */
+ static struct resource smsc911x_resources[] = {
+ 	[0] = {
+@@ -230,6 +234,7 @@ static void __init marzen_init(void)
+ 	r8a7779_pinmux_init();
+ 
+ 	r8a7779_add_standard_devices();
++	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+ 
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -4,6 +4,7 @@
+ #include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
+ #include <linux/sh_eth.h>
++#include <linux/usb/rcar-phy.h>
+ 
+ struct platform_device;
+ 
+@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(vo
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
++extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
+ extern void r8a7779_init_late(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -407,13 +407,6 @@ static struct resource usb_phy_resources
+ 	},
+ };
+ 
+-static struct platform_device usb_phy_device = {
+-	.name		= "rcar_usb_phy",
+-	.id		= -1,
+-	.resource	= usb_phy_resources,
+-	.num_resources	= ARRAY_SIZE(usb_phy_resources),
+-};
+-
+ /* USB */
+ static struct usb_phy *phy;
+ 
+@@ -585,7 +578,6 @@ static struct platform_device *r8a7779_d
+ 	&scif5_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
+-	&usb_phy_device,
+ };
+ 
+ static struct platform_device *r8a7779_standard_devices[] __initdata = {
+@@ -620,6 +612,14 @@ void __init r8a7779_add_ether_device(str
+ 					  pdata, sizeof(*pdata));
+ }
+ 
++void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
++					  usb_phy_resources,
++					  ARRAY_SIZE(usb_phy_resources),
++					  pdata, sizeof(*pdata));
++}
++
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
