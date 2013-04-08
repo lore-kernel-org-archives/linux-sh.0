@@ -1,67 +1,126 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:08 +0000
-Subject: [PATCH 12/30] ARM: shmobile: sh73a0: add a TWD clock
-Message-Id: <1364879246-9470-13-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 08 Apr 2013 09:36:20 +0000
+Subject: [PATCH 08/10] sh-pfc: r8a7790: Don't use GPIO enum entries
+Message-Id: <1365413782-17036-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Refactor the GPIO macro magic to use GPIO numbers directly instead of
+the GPIO_GP_x_y enum entries. This will allow removing the GPIO enum
+entries from the mach/r8a7790.h header.
 
-Add a TWD clock on sh73a0 for the smp_twd driver to properly update the
-clock's frequency upon cpufreq events.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 90 ++++++++++++++++++++++++------------
+ 1 file changed, 60 insertions(+), 30 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 34b5c5a..a57ec15 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -288,6 +288,20 @@ static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_HP] = DIV4(FRQCRB, 4, 0xdff, 0),
- };
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 51219e1..1656915 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -24,39 +24,69 @@
+ #include <linux/kernel.h>
+ #include <linux/platform_data/gpio-rcar.h>
  
-+static unsigned long twd_recalc(struct clk *clk)
-+{
-+	return clk_get_rate(clk->parent) / 4;
-+}
-+
-+static struct sh_clk_ops twd_clk_ops = {
-+	.recalc = twd_recalc,
-+};
-+
-+static struct clk twd_clk = {
-+	.parent = &div4_clks[DIV4_Z],
-+	.ops = &twd_clk_ops,
-+};
-+
- enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
- 	DIV6_FLCTL, DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
- 	DIV6_FSIA, DIV6_FSIB, DIV6_SUB,
-@@ -482,6 +496,7 @@ static struct clk dsi1phy_clk = {
- static struct clk *late_main_clks[] = {
- 	&dsi0phy_clk,
- 	&dsi1phy_clk,
-+	&twd_clk,
- };
+-#include <mach/r8a7790.h>
+-
+ #include "core.h"
+ #include "sh_pfc.h"
  
- enum { MSTP001,
-@@ -546,6 +561,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- static struct clk_lookup lookups[] = {
- 	/* main clocks */
- 	CLKDEV_CON_ID("r_clk", &r_clk),
-+	CLKDEV_DEV_ID("smp_twd", &twd_clk), /* smp_twd */
+-#define CPU_32_PORT(fn, pfx, sfx)				\
+-	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
+-	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
+-	PORT_1(fn, pfx##31, sfx)
+-
+-#define CPU_32_PORT1(fn, pfx, sfx)				\
+-	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
+-	PORT_10(fn, pfx##2, sfx)
+-
+-#define CPU_32_PORT2(fn, pfx, sfx)				\
+-	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
+-	PORT_10(fn, pfx##2, sfx)
+-
+-/* GP_0_0_DATA -> GP_5_31_DATA (except for GP1[30],GP1[31],GP2[30],GP2[31]) */
+-#define CPU_ALL_PORT(fn, pfx, sfx)				\
+-	CPU_32_PORT(fn, pfx##_0_, sfx),				\
+-	CPU_32_PORT1(fn, pfx##_1_, sfx),			\
+-	CPU_32_PORT2(fn, pfx##_2_, sfx),			\
+-	CPU_32_PORT(fn, pfx##_3_, sfx),				\
+-	CPU_32_PORT(fn, pfx##_4_, sfx),				\
+-	CPU_32_PORT(fn, pfx##_5_, sfx)				\
+-
+-#define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
+-#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN)
+-
+-#define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
+-#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
+-#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
++#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
++
++#define PORT_GP_32(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
++	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
++	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
++	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
++	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
++	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
++	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
++	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
++	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
++	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
++	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
++	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
++	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
++	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
++	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
++	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
++
++#define PORT_GP_32_REV(bank, fn, sfx)					\
++	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
++	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
++	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
++	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
++	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
++	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
++	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
++	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
++	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
++	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
++	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
++	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
++	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
++	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
++	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
++	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
++
++#define CPU_ALL_PORT(fn, sfx)						\
++	PORT_GP_32(0, fn, sfx),						\
++	PORT_GP_32(1, fn, sfx),						\
++	PORT_GP_32(2, fn, sfx),						\
++	PORT_GP_32(3, fn, sfx),						\
++	PORT_GP_32(4, fn, sfx),						\
++	PORT_GP_32(5, fn, sfx)
++
++#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
++
++#define _GP_GPIO(bank, pin, _name, sfx)					\
++	[(bank * 32) + pin] = {						\
++		.name = __stringify(_name),				\
++		.enum_id = _name##_DATA,				\
++	}
++
++#define _GP_DATA(bank, pin, name, sfx)					\
++	PINMUX_DATA(name##_DATA, name##_FN)
++
++#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
++#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
++#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
  
- 	/* DIV6 clocks */
- 	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
+ #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
+ #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
 -- 
-1.7.10.4
+1.8.1.5
 
