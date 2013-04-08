@@ -1,42 +1,25 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 05 Apr 2013 02:56:22 +0000
-Subject: [GIT PULL] Renesas ARM based SoC bockw defconfig updates for v3.10
-Message-Id: <1365130583-11257-1-git-send-email-horms+renesas@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 08 Apr 2013 18:33:03 +0000
+Subject: Re: [GIT PULL] Renesas ARM based SoC bockw defconfig updates for v3.10
+Message-Id: <201304082033.04091.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365130583-11257-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365130583-11257-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+On Friday 05 April 2013, Simon Horman wrote:
+> An update to the defconfig for the bockw board to enable SMSC ethernet.
+> 
+> This is based on:
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-boards3-for-v3.10
+> 
+> The reason for using that base is that the bockw defconfig was added
+> in the boards branch instead of the defconfig branch, which was not ideal.
 
-The following changes since commit 00ae962f8051bb143fa1c43c6a9c8274c3a9c593:
+Pulled into the same next/boards2 branch that had the original addition.
 
-  ARM: shmobile: mackerel: clean up MMCIF vs. SDHI1 selection (2013-04-03 10:50:44 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas tags/renesas-defconfig-bockw-for-v3.10
-
-for you to fetch changes up to e2f77f6ff54865870870aaff0c07e2c35c4e0cfa:
-
-  ARM: shmobile: bockw: enable SMSC ethernet on defconfig (2013-04-04 15:51:12 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based SoC bockw defconfig updates for v3.10
-
-An update to the defconfig for the bockw board to enable SMSC ethernet.
-
-This is based on:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas renesas-boards3-for-v3.10
-
-The reason for using that base is that the bockw defconfig was added
-in the boards branch instead of the defconfig branch, which was not ideal.
-
-----------------------------------------------------------------
-Kuninori Morimoto (1):
-      ARM: shmobile: bockw: enable SMSC ethernet on defconfig
-
- arch/arm/configs/bockw_defconfig |   34 +++++++++++++++++++++++++++++++---
- 1 file changed, 31 insertions(+), 3 deletions(-)
+	Arnd
