@@ -1,82 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:46 +0000
-Subject: [PATCH 08/28] ARM: shmobile: marzen: Add GPIO LEDs
-Message-Id: <1364954706-14727-9-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Apr 2013 01:23:28 +0000
+Subject: [PATCH 01/02] ARM: shmobile: force enable of r8a7790 arch timer
+Message-Id: <20130408012328.13555.44487.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130408012318.13555.58237.sendpatchset@w520>
+In-Reply-To: <20130408012318.13555.58237.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-The board has 3 LEDs connected to GPIOs. Add a led-gpio device to
-support them.
+Implement a SoC-specific timer init function for
+r8a7790 that makes sure the architected timer
+is started regardless of boot loader setting.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-marzen.c |   32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 5852331..a88f7f3 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -25,6 +25,7 @@
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/io.h>
-+#include <linux/leds.h>
- #include <linux/dma-mapping.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/regulator/fixed.h>
-@@ -168,12 +169,43 @@ static struct platform_device usb_phy_device = {
- 	.num_resources	= ARRAY_SIZE(usb_phy_resources),
- };
- 
-+/* LEDS */
-+static struct gpio_led marzen_leds[] = {
-+	{
-+		.name		= "led2",
-+		.gpio		= 157,
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	}, {
-+		.name		= "led3",
-+		.gpio		= 158,
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	}, {
-+		.name		= "led4",
-+		.gpio		= 159,
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	},
-+};
-+
-+static struct gpio_led_platform_data marzen_leds_pdata = {
-+	.leds		= marzen_leds,
-+	.num_leds	= ARRAY_SIZE(marzen_leds),
-+};
-+
-+static struct platform_device leds_device = {
-+	.name	= "leds-gpio",
-+	.id	= 0,
-+	.dev	= {
-+		.platform_data  = &marzen_leds_pdata,
-+	},
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
- 	&hspi_device,
- 	&usb_phy_device,
-+	&leds_device,
- };
- 
- /* USB */
--- 
-1.7.10.4
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   14 +++++++++++++-
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2013-04-08 10:13:38.000000000 +0900
+@@ -4,5 +4,6 @@
+ void r8a7790_add_standard_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
++void r8a7790_timer_init(void);
+ 
+ #endif /* __ASM_R8A7790_H__ */
+--- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-04-08 10:13:38.000000000 +0900
+@@ -117,6 +117,18 @@ void __init r8a7790_add_standard_devices
+ 	r8a7790_register_irqc(0);
+ }
+ 
++void __init r8a7790_timer_init(void)
++{
++	void __iomem *cntcr;
++
++	/* make sure arch timer is started by setting bit 0 of CNTCT */
++	cntcr = ioremap(0xe6080000, PAGE_SIZE);
++	iowrite32(1, cntcr);
++	iounmap(cntcr);
++
++	shmobile_timer_init();
++}
++
+ #ifdef CONFIG_USE_OF
+ void __init r8a7790_add_standard_devices_dt(void)
+ {
+@@ -131,7 +143,7 @@ static const char *r8a7790_boards_compat
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+ 	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a7790_add_standard_devices_dt,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
