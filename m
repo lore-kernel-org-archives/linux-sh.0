@@ -1,64 +1,69 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 10 Apr 2013 09:33:12 +0000
-Subject: [PATCH 3/3 v2] ARM: shmobile: bockw: add pinctrl support
-Message-Id: <87d2u2k9wr.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Apr 2013 08:08:40 +0000
+Subject: [PATCH v3] irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
+Message-Id: <Pine.LNX.4.64.1304081002190.29945@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bo9z56k8.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bo9z56k8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-SCIF0 support as 1st step
+Most Renesas irqpin controllers have 4-bit sense fields, however, some
+have different widths. This patch adds a DT binding to optionally
+specify such non-standard values.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
-v1 -> v2
 
- - no change
+v3: move the code to a common location, where device configuration 
+parameters are retrieved
 
- arch/arm/mach-shmobile/board-bockw.c |   13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ .../interrupt-controller/renesas,intc-irqpin.txt   |   13 +++++++++++++
+ drivers/irqchip/irq-renesas-intc-irqpin.c          |    4 ++++
+ 2 files changed, 17 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 3e0b641..88fcdb3 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+new file mode 100644
+index 0000000..c6f09b7
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -0,0 +1,13 @@
++DT bindings for the R-/SH-Mobile irqpin controller
++
++Required properties:
++
++- compatible: has to be "renesas,intc-irqpin"
++- #interrupt-cells: has to be <2>
++
++Optional properties:
++
++- any properties, listed in interrupts.txt in this directory, and any standard
++  resource allocation properties
++- sense-bitfield-width: width of a single sense bitfield in the SENSE register,
++  if different from the default 4 bits
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 5a68e5a..4aca1b2 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
 @@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   */
  
-+#include <linux/pinctrl/machine.h>
+ #include <linux/init.h>
++#include <linux/of.h>
  #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -53,6 +54,14 @@ static struct resource smsc911x_resources[] = {
- 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
- };
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+@@ -349,6 +350,9 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	/* deal with driver instance configuration */
+ 	if (pdata)
+ 		memcpy(&p->config, pdata, sizeof(*pdata));
++	else
++		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
++				     &p->config.sense_bitfield_width);
+ 	if (!p->config.sense_bitfield_width)
+ 		p->config.sense_bitfield_width = 4; /* default to 4 bits */
  
-+static const struct pinctrl_map bockw_pinctrl_map[] = {
-+	/* SCIF0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-+				  "scif0_data_a", "scif0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-+				  "scif0_ctrl", "scif0"),
-+};
-+
- #define IRQ0MR	0x30
- static void __init bockw_init(void)
- {
-@@ -62,6 +71,10 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
- 
-+	pinctrl_register_mappings(bockw_pinctrl_map,
-+				  ARRAY_SIZE(bockw_pinctrl_map));
-+	r8a7778_pinmux_init();
-+
- 	fpga = ioremap_nocache(0x18200000, SZ_1M);
- 	if (fpga) {
- 		/*
 -- 
-1.7.9.5
+1.7.2.5
 
