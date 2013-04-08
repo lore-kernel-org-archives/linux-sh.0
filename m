@@ -1,50 +1,102 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Apr 2013 22:00:07 +0000
-Subject: [PATCH v5 5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
-Message-Id: <201304200200.08498.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 08 Apr 2013 09:36:14 +0000
+Subject: [PATCH 02/10] sh-pfc: r8a7790: Add ETH pin groups and functions
+Message-Id: <1365413782-17036-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Now that 'drivers/usb/phy/rcar-phy.c' doesn't require the second memory resource
-anymore, we can remove it from the R8A7779's USB PHY platform device.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 4:
-- refreshed the patch.
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 58 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
 
-Changes since version 3:
-- lowercased the SoC name in the subject.
-
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- new patch in this version, split from the previous one.
-
- arch/arm/mach-shmobile/setup-r8a7779.c |    5 -----
- 1 file changed, 5 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -395,11 +395,6 @@ static struct resource usb_phy_resources
- 		.end		= 0xffe70900 - 1,
- 		.flags		= IORESOURCE_MEM,
- 	},
--	[1] = {
--		.start		= 0xfff70000,
--		.end		= 0xfff70900 - 1,
--		.flags		= IORESOURCE_MEM,
--	},
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 42b0c55..3774242 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -20,7 +20,10 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++
+ #include <linux/kernel.h>
++#include <linux/platform_data/gpio-rcar.h>
++
+ #include <mach/r8a7790.h>
+ 
+ #include "core.h"
+@@ -1820,6 +1823,57 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
  };
  
- static struct platform_device usb_phy_device = {
++/* - ETH -------------------------------------------------------------------- */
++static const unsigned int eth_link_pins[] = {
++	/* LINK */
++	RCAR_GP_PIN(2, 22),
++};
++static const unsigned int eth_link_mux[] = {
++	ETH_LINK_MARK,
++};
++static const unsigned int eth_magic_pins[] = {
++	/* MAGIC */
++	RCAR_GP_PIN(2, 27),
++};
++static const unsigned int eth_magic_mux[] = {
++	ETH_MAGIC_MARK,
++};
++static const unsigned int eth_mdio_pins[] = {
++	/* MDC, MDIO */
++	RCAR_GP_PIN(2, 29), RCAR_GP_PIN(2, 24),
++};
++static const unsigned int eth_mdio_mux[] = {
++	ETH_MDC_MARK, ETH_MDIO_MARK,
++};
++static const unsigned int eth_rmii_pins[] = {
++	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK */
++	RCAR_GP_PIN(2, 20), RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 19),
++	RCAR_GP_PIN(2, 18), RCAR_GP_PIN(2, 28), RCAR_GP_PIN(2, 25),
++	RCAR_GP_PIN(2, 26), RCAR_GP_PIN(2, 23),
++};
++static const unsigned int eth_rmii_mux[] = {
++	ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_RX_ER_MARK, ETH_CRS_DV_MARK,
++	ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK, ETH_REF_CLK_MARK,
++};
++
++static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(eth_link),
++	SH_PFC_PIN_GROUP(eth_magic),
++	SH_PFC_PIN_GROUP(eth_mdio),
++	SH_PFC_PIN_GROUP(eth_rmii),
++};
++
++static const char * const eth_groups[] = {
++	"eth_link",
++	"eth_magic",
++	"eth_mdio",
++	"eth_rmii",
++};
++
++static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(eth),
++};
++
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+ 
+ static const struct pinmux_func pinmux_func_gpios[] = {
+@@ -3226,6 +3280,10 @@ const struct sh_pfc_soc_info r8a7790_pinmux_info = {
+ 
+ 	.pins = pinmux_pins,
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
++	.groups = pinmux_groups,
++	.nr_groups = ARRAY_SIZE(pinmux_groups),
++	.functions = pinmux_functions,
++	.nr_functions = ARRAY_SIZE(pinmux_functions),
+ 
+ 	.func_gpios	= pinmux_func_gpios,
+ 	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
+-- 
+1.8.1.5
+
