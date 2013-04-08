@@ -1,29 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Apr 2013 20:18:43 +0000
-Subject: Re: [PATCH v2] sh_eth: use random MAC address if no valid one supplied
-Message-Id: <51802723.9020105@cogentembedded.com>
+From: Barry Song <21cnbao@gmail.com>
+Date: Mon, 08 Apr 2013 09:19:52 +0000
+Subject: Re: [PATCH 10/14] media: soc-camera: support OF cameras
+Message-Id: <CAGsJ_4zYvF-U0_ETs9EP8i+bOJiJLkXWrJdMNnW_sXU-QwnXQw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304292349.43251.sergei.shtylyov@cogentembedded.com> <20130430.153729.859998606300915403.davem@davemloft.net>
-In-Reply-To: <20130430.153729.859998606300915403.davem@davemloft.net>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <1348754853-28619-11-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-11-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus Damm <magnus.damm@gmail.com>, Hans Verkuil <hverkuil@xs4all.nl>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, DL-SHA-WorkGroupLinux <workgroup.linux@csr.com>, zilong.wu@csr.com, "renwei.wu" <renwei.wu@csr.com>, xiaomeng.hou@csr.com
 
-On 04/30/2013 11:37 PM, David Miller wrote:
+hi Guennadi,
 
+2012/9/27 Guennadi Liakhovetski <g.liakhovetski@gmx.de>:
+> With OF we aren't getting platform data any more. To minimise changes we
+> create all the missing data ourselves, including compulsory struct
+> soc_camera_link objects. Host-client linking is now done, based on the OF
+> data. Media bus numbers also have to be assigned dynamically.
 >
->> On Renesas R-Car based development boards, although a MAC address is printed on
->> all the Ethernet port labels, U-Boot  doesn't write a valid MAC address  to the
->> Ether MAHR/MALR registers (there's no storage provided for the Ether MAC address
->> either), so we have to resort to using a random MAC address...
->>
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Applied, thanks.
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-     Thanks to you. I thought I'll have to wait after merge window 
-closes now... :-)
+as your V4L2 core DT based supports
+[media] Add a V4L2 OF parser
+[media] Add common video interfaces OF bindings documentation
+have been in media_tree queue for 3.10. i do care about the status of
+this patch for soc_camera.
 
-WBR, Sergei
+will you have a plan to resend these soc-camera patches based on your
+final V4L2 core DT patches? otherwise, we might do some jobs for that.
 
+> ---
+>  drivers/media/platform/soc_camera/soc_camera.c |  337 ++++++++++++++++++++++--
+>  include/media/soc_camera.h                     |    5 +
+>  2 files changed, 326 insertions(+), 16 deletions(-)
+>
+-barry
