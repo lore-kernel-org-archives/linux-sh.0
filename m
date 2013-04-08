@@ -1,60 +1,198 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:06 +0000
-Subject: [PATCH 25/37] sh-pfc: r8a7740: Remove CEU function GPIOS
-Message-Id: <1366671618-8796-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 08 Apr 2013 09:36:18 +0000
+Subject: [PATCH 06/10] sh-pfc: r8a7790: Remove GPIO data
+Message-Id: <1365413782-17036-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-All r8a7740 platforms now use the pinctrl API to control the CEU pins,
-the corresponding function GPIOS are unused. Remove them.
+GPIOs are now handled by a separate driver, remove GPIO data from the
+SoC information structure.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 28 ----------------------------
- 1 file changed, 28 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 133 +----------------------------------
+ 1 file changed, 1 insertion(+), 132 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 58fbe6b..7ab4ff2 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -3232,34 +3232,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
- 	GPIO_FN(RSPI_MISO_A),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 54c1e10..7716a1e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -52,32 +52,12 @@
+ 	CPU_32_PORT(fn, pfx##_5_, sfx)				\
  
--	/* VIO CKO */
--	GPIO_FN(VIO_CKO1),
--	GPIO_FN(VIO_CKO2),
--	GPIO_FN(VIO_CKO_1),
--	GPIO_FN(VIO_CKO),
+ #define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
+-#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
+-				       GP##pfx##_IN, GP##pfx##_OUT)
 -
--	/* VIO0 */
--	GPIO_FN(VIO0_D0),	GPIO_FN(VIO0_D1),	GPIO_FN(VIO0_D2),
--	GPIO_FN(VIO0_D3),	GPIO_FN(VIO0_D4),	GPIO_FN(VIO0_D5),
--	GPIO_FN(VIO0_D6),	GPIO_FN(VIO0_D7),	GPIO_FN(VIO0_D8),
--	GPIO_FN(VIO0_D9),	GPIO_FN(VIO0_D10),	GPIO_FN(VIO0_D11),
--	GPIO_FN(VIO0_D12),	GPIO_FN(VIO0_VD),	GPIO_FN(VIO0_HD),
--	GPIO_FN(VIO0_CLK),	GPIO_FN(VIO0_FIELD),
+-#define _GP_INOUTSEL(pfx, sfx) GP##pfx##_IN, GP##pfx##_OUT
+-#define _GP_INDT(pfx, sfx) GP##pfx##_DATA
++#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN)
+ 
+ #define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
+ #define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
+ #define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
+ 
 -
--	GPIO_FN(VIO0_D13_PORT26), /* MSEL5CR_27_0 */
--	GPIO_FN(VIO0_D14_PORT25),
--	GPIO_FN(VIO0_D15_PORT24),
+-#define PORT_10_REV(fn, pfx, sfx)				\
+-	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
+-	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
+-	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
+-	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
+-	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
 -
--	GPIO_FN(VIO0_D13_PORT22), /* MSEL5CR_27_1 */
--	GPIO_FN(VIO0_D14_PORT95),
--	GPIO_FN(VIO0_D15_PORT96),
+-#define CPU_32_PORT_REV(fn, pfx, sfx)					\
+-	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),		\
+-	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
+-	PORT_10_REV(fn, pfx, sfx)
 -
--	/* VIO1 */
--	GPIO_FN(VIO1_D0),	GPIO_FN(VIO1_D1),	GPIO_FN(VIO1_D2),
--	GPIO_FN(VIO1_D3),	GPIO_FN(VIO1_D4),	GPIO_FN(VIO1_D5),
--	GPIO_FN(VIO1_D6),	GPIO_FN(VIO1_D7),	GPIO_FN(VIO1_VD),
--	GPIO_FN(VIO1_HD),	GPIO_FN(VIO1_CLK),	GPIO_FN(VIO1_FIELD),
+-#define GP_INOUTSEL(bank) CPU_32_PORT_REV(_GP_INOUTSEL, _##bank##_, unused)
+-#define GP_INDT(bank) CPU_32_PORT_REV(_GP_INDT, _##bank##_, unused)
 -
- 	/* TPU0 */
- 	GPIO_FN(TPU0TO0),	GPIO_FN(TPU0TO1),	GPIO_FN(TPU0TO3),
- 	GPIO_FN(TPU0TO2_PORT66), /* TPU0TO2 Port 66/202 */
+ #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
+ #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+ 							  FN_##ipsr, FN_##fn)
+@@ -89,14 +69,6 @@ enum {
+ 	GP_ALL(DATA),
+ 	PINMUX_DATA_END,
+ 
+-	PINMUX_INPUT_BEGIN,
+-	GP_ALL(IN),
+-	PINMUX_INPUT_END,
+-
+-	PINMUX_OUTPUT_BEGIN,
+-	GP_ALL(OUT),
+-	PINMUX_OUTPUT_END,
+-
+ 	PINMUX_FUNCTION_BEGIN,
+ 	GP_ALL(FN),
+ 
+@@ -3824,106 +3796,6 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* SEL_I2C1 [2] */
+ 		FN_SEL_I2C1_0, FN_SEL_I2C1_1, FN_SEL_I2C1_2, 0, }
+ 	},
+-	{ PINMUX_CFG_REG("INOUTSEL0", 0xE6050004, 32, 1) { GP_INOUTSEL(0) } },
+-	{ PINMUX_CFG_REG("INOUTSEL1", 0xE6051004, 32, 1) {
+-		0, 0,
+-		0, 0,
+-		GP_1_29_IN, GP_1_29_OUT,
+-		GP_1_28_IN, GP_1_28_OUT,
+-		GP_1_27_IN, GP_1_27_OUT,
+-		GP_1_26_IN, GP_1_26_OUT,
+-		GP_1_25_IN, GP_1_25_OUT,
+-		GP_1_24_IN, GP_1_24_OUT,
+-		GP_1_23_IN, GP_1_23_OUT,
+-		GP_1_22_IN, GP_1_22_OUT,
+-		GP_1_21_IN, GP_1_21_OUT,
+-		GP_1_20_IN, GP_1_20_OUT,
+-		GP_1_19_IN, GP_1_19_OUT,
+-		GP_1_18_IN, GP_1_18_OUT,
+-		GP_1_17_IN, GP_1_17_OUT,
+-		GP_1_16_IN, GP_1_16_OUT,
+-		GP_1_15_IN, GP_1_15_OUT,
+-		GP_1_14_IN, GP_1_14_OUT,
+-		GP_1_13_IN, GP_1_13_OUT,
+-		GP_1_12_IN, GP_1_12_OUT,
+-		GP_1_11_IN, GP_1_11_OUT,
+-		GP_1_10_IN, GP_1_10_OUT,
+-		GP_1_9_IN, GP_1_9_OUT,
+-		GP_1_8_IN, GP_1_8_OUT,
+-		GP_1_7_IN, GP_1_7_OUT,
+-		GP_1_6_IN, GP_1_6_OUT,
+-		GP_1_5_IN, GP_1_5_OUT,
+-		GP_1_4_IN, GP_1_4_OUT,
+-		GP_1_3_IN, GP_1_3_OUT,
+-		GP_1_2_IN, GP_1_2_OUT,
+-		GP_1_1_IN, GP_1_1_OUT,
+-		GP_1_0_IN, GP_1_0_OUT, }
+-	},
+-	{ PINMUX_CFG_REG("INOUTSEL2", 0xE6052004, 32, 1) {
+-		0, 0,
+-		0, 0,
+-		GP_2_29_IN, GP_2_29_OUT,
+-		GP_2_28_IN, GP_2_28_OUT,
+-		GP_2_27_IN, GP_2_27_OUT,
+-		GP_2_26_IN, GP_2_26_OUT,
+-		GP_2_25_IN, GP_2_25_OUT,
+-		GP_2_24_IN, GP_2_24_OUT,
+-		GP_2_23_IN, GP_2_23_OUT,
+-		GP_2_22_IN, GP_2_22_OUT,
+-		GP_2_21_IN, GP_2_21_OUT,
+-		GP_2_20_IN, GP_2_20_OUT,
+-		GP_2_19_IN, GP_2_19_OUT,
+-		GP_2_18_IN, GP_2_18_OUT,
+-		GP_2_17_IN, GP_2_17_OUT,
+-		GP_2_16_IN, GP_2_16_OUT,
+-		GP_2_15_IN, GP_2_15_OUT,
+-		GP_2_14_IN, GP_2_14_OUT,
+-		GP_2_13_IN, GP_2_13_OUT,
+-		GP_2_12_IN, GP_2_12_OUT,
+-		GP_2_11_IN, GP_2_11_OUT,
+-		GP_2_10_IN, GP_2_10_OUT,
+-		GP_2_9_IN, GP_2_9_OUT,
+-		GP_2_8_IN, GP_2_8_OUT,
+-		GP_2_7_IN, GP_2_7_OUT,
+-		GP_2_6_IN, GP_2_6_OUT,
+-		GP_2_5_IN, GP_2_5_OUT,
+-		GP_2_4_IN, GP_2_4_OUT,
+-		GP_2_3_IN, GP_2_3_OUT,
+-		GP_2_2_IN, GP_2_2_OUT,
+-		GP_2_1_IN, GP_2_1_OUT,
+-		GP_2_0_IN, GP_2_0_OUT, }
+-	},
+-	{ PINMUX_CFG_REG("INOUTSEL3", 0xE6053004, 32, 1) { GP_INOUTSEL(3) } },
+-	{ PINMUX_CFG_REG("INOUTSEL4", 0xE6054004, 32, 1) { GP_INOUTSEL(4) } },
+-	{ PINMUX_CFG_REG("INOUTSEL5", 0xE6055004, 32, 1) { GP_INOUTSEL(5) } },
+-	{ },
+-};
+-
+-static const struct pinmux_data_reg pinmux_data_regs[] = {
+-	{ PINMUX_DATA_REG("INDT0", 0xE605000C, 32) { GP_INDT(0) } },
+-	{ PINMUX_DATA_REG("INDT1", 0xE605100C, 32) {
+-		0, 0, GP_1_29_DATA, GP_1_28_DATA,
+-		GP_1_27_DATA, GP_1_26_DATA, GP_1_25_DATA, GP_1_24_DATA,
+-		GP_1_23_DATA, GP_1_22_DATA, GP_1_21_DATA, GP_1_20_DATA,
+-		GP_1_19_DATA, GP_1_18_DATA, GP_1_17_DATA, GP_1_16_DATA,
+-		GP_1_15_DATA, GP_1_14_DATA, GP_1_13_DATA, GP_1_12_DATA,
+-		GP_1_11_DATA, GP_1_10_DATA, GP_1_9_DATA, GP_1_8_DATA,
+-		GP_1_7_DATA, GP_1_6_DATA, GP_1_5_DATA, GP_1_4_DATA,
+-		GP_1_3_DATA, GP_1_2_DATA, GP_1_1_DATA, GP_1_0_DATA }
+-	},
+-	{ PINMUX_DATA_REG("INDT2", 0xE605200C, 32) {
+-		0, 0, GP_2_29_DATA, GP_2_28_DATA,
+-		GP_2_27_DATA, GP_2_26_DATA, GP_2_25_DATA, GP_2_24_DATA,
+-		GP_2_23_DATA, GP_2_22_DATA, GP_2_21_DATA, GP_2_20_DATA,
+-		GP_2_19_DATA, GP_2_18_DATA, GP_2_17_DATA, GP_2_16_DATA,
+-		GP_2_15_DATA, GP_2_14_DATA, GP_2_13_DATA, GP_2_12_DATA,
+-		GP_2_11_DATA, GP_2_10_DATA, GP_2_9_DATA, GP_2_8_DATA,
+-		GP_2_7_DATA, GP_2_6_DATA, GP_2_5_DATA, GP_2_4_DATA,
+-		GP_2_3_DATA, GP_2_2_DATA, GP_2_1_DATA, GP_2_0_DATA }
+-	},
+-	{ PINMUX_DATA_REG("INDT3", 0xE605300C, 32) { GP_INDT(3) } },
+-	{ PINMUX_DATA_REG("INDT4", 0xE605400C, 32) { GP_INDT(4) } },
+-	{ PINMUX_DATA_REG("INDT5", 0xE605500C, 32) { GP_INDT(5) } },
+ 	{ },
+ };
+ 
+@@ -3931,8 +3803,6 @@ const struct sh_pfc_soc_info r8a7790_pinmux_info = {
+ 	.name = "r8a77900_pfc",
+ 	.unlock_reg = 0xe6060000, /* PMMR */
+ 
+-	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+-	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.pins = pinmux_pins,
+@@ -3946,7 +3816,6 @@ const struct sh_pfc_soc_info r8a7790_pinmux_info = {
+ 	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+-	.data_regs = pinmux_data_regs,
+ 
+ 	.gpio_data = pinmux_data,
+ 	.gpio_data_size = ARRAY_SIZE(pinmux_data),
 -- 
 1.8.1.5
 
