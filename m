@@ -1,49 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 12 Apr 2013 08:22:41 +0000
-Subject: Re: [PATCH v8 1/7] media: V4L2: add temporary clock helpers
-Message-Id: <1682270.VnHBnRB9ZY@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 08 Apr 2013 10:05:29 +0000
+Subject: [PATCH v2 0/3] sh-pfc: r8a7779: Improve readability with a new macro
+Message-Id: <1365415532-24544-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAGsJ_4zCRBvEX9xEDCr27JLK6wYp_2T_wk2hzVjqpKinbL=9pg@mail.gmail.com>
- <13951098.tvATHWRRmI@avalon> <20130411231923.7915.17215@quantum>
-In-Reply-To: <20130411231923.7915.17215@quantum>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Mike,
+Hello,
 
-On Thursday 11 April 2013 16:19:23 Mike Turquette wrote:
-> Quoting Laurent Pinchart (2013-04-11 15:35:38)
-> > On Thursday 11 April 2013 11:52:58 Mike Turquette wrote:
+This is the second version of the r8a7779 PFC readability improvement patches
+that use a macro to convert from the documentation pin number space to the
+linear pinctrl space.
 
-[snip]
+Note that patch 1/3 has already been posted as part of the "r8a7790 PFC pinctrl
+and GPIO improvements" patch series. Depending on the merge order one of them
+should be dropped.
 
-> > > I came into this thread late and don't have the actual patches in my
-> > > inbox for review.  That said, I don't understand why V4L2 cares about
-> > > the clk framework *implementation*?  The clk.h api is the same for
-> > > platforms using the common struct clk and those still using the legacy
-> > > method of defining their own struct clk.  If drivers are only consumers
-> > > of the clk.h api then the implementation underneath should not matter.
-> > 
-> > The issue on non-CCF systems is that devices usually can't register clocks
-> > dynamically. (Most of) those systems provide system clocks only through
-> > their clock API, without a way for the camera IP core to hook up the
-> > clock(s) it can provide to the camera sensor. On the consumer side we
-> > don't care much about the clock framework implementation, but on the
-> > provider side we need a framework that allows registering non-system
-> > clocks at runtime.
-> 
-> Yes, you do care about the clock framework implementation if you are a clock
-> provider.  I still haven't gone through the archives to find these patches
-> but I hope that any dependency on CONFIG_COMMON_CLK is conditionalized to
-> have the smallest impact possible. Making v4l2 as a whole depend on
-> COMMON_CLK might be a bit overkill compared to just making individual camera
-> drivers depend on it.
+Simon, is there a chance you could queue this to your pinmux branch for v3.10 ?
 
-The basic idea is to push the dependency on CONFIG_COMMON_CLK to individual 
-drivers, and provide a V4L2-specific clock framework (that looks like a 
-stripped-down version of CCF) for platforms that don't implement CCF yet.
+Changes from v1:
+
+- Rename the macro to RCAR_GP_PIN
+- Define the macro in a single header file
+
+Laurent Pinchart (3):
+  gpio-rcar: Add RCAR_GP_PIN macro
+  sh-pfc: r8a7779: Replace hardcoded pin numbers with RCAR_GP_PIN macro
+  ARM: shmobile: marzen: Use RCAR_GP_PIN macro
+
+ arch/arm/mach-shmobile/board-marzen.c   |   7 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c    | 294 ++++++++++++++++++--------------
+ include/linux/platform_data/gpio-rcar.h |   2 +
+ 3 files changed, 170 insertions(+), 133 deletions(-)
 
 -- 
 Regards,
