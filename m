@@ -1,123 +1,84 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 17 Apr 2013 18:44:58 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7778: add I2C support
-Message-Id: <201304172244.59435.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 08 Apr 2013 09:36:15 +0000
+Subject: [PATCH 03/10] sh-pfc: r8a7790: Add INTC pin groups and functions
+Message-Id: <1365413782-17036-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304172242.27671.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304172242.27671.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-
-Add I2C clocks and platform devices for R8A7778 SoC.
-Don't forget to also add the peripheral clock which the I2C driver uses.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: changed the registration function to platform_device_register_simple()]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c |   12 ++++++++++++
- arch/arm/mach-shmobile/setup-r8a7778.c |   32 ++++++++++++++++++++++++++++++++
- 2 files changed, 44 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 40 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
-Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2013  Renesas Solutions Corp.
-  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * based on r8a7779
-  *
-@@ -105,6 +106,7 @@ static struct clk *main_clks[] = {
- enum {
- 	MSTP114,
- 	MSTP100,
-+	MSTP030, MSTP029, MSTP028, MSTP027,
- 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015,
- 	MSTP_NR };
-@@ -112,6 +114,10 @@ enum {
- static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
- 	[MSTP100] = SH_CLK_MSTP32(&p_clk, MSTPCR1,  0, 0), /* USB0/1 */
-+	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
-+	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
-+	[MSTP028] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 28, 0), /* I2C2 */
-+	[MSTP027] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 27, 0), /* I2C3 */
- 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 24, 0), /* SCIF2 */
-@@ -123,10 +129,16 @@ static struct clk mstp_clks[MSTP_NR] = {
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 3774242..a92b204 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -1855,12 +1855,45 @@ static const unsigned int eth_rmii_mux[] = {
+ 	ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_RX_ER_MARK, ETH_CRS_DV_MARK,
+ 	ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK, ETH_REF_CLK_MARK,
+ };
++/* - INTC ------------------------------------------------------------------- */
++static const unsigned int intc_irq0_pins[] = {
++	/* IRQ */
++	RCAR_GP_PIN(1, 25),
++};
++static const unsigned int intc_irq0_mux[] = {
++	IRQ0_MARK,
++};
++static const unsigned int intc_irq1_pins[] = {
++	/* IRQ */
++	RCAR_GP_PIN(1, 27),
++};
++static const unsigned int intc_irq1_mux[] = {
++	IRQ1_MARK,
++};
++static const unsigned int intc_irq2_pins[] = {
++	/* IRQ */
++	RCAR_GP_PIN(1, 29),
++};
++static const unsigned int intc_irq2_mux[] = {
++	IRQ2_MARK,
++};
++static const unsigned int intc_irq3_pins[] = {
++	/* IRQ */
++	RCAR_GP_PIN(1, 23),
++};
++static const unsigned int intc_irq3_mux[] = {
++	IRQ3_MARK,
++};
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(eth_link),
+ 	SH_PFC_PIN_GROUP(eth_magic),
+ 	SH_PFC_PIN_GROUP(eth_mdio),
+ 	SH_PFC_PIN_GROUP(eth_rmii),
++	SH_PFC_PIN_GROUP(intc_irq0),
++	SH_PFC_PIN_GROUP(intc_irq1),
++	SH_PFC_PIN_GROUP(intc_irq2),
++	SH_PFC_PIN_GROUP(intc_irq3),
  };
  
- static struct clk_lookup lookups[] = {
-+	CLKDEV_CON_ID("peripheral_clk", &p_clk),
-+
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
-+	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-+	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
-+	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
-+	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -94,6 +94,33 @@ static struct sh_timer_config sh_tmu1_pl
- 		&sh_tmu##idx##_platform_data,		\
- 		sizeof(sh_tmu##idx##_platform_data))
+ static const char * const eth_groups[] = {
+@@ -1870,8 +1903,15 @@ static const char * const eth_groups[] = {
+ 	"eth_rmii",
+ };
  
-+/* I2C */
-+static struct resource i2c0_resources[] = {
-+	DEFINE_RES_MEM(0xffc70000, 0x1000),
-+	DEFINE_RES_IRQ(gic_iid(0x63)),
++static const char * const intc_groups[] = {
++	"intc_irq0",
++	"intc_irq1",
++	"intc_irq2",
++	"intc_irq3",
 +};
-+
-+static struct resource i2c1_resources[] = {
-+	DEFINE_RES_MEM(0xffc71000, 0x1000),
-+	DEFINE_RES_IRQ(gic_iid(0x6e)),
-+};
-+
-+static struct resource i2c2_resources[] = {
-+	DEFINE_RES_MEM(0xffc72000, 0x1000),
-+	DEFINE_RES_IRQ(gic_iid(0x6c)),
-+};
-+
-+static struct resource i2c3_resources[] = {
-+	DEFINE_RES_MEM(0xffc73000, 0x1000),
-+	DEFINE_RES_IRQ(gic_iid(0x6d)),
-+};
-+
-+#define r8a7778_register_i2c(idx)			\
-+	platform_device_register_simple(		\
-+		"i2c-rcar", idx,			\
-+		i2c##idx##_resources,			\
-+		ARRAY_SIZE(i2c##idx##_resources))
-+
- /* USB PHY */
- static struct resource usb_phy_resources[] = {
- 	DEFINE_RES_MEM(0xffe70800, 0x100),
-@@ -236,6 +263,11 @@ void __init r8a7778_add_standard_devices
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(eth),
++	SH_PFC_FUNCTION(intc),
+ };
  
- 	r8a7778_register_tmu(0);
- 	r8a7778_register_tmu(1);
-+
-+	r8a7778_register_i2c(0);
-+	r8a7778_register_i2c(1);
-+	r8a7778_register_i2c(2);
-+	r8a7778_register_i2c(3);
- }
- 
- void __init r8a7778_init_late(void)
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+-- 
+1.8.1.5
 
