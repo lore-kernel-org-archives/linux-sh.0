@@ -1,52 +1,52 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Apr 2013 22:56:05 +0000
-Subject: [PATCH v7 5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
-Message-Id: <201305010256.06379.sergei.shtylyov@cogentembedded.com>
+Date: Mon, 08 Apr 2013 21:21:22 +0000
+Subject: [PATCH v2 3/9] ARM: shmobile: R8A7779: setup EHCI internal buffer
+Message-Id: <201304090121.23296.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305010242.37483.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305010242.37483.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that 'drivers/usb/phy/rcar-phy.c' doesn't require the second memory resource
-anymore, we can remove it from the R8A7779's USB PHY platform device.
+Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
+registers) using the pre_setup() method in 'struct usb_ehci_pdata'.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
 ---
-Changes since version 4:
-- refreshed the patch.
-
-Changes since version 3:
-- lowercased the SoC name in the subject.
-
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
 Changes since the original posting:
-- new patch in this version, split from the previous one.
+- changed from init() platform device method to pre_setup() as per the previous
+  patch.
 
- arch/arm/mach-shmobile/setup-r8a7779.c |    5 -----
- 1 file changed, 5 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c |   15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
 Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
 =================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
 +++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -395,11 +395,6 @@ static struct resource usb_phy_resources
- 		.end		= 0xffe70900 - 1,
- 		.flags		= IORESOURCE_MEM,
- 	},
--	[1] = {
--		.start		= 0xfff70000,
--		.end		= 0xfff70900 - 1,
--		.flags		= IORESOURCE_MEM,
--	},
+@@ -446,10 +446,25 @@ static void usb_power_off(struct platfor
+ 	pm_runtime_disable(&pdev->dev);
+ }
+ 
++static int ehci_init_internal_buffer(struct usb_hcd *hcd)
++{
++	/*
++	 * Below are recommended values from the datasheet;
++	 * see [USB :: Setting of EHCI Internal Buffer].
++	 */
++	/* EHCI IP internal buffer setting */
++	iowrite32(0x00ff0040, hcd->regs + 0x0094);
++	/* EHCI IP internal buffer enable */
++	iowrite32(0x00000001, hcd->regs + 0x009C);
++
++	return 0;
++}
++
+ static struct usb_ehci_pdata ehcix_pdata = {
+ 	.power_on	= usb_power_on,
+ 	.power_off	= usb_power_off,
+ 	.power_suspend	= usb_power_off,
++	.pre_setup	= ehci_init_internal_buffer,
  };
  
- static struct platform_device usb_phy_device = {
+ static struct resource ehci0_resources[] = {
