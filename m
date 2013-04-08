@@ -1,204 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 29 Apr 2013 11:12:23 +0000
-Subject: [PATCH v3 2/4] sh-pfc: sh73a0: Add VCCQ MC0 regulator
-Message-Id: <1367233945-20630-3-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 08 Apr 2013 09:36:22 +0000
+Subject: [PATCH 10/10] ARM: shmobile: lager: Initialize pinmux
+Message-Id: <1365413782-17036-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The sh73a0 has an internal power gate on the VCCQ power supply for the
-SDHI0 device that is controlled (for some strange reason) by a bit in a
-PFC register. This feature should be exposed as a regulator.
-
-As the same register is also used for pin control purposes there is no
-way to achieve atomic read/write sequences with a separate regulator
-driver. We thus need to implement the regulator here.
+Initialize r8a7790 pinmuxing and register mappings for the two debug
+serial ports.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/Kconfig      |   1 +
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 134 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 135 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-index 103e8bf..4ff2b50 100644
---- a/drivers/pinctrl/sh-pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -72,6 +72,7 @@ config PINCTRL_PFC_SH73A0
- 	def_bool y
- 	depends on ARCH_SH73A0
- 	select PINCTRL_SH_PFC
-+	select REGULATOR
- 
- config PINCTRL_PFC_SH7720
- 	def_bool y
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 587f777..b783724 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -20,7 +20,11 @@
-  */
- #include <linux/io.h>
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f587187..c863bc7 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -21,15 +21,30 @@
+ #include <linux/interrupt.h>
+ #include <linux/irqchip.h>
  #include <linux/kernel.h>
-+#include <linux/module.h>
- #include <linux/pinctrl/pinconf-generic.h>
-+#include <linux/regulator/driver.h>
-+#include <linux/regulator/machine.h>
-+#include <linux/slab.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <mach/common.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
- #include <mach/sh73a0.h>
- #include <mach/irqs.h>
-@@ -3888,6 +3892,92 @@ static const struct pinmux_irq pinmux_irqs[] = {
- 	PINMUX_IRQ(EXT_IRQ16L(9), 308),
- };
- 
-+/* -----------------------------------------------------------------------------
-+ * VCCQ MC0 regulator
-+ */
-+
-+static void sh73a0_vccq_mc0_endisable(struct regulator_dev *reg, bool enable)
-+{
-+	struct sh_pfc *pfc = reg->reg_data;
-+	void __iomem *addr = pfc->window[1].virt + 4;
-+	unsigned long flags;
-+	u32 value;
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	value = ioread32(addr);
-+
-+	if (enable)
-+		value |= BIT(28);
-+	else
-+		value &= ~BIT(28);
-+
-+	iowrite32(value, addr);
-+
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+}
-+
-+static int sh73a0_vccq_mc0_enable(struct regulator_dev *reg)
-+{
-+	sh73a0_vccq_mc0_endisable(reg, true);
-+	return 0;
-+}
-+
-+static int sh73a0_vccq_mc0_disable(struct regulator_dev *reg)
-+{
-+	sh73a0_vccq_mc0_endisable(reg, false);
-+	return 0;
-+}
-+
-+static int sh73a0_vccq_mc0_is_enabled(struct regulator_dev *reg)
-+{
-+	struct sh_pfc *pfc = reg->reg_data;
-+	void __iomem *addr = pfc->window[1].virt + 4;
-+	unsigned long flags;
-+	u32 value;
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+	value = ioread32(addr);
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+
-+	return !!(value & BIT(28));
-+}
-+
-+static int sh73a0_vccq_mc0_get_voltage(struct regulator_dev *reg)
-+{
-+	return 3300000;
-+}
-+
-+static struct regulator_ops sh73a0_vccq_mc0_ops = {
-+	.enable = sh73a0_vccq_mc0_enable,
-+	.disable = sh73a0_vccq_mc0_disable,
-+	.is_enabled = sh73a0_vccq_mc0_is_enabled,
-+	.get_voltage = sh73a0_vccq_mc0_get_voltage,
++static const struct pinctrl_map lager_pinctrl_map[] = {
++	/* SCIF0 (CN19: DEBUG SERIAL0) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
++				  "scif0_data", "scif0"),
++	/* SCIF1 (CN20: DEBUG SERIAL1) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
++				  "scif1_data", "scif1"),
 +};
 +
-+static const struct regulator_desc sh73a0_vccq_mc0_desc = {
-+	.owner = THIS_MODULE,
-+	.name = "vccq_mc0",
-+	.type = REGULATOR_VOLTAGE,
-+	.ops = &sh73a0_vccq_mc0_ops,
-+};
+ static void __init lager_add_standard_devices(void)
+ {
+ 	r8a7790_clock_init();
 +
-+static struct regulator_consumer_supply sh73a0_vccq_mc0_consumers[] = {
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
++	pinctrl_register_mappings(lager_pinctrl_map,
++				  ARRAY_SIZE(lager_pinctrl_map));
++	r8a7790_pinmux_init();
 +
-+static const struct regulator_init_data sh73a0_vccq_mc0_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies = ARRAY_SIZE(sh73a0_vccq_mc0_consumers),
-+	.consumer_supplies = sh73a0_vccq_mc0_consumers,
-+};
-+
-+/* -----------------------------------------------------------------------------
-+ * Pin bias
-+ */
-+
- #define PORTnCR_PULMD_OFF	(0 << 6)
- #define PORTnCR_PULMD_DOWN	(2 << 6)
- #define PORTnCR_PULMD_UP	(3 << 6)
-@@ -3934,7 +4024,51 @@ static void sh73a0_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
- 	iowrite8(value, addr);
+ 	r8a7790_add_standard_devices();
  }
  
-+/* -----------------------------------------------------------------------------
-+ * SoC information
-+ */
-+
-+struct sh73a0_pinmux_data {
-+	struct regulator_dev *vccq_mc0;
-+};
-+
-+static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
-+{
-+	struct sh73a0_pinmux_data *data;
-+	struct regulator_config cfg = { };
-+	int ret;
-+
-+	data = devm_kzalloc(pfc->dev, sizeof(*data), GFP_KERNEL);
-+	if (data = NULL)
-+		return -ENOMEM;
-+
-+	cfg.dev = pfc->dev;
-+	cfg.init_data = &sh73a0_vccq_mc0_init_data;
-+	cfg.driver_data = pfc;
-+
-+	data->vccq_mc0 = regulator_register(&sh73a0_vccq_mc0_desc, &cfg);
-+	if (IS_ERR(data->vccq_mc0)) {
-+		ret = PTR_ERR(data->vccq_mc0);
-+		dev_err(pfc->dev, "Failed to register VCCQ MC0 regulator: %d\n",
-+			ret);
-+		return ret;
-+	}
-+
-+	pfc->soc_data = data;
-+
-+	return 0;
-+}
-+
-+static void sh73a0_pinmux_soc_exit(struct sh_pfc *pfc)
-+{
-+	struct sh73a0_pinmux_data *data = pfc->soc_data;
-+
-+	regulator_unregister(data->vccq_mc0);
-+}
-+
- static const struct sh_pfc_soc_operations sh73a0_pinmux_ops = {
-+	.init = sh73a0_pinmux_soc_init,
-+	.exit = sh73a0_pinmux_soc_exit,
- 	.get_bias = sh73a0_pinmux_get_bias,
- 	.set_bias = sh73a0_pinmux_set_bias,
- };
 -- 
 1.8.1.5
 
