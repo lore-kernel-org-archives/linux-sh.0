@@ -1,320 +1,298 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:18 +0000
-Subject: [PATCH 37/37] ARM: shmobile: r8a7740: Remove all GPIOs
-Message-Id: <1366671618-8796-38-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Apr 2013 11:07:05 +0000
+Subject: [PATCH v7 1/7] media: V4L2: add temporary clock helpers
+Message-Id: <1365419231-14830-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Function GPIOs are not used anymore, and all code use the GPIO numbers
-directly. Remove the GPIOs enumeration.
+Typical video devices like camera sensors require an external clock source.
+Many such devices cannot even access their hardware registers without a
+running clock. These clock sources should be controlled by their consumers.
+This should be performed, using the generic clock framework. Unfortunately
+so far only very few systems have been ported to that framework. This patch
+adds a set of temporary helpers, mimicking the generic clock API, to V4L2.
+Platforms, adopting the clock API, should switch to using it. Eventually
+this temporary API should be removed.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 288 --------------------------
- 1 file changed, 288 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index ed30a1d..b34d19b 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -28,294 +28,6 @@
- #define MD_CK1	(1 << 1)
- #define MD_CK0	(1 << 0)
+v7: (thanks to all reviewers)
+
+1. Updated the (C) date ;-)
+2. Removed the struct v4l2-clock subdevice member
+3. Switched from using subdevice name to device name
+4. Added the slab.h header
+
+ drivers/media/v4l2-core/Makefile   |    2 +-
+ drivers/media/v4l2-core/v4l2-clk.c |  177 ++++++++++++++++++++++++++++++++++++
+ include/media/v4l2-clk.h           |   54 +++++++++++
+ 3 files changed, 232 insertions(+), 1 deletions(-)
+ create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+ create mode 100644 include/media/v4l2-clk.h
+
+diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
+index aa50c46..628c630 100644
+--- a/drivers/media/v4l2-core/Makefile
++++ b/drivers/media/v4l2-core/Makefile
+@@ -5,7 +5,7 @@
+ tuner-objs	:=	tuner-core.o
  
--/*
-- * Pin Function Controller:
-- *	GPIO_FN_xx - GPIO used to select pin function
-- *	GPIO_PORTxx - GPIO mapped to real I/O pin on CPU
-- */
--enum {
--	/* PORT */
--	GPIO_PORT0, GPIO_PORT1, GPIO_PORT2, GPIO_PORT3, GPIO_PORT4,
--	GPIO_PORT5, GPIO_PORT6, GPIO_PORT7, GPIO_PORT8, GPIO_PORT9,
--
--	GPIO_PORT10, GPIO_PORT11, GPIO_PORT12, GPIO_PORT13, GPIO_PORT14,
--	GPIO_PORT15, GPIO_PORT16, GPIO_PORT17, GPIO_PORT18, GPIO_PORT19,
--
--	GPIO_PORT20, GPIO_PORT21, GPIO_PORT22, GPIO_PORT23, GPIO_PORT24,
--	GPIO_PORT25, GPIO_PORT26, GPIO_PORT27, GPIO_PORT28, GPIO_PORT29,
--
--	GPIO_PORT30, GPIO_PORT31, GPIO_PORT32, GPIO_PORT33, GPIO_PORT34,
--	GPIO_PORT35, GPIO_PORT36, GPIO_PORT37, GPIO_PORT38, GPIO_PORT39,
--
--	GPIO_PORT40, GPIO_PORT41, GPIO_PORT42, GPIO_PORT43, GPIO_PORT44,
--	GPIO_PORT45, GPIO_PORT46, GPIO_PORT47, GPIO_PORT48, GPIO_PORT49,
--
--	GPIO_PORT50, GPIO_PORT51, GPIO_PORT52, GPIO_PORT53, GPIO_PORT54,
--	GPIO_PORT55, GPIO_PORT56, GPIO_PORT57, GPIO_PORT58, GPIO_PORT59,
--
--	GPIO_PORT60, GPIO_PORT61, GPIO_PORT62, GPIO_PORT63, GPIO_PORT64,
--	GPIO_PORT65, GPIO_PORT66, GPIO_PORT67, GPIO_PORT68, GPIO_PORT69,
--
--	GPIO_PORT70, GPIO_PORT71, GPIO_PORT72, GPIO_PORT73, GPIO_PORT74,
--	GPIO_PORT75, GPIO_PORT76, GPIO_PORT77, GPIO_PORT78, GPIO_PORT79,
--
--	GPIO_PORT80, GPIO_PORT81, GPIO_PORT82, GPIO_PORT83, GPIO_PORT84,
--	GPIO_PORT85, GPIO_PORT86, GPIO_PORT87, GPIO_PORT88, GPIO_PORT89,
--
--	GPIO_PORT90, GPIO_PORT91, GPIO_PORT92, GPIO_PORT93, GPIO_PORT94,
--	GPIO_PORT95, GPIO_PORT96, GPIO_PORT97, GPIO_PORT98, GPIO_PORT99,
--
--	GPIO_PORT100, GPIO_PORT101, GPIO_PORT102, GPIO_PORT103, GPIO_PORT104,
--	GPIO_PORT105, GPIO_PORT106, GPIO_PORT107, GPIO_PORT108, GPIO_PORT109,
--
--	GPIO_PORT110, GPIO_PORT111, GPIO_PORT112, GPIO_PORT113, GPIO_PORT114,
--	GPIO_PORT115, GPIO_PORT116, GPIO_PORT117, GPIO_PORT118, GPIO_PORT119,
--
--	GPIO_PORT120, GPIO_PORT121, GPIO_PORT122, GPIO_PORT123, GPIO_PORT124,
--	GPIO_PORT125, GPIO_PORT126, GPIO_PORT127, GPIO_PORT128, GPIO_PORT129,
--
--	GPIO_PORT130, GPIO_PORT131, GPIO_PORT132, GPIO_PORT133, GPIO_PORT134,
--	GPIO_PORT135, GPIO_PORT136, GPIO_PORT137, GPIO_PORT138, GPIO_PORT139,
--
--	GPIO_PORT140, GPIO_PORT141, GPIO_PORT142, GPIO_PORT143, GPIO_PORT144,
--	GPIO_PORT145, GPIO_PORT146, GPIO_PORT147, GPIO_PORT148, GPIO_PORT149,
--
--	GPIO_PORT150, GPIO_PORT151, GPIO_PORT152, GPIO_PORT153, GPIO_PORT154,
--	GPIO_PORT155, GPIO_PORT156, GPIO_PORT157, GPIO_PORT158, GPIO_PORT159,
--
--	GPIO_PORT160, GPIO_PORT161, GPIO_PORT162, GPIO_PORT163, GPIO_PORT164,
--	GPIO_PORT165, GPIO_PORT166, GPIO_PORT167, GPIO_PORT168, GPIO_PORT169,
--
--	GPIO_PORT170, GPIO_PORT171, GPIO_PORT172, GPIO_PORT173, GPIO_PORT174,
--	GPIO_PORT175, GPIO_PORT176, GPIO_PORT177, GPIO_PORT178, GPIO_PORT179,
--
--	GPIO_PORT180, GPIO_PORT181, GPIO_PORT182, GPIO_PORT183, GPIO_PORT184,
--	GPIO_PORT185, GPIO_PORT186, GPIO_PORT187, GPIO_PORT188, GPIO_PORT189,
--
--	GPIO_PORT190, GPIO_PORT191, GPIO_PORT192, GPIO_PORT193, GPIO_PORT194,
--	GPIO_PORT195, GPIO_PORT196, GPIO_PORT197, GPIO_PORT198, GPIO_PORT199,
--
--	GPIO_PORT200, GPIO_PORT201, GPIO_PORT202, GPIO_PORT203, GPIO_PORT204,
--	GPIO_PORT205, GPIO_PORT206, GPIO_PORT207, GPIO_PORT208, GPIO_PORT209,
--
--	GPIO_PORT210, GPIO_PORT211,
--
--	/* Function */
--
--	/* DBGT */
--	GPIO_FN_DBGMDT2,	GPIO_FN_DBGMDT1,	GPIO_FN_DBGMDT0,
--	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
--	GPIO_FN_DBGMD21,
--
--	/* FMSI */
--	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
--	GPIO_FN_FMSISLD_PORT6,
--	GPIO_FN_FMSIILR,	GPIO_FN_FMSIIBT,
--	GPIO_FN_FMSIOLR,	GPIO_FN_FMSIOBT,
--	GPIO_FN_FMSICK,		GPIO_FN_FMSOILR,
--	GPIO_FN_FMSOIBT,	GPIO_FN_FMSOOLR,
--	GPIO_FN_FMSOOBT,	GPIO_FN_FMSOSLD,
--	GPIO_FN_FMSOCK,
--
--	/* LCD0 */
--	GPIO_FN_LCDC0_SELECT,
--
--	/* LCD1 */
--	GPIO_FN_LCDC1_SELECT,
--
--	/* RSPI */
--	GPIO_FN_RSPI_SSL0_A,	GPIO_FN_RSPI_SSL1_A,
--	GPIO_FN_RSPI_SSL2_A,	GPIO_FN_RSPI_SSL3_A,
--	GPIO_FN_RSPI_MOSI_A,	GPIO_FN_RSPI_MISO_A,
--	GPIO_FN_RSPI_CK_A,
--
--	/* TPU0 */
--	GPIO_FN_TPU0TO0,	GPIO_FN_TPU0TO1,
--	GPIO_FN_TPU0TO3,
--	GPIO_FN_TPU0TO2_PORT66, /* TPU0TO2 Port 66/202 */
--	GPIO_FN_TPU0TO2_PORT202,
--
--	/* SSP1 0 */
--	GPIO_FN_STP0_IPD0,	GPIO_FN_STP0_IPD1,	GPIO_FN_STP0_IPD2,
--	GPIO_FN_STP0_IPD3,	GPIO_FN_STP0_IPD4,	GPIO_FN_STP0_IPD5,
--	GPIO_FN_STP0_IPD6,	GPIO_FN_STP0_IPD7,	GPIO_FN_STP0_IPEN,
--	GPIO_FN_STP0_IPCLK,	GPIO_FN_STP0_IPSYNC,
--
--	/* SSP1 1 */
--	GPIO_FN_STP1_IPD1,	GPIO_FN_STP1_IPD2,	GPIO_FN_STP1_IPD3,
--	GPIO_FN_STP1_IPD4,	GPIO_FN_STP1_IPD5,	GPIO_FN_STP1_IPD6,
--	GPIO_FN_STP1_IPD7,	GPIO_FN_STP1_IPCLK,	GPIO_FN_STP1_IPSYNC,
--
--	GPIO_FN_STP1_IPD0_PORT186, /* MSEL5CR_23_0 */
--	GPIO_FN_STP1_IPEN_PORT187,
--
--	GPIO_FN_STP1_IPD0_PORT194, /* MSEL5CR_23_1 */
--	GPIO_FN_STP1_IPEN_PORT193,
--
--	/* SIM */
--	GPIO_FN_SIM_RST,	GPIO_FN_SIM_CLK,
--	GPIO_FN_SIM_D_PORT22, /* SIM_D  Port 22/199 */
--	GPIO_FN_SIM_D_PORT199,
--
--	/* MSIOF2 */
--	GPIO_FN_MSIOF2_TXD,	GPIO_FN_MSIOF2_RXD,	GPIO_FN_MSIOF2_TSCK,
--	GPIO_FN_MSIOF2_SS2,	GPIO_FN_MSIOF2_TSYNC,	GPIO_FN_MSIOF2_SS1,
--	GPIO_FN_MSIOF2_MCK1,	GPIO_FN_MSIOF2_MCK0,	GPIO_FN_MSIOF2_RSYNC,
--	GPIO_FN_MSIOF2_RSCK,
--
--	/* KEYSC */
--	GPIO_FN_KEYIN4,		GPIO_FN_KEYIN5,
--	GPIO_FN_KEYIN6,		GPIO_FN_KEYIN7,
--	GPIO_FN_KEYOUT0,	GPIO_FN_KEYOUT1,	GPIO_FN_KEYOUT2,
--	GPIO_FN_KEYOUT3,	GPIO_FN_KEYOUT4,	GPIO_FN_KEYOUT5,
--	GPIO_FN_KEYOUT6,	GPIO_FN_KEYOUT7,
--
--	GPIO_FN_KEYIN0_PORT43, /* MSEL4CR_18_0 */
--	GPIO_FN_KEYIN1_PORT44,
--	GPIO_FN_KEYIN2_PORT45,
--	GPIO_FN_KEYIN3_PORT46,
--
--	GPIO_FN_KEYIN0_PORT58, /* MSEL4CR_18_1 */
--	GPIO_FN_KEYIN1_PORT57,
--	GPIO_FN_KEYIN2_PORT56,
--	GPIO_FN_KEYIN3_PORT55,
--
--	/* VOU */
--	GPIO_FN_DV_D0,	GPIO_FN_DV_D1,	GPIO_FN_DV_D2,	GPIO_FN_DV_D3,
--	GPIO_FN_DV_D4,	GPIO_FN_DV_D5,	GPIO_FN_DV_D6,	GPIO_FN_DV_D7,
--	GPIO_FN_DV_D8,	GPIO_FN_DV_D9,	GPIO_FN_DV_D10,	GPIO_FN_DV_D11,
--	GPIO_FN_DV_D12,	GPIO_FN_DV_D13,	GPIO_FN_DV_D14,	GPIO_FN_DV_D15,
--	GPIO_FN_DV_CLK,
--	GPIO_FN_DV_VSYNC,
--	GPIO_FN_DV_HSYNC,
--
--	/* MEMC */
--	GPIO_FN_MEMC_AD0,	GPIO_FN_MEMC_AD1,	GPIO_FN_MEMC_AD2,
--	GPIO_FN_MEMC_AD3,	GPIO_FN_MEMC_AD4,	GPIO_FN_MEMC_AD5,
--	GPIO_FN_MEMC_AD6,	GPIO_FN_MEMC_AD7,	GPIO_FN_MEMC_AD8,
--	GPIO_FN_MEMC_AD9,	GPIO_FN_MEMC_AD10,	GPIO_FN_MEMC_AD11,
--	GPIO_FN_MEMC_AD12,	GPIO_FN_MEMC_AD13,	GPIO_FN_MEMC_AD14,
--	GPIO_FN_MEMC_AD15,	GPIO_FN_MEMC_CS0,	GPIO_FN_MEMC_INT,
--	GPIO_FN_MEMC_NWE,	GPIO_FN_MEMC_NOE,
--
--	GPIO_FN_MEMC_CS1, /* MSEL4CR_6_0 */
--	GPIO_FN_MEMC_ADV,
--	GPIO_FN_MEMC_WAIT,
--	GPIO_FN_MEMC_BUSCLK,
--
--	GPIO_FN_MEMC_A1, /* MSEL4CR_6_1 */
--	GPIO_FN_MEMC_DREQ0,
--	GPIO_FN_MEMC_DREQ1,
--	GPIO_FN_MEMC_A0,
--
--	/* MSIOF0 */
--	GPIO_FN_MSIOF0_SS1,	GPIO_FN_MSIOF0_SS2,
--	GPIO_FN_MSIOF0_RXD,	GPIO_FN_MSIOF0_TXD,
--	GPIO_FN_MSIOF0_MCK0,	GPIO_FN_MSIOF0_MCK1,
--	GPIO_FN_MSIOF0_RSYNC,	GPIO_FN_MSIOF0_RSCK,
--	GPIO_FN_MSIOF0_TSCK,	GPIO_FN_MSIOF0_TSYNC,
--
--	/* MSIOF1 */
--	GPIO_FN_MSIOF1_RSCK,	GPIO_FN_MSIOF1_RSYNC,
--	GPIO_FN_MSIOF1_MCK0,	GPIO_FN_MSIOF1_MCK1,
--
--	GPIO_FN_MSIOF1_SS2_PORT116,	GPIO_FN_MSIOF1_SS1_PORT117,
--	GPIO_FN_MSIOF1_RXD_PORT118,	GPIO_FN_MSIOF1_TXD_PORT119,
--	GPIO_FN_MSIOF1_TSYNC_PORT120,
--	GPIO_FN_MSIOF1_TSCK_PORT121,	/* MSEL4CR_10_0 */
--
--	GPIO_FN_MSIOF1_SS1_PORT67,	GPIO_FN_MSIOF1_TSCK_PORT72,
--	GPIO_FN_MSIOF1_TSYNC_PORT73,	GPIO_FN_MSIOF1_TXD_PORT74,
--	GPIO_FN_MSIOF1_RXD_PORT75,
--	GPIO_FN_MSIOF1_SS2_PORT202,	/* MSEL4CR_10_1 */
--
--	/* GPIO */
--	GPIO_FN_GPO0,	GPIO_FN_GPI0,
--	GPIO_FN_GPO1,	GPIO_FN_GPI1,
--
--	/* USB0 */
--	GPIO_FN_USB0_OCI,	GPIO_FN_USB0_PPON,	GPIO_FN_VBUS,
--
--	/* USB1 */
--	GPIO_FN_USB1_OCI,	GPIO_FN_USB1_PPON,
--
--	/* BBIF1 */
--	GPIO_FN_BBIF1_RXD,	GPIO_FN_BBIF1_TXD,	GPIO_FN_BBIF1_TSYNC,
--	GPIO_FN_BBIF1_TSCK,	GPIO_FN_BBIF1_RSCK,	GPIO_FN_BBIF1_RSYNC,
--	GPIO_FN_BBIF1_FLOW,	GPIO_FN_BBIF1_RX_FLOW_N,
--
--	/* BBIF2 */
--	GPIO_FN_BBIF2_TXD2_PORT5, /* MSEL5CR_0_0 */
--	GPIO_FN_BBIF2_RXD2_PORT60,
--	GPIO_FN_BBIF2_TSYNC2_PORT6,
--	GPIO_FN_BBIF2_TSCK2_PORT59,
--
--	GPIO_FN_BBIF2_RXD2_PORT90, /* MSEL5CR_0_1 */
--	GPIO_FN_BBIF2_TXD2_PORT183,
--	GPIO_FN_BBIF2_TSCK2_PORT89,
--	GPIO_FN_BBIF2_TSYNC2_PORT184,
--
--	/* FLCTL / PCMCIA */
--	GPIO_FN_IOIS16, /* ? */
--
--	GPIO_FN_A0,	GPIO_FN_A1,	GPIO_FN_A2,	GPIO_FN_A3,
--	GPIO_FN_A4_FOE,		/* share with FLCTL */
--	GPIO_FN_A5_FCDE,	/* share with FLCTL */
--	GPIO_FN_A6,	GPIO_FN_A7,	GPIO_FN_A8,	GPIO_FN_A9,
--	GPIO_FN_A10,	GPIO_FN_A11,	GPIO_FN_A12,	GPIO_FN_A13,
--	GPIO_FN_A14,	GPIO_FN_A15,	GPIO_FN_A16,	GPIO_FN_A17,
--	GPIO_FN_A18,	GPIO_FN_A19,	GPIO_FN_A20,	GPIO_FN_A21,
--	GPIO_FN_A22,	GPIO_FN_A23,	GPIO_FN_A24,	GPIO_FN_A25,
--	GPIO_FN_A26,
--
--	GPIO_FN_CKO,
--	GPIO_FN_WAIT_PORT177,	/* WAIT Port 90/177 */
--	GPIO_FN_WAIT_PORT90,
--
--	GPIO_FN_FCE0,	GPIO_FN_FCE1,	GPIO_FN_FRB, /* FLCTL */
--
--	/* IRDA */
--	GPIO_FN_IRDA_FIRSEL,	GPIO_FN_IRDA_IN,	GPIO_FN_IRDA_OUT,
--
--	/* ATAPI */
--	GPIO_FN_IDE_D0,		GPIO_FN_IDE_D1,		GPIO_FN_IDE_D2,
--	GPIO_FN_IDE_D3,		GPIO_FN_IDE_D4,		GPIO_FN_IDE_D5,
--	GPIO_FN_IDE_D6,		GPIO_FN_IDE_D7,		GPIO_FN_IDE_D8,
--	GPIO_FN_IDE_D9,		GPIO_FN_IDE_D10,	GPIO_FN_IDE_D11,
--	GPIO_FN_IDE_D12,	GPIO_FN_IDE_D13,	GPIO_FN_IDE_D14,
--	GPIO_FN_IDE_D15,	GPIO_FN_IDE_A0,		GPIO_FN_IDE_A1,
--	GPIO_FN_IDE_A2,		GPIO_FN_IDE_CS0,	GPIO_FN_IDE_CS1,
--	GPIO_FN_IDE_IOWR,	GPIO_FN_IDE_IORD,	GPIO_FN_IDE_IORDY,
--	GPIO_FN_IDE_INT,	GPIO_FN_IDE_RST,	GPIO_FN_IDE_DIRECTION,
--	GPIO_FN_IDE_EXBUF_ENB,	GPIO_FN_IDE_IODACK,	GPIO_FN_IDE_IODREQ,
--
--	/* DMA0 */
--	GPIO_FN_DREQ0,		GPIO_FN_DACK0,
--
--	/* DMA1 */
--	GPIO_FN_DREQ1,		GPIO_FN_DACK1,
--
--	/* SYSC */
--	GPIO_FN_RESETOUTS,
--	GPIO_FN_RESETP_PULLUP,
--	GPIO_FN_RESETP_PLAIN,
--
--	/* SDENC */
--	GPIO_FN_SDENC_CPG,
--	GPIO_FN_SDENC_DV_CLKI,
--
--	/* IRREM */
--	GPIO_FN_IROUT,
--
--	/* DEBUG */
--	GPIO_FN_EDEBGREQ_PULLDOWN,
--	GPIO_FN_EDEBGREQ_PULLUP,
--
--	GPIO_FN_TRACEAUD_FROM_VIO,
--	GPIO_FN_TRACEAUD_FROM_LCDC0,
--	GPIO_FN_TRACEAUD_FROM_MEMC,
--};
--
- /* DMA slave IDs */
- enum {
- 	SHDMA_SLAVE_INVALID,
+ videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
+-			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o
++			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o
+ ifeq ($(CONFIG_COMPAT),y)
+   videodev-objs += v4l2-compat-ioctl32.o
+ endif
+diff --git a/drivers/media/v4l2-core/v4l2-clk.c b/drivers/media/v4l2-core/v4l2-clk.c
+new file mode 100644
+index 0000000..d7cc13e
+--- /dev/null
++++ b/drivers/media/v4l2-core/v4l2-clk.c
+@@ -0,0 +1,177 @@
++/*
++ * V4L2 clock service
++ *
++ * Copyright (C) 2012-2013, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/atomic.h>
++#include <linux/device.h>
++#include <linux/errno.h>
++#include <linux/list.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/slab.h>
++#include <linux/string.h>
++
++#include <media/v4l2-clk.h>
++#include <media/v4l2-subdev.h>
++
++static DEFINE_MUTEX(clk_lock);
++static LIST_HEAD(clk_list);
++
++static struct v4l2_clk *v4l2_clk_find(const char *dev_id, const char *id)
++{
++	struct v4l2_clk *clk;
++
++	list_for_each_entry(clk, &clk_list, list) {
++		if (strcmp(dev_id, clk->dev_id))
++			continue;
++
++		if (!id || !clk->id || !strcmp(clk->id, id))
++			return clk;
++	}
++
++	return ERR_PTR(-ENODEV);
++}
++
++struct v4l2_clk *v4l2_clk_get(struct device *dev, const char *id)
++{
++	struct v4l2_clk *clk;
++
++	mutex_lock(&clk_lock);
++	clk = v4l2_clk_find(dev_name(dev), id);
++
++	if (!IS_ERR(clk) && !try_module_get(clk->ops->owner))
++		clk = ERR_PTR(-ENODEV);
++	mutex_unlock(&clk_lock);
++
++	if (!IS_ERR(clk))
++		atomic_inc(&clk->use_count);
++
++	return clk;
++}
++EXPORT_SYMBOL(v4l2_clk_get);
++
++void v4l2_clk_put(struct v4l2_clk *clk)
++{
++	if (!IS_ERR(clk)) {
++		atomic_dec(&clk->use_count);
++		module_put(clk->ops->owner);
++	}
++}
++EXPORT_SYMBOL(v4l2_clk_put);
++
++int v4l2_clk_enable(struct v4l2_clk *clk)
++{
++	int ret;
++	mutex_lock(&clk->lock);
++	if (++clk->enable = 1 && clk->ops->enable) {
++		ret = clk->ops->enable(clk);
++		if (ret < 0)
++			clk->enable--;
++	} else {
++		ret = 0;
++	}
++	mutex_unlock(&clk->lock);
++	return ret;
++}
++EXPORT_SYMBOL(v4l2_clk_enable);
++
++void v4l2_clk_disable(struct v4l2_clk *clk)
++{
++	int enable;
++
++	mutex_lock(&clk->lock);
++	enable = --clk->enable;
++	if (WARN(enable < 0, "Unbalanced %s() on %s:%s!\n", __func__,
++		 clk->dev_id, clk->id))
++		clk->enable++;
++	else if (!enable && clk->ops->disable)
++		clk->ops->disable(clk);
++	mutex_unlock(&clk->lock);
++}
++EXPORT_SYMBOL(v4l2_clk_disable);
++
++unsigned long v4l2_clk_get_rate(struct v4l2_clk *clk)
++{
++	if (!clk->ops->get_rate)
++		return -ENOSYS;
++
++	return clk->ops->get_rate(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_get_rate);
++
++int v4l2_clk_set_rate(struct v4l2_clk *clk, unsigned long rate)
++{
++	if (!clk->ops->set_rate)
++		return -ENOSYS;
++
++	return clk->ops->set_rate(clk, rate);
++}
++EXPORT_SYMBOL(v4l2_clk_set_rate);
++
++struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
++				   const char *dev_id,
++				   const char *id, void *priv)
++{
++	struct v4l2_clk *clk;
++	int ret;
++
++	if (!ops || !dev_id)
++		return ERR_PTR(-EINVAL);
++
++	clk = kzalloc(sizeof(struct v4l2_clk), GFP_KERNEL);
++	if (!clk)
++		return ERR_PTR(-ENOMEM);
++
++	clk->id = kstrdup(id, GFP_KERNEL);
++	clk->dev_id = kstrdup(dev_id, GFP_KERNEL);
++	if ((id && !clk->id) || !clk->dev_id) {
++		ret = -ENOMEM;
++		goto ealloc;
++	}
++	clk->ops = ops;
++	clk->priv = priv;
++	atomic_set(&clk->use_count, 0);
++	mutex_init(&clk->lock);
++
++	mutex_lock(&clk_lock);
++	if (!IS_ERR(v4l2_clk_find(dev_id, id))) {
++		mutex_unlock(&clk_lock);
++		ret = -EEXIST;
++		goto eexist;
++	}
++	list_add_tail(&clk->list, &clk_list);
++	mutex_unlock(&clk_lock);
++
++	return clk;
++
++eexist:
++ealloc:
++	kfree(clk->id);
++	kfree(clk->dev_id);
++	kfree(clk);
++	return ERR_PTR(ret);
++}
++EXPORT_SYMBOL(v4l2_clk_register);
++
++void v4l2_clk_unregister(struct v4l2_clk *clk)
++{
++	if (WARN(atomic_read(&clk->use_count),
++		 "%s(): Refusing to unregister ref-counted %s:%s clock!\n",
++		 __func__, clk->dev_id, clk->id))
++		return;
++
++	mutex_lock(&clk_lock);
++	list_del(&clk->list);
++	mutex_unlock(&clk_lock);
++
++	kfree(clk->id);
++	kfree(clk->dev_id);
++	kfree(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_unregister);
+diff --git a/include/media/v4l2-clk.h b/include/media/v4l2-clk.h
+new file mode 100644
+index 0000000..89efbd7
+--- /dev/null
++++ b/include/media/v4l2-clk.h
+@@ -0,0 +1,54 @@
++/*
++ * V4L2 clock service
++ *
++ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * ATTENTION: This is a temporary API and it shall be replaced by the generic
++ * clock API, when the latter becomes widely available.
++ */
++
++#ifndef MEDIA_V4L2_CLK_H
++#define MEDIA_V4L2_CLK_H
++
++#include <linux/atomic.h>
++#include <linux/list.h>
++#include <linux/mutex.h>
++
++struct module;
++struct device;
++
++struct v4l2_clk {
++	struct list_head list;
++	const struct v4l2_clk_ops *ops;
++	const char *dev_id;
++	const char *id;
++	int enable;
++	struct mutex lock; /* Protect the enable count */
++	atomic_t use_count;
++	void *priv;
++};
++
++struct v4l2_clk_ops {
++	struct module	*owner;
++	int		(*enable)(struct v4l2_clk *clk);
++	void		(*disable)(struct v4l2_clk *clk);
++	unsigned long	(*get_rate)(struct v4l2_clk *clk);
++	int		(*set_rate)(struct v4l2_clk *clk, unsigned long);
++};
++
++struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
++				   const char *dev_name,
++				   const char *name, void *priv);
++void v4l2_clk_unregister(struct v4l2_clk *clk);
++struct v4l2_clk *v4l2_clk_get(struct device *dev, const char *id);
++void v4l2_clk_put(struct v4l2_clk *clk);
++int v4l2_clk_enable(struct v4l2_clk *clk);
++void v4l2_clk_disable(struct v4l2_clk *clk);
++unsigned long v4l2_clk_get_rate(struct v4l2_clk *clk);
++int v4l2_clk_set_rate(struct v4l2_clk *clk, unsigned long rate);
++
++#endif
 -- 
-1.8.1.5
+1.7.2.5
 
