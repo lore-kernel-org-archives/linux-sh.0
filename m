@@ -1,30 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 18 Apr 2013 13:52:12 +0000
-Subject: Re: [PATCH v5 3/3] ARM: shmobile: sh73a0: add CPUFreq support
-Message-Id: <20130418135212.GL20929@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Mon, 08 Apr 2013 12:52:27 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: Armadillo800EVA: Move st1232 reset pin handling
+Message-Id: <1365425547-10391-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365156038-12467-1-git-send-email-g.liakhovetski@gmx.de>
- <1365156038-12467-4-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365156038-12467-4-git-send-email-g.liakhovetski@gmx.de>
+References: <1365425547-10391-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1365425547-10391-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-input@vger.kernel.org
+Cc: Tony SIM <chinyeow.sim.xt@renesas.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Fri, Apr 05, 2013 at 12:00:38PM +0200, Guennadi Liakhovetski wrote:
-> This patch enables the use of the generic cpufreq-cpu0 driver on sh73a0.
-> Providing a regulator, a list of OPPs in DT, combined with a virtual
-> cpufreq-cpu0 platform device and a clock, attached to it is everything,
-> the cpufreq-cpu0 driver needs. The first sh73a0 platform, implementing
-> such CPUFreq support is kzm9g-reference.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
-> 
-> v5: remove sh73a0-kzm9g-reference.dts hunk, it's now merged into patch 2/3
-> 
->  arch/arm/mach-shmobile/Kconfig        |    2 ++
->  arch/arm/mach-shmobile/setup-sh73a0.c |    5 +++++
->  2 files changed, 7 insertions(+), 0 deletions(-)
+We no longer need to set up the reset pin for the st1232 in the board
+code, but can pass the GPIO number via the platform data to the driver.
+This results in a cleaner grouping of the device setup.
 
-Thanks, queued-up for v3.11 in the soc-sh73a0 branch.
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+v2:
+reset_pin changed to reset_gpio
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index bf4c3d2..d1c1ff4 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -24,6 +24,7 @@
+ #include <linux/err.h>
+ #include <linux/kernel.h>
+ #include <linux/input.h>
++#include <linux/input/st1232_pdata.h>
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+@@ -997,10 +998,15 @@ static struct platform_device i2c_gpio_device = {
+ };
+ 
+ /* I2C */
++static struct st1232_pdata st1232_i2c0_pdata = {
++	.reset_gpio = 166,
++};
++
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("st1232-ts", 0x55),
+ 		.irq = irq_pin(10),
++		.platform_data = &st1232_i2c0_pdata,
+ 	},
+ 	{
+ 		I2C_BOARD_INFO("wm8978", 0x1a),
+@@ -1120,7 +1126,6 @@ static void __init eva_init(void)
+ 
+ 	/* Touchscreen */
+ 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 
+ 	/* GETHER */
+ 	gpio_request(GPIO_FN_ET_CRS,		NULL);
+-- 
+1.7.9.5
+
