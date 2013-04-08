@@ -1,77 +1,89 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 11 Apr 2013 11:23:57 +0000
-Subject: [PATCH v4 1/7] ARM: shmobile: Define DT bindings for timer devices
-Message-Id: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 08 Apr 2013 21:35:20 +0000
+Subject: [PATCH v2 9/9] rcar-phy: handle platform data
+Message-Id: <201304090135.21041.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The SH mobile series currently features 3 timer devices in the kernel:
-Compare Match Timer (CMT), Timer Unit (TMU) and MTU2. These devices
-share register layout characteristics amongst each that enable us to
-define common DT bindings for them.
+Set the USBPCTRL0 register from the passed platform data in rcar_usb_phy_init();
+don't reset it to 0 in  rcar_usb_phy_shutdown()  anymore as that does not make
+sense.  Also, don't allow the driver's probe to succeed when the platform data
+are not supplied with a device.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
-v4: same. only patch 2 and 3 changed
+ drivers/usb/phy/rcar-phy.c |   18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
 
- .../devicetree/bindings/timer/renesas,timer.txt    |   45 ++++++++++++++++++++
- 1 file changed, 45 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,timer.txt
-
-diff --git a/Documentation/devicetree/bindings/timer/renesas,timer.txt b/Documentation/devicetree/bindings/timer/renesas,timer.txt
-new file mode 100644
-index 0000000..2c001bf
---- /dev/null
-+++ b/Documentation/devicetree/bindings/timer/renesas,timer.txt
-@@ -0,0 +1,45 @@
-+* Renesas SH Mobile Timer
+Index: renesas/drivers/usb/phy/rcar-phy.c
+=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
++++ renesas/drivers/usb/phy/rcar-phy.c
+@@ -1,8 +1,9 @@
+ /*
+  * Renesas R-Car USB phy driver
+  *
+- * Copyright (C) 2012 Renesas Solutions Corp.
++ * Copyright (C) 2012-2013 Renesas Solutions Corp.
+  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013 Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+@@ -11,10 +12,11 @@
+ 
+ #include <linux/delay.h>
+ #include <linux/io.h>
+-#include <linux/usb/otg.h>
+ #include <linux/platform_device.h>
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
++#include <linux/usb/otg.h>
++#include <linux/usb/rcar-phy.h>
+ 
+ /* REGS block */
+ #define USBPCTRL0	0x00
+@@ -55,6 +57,7 @@ static int rcar_usb_phy_init(struct usb_
+ {
+ 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
+ 	struct device *dev = phy->dev;
++	struct rcar_phy_platform_data *pdata = dev->platform_data;
+ 	void __iomem *reg0 = priv->reg0;
+ 	int i;
+ 	u32 val;
+@@ -90,7 +93,7 @@ static int rcar_usb_phy_init(struct usb_
+ 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
+ 
+ 		/* set platform specific port settings */
+-		iowrite32(0x00000000, (reg0 + USBPCTRL0));
++		iowrite32(pdata->usbpctrl0, (reg0 + USBPCTRL0));
+ 
+ 		/*
+ 		 * Bus alignment settings
+@@ -117,10 +120,8 @@ static void rcar_usb_phy_shutdown(struct
+ 
+ 	spin_lock_irqsave(&priv->lock, flags);
+ 
+-	if (priv->counter-- = 1) { /* last user */
+-		iowrite32(0x00000000, (reg0 + USBPCTRL0));
++	if (priv->counter-- = 1)	/* last user */
+ 		iowrite32(0x00000000, (reg0 + USBPCTRL1));
+-	}
+ 
+ 	spin_unlock_irqrestore(&priv->lock, flags);
+ }
+@@ -133,6 +134,11 @@ static int rcar_usb_phy_probe(struct pla
+ 	void __iomem *reg0;
+ 	int ret;
+ 
++	if (!pdev->dev.platform_data) {
++		dev_err(dev, "No platform data\n");
++		return -EINVAL;
++	}
 +
-+Bindings for several timer devices from Renesas including CMT, TMU and MTU2.
-+
-+Required properties:
-+- compatible : Should be "renesas,{device}-timer",
-+  whereas device is "cmt", "tmu" or "mtu2".
-+- reg : Address and length of the register set for the device
-+- interrupts : Timer interrupt
-+- renesas,device-id : The ID of the timer device
-+- renesas,channel-id : The channel ID of the timer device
-+- renesas,source-quality : The viability to use this device as a free
-+  running clock. From 0 (do not use) to 10 (best possible clock).
-+- renesas,event-quality : The viability to use this device as an event
-+  generator. From 0 (do not use) to 10 (best possible clock).
-+
-+The properties renesas,{source,event}-quality reflect the situation that the
-+usability of the timer devices depend on the location within their SoCs. E.g.
-+the power domain affinty affects power management, some mux-ed lines might be
-+preferred to be assigned to other functions and other constraints.
-+
-+Example for CMT1 channel 0 on the R8A7740 SoC:
-+
-+	timer@e6138010 {
-+		compatible = "renesas,cmt-timer";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6138010 0xc>;
-+		interrupts = <0x0b00>;
-+		renesas,device-id = <1>;
-+		renesas,channel-id = <0>;
-+		renesas,source-quality = <3>;
-+		renesas,event-quality = <3>;
-+	};
-+
-+Example for TMU0 channel 1 on the SH7372 SoC:
-+	timer@fff60014 {
-+		compatible = "renesas,tmu-timer";
-+		interrupt-parent = <&intcs>;
-+		reg = <0xfff60014 0xc>;
-+		interrupts = <0xea0>;
-+		renesas,device-id = <0>;
-+		renesas,channel-id = <1>;
-+		renesas,source-quality = <4>;
-+		renesas,event-quality = <0>;
-+	};
--- 
-1.7.9.5
-
+ 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res0) {
+ 		dev_err(dev, "Not enough platform resources\n");
