@@ -1,35 +1,73 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:16:24 +0000
-Subject: [PATCH 3/4] ARM: shmobile: kzm9g: Remove the VCCQ MC0 function GPIO
-Message-Id: <1366672585-9098-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Apr 2013 11:07:04 +0000
+Subject: [PATCH v7 0/7] V4L2 clock and async patches and soc-camera example
+Message-Id: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-The VCCQ MC0 power gate is now controlled by a regulator registered by
-the PFC driver. Remove the corresponding function GPIO.
+Update of V4l2 clock and asynchronous probing patches. Various review 
+comments are addressed, as described in individual patches. (Yes, this is 
+an exact copy of the text in v6 ;-) )
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-kzm9g.c | 3 ---
- 1 file changed, 3 deletions(-)
+A common notice for v7: while patches 1 and 2 introduce the new API, 
+patches 3-7 use it. Reviewer comments mainly addressed the API itself, 
+users have been updated to reflect the changes.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index ceabb44..e0e027c 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -871,9 +871,6 @@ static void __init kzm_init(void)
- 	/* Touchscreen */
- 	gpio_request_one(223, GPIOF_IN, NULL); /* IRQ8 */
- 
--	/* enable SD */
--	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
--
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
- 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+Guennadi Liakhovetski (7):
+  media: V4L2: add temporary clock helpers
+  media: V4L2: support asynchronous subdevice registration
+  media: soc-camera: switch I2C subdevice drivers to use v4l2-clk
+  soc-camera: add V4L2-async support
+  sh_mobile_ceu_camera: add asynchronous subdevice probing support
+  imx074: support asynchronous probing
+  ARM: shmobile: convert ap4evb to asynchronously register camera
+    subdevices
+
+ arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
+ arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
+ drivers/media/i2c/soc_camera/imx074.c              |   36 +-
+ drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
+ drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
+ drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
+ drivers/media/i2c/soc_camera/mt9t112.c             |   19 +-
+ drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
+ drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
+ drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
+ drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
+ drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
+ drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
+ drivers/media/i2c/soc_camera/ov9640.h              |    1 +
+ drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
+ drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
+ drivers/media/i2c/soc_camera/tw9910.c              |   18 +-
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |  134 +++--
+ drivers/media/platform/soc_camera/sh_mobile_csi2.c |  163 +++--
+ drivers/media/platform/soc_camera/soc_camera.c     |  666 ++++++++++++++++----
+ .../platform/soc_camera/soc_camera_platform.c      |    2 +-
+ drivers/media/v4l2-core/Makefile                   |    3 +-
+ drivers/media/v4l2-core/v4l2-async.c               |  263 ++++++++
+ drivers/media/v4l2-core/v4l2-clk.c                 |  177 ++++++
+ include/media/sh_mobile_ceu.h                      |    2 +
+ include/media/sh_mobile_csi2.h                     |    2 +-
+ include/media/soc_camera.h                         |   36 +-
+ include/media/v4l2-async.h                         |  105 +++
+ include/media/v4l2-clk.h                           |   54 ++
+ 29 files changed, 1677 insertions(+), 304 deletions(-)
+ create mode 100644 drivers/media/v4l2-core/v4l2-async.c
+ create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+ create mode 100644 include/media/v4l2-async.h
+ create mode 100644 include/media/v4l2-clk.h
+
 -- 
-1.8.1.5
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
