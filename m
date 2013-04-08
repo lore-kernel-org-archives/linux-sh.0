@@ -1,42 +1,31 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 09 Apr 2013 12:53:49 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC bockw board updates for v3.10
-Message-Id: <201304091453.49770.arnd@arndb.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Apr 2013 02:08:34 +0000
+Subject: [PATCH 00/02] sh-pfc: Initial r8a7790 PFC support
+Message-Id: <20130408020834.29957.24249.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365131070-13142-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365131070-13142-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Friday 05 April 2013, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> The following changes since commit 5e3780ba6dded2636c939549e3bea16d736859fb:
-> 
->   Merge branch 'soc-r8a7778' into boards-bockw-base (2013-04-05 11:32:38 +0900)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas tags/renesas-boards-bockw-for-v3.10
-> 
-> for you to fetch changes up to 446ee9b2d813a9378e304008fc433ce543ca68a1:
-> 
->   ARM: shmobile: bockw: enable network settings on bootargs (2013-04-05 11:32:53 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM-based SoC bockw board updates for v3.10
-> 
-> Add SMSC ethernet support to the bockw board.
-> 
-> This pull request is based on a merge of:
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-r8a7778-for-v3.10
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-boards3-for-v3.10
-> 
+sh-pfc: Initial r8a7790 PFC support
 
+[PATCH 01/02] ARM: shmobile: Add second I/O range for r8a7790 PFC
+[PATCH 02/02] sh-pfc: Initial r8a7790 PFC support
 
-Pulled into next/boards2, thanks!
+This mini-series contains initial support for the r8a7790 PFC.
+Incremental future changes will move over to PINCTRL.
 
-	Arnd
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas-next-20130405v2 in renesas.git
+
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  383 ++
+ arch/arm/mach-shmobile/setup-r8a7790.c        |    1 
+ drivers/pinctrl/sh-pfc/Kconfig                |    5 
+ drivers/pinctrl/sh-pfc/Makefile               |    1 
+ drivers/pinctrl/sh-pfc/core.c                 |    3 
+ drivers/pinctrl/sh-pfc/core.h                 |    1 
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c          | 3238 +++++++++++++++++++++++++
+ 7 files changed, 3632 insertions(+)
