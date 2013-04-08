@@ -1,33 +1,29 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Apr 2013 02:10:04 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager: Add GPIO LEDs
-Message-Id: <20130430021002.GA5547@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 08 Apr 2013 15:54:55 +0000
+Subject: Re: [GIT PULL] Update for Renesas INTC External IRQ pin driver for v3.10
+Message-Id: <201304081754.55689.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366684625-17256-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1366684625-17256-1-git-send-email-horms+renesas@verge.net.au>
+References: <1364540207-7699-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364540207-7699-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 23, 2013 at 11:37:05AM +0900, Simon Horman wrote:
-> The board has 3 LEDs connected to GPIOs. Add a led-gpio device to
-> support them.
+On Friday 29 March 2013, Simon Horman wrote:
+> Hi Arnd, Hi Olof,
 > 
-> Based on "ARM: shmobile: marzen: Add GPIO LEDs" by Laurent Pinchart.
+> The following changes since commit 3b8dfa7c2f8af7613dae28ac0f3419bf75ead5d0:
 > 
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>   irqchip: irqc: Add DT support (2013-03-18 21:26:07 +0900)
 > 
-> ---
+> are available in the git repository at:
 > 
-> v2
-> * As suggested by Sergei Shtylyov:
->   Use platform_device_register_data() instead of platform_add_devices()
-> * As suggested by Laurent Pinchart:
->   Use -1 as device id as there is only one such device
-> ---
->  arch/arm/mach-shmobile/board-lager.c | 27 +++++++++++++++++++++++++++
->  1 file changed, 27 insertions(+)
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-intc-external-irq2-for-v3.10
+> 
 
-I have queued-up this patch for v3.11 in the boards-lager branch.
+Pulled into next/drivers, thanks!
+
+Sorry for the slight delay in processing this.
+
+	Arnd
