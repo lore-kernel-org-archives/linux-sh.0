@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 08 Apr 2013 02:13:43 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 08 Apr 2013 09:18:11 +0000
 Subject: Re: [PATCH 00/02] sh-pfc: Initial r8a7790 PFC support
-Message-Id: <20130408021342.GH13103@verge.net.au>
+Message-Id: <1388577.6DiElEe6NJ@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130408020834.29957.24249.sendpatchset@w520>
 In-Reply-To: <20130408020834.29957.24249.sendpatchset@w520>
@@ -10,7 +10,11 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Apr 08, 2013 at 11:08:34AM +0900, Magnus Damm wrote:
+Hi Magnus,
+
+Thanks for the patches.
+
+On Monday 08 April 2013 11:08:34 Magnus Damm wrote:
 > sh-pfc: Initial r8a7790 PFC support
 > 
 > [PATCH 01/02] ARM: shmobile: Add second I/O range for r8a7790 PFC
@@ -21,10 +25,12 @@ On Mon, Apr 08, 2013 at 11:08:34AM +0900, Magnus Damm wrote:
 > 
 > Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Thanks Magnus.
+For the whole series,
 
-Laurent, can I get a review from you.
-And also some indication of how you would like to queue these up.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-The pinmux branch of my tree seems like a likely candidate.
+-- 
+Regards,
+
+Laurent Pinchart
 
