@@ -1,265 +1,294 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Tue, 09 Apr 2013 10:51:23 +0000
-Subject: Re: [PATCH] sh-pfc: Add entries for INTC external IRQs
-Message-Id: <CABYn4sy8DTgTekc-ARZHmze06JFWo6FMmbd2X5PuGUNCMZXaMQ@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Apr 2013 15:05:32 +0000
+Subject: [PATCH v8 1/7] media: V4L2: add temporary clock helpers
+Message-Id: <1365433538-15975-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365434829-21791-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365434829-21791-1-git-send-email-hechtb+renesas@gmail.com>
+References: <1365433538-15975-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365433538-15975-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Hi Laurent,
+Typical video devices like camera sensors require an external clock source.
+Many such devices cannot even access their hardware registers without a
+running clock. These clock sources should be controlled by their consumers.
+This should be performed, using the generic clock framework. Unfortunately
+so far only very few systems have been ported to that framework. This patch
+adds a set of temporary helpers, mimicking the generic clock API, to V4L2.
+Platforms, adopting the clock API, should switch to using it. Eventually
+this temporary API should be removed.
 
-I followed all advice given here and the v2 is out.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Hail the creators of vim,
+v8: Updated both (C) dates
 
- Bastian
+ drivers/media/v4l2-core/Makefile   |    2 +-
+ drivers/media/v4l2-core/v4l2-clk.c |  177 ++++++++++++++++++++++++++++++++++++
+ include/media/v4l2-clk.h           |   54 +++++++++++
+ 3 files changed, 232 insertions(+), 1 deletions(-)
+ create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+ create mode 100644 include/media/v4l2-clk.h
 
-2013/4/9 Laurent Pinchart <laurent.pinchart@ideasonboard.com>:
-> Hi Bastian,
->
-> Thank you for the patch.
->
-> On Monday 08 April 2013 17:27:09 Bastian Hecht wrote:
->> We add all necessary entries to support the external IRQs from the INTC.
->>
->> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
->> ---
->>  drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  171 +++++++++++++++++++++++++++++++
->>  1 file changed, 171 insertions(+)
->>
->> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
->> b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c index 21ff7f2..f4fa4c8 100644
->> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
->> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
->> @@ -30,6 +30,22 @@
->>       PORT_10(fn, pfx##20, sfx),                                      \
->>       PORT_1(fn, pfx##210, sfx),      PORT_1(fn, pfx##211, sfx)
->>
->> +#define IRQC_PIN_MUX(pin, mark)                                              \
->> +static const unsigned int intc_irq##mark##_pins[] = {                        \
->> +     pin,                                                            \
->> +};                                                                   \
->> +static const unsigned int intc_irq##mark##_mux[] = {                 \
->> +     IRQ##mark##_MARK,                                               \
->> +}
->
-> Please rename the mark argument to irq and switch the two arguments. The INTC
-> functions are primarly named after the IRQ number, not the pin number.
->
->> +#define IRQC_PINS_MUX(pin, mark)                                     \
->> +static const unsigned int intc_irq##mark##_port##pin##_pins[] = {    \
->> +     pin,                                                            \
->> +};                                                                   \
->> +static const unsigned int intc_irq##mark##_port##pin##_mux[] = {     \
->> +     IRQ##mark##_PORT##pin##_MARK,                                   \
->> +}
->> +
->
-> The Linux pinctrl subsystem usually use a numerical suffix (unless otherwise
-> specified in the SoC datasheet) when a function can be multiplexed on several
-> pins. In this case the function name should thus be intc_irqx_y where x is the
-> IRQ number and y an index starting from 0. The IRQC_PINS_MUX macro would thus
-> become something like
->
-> #define IRQC_PINS_MUX(irq, idx, pin)                            \
-> static const unsigned int intc_irq##irq##_##idx##_pins[] = {    \
->         pin,                                                    \
-> };                                                              \
-> static const unsigned int intc_irq##irq##_##idx##_mux[] = {     \
->         IRQ##irq##_PORT##pin##_MARK,                            \
-> }
->
->>  enum {
->>       PINMUX_RESERVED = 0,
->>
->> @@ -1658,6 +1674,58 @@ static struct sh_pfc_pin pinmux_pins[] = {
->>       GPIO_PORT_ALL(),
->>  };
->>
->> +/* - INTC
->> ------------------------------------------------------------------- */
->> +IRQC_PINS_MUX(0, 5);
->> +IRQC_PINS_MUX(1, 5);
->> +IRQC_PINS_MUX(2, 0);
->> +IRQC_PINS_MUX(10, 3);
->> +IRQC_PINS_MUX(11, 2);
->> +IRQC_PINS_MUX(13, 0);
->> +IRQC_PINS_MUX(14, 3);
->> +IRQC_PINS_MUX(15, 4);
->> +IRQC_PIN_MUX(19, 10);
->> +IRQC_PIN_MUX(20, 1);
->> +IRQC_PIN_MUX(38, 25);
->> +IRQC_PINS_MUX(41, 31);
->> +IRQC_PINS_MUX(42, 12);
->> +IRQC_PINS_MUX(49, 30);
->> +IRQC_PINS_MUX(50, 29);
->> +IRQC_PINS_MUX(56, 28);
->> +IRQC_PINS_MUX(57, 27);
->> +IRQC_PINS_MUX(58, 26);
->> +IRQC_PINS_MUX(62, 15);
->> +IRQC_PINS_MUX(63, 14);
->> +IRQC_PINS_MUX(64, 13);
->> +IRQC_PIN_MUX(67, 20);
->> +IRQC_PINS_MUX(68, 16);
->> +IRQC_PIN_MUX(69, 17);
->> +IRQC_PIN_MUX(70, 18);
->> +IRQC_PIN_MUX(71, 19);
->> +IRQC_PINS_MUX(81, 26);
->> +IRQC_PIN_MUX(95, 22);
->> +IRQC_PIN_MUX(96, 23);
->> +IRQC_PINS_MUX(97, 12);
->> +IRQC_PINS_MUX(98, 13);
->> +IRQC_PINS_MUX(99, 14);
->> +IRQC_PINS_MUX(100, 15);
->> +IRQC_PIN_MUX(104, 11);
->> +IRQC_PINS_MUX(118, 9);
->> +IRQC_PIN_MUX(119, 8);
->> +IRQC_PINS_MUX(120, 7);
->> +IRQC_PINS_MUX(121, 6);
->> +IRQC_PINS_MUX(167, 31);
->> +IRQC_PINS_MUX(168, 27);
->> +IRQC_PINS_MUX(169, 28);
->> +IRQC_PINS_MUX(170, 29);
->> +IRQC_PINS_MUX(171, 30);
->> +IRQC_PINS_MUX(172, 4);
->> +IRQC_PINS_MUX(173, 6);
->> +IRQC_PIN_MUX(180, 24);
->> +IRQC_PIN_MUX(202, 21);
->> +IRQC_PINS_MUX(209, 7);
->> +IRQC_PINS_MUX(210, 9);
->> +IRQC_PINS_MUX(211, 16);
->
-> Could you please sort these (and the groups below) by IRQ number ?
->
->> +
->>  /* - LCD0
->> ------------------------------------------------------------------- */
->> static const unsigned int lcd0_data8_pins[] = {
->>       /* D[0:7] */
->> @@ -2062,6 +2130,56 @@ static const unsigned int sdhi2_wp_1_mux[] = {
->>  };
->>
->>  static const struct sh_pfc_pin_group pinmux_groups[] = {
->> +     SH_PFC_PIN_GROUP(intc_irq1),
->> +     SH_PFC_PIN_GROUP(intc_irq8),
->> +     SH_PFC_PIN_GROUP(intc_irq10),
->> +     SH_PFC_PIN_GROUP(intc_irq11),
->> +     SH_PFC_PIN_GROUP(intc_irq17),
->> +     SH_PFC_PIN_GROUP(intc_irq18),
->> +     SH_PFC_PIN_GROUP(intc_irq19),
->> +     SH_PFC_PIN_GROUP(intc_irq20),
->> +     SH_PFC_PIN_GROUP(intc_irq21),
->> +     SH_PFC_PIN_GROUP(intc_irq22),
->> +     SH_PFC_PIN_GROUP(intc_irq23),
->> +     SH_PFC_PIN_GROUP(intc_irq24),
->> +     SH_PFC_PIN_GROUP(intc_irq25),
->> +     SH_PFC_PIN_GROUP(intc_irq5_port0),
->> +     SH_PFC_PIN_GROUP(intc_irq5_port1),
->> +     SH_PFC_PIN_GROUP(intc_irq0_port2),
->> +     SH_PFC_PIN_GROUP(intc_irq3_port10),
->> +     SH_PFC_PIN_GROUP(intc_irq2_port11),
->> +     SH_PFC_PIN_GROUP(intc_irq0_port13),
->> +     SH_PFC_PIN_GROUP(intc_irq3_port14),
->> +     SH_PFC_PIN_GROUP(intc_irq4_port15),
->> +     SH_PFC_PIN_GROUP(intc_irq31_port41),
->> +     SH_PFC_PIN_GROUP(intc_irq12_port42),
->> +     SH_PFC_PIN_GROUP(intc_irq30_port49),
->> +     SH_PFC_PIN_GROUP(intc_irq29_port50),
->> +     SH_PFC_PIN_GROUP(intc_irq28_port56),
->> +     SH_PFC_PIN_GROUP(intc_irq27_port57),
->> +     SH_PFC_PIN_GROUP(intc_irq26_port58),
->> +     SH_PFC_PIN_GROUP(intc_irq15_port62),
->> +     SH_PFC_PIN_GROUP(intc_irq14_port63),
->> +     SH_PFC_PIN_GROUP(intc_irq13_port64),
->> +     SH_PFC_PIN_GROUP(intc_irq16_port68),
->> +     SH_PFC_PIN_GROUP(intc_irq26_port81),
->> +     SH_PFC_PIN_GROUP(intc_irq12_port97),
->> +     SH_PFC_PIN_GROUP(intc_irq13_port98),
->> +     SH_PFC_PIN_GROUP(intc_irq14_port99),
->> +     SH_PFC_PIN_GROUP(intc_irq15_port100),
->> +     SH_PFC_PIN_GROUP(intc_irq9_port118),
->> +     SH_PFC_PIN_GROUP(intc_irq7_port120),
->> +     SH_PFC_PIN_GROUP(intc_irq6_port121),
->> +     SH_PFC_PIN_GROUP(intc_irq31_port167),
->> +     SH_PFC_PIN_GROUP(intc_irq27_port168),
->> +     SH_PFC_PIN_GROUP(intc_irq28_port169),
->> +     SH_PFC_PIN_GROUP(intc_irq29_port170),
->> +     SH_PFC_PIN_GROUP(intc_irq30_port171),
->> +     SH_PFC_PIN_GROUP(intc_irq4_port172),
->> +     SH_PFC_PIN_GROUP(intc_irq6_port173),
->> +     SH_PFC_PIN_GROUP(intc_irq7_port209),
->> +     SH_PFC_PIN_GROUP(intc_irq9_port210),
->> +     SH_PFC_PIN_GROUP(intc_irq16_port211),
->>       SH_PFC_PIN_GROUP(lcd0_data8),
->>       SH_PFC_PIN_GROUP(lcd0_data9),
->>       SH_PFC_PIN_GROUP(lcd0_data12),
->> @@ -2112,6 +2230,59 @@ static const struct sh_pfc_pin_group pinmux_groups[]
->> = { SH_PFC_PIN_GROUP(sdhi2_wp_1),
->>  };
->>
->> +static const char * const intc_groups[] = {
->> +     "intc_irq1",
->> +     "intc_irq8",
->> +     "intc_irq10",
->> +     "intc_irq11",
->> +     "intc_irq17",
->> +     "intc_irq18",
->> +     "intc_irq19",
->> +     "intc_irq20",
->> +     "intc_irq21",
->> +     "intc_irq22",
->> +     "intc_irq23",
->> +     "intc_irq24",
->> +     "intc_irq25",
->> +     "intc_irq5_port0",
->> +     "intc_irq5_port1",
->> +     "intc_irq0_port2",
->> +     "intc_irq3_port10",
->> +     "intc_irq2_port11",
->> +     "intc_irq0_port13",
->> +     "intc_irq3_port14",
->> +     "intc_irq4_port15",
->> +     "intc_irq31_port41",
->> +     "intc_irq12_port42",
->> +     "intc_irq30_port49",
->> +     "intc_irq29_port50",
->> +     "intc_irq28_port56",
->> +     "intc_irq27_port57",
->> +     "intc_irq26_port58",
->> +     "intc_irq15_port62",
->> +     "intc_irq14_port63",
->> +     "intc_irq13_port64",
->> +     "intc_irq16_port68",
->> +     "intc_irq26_port81",
->> +     "intc_irq12_port97",
->> +     "intc_irq13_port98",
->> +     "intc_irq14_port99",
->> +     "intc_irq15_port100",
->> +     "intc_irq9_port118",
->> +     "intc_irq7_port120",
->> +     "intc_irq6_port121",
->> +     "intc_irq31_port167",
->> +     "intc_irq27_port168",
->> +     "intc_irq28_port169",
->> +     "intc_irq29_port170",
->> +     "intc_irq30_port171",
->> +     "intc_irq4_port172",
->> +     "intc_irq6_port173",
->> +     "intc_irq7_port209",
->> +     "intc_irq9_port210",
->> +     "intc_irq16_port211",
->> +};
->> +
->>  static const char * const lcd0_groups[] = {
->>       "lcd0_data8",
->>       "lcd0_data9",
->
-> --
-> Regards,
->
-> Laurent Pinchart
->
+diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
+index aa50c46..628c630 100644
+--- a/drivers/media/v4l2-core/Makefile
++++ b/drivers/media/v4l2-core/Makefile
+@@ -5,7 +5,7 @@
+ tuner-objs	:=	tuner-core.o
+ 
+ videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
+-			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o
++			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o
+ ifeq ($(CONFIG_COMPAT),y)
+   videodev-objs += v4l2-compat-ioctl32.o
+ endif
+diff --git a/drivers/media/v4l2-core/v4l2-clk.c b/drivers/media/v4l2-core/v4l2-clk.c
+new file mode 100644
+index 0000000..d7cc13e
+--- /dev/null
++++ b/drivers/media/v4l2-core/v4l2-clk.c
+@@ -0,0 +1,177 @@
++/*
++ * V4L2 clock service
++ *
++ * Copyright (C) 2012-2013, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/atomic.h>
++#include <linux/device.h>
++#include <linux/errno.h>
++#include <linux/list.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/slab.h>
++#include <linux/string.h>
++
++#include <media/v4l2-clk.h>
++#include <media/v4l2-subdev.h>
++
++static DEFINE_MUTEX(clk_lock);
++static LIST_HEAD(clk_list);
++
++static struct v4l2_clk *v4l2_clk_find(const char *dev_id, const char *id)
++{
++	struct v4l2_clk *clk;
++
++	list_for_each_entry(clk, &clk_list, list) {
++		if (strcmp(dev_id, clk->dev_id))
++			continue;
++
++		if (!id || !clk->id || !strcmp(clk->id, id))
++			return clk;
++	}
++
++	return ERR_PTR(-ENODEV);
++}
++
++struct v4l2_clk *v4l2_clk_get(struct device *dev, const char *id)
++{
++	struct v4l2_clk *clk;
++
++	mutex_lock(&clk_lock);
++	clk = v4l2_clk_find(dev_name(dev), id);
++
++	if (!IS_ERR(clk) && !try_module_get(clk->ops->owner))
++		clk = ERR_PTR(-ENODEV);
++	mutex_unlock(&clk_lock);
++
++	if (!IS_ERR(clk))
++		atomic_inc(&clk->use_count);
++
++	return clk;
++}
++EXPORT_SYMBOL(v4l2_clk_get);
++
++void v4l2_clk_put(struct v4l2_clk *clk)
++{
++	if (!IS_ERR(clk)) {
++		atomic_dec(&clk->use_count);
++		module_put(clk->ops->owner);
++	}
++}
++EXPORT_SYMBOL(v4l2_clk_put);
++
++int v4l2_clk_enable(struct v4l2_clk *clk)
++{
++	int ret;
++	mutex_lock(&clk->lock);
++	if (++clk->enable = 1 && clk->ops->enable) {
++		ret = clk->ops->enable(clk);
++		if (ret < 0)
++			clk->enable--;
++	} else {
++		ret = 0;
++	}
++	mutex_unlock(&clk->lock);
++	return ret;
++}
++EXPORT_SYMBOL(v4l2_clk_enable);
++
++void v4l2_clk_disable(struct v4l2_clk *clk)
++{
++	int enable;
++
++	mutex_lock(&clk->lock);
++	enable = --clk->enable;
++	if (WARN(enable < 0, "Unbalanced %s() on %s:%s!\n", __func__,
++		 clk->dev_id, clk->id))
++		clk->enable++;
++	else if (!enable && clk->ops->disable)
++		clk->ops->disable(clk);
++	mutex_unlock(&clk->lock);
++}
++EXPORT_SYMBOL(v4l2_clk_disable);
++
++unsigned long v4l2_clk_get_rate(struct v4l2_clk *clk)
++{
++	if (!clk->ops->get_rate)
++		return -ENOSYS;
++
++	return clk->ops->get_rate(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_get_rate);
++
++int v4l2_clk_set_rate(struct v4l2_clk *clk, unsigned long rate)
++{
++	if (!clk->ops->set_rate)
++		return -ENOSYS;
++
++	return clk->ops->set_rate(clk, rate);
++}
++EXPORT_SYMBOL(v4l2_clk_set_rate);
++
++struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
++				   const char *dev_id,
++				   const char *id, void *priv)
++{
++	struct v4l2_clk *clk;
++	int ret;
++
++	if (!ops || !dev_id)
++		return ERR_PTR(-EINVAL);
++
++	clk = kzalloc(sizeof(struct v4l2_clk), GFP_KERNEL);
++	if (!clk)
++		return ERR_PTR(-ENOMEM);
++
++	clk->id = kstrdup(id, GFP_KERNEL);
++	clk->dev_id = kstrdup(dev_id, GFP_KERNEL);
++	if ((id && !clk->id) || !clk->dev_id) {
++		ret = -ENOMEM;
++		goto ealloc;
++	}
++	clk->ops = ops;
++	clk->priv = priv;
++	atomic_set(&clk->use_count, 0);
++	mutex_init(&clk->lock);
++
++	mutex_lock(&clk_lock);
++	if (!IS_ERR(v4l2_clk_find(dev_id, id))) {
++		mutex_unlock(&clk_lock);
++		ret = -EEXIST;
++		goto eexist;
++	}
++	list_add_tail(&clk->list, &clk_list);
++	mutex_unlock(&clk_lock);
++
++	return clk;
++
++eexist:
++ealloc:
++	kfree(clk->id);
++	kfree(clk->dev_id);
++	kfree(clk);
++	return ERR_PTR(ret);
++}
++EXPORT_SYMBOL(v4l2_clk_register);
++
++void v4l2_clk_unregister(struct v4l2_clk *clk)
++{
++	if (WARN(atomic_read(&clk->use_count),
++		 "%s(): Refusing to unregister ref-counted %s:%s clock!\n",
++		 __func__, clk->dev_id, clk->id))
++		return;
++
++	mutex_lock(&clk_lock);
++	list_del(&clk->list);
++	mutex_unlock(&clk_lock);
++
++	kfree(clk->id);
++	kfree(clk->dev_id);
++	kfree(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_unregister);
+diff --git a/include/media/v4l2-clk.h b/include/media/v4l2-clk.h
+new file mode 100644
+index 0000000..89efbd7
+--- /dev/null
++++ b/include/media/v4l2-clk.h
+@@ -0,0 +1,54 @@
++/*
++ * V4L2 clock service
++ *
++ * Copyright (C) 2012-2013, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * ATTENTION: This is a temporary API and it shall be replaced by the generic
++ * clock API, when the latter becomes widely available.
++ */
++
++#ifndef MEDIA_V4L2_CLK_H
++#define MEDIA_V4L2_CLK_H
++
++#include <linux/atomic.h>
++#include <linux/list.h>
++#include <linux/mutex.h>
++
++struct module;
++struct device;
++
++struct v4l2_clk {
++	struct list_head list;
++	const struct v4l2_clk_ops *ops;
++	const char *dev_id;
++	const char *id;
++	int enable;
++	struct mutex lock; /* Protect the enable count */
++	atomic_t use_count;
++	void *priv;
++};
++
++struct v4l2_clk_ops {
++	struct module	*owner;
++	int		(*enable)(struct v4l2_clk *clk);
++	void		(*disable)(struct v4l2_clk *clk);
++	unsigned long	(*get_rate)(struct v4l2_clk *clk);
++	int		(*set_rate)(struct v4l2_clk *clk, unsigned long);
++};
++
++struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
++				   const char *dev_name,
++				   const char *name, void *priv);
++void v4l2_clk_unregister(struct v4l2_clk *clk);
++struct v4l2_clk *v4l2_clk_get(struct device *dev, const char *id);
++void v4l2_clk_put(struct v4l2_clk *clk);
++int v4l2_clk_enable(struct v4l2_clk *clk);
++void v4l2_clk_disable(struct v4l2_clk *clk);
++unsigned long v4l2_clk_get_rate(struct v4l2_clk *clk);
++int v4l2_clk_set_rate(struct v4l2_clk *clk, unsigned long rate);
++
++#endif
+
+-- 
+1.7.2.5
+
