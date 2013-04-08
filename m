@@ -1,25 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 11 Apr 2013 03:09:13 +0000
-Subject: Re: [PATCH 1/2] ARM: r8a7740: Add interim sh-eth device name to clocks list
-Message-Id: <20130411030913.GA13456@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Apr 2013 01:23:37 +0000
+Subject: [PATCH 02/02] ARM: shmobile: use r8a7790 timer setup code on Lager
+Message-Id: <20130408012337.13555.70590.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355851359-8871-1-git-send-email-hechtb+renesas@gmail.com>
- <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
- <20130109020647.GB6496@verge.net.au>
-In-Reply-To: <20130109020647.GB6496@verge.net.au>
+References: <20130408012318.13555.58237.sendpatchset@w520>
+In-Reply-To: <20130408012318.13555.58237.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 09, 2013 at 11:06:47AM +0900, Simon Horman wrote:
-> On Tue, Dec 18, 2012 at 06:22:38PM +0100, Bastian Hecht wrote:
-> > When we use the ethernet device via DT setup, we need to add it
-> > to a lookup list until this is properly handled later in a DT-only
-> > fashion.
-> 
-> Thanks, looks good.
-> I will apply this.
+From: Magnus Damm <damm@opensource.se>
 
-Apparently I forgot to actually do that.
-I have done so now, it is queued up for v3.11 in the soc-r8a7740 branch.
+Use the r8a7790 timer init function on Lager
+to make sure the architected timer is started
+regardless of boot loader setting.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-lager.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2013-04-08 10:15:49.000000000 +0900
+@@ -40,7 +40,7 @@ static const char *lager_boards_compat_d
+ 
+ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_irq	= irqchip_init,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= r8a7790_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
