@@ -1,67 +1,50 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 23 Apr 2013 10:50:07 +0000
-Subject: Re: [PATCH 2/2 v7] sudmac: add support for SUDMAC
-Message-Id: <5176675F.1000804@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 08 Apr 2013 09:36:12 +0000
+Subject: [PATCH 00/10] r8a7790 PFC pinctrl and GPIO improvements
+Message-Id: <1365413782-17036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5174FDF3.8060809@renesas.com>
-In-Reply-To: <5174FDF3.8060809@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Vinod,
+Hello,
 
-(2013/04/23 15:31), Vinod Koul wrote:
-> On Mon, Apr 22, 2013 at 10:08:45PM -0700, Kuninori Morimoto wrote:
-< snip >
->> Selecting SH_DMAE_BASE only is not so strange for me,
->> and (as you mentioned F2F), some driver already depends on it.
->> So this SH_DMAE_BASE should be y, and SH_DMAE/SUDMAC should depend
->> on it.
-> What I would expect a decent config to do is have the driver symbol slect
-> whatever it needs
-> 
-> something like
-> config SH_BASE
-> 
-> config SH_DMAE
-> 
-> config SUDMAC
-> 	select SH_DMAE
-> 	select SH_BASE
-> 
-> etc, its nice to have simpler config and driver options. Driver selects all that
-> it needs :)
-> 
-> Btw the driver patch looks sane to me. So once you have sorted what you guys
-> want here, I think its good for merge. 
+This patch series adds pinctrl support to the r8a7790 PFC driver. Only the
+ETH, INTC and SCIF pin groups are currently defined, more will be added later
+as needed.
 
-Thank you for the comment. I will send new patches soon.
+The series also removes the r8a7790 PFC GPIO code and uses the separate RCar
+GPIO driver instead.
 
-Best regards,
-Yoshihiro shimoda
+The patches are based on Simon's pinmux branch plus Magnus' r8a7790 PFC
+patches posted today ("[PATCH 00/02] sh-pfc: Initial r8a7790 PFC support"),
+except for the last patch that requires Lager board support as a prerequisite.
 
-> --
-> ~Vinod
->>
->> I guess this is naturally Kconfig for me
->>
->> config SH_DMAE_BASE
->> 	bool xxx
->> 	default y if (SH_MOBLE && SH)
->>
->> config SH_DMAE
->>         xxxx
->> 	depends on SH_DMAE_BASE
->>
->> config SUDMAC
->>         xxxx
->> 	depends on SH_DMAE_BASE
->>
->> BTW, "SH_DMAE" is mismatch naming, I guess "SHDMAC" is better ?
->>
->> Best regards
->> ---
->> Kuninori Morimoto
-> 
+Simon, is it too late to get this series merged in v3.10 ? We can delay the
+last patch to v3.11 if that helps.
+
+Laurent Pinchart (10):
+  gpio-rcar: Add RCAR_GP_PIN macro
+  sh-pfc: r8a7790: Add ETH pin groups and functions
+  sh-pfc: r8a7790: Add INTC pin groups and functions
+  sh-pfc: r8a7790: Add SCIF, SCIFA and SCIFB pin groups and functions
+  ARM: shmobile: r8a7790: Register GPIO devices
+  sh-pfc: r8a7790: Remove GPIO data
+  sh-pfc: r8a7790: Remove function GPIOs
+  sh-pfc: r8a7790: Don't use GPIO enum entries
+  ARM: shmobile: r8a7790: Remove all GPIOs
+  ARM: shmobile: lager: Initialize pinmux
+
+ arch/arm/mach-shmobile/board-lager.c          |   15 +
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  383 --------
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   35 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c          | 1280 +++++++++++++++----------
+ include/linux/platform_data/gpio-rcar.h       |    2 +
+ 5 files changed, 823 insertions(+), 892 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
