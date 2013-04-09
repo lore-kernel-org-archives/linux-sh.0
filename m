@@ -1,82 +1,33 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 16 Apr 2013 12:45:14 +0000
-Subject: Re: [PATCH/RFC 3/6] DMA: shdma: add DT support
-Message-Id: <24397789.N1LYZfBEh2@wuerfel>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Apr 2013 17:48:59 +0000
+Subject: [PATCH 2/2] ARM: shmobile: R8A7779: fix Ether device name
+Message-Id: <201304092149.00465.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de> <201304152318.42913.arnd@arndb.de> <Pine.LNX.4.64.1304152328320.32574@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304152328320.32574@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Monday 15 April 2013 23:34:57 Guennadi Liakhovetski wrote:
-> 
-> > 
-> > This patch is missing the DT binding document, which is necessary for a proper
-> > review, and as a documentation for anyone trying to write device tree source
-> > files.
-> 
-> The documentation was left off consciously, because this driver isn't 
-> using any non-standard DMA DT bindings, only those, already described in 
-> Documentation/devicetree/bindings/dma/dma.txt.
->
-> > In particular, it is not clear what mid/rid refer to here and whether they should
-> > be represented as one or two cells. The driver here uses one cell, which is probably
-> > ok, but I'd like to understand that anyway.
-> 
-> Yes, mid/rid is a kind of a DMA request line number on these controllers, 
-> IIUC. It does have some internal hardware meaning, so, it's not a plane 
-> index, but for a high-level view it's just an 8-bit DMA request ID.
+While recasting the commit "ARM: shmobile: R8A7779: add Ether support", I made a
+typo in the platform device's name: used underscore instead of hyphen. 
 
-Ok, this needs to be in the binding then.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-You have to at least describe the meaning of the dma descriptor, because
-the generic binding only defines that the descriptor contains a phandle of the
-dma engine device, followed by a hardware specific number of cells to identify
-a channel. The description of the device itself should mention the valid
-strings for the "compatible" property and the required value of #dma-cells (<1>).
+---
+The patch is atop of the 'renesas-next-20130410' tag of the 'renesas.git' tree.
 
-> > > > + * NOTE 2: This filter function is also used in the DT case by shdma_xlate().
-> > > > + * In that case the MID-RID value is used for slave channel filtering and is
-> > > > + * passed to this function in the "arg" parameter.
-> > > >   */
-> > > >  bool shdma_chan_filter(struct dma_chan *chan, void *arg)
-> > > >  {
-> > > >   struct shdma_chan *schan = to_shdma_chan(chan);
-> > > >   struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
-> > > >   const struct shdma_ops *ops = sdev->ops;
-> > > > - int slave_id = (int)arg;
-> > > > + int match = (int)arg;
-> > > >   int ret;
-> > > >  
-> > > > - if (slave_id < 0)
-> > > > + if (match < 0)
-> > > >           /* No slave requested - arbitrary channel */
-> > > >           return true;
-> > > >  
-> > > > - if (slave_id >= slave_num)
-> > > > + if (!schan->dev->of_node && match >= slave_num)
-> > > >           return false;
-> > > >  
-> > > > - ret = ops->set_slave(schan, slave_id, true);
-> > > > + ret = ops->set_slave(schan, match, true);
-> > > >   if (ret < 0)
-> > > >           return false;
-> > 
-> > The filter function should really ensure that the dma_chan.device matches
-> > the device passed as the argument before accessing any members of
-> > the outer structures. This seems to be a preexisting bug.
-> 
-> Also this I wouldn't necessarily call a bug, but a pre-existing and known 
-> limitation  So far no platform, using such DMA controllers, has DMA 
-> controllers, driven by different dmaengine drivers, so, no confusion is 
-> possible, since those request line IDs are unique across SoCs. If in the 
-> future need arises, this limitation can certainly be lifted.
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I think it's a bit dangerous to rely on this. There are PCI add-on cards
-with general-purpose DMA engines on them, so all it takes to make this
-a real bug is a system with a PCI slot.
-
-	Arnd
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -443,7 +443,7 @@ void __init r8a7779_add_standard_devices
+ 
+ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
+ {
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++	platform_device_register_resndata(&platform_bus, "sh-eth", -1,
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
+ 					  pdata, sizeof(*pdata));
