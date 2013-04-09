@@ -1,47 +1,74 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Fri, 19 Apr 2013 10:48:10 +0000
-Subject: Re: v7_flush_kern_cache_louis flushes up to L2?
-Message-Id: <20130419104810.GJ14496@n2100.arm.linux.org.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 09 Apr 2013 05:33:44 +0000
+Subject: [RFC][PATCH 2/4] ARM: shmobile: r8a7778: fixup Ether setup code position
+Message-Id: <874nfgb74b.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CABYn4sxUCoWhC_4qydzbCtZdQdetqFZ_u5WtXsghprQget9f5g@mail.gmail.com>
- <51655248.7000401@arm.com>
- <CABYn4swK_FB+nPO4vKZM8khp+mjaPwkAv_GF+XDg5SYz0VLf0Q@mail.gmail.com>
- <51656A89.9090600@arm.com> <20130419102142.GI14496@n2100.arm.linux.org.uk>
-In-Reply-To: <20130419102142.GI14496@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Apr 19, 2013 at 11:21:42AM +0100, Russell King - ARM Linux wrote:
-> On Wed, Apr 10, 2013 at 02:35:05PM +0100, Jonathan Austin wrote:
-> > Note that on SMP, you would also need to clean/flush again after turning  
-> > off the caches, as read-speculation could have sucked dirty data from  
-> > another cache in to your cache, which would need to be written back  
-> > before sleeping.
-> 
-> Err, no.  If you read data into a cache, it is always populated in a clean
-> state.  You never suck dirty data out of one cache, remove it there and
-> place it immediately in a dirty state in an upper level cache.
-> 
-> So, if we start from the idea that reads will populate the upper level
-> cache with clean data, that cache is populated merely with a _copy_ of
-> the data held elsewhere in the system.
+Ether setup code position was scattering.
+This patch fixes it up
 
-Hmm, Will tells me that later ARM cores can migrate dirty cache lines up
-the cache tree, which means that we're potentially into deep problems
-with CPU hotplug and suspend paths, because it means there's potentially
-no way to ensure that we cleanly push data out the caches and shut the
-caches down before the CPU goes down.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7778.c |   28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
-Combine this cache behaviour with the implementation specific details
-about SCTRL.C (whether caches are just prevented from being allocated,
-or whether it also affects the caches being searched) and you have a
-recipe for multiple chunks of complex platform specific and CPU
-specific code - especially when combined with things like removal of
-CPU power and synchronisation of that in the hotplug case.
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 30b4a33..d6ee521 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -80,12 +80,6 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 	.clocksource_rating	= 200,
+ };
+ 
+-/* Ether */
+-static struct resource ether_resources[] = {
+-	DEFINE_RES_MEM(0xfde00000, 0x400),
+-	DEFINE_RES_IRQ(gic_iid(0x89)),
+-};
+-
+ #define r8a7778_register_tmu(idx)			\
+ 	platform_device_register_resndata(		\
+ 		&platform_bus, "sh_tmu", idx,		\
+@@ -94,6 +88,20 @@ static struct resource ether_resources[] = {
+ 		&sh_tmu##idx##_platform_data,		\
+ 		sizeof(sh_tmu##idx##_platform_data))
+ 
++/* Ether */
++static struct resource ether_resources[] = {
++	DEFINE_RES_MEM(0xfde00000, 0x400),
++	DEFINE_RES_IRQ(gic_iid(0x89)),
++};
++
++void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  pdata, sizeof(*pdata));
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
+@@ -118,14 +126,6 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_tmu(1);
+ }
+ 
+-void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+-{
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  pdata, sizeof(*pdata));
+-}
+-
+ static struct renesas_intc_irqpin_config irqpin_platform_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+ 	.sense_bitfield_width = 2,
+-- 
+1.7.9.5
 
-I do hope that ARM Ltd have thought about this, and have a way that we
-can shut CPU caches down sanely, but I'm fearing that they haven't
-really considered that to be something anyone really wants to do in a
-generic way.
