@@ -1,35 +1,41 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 08 Apr 2013 03:32:09 +0000
+Date: Tue, 09 Apr 2013 12:42:46 +0000
 Subject: Re: [PATCH 00/02] ARM: shmobile: r8a7790 Lager arch timer fixes
-Message-Id: <20130408033207.GA10151@verge.net.au>
+Message-Id: <20130409124245.GE15412@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130408012318.13555.58237.sendpatchset@w520>
  <87r4ilolmh.wl%kuninori.morimoto.gx@renesas.com>
- <20130408020637.GF13103@verge.net.au>
- <87ppy5oika.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ppy5oika.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87r4ilolmh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Apr 07, 2013 at 07:35:53PM -0700, Kuninori Morimoto wrote:
+On Sun, Apr 07, 2013 at 06:29:46PM -0700, Kuninori Morimoto wrote:
 > 
-> Hi Simon
+> Hi
 > 
-> > > I guess shmobile_timer_init() will be conflict (or compile error)
-> > > on next (?) merge window thought...
-> > > but, for current code/branch
+> > ARM: shmobile: r8a7790 Lager arch timer fixes
 > > 
-> > I guess that the solution is to ensure that patch 1 is applied
-> > before patch 2. Am I missing something?
+> > [PATCH 01/02] ARM: shmobile: force enable of r8a7790 arch timer 
+> > [PATCH 02/02] ARM: shmobile: use r8a7790 timer setup code on Lager
+> > 
+> > This mini-series contains fixes to start the arch timer on
+> > r8a7790 and the Lager board regardless of boot loader setting.
+> > 
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
+> > ---
 > 
-> Sorry for my confusion
-> I meant shmobile_timer_init() will be removed from ARM SoC side.
-> But I'm not sure for detail
+> I guess shmobile_timer_init() will be conflict (or compile error)
+> on next (?) merge window thought...
+> but, for current code/branch
 
-Ah yes.
+[ discussed in another sub-thread ]
 
-That already causes multiple breakages in renesas-next.
-I have responded to the thread on removing shmobile_timer_init()
-accordingly.
+> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Thanks.
+
+01/02 queued up in the soc-r8a7790 branch
+02/02 queue up in the boards-lager branch,
+      which is a merge of renesas-boards3-for-v3.10 and soc-r8a7790
