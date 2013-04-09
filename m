@@ -1,304 +1,225 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Apr 2013 20:50:13 +0000
-Subject: [PATCH v2 08/11] ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
-Message-Id: <1366836616-21475-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Apr 2013 22:52:45 +0000
+Subject: [PATCH 2/4] ARM: shmobile: R8A7778: add USB support
+Message-Id: <201304100252.46139.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201304100247.22615.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304100247.22615.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Instead of using the LED-specific TPU PWM driver, switch to the generic
-TPU PWM driver with leds-pwm.
+Add USB clock and EHCI, OHCI, and USB PHY platform devices for R8A7778 SoC;  add
+a function to register PHY device with board-specific platform data and register
+EHCI and OHCI platfrom devices from the init_late() board method.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Also,  don't forget to enable CONFIG_ARCH_HAS_[EO]HCI options for R8A7778 SoC in
+Kconfig...
+
+The patch has been tested on the BOCK-W board.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/board-kota2.c  | 178 ++++++++++++++++++++--------------
- arch/arm/mach-shmobile/clock-sh73a0.c |   8 +-
- 2 files changed, 109 insertions(+), 77 deletions(-)
+ arch/arm/mach-shmobile/Kconfig                |    2 
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    4 
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    3 
+ arch/arm/mach-shmobile/setup-r8a7778.c        |  108 ++++++++++++++++++++++++++
+ 4 files changed, 117 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index ef5ca0e..97a1f7d 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -26,6 +26,7 @@
- #include <linux/irq.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/pinctrl/pinconf-generic.h>
-+#include <linux/platform_data/pwm-renesas-tpu.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/io.h>
-@@ -37,8 +38,8 @@
- #include <linux/input/sh_keysc.h>
- #include <linux/gpio_keys.h>
- #include <linux/leds.h>
-+#include <linux/leds_pwm.h>
- #include <linux/irqchip/arm-gic.h>
--#include <linux/platform_data/leds-renesas-tpu.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mfd/tmio.h>
-@@ -186,116 +187,137 @@ static struct platform_device gpio_leds_device = {
- };
+Index: renesas/arch/arm/mach-shmobile/Kconfig
+=================================--- renesas.orig/arch/arm/mach-shmobile/Kconfig
++++ renesas/arch/arm/mach-shmobile/Kconfig
+@@ -40,6 +40,8 @@ config ARCH_R8A7778
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select ARM_GIC
++	select USB_ARCH_HAS_EHCI
++	select USB_ARCH_HAS_OHCI
  
- /* TPU LED */
--static struct led_renesas_tpu_config led_renesas_tpu12_pdata = {
--	.name		= "V2513",
--	.pin_gpio_fn	= GPIO_FN_TPU1TO2,
--	.pin_gpio	= 153,
--	.channel_offset = 0x90,
--	.timer_bit = 2,
--	.max_brightness = 1000,
-+static struct tpu_pwm_platform_data tpu1_pwm_pdata = {
-+	.channels[2] = {
-+		.enabled = true,
-+		.active_low = false,
-+	},
- };
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -59,12 +59,14 @@ static struct clk *main_clks[] = {
  
--static struct resource tpu12_resources[] = {
-+static struct resource tpu1_pwm_resources[] = {
- 	[0] = {
--		.name	= "TPU12",
--		.start	= 0xe6610090,
--		.end	= 0xe66100b5,
-+		.start	= 0xe6610000,
-+		.end	= 0xe66100ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- };
+ enum {
+ 	MSTP114,
++	MSTP100,
+ 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
  
--static struct platform_device leds_tpu12_device = {
--	.name = "leds-renesas-tpu",
--	.id = 12,
-+static struct platform_device tpu1_pwm_device = {
-+	.name = "renesas_tpu_pwm",
-+	.id = 1,
- 	.dev = {
--		.platform_data  = &led_renesas_tpu12_pdata,
-+		.platform_data  = &tpu1_pwm_pdata,
- 	},
--	.num_resources	= ARRAY_SIZE(tpu12_resources),
--	.resource	= tpu12_resources,
-+	.num_resources	= ARRAY_SIZE(tpu1_pwm_resources),
-+	.resource	= tpu1_pwm_resources,
- };
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP114] = SH_CLK_MSTP32(&clkp, MSTPCR1, 14, 0), /* Ether */
++	[MSTP100] = SH_CLK_MSTP32(&clkp, MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP026] = SH_CLK_MSTP32(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
+@@ -78,6 +80,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
++	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
++	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -19,10 +19,13 @@
+ #define __ASM_R8A7778_H__
  
--static struct led_renesas_tpu_config led_renesas_tpu41_pdata = {
--	.name		= "V2514",
--	.pin_gpio_fn	= GPIO_FN_TPU4TO1,
--	.pin_gpio	= 199,
--	.channel_offset = 0x50,
--	.timer_bit = 1,
--	.max_brightness = 1000,
-+static struct tpu_pwm_platform_data tpu2_pwm_pdata = {
-+	.channels[1] = {
-+		.enabled = true,
-+		.active_low = false,
-+	},
- };
+ #include <linux/sh_eth.h>
++#include <linux/usb/rcar-phy.h>
  
--static struct resource tpu41_resources[] = {
-+static struct resource tpu2_pwm_resources[] = {
- 	[0] = {
--		.name	= "TPU41",
--		.start	= 0xe6640050,
--		.end	= 0xe6640075,
-+		.start	= 0xe6620000,
-+		.end	= 0xe66200ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- };
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
++extern void r8a7778_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
++extern void r8a7778_init_late(void);
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+ extern void r8a7778_init_irq_dt(void);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -29,6 +29,12 @@
+ #include <linux/irqchip.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
++#include <linux/pm_runtime.h>
++#include <linux/usb/phy.h>
++#include <linux/usb/hcd.h>
++#include <linux/usb/ehci_pdriver.h>
++#include <linux/usb/ohci_pdriver.h>
++#include <linux/dma-mapping.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+ #include <mach/common.h>
+@@ -88,6 +94,99 @@ static struct sh_timer_config sh_tmu1_pl
+ 		&sh_tmu##idx##_platform_data,		\
+ 		sizeof(sh_tmu##idx##_platform_data))
  
--static struct platform_device leds_tpu41_device = {
--	.name = "leds-renesas-tpu",
--	.id = 41,
-+static struct platform_device tpu2_pwm_device = {
-+	.name = "renesas_tpu_pwm",
-+	.id = 2,
- 	.dev = {
--		.platform_data  = &led_renesas_tpu41_pdata,
-+		.platform_data  = &tpu2_pwm_pdata,
- 	},
--	.num_resources	= ARRAY_SIZE(tpu41_resources),
--	.resource	= tpu41_resources,
-+	.num_resources	= ARRAY_SIZE(tpu2_pwm_resources),
-+	.resource	= tpu2_pwm_resources,
- };
- 
--static struct led_renesas_tpu_config led_renesas_tpu21_pdata = {
--	.name		= "V2515",
--	.pin_gpio_fn	= GPIO_FN_TPU2TO1,
--	.pin_gpio	= 197,
--	.channel_offset = 0x50,
--	.timer_bit = 1,
--	.max_brightness = 1000,
-+static struct tpu_pwm_platform_data tpu3_pwm_pdata = {
-+	.channels[0] = {
-+		.enabled = true,
-+		.active_low = false,
-+	},
- };
- 
--static struct resource tpu21_resources[] = {
-+static struct resource tpu3_pwm_resources[] = {
- 	[0] = {
--		.name	= "TPU21",
--		.start	= 0xe6620050,
--		.end	= 0xe6620075,
-+		.start	= 0xe6630000,
-+		.end	= 0xe66300ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- };
- 
--static struct platform_device leds_tpu21_device = {
--	.name = "leds-renesas-tpu",
--	.id = 21,
-+static struct platform_device tpu3_pwm_device = {
-+	.name = "renesas_tpu_pwm",
-+	.id = 3,
- 	.dev = {
--		.platform_data  = &led_renesas_tpu21_pdata,
-+		.platform_data  = &tpu3_pwm_pdata,
- 	},
--	.num_resources	= ARRAY_SIZE(tpu21_resources),
--	.resource	= tpu21_resources,
-+	.num_resources	= ARRAY_SIZE(tpu3_pwm_resources),
-+	.resource	= tpu3_pwm_resources,
- };
- 
--static struct led_renesas_tpu_config led_renesas_tpu30_pdata = {
--	.name		= "KEYLED",
--	.pin_gpio_fn	= GPIO_FN_TPU3TO0,
--	.pin_gpio	= 163,
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.max_brightness = 1000,
-+static struct tpu_pwm_platform_data tpu4_pwm_pdata = {
-+	.channels[1] = {
-+		.enabled = true,
-+		.active_low = false,
-+	},
- };
- 
--static struct resource tpu30_resources[] = {
-+static struct resource tpu4_pwm_resources[] = {
- 	[0] = {
--		.name	= "TPU30",
--		.start	= 0xe6630010,
--		.end	= 0xe6630035,
-+		.start	= 0xe6640000,
-+		.end	= 0xe66400ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- };
- 
--static struct platform_device leds_tpu30_device = {
--	.name = "leds-renesas-tpu",
--	.id = 30,
-+static struct platform_device tpu4_pwm_device = {
-+	.name = "renesas_tpu_pwm",
-+	.id = 4,
-+	.dev = {
-+		.platform_data  = &tpu4_pwm_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(tpu4_pwm_resources),
-+	.resource	= tpu4_pwm_resources,
++/* USB PHY */
++static struct resource usb_phy_resources[] = {
++	DEFINE_RES_MEM(0xffe70800, 0x100),
++	DEFINE_RES_MEM(0xffe76000, 0x100),
 +};
 +
-+static struct led_pwm tpu_pwm_leds[] = {
-+	{
-+		.name		= "V2513",
-+		.pwm_id		= TPU_PWM_ID(1, 2),
-+		.max_brightness	= 1000,
-+	}, {
-+		.name		= "V2515",
-+		.pwm_id		= TPU_PWM_ID(2, 1),
-+		.max_brightness	= 1000,
-+	}, {
-+		.name		= "KEYLED",
-+		.pwm_id		= TPU_PWM_ID(3, 0),
-+		.max_brightness	= 1000,
-+	}, {
-+		.name		= "V2514",
-+		.pwm_id		= TPU_PWM_ID(4, 1),
-+		.max_brightness	= 1000,
-+	},
++void __init r8a7778_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
++					  usb_phy_resources,
++					  ARRAY_SIZE(usb_phy_resources),
++					  pdata, sizeof(*pdata));
++}
++
++/* USB */
++static struct usb_phy *phy;
++
++static int usb_power_on(struct platform_device *pdev)
++{
++	if (!phy)
++		return -EIO;
++
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
++	usb_phy_init(phy);
++
++	return 0;
++}
++
++static void usb_power_off(struct platform_device *pdev)
++{
++	if (!phy)
++		return;
++
++	usb_phy_shutdown(phy);
++
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
++}
++
++static int ehci_init_internal_buffer(struct usb_hcd *hcd)
++{
++	/*
++	 * Below are recommended values from the datasheet;
++	 * see [USB :: Setting of EHCI Internal Buffer].
++	 */
++	/* EHCI IP internal buffer setting */
++	iowrite32(0x00ff0040, hcd->regs + 0x0094);
++	/* EHCI IP internal buffer enable */
++	iowrite32(0x00000001, hcd->regs + 0x009C);
++
++	return 0;
++}
++
++static struct usb_ehci_pdata ehci_pdata = {
++	.power_on	= usb_power_on,
++	.power_off	= usb_power_off,
++	.power_suspend	= usb_power_off,
++	.pre_setup	= ehci_init_internal_buffer,
 +};
 +
-+static struct led_pwm_platform_data leds_pwm_pdata = {
-+	.num_leds = ARRAY_SIZE(tpu_pwm_leds),
-+	.leds = tpu_pwm_leds,
++static struct resource ehci_resources[] = {
++	DEFINE_RES_MEM(0xffe70000, 0x400),
++	DEFINE_RES_IRQ(gic_iid(0x4c)),
 +};
 +
-+static struct platform_device leds_pwm_device = {
-+	.name = "leds-pwm",
-+	.id = 0,
- 	.dev = {
--		.platform_data  = &led_renesas_tpu30_pdata,
-+		.platform_data = &leds_pwm_pdata,
- 	},
--	.num_resources	= ARRAY_SIZE(tpu30_resources),
--	.resource	= tpu30_resources,
- };
++static struct usb_ohci_pdata ohci_pdata = {
++	.power_on	= usb_power_on,
++	.power_off	= usb_power_off,
++	.power_suspend	= usb_power_off,
++};
++
++static struct resource ohci_resources[] = {
++	DEFINE_RES_MEM(0xffe70400, 0x400),
++	DEFINE_RES_IRQ(gic_iid(0x4c)),
++};
++
++#define USB_PLATFORM_INFO(hci)				\
++static struct platform_device_info hci##_info = {	\
++	.parent		= &platform_bus,		\
++	.name		= #hci "-platform",		\
++	.id		= -1,				\
++	.res		= hci##_resources,		\
++	.num_res	= ARRAY_SIZE(hci##_resources),	\
++	.data		= &hci##_pdata,			\
++	.size_data	= sizeof(hci##_pdata),		\
++	.dma_mask	= DMA_BIT_MASK(32),		\
++}
++
++USB_PLATFORM_INFO(ehci);
++USB_PLATFORM_INFO(ohci);
++
+ /* Ether */
+ static struct resource ether_resources[] = {
+ 	DEFINE_RES_MEM(0xfde00000, 0x400),
+@@ -126,6 +225,14 @@ void __init r8a7778_add_standard_devices
+ 	r8a7778_register_tmu(1);
+ }
  
- /* Fixed 1.8V regulator to be used by MMCIF */
-@@ -426,10 +448,11 @@ static struct platform_device *kota2_devices[] __initdata = {
- 	&keysc_device,
- 	&gpio_keys_device,
- 	&gpio_leds_device,
--	&leds_tpu12_device,
--	&leds_tpu41_device,
--	&leds_tpu21_device,
--	&leds_tpu30_device,
-+	&tpu1_pwm_device,
-+	&tpu2_pwm_device,
-+	&tpu3_pwm_device,
-+	&tpu4_pwm_device,
-+	&leds_pwm_device,
- 	&mmcif_device,
- 	&sdhi0_device,
- 	&sdhi1_device,
-@@ -512,6 +535,15 @@ static const struct pinctrl_map kota2_pinctrl_map[] = {
- 				  "bsc_cs5_a", "bsc"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
- 				  "bsc_we0", "bsc"),
-+	/* TPU */
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_tpu_pwm.1", "pfc-sh73a0",
-+				  "tpu1_to2", "tpu1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_tpu_pwm.2", "pfc-sh73a0",
-+				  "tpu2_to1", "tpu2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_tpu_pwm.3", "pfc-sh73a0",
-+				  "tpu3_to0", "tpu3"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_tpu_pwm.4", "pfc-sh73a0",
-+				  "tpu4_to1", "tpu4"),
- };
++void __init r8a7778_init_late(void)
++{
++	phy = usb_get_phy(USB_PHY_TYPE_USB2);
++
++	platform_device_register_full(&ehci_info);
++	platform_device_register_full(&ohci_info);
++}
++
+ static struct renesas_intc_irqpin_config irqpin_platform_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+ 	.sense_bitfield_width = 2,
+@@ -239,6 +346,7 @@ DT_MACHINE_START(R8A7778_DT, "Generic R8
+ 	.init_machine	= r8a7778_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a7778_compat_dt,
++	.init_late      = r8a7778_init_late,
+ MACHINE_END
  
- static void __init kota2_init(void)
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index f222837..c454dc7 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -656,10 +656,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
- 	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
--	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
--	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
--	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
--	CLKDEV_DEV_ID("leds-renesas-tpu.41", &mstp_clks[MSTP300]), /* TPU4 */
-+	CLKDEV_DEV_ID("rmob_tpu_pwm.1", &mstp_clks[MSTP303]), /* TPU1 */
-+	CLKDEV_DEV_ID("rmob_tpu_pwm.2", &mstp_clks[MSTP302]), /* TPU2 */
-+	CLKDEV_DEV_ID("rmob_tpu_pwm.3", &mstp_clks[MSTP301]), /* TPU3 */
-+	CLKDEV_DEV_ID("rmob_tpu_pwm.4", &mstp_clks[MSTP300]), /* TPU4 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
- 	CLKDEV_DEV_ID("e6826000.i2c", &mstp_clks[MSTP411]), /* I2C3 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
--- 
-1.8.1.5
-
+ #endif /* CONFIG_USE_OF */
