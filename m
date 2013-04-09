@@ -1,18 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Apr 2013 06:19:37 +0000
-Subject: Re: [PATCH 4/4 v2] ARM: shmobile: r8a7790: add div6 clocks
-Message-Id: <20130416061935.GE27462@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Apr 2013 17:47:51 +0000
+Subject: [PATCH 1/2] ARM: shmobile: R8A7778: fix Ether device name
+Message-Id: <201304092147.51621.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r4ignqie.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r4ignqie.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Apr 12, 2013 at 12:43:09AM -0700, Kuninori Morimoto wrote:
-> DIV6 clocks control SD*/MMC* core clocks.
+While recasting the commit "ARM: shmobile: R8A7778: add Ether support", I made a
+typo in the platform device's name: used underscore instead of hyphen. 
 
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Thanks, queued-up for v3.11 in the soc-r8a7790 branch.
+---
+The patch is atop of the 'renesas-next-20130410' tag of the 'renesas.git' tree.
 
+ arch/arm/mach-shmobile/setup-r8a7778.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -96,7 +96,7 @@ static struct resource ether_resources[]
+ 
+ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+ {
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++	platform_device_register_resndata(&platform_bus, "sh-eth", -1,
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
+ 					  pdata, sizeof(*pdata));
