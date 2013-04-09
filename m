@@ -1,44 +1,94 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 09 Apr 2013 14:07:58 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: Disallow PINCTRL without GPIOLIB
-Message-Id: <2575027.16EVpHnJzT@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Apr 2013 22:36:50 +0000
+Subject: [PATCH v3 6/9] rcar-phy: correct base address
+Message-Id: <201304100236.50822.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318135818.23765.51686.sendpatchset@w520>
- <21658140.49USZQOU99@avalon>
- <CACRpkdZ9fSoQnF-MgRKi4PUhv56+CuraXhuVgUhLyHcoEnBPZg@mail.gmail.com>
-In-Reply-To: <CACRpkdZ9fSoQnF-MgRKi4PUhv56+CuraXhuVgUhLyHcoEnBPZg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+The memory region that is used by the driver overlaps EHCI and OHCI  register
+regions for absolutely no reason now  -- fix it  by adding offset of 0x800 to
+the base address, changing the register #define's accordingly. This has extra
+positive effect that we now can use devm_ioremap_resource()...
 
-On Tuesday 09 April 2013 10:06:45 Linus Walleij wrote:
-> On Tue, Mar 26, 2013 at 4:23 PM, Laurent Pinchart wrote:
-> >> About this issue, the fact that selecting PINCTRL without GPIO results
-> >> in compile error makes me think that something needs slight adjustment
-> >> in the PFC code.
-> > 
-> > The above errors come from the pinctrl core (although the PFC driver might
-> > not compile either in this case). Linus, what's your opinion on this ? Do
-> > we want to support systems with pinctrl but without gpiolib ?
-> 
-> Yes. It is perfectly legal to have pin controllers that do not correlate
-> GPIO ranges.
-> 
-> Does commit 2afe8229687ec24cbc07e78449a588bb8b68f858
-> "pinctrl: core: add dependence of GPIOLIB"
-> by Haojian fix this issue?
+Note that the driver and the SoC code have to be in one patch to keep the code
+bisectable...
 
-Yes it does.
+The patch has been tested on the Marzen board.
 
-I've just sent a patch that makes GPIOLIB support optional in the PFC driver. 
-Magnus, with these two, should we revert 
-6722f6cb763203cab775297b6e9d00834af0d6d7 ?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
--- 
-Regards,
+---
+Changes since version 2:
+- refreshed atop of the prior patches;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
 
-Laurent Pinchart
+Changes since the original posting:
+- added a note about bisectability to the changelog.
 
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
+ drivers/usb/phy/rcar-phy.c             |   28 ++++++++++------------------
+ 2 files changed, 11 insertions(+), 19 deletions(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -402,7 +402,7 @@ static struct platform_device sata_devic
+ /* USB PHY */
+ static struct resource usb_phy_resources[] = {
+ 	[0] = {
+-		.start		= 0xffe70000,
++		.start		= 0xffe70800,
+ 		.end		= 0xffe70900 - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+Index: renesas/drivers/usb/phy/rcar-phy.c
+=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
++++ renesas/drivers/usb/phy/rcar-phy.c
+@@ -16,13 +16,13 @@
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
+ 
+-/* USBH common register */
+-#define USBPCTRL0	0x0800
+-#define USBPCTRL1	0x0804
+-#define USBST		0x0808
+-#define USBEH0		0x080C
+-#define USBOH0		0x081C
+-#define USBCTL0		0x0858
++/* REGS block */
++#define USBPCTRL0	0x00
++#define USBPCTRL1	0x04
++#define USBST		0x08
++#define USBEH0		0x0C
++#define USBOH0		0x1C
++#define USBCTL0		0x58
+ 
+ /* USBPCTRL1 */
+ #define PHY_RST		(1 << 2)
+@@ -139,17 +139,9 @@ static int rcar_usb_phy_probe(struct pla
+ 		return -EINVAL;
+ 	}
+ 
+-	/*
+-	 * CAUTION
+-	 *
+-	 * Because this phy address is also mapped under OHCI/EHCI address area,
+-	 * this driver can't use devm_request_and_ioremap(dev, res) here
+-	 */
+-	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
+-	if (!reg0) {
+-		dev_err(dev, "ioremap error\n");
+-		return -ENOMEM;
+-	}
++	reg0 = devm_ioremap_resource(dev, res0);
++	if (IS_ERR(reg0))
++		return PTR_ERR(reg0);
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv) {
