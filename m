@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 09 Apr 2013 12:55:22 +0000
+From: Alan Stern <stern@rowland.harvard.edu>
+Date: Tue, 09 Apr 2013 15:27:46 +0000
 Subject: Re: [PATCH v2 2/9] ehci-platform: add pre_setup() method to platform data
-Message-Id: <51640FBA.4020807@cogentembedded.com>
+Message-Id: <Pine.LNX.4.44L0.1304091125430.1573-100000@iolanthe.rowland.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201304090120.00626.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201304090120.00626.sergei.shtylyov@cogentembedded.com>
@@ -10,53 +10,32 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+On Tue, 9 Apr 2013, Sergei Shtylyov wrote:
 
-On 09-04-2013 3:42, Greg KH wrote:
+> >>>> --- renesas.orig/include/linux/usb/ehci_pdriver.h
+> >>>> +++ renesas/include/linux/usb/ehci_pdriver.h
+> >>>> @@ -19,6 +19,8 @@
+> >>>>   #ifndef __USB_CORE_EHCI_PDRIVER_H
+> >>>>   #define __USB_CORE_EHCI_PDRIVER_H
+> >>>> +#include <linux/usb/hcd.h>
+> >>> This isn't needed in the .h file, right?  Only the .c file, if it hasn't
+> >>> already included it (hint, I bet it has...)
+> >>     No, it hasn't. And I wouldn't want to include this header in the
+> >> platform code.
+> > Then you don't need it in this .h file either, please remove it.
+> 
+>      I do need it in the platform .c file. Well, long live multiple 
+> redeclarations
+> of the same thing!
 
->>>>> Sometimes there is a need  to initialize some non-standard
->>>>> registers mapped to
->>>>> the EHCI region before accessing the standard EHCI registers.
->>>>> Add pre_setup()
->>>>> method with 'struct usb_hcd *' parameter to be called just
->>>>> before ehci_setup()
->>>>> to the 'ehci-platform'  driver's platform data for this purpose...
+If you do remove that line from ehci_pdriver.h, you should add a
+declaration of struct usb_hcd.  Like this:
 
->>>>> Suggested-by: Alan Stern <stern@rowland.harvard.edu>
->>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+struct usb_hcd;
 
->>> [...]
->>>>> Index: renesas/include/linux/usb/ehci_pdriver.h
->>>>> =================================>>>>> --- renesas.orig/include/linux/usb/ehci_pdriver.h
->>>>> +++ renesas/include/linux/usb/ehci_pdriver.h
->>>>> @@ -19,6 +19,8 @@
->>>>>   #ifndef __USB_CORE_EHCI_PDRIVER_H
->>>>>   #define __USB_CORE_EHCI_PDRIVER_H
->>>>>   +#include <linux/usb/hcd.h>
+Otherwise the compiler will complain when it sees this structure
+mentioned for the first time in the parameter list of a
+function-pointer declaration.
 
->>>> This isn't needed in the .h file, right?  Only the .c file, if it hasn't
->>>> already included it (hint, I bet it has...)
-
->>>    No, it hasn't. And I wouldn't want to include this header in the
->>> platform code.
-
->>     Although, if you insist...
-
->>     It just occured to me that this file doesn't have 'struct
->> platform_device'
->> pre-declared either -- in the "best" tradition of the USB header files. :-)
-
-> Yes, if the .h file doesn't need it, don't include it in the .h file.
-> Include it in the .c file instead.
-
-    The ehci_pdriver.h still needs 'struct platfrom_device' declared. It 
-shouldn't rely on the order of other #include's in the .c file that includes 
-it. That's simply wrong, and I'm adding incomplete declaration while I am 
-touching this file...
-
-> thanks,
-
-> greg k-h
-
-WBR, Sergei
+Alan Stern
 
