@@ -1,110 +1,72 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:51 +0000
-Subject: [PATCH 13/28] ARM: shmobile: r8a7779: Register GPIO devices
-Message-Id: <1364954706-14727-14-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Apr 2013 22:37:49 +0000
+Subject: [PATCH v3 7/9] rcar-phy: add platform data
+Message-Id: <201304100237.50334.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong since this
+register contains board-specific USB ports configuration and so its value should
+be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file with
+the USBPCTRL0 bit #define's and 'struct rcar_phy_platform_data' containing the
+value to be set by the driver to that register.
 
-Move GPIOs handling from the PFC device to separate GPIO devices.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c |   58 ++++++++++++++++++++++++++++----
- 1 file changed, 52 insertions(+), 6 deletions(-)
+Changes since version 2:
+- added #include <linux/types.h>;
+- added ACKs from Simon Horman and Kuninori Morimoto.
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 042df35..a460ba3 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -22,6 +22,7 @@
- #include <linux/interrupt.h>
- #include <linux/irq.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/input.h>
-@@ -68,11 +69,6 @@ static struct resource r8a7779_pfc_resources[] = {
- 		.end	= 0xfffc023b,
- 		.flags	= IORESOURCE_MEM,
- 	},
--	[1] = {
--		.start	= 0xffc40000,
--		.end	= 0xffc46fff,
--		.flags	= IORESOURCE_MEM,
--	}
- };
- 
- static struct platform_device r8a7779_pfc_device = {
-@@ -82,9 +78,59 @@ static struct platform_device r8a7779_pfc_device = {
- 	.num_resources	= ARRAY_SIZE(r8a7779_pfc_resources),
- };
- 
-+#define R8A7779_GPIO(idx, npins) \
-+static struct resource r8a7779_gpio##idx##_resources[] = {		\
-+	[0] = {								\
-+		.start	= 0xffc40000 + 0x1000 * (idx),			\
-+		.end	= 0xffc4002b + 0x1000 * (idx),			\
-+		.flags	= IORESOURCE_MEM,				\
-+	},								\
-+	[1] = {								\
-+		.start	= gic_iid(0xad + (idx)),			\
-+		.flags	= IORESOURCE_IRQ,				\
-+	}								\
-+};									\
-+									\
-+static struct gpio_rcar_config r8a7779_gpio##idx##_platform_data = {	\
-+	.gpio_base	= 32 * (idx),					\
-+	.irq_base	= 0,						\
-+	.number_of_pins	= npins,					\
-+	.pctl_name	= "pfc-r8a7779",				\
-+};									\
-+									\
-+static struct platform_device r8a7779_gpio##idx##_device = {		\
-+	.name		= "gpio_rcar",					\
-+	.id		= idx,						\
-+	.resource	= r8a7779_gpio##idx##_resources,		\
-+	.num_resources	= ARRAY_SIZE(r8a7779_gpio##idx##_resources),	\
-+	.dev		= {						\
-+		.platform_data	= &r8a7779_gpio##idx##_platform_data,	\
-+	},								\
-+}
+ include/linux/usb/rcar-phy.h |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+Index: renesas/include/linux/usb/rcar-phy.h
+=================================--- /dev/null
++++ renesas/include/linux/usb/rcar-phy.h
+@@ -0,0 +1,40 @@
++/*
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Cogent Embedded, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
 +
-+R8A7779_GPIO(0, 32);
-+R8A7779_GPIO(1, 32);
-+R8A7779_GPIO(2, 32);
-+R8A7779_GPIO(3, 32);
-+R8A7779_GPIO(4, 32);
-+R8A7779_GPIO(5, 32);
-+R8A7779_GPIO(6, 9);
++#ifndef __RCAR_PHY_H
++#define __RCAR_PHY_H
 +
-+static struct platform_device *r8a7779_pinctrl_devices[] __initdata = {
-+	&r8a7779_pfc_device,
-+	&r8a7779_gpio0_device,
-+	&r8a7779_gpio1_device,
-+	&r8a7779_gpio2_device,
-+	&r8a7779_gpio3_device,
-+	&r8a7779_gpio4_device,
-+	&r8a7779_gpio5_device,
-+	&r8a7779_gpio6_device,
++#include <linux/bitops.h>
++#include <linux/types.h>
++
++/* USBPCTRL0 register bits */
++#define USBPCTRL0_OVC2	BIT(10)	/* Switches the OVC input pin for port 2: */
++				/* 1: USB_OVC2, 0: OVC2			*/
++#define USBPCTRL0_OVC1_VBUS1 BIT(9) /* Switches the OVC input pin for port 1: */
++				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
++#define USBPCTRL0_OVC0	BIT(8)	/* Switches the OVC input pin for port 0: */
++				/* 1: USB_OVC0 pin, 0: OVC0		*/
++#define USBPCTRL0_OVC2_ACT BIT(6) /* Host mode: OVC2 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++				/* Function mode: be sure to set to 1	*/
++#define USBPCTRL0_PENC	BIT(4)	/* Function mode: output level of PENC1 pin: */
++				/* 1: high, 0: low			*/
++#define USBPCTRL0_OVC0_ACT BIT(3) /* Host mode: OVC0 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++#define USBPCTRL0_OVC1_ACT BIT(1) /* Host mode: OVC1 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++				/* Function mode: be sure to set to 1	*/
++#define USBPCTRL0_PORT1	BIT(0)	/* Selects port 1 mode:			*/
++				/* 1: function, 0: host			*/
++
++struct rcar_phy_platform_data {
++	u32 usbpctrl0;		/* USBPCTRL0 register value */
 +};
 +
- void __init r8a7779_pinmux_init(void)
- {
--	platform_device_register(&r8a7779_pfc_device);
-+	platform_add_devices(r8a7779_pinctrl_devices,
-+			    ARRAY_SIZE(r8a7779_pinctrl_devices));
- }
- 
- static struct plat_sci_port scif0_platform_data = {
--- 
-1.7.10.4
-
++#endif /* __RCAR_PHY_H */
