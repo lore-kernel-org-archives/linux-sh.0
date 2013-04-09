@@ -1,36 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 08 Apr 2013 21:10:49 +0000
-Subject: [PATCH v2 0/9] Reorganize R8A7779/Marzen USB code
-Message-Id: <201304090110.50154.sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 09 Apr 2013 05:58:04 +0000
+Subject: Re: [PATCH v2 0/9] Reorganize R8A7779/Marzen USB code
+Message-Id: <87zjx89rfb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201304090110.50154.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304090110.50154.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
 
-   Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130405v2' tag.  It was created to fix the shortcomings in the
-R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
-spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
-to touch both subtrees). The patches were conceived with the complete
-bisectability goal in mind. The patches have been tested on the Marzen board.
+Hi
 
-[1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
-[2/9] ehci-platform: add pre_setup() method to platform data
-[3/9] ARM: shmobile: R8A7779: setup EHCI internal buffer
-[4/9] rcar-phy: remove EHCI internal buffer setup
-[5/9] ARM: shmobile: R8A7779: remove USB PHY 2nd memory resource
-[6/9] rcar-phy: correct base address
-[7/9] rcar-phy: add platform data
-[8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-[9/9] rcar-phy: handle platform data
+>    Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
+> 'renesas-next-20130405v2' tag.  It was created to fix the shortcomings in the
+> R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
+> spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
+> to touch both subtrees). The patches were conceived with the complete
+> bisectability goal in mind. The patches have been tested on the Marzen board.
 
-   I'm not sure thru which tree this patchset should be merged, however it turns
-out that it's too late now to push it thru Felipe Balbi's USB tree for 3.10 which
-would have been most convenient probably, so maybe the patchset can be merged
-thru Simon's tree with Felipe's and Alan Stern's ACKs. Or perhaps it now should
-be postponed for 3.11...
+Please add this "tested on xxx" comment on each patch's log area, not only on [0/x].
+We need it on "git log"
 
-WBR, Sergei
+> [1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
+> [2/9] ehci-platform: add pre_setup() method to platform data
+> [3/9] ARM: shmobile: R8A7779: setup EHCI internal buffer
+> [4/9] rcar-phy: remove EHCI internal buffer setup
+> [5/9] ARM: shmobile: R8A7779: remove USB PHY 2nd memory resource
+> [6/9] rcar-phy: correct base address
+> [7/9] rcar-phy: add platform data
+> [8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
+> [9/9] rcar-phy: handle platform data
+
+I didn't get [7/9][9/9] patch somehow
+
+Best regards
+---
+Kuninori Morimoto
