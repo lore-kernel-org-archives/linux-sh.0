@@ -1,94 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Apr 2013 08:44:23 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 09 Apr 2013 22:23:06 +0000
 Subject: Re: [PATCH v3] irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
-Message-Id: <20130409084423.GH18478@verge.net.au>
+Message-Id: <CANqRtoS7fkYd8iX3yAh7xoTNR39UiquWooUSr8+BjbBSUNozFQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1304081002190.29945@axis700.grange>
- <15518520.KQOfZxAAdo@avalon>
- <Pine.LNX.4.64.1304081412550.29945@axis700.grange>
- <2492042.P3NGiSlrcg@avalon>
-In-Reply-To: <2492042.P3NGiSlrcg@avalon>
+In-Reply-To: <Pine.LNX.4.64.1304081002190.29945@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 09, 2013 at 01:22:29AM +0200, Laurent Pinchart wrote:
-> Hi Guennadi,
-> 
-> On Monday 08 April 2013 14:15:39 Guennadi Liakhovetski wrote:
-> > On Mon, 8 Apr 2013, Laurent Pinchart wrote:
-> > > On Monday 08 April 2013 13:25:46 Guennadi Liakhovetski wrote:
-> > > > On Mon, 8 Apr 2013, Laurent Pinchart wrote:
-> > > > > On Monday 08 April 2013 10:08:40 Guennadi Liakhovetski wrote:
-> > > > > > Most Renesas irqpin controllers have 4-bit sense fields, however,
-> > > > > > some have different widths. This patch adds a DT binding to
-> > > > > > optionally specify such non-standard values.
-> > > > > > 
-> > > > > > Signed-off-by: Guennadi Liakhovetski
-> > > > > > <g.liakhovetski+renesas@gmail.com>
-> > > > > > ---
-> > > > > > 
-> > > > > > v3: move the code to a common location, where device configuration
-> > > > > > parameters are retrieved
-> > > > > > 
-> > > > > >  .../interrupt-controller/renesas,intc-irqpin.txt   |   13 +++++++++
-> > > > > >  drivers/irqchip/irq-renesas-intc-irqpin.c          |    4 ++++
-> > > > > >  2 files changed, 17 insertions(+), 0 deletions(-)
-> > > > > >  create mode 100644
-> > > > > > 
-> > > > > > Documentation/devicetree/bindings/interrupt-controller/renesas,intc-
-> > > > > > irqpin.txt
-> > > > > > diff --git a/Documentation/devicetree/bindings/interrupt-
-> > > > > > controller/renesas,intc-irqpin.txt
-> > > > > > b/Documentation/devicetree/bindings/interrupt-controller/
-> > > > > > renesas,intc-irqpin.txt
-> > > > > > new file mode 100644
-> > > > > > index 0000000..c6f09b7
-> > > > > > --- /dev/null
-> > > > > > +++
-> > > > > > b/Documentation/devicetree/bindings/interrupt-controller/renesas,int
-> > > > > > c-
-> > > > > > irqpin.txt
-> > > > > > @@ -0,0 +1,13 @@
-> > > > > > +DT bindings for the R-/SH-Mobile irqpin controller
-> > > > > > +
-> > > > > > +Required properties:
-> > > > > > +
-> > > > > > +- compatible: has to be "renesas,intc-irqpin"
-> > > > > > +- #interrupt-cells: has to be <2>
-> > > > > > +
-> > > > > > +Optional properties:
-> > > > > > +
-> > > > > > +- any properties, listed in interrupts.txt in this directory, and
-> > > > > > any standard
-> > > > > > +  resource allocation properties
-> > > > > > +- sense-bitfield-width: width of a single sense bitfield in the
-> > > > > > SENSE register,
-> > > > > > +  if different from the default 4 bits
-> > > > > 
-> > > > > Wouldn't it be better to define per-SoC compatible strings, and infer
-> > > > > the sense bitfield width from that ?
-> > > > 
-> > > > This is not a boolean, it is an integer, I don't think defining
-> > > > compatibility strings for 1, 2, 3, 4, 5,... bits is better than having
-> > > > one integer property.
-> > > 
-> > > I'm not advocating for compatibility strings for a given number of bits,
-> > > but for per-SoC compatibility strings from which to infer the width.
-> > > 
-> > > For instance, if the r8a7779 has a 6-bit sense field, you would use
-> > > 
-> > > compatible = "r8a7779,intc-irqpin";
-> > > 
-> > > and map that to 6 in the irqpin driver.
-> > 
-> > I understand what you mean, still I don't think mapping N SoC-compatibility
-> > strings to various values of a single integer is better than having a single
-> > property.
-> 
-> The way I understand (or maybe rather feel) the DT bindings philosophy is that 
-> hardware information for on-SoC IP cores that depend on the IP core version 
-> should be conveyed through the compatible property. I might be wrong though.
+Hi Guennadi,
 
-That is also my understanding.
+On Mon, Apr 8, 2013 at 5:08 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> Most Renesas irqpin controllers have 4-bit sense fields, however, some
+> have different widths. This patch adds a DT binding to optionally
+> specify such non-standard values.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> ---
+>
+> v3: move the code to a common location, where device configuration
+> parameters are retrieved
+
+Thanks for rearranging the code, this looks good to me.
+
+Acked-by: Magnus Damm <damm@opensource.se>
+
+To be clear, I prefer your approach over a per-SoC compatible string.
+
+In general I think a per-SoC compatible string is nice in theory, but
+I don't think it is correct to use it to describe a change in a IP
+block that just happens to included in the SoC. Instead the version of
+the IP block shall be used with the compatible value. In some cases it
+may not be easy to retrieve such a version.
+
+The per-SoC compatible string may look good but they come with at
+least two drawbacks. Either
+1) the driver has to be updated for each new SoC even though the
+device IP the driver is handling hasn't changed which leads to
+1.1) more need for pointless per-SoC compatible string patches to be
+merged and tracked and back ported
+and
+1.2) less chance of running a standard distro lacking per-SoC
+compatible string but has actual code for support
+or
+2) to ship soon the per-SoC DT will use SoC compatible strings
+matching other SoC names which works but is even more confusing.
+
+For the INTC irqpin case I believe this approach with a single
+property is the best.
+
+Thanks,
+
+/ magnus
