@@ -1,62 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 22:59:52 +0000
-Subject: [PATCH 11/37] ARM: shmobile: armadillo800eva: Register pinctrl mapping for CEU0
-Message-Id: <1366671618-8796-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Apr 2013 22:31:48 +0000
+Subject: [PATCH v3 3/9] ARM: shmobile: R8A7779: setup EHCI internal buffer
+Message-Id: <201304100231.48628.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based CEU0 pinmux configuration by a pinctrl mapping.
+Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
+registers) using the pre_setup() method in 'struct usb_ehci_pdata'.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The patch has been tested on the Marzen board.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 24 +++++++++---------------
- 1 file changed, 9 insertions(+), 15 deletions(-)
+Changes since version 2:
+- added #include <linux/usb/hcd.h>;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index a23988b..1d57cc4 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1036,6 +1036,15 @@ static struct platform_device *eva_devices[] __initdata = {
+Changes since the original posting:
+- changed from init() platform device method to pre_setup() as per the previous
+  patch.
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -33,6 +33,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/usb/otg.h>
++#include <linux/usb/hcd.h>
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+@@ -446,10 +447,25 @@ static void usb_power_off(struct platfor
+ 	pm_runtime_disable(&pdev->dev);
+ }
+ 
++static int ehci_init_internal_buffer(struct usb_hcd *hcd)
++{
++	/*
++	 * Below are recommended values from the datasheet;
++	 * see [USB :: Setting of EHCI Internal Buffer].
++	 */
++	/* EHCI IP internal buffer setting */
++	iowrite32(0x00ff0040, hcd->regs + 0x0094);
++	/* EHCI IP internal buffer enable */
++	iowrite32(0x00000001, hcd->regs + 0x009C);
++
++	return 0;
++}
++
+ static struct usb_ehci_pdata ehcix_pdata = {
+ 	.power_on	= usb_power_on,
+ 	.power_off	= usb_power_off,
+ 	.power_suspend	= usb_power_off,
++	.pre_setup	= ehci_init_internal_buffer,
  };
  
- static const struct pinctrl_map eva_pinctrl_map[] = {
-+	/* CEU0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
-+				  "ceu0_data_0_7", "ceu0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
-+				  "ceu0_clk_0", "ceu0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
-+				  "ceu0_sync", "ceu0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
-+				  "ceu0_field", "ceu0"),
- 	/* GETHER */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
- 				  "gether_mii", "gether"),
-@@ -1154,21 +1163,6 @@ static void __init eva_init(void)
- 		usb = &usbhsf_device;
- 	}
- 
--	/* CEU0 */
--	gpio_request(GPIO_FN_VIO0_D7,		NULL);
--	gpio_request(GPIO_FN_VIO0_D6,		NULL);
--	gpio_request(GPIO_FN_VIO0_D5,		NULL);
--	gpio_request(GPIO_FN_VIO0_D4,		NULL);
--	gpio_request(GPIO_FN_VIO0_D3,		NULL);
--	gpio_request(GPIO_FN_VIO0_D2,		NULL);
--	gpio_request(GPIO_FN_VIO0_D1,		NULL);
--	gpio_request(GPIO_FN_VIO0_D0,		NULL);
--	gpio_request(GPIO_FN_VIO0_CLK,		NULL);
--	gpio_request(GPIO_FN_VIO0_HD,		NULL);
--	gpio_request(GPIO_FN_VIO0_VD,		NULL);
--	gpio_request(GPIO_FN_VIO0_FIELD,	NULL);
--	gpio_request(GPIO_FN_VIO_CKO,		NULL);
--
- 	/* CON1/CON15 Camera */
- 	gpio_request_one(173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
- 	gpio_request_one(172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
--- 
-1.8.1.5
-
+ static struct resource ehci0_resources[] = {
