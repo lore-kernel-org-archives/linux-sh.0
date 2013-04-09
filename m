@@ -1,58 +1,42 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 26 Apr 2013 16:27:45 +0000
-Subject: [PATCH 4/6] ARM: shmobile: r8a7740: add MMCIF DMA definitions
-Message-Id: <1366993667-23294-5-git-send-email-g.liakhovetski@gmx.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 09 Apr 2013 21:07:02 +0000
+Subject: Re: Build regressions/improvements in v3.9-rc6
+Message-Id: <alpine.DEB.2.00.1304092304550.23730@ayla.of.borg>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
+References: <alpine.DEB.2.00.1304092304220.23715@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.00.1304092304220.23715@ayla.of.borg>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux Kernel Development <linux-kernel@vger.kernel.org>
+Cc: Linux/PPC Development <linuxppc-dev@lists.ozlabs.org>, linux-sh@vger.kernel.org
 
-Add DMA channel slave IDs and configuration entries for the r8a7740
-MMCIF controller.
+On Tue, 9 Apr 2013, Geert Uytterhoeven wrote:
+> JFYI, when comparing v3.9-rc6 to v3.9-rc5[3], the summaries are:
+>   - build errors: +8/-13
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7740.c        |   10 ++++++++++
- 2 files changed, 12 insertions(+), 0 deletions(-)
+Ignoring R_PPC64_REL24 truncated relocations, as usual:
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 7b1138f..536c021 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -42,6 +42,8 @@ enum {
- 	SHDMA_SLAVE_FSIB_TX,
- 	SHDMA_SLAVE_USBHS_TX,
- 	SHDMA_SLAVE_USBHS_RX,
-+	SHDMA_SLAVE_MMCIF_TX,
-+	SHDMA_SLAVE_MMCIF_RX,
- };
- 
- extern void r8a7740_meram_workaround(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 00c5a70..6b3ed42 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -588,6 +588,16 @@ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
- 		.addr		= 0xfe1f0064,
- 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xb5,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
- 	},
- };
- 
--- 
-1.7.2.5
+  + error: binder.c: undefined reference to `get_vm_area':  => .text+0x2fe8b8)
+  + error: binder.c: undefined reference to `map_vm_area':  => .text+0x2fa11c) 
+  + error: binder.c: undefined reference to `zap_page_range':  => .text+0x2fa354)
 
+sh4/sh-randconfig
+
+  + error: cuboot-pq2.c: undefined reference to `fsl_get_immr':  => .text+0x314)
+
+powerpc-randconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/6063/ (all 118 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/6041/ (all 118 configs)
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
