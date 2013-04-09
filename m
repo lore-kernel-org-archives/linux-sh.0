@@ -1,74 +1,244 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Apr 2013 13:24:24 +0000
-Subject: Re: [PATCH] ARM: sh-mobile: Fix symbol redefinition with r8a7740 and r8a7790 clocks
-Message-Id: <20130416132421.GA30365@verge.net.au>
+Date: Tue, 09 Apr 2013 13:38:06 +0000
+Subject: Re: [PATCH v3 2/7] clocksource: sh_cmt: Add OF support
+Message-Id: <20130409133805.GA21875@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366107012-24642-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366107012-24642-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
+ <1363535031-21402-2-git-send-email-hechtb+renesas@gmail.com>
+ <20130321130714.GE24470@verge.net.au>
+In-Reply-To: <20130321130714.GE24470@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 16, 2013 at 12:10:12PM +0200, Laurent Pinchart wrote:
-> Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
-> non-static. Compiling support for both SoCs thus result in a symbol
-> redefinition. Fix it by defining the arrays as static.
+On 木,  3月 21, 2013 at 10:07:15午後 +0900, Simon Horman wrote:
+> On Sun, Mar 17, 2013 at 04:43:46PM +0100, Bastian Hecht wrote:
+> > We add the capabilty to probe SH CMT timer devices using Device Tree
+> > setup.
+> > 
+> > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+> > ---
+> > v3: same (only patch 0003 changed)
+> > 
+> >  drivers/clocksource/sh_cmt.c |  109 +++++++++++++++++++++++++++++++++++++-----
 > 
-> To avoid further similar issues, also define the main_clks as static in
-> clock-r8a7740.c.
 > 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> This change appears to break booting of kzm9g-reference
+> with MMC enabled. I assume because it somehow causes CMT to
+> (once again) be initialised after SDHI and/or MMC.
+> 
+> Tested using next with the defconfig + CONFIG_MACH_KZM9G_REFERENCE=y +
+> initrd root fs.
 
-Hi Laurent,
+Ping.
 
-please split this into two patches, one for each SoC.
-
-> ---
->  arch/arm/mach-shmobile/clock-r8a7740.c | 4 ++--
->  arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
->  2 files changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-> index 8fc396a..a2a612f 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-> @@ -266,7 +266,7 @@ static struct clk fsiack_clk = {
->  static struct clk fsibck_clk = {
->  };
->  
-> -struct clk *main_clks[] = {
-> +static struct clk *main_clks[] = {
->  	&extalr_clk,
->  	&extal1_clk,
->  	&extal2_clk,
-> @@ -317,7 +317,7 @@ enum {
->  	DIV4_NR
->  };
->  
-> -struct clk div4_clks[DIV4_NR] = {
-> +static struct clk div4_clks[DIV4_NR] = {
->  	[DIV4_I]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT),
->  	[DIV4_ZG]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT),
->  	[DIV4_B]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA,  8, 0x6fff, CLK_ENABLE_ON_INIT),
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-> index a481003..bedd20c 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-> @@ -154,7 +154,7 @@ enum {
->  	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
->  };
->  
-> -struct clk div4_clks[DIV4_NR] = {
-> +static struct clk div4_clks[DIV4_NR] = {
->  	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
->  	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
->  	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+> >  1 file changed, 96 insertions(+), 13 deletions(-)
+> > 
+> > diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+> > index 08d0c41..79bc526 100644
+> > --- a/drivers/clocksource/sh_cmt.c
+> > +++ b/drivers/clocksource/sh_cmt.c
+> > @@ -34,10 +34,13 @@
+> >  #include <linux/module.h>
+> >  #include <linux/pm_domain.h>
+> >  #include <linux/pm_runtime.h>
+> > +#include <linux/of.h>
+> >  
+> >  struct sh_cmt_priv {
+> >  	void __iomem *mapbase;
+> >  	struct clk *clk;
+> > +	long channel_offset;
+> > +	int timer_bit;
+> >  	unsigned long width; /* 16 or 32 bit version of hardware block */
+> >  	unsigned long overflow_bit;
+> >  	unsigned long clear_bits;
+> > @@ -109,9 +112,7 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
+> >  
+> >  static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
+> >  {
+> > -	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+> > -
+> > -	return p->read_control(p->mapbase - cfg->channel_offset, 0);
+> > +	return p->read_control(p->mapbase - p->channel_offset, 0);
+> >  }
+> >  
+> >  static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
+> > @@ -127,9 +128,7 @@ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
+> >  static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
+> >  				      unsigned long value)
+> >  {
+> > -	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+> > -
+> > -	p->write_control(p->mapbase - cfg->channel_offset, 0, value);
+> > +	p->write_control(p->mapbase - p->channel_offset, 0, value);
+> >  }
+> >  
+> >  static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
+> > @@ -176,7 +175,6 @@ static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
+> >  
+> >  static void sh_cmt_start_stop_ch(struct sh_cmt_priv *p, int start)
+> >  {
+> > -	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+> >  	unsigned long flags, value;
+> >  
+> >  	/* start stop register shared by multiple timer channels */
+> > @@ -184,9 +182,9 @@ static void sh_cmt_start_stop_ch(struct sh_cmt_priv *p, int start)
+> >  	value = sh_cmt_read_cmstr(p);
+> >  
+> >  	if (start)
+> > -		value |= 1 << cfg->timer_bit;
+> > +		value |= 1 << p->timer_bit;
+> >  	else
+> > -		value &= ~(1 << cfg->timer_bit);
+> > +		value &= ~(1 << p->timer_bit);
+> >  
+> >  	sh_cmt_write_cmstr(p, value);
+> >  	raw_spin_unlock_irqrestore(&sh_cmt_lock, flags);
+> > @@ -673,9 +671,85 @@ static int sh_cmt_register(struct sh_cmt_priv *p, char *name,
+> >  	return 0;
+> >  }
+> >  
+> > -static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+> > +static const struct of_device_id of_sh_cmt_match[] = {
+> > +	{ .compatible = "renesas,cmt-timer" },
+> > +	{},
+> > +};
+> > +MODULE_DEVICE_TABLE(of, of_sh_cmt_match);
+> > +
+> > +static const int sh_cmt_offset_multiplier[] = { 0x60, 0x10, 0x40, 0x40, 0x40 };
+> > +#define CMT_MAX_CHANNELS	6
+> > +
+> > +static struct sh_timer_config *sh_cmt_parse_dt(struct device *dev)
+> > +{
+> > +	struct sh_timer_config *cfg;
+> > +	struct device_node *np = dev->of_node;
+> > +	u32 timer_id, channel_id, rating;
+> > +
+> > +	if (!IS_ENABLED(CONFIG_OF) || !np)
+> > +		return NULL;
+> > +
+> > +	cfg = devm_kzalloc(dev, sizeof(struct sh_timer_config), GFP_KERNEL);
+> > +	if (!cfg) {
+> > +		dev_err(dev, "failed to allocate DT config data\n");
+> > +		return NULL;
+> > +	}
+> > +
+> > +	if (of_property_read_u32(np, "renesas,device-id", &timer_id)) {
+> > +		dev_err(dev, "device id missing\n");
+> > +		return NULL;
+> > +	}
+> > +	if (timer_id >= ARRAY_SIZE(sh_cmt_offset_multiplier)) {
+> > +		dev_err(dev, "invalid device id\n");
+> > +		return NULL;
+> > +	}
+> > +
+> > +	if (of_property_read_u32(np, "renesas,channel-id", &channel_id)) {
+> > +		dev_err(dev, "channel id missing\n");
+> > +		return NULL;
+> > +	}
+> > +	if (channel_id >= CMT_MAX_CHANNELS) {
+> > +		dev_err(dev, "invalid channel id\n");
+> > +		return NULL;
+> > +	}
+> > +
+> > +	cfg->channel_offset = sh_cmt_offset_multiplier[timer_id] *
+> > +							(channel_id + 1);
+> > +	cfg->timer_bit = channel_id;
+> > +
+> > +	/*
+> > +	 * We convert the {source,event}-quality DT properties to linux specific
+> > +	 * clock{source,event}_ratings.
+> > +	 */
+> > +	if (!of_property_read_u32(np, "renesas,source-quality", &rating)) {
+> > +		if (rating > 10) {
+> > +			dev_err(dev, "invalid source-quality\n");
+> > +			return NULL;
+> > +		}
+> > +		if (rating)
+> > +			cfg->clocksource_rating = rating * 50 - 1;
+> > +	}
+> > +
+> > +	if (!of_property_read_u32(np, "renesas,event-quality", &rating)) {
+> > +		if (rating > 10) {
+> > +			dev_err(dev, "invalid event-quality\n");
+> > +			return NULL;
+> > +		}
+> > +		if (rating)
+> > +			cfg->clockevent_rating = rating * 50 - 1;
+> > +	}
+> > +
+> > +	if (!cfg->clocksource_rating && !cfg->clockevent_rating) {
+> > +		dev_err(dev, "source- and event-quality 0, timer is unused\n");
+> > +		return NULL;
+> > +	}
+> > +
+> > +	return cfg;
+> > +}
+> > +
+> > +static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev,
+> > +						struct sh_timer_config *cfg)
+> >  {
+> > -	struct sh_timer_config *cfg = pdev->dev.platform_data;
+> >  	struct resource *res;
+> >  	int irq, ret;
+> >  	ret = -ENXIO;
+> > @@ -762,6 +836,9 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+> >  		goto err2;
+> >  	}
+> >  
+> > +	p->channel_offset = cfg->channel_offset;
+> > +	p->timer_bit = cfg->timer_bit;
+> > +
+> >  	platform_set_drvdata(pdev, p);
+> >  
+> >  	return 0;
+> > @@ -777,7 +854,7 @@ err0:
+> >  static int sh_cmt_probe(struct platform_device *pdev)
+> >  {
+> >  	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
+> > -	struct sh_timer_config *cfg = pdev->dev.platform_data;
+> > +	struct sh_timer_config *cfg;
+> >  	int ret;
+> >  
+> >  	if (!is_early_platform_device(pdev)) {
+> > @@ -785,6 +862,11 @@ static int sh_cmt_probe(struct platform_device *pdev)
+> >  		pm_runtime_enable(&pdev->dev);
+> >  	}
+> >  
+> > +	if (pdev->dev.of_node)
+> > +		cfg = sh_cmt_parse_dt(&pdev->dev);
+> > +	else
+> > +		cfg = pdev->dev.platform_data;
+> > +
+> >  	if (p) {
+> >  		dev_info(&pdev->dev, "kept as earlytimer\n");
+> >  		goto out;
+> > @@ -796,7 +878,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
+> >  		return -ENOMEM;
+> >  	}
+> >  
+> > -	ret = sh_cmt_setup(p, pdev);
+> > +	ret = sh_cmt_setup(p, pdev, cfg);
+> >  	if (ret) {
+> >  		kfree(p);
+> >  		pm_runtime_idle(&pdev->dev);
+> > @@ -824,6 +906,7 @@ static struct platform_driver sh_cmt_device_driver = {
+> >  	.remove		= sh_cmt_remove,
+> >  	.driver		= {
+> >  		.name	= "sh_cmt",
+> > +		.of_match_table = of_match_ptr(of_sh_cmt_match),
+> >  	}
+> >  };
+> >  
+> > -- 
+> > 1.7.9.5
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
 > the body of a message to majordomo@vger.kernel.org
