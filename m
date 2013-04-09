@@ -1,86 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 08 Apr 2013 14:26:33 +0000
-Subject: Re: [PATCH 1/2] input: st1232: Add reset pin handling
-Message-Id: <1665503.UbR34e1lGM@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Apr 2013 22:26:08 +0000
+Subject: [PATCH v3 0/9] Reorganize R8A7779/Marzen USB code
+Message-Id: <201304100226.08967.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365254327-10408-1-git-send-email-hechtb+renesas@gmail.com> <2964968.zUPa6PMQYi@avalon> <CABYn4sznm2RWnRjR6NAi_iGe7D+tcFBtdbkEb9D9iGAhGOj2hQ@mail.gmail.com>
-In-Reply-To: <CABYn4sznm2RWnRjR6NAi_iGe7D+tcFBtdbkEb9D9iGAhGOj2hQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bastian Hecht <hechtb@gmail.com>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-input@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Bastian,
+Hello.
 
-On Monday 08 April 2013 14:43:26 Bastian Hecht wrote:
-> 2013/4/7 Laurent Pinchart <laurent.pinchart@ideasonboard.com>:
-> > On Saturday 06 April 2013 15:18:45 Bastian Hecht wrote:
-> >> We add the possiblity to hand over a GPIO number for the reset pin.
-> >> This way we can remove existing board code that takes care of it and
-> >> group this information properly in the platform data or in the device
-> >> tree confguration.
-> >> 
-> >> The implementation is analogous to the cy8ctmg110 driver, thanks.
-> >> 
-> >> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> >> ---
-> >> 
-> >>  .../bindings/input/touchscreen/sitronix-st1232.txt |   24 ++++++++++
-> >>  drivers/input/touchscreen/st1232.c                 |   47 ++++++++++++--
-> >>  include/linux/input/st1232_pdata.h                 |   13 ++++++
-> >>  3 files changed, 81 insertions(+), 3 deletions(-)
-> >>  create mode 100644
-> >> 
-> >> Documentation/devicetree/bindings/input/touchscreen/sitronix-st1232.txt
-> >> create mode 100644 include/linux/input/st1232_pdata.h
-> >> 
-> >> diff --git
-> >> a/Documentation/devicetree/bindings/input/touchscreen/sitronix-st1232.txt
-> >> b/Documentation/devicetree/bindings/input/touchscreen/sitronix-st1232.txt
-> >> new file mode 100644
-> >> index 0000000..1936969
-> >> --- /dev/null
-> >> +++
-> >> b/Documentation/devicetree/bindings/input/touchscreen/sitronix-st1232.txt
-> >> @@ -0,0 +1,24 @@
-> >> +* Sitronix st1232 touchscreen controller
-> >> +
-> >> +Required properties:
-> >> +- compatible: must be "sitronix,st1232"
-> >> +- reg: I2C address of the chip
-> >> +- interrupts: interrupt to which the chip is connected
-> >> +
-> >> +Optional properties:
-> >> +- sitronix,reset-pin: GPIO number of the reset pin
-> > 
-> > GPIO bindings use phandles, please see
-> > Documentation/devicetree/bindings/gpio/gpio.txt.
-> 
-> Ok done. I haven't tested that part yet as the pfc is not set up via the DT.
-> I saw in topic/pinmux-dt that you added OF support for the pfc, but I
-> couldn't apply the patch without conflicts. Do you think this part is going
-> to be merged to next any time soon?
+   Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130410' tag.  It was created to fix the shortcomings in the
+R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
+spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
+to touch both subtrees). The patches were conceived with the complete
+bisectability goal in mind.
 
-I need to rework the patches, I hope to get them merged in v3.11
+[1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
+[2/9] ehci-platform: add pre_setup() method to platform data
+[3/9] ARM: shmobile: R8A7779: setup EHCI internal buffer
+[4/9] rcar-phy: remove EHCI internal buffer setup
+[5/9] ARM: shmobile: R8A7779: remove USB PHY 2nd memory resource
+[6/9] rcar-phy: correct base address
+[7/9] rcar-phy: add platform data
+[8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
+[9/9] rcar-phy: handle platform data
 
-> >> +Example:
-> >> +
-> >> +     i2c@00000000 {
-> >> +             /* ... */
-> >> +
-> >> +             touchscreen@55 {
-> >> +                     compatible = "sitronix,st1232";
-> >> +                     reg = <0x55>;
-> >> +                     interrupts = <2 0>;
-> >> +                     sitronix,reset-pin = <166>;
-> >> +             };
-> >> +
-> >> +             /* ... */
-> >> +     };
+   I'm not sure thru which tree this patchset should be merged, however it turns
+out that it's too late now to push it thru Felipe Balbi's USB tree for 3.10
+(which would have been most convenient probably), and it's probably too late to
+merge thru Simon's tree for 3.10 too. So it now have to be postponed to 3.11,
+unfortunately...
 
--- 
-Regards,
-
-Laurent Pinchart
-
+WBR, Sergei
