@@ -1,55 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:12 +0000
-Subject: [PATCH 31/37] ARM: shmobile: r8a7740: Remove GETHER function GPIOs
-Message-Id: <1366671618-8796-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Apr 2013 22:59:12 +0000
+Subject: [PATCH 4/4] ARM: shmobile: BOCK-W: enable USB in defconfig
+Message-Id: <201304100259.13346.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201304100247.22615.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304100247.22615.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+Enable USB platform EHCI/OHCI and common PHY drivers in 'bockw_defconfig'.
+Enable USB storage driver and SCSI disk driver that it needs as well...
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 23 -----------------------
- 1 file changed, 23 deletions(-)
+ arch/arm/configs/bockw_defconfig |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 28c0542..3a8de9c 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -331,29 +331,6 @@ enum {
- 	GPIO_FN_IDE_INT,	GPIO_FN_IDE_RST,	GPIO_FN_IDE_DIRECTION,
- 	GPIO_FN_IDE_EXBUF_ENB,	GPIO_FN_IDE_IODACK,	GPIO_FN_IDE_IODREQ,
- 
--	/* RMII */
--	GPIO_FN_RMII_CRS_DV,	GPIO_FN_RMII_RX_ER,	GPIO_FN_RMII_RXD0,
--	GPIO_FN_RMII_RXD1,	GPIO_FN_RMII_TX_EN,	GPIO_FN_RMII_TXD0,
--	GPIO_FN_RMII_MDC,	GPIO_FN_RMII_TXD1,	GPIO_FN_RMII_MDIO,
--	GPIO_FN_RMII_REF50CK,	/* for RMII */
--	GPIO_FN_RMII_REF125CK,	/* for GMII */
--
--	/* GEther */
--	GPIO_FN_ET_TX_CLK,	GPIO_FN_ET_TX_EN,	GPIO_FN_ET_ETXD0,
--	GPIO_FN_ET_ETXD1,	GPIO_FN_ET_ETXD2,	GPIO_FN_ET_ETXD3,
--	GPIO_FN_ET_ETXD4,	GPIO_FN_ET_ETXD5, /* for GEther */
--	GPIO_FN_ET_ETXD6,	GPIO_FN_ET_ETXD7, /* for GEther */
--	GPIO_FN_ET_COL,		GPIO_FN_ET_TX_ER,
--	GPIO_FN_ET_RX_CLK,	GPIO_FN_ET_RX_DV,
--	GPIO_FN_ET_ERXD0,	GPIO_FN_ET_ERXD1,
--	GPIO_FN_ET_ERXD2,	GPIO_FN_ET_ERXD3,
--	GPIO_FN_ET_ERXD4,	GPIO_FN_ET_ERXD5, /* for GEther */
--	GPIO_FN_ET_ERXD6,	GPIO_FN_ET_ERXD7, /* for GEther */
--	GPIO_FN_ET_RX_ER,	GPIO_FN_ET_CRS,
--	GPIO_FN_ET_MDC,		GPIO_FN_ET_MDIO,
--	GPIO_FN_ET_LINK,	GPIO_FN_ET_PHY_INT,
--	GPIO_FN_ET_WOL,		GPIO_FN_ET_GTX_CLK,
--
- 	/* DMA0 */
- 	GPIO_FN_DREQ0,		GPIO_FN_DACK0,
- 
--- 
-1.8.1.5
+Index: renesas/arch/arm/configs/bockw_defconfig
+=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
++++ renesas/arch/arm/configs/bockw_defconfig
+@@ -48,6 +48,8 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CADENCE is not set
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+@@ -71,7 +73,14 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ # CONFIG_HWMON is not set
+-# CONFIG_USB_SUPPORT is not set
++CONFIG_USB=y
++CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_STORAGE=y
++CONFIG_USB_RCAR_PHY=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
 
