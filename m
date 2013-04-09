@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Apr 2013 11:55:27 +0000
+Date: Tue, 09 Apr 2013 15:01:54 +0000
 Subject: Re: [PATCH v2 2/2] ARM: shmobile: Armadillo800EVA: Move st1232 reset pin handling
-Message-Id: <20130409115524.GB13835@verge.net.au>
+Message-Id: <20130409150154.GB27787@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365425547-10391-1-git-send-email-hechtb+renesas@gmail.com>
  <1365425547-10391-2-git-send-email-hechtb+renesas@gmail.com>
@@ -47,4 +47,6 @@ On Tue, Apr 09, 2013 at 11:16:18AM +0200, Bastian Hecht wrote:
 > Ah sweet, I was indeed a bit confused about going back to the INTC as
 > primary controller.
 
-Sorry for the confusion.
+After all that I had to drop the patch as it depends on patch 1/2.
+Lets sort out which tree that patch is going through.
+I have sent an email to try and sort that out.
