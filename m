@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Apr 2013 08:58:02 +0000
+Date: Tue, 09 Apr 2013 08:59:06 +0000
 Subject: Re: [PATCH 00/02] sh-pfc: Initial r8a7790 PFC support
-Message-Id: <20130409085802.GJ18478@verge.net.au>
+Message-Id: <20130409085906.GK18478@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130408020834.29957.24249.sendpatchset@w520>
 In-Reply-To: <20130408020834.29957.24249.sendpatchset@w520>
@@ -10,34 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Apr 08, 2013 at 11:39:04AM +0200, Laurent Pinchart wrote:
-> Hi Simon,
+On Mon, Apr 08, 2013 at 11:18:11AM +0200, Laurent Pinchart wrote:
+> Hi Magnus,
 > 
-> On Monday 08 April 2013 11:13:43 Simon Horman wrote:
-> > On Mon, Apr 08, 2013 at 11:08:34AM +0900, Magnus Damm wrote:
-> > > sh-pfc: Initial r8a7790 PFC support
-> > > 
-> > > [PATCH 01/02] ARM: shmobile: Add second I/O range for r8a7790 PFC
-> > > [PATCH 02/02] sh-pfc: Initial r8a7790 PFC support
-> > > 
-> > > This mini-series contains initial support for the r8a7790 PFC.
-> > > Incremental future changes will move over to PINCTRL.
-> > > 
-> > > Signed-off-by: Magnus Damm <damm@opensource.se>
+> Thanks for the patches.
+> 
+> On Monday 08 April 2013 11:08:34 Magnus Damm wrote:
+> > sh-pfc: Initial r8a7790 PFC support
 > > 
-> > Thanks Magnus.
+> > [PATCH 01/02] ARM: shmobile: Add second I/O range for r8a7790 PFC
+> > [PATCH 02/02] sh-pfc: Initial r8a7790 PFC support
 > > 
-> > Laurent, can I get a review from you.
-> 
-> I've acked the patches.
-> 
-> > And also some indication of how you would like to queue these up.
+> > This mini-series contains initial support for the r8a7790 PFC.
+> > Incremental future changes will move over to PINCTRL.
 > > 
-> > The pinmux branch of my tree seems like a likely candidate.
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
 > 
-> That sounds good to me. I've posted a follow-up patch series that I would
-> like to get merged at the same time as these two patches. Is there still
-> time to get all that in v3.10 ?
+> For the whole series,
+> 
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-I think it is Borerline at this point and I would prefer to queue
-these things up for v3.11.
+01/02: Queued up in the soc-r8a7790 branch
+02/02: Queued up in the pinmux branch
