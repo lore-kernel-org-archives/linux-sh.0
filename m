@@ -1,84 +1,71 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 10 Apr 2013 12:16:03 +0000
+From: Jonathan Austin <jonathan.austin@arm.com>
+Date: Wed, 10 Apr 2013 13:35:05 +0000
 Subject: Re: v7_flush_kern_cache_louis flushes up to L2?
-Message-Id: <CABYn4swK_FB+nPO4vKZM8khp+mjaPwkAv_GF+XDg5SYz0VLf0Q@mail.gmail.com>
+Message-Id: <51656A89.9090600@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CABYn4sxUCoWhC_4qydzbCtZdQdetqFZ_u5WtXsghprQget9f5g@mail.gmail.com>
  <51655248.7000401@arm.com>
-In-Reply-To: <51655248.7000401@arm.com>
+ <CABYn4swK_FB+nPO4vKZM8khp+mjaPwkAv_GF+XDg5SYz0VLf0Q@mail.gmail.com>
+In-Reply-To: <CABYn4swK_FB+nPO4vKZM8khp+mjaPwkAv_GF+XDg5SYz0VLf0Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Jonny!
+Hi again Bastian,
 
-2013/4/10 Jonathan Austin <jonathan.austin@arm.com>:
-> Hi Bastian,
->
->
-> On 10/04/13 11:43, Bastian Hecht wrote:
+On 10/04/13 13:16, Bastian Hecht wrote:
+[...]
+>>> This flushes the data out up to the L2, right? The ARM docs say that
+>>> the Point of Unification would be my L2. I'm a bit confused by the
+>>> term "Level of Unification Inner Shareable" (that states that in an
+>>> SMP system L1 coherency is guaranteed and all is flushed to the L2?).
+>>>
 >>
->> Hello,
->>
->> I've got a Cortex-A9 UP with a L2 and want to submit some PM code I've
+>> As you say, for the A9 (from the TRM) the CLIDR reports LoUIS is the same as
+>> LoUU and both specify L2.
 >
+> Ok, this is the golden info I was looking for. So after cpu_suspend()
+> I am good with the following sequence?
+> flush L2 (outer_flush_all)
+> disable L2 (outer_disable)
+> Clear the SCTLR.C bit and issue an "isb"
+> flush L1 (v7_flush_dcache_all)
+
+This looks good but I think there's a minor modification to be made to 
+the sequence here:
+
+After you turn of the caches with the SCTLR.C bit, you can no longer hit 
+in the L1 cache:
+SCTLR.C = 0:
+"The Cortex-A9 L1 Data Cache is not enabled. All memory accesses to 
+Normal Memory Cacheable regions are treated as Normal Memory 
+Non-Cacheable, without lookup and without allocation in the L1 Data Cache."
+
+If you had dirty data in the L1 cache you will lose it at that point.
+
+So, you should flush L1 before turning off caches.
+
+Note that on SMP, you would also need to clean/flush again after turning 
+off the caches, as read-speculation could have sucked dirty data from 
+another cache in to your cache, which would need to be written back 
+before sleeping.
+
+> cpu_do_idle
 >
-> To clarify, is this an MPCore with a single core, or a genuine UP? This can
-> be established from the 'U' bit of the MPIDR.
->
+> and for resume:
+> invalidate L1
 
-I didn't actually read out the U bit, but I'm sure I've got no SCU, so
-I bet high that it's a genuine UP system.
+How do you plan to do this? I notice that there's an increasing tendency 
+to call v7_invalidate_l1 which isn't actually part of the cacheflush API 
+(see arch/arm/include/asm/cacheflush.h arch/arm/include/asm/glue-cache.h...)
 
->> written. Just to make sure I've made no mistake, it would be very
->> helpful if you can confirm a hypothesis I use in my code:
->>
->> v7_flush_kern_cache_louis: Flush the data cache up to Level of
->> Unification Inner Shareable
->>
->
-> Depending on whether you're SMP or UP (bearing in mind that you can be SMP,
-> but still only have one processor!) the IS is ignored in the
-> v7_flush_dcache_louis operation:
-> (from cache-v7.S)
->
->         mrc     p15, 1, r0, c0, c0, 1           @ read clidr, r0 = clidr
->         ALT_SMP(ands    r3, r0, #(7 << 21))     @ extract LoUIS from clidr
->         ALT_UP(ands     r3, r0, #(7 << 27))     @ extract LoUU from clidr
->         ALT_SMP(mov     r3, r3, lsr #20)        @ r3 = LoUIS * 2
->         ALT_UP(mov      r3, r3, lsr #26)        @ r3 = LoUU * 2
->         ...
->         flush levels based on value in r3
->
->
->> This flushes the data out up to the L2, right? The ARM docs say that
->> the Point of Unification would be my L2. I'm a bit confused by the
->> term "Level of Unification Inner Shareable" (that states that in an
->> SMP system L1 coherency is guaranteed and all is flushed to the L2?).
->>
->
-> As you say, for the A9 (from the TRM) the CLIDR reports LoUIS is the same as
-> LoUU and both specify L2.
+Does your cache definitely come up in an undefined state? If not, could 
+you use v7_flush_dcache_all? (see the comment above v7_invalidate_l1 in 
+arch/arm/mm/cache-v7.S)
 
-Ok, this is the golden info I was looking for. So after cpu_suspend()
-I am good with the following sequence?
-flush L2 (outer_flush_all)
-disable L2 (outer_disable)
-Clear the SCTLR.C bit and issue an "isb"
-flush L1 (v7_flush_dcache_all)
-cpu_do_idle
+Hope that helps,
 
-and for resume:
-invalidate L1
-(trust cpu_resume to resume the L1 and enable the SCTLR.C bit)
-resume L2 (outer_resume)
+Jonny
 
-> Does that make things clearer, or are you still unsure about something?
 
-If you could confirm the above sequence, I'm perfectly fine. Thanks
-for the quick and exhaustive support.
-
-Cheers,
-
- Bastian
