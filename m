@@ -1,82 +1,93 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 25 Apr 2013 10:41:38 +0000
-Subject: Re: [PATCH v2] mmc: tmio: reset the controller after power-up
-Message-Id: <Pine.LNX.4.64.1304251240360.21045@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 10 Apr 2013 09:10:27 +0000
+Subject: [PATCH] input: st1232: Convert to devm_* infrastructure
+Message-Id: <1365585027-8123-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304241143460.11670@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304241143460.11670@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, hechtb@gmail.com, Horman Simon <simon@horms.net>, Damm Magnus <magnus.damm@gmail.com>, "^[$B0p5H$5$s^[(B" <jinso.inayoshi@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Nguyen Hong Ky <nh-ky@jinso.co.jp>
+To: linux-input@vger.kernel.org
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Bastian Hecht <hechtb@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Chris
+Use the devm_* managed functions to allocate resources.
 
-On Wed, 24 Apr 2013, Guennadi Liakhovetski wrote:
-
-> This fixes two reported problems:
-> 1. after a system resume the controller isn't functioning until a command
->    runs on a timeout and a controller reset is performed.
-> 2. if a card is ejected during a running write operation, its re-insertion
->    isn't detected.
-> 
-> Reported-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-> Reported-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-
-Please, add the following tags, when applying:
-
-Tested-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-Tested-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
-
-Thanks
-Guennadi
-
-> ---
-> 
-> v2: this patch supersedes the earlier "mmc: tmio: postpone controller 
-> reset during resume" in that it extends the number of cases, in which the 
-> reset is applied. It turned out, it is needed not only after a resume, but 
-> also for recovery after an interrupted write. It also now applies on top 
-> of "[PATCH v2] MMC: tmio: fix unbalanced power-on calls with clock-gating 
-> enabled" http://article.gmane.org/gmane.linux.kernel.mmc/20233. Reporters 
-> are cordially invited to add their "Tested-by" tags ;-)
-> 
-> Chris, both these patches are fixes. Not sure whether it's still a good 
-> idea to push them for 3.9, maybe better get them into 3.10 and then to 
-> stable?
-> 
->  drivers/mmc/host/tmio_mmc_pio.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-> index 1d5ef64..fcb9503 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -863,6 +863,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
->  			tmio_mmc_clk_update(mmc);
->  			pm_runtime_get_sync(dev);
->  		}
-> +		if (host->power = TMIO_MMC_OFF_STOP)
-> +			tmio_mmc_reset(host);
->  		tmio_mmc_set_clock(host, ios->clock);
->  		if (host->power = TMIO_MMC_OFF_STOP)
->  			/* power up SD card and the bus */
-> @@ -1161,7 +1163,6 @@ int tmio_mmc_host_resume(struct device *dev)
->  	struct mmc_host *mmc = dev_get_drvdata(dev);
->  	struct tmio_mmc_host *host = mmc_priv(mmc);
->  
-> -	tmio_mmc_reset(host);
->  	tmio_mmc_enable_dma(host, true);
->  
->  	/* The MMC core will perform the complete set up */
-> -- 
-> 1.7.2.5
-> 
-> 
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/input/touchscreen/st1232.c | 31 +++++++++----------------------
+ 1 file changed, 9 insertions(+), 22 deletions(-)
+
+Compile-tested only.
+
+diff --git a/drivers/input/touchscreen/st1232.c b/drivers/input/touchscreen/st1232.c
+index d9d05e2..f091451 100644
+--- a/drivers/input/touchscreen/st1232.c
++++ b/drivers/input/touchscreen/st1232.c
+@@ -157,12 +157,10 @@ static int st1232_ts_probe(struct i2c_client *client,
+ 	}
+ 
+ 
+-	ts = kzalloc(sizeof(struct st1232_ts_data), GFP_KERNEL);
+-	input_dev = input_allocate_device();
+-	if (!ts || !input_dev) {
+-		error = -ENOMEM;
+-		goto err_free_mem;
+-	}
++	ts = devm_kzalloc(&client->dev, sizeof(*ts), GFP_KERNEL);
++	input_dev = devm_input_allocate_device(&client->dev);
++	if (!ts || !input_dev)
++		return -ENOMEM;
+ 
+ 	ts->client = client;
+ 	ts->input_dev = input_dev;
+@@ -179,41 +177,30 @@ static int st1232_ts_probe(struct i2c_client *client,
+ 	input_set_abs_params(input_dev, ABS_MT_POSITION_X, MIN_X, MAX_X, 0, 0);
+ 	input_set_abs_params(input_dev, ABS_MT_POSITION_Y, MIN_Y, MAX_Y, 0, 0);
+ 
+-	error = request_threaded_irq(client->irq, NULL, st1232_ts_irq_handler,
+-				     IRQF_ONESHOT, client->name, ts);
++	error = devm_request_threaded_irq(&client->dev, client->irq, NULL,
++					  st1232_ts_irq_handler, IRQF_ONESHOT,
++					  client->name, ts);
+ 	if (error) {
+ 		dev_err(&client->dev, "Failed to register interrupt\n");
+-		goto err_free_mem;
++		return error;
+ 	}
+ 
+ 	error = input_register_device(ts->input_dev);
+ 	if (error) {
+ 		dev_err(&client->dev, "Unable to register %s input device\n",
+ 			input_dev->name);
+-		goto err_free_irq;
++		return error;
+ 	}
+ 
+ 	i2c_set_clientdata(client, ts);
+ 	device_init_wakeup(&client->dev, 1);
+ 
+ 	return 0;
+-
+-err_free_irq:
+-	free_irq(client->irq, ts);
+-err_free_mem:
+-	input_free_device(input_dev);
+-	kfree(ts);
+-	return error;
+ }
+ 
+ static int st1232_ts_remove(struct i2c_client *client)
+ {
+-	struct st1232_ts_data *ts = i2c_get_clientdata(client);
+-
+ 	device_init_wakeup(&client->dev, 0);
+-	free_irq(client->irq, ts);
+-	input_unregister_device(ts->input_dev);
+-	kfree(ts);
+ 
+ 	return 0;
+ }
+-- 
+Regards,
+
+Laurent Pinchart
+
