@@ -1,28 +1,43 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 01 Apr 2013 16:58:30 +0000
-Subject: Re: [PATCH 6/9] cpufreq: Don't check if cpu is online/offline for cpufreq callbacks
-Message-Id: <20130401.125830.1655034418750471341.davem@davemloft.net>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 10 Apr 2013 22:19:43 +0000
+Subject: [PATCH/RFC 0/6] DMA: shdma: add Device Tree support
+Message-Id: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1364820620.git.viresh.kumar@linaro.org>
-        <cover.1364820620.git.viresh.kumar@linaro.org>
-        <cd771cb37feb4e79172548ed342ad194ee31a384.1364820620.git.viresh.kumar@linaro.org>
-In-Reply-To: <cd771cb37feb4e79172548ed342ad194ee31a384.1364820620.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: viresh.kumar@linaro.org
-Cc: rjw@sisk.pl, cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, ralf@linux-mips.org, lethal@linux-sh.org, trenn@suse.de, bp@alien8.de, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Mon,  1 Apr 2013 18:27:46 +0530
+This patch series adds Device Tree support to the shdma dmaengine driver 
+and illustraits its use with the kzm9g-reference board's MMCIF interface.
 
-> cpufreq layer doesn't call cpufreq driver's callback for any offline cpu and so
-> checking that isn't useful.
-> 
-> Lets get rid of it.
-> 
-> Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-For sparc bits:
+Guennadi Liakhovetski (6):
+  DMA: shdma: (cosmetic) don't re-calculate a pointer
+  DMA: shdma: shdma_chan_filter() has to be in shdma-base.h
+  DMA: shdma: add DT support
+  ARM: shmobile: sh73a0: add support for the DMA0 controller in DT
+  mmc: sh_mmcif: add support for Device Tree DMA bindings
+  ARM: shmobile: kzm9g-reference: add DMA channels to the MMCIF DT
 
-Acked-by: David S. Miller <davem@davemloft.net>
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    3 ++
+ arch/arm/boot/dts/sh73a0.dtsi                |   36 ++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c        |    4 ++
+ drivers/dma/sh/shdma-base.c                  |   51 +++++++++++++++++++++++---
+ drivers/dma/sh/shdma.c                       |   46 ++++++++++++++++++++----
+ drivers/mmc/host/sh_mmcif.c                  |   29 +++++++++------
+ include/linux/sh_dma.h                       |    2 -
+ include/linux/shdma-base.h                   |    6 +++
+ 8 files changed, 151 insertions(+), 26 deletions(-)
+
+-- 
+1.7.2.5
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
