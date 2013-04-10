@@ -1,41 +1,27 @@
 From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 10 Apr 2013 21:38:00 +0000
-Subject: Re: [PATCH v2 1/2] input: st1232: Add reset pin handling
-Message-Id: <CABYn4sx+9aOTsKfTHOcEtBH2U9V641tmbvvYmEGujpacKSD2HA@mail.gmail.com>
+Date: Wed, 10 Apr 2013 10:43:13 +0000
+Subject: v7_flush_kern_cache_louis flushes up to L2?
+Message-Id: <CABYn4sxUCoWhC_4qydzbCtZdQdetqFZ_u5WtXsghprQget9f5g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365425547-10391-1-git-send-email-hechtb+renesas@gmail.com>
-	<20130410065114.GA21515@core.coreip.homeip.net>
-	<3156128.fKWFDgdS29@avalon>
-In-Reply-To: <3156128.fKWFDgdS29@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-input@vger.kernel.org, Tony SIM <chinyeow.sim.xt@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi all,
+Hello,
 
-2013/4/10 Laurent Pinchart <laurent.pinchart@ideasonboard.com>:
-> Hi Dmitry,
->
-> On Tuesday 09 April 2013 23:51:14 Dmitry Torokhov wrote:
->> On Mon, Apr 08, 2013 at 02:52:26PM +0200, Bastian Hecht wrote:
->
-> [snip]
->
->> > +           error = devm_gpio_request(&client->dev, ts->reset_gpio, NULL);
->>
->> Frankly I do not like mixing managed and noon-managed resources. Maybe
->> the entire driver needs to be converted to managed resources?
->
-> I've just sent a patch to do so.
+I've got a Cortex-A9 UP with a L2 and want to submit some PM code I've
+written. Just to make sure I've made no mistake, it would be very
+helpful if you can confirm a hypothesis I use in my code:
 
-Thanks Laurent! I've tested it - works fine.
+v7_flush_kern_cache_louis: Flush the data cache up to Level of
+Unification Inner Shareable
 
-Dimitri, I've addressed your suggestions and use gpio_valid and have
-reordered the probing for platform and OF data. Thanks for your
-feedback. I've based my changes on top of it and will post it shortly.
+This flushes the data out up to the L2, right? The ARM docs say that
+the Point of Unification would be my L2. I'm a bit confused by the
+term "Level of Unification Inner Shareable" (that states that in an
+SMP system L1 coherency is guaranteed and all is flushed to the L2?).
 
-Cheers,
+Thanks,
 
  Bastian
