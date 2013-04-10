@@ -1,40 +1,28 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 05 Apr 2013 16:33:39 +0000
-Subject: Re: [PATCH 7/8] ARM: shmobile: Marzen: pass platform data to USB PHY device
-Message-Id: <515EFCE3.4060805@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 10 Apr 2013 05:20:03 +0000
+Subject: Re: [PATCH/RFC 0/2] wait for MSTP clocks to start
+Message-Id: <20130410052003.GB29735@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304050310.39289.sergei.shtylyov@cogentembedded.com>
- <20130405004445.GQ29203@verge.net.au>
-In-Reply-To: <20130405004445.GQ29203@verge.net.au>
+References: <Pine.LNX.4.64.1303221415490.12375@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1303221415490.12375@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+On Wed, Mar 27, 2013 at 02:31:38PM +0900, Simon Horman wrote:
+> On Fri, Mar 22, 2013 at 02:24:22PM +0100, Guennadi Liakhovetski wrote:
+> > Hi
+> > 
+> > These patches add an ability to wait for MSTP clocks to start by reading 
+> > back their status registers repeatedly, until they update. This assumes, 
+> > that *MSTPCR and respective MSTPSR registers use the same bits for the 
+> > same clocks. Patches are marked "RFC," because I think at least one ack 
+> > is required ;-)
+> 
+> Thanks Guennadi.
+> 
+> Magnus, I have no particular objections to these changes.
+> What are your thoughts?
 
-On 05-04-2013 4:44, Simon Horman wrote:
-
->> Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
->> platform data, we now need a way to pass those platform data from the board file
->> to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
->> r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
->> passed platform data using platform_device_register_resndata() call; creating
->> this function involves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
->> so that it will no longer be registered for the generic R8A7779 machine (where
->> we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
->> to load as well.
-
->> For the Marzen board, this new function will be called from marzen_init() to
->> register the USB PHY device early enough.
-
-> As per my comment regarding patch 1, I wonder if this could
-> be split into an SoC patch and a board patch.
-
-    No, that'll break bisection as it will cause the PHY driver to not be 
-registered after the SoC patch, and hence EHCI/OHCI drivers won't load too.
-
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-WBR, Sergei
-
+Magnus: ping
