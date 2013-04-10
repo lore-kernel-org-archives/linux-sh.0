@@ -1,27 +1,55 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 10 Apr 2013 10:43:13 +0000
-Subject: v7_flush_kern_cache_louis flushes up to L2?
-Message-Id: <CABYn4sxUCoWhC_4qydzbCtZdQdetqFZ_u5WtXsghprQget9f5g@mail.gmail.com>
+From: Jonathan Austin <jonathan.austin@arm.com>
+Date: Wed, 10 Apr 2013 11:51:36 +0000
+Subject: Re: v7_flush_kern_cache_louis flushes up to L2?
+Message-Id: <51655248.7000401@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <CABYn4sxUCoWhC_4qydzbCtZdQdetqFZ_u5WtXsghprQget9f5g@mail.gmail.com>
+In-Reply-To: <CABYn4sxUCoWhC_4qydzbCtZdQdetqFZ_u5WtXsghprQget9f5g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+Hi Bastian,
 
-I've got a Cortex-A9 UP with a L2 and want to submit some PM code I've
-written. Just to make sure I've made no mistake, it would be very
-helpful if you can confirm a hypothesis I use in my code:
+On 10/04/13 11:43, Bastian Hecht wrote:
+> Hello,
+>
+> I've got a Cortex-A9 UP with a L2 and want to submit some PM code I've
 
-v7_flush_kern_cache_louis: Flush the data cache up to Level of
-Unification Inner Shareable
+To clarify, is this an MPCore with a single core, or a genuine UP? This 
+can be established from the 'U' bit of the MPIDR.
 
-This flushes the data out up to the L2, right? The ARM docs say that
-the Point of Unification would be my L2. I'm a bit confused by the
-term "Level of Unification Inner Shareable" (that states that in an
-SMP system L1 coherency is guaranteed and all is flushed to the L2?).
+> written. Just to make sure I've made no mistake, it would be very
+> helpful if you can confirm a hypothesis I use in my code:
+>
+> v7_flush_kern_cache_louis: Flush the data cache up to Level of
+> Unification Inner Shareable
+>
 
-Thanks,
+Depending on whether you're SMP or UP (bearing in mind that you can be 
+SMP, but still only have one processor!) the IS is ignored in the 
+v7_flush_dcache_louis operation:
+(from cache-v7.S)
 
- Bastian
+         mrc     p15, 1, r0, c0, c0, 1           @ read clidr, r0 = clidr
+         ALT_SMP(ands    r3, r0, #(7 << 21))     @ extract LoUIS from clidr
+         ALT_UP(ands     r3, r0, #(7 << 27))     @ extract LoUU from clidr
+         ALT_SMP(mov     r3, r3, lsr #20)        @ r3 = LoUIS * 2
+         ALT_UP(mov      r3, r3, lsr #26)        @ r3 = LoUU * 2
+	...
+	flush levels based on value in r3
+
+> This flushes the data out up to the L2, right? The ARM docs say that
+> the Point of Unification would be my L2. I'm a bit confused by the
+> term "Level of Unification Inner Shareable" (that states that in an
+> SMP system L1 coherency is guaranteed and all is flushed to the L2?).
+>
+
+As you say, for the A9 (from the TRM) the CLIDR reports LoUIS is the 
+same as LoUU and both specify L2.
+
+Does that make things clearer, or are you still unsure about something?
+
+Jonny
+
