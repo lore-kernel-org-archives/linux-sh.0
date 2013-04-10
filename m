@@ -1,116 +1,71 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 09 Apr 2013 22:32:30 +0000
-Subject: [PATCH v3 4/9] rcar-phy: remove EHCI internal buffer setup
-Message-Id: <201304100232.30889.sergei.shtylyov@cogentembedded.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Wed, 10 Apr 2013 08:27:48 +0000
+Subject: Re: [PATCH v3 4/9] rcar-phy: remove EHCI internal buffer setup
+Message-Id: <20130410082748.GJ7983@arwen.pp.htv.fi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="SLauP2uySp+9cKYP"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <201304100232.30889.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304100232.30889.sergei.shtylyov@cogentembedded.com>
 To: linux-arm-kernel@lists.infradead.org
 
-Now that the EHCI internal  buffer setup is done by the platform code, we  can
-remove  such code from this driver as it  never  really belonged here.  We also
-no longer need the 2nd memory region now (2nd EHCI controller is simply missing
-in e.g. R8A7778 SoC).
+--SLauP2uySp+9cKYP
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-The patch has been tested on the Marzen and BOCK-W boards.
+Hi,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+On Wed, Apr 10, 2013 at 02:32:30AM +0400, Sergei Shtylyov wrote:
+> Now that the EHCI internal  buffer setup is done by the platform code, we=
+  can
+> remove  such code from this driver as it  never  really belonged here.  W=
+e also
+> no longer need the 2nd memory region now (2nd EHCI controller is simply m=
+issing
+> in e.g. R8A7778 SoC).
+>=20
+> The patch has been tested on the Marzen and BOCK-W boards.
+>=20
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+>=20
+> ---
+> Changes since version 2:
+> - added a note about testing to the changelog;
+> - added ACKs from Simon Horman and Kuninori Morimoto.
+>=20
+> Changes since the original posting:
+> - split R8A7779 SoC file change to a separate patch.
+>=20
+>  drivers/usb/phy/rcar-phy.c |   28 ++++------------------------
 
----
-Changes since version 2:
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
+you do realise this won't apply, right ?
 
-Changes since the original posting:
-- split R8A7779 SoC file change to a separate patch.
+--=20
+balbi
 
- drivers/usb/phy/rcar-phy.c |   28 ++++------------------------
- 1 file changed, 4 insertions(+), 24 deletions(-)
+--SLauP2uySp+9cKYP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -23,8 +23,6 @@
- #define USBEH0		0x080C
- #define USBOH0		0x081C
- #define USBCTL0		0x0858
--#define EIIBC1		0x0094
--#define EIIBC2		0x009C
- 
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
-@@ -40,7 +38,6 @@ struct rcar_usb_phy_priv {
- 	spinlock_t lock;
- 
- 	void __iomem *reg0;
--	void __iomem *reg1;
- 	int counter;
- };
- 
-@@ -59,7 +56,6 @@ static int rcar_usb_phy_init(struct usb_
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
- 	void __iomem *reg0 = priv->reg0;
--	void __iomem *reg1 = priv->reg1;
- 	int i;
- 	u32 val;
- 	unsigned long flags;
-@@ -97,19 +93,6 @@ static int rcar_usb_phy_init(struct usb_
- 		iowrite32(0x00000000, (reg0 + USBPCTRL0));
- 
- 		/*
--		 * EHCI IP internal buffer setting
--		 * EHCI IP internal buffer enable
--		 *
--		 * These are recommended value of a datasheet
--		 * see [USB :: EHCI internal buffer setting]
--		 */
--		iowrite32(0x00ff0040, (reg0 + EIIBC1));
--		iowrite32(0x00ff0040, (reg1 + EIIBC1));
--
--		iowrite32(0x00000001, (reg0 + EIIBC2));
--		iowrite32(0x00000001, (reg1 + EIIBC2));
--
--		/*
- 		 * Bus alignment settings
- 		 */
- 
-@@ -145,14 +128,13 @@ static void rcar_usb_phy_shutdown(struct
- static int rcar_usb_phy_probe(struct platform_device *pdev)
- {
- 	struct rcar_usb_phy_priv *priv;
--	struct resource *res0, *res1;
-+	struct resource *res0;
- 	struct device *dev = &pdev->dev;
--	void __iomem *reg0, *reg1;
-+	void __iomem *reg0;
- 	int ret;
- 
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
--	if (!res0 || !res1) {
-+	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
- 		return -EINVAL;
- 	}
-@@ -164,8 +146,7 @@ static int rcar_usb_phy_probe(struct pla
- 	 * this driver can't use devm_request_and_ioremap(dev, res) here
- 	 */
- 	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
--	reg1 = devm_ioremap_nocache(dev, res1->start, resource_size(res1));
--	if (!reg0 || !reg1) {
-+	if (!reg0) {
- 		dev_err(dev, "ioremap error\n");
- 		return -ENOMEM;
- 	}
-@@ -177,7 +158,6 @@ static int rcar_usb_phy_probe(struct pla
- 	}
- 
- 	priv->reg0		= reg0;
--	priv->reg1		= reg1;
- 	priv->counter		= 0;
- 	priv->phy.dev		= dev;
- 	priv->phy.label		= dev_name(dev);
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJRZSKEAAoJEIaOsuA1yqREB64P/RP9rhzUJJOWkD3E5I0Ub7To
+n/lVIXunjGOQE+1Edetzo4PJLb3oxkCzbk38NyoKbT99R0hqmrsn3TFUubXQ/LD5
+QI1PW5X7T41GwJcykrIAFnPkWc9mxUD+4BGOG8vGy7qgljoyvJoBAXMu/xznyiX7
+71uSYJzs0j9F94y6wocxD6cvwEupzpjqFOS0gqxATjHq8hqlsTk37Onr3W8kwqiW
+uQxTOhORtetdhXs5xH/jv887AKTpFfnWSaD8W622yPtMrAqttR/722wwaaUIUvFw
+Nb2bp9QDwU5TICAU+RN/WInN+nFFD3UOMVJyKw8WYAjRKYwd5SNq+8+aPI5R5Pm2
+aQdDtfBi16A4g095CA3673kApzg6264H2U6QxiYh2/QTN29tDs2Nb5MwLu6ujuPJ
+bbKMoDLcn+O1wIINkJbiD/9Jf/yvl+ogPe+Fy0zm8ZS6e/hKdey4jrUXT0ehWlCl
+MhuWFUzolojwYP7sdX76BLlJ98VhBtpFB3JniKe8T2Eb1DmOfoVSA5vXHfrCuFvr
+Z+FEL9y7zUtKMFsLOKYXsucHaZV5p6gYiehyDGDTLBZ9W8xYQX0Ah12394RZkSKd
+d9J8gIY3jxWywa6PYjbGxJEq3GDQWrX2+SIxWDbQx/bURKMj3FwGnEM7uwRz+GaS
+n0CXAJ80ePPxEQLcDqkn
+=3PNI
+-----END PGP SIGNATURE-----
+
+--SLauP2uySp+9cKYP--
