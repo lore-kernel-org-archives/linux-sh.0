@@ -1,66 +1,47 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 16:03:41 +0000
-Subject: [PATCH v5 3/3] ARM: shmobile: BOCK-W: add USB support
-Message-Id: <201304232003.41838.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 10 Apr 2013 22:19:45 +0000
+Subject: [PATCH 2/6] DMA: shdma: shdma_chan_filter() has to be in shdma-base.h
+Message-Id: <1365632389-2249-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304231953.42505.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304231953.42505.sergei.shtylyov@cogentembedded.com>
+References: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Register the USB PHY device from bockw_init(), passing the platform  data to it.
-Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
-get registered too...
+shdma_chan_filter() is a function, provided by the shdma-base.c module,
+move its declaration to the appropriate header.
 
-The patch has been tested on the BOCK-W board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
-Changes since version 4:
-- annotated 'usb_phy_platform_data' as '__initdata' since it's kmemdup()'ed
-  while registering the platform device anyway;
-- refreshed the patch.
+ include/linux/sh_dma.h     |    2 --
+ include/linux/shdma-base.h |    1 +
+ 2 files changed, 1 insertions(+), 2 deletions(-)
 
-Changes since version 3:
-- removed initializer for 'usb_phy_platform_data' letting it be set to all 0s;
-- refreshed the patch.
-
-Changes since version 2:
-- refreshed the patch.
-
-Changes since the original posting:
-- removed initializer for no longer existing field in 'usb_phy_platform_data',
-  modified the comment to the 'ferrite_bead' field initializer.
-
- arch/arm/mach-shmobile/board-bockw.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -63,6 +63,8 @@ static struct sh_mobile_sdhi_info sdhi0_
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index b64d6be..4e83f3e 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -99,6 +99,4 @@ struct sh_dmae_pdata {
+ #define CHCR_TE	0x00000002
+ #define CHCR_IE	0x00000004
  
-+static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-@@ -91,6 +93,7 @@ static void __init bockw_init(void)
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
+-bool shdma_chan_filter(struct dma_chan *chan, void *arg);
+-
+ #endif
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index a3728bf..9a93897 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -122,5 +122,6 @@ void shdma_chan_remove(struct shdma_chan *schan);
+ int shdma_init(struct device *dev, struct shdma_dev *sdev,
+ 		    int chan_num);
+ void shdma_cleanup(struct shdma_dev *sdev);
++bool shdma_chan_filter(struct dma_chan *chan, void *arg);
  
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
-@@ -146,4 +149,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_machine	= bockw_init,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
-+	.init_late      = r8a7778_init_late,
- MACHINE_END
+ #endif
+-- 
+1.7.2.5
+
