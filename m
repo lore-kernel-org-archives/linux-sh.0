@@ -1,97 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 09 Apr 2013 22:39:47 +0000
-Subject: [PATCH v3 9/9] rcar-phy: handle platform data
-Message-Id: <201304100239.47852.sergei.shtylyov@cogentembedded.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Wed, 10 Apr 2013 09:02:38 +0000
+Subject: Re: [PATCH v3 9/9] rcar-phy: handle platform data
+Message-Id: <20130410090238.GP7983@arwen.pp.htv.fi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ngPZezdD7QsvFaqQ"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <201304100239.47852.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304100239.47852.sergei.shtylyov@cogentembedded.com>
 To: linux-sh@vger.kernel.org
 
-Set the USBPCTRL0 register from the passed platform data in rcar_usb_phy_init();
-don't reset it to 0 in  rcar_usb_phy_shutdown()  anymore as that does not make
-sense.  Also, don't allow the driver's probe to succeed when the platform data
-are not supplied with a device.
+--ngPZezdD7QsvFaqQ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-The patch has been tested on the Marzen and BOCK-W boards.
+On Wed, Apr 10, 2013 at 02:39:47AM +0400, Sergei Shtylyov wrote:
+> Set the USBPCTRL0 register from the passed platform data in rcar_usb_phy_=
+init();
+> don't reset it to 0 in  rcar_usb_phy_shutdown()  anymore as that does not=
+ make
+> sense.  Also, don't allow the driver's probe to succeed when the platform=
+ data
+> are not supplied with a device.
+>=20
+> The patch has been tested on the Marzen and BOCK-W boards.
+>=20
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+NAK due to previous comments (passing register contents via pdata).
 
----
-Changes since version 2:
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
+--=20
+balbi
 
- drivers/usb/phy/rcar-phy.c |   18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+--ngPZezdD7QsvFaqQ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -1,8 +1,9 @@
- /*
-  * Renesas R-Car USB phy driver
-  *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2012-2013 Renesas Solutions Corp.
-  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License version 2 as
-@@ -11,10 +12,11 @@
- 
- #include <linux/delay.h>
- #include <linux/io.h>
--#include <linux/usb/otg.h>
- #include <linux/platform_device.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
-+#include <linux/usb/otg.h>
-+#include <linux/usb/rcar-phy.h>
- 
- /* REGS block */
- #define USBPCTRL0	0x00
-@@ -55,6 +57,7 @@ static int rcar_usb_phy_init(struct usb_
- {
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
-+	struct rcar_phy_platform_data *pdata = dev->platform_data;
- 	void __iomem *reg0 = priv->reg0;
- 	int i;
- 	u32 val;
-@@ -90,7 +93,7 @@ static int rcar_usb_phy_init(struct usb_
- 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
- 
- 		/* set platform specific port settings */
--		iowrite32(0x00000000, (reg0 + USBPCTRL0));
-+		iowrite32(pdata->usbpctrl0, (reg0 + USBPCTRL0));
- 
- 		/*
- 		 * Bus alignment settings
-@@ -117,10 +120,8 @@ static void rcar_usb_phy_shutdown(struct
- 
- 	spin_lock_irqsave(&priv->lock, flags);
- 
--	if (priv->counter-- = 1) { /* last user */
--		iowrite32(0x00000000, (reg0 + USBPCTRL0));
-+	if (priv->counter-- = 1)	/* last user */
- 		iowrite32(0x00000000, (reg0 + USBPCTRL1));
--	}
- 
- 	spin_unlock_irqrestore(&priv->lock, flags);
- }
-@@ -133,6 +134,11 @@ static int rcar_usb_phy_probe(struct pla
- 	void __iomem *reg0;
- 	int ret;
- 
-+	if (!pdev->dev.platform_data) {
-+		dev_err(dev, "No platform data\n");
-+		return -EINVAL;
-+	}
-+
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJRZSquAAoJEIaOsuA1yqRELFUP/2/L1ngwZYQS3UIX4Z6kaz+H
+cV0tjXJMs1ziV0On/Jvaha71LqR5QDbya6VO0yW/IgWFRogDJm7vU1fu0StVmymY
+YJkQNUZAvq4Deqyuxusacl5aiTEiHqLQcxgBwiwSXKIx9Te7dO+2nU3UsxtUqUbi
+baebW+JkbgRRSGqGAl7xshuifnK+coyaBD5ItJpcSIjGQ0u35Jg4EaaMvg2BgZPI
+rQbcDo0cRHpMAspj8QX88VrIZSCmr4Im1rf3kGu3Ql0NDwi1L+Dqn/J4lIzvUVCj
+ZOXqlklrDf2HZ2q9aMgIwZ84JxyiA49TgUUP8OBpgP9x50F0mSMEb7j/8pzHmz9j
+1beD9prUWZw3b6uccSe5EZ/Q4Txj7+I4cacOx0suyamkum6riA0q7a1Ll7jlaUBW
+ORz4sIZvLiN6D+NmTxC3Z8AmiZqyC4oWEwL7qLwy2y5z5UqlXbptQtz7b9cGjekG
++9qDOm402uP+CnjEMUUyfKY4vHIvH/7XjCF9wCCjj8iDm5cPcEvagFPj0B2f2/tO
+HszENNYcnZNl8aGgCoM2JWmSK5F5kLCBAlfBD19tAU5OhkYcr2kx44Mqw08csK64
+L3lhGRdCLfWN7jaan/2bmwyaMI38xxto+aD7xsVVFU8UCgKB1kuWkzVsc0EFxL7V
+qFVv6VVbzY42NP+8ZSK8
+=9Lnf
+-----END PGP SIGNATURE-----
+
+--ngPZezdD7QsvFaqQ--
