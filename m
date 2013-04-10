@@ -1,81 +1,64 @@
-From: Jiang Liu <liuj97@gmail.com>
-Date: Sat, 06 Apr 2013 14:32:33 +0000
-Subject: [PATCH v4, part3 34/41] mm/SH: prepare for removing num_physpages and simplify mem_init()
-Message-Id: <1365258760-30821-35-git-send-email-jiang.liu@huawei.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 10 Apr 2013 21:41:23 +0000
+Subject: [PATCH v3 2/2] ARM: shmobile: Armadillo800EVA: Move st1232 reset pin handling
+Message-Id: <1365630083-9758-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365258760-30821-1-git-send-email-jiang.liu@huawei.com>
-In-Reply-To: <1365258760-30821-1-git-send-email-jiang.liu@huawei.com>
+References: <1365630083-9758-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1365630083-9758-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Jiang Liu <jiang.liu@huawei.com>, David Rientjes <rientjes@google.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, James Bottomley <James.Bottomley@HansenPartnership.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, David Howells <dhowells@redhat.com>, Mark Salter <msalter@redhat.com>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-input@vger.kernel.org
+Cc: Laurent Pichart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>
 
-Prepare for removing num_physpages and simplify mem_init().
+We no longer need to set up the reset pin for the st1232 in the board
+code, but can pass the GPIO number via the platform data to the driver.
+This results in a cleaner grouping of the device setup.
 
-Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Wen Congyang <wency@cn.fujitsu.com>
-Cc: Tang Chen <tangchen@cn.fujitsu.com>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/sh/mm/init.c |   25 ++++---------------------
- 1 file changed, 4 insertions(+), 21 deletions(-)
+v3:
+same
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index aecd913..3826596 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -407,24 +407,18 @@ unsigned int mem_init_done = 0;
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 81db74a..885c6a9 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -24,6 +24,7 @@
+ #include <linux/err.h>
+ #include <linux/kernel.h>
+ #include <linux/input.h>
++#include <linux/input/st1232_pdata.h>
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+@@ -997,10 +998,15 @@ static struct platform_device i2c_gpio_device = {
+ };
  
- void __init mem_init(void)
- {
--	int codesize, datasize, initsize;
--	int nid;
-+	pg_data_t *pgdat;
+ /* I2C */
++static struct st1232_pdata st1232_i2c0_pdata = {
++	.reset_gpio = 166,
++};
++
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("st1232-ts", 0x55),
+ 		.irq = irq_pin(10),
++		.platform_data = &st1232_i2c0_pdata,
+ 	},
+ 	{
+ 		I2C_BOARD_INFO("wm8978", 0x1a),
+@@ -1121,7 +1127,6 @@ static void __init eva_init(void)
  
- 	iommu_init();
+ 	/* Touchscreen */
+ 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
  
--	num_physpages = 0;
- 	high_memory = NULL;
- 
--	for_each_online_node(nid) {
--		pg_data_t *pgdat = NODE_DATA(nid);
-+	for_each_online_pgdat(pgdat) {
- 		void *node_high_memory;
- 
--		num_physpages += pgdat->node_present_pages;
--
- 		if (pgdat->node_spanned_pages)
- 			free_all_bootmem_node(pgdat);
- 
--
- 		node_high_memory = (void *)__va((pgdat->node_start_pfn +
- 						 pgdat->node_spanned_pages) <<
- 						 PAGE_SHIFT);
-@@ -441,19 +435,8 @@ void __init mem_init(void)
- 
- 	vsyscall_init();
- 
--	codesize =  (unsigned long) &_etext - (unsigned long) &_text;
--	datasize =  (unsigned long) &_edata - (unsigned long) &_etext;
--	initsize =  (unsigned long) &__init_end - (unsigned long) &__init_begin;
--
--	printk(KERN_INFO "Memory: %luk/%luk available (%dk kernel code, "
--	       "%dk data, %dk init)\n",
--		nr_free_pages() << (PAGE_SHIFT-10),
--		num_physpages << (PAGE_SHIFT-10),
--		codesize >> 10,
--		datasize >> 10,
--		initsize >> 10);
--
--	printk(KERN_INFO "virtual kernel memory layout:\n"
-+	mem_init_print_info(NULL);
-+	pr_info("virtual kernel memory layout:\n"
- 		"    fixmap  : 0x%08lx - 0x%08lx   (%4ld kB)\n"
- #ifdef CONFIG_HIGHMEM
- 		"    pkmap   : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+ 	/* GETHER */
+ 	gpio_request(GPIO_FN_ET_CRS,		NULL);
 -- 
 1.7.9.5
 
