@@ -1,72 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 23:29:46 +0000
-Subject: [PATCH v4 3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
-Message-Id: <201304130329.47389.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 10 Apr 2013 04:51:15 +0000
+Subject: [PATCH] sh-pfc: r8a7779: tidyup intc_irq3_b typo
+Message-Id: <1365569475-28721-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365569475-28721-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365569475-28721-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
-registers) using the pre_setup() method in 'struct usb_ehci_pdata'.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-Changes since version 3:
-- lowercased the SoC name in the subject.
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Changes since version 2:
-- added #include <linux/usb/hcd.h>;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- changed from init() platform device method to pre_setup() as per the previous
-  patch.
-
- arch/arm/mach-shmobile/setup-r8a7779.c |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -33,6 +33,7 @@
- #include <linux/sh_timer.h>
- #include <linux/dma-mapping.h>
- #include <linux/usb/otg.h>
-+#include <linux/usb/hcd.h>
- #include <linux/usb/ehci_pdriver.h>
- #include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
-@@ -446,10 +447,25 @@ static void usb_power_off(struct platfor
- 	pm_runtime_disable(&pdev->dev);
- }
- 
-+static int ehci_init_internal_buffer(struct usb_hcd *hcd)
-+{
-+	/*
-+	 * Below are recommended values from the datasheet;
-+	 * see [USB :: Setting of EHCI Internal Buffer].
-+	 */
-+	/* EHCI IP internal buffer setting */
-+	iowrite32(0x00ff0040, hcd->regs + 0x0094);
-+	/* EHCI IP internal buffer enable */
-+	iowrite32(0x00000001, hcd->regs + 0x009C);
-+
-+	return 0;
-+}
-+
- static struct usb_ehci_pdata ehcix_pdata = {
- 	.power_on	= usb_power_on,
- 	.power_off	= usb_power_off,
- 	.power_suspend	= usb_power_off,
-+	.pre_setup	= ehci_init_internal_buffer,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 62dcdcd..791a671 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2552,7 +2552,7 @@ static const char * const intc_groups[] = {
+ 	"intc_irq2",
+ 	"intc_irq2_b",
+ 	"intc_irq3",
+-	"intc_irq4_b",
++	"intc_irq3_b",
  };
  
- static struct resource ehci0_resources[] = {
+ static const char * const lbsc_groups[] = {
+-- 
+1.7.10.4
+
