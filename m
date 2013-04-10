@@ -1,38 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 08 Apr 2013 09:36:13 +0000
-Subject: [PATCH 01/10] gpio-rcar: Add RCAR_GP_PIN macro
-Message-Id: <1365413782-17036-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 10 Apr 2013 22:19:44 +0000
+Subject: [PATCH 1/6] DMA: shdma: (cosmetic) don't re-calculate a pointer
+Message-Id: <1365632389-2249-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Pins are numbered in the R-Car family documentation using a bank number
-and a pin number in the bank. As the Linux pin number space is linear,
-we need to flatten this by multiplying the bank number by 32 and adding
-the pin number. The resulting number bear no directly visible
-relationship  to the documentation, making it error-prone.
+Use an existing pointer instead of retrieving it again.
 
-Add a RCAR_GP_PIN macro to convert from the documentation pin number
-space to the linear Linux space.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- include/linux/platform_data/gpio-rcar.h | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/dma/sh/shdma.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
-index b253f77..cc472f6 100644
---- a/include/linux/platform_data/gpio-rcar.h
-+++ b/include/linux/platform_data/gpio-rcar.h
-@@ -23,4 +23,6 @@ struct gpio_rcar_config {
- 	const char *pctl_name;
- };
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index b70709b..a5a1887 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -729,7 +729,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
+ 		goto eshdma;
  
-+#define RCAR_GP_PIN(bank, pin)		(((bank) * 32) + (pin))
-+
- #endif /* __GPIO_RCAR_H__ */
+ 	/* platform data */
+-	shdev->pdata = pdev->dev.platform_data;
++	shdev->pdata = pdata;
+ 
+ 	if (pdata->chcr_offset)
+ 		shdev->chcr_offset = pdata->chcr_offset;
 -- 
-1.8.1.5
+1.7.2.5
 
