@@ -1,103 +1,72 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Apr 2013 20:50:07 +0000
-Subject: [PATCH v2 02/11] sh-pfc: r8a7740: Add TPU pin groups and functions
-Message-Id: <1366836616-21475-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Apr 2013 08:15:01 +0000
+Subject: [PATCH 2/2] ARM: shmobile: force enable of r8a7790 arch timer
+Message-Id: <1365668101-21723-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
+
+Implement a SoC-specific timer init function for
+r8a7790 that makes sure the architected timer
+is started regardless of boot loader setting.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 50 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 50 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   14 +++++++++++++-
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index e5ef587..f6ea47c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -2745,6 +2745,42 @@ static const unsigned int sdhi2_wp_1_pins[] = {
- static const unsigned int sdhi2_wp_1_mux[] = {
- 	SDHI2_WP_PORT25_MARK,
- };
-+/* - TPU0 ------------------------------------------------------------------- */
-+static const unsigned int tpu0_to0_pins[] = {
-+	/* TO */
-+	23,
-+};
-+static const unsigned int tpu0_to0_mux[] = {
-+	TPU0TO0_MARK,
-+};
-+static const unsigned int tpu0_to1_pins[] = {
-+	/* TO */
-+	21,
-+};
-+static const unsigned int tpu0_to1_mux[] = {
-+	TPU0TO1_MARK,
-+};
-+static const unsigned int tpu0_to2_0_pins[] = {
-+	/* TO */
-+	66,
-+};
-+static const unsigned int tpu0_to2_0_mux[] = {
-+	TPU0TO2_PORT66_MARK,
-+};
-+static const unsigned int tpu0_to2_1_pins[] = {
-+	/* TO */
-+	202,
-+};
-+static const unsigned int tpu0_to2_1_mux[] = {
-+	TPU0TO2_PORT202_MARK,
-+};
-+static const unsigned int tpu0_to3_pins[] = {
-+	/* TO */
-+	180,
-+};
-+static const unsigned int tpu0_to3_mux[] = {
-+	TPU0TO3_MARK,
-+};
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 9bd6f5c..2e919e6 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -4,5 +4,6 @@
+ void r8a7790_add_standard_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
++void r8a7790_timer_init(void);
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(bsc_data8),
-@@ -2926,6 +2962,11 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_wp_0),
- 	SH_PFC_PIN_GROUP(sdhi2_cd_1),
- 	SH_PFC_PIN_GROUP(sdhi2_wp_1),
-+	SH_PFC_PIN_GROUP(tpu0_to0),
-+	SH_PFC_PIN_GROUP(tpu0_to1),
-+	SH_PFC_PIN_GROUP(tpu0_to2_0),
-+	SH_PFC_PIN_GROUP(tpu0_to2_1),
-+	SH_PFC_PIN_GROUP(tpu0_to3),
- };
+ #endif /* __ASM_R8A7790_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index cfccf6c..49de2d5 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -118,6 +118,18 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_irqc(0);
+ }
  
- static const char * const bsc_groups[] = {
-@@ -3176,6 +3217,14 @@ static const char * const sdhi2_groups[] = {
- 	"sdhi2_wp_1",
- };
- 
-+static const char * const tpu0_groups[] = {
-+	"tpu0_to0",
-+	"tpu0_to1",
-+	"tpu0_to2_0",
-+	"tpu0_to2_1",
-+	"tpu0_to3",
-+};
++void __init r8a7790_timer_init(void)
++{
++	void __iomem *cntcr;
 +
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(ceu0),
-@@ -3200,6 +3249,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(tpu0),
- };
- 
- #undef PORTCR
++	/* make sure arch timer is started by setting bit 0 of CNTCT */
++	cntcr = ioremap(0xe6080000, PAGE_SIZE);
++	iowrite32(1, cntcr);
++	iounmap(cntcr);
++
++	shmobile_timer_init();
++}
++
+ #ifdef CONFIG_USE_OF
+ void __init r8a7790_add_standard_devices_dt(void)
+ {
+@@ -132,7 +144,7 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+ 	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a7790_add_standard_devices_dt,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
-1.8.1.5
+1.7.10.4
 
