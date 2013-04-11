@@ -1,49 +1,41 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 04 Apr 2013 23:01:59 +0000
-Subject: [PATCH 3/8] ARM: shmobile: R8A7779: setup EHCI internal buffer
-Message-Id: <201304050301.59961.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Apr 2013 08:18:46 +0000
+Subject: [PATCH] ARM: shmobile: use r8a7790 timer setup code on Lager
+Message-Id: <1365668326-22518-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365668326-22518-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365668326-22518-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
-registers) using the init() method in 'struct usb_ehci_pdata'.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Use the r8a7790 timer init function on Lager
+to make sure the architected timer is started
+regardless of boot loader setting.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -445,10 +445,26 @@ static void usb_power_off(struct platfor
- 	pm_runtime_disable(&pdev->dev);
- }
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index ea6f9e5..f587187 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -40,7 +40,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
  
-+static int ehci_init_internal_buffer(struct platform_device *pdev,
-+				     void __iomem *regs)
-+{
-+	/*
-+	 * Below are recommended values from the datasheet;
-+	 * see [USB :: Setting of EHCI Internal Buffer].
-+	 */
-+	/* EHCI IP internal buffer setting */
-+	iowrite32(0x00ff0040, regs + 0x0094);
-+	/* EHCI IP internal buffer enable */
-+	iowrite32(0x00000001, regs + 0x009C);
-+
-+	return 0;
-+}
-+
- static struct usb_ehci_pdata ehcix_pdata = {
- 	.power_on	= usb_power_on,
- 	.power_off	= usb_power_off,
- 	.power_suspend	= usb_power_off,
-+	.init		= ehci_init_internal_buffer,
- };
- 
- static struct resource ehci0_resources[] = {
+ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_irq	= irqchip_init,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= r8a7790_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
+-- 
+1.7.10.4
+
