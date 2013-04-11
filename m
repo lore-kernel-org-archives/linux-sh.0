@@ -1,258 +1,91 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:05:00 +0000
-Subject: [PATCH 22/28] sh-pfc: r8a73a4: Remove SCIF function GPIOS
-Message-Id: <1364954706-14727-23-git-send-email-horms+renesas@verge.net.au>
+From: David Howells <dhowells@redhat.com>
+Date: Thu, 11 Apr 2013 13:30:09 +0000
+Subject: [PATCH 19/26] sh: Don't use create_proc_read_entry() [RFC]
+Message-Id: <20130411133009.32763.71122.stgit@warthog.procyon.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130411132739.32763.82609.stgit@warthog.procyon.org.uk>
+In-Reply-To: <20130411132739.32763.82609.stgit@warthog.procyon.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, viro@ZenIV.linux.org.uk, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Don't use create_proc_read_entry() as that is deprecated, but rather use
+proc_create_data() and seq_file instead.
 
-The r8a73a4 board support will use the pinctrl API to control the SCIF
-pins, remove the corresponding unused function GPIOS.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: David Howells <dhowells@redhat.com>
+cc: Paul Mundt <lethal@linux-sh.org>
+cc: linux-sh@vger.kernel.org
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |   45 ----------------------------------
- 1 file changed, 45 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-index 8a5288c..470b18f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-@@ -2160,55 +2160,45 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ arch/sh/drivers/dma/dma-api.c |   28 +++++++++++++++++++---------
+ 1 file changed, 19 insertions(+), 9 deletions(-)
+
+diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
+index f46848f..851e510 100644
+--- a/arch/sh/drivers/dma/dma-api.c
++++ b/arch/sh/drivers/dma/dma-api.c
+@@ -13,6 +13,7 @@
+ #include <linux/module.h>
+ #include <linux/spinlock.h>
+ #include <linux/proc_fs.h>
++#include <linux/seq_file.h>
+ #include <linux/list.h>
+ #include <linux/platform_device.h>
+ #include <linux/mm.h>
+@@ -308,11 +309,9 @@ int dma_extend(unsigned int chan, unsigned long op, void *param)
+ }
+ EXPORT_SYMBOL(dma_extend);
  
- 	/* Port19 */
- 	GPIO_FN(LCDD19),
--	GPIO_FN(SCIFB3_RTS_19),
- 	GPIO_FN(DU0_DB3),
+-static int dma_read_proc(char *buf, char **start, off_t off,
+-			 int len, int *eof, void *data)
++static int dma_proc_show(struct seq_file *m, void *v)
+ {
+-	struct dma_info *info;
+-	char *p = buf;
++	struct dma_info *info = v;
  
- 	/* Port20 */
- 	GPIO_FN(LCDD20),
--	GPIO_FN(SCIFB3_CTS_20),
- 	GPIO_FN(DU0_DB4),
+ 	if (list_empty(&registered_dmac_list))
+ 		return 0;
+@@ -332,14 +331,26 @@ static int dma_read_proc(char *buf, char **start, off_t off,
+ 			if (!(channel->flags & DMA_CONFIGURED))
+ 				continue;
  
- 	/* Port21 */
- 	GPIO_FN(LCDD21),
--	GPIO_FN(SCIFB3_TXD_21),
- 	GPIO_FN(DU0_DB5),
+-			p += sprintf(p, "%2d: %14s    %s\n", i,
+-				     info->name, channel->dev_id);
++			seq_printf(m, "%2d: %14s    %s\n", i,
++				   info->name, channel->dev_id);
+ 		}
+ 	}
  
- 	/* Port22 */
- 	GPIO_FN(LCDD22),
--	GPIO_FN(SCIFB3_RXD_22),
- 	GPIO_FN(DU0_DB6),
+-	return p - buf;
++	return 0;
++}
++
++static int dma_proc_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, dma_proc_show, NULL);
+ }
  
- 	/* Port23 */
- 	GPIO_FN(LCDD23),
--	GPIO_FN(SCIFB3_SCK_23),
- 	GPIO_FN(DU0_DB7),
++static const struct file_operations dma_proc_fops = {
++	.open		= dma_proc_open,
++	.read		= seq_read,
++	.llseek		= seq_lseek,
++	.release	= seq_release,
++};
++
+ int register_dmac(struct dma_info *info)
+ {
+ 	unsigned int total_channels, i;
+@@ -412,8 +423,7 @@ EXPORT_SYMBOL(unregister_dmac);
+ static int __init dma_api_init(void)
+ {
+ 	printk(KERN_NOTICE "DMA: Registering DMA API.\n");
+-	return create_proc_read_entry("dma", 0, 0, dma_read_proc, 0)
+-		    ? 0 : -ENOMEM;
++	return proc_create("dma", 0, NULL, &dma_proc_fops) ? 0 : -ENOMEM;
+ }
+ subsys_initcall(dma_api_init);
  
- 	/* Port24 */
- 	GPIO_FN(LCDHSYN),
- 	GPIO_FN(LCDCS),
--	GPIO_FN(SCIFB1_RTS_24),
- 	GPIO_FN(DU0_EXHSYNC_N_CSYNC_N_HSYNC_N),
- 
- 	/* Port25 */
- 	GPIO_FN(LCDVSYN),
--	GPIO_FN(SCIFB1_CTS_25),
- 	GPIO_FN(DU0_EXVSYNC_N_VSYNC_N_CSYNC_N),
- 
- 	/* Port26 */
- 	GPIO_FN(LCDDCK),
- 	GPIO_FN(LCDWR),
--	GPIO_FN(SCIFB1_TXD_26),
- 	GPIO_FN(DU0_DOTCLKIN),
- 
- 	/* Port27 */
- 	GPIO_FN(LCDDISP),
- 	GPIO_FN(LCDRS),
--	GPIO_FN(SCIFB1_RXD_27),
- 	GPIO_FN(DU0_DOTCLKOUT),
- 
- 	/* Port28 */
- 	GPIO_FN(LCDRD_N),
--	GPIO_FN(SCIFB1_SCK_28),
- 	GPIO_FN(DU0_DOTCLKOUTB),
- 
- 	/* Port29 */
-@@ -2222,48 +2212,36 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(DU0_ODDF_N_CLAMP),
- 
- 	/* Port32 */
--	GPIO_FN(SCIFA0_RTS),
- 	GPIO_FN(SIM0_DET),
- 	GPIO_FN(CSCIF0_RTS),
- 
- 	/* Port33 */
--	GPIO_FN(SCIFA0_CTS),
- 	GPIO_FN(SIM1_DET),
- 	GPIO_FN(CSCIF0_CTS),
- 
- 	/* Port34 */
--	GPIO_FN(SCIFA0_SCK),
- 	GPIO_FN(SIM0_PWRON),
- 	GPIO_FN(CSCIF0_SCK),
- 
- 	/* Port35 */
--	GPIO_FN(SCIFA1_RTS),
- 	GPIO_FN(CSCIF1_RTS),
- 
- 	/* Port36 */
--	GPIO_FN(SCIFA1_CTS),
- 	GPIO_FN(CSCIF1_CTS),
- 
- 	/* Port37 */
--	GPIO_FN(SCIFA1_SCK),
- 	GPIO_FN(CSCIF1_SCK),
- 
- 	/* Port38 */
--	GPIO_FN(SCIFB0_RTS),
- 	GPIO_FN(TPU0TO1),
--	GPIO_FN(SCIFB3_RTS_38),
- 	GPIO_FN(CHSCIF0_HRTS),
- 
- 	/* Port39 */
--	GPIO_FN(SCIFB0_CTS),
- 	GPIO_FN(TPU0TO2),
--	GPIO_FN(SCIFB3_CTS_39),
- 	GPIO_FN(CHSCIF0_HCTS),
- 
- 	/* Port40 */
--	GPIO_FN(SCIFB0_SCK),
- 	GPIO_FN(TPU0TO3),
--	GPIO_FN(SCIFB3_SCK_40),
- 	GPIO_FN(CHSCIF0_HSCK),
- 
- 	/* Port64 */
-@@ -2274,52 +2252,44 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 
- 	/* Port66 */
- 	GPIO_FN(HSI_RX_WAKE),
--	GPIO_FN(SCIFB2_CTS_66),
- 	GPIO_FN(MSIOF3_SYNC),
- 	GPIO_FN(GenIO4),
- 	GPIO_FN(IRQ40),
- 
- 	/* Port67 */
- 	GPIO_FN(HSI_RX_READY),
--	GPIO_FN(SCIFB1_TXD_67),
- 	GPIO_FN(GIO_OUT3_67),
- 	GPIO_FN(CHSCIF1_HTX),
- 
- 	/* Port68 */
- 	GPIO_FN(HSI_RX_FLAG),
--	GPIO_FN(SCIFB2_TXD_68),
- 	GPIO_FN(MSIOF3_TXD),
- 	GPIO_FN(GIO_OUT4_68),
- 
- 	/* Port69 */
- 	GPIO_FN(HSI_RX_DATA),
--	GPIO_FN(SCIFB2_RXD_69),
- 	GPIO_FN(MSIOF3_RXD),
- 	GPIO_FN(GIO_OUT5_69),
- 
- 	/* Port70 */
- 	GPIO_FN(HSI_TX_FLAG),
--	GPIO_FN(SCIFB1_RTS_70),
- 	GPIO_FN(GIO_OUT1_70),
- 	GPIO_FN(HSIC_TSTCLK0),
- 	GPIO_FN(CHSCIF1_HRTS),
- 
- 	/* Port71 */
- 	GPIO_FN(HSI_TX_DATA),
--	GPIO_FN(SCIFB1_CTS_71),
- 	GPIO_FN(GIO_OUT2_71),
- 	GPIO_FN(HSIC_TSTCLK1),
- 	GPIO_FN(CHSCIF1_HCTS),
- 
- 	/* Port72 */
- 	GPIO_FN(HSI_TX_WAKE),
--	GPIO_FN(SCIFB1_RXD_72),
- 	GPIO_FN(GenIO8),
- 	GPIO_FN(CHSCIF1_HRX),
- 
- 	/* Port73 */
- 	GPIO_FN(HSI_TX_READY),
--	GPIO_FN(SCIFB2_RTS_73),
- 	GPIO_FN(MSIOF3_SCK),
- 	GPIO_FN(GIO_OUT0_73),
- 
-@@ -2398,36 +2368,28 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(IRQ49),
- 
- 	/* Port116 */
--	GPIO_FN(SCIFA0_TXD),
- 	GPIO_FN(CSCIF0_TX),
- 
- 	/* Port117 */
--	GPIO_FN(SCIFA0_RXD),
- 	GPIO_FN(CSCIF0_RX),
- 
- 	/* Port118 */
--	GPIO_FN(SCIFA1_TXD),
- 	GPIO_FN(CSCIF1_TX),
- 
- 	/* Port119 */
--	GPIO_FN(SCIFA1_RXD),
- 	GPIO_FN(CSCIF1_RX),
- 
- 	/* Port120 */
- 	GPIO_FN(SF_PORT_1_120),
--	GPIO_FN(SCIFB3_RXD_120),
- 	GPIO_FN(DU0_CDE),
- 
- 	/* Port121 */
- 	GPIO_FN(SF_PORT_0_121),
--	GPIO_FN(SCIFB3_TXD_121),
- 
- 	/* Port122 */
--	GPIO_FN(SCIFB0_TXD),
- 	GPIO_FN(CHSCIF0_HTX),
- 
- 	/* Port123 */
--	GPIO_FN(SCIFB0_RXD),
- 	GPIO_FN(CHSCIF0_HRX),
- 
- 	/* Port124 */
-@@ -2721,11 +2683,9 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(MSIOF0_TXD),
- 
- 	/* Port261 */
--	GPIO_FN(SCIFB1_SCK_261),
- 	GPIO_FN(CHSCIF1_HSCK),
- 
- 	/* Port262 */
--	GPIO_FN(SCIFB2_SCK_262),
- 
- 	/* Port263 - Port266 FN1 */
- 	GPIO_FN(MSIOF1_SS2),
-@@ -2809,7 +2769,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	/* Port295 */
- 	GPIO_FN(SDHID2_0),
- 	GPIO_FN(MSIOF4_TXD),
--	GPIO_FN(SCIFB2_TXD_295),
- 	GPIO_FN(MSIOF6_TXD),
- 
- 	/* Port296 */
-@@ -2830,10 +2789,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(MSIOF4_SS1),
- 
- 	/* Port297 - Port300 FN3 */
--	GPIO_FN(SCIFB2_RXD_297),
--	GPIO_FN(SCIFB2_CTS_298),
--	GPIO_FN(SCIFB2_SCK_299),
--	GPIO_FN(SCIFB2_RTS_300),
- 
- 	/* Port297 - Port300 FN4 */
- 	GPIO_FN(MSIOF6_RXD),
--- 
-1.7.10.4
 
