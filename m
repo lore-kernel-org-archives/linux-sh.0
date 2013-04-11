@@ -1,12 +1,9 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Thu, 11 Apr 2013 20:14:43 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 11 Apr 2013 22:35:38 +0000
 Subject: Re: [PATCH v8 1/7] media: V4L2: add temporary clock helpers
-Message-Id: <516719B3.8060502@gmail.com>
+Message-Id: <13951098.tvATHWRRmI@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CAGsJ_4zCRBvEX9xEDCr27JLK6wYp_2T_wk2hzVjqpKinbL=9pg@mail.gmail.com>
- <Pine.LNX.4.64.1304110921480.23859@axis700.grange>
- <CAGsJ_4xXRHDbpuqT3e5=0vz9_NxxCXfvrci+h567HP9=AhwRiQ@mail.gmail.com>
- <Pine.LNX.4.64.1304111028090.23859@axis700.grange>
  <CAGsJ_4yXE7SYLgPucW9kAEYgKg+z93j8yN3d+gvhqeLAn-sSOw@mail.gmail.com>
  <20130411185258.7915.67263@quantum>
 In-Reply-To: <20130411185258.7915.67263@quantum>
@@ -15,31 +12,66 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Hi Mike,
 
-On 04/11/2013 08:52 PM, Mike Turquette wrote:
-[...]
->>> So, you enable CFF, it provides its own clk_* implementation like
->>> clk_get_rate() etc. Now, PXA already has it defined in
->>> arch/arm/mach-pxa/clock.c. Don't think this is going to fly.
->>
->> agree.
->
-> Hi,
->
-> I came into this thread late and don't have the actual patches in my
-> inbox for review.  That said, I don't understand why V4L2 cares about
-> the clk framework *implementation*?  The clk.h api is the same for
-> platforms using the common struct clk and those still using the legacy
-> method of defining their own struct clk.  If drivers are only consumers
-> of the clk.h api then the implementation underneath should not matter.
+On Thursday 11 April 2013 11:52:58 Mike Turquette wrote:
+> Quoting Barry Song (2013-04-11 01:59:28)
+> > 2013/4/11 Guennadi Liakhovetski <g.liakhovetski@gmx.de>:
+> > > On Thu, 11 Apr 2013, Barry Song wrote:
+> > >> 2013/4/11 Guennadi Liakhovetski <g.liakhovetski@gmx.de>:
+> > >> > On Thu, 11 Apr 2013, Barry Song wrote:
+> > >> >> Hi Guennadi,
+> > >> >> 
+> > >> >> > Typical video devices like camera sensors require an external
+> > >> >> > clock source. Many such devices cannot even access their hardware
+> > >> >> > registers without a running clock. These clock sources should be
+> > >> >> > controlled by their consumers. This should be performed, using the
+> > >> >> > generic clock framework. Unfortunately so far only very few
+> > >> >> > systems have been ported to that framework. This patch adds a set
+> > >> >> > of temporary helpers, mimicking the generic clock API, to V4L2.
+> > >> >> > Platforms, adopting the clock API, should switch to using it.
+> > >> >> > Eventually this temporary API should be removed.
+> > >> >> > 
+> > >> >> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@xxxxxx>
+> > >> >> > ---
+> > >> >> 
+> > >> >> for your patch 1/8 and 3/8, i think it makes a lot of senses to let
+> > >> >> the object manages its own clock by itself.
+> > >> >> is it possible for us to implement v4l2-clk.c directly as an
+> > >> >> instance of standard clk driver for those systems which don't have
+> > >> >> generic clock,  and remove the V4L2 clock APIs like v4l2_clk_get,
+> > >> >> v4l2_clk_enable from the first day? i mean v4l2-clk.c becomes a temp
+> > >> >> and fake clock controller driver. finally, after people have
+> > >> >> generically clk, remove it.
+> > >> > 
+> > >> > I don't think you can force-enable the CFF on systems, that don't
+> > >> > support it, e.g. PXA.
+> > >> 
+> > >> yes. we can. clock is only a framework, has it any limitation to
+> > >> implement a driver instance on any platform?
+> > > 
+> > > So, you enable CFF, it provides its own clk_* implementation like
+> > > clk_get_rate() etc. Now, PXA already has it defined in
+> > > arch/arm/mach-pxa/clock.c. Don't think this is going to fly.
+> > 
+> > agree.
+> 
+> I came into this thread late and don't have the actual patches in my inbox
+> for review.  That said, I don't understand why V4L2 cares about the clk
+> framework *implementation*?  The clk.h api is the same for platforms using
+> the common struct clk and those still using the legacy method of defining
+> their own struct clk.  If drivers are only consumers of the clk.h api then
+> the implementation underneath should not matter.
 
-I came to similar conclusions previously, but in case when one of the two
-drivers is the clock provider I think there is still an issue there.
+The issue on non-CCF systems is that devices usually can't register clocks 
+dynamically. (Most of) those systems provide system clocks only through their 
+clock API, without a way for the camera IP core to hook up the clock(s) it can 
+provide to the camera sensor. On the consumer side we don't care much about 
+the clock framework implementation, but on the provider side we need a 
+framework that allows registering non-system clocks at runtime.
 
-The drivers are supposed to be platform agnostic, but the clock provider
-would have to include mach specific declarations of struct clk, wouldn't
-it ?
-
+-- 
 Regards,
-Sylwester
+
+Laurent Pinchart
+
