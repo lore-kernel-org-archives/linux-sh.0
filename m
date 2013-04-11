@@ -1,85 +1,25 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 08 Apr 2013 21:31:10 +0000
-Subject: [PATCH v2 6/9] rcar-phy: correct base address
-Message-Id: <201304090131.11208.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 11 Apr 2013 03:09:13 +0000
+Subject: Re: [PATCH 1/2] ARM: r8a7740: Add interim sh-eth device name to clocks list
+Message-Id: <20130411030913.GA13456@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355851359-8871-1-git-send-email-hechtb+renesas@gmail.com>
+ <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
+ <20130109020647.GB6496@verge.net.au>
+In-Reply-To: <20130109020647.GB6496@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The memory region that is used by the driver overlaps EHCI and OHCI  register
-regions for absolutely no reason now  -- fix it  by adding offset of 0x800 to
-the base address, changing the register #define's accordingly. This has extra
-positive effect that we now can use devm_ioremap_resource()...
+On Wed, Jan 09, 2013 at 11:06:47AM +0900, Simon Horman wrote:
+> On Tue, Dec 18, 2012 at 06:22:38PM +0100, Bastian Hecht wrote:
+> > When we use the ethernet device via DT setup, we need to add it
+> > to a lookup list until this is properly handled later in a DT-only
+> > fashion.
+> 
+> Thanks, looks good.
+> I will apply this.
 
-Note that the driver and the SoC code have to be in one patch to keep the code
-bisectable...
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
----
-Changes since the original posting:
-- added a note about bisectability to the changelog.
-
- arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
- drivers/usb/phy/rcar-phy.c             |   28 ++++++++++------------------
- 2 files changed, 11 insertions(+), 19 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -401,7 +401,7 @@ static struct platform_device sata_devic
- /* USB PHY */
- static struct resource usb_phy_resources[] = {
- 	[0] = {
--		.start		= 0xffe70000,
-+		.start		= 0xffe70800,
- 		.end		= 0xffe70900 - 1,
- 		.flags		= IORESOURCE_MEM,
- 	},
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -16,13 +16,13 @@
- #include <linux/spinlock.h>
- #include <linux/module.h>
- 
--/* USBH common register */
--#define USBPCTRL0	0x0800
--#define USBPCTRL1	0x0804
--#define USBST		0x0808
--#define USBEH0		0x080C
--#define USBOH0		0x081C
--#define USBCTL0		0x0858
-+/* REGS block */
-+#define USBPCTRL0	0x00
-+#define USBPCTRL1	0x04
-+#define USBST		0x08
-+#define USBEH0		0x0C
-+#define USBOH0		0x1C
-+#define USBCTL0		0x58
- 
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
-@@ -139,17 +139,9 @@ static int rcar_usb_phy_probe(struct pla
- 		return -EINVAL;
- 	}
- 
--	/*
--	 * CAUTION
--	 *
--	 * Because this phy address is also mapped under OHCI/EHCI address area,
--	 * this driver can't use devm_request_and_ioremap(dev, res) here
--	 */
--	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
--	if (!reg0) {
--		dev_err(dev, "ioremap error\n");
--		return -ENOMEM;
--	}
-+	reg0 = devm_ioremap_resource(dev, res0);
-+	if (IS_ERR(reg0))
-+		return PTR_ERR(reg0);
- 
- 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
- 	if (!priv) {
+Apparently I forgot to actually do that.
+I have done so now, it is queued up for v3.11 in the soc-r8a7740 branch.
