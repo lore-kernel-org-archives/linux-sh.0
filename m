@@ -1,66 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:03 +0000
-Subject: [PATCH 22/37] sh-pfc: r8a7740: Remove INTC function GPIOS
-Message-Id: <1366671618-8796-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 11 Apr 2013 11:24:00 +0000
+Subject: [PATCH v4 4/7] ARM: shmobile: sh73a0: Add timer DT names to clock list
+Message-Id: <1365679443-25456-4-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All r8a7740 platforms now use the pinctrl API to control the INTC pins,
-the corresponding function GPIOS are unused. Remove them.
+This adds temporarily the alternative device names to the clock list
+that are used when booting via Device Tree setup.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 34 ----------------------------------
- 1 file changed, 34 deletions(-)
+v4: same. only patches 2 and 3 are changed.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 3b53193..0429c7d 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -3200,40 +3200,6 @@ static const struct sh_pfc_function pinmux_functions[] = {
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
- 
- static const struct pinmux_func pinmux_func_gpios[] = {
--	/* IRQ */
--	GPIO_FN(IRQ0_PORT2),	GPIO_FN(IRQ0_PORT13),
--	GPIO_FN(IRQ1),
--	GPIO_FN(IRQ2_PORT11),	GPIO_FN(IRQ2_PORT12),
--	GPIO_FN(IRQ3_PORT10),	GPIO_FN(IRQ3_PORT14),
--	GPIO_FN(IRQ4_PORT15),	GPIO_FN(IRQ4_PORT172),
--	GPIO_FN(IRQ5_PORT0),	GPIO_FN(IRQ5_PORT1),
--	GPIO_FN(IRQ6_PORT121),	GPIO_FN(IRQ6_PORT173),
--	GPIO_FN(IRQ7_PORT120),	GPIO_FN(IRQ7_PORT209),
--	GPIO_FN(IRQ8),
--	GPIO_FN(IRQ9_PORT118),	GPIO_FN(IRQ9_PORT210),
--	GPIO_FN(IRQ10),
--	GPIO_FN(IRQ11),
--	GPIO_FN(IRQ12_PORT42),	GPIO_FN(IRQ12_PORT97),
--	GPIO_FN(IRQ13_PORT64),	GPIO_FN(IRQ13_PORT98),
--	GPIO_FN(IRQ14_PORT63),	GPIO_FN(IRQ14_PORT99),
--	GPIO_FN(IRQ15_PORT62),	GPIO_FN(IRQ15_PORT100),
--	GPIO_FN(IRQ16_PORT68),	GPIO_FN(IRQ16_PORT211),
--	GPIO_FN(IRQ17),
--	GPIO_FN(IRQ18),
--	GPIO_FN(IRQ19),
--	GPIO_FN(IRQ20),
--	GPIO_FN(IRQ21),
--	GPIO_FN(IRQ22),
--	GPIO_FN(IRQ23),
--	GPIO_FN(IRQ24),
--	GPIO_FN(IRQ25),
--	GPIO_FN(IRQ26_PORT58),	GPIO_FN(IRQ26_PORT81),
--	GPIO_FN(IRQ27_PORT57),	GPIO_FN(IRQ27_PORT168),
--	GPIO_FN(IRQ28_PORT56),	GPIO_FN(IRQ28_PORT169),
--	GPIO_FN(IRQ29_PORT50),	GPIO_FN(IRQ29_PORT170),
--	GPIO_FN(IRQ30_PORT49),	GPIO_FN(IRQ30_PORT171),
--	GPIO_FN(IRQ31_PORT41),	GPIO_FN(IRQ31_PORT167),
--
- 	/* Function */
- 
- 	/* DBGT */
+ arch/arm/mach-shmobile/clock-sh73a0.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 784fbaa..5d98322 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -535,7 +535,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU0 */
+ 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2-RX0 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
++	CLKDEV_DEV_ID("fff60008.timer", &mstp_clks[MSTP125]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
++	CLKDEV_DEV_ID("fff60014.timer", &mstp_clks[MSTP125]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
+ 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
+@@ -552,6 +554,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+ 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
++	CLKDEV_DEV_ID("e6138010.timer", &mstp_clks[MSTP329]), /* CMT10 */
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
 -- 
-1.8.1.5
+1.7.9.5
 
