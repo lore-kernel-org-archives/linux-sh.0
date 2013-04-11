@@ -1,30 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Apr 2013 01:13:34 +0000
-Subject: Re: [PATCH 00/03 v4] ARM: shmobile: r8a73a4 APE6EVM board support
-Message-Id: <20130402011333.GB19813@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Apr 2013 08:15:00 +0000
+Subject: [PATCH 1/2] ARM: shmobile: Add second I/O range for r8a7790 PFC
+Message-Id: <1365668101-21723-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130329075952.15748.6290.sendpatchset@w520>
-In-Reply-To: <20130329075952.15748.6290.sendpatchset@w520>
+References: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 29, 2013 at 04:59:52PM +0900, Magnus Damm wrote:
-> ARM: shmobile: r8a73a4 APE6EVM board support (V4)
-> 
-> [PATCH 01/03 v3] ARM: shmobile: APE6EVM base support
-> [PATCH 02/03 v2] ARM: shmobile: APE6EVM PFC support
-> [PATCH 03/03 v3] ARM: shmobile: APE6EVM LAN9220 support
-> 
-> This series is V4 of initial support for the APE6EVM board.
-> 
-> The APE6EVM board makes use of the r8a73a4 SoC and has a
-> couple of different I/O devices on board, but with this
-> series only support for the SCIFA0 UART and the Ethernet
-> chip is included.
-> 
-> In the future support for more I/O devices will be added as
-> incremental feature patches.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, queued up for v3.10 in the boards branch.
+Add the GPIO I/O memory range to the r8a7790 PFC device.
+
+This extra I/O memory range is needed when using the PFC
+tables to drive both pin functions (using PINCTRL or
+function GPIO for old code) and actual GPIO. The goal is
+however to use a separate GPIO driver in the long run
+and when that happens this extra I/O memory range can
+be removed.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7790.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 481201a..cfccf6c 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -31,6 +31,7 @@
+ 
+ static const struct resource pfc_resources[] = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
++	DEFINE_RES_MEM(0xe6050000, 0x5050),
+ };
+ 
+ void __init r8a7790_pinmux_init(void)
+-- 
+1.7.10.4
+
