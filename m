@@ -1,126 +1,361 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 04:31:34 +0000
-Subject: [PATCH 3/3] ARM: shmobile: ape6evm: add defconfig
-Message-Id: <1364877094-1508-4-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 11 Apr 2013 14:07:43 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7740: Add Suspend-To-RAM A3SM
+Message-Id: <1365689264-14410-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add defconfig for ape6evm. This is based loosely
-on the kzm9g defconfig with fewer devices enabled.
+We add 2 Suspend to RAM modes:
+- A3SM PLL0 on/off:     Power domain A3SM that contains the ARM core
+                        and the 2nd level cache with either PLL0 on
+                        or off
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+As the suspend to memory mechanism we use A3SM PLL off. A3SM PLL on
+is included here too, so CPUIdle can use both power down modes (not
+included in this patch).
+
+The setup of the SYSC regarding the external IRQs is taken from
+pm-sh7372.c from Magnus Damm.
+
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/configs/ape6evm_defconfig |   95 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 95 insertions(+)
- create mode 100644 arch/arm/configs/ape6evm_defconfig
+This patch relies on
+ARM: hw_breakpoint: Do not use __cpuinitdata for dbg_cpu_pm_nb
 
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
+v2: successor to [PATCH] ARM: shmobile: r8a7740: Add Suspend-To-RAM modes and CPUIdle
+
+- Removed the 2nd L1 flush in the asm shutdown code. See comment in code for explanation.
+- Reworked the ifdefs: We can only use CPUIdle if SUSPEND is set as well.
+- Removed cpu_do_idle() in r8a7740_enter_suspend: We don't want to sleep twice...
+
+If you want to test this use this workaround in the st1232 driver in
+drivers/input/touchscreen/st1232.c:
+
+        error = request_threaded_irq(client->irq, NULL, st1232_ts_irq_handler,
+-                                    IRQF_ONESHOT, client->name, ts);
++                                    IRQF_NO_SUSPEND | IRQF_ONESHOT, client->name, ts);
+
+You need it as the current irqpin driver doesn't handle wakeup devices properly yet.
+
+Tested with the 4 possiblities 	L2 on - Suspend on/off - CPUIdle on/off
+and with the additional test	L2 off - Suspend on - CPUIdle on
+
+ arch/arm/mach-shmobile/Makefile               |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    3 +
+ arch/arm/mach-shmobile/pm-r8a7740.c           |  167 ++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/sleep-r8a7740.S        |   72 +++++++++++
+ 4 files changed, 240 insertions(+), 4 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/sleep-r8a7740.S
+
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 068f1da..0568894 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -30,7 +30,7 @@ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o
++obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o sleep-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index abdc4d4..05551ee 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -540,6 +540,9 @@ extern void r8a7740_add_standard_devices(void);
+ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
++extern void r8a7740_resume(void);
++extern void r8a7740_shutdown(void);
++extern void r8a7740_enter_a3sm_common(int);
+ 
+ #ifdef CONFIG_PM
+ extern void __init r8a7740_init_pm_domains(void);
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 40b87aa..adadac4 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -8,10 +8,52 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
++#include <linux/bitrev.h>
+ #include <linux/console.h>
++#include <linux/module.h>
+ #include <linux/suspend.h>
++#include <linux/io.h>
++#include <asm/suspend.h>
++#include <asm/cacheflush.h>
++#include <asm/hardware/cache-l2x0.h>
+ #include <mach/pm-rmobile.h>
+ #include <mach/common.h>
++#include <mach/r8a7740.h>
++
++/* CPGA */
++#define PLLC01STPCR 	IOMEM(0xe61500c8)
++#define SYSTBCR		IOMEM(0xe6150024)
++
++/* SYSC */
++#define STBCHR		IOMEM(0xe6180000)
++#define STBCHRB		IOMEM(0xe6180040)
++#define SPDCR		IOMEM(0xe6180008)
++#define SBAR		IOMEM(0xe6180020)
++#define SRSTFR		IOMEM(0xe61800B4)
++#define WUPSMSK		IOMEM(0xe618002c)
++#define WUPSMSK2	IOMEM(0xe6180048)
++#define WUPSFAC		IOMEM(0xe6180098)
++#define IRQCR 		IOMEM(0xe618022c)
++#define IRQCR2 		IOMEM(0xe6180238)
++#define IRQCR3		IOMEM(0xe6180244)
++#define IRQCR4		IOMEM(0xe6180248)
++
++/* SRSTFR flags */
++#define RAMST		(1 << 19)
++#define RCLNKA		(1 << 7)
++#define RCPRES		(1 << 5)
++#define RCWD1		(1 << 4)
++#define RPF		(1 << 0)
++
++/* INTC */
++#define ICR1A		IOMEM(0xe6900000)
++#define ICR2A		IOMEM(0xe6900004)
++#define ICR3A		IOMEM(0xe6900008)
++#define ICR4A		IOMEM(0xe690000c)
++#define INTMSK00A	IOMEM(0xe6900040)
++#define INTMSK10A	IOMEM(0xe6900044)
++#define INTMSK20A	IOMEM(0xe6900048)
++#define INTMSK30A	IOMEM(0xe690004c)
+ 
+ #ifdef CONFIG_PM
+ static int r8a7740_pd_a4s_suspend(void)
+@@ -58,13 +100,132 @@ void __init r8a7740_init_pm_domains(void)
+ 	rmobile_init_domains(r8a7740_pm_domains, ARRAY_SIZE(r8a7740_pm_domains));
+ 	pm_genpd_add_subdomain_names("A4S", "A3SP");
+ }
+-
+ #endif /* CONFIG_PM */
+ 
+ #ifdef CONFIG_SUSPEND
++static void r8a7740_set_reset_vector(unsigned long address)
++{
++	__raw_writel(address, SBAR);
++}
++
++static void r8a7740_icr_to_irqcr(unsigned long icr, u16 *irqcr1p, u16 *irqcr2p)
++{
++	u16 tmp, irqcr1, irqcr2;
++	int k;
++
++	irqcr1 = 0;
++	irqcr2 = 0;
++
++	/* convert INTCA ICR register layout to SYSC IRQCR+IRQCR2 */
++	for (k = 0; k <= 7; k++) {
++		tmp = (icr >> ((7 - k) * 4)) & 0xf;
++		irqcr1 |= (tmp & 0x03) << (k * 2);
++		irqcr2 |= (tmp >> 2) << (k * 2);
++	}
++
++	*irqcr1p = irqcr1;
++	*irqcr2p = irqcr2;
++}
++
++static void r8a7740_setup_sysc(unsigned long msk, unsigned long msk2)
++{
++	u16 irqcrx_low, irqcrx_high, irqcry_low, irqcry_high;
++	unsigned long tmp;
++
++	/* read IRQ0A -> IRQ15A mask */
++	tmp = bitrev8(__raw_readb(INTMSK00A));
++	tmp |= bitrev8(__raw_readb(INTMSK10A)) << 8;
++
++	/* setup WUPSMSK from clocks and external IRQ mask */
++	msk = (~msk & 0xc030000f) | (tmp << 4);
++	__raw_writel(msk, WUPSMSK);
++
++	/* propage level/edge trigger for external IRQ 0->15 */
++	r8a7740_icr_to_irqcr(__raw_readl(ICR1A), &irqcrx_low, &irqcry_low);
++	r8a7740_icr_to_irqcr(__raw_readl(ICR2A), &irqcrx_high, &irqcry_high);
++	__raw_writel((irqcrx_high << 16) | irqcrx_low, IRQCR);
++	__raw_writel((irqcry_high << 16) | irqcry_low, IRQCR2);
++
++	/* read IRQ16A -> IRQ31A mask */
++	tmp = bitrev8(__raw_readb(INTMSK20A));
++	tmp |= bitrev8(__raw_readb(INTMSK30A)) << 8;
++
++	/* setup WUPSMSK2 from clocks and external IRQ mask */
++	msk2 = (~msk2 & 0x00030000) | tmp;
++	__raw_writel(msk2, WUPSMSK2);
++
++	/* propage level/edge trigger for external IRQ 16->31 */
++	r8a7740_icr_to_irqcr(__raw_readl(ICR3A), &irqcrx_low, &irqcry_low);
++	r8a7740_icr_to_irqcr(__raw_readl(ICR4A), &irqcrx_high, &irqcry_high);
++	__raw_writel((irqcrx_high << 16) | irqcrx_low, IRQCR3);
++	__raw_writel((irqcry_high << 16) | irqcry_low, IRQCR4);
++}
++
++static void r8a7740_prepare_wakeup(void)
++{
++	/* clear all flags that lead to a cold boot */
++	__raw_writel(~(RAMST | RCLNKA | RCPRES | RCWD1 | RPF), SRSTFR);
++	/* indicate warm boot */
++	__raw_writel(0x80000000, STBCHRB);
++	/* clear other flags checked by internal ROM boot loader */
++	__raw_writel(0x00000000, STBCHR);
++}
++
++static int r8a7740_do_suspend(unsigned long unused)
++{
++	/*
++	 * cpu_suspend() guarantees that all data made it to the L2.
++	 * Flush it out now and disable the cache controller.
++	 */
++	outer_flush_all();
++	outer_disable();
++
++	r8a7740_shutdown();
++
++	/* in case WFI fails to enter the low power state, restore things */
++	outer_resume();
++
++	return 0;
++}
++
++void r8a7740_enter_a3sm_common(int pllc0_on)
++{
++	u32 reg32;
++
++	if (pllc0_on)
++		__raw_writel(0, PLLC01STPCR);
++	else
++		__raw_writel(1 << 28, PLLC01STPCR);
++
++	r8a7740_set_reset_vector(__pa(r8a7740_resume));
++	r8a7740_prepare_wakeup();
++	r8a7740_setup_sysc(1 << 0, 0);
++
++	/* Activate delayed shutdown of A3SM */
++	reg32 = __raw_readl(SPDCR);
++	reg32 |= (1 << 31) | (1 << 12);
++	__raw_writel(reg32, SPDCR);
++
++	/* We activate CPU Core Standby as well here */
++	reg32 = __raw_readl(SYSTBCR);
++	reg32 |= (1 << 4);
++	__raw_writel(reg32, SYSTBCR);
++
++	/* Clear Wakeup Factors and do suspend */
++	reg32 = __raw_readl(WUPSFAC);
++	cpu_suspend(0, r8a7740_do_suspend);
++	outer_resume();
++	reg32 = __raw_readl(WUPSFAC);
++
++	/* Clear CPU Core Standby flag for other WFI instructions */
++	reg32 &= ~(1 << 4);
++	__raw_writel(reg32, SYSTBCR);
++
++}
++
+ static int r8a7740_enter_suspend(suspend_state_t suspend_state)
+ {
+-	cpu_do_idle();
++	r8a7740_enter_a3sm_common(0);
+ 	return 0;
+ }
+ 
+@@ -74,7 +235,7 @@ static void r8a7740_suspend_init(void)
+ }
+ #else
+ static void r8a7740_suspend_init(void) {}
+-#endif
++#endif /* CONFIG_SUSPEND */
+ 
+ void __init r8a7740_pm_init(void)
+ {
+diff --git a/arch/arm/mach-shmobile/sleep-r8a7740.S b/arch/arm/mach-shmobile/sleep-r8a7740.S
 new file mode 100644
-index 0000000..dab5a7d
+index 0000000..762f978
 --- /dev/null
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -0,0 +1,95 @@
-+CONFIG_SYSVIPC=y
-+CONFIG_POSIX_MQUEUE=y
-+CONFIG_NO_HZ=y
-+CONFIG_HIGH_RES_TIMERS=y
-+CONFIG_BSD_PROCESS_ACCT=y
-+CONFIG_IKCONFIG=y
-+CONFIG_IKCONFIG_PROC=y
-+CONFIG_LOG_BUF_SHIFT
-+CONFIG_CGROUPS=y
-+CONFIG_CGROUP_SCHED=y
-+CONFIG_KALLSYMS_ALL=y
-+CONFIG_EMBEDDED=y
-+CONFIG_PERF_EVENTS=y
-+CONFIG_SLAB=y
-+# CONFIG_BLOCK is not set
-+CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_R8A73A4=y
-+CONFIG_MACH_APE6EVM=y
-+# CONFIG_ARM_THUMB is not set
-+CONFIG_CPU_BPREDICT_DISABLE=y
-+CONFIG_PL310_ERRATA_588369=y
-+CONFIG_ARM_ERRATA_754322=y
-+CONFIG_SMP=y
-+CONFIG_SCHED_MC=y
-+CONFIG_HAVE_ARM_ARCH_TIMER=y
-+CONFIG_NR_CPUS=8
-+CONFIG_AEABI=y
-+CONFIG_HIGHMEM=y
-+CONFIG_HIGHPTE=y
-+# CONFIG_HW_PERF_EVENTS is not set
-+# CONFIG_COMPACTION is not set
-+# CONFIG_CROSS_MEMORY_ATTACH is not set
-+CONFIG_ARM_APPENDED_DTB=y
-+CONFIG_VFP=y
-+CONFIG_NEON=y
-+CONFIG_BINFMT_MISC=y
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_XFRM_USER=y
-+CONFIG_NET_KEY=y
-+CONFIG_NET_KEY_MIGRATE=y
-+CONFIG_INET=y
-+CONFIG_IP_MULTICAST=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_LRO is not set
-+# CONFIG_IPV6_SIT is not set
-+CONFIG_NETFILTER=y
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+# CONFIG_FW_LOADER_USER_HELPER is not set
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_CADENCE is not set
-+CONFIG_SMC91X=y
-+CONFIG_SMSC911X=y
-+# CONFIG_INPUT_MOUSEDEV is not set
-+# CONFIG_INPUT_KEYBOARD is not set
-+# CONFIG_INPUT_MOUSE is not set
-+# CONFIG_SERIO is not set
-+CONFIG_SERIAL_NONSTANDARD=y
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+CONFIG_GPIO_SH_PFC=y
-+CONFIG_GPIOLIB=y
-+# CONFIG_HWMON is not set
-+CONFIG_THERMAL=y
-+CONFIG_RCAR_THERMAL=y
-+CONFIG_REGULATOR=y
-+CONFIG_REGULATOR_FIXED_VOLTAGE=y
-+CONFIG_REGULATOR_GPIO=y
-+# CONFIG_HID is not set
-+# CONFIG_USB_SUPPORT is not set
-+# CONFIG_IOMMU_SUPPORT is not set
-+# CONFIG_DNOTIFY is not set
-+CONFIG_TMPFS=y
-+# CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_V3_ACL=y
-+CONFIG_NFS_V4=y
-+CONFIG_NFS_V4_1=y
-+CONFIG_ROOT_NFS=y
-+CONFIG_MAGIC_SYSRQ=y
-+CONFIG_ENABLE_DEFAULT_TRACERS=y
-+CONFIG_CRYPTO_CBC=y
-+CONFIG_CRYPTO_ECB=y
-+CONFIG_CRYPTO_MD5=y
-+CONFIG_CRYPTO_MICHAEL_MIC=y
-+CONFIG_CRYPTO_TWOFISH=y
-+CONFIG_CRC_CCITT=y
-+CONFIG_CRC16=y
-+CONFIG_CRC_T10DIF=y
-+CONFIG_CRC_ITU_T=y
-+CONFIG_CRC7=y
-+CONFIG_LIBCRC32C=y
++++ b/arch/arm/mach-shmobile/sleep-r8a7740.S
+@@ -0,0 +1,72 @@
++/*
++ * Low level sleep code for the SoC r8a7740
++ *
++ * Copyright (C) 2013 Bastian Hecht
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/linkage.h>
++#include <linux/init.h>
++#include <asm/memory.h>
++
++#ifdef CONFIG_SUSPEND
++
++/* r8a7740_shutdown expects L2 to be flushed */
++	.text
++ENTRY(r8a7740_shutdown)
++	stmfd   sp!, {r4-r12, lr}
++
++	/* make sure the stack stays intact */
++	bl      v7_flush_dcache_all
++
++	/*
++	 * Clear the SCTLR.C bit to prevent further data cache
++	 * allocation. Clearing SCTLR.C would make all the data accesses
++	 * strongly ordered and would not hit the cache.
++	 */
++	mrc	p15, 0, r0, c1, c0, 0
++	bic	r0, r0, #(1 << 2)		@ Disable the C bit
++	mcr	p15, 0, r0, c1, c0, 0
++	isb
++
++	/*
++	 * We don't issue another v7_flush_dcache_all here as seen in many
++	 * other places as we have a UP core and the L1 could not soak up
++	 * data from other L1 caches in the meantime.
++	 */
++
++	bl	cpu_v7_do_idle
++
++	/* in rare cases when WFI fails we end up here and restore things */
++	mrc	p15, 0, r0, c1, c0, 0
++	orr	r0, r0, #(1 << 2)		@ Enable the C bit
++	mcr	p15, 0, r0, c1, c0, 0
++	isb
++
++	ldmfd   sp!, {r4-r12, pc}
++ENDPROC(r8a7740)
++
++	.text
++ENTRY(v7_cpu_resume)
++	bl	v7_invalidate_l1
++	b	cpu_resume
++ENDPROC(v7_cpu_resume)
++
++/*
++ * The entry point of a warm reboot, used by wakeup scenarios
++ *
++ * The CPU jumps in this case to (0xfffff000 & SBAR), so we need
++ * to align this function properly.
++ * We use a long jump into the text segment and use the physical
++ * address as the MMU is still turned off.
++ */
++	.align	12
++	.text
++ENTRY(r8a7740_resume)
++	ldr	pc, 1f
++1:	.long	v7_cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
++ENDPROC(r8a7740_resume_core_standby)
++#endif
 -- 
-1.7.10.4
+1.7.9.5
 
