@@ -1,69 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:16 +0000
-Subject: [PATCH 13/35] ARM: shmobile: mackerel: Register pinctrl mapping for FLCTL
-Message-Id: <1366671758-8954-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 11 Apr 2013 11:24:02 +0000
+Subject: [PATCH v4 6/7] ARM: shmobile: r8a7740: Add DT name to clock list for CMT10
+Message-Id: <1365679443-25456-6-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based FLCTL pinmux configuration by a pinctrl mapping.
+This adds temporarily the alternative device name to the clock list
+that is used when booting via Device Tree setup.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 31 +++++++------------------------
- 1 file changed, 7 insertions(+), 24 deletions(-)
+v4: same. only patch 2 and 3 changed
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index ed442d2..e162abd 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1315,6 +1315,13 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 				  "ceu_sync", "ceu"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
- 				  "ceu_field", "ceu"),
-+	/* FLCTL */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
-+				  "flctl_data", "flctl"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
-+				  "flctl_ce0", "flctl"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
-+				  "flctl_ctrl", "flctl"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -1472,30 +1479,6 @@ static void __init mackerel_init(void)
- 	/* SDHI0 PORT172 card-detect IRQ26 */
- 	gpio_request(GPIO_FN_IRQ26_172, NULL);
+ arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 5bd8da0..8fc396a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -582,6 +582,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
  
--	/* FLCTL */
--	gpio_request(GPIO_FN_D0_NAF0, NULL);
--	gpio_request(GPIO_FN_D1_NAF1, NULL);
--	gpio_request(GPIO_FN_D2_NAF2, NULL);
--	gpio_request(GPIO_FN_D3_NAF3, NULL);
--	gpio_request(GPIO_FN_D4_NAF4, NULL);
--	gpio_request(GPIO_FN_D5_NAF5, NULL);
--	gpio_request(GPIO_FN_D6_NAF6, NULL);
--	gpio_request(GPIO_FN_D7_NAF7, NULL);
--	gpio_request(GPIO_FN_D8_NAF8, NULL);
--	gpio_request(GPIO_FN_D9_NAF9, NULL);
--	gpio_request(GPIO_FN_D10_NAF10, NULL);
--	gpio_request(GPIO_FN_D11_NAF11, NULL);
--	gpio_request(GPIO_FN_D12_NAF12, NULL);
--	gpio_request(GPIO_FN_D13_NAF13, NULL);
--	gpio_request(GPIO_FN_D14_NAF14, NULL);
--	gpio_request(GPIO_FN_D15_NAF15, NULL);
--	gpio_request(GPIO_FN_FCE0, NULL);
--	gpio_request(GPIO_FN_WE0_FWE, NULL);
--	gpio_request(GPIO_FN_FRB, NULL);
--	gpio_request(GPIO_FN_A4_FOE, NULL);
--	gpio_request(GPIO_FN_A5_FCDE, NULL);
--	gpio_request(GPIO_FN_RD_FSC, NULL);
--
- 	/* enable GPS module (GT-720F) */
- 	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
- 	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
++	CLKDEV_DEV_ID("e6138010.timer",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
 -- 
-1.8.1.5
+1.7.9.5
 
