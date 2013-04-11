@@ -1,85 +1,44 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 18:00:06 +0000
-Subject: Re: [PATCH v3 4/4] ARM: shmobile: BOCK-W: enable USB in defconfig
-Message-Id: <5176CC26.8010705@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 11 Apr 2013 08:14:59 +0000
+Subject: [GIT PULL] Renesas ARM based r8a7790 SoC update for v3.10
+Message-Id: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304170135.10251.sergei.shtylyov@cogentembedded.com>
- <20130418140552.GO20929@verge.net.au> <5170789D.5020108@cogentembedded.com>
- <20130419021414.GB25718@verge.net.au> <5171A7D8.2010000@cogentembedded.com>
- <20130422040043.GJ15680@verge.net.au>
-In-Reply-To: <20130422040043.GJ15680@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Arnd, Hi Olof,
 
-On 04/22/2013 08:00 AM, Simon Horman wrote:
+The following changes since commit 8585deb18580d04209a2986430aa0959ef38fce2:
 
->>>>>> Enable USB platform EHCI/OHCI and common PHY drivers in 'bockw_defconfig'.
->>>>>> Enable USB storage driver and SCSI disk driver that it needs as well...
->>>>>>
->>>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>>> I realise that this is not going to be useful until the rest
->>>>> of the series has been merged. But regardless I have pre-emptively
->>>>> queued it up for v3.11 in the defconfig-bockw branch.
->>>>>> ---
->>>>>>   arch/arm/configs/bockw_defconfig |   11 ++++++++++-
->>>>>>   1 file changed, 10 insertions(+), 1 deletion(-)
->>>>>>
->>>>>> Index: renesas/arch/arm/configs/bockw_defconfig
->>>>>> =================================>>>>>> --- renesas.orig/arch/arm/configs/bockw_defconfig
->>>>>> +++ renesas/arch/arm/configs/bockw_defconfig
->>>>>> @@ -48,6 +48,8 @@ CONFIG_DEVTMPFS_MOUNT=y
->>>>>>   # CONFIG_STANDALONE is not set
->>>>>>   # CONFIG_PREVENT_FIRMWARE_BUILD is not set
->>>>>>   # CONFIG_FW_LOADER is not set
->>>>>> +CONFIG_SCSI=y
->>>>>> +CONFIG_BLK_DEV_SD=y
->>>>>>   CONFIG_NETDEVICES=y
->>>>>>   # CONFIG_NET_CADENCE is not set
->>>>>>   # CONFIG_NET_VENDOR_BROADCOM is not set
->>>>>> @@ -71,7 +73,14 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
->>>>>>   CONFIG_SERIAL_SH_SCI_CONSOLE=y
->>>>>>   # CONFIG_HW_RANDOM is not set
->>>>>>   # CONFIG_HWMON is not set
->>>>>> -# CONFIG_USB_SUPPORT is not set
->>>>>> +CONFIG_USB=y
->>>>>> +CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
->>>>>> +CONFIG_USB_EHCI_HCD=y
->>>>>> +CONFIG_USB_OHCI_HCD=y
->>>>>> +CONFIG_USB_OHCI_HCD_PLATFORM=y
->>>>>> +CONFIG_USB_EHCI_HCD_PLATFORM=y
->>>>>> +CONFIG_USB_STORAGE=y
->>>>>> +CONFIG_USB_RCAR_PHY=y
->>>>>>
->>>>     Unfortunately, you've made a mistake in this last line of the patch:
->>>> you've truncated it to just "CONFIG_USB_RCAR". :-(
->>>>     Will you correct it?
->>> Sorry about that, I will fix it.
->>      Sorry to say, but you fixed it the wrong way; now it's:
->>
->> +CONFIG_USB_RCAR=y
->>
->> instead of:
->>
->> +CONFIG_USB_RCAR_PHY=y
-> Sorry for my carelessness.
-> I will forcibly push the following:
->
->  From 26b78f5c9ad1e4809f6d0a5547e4eab222f53f23 Mon Sep 17 00:00:00 2001
-> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Date: Wed, 17 Apr 2013 01:35:09 +0400
-> Subject: [PATCH] ARM: shmobile: BOCK-W: enable USB in defconfig
->
-> Enable USB platform EHCI/OHCI and common PHY drivers in 'bockw_defconfig'.
-> Enable USB storage driver and SCSI disk driver that it needs as well...
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+  ARM: shmobile: r8a7790 SoC 64-bit DT support (2013-04-02 11:02:21 +0900)
 
-    Third time's a charm, as they say. :-)
+are available in the git repository at:
 
-WBR, Sergei
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-r8a7790-for-v3.10
 
+for you to fetch changes up to ab5fdfd5ea621b629da9bfda987af301da973525:
+
+  ARM: shmobile: force enable of r8a7790 arch timer (2013-04-09 21:37:36 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based r8a7790 SoC update for v3.10
+
+* Force architecture timer to be activated regardless of bootloader
+  - This is necessary for the lager board to boot
+* Add second memory range to r8a7790 PFC device
+  - This is in preparation for further PFC work.
+    It should not break anything as it is not used yet.
+
+This pull request is based on:
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc2-for-v3.10
+
+----------------------------------------------------------------
+Magnus Damm (2):
+      ARM: shmobile: Add second I/O range for r8a7790 PFC
+      ARM: shmobile: force enable of r8a7790 arch timer
+
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   15 ++++++++++++++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
