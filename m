@@ -1,61 +1,133 @@
 From: Bastian Hecht <hechtb@gmail.com>
-Date: Sat, 06 Apr 2013 12:20:05 +0000
-Subject: [PATCH 2/2] ARM: shmobile: Armadillo800EVA: Move st1232 reset pin handling
-Message-Id: <1365254327-10408-2-git-send-email-hechtb+renesas@gmail.com>
+Date: Thu, 11 Apr 2013 14:07:44 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: r8a7740: Add CPUIdle
+Message-Id: <1365689264-14410-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365254327-10408-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365254327-10408-1-git-send-email-hechtb+renesas@gmail.com>
+References: <1365689264-14410-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1365689264-14410-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-input@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-We no longer need to set up the reset pin for the st1232 in the board
-code, but can pass the GPIO number via the platform data to the driver.
-This results in a cleaner grouping of the device setup.
+We make use of the r8a7740 Suspend To Ram code to plug together a
+CPUIdle driver.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Bastian Hecht<hechtb+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+v2:
+new patch: Moved out the CPUIdle part
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index bf4c3d2..d82e67a 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -24,6 +24,7 @@
- #include <linux/err.h>
- #include <linux/kernel.h>
- #include <linux/input.h>
-+#include <linux/input/st1232_pdata.h>
- #include <linux/irq.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
-@@ -997,10 +998,15 @@ static struct platform_device i2c_gpio_device = {
- };
+ arch/arm/mach-shmobile/Makefile               |    2 +-
+ arch/arm/mach-shmobile/cpuidle-r8a7740.c      |   62 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 +
+ arch/arm/mach-shmobile/pm-r8a7740.c           |    1 +
+ 4 files changed, 65 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/mach-shmobile/cpuidle-r8a7740.c
+
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 0568894..2852dcf 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -30,7 +30,7 @@ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o sleep-r8a7740.o
++obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o sleep-r8a7740.o cpuidle-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
  
- /* I2C */
-+static struct st1232_pdata st1232_i2c0_pdata = {
-+	.reset_pin = 166,
+diff --git a/arch/arm/mach-shmobile/cpuidle-r8a7740.c b/arch/arm/mach-shmobile/cpuidle-r8a7740.c
+new file mode 100644
+index 0000000..48c7a6c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/cpuidle-r8a7740.c
+@@ -0,0 +1,62 @@
++/*
++ * CPUIdle code for SoC r8a7740
++ *
++ * Copyright (C) 2013 Bastian Hecht
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#include <linux/cpuidle.h>
++#include <linux/module.h>
++#include <asm/cpuidle.h>
++#include <mach/common.h>
++#include <mach/r8a7740.h>
++
++#if defined(CONFIG_SUSPEND) && defined(CONFIG_CPU_IDLE)
++static int r8a7740_enter_a3sm_pll_on(struct cpuidle_device *dev,
++					struct cpuidle_driver *drv, int index)
++{
++	r8a7740_enter_a3sm_common(1);
++	return 1;
++}
++
++static int r8a7740_enter_a3sm_pll_off(struct cpuidle_device *dev,
++					struct cpuidle_driver *drv, int index)
++{
++	r8a7740_enter_a3sm_common(0);
++	return 2;
++}
++
++static struct cpuidle_driver r8a7740_cpuidle_driver = {
++	.name			= "r8a7740_cpuidle",
++	.owner			= THIS_MODULE,
++	.en_core_tk_irqen	= 1,
++	.state_count		= 3,
++	.safe_state_index	= 0, /* C1 */
++	.states[0] = ARM_CPUIDLE_WFI_STATE,
++	.states[1] = {
++		.name = "C2",
++		.desc = "A3SM PLL ON",
++		.exit_latency = 40,
++		.target_residency = 30 + 40,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = r8a7740_enter_a3sm_pll_on,
++	},
++	.states[2] = {
++		.name = "C3",
++		.desc = "A3SM PLL OFF",
++		.exit_latency = 120,
++		.target_residency = 30 + 120,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = r8a7740_enter_a3sm_pll_off,
++	},
 +};
 +
- static struct i2c_board_info i2c0_devices[] = {
- 	{
- 		I2C_BOARD_INFO("st1232-ts", 0x55),
- 		.irq = irq_pin(10),
-+		.platform_data = &st1232_i2c0_pdata,
- 	},
- 	{
- 		I2C_BOARD_INFO("wm8978", 0x1a),
-@@ -1120,7 +1126,6 @@ static void __init eva_init(void)
++void r8a7740_cpuidle_init(void)
++{
++	shmobile_cpuidle_set_driver(&r8a7740_cpuidle_driver);
++}
++#else
++void r8a7740_cpuidle_init(void) {}
++#endif
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 05551ee..5c3361a 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -542,6 +542,7 @@ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+ extern void r8a7740_resume(void);
+ extern void r8a7740_shutdown(void);
++extern void r8a7740_cpuidle_init(void);
+ extern void r8a7740_enter_a3sm_common(int);
  
- 	/* Touchscreen */
- 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
- 
- 	/* GETHER */
- 	gpio_request(GPIO_FN_ET_CRS,		NULL);
+ #ifdef CONFIG_PM
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index adadac4..1b1fba2 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -240,4 +240,5 @@ static void r8a7740_suspend_init(void) {}
+ void __init r8a7740_pm_init(void)
+ {
+ 	r8a7740_suspend_init();
++	r8a7740_cpuidle_init();
+ }
 -- 
 1.7.9.5
 
