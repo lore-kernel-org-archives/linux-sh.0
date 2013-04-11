@@ -1,34 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Apr 2013 06:24:05 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: add each clocks ratio on comment area
-Message-Id: <20130404062404.GM28297@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 11 Apr 2013 11:24:03 +0000
+Subject: [PATCH v4 7/7] ARM: mach-shmobile: r8a7740: Setup the timer CMT10 using DT
+Message-Id: <1365679443-25456-7-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ip44cc6g.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ip44cc6g.wl%kuninori.morimoto.gx@renesas.com>
+References: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 03, 2013 at 05:22:15PM +0900, Magnus Damm wrote:
-> Hi Morimoto-san, Simon,
-> 
-> I suggest using the following commit message:
-> 
-> Adding comment describing the r8a7779 clock frequencies depending on
-> MD pin settings.
-> 
-> On Wed, Apr 3, 2013 at 4:20 PM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >  arch/arm/mach-shmobile/clock-r8a7779.c |   19 +++++++++++++++++++
-> >  1 file changed, 19 insertions(+)
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+We can now use the Device Tree for bringing up our timer device CMT10 on
+the SoC r8a7740.
 
-Morimoto-san,
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+v4: same. only patch 2 and 3 changed
 
-please repost the patch with the updated changelog and Magnus's ack.
+ arch/arm/mach-shmobile/setup-r8a7740.c |   33 --------------------------------
+ 1 file changed, 33 deletions(-)
 
-Thanks
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index c2ac4aa..e88b50d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -363,38 +363,6 @@ static struct platform_device scifb_device = {
+ 	},
+ };
+ 
+-/* CMT */
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
+-};
+-
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(58),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
+-	.dev = {
+-		.platform_data	= &cmt10_platform_data,
+-	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
+-};
+-
+ /* TMU */
+ static struct sh_timer_config tmu00_platform_data = {
+ 	.name = "TMU00",
+@@ -531,7 +499,6 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scifb_device,
+-	&cmt10_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
+ 	&tmu02_device,
+-- 
+1.7.9.5
+
