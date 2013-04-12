@@ -1,77 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:20 +0000
-Subject: [PATCH 24/30] ARM: shmobile: r8a7779: move global functions to r8a7779.h
-Message-Id: <1364879246-9470-25-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Apr 2013 15:40:24 +0000
+Subject: [PATCH v9 04/20] soc-camera: add host clock callbacks to start and stop the master clock
+Message-Id: <1365781240-16149-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Currently soc-camera uses a single camera host callback to activate the
+interface master clock and to configure the interface for a specific
+client. However, during probing we might not have the information about
+a client, we just need to activate the clock. Add new camera host driver
+callbacks to only start and stop the clock without and client-specific
+configuration.
 
-There is no reason each CPU's own function has to exist in common.h.
-r8a7779_xxx() go to r8a7779.h
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/include/mach/common.h  |   14 --------------
- arch/arm/mach-shmobile/include/mach/r8a7779.h |   13 +++++++++++++
- 2 files changed, 13 insertions(+), 14 deletions(-)
+ drivers/media/platform/soc_camera/soc_camera.c |   19 +++++++++++++++++--
+ include/media/soc_camera.h                     |    2 ++
+ 2 files changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 4d5410d..e002cfd 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -19,20 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
- 			      struct cpuidle_driver *drv, int index);
- extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index e32e4e2..2f81af5 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -513,10 +513,23 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
+ 	if (ici->icd)
+ 		return -EBUSY;
  
--extern void r8a7779_init_delay(void);
--extern void r8a7779_init_irq(void);
--extern void r8a7779_init_irq_extpin(int irlm);
--extern void r8a7779_init_irq_dt(void);
--extern void r8a7779_map_io(void);
--extern void r8a7779_earlytimer_init(void);
--extern void r8a7779_add_early_devices(void);
--extern void r8a7779_add_standard_devices(void);
--extern void r8a7779_add_standard_devices_dt(void);
--extern void r8a7779_clock_init(void);
--extern void r8a7779_pinmux_init(void);
--extern void r8a7779_pm_init(void);
--extern void r8a7779_register_twd(void);
--
- #ifdef CONFIG_SUSPEND
- int shmobile_suspend_init(void);
- #else
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 8ab0cd6..af38750 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -343,6 +343,19 @@ static inline struct r8a7779_pm_ch *to_r8a7779_ch(struct generic_pm_domain *d)
- 	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
++	if (ici->ops->clock_start) {
++		ret = ici->ops->clock_start(ici);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	ret = ici->ops->add(icd);
+-	if (!ret)
+-		ici->icd = icd;
++	if (ret < 0)
++		goto eadd;
++
++	ici->icd = icd;
+ 
++	return 0;
++
++eadd:
++	if (ici->ops->clock_stop)
++		ici->ops->clock_stop(ici);
+ 	return ret;
  }
  
-+extern void r8a7779_init_delay(void);
-+extern void r8a7779_init_irq(void);
-+extern void r8a7779_init_irq_extpin(int irlm);
-+extern void r8a7779_init_irq_dt(void);
-+extern void r8a7779_map_io(void);
-+extern void r8a7779_earlytimer_init(void);
-+extern void r8a7779_add_early_devices(void);
-+extern void r8a7779_add_standard_devices(void);
-+extern void r8a7779_add_standard_devices_dt(void);
-+extern void r8a7779_clock_init(void);
-+extern void r8a7779_pinmux_init(void);
-+extern void r8a7779_pm_init(void);
-+extern void r8a7779_register_twd(void);
- extern int r8a7779_sysc_power_down(struct r8a7779_pm_ch *r8a7779_ch);
- extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
+@@ -528,6 +541,8 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
+ 		return;
  
+ 	ici->ops->remove(icd);
++	if (ici->ops->clock_stop)
++		ici->ops->clock_stop(ici);
+ 	ici->icd = NULL;
+ }
+ 
+diff --git a/include/media/soc_camera.h b/include/media/soc_camera.h
+index 5a46ce2..64415ee 100644
+--- a/include/media/soc_camera.h
++++ b/include/media/soc_camera.h
+@@ -74,6 +74,8 @@ struct soc_camera_host_ops {
+ 	struct module *owner;
+ 	int (*add)(struct soc_camera_device *);
+ 	void (*remove)(struct soc_camera_device *);
++	int (*clock_start)(struct soc_camera_host *);
++	void (*clock_stop)(struct soc_camera_host *);
+ 	/*
+ 	 * .get_formats() is called for each client device format, but
+ 	 * .put_formats() is only called once. Further, if any of the calls to
 -- 
-1.7.10.4
+1.7.2.5
 
