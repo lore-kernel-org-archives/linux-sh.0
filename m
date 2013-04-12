@@ -1,7 +1,7 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Apr 2013 15:40:24 +0000
-Subject: [PATCH v9 04/20] soc-camera: add host clock callbacks to start and stop the master clock
-Message-Id: <1365781240-16149-5-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 12 Apr 2013 15:40:33 +0000
+Subject: [PATCH v9 13/20] soc-camera: don't attach the client to the host during probing
+Message-Id: <1365781240-16149-14-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
@@ -11,71 +11,45 @@ Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
 Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Currently soc-camera uses a single camera host callback to activate the
-interface master clock and to configure the interface for a specific
-client. However, during probing we might not have the information about
-a client, we just need to activate the clock. Add new camera host driver
-callbacks to only start and stop the clock without and client-specific
-configuration.
+During client probing we only have to turn on the host's clock, no need to
+actually attach the client to the host.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/media/platform/soc_camera/soc_camera.c |   19 +++++++++++++++++--
- include/media/soc_camera.h                     |    2 ++
- 2 files changed, 19 insertions(+), 2 deletions(-)
+ drivers/media/platform/soc_camera/soc_camera.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
-index e32e4e2..2f81af5 100644
+index 507f539..f693817 100644
 --- a/drivers/media/platform/soc_camera/soc_camera.c
 +++ b/drivers/media/platform/soc_camera/soc_camera.c
-@@ -513,10 +513,23 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
- 	if (ici->icd)
- 		return -EBUSY;
+@@ -1207,7 +1207,7 @@ static int soc_camera_probe(struct soc_camera_device *icd)
+ 		ssdd->reset(icd->pdev);
  
-+	if (ici->ops->clock_start) {
-+		ret = ici->ops->clock_start(ici);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
- 	ret = ici->ops->add(icd);
--	if (!ret)
--		ici->icd = icd;
-+	if (ret < 0)
-+		goto eadd;
-+
-+	ici->icd = icd;
+ 	mutex_lock(&ici->host_lock);
+-	ret = soc_camera_add_device(icd);
++	ret = ici->ops->clock_start(ici);
+ 	mutex_unlock(&ici->host_lock);
+ 	if (ret < 0)
+ 		goto eadd;
+@@ -1280,7 +1280,7 @@ static int soc_camera_probe(struct soc_camera_device *icd)
+ 		icd->field		= mf.field;
+ 	}
  
-+	return 0;
-+
-+eadd:
-+	if (ici->ops->clock_stop)
-+		ici->ops->clock_stop(ici);
- 	return ret;
- }
+-	soc_camera_remove_device(icd);
++	ici->ops->clock_stop(ici);
  
-@@ -528,6 +541,8 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
- 		return;
+ 	mutex_unlock(&ici->host_lock);
  
- 	ici->ops->remove(icd);
-+	if (ici->ops->clock_stop)
-+		ici->ops->clock_stop(ici);
- 	ici->icd = NULL;
- }
- 
-diff --git a/include/media/soc_camera.h b/include/media/soc_camera.h
-index 5a46ce2..64415ee 100644
---- a/include/media/soc_camera.h
-+++ b/include/media/soc_camera.h
-@@ -74,6 +74,8 @@ struct soc_camera_host_ops {
- 	struct module *owner;
- 	int (*add)(struct soc_camera_device *);
- 	void (*remove)(struct soc_camera_device *);
-+	int (*clock_start)(struct soc_camera_host *);
-+	void (*clock_stop)(struct soc_camera_host *);
- 	/*
- 	 * .get_formats() is called for each client device format, but
- 	 * .put_formats() is only called once. Further, if any of the calls to
+@@ -1303,7 +1303,7 @@ eadddev:
+ 	icd->vdev = NULL;
+ evdc:
+ 	mutex_lock(&ici->host_lock);
+-	soc_camera_remove_device(icd);
++	ici->ops->clock_stop(ici);
+ 	mutex_unlock(&ici->host_lock);
+ eadd:
+ 	v4l2_ctrl_handler_free(&icd->ctrl_handler);
 -- 
 1.7.2.5
 
