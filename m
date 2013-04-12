@@ -1,127 +1,110 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 01 Apr 2013 02:31:49 +0000
-Subject: [INFO] R-Car DU DRM driver testing
-Message-Id: <1689455.mcxOzcvm4g@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Apr 2013 15:40:30 +0000
+Subject: [PATCH v9 10/20] mx1-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1365781240-16149-11-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Hello everybody,
+When adding and removing a client, the mx1-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-I've compiled instructions on how to use the modetest and dmabuf-sharing test 
-tools with the R-Car DU DRM driver. In case someone would be interested in 
-testing the driver, here they are.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/media/platform/soc_camera/mx1_camera.c |   32 +++++++++++++++---------
+ 1 files changed, 20 insertions(+), 12 deletions(-)
 
-The modetest tool is found in the libdrm repository. You can fetch the latest 
-upstream version from
-
-	git://anongit.freedesktop.org/mesa/drm master
-
-and apply the "[PATCH v4 00/21] modetest enhancements" patch series posted on 
-the dri-devel mailing list. Alternatively, you can get the patches from
-
-	git-ideasonboard@git.ideasonboard.com:renesas/drm.git master
-
-The tool is in the tests/modetest directory.
-
-The dmabuf-sharing tool is found in the Samsung public-apps repository. You 
-can fetch the latest version from
-
-	git://git.infradead.org/users/kmpark/public-apps master
-
-The tool is in the v4l2-drm-example directory.
-
-
-Layer Priority
---------------
-
-Layers priority is configured through the layer zpos property. The property 
-takes an integer value between 1 and 7 inclusive. Layers with a higher zpos 
-value are displayed on top of layers with a lower zpos value. If two layers 
-have the same zpos value, the layer with the highest ID will be displayed on 
-top.
-
-# ./modetest -M rcar-du -s 9:1024x768@AR24 -d \
-        -P '6:(200,200)/400x300@AR24' \
-        -P '6:(300,300)/400x300@AR24' &
-setting mode 1024x768@AR24 on connectors 9, crtc 6
-testing 400x300@AR24 overlay plane 12
-testing 400x300@AR24 overlay plane 13
-
-# ./modetest -M rcar-du -w 12:zpos:2
-
-Layer Opacity
--------------
-
-Layer-wide alpha value is only supported for layers in the XRGB1555 format. It 
-is configured through the layer alpha property.
-
-# ./modetest -M rcar-du -s 9:1024x768@AR24 -d \
-        -P '6:(200,200)/400x300@XR15' \
-        -P '6:(300,300)/400x300@XR15' &
-setting mode 1024x768@AR24 on connectors 9, crtc 6
-testing 400x300@AR24 overlay plane 12
-testing 400x300@AR24 overlay plane 13
-
-# ./modetest -M rcar-du -w 13:alpha:128
-
-Color Keying
-------------
-
-Color keying is configured through the layer colorkey property. The color key 
-is expressed as an RGB888 triplet stored in a 32-bit integer in XRGB8888 
-format. Bit 24 is used as a flag to disable (0) or enable color keying (1).
-
-# ./modetest -M rcar-du -s 9:1024x768@AR24 -d \
-        -P '6:(200,200)/400x300@XR15' \
-        -P '6:(300,300)/400x300@XR15' &
-
-./modetest -M rcar-du -w 12:colorkey:17436960
-
-Dual Output (two CRTCs)
------------------------
-
-# ./modetest -M rcar-du -s 9:1024x768@AR24 -d \
-        -P '6:(200,200)/400x300@AR24' &
-setting mode 1024x768@AR24 on connectors 9, crtc 6
-testing 400x300@AR24 overlay plane 12
-
-# ./modetest -M rcar-du -s 11:1024x768@AR24 \
-        -P '7:(300,300)/400x300@AR24'
-setting mode 1024x768@AR24 on connectors 11, crtc 7
-testing 400x300@AR24 overlay plane 13
-
-Dual Output (cloned)
---------------------
-
-# ./modetest -M rcar-du -s 9,11:1024x768@AR24 -d \
-        -P '6:(200,200)/400x300@AR24'
-setting mode 1024x768@AR24 on connectors 9, 11, crtc 6
-testing 400x300@AR24 overlay plane 12
-
-DMABUF
-------
-
-To test DMABUF support you will first need to load the vivi (virtual video) 
-V4L2 driver. You can then test the R-Car DU DRM driver DMABUF exporter role 
-with the following commands. The importer role can't be tested with the vivi 
-driver.
-
-# ./modetest -M rcar-du -s 9:1024x768@AR24 -d &
-setting mode 1024x768@AR24 on connectors 9, crtc 6
-
-# ./dmabuf-sharing -i /dev/video0 -f YUYV -S 640,480 \
-        -M rcar-du -p 9:6 -F YUYV -t 640,480@192,144 -b 2
-G_FMT(start): width = 640, height = 480, 4cc = YUYV
-G_FMT(final): width = 640, height = 480, 4cc = YUYV
-dbuf_fd = 5
-dbuf_fd = 6
-buffers ready
-
+diff --git a/drivers/media/platform/soc_camera/mx1_camera.c b/drivers/media/platform/soc_camera/mx1_camera.c
+index 5f9ec8e..fea3e61 100644
+--- a/drivers/media/platform/soc_camera/mx1_camera.c
++++ b/drivers/media/platform/soc_camera/mx1_camera.c
+@@ -399,7 +399,7 @@ static void mx1_camera_activate(struct mx1_camera_dev *pcdev)
+ {
+ 	unsigned int csicr1 = CSICR1_EN;
+ 
+-	dev_dbg(pcdev->soc_host.icd->parent, "Activate device\n");
++	dev_dbg(pcdev->soc_host.v4l2_dev.dev, "Activate device\n");
+ 
+ 	clk_prepare_enable(pcdev->clk);
+ 
+@@ -415,7 +415,7 @@ static void mx1_camera_activate(struct mx1_camera_dev *pcdev)
+ 
+ static void mx1_camera_deactivate(struct mx1_camera_dev *pcdev)
+ {
+-	dev_dbg(pcdev->soc_host.icd->parent, "Deactivate device\n");
++	dev_dbg(pcdev->soc_host.v4l2_dev.dev, "Deactivate device\n");
+ 
+ 	/* Disable all CSI interface */
+ 	__raw_writel(0x00, pcdev->base + CSICR1);
+@@ -423,26 +423,35 @@ static void mx1_camera_deactivate(struct mx1_camera_dev *pcdev)
+ 	clk_disable_unprepare(pcdev->clk);
+ }
+ 
++static int mx1_camera_add_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "MX1 Camera driver attached to camera %d\n",
++		 icd->devnum);
++
++	return 0;
++}
++
++static void mx1_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "MX1 Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
+ /*
+  * The following two functions absolutely depend on the fact, that
+  * there can be only one camera on i.MX1/i.MXL camera sensor interface
+  */
+-static int mx1_camera_add_device(struct soc_camera_device *icd)
++static int mx1_camera_clock_start(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx1_camera_dev *pcdev = ici->priv;
+ 
+-	dev_info(icd->parent, "MX1 Camera driver attached to camera %d\n",
+-		 icd->devnum);
+-
+ 	mx1_camera_activate(pcdev);
+ 
+ 	return 0;
+ }
+ 
+-static void mx1_camera_remove_device(struct soc_camera_device *icd)
++static void mx1_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx1_camera_dev *pcdev = ici->priv;
+ 	unsigned int csicr1;
+ 
+@@ -453,9 +462,6 @@ static void mx1_camera_remove_device(struct soc_camera_device *icd)
+ 	/* Stop DMA engine */
+ 	imx_dma_disable(pcdev->dma_chan);
+ 
+-	dev_info(icd->parent, "MX1 Camera driver detached from camera %d\n",
+-		 icd->devnum);
+-
+ 	mx1_camera_deactivate(pcdev);
+ }
+ 
+@@ -669,6 +675,8 @@ static struct soc_camera_host_ops mx1_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= mx1_camera_add_device,
+ 	.remove		= mx1_camera_remove_device,
++	.clock_start	= mx1_camera_clock_start,
++	.clock_stop	= mx1_camera_clock_stop,
+ 	.set_bus_param	= mx1_camera_set_bus_param,
+ 	.set_fmt	= mx1_camera_set_fmt,
+ 	.try_fmt	= mx1_camera_try_fmt,
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.2.5
 
