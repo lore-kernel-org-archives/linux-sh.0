@@ -1,37 +1,80 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 11 Apr 2013 11:24:02 +0000
-Subject: [PATCH v4 6/7] ARM: shmobile: r8a7740: Add DT name to clock list for CMT10
-Message-Id: <1365679443-25456-6-git-send-email-hechtb+renesas@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 12 Apr 2013 23:28:34 +0000
+Subject: [PATCH v4 2/9] ehci-platform: add pre_setup() method to platform data
+Message-Id: <201304130328.35284.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This adds temporarily the alternative device name to the clock list
-that is used when booting via Device Tree setup.
+Sometimes there is a need  to initialize some non-standard registers mapped to
+the EHCI region before accessing the standard EHCI registers.  Add pre_setup()
+method with 'struct usb_hcd *' parameter to be called just before ehci_setup()
+to the 'ehci-platform'  driver's platform data for this purpose...
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+While at it, add the missing incomplete declaration of 'struct platform_device'
+to <linux/usb/ehci_pdriver.h>...
+
+The patch has been tested on the Marzen and BOCK-W boards.
+
+Suggested-by: Alan Stern <stern@rowland.harvard.edu>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
+
 ---
-v4: same. only patch 2 and 3 changed
+Changes since version 3:
+- added ACK from Alan Stern.
 
- arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
- 1 file changed, 1 insertion(+)
+Changes since version 2:
+- replaced #include with incomplete declarations of 'struct platform_device' and
+  'struct usb_hcd';
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 5bd8da0..8fc396a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -582,6 +582,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
+Changes since the original posting:
+- changed init() method to pre_setup() with different parameters and call site.
+
+ drivers/usb/host/ehci-platform.c |    6 ++++++
+ include/linux/usb/ehci_pdriver.h |    4 ++++
+ 2 files changed, 10 insertions(+)
+
+Index: renesas/drivers/usb/host/ehci-platform.c
+=================================--- renesas.orig/drivers/usb/host/ehci-platform.c
++++ renesas/drivers/usb/host/ehci-platform.c
+@@ -46,6 +46,12 @@ static int ehci_platform_reset(struct us
+ 	ehci->big_endian_desc = pdata->big_endian_desc;
+ 	ehci->big_endian_mmio = pdata->big_endian_mmio;
  
- 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
-+	CLKDEV_DEV_ID("e6138010.timer",		&mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
--- 
-1.7.9.5
-
++	if (pdata->pre_setup) {
++		retval = pdata->pre_setup(hcd);
++		if (retval < 0)
++			return retval;
++	}
++
+ 	ehci->caps = hcd->regs + pdata->caps_offset;
+ 	retval = ehci_setup(hcd);
+ 	if (retval)
+Index: renesas/include/linux/usb/ehci_pdriver.h
+=================================--- renesas.orig/include/linux/usb/ehci_pdriver.h
++++ renesas/include/linux/usb/ehci_pdriver.h
+@@ -19,6 +19,9 @@
+ #ifndef __USB_CORE_EHCI_PDRIVER_H
+ #define __USB_CORE_EHCI_PDRIVER_H
+ 
++struct platform_device;
++struct usb_hcd;
++
+ /**
+  * struct usb_ehci_pdata - platform_data for generic ehci driver
+  *
+@@ -50,6 +53,7 @@ struct usb_ehci_pdata {
+ 	/* Turn on only VBUS suspend power and hotplug detection,
+ 	 * turn off everything else */
+ 	void (*power_suspend)(struct platform_device *pdev);
++	int (*pre_setup)(struct usb_hcd *hcd);
+ };
+ 
+ #endif /* __USB_CORE_EHCI_PDRIVER_H */
