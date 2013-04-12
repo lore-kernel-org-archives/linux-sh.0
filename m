@@ -1,50 +1,228 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 22 Apr 2013 03:45:54 +0000
-Subject: Re: [PATCH 1/8] ARM: shmobile:Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
-Message-Id: <20130422034554.GI15680@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 12 Apr 2013 08:13:14 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7778: use fixed ratio clock
+Message-Id: <87ppy0np49.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304050257.00799.sergei.shtylyov@cogentembedded.com>
- <20130418154425.GZ14496@n2100.arm.linux.org.uk>
- <5170301B.3030306@cogentembedded.com>
- <20130419021755.GF25718@verge.net.au>
- <51712E2E.8040105@cogentembedded.com>
-In-Reply-To: <51712E2E.8040105@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Apr 19, 2013 at 03:44:46PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 19-04-2013 6:17, Simon Horman wrote:
-> 
-> >>>>+/* USB PHY */
-> >>>>+static struct resource usb_phy_resources[] = {
-> >>>>+	[0] = {
-> >>>>+		.start		= 0xffe70000,
-> >>>>+		.end		= 0xffe70900 - 1,
-> >>>>+		.flags		= IORESOURCE_MEM,
-> >>>>+	},
-> >>>>+	[1] = {
-> >>>>+		.start		= 0xfff70000,
-> >>>>+		.end		= 0xfff70900 - 1,
-> >>>>+		.flags		= IORESOURCE_MEM,
-> >>>>+	},
-> 
-> >>>Please consider using the macros for these initialisers.
-> 
-> >>    I'm just moving the code as is here. The destination file still
-> >>uses old style initializers, and probably needs the wholesale
-> >>conversion patch in the future.
-> 
-> >My preference is for you to either convert these users in this patch or
-> >provide a patch that makes a wholesale conversion.
-> 
->    I'll try to do the latter but my load is currently very high, so that
-> may take some time.
+R-Car M1 has many clocks, and it is possible to
+read/use clock ratio of these clocks from FRQMRx.
+But, these ratio are fixed value and
+these are decided by MD pin status.
 
-Thanks. In the same vein I have posted the following patch to
-convert the sh73a0 SoC to use the macros.
+This patch reads MD pin status,
+and used fixed ratio clock for other clocks.
+It was tesed on bock-w board.
 
-"[PATCH] ARM: shmobile: sh73a0: Use IORESOURCE_MEM_* everywhere"
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
+
+ - based on renesas-next-20130411v2 tags
+
+ arch/arm/mach-shmobile/clock-r8a7778.c |  149 +++++++++++++++++++++++++++++---
+ 1 file changed, 136 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index cd68552..5cc271e 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -23,9 +23,23 @@
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+ 
++/*
++ *     MD      MD      MD      MD       PLLA   PLLB    EXTAL   clki    clkz
++ *     19      18      12      11                      (HMz)   (MHz)   (MHz)
++ *----------------------------------------------------------------------------
++ *     1       0       0       0       x21     x21     38.00   800     800
++ *     1       0       0       1       x24     x24     33.33   800     800
++ *     1       0       1       0       x28     x28     28.50   800     800
++ *     1       0       1       1       x32     x32     25.00   800     800
++ *     1       1       0       1       x24     x21     33.33   800     700
++ *     1       1       1       0       x28     x21     28.50   800     600
++ *     1       1       1       1       x32     x24     25.00   800     600
++ */
++
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ 
+ #define MSTPCR0		IOMEM(0xffc80030)
+@@ -37,6 +51,9 @@
+ #define MSTPCR4		IOMEM(0xffc80050)
+ #define MSTPCR5		IOMEM(0xffc80054)
+ #define MSTPCR6		IOMEM(0xffc80058)
++#define MODEMR		0xFFCC0020
++
++#define MD(nr)	BIT(nr)
+ 
+ /* ioremap() through clock mapping mandatory to avoid
+  * collision with ARM coherent DMA virtual memory range.
+@@ -47,14 +64,42 @@ static struct clk_mapping cpg_mapping = {
+ 	.len	= 0x80,
+ };
+ 
+-static struct clk clkp = {
+-	.rate   = 62500000, /* FIXME: shortcut */
+-	.flags  = CLK_ENABLE_ON_INIT,
++static struct clk extal_clk = {
++	/* .rate will be updated on r8a7778_clock_init() */
+ 	.mapping = &cpg_mapping,
+ };
+ 
++/*
++ * clock ratio of these clock will be updated
++ * on r8a7778_clock_init()
++ */
++SH_FIXED_RATIO_CLK_SET(plla_clk,	extal_clk, 1, 1);
++SH_FIXED_RATIO_CLK_SET(pllb_clk,	extal_clk, 1, 1);
++SH_FIXED_RATIO_CLK_SET(i_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(s_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(s1_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(s3_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(s4_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(b_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(out_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(p_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(g_clk,		plla_clk,  1, 1);
++SH_FIXED_RATIO_CLK_SET(z_clk,		pllb_clk,  1, 1);
++
+ static struct clk *main_clks[] = {
+-	&clkp,
++	&extal_clk,
++	&plla_clk,
++	&pllb_clk,
++	&i_clk,
++	&s_clk,
++	&s1_clk,
++	&s3_clk,
++	&s4_clk,
++	&b_clk,
++	&out_clk,
++	&p_clk,
++	&g_clk,
++	&z_clk,
+ };
+ 
+ enum {
+@@ -64,15 +109,15 @@ enum {
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP114] = SH_CLK_MSTP32(&clkp, MSTPCR1, 14, 0), /* Ether */
+-	[MSTP026] = SH_CLK_MSTP32(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
+-	[MSTP025] = SH_CLK_MSTP32(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
+-	[MSTP024] = SH_CLK_MSTP32(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
+-	[MSTP023] = SH_CLK_MSTP32(&clkp, MSTPCR0, 23, 0), /* SCIF3 */
+-	[MSTP022] = SH_CLK_MSTP32(&clkp, MSTPCR0, 22, 0), /* SCIF4 */
+-	[MSTP021] = SH_CLK_MSTP32(&clkp, MSTPCR0, 21, 0), /* SCIF5 */
+-	[MSTP016] = SH_CLK_MSTP32(&clkp, MSTPCR0, 16, 0), /* TMU0 */
+-	[MSTP015] = SH_CLK_MSTP32(&clkp, MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
++	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
++	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
++	[MSTP024] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 24, 0), /* SCIF2 */
++	[MSTP023] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 23, 0), /* SCIF3 */
++	[MSTP022] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 22, 0), /* SCIF4 */
++	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
++	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
++	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+@@ -90,8 +135,86 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a7778_clock_init(void)
+ {
++	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++	u32 mode;
+ 	int k, ret = 0;
+ 
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	switch (mode & (MD(19) | MD(18) | MD(12) | MD(11))) {
++	case MD(19):
++		extal_clk.rate = 38000000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	21, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	21, 1);
++		break;
++	case MD(19) | MD(11):
++		extal_clk.rate = 33333333;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	24, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	24, 1);
++		break;
++	case MD(19) | MD(12):
++		extal_clk.rate = 28500000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	28, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	28, 1);
++		break;
++	case MD(19) | MD(12) | MD(11):
++		extal_clk.rate = 25000000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	32, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	32, 1);
++		break;
++	case MD(19) | MD(18) | MD(11):
++		extal_clk.rate = 33333333;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	24, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	21, 1);
++		break;
++	case MD(19) | MD(18) | MD(12):
++		extal_clk.rate = 28500000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	28, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	21, 1);
++		break;
++	case MD(19) | MD(18) | MD(12) | MD(11):
++		extal_clk.rate = 25000000;
++		SH_CLK_SET_RATIO(&plla_clk_ratio,	32, 1);
++		SH_CLK_SET_RATIO(&pllb_clk_ratio,	24, 1);
++		break;
++	default:
++		BUG();
++	}
++
++	if (mode & MD(1)) {
++		SH_CLK_SET_RATIO(&i_clk_ratio,	1, 1);
++		SH_CLK_SET_RATIO(&s_clk_ratio,	1, 3);
++		SH_CLK_SET_RATIO(&s1_clk_ratio,	1, 6);
++		SH_CLK_SET_RATIO(&s3_clk_ratio,	1, 4);
++		SH_CLK_SET_RATIO(&s4_clk_ratio,	1, 8);
++		SH_CLK_SET_RATIO(&p_clk_ratio,	1, 12);
++		SH_CLK_SET_RATIO(&g_clk_ratio,	1, 12);
++		if (mode & MD(2)) {
++			SH_CLK_SET_RATIO(&b_clk_ratio,		1, 18);
++			SH_CLK_SET_RATIO(&out_clk_ratio,	1, 18);
++		} else {
++			SH_CLK_SET_RATIO(&b_clk_ratio,		1, 12);
++			SH_CLK_SET_RATIO(&out_clk_ratio,	1, 12);
++		}
++	} else {
++		SH_CLK_SET_RATIO(&i_clk_ratio,	1, 1);
++		SH_CLK_SET_RATIO(&s_clk_ratio,	1, 4);
++		SH_CLK_SET_RATIO(&s1_clk_ratio,	1, 8);
++		SH_CLK_SET_RATIO(&s3_clk_ratio,	1, 4);
++		SH_CLK_SET_RATIO(&s4_clk_ratio,	1, 8);
++		SH_CLK_SET_RATIO(&p_clk_ratio,	1, 16);
++		SH_CLK_SET_RATIO(&g_clk_ratio,	1, 12);
++		if (mode & MD(2)) {
++			SH_CLK_SET_RATIO(&b_clk_ratio,		1, 16);
++			SH_CLK_SET_RATIO(&out_clk_ratio,	1, 16);
++		} else {
++			SH_CLK_SET_RATIO(&b_clk_ratio,		1, 12);
++			SH_CLK_SET_RATIO(&out_clk_ratio,	1, 12);
++		}
++	}
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
+-- 
+1.7.9.5
+
