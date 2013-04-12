@@ -1,65 +1,86 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 08 Apr 2013 21:32:07 +0000
-Subject: [PATCH v2 7/9] rcar-phy: add platform data
-Message-Id: <201304090132.08103.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Apr 2013 15:40:32 +0000
+Subject: [PATCH v9 12/20] soc-camera: make .clock_{start,stop} compulsory, .add / .remove optional
+Message-Id: <1365781240-16149-13-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong since this
-register contains board-specific USB ports configuration and so its value should
-be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file with
-the USBPCTRL0 bit #define's and 'struct rcar_phy_platform_data' containing the
-value to be set by the driver to that register.
+All existing soc-camera host drivers use .clock_start() and .clock_stop()
+callbacks to activate and deactivate their camera interfaces, whereas
+.add() and .remove() callbacks are usually dummy. Make the former two
+compulsory and the latter two optional.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- include/linux/usb/rcar-phy.h |   39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ drivers/media/platform/soc_camera/soc_camera.c |   27 +++++++++++------------
+ 1 files changed, 13 insertions(+), 14 deletions(-)
 
-Index: renesas/include/linux/usb/rcar-phy.h
-=================================--- /dev/null
-+++ renesas/include/linux/usb/rcar-phy.h
-@@ -0,0 +1,39 @@
-+/*
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index 2f81af5..507f539 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -513,23 +513,22 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
+ 	if (ici->icd)
+ 		return -EBUSY;
+ 
+-	if (ici->ops->clock_start) {
+-		ret = ici->ops->clock_start(ici);
++	ret = ici->ops->clock_start(ici);
++	if (ret < 0)
++		return ret;
 +
-+#ifndef __RCAR_PHY_H
-+#define __RCAR_PHY_H
-+
-+#include <linux/bitops.h>
-+
-+/* USBPCTRL0 register bits */
-+#define USBPCTRL0_OVC2	BIT(10)	/* Switches the OVC input pin for port 2: */
-+				/* 1: USB_OVC2, 0: OVC2			*/
-+#define USBPCTRL0_OVC1_VBUS1 BIT(9) /* Switches the OVC input pin for port 1: */
-+				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
-+#define USBPCTRL0_OVC0	BIT(8)	/* Switches the OVC input pin for port 0: */
-+				/* 1: USB_OVC0 pin, 0: OVC0		*/
-+#define USBPCTRL0_OVC2_ACT BIT(6) /* Host mode: OVC2 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+				/* Function mode: be sure to set to 1	*/
-+#define USBPCTRL0_PENC	BIT(4)	/* Function mode: output level of PENC1 pin: */
-+				/* 1: high, 0: low			*/
-+#define USBPCTRL0_OVC0_ACT BIT(3) /* Host mode: OVC0 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+#define USBPCTRL0_OVC1_ACT BIT(1) /* Host mode: OVC1 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+				/* Function mode: be sure to set to 1	*/
-+#define USBPCTRL0_PORT1	BIT(0)	/* Selects port 1 mode:			*/
-+				/* 1: function, 0: host			*/
-+
-+struct rcar_phy_platform_data {
-+	u32 usbpctrl0;		/* USBPCTRL0 register value */
-+};
-+
-+#endif /* __RCAR_PHY_H */
++	if (ici->ops->add) {
++		ret = ici->ops->add(icd);
+ 		if (ret < 0)
+-			return ret;
++			goto eadd;
+ 	}
+ 
+-	ret = ici->ops->add(icd);
+-	if (ret < 0)
+-		goto eadd;
+-
+ 	ici->icd = icd;
+ 
+ 	return 0;
+ 
+ eadd:
+-	if (ici->ops->clock_stop)
+-		ici->ops->clock_stop(ici);
++	ici->ops->clock_stop(ici);
+ 	return ret;
+ }
+ 
+@@ -540,9 +539,9 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
+ 	if (WARN_ON(icd != ici->icd))
+ 		return;
+ 
+-	ici->ops->remove(icd);
+-	if (ici->ops->clock_stop)
+-		ici->ops->clock_stop(ici);
++	if (ici->ops->remove)
++		ici->ops->remove(icd);
++	ici->ops->clock_stop(ici);
+ 	ici->icd = NULL;
+ }
+ 
+@@ -1413,8 +1412,8 @@ int soc_camera_host_register(struct soc_camera_host *ici)
+ 	    ((!ici->ops->init_videobuf ||
+ 	      !ici->ops->reqbufs) &&
+ 	     !ici->ops->init_videobuf2) ||
+-	    !ici->ops->add ||
+-	    !ici->ops->remove ||
++	    !ici->ops->clock_start ||
++	    !ici->ops->clock_stop ||
+ 	    !ici->ops->poll ||
+ 	    !ici->v4l2_dev.dev)
+ 		return -EINVAL;
+-- 
+1.7.2.5
+
