@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 14:24:03 +0000
+Date: Fri, 12 Apr 2013 14:26:20 +0000
 Subject: Re: [PATCH] sh-pfc: R8A7779: add VIN pin groups
-Message-Id: <51681903.9060803@cogentembedded.com>
+Message-Id: <5168198C.90709@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201304120251.38652.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201304120251.38652.sergei.shtylyov@cogentembedded.com>
@@ -12,64 +12,28 @@ To: linux-sh@vger.kernel.org
 
 Hello.
 
-On 12-04-2013 12:15, Laurent Pinchart wrote:
+On 12-04-2013 8:33, Kuninori Morimoto wrote:
 
-> Thank you for the patch.
+> Thank you for your patch
 
-    Thanks to Vladimir, actually.
+    It's not mine. :-)
 
-> Beside Morimoto-san's request to use the RCAR_GP_PIN() macro, please see below
-> for a small comment.
-
-    See the reply below.
-
-> On Friday 12 April 2013 02:51:38 Sergei Shtylyov wrote:
->> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-
->> Add VIN DATAx/CLK/HSYNC/VSYNC pin groups in R8A7779 PFC.
-
->> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> ---
->> These pins will be needed by the upcoming R-Car VIN driver...
->> The patch is atop of Simon's 'renesas.git' tree, 'renesas-next-20130411v2'
->> tag.
-
->>   drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  139 ++++++++++++++++++++++++++++++-
->>   1 file changed, 138 insertions(+), 1 deletion(-)
-
->> Index: renesas/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
->> =================================>> --- renesas.orig/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
->> +++ renesas/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-
-> [snip]
-
->> @@ -2413,6 +2414,102 @@ static const unsigned int usb2_pins[] >>   static const unsigned int usb2_mux[] = {
->>   	USB_OVC2_MARK, USB_PENC2_MARK,
->>   };
->> +/* - VIN0
->> ------------------------------------------------------------------- */
+>> +/* - VIN0 ------------------------------------------------------------------- */
 >> +static const unsigned int vin0_data8_pins[] = {
 >> +	/* D[0:7] */
 >> +	70, 71, 72, 73, 74, 75, 76, 77,
 >> +};
->> +static const unsigned int vin0_data8_mux[] = {
->> +	VI0_DATA0_VI0_B0_MARK, VI0_DATA1_VI0_B1_MARK, VI0_DATA2_VI0_B2_MARK,
->> +	VI0_DATA3_VI0_B3_MARK, VI0_DATA4_VI0_B4_MARK, VI0_DATA5_VI0_B5_MARK,
->> +	VI0_DATA6_VI0_B6_MARK, VI0_DATA7_VI0_B7_MARK,
->> +};
 
-> Won't you also need to support the other input data formats ?
+> Can you use RCAR_GP_PIN() macro on this patch ?
 
-    Currently we do not need other pins.
-    Once we have the chance to test other formats than 8-bit BT.656 (this is 
-the only one interface used on the Marzen board) we can add the other pins.
-We are curently working with the BOCK-W board but it also has 8-bit BT.656 
-data interface on one channel and 8-bit BT.601 on another.
-    Once we need more control pins like FIELD, then we can easily add them and 
-add wider data bus like vin0_data16_mux[] and vin0_data24_mux[] with 16 and 24 
-entries correspondingly.
+> 0bd898b16cdc0a4512d0b1af2fbe1174d217dd2d
+> (gpio-rcar: Add RCAR_GP_PIN macro)
+
+    I think there should be a wholesale conversion patch for all this file.
+
+> Best regards
+> ---
+> Kuninori Morimoto
 
 WBR, Sergei
 
