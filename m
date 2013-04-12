@@ -1,94 +1,29 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Apr 2013 15:40:26 +0000
-Subject: [PATCH v9 06/20] omap1-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1365781240-16149-7-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 12 Apr 2013 07:40:10 +0000
+Subject: [PATCH 0/4 v2] ARM: shmobile: r8a7790 clock update
+Message-Id: <87wqs8nqnd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-sh@vger.kernel.org
 
-When adding and removing a client, the omap1-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/media/platform/soc_camera/omap1_camera.c |   27 ++++++++++++++-------
- 1 files changed, 18 insertions(+), 9 deletions(-)
+Hi Simon, Magnus
 
-diff --git a/drivers/media/platform/soc_camera/omap1_camera.c b/drivers/media/platform/soc_camera/omap1_camera.c
-index c42c23e..6769193 100644
---- a/drivers/media/platform/soc_camera/omap1_camera.c
-+++ b/drivers/media/platform/soc_camera/omap1_camera.c
-@@ -893,13 +893,26 @@ static void sensor_reset(struct omap1_cam_dev *pcdev, bool reset)
- 		CAM_WRITE(pcdev, GPIO, !reset);
- }
- 
-+static int omap1_cam_add_device(struct soc_camera_device *icd)
-+{
-+	dev_dbg(icd->parent, "OMAP1 Camera driver attached to camera %d\n",
-+			icd->devnum);
-+
-+	return 0;
-+}
-+
-+static void omap1_cam_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_dbg(icd->parent,
-+		"OMAP1 Camera driver detached from camera %d\n", icd->devnum);
-+}
-+
- /*
-  * The following two functions absolutely depend on the fact, that
-  * there can be only one camera on OMAP1 camera sensor interface
-  */
--static int omap1_cam_add_device(struct soc_camera_device *icd)
-+static int omap1_cam_clock_start(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct omap1_cam_dev *pcdev = ici->priv;
- 	u32 ctrlclock;
- 
-@@ -937,14 +950,11 @@ static int omap1_cam_add_device(struct soc_camera_device *icd)
- 
- 	sensor_reset(pcdev, false);
- 
--	dev_dbg(icd->parent, "OMAP1 Camera driver attached to camera %d\n",
--			icd->devnum);
- 	return 0;
- }
- 
--static void omap1_cam_remove_device(struct soc_camera_device *icd)
-+static void omap1_cam_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct omap1_cam_dev *pcdev = ici->priv;
- 	u32 ctrlclock;
- 
-@@ -965,9 +975,6 @@ static void omap1_cam_remove_device(struct soc_camera_device *icd)
- 	CAM_WRITE(pcdev, CTRLCLOCK, ctrlclock & ~MCLK_EN);
- 
- 	clk_disable(pcdev->clk);
--
--	dev_dbg(icd->parent,
--		"OMAP1 Camera driver detached from camera %d\n", icd->devnum);
- }
- 
- /* Duplicate standard formats based on host capability of byte swapping */
-@@ -1525,6 +1532,8 @@ static struct soc_camera_host_ops omap1_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= omap1_cam_add_device,
- 	.remove		= omap1_cam_remove_device,
-+	.clock_start	= omap1_cam_clock_start,
-+	.clock_stop	= omap1_cam_clock_stop,
- 	.get_formats	= omap1_cam_get_formats,
- 	.set_crop	= omap1_cam_set_crop,
- 	.set_fmt	= omap1_cam_set_fmt,
--- 
-1.7.2.5
+These are v2 of r8a7790 clocks update patches.
+v1 patch set had datasheet <--> real machine mismatch,
+but this v2 solved that issue.
+
+These are based on renesas-next-20130411v2 tags
+
+Kuninori Morimoto (4):
+      ARM: shmobile: use do{ }while() on SH_CLK_SET_RATIO()
+      ARM: shmobile: r8a7790: add main clock
+      ARM: shmobile: r8a7790: add div4 clocks
+      ARM: shmobile: r8a7790: add div6 clocks
+
+ arch/arm/mach-shmobile/clock-r8a7790.c      |  227 ++++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/include/mach/clock.h |    4 +-
+ 2 files changed, 224 insertions(+), 7 deletions(-)
 
