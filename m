@@ -1,135 +1,156 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Apr 2013 21:07:47 +0000
-Subject: [PATCH v2 1/3] sh-pfc: r8a7778: add VIN pin groups
-Message-Id: <201304270107.47478.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Apr 2013 15:40:31 +0000
+Subject: [PATCH v9 11/20] sh-mobile-ceu-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1365781240-16149-12-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+When adding and removing a client, the sh-mobile-ceu-camera driver activates
+and, respectively, deactivates its camera interface and, if necessary, the
+CSI2 controller. Only handling of the CSI2 interface is client-specific and
+is only needed, when a data-exchange with the client is taking place. Move
+the rest to .clock_start() and .clock_stop() callbacks.
 
-Add VIN DATA[0:8]/CLK/HSYNC/VSYNC pin groups to R8A7778 PFC driver.
-While at it, add SH_PFC_MUX8() macro for 8-bit data busses.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: updated the copyrights, added SH_PFC_MUX8() macro for 8-bit data bus,
-made use of SH_PFC_*() macros to define the pin groups.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Changes from the original posting:
-- new patch in this series, extracted from R8A7778/BOCK-W VIN patch series;
-- added SH_PFC_MUX8() macro for 8-bit data busses;
-- made use of SH_PFC_*() macros to define the pin groups.
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |   58 ++++++++++++--------
+ 1 files changed, 35 insertions(+), 23 deletions(-)
 
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   60 +++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+index 5b7d8e1..9037472 100644
+--- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
++++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+@@ -162,7 +162,6 @@ static u32 ceu_read(struct sh_mobile_ceu_dev *priv, unsigned long reg_offs)
+ static int sh_mobile_ceu_soft_reset(struct sh_mobile_ceu_dev *pcdev)
+ {
+ 	int i, success = 0;
+-	struct soc_camera_device *icd = pcdev->ici.icd;
+ 
+ 	ceu_write(pcdev, CAPSR, 1 << 16); /* reset */
+ 
+@@ -186,7 +185,7 @@ static int sh_mobile_ceu_soft_reset(struct sh_mobile_ceu_dev *pcdev)
+ 
+ 
+ 	if (2 != success) {
+-		dev_warn(icd->pdev, "soft reset time out\n");
++		dev_warn(pcdev->ici.v4l2_dev.dev, "soft reset time out\n");
+ 		return -EIO;
+ 	}
+ 
+@@ -543,35 +542,21 @@ static struct v4l2_subdev *find_csi2(struct sh_mobile_ceu_dev *pcdev)
+ 	return NULL;
+ }
+ 
+-/* Called with .host_lock held */
+ static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
+ {
+ 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct sh_mobile_ceu_dev *pcdev = ici->priv;
+-	struct v4l2_subdev *csi2_sd;
++	struct v4l2_subdev *csi2_sd = find_csi2(pcdev);
+ 	int ret;
+ 
+-	dev_info(icd->parent,
+-		 "SuperH Mobile CEU driver attached to camera %d\n",
+-		 icd->devnum);
+-
+-	pm_runtime_get_sync(ici->v4l2_dev.dev);
+-
+-	pcdev->buf_total = 0;
+-
+-	ret = sh_mobile_ceu_soft_reset(pcdev);
+-
+-	csi2_sd = find_csi2(pcdev);
+ 	if (csi2_sd) {
+ 		csi2_sd->grp_id = soc_camera_grp_id(icd);
+ 		v4l2_set_subdev_hostdata(csi2_sd, icd);
+ 	}
+ 
+ 	ret = v4l2_subdev_call(csi2_sd, core, s_power, 1);
+-	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV) {
+-		pm_runtime_put(ici->v4l2_dev.dev);
++	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV)
+ 		return ret;
+-	}
+ 
+ 	/*
+ 	 * -ENODEV is special: either csi2_sd = NULL or the CSI-2 driver
+@@ -580,19 +565,48 @@ static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
+ 	if (ret = -ENODEV && csi2_sd)
+ 		csi2_sd->grp_id = 0;
+ 
++	dev_info(icd->parent,
++		 "SuperH Mobile CEU driver attached to camera %d\n",
++		 icd->devnum);
++
+ 	return 0;
+ }
+ 
+-/* Called with .host_lock held */
+ static void sh_mobile_ceu_remove_device(struct soc_camera_device *icd)
+ {
+ 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct sh_mobile_ceu_dev *pcdev = ici->priv;
+ 	struct v4l2_subdev *csi2_sd = find_csi2(pcdev);
+ 
++	dev_info(icd->parent,
++		 "SuperH Mobile CEU driver detached from camera %d\n",
++		 icd->devnum);
++
+ 	v4l2_subdev_call(csi2_sd, core, s_power, 0);
+ 	if (csi2_sd)
+ 		csi2_sd->grp_id = 0;
++}
++
++/* Called with .host_lock held */
++static int sh_mobile_ceu_clock_start(struct soc_camera_host *ici)
++{
++	struct sh_mobile_ceu_dev *pcdev = ici->priv;
++	int ret;
++
++	pm_runtime_get_sync(ici->v4l2_dev.dev);
++
++	pcdev->buf_total = 0;
++
++	ret = sh_mobile_ceu_soft_reset(pcdev);
++
++	return 0;
++}
++
++/* Called with .host_lock held */
++static void sh_mobile_ceu_clock_stop(struct soc_camera_host *ici)
++{
++	struct sh_mobile_ceu_dev *pcdev = ici->priv;
++
+ 	/* disable capture, disable interrupts */
+ 	ceu_write(pcdev, CEIER, 0);
+ 	sh_mobile_ceu_soft_reset(pcdev);
+@@ -607,10 +621,6 @@ static void sh_mobile_ceu_remove_device(struct soc_camera_device *icd)
+ 	spin_unlock_irq(&pcdev->lock);
+ 
+ 	pm_runtime_put(ici->v4l2_dev.dev);
+-
+-	dev_info(icd->parent,
+-		 "SuperH Mobile CEU driver detached from camera %d\n",
+-		 icd->devnum);
+ }
+ 
+ /*
+@@ -2027,6 +2037,8 @@ static struct soc_camera_host_ops sh_mobile_ceu_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= sh_mobile_ceu_add_device,
+ 	.remove		= sh_mobile_ceu_remove_device,
++	.clock_start	= sh_mobile_ceu_clock_start,
++	.clock_stop	= sh_mobile_ceu_clock_stop,
+ 	.get_formats	= sh_mobile_ceu_get_formats,
+ 	.put_formats	= sh_mobile_ceu_put_formats,
+ 	.get_crop	= sh_mobile_ceu_get_crop,
+-- 
+1.7.2.5
 
-Index: renesas/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-=================================--- renesas.orig/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ renesas/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2013  Renesas Solutions Corp.
-  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * based on
-  * Copyright (C) 2011  Renesas Solutions Corp.
-@@ -1316,6 +1317,11 @@ static struct sh_pfc_pin pinmux_pins[]  #define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
- 	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
- 						     arg3##_MARK, arg4##_MARK }
-+#define SH_PFC_MUX8(name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) \
-+	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
-+						     arg3##_MARK, arg4##_MARK, \
-+						     arg5##_MARK, arg6##_MARK, \
-+						     arg7##_MARK, arg8##_MARK, }
- 
- /* - SCIF macro ------------------------------------------------------------- */
- #define SCIF_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
-@@ -1501,6 +1507,40 @@ SDHI_PFC_WPPN(sdhi2_wp_a,	SD2_WP_A);
- SDHI_PFC_PINS(sdhi2_wp_b,	RCAR_GP_PIN(3, 28));
- SDHI_PFC_WPPN(sdhi2_wp_b,	SD2_WP_B);
- 
-+/* - VIN macros ------------------------------------------------------------- */
-+#define VIN_PFC_PINS(name, args...)		SH_PFC_PINS(name, args)
-+#define VIN_PFC_DAT8(name, d0, d1, d2, d3, d4, d5, d6, d7)	\
-+	SH_PFC_MUX8(name, d0, d1, d2, d3, d4, d5, d6, d7)
-+#define VIN_PFC_CLK(name, clk)			SH_PFC_MUX1(name, clk)
-+#define VIN_PFC_SYNC(name, hsync, vsync)	SH_PFC_MUX2(name, hsync, vsync)
-+
-+/* - VIN0 ------------------------------------------------------------------- */
-+VIN_PFC_PINS(vin0_data8,	RCAR_GP_PIN(3, 29),	RCAR_GP_PIN(3, 30),
-+				RCAR_GP_PIN(3, 31),	RCAR_GP_PIN(4, 0),
-+				RCAR_GP_PIN(4, 1),	RCAR_GP_PIN(4, 2),
-+	     			RCAR_GP_PIN(4, 3),	RCAR_GP_PIN(4, 4));
-+VIN_PFC_DAT8(vin0_data8,	VI0_DATA0_VI0_B0,	VI0_DATA1_VI0_B1,
-+	    			VI0_DATA2_VI0_B2,	VI0_DATA3_VI0_B3,
-+	    			VI0_DATA4_VI0_B4,	VI0_DATA5_VI0_B5,
-+	    			VI0_DATA6_VI0_G0,	VI0_DATA7_VI0_G1);
-+VIN_PFC_PINS(vin0_clk,		RCAR_GP_PIN(3, 24));
-+VIN_PFC_CLK(vin0_clk,		VI0_CLK);
-+VIN_PFC_PINS(vin0_sync,		RCAR_GP_PIN(3, 27),	RCAR_GP_PIN(3, 28));
-+VIN_PFC_SYNC(vin0_sync,		VI0_HSYNC,		VI0_VSYNC);
-+/* - VIN1 ------------------------------------------------------------------- */
-+VIN_PFC_PINS(vin1_data8,	RCAR_GP_PIN(3, 25),	RCAR_GP_PIN(3, 26),
-+	     			RCAR_GP_PIN(3, 27),	RCAR_GP_PIN(3, 28),
-+				RCAR_GP_PIN(4, 5),	RCAR_GP_PIN(4, 6),
-+	     			RCAR_GP_PIN(4, 7),	RCAR_GP_PIN(4, 8));
-+VIN_PFC_DAT8(vin1_data8,	VI1_DATA0,		VI1_DATA1,
-+	    			VI1_DATA2,		VI1_DATA3,
-+	    			VI1_DATA4,		VI1_DATA5,
-+	    			VI1_DATA6,		VI1_DATA7);
-+VIN_PFC_PINS(vin1_clk,		RCAR_GP_PIN(4, 9));
-+VIN_PFC_CLK(vin1_clk,		VI1_CLK);
-+VIN_PFC_PINS(vin1_sync,		RCAR_GP_PIN(3, 21),	RCAR_GP_PIN(3, 22));
-+VIN_PFC_SYNC(vin1_sync,		VI1_HSYNC,		VI1_VSYNC);
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(hscif0_data_a),
- 	SH_PFC_PIN_GROUP(hscif0_data_b),
-@@ -1570,6 +1610,12 @@ static const struct sh_pfc_pin_group pin
- 	SH_PFC_PIN_GROUP(sdhi2_data4_b),
- 	SH_PFC_PIN_GROUP(sdhi2_wp_a),
- 	SH_PFC_PIN_GROUP(sdhi2_wp_b),
-+	SH_PFC_PIN_GROUP(vin0_data8),
-+	SH_PFC_PIN_GROUP(vin0_clk),
-+	SH_PFC_PIN_GROUP(vin0_sync),
-+	SH_PFC_PIN_GROUP(vin1_data8),
-+	SH_PFC_PIN_GROUP(vin1_clk),
-+	SH_PFC_PIN_GROUP(vin1_sync),
- };
- 
- static const char * const hscif0_groups[] = {
-@@ -1677,6 +1723,18 @@ static const char * const sdhi2_groups[]
- 	"sdhi2_wp_b",
- };
- 
-+static const char * const vin0_groups[] = {
-+	"vin0_data8",
-+	"vin0_clk",
-+	"vin0_sync",
-+};
-+
-+static const char * const vin1_groups[] = {
-+	"vin1_data8",
-+	"vin1_clk",
-+	"vin1_sync",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(hscif0),
- 	SH_PFC_FUNCTION(hscif1),
-@@ -1690,6 +1748,8 @@ static const struct sh_pfc_function pinm
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(vin0),
-+	SH_PFC_FUNCTION(vin1),
- };
- 
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
