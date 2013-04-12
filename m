@@ -1,48 +1,89 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:22 +0000
-Subject: [PATCH 19/35] ARM: shmobile: mackerel: Register pinctrl mapping for SMSC911x
-Message-Id: <1366671758-8954-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Apr 2013 15:40:27 +0000
+Subject: [PATCH v9 07/20] atmel-isi: move interface activation and deactivation to clock callbacks
+Message-Id: <1365781240-16149-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Replace the GPIO-based SMSC911x pinmux configuration by a pinctrl
-mapping.
+When adding and removing a client, the atmel-isi camera host driver only
+activates and deactivates its camera interface respectively, which doesn't
+include any client-specific actions. Move this functionality into
+.clock_start() and .clock_stop() callbacks.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ drivers/media/platform/soc_camera/atmel-isi.c |   28 +++++++++++++++++--------
+ 1 files changed, 19 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index cfcd028..f515c57 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1373,6 +1373,11 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 				  "sdhi2_data4", "sdhi2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh7372",
- 				  "sdhi2_ctrl", "sdhi2"),
-+	/* SMSC911X */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
-+				  "bsc_cs5a", "bsc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
-+				  "intc_irq6_0", "intc"),
- };
+diff --git a/drivers/media/platform/soc_camera/atmel-isi.c b/drivers/media/platform/soc_camera/atmel-isi.c
+index c9e080a..1044856 100644
+--- a/drivers/media/platform/soc_camera/atmel-isi.c
++++ b/drivers/media/platform/soc_camera/atmel-isi.c
+@@ -745,10 +745,23 @@ static int isi_camera_get_formats(struct soc_camera_device *icd,
+ 	return formats;
+ }
  
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
-@@ -1416,10 +1421,6 @@ static void __init mackerel_init(void)
- 				  ARRAY_SIZE(mackerel_pinctrl_map));
- 	sh7372_pinmux_init();
+-/* Called with .host_lock held */
+ static int isi_camera_add_device(struct soc_camera_device *icd)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
++	dev_dbg(icd->parent, "Atmel ISI Camera driver attached to camera %d\n",
++		 icd->devnum);
++
++	return 0;
++}
++
++static void isi_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_dbg(icd->parent, "Atmel ISI Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
++/* Called with .host_lock held */
++static int isi_camera_clock_start(struct soc_camera_host *ici)
++{
+ 	struct atmel_isi *isi = ici->priv;
+ 	int ret;
  
--	/* enable SMSC911X */
--	gpio_request(GPIO_FN_CS5A,	NULL);
--	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+@@ -762,21 +775,16 @@ static int isi_camera_add_device(struct soc_camera_device *icd)
+ 		return ret;
+ 	}
+ 
+-	dev_dbg(icd->parent, "Atmel ISI Camera driver attached to camera %d\n",
+-		 icd->devnum);
+ 	return 0;
+ }
++
+ /* Called with .host_lock held */
+-static void isi_camera_remove_device(struct soc_camera_device *icd)
++static void isi_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct atmel_isi *isi = ici->priv;
+ 
+ 	clk_disable(isi->mck);
+ 	clk_disable(isi->pclk);
 -
- 	/* backlight, off by default */
- 	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
+-	dev_dbg(icd->parent, "Atmel ISI Camera driver detached from camera %d\n",
+-		 icd->devnum);
+ }
  
+ static unsigned int isi_camera_poll(struct file *file, poll_table *pt)
+@@ -880,6 +888,8 @@ static struct soc_camera_host_ops isi_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= isi_camera_add_device,
+ 	.remove		= isi_camera_remove_device,
++	.clock_start	= isi_camera_clock_start,
++	.clock_stop	= isi_camera_clock_stop,
+ 	.set_fmt	= isi_camera_set_fmt,
+ 	.try_fmt	= isi_camera_try_fmt,
+ 	.get_formats	= isi_camera_get_formats,
 -- 
-1.8.1.5
+1.7.2.5
 
