@@ -1,43 +1,61 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Apr 2013 03:33:39 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM SoC board updates for v3.10 #3
-Message-Id: <20130404033338.GB28297@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 12 Apr 2013 12:21:29 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779 pinmux platform device cleanup
+Message-Id: <1365769289-29402-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
- <20130403063059.GB29601@quad.lixom.net>
-In-Reply-To: <20130403063059.GB29601@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Apr 02, 2013 at 11:30:59PM -0700, Olof Johansson wrote:
-> Hi,
-> 
-> On Wed, Apr 03, 2013 at 11:08:15AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Arnd,
-> > 
-> > The following changes since commit eb0ae7280939fda741ad6ae9b108725517652f56:
-> > 
-> >   Merge tag 'renesas-pinmux2-for-v3.10' into boards-base (2013-04-03 10:49:18 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards3-for-v3.10
-> 
-> Pulled in in a next/boards2 since it depends on next/soc2.
-> 
-> >  arch/arm/configs/bockw_defconfig             |   66 +++++++++++++++
-> 
-> shmobile is now up to 11 defconfigs in arch/arm/configs. It'd be nice if
-> you could move towards what OMAP and many other platforms have started
-> doing for a while now, with one superset defconfig for the platform
-> (well, one for v4/v5 harware and one for v6+).
+From: Magnus Damm <damm@opensource.se>
 
-The not so good news is that there is one more in the pipeline for
-the lager board.
+Use DEFINE_RES_MEM() to save a couple of lines of code.
 
-The more positive news is that this morning I sent out a series
-to try and kick of consolidation. I have CCed you on that series.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+[lp: Don't declare r8a7779_pfc_resources as const]
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 17 +++--------------
+ 1 file changed, 3 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index c14a69b..a93788e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -65,11 +65,7 @@ void __init r8a7779_map_io(void)
+ }
+ 
+ static struct resource r8a7779_pfc_resources[] = {
+-	[0] = {
+-		.start	= 0xfffc0000,
+-		.end	= 0xfffc023b,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	DEFINE_RES_MEM(0xfffc0000, 0x023c),
+ };
+ 
+ static struct platform_device r8a7779_pfc_device = {
+@@ -81,15 +77,8 @@ static struct platform_device r8a7779_pfc_device = {
+ 
+ #define R8A7779_GPIO(idx, npins) \
+ static struct resource r8a7779_gpio##idx##_resources[] = {		\
+-	[0] = {								\
+-		.start	= 0xffc40000 + 0x1000 * (idx),			\
+-		.end	= 0xffc4002b + 0x1000 * (idx),			\
+-		.flags	= IORESOURCE_MEM,				\
+-	},								\
+-	[1] = {								\
+-		.start	= gic_iid(0xad + (idx)),			\
+-		.flags	= IORESOURCE_IRQ,				\
+-	}								\
++	DEFINE_RES_MEM(0xffc40000 + (0x1000 * (idx)), 0x002c),		\
++	DEFINE_RES_IRQ(gic_iid(0xad + (idx))),				\
+ };									\
+ 									\
+ static struct gpio_rcar_config r8a7779_gpio##idx##_platform_data = {	\
+-- 
+Regards,
+
+Laurent Pinchart
 
