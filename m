@@ -1,96 +1,89 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 11 Apr 2013 11:24:01 +0000
-Subject: [PATCH v4 5/7] ARM: mach-shmobile: sh73a0: Setup the timer CMT10 using DT
-Message-Id: <1365679443-25456-5-git-send-email-hechtb+renesas@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Apr 2013 15:40:25 +0000
+Subject: [PATCH v9 05/20] pxa-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1365781240-16149-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
+References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-We can now use the Device Tree for bringing up our timer device CMT10 on
-the SoC sh73a0.
+When adding and removing a client, the pxa-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-v4: same. only patch 2 and 3 changed
+ drivers/media/platform/soc_camera/pxa_camera.c |   28 +++++++++++++++--------
+ 1 files changed, 18 insertions(+), 10 deletions(-)
 
- arch/arm/boot/dts/sh73a0.dtsi         |   11 +++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c |   32 --------------------------------
- 2 files changed, 11 insertions(+), 32 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index ec40bf7..67b5089 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -222,4 +222,15 @@
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
+diff --git a/drivers/media/platform/soc_camera/pxa_camera.c b/drivers/media/platform/soc_camera/pxa_camera.c
+index 686edf7..d4df305 100644
+--- a/drivers/media/platform/soc_camera/pxa_camera.c
++++ b/drivers/media/platform/soc_camera/pxa_camera.c
+@@ -955,33 +955,39 @@ static irqreturn_t pxa_camera_irq(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
+ 
++static int pxa_camera_add_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "PXA Camera driver attached to camera %d\n",
++		 icd->devnum);
 +
-+	timer@e6138010 {
-+		compatible = "renesas,cmt-timer";
-+		interrupt-parent = <&gic>;
-+		reg = <0xe6138010 0xc>;
-+		interrupts = <0 65 0x4>;
-+		renesas,device-id = <1>;
-+		renesas,channel-id = <0>;
-+		renesas,source-quality = <3>;
-+		renesas,event-quality = <3>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index d10ded0..024b7a6 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -235,37 +235,6 @@ static struct platform_device scif8_device = {
- 	},
- };
++	return 0;
++}
++
++static void pxa_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "PXA Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
+ /*
+  * The following two functions absolutely depend on the fact, that
+  * there can be only one camera on PXA quick capture interface
+  * Called with .host_lock held
+  */
+-static int pxa_camera_add_device(struct soc_camera_device *icd)
++static int pxa_camera_clock_start(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct pxa_camera_dev *pcdev = ici->priv;
  
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.clockevent_rating = 125,
--	.clocksource_rating = 125,
--};
--
--static struct resource cmt10_resources[] = {
--	[0] = {
--		.name	= "CMT10",
--		.start	= 0xe6138010,
--		.end	= 0xe613801b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(65),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device cmt10_device = {
--	.name		= "sh_cmt",
--	.id		= 10,
--	.dev = {
--		.platform_data	= &cmt10_platform_data,
--	},
--	.resource	= cmt10_resources,
--	.num_resources	= ARRAY_SIZE(cmt10_resources),
--};
--
- /* TMU */
- static struct sh_timer_config tmu00_platform_data = {
- 	.name = "TMU00",
-@@ -930,7 +899,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scif8_device,
--	&cmt10_device,
- };
+ 	pxa_camera_activate(pcdev);
  
- static struct platform_device *sh73a0_early_devices[] __initdata = {
+-	dev_info(icd->parent, "PXA Camera driver attached to camera %d\n",
+-		 icd->devnum);
+-
+ 	return 0;
+ }
+ 
+ /* Called with .host_lock held */
+-static void pxa_camera_remove_device(struct soc_camera_device *icd)
++static void pxa_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct pxa_camera_dev *pcdev = ici->priv;
+ 
+-	dev_info(icd->parent, "PXA Camera driver detached from camera %d\n",
+-		 icd->devnum);
+-
+ 	/* disable capture, disable interrupts */
+ 	__raw_writel(0x3ff, pcdev->base + CICR0);
+ 
+@@ -1630,6 +1636,8 @@ static struct soc_camera_host_ops pxa_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= pxa_camera_add_device,
+ 	.remove		= pxa_camera_remove_device,
++	.clock_start	= pxa_camera_clock_start,
++	.clock_stop	= pxa_camera_clock_stop,
+ 	.set_crop	= pxa_camera_set_crop,
+ 	.get_formats	= pxa_camera_get_formats,
+ 	.put_formats	= pxa_camera_put_formats,
 -- 
-1.7.9.5
+1.7.2.5
 
