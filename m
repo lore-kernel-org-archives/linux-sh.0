@@ -1,70 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:26 +0000
-Subject: [PATCH 30/30] ARM: shmobile: r8a7790 SoC 64-bit DT support
-Message-Id: <1364879246-9470-31-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Apr 2013 15:40:29 +0000
+Subject: [PATCH v9 09/20] mx2-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1365781240-16149-10-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+When adding and removing a client, the mx2-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-The r8a7790 SoC supports LPAE and has memory window up to
-0x2ffffffff. Convert to 64-bit addresses by enlarging
-#addr-cells and #size-cells to 2.
-
-Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ drivers/media/platform/soc_camera/mx2_camera.c |   28 +++++++++++++++--------
+ 1 files changed, 18 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a1e0e0c..7a17110 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -8,11 +8,11 @@
-  * kind, whether express or implied.
+diff --git a/drivers/media/platform/soc_camera/mx2_camera.c b/drivers/media/platform/soc_camera/mx2_camera.c
+index 772e071..45a0276 100644
+--- a/drivers/media/platform/soc_camera/mx2_camera.c
++++ b/drivers/media/platform/soc_camera/mx2_camera.c
+@@ -412,13 +412,26 @@ static void mx2_camera_deactivate(struct mx2_camera_dev *pcdev)
+ 	writel(0, pcdev->base_emma + PRP_CNTL);
+ }
+ 
++static int mx2_camera_add_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "Camera driver attached to camera %d\n",
++		 icd->devnum);
++
++	return 0;
++}
++
++static void mx2_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
+ /*
+  * The following two functions absolutely depend on the fact, that
+  * there can be only one camera on mx2 camera sensor interface
   */
+-static int mx2_camera_add_device(struct soc_camera_device *icd)
++static int mx2_camera_clock_start(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx2_camera_dev *pcdev = ici->priv;
+ 	int ret;
+ 	u32 csicr1;
+@@ -439,9 +452,6 @@ static int mx2_camera_add_device(struct soc_camera_device *icd)
  
--/include/ "skeleton.dtsi"
+ 	pcdev->frame_count = 0;
+ 
+-	dev_info(icd->parent, "Camera driver attached to camera %d\n",
+-		 icd->devnum);
 -
- / {
- 	compatible = "renesas,r8a7790";
- 	interrupt-parent = <&gic>;
-+	#address-cells = <2>;
-+	#size-cells = <2>;
+ 	return 0;
  
- 	cpus {
- 		#address-cells = <1>;
-@@ -31,10 +31,10 @@
- 		#interrupt-cells = <3>;
- 		#address-cells = <0>;
- 		interrupt-controller;
--		reg = <0xf1001000 0x1000>,
--			<0xf1002000 0x1000>,
--			<0xf1004000 0x2000>,
--			<0xf1006000 0x2000>;
-+		reg = <0 0xf1001000 0 0x1000>,
-+			<0 0xf1002000 0 0x1000>,
-+			<0 0xf1004000 0 0x2000>,
-+			<0 0xf1006000 0 0x2000>;
- 		interrupts = <1 9 0xf04>;
+ exit_csi_ahb:
+@@ -450,14 +460,10 @@ exit_csi_ahb:
+ 	return ret;
+ }
  
- 		gic-cpuif@4 {
-@@ -56,7 +56,7 @@
- 		compatible = "renesas,irqc";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
--		reg = <0xe61c0000 0x200>;
-+		reg = <0 0xe61c0000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
- 	};
+-static void mx2_camera_remove_device(struct soc_camera_device *icd)
++static void mx2_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx2_camera_dev *pcdev = ici->priv;
+ 
+-	dev_info(icd->parent, "Camera driver detached from camera %d\n",
+-		 icd->devnum);
+-
+ 	mx2_camera_deactivate(pcdev);
+ }
+ 
+@@ -1271,6 +1277,8 @@ static struct soc_camera_host_ops mx2_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= mx2_camera_add_device,
+ 	.remove		= mx2_camera_remove_device,
++	.clock_start	= mx2_camera_clock_start,
++	.clock_stop	= mx2_camera_clock_stop,
+ 	.set_fmt	= mx2_camera_set_fmt,
+ 	.set_crop	= mx2_camera_set_crop,
+ 	.get_formats	= mx2_camera_get_formats,
 -- 
-1.7.10.4
+1.7.2.5
 
