@@ -1,141 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:10 +0000
-Subject: [PATCH 07/35] sh-pfc: sh7372: Add KEYSC pin groups and functions
-Message-Id: <1366671758-8954-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Jiang Liu <liuj97@gmail.com>
+Date: Sat, 13 Apr 2013 15:36:30 +0000
+Subject: [RFC PATCH v1 10/19] mm/SH: prepare for killing free_all_bootmem_node()
+Message-Id: <1365867399-21323-11-git-send-email-jiang.liu@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1365867399-21323-1-git-send-email-jiang.liu@huawei.com>
+In-Reply-To: <1365867399-21323-1-git-send-email-jiang.liu@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, Yinghai Lu <yinghai@kernel.org>
+Cc: Jiang Liu <jiang.liu@huawei.com>, David Rientjes <rientjes@google.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, David Howells <dhowells@redhat.com>, Mark Salter <msalter@redhat.com>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Prepare for killing free_all_bootmem_node() by using
+free_all_bootmem().
+
+Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Wen Congyang <wency@cn.fujitsu.com>
+Cc: Tang Chen <tangchen@cn.fujitsu.com>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 91 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 91 insertions(+)
+ arch/sh/mm/init.c |   16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index def6e2c..50cbff6 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1241,6 +1241,75 @@ IRQC_PINS_MUX(28, 123, 181);
- IRQC_PINS_MUX(29, 129, 182);
- IRQC_PINS_MUX(30, 130, 183);
- IRQC_PINS_MUX(31, 138, 184);
-+/* - KEYSC ------------------------------------------------------------------ */
-+static const unsigned int keysc_in04_0_pins[] = {
-+	/* KEYIN[0:4] */
-+	136, 135, 134, 133, 132,
-+};
-+static const unsigned int keysc_in04_0_mux[] = {
-+	KEYIN0_136_MARK, KEYIN1_135_MARK, KEYIN2_134_MARK, KEYIN3_133_MARK,
-+	KEYIN4_MARK,
-+};
-+static const unsigned int keysc_in04_1_pins[] = {
-+	/* KEYIN[0:4] */
-+	121, 122, 123, 124, 132,
-+};
-+static const unsigned int keysc_in04_1_mux[] = {
-+	KEYIN0_121_MARK, KEYIN1_122_MARK, KEYIN2_123_MARK, KEYIN3_124_MARK,
-+	KEYIN4_MARK,
-+};
-+static const unsigned int keysc_in5_pins[] = {
-+	/* KEYIN5 */
-+	131,
-+};
-+static const unsigned int keysc_in5_mux[] = {
-+	KEYIN5_MARK,
-+};
-+static const unsigned int keysc_in6_pins[] = {
-+	/* KEYIN6 */
-+	130,
-+};
-+static const unsigned int keysc_in6_mux[] = {
-+	KEYIN6_MARK,
-+};
-+static const unsigned int keysc_in7_pins[] = {
-+	/* KEYIN7 */
-+	129,
-+};
-+static const unsigned int keysc_in7_mux[] = {
-+	KEYIN7_MARK,
-+};
-+static const unsigned int keysc_out4_pins[] = {
-+	/* KEYOUT[0:3] */
-+	128, 127, 126, 125,
-+};
-+static const unsigned int keysc_out4_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
-+};
-+static const unsigned int keysc_out5_pins[] = {
-+	/* KEYOUT[0:4] */
-+	128, 127, 126, 125, 124,
-+};
-+static const unsigned int keysc_out5_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
-+	KEYOUT4_MARK,
-+};
-+static const unsigned int keysc_out6_pins[] = {
-+	/* KEYOUT[0:5] */
-+	128, 127, 126, 125, 124, 123,
-+};
-+static const unsigned int keysc_out6_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
-+	KEYOUT4_MARK, KEYOUT5_MARK,
-+};
-+static const unsigned int keysc_out8_pins[] = {
-+	/* KEYOUT[0:7] */
-+	128, 127, 126, 125, 124, 123, 122, 121,
-+};
-+static const unsigned int keysc_out8_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
-+	KEYOUT4_MARK, KEYOUT5_MARK, KEYOUT6_MARK, KEYOUT7_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_0_pins[] = {
- 	/* D[0] */
-@@ -1467,6 +1536,15 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(intc_irq30_1),
- 	SH_PFC_PIN_GROUP(intc_irq31_0),
- 	SH_PFC_PIN_GROUP(intc_irq31_1),
-+	SH_PFC_PIN_GROUP(keysc_in04_0),
-+	SH_PFC_PIN_GROUP(keysc_in04_1),
-+	SH_PFC_PIN_GROUP(keysc_in5),
-+	SH_PFC_PIN_GROUP(keysc_in6),
-+	SH_PFC_PIN_GROUP(keysc_in7),
-+	SH_PFC_PIN_GROUP(keysc_out4),
-+	SH_PFC_PIN_GROUP(keysc_out5),
-+	SH_PFC_PIN_GROUP(keysc_out6),
-+	SH_PFC_PIN_GROUP(keysc_out8),
- 	SH_PFC_PIN_GROUP(mmc0_data1_0),
- 	SH_PFC_PIN_GROUP(mmc0_data4_0),
- 	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1593,6 +1671,18 @@ static const char * const intc_groups[] = {
- 	"intc_irq31_1",
- };
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 3826596..485c858 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -412,19 +412,11 @@ void __init mem_init(void)
+ 	iommu_init();
  
-+static const char * const keysc_groups[] = {
-+	"keysc_in04_0",
-+	"keysc_in04_1",
-+	"keysc_in5",
-+	"keysc_in6",
-+	"keysc_in7",
-+	"keysc_out4",
-+	"keysc_out5",
-+	"keysc_out6",
-+	"keysc_out8",
-+};
-+
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1_0",
- 	"mmc0_data4_0",
-@@ -1632,6 +1722,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(fsib),
- 	SH_PFC_FUNCTION(hdmi),
- 	SH_PFC_FUNCTION(intc),
-+	SH_PFC_FUNCTION(keysc),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
+ 	high_memory = NULL;
++	for_each_online_pgdat(pgdat)
++		high_memory = max_t(void *, high_memory,
++			(void *)__va(pgdat_end_pfn(pgdat) << PAGE_SHIFT));
+ 
+-	for_each_online_pgdat(pgdat) {
+-		void *node_high_memory;
+-
+-		if (pgdat->node_spanned_pages)
+-			free_all_bootmem_node(pgdat);
+-
+-		node_high_memory = (void *)__va((pgdat->node_start_pfn +
+-						 pgdat->node_spanned_pages) <<
+-						 PAGE_SHIFT);
+-		if (node_high_memory > high_memory)
+-			high_memory = node_high_memory;
+-	}
++	free_all_bootmem();
+ 
+ 	/* Set this up early, so we can take care of the zero page */
+ 	cpu_cache_init();
 -- 
-1.8.1.5
+1.7.9.5
 
