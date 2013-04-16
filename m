@@ -1,50 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 05 Apr 2013 02:25:25 +0000
-Subject: Re: [PATCH] ARM: shmobile: kzm9d: resigser smsc911x platform device with id -1
-Message-Id: <20130405022525.GC29203@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 16 Apr 2013 21:35:09 +0000
+Subject: [PATCH v3 4/4] ARM: shmobile: BOCK-W: enable USB in defconfig
+Message-Id: <201304170135.10251.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365042033-29649-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365042033-29649-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 04, 2013 at 11:20:33AM +0900, Simon Horman wrote:
-> As the kzm9d only has one smsc911x device it
-> may be registered as a platform device with id -1.
-> 
-> This allows the kzm9d board to access the smsc911x device
-> when CONFIG_REGULATOR (and CONFIG_REGULATOR_FIXED_VOLTAGE)
-> are set. The motivation for which is twofold: using regulators
-> seems to be generally a good thing; it will move the kzm9d defconfig
-> one step closer to being able to be consolidated with other
-> shmobile defconfigs.
-> 
-> An alternate but so far untested approach would be to
-> update the definition of dummy_supplies in board-kzm9d.c
-> to use "smsc911x.0" instead of "smsc911x".
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/mach-shmobile/board-kzm9d.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
-> index c254782..2425d67 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9d.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9d.c
-> @@ -56,7 +56,7 @@ static struct smsc911x_platform_config smsc911x_platdata = {
->  
->  static struct platform_device smsc91x_device = {
->  	.name	= "smsc911x",
-> -	.id	= 0,
-> +	.id	= -1,
->  	.dev	= {
->  		  .platform_data = &smsc911x_platdata,
->  		},
-> -- 
-> 1.7.10.4
-> 
+Enable USB platform EHCI/OHCI and common PHY drivers in 'bockw_defconfig'.
+Enable USB storage driver and SCSI disk driver that it needs as well...
 
-Queued up in the boards-kzm9d branch.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+ arch/arm/configs/bockw_defconfig |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+Index: renesas/arch/arm/configs/bockw_defconfig
+=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
++++ renesas/arch/arm/configs/bockw_defconfig
+@@ -48,6 +48,8 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CADENCE is not set
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+@@ -71,7 +73,14 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ # CONFIG_HWMON is not set
+-# CONFIG_USB_SUPPORT is not set
++CONFIG_USB=y
++CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_STORAGE=y
++CONFIG_USB_RCAR_PHY=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
