@@ -1,44 +1,216 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 09 Apr 2013 11:56:32 +0000
-Subject: Re: [PATCH 00/02] sh-pfc: Initial r8a7790 PFC support
-Message-Id: <20130409115631.GC13835@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 16 Apr 2013 22:16:19 +0000
+Subject: [PATCH v2] sh-pfc: R8A7779: add VIN pin groups
+Message-Id: <201304170216.19353.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130408020834.29957.24249.sendpatchset@w520>
-In-Reply-To: <20130408020834.29957.24249.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 09, 2013 at 11:11:38AM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Tuesday 09 April 2013 17:59:06 Simon Horman wrote:
-> > On Mon, Apr 08, 2013 at 11:18:11AM +0200, Laurent Pinchart wrote:
-> > > Hi Magnus,
-> > > 
-> > > Thanks for the patches.
-> > > 
-> > > On Monday 08 April 2013 11:08:34 Magnus Damm wrote:
-> > > > sh-pfc: Initial r8a7790 PFC support
-> > > > 
-> > > > [PATCH 01/02] ARM: shmobile: Add second I/O range for r8a7790 PFC
-> > > > [PATCH 02/02] sh-pfc: Initial r8a7790 PFC support
-> > > > 
-> > > > This mini-series contains initial support for the r8a7790 PFC.
-> > > > Incremental future changes will move over to PINCTRL.
-> > > > 
-> > > > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > > 
-> > > For the whole series,
-> > > 
-> > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > 
-> > 01/02: Queued up in the soc-r8a7790 branch
-> > 02/02: Queued up in the pinmux branch
-> 
-> Will you push these to v3.10 or v3.11 ? If v3.10, I'd really like my follow-up 
-> patch series to go in at the same time, otherwise people will start writing 
-> board code on the outdated function GPIO API.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-I am planning on v3.11 at this time.
+Add VIN DATA[0:7]/CLK/HSYNC/VSYNC pin groups to R8A7779 PFC driver.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+These pins will be needed by the upcoming R-Car VIN driver...
+The patch is atop of Simon's 'renesas.git' tree, 'renesas-next-20130416' tag.
+
+Changes from the original posting:
+- replaced hardcoded pin numbers with RCAR_GP_PIN() macro invocations;
+- clarified the changelog;
+- lowercased the SoC name in the subject.
+
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  147 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 146 insertions(+), 1 deletion(-)
+
+Index: renesas/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+=================================--- renesas.orig/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ renesas/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1,8 +1,9 @@
+ /*
+  * r8a7779 processor support - PFC hardware block
+  *
+- * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
+  * Copyright (C) 2011  Magnus Damm
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -2413,6 +2414,110 @@ static const unsigned int usb2_pins[] = 
+ static const unsigned int usb2_mux[] = {
+ 	USB_OVC2_MARK, USB_PENC2_MARK,
+ };
++/* - VIN0 ------------------------------------------------------------------- */
++static const unsigned int vin0_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(2, 6),  RCAR_GP_PIN(2, 7),  RCAR_GP_PIN(2, 8),
++	RCAR_GP_PIN(2, 9),  RCAR_GP_PIN(2, 10), RCAR_GP_PIN(2, 11),
++	RCAR_GP_PIN(2, 12), RCAR_GP_PIN(2, 13),
++};
++static const unsigned int vin0_data8_mux[] = {
++	VI0_DATA0_VI0_B0_MARK, VI0_DATA1_VI0_B1_MARK, VI0_DATA2_VI0_B2_MARK,
++	VI0_DATA3_VI0_B3_MARK, VI0_DATA4_VI0_B4_MARK, VI0_DATA5_VI0_B5_MARK,
++	VI0_DATA6_VI0_B6_MARK, VI0_DATA7_VI0_B7_MARK,
++};
++static const unsigned int vin0_clk_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(2, 1),
++};
++static const unsigned int vin0_clk_mux[] = {
++	VI0_CLK_MARK,
++};
++static const unsigned int vin0_sync_pins[] = {
++	/* HSYNC, VSYNC */
++	RCAR_GP_PIN(2, 4), RCAR_GP_PIN(2, 5),
++};
++static const unsigned int vin0_sync_mux[] = {
++	VI0_HSYNC_MARK, VI0_VSYNC_MARK,
++};
++/* - VIN1 ------------------------------------------------------------------- */
++static const unsigned int vin1_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(3, 1), RCAR_GP_PIN(3, 2), RCAR_GP_PIN(3, 3),
++	RCAR_GP_PIN(3, 4), RCAR_GP_PIN(3, 5), RCAR_GP_PIN(3, 6),
++	RCAR_GP_PIN(3, 7), RCAR_GP_PIN(3, 8),
++};
++static const unsigned int vin1_data8_mux[] = {
++	VI1_DATA0_VI1_B0_MARK, VI1_DATA1_VI1_B1_MARK, VI1_DATA2_VI1_B2_MARK,
++	VI1_DATA3_VI1_B3_MARK, VI1_DATA4_VI1_B4_MARK, VI1_DATA5_VI1_B5_MARK,
++	VI1_DATA6_VI1_B6_MARK, VI1_DATA7_VI1_B7_MARK,
++};
++static const unsigned int vin1_clk_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(2, 30),
++};
++static const unsigned int vin1_clk_mux[] = {
++	VI1_CLK_MARK,
++};
++static const unsigned int vin1_sync_pins[] = {
++	/* HSYNC, VSYNC */
++	RCAR_GP_PIN(2, 31), RCAR_GP_PIN(3, 0),
++};
++static const unsigned int vin1_sync_mux[] = {
++	VI1_HSYNC_MARK, VI1_VSYNC_MARK,
++};
++/* - VIN2 ------------------------------------------------------------------- */
++static const unsigned int vin2_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(1, 2),  RCAR_GP_PIN(1, 3),  RCAR_GP_PIN(1, 10),
++	RCAR_GP_PIN(1, 11), RCAR_GP_PIN(1, 18), RCAR_GP_PIN(1, 19),
++	RCAR_GP_PIN(1, 31), RCAR_GP_PIN(2, 0),
++};
++static const unsigned int vin2_data8_mux[] = {
++	VI2_DATA0_VI2_B0_MARK, VI2_DATA1_VI2_B1_MARK, VI2_DATA2_VI2_B2_MARK,
++	VI2_DATA3_VI2_B3_MARK, VI2_DATA4_VI2_B4_MARK, VI2_DATA5_VI2_B5_MARK,
++	VI2_DATA6_VI2_B6_MARK, VI2_DATA7_VI2_B7_MARK,
++};
++static const unsigned int vin2_clk_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(1, 30),
++};
++static const unsigned int vin2_clk_mux[] = {
++	VI2_CLK_MARK,
++};
++static const unsigned int vin2_sync_pins[] = {
++	/* HSYNC, VSYNC */
++	RCAR_GP_PIN(1, 28), RCAR_GP_PIN(1, 29),
++};
++static const unsigned int vin2_sync_mux[] = {
++	VI2_HSYNC_MARK, VI2_VSYNC_MARK,
++};
++/* - VIN3 ------------------------------------------------------------------- */
++static const unsigned int vin3_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(3, 9),  RCAR_GP_PIN(3, 10), RCAR_GP_PIN(3, 11),
++	RCAR_GP_PIN(3, 12), RCAR_GP_PIN(3, 13), RCAR_GP_PIN(3, 14),
++	RCAR_GP_PIN(3, 15), RCAR_GP_PIN(3, 16),
++};
++static const unsigned int vin3_data8_mux[] = {
++	VI3_DATA0_MARK, VI3_DATA1_MARK, VI3_DATA2_MARK,
++	VI3_DATA3_MARK, VI3_DATA4_MARK, VI3_DATA5_MARK,
++	VI3_DATA6_MARK, VI3_DATA7_MARK,
++};
++static const unsigned int vin3_clk_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(2, 31),
++};
++static const unsigned int vin3_clk_mux[] = {
++	VI3_CLK_MARK,
++};
++static const unsigned int vin3_sync_pins[] = {
++	/* HSYNC, VSYNC */
++	RCAR_GP_PIN(1, 28), RCAR_GP_PIN(1, 29),
++};
++static const unsigned int vin3_sync_mux[] = {
++	VI3_HSYNC_MARK, VI3_VSYNC_MARK,
++};
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(du0_rgb666),
+@@ -2537,6 +2642,18 @@ static const struct sh_pfc_pin_group pin
+ 	SH_PFC_PIN_GROUP(usb0),
+ 	SH_PFC_PIN_GROUP(usb1),
+ 	SH_PFC_PIN_GROUP(usb2),
++	SH_PFC_PIN_GROUP(vin0_data8),
++	SH_PFC_PIN_GROUP(vin0_clk),
++	SH_PFC_PIN_GROUP(vin0_sync),
++	SH_PFC_PIN_GROUP(vin1_data8),
++	SH_PFC_PIN_GROUP(vin1_clk),
++	SH_PFC_PIN_GROUP(vin1_sync),
++	SH_PFC_PIN_GROUP(vin2_data8),
++	SH_PFC_PIN_GROUP(vin2_clk),
++	SH_PFC_PIN_GROUP(vin2_sync),
++	SH_PFC_PIN_GROUP(vin3_data8),
++	SH_PFC_PIN_GROUP(vin3_clk),
++	SH_PFC_PIN_GROUP(vin3_sync),
+ };
+ 
+ static const char * const du0_groups[] = {
+@@ -2727,6 +2844,30 @@ static const char * const usb2_groups[] 
+ 	"usb2",
+ };
+ 
++static const char * const vin0_groups[] = {
++	"vin0_data8",
++	"vin0_clk",
++	"vin0_sync",
++};
++
++static const char * const vin1_groups[] = {
++	"vin1_data8",
++	"vin1_clk",
++	"vin1_sync",
++};
++
++static const char * const vin2_groups[] = {
++	"vin2_data8",
++	"vin2_clk",
++	"vin2_sync",
++};
++
++static const char * const vin3_groups[] = {
++	"vin3_data8",
++	"vin3_clk",
++	"vin3_sync",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(du0),
+ 	SH_PFC_FUNCTION(du1),
+@@ -2750,6 +2891,10 @@ static const struct sh_pfc_function pinm
+ 	SH_PFC_FUNCTION(usb0),
+ 	SH_PFC_FUNCTION(usb1),
+ 	SH_PFC_FUNCTION(usb2),
++	SH_PFC_FUNCTION(vin0),
++	SH_PFC_FUNCTION(vin1),
++	SH_PFC_FUNCTION(vin2),
++	SH_PFC_FUNCTION(vin3),
+ };
+ 
+ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
