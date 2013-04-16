@@ -1,104 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 05 Apr 2013 06:12:03 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
-Message-Id: <1365142324-7286-3-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 16 Apr 2013 23:03:45 +0000
+Subject: [PATCH] ARM: shmobile: BOCK-W: enable CONFIG_PM_RUNTIME in defconfig
+Message-Id: <201304170303.46193.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365142324-7286-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365142324-7286-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-This patch adds r8a7778_init_irq_extpin() for IRQ0 - IRQ3.
-But this patch doesn't enable DT settings on r8a7778.dts,
-because R8A7778 chip external IRQ depends on
-IRQ0 - IRQ3 pin encoding which came from platform board
-implementation.
+Enable CONFIG_PM_RUNTIME in 'bockw_defconfig' -- it's already used by TMU, SCI,
+I2C, and Ether drivers to control the clocks...
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   44 +++++++++++++++++++++++++
- 2 files changed, 45 insertions(+)
+The patch is atop of Simon's 'renesas.git' tree, 'renesas-next-20130416' tag.
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index a755dca..e0c6205 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -24,5 +24,6 @@ extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
- extern void r8a7778_init_irq_dt(void);
- extern void r8a7778_clock_init(void);
-+extern void r8a7778_init_irq_extpin(int irlm);
- 
- #endif /* __ASM_R8A7778_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 57d6b0e..2882305 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -23,6 +23,7 @@
- #include <linux/irqchip/arm-gic.h>
- #include <linux/of.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/platform_device.h>
- #include <linux/irqchip.h>
- #include <linux/serial_sci.h>
-@@ -110,6 +111,49 @@ void __init r8a7778_add_standard_devices(void)
- 	r8a7778_register_tmu(1);
- }
- 
-+static struct renesas_intc_irqpin_config irqpin_platform_data = {
-+	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
-+	.sense_bitfield_width = 2,
-+};
-+
-+static struct resource irqpin_resources[] = {
-+	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
-+	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
-+	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
-+	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
-+	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
-+	DEFINE_RES_IRQ(gic_iid(0x3b)), /* IRQ0 */
-+	DEFINE_RES_IRQ(gic_iid(0x3c)), /* IRQ1 */
-+	DEFINE_RES_IRQ(gic_iid(0x3d)), /* IRQ2 */
-+	DEFINE_RES_IRQ(gic_iid(0x3e)), /* IRQ3 */
-+};
-+
-+void __init r8a7778_init_irq_extpin(int irlm)
-+{
-+	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
-+	unsigned long tmp;
-+
-+	if (!icr0) {
-+		pr_warn("r8a7778: unable to setup external irq pin mode\n");
-+		return;
-+	}
-+
-+	tmp = ioread32(icr0);
-+	if (irlm)
-+		tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
-+	else
-+		tmp &= ~(1 << 23); /* IRL mode - not supported */
-+	tmp |= (1 << 21); /* LVLMODE = 1 */
-+	iowrite32(tmp, icr0);
-+	iounmap(icr0);
-+
-+	if (irlm)
-+		platform_device_register_resndata(
-+			&platform_bus, "renesas_intc_irqpin", -1,
-+			irqpin_resources, ARRAY_SIZE(irqpin_resources),
-+			&irqpin_platform_data, sizeof(irqpin_platform_data));
-+}
-+
- #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
- #define INT2SMSKCR1	0x8228c /* 0xfe78228c */
- 
--- 
-1.7.10.4
+ arch/arm/configs/bockw_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
+Index: renesas/arch/arm/configs/bockw_defconfig
+=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
++++ renesas/arch/arm/configs/bockw_defconfig
+@@ -31,6 +31,7 @@ CONFIG_CMDLINE="console=ttySC0,115200 ig
+ CONFIG_CMDLINE_FORCE=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ # CONFIG_SUSPEND is not set
++CONFIG_PM_RUNTIME=y
+ CONFIG_NET=y
+ CONFIG_UNIX=y
+ CONFIG_INET=y
