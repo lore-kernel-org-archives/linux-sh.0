@@ -1,62 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 18 Apr 2013 13:45:46 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: BOCK-W: enable I2C in defconfig
-Message-Id: <20130418134546.GJ20929@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Apr 2013 10:10:12 +0000
+Subject: [PATCH] ARM: sh-mobile: Fix symbol redefinition with r8a7740 and r8a7790 clocks
+Message-Id: <1366107012-24642-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304172242.27671.sergei.shtylyov@cogentembedded.com>
- <201304172247.28311.sergei.shtylyov@cogentembedded.com>
- <20130418132724.GC20929@verge.net.au>
- <516FF561.5040801@cogentembedded.com>
-In-Reply-To: <516FF561.5040801@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Apr 18, 2013 at 05:30:09PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 18-04-2013 17:27, Simon Horman wrote:
-> 
-> >>From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> 
-> >>Enable I2C driver in 'bockw_defconfig'.
-> 
-> >>Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>---
-> >>  arch/arm/configs/bockw_defconfig |    2 ++
-> >>  1 file changed, 2 insertions(+)
-> 
-> >>Index: renesas/arch/arm/configs/bockw_defconfig
-> >>=================================> >>--- renesas.orig/arch/arm/configs/bockw_defconfig
-> >>+++ renesas/arch/arm/configs/bockw_defconfig
-> >>@@ -73,6 +73,8 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
-> >>  CONFIG_SERIAL_SH_SCI_CONSOLE=y
-> >>  # CONFIG_HW_RANDOM is not set
-> >>  # CONFIG_HWMON is not set
-> >>+CONFIG_I2C=y
-> >>+CONFIG_I2C_RCAR=y
-> >>  CONFIG_USB=y
-> >>  CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
-> >>  CONFIG_USB_EHCI_HCD=y
-> 
-> >I have applied the following after resolving conflicts
-> >(I don't see CONFIG_USB=y in my tree). Please let me
-> >know if I made an error.
-> 
->    I wrote in [0/2] that the patch is atop of my unaccepted USB patches.
-> 
-> >I have queued-up the change for v3.11 in the defconfig-bockw branch
-> >and will push is shortly.
-> 
->    Have you also queued patch #1? The patch #2 doesn't make much
-> sense without it.
+Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
+non-static. Compiling support for both SoCs thus result in a symbol
+redefinition. Fix it by defining the arrays as static.
 
-No, I was going to ask for it to be rebased, but I'm happy for it
-to wait until your USB changes go in if you are happy to wait.
+To avoid further similar issues, also define the main_clks as static in
+clock-r8a7740.c.
 
-As for not making much sense, I'm happy with pre-emptively applying
-defconfig changes as they are somewhat orthogonal and live in a different
-branch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 4 ++--
+ arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 8fc396a..a2a612f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -266,7 +266,7 @@ static struct clk fsiack_clk = {
+ static struct clk fsibck_clk = {
+ };
+ 
+-struct clk *main_clks[] = {
++static struct clk *main_clks[] = {
+ 	&extalr_clk,
+ 	&extal1_clk,
+ 	&extal2_clk,
+@@ -317,7 +317,7 @@ enum {
+ 	DIV4_NR
+ };
+ 
+-struct clk div4_clks[DIV4_NR] = {
++static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_I]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_ZG]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_B]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA,  8, 0x6fff, CLK_ENABLE_ON_INIT),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a481003..bedd20c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -154,7 +154,7 @@ enum {
+ 	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
+ };
+ 
+-struct clk div4_clks[DIV4_NR] = {
++static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
+ 	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
+-- 
+Regards,
+
+Laurent Pinchart
+
