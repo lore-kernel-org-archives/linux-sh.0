@@ -1,24 +1,28 @@
-From: Al Viro <viro@ZenIV.linux.org.uk>
-Date: Tue, 16 Apr 2013 06:28:42 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 16 Apr 2013 18:42:03 +0000
 Subject: Re: [PATCH 19/26] sh: Don't use create_proc_read_entry() [RFC]
-Message-Id: <20130416062842.GL4068@ZenIV.linux.org.uk>
+Message-Id: <20130416184203.GA18348@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130411132739.32763.82609.stgit@warthog.procyon.org.uk>
  <20130411133009.32763.71122.stgit@warthog.procyon.org.uk>
  <20130416061113.GA27462@verge.net.au>
-In-Reply-To: <20130416061113.GA27462@verge.net.au>
+ <20130416062842.GL4068@ZenIV.linux.org.uk>
+In-Reply-To: <20130416062842.GL4068@ZenIV.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: David Howells <dhowells@redhat.com>, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: Simon Horman <horms@verge.net.au>, David Howells <dhowells@redhat.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Tue, Apr 16, 2013 at 03:11:13PM +0900, Simon Horman wrote:
-> On Thu, Apr 11, 2013 at 02:30:09PM +0100, David Howells wrote:
-> > Don't use create_proc_read_entry() as that is deprecated, but rather use
-> > proc_create_data() and seq_file instead.
+On Tue, Apr 16, 2013 at 07:28:42AM +0100, Al Viro wrote:
+> On Tue, Apr 16, 2013 at 03:11:13PM +0900, Simon Horman wrote:
+> > On Thu, Apr 11, 2013 at 02:30:09PM +0100, David Howells wrote:
+> > > Don't use create_proc_read_entry() as that is deprecated, but rather use
+> > > proc_create_data() and seq_file instead.
+> > 
+> > Paul, do you want me to handle this?
 > 
-> Paul, do you want me to handle this?
+> FWIW, I can pick that stuff via vfs.git - not a problem and I've already got
+> shitloads of procfs-related patches in that queue...
 
-FWIW, I can pick that stuff via vfs.git - not a problem and I've already got
-shitloads of procfs-related patches in that queue...
+That works for me.
