@@ -1,115 +1,24 @@
-From: Zhang Rui <rui.zhang@intel.com>
-Date: Tue, 02 Apr 2013 13:17:27 +0000
-Subject: Re: [PATCH 1/2 v2] thermal: rcar: tidyup registration failure case
-Message-Id: <1364908647.2190.39.camel@rzhang1-mobl4>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 16 Apr 2013 21:30:59 +0000
+Subject: [PATCH v3 0/4] Add USB support to R8A7778/BOCK-W
+Message-Id: <201304170131.00238.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87620gqbbe.wl%kuninori.morimoto.gx@renesas.com>
-	 <874ng0qb9f.wl%kuninori.morimoto.gx@renesas.com>
-	 <1364200856.2465.48.camel@rzhang1-mobl4>
-	 <871ub3j9r3.wl%kuninori.morimoto.gx@renesas.com>
-	 <87sj3iiu5m.wl%kuninori.morimoto.gx@renesas.com>
-	 <87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
-	 <87ppymith5.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ppymith5.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-pm@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 2013-03-25 at 23:08 -0700, Kuninori Morimoto wrote:
-> Current rcar_thermal driver didn't care about rcar_theraml_irq_disable()
-> when registration failure case on _probe(), and _remove().
-> And, it returns without unregistering thermal zone when
-> registration failure case on _probe().
-> This patch fixes these issue.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello.
 
-rebased on thermal -next and applied.
-please make a double check.
+   Here's the set of 4 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130416' tag and the R8A7779/Marzen patchset I've posted.
+ It was created to add support of R8A7778/BOCK-W USB to the platform code and
+the USB common PHY driver, and so spans both arch/arm/mach-shmobile/ and
+drivers/usb/phy/ subtrees.
 
-From 1dc20828e674a781635286072bae909dc4e5c377 Mon Sep 17 00:00:00 2001
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 26 Mar 2013 06:08:10 +0000
-Subject: [PATCH] thermal: rcar: tidyup registration failure case
+[1/4] rcar-phy: add R8A7778 support
+[2/4] ARM: shmobile: r8a7778: add USB support
+[3/4] ARM: shmobile: BOCK-W: add USB support
+[4/4] ARM: shmobile: BOCK-W: enable USB in defconfig
 
-Current rcar_thermal driver didn't care about rcar_theraml_irq_disable()
-when registration failure case on _probe(), and _remove().
-And, it returns without unregistering thermal zone when
-registration failure case on _probe().
-This patch fixes these issue.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Zhang Rui <rui.zhang@intel.com>
----
- drivers/thermal/rcar_thermal.c |   23 ++++++++++++++++-------
- 1 file changed, 16 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 2cc5b61..4d6095b 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -419,12 +419,15 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 		priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
- 		if (!priv) {
- 			dev_err(dev, "Could not allocate priv\n");
--			return -ENOMEM;
-+			ret = -ENOMEM;
-+			goto error_unregister;
- 		}
- 
- 		priv->base = devm_ioremap_resource(dev, res);
--		if (IS_ERR(priv->base))
--			return PTR_ERR(priv->base);
-+		if (IS_ERR(priv->base)) {
-+			ret = PTR_ERR(priv->base);
-+			goto error_unregister;
-+		}
- 
- 		priv->common = common;
- 		priv->id = i;
-@@ -443,10 +446,10 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 			goto error_unregister;
- 		}
- 
--		list_move_tail(&priv->list, &common->head);
--
- 		if (rcar_has_irq_support(priv))
- 			rcar_thermal_irq_enable(priv);
-+
-+		list_move_tail(&priv->list, &common->head);
- 	}
- 
- 	platform_set_drvdata(pdev, common);
-@@ -456,8 +459,11 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 	return 0;
- 
- error_unregister:
--	rcar_thermal_for_each_priv(priv, common)
-+	rcar_thermal_for_each_priv(priv, common) {
- 		thermal_zone_device_unregister(priv->zone);
-+		if (rcar_has_irq_support(priv))
-+			rcar_thermal_irq_disable(priv);
-+	}
- 
- 	return ret;
- }
-@@ -467,8 +473,11 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
- 	struct rcar_thermal_priv *priv;
- 
--	rcar_thermal_for_each_priv(priv, common)
-+	rcar_thermal_for_each_priv(priv, common) {
- 		thermal_zone_device_unregister(priv->zone);
-+		if (rcar_has_irq_support(priv))
-+			rcar_thermal_irq_disable(priv);
-+	}
- 
- 	platform_set_drvdata(pdev, NULL);
- 
--- 
-1.7.9.5
-
-
-
+WBR, Sergei
