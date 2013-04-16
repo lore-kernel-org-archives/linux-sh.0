@@ -1,21 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 24 Apr 2013 07:45:02 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7778: tidyup SDHI naming suffixes and sort it alphabetically
-Message-Id: <20130424074501.GF847@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Apr 2013 15:16:20 +0000
+Subject: [PATCH v2 2/2] ARM: sh-mobile: r8a7790: Make private clock arrays static
+Message-Id: <1366125380-14528-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bo956f4y.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bo956f4y.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 23, 2013 at 12:44:22PM +0200, Laurent Pinchart wrote:
-> On Monday 22 April 2013 21:32:32 Kuninori Morimoto wrote:
-> > SDHI 1/2 are the target
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
+non-static. Compiling support for both SoCs thus result in a symbol
+redefinition. Fix it by defining the arrays as static.
 
-Thanks, queued-up for v3.11 in the pinmux branch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a481003..bedd20c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -154,7 +154,7 @@ enum {
+ 	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
+ };
+ 
+-struct clk div4_clks[DIV4_NR] = {
++static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
+ 	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
+-- 
+1.8.1.5
+
