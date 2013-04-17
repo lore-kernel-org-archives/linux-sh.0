@@ -1,65 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Apr 2013 18:33:05 +0000
-Subject: Re: [PATCH 1/3 v3] sh-pfc: r8a7778: add common PFC macro helper
-Message-Id: <517AC861.1060808@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Apr 2013 10:27:43 +0000
+Subject: [PATCH] sh-pfc: r8a7778: Remove outdated comments
+Message-Id: <1366194463-27045-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8738un6wwd.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8738un6wwd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+Function GPIOs have been removed, remove comments that refer to them.
 
-On 04/19/2013 07:07 AM, Kuninori Morimoto wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-> pfc-r8a7778 will have many devices pfc support in the future,
-> and current pfc-r8a7778 is using pin/mux definition macro for SCIF.
-> The device definition style using macro is readable code IMO,
-> but creating new macro for each devices is not good sense.
-> This patch adds common SH_PFC_xx() macro for each new feature devices
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v2 -> v3
->
->   - new patch
->
->   drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   26 ++++++++++++++++++--------
->   1 file changed, 18 insertions(+), 8 deletions(-)
->
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> index ddbd27b..139f9dd 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> @@ -1303,15 +1303,25 @@ static struct sh_pfc_pin pinmux_pins[] = {
->    */
->   #define PIN_NUMBER(row, col)		(1000+((row)-1)*25+(col)-1)
->   
-> -/* - SCIF macro ------------------------------------------------------------- */
-> -#define SCIF_PFC_PIN(name, args...)					\
-> +/* - macro */
-> +#define SH_PFC_PINS(name, args...) \
->   	static const unsigned int name ##_pins[] = { args }
-> -#define SCIF_PFC_DAT(name, tx, rx)					\
-> -	static const unsigned int name ##_mux[]  = { tx##_MARK, rx##_MARK, }
-> -#define SCIF_PFC_CTR(name, cts, rts)					\
-> -	static const unsigned int name ##_mux[]  = { cts##_MARK, rts##_MARK, }
-> -#define SCIF_PFC_CLK(name, sck)					\
-> -	static const unsigned int name ##_mux[]  = { sck##_MARK, }
-> +#define SH_PFC_MUX1(name, arg1)					\
-> +	static const unsigned int name ##_mux[]  = { arg1##_MARK }
-> +#define SH_PFC_MUX2(name, arg1, arg2)					\
-> +	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, }
-> +#define SH_PFC_MUX3(name, arg1, arg2, arg3)					\
-> +	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK,	\
-> +						     arg3##_MARK }
-> +#define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
-> +	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
-> +						     arg3##_MARK, arg4##_MARK }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index ddbd27b..e9cc040 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -376,19 +376,19 @@ enum {
+ 	AVS1_MARK,
+ 	AVS2_MARK,
+ 
+-	VI0_R0_C_MARK,  /* see GPIO_FN_VI0_R0_A */
+-	VI0_R1_C_MARK,  /* see GPIO_FN_VI0_R1_A */
+-	VI0_R2_C_MARK,  /* see GPIO_FN_VI0_R2_A */
+-	/* VI0_R3_C_MARK,  see GPIO_FN_VI0_R3_A */
+-	VI0_R4_C_MARK,  /* see GPIO_FN_VI0_R4_A */
+-	VI0_R5_C_MARK,  /* see GPIO_FN_VI0_R5_A */
+-
+-	VI0_R0_D_MARK,  /* see GPIO_FN_VI0_R0_B */
+-	VI0_R1_D_MARK,  /* see GPIO_FN_VI0_R1_B */
+-	VI0_R2_D_MARK,  /* see GPIO_FN_VI0_R2_B */
+-	VI0_R3_D_MARK,  /* see GPIO_FN_VI0_R3_B */
+-	VI0_R4_D_MARK,  /* see GPIO_FN_VI0_R4_B */
+-	VI0_R5_D_MARK,  /* see GPIO_FN_VI0_R5_B */
++	VI0_R0_C_MARK,
++	VI0_R1_C_MARK,
++	VI0_R2_C_MARK,
++	/* VI0_R3_C_MARK, */
++	VI0_R4_C_MARK,
++	VI0_R5_C_MARK,
++
++	VI0_R0_D_MARK,
++	VI0_R1_D_MARK,
++	VI0_R2_D_MARK,
++	VI0_R3_D_MARK,
++	VI0_R4_D_MARK,
++	VI0_R5_D_MARK,
+ 
+ 	/* IPSR0 */
+ 	PRESETOUT_MARK,	PWM1_MARK,	AUDATA0_MARK,
+-- 
+Regards,
 
-     I think you should also have added SH_PFC_MUX8(). I'll add it today.
-
-WBR, Sergei
+Laurent Pinchart
 
