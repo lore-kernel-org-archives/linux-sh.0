@@ -1,118 +1,93 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:08:24 +0000
-Subject: [PATCH 09/11] ARM: shmobile: mackerel: switch SDHI and MMCIF interfaces to slot-gpio
-Message-Id: <1364954906-16014-10-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 17 Apr 2013 05:17:56 +0000
+Subject: [PATCH 5/6] ARM: shmobile: bockw: add SDHI0 support
+Message-Id: <878v4henwe.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch is directly accessing to PUPR4 register which can
+control SDHI0 CD/WP pin pull-up setting.
+It should be replaced in the future.
 
-Both SDHI and MMCIF drivers can use the standard slot-gpio card-detection
-functions. Switch mackerel to using them instead of platform callbacks.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |   39 ++++++++++---------------------
- 1 file changed, 12 insertions(+), 27 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c |   29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 734565d..a47a1116 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -963,15 +963,6 @@ static struct platform_device nand_flash_device = {
- 	},
- };
- 
--/*
-- * The card detect pin of the top SD/MMC slot (CN7) is active low and is
-- * connected to GPIO A22 of SH7372 (GPIO 41).
-- */
--static int slot_cn7_get_cd(struct platform_device *pdev)
--{
--	return !gpio_get_value(41);
--}
--
- /* SDHI0 */
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-@@ -1011,13 +1002,15 @@ static struct platform_device sdhi0_device = {
- 
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SDHI1 */
-+
-+/* GPIO 41 can trigger IRQ8, but it is used by USBHS1, we have to poll */
- static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
--	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
-+	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
--	.get_cd		= slot_cn7_get_cd,
-+	.cd_gpio	= 41,
- };
- 
- static struct resource sdhi1_resources[] = {
-@@ -1052,23 +1045,19 @@ static struct platform_device sdhi1_device = {
- };
- #endif
- 
-+/* SDHI2 */
-+
- /*
-  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
-- * connected to GPIO SCIFB_SCK of SH7372 (162).
-+ * connected to GPIO SCIFB_SCK of SH7372 (GPIO 162).
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 4d65715..2b6103e 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -18,6 +18,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   */
--static int slot_cn23_get_cd(struct platform_device *pdev)
--{
--	return !gpio_get_value(162);
--}
--
--/* SDHI2 */
- static struct sh_mobile_sdhi_info sdhi2_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
--	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
-+	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
--	.get_cd		= slot_cn23_get_cd,
-+	.cd_gpio	= 162,
+ 
++#include <linux/mfd/tmio.h>
++#include <linux/mmc/host.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+@@ -54,16 +56,28 @@ static struct resource smsc911x_resources[] = {
+ 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
  };
  
- static struct resource sdhi2_resources[] = {
-@@ -1127,7 +1116,9 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
- 			  MMC_CAP_NEEDS_POLL,
--	.get_cd		= slot_cn7_get_cd,
-+	.use_cd_gpio	= true,
-+	/* card detect pin for SD/MMC slot (CN7) */
-+	.cd_gpio	= 41,
- 	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
- 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
++/* SDHI */
++static struct sh_mobile_sdhi_info sdhi0_info = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++};
++
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+ 				  "scif0_data_a", "scif0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+ 				  "scif0_ctrl", "scif0"),
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
++				  "sdhi0", "sdhi0"),
  };
-@@ -1475,12 +1466,6 @@ static void __init mackerel_init(void)
- 	/* SDHI0 PORT172 card-detect IRQ26 */
- 	gpio_request(GPIO_FN_IRQ26_172, NULL);
  
--	/* card detect pin for MMC slot (CN7) */
--	gpio_request_one(41, GPIOF_IN, NULL);
--
--	/* card detect pin for microSD slot (CN23) */
--	gpio_request_one(162, GPIOF_IN, NULL);
--
- 	/* FLCTL */
- 	gpio_request(GPIO_FN_D0_NAF0, NULL);
- 	gpio_request(GPIO_FN_D1_NAF1, NULL);
+ #define FPGA	0x18200000
+ #define IRQ0MR	0x30
++#define PFC	0xfffc0000
++#define PUPR4	0x110
+ static void __init bockw_init(void)
+ {
+ 	void __iomem *base;
+@@ -76,6 +90,7 @@ static void __init bockw_init(void)
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
+ 	r8a7778_pinmux_init();
+ 
++	/* for SMSC */
+ 	base = ioremap_nocache(FPGA, SZ_1M);
+ 	if (base) {
+ 		/*
+@@ -98,6 +113,20 @@ static void __init bockw_init(void)
+ 			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
+ 			&smsc911x_data, sizeof(smsc911x_data));
+ 	}
++
++	/* for SDHI */
++	base = ioremap_nocache(PFC, 0x200);
++	if (base) {
++		/*
++		 * FIXME
++		 *
++		 * SDHI CD/WP pin needs pull-up
++		 */
++		iowrite32(ioread32(base + PUPR4) | (3 << 26), base + PUPR4);
++		iounmap(base);
++
++		r8a7778_sdhi_init(0, &sdhi0_info);
++	}
+ }
+ 
+ static const char *bockw_boards_compat_dt[] __initdata = {
 -- 
-1.7.10.4
+1.7.9.5
 
