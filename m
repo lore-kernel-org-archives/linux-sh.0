@@ -1,62 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 05 Apr 2013 00:02:01 +0000
-Subject: Re: [PATCH v2 1/2] ARM: mach-shmobile: r8a7779: Add DU support
-Message-Id: <2405796.5ubkezlbZP@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 17 Apr 2013 22:17:27 +0000
+Subject: [PATCH 4/4] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
+Message-Id: <201304180217.28176.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364412073-12322-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1364412073-12322-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201304180206.39465.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304180206.39465.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-On Thursday 04 April 2013 23:17:59 Sergei Shtylyov wrote:
-> On 03/27/2013 10:21 PM, Laurent Pinchart wrote:
-> > Add a function to register the DU device with board-specific platform
-> > data.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> [...]
-> 
-> > diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c
-> > b/arch/arm/mach-shmobile/setup-r8a7779.c index a460ba3..2f817d8 100644
-> > --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> > +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> 
-> [...]
-> 
-> > @@ -428,6 +451,13 @@ void __init r8a7779_add_standard_devices(void)
-> >   			    ARRAY_SIZE(r8a7779_late_devices));
-> >   }
-> > 
-> > +void __init r8a7779_add_du_device(void *pdata)
-> 
-> Just to repeat the criticism that your patch have somehow eluded (but mine
-> 2, with analogous approach, has not :-), you can't have 'void *' here -- you
-> should declare the function with the actual platform data type pointer as an
-> argument.
+Add the VIN and ADV7180 drivers to 'marzen_defconfig'.
 
-OK I'll fix that.
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> > +{
-> > +	du_device.dev.platform_data = pdata;
-> > +
-> > +	platform_device_register(&du_device);
-> 
-> That function should also be avoided like plague (according to Greg KH and
-> Arnd Bergmann). I suggest you use
-> 
-> platform_device_register_resndata() instead, it's more preferable along with
-> all the platform_device_register_*() family.
+---
+ arch/arm/configs/marzen_defconfig |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-OK.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Index: renesas/arch/arm/configs/marzen_defconfig
+=================================--- renesas.orig/arch/arm/configs/marzen_defconfig
++++ renesas/arch/arm/configs/marzen_defconfig
+@@ -84,6 +84,13 @@ CONFIG_GPIO_RCAR=y
+ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_SSB=y
++CONFIG_MEDIA_SUPPORT=y
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SOC_CAMERA=y
++CONFIG_VIDEO_RCAR_VIN=y
++# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
++CONFIG_VIDEO_ADV7180=y
+ CONFIG_USB=y
+ CONFIG_USB_RCAR_PHY=y
+ CONFIG_MMC=y
