@@ -1,84 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 23 Apr 2013 11:07:52 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7778: Remove outdated comments
-Message-Id: <2250366.VB8doyBIfi@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 17 Apr 2013 18:47:27 +0000
+Subject: [PATCH 2/2] ARM: shmobile: BOCK-W: enable I2C in defconfig
+Message-Id: <201304172247.28311.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366194463-27045-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366194463-27045-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201304172242.27671.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304172242.27671.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-On Wednesday 17 April 2013 17:24:49 Kuninori Morimoto wrote:
-> Hi Laurent
-> 
-> Thank you for your patch
-> At first, I'm sorry, these comments created confusion.
-> But, these are indicating caution of strange VI pin settings.
-> You can find same meaning comments on /* IPSR9 */ category, as /* see
-> sel_vi0 */ So, How about this ?
-> 
->  /* see VI0_Rx_A_MARK */
-> 
-> or
-> 
->  /* see sel_vi0 */
+Enable I2C driver in 'bockw_defconfig'.
 
-That sounds good to me. I'll resubmit the patch.
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> > Function GPIOs have been removed, remove comments that refer to them.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 26 +++++++++++++-------------
-> >  1 file changed, 13 insertions(+), 13 deletions(-)
-> > 
-> > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> > b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c index ddbd27b..e9cc040 100644
-> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> > @@ -376,19 +376,19 @@ enum {
-> > 
-> >  	AVS1_MARK,
-> >  	AVS2_MARK,
-> > 
-> > -	VI0_R0_C_MARK,  /* see GPIO_FN_VI0_R0_A */
-> > -	VI0_R1_C_MARK,  /* see GPIO_FN_VI0_R1_A */
-> > -	VI0_R2_C_MARK,  /* see GPIO_FN_VI0_R2_A */
-> > -	/* VI0_R3_C_MARK,  see GPIO_FN_VI0_R3_A */
-> > -	VI0_R4_C_MARK,  /* see GPIO_FN_VI0_R4_A */
-> > -	VI0_R5_C_MARK,  /* see GPIO_FN_VI0_R5_A */
-> > -
-> > -	VI0_R0_D_MARK,  /* see GPIO_FN_VI0_R0_B */
-> > -	VI0_R1_D_MARK,  /* see GPIO_FN_VI0_R1_B */
-> > -	VI0_R2_D_MARK,  /* see GPIO_FN_VI0_R2_B */
-> > -	VI0_R3_D_MARK,  /* see GPIO_FN_VI0_R3_B */
-> > -	VI0_R4_D_MARK,  /* see GPIO_FN_VI0_R4_B */
-> > -	VI0_R5_D_MARK,  /* see GPIO_FN_VI0_R5_B */
-> > +	VI0_R0_C_MARK,
-> > +	VI0_R1_C_MARK,
-> > +	VI0_R2_C_MARK,
-> > +	/* VI0_R3_C_MARK, */
-> > +	VI0_R4_C_MARK,
-> > +	VI0_R5_C_MARK,
-> > +
-> > +	VI0_R0_D_MARK,
-> > +	VI0_R1_D_MARK,
-> > +	VI0_R2_D_MARK,
-> > +	VI0_R3_D_MARK,
-> > +	VI0_R4_D_MARK,
-> > +	VI0_R5_D_MARK,
-> > 
-> >  	/* IPSR0 */
-> >  	PRESETOUT_MARK,	PWM1_MARK,	AUDATA0_MARK,
+---
+ arch/arm/configs/bockw_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
--- 
-Regards,
-
-Laurent Pinchart
-
+Index: renesas/arch/arm/configs/bockw_defconfig
+=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
++++ renesas/arch/arm/configs/bockw_defconfig
+@@ -73,6 +73,8 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ # CONFIG_HWMON is not set
++CONFIG_I2C=y
++CONFIG_I2C_RCAR=y
+ CONFIG_USB=y
+ CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
+ CONFIG_USB_EHCI_HCD=y
