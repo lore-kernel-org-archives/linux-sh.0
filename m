@@ -1,70 +1,49 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 08 Apr 2013 03:16:41 +0000
-Subject: Re: [RFC/PATCH 0/7] ARCH: shmobile: defconfig consolidation
-Message-Id: <87li8togoa.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 17 Apr 2013 05:17:04 +0000
+Subject: [PATCH 2/6] ARM: shmobile: r8a7778: add SDHI clock support
+Message-Id: <87d2ttenxv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
- <87sj31omnz.wl%kuninori.morimoto.gx@renesas.com>
- <20130408021630.GI13103@verge.net.au>
- <87mwt9ohsx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mwt9ohsx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-
-Hi Simon
-
-> > Unfortunately not, the idea is not to modify CONFIG_MEMORY_START
-> > or CONFIG_MEMORY_SIZE.
-> > 
-> > My understanding is that if you load a zImage at the correct
-> > start address (0x60000000 IIRC) and then execute it using bootz
-> > then the kernel should relocate and run from that address.
-> 
-> Hmm...
-> This means 3) is not needed, but it didn't work without 3)
-> Is it R8A7778 or Bock-W DT code issue ?
-
-Now, Bock-W start works with attached patch
-Is it correct for you ?
-
-I used simon/topic/defconfig-consolidation+next-20130403
-(I guess there is no tag for it ?)
-
--- for bock-w ---------------------------
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 0076b1e..1242940 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -27,6 +27,6 @@
- 
- 	memory {
- 		device_type = "memory";
--		reg = <0x60000000 0x10000000>;
-+		reg = <0x40000000 0x10000000>;
- 	};
- };
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 7dba53f..c4b9940 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -14,10 +14,12 @@ CONFIG_SLAB=y
- CONFIG_ARCH_SHMOBILE=y
- CONFIG_ARCH_SH7372=y
- CONFIG_ARCH_R8A7740=y
-+CONFIG_ARCH_R8A7778=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_EMEV2=y
- CONFIG_MACH_MACKEREL=y
- CONFIG_MACH_ARMADILLO800EVA=y
-+CONFIG_MACH_BOCKW=y
- CONFIG_MACH_LAGER=y
- CONFIG_MACH_KZM9D=y
- # CONFIG_SH_TIMER_TMU is not set
-
-
-Best regards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/clock-r8a7778.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 5cc271e..b251e4d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -103,12 +103,16 @@ static struct clk *main_clks[] = {
+ };
+ 
+ enum {
++	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+ 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
++	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
++	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
+ 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
+@@ -122,6 +126,9 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+-- 
+1.7.9.5
+
