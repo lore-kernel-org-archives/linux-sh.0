@@ -1,45 +1,132 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 22:59:54 +0000
-Subject: [PATCH 13/37] ARM: shmobile: armadillo800eva: Register pinctrl mapping for HDMI
-Message-Id: <1366671618-8796-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Daniel Lezcano <daniel.lezcano@linaro.org>
+Date: Wed, 17 Apr 2013 13:32:56 +0000
+Subject: [PATCH 3/4] SH: cpuidle: initialize the driver's states directly
+Message-Id: <1366205577-11632-3-git-send-email-daniel.lezcano@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366205577-11632-1-git-send-email-daniel.lezcano@linaro.org>
+In-Reply-To: <1366205577-11632-1-git-send-email-daniel.lezcano@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: lethal@linux-sh.org, rjw@sisk.pl
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, patches@linaro.org
 
-Replace the GPIO-based HDMI pinmux configuration by a pinctrl mapping.
+Like all the other drivers, let's initialize the structure a compile time
+instead of init time.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The states #1 and #2 are not enabled by default. The init function will
+check the features of the board in order to enable the state.
+
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ arch/sh/kernel/cpu/shmobile/cpuidle.c |   90 +++++++++++++++------------------
+ 1 file changed, 41 insertions(+), 49 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index d8ce94a..a74e750 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1062,6 +1062,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
- 				  "gether_mii", "gether"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
- 				  "gether_int", "gether"),
-+	/* HDMI */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-mobile-hdmi", "pfc-r8a7740",
-+				  "hdmi", "hdmi"),
- 	/* LCD0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
- 				  "lcd0_data24_0", "lcd0"),
-@@ -1187,10 +1190,6 @@ static void __init eva_init(void)
- 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
+diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+index 36374cc..f024acf 100644
+--- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
++++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+@@ -53,59 +53,51 @@ static int cpuidle_sleep_enter(struct cpuidle_device *dev,
  
--	/* HDMI */
--	gpio_request(GPIO_FN_HDMI_HPD,		NULL);
--	gpio_request(GPIO_FN_HDMI_CEC,		NULL);
+ static struct cpuidle_device cpuidle_dev;
+ static struct cpuidle_driver cpuidle_driver = {
+-	.name			= "sh_idle",
+-	.owner			= THIS_MODULE,
++	.name   = "sh_idle",
++	.owner  = THIS_MODULE,
++	.states = {
++		{
++			.exit_latency = 1,
++			.target_residency = 1 * 2,
++			.power_usage = 3,
++			.flags = CPUIDLE_FLAG_TIME_VALID,
++			.enter = cpuidle_sleep_enter,
++			.name = "C1",
++			.desc = "SuperH Sleep Mode",
++		},
++		{
++			.exit_latency = 100,
++			.target_residency = 1 * 2,
++			.power_usage = 1,
++			.flags = CPUIDLE_FLAG_TIME_VALID,
++			.enter = cpuidle_sleep_enter,
++			.name = "C2",
++			.desc = "SuperH Sleep Mode [SF]",
++			.disabled = true,
++		},
++		{
++			.exit_latency = 2300,
++			.target_residency = 1 * 2,
++			.power_usage = 1,
++			.flags = CPUIDLE_FLAG_TIME_VALID,
++			.enter = cpuidle_sleep_enter,
++			.name = "C3",
++			.desc = "SuperH Mobile Standby Mode [SF]",
++			.disabled = true,
++		},
++	},
++	.safe_state_index = 0,
++	.state_count = 3,
+ };
+ 
+ void sh_mobile_setup_cpuidle(void)
+ {
+-	struct cpuidle_device *dev = &cpuidle_dev;
+-	struct cpuidle_driver *drv = &cpuidle_driver;
+-	struct cpuidle_state *state;
+-	int i = 0;
++	if (sh_mobile_sleep_supported & SUSP_SH_SF)
++		cpuidle_driver.states[1].disabled = false;
+ 
+-	state = &drv->states[i++];
+-	snprintf(state->name, CPUIDLE_NAME_LEN, "C1");
+-	strncpy(state->desc, "SuperH Sleep Mode", CPUIDLE_DESC_LEN);
+-	state->exit_latency = 1;
+-	state->target_residency = 1 * 2;
+-	state->power_usage = 3;
+-	state->flags = 0;
+-	state->flags |= CPUIDLE_FLAG_TIME_VALID;
+-	state->enter = cpuidle_sleep_enter;
++	if (sh_mobile_sleep_supported & SUSP_SH_STANDBY)
++		cpuidle_driver.states[2].disabled = false;
+ 
+-	drv->safe_state_index = 0;
 -
- 	/*
- 	 * CAUTION
- 	 *
+-	if (sh_mobile_sleep_supported & SUSP_SH_SF) {
+-		state = &drv->states[i++];
+-		snprintf(state->name, CPUIDLE_NAME_LEN, "C2");
+-		strncpy(state->desc, "SuperH Sleep Mode [SF]",
+-			CPUIDLE_DESC_LEN);
+-		state->exit_latency = 100;
+-		state->target_residency = 1 * 2;
+-		state->power_usage = 1;
+-		state->flags = 0;
+-		state->flags |= CPUIDLE_FLAG_TIME_VALID;
+-		state->enter = cpuidle_sleep_enter;
+-	}
+-
+-	if (sh_mobile_sleep_supported & SUSP_SH_STANDBY) {
+-		state = &drv->states[i++];
+-		snprintf(state->name, CPUIDLE_NAME_LEN, "C3");
+-		strncpy(state->desc, "SuperH Mobile Standby Mode [SF]",
+-			CPUIDLE_DESC_LEN);
+-		state->exit_latency = 2300;
+-		state->target_residency = 1 * 2;
+-		state->power_usage = 1;
+-		state->flags = 0;
+-		state->flags |= CPUIDLE_FLAG_TIME_VALID;
+-		state->enter = cpuidle_sleep_enter;
+-	}
+-
+-	drv->state_count = i;
+-	dev->state_count = i;
+-
+-	cpuidle_register_driver(&cpuidle_driver);
+-
+-	cpuidle_register_device(dev);
++	if (!cpuidle_register_driver(&cpuidle_driver))
++		cpuidle_register_device(&cpuidle_dev);
+ }
 -- 
-1.8.1.5
+1.7.9.5
 
