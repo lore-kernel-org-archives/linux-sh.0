@@ -1,47 +1,123 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 10 Apr 2013 22:19:45 +0000
-Subject: [PATCH 2/6] DMA: shdma: shdma_chan_filter() has to be in shdma-base.h
-Message-Id: <1365632389-2249-3-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 17 Apr 2013 18:44:58 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7778: add I2C support
+Message-Id: <201304172244.59435.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de>
+References: <201304172242.27671.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304172242.27671.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-shdma_chan_filter() is a function, provided by the shdma-base.c module,
-move its declaration to the appropriate header.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Add I2C clocks and platform devices for R8A7778 SoC.
+Don't forget to also add the peripheral clock which the I2C driver uses.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: changed the registration function to platform_device_register_simple()]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- include/linux/sh_dma.h     |    2 --
- include/linux/shdma-base.h |    1 +
- 2 files changed, 1 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c |   12 ++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7778.c |   32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
 
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index b64d6be..4e83f3e 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -99,6 +99,4 @@ struct sh_dmae_pdata {
- #define CHCR_TE	0x00000002
- #define CHCR_IE	0x00000004
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * based on r8a7779
+  *
+@@ -105,6 +106,7 @@ static struct clk *main_clks[] = {
+ enum {
+ 	MSTP114,
+ 	MSTP100,
++	MSTP030, MSTP029, MSTP028, MSTP027,
+ 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
+@@ -112,6 +114,10 @@ enum {
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
+ 	[MSTP100] = SH_CLK_MSTP32(&p_clk, MSTPCR1,  0, 0), /* USB0/1 */
++	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
++	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
++	[MSTP028] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 28, 0), /* I2C2 */
++	[MSTP027] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 27, 0), /* I2C3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 24, 0), /* SCIF2 */
+@@ -123,10 +129,16 @@ static struct clk mstp_clks[MSTP_NR] = {
+ };
  
--bool shdma_chan_filter(struct dma_chan *chan, void *arg);
--
- #endif
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index a3728bf..9a93897 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -122,5 +122,6 @@ void shdma_chan_remove(struct shdma_chan *schan);
- int shdma_init(struct device *dev, struct shdma_dev *sdev,
- 		    int chan_num);
- void shdma_cleanup(struct shdma_dev *sdev);
-+bool shdma_chan_filter(struct dma_chan *chan, void *arg);
+ static struct clk_lookup lookups[] = {
++	CLKDEV_CON_ID("peripheral_clk", &p_clk),
++
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -94,6 +94,33 @@ static struct sh_timer_config sh_tmu1_pl
+ 		&sh_tmu##idx##_platform_data,		\
+ 		sizeof(sh_tmu##idx##_platform_data))
  
- #endif
--- 
-1.7.2.5
++/* I2C */
++static struct resource i2c0_resources[] = {
++	DEFINE_RES_MEM(0xffc70000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x63)),
++};
++
++static struct resource i2c1_resources[] = {
++	DEFINE_RES_MEM(0xffc71000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6e)),
++};
++
++static struct resource i2c2_resources[] = {
++	DEFINE_RES_MEM(0xffc72000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6c)),
++};
++
++static struct resource i2c3_resources[] = {
++	DEFINE_RES_MEM(0xffc73000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6d)),
++};
++
++#define r8a7778_register_i2c(idx)			\
++	platform_device_register_simple(		\
++		"i2c-rcar", idx,			\
++		i2c##idx##_resources,			\
++		ARRAY_SIZE(i2c##idx##_resources))
++
+ /* USB PHY */
+ static struct resource usb_phy_resources[] = {
+ 	DEFINE_RES_MEM(0xffe70800, 0x100),
+@@ -236,6 +263,11 @@ void __init r8a7778_add_standard_devices
+ 
+ 	r8a7778_register_tmu(0);
+ 	r8a7778_register_tmu(1);
++
++	r8a7778_register_i2c(0);
++	r8a7778_register_i2c(1);
++	r8a7778_register_i2c(2);
++	r8a7778_register_i2c(3);
+ }
+ 
+ void __init r8a7778_init_late(void)
 
