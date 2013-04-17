@@ -1,46 +1,22 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Apr 2013 15:16:19 +0000
-Subject: [PATCH v2 1/2] ARM: sh-mobile: r8a7740: Make private clock arrays static
-Message-Id: <1366125380-14528-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Apr 2013 00:36:57 +0000
+Subject: Re: [PATCH v2 1/2] ARM: sh-mobile: r8a7740: Make private clock arrays static
+Message-Id: <20130417003657.GB16092@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366125380-14528-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366125380-14528-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
-non-static. Compiling support for both SoCs thus result in a symbol
-redefinition. Fix it by defining the arrays as static.
+On Tue, Apr 16, 2013 at 05:16:19PM +0200, Laurent Pinchart wrote:
+> Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
+> non-static. Compiling support for both SoCs thus result in a symbol
+> redefinition. Fix it by defining the arrays as static.
+> 
+> To avoid further similar issues, also define the main_clks as static.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-To avoid further similar issues, also define the main_clks as static.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/clock-r8a7740.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 8fc396a..a2a612f 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -266,7 +266,7 @@ static struct clk fsiack_clk = {
- static struct clk fsibck_clk = {
- };
- 
--struct clk *main_clks[] = {
-+static struct clk *main_clks[] = {
- 	&extalr_clk,
- 	&extal1_clk,
- 	&extal2_clk,
-@@ -317,7 +317,7 @@ enum {
- 	DIV4_NR
- };
- 
--struct clk div4_clks[DIV4_NR] = {
-+static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_I]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT),
- 	[DIV4_ZG]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT),
- 	[DIV4_B]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA,  8, 0x6fff, CLK_ENABLE_ON_INIT),
--- 
-1.8.1.5
-
+Thanks, queued-up for v3.11 in the soc-r8a7740 branch.
