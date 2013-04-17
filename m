@@ -1,91 +1,116 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 25 Apr 2013 10:18:39 +0000
-Subject: Re: [PATCH 0/9] TPU PWM support
-Message-Id: <3436780.byyn8E3kaI@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 17 Apr 2013 22:15:00 +0000
+Subject: [PATCH 3/4] ARM: shmobile: Marzen: add VIN and ADV7180 support
+Message-Id: <201304180215.01218.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20130424074044.GD847@verge.net.au> <20130425005402.GA21277@verge.net.au>
-In-Reply-To: <20130425005402.GA21277@verge.net.au>
+References: <201304180206.39465.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304180206.39465.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-On Thursday 25 April 2013 09:54:02 Simon Horman wrote:
-> On Wed, Apr 24, 2013 at 04:40:44PM +0900, Simon Horman wrote:
-> > On Wed, Apr 24, 2013 at 02:06:00AM +0200, Laurent Pinchart wrote:
-> > > Hello,
-> > > 
-> > > This patch set adds support for the TPU PWM unit found in the sh73a0 and
-> > > r8a7740 SoCs. It deprecates and removes the leds-renesas-tpu driver in
-> > > favor of a combination of leds-pwm and pwm-rmob.
-> > > 
-> > > I've tested the code on Armadillo only as I don't have access to a kota2
-> > > board. This is why I've added backlight support to Armadillo as part of
-> > > this set.
-> > > 
-> > > As an added bonus patches 7/9 and 8/9 remove function GPIOs support from
-> > > the sh73a0 platform. Along with the other PFC-related patches recently
-> > > posted on the list, mach-shmobile is now free of function GPIOs. Any
-> > > volunteer to migrate arch/sh ? :-)
-> > > 
-> > > The patches are based on a merge of "[PATCH 00/37] Fully migrate r8a7740
-> > > to pinctrl", "[PATCH 0/4] sh73a0: Expose the PFC-controller SDHI power
-> > > gate as a regulator" and "[PATCH] sh-pfc: r8a7740: Add bias (pull-
-> > > up/down) pinconf support".
-> > > 
-> > > Laurent Pinchart (9):
-> > >   sh-pfc: sh73a0: Add TPU pin groups and functions
-> > >   sh-pfc: r8a7740: Add TPU pin groups and functions
-> > >   pwm: Add Renesas Mobile TPU PWM driver
-> > >   ARM: mach-shmobile: clock-r8a7740: add TPU PWM support
-> > >   ARM: mach-shmobile: armadillo800eva: Add backlight support
-> > >   ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
-> > >   sh-pfc: sh73a0: Remove function GPIOs
-> > >   ARM: shmobile: sh73a0: Remove all GPIOs
-> > >   leds: Remove leds-renesas-tpu driver
-> > >  
-> > >  arch/arm/mach-shmobile/board-armadillo800eva.c |  51 ++-
-> > >  arch/arm/mach-shmobile/board-kota2.c           | 178 +++++---
-> > >  arch/arm/mach-shmobile/clock-r8a7740.c         |   4 +-
-> > >  arch/arm/mach-shmobile/clock-sh73a0.c          |   8 +-
-> > >  arch/arm/mach-shmobile/include/mach/sh73a0.h   | 373 +--------------
-> > >  drivers/leds/Kconfig                           |  12 -
-> > >  drivers/leds/Makefile                          |   1 -
-> > >  drivers/leds/leds-renesas-tpu.c                | 336 --------------
-> > >  drivers/pinctrl/sh-pfc/pfc-r8a7740.c           |  50 ++
-> > >  drivers/pinctrl/sh-pfc/pfc-sh73a0.c            | 608  +++++++----------
-> > >  drivers/pwm/Kconfig                            |   7 +
-> > >  drivers/pwm/Makefile                           |   1 +
-> > >  drivers/pwm/pwm-rmob.c                         | 462 ++++++++++++++++++
-> > >  include/linux/platform_data/leds-renesas-tpu.h |  14 -
-> > >  include/linux/platform_data/pwm-rmob.h         |  18 +
-> > >  15 files changed, 913 insertions(+), 1210 deletions(-)
-> > >  delete mode 100644 drivers/leds/leds-renesas-tpu.c
-> > >  create mode 100644 drivers/pwm/pwm-rmob.c
-> > >  delete mode 100644 include/linux/platform_data/leds-renesas-tpu.h
-> > >  create mode 100644 include/linux/platform_data/pwm-rmob.h
-> > 
-> > I have rebased the pinmux branch on renesas-boards3-for-v3.10 to
-> > supply dependencies. That tag includes the renesas-pinmux2-for-v3.10
-> > tag which the pinmux branch was previously based on.
-> > 
-> > I have applied this entire series on the resulting pinmux branch.
-> > 
-> > I plan to push this when I tag renesas-next-20130424 later today.
-> > If not I will tag and push renesas-next-20130425 tomorrow.
-> 
-> As there has been subsequent discussion and a v2 of this series posted, and
-> I have dropped the "[PATCH 0/4] sh73a0: Expose the PFC-controller SDHI
-> power gate as a regulator" series for similar reasons; I have dropped these
-> patches for now.
+Add ADV7180 platform devices on the Marzen board, configure VIN1/3 pins, and
+register VIN1/3 devices with the ADV7180 specific platform data.
 
-I'll wait for Magnus' ack and I'll then ask you to apply the patches.
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
--- 
-Regards,
+---
+ arch/arm/mach-shmobile/board-marzen.c |   55 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
 
-Laurent Pinchart
-
+Index: renesas/arch/arm/mach-shmobile/board-marzen.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
++++ renesas/arch/arm/mach-shmobile/board-marzen.c
+@@ -37,6 +37,7 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
++#include <media/soc_camera.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -178,12 +179,54 @@ static struct platform_device leds_devic
+ 	},
+ };
+ 
++static struct rcar_vin_platform_data vin_platform_data = {
++	.flags	= RCAR_VIN_BT656,
++};
++
++static struct i2c_board_info i2c_camera[] = {
++	{
++		I2C_BOARD_INFO("adv7180", 0x20),
++	}, {
++		I2C_BOARD_INFO("adv7180", 0x21),
++	},
++};
++
++static struct soc_camera_link iclink_adv7180[] = {
++	{
++		.bus_id		= 1,
++		.i2c_adapter_id	= 0,
++		.board_info	= &i2c_camera[0],
++	}, {
++		.bus_id		= 3,
++		.i2c_adapter_id	= 0,
++		.board_info	= &i2c_camera[1],
++	}
++};
++
++static struct platform_device camera0_device = {
++	.name	= "soc-camera-pdrv",
++	.id	= 0,
++	.dev	= {
++		.platform_data	= &iclink_adv7180[0],
++	},
++};
++
++static struct platform_device camera1_device = {
++	.name	= "soc-camera-pdrv",
++	.id	= 1,
++	.dev	= {
++		.platform_data	= &iclink_adv7180[1],
++	},
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
+ 	&thermal_device,
+ 	&hspi_device,
+ 	&leds_device,
++	&camera0_device,
++	&camera1_device,
+ };
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+@@ -219,6 +262,16 @@ static const struct pinctrl_map marzen_p
+ 	/* USB2 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
+ 				  "usb2", "usb2"),
++	/* VIN1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7779",
++				  "vin1_clk", "vin1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7779",
++				  "vin1_data8", "vin1"),
++	/* VIN3 */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.3", "pfc-r8a7779",
++				  "vin3_clk", "vin3"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.3", "pfc-r8a7779",
++				  "vin3_data8", "vin3"),
+ };
+ 
+ static void __init marzen_init(void)
+@@ -234,6 +287,8 @@ static void __init marzen_init(void)
+ 
+ 	r8a7779_add_standard_devices();
+ 	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
++	r8a7779_add_vin_device(1, &vin_platform_data);
++	r8a7779_add_vin_device(3, &vin_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+ 
