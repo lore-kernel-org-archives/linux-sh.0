@@ -1,53 +1,37 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 03 Apr 2013 09:19:03 +0000
-Subject: [PATCH/RFC 1/2] irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
-Message-Id: <Pine.LNX.4.64.1304031112170.10531@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 18 Apr 2013 06:41:30 +0000
+Subject: [PATCH 2/3] ARM: shmobile: add GPIO IRQ macro
+Message-Id: <87d2tss5m1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304031103590.10531@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304031103590.10531@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Most Renesas irqpin controllers have 4-bit sense fields, however, some
-have different widths. This patch adds a DT binding to optionally
-specify such non-standard values.
+R-Car series gpio_rcar driver can control GPIO IRQ today.
+It needs base IRQ number for gpio_rcar_config :: .irq_base
+This patch adds macro for GPIO IRQ.
+This patch was tested on Bock-W board
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- .../interrupt-controller/renesas,intc-irqpin.txt   |    2 ++
- drivers/irqchip/irq-renesas-intc-irqpin.c          |    5 ++++-
- 2 files changed, 6 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/include/mach/irqs.h |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-index e55d183..6b48742 100644
---- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-+++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-@@ -11,3 +11,5 @@ Optional properties:
-   resource allocation properties
- - control-parent: disable and enable interrupts on the parent interrupt
-   controller, needed for some broken implementations
-+- sense-bitfield-width: width of a single sense bitfield in the SENSE register,
-+  if different from the default 4 bits
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index 82bbe8f..6aadfe6 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -381,9 +381,12 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	for (k = 0; k < p->number_of_irqs; k++)
- 		intc_irqpin_mask_unmask_prio(p, k, 1);
+diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
+index b2074e2..d241bfd 100644
+--- a/arch/arm/mach-shmobile/include/mach/irqs.h
++++ b/arch/arm/mach-shmobile/include/mach/irqs.h
+@@ -16,4 +16,9 @@
+ #define IRQPIN_BASE		2000
+ #define irq_pin(nr)		((nr) + IRQPIN_BASE)
  
--	if (!pdata)
-+	if (!pdata) {
- 		p->config.control_parent = of_property_read_bool(pdev->dev.of_node,
- 								 "control-parent");
-+		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
-+				     &p->config.sense_bitfield_width);
-+	}
- 
- 	/* use more severe masking method if requested */
- 	if (p->config.control_parent) {
++/* GPIO IRQ */
++#define _GPIO_IRQ_BASE		2500
++#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
++#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
++
+ #endif /* __ASM_MACH_IRQS_H */
 -- 
-1.7.2.5
+1.7.9.5
 
