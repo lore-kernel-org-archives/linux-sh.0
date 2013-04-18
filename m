@@ -1,18 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 25 Apr 2013 00:26:59 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7740: Add bias (pull-up/down) pinconf support
-Message-Id: <20130425002659.GB7857@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 18 Apr 2013 06:33:47 +0000
+Subject: [PATCH] ARM: shmobile: marzen: keep local function as static
+Message-Id: <87haj4s5yw.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366761060-16142-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366761060-16142-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Apr 24, 2013 at 01:51:00AM +0200, Laurent Pinchart wrote:
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+marzen_init_late() should be static
 
-Thanks,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-marzen.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-queued-up for v3.11 in the pinmux branch.
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index fac9e0f..ff8111b 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -350,7 +350,7 @@ static struct platform_device *marzen_late_devices[] __initdata = {
+ 	&ohci1_device,
+ };
+ 
+-void __init marzen_init_late(void)
++static void __init marzen_init_late(void)
+ {
+ 	/* get usb phy */
+ 	phy = usb_get_phy(USB_PHY_TYPE_USB2);
+-- 
+1.7.9.5
+
