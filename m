@@ -1,115 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:03 +0000
-Subject: [PATCH 07/30] ARM: shmobile: r8a7778 SCIF support
-Message-Id: <1364879246-9470-8-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 18 Apr 2013 06:40:57 +0000
+Subject: [PATCH 1/3] gpio-rcar: R-Car GPIO IRQ share interrupt
+Message-Id: <87ehe8s5my.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Add SCIF serial port support to the r8a7778 SoC by
-adding platform devices together with clock bindings.
-DT device description is excluded at this point since
-such bindings are still under development.
+R-Car H1 or Gen2 GPIO interrupts are assigned per each GPIO domain,
+but, Gen1 E1/M1 GPIO interrupts are shared for all GPIO domain.
+gpio-rcar driver needs IRQF_SHARED flags for these.
+This patch was tested on Bock-W board
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c |   13 +++++++++++++
- arch/arm/mach-shmobile/setup-r8a7778.c |   26 ++++++++++++++++++++++++++
- 2 files changed, 39 insertions(+)
+ drivers/gpio/gpio-rcar.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 387e3b7..f1277f4 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -58,16 +58,29 @@ static struct clk *main_clks[] = {
- };
- 
- enum {
-+	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015,
- 	MSTP_NR };
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP026] = SH_CLK_MSTP32(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
-+	[MSTP025] = SH_CLK_MSTP32(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
-+	[MSTP024] = SH_CLK_MSTP32(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
-+	[MSTP023] = SH_CLK_MSTP32(&clkp, MSTPCR0, 23, 0), /* SCIF3 */
-+	[MSTP022] = SH_CLK_MSTP32(&clkp, MSTPCR0, 22, 0), /* SCIF4 */
-+	[MSTP021] = SH_CLK_MSTP32(&clkp, MSTPCR0, 21, 0), /* SCIF5 */
- 	[MSTP016] = SH_CLK_MSTP32(&clkp, MSTPCR0, 16, 0), /* TMU0 */
- 	[MSTP015] = SH_CLK_MSTP32(&clkp, MSTPCR0, 15, 0), /* TMU1 */
- };
- 
- static struct clk_lookup lookups[] = {
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
-+	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
-+	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
-+	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
-+	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
-+	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
- };
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 811ccf3..01c62be 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -25,6 +25,7 @@
- #include <linux/of_platform.h>
- #include <linux/platform_device.h>
- #include <linux/irqchip.h>
-+#include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <mach/irqs.h>
- #include <mach/r8a7778.h>
-@@ -32,6 +33,26 @@
- #include <asm/mach/arch.h>
- #include <asm/hardware/cache-l2x0.h>
- 
-+/* SCIF */
-+#define SCIF_INFO(baseaddr, irq)				\
-+{								\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
-+	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+	.scbrr_algo_id	= SCBRR_ALGO_2,				\
-+	.type		= PORT_SCIF,				\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+}
-+
-+static struct plat_sci_port scif_platform_data[] = {
-+	SCIF_INFO(0xffe40000, gic_iid(0x66)),
-+	SCIF_INFO(0xffe41000, gic_iid(0x67)),
-+	SCIF_INFO(0xffe42000, gic_iid(0x68)),
-+	SCIF_INFO(0xffe43000, gic_iid(0x69)),
-+	SCIF_INFO(0xffe44000, gic_iid(0x6a)),
-+	SCIF_INFO(0xffe45000, gic_iid(0x6b)),
-+};
-+
- /* TMU */
- static struct resource sh_tmu0_resources[] = {
- 	DEFINE_RES_MEM(0xffd80008, 12),
-@@ -88,6 +109,11 @@ void __init r8a7778_add_standard_devices(void)
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index b4ca450..0f3d647 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -333,7 +333,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
  	}
- #endif
  
-+	for (i = 0; i < ARRAY_SIZE(scif_platform_data); i++)
-+		platform_device_register_data(&platform_bus, "sh-sci", i,
-+					      &scif_platform_data[i],
-+					      sizeof(struct plat_sci_port));
-+
- 	for (i = 0; i < ARRAY_SIZE(platform_devinfo); i++)
- 		platform_device_register_full(&platform_devinfo[i]);
- }
+ 	if (devm_request_irq(&pdev->dev, irq->start,
+-			     gpio_rcar_irq_handler, 0, name, p)) {
++			     gpio_rcar_irq_handler, IRQF_SHARED, name, p)) {
+ 		dev_err(&pdev->dev, "failed to request IRQ\n");
+ 		ret = -ENOENT;
+ 		goto err1;
 -- 
-1.7.10.4
+1.7.9.5
 
