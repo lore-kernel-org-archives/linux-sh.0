@@ -1,79 +1,38 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Thu, 18 Apr 2013 15:44:25 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 18 Apr 2013 17:40:43 +0000
 Subject: Re: [PATCH 1/8] ARM: shmobile:Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
-Message-Id: <20130418154425.GZ14496@n2100.arm.linux.org.uk>
+Message-Id: <5170301B.3030306@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201304050257.00799.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304050257.00799.sergei.shtylyov@cogentembedded.com>
+ <20130418154425.GZ14496@n2100.arm.linux.org.uk>
+In-Reply-To: <20130418154425.GZ14496@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Apr 05, 2013 at 02:57:00AM +0400, Sergei Shtylyov wrote:
-> +/* USB PHY */
-> +static struct resource usb_phy_resources[] = {
-> +	[0] = {
-> +		.start		= 0xffe70000,
-> +		.end		= 0xffe70900 - 1,
-> +		.flags		= IORESOURCE_MEM,
-> +	},
-> +	[1] = {
-> +		.start		= 0xfff70000,
-> +		.end		= 0xfff70900 - 1,
-> +		.flags		= IORESOURCE_MEM,
-> +	},
+Hello.
 
-Please consider using the macros for these initialisers.
+On 18-04-2013 19:44, Russell King - ARM Linux wrote:
 
-> +static struct resource ehci0_resources[] = {
-> +	[0] = {
-> +		.start	= 0xffe70000,
-> +		.end	= 0xffe70400 - 1,
-> +		.flags	= IORESOURCE_MEM,
-> +	},
-> +	[1] = {
-> +		.start	= gic_iid(0x4c),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
+>> +/* USB PHY */
+>> +static struct resource usb_phy_resources[] = {
+>> +	[0] = {
+>> +		.start		= 0xffe70000,
+>> +		.end		= 0xffe70900 - 1,
+>> +		.flags		= IORESOURCE_MEM,
+>> +	},
+>> +	[1] = {
+>> +		.start		= 0xfff70000,
+>> +		.end		= 0xfff70900 - 1,
+>> +		.flags		= IORESOURCE_MEM,
+>> +	},
 
-Ditto.
+> Please consider using the macros for these initialisers.
 
-> +static struct resource ehci1_resources[] = {
-> +	[0] = {
-> +		.start	= 0xfff70000,
-> +		.end	= 0xfff70400 - 1,
-> +		.flags	= IORESOURCE_MEM,
-> +	},
-> +	[1] = {
-> +		.start	= gic_iid(0x4d),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
+    I'm just moving the code as is here. The destination file still uses old 
+style initializers, and probably needs the wholesale conversion patch in the 
+future.
 
-Ditto.
+WBR, Sergei
 
-> +static struct resource ohci0_resources[] = {
-> +	[0] = {
-> +		.start	= 0xffe70400,
-> +		.end	= 0xffe70800 - 1,
-> +		.flags	= IORESOURCE_MEM,
-> +	},
-> +	[1] = {
-> +		.start	= gic_iid(0x4c),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-
-Ditto.
-
-> +static struct resource ohci1_resources[] = {
-> +	[0] = {
-> +		.start	= 0xfff70400,
-> +		.end	= 0xfff70800 - 1,
-> +		.flags	= IORESOURCE_MEM,
-> +	},
-> +	[1] = {
-> +		.start	= gic_iid(0x4d),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-
-Ditto.
