@@ -1,89 +1,34 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 04 Apr 2013 23:13:03 +0000
-Subject: [PATCH 8/8] rcar-phy: handle platform data
-Message-Id: <201304050313.03609.sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 19 Apr 2013 03:06:04 +0000
+Subject: [PATCH 0/3 v2] ARM: shmobile: r8a7778/bockw: add SDHI0 support
+Message-Id: <874nf36wyu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Set the USBPCTRL0 register from the passed platform data in rcar_usb_phy_init();
-don't reset it to 0 in  rcar_usb_phy_shutdown()  anymore as that does not make
-sense.  Also, don't allow the driver's probe to succeed when the platform data
-are not supplied with a device.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Hi Simon, Laurent
 
+These are v3 patches of SDHI support on Bock-W board.
+
+#1 patch adds common macro for each device definitions.
+Laurent, can you accept it ?
+it is useful for new feature IMO
+
+These are based on renesas-next-20130418 tags
+
+Kuninori Morimoto (3):
+      sh-pfc: r8a7778: add common PFC macro helper
+      sh-pfc: r8a7778: add SDHI support
+      ARM: shmobile: bockw: add SDHI0 support
+
+ arch/arm/mach-shmobile/board-bockw.c |   35 +++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  167 ++++++++++++++++++++++++++++++++--
+ 2 files changed, 194 insertions(+), 8 deletions(-)
+
+
+Best regards
 ---
- drivers/usb/phy/rcar-phy.c |   18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
-
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -1,8 +1,9 @@
- /*
-  * Renesas R-Car USB phy driver
-  *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2012-2013 Renesas Solutions Corp.
-  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License version 2 as
-@@ -11,10 +12,11 @@
- 
- #include <linux/delay.h>
- #include <linux/io.h>
--#include <linux/usb/otg.h>
- #include <linux/platform_device.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
-+#include <linux/usb/otg.h>
-+#include <linux/usb/rcar-phy.h>
- 
- /* REGS block */
- #define USBPCTRL0	0x00
-@@ -55,6 +57,7 @@ static int rcar_usb_phy_init(struct usb_
- {
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
-+	struct rcar_phy_platform_data *pdata = dev->platform_data;
- 	void __iomem *reg0 = priv->reg0;
- 	int i;
- 	u32 val;
-@@ -90,7 +93,7 @@ static int rcar_usb_phy_init(struct usb_
- 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
- 
- 		/* set platform specific port settings */
--		iowrite32(0x00000000, (reg0 + USBPCTRL0));
-+		iowrite32(pdata->usbpctrl0, (reg0 + USBPCTRL0));
- 
- 		/*
- 		 * Bus alignment settings
-@@ -117,10 +120,8 @@ static void rcar_usb_phy_shutdown(struct
- 
- 	spin_lock_irqsave(&priv->lock, flags);
- 
--	if (priv->counter-- = 1) { /* last user */
--		iowrite32(0x00000000, (reg0 + USBPCTRL0));
-+	if (priv->counter-- = 1)	/* last user */
- 		iowrite32(0x00000000, (reg0 + USBPCTRL1));
--	}
- 
- 	spin_unlock_irqrestore(&priv->lock, flags);
- }
-@@ -133,6 +134,11 @@ static int rcar_usb_phy_probe(struct pla
- 	void __iomem *reg0;
- 	int ret;
- 
-+	if (!pdev->dev.platform_data) {
-+		dev_err(dev, "No platform data\n");
-+		return -EINVAL;
-+	}
-+
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
+Kuninori Morimoto
