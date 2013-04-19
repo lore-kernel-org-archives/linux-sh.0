@@ -1,10 +1,8 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 17:13:29 +0000
-Subject: [PATCH v3 3/4] ARM: shmobile: Marzen: add VIN and ADV7180 support
-Message-Id: <201304232113.30512.sergei.shtylyov@cogentembedded.com>
+Date: Fri, 19 Apr 2013 22:33:32 +0000
+Subject: [PATCH v2 3/4] ARM: shmobile: Marzen: add VIN and ADV7180 support
+Message-Id: <201304200233.33555.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,15 +14,11 @@ Add ADV7180 platform devices on the Marzen board, configure VIN1/3 pins, and
 register VIN1/3 devices with the ADV7180 specific platform data.
 
 Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: removed superfluous tabulation and inserted empty lines in the  macro
-definition, updated the copyrights, annotated VIN platform data as '__initdata']
+[Sergei: removed superfluous tabulation and inserted empty lines in the macro
+definition; updated the copyrights]
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Changes since version 2:
-- annotated 'vin_platform_data' as '__initdata' since they're kmemdup()'ed while
-  registering the platform devices anyway.
-
 Changes since the original posting:
 - used a macro to define the camera platform devices;
 - updated the copyrights;
@@ -59,7 +53,7 @@ Index: renesas/arch/arm/mach-shmobile/board-marzen.c
  	},
  };
  
-+static struct rcar_vin_platform_data vin_platform_data __initdata = {
++static struct rcar_vin_platform_data vin_platform_data = {
 +	.flags	= RCAR_VIN_BT656,
 +};
 +
