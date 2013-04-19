@@ -1,43 +1,66 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 10 Apr 2013 22:19:43 +0000
-Subject: [PATCH/RFC 0/6] DMA: shdma: add Device Tree support
-Message-Id: <1365632389-2249-1-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 19 Apr 2013 03:07:34 +0000
+Subject: [PATCH 1/3 v3] sh-pfc: r8a7778: add common PFC macro helper
+Message-Id: <8738un6wwd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-This patch series adds Device Tree support to the shdma dmaengine driver 
-and illustraits its use with the kzm9g-reference board's MMCIF interface.
+pfc-r8a7778 will have many devices pfc support in the future,
+and current pfc-r8a7778 is using pin/mux definition macro for SCIF.
+The device definition style using macro is readable code IMO,
+but creating new macro for each devices is not good sense.
+This patch adds common SH_PFC_xx() macro for each new feature devices
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-
-Guennadi Liakhovetski (6):
-  DMA: shdma: (cosmetic) don't re-calculate a pointer
-  DMA: shdma: shdma_chan_filter() has to be in shdma-base.h
-  DMA: shdma: add DT support
-  ARM: shmobile: sh73a0: add support for the DMA0 controller in DT
-  mmc: sh_mmcif: add support for Device Tree DMA bindings
-  ARM: shmobile: kzm9g-reference: add DMA channels to the MMCIF DT
-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    3 ++
- arch/arm/boot/dts/sh73a0.dtsi                |   36 ++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c        |    4 ++
- drivers/dma/sh/shdma-base.c                  |   51 +++++++++++++++++++++++---
- drivers/dma/sh/shdma.c                       |   46 ++++++++++++++++++++----
- drivers/mmc/host/sh_mmcif.c                  |   29 +++++++++------
- include/linux/sh_dma.h                       |    2 -
- include/linux/shdma-base.h                   |    6 +++
- 8 files changed, 151 insertions(+), 26 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+v2 -> v3
+
+ - new patch
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   26 ++++++++++++++++++--------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index ddbd27b..139f9dd 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -1303,15 +1303,25 @@ static struct sh_pfc_pin pinmux_pins[] = {
+  */
+ #define PIN_NUMBER(row, col)		(1000+((row)-1)*25+(col)-1)
+ 
+-/* - SCIF macro ------------------------------------------------------------- */
+-#define SCIF_PFC_PIN(name, args...)					\
++/* - macro */
++#define SH_PFC_PINS(name, args...) \
+ 	static const unsigned int name ##_pins[] = { args }
+-#define SCIF_PFC_DAT(name, tx, rx)					\
+-	static const unsigned int name ##_mux[]  = { tx##_MARK, rx##_MARK, }
+-#define SCIF_PFC_CTR(name, cts, rts)					\
+-	static const unsigned int name ##_mux[]  = { cts##_MARK, rts##_MARK, }
+-#define SCIF_PFC_CLK(name, sck)					\
+-	static const unsigned int name ##_mux[]  = { sck##_MARK, }
++#define SH_PFC_MUX1(name, arg1)					\
++	static const unsigned int name ##_mux[]  = { arg1##_MARK }
++#define SH_PFC_MUX2(name, arg1, arg2)					\
++	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, }
++#define SH_PFC_MUX3(name, arg1, arg2, arg3)					\
++	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK,	\
++						     arg3##_MARK }
++#define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
++	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
++						     arg3##_MARK, arg4##_MARK }
++
++/* - SCIF macro ------------------------------------------------------------- */
++#define SCIF_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
++#define SCIF_PFC_DAT(name, tx, rx)	SH_PFC_MUX2(name, tx, rx)
++#define SCIF_PFC_CTR(name, cts, rts)	SH_PFC_MUX2(name, cts, rts)
++#define SCIF_PFC_CLK(name, sck)		SH_PFC_MUX1(name, sck)
+ 
+ /* - HSCIF0 ----------------------------------------------------------------- */
+ SCIF_PFC_PIN(hscif0_data_a,	RCAR_GP_PIN(1, 17),	RCAR_GP_PIN(1, 18));
+-- 
+1.7.9.5
+
