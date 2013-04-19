@@ -1,8 +1,10 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Apr 2013 22:07:07 +0000
-Subject: [PATCH v4 0/4] Add USB support to R8A7778/BOCK-W
-Message-Id: <201304200207.07895.sergei.shtylyov@cogentembedded.com>
+Date: Fri, 19 Apr 2013 22:27:32 +0000
+Subject: Re: [PATCH v4 0/4] Add USB support to R8A7778/BOCK-W
+Message-Id: <5171C4D4.8080607@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201304200207.07895.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304200207.07895.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,17 +12,12 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hello.
 
-   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130416' tag and the R8A7779/Marzen patchset I've posted.
- It was created to add support of R8A7778/BOCK-W USB to the platform code and
-the USB common PHY driver, and so spans both arch/arm/mach-shmobile/ and
-drivers/usb/phy/ subtrees.
+On 04/20/2013 02:07 AM, Sergei Shtylyov wrote:
 
-[1/3] rcar-phy: add R8A7778 support
-[2/3] ARM: shmobile: r8a7778: add USB support
-[3/3] ARM: shmobile: BOCK-W: add USB support
+>     Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
+> 'renesas-next-20130416' tag and the R8A7779/Marzen patchset I've posted.
 
-The patch #4 (ARM: shmobile: BOCK-W: enable USB in defconfig) that has been
-already merged, is not reposted.
+    Sorry, it's against 'renesas-next-20130419' tag now.
 
 WBR, Sergei
+
