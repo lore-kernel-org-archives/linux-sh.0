@@ -1,45 +1,47 @@
 From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Fri, 19 Apr 2013 10:21:42 +0000
+Date: Fri, 19 Apr 2013 10:48:10 +0000
 Subject: Re: v7_flush_kern_cache_louis flushes up to L2?
-Message-Id: <20130419102142.GI14496@n2100.arm.linux.org.uk>
+Message-Id: <20130419104810.GJ14496@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CABYn4sxUCoWhC_4qydzbCtZdQdetqFZ_u5WtXsghprQget9f5g@mail.gmail.com>
  <51655248.7000401@arm.com>
  <CABYn4swK_FB+nPO4vKZM8khp+mjaPwkAv_GF+XDg5SYz0VLf0Q@mail.gmail.com>
- <51656A89.9090600@arm.com>
-In-Reply-To: <51656A89.9090600@arm.com>
+ <51656A89.9090600@arm.com> <20130419102142.GI14496@n2100.arm.linux.org.uk>
+In-Reply-To: <20130419102142.GI14496@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 10, 2013 at 02:35:05PM +0100, Jonathan Austin wrote:
-> Note that on SMP, you would also need to clean/flush again after turning  
-> off the caches, as read-speculation could have sucked dirty data from  
-> another cache in to your cache, which would need to be written back  
-> before sleeping.
+On Fri, Apr 19, 2013 at 11:21:42AM +0100, Russell King - ARM Linux wrote:
+> On Wed, Apr 10, 2013 at 02:35:05PM +0100, Jonathan Austin wrote:
+> > Note that on SMP, you would also need to clean/flush again after turning  
+> > off the caches, as read-speculation could have sucked dirty data from  
+> > another cache in to your cache, which would need to be written back  
+> > before sleeping.
+> 
+> Err, no.  If you read data into a cache, it is always populated in a clean
+> state.  You never suck dirty data out of one cache, remove it there and
+> place it immediately in a dirty state in an upper level cache.
+> 
+> So, if we start from the idea that reads will populate the upper level
+> cache with clean data, that cache is populated merely with a _copy_ of
+> the data held elsewhere in the system.
 
-Err, no.  If you read data into a cache, it is always populated in a clean
-state.  You never suck dirty data out of one cache, remove it there and
-place it immediately in a dirty state in an upper level cache.
+Hmm, Will tells me that later ARM cores can migrate dirty cache lines up
+the cache tree, which means that we're potentially into deep problems
+with CPU hotplug and suspend paths, because it means there's potentially
+no way to ensure that we cleanly push data out the caches and shut the
+caches down before the CPU goes down.
 
-So, if we start from the idea that reads will populate the upper level
-cache with clean data, that cache is populated merely with a _copy_ of
-the data held elsewhere in the system.
+Combine this cache behaviour with the implementation specific details
+about SCTRL.C (whether caches are just prevented from being allocated,
+or whether it also affects the caches being searched) and you have a
+recipe for multiple chunks of complex platform specific and CPU
+specific code - especially when combined with things like removal of
+CPU power and synchronisation of that in the hotplug case.
 
-In that case, there is no need to clean or flush that cache after turning
-it off - if the cache only contains _copies_ of data elsewhere in the
-system, then it's perfectly fine for that data to be discarded in any
-way - be that by turning the power off to the cache or invalidating it.
-
-There is a step further in this: if the cache is being dirtied by the
-local CPU, and that data will only ever be used by the local CPU, again,
-in the CPU shutdown path, you really do not need to write that data out -
-because the only CPU which cares about it is the local CPU which is going
-to be shutdown.  So, loss of that data is not a problem.
-
-In other words, shutdown of a CPU is a process which involves pushing out
-data which the rest of the system requires (that's done by an initial
-flush).  Once that flush is done, provided the dying CPU does not _write_
-to any shared data (this includes spinlocks and such like too), there is
-no need to flush the cache anymore.
+I do hope that ARM Ltd have thought about this, and have a way that we
+can shut CPU caches down sanely, but I'm fearing that they haven't
+really considered that to be something anyone really wants to do in a
+generic way.
