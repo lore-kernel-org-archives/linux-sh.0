@@ -1,198 +1,132 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 08 Apr 2013 09:36:18 +0000
-Subject: [PATCH 06/10] sh-pfc: r8a7790: Remove GPIO data
-Message-Id: <1365413782-17036-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 19 Apr 2013 22:21:36 +0000
+Subject: [PATCH v2 1/1] ARM: shmobile: r8a7778: add I2C support
+Message-Id: <201304200221.36928.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-GPIOs are now handled by a separate driver, remove GPIO data from the
-SoC information structure.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add I2C clocks and platform devices for R8A7778 SoC.
+Don't forget to also add the peripheral clock which the I2C driver uses.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: changed the registration function to platform_device_register_simple(),
+regrouped MSTPxxx *enum* members, added the copyright.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 133 +----------------------------------
- 1 file changed, 1 insertion(+), 132 deletions(-)
+Changes since the original posting:
+- regrouped MSTPxxx *enum* members;
+- resolved reject in the 'clock-r8a7778.c' file, refreshed the patch;
+- added an ACK from Kuninori Morimoto.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 54c1e10..7716a1e 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -52,32 +52,12 @@
- 	CPU_32_PORT(fn, pfx##_5_, sfx)				\
+ arch/arm/mach-shmobile/clock-r8a7778.c |   14 +++++++++++++-
+ arch/arm/mach-shmobile/setup-r8a7778.c |   32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 45 insertions(+), 1 deletion(-)
+
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * based on r8a7779
+  *
+@@ -106,7 +107,8 @@ enum {
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+ 	MSTP100,
+-	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++	MSTP030, MSTP029,
++	MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
  
- #define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
--#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
--				       GP##pfx##_IN, GP##pfx##_OUT)
--
--#define _GP_INOUTSEL(pfx, sfx) GP##pfx##_IN, GP##pfx##_OUT
--#define _GP_INDT(pfx, sfx) GP##pfx##_DATA
-+#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN)
- 
- #define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
- #define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
- #define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
- 
--
--#define PORT_10_REV(fn, pfx, sfx)				\
--	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
--	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
--	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
--	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
--	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
--
--#define CPU_32_PORT_REV(fn, pfx, sfx)					\
--	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),		\
--	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
--	PORT_10_REV(fn, pfx, sfx)
--
--#define GP_INOUTSEL(bank) CPU_32_PORT_REV(_GP_INOUTSEL, _##bank##_, unused)
--#define GP_INDT(bank) CPU_32_PORT_REV(_GP_INDT, _##bank##_, unused)
--
- #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
- #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
- 							  FN_##ipsr, FN_##fn)
-@@ -89,14 +69,6 @@ enum {
- 	GP_ALL(DATA),
- 	PINMUX_DATA_END,
- 
--	PINMUX_INPUT_BEGIN,
--	GP_ALL(IN),
--	PINMUX_INPUT_END,
--
--	PINMUX_OUTPUT_BEGIN,
--	GP_ALL(OUT),
--	PINMUX_OUTPUT_END,
--
- 	PINMUX_FUNCTION_BEGIN,
- 	GP_ALL(FN),
- 
-@@ -3824,106 +3796,6 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		/* SEL_I2C1 [2] */
- 		FN_SEL_I2C1_0, FN_SEL_I2C1_1, FN_SEL_I2C1_2, 0, }
- 	},
--	{ PINMUX_CFG_REG("INOUTSEL0", 0xE6050004, 32, 1) { GP_INOUTSEL(0) } },
--	{ PINMUX_CFG_REG("INOUTSEL1", 0xE6051004, 32, 1) {
--		0, 0,
--		0, 0,
--		GP_1_29_IN, GP_1_29_OUT,
--		GP_1_28_IN, GP_1_28_OUT,
--		GP_1_27_IN, GP_1_27_OUT,
--		GP_1_26_IN, GP_1_26_OUT,
--		GP_1_25_IN, GP_1_25_OUT,
--		GP_1_24_IN, GP_1_24_OUT,
--		GP_1_23_IN, GP_1_23_OUT,
--		GP_1_22_IN, GP_1_22_OUT,
--		GP_1_21_IN, GP_1_21_OUT,
--		GP_1_20_IN, GP_1_20_OUT,
--		GP_1_19_IN, GP_1_19_OUT,
--		GP_1_18_IN, GP_1_18_OUT,
--		GP_1_17_IN, GP_1_17_OUT,
--		GP_1_16_IN, GP_1_16_OUT,
--		GP_1_15_IN, GP_1_15_OUT,
--		GP_1_14_IN, GP_1_14_OUT,
--		GP_1_13_IN, GP_1_13_OUT,
--		GP_1_12_IN, GP_1_12_OUT,
--		GP_1_11_IN, GP_1_11_OUT,
--		GP_1_10_IN, GP_1_10_OUT,
--		GP_1_9_IN, GP_1_9_OUT,
--		GP_1_8_IN, GP_1_8_OUT,
--		GP_1_7_IN, GP_1_7_OUT,
--		GP_1_6_IN, GP_1_6_OUT,
--		GP_1_5_IN, GP_1_5_OUT,
--		GP_1_4_IN, GP_1_4_OUT,
--		GP_1_3_IN, GP_1_3_OUT,
--		GP_1_2_IN, GP_1_2_OUT,
--		GP_1_1_IN, GP_1_1_OUT,
--		GP_1_0_IN, GP_1_0_OUT, }
--	},
--	{ PINMUX_CFG_REG("INOUTSEL2", 0xE6052004, 32, 1) {
--		0, 0,
--		0, 0,
--		GP_2_29_IN, GP_2_29_OUT,
--		GP_2_28_IN, GP_2_28_OUT,
--		GP_2_27_IN, GP_2_27_OUT,
--		GP_2_26_IN, GP_2_26_OUT,
--		GP_2_25_IN, GP_2_25_OUT,
--		GP_2_24_IN, GP_2_24_OUT,
--		GP_2_23_IN, GP_2_23_OUT,
--		GP_2_22_IN, GP_2_22_OUT,
--		GP_2_21_IN, GP_2_21_OUT,
--		GP_2_20_IN, GP_2_20_OUT,
--		GP_2_19_IN, GP_2_19_OUT,
--		GP_2_18_IN, GP_2_18_OUT,
--		GP_2_17_IN, GP_2_17_OUT,
--		GP_2_16_IN, GP_2_16_OUT,
--		GP_2_15_IN, GP_2_15_OUT,
--		GP_2_14_IN, GP_2_14_OUT,
--		GP_2_13_IN, GP_2_13_OUT,
--		GP_2_12_IN, GP_2_12_OUT,
--		GP_2_11_IN, GP_2_11_OUT,
--		GP_2_10_IN, GP_2_10_OUT,
--		GP_2_9_IN, GP_2_9_OUT,
--		GP_2_8_IN, GP_2_8_OUT,
--		GP_2_7_IN, GP_2_7_OUT,
--		GP_2_6_IN, GP_2_6_OUT,
--		GP_2_5_IN, GP_2_5_OUT,
--		GP_2_4_IN, GP_2_4_OUT,
--		GP_2_3_IN, GP_2_3_OUT,
--		GP_2_2_IN, GP_2_2_OUT,
--		GP_2_1_IN, GP_2_1_OUT,
--		GP_2_0_IN, GP_2_0_OUT, }
--	},
--	{ PINMUX_CFG_REG("INOUTSEL3", 0xE6053004, 32, 1) { GP_INOUTSEL(3) } },
--	{ PINMUX_CFG_REG("INOUTSEL4", 0xE6054004, 32, 1) { GP_INOUTSEL(4) } },
--	{ PINMUX_CFG_REG("INOUTSEL5", 0xE6055004, 32, 1) { GP_INOUTSEL(5) } },
--	{ },
--};
--
--static const struct pinmux_data_reg pinmux_data_regs[] = {
--	{ PINMUX_DATA_REG("INDT0", 0xE605000C, 32) { GP_INDT(0) } },
--	{ PINMUX_DATA_REG("INDT1", 0xE605100C, 32) {
--		0, 0, GP_1_29_DATA, GP_1_28_DATA,
--		GP_1_27_DATA, GP_1_26_DATA, GP_1_25_DATA, GP_1_24_DATA,
--		GP_1_23_DATA, GP_1_22_DATA, GP_1_21_DATA, GP_1_20_DATA,
--		GP_1_19_DATA, GP_1_18_DATA, GP_1_17_DATA, GP_1_16_DATA,
--		GP_1_15_DATA, GP_1_14_DATA, GP_1_13_DATA, GP_1_12_DATA,
--		GP_1_11_DATA, GP_1_10_DATA, GP_1_9_DATA, GP_1_8_DATA,
--		GP_1_7_DATA, GP_1_6_DATA, GP_1_5_DATA, GP_1_4_DATA,
--		GP_1_3_DATA, GP_1_2_DATA, GP_1_1_DATA, GP_1_0_DATA }
--	},
--	{ PINMUX_DATA_REG("INDT2", 0xE605200C, 32) {
--		0, 0, GP_2_29_DATA, GP_2_28_DATA,
--		GP_2_27_DATA, GP_2_26_DATA, GP_2_25_DATA, GP_2_24_DATA,
--		GP_2_23_DATA, GP_2_22_DATA, GP_2_21_DATA, GP_2_20_DATA,
--		GP_2_19_DATA, GP_2_18_DATA, GP_2_17_DATA, GP_2_16_DATA,
--		GP_2_15_DATA, GP_2_14_DATA, GP_2_13_DATA, GP_2_12_DATA,
--		GP_2_11_DATA, GP_2_10_DATA, GP_2_9_DATA, GP_2_8_DATA,
--		GP_2_7_DATA, GP_2_6_DATA, GP_2_5_DATA, GP_2_4_DATA,
--		GP_2_3_DATA, GP_2_2_DATA, GP_2_1_DATA, GP_2_0_DATA }
--	},
--	{ PINMUX_DATA_REG("INDT3", 0xE605300C, 32) { GP_INDT(3) } },
--	{ PINMUX_DATA_REG("INDT4", 0xE605400C, 32) { GP_INDT(4) } },
--	{ PINMUX_DATA_REG("INDT5", 0xE605500C, 32) { GP_INDT(5) } },
- 	{ },
+@@ -116,6 +118,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
+ 	[MSTP100] = SH_CLK_MSTP32(&p_clk, MSTPCR1,  0, 0), /* USB0/1 */
++	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
++	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
++	[MSTP028] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 28, 0), /* I2C2 */
++	[MSTP027] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 27, 0), /* I2C3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 24, 0), /* SCIF2 */
+@@ -127,6 +133,8 @@ static struct clk mstp_clks[MSTP_NR] = {
  };
  
-@@ -3931,8 +3803,6 @@ const struct sh_pfc_soc_info r8a7790_pinmux_info = {
- 	.name = "r8a77900_pfc",
- 	.unlock_reg = 0xe6060000, /* PMMR */
+ static struct clk_lookup lookups[] = {
++	CLKDEV_CON_ID("peripheral_clk", &p_clk),
++
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+@@ -134,6 +142,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -94,6 +94,33 @@ static struct sh_timer_config sh_tmu1_pl
+ 		&sh_tmu##idx##_platform_data,		\
+ 		sizeof(sh_tmu##idx##_platform_data))
  
--	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
--	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
++/* I2C */
++static struct resource i2c0_resources[] = {
++	DEFINE_RES_MEM(0xffc70000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x63)),
++};
++
++static struct resource i2c1_resources[] = {
++	DEFINE_RES_MEM(0xffc71000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6e)),
++};
++
++static struct resource i2c2_resources[] = {
++	DEFINE_RES_MEM(0xffc72000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6c)),
++};
++
++static struct resource i2c3_resources[] = {
++	DEFINE_RES_MEM(0xffc73000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6d)),
++};
++
++#define r8a7778_register_i2c(idx)			\
++	platform_device_register_simple(		\
++		"i2c-rcar", idx,			\
++		i2c##idx##_resources,			\
++		ARRAY_SIZE(i2c##idx##_resources))
++
+ /* USB PHY */
+ static struct resource usb_phy_resources[] = {
+ 	DEFINE_RES_MEM(0xffe70800, 0x100),
+@@ -260,6 +287,11 @@ void __init r8a7778_add_standard_devices
  
- 	.pins = pinmux_pins,
-@@ -3946,7 +3816,6 @@ const struct sh_pfc_soc_info r8a7790_pinmux_info = {
- 	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
+ 	r8a7778_register_tmu(0);
+ 	r8a7778_register_tmu(1);
++
++	r8a7778_register_i2c(0);
++	r8a7778_register_i2c(1);
++	r8a7778_register_i2c(2);
++	r8a7778_register_i2c(3);
+ }
  
- 	.cfg_regs = pinmux_config_regs,
--	.data_regs = pinmux_data_regs,
- 
- 	.gpio_data = pinmux_data,
- 	.gpio_data_size = ARRAY_SIZE(pinmux_data),
--- 
-1.8.1.5
-
+ void __init r8a7778_init_late(void)
