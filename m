@@ -1,54 +1,30 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:44 +0000
-Subject: [PATCH v4 39/88] ARM: shmobile: kzm9g: Register pinctrl mappings for FSI
-Message-Id: <1363215633-4264-40-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 19 Apr 2013 21:55:12 +0000
+Subject: [PATCH v5 0/9] Reorganize R8A7779/Marzen USB code
+Message-Id: <201304200155.13492.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based FSI pinmux configuration by pinctrl mappings.
+Hello.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-kzm9g.c | 16 +++++++++-------
- 1 file changed, 9 insertions(+), 7 deletions(-)
+   Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130419' tag.  It was created to fix the shortcomings in the
+R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
+spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
+to touch both subtrees). The patches were conceived with the complete
+bisectability goal in mind.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index df3c5ca..a628d1b 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -601,6 +601,15 @@ static struct platform_device *kzm_devices[] __initdata = {
- };
- 
- static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	/* FSIA (AK4648) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_mclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_out", "fsia"),
- 	/* I2C3 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
- 				  "i2c3_1", "i2c3"),
-@@ -727,13 +736,6 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
- 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
--	/* enable FSI2 port A (ak4648) */
--	gpio_request(GPIO_FN_FSIACK,	NULL);
--	gpio_request(GPIO_FN_FSIAILR,	NULL);
--	gpio_request(GPIO_FN_FSIAIBT,	NULL);
--	gpio_request(GPIO_FN_FSIAISLD,	NULL);
--	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--
- 	/* enable USB */
- 	gpio_request(GPIO_FN_VBUS_0,	NULL);
- 
--- 
-1.8.1.5
+[1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
+[2/9] ehci-platform: add pre_setup() method to platform data
+[3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
+[4/9] rcar-phy: remove EHCI internal buffer setup
+[5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
+[6/9] rcar-phy: correct base address
+[7/9] rcar-phy: add platform data
+[8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
+[9/9] rcar-phy: handle platform data
 
+WBR, Sergei
