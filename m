@@ -1,38 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 08 Apr 2013 10:05:30 +0000
-Subject: [PATCH v2 1/3] gpio-rcar: Add RCAR_GP_PIN macro
-Message-Id: <1365415532-24544-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 19 Apr 2013 22:00:07 +0000
+Subject: [PATCH v5 5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
+Message-Id: <201304200200.08498.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Pins are numbered in the R-Car family documentation using a bank number
-and a pin number in the bank. As the Linux pin number space is linear,
-we need to flatten this by multiplying the bank number by 32 and adding
-the pin number. The resulting number bear no directly visible
-relationship  to the documentation, making it error-prone.
+Now that 'drivers/usb/phy/rcar-phy.c' doesn't require the second memory resource
+anymore, we can remove it from the R8A7779's USB PHY platform device.
 
-Add a RCAR_GP_PIN macro to convert from the documentation pin number
-space to the linear Linux space.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- include/linux/platform_data/gpio-rcar.h | 2 ++
- 1 file changed, 2 insertions(+)
+Changes since version 4:
+- refreshed the patch.
 
-diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
-index b253f77..cc472f6 100644
---- a/include/linux/platform_data/gpio-rcar.h
-+++ b/include/linux/platform_data/gpio-rcar.h
-@@ -23,4 +23,6 @@ struct gpio_rcar_config {
- 	const char *pctl_name;
+Changes since version 3:
+- lowercased the SoC name in the subject.
+
+Changes since version 2:
+- refreshed atop of the prior patches;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- new patch in this version, split from the previous one.
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |    5 -----
+ 1 file changed, 5 deletions(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -395,11 +395,6 @@ static struct resource usb_phy_resources
+ 		.end		= 0xffe70900 - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+-	[1] = {
+-		.start		= 0xfff70000,
+-		.end		= 0xfff70900 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
  };
  
-+#define RCAR_GP_PIN(bank, pin)		(((bank) * 32) + (pin))
-+
- #endif /* __GPIO_RCAR_H__ */
--- 
-1.8.1.5
-
+ static struct platform_device usb_phy_device = {
