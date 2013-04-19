@@ -1,65 +1,59 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 04 Apr 2013 23:07:50 +0000
-Subject: [PATCH 6/8] rcar-phy: add platform data
-Message-Id: <201304050307.51360.sergei.shtylyov@cogentembedded.com>
+Date: Fri, 19 Apr 2013 22:13:26 +0000
+Subject: [PATCH v4 3/3] ARM: shmobile: BOCK-W: add USB support
+Message-Id: <201304200213.27342.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong since this
-register contains board-specific USB ports configuration and so its value should
-be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file with
-the USBPCTRL0 bit #define's and 'struct rcar_phy_platform_data' containing the
-value to be set by the driver to that register.
+Register the USB PHY device from bockw_init(), passing the platform  data to it.
+Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
+get registered too...
+
+The patch has been tested on the BOCK-W board.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
- include/linux/usb/rcar-phy.h |   39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+Changes since version 3:
+- removed initializer for 'usb_phy_platform_data' letting it be set to all 0s;
+- refreshed the patch.
 
-Index: renesas/include/linux/usb/rcar-phy.h
-=================================--- /dev/null
-+++ renesas/include/linux/usb/rcar-phy.h
-@@ -0,0 +1,39 @@
-+/*
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
+Changes since version 2:
+- refreshed the patch.
+
+Changes since the original posting:
+- removed initializer for no longer existing field in 'usb_phy_platform_data',
+  modified the comment to the 'ferrite_bead' field initializer.
+
+ arch/arm/mach-shmobile/board-bockw.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -54,6 +54,8 @@ static struct resource smsc911x_resource
+ 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
+ };
+ 
++static struct rcar_phy_platform_data usb_phy_platform_data;
 +
-+#ifndef __RCAR_PHY_H
-+#define __RCAR_PHY_H
-+
-+#include <linux/bitops.h>
-+
-+/* USBPCTRL0 register bits */
-+#define USBPCTRL0_OVC2	BIT(10)	/* Switches the OVC input pin for port 2: */
-+				/* 1: USB_OVC2, 0: OVC2			*/
-+#define USBPCTRL0_OVC1_VBUS1 BIT(9) /* Switches the OVC input pin for port 1: */
-+				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
-+#define USBPCTRL0_OVC0	BIT(8)	/* Switches the OVC input pin for port 0: */
-+				/* 1: USB_OVC0 pin, 0: OVC0		*/
-+#define USBPCTRL0_OVC2_ACT BIT(6) /* Host mode: OVC2 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+				/* Function mode: be sure to set to 1	*/
-+#define USBPCTRL0_PENC	BIT(4)	/* Function mode: output level of PENC1 pin: */
-+				/* 1: high, 0: low			*/
-+#define USBPCTRL0_OVC0_ACT BIT(3) /* Host mode: OVC0 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+#define USBPCTRL0_OVC1_ACT BIT(1) /* Host mode: OVC1 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+				/* Function mode: be sure to set to 1	*/
-+#define USBPCTRL0_PORT1	BIT(0)	/* Selects port 1 mode:			*/
-+				/* 1: function, 0: host			*/
-+
-+struct rcar_phy_platform_data {
-+	u32 usbpctrl0;		/* USBPCTRL0 register value */
-+};
-+
-+#endif /* __RCAR_PHY_H */
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+@@ -71,6 +73,7 @@ static void __init bockw_init(void)
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
++	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
+ 
+ 	pinctrl_register_mappings(bockw_pinctrl_map,
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
+@@ -111,4 +114,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
+ 	.init_machine	= bockw_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= bockw_boards_compat_dt,
++	.init_late      = r8a7778_init_late,
+ MACHINE_END
