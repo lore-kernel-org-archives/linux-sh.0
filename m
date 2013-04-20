@@ -1,8 +1,10 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 20 Apr 2013 20:13:45 +0000
-Subject: [PATCH 0/5] OKI ML86V7667 driver and R8A7778/BOCK-W VIN support
-Message-Id: <201304210013.46110.sergei.shtylyov@cogentembedded.com>
+Date: Sat, 20 Apr 2013 20:43:24 +0000
+Subject: Re: [PATCH 0/5] OKI ML86V7667 driver and R8A7778/BOCK-W VIN support
+Message-Id: <5172FDEC.3070200@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201304210013.46110.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304210013.46110.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,16 +12,22 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hello.
 
-   Here's the set of 4 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130419' tag and my recent yet unapplied patches. Here we
-add the OKI ML86V7667 video decoder driver and the VIN platform code working on
-the R8A7778/BOCK-W with ML86V7667. The driver patch also applies (with offsets)
-to Mauro's 'media_tree.git'...
+On 04/21/2013 12:13 AM, Sergei Shtylyov wrote:
 
-[1/5] V4L2: I2C: ML86V7667 video decoder driver
-[2/5] sh-pfc: r8a7778: add VIN pin groups
-[3/5] ARM: shmobile: r8a7778: add VIN support
-[4/5] ARM: shmobile: BOCK-W: add VIN and ADV7180 support
-[5/5] ARM: shmobile: BOCK-W: enable VIN and ADV7180 in defconfig
+>     Here's the set of 4 patches against the Simon Horman's 'renesas.git' repo,
+> 'renesas-next-20130419' tag and my recent yet unapplied patches. Here we
+> add the OKI ML86V7667 video decoder driver and the VIN platform code working on
+> the R8A7778/BOCK-W with ML86V7667. The driver patch also applies (with offsets)
+> to Mauro's 'media_tree.git'...
+>
+> [1/5] V4L2: I2C: ML86V7667 video decoder driver
+> [2/5] sh-pfc: r8a7778: add VIN pin groups
+> [3/5] ARM: shmobile: r8a7778: add VIN support
+> [4/5] ARM: shmobile: BOCK-W: add VIN and ADV7180 support
+> [5/5] ARM: shmobile: BOCK-W: enable VIN and ADV7180 in defconfig
+
+     s/ADV7180/ML86V7667/. Sorry, used the old cover letter as a template
+and forgot to fix the decoder name.
 
 WBR, Sergei
+
