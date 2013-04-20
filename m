@@ -1,132 +1,134 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 22:59:45 +0000
-Subject: [PATCH 04/37] sh-pfc: r8a7740: Add GETHER pin groups and functions
-Message-Id: <1366671618-8796-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 20 Apr 2013 20:24:18 +0000
+Subject: [PATCH 2/5] sh-pfc: r8a7778: add VIN pin groups
+Message-Id: <201304210024.19400.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 82 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index f17a39a..1b98990 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -1795,6 +1795,72 @@ static const unsigned int bsc_rdwr_pins[] = {
- static const unsigned int bsc_rdwr_mux[] = {
- 	RDWR_MARK,
- };
-+/* - GETHER ----------------------------------------------------------------- */
-+static const unsigned int gether_rmii_pins[] = {
-+	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK, MDC, MDIO */
-+	195, 196, 194, 193, 200, 201, 199, 159, 202, 208,
-+};
-+static const unsigned int gether_rmii_mux[] = {
-+	RMII_RXD0_MARK, RMII_RXD1_MARK, RMII_RX_ER_MARK, RMII_CRS_DV_MARK,
-+	RMII_TXD0_MARK, RMII_TXD1_MARK, RMII_TX_EN_MARK, RMII_REF50CK_MARK,
-+	RMII_MDC_MARK, RMII_MDIO_MARK,
-+};
-+static const unsigned int gether_mii_pins[] = {
-+	/* RXD[0:3], RX_CLK, RX_DV, RX_ER
-+	 * TXD[0:3], TX_CLK, TX_EN, TX_ER
-+	 * CRS, COL, MDC, MDIO,
-+	 */
-+	185, 186, 187, 188, 174, 161, 204,
-+	171, 170, 169, 168, 184, 183, 203,
-+	205, 163, 206, 207,
-+};
-+static const unsigned int gether_mii_mux[] = {
-+	ET_ERXD0_MARK, ET_ERXD1_MARK, ET_ERXD2_MARK, ET_ERXD3_MARK,
-+	ET_RX_CLK_MARK, ET_RX_DV_MARK, ET_RX_ER_MARK,
-+	ET_ETXD0_MARK, ET_ETXD1_MARK, ET_ETXD2_MARK, ET_ETXD3_MARK,
-+	ET_TX_CLK_MARK, ET_TX_EN_MARK, ET_TX_ER_MARK,
-+	ET_CRS_MARK, ET_COL_MARK, ET_MDC_MARK, ET_MDIO_MARK,
-+};
-+static const unsigned int gether_gmii_pins[] = {
-+	/* RXD[0:7], RX_CLK, RX_DV, RX_ER
-+	 * TXD[0:7], GTX_CLK, TX_CLK, TX_EN, TX_ER
-+	 * CRS, COL, MDC, MDIO, REF125CK_MARK,
-+	 */
-+	185, 186, 187, 188, 189, 190, 191, 192, 174, 161, 204,
-+	171, 170, 169, 168, 167, 166, 173, 172, 176, 184, 183, 203,
-+	205, 163, 206, 207,
-+};
-+static const unsigned int gether_gmii_mux[] = {
-+	ET_ERXD0_MARK, ET_ERXD1_MARK, ET_ERXD2_MARK, ET_ERXD3_MARK,
-+	ET_ERXD4_MARK, ET_ERXD5_MARK, ET_ERXD6_MARK, ET_ERXD7_MARK,
-+	ET_RX_CLK_MARK, ET_RX_DV_MARK, ET_RX_ER_MARK,
-+	ET_ETXD0_MARK, ET_ETXD1_MARK, ET_ETXD2_MARK, ET_ETXD3_MARK,
-+	ET_ETXD4_MARK, ET_ETXD5_MARK, ET_ETXD6_MARK, ET_ETXD7_MARK,
-+	ET_GTX_CLK_MARK, ET_TX_CLK_MARK, ET_TX_EN_MARK, ET_TX_ER_MARK,
-+	ET_CRS_MARK, ET_COL_MARK, ET_MDC_MARK, ET_MDIO_MARK,
-+	RMII_REF125CK_MARK,
-+};
-+static const unsigned int gether_int_pins[] = {
-+	/* PHY_INT */
-+	164,
-+};
-+static const unsigned int gether_int_mux[] = {
-+	ET_PHY_INT_MARK,
-+};
-+static const unsigned int gether_link_pins[] = {
-+	/* LINK */
-+	177,
-+};
-+static const unsigned int gether_link_mux[] = {
-+	ET_LINK_MARK,
-+};
-+static const unsigned int gether_wol_pins[] = {
-+	/* WOL */
-+	175,
-+};
-+static const unsigned int gether_wol_mux[] = {
-+	ET_WOL_MARK,
-+};
- /* - INTC ------------------------------------------------------------------- */
- IRQC_PINS_MUX(0, 0, 2);
- IRQC_PINS_MUX(0, 1, 13);
-@@ -2513,6 +2579,12 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(bsc_rd_we32),
- 	SH_PFC_PIN_GROUP(bsc_bs),
- 	SH_PFC_PIN_GROUP(bsc_rdwr),
-+	SH_PFC_PIN_GROUP(gether_rmii),
-+	SH_PFC_PIN_GROUP(gether_mii),
-+	SH_PFC_PIN_GROUP(gether_gmii),
-+	SH_PFC_PIN_GROUP(gether_int),
-+	SH_PFC_PIN_GROUP(gether_link),
-+	SH_PFC_PIN_GROUP(gether_wol),
- 	SH_PFC_PIN_GROUP(intc_irq0_0),
- 	SH_PFC_PIN_GROUP(intc_irq0_1),
- 	SH_PFC_PIN_GROUP(intc_irq1),
-@@ -2666,6 +2738,15 @@ static const char * const bsc_groups[] = {
- 	"bsc_rdwr",
- };
+Add VIN DATA[0:8]/CLK/HSYNC/VSYNC pin groups to R8A7778 PFC driver.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: updated the copyrights.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   74 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 74 insertions(+)
+
+Index: renesas/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+=================================--- renesas.orig/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ renesas/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * based on
+  * Copyright (C) 2011  Renesas Solutions Corp.
+@@ -1417,6 +1418,59 @@ SCIF_PFC_DAT(scif5_data_a,	TX5_A,			RX5_
+ SCIF_PFC_PIN(scif5_data_b,	RCAR_GP_PIN(1, 15),	RCAR_GP_PIN(1, 14));
+ SCIF_PFC_DAT(scif5_data_b,	TX5_B,			RX5_B);
  
-+static const char * const gether_groups[] = {
-+	"gether_rmii",
-+	"gether_mii",
-+	"gether_gmii",
-+	"gether_int",
-+	"gether_link",
-+	"gether_wol",
++/* - VIN0 ------------------------------------------------------------------- */
++static const unsigned int vin0_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(3, 29), RCAR_GP_PIN(3, 30), RCAR_GP_PIN(3, 31),
++	RCAR_GP_PIN(4, 0),  RCAR_GP_PIN(4, 1),  RCAR_GP_PIN(4, 2),
++	RCAR_GP_PIN(4, 3),  RCAR_GP_PIN(4, 4),
++};
++static const unsigned int vin0_data8_mux[] = {
++	VI0_DATA0_VI0_B0_MARK, VI0_DATA1_VI0_B1_MARK, VI0_DATA2_VI0_B2_MARK,
++	VI0_DATA3_VI0_B3_MARK, VI0_DATA4_VI0_B4_MARK, VI0_DATA5_VI0_B5_MARK,
++	VI0_DATA6_VI0_G0_MARK, VI0_DATA7_VI0_G1_MARK,
++};
++static const unsigned int vin0_clk_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(3, 24),
++};
++static const unsigned int vin0_clk_mux[] = {
++	VI0_CLK_MARK,
++};
++static const unsigned int vin0_sync_pins[] = {
++	/* HSYNC, VSYNC */
++	RCAR_GP_PIN(3, 27), RCAR_GP_PIN(3, 28),
++};
++static const unsigned int vin0_sync_mux[] = {
++	VI0_HSYNC_MARK, VI0_VSYNC_MARK,
++};
++/* - VIN1 ------------------------------------------------------------------- */
++static const unsigned int vin1_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(3, 25), RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 27),
++	RCAR_GP_PIN(3, 28), RCAR_GP_PIN(4, 5),  RCAR_GP_PIN(4, 6),
++	RCAR_GP_PIN(4, 7),  RCAR_GP_PIN(4, 8),
++};
++static const unsigned int vin1_data8_mux[] = {
++	VI1_DATA0_MARK, VI1_DATA1_MARK, VI1_DATA2_MARK,
++	VI1_DATA3_MARK, VI1_DATA4_MARK, VI1_DATA5_MARK,
++	VI1_DATA6_MARK, VI1_DATA7_MARK,
++};
++static const unsigned int vin1_clk_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(4, 9),
++};
++static const unsigned int vin1_clk_mux[] = {
++	VI1_CLK_MARK,
++};
++static const unsigned int vin1_sync_pins[] = {
++	/* HSYNC, VSYNC */
++	RCAR_GP_PIN(3, 21), RCAR_GP_PIN(3, 22),
++};
++static const unsigned int vin1_sync_mux[] = {
++	VI1_HSYNC_MARK, VI1_VSYNC_MARK,
 +};
 +
- static const char * const intc_groups[] = {
- 	"intc_irq0_0",
- 	"intc_irq0_1",
-@@ -2849,6 +2930,7 @@ static const char * const sdhi2_groups[] = {
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hscif0_data_a),
+ 	SH_PFC_PIN_GROUP(hscif0_data_b),
+@@ -1461,6 +1515,12 @@ static const struct sh_pfc_pin_group pin
+ 	SH_PFC_PIN_GROUP(scif4_data_c),
+ 	SH_PFC_PIN_GROUP(scif5_data_a),
+ 	SH_PFC_PIN_GROUP(scif5_data_b),
++	SH_PFC_PIN_GROUP(vin0_data8),
++	SH_PFC_PIN_GROUP(vin0_clk),
++	SH_PFC_PIN_GROUP(vin0_sync),
++	SH_PFC_PIN_GROUP(vin1_data8),
++	SH_PFC_PIN_GROUP(vin1_clk),
++	SH_PFC_PIN_GROUP(vin1_sync),
+ };
  
+ static const char * const hscif0_groups[] = {
+@@ -1533,6 +1593,18 @@ static const char * const scif5_groups[]
+ 	"scif5_data_b",
+ };
+ 
++static const char * const vin0_groups[] = {
++	"vin0_data8",
++	"vin0_clk",
++	"vin0_sync",
++};
++
++static const char * const vin1_groups[] = {
++	"vin1_data8",
++	"vin1_clk",
++	"vin1_sync",
++};
++
  static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
-+	SH_PFC_FUNCTION(gether),
- 	SH_PFC_FUNCTION(intc),
- 	SH_PFC_FUNCTION(lcd0),
- 	SH_PFC_FUNCTION(lcd1),
--- 
-1.8.1.5
-
+ 	SH_PFC_FUNCTION(hscif0),
+ 	SH_PFC_FUNCTION(hscif1),
+@@ -1543,6 +1615,8 @@ static const struct sh_pfc_function pinm
+ 	SH_PFC_FUNCTION(scif3),
+ 	SH_PFC_FUNCTION(scif4),
+ 	SH_PFC_FUNCTION(scif5),
++	SH_PFC_FUNCTION(vin0),
++	SH_PFC_FUNCTION(vin1),
+ };
+ 
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
