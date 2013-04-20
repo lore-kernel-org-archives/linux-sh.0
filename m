@@ -1,86 +1,40 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Apr 2013 15:05:37 +0000
-Subject: [PATCH v8 6/7] imx074: support asynchronous probing
-Message-Id: <1365433538-15975-7-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 20 Apr 2013 20:38:43 +0000
+Subject: [PATCH 5/5] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
+Message-Id: <201304210038.43857.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365433538-15975-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365433538-15975-1-git-send-email-g.liakhovetski@gmx.de>
+References: <201304210013.46110.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304210013.46110.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Both synchronous and asynchronous imx074 subdevice probing is supported by
-this patch.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add the VIN and ML86V7667 drivers to 'bockw_defconfig'.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/media/i2c/soc_camera/imx074.c |   24 +++++++++++++++++++++---
- 1 files changed, 21 insertions(+), 3 deletions(-)
+ arch/arm/configs/bockw_defconfig |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/drivers/media/i2c/soc_camera/imx074.c b/drivers/media/i2c/soc_camera/imx074.c
-index a6a5060..624d7c7 100644
---- a/drivers/media/i2c/soc_camera/imx074.c
-+++ b/drivers/media/i2c/soc_camera/imx074.c
-@@ -18,6 +18,7 @@
- #include <linux/module.h>
- 
- #include <media/soc_camera.h>
-+#include <media/v4l2-async.h>
- #include <media/v4l2-clk.h>
- #include <media/v4l2-subdev.h>
- #include <media/v4l2-chip-ident.h>
-@@ -79,6 +80,7 @@ struct imx074 {
- 	struct v4l2_subdev		subdev;
- 	const struct imx074_datafmt	*fmt;
- 	struct v4l2_clk			*clk;
-+	struct v4l2_async_subdev_list	asdl;
- };
- 
- static const struct imx074_datafmt imx074_colour_fmts[] = {
-@@ -455,14 +457,28 @@ static int imx074_probe(struct i2c_client *client,
- 
- 	priv->fmt	= &imx074_colour_fmts[0];
- 
-+	priv->asdl.subdev = &priv->subdev;
-+	priv->asdl.dev = &client->dev;
-+
- 	priv->clk = v4l2_clk_get(&client->dev, "mclk");
--	if (IS_ERR(priv->clk))
--		return PTR_ERR(priv->clk);
-+	if (IS_ERR(priv->clk)) {
-+		dev_info(&client->dev, "Error %ld getting clock\n", PTR_ERR(priv->clk));
-+		return -EPROBE_DEFER;
-+	}
-+
-+	ret = soc_camera_power_init(&client->dev, ssdd);
-+	if (ret < 0)
-+		goto epwrinit;
- 
- 	ret = imx074_video_probe(client);
- 	if (ret < 0)
--		v4l2_clk_put(priv->clk);
-+		goto eprobe;
- 
-+	return v4l2_async_register_subdev(&priv->asdl);
-+
-+epwrinit:
-+eprobe:
-+	v4l2_clk_put(priv->clk);
- 	return ret;
- }
- 
-@@ -471,7 +487,9 @@ static int imx074_remove(struct i2c_client *client)
- 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
- 	struct imx074 *priv = to_imx074(client);
- 
-+	v4l2_async_unregister_subdev(&priv->asdl);
- 	v4l2_clk_put(priv->clk);
-+
- 	if (ssdd->free_bus)
- 		ssdd->free_bus(ssdd);
- 
--- 
-1.7.2.5
-
+Index: renesas/arch/arm/configs/bockw_defconfig
+=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
++++ renesas/arch/arm/configs/bockw_defconfig
+@@ -76,6 +76,13 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HWMON is not set
+ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
++CONFIG_MEDIA_SUPPORT=y
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SOC_CAMERA=y
++CONFIG_VIDEO_RCAR_VIN=y
++# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
++CONFIG_VIDEO_ML86V7667=y
+ CONFIG_USB=y
+ CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
+ CONFIG_USB_EHCI_HCD=y
