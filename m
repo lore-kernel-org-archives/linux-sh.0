@@ -1,41 +1,25 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 30 Apr 2013 12:04:14 +0000
-Subject: Re: [PATCH 7/6] DMA: shdma: add DT binding documentation
-Message-Id: <Pine.LNX.4.64.1304301403130.1489@axis700.grange>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 20 Apr 2013 20:13:45 +0000
+Subject: [PATCH 0/5] OKI ML86V7667 driver and R8A7778/BOCK-W VIN support
+Message-Id: <201304210013.46110.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304260823050.30844@axis700.grange>
- <20130430104028.GE1960@intel.com>
-In-Reply-To: <20130430104028.GE1960@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: devicetree-discuss@lists.ozlabs.org, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 30 Apr 2013, Vinod Koul wrote:
+Hello.
 
-> On Fri, Apr 26, 2013 at 08:26:16AM +0200, Guennadi Liakhovetski wrote:
-> > SHDMA uses only standard DMA Device Tree bindings. This patch adds
-> > documentation, exactly describing the use of the bindings and providing
-> > examples.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> > 
-> > This patch adds the missing documentation to the patch series "DMA: shdma: 
-> > add Device Tree support"
-> > http://thread.gmane.org/gmane.linux.ports.sh.devel/21972
-> > Arnd, Vinod, I hope, now this series can be applied :)
-> Yes, but where is the rest of series. I got only the 7th of 6 (huh)...
-> 
-> Can you please resend entire one...
+   Here's the set of 4 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130419' tag and my recent yet unapplied patches. Here we
+add the OKI ML86V7667 video decoder driver and the VIN platform code working on
+the R8A7778/BOCK-W with ML86V7667. The driver patch also applies (with offsets)
+to Mauro's 'media_tree.git'...
 
-You were CCed on it and you even commented to it, asking Arnd to review... 
-But sure, np, I'll re-send them to you privately again.
+[1/5] V4L2: I2C: ML86V7667 video decoder driver
+[2/5] sh-pfc: r8a7778: add VIN pin groups
+[3/5] ARM: shmobile: r8a7778: add VIN support
+[4/5] ARM: shmobile: BOCK-W: add VIN and ADV7180 support
+[5/5] ARM: shmobile: BOCK-W: enable VIN and ADV7180 in defconfig
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+WBR, Sergei
