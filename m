@@ -1,37 +1,117 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 10 Apr 2013 04:51:15 +0000
-Subject: [PATCH] sh-pfc: r8a7779: tidyup intc_irq3_b typo
-Message-Id: <1365569475-28721-2-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 21 Apr 2013 18:42:02 +0000
+Subject: [PATCH v2 3/5] ARM: shmobile: r8a7778: add VIN support
+Message-Id: <201304212242.03076.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365569475-28721-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365569475-28721-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Add VIN clocks and platform devices on R8A7778 SoC; add function to register
+the VIN platform devices.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: added 'id' parameter check to r8a7779_add_vin_device(), used '*pdata'
+in *sizeof* operator there, renamed some variables, marked 'vin[01]_info' as
+'__initdata'.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    5 +++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    3 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   33 ++++++++++++++++++++++++++
+ 3 files changed, 41 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 62dcdcd..791a671 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2552,7 +2552,7 @@ static const char * const intc_groups[] = {
- 	"intc_irq2",
- 	"intc_irq2_b",
- 	"intc_irq3",
--	"intc_irq4_b",
-+	"intc_irq3_b",
- };
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -106,6 +106,7 @@ static struct clk *main_clks[] = {
+ enum {
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
++	MSTP110, MSTP109,
+ 	MSTP100,
+ 	MSTP030, MSTP029,
+ 	MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+@@ -117,6 +118,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
++	[MSTP110] = SH_CLK_MSTP32(&s_clk, MSTPCR1, 10, 0), /* VIN0 */
++	[MSTP109] = SH_CLK_MSTP32(&s_clk, MSTPCR1,  9, 0), /* VIN1 */
+ 	[MSTP100] = SH_CLK_MSTP32(&p_clk, MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
+ 	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
+@@ -140,6 +143,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
++	CLKDEV_DEV_ID("rcar_vin.0", &mstp_clks[MSTP110]), /* VIN0 */
++	CLKDEV_DEV_ID("rcar_vin.1", &mstp_clks[MSTP109]), /* VIN1 */
+ 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -21,11 +21,14 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
+ #include <linux/usb/rcar-phy.h>
++#include <linux/platform_data/camera-rcar.h>
  
- static const char * const lbsc_groups[] = {
--- 
-1.7.10.4
-
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
++extern void r8a7778_add_vin_device(int id,
++				   struct rcar_vin_platform_data *pdata);
+ extern void r8a7778_init_late(void);
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -265,6 +265,39 @@ void __init r8a7778_sdhi_init(int id,
+ 		info, sizeof(*info));
+ }
+ 
++/* VIN */
++#define R8A7778_VIN(idx)						\
++static struct resource vin##idx##_resources[] = {			\
++	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
++	DEFINE_RES_IRQ(gic_iid(0x5a)),					\
++};									\
++									\
++static struct platform_device_info vin##idx##_info __initdata = {	\
++	.parent		= &platform_bus,				\
++	.name		= "rcar_vin",					\
++	.id		= idx,						\
++	.res		= vin##idx##_resources,				\
++	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
++	.dma_mask	= DMA_BIT_MASK(32),				\
++}
++
++R8A7778_VIN(0);
++R8A7778_VIN(1);
++
++static struct platform_device_info *vin_info_table[] __initdata = {
++	&vin0_info,
++	&vin1_info,
++};
++
++void __init r8a7778_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
++{
++	BUG_ON(id < 0 || id > 1);
++
++	vin_info_table[id]->data = pdata;
++	vin_info_table[id]->size_data = sizeof(*pdata);
++	platform_device_register_full(vin_info_table[id]);
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
