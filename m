@@ -1,104 +1,174 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:02 +0000
-Subject: [PATCH 21/37] sh-pfc: r8a7740: Remove SCIF function GPIOS
-Message-Id: <1366671618-8796-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:04 +0000
+Subject: [PATCH 01/35] sh-pfc: sh7372: Add BSC pin groups and functions
+Message-Id: <1366671758-8954-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-All r8a7740 platforms now use the pinctrl API to control the SCIF pins,
-the corresponding function GPIOS are unused. Remove them.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 72 ------------------------------------
- 1 file changed, 72 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 124 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 124 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 9afc7b0..3b53193 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -3261,78 +3261,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(FMSOIBT),	GPIO_FN(FMSOOLR),	GPIO_FN(FMSOOBT),
- 	GPIO_FN(FMSOSLD),	GPIO_FN(FMSOCK),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index df0ae21..9545b3c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -933,6 +933,102 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
+ };
  
--	/* SCIFA0 */
--	GPIO_FN(SCIFA0_SCK),	GPIO_FN(SCIFA0_CTS),	GPIO_FN(SCIFA0_RTS),
--	GPIO_FN(SCIFA0_RXD),	GPIO_FN(SCIFA0_TXD),
--
--	/* SCIFA1 */
--	GPIO_FN(SCIFA1_CTS),	GPIO_FN(SCIFA1_SCK),
--	GPIO_FN(SCIFA1_RXD),	GPIO_FN(SCIFA1_TXD),	GPIO_FN(SCIFA1_RTS),
--
--	/* SCIFA2 */
--	GPIO_FN(SCIFA2_SCK_PORT22), /* SCIFA2_SCK Port 22/199 */
--	GPIO_FN(SCIFA2_SCK_PORT199),
--	GPIO_FN(SCIFA2_RXD),	GPIO_FN(SCIFA2_TXD),
--	GPIO_FN(SCIFA2_CTS),	GPIO_FN(SCIFA2_RTS),
--
--	/* SCIFA3 */
--	GPIO_FN(SCIFA3_RTS_PORT105), /* MSEL5CR_8_0 */
--	GPIO_FN(SCIFA3_SCK_PORT116),
--	GPIO_FN(SCIFA3_CTS_PORT117),
--	GPIO_FN(SCIFA3_RXD_PORT174),
--	GPIO_FN(SCIFA3_TXD_PORT175),
--
--	GPIO_FN(SCIFA3_RTS_PORT161), /* MSEL5CR_8_1 */
--	GPIO_FN(SCIFA3_SCK_PORT158),
--	GPIO_FN(SCIFA3_CTS_PORT162),
--	GPIO_FN(SCIFA3_RXD_PORT159),
--	GPIO_FN(SCIFA3_TXD_PORT160),
--
--	/* SCIFA4 */
--	GPIO_FN(SCIFA4_RXD_PORT12), /* MSEL5CR[12:11] = 00 */
--	GPIO_FN(SCIFA4_TXD_PORT13),
--
--	GPIO_FN(SCIFA4_RXD_PORT204), /* MSEL5CR[12:11] = 01 */
--	GPIO_FN(SCIFA4_TXD_PORT203),
--
--	GPIO_FN(SCIFA4_RXD_PORT94), /* MSEL5CR[12:11] = 10 */
--	GPIO_FN(SCIFA4_TXD_PORT93),
--
--	GPIO_FN(SCIFA4_SCK_PORT21), /* SCIFA4_SCK Port 21/205 */
--	GPIO_FN(SCIFA4_SCK_PORT205),
--
--	/* SCIFA5 */
--	GPIO_FN(SCIFA5_TXD_PORT20), /* MSEL5CR[15:14] = 00 */
--	GPIO_FN(SCIFA5_RXD_PORT10),
--
--	GPIO_FN(SCIFA5_RXD_PORT207), /* MSEL5CR[15:14] = 01 */
--	GPIO_FN(SCIFA5_TXD_PORT208),
--
--	GPIO_FN(SCIFA5_TXD_PORT91), /* MSEL5CR[15:14] = 10 */
--	GPIO_FN(SCIFA5_RXD_PORT92),
--
--	GPIO_FN(SCIFA5_SCK_PORT23), /* SCIFA5_SCK Port 23/206 */
--	GPIO_FN(SCIFA5_SCK_PORT206),
--
--	/* SCIFA6 */
--	GPIO_FN(SCIFA6_SCK),	GPIO_FN(SCIFA6_RXD),	GPIO_FN(SCIFA6_TXD),
--
--	/* SCIFA7 */
--	GPIO_FN(SCIFA7_TXD),	GPIO_FN(SCIFA7_RXD),
--
--	/* SCIFAB */
--	GPIO_FN(SCIFB_SCK_PORT190), /* MSEL5CR_17_0 */
--	GPIO_FN(SCIFB_RXD_PORT191),
--	GPIO_FN(SCIFB_TXD_PORT192),
--	GPIO_FN(SCIFB_RTS_PORT186),
--	GPIO_FN(SCIFB_CTS_PORT187),
--
--	GPIO_FN(SCIFB_SCK_PORT2), /* MSEL5CR_17_1 */
--	GPIO_FN(SCIFB_RXD_PORT3),
--	GPIO_FN(SCIFB_TXD_PORT4),
--	GPIO_FN(SCIFB_RTS_PORT172),
--	GPIO_FN(SCIFB_CTS_PORT173),
--
- 	/* RSPI */
- 	GPIO_FN(RSPI_SSL0_A),	GPIO_FN(RSPI_SSL1_A),	GPIO_FN(RSPI_SSL2_A),
- 	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
++/* - BSC -------------------------------------------------------------------- */
++static const unsigned int bsc_data8_pins[] = {
++	/* D[0:7] */
++	46, 47, 48, 49, 50, 51, 52, 53,
++};
++static const unsigned int bsc_data8_mux[] = {
++	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
++	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
++};
++static const unsigned int bsc_data16_pins[] = {
++	/* D[0:15] */
++	46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
++};
++static const unsigned int bsc_data16_mux[] = {
++	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
++	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
++	D8_NAF8_MARK, D9_NAF9_MARK, D10_NAF10_MARK, D11_NAF11_MARK,
++	D12_NAF12_MARK, D13_NAF13_MARK, D14_NAF14_MARK, D15_NAF15_MARK,
++};
++static const unsigned int bsc_cs0_pins[] = {
++	/* CS */
++	62,
++};
++static const unsigned int bsc_cs0_mux[] = {
++	CS0_MARK,
++};
++static const unsigned int bsc_cs2_pins[] = {
++	/* CS */
++	63,
++};
++static const unsigned int bsc_cs2_mux[] = {
++	CS2_MARK,
++};
++static const unsigned int bsc_cs4_pins[] = {
++	/* CS */
++	64,
++};
++static const unsigned int bsc_cs4_mux[] = {
++	CS4_MARK,
++};
++static const unsigned int bsc_cs5a_pins[] = {
++	/* CS */
++	65,
++};
++static const unsigned int bsc_cs5a_mux[] = {
++	CS5A_MARK,
++};
++static const unsigned int bsc_cs5b_pins[] = {
++	/* CS */
++	66,
++};
++static const unsigned int bsc_cs5b_mux[] = {
++	CS5B_MARK,
++};
++static const unsigned int bsc_cs6a_pins[] = {
++	/* CS */
++	67,
++};
++static const unsigned int bsc_cs6a_mux[] = {
++	CS6A_MARK,
++};
++static const unsigned int bsc_rd_we8_pins[] = {
++	/* RD, WE[0] */
++	69, 70,
++};
++static const unsigned int bsc_rd_we8_mux[] = {
++	RD_FSC_MARK, WE0_FWE_MARK,
++};
++static const unsigned int bsc_rd_we16_pins[] = {
++	/* RD, WE[0:1] */
++	69, 70, 71,
++};
++static const unsigned int bsc_rd_we16_mux[] = {
++	RD_FSC_MARK, WE0_FWE_MARK, WE1_MARK,
++};
++static const unsigned int bsc_bs_pins[] = {
++	/* BS */
++	19,
++};
++static const unsigned int bsc_bs_mux[] = {
++	BS_MARK,
++};
++static const unsigned int bsc_rdwr_pins[] = {
++	/* RDWR */
++	75,
++};
++static const unsigned int bsc_rdwr_mux[] = {
++	RDWR_MARK,
++};
++static const unsigned int bsc_wait_pins[] = {
++	/* WAIT */
++	74,
++};
++static const unsigned int bsc_wait_mux[] = {
++	WAIT_MARK,
++};
+ /* - MMCIF ------------------------------------------------------------------ */
+ static const unsigned int mmc0_data1_0_pins[] = {
+ 	/* D[0] */
+@@ -1075,6 +1171,18 @@ static const unsigned int sdhi2_ctrl_mux[] = {
+ };
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(bsc_data8),
++	SH_PFC_PIN_GROUP(bsc_data16),
++	SH_PFC_PIN_GROUP(bsc_cs0),
++	SH_PFC_PIN_GROUP(bsc_cs2),
++	SH_PFC_PIN_GROUP(bsc_cs4),
++	SH_PFC_PIN_GROUP(bsc_cs5a),
++	SH_PFC_PIN_GROUP(bsc_cs5b),
++	SH_PFC_PIN_GROUP(bsc_cs6a),
++	SH_PFC_PIN_GROUP(bsc_rd_we8),
++	SH_PFC_PIN_GROUP(bsc_rd_we16),
++	SH_PFC_PIN_GROUP(bsc_bs),
++	SH_PFC_PIN_GROUP(bsc_rdwr),
+ 	SH_PFC_PIN_GROUP(mmc0_data1_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data4_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data8_0),
+@@ -1096,6 +1204,21 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
+ };
+ 
++static const char * const bsc_groups[] = {
++	"bsc_data8",
++	"bsc_data16",
++	"bsc_cs0",
++	"bsc_cs2",
++	"bsc_cs4",
++	"bsc_cs5a",
++	"bsc_cs5b",
++	"bsc_cs6a",
++	"bsc_rd_we8",
++	"bsc_rd_we16",
++	"bsc_bs",
++	"bsc_rdwr",
++};
++
+ static const char * const mmc0_groups[] = {
+ 	"mmc0_data1_0",
+ 	"mmc0_data4_0",
+@@ -1128,6 +1251,7 @@ static const char * const sdhi2_groups[] = {
+ };
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
 -- 
 1.8.1.5
 
