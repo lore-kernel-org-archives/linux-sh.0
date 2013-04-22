@@ -1,268 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:21 +0000
-Subject: [PATCH 25/30] ARM: shmobile: Initial r8a7790 SoC support
-Message-Id: <1364879246-9470-26-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:00:12 +0000
+Subject: [PATCH 31/37] ARM: shmobile: r8a7740: Remove GETHER function GPIOs
+Message-Id: <1366671618-8796-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Add initial support for the r8a7790 SoC including:
- - Single Cortex-A15 CPU Core
- - GIC
- - Architecture timer
-
-No static virtual mappings are used, all the components
-make use of ioremap(). DT_MACHINE_START is still wrapped
-in CONFIG_USE_OF to match other mach-shmobile code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi                |   54 ++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                |    7 +++
- arch/arm/mach-shmobile/Makefile               |    1 +
- arch/arm/mach-shmobile/clock-r8a7790.c        |   61 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/r8a7790.h |    7 +++
- arch/arm/mach-shmobile/setup-r8a7790.c        |   51 +++++++++++++++++++++
- 6 files changed, 181 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7790.dtsi
- create mode 100644 arch/arm/mach-shmobile/clock-r8a7790.c
- create mode 100644 arch/arm/mach-shmobile/include/mach/r8a7790.h
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7790.c
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 23 -----------------------
+ 1 file changed, 23 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-new file mode 100644
-index 0000000..1c58ffb
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -0,0 +1,54 @@
-+/*
-+ * Device Tree Source for the r8a7790 SoC
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	compatible = "renesas,r8a7790";
-+	interrupt-parent = <&gic>;
-+
-+	cpus {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		cpu0: cpu@0 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <0>;
-+			clock-frequency = <1300000000>;
-+		};
-+	};
-+
-+	gic: interrupt-controller@f1001000 {
-+		compatible = "arm,cortex-a15-gic";
-+		#interrupt-cells = <3>;
-+		#address-cells = <0>;
-+		interrupt-controller;
-+		reg = <0xf1001000 0x1000>,
-+			<0xf1002000 0x1000>,
-+			<0xf1004000 0x2000>,
-+			<0xf1006000 0x2000>;
-+		interrupts = <1 9 0xf04>;
-+
-+		gic-cpuif@4 {
-+			compatible = "arm,gic-cpuif";
-+			cpuif-id = <4>;
-+			cpu = <&cpu0>;
-+		};
-+	};
-+
-+	timer {
-+		compatible = "arm,armv7-timer";
-+		interrupts = <1 13 0xf08>,
-+				<1 14 0xf08>,
-+				<1 11 0xf08>,
-+				<1 10 0xf08>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index d569c34..749dfb4 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -51,6 +51,13 @@ config ARCH_R8A7779
- 	select USB_ARCH_HAS_OHCI
- 	select RENESAS_INTC_IRQPIN
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 28c0542..3a8de9c 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -331,29 +331,6 @@ enum {
+ 	GPIO_FN_IDE_INT,	GPIO_FN_IDE_RST,	GPIO_FN_IDE_DIRECTION,
+ 	GPIO_FN_IDE_EXBUF_ENB,	GPIO_FN_IDE_IODACK,	GPIO_FN_IDE_IODREQ,
  
-+config ARCH_R8A7790
-+	bool "R-Car H2 (R8A77900)"
-+	select ARM_GIC
-+	select CPU_V7
-+	select ARM_ARCH_TIMER
-+	select SH_CLK_CPG
-+
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 2d42de4..709b9b4 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
- obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
- obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
-+obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o clock-r8a7790.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+-	/* RMII */
+-	GPIO_FN_RMII_CRS_DV,	GPIO_FN_RMII_RX_ER,	GPIO_FN_RMII_RXD0,
+-	GPIO_FN_RMII_RXD1,	GPIO_FN_RMII_TX_EN,	GPIO_FN_RMII_TXD0,
+-	GPIO_FN_RMII_MDC,	GPIO_FN_RMII_TXD1,	GPIO_FN_RMII_MDIO,
+-	GPIO_FN_RMII_REF50CK,	/* for RMII */
+-	GPIO_FN_RMII_REF125CK,	/* for GMII */
+-
+-	/* GEther */
+-	GPIO_FN_ET_TX_CLK,	GPIO_FN_ET_TX_EN,	GPIO_FN_ET_ETXD0,
+-	GPIO_FN_ET_ETXD1,	GPIO_FN_ET_ETXD2,	GPIO_FN_ET_ETXD3,
+-	GPIO_FN_ET_ETXD4,	GPIO_FN_ET_ETXD5, /* for GEther */
+-	GPIO_FN_ET_ETXD6,	GPIO_FN_ET_ETXD7, /* for GEther */
+-	GPIO_FN_ET_COL,		GPIO_FN_ET_TX_ER,
+-	GPIO_FN_ET_RX_CLK,	GPIO_FN_ET_RX_DV,
+-	GPIO_FN_ET_ERXD0,	GPIO_FN_ET_ERXD1,
+-	GPIO_FN_ET_ERXD2,	GPIO_FN_ET_ERXD3,
+-	GPIO_FN_ET_ERXD4,	GPIO_FN_ET_ERXD5, /* for GEther */
+-	GPIO_FN_ET_ERXD6,	GPIO_FN_ET_ERXD7, /* for GEther */
+-	GPIO_FN_ET_RX_ER,	GPIO_FN_ET_CRS,
+-	GPIO_FN_ET_MDC,		GPIO_FN_ET_MDIO,
+-	GPIO_FN_ET_LINK,	GPIO_FN_ET_PHY_INT,
+-	GPIO_FN_ET_WOL,		GPIO_FN_ET_GTX_CLK,
+-
+ 	/* DMA0 */
+ 	GPIO_FN_DREQ0,		GPIO_FN_DACK0,
  
- # SMP objects
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-new file mode 100644
-index 0000000..6869798
---- /dev/null
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -0,0 +1,61 @@
-+/*
-+ * r8a7790 clock framework support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+#include <linux/init.h>
-+#include <linux/io.h>
-+#include <linux/kernel.h>
-+#include <linux/sh_clk.h>
-+#include <linux/clkdev.h>
-+#include <mach/common.h>
-+
-+#define CPG_BASE 0xe6150000
-+#define CPG_LEN 0x1000
-+
-+static struct clk_mapping cpg_mapping = {
-+	.phys   = CPG_BASE,
-+	.len    = CPG_LEN,
-+};
-+
-+static struct clk *main_clks[] = {
-+};
-+
-+enum { MSTP_NR };
-+static struct clk mstp_clks[MSTP_NR] = {
-+};
-+
-+static struct clk_lookup lookups[] = {
-+};
-+
-+void __init r8a7790_clock_init(void)
-+{
-+	int k, ret = 0;
-+
-+	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
-+		ret = clk_register(main_clks[k]);
-+
-+	if (!ret)
-+		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
-+	if (!ret)
-+		shmobile_clk_init();
-+	else
-+		panic("failed to setup r8a7790 clocks\n");
-+}
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-new file mode 100644
-index 0000000..f38ded6
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -0,0 +1,7 @@
-+#ifndef __ASM_R8A7790_H__
-+#define __ASM_R8A7790_H__
-+
-+void r8a7790_add_standard_devices(void);
-+void r8a7790_clock_init(void);
-+
-+#endif /* __ASM_R8A7790_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-new file mode 100644
-index 0000000..af432ba
---- /dev/null
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -0,0 +1,51 @@
-+/*
-+ * r8a7790 processor support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/irq.h>
-+#include <linux/irqchip.h>
-+#include <linux/kernel.h>
-+#include <linux/of_platform.h>
-+#include <mach/common.h>
-+#include <mach/irqs.h>
-+#include <mach/r8a7790.h>
-+#include <asm/mach/arch.h>
-+
-+void __init r8a7790_add_standard_devices(void)
-+{
-+}
-+
-+#ifdef CONFIG_USE_OF
-+void __init r8a7790_add_standard_devices_dt(void)
-+{
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
-+
-+static const char *r8a7790_boards_compat_dt[] __initdata = {
-+	"renesas,r8a7790",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
-+	.init_irq	= irqchip_init,
-+	.init_machine	= r8a7790_add_standard_devices_dt,
-+	.init_time	= shmobile_timer_init,
-+	.dt_compat	= r8a7790_boards_compat_dt,
-+MACHINE_END
-+#endif /* CONFIG_USE_OF */
 -- 
-1.7.10.4
+1.8.1.5
 
