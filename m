@@ -1,30 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Apr 2013 04:33:52 +0000
-Subject: Re: [PATCH 00/04 v2] ARM: shmobile: r8a7790 SoC
-Message-Id: <20130402043351.GE1696@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:31 +0000
+Subject: [PATCH 28/35] ARM: shmobile: ap4evb: Register pinctrl mapping for SCIF
+Message-Id: <1366671758-8954-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130327154925.10876.40575.sendpatchset@w520>
-In-Reply-To: <20130327154925.10876.40575.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Mar 28, 2013 at 12:49:25AM +0900, Magnus Damm wrote:
-> ARM: shmobile: r8a7790 SoC (V2)
-> 
-> [PATCH 01/04] ARM: shmobile: Initial r8a7790 SoC support
-> [PATCH 02/04] ARM: shmobile: r8a7790 SCIF support
-> [PATCH 03/04] ARM: shmobile: r8a7790 IRQC support
-> [PATCH 04/04] ARM: shmobile: r8a7790 PFC support
-> 
-> This series is V2 of initial support for the r8a7790 SoC. The SoC
-> is known as r8a7790 which is built around Cortex-A15 and makes use
-> of SCIF for serial and IRQC interrupt controller for external IRQs.
-> 
-> Changes in V2:
-> - Added PFC platform device
-> 
-> Future r8a7790 PFC and Lager board series will depend on this one.
+Replace the GPIO-based SCIF pinmux configuration by a pinctrl mapping.
 
-Thanks, queued up for v3.10 in the soc branch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index c6e1e44..3163983 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1119,6 +1119,9 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
+ 				  "mmc0_data8_0", "mmc0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
+ 				  "mmc0_ctrl_0", "mmc0"),
++	/* SCIFA0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-sh7372",
++				  "scifa0_data", "scifa0"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1165,10 +1168,6 @@ static void __init ap4evb_init(void)
+ 				  ARRAY_SIZE(ap4evb_pinctrl_map));
+ 	sh7372_pinmux_init();
+ 
+-	/* enable SCIFA0 */
+-	gpio_request(GPIO_FN_SCIFA0_TXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA0_RXD, NULL);
+-
+ 	/* enable SMSC911X */
+ 	gpio_request(GPIO_FN_CS5A,	NULL);
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+-- 
+1.8.1.5
+
