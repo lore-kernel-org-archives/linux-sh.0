@@ -1,66 +1,132 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:11 +0000
-Subject: [PATCH 30/37] ARM: shmobile: r8a7740: Remove BSC function GPIOs
-Message-Id: <1366671618-8796-31-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 22:59:45 +0000
+Subject: [PATCH 04/37] sh-pfc: r8a7740: Add GETHER pin groups and functions
+Message-Id: <1366671618-8796-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 27 ++-------------------------
- 1 file changed, 2 insertions(+), 25 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 82 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 82 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index ef6ddb6..28c0542 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -297,11 +297,7 @@ enum {
- 	GPIO_FN_BBIF2_TSCK2_PORT89,
- 	GPIO_FN_BBIF2_TSYNC2_PORT184,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index f17a39a..1b98990 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1795,6 +1795,72 @@ static const unsigned int bsc_rdwr_pins[] = {
+ static const unsigned int bsc_rdwr_mux[] = {
+ 	RDWR_MARK,
+ };
++/* - GETHER ----------------------------------------------------------------- */
++static const unsigned int gether_rmii_pins[] = {
++	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK, MDC, MDIO */
++	195, 196, 194, 193, 200, 201, 199, 159, 202, 208,
++};
++static const unsigned int gether_rmii_mux[] = {
++	RMII_RXD0_MARK, RMII_RXD1_MARK, RMII_RX_ER_MARK, RMII_CRS_DV_MARK,
++	RMII_TXD0_MARK, RMII_TXD1_MARK, RMII_TX_EN_MARK, RMII_REF50CK_MARK,
++	RMII_MDC_MARK, RMII_MDIO_MARK,
++};
++static const unsigned int gether_mii_pins[] = {
++	/* RXD[0:3], RX_CLK, RX_DV, RX_ER
++	 * TXD[0:3], TX_CLK, TX_EN, TX_ER
++	 * CRS, COL, MDC, MDIO,
++	 */
++	185, 186, 187, 188, 174, 161, 204,
++	171, 170, 169, 168, 184, 183, 203,
++	205, 163, 206, 207,
++};
++static const unsigned int gether_mii_mux[] = {
++	ET_ERXD0_MARK, ET_ERXD1_MARK, ET_ERXD2_MARK, ET_ERXD3_MARK,
++	ET_RX_CLK_MARK, ET_RX_DV_MARK, ET_RX_ER_MARK,
++	ET_ETXD0_MARK, ET_ETXD1_MARK, ET_ETXD2_MARK, ET_ETXD3_MARK,
++	ET_TX_CLK_MARK, ET_TX_EN_MARK, ET_TX_ER_MARK,
++	ET_CRS_MARK, ET_COL_MARK, ET_MDC_MARK, ET_MDIO_MARK,
++};
++static const unsigned int gether_gmii_pins[] = {
++	/* RXD[0:7], RX_CLK, RX_DV, RX_ER
++	 * TXD[0:7], GTX_CLK, TX_CLK, TX_EN, TX_ER
++	 * CRS, COL, MDC, MDIO, REF125CK_MARK,
++	 */
++	185, 186, 187, 188, 189, 190, 191, 192, 174, 161, 204,
++	171, 170, 169, 168, 167, 166, 173, 172, 176, 184, 183, 203,
++	205, 163, 206, 207,
++};
++static const unsigned int gether_gmii_mux[] = {
++	ET_ERXD0_MARK, ET_ERXD1_MARK, ET_ERXD2_MARK, ET_ERXD3_MARK,
++	ET_ERXD4_MARK, ET_ERXD5_MARK, ET_ERXD6_MARK, ET_ERXD7_MARK,
++	ET_RX_CLK_MARK, ET_RX_DV_MARK, ET_RX_ER_MARK,
++	ET_ETXD0_MARK, ET_ETXD1_MARK, ET_ETXD2_MARK, ET_ETXD3_MARK,
++	ET_ETXD4_MARK, ET_ETXD5_MARK, ET_ETXD6_MARK, ET_ETXD7_MARK,
++	ET_GTX_CLK_MARK, ET_TX_CLK_MARK, ET_TX_EN_MARK, ET_TX_ER_MARK,
++	ET_CRS_MARK, ET_COL_MARK, ET_MDC_MARK, ET_MDIO_MARK,
++	RMII_REF125CK_MARK,
++};
++static const unsigned int gether_int_pins[] = {
++	/* PHY_INT */
++	164,
++};
++static const unsigned int gether_int_mux[] = {
++	ET_PHY_INT_MARK,
++};
++static const unsigned int gether_link_pins[] = {
++	/* LINK */
++	177,
++};
++static const unsigned int gether_link_mux[] = {
++	ET_LINK_MARK,
++};
++static const unsigned int gether_wol_pins[] = {
++	/* WOL */
++	175,
++};
++static const unsigned int gether_wol_mux[] = {
++	ET_WOL_MARK,
++};
+ /* - INTC ------------------------------------------------------------------- */
+ IRQC_PINS_MUX(0, 0, 2);
+ IRQC_PINS_MUX(0, 1, 13);
+@@ -2513,6 +2579,12 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(bsc_rd_we32),
+ 	SH_PFC_PIN_GROUP(bsc_bs),
+ 	SH_PFC_PIN_GROUP(bsc_rdwr),
++	SH_PFC_PIN_GROUP(gether_rmii),
++	SH_PFC_PIN_GROUP(gether_mii),
++	SH_PFC_PIN_GROUP(gether_gmii),
++	SH_PFC_PIN_GROUP(gether_int),
++	SH_PFC_PIN_GROUP(gether_link),
++	SH_PFC_PIN_GROUP(gether_wol),
+ 	SH_PFC_PIN_GROUP(intc_irq0_0),
+ 	SH_PFC_PIN_GROUP(intc_irq0_1),
+ 	SH_PFC_PIN_GROUP(intc_irq1),
+@@ -2666,6 +2738,15 @@ static const char * const bsc_groups[] = {
+ 	"bsc_rdwr",
+ };
  
--	/* BSC / FLCTL / PCMCIA */
--	GPIO_FN_CS0,	GPIO_FN_CS2,	GPIO_FN_CS4,
--	GPIO_FN_CS5B,	GPIO_FN_CS6A,
--	GPIO_FN_CS5A_PORT105, /* CS5A PORT 19/105 */
--	GPIO_FN_CS5A_PORT19,
-+	/* FLCTL / PCMCIA */
- 	GPIO_FN_IOIS16, /* ? */
++static const char * const gether_groups[] = {
++	"gether_rmii",
++	"gether_mii",
++	"gether_gmii",
++	"gether_int",
++	"gether_link",
++	"gether_wol",
++};
++
+ static const char * const intc_groups[] = {
+ 	"intc_irq0_0",
+ 	"intc_irq0_1",
+@@ -2849,6 +2930,7 @@ static const char * const sdhi2_groups[] = {
  
- 	GPIO_FN_A0,	GPIO_FN_A1,	GPIO_FN_A2,	GPIO_FN_A3,
-@@ -314,26 +310,7 @@ enum {
- 	GPIO_FN_A22,	GPIO_FN_A23,	GPIO_FN_A24,	GPIO_FN_A25,
- 	GPIO_FN_A26,
- 
--	GPIO_FN_D0_NAF0,	GPIO_FN_D1_NAF1,	/* share with FLCTL */
--	GPIO_FN_D2_NAF2,	GPIO_FN_D3_NAF3,	/* share with FLCTL */
--	GPIO_FN_D4_NAF4,	GPIO_FN_D5_NAF5,	/* share with FLCTL */
--	GPIO_FN_D6_NAF6,	GPIO_FN_D7_NAF7,	/* share with FLCTL */
--	GPIO_FN_D8_NAF8,	GPIO_FN_D9_NAF9,	/* share with FLCTL */
--	GPIO_FN_D10_NAF10,	GPIO_FN_D11_NAF11,	/* share with FLCTL */
--	GPIO_FN_D12_NAF12,	GPIO_FN_D13_NAF13,	/* share with FLCTL */
--	GPIO_FN_D14_NAF14,	GPIO_FN_D15_NAF15,	/* share with FLCTL */
--
--	GPIO_FN_D16,	GPIO_FN_D17,	GPIO_FN_D18,	GPIO_FN_D19,
--	GPIO_FN_D20,	GPIO_FN_D21,	GPIO_FN_D22,	GPIO_FN_D23,
--	GPIO_FN_D24,	GPIO_FN_D25,	GPIO_FN_D26,	GPIO_FN_D27,
--	GPIO_FN_D28,	GPIO_FN_D29,	GPIO_FN_D30,	GPIO_FN_D31,
--
--	GPIO_FN_WE0_FWE,	/* share with FLCTL */
--	GPIO_FN_WE1,
--	GPIO_FN_WE2_ICIORD,	/* share with PCMCIA */
--	GPIO_FN_WE3_ICIOWR,	/* share with PCMCIA */
--	GPIO_FN_CKO,	GPIO_FN_BS,	GPIO_FN_RDWR,
--	GPIO_FN_RD_FSC,		/* share with FLCTL */
-+	GPIO_FN_CKO,
- 	GPIO_FN_WAIT_PORT177,	/* WAIT Port 90/177 */
- 	GPIO_FN_WAIT_PORT90,
- 
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
++	SH_PFC_FUNCTION(gether),
+ 	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(lcd0),
+ 	SH_PFC_FUNCTION(lcd1),
 -- 
 1.8.1.5
 
