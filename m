@@ -1,62 +1,104 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 22 Apr 2013 09:07:54 +0000
-Subject: [PATCH 1/2 v7] dma: sh: add Kconfig
-Message-Id: <5174FDEA.9050301@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:00:02 +0000
+Subject: [PATCH 21/37] sh-pfc: r8a7740: Remove SCIF function GPIOS
+Message-Id: <1366671618-8796-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch adds Kconfig in the drivers/dma/sh.
+All r8a7740 platforms now use the pinctrl API to control the SCIF pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- about v7:
-  - rebase this patch on the current remotes/origin/next branch of slave-dma.git.
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 72 ------------------------------------
+ 1 file changed, 72 deletions(-)
 
- drivers/dma/Kconfig    |   10 +---------
- drivers/dma/sh/Kconfig |   11 +++++++++++
- 2 files changed, 12 insertions(+), 9 deletions(-)
- create mode 100644 drivers/dma/sh/Kconfig
-
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index afe5b19..e992489 100644
---- a/drivers/dma/Kconfig
-+++ b/drivers/dma/Kconfig
-@@ -172,15 +172,7 @@ config TEGRA20_APB_DMA
- 	  This DMA controller transfers data from memory to peripheral fifo
- 	  or vice versa. It does not support memory to memory data transfer.
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 9afc7b0..3b53193 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -3261,78 +3261,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(FMSOIBT),	GPIO_FN(FMSOOLR),	GPIO_FN(FMSOOBT),
+ 	GPIO_FN(FMSOSLD),	GPIO_FN(FMSOCK),
+ 
+-	/* SCIFA0 */
+-	GPIO_FN(SCIFA0_SCK),	GPIO_FN(SCIFA0_CTS),	GPIO_FN(SCIFA0_RTS),
+-	GPIO_FN(SCIFA0_RXD),	GPIO_FN(SCIFA0_TXD),
 -
+-	/* SCIFA1 */
+-	GPIO_FN(SCIFA1_CTS),	GPIO_FN(SCIFA1_SCK),
+-	GPIO_FN(SCIFA1_RXD),	GPIO_FN(SCIFA1_TXD),	GPIO_FN(SCIFA1_RTS),
 -
--config SH_DMAE
--	tristate "Renesas SuperH DMAC support"
--	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
--	depends on !SH_DMA_API
--	select DMA_ENGINE
--	help
--	  Enable support for the Renesas SuperH DMA controllers.
-+source "drivers/dma/sh/Kconfig"
-
- config COH901318
- 	bool "ST-Ericsson COH901318 DMA support"
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-new file mode 100644
-index 0000000..7e85ad6
---- /dev/null
-+++ b/drivers/dma/sh/Kconfig
-@@ -0,0 +1,11 @@
-+#
-+# DMA engine configuration for sh
-+#
-+
-+config SH_DMAE
-+	tristate "Renesas SuperH DMAC support"
-+	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
-+	depends on !SH_DMA_API
-+	select DMA_ENGINE
-+	help
-+	  Enable support for the Renesas SuperH DMA controllers.
+-	/* SCIFA2 */
+-	GPIO_FN(SCIFA2_SCK_PORT22), /* SCIFA2_SCK Port 22/199 */
+-	GPIO_FN(SCIFA2_SCK_PORT199),
+-	GPIO_FN(SCIFA2_RXD),	GPIO_FN(SCIFA2_TXD),
+-	GPIO_FN(SCIFA2_CTS),	GPIO_FN(SCIFA2_RTS),
+-
+-	/* SCIFA3 */
+-	GPIO_FN(SCIFA3_RTS_PORT105), /* MSEL5CR_8_0 */
+-	GPIO_FN(SCIFA3_SCK_PORT116),
+-	GPIO_FN(SCIFA3_CTS_PORT117),
+-	GPIO_FN(SCIFA3_RXD_PORT174),
+-	GPIO_FN(SCIFA3_TXD_PORT175),
+-
+-	GPIO_FN(SCIFA3_RTS_PORT161), /* MSEL5CR_8_1 */
+-	GPIO_FN(SCIFA3_SCK_PORT158),
+-	GPIO_FN(SCIFA3_CTS_PORT162),
+-	GPIO_FN(SCIFA3_RXD_PORT159),
+-	GPIO_FN(SCIFA3_TXD_PORT160),
+-
+-	/* SCIFA4 */
+-	GPIO_FN(SCIFA4_RXD_PORT12), /* MSEL5CR[12:11] = 00 */
+-	GPIO_FN(SCIFA4_TXD_PORT13),
+-
+-	GPIO_FN(SCIFA4_RXD_PORT204), /* MSEL5CR[12:11] = 01 */
+-	GPIO_FN(SCIFA4_TXD_PORT203),
+-
+-	GPIO_FN(SCIFA4_RXD_PORT94), /* MSEL5CR[12:11] = 10 */
+-	GPIO_FN(SCIFA4_TXD_PORT93),
+-
+-	GPIO_FN(SCIFA4_SCK_PORT21), /* SCIFA4_SCK Port 21/205 */
+-	GPIO_FN(SCIFA4_SCK_PORT205),
+-
+-	/* SCIFA5 */
+-	GPIO_FN(SCIFA5_TXD_PORT20), /* MSEL5CR[15:14] = 00 */
+-	GPIO_FN(SCIFA5_RXD_PORT10),
+-
+-	GPIO_FN(SCIFA5_RXD_PORT207), /* MSEL5CR[15:14] = 01 */
+-	GPIO_FN(SCIFA5_TXD_PORT208),
+-
+-	GPIO_FN(SCIFA5_TXD_PORT91), /* MSEL5CR[15:14] = 10 */
+-	GPIO_FN(SCIFA5_RXD_PORT92),
+-
+-	GPIO_FN(SCIFA5_SCK_PORT23), /* SCIFA5_SCK Port 23/206 */
+-	GPIO_FN(SCIFA5_SCK_PORT206),
+-
+-	/* SCIFA6 */
+-	GPIO_FN(SCIFA6_SCK),	GPIO_FN(SCIFA6_RXD),	GPIO_FN(SCIFA6_TXD),
+-
+-	/* SCIFA7 */
+-	GPIO_FN(SCIFA7_TXD),	GPIO_FN(SCIFA7_RXD),
+-
+-	/* SCIFAB */
+-	GPIO_FN(SCIFB_SCK_PORT190), /* MSEL5CR_17_0 */
+-	GPIO_FN(SCIFB_RXD_PORT191),
+-	GPIO_FN(SCIFB_TXD_PORT192),
+-	GPIO_FN(SCIFB_RTS_PORT186),
+-	GPIO_FN(SCIFB_CTS_PORT187),
+-
+-	GPIO_FN(SCIFB_SCK_PORT2), /* MSEL5CR_17_1 */
+-	GPIO_FN(SCIFB_RXD_PORT3),
+-	GPIO_FN(SCIFB_TXD_PORT4),
+-	GPIO_FN(SCIFB_RTS_PORT172),
+-	GPIO_FN(SCIFB_CTS_PORT173),
+-
+ 	/* RSPI */
+ 	GPIO_FN(RSPI_SSL0_A),	GPIO_FN(RSPI_SSL1_A),	GPIO_FN(RSPI_SSL2_A),
+ 	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
 -- 
-1.7.1
+1.8.1.5
+
