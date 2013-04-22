@@ -1,112 +1,168 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:23 +0000
-Subject: [PATCH 27/30] ARM: shmobile: r8a7790 IRQC support
-Message-Id: <1364879246-9470-28-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 22:59:47 +0000
+Subject: [PATCH 06/37] sh-pfc: r8a7740: Add FSI pin groups and functions
+Message-Id: <1366671618-8796-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Add IRQC interrupt controller support to r8a7790 by
-hooking up a single IRQC instances to handle 4 external
-IRQ signals. The IRQC controller is tied to SPIs of
-the GIC. On r8a7790 the external IRQ pins routing is
-handled by the PFC which is excluded from this patch.
-
-Both platform devices and DT devices are added in this
-patch. The platform device versions are used to provide
-a static interrupt map configuration for board code
-written in C.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi         |    9 +++++++++
- arch/arm/mach-shmobile/Kconfig         |    1 +
- arch/arm/mach-shmobile/setup-r8a7790.c |   21 +++++++++++++++++++++
- 3 files changed, 31 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 118 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 118 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 1c58ffb..a1e0e0c 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -51,4 +51,13 @@
- 				<1 11 0xf08>,
- 				<1 10 0xf08>;
- 	};
-+
-+	irqc0: interrupt-controller@e61c0000 {
-+		compatible = "renesas,irqc";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xe61c0000 0x200>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
-+	};
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 71d7c1f..49da76a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1887,6 +1887,92 @@ static const unsigned int ceu1_field_pins[] = {
+ static const unsigned int ceu1_field_mux[] = {
+ 	VIO1_FIELD_MARK,
  };
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 749dfb4..ccaea6a 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -57,6 +57,7 @@ config ARCH_R8A7790
- 	select CPU_V7
- 	select ARM_ARCH_TIMER
- 	select SH_CLK_CPG
-+	select RENESAS_IRQC
++/* - FSIA ------------------------------------------------------------------- */
++static const unsigned int fsia_mclk_in_pins[] = {
++	/* CK */
++	11,
++};
++static const unsigned int fsia_mclk_in_mux[] = {
++	FSIACK_MARK,
++};
++static const unsigned int fsia_mclk_out_pins[] = {
++	/* OMC */
++	10,
++};
++static const unsigned int fsia_mclk_out_mux[] = {
++	FSIAOMC_MARK,
++};
++static const unsigned int fsia_sclk_in_pins[] = {
++	/* ILR, IBT */
++	12, 13,
++};
++static const unsigned int fsia_sclk_in_mux[] = {
++	FSIAILR_MARK, FSIAIBT_MARK,
++};
++static const unsigned int fsia_sclk_out_pins[] = {
++	/* OLR, OBT */
++	7, 8,
++};
++static const unsigned int fsia_sclk_out_mux[] = {
++	FSIAOLR_MARK, FSIAOBT_MARK,
++};
++static const unsigned int fsia_data_in_0_pins[] = {
++	/* ISLD */
++	0,
++};
++static const unsigned int fsia_data_in_0_mux[] = {
++	FSIAISLD_PORT0_MARK,
++};
++static const unsigned int fsia_data_in_1_pins[] = {
++	/* ISLD */
++	5,
++};
++static const unsigned int fsia_data_in_1_mux[] = {
++	FSIAISLD_PORT5_MARK,
++};
++static const unsigned int fsia_data_out_0_pins[] = {
++	/* OSLD */
++	9,
++};
++static const unsigned int fsia_data_out_0_mux[] = {
++	FSIAOSLD_MARK,
++};
++static const unsigned int fsia_data_out_1_pins[] = {
++	/* OSLD */
++	0,
++};
++static const unsigned int fsia_data_out_1_mux[] = {
++	FSIAOSLD1_MARK,
++};
++static const unsigned int fsia_data_out_2_pins[] = {
++	/* OSLD */
++	1,
++};
++static const unsigned int fsia_data_out_2_mux[] = {
++	FSIAOSLD2_MARK,
++};
++static const unsigned int fsia_spdif_0_pins[] = {
++	/* SPDIF */
++	9,
++};
++static const unsigned int fsia_spdif_0_mux[] = {
++	FSIASPDIF_PORT9_MARK,
++};
++static const unsigned int fsia_spdif_1_pins[] = {
++	/* SPDIF */
++	18,
++};
++static const unsigned int fsia_spdif_1_mux[] = {
++	FSIASPDIF_PORT18_MARK,
++};
++/* - FSIB ------------------------------------------------------------------- */
++static const unsigned int fsib_mclk_in_pins[] = {
++	/* CK */
++	11,
++};
++static const unsigned int fsib_mclk_in_mux[] = {
++	FSIBCK_MARK,
++};
+ /* - GETHER ----------------------------------------------------------------- */
+ static const unsigned int gether_rmii_pins[] = {
+ 	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK, MDC, MDIO */
+@@ -2683,6 +2769,18 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(ceu1_clk),
+ 	SH_PFC_PIN_GROUP(ceu1_sync),
+ 	SH_PFC_PIN_GROUP(ceu1_field),
++	SH_PFC_PIN_GROUP(fsia_mclk_in),
++	SH_PFC_PIN_GROUP(fsia_mclk_out),
++	SH_PFC_PIN_GROUP(fsia_sclk_in),
++	SH_PFC_PIN_GROUP(fsia_sclk_out),
++	SH_PFC_PIN_GROUP(fsia_data_in_0),
++	SH_PFC_PIN_GROUP(fsia_data_in_1),
++	SH_PFC_PIN_GROUP(fsia_data_out_0),
++	SH_PFC_PIN_GROUP(fsia_data_out_1),
++	SH_PFC_PIN_GROUP(fsia_data_out_2),
++	SH_PFC_PIN_GROUP(fsia_spdif_0),
++	SH_PFC_PIN_GROUP(fsia_spdif_1),
++	SH_PFC_PIN_GROUP(fsib_mclk_in),
+ 	SH_PFC_PIN_GROUP(gether_rmii),
+ 	SH_PFC_PIN_GROUP(gether_mii),
+ 	SH_PFC_PIN_GROUP(gether_gmii),
+@@ -2860,6 +2958,24 @@ static const char * const ceu1_groups[] = {
+ 	"ceu1_field",
+ };
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 3bb5bf1..9b4ccd7 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -23,6 +23,7 @@
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/serial_sci.h>
-+#include <linux/platform_data/irq-renesas-irqc.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7790.h>
-@@ -74,6 +75,25 @@ static inline void r8a7790_register_scif(int idx)
- 				      sizeof(struct plat_sci_port));
- }
- 
-+static struct renesas_irqc_config irqc0_data = {
-+	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
++static const char * const fsia_groups[] = {
++	"fsia_mclk_in",
++	"fsia_mclk_out",
++	"fsia_sclk_in",
++	"fsia_sclk_out",
++	"fsia_data_in_0",
++	"fsia_data_in_1",
++	"fsia_data_out_0",
++	"fsia_data_out_1",
++	"fsia_data_out_2",
++	"fsia_spdif_0",
++	"fsia_spdif_1",
 +};
 +
-+static struct resource irqc0_resources[] = {
-+	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
-+	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
-+	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
-+	DEFINE_RES_IRQ(gic_spi(2)), /* IRQ2 */
-+	DEFINE_RES_IRQ(gic_spi(3)), /* IRQ3 */
++static const char * const fsib_groups[] = {
++	"fsib_mclk_in",
 +};
 +
-+#define r8a7790_register_irqc(idx)					\
-+	platform_device_register_resndata(&platform_bus, "renesas_irqc", \
-+					  idx, irqc##idx##_resources,	\
-+					  ARRAY_SIZE(irqc##idx##_resources), \
-+					  &irqc##idx##_data,		\
-+					  sizeof(struct renesas_irqc_config))
-+
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_register_scif(SCIFA0);
-@@ -84,6 +104,7 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(SCIFA2);
- 	r8a7790_register_scif(SCIF0);
- 	r8a7790_register_scif(SCIF1);
-+	r8a7790_register_irqc(0);
- }
- 
- #ifdef CONFIG_USE_OF
+ static const char * const gether_groups[] = {
+ 	"gether_rmii",
+ 	"gether_mii",
+@@ -3054,6 +3170,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(ceu0),
+ 	SH_PFC_FUNCTION(ceu1),
++	SH_PFC_FUNCTION(fsia),
++	SH_PFC_FUNCTION(fsib),
+ 	SH_PFC_FUNCTION(gether),
+ 	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(lcd0),
 -- 
-1.7.10.4
+1.8.1.5
 
