@@ -1,102 +1,45 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 08 Apr 2013 09:36:14 +0000
-Subject: [PATCH 02/10] sh-pfc: r8a7790: Add ETH pin groups and functions
-Message-Id: <1365413782-17036-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 22:59:54 +0000
+Subject: [PATCH 13/37] ARM: shmobile: armadillo800eva: Register pinctrl mapping for HDMI
+Message-Id: <1366671618-8796-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Replace the GPIO-based HDMI pinmux configuration by a pinctrl mapping.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 58 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 58 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 42b0c55..3774242 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -20,7 +20,10 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+
- #include <linux/kernel.h>
-+#include <linux/platform_data/gpio-rcar.h>
-+
- #include <mach/r8a7790.h>
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index d8ce94a..a74e750 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1062,6 +1062,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 				  "gether_mii", "gether"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
+ 				  "gether_int", "gether"),
++	/* HDMI */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-mobile-hdmi", "pfc-r8a7740",
++				  "hdmi", "hdmi"),
+ 	/* LCD0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
+ 				  "lcd0_data24_0", "lcd0"),
+@@ -1187,10 +1190,6 @@ static void __init eva_init(void)
+ 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
  
- #include "core.h"
-@@ -1820,6 +1823,57 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 	PINMUX_GPIO_GP_ALL(),
- };
- 
-+/* - ETH -------------------------------------------------------------------- */
-+static const unsigned int eth_link_pins[] = {
-+	/* LINK */
-+	RCAR_GP_PIN(2, 22),
-+};
-+static const unsigned int eth_link_mux[] = {
-+	ETH_LINK_MARK,
-+};
-+static const unsigned int eth_magic_pins[] = {
-+	/* MAGIC */
-+	RCAR_GP_PIN(2, 27),
-+};
-+static const unsigned int eth_magic_mux[] = {
-+	ETH_MAGIC_MARK,
-+};
-+static const unsigned int eth_mdio_pins[] = {
-+	/* MDC, MDIO */
-+	RCAR_GP_PIN(2, 29), RCAR_GP_PIN(2, 24),
-+};
-+static const unsigned int eth_mdio_mux[] = {
-+	ETH_MDC_MARK, ETH_MDIO_MARK,
-+};
-+static const unsigned int eth_rmii_pins[] = {
-+	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK */
-+	RCAR_GP_PIN(2, 20), RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 19),
-+	RCAR_GP_PIN(2, 18), RCAR_GP_PIN(2, 28), RCAR_GP_PIN(2, 25),
-+	RCAR_GP_PIN(2, 26), RCAR_GP_PIN(2, 23),
-+};
-+static const unsigned int eth_rmii_mux[] = {
-+	ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_RX_ER_MARK, ETH_CRS_DV_MARK,
-+	ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK, ETH_REF_CLK_MARK,
-+};
-+
-+static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(eth_link),
-+	SH_PFC_PIN_GROUP(eth_magic),
-+	SH_PFC_PIN_GROUP(eth_mdio),
-+	SH_PFC_PIN_GROUP(eth_rmii),
-+};
-+
-+static const char * const eth_groups[] = {
-+	"eth_link",
-+	"eth_magic",
-+	"eth_mdio",
-+	"eth_rmii",
-+};
-+
-+static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(eth),
-+};
-+
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
- 
- static const struct pinmux_func pinmux_func_gpios[] = {
-@@ -3226,6 +3280,10 @@ const struct sh_pfc_soc_info r8a7790_pinmux_info = {
- 
- 	.pins = pinmux_pins,
- 	.nr_pins = ARRAY_SIZE(pinmux_pins),
-+	.groups = pinmux_groups,
-+	.nr_groups = ARRAY_SIZE(pinmux_groups),
-+	.functions = pinmux_functions,
-+	.nr_functions = ARRAY_SIZE(pinmux_functions),
- 
- 	.func_gpios	= pinmux_func_gpios,
- 	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
+-	/* HDMI */
+-	gpio_request(GPIO_FN_HDMI_HPD,		NULL);
+-	gpio_request(GPIO_FN_HDMI_CEC,		NULL);
+-
+ 	/*
+ 	 * CAUTION
+ 	 *
 -- 
 1.8.1.5
 
