@@ -1,43 +1,72 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 18 Apr 2013 13:14:54 +0000
-Subject: Re: [PATCH v2 6/6] ARM: shmobile: Armadillo800EVA: Reference DT implementation
-Message-Id: <20130418131454.GB20929@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 22 Apr 2013 08:29:26 +0000
+Subject: [PATCH] mmc: tmio: postpone controller reset during resume
+Message-Id: <Pine.LNX.4.64.1304221025300.23906@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366194847-9879-6-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1366194847-9879-6-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, hechtb@gmail.com, Horman Simon <simon@horms.net>, Damm Magnus <magnus.damm@gmail.com>, "^[$B0p5H$5$s^[(B" <jinso.inayoshi@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-On Wed, Apr 17, 2013 at 12:34:06PM +0200, Bastian Hecht wrote:
-> Provide alternate board code for the Armadillo800EVA to demonstrate how
-> DT may be used given the current state of driver device tree support.
-> This is intended to act as a reference for mach-shmobile developers.
-> 
-> This a rather bare bone version with the following devices supported:
-> 
->  - GIC
->  - irqpins
->  - i2c0/1
->  - touchscreen
-> 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> ---
-> v2:
-> 
->  - Removed the GPIO request for IRQ10 (the mux defaults to right port)
->  - Added a TODO to the reset GPIO request. We can move that as soon as
->   we got the PFC in the device tree.
->  - Removed the .dtsi part that is now in 5/6
-> 
->  arch/arm/boot/dts/Makefile                         |    1 +
->  .../boot/dts/r8a7740-armadillo800eva-reference.dts |   45 +++++
->  arch/arm/mach-shmobile/Kconfig                     |   14 ++
->  arch/arm/mach-shmobile/Makefile                    |    1 +
->  .../board-armadillo800eva-reference.c              |  213 ++++++++++++++++++++
->  5 files changed, 274 insertions(+)
->  create mode 100644 arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
->  create mode 100644 arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+When resuming, the tmio_mmc_host_resume() function is run when the
+controller might still be powered down. Issuing a reset command to it at
+that time has no effect. This patch postpones resetting the controller
+until the first powering-up .set_ios() call.
 
-Thanks, queued-up for v3.11 in the boards-armadillo800eva branch.
+Reported-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+
+There is some risk associated with this patch: it removes unconditional 
+(attempt of) controller reset from the tmio_mmc_host_resume() function. 
+AFAICS, this shouldn't have any negative effects. There _should_ always be 
+a powering-up .set_ios() call after a resume. However, if anyone sees any 
+(potential) problems with it, please, let me know.
+
+ drivers/mmc/host/tmio_mmc.h     |    1 +
+ drivers/mmc/host/tmio_mmc_pio.c |    6 +++++-
+ 2 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index d857f5c..759d8f4 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -85,6 +85,7 @@ struct tmio_mmc_host {
+ 	unsigned long		last_req_ts;
+ 	struct mutex		ios_lock;	/* protect set_ios() context */
+ 	bool			native_hotplug;
++	bool			resuming;
+ };
+ 
+ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index f508ecb..435cc4d 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -862,6 +862,10 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		if (!host->power) {
+ 			tmio_mmc_clk_update(mmc);
+ 			pm_runtime_get_sync(dev);
++			if (host->resuming) {
++				tmio_mmc_reset(host);
++				host->resuming = false;
++			}
+ 		}
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		if (!host->power) {
+@@ -1154,10 +1158,10 @@ int tmio_mmc_host_resume(struct device *dev)
+ 	struct mmc_host *mmc = dev_get_drvdata(dev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 
+-	tmio_mmc_reset(host);
+ 	tmio_mmc_enable_dma(host, true);
+ 
+ 	/* The MMC core will perform the complete set up */
++	host->resuming = true;
+ 	return mmc_resume_host(mmc);
+ }
+ EXPORT_SYMBOL(tmio_mmc_host_resume);
+-- 
+1.7.2.5
+
