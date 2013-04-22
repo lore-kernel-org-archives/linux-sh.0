@@ -1,102 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 05 Apr 2013 03:04:29 +0000
-Subject: [PATCH 1/2] ARM: shmobile: bockw: add SMSC ethernet support
-Message-Id: <1365131070-13142-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:00:14 +0000
+Subject: [PATCH 33/37] ARM: shmobile: r8a7740: Remove FSI function GPIOs
+Message-Id: <1366671618-8796-34-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365131070-13142-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365131070-13142-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-This patch adds SMSC ethernet support on Bock-W
-
-Bock-W SMSC needs FPGA settings which enables interrupt.
-This patch does it on bockw_init() function.
-As notes for future, this FPGA settings should be updated,
-since this FPGA is using cascaded interrupt.
-Current code is assuming that this FPGA interrupt user is only SMSC.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Kconfig       |    1 +
- arch/arm/mach-shmobile/board-bockw.c |   38 ++++++++++++++++++++++++++++++++++
- 2 files changed, 39 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 14 --------------
+ 1 file changed, 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 549e059..1a517e2 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -133,6 +133,7 @@ config MACH_BOCKW
- 	bool "BOCK-W platform"
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
-+	select RENESAS_INTC_IRQPIN
- 	select USE_OF
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 4bec7cd..cb8e3fb 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -107,20 +107,6 @@ enum {
+ 	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
+ 	GPIO_FN_DBGMD21,
  
- config MACH_MARZEN
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 56ab56e..38e5e50 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -19,14 +19,52 @@
-  */
- 
- #include <linux/platform_device.h>
-+#include <linux/smsc911x.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r8a7778.h>
- #include <asm/mach/arch.h>
- 
-+static struct smsc911x_platform_config smsc911x_data = {
-+	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
-+	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
-+	.flags		= SMSC911X_USE_32BIT,
-+	.phy_interface	= PHY_INTERFACE_MODE_MII,
-+};
-+
-+static struct resource smsc911x_resources[] = {
-+	DEFINE_RES_MEM(0x18300000, 0x1000),
-+	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
-+};
-+
-+#define IRQ0MR	0x30
- static void __init bockw_init(void)
- {
-+	void __iomem *fpga;
-+
- 	r8a7778_clock_init();
-+	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+
-+	fpga = ioremap_nocache(0x18200000, SZ_1M);
-+	if (fpga) {
-+		/*
-+		 * CAUTION
-+		 *
-+		 * IRQ0/1 is cascaded interrupt from FPGA.
-+		 * it should be cared in the future
-+		 * Now, it is assuming IRQ0 was used only from SMSC.
-+		 */
-+		u16 val = ioread16(fpga + IRQ0MR);
-+		val &= ~(1 << 4); /* enable SMSC911x */
-+		iowrite16(val, fpga + IRQ0MR);
-+		iounmap(fpga);
-+
-+		platform_device_register_resndata(
-+			&platform_bus, "smsc911x", -1,
-+			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
-+			&smsc911x_data, sizeof(smsc911x_data));
-+	}
- }
- 
- static const char *bockw_boards_compat_dt[] __initdata = {
+-	/* FSI-A */
+-	GPIO_FN_FSIAISLD_PORT0,		/* FSIAISLD Port 0/5 */
+-	GPIO_FN_FSIAISLD_PORT5,
+-	GPIO_FN_FSIASPDIF_PORT9,	/* FSIASPDIF Port 9/18 */
+-	GPIO_FN_FSIASPDIF_PORT18,
+-	GPIO_FN_FSIAOSLD1,	GPIO_FN_FSIAOSLD2,
+-	GPIO_FN_FSIAOLR,	GPIO_FN_FSIAOBT,
+-	GPIO_FN_FSIAOSLD,	GPIO_FN_FSIAOMC,
+-	GPIO_FN_FSIACK,		GPIO_FN_FSIAILR,
+-	GPIO_FN_FSIAIBT,
+-
+-	/* FSI-B */
+-	GPIO_FN_FSIBCK,
+-
+ 	/* FMSI */
+ 	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
+ 	GPIO_FN_FMSISLD_PORT6,
 -- 
-1.7.10.4
+1.8.1.5
 
