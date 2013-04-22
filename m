@@ -1,168 +1,60 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 22:59:47 +0000
-Subject: [PATCH 06/37] sh-pfc: r8a7740: Add FSI pin groups and functions
-Message-Id: <1366671618-8796-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:00:13 +0000
+Subject: [PATCH 32/37] ARM: shmobile: r8a7740: Remove CEU function GPIOs
+Message-Id: <1366671618-8796-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 118 +++++++++++++++++++++++++++++++++++
- 1 file changed, 118 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 28 ---------------------------
+ 1 file changed, 28 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 71d7c1f..49da76a 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -1887,6 +1887,92 @@ static const unsigned int ceu1_field_pins[] = {
- static const unsigned int ceu1_field_mux[] = {
- 	VIO1_FIELD_MARK,
- };
-+/* - FSIA ------------------------------------------------------------------- */
-+static const unsigned int fsia_mclk_in_pins[] = {
-+	/* CK */
-+	11,
-+};
-+static const unsigned int fsia_mclk_in_mux[] = {
-+	FSIACK_MARK,
-+};
-+static const unsigned int fsia_mclk_out_pins[] = {
-+	/* OMC */
-+	10,
-+};
-+static const unsigned int fsia_mclk_out_mux[] = {
-+	FSIAOMC_MARK,
-+};
-+static const unsigned int fsia_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	12, 13,
-+};
-+static const unsigned int fsia_sclk_in_mux[] = {
-+	FSIAILR_MARK, FSIAIBT_MARK,
-+};
-+static const unsigned int fsia_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	7, 8,
-+};
-+static const unsigned int fsia_sclk_out_mux[] = {
-+	FSIAOLR_MARK, FSIAOBT_MARK,
-+};
-+static const unsigned int fsia_data_in_0_pins[] = {
-+	/* ISLD */
-+	0,
-+};
-+static const unsigned int fsia_data_in_0_mux[] = {
-+	FSIAISLD_PORT0_MARK,
-+};
-+static const unsigned int fsia_data_in_1_pins[] = {
-+	/* ISLD */
-+	5,
-+};
-+static const unsigned int fsia_data_in_1_mux[] = {
-+	FSIAISLD_PORT5_MARK,
-+};
-+static const unsigned int fsia_data_out_0_pins[] = {
-+	/* OSLD */
-+	9,
-+};
-+static const unsigned int fsia_data_out_0_mux[] = {
-+	FSIAOSLD_MARK,
-+};
-+static const unsigned int fsia_data_out_1_pins[] = {
-+	/* OSLD */
-+	0,
-+};
-+static const unsigned int fsia_data_out_1_mux[] = {
-+	FSIAOSLD1_MARK,
-+};
-+static const unsigned int fsia_data_out_2_pins[] = {
-+	/* OSLD */
-+	1,
-+};
-+static const unsigned int fsia_data_out_2_mux[] = {
-+	FSIAOSLD2_MARK,
-+};
-+static const unsigned int fsia_spdif_0_pins[] = {
-+	/* SPDIF */
-+	9,
-+};
-+static const unsigned int fsia_spdif_0_mux[] = {
-+	FSIASPDIF_PORT9_MARK,
-+};
-+static const unsigned int fsia_spdif_1_pins[] = {
-+	/* SPDIF */
-+	18,
-+};
-+static const unsigned int fsia_spdif_1_mux[] = {
-+	FSIASPDIF_PORT18_MARK,
-+};
-+/* - FSIB ------------------------------------------------------------------- */
-+static const unsigned int fsib_mclk_in_pins[] = {
-+	/* CK */
-+	11,
-+};
-+static const unsigned int fsib_mclk_in_mux[] = {
-+	FSIBCK_MARK,
-+};
- /* - GETHER ----------------------------------------------------------------- */
- static const unsigned int gether_rmii_pins[] = {
- 	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK, MDC, MDIO */
-@@ -2683,6 +2769,18 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(ceu1_clk),
- 	SH_PFC_PIN_GROUP(ceu1_sync),
- 	SH_PFC_PIN_GROUP(ceu1_field),
-+	SH_PFC_PIN_GROUP(fsia_mclk_in),
-+	SH_PFC_PIN_GROUP(fsia_mclk_out),
-+	SH_PFC_PIN_GROUP(fsia_sclk_in),
-+	SH_PFC_PIN_GROUP(fsia_sclk_out),
-+	SH_PFC_PIN_GROUP(fsia_data_in_0),
-+	SH_PFC_PIN_GROUP(fsia_data_in_1),
-+	SH_PFC_PIN_GROUP(fsia_data_out_0),
-+	SH_PFC_PIN_GROUP(fsia_data_out_1),
-+	SH_PFC_PIN_GROUP(fsia_data_out_2),
-+	SH_PFC_PIN_GROUP(fsia_spdif_0),
-+	SH_PFC_PIN_GROUP(fsia_spdif_1),
-+	SH_PFC_PIN_GROUP(fsib_mclk_in),
- 	SH_PFC_PIN_GROUP(gether_rmii),
- 	SH_PFC_PIN_GROUP(gether_mii),
- 	SH_PFC_PIN_GROUP(gether_gmii),
-@@ -2860,6 +2958,24 @@ static const char * const ceu1_groups[] = {
- 	"ceu1_field",
- };
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 3a8de9c..4bec7cd 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -143,34 +143,6 @@ enum {
+ 	GPIO_FN_RSPI_MOSI_A,	GPIO_FN_RSPI_MISO_A,
+ 	GPIO_FN_RSPI_CK_A,
  
-+static const char * const fsia_groups[] = {
-+	"fsia_mclk_in",
-+	"fsia_mclk_out",
-+	"fsia_sclk_in",
-+	"fsia_sclk_out",
-+	"fsia_data_in_0",
-+	"fsia_data_in_1",
-+	"fsia_data_out_0",
-+	"fsia_data_out_1",
-+	"fsia_data_out_2",
-+	"fsia_spdif_0",
-+	"fsia_spdif_1",
-+};
-+
-+static const char * const fsib_groups[] = {
-+	"fsib_mclk_in",
-+};
-+
- static const char * const gether_groups[] = {
- 	"gether_rmii",
- 	"gether_mii",
-@@ -3054,6 +3170,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(ceu0),
- 	SH_PFC_FUNCTION(ceu1),
-+	SH_PFC_FUNCTION(fsia),
-+	SH_PFC_FUNCTION(fsib),
- 	SH_PFC_FUNCTION(gether),
- 	SH_PFC_FUNCTION(intc),
- 	SH_PFC_FUNCTION(lcd0),
+-	/* VIO CKO */
+-	GPIO_FN_VIO_CKO1,
+-	GPIO_FN_VIO_CKO2,
+-	GPIO_FN_VIO_CKO_1,
+-	GPIO_FN_VIO_CKO,
+-
+-	/* VIO0 */
+-	GPIO_FN_VIO0_D0,	GPIO_FN_VIO0_D1,	GPIO_FN_VIO0_D2,
+-	GPIO_FN_VIO0_D3,	GPIO_FN_VIO0_D4,	GPIO_FN_VIO0_D5,
+-	GPIO_FN_VIO0_D6,	GPIO_FN_VIO0_D7,	GPIO_FN_VIO0_D8,
+-	GPIO_FN_VIO0_D9,	GPIO_FN_VIO0_D10,	GPIO_FN_VIO0_D11,
+-	GPIO_FN_VIO0_D12,	GPIO_FN_VIO0_VD,	GPIO_FN_VIO0_HD,
+-	GPIO_FN_VIO0_CLK,	GPIO_FN_VIO0_FIELD,
+-
+-	GPIO_FN_VIO0_D13_PORT26, /* MSEL5CR_27_0 */
+-	GPIO_FN_VIO0_D14_PORT25,
+-	GPIO_FN_VIO0_D15_PORT24,
+-
+-	GPIO_FN_VIO0_D13_PORT22, /* MSEL5CR_27_1 */
+-	GPIO_FN_VIO0_D14_PORT95,
+-	GPIO_FN_VIO0_D15_PORT96,
+-
+-	/* VIO1 */
+-	GPIO_FN_VIO1_D0,	GPIO_FN_VIO1_D1,	GPIO_FN_VIO1_D2,
+-	GPIO_FN_VIO1_D3,	GPIO_FN_VIO1_D4,	GPIO_FN_VIO1_D5,
+-	GPIO_FN_VIO1_D6,	GPIO_FN_VIO1_D7,	GPIO_FN_VIO1_VD,
+-	GPIO_FN_VIO1_HD,	GPIO_FN_VIO1_CLK,	GPIO_FN_VIO1_FIELD,
+-
+ 	/* TPU0 */
+ 	GPIO_FN_TPU0TO0,	GPIO_FN_TPU0TO1,
+ 	GPIO_FN_TPU0TO3,
 -- 
 1.8.1.5
 
