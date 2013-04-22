@@ -1,64 +1,64 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 10 Apr 2013 21:41:23 +0000
-Subject: [PATCH v3 2/2] ARM: shmobile: Armadillo800EVA: Move st1232 reset pin handling
-Message-Id: <1365630083-9758-2-git-send-email-hechtb+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:17 +0000
+Subject: [PATCH 14/35] ARM: shmobile: mackerel: Register pinctrl mapping for FSI
+Message-Id: <1366671758-8954-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365630083-9758-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365630083-9758-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-input@vger.kernel.org
-Cc: Laurent Pichart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>
+To: linux-sh@vger.kernel.org
 
-We no longer need to set up the reset pin for the st1232 in the board
-code, but can pass the GPIO number via the platform data to the driver.
-This results in a cleaner grouping of the device setup.
+Replace the GPIO-based FSI pinmux configuration by a pinctrl mapping.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3:
-same
+ arch/arm/mach-shmobile/board-mackerel.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
 
- arch/arm/mach-shmobile/board-armadillo800eva.c |    7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 81db74a..885c6a9 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -24,6 +24,7 @@
- #include <linux/err.h>
- #include <linux/kernel.h>
- #include <linux/input.h>
-+#include <linux/input/st1232_pdata.h>
- #include <linux/irq.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
-@@ -997,10 +998,15 @@ static struct platform_device i2c_gpio_device = {
- };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index e162abd..b28561d 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1322,6 +1322,16 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 				  "flctl_ce0", "flctl"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
+ 				  "flctl_ctrl", "flctl"),
++	/* FSIA (AK4643) */
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_sclk_in", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_data_in", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_data_out", "fsia"),
++	/* FSIB (HDMI) */
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-sh7372",
++				  "fsib_mclk_in", "fsib"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1440,11 +1450,7 @@ static void __init mackerel_init(void)
+ 	gpio_request_pulldown(GPIO_PORT167CR); /* VBUS0_1 pull down */
+ 	gpio_request(GPIO_FN_IDIN_1_113, NULL);
  
- /* I2C */
-+static struct st1232_pdata st1232_i2c0_pdata = {
-+	.reset_gpio = 166,
-+};
-+
- static struct i2c_board_info i2c0_devices[] = {
- 	{
- 		I2C_BOARD_INFO("st1232-ts", 0x55),
- 		.irq = irq_pin(10),
-+		.platform_data = &st1232_i2c0_pdata,
- 	},
- 	{
- 		I2C_BOARD_INFO("wm8978", 0x1a),
-@@ -1121,7 +1127,6 @@ static void __init eva_init(void)
+-	/* enable FSI2 port A (ak4643) */
+-	gpio_request(GPIO_FN_FSIAIBT,	NULL);
+-	gpio_request(GPIO_FN_FSIAILR,	NULL);
+-	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+-	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
++	/* FSI2 port A (ak4643) */
+ 	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
  
- 	/* Touchscreen */
- 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 	gpio_request(9,  NULL);
+@@ -1454,8 +1460,7 @@ static void __init mackerel_init(void)
  
- 	/* GETHER */
- 	gpio_request(GPIO_FN_ET_CRS,		NULL);
+ 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
+ 
+-	/* setup FSI2 port B (HDMI) */
+-	gpio_request(GPIO_FN_FSIBCK, NULL);
++	/* FSI2 port B (HDMI) */
+ 	__raw_writew(__raw_readw(USCCR1) & ~(1 << 6), USCCR1); /* use SPDIF */
+ 
+ 	/* set SPU2 clock to 119.6 MHz */
 -- 
-1.7.9.5
+1.8.1.5
 
