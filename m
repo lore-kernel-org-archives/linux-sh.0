@@ -1,161 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:22 +0000
-Subject: [PATCH 26/30] ARM: shmobile: r8a7790 SCIF support
-Message-Id: <1364879246-9470-27-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:00:03 +0000
+Subject: [PATCH 22/37] sh-pfc: r8a7740: Remove INTC function GPIOS
+Message-Id: <1366671618-8796-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+All r8a7740 platforms now use the pinctrl API to control the INTC pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Add SCIF serial port support to the r8a7790 SoC by
-adding platform devices for SCIFA0 -> SCIFA2 as well
-as SCIFB0 -> SCIFB2 and SCIF0 -> SCIF1 together with
-clock bindings. DT device description is excluded at
-this point since such bindings are still under
-development.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c |   34 +++++++++++++++++++-
- arch/arm/mach-shmobile/setup-r8a7790.c |   55 ++++++++++++++++++++++++++++++++
- 2 files changed, 88 insertions(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 34 ----------------------------------
+ 1 file changed, 34 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 6869798..bad9bf2 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -27,19 +27,51 @@
- #define CPG_BASE 0xe6150000
- #define CPG_LEN 0x1000
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 3b53193..0429c7d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -3200,40 +3200,6 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
  
-+#define SMSTPCR2 0xe6150138
-+#define SMSTPCR7 0xe615014c
-+
- static struct clk_mapping cpg_mapping = {
- 	.phys   = CPG_BASE,
- 	.len    = CPG_LEN,
- };
+ static const struct pinmux_func pinmux_func_gpios[] = {
+-	/* IRQ */
+-	GPIO_FN(IRQ0_PORT2),	GPIO_FN(IRQ0_PORT13),
+-	GPIO_FN(IRQ1),
+-	GPIO_FN(IRQ2_PORT11),	GPIO_FN(IRQ2_PORT12),
+-	GPIO_FN(IRQ3_PORT10),	GPIO_FN(IRQ3_PORT14),
+-	GPIO_FN(IRQ4_PORT15),	GPIO_FN(IRQ4_PORT172),
+-	GPIO_FN(IRQ5_PORT0),	GPIO_FN(IRQ5_PORT1),
+-	GPIO_FN(IRQ6_PORT121),	GPIO_FN(IRQ6_PORT173),
+-	GPIO_FN(IRQ7_PORT120),	GPIO_FN(IRQ7_PORT209),
+-	GPIO_FN(IRQ8),
+-	GPIO_FN(IRQ9_PORT118),	GPIO_FN(IRQ9_PORT210),
+-	GPIO_FN(IRQ10),
+-	GPIO_FN(IRQ11),
+-	GPIO_FN(IRQ12_PORT42),	GPIO_FN(IRQ12_PORT97),
+-	GPIO_FN(IRQ13_PORT64),	GPIO_FN(IRQ13_PORT98),
+-	GPIO_FN(IRQ14_PORT63),	GPIO_FN(IRQ14_PORT99),
+-	GPIO_FN(IRQ15_PORT62),	GPIO_FN(IRQ15_PORT100),
+-	GPIO_FN(IRQ16_PORT68),	GPIO_FN(IRQ16_PORT211),
+-	GPIO_FN(IRQ17),
+-	GPIO_FN(IRQ18),
+-	GPIO_FN(IRQ19),
+-	GPIO_FN(IRQ20),
+-	GPIO_FN(IRQ21),
+-	GPIO_FN(IRQ22),
+-	GPIO_FN(IRQ23),
+-	GPIO_FN(IRQ24),
+-	GPIO_FN(IRQ25),
+-	GPIO_FN(IRQ26_PORT58),	GPIO_FN(IRQ26_PORT81),
+-	GPIO_FN(IRQ27_PORT57),	GPIO_FN(IRQ27_PORT168),
+-	GPIO_FN(IRQ28_PORT56),	GPIO_FN(IRQ28_PORT169),
+-	GPIO_FN(IRQ29_PORT50),	GPIO_FN(IRQ29_PORT170),
+-	GPIO_FN(IRQ30_PORT49),	GPIO_FN(IRQ30_PORT171),
+-	GPIO_FN(IRQ31_PORT41),	GPIO_FN(IRQ31_PORT167),
+-
+ 	/* Function */
  
-+static struct clk p_clk = {
-+	.rate	= 65000000, /* shortcut for now */
-+	.mapping	= &cpg_mapping,
-+};
-+
-+static struct clk mp_clk = {
-+	.rate	= 52000000,  /* shortcut for now */
-+	.mapping	= &cpg_mapping,
-+};
-+
- static struct clk *main_clks[] = {
-+	&p_clk,
-+	&mp_clk,
- };
- 
--enum { MSTP_NR };
-+enum { MSTP721, MSTP720,
-+	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
-+	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
-+	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
-+	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
-+	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
-+	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
-+	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
-+	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
- };
- 
- static struct clk_lookup lookups[] = {
-+	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
-+	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
-+	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
-+	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
-+	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
-+	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP202]),
-+	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP721]),
-+	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- };
- 
- void __init r8a7790_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index af432ba..3bb5bf1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -22,13 +22,68 @@
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <linux/serial_sci.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- 
-+#define SCIF_COMMON(scif_type, baseaddr, irq)			\
-+	.type		= scif_type,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
-+	.irqs		= SCIx_IRQ_MUXED(irq)
-+
-+#define SCIFA_DATA(index, baseaddr, irq)		\
-+[index] = {						\
-+	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,			\
-+	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
-+}
-+
-+#define SCIFB_DATA(index, baseaddr, irq)	\
-+[index] = {					\
-+	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,		\
-+	.scscr = SCSCR_RE | SCSCR_TE,		\
-+}
-+
-+#define SCIF_DATA(index, baseaddr, irq)		\
-+[index] = {						\
-+	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
-+	.scbrr_algo_id	= SCBRR_ALGO_2,			\
-+	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+}
-+
-+enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
-+
-+static const struct plat_sci_port scif[] = {
-+	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
-+	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
-+	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
-+	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
-+	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
-+	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
-+	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
-+	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
-+};
-+
-+static inline void r8a7790_register_scif(int idx)
-+{
-+	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
-+				      sizeof(struct plat_sci_port));
-+}
-+
- void __init r8a7790_add_standard_devices(void)
- {
-+	r8a7790_register_scif(SCIFA0);
-+	r8a7790_register_scif(SCIFA1);
-+	r8a7790_register_scif(SCIFB0);
-+	r8a7790_register_scif(SCIFB1);
-+	r8a7790_register_scif(SCIFB2);
-+	r8a7790_register_scif(SCIFA2);
-+	r8a7790_register_scif(SCIF0);
-+	r8a7790_register_scif(SCIF1);
- }
- 
- #ifdef CONFIG_USE_OF
+ 	/* DBGT */
 -- 
-1.7.10.4
+1.8.1.5
 
