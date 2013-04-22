@@ -1,127 +1,64 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 09 Apr 2013 22:38:34 +0000
-Subject: [PATCH v3 8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-Message-Id: <201304100238.34847.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 22:59:53 +0000
+Subject: [PATCH 12/37] ARM: shmobile: armadillo800eva: Register pinctrl mapping for FSI
+Message-Id: <1366671618-8796-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
-platform data, we now need a way to pass those platform data from the board file
-to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
-r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
-passed platform data using platform_device_register_resndata() call; creating
-this function envolves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
-so that it will no longer be registered for the generic R8A7779 machine (where
-we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
-to load as well.
+Replace the GPIO-based FSI pinmux configuration by a pinctrl mapping.
 
-For the Marzen board, this new function will be called from marzen_init() to
-register the USB PHY device early enough.
-
-Note that the board and the SoC code have to be in one patch to keep the code
-bisectable...
-
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
 
-Changes since the original posting:
-- added a note about bisectability to the changelog.
-
- arch/arm/mach-shmobile/board-marzen.c         |    5 +++++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        |   16 ++++++++--------
- 3 files changed, 15 insertions(+), 8 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/board-marzen.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
-+++ renesas/arch/arm/mach-shmobile/board-marzen.c
-@@ -56,6 +56,10 @@ static struct regulator_consumer_supply 
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 1d57cc4..d8ce94a 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1045,6 +1045,18 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 				  "ceu0_sync", "ceu0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
+ 				  "ceu0_field", "ceu0"),
++	/* FSIA */
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-r8a7740",
++				  "fsia_sclk_in", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-r8a7740",
++				  "fsia_mclk_out", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-r8a7740",
++				  "fsia_data_in_1", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-r8a7740",
++				  "fsia_data_out_0", "fsia"),
++	/* FSIB */
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-r8a7740",
++				  "fsib_mclk_in", "fsib"),
+ 	/* GETHER */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
+ 				  "gether_mii", "gether"),
+@@ -1170,20 +1182,11 @@ static void __init eva_init(void)
+ 	gpio_request_one(158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
  
-+static struct rcar_phy_platform_data usb_phy_platform_data = {
-+	.usbpctrl0	= 0,
-+};
-+
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
- 	[0] = {
-@@ -230,6 +234,7 @@ static void __init marzen_init(void)
- 	r8a7779_pinmux_init();
- 
- 	r8a7779_add_standard_devices();
-+	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -4,6 +4,7 @@
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
-+#include <linux/usb/rcar-phy.h>
- 
- struct platform_device;
- 
-@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(vo
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
-+extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -408,13 +408,6 @@ static struct resource usb_phy_resources
- 	},
- };
- 
--static struct platform_device usb_phy_device = {
--	.name		= "rcar_usb_phy",
--	.id		= -1,
--	.resource	= usb_phy_resources,
--	.num_resources	= ARRAY_SIZE(usb_phy_resources),
--};
+ 	/* FSI-WM8978 */
+-	gpio_request(GPIO_FN_FSIAIBT,		NULL);
+-	gpio_request(GPIO_FN_FSIAILR,		NULL);
+-	gpio_request(GPIO_FN_FSIAOMC,		NULL);
+-	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
+-	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
 -
- /* USB */
- static struct usb_phy *phy;
+ 	gpio_request(7, NULL);
+ 	gpio_request(8, NULL);
+ 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
  
-@@ -586,7 +579,6 @@ static struct platform_device *r8a7779_d
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
--	&usb_phy_device,
- };
- 
- static struct platform_device *r8a7779_standard_devices[] __initdata = {
-@@ -621,6 +613,14 @@ void __init r8a7779_add_ether_device(str
- 					  pdata, sizeof(*pdata));
- }
- 
-+void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
-+{
-+	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
-+					  usb_phy_resources,
-+					  ARRAY_SIZE(usb_phy_resources),
-+					  pdata, sizeof(*pdata));
-+}
-+
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
- 
+-	/* FSI-HDMI */
+-	gpio_request(GPIO_FN_FSIBCK,		NULL);
+-
+ 	/* HDMI */
+ 	gpio_request(GPIO_FN_HDMI_HPD,		NULL);
+ 	gpio_request(GPIO_FN_HDMI_CEC,		NULL);
+-- 
+1.8.1.5
+
