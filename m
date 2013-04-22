@@ -1,120 +1,62 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Apr 2013 22:53:55 +0000
-Subject: [PATCH v7 4/9] rcar-phy: remove EHCI internal buffer setup
-Message-Id: <201305010253.56243.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:15 +0000
+Subject: [PATCH 12/35] ARM: shmobile: mackerel: Register pinctrl mapping for CEU
+Message-Id: <1366671758-8954-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Now that the EHCI internal  buffer setup is done by the platform code, we  can
-remove  such code from this driver as it  never  really belonged here.  We also
-no longer need the 2nd memory region now (2nd EHCI controller is simply missing
-in e.g. R8A7778 SoC).
+Replace the GPIO-based CEU pinmux configuration by a pinctrl mapping.
 
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Felipe Balbi <balbi@ti.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 6:
-- added an ACK from Felipe Balbi.
+ arch/arm/mach-shmobile/board-mackerel.c | 24 +++++++++---------------
+ 1 file changed, 9 insertions(+), 15 deletions(-)
 
-Changes since version 2:
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- split R8A7779 SoC file change to a separate patch.
-
- drivers/usb/phy/rcar-phy.c |   28 ++++------------------------
- 1 file changed, 4 insertions(+), 24 deletions(-)
-
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -23,8 +23,6 @@
- #define USBEH0		0x080C
- #define USBOH0		0x081C
- #define USBCTL0		0x0858
--#define EIIBC1		0x0094
--#define EIIBC2		0x009C
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index d252c6e..ed442d2 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1306,6 +1306,15 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 	/* ADXL34X */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("1-0053", "pfc-sh7372",
+ 				  "intc_irq21", "intc"),
++	/* CEU */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
++				  "ceu_data_0_7", "ceu"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
++				  "ceu_clk_0", "ceu"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
++				  "ceu_sync", "ceu"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
++				  "ceu_field", "ceu"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1491,21 +1500,6 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+ 	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
  
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
-@@ -40,7 +38,6 @@ struct rcar_usb_phy_priv {
- 	spinlock_t lock;
- 
- 	void __iomem *reg0;
--	void __iomem *reg1;
- 	int counter;
- };
- 
-@@ -59,7 +56,6 @@ static int rcar_usb_phy_init(struct usb_
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
- 	void __iomem *reg0 = priv->reg0;
--	void __iomem *reg1 = priv->reg1;
- 	int i;
- 	u32 val;
- 	unsigned long flags;
-@@ -97,19 +93,6 @@ static int rcar_usb_phy_init(struct usb_
- 		iowrite32(0x00000000, (reg0 + USBPCTRL0));
- 
- 		/*
--		 * EHCI IP internal buffer setting
--		 * EHCI IP internal buffer enable
--		 *
--		 * These are recommended value of a datasheet
--		 * see [USB :: EHCI internal buffer setting]
--		 */
--		iowrite32(0x00ff0040, (reg0 + EIIBC1));
--		iowrite32(0x00ff0040, (reg1 + EIIBC1));
+-	/* CEU */
+-	gpio_request(GPIO_FN_VIO_CLK, NULL);
+-	gpio_request(GPIO_FN_VIO_VD, NULL);
+-	gpio_request(GPIO_FN_VIO_HD, NULL);
+-	gpio_request(GPIO_FN_VIO_FIELD, NULL);
+-	gpio_request(GPIO_FN_VIO_CKO, NULL);
+-	gpio_request(GPIO_FN_VIO_D7, NULL);
+-	gpio_request(GPIO_FN_VIO_D6, NULL);
+-	gpio_request(GPIO_FN_VIO_D5, NULL);
+-	gpio_request(GPIO_FN_VIO_D4, NULL);
+-	gpio_request(GPIO_FN_VIO_D3, NULL);
+-	gpio_request(GPIO_FN_VIO_D2, NULL);
+-	gpio_request(GPIO_FN_VIO_D1, NULL);
+-	gpio_request(GPIO_FN_VIO_D0, NULL);
 -
--		iowrite32(0x00000001, (reg0 + EIIBC2));
--		iowrite32(0x00000001, (reg1 + EIIBC2));
--
--		/*
- 		 * Bus alignment settings
- 		 */
- 
-@@ -145,14 +128,13 @@ static void rcar_usb_phy_shutdown(struct
- static int rcar_usb_phy_probe(struct platform_device *pdev)
- {
- 	struct rcar_usb_phy_priv *priv;
--	struct resource *res0, *res1;
-+	struct resource *res0;
- 	struct device *dev = &pdev->dev;
--	void __iomem *reg0, *reg1;
-+	void __iomem *reg0;
- 	int ret;
- 
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
--	if (!res0 || !res1) {
-+	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
- 		return -EINVAL;
- 	}
-@@ -164,8 +146,7 @@ static int rcar_usb_phy_probe(struct pla
- 	 * this driver can't use devm_request_and_ioremap(dev, res) here
- 	 */
- 	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
--	reg1 = devm_ioremap_nocache(dev, res1->start, resource_size(res1));
--	if (!reg0 || !reg1) {
-+	if (!reg0) {
- 		dev_err(dev, "ioremap error\n");
- 		return -ENOMEM;
- 	}
-@@ -177,7 +158,6 @@ static int rcar_usb_phy_probe(struct pla
- 	}
- 
- 	priv->reg0		= reg0;
--	priv->reg1		= reg1;
- 	priv->counter		= 0;
- 	priv->phy.dev		= dev;
- 	priv->phy.label		= dev_name(dev);
+ 	/* HDMI */
+ 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
+ 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
+-- 
+1.8.1.5
+
