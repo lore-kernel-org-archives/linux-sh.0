@@ -1,148 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 15:39:01 +0000
-Subject: [PATCH v6 8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-Message-Id: <201304231939.02407.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:20 +0000
+Subject: [PATCH 17/35] ARM: shmobile: mackerel: Register pinctrl mapping for SCIF
+Message-Id: <1366671758-8954-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
-platform data, we now need a way to pass those platform data from the board file
-to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
-r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
-passed platform data using platform_device_register_resndata() call; creating
-this function involves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
-so that it will no longer be registered for the generic R8A7779 machine (where
-we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
-to load as well.
+Replace the GPIO-based SCIF pinmux configuration by a pinctrl mapping.
 
-For the Marzen board, this new function will be called from marzen_init() to
-register the USB PHY device early enough.
-
-Note that the board and the SoC code have to be in one patch to keep the code
-bisectable...
-
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 5:
-- annotated USB PHY resources and platform data as '__initdata' since they're
-  kmemdup()'ed while registering the platform device anyway;
-- fixed typo in the changelog.
+ arch/arm/mach-shmobile/board-mackerel.c | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
-Changes since version 4:
-- refreshed the patch.
-
-Changes since version 3:
-- removed the initializer for 'usb_phy_platform_data';
-- refreshed the 'board-marzen.c' file.
-
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- added a note about bisectability to the changelog.
-
- arch/arm/mach-shmobile/board-marzen.c         |    3 +++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        |   18 +++++++++---------
- 3 files changed, 14 insertions(+), 9 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/board-marzen.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
-+++ renesas/arch/arm/mach-shmobile/board-marzen.c
-@@ -57,6 +57,8 @@ static struct regulator_consumer_supply 
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 7a4048a..66442a2 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1340,6 +1340,12 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 				  "lcd_data24", "lcd"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh7372",
+ 				  "lcd_sync", "lcd"),
++	/* SCIFA0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-sh7372",
++				  "scifa0_data", "scifa0"),
++	/* SCIFA2 (GT-720F GPS module) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh7372",
++				  "scifa2_data", "scifa2"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1408,10 +1414,6 @@ static void __init mackerel_init(void)
+ 				  ARRAY_SIZE(mackerel_pinctrl_map));
+ 	sh7372_pinmux_init();
  
-+static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
-+
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
- 	[0] = {
-@@ -232,6 +234,7 @@ static void __init marzen_init(void)
- 	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
- 
- 	r8a7779_add_standard_devices();
-+	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -4,6 +4,7 @@
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
-+#include <linux/usb/rcar-phy.h>
- 
- struct platform_device;
- 
-@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(vo
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
-+extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -389,7 +389,7 @@ static struct platform_device sata_devic
- };
- 
- /* USB PHY */
--static struct resource usb_phy_resources[] = {
-+static struct resource usb_phy_resources[] __initdata = {
- 	[0] = {
- 		.start		= 0xffe70800,
- 		.end		= 0xffe70900 - 1,
-@@ -397,13 +397,6 @@ static struct resource usb_phy_resources
- 	},
- };
- 
--static struct platform_device usb_phy_device = {
--	.name		= "rcar_usb_phy",
--	.id		= -1,
--	.resource	= usb_phy_resources,
--	.num_resources	= ARRAY_SIZE(usb_phy_resources),
--};
+-	/* enable SCIFA0 */
+-	gpio_request(GPIO_FN_SCIFA0_TXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA0_RXD, NULL);
 -
- /* USB */
- static struct usb_phy *phy;
+ 	/* enable SMSC911X */
+ 	gpio_request(GPIO_FN_CS5A,	NULL);
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+@@ -1464,10 +1466,6 @@ static void __init mackerel_init(void)
+ 	/* SDHI0 PORT172 card-detect IRQ26 */
+ 	gpio_request(GPIO_FN_IRQ26_172, NULL);
  
-@@ -575,7 +568,6 @@ static struct platform_device *r8a7779_d
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
--	&usb_phy_device,
- };
- 
- static struct platform_device *r8a7779_standard_devices[] __initdata = {
-@@ -610,6 +602,14 @@ void __init r8a7779_add_ether_device(str
- 					  pdata, sizeof(*pdata));
- }
- 
-+void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
-+{
-+	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
-+					  usb_phy_resources,
-+					  ARRAY_SIZE(usb_phy_resources),
-+					  pdata, sizeof(*pdata));
-+}
-+
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
- 
+-	/* enable GPS module (GT-720F) */
+-	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
+-
+ 	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
+ 	srcr4 = __raw_readl(SRCR4);
+ 	__raw_writel(srcr4 | (1 << 13), SRCR4);
+-- 
+1.8.1.5
+
