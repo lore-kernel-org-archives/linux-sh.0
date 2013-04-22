@@ -1,41 +1,68 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Mon, 15 Apr 2013 09:39:58 +0000
-Subject: Re: [PATCH v2 02/13] ARM: convert arm/arm64 arch timer to use CLKSRC_OF init
-Message-Id: <20130415093958.GA29528@arm.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 22:59:41 +0000
+Subject: [PATCH 00/37] Fully migrate r8a7740 to pinctrl
+Message-Id: <1366671618-8796-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364854883-5961-1-git-send-email-robherring2@gmail.com>
- <1364854883-5961-3-git-send-email-robherring2@gmail.com>
-In-Reply-To: <1364854883-5961-3-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Apr 01, 2013 at 11:21:12PM +0100, Rob Herring wrote:
-> From: Rob Herring <rob.herring@calxeda.com>
-> 
-> This converts arm and arm64 to use CLKSRC_OF DT based initialization for
-> the arch timer. A new function arch_timer_arch_init is added to allow for
-> arch specific setup.
-> 
-> This has a side effect of enabling sched_clock on omap5 and exynos5. There
-> should not be any reason not to use the arch timers for sched_clock.
-> 
-> Signed-off-by: Rob Herring <rob.herring@calxeda.com>
-> Cc: Russell King <linux@arm.linux.org.uk>
-> Cc: Kukjin Kim <kgene.kim@samsung.com>
-> Cc: Tony Lindgren <tony@atomide.com>
-> Cc: Simon Horman <horms@verge.net.au>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will.deacon@arm.com>
-> Cc: John Stultz <john.stultz@linaro.org>
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: linux-samsung-soc@vger.kernel.org
-> Cc: linux-omap@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
+Hello,
 
-Unless you pushed the patches already (I've been away for two weeks),
-for arm64:
+This patch set migrates the r8a7740 platforms to pinctrl, function by function,
+and then removes function GPIO support completely.
 
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+The patches have been tested on Armadillo only as I don't have a Bonito board.
+
+Laurent Pinchart (37):
+  sh-pfc: r8a7740: Add SCIF pin groups and functions
+  sh-pfc: r8a7740: Declare missing INTC function
+  sh-pfc: r8a7740: Add BSC pin groups and functions
+  sh-pfc: r8a7740: Add GETHER pin groups and functions
+  sh-pfc: r8a7740: Add CEU pin groups and functions
+  sh-pfc: r8a7740: Add FSI pin groups and functions
+  sh-pfc: r8a7740: Add HDMI pin groups and functions
+  sh-pfc: r8a7740: Hardcode the LCDC0 output
+  ARM: shmobile: armadillo800eva: Register pinctrl mapping for INTC
+  ARM: shmobile: armadillo800eva: Register pinctrl mapping for GETHER
+  ARM: shmobile: armadillo800eva: Register pinctrl mapping for CEU0
+  ARM: shmobile: armadillo800eva: Register pinctrl mapping for FSI
+  ARM: shmobile: armadillo800eva: Register pinctrl mapping for HDMI
+  ARM: shmobile: armadillo800eva: Don't configure LCDC routing manually
+  ARM: shmobile: armadillo800eva: Replace GPIO_PORTx with GPIO port
+    numbers
+  ARM: shmobile: bonito: Remove empty core devices array
+  ARM: shmobile: bonito: Register pinctrl mapping for SCIF
+  ARM: shmobile: bonito: Register pinctrl mapping for INTC
+  ARM: shmobile: bonito: Register pinctrl mapping for BSC
+  ARM: shmobile: bonito: Don't configure LCDC routing manually
+  sh-pfc: r8a7740: Remove SCIF function GPIOS
+  sh-pfc: r8a7740: Remove INTC function GPIOS
+  sh-pfc: r8a7740: Remove BSC function GPIOS
+  sh-pfc: r8a7740: Remove GETHER function GPIOS
+  sh-pfc: r8a7740: Remove CEU function GPIOS
+  sh-pfc: r8a7740: Remove FSI function GPIOS
+  sh-pfc: r8a7740: Remove HDMI function GPIOS
+  ARM: shmobile: r8a7740: Remove SCIF function GPIOs
+  ARM: shmobile: r8a7740: Remove INTC function GPIOs
+  ARM: shmobile: r8a7740: Remove BSC function GPIOs
+  ARM: shmobile: r8a7740: Remove GETHER function GPIOs
+  ARM: shmobile: r8a7740: Remove CEU function GPIOs
+  ARM: shmobile: r8a7740: Remove FSI function GPIOs
+  ARM: shmobile: r8a7740: Remove HDMI function GPIOs
+  sh-pfc: r8a7740: Remove function GPIOs
+  sh-pfc: r8a7740: Replace GPIO_PORTx enum with GPIO port numbers
+  ARM: shmobile: r8a7740: Remove all GPIOs
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  108 +-
+ arch/arm/mach-shmobile/board-bonito.c          |   47 +-
+ arch/arm/mach-shmobile/include/mach/r8a7740.h  |  488 ---------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c           | 1322 ++++++++++++++++--------
+ 4 files changed, 952 insertions(+), 1013 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
