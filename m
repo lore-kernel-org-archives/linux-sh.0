@@ -1,82 +1,63 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 29 Apr 2013 22:37:50 +0000
-Subject: [PATCH] ARM: shmobile: BOCK-W: add Ether support
-Message-Id: <201304300237.50896.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 22:59:51 +0000
+Subject: [PATCH 10/37] ARM: shmobile: armadillo800eva: Register pinctrl mapping for GETHER
+Message-Id: <1366671618-8796-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Register Ether device from bockw_init(), passing the platform data to it, adding
-only the RMII pin group to bockw_pinctrl_map[].  Although the LINK signal exists
-on the board, it's connected to the link/activity LED  output of the PHY, thus
-the link disappears and reappears after each packet. We'd be better off ignoring
-such signal and getting the link state from the PHY indirectly.
+Replace the GPIO-based GETHER pinmux configuration by a pinctrl mapping.
 
-Also, Ether has pin conflict with VIN1, so the latter is not registered when the
-'sh_eth' driver is enabled now.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-The patch is atop of Simon Horman's 'renesas.git' repo, 'renesas-next-20130426'
-tag and my recent yet unapplied patches.
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 25 +++++--------------------
+ 1 file changed, 5 insertions(+), 20 deletions(-)
 
-Note that it's compile time dependent on the David Miller's 'net-next.git' repo,
-so probably is not fit for immediate applying. One also needs my  yet unmerged
-patch "sh_eth: use random MAC address if no valid one supplied" in order for the
-driver to work:
-
-http://marc.info/?l=linux-sh&m6726502117160
-
- arch/arm/mach-shmobile/board-bockw.c |   22 +++++++++++++++++++++-
- 1 file changed, 21 insertions(+), 1 deletion(-)
-
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -67,6 +67,20 @@ static struct sh_mobile_sdhi_info sdhi0_
- 
- static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
- 
-+static struct sh_eth_plat_data ether_platform_data __initdata = {
-+	.phy		= 0x01,
-+	.edmac_endian	= EDMAC_LITTLE_ENDIAN,
-+	.register_type	= SH_ETH_REG_FAST_RCAR,
-+	.phy_interface	= PHY_INTERFACE_MODE_RMII,
-+	/*
-+	 * Although the LINK signal is available on the board, it's connected to
-+	 * the link/activity LED output of the PHY, thus the link disappears and
-+	 * reappears after each packet.  We'd be better off ignoring such signal
-+	 * and getting the link state from the PHY indirectly.
-+	 */
-+	.no_ether_link	= 1,
-+};
-+
- static struct rcar_vin_platform_data vin_platform_data __initdata = {
- 	.flags	= RCAR_VIN_BT656,
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 8f103c4..a23988b 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1036,6 +1036,11 @@ static struct platform_device *eva_devices[] __initdata = {
  };
-@@ -87,6 +101,9 @@ BOCKW_CAMERA(0);
- BOCKW_CAMERA(1);
  
- static const struct pinctrl_map bockw_pinctrl_map[] = {
-+	/* Ether */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
-+				  "ether_rmii", "ether"),
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_data_a", "scif0"),
-@@ -125,8 +142,11 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
- 	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
-+	r8a7778_add_ether_device(&ether_platform_data);
- 	r8a7778_add_vin_device(0, &vin_platform_data);
--	r8a7778_add_vin_device(1, &vin_platform_data);
-+	/* VIN1 has a pin conflict with Ether */
-+	if (!IS_ENABLED(CONFIG_SH_ETH))
-+		r8a7778_add_vin_device(1, &vin_platform_data);
- 	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 0,
- 				      &iclink0_ml86v7667,
- 				      sizeof(iclink0_ml86v7667));
+ static const struct pinctrl_map eva_pinctrl_map[] = {
++	/* GETHER */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
++				  "gether_mii", "gether"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
++				  "gether_int", "gether"),
+ 	/* LCD0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
+ 				  "lcd0_data24_0", "lcd0"),
+@@ -1128,26 +1133,6 @@ static void __init eva_init(void)
+ 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 
+ 	/* GETHER */
+-	gpio_request(GPIO_FN_ET_CRS,		NULL);
+-	gpio_request(GPIO_FN_ET_MDC,		NULL);
+-	gpio_request(GPIO_FN_ET_MDIO,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_ER,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_ER,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD0,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD1,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD2,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD3,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_CLK,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_EN,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD0,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD1,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD2,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD3,		NULL);
+-	gpio_request(GPIO_FN_ET_PHY_INT,	NULL);
+-	gpio_request(GPIO_FN_ET_COL,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
+-
+ 	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
+ 
+ 	/* USB */
+-- 
+1.8.1.5
+
