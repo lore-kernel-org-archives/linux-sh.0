@@ -1,70 +1,96 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 26 Apr 2013 16:27:46 +0000
-Subject: [PATCH 5/6] ARM: shmobile: r8a7740: add DT node for one DMAC instance
-Message-Id: <1366993667-23294-6-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:16:22 +0000
+Subject: [PATCH 1/4] sh-pfc: Add support for SoC-specific initialization
+Message-Id: <1366672585-9098-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds  Device Tree support for the first (#0) DMA controller
-instance on r8a7740. We want to add further DMA controller DT nodes in
-a DMA multiplexer node, which isn't implemented yet. Further DMAC
-instances will be added after the DMA multiplexer support is done.
+Add two optional init and cleanup SoC operations and call them from the
+core at probe and remove time.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7740.dtsi         |   20 ++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7740.c |    2 ++
- 2 files changed, 22 insertions(+), 0 deletions(-)
+ drivers/pinctrl/sh-pfc/core.c   | 16 +++++++++++++++-
+ drivers/pinctrl/sh-pfc/core.h   |  1 +
+ drivers/pinctrl/sh-pfc/sh_pfc.h |  2 ++
+ 3 files changed, 18 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index e9a90d8..054bc1a 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -112,6 +112,26 @@
- 			      0 149 0x4>;
- 	};
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 4540ce3..5576e8a 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -372,6 +372,12 @@ static int sh_pfc_probe(struct platform_device *pdev)
  
-+	dma0: shdma@fe008020 {
-+		compatible = "renesas,shdma";
-+		reg = <0xfe008020 0x270
-+			0xfe009000 0xc>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 34 4
-+				0 28 4
-+				0 29 4
-+				0 30 4
-+				0 31 4
-+				0 32 4
-+				0 33 4>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5";
-+		#dma-cells = <1>;
-+		dma-channels = <6>;
-+		dma-requests = <256>;
-+	};
+ 	spin_lock_init(&pfc->lock);
+ 
++	if (info->ops && info->ops->init) {
++		ret = info->ops->init(pfc);
++		if (ret < 0)
++			return ret;
++	}
 +
- 	i2c0: i2c@fff20000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 6b3ed42..7781d3b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -997,6 +997,8 @@ void __init r8a7740_add_early_devices(void)
- #ifdef CONFIG_USE_OF
+ 	pinctrl_provide_dummies();
  
- static const struct of_dev_auxdata r8a7740_auxdata_lookup[] __initconst = {
-+	OF_DEV_AUXDATA("renesas,shdma", 0xfe008020, "sh-dma-engine.0",
-+		       &r8a7740_dma_platform_data),
- 	{ }
- };
+ 	/*
+@@ -379,7 +385,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	 */
+ 	ret = sh_pfc_register_pinctrl(pfc);
+ 	if (unlikely(ret != 0))
+-		return ret;
++		goto error;
  
+ #ifdef CONFIG_GPIO_SH_PFC
+ 	/*
+@@ -401,6 +407,11 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	dev_info(pfc->dev, "%s support registered\n", info->name);
+ 
+ 	return 0;
++
++error:
++	if (info->ops && info->ops->cleanup)
++		info->ops->cleanup(pfc);
++	return ret;
+ }
+ 
+ static int sh_pfc_remove(struct platform_device *pdev)
+@@ -412,6 +423,9 @@ static int sh_pfc_remove(struct platform_device *pdev)
+ #endif
+ 	sh_pfc_unregister_pinctrl(pfc);
+ 
++	if (pfc->info->ops && pfc->info->ops->cleanup)
++		pfc->info->ops->cleanup(pfc);
++
+ 	platform_set_drvdata(pdev, NULL);
+ 
+ 	return 0;
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index e847afb..f02ba1d 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -28,6 +28,7 @@ struct sh_pfc_pinctrl;
+ struct sh_pfc {
+ 	struct device *dev;
+ 	const struct sh_pfc_soc_info *info;
++	void *soc_data;
+ 	spinlock_t lock;
+ 
+ 	unsigned int num_windows;
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index b170761..acb1bb0 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -129,6 +129,8 @@ struct pinmux_range {
+ struct sh_pfc;
+ 
+ struct sh_pfc_soc_operations {
++	int (*init)(struct sh_pfc *pfc);
++	void (*cleanup)(struct sh_pfc *pfc);
+ 	unsigned int (*get_bias)(struct sh_pfc *pfc, unsigned int pin);
+ 	void (*set_bias)(struct sh_pfc *pfc, unsigned int pin,
+ 			 unsigned int bias);
 -- 
-1.7.2.5
+1.8.1.5
 
