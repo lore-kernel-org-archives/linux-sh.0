@@ -1,78 +1,63 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Mon, 22 Apr 2013 09:06:20 +0000
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Date: Mon, 22 Apr 2013 20:55:37 +0000
 Subject: Re: [PATCH v2 1/5] V4L2: I2C: ML86V7667 video decoder driver
-Message-Id: <201304221106.20598.hverkuil@xs4all.nl>
+Message-Id: <5175A3C9.4050204@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304212240.30949.sergei.shtylyov@cogentembedded.com> <201304220848.04870.hverkuil@xs4all.nl> <5174F74E.9030707@cogentembedded.com>
-In-Reply-To: <5174F74E.9030707@cogentembedded.com>
+References: <201304212240.30949.sergei.shtylyov@cogentembedded.com> <201304220848.04870.hverkuil@xs4all.nl> <5174F74E.9030707@cogentembedded.com> <201304221106.20598.hverkuil@xs4all.nl>
+In-Reply-To: <201304221106.20598.hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+To: Hans Verkuil <hverkuil@xs4all.nl>
 Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, mchehab@redhat.com, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, matsu@igel.co.jp
 
-On Mon April 22 2013 10:39:42 Vladimir Barinov wrote:
-> Hi Hans,
-> 
-> Thank you for the review.
-> 
-> Hans Verkuil wrote:
-> >> +#include <media/v4l2-chip-ident.h>
-> >>     
-> >
-> > This include should be removed as well.
-> >   
-> ok
-> >   
-> >> +
-> >> +static int ml86v7667_querystd(struct v4l2_subdev *sd, v4l2_std_id *std)
-> >> +{
-> >> +	struct ml86v7667_priv *priv = to_ml86v7667(sd);
-> >> +
-> >> +	*std = priv->std;
-> >>     
-> >
-> > That's not right. querystd should attempt to detect the standard, that's
-> > what it is for. It should just return the detected standard, not actually
-> > change it.
-> >   
-> Ok.
-> I've mixed the things up with your review on removing the autoselection 
-> feature and detection.
-> Thx for pointing on this.
-> >   
-> >> +	 */
-> >> +	val = i2c_smbus_read_byte_data(client, STATUS_REG);
-> >> +	if (val < 0)
-> >> +		return val;
-> >> +
-> >> +	priv->std = val & STATUS_NTSCPAL ? V4L2_STD_PAL : V4L2_STD_NTSC;
-> >>     
-> >
-> > Shouldn't this be 50 Hz vs 60 Hz formats? There are 60 Hz PAL standards
-> > and usually these devices detect 50 Hz vs 60 Hz, not NTSC vs PAL.
-> >   
-> In the reference manual it is not mentioned about 50/60Hz input format 
-> selection/detection but it mentioned just PAL/NTSC.
-> The 50hz formats can be ether PAL and NTSC formats variants. The same is 
-> applied to 60Hz.
-> 
-> In the ML86V7667 datasheet the description for STATUS register detection 
-> bit is just PAL/NTSC:
-> " $2C/STATUS [2] NTSC/PAL identification 0: NTSC /1: PAL "
-> 
-> If you assure me that I must judge their description as 50 vs 60Hz 
-> formats and not PAL/NTSC then I will make the change.
+Hi Hans,
 
-I can't judge that. Are there no status bits anywhere that tell you something
-about the number of lines per frame or the framerate?
+Hans Verkuil wrote:
+>>>> +	 */
+>>>> +	val = i2c_smbus_read_byte_data(client, STATUS_REG);
+>>>> +	if (val < 0)
+>>>> +		return val;
+>>>> +
+>>>> +	priv->std = val & STATUS_NTSCPAL ? V4L2_STD_PAL : V4L2_STD_NTSC;
+>>>>     
+>>>>         
+>>> Shouldn't this be 50 Hz vs 60 Hz formats? There are 60 Hz PAL standards
+>>> and usually these devices detect 50 Hz vs 60 Hz, not NTSC vs PAL.
+>>>   
+>>>       
+>> In the reference manual it is not mentioned about 50/60Hz input format 
+>> selection/detection but it mentioned just PAL/NTSC.
+>> The 50hz formats can be ether PAL and NTSC formats variants. The same is 
+>> applied to 60Hz.
+>>
+>> In the ML86V7667 datasheet the description for STATUS register detection 
+>> bit is just PAL/NTSC:
+>> " $2C/STATUS [2] NTSC/PAL identification 0: NTSC /1: PAL "
+>>
+>> If you assure me that I must judge their description as 50 vs 60Hz 
+>> formats and not PAL/NTSC then I will make the change.
+>>     
+>
+> I can't judge that. Are there no status bits anywhere that tell you something
+> about the number of lines per frame or the framerate?
+>   
+You are right. I've found a relationship table with description of 
+number of total H/V pixels vs Video Modes mentioned in datasheet.
+It's  "NTSC" has Odd/263 and Even/262 vertical lines. The "PAL" has 
+Odd/312 and Even/313.
+So I will change the standard per your suggestion.
+> Are you able to test with a PAL-M or PAL-N(c) input?
+>   
+Unfortunately I cannot. I have a couple of different cameras and all of 
+them mention PAL output with number of lines in the technical manual. 
+All of them are 625 lines.
+> Can you ask the manufacturer for more information?
+>   
+It can take a while for waiting their feedback since OKI was 
+significantly reorganized.
 
-Are you able to test with a PAL-M or PAL-N(c) input?
-
-Can you ask the manufacturer for more information?
-
-If the answer to all of these is 'no', then stick to STD_PAL/NTSC.
+Than you very much for your valuable feedback/review.
 
 Regards,
-
-	Hans
+Vladimir
