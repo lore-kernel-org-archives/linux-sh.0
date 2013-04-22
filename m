@@ -1,183 +1,141 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Apr 2013 03:29:51 +0000
-Subject: [RFC/PATCH 5/7] ARM: shmobile: defconfig: Remove armadillo800eva defconfig
-Message-Id: <1365046193-19369-6-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:07 +0000
+Subject: [PATCH 04/35] sh-pfc: sh7372: Add FSI pin groups and functions
+Message-Id: <1366671758-8954-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Remove armadillo800eva defconfig as the shmobile defconfig may now be used
-instead.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/armadillo800eva_defconfig |  153 ----------------------------
- 1 file changed, 153 deletions(-)
- delete mode 100644 arch/arm/configs/armadillo800eva_defconfig
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 91 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-deleted file mode 100644
-index 0f2d80d..0000000
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ /dev/null
-@@ -1,153 +0,0 @@
--CONFIG_EXPERIMENTAL=y
--CONFIG_SYSVIPC=y
--CONFIG_IKCONFIG=y
--CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
--# CONFIG_UTS_NS is not set
--# CONFIG_IPC_NS is not set
--# CONFIG_PID_NS is not set
--CONFIG_CC_OPTIMIZE_FOR_SIZE=y
--CONFIG_PERF_EVENTS=y
--CONFIG_SLAB=y
--CONFIG_MODULES=y
--CONFIG_MODULE_UNLOAD=y
--CONFIG_MODULE_FORCE_UNLOAD=y
--# CONFIG_BLK_DEV_BSG is not set
--# CONFIG_IOSCHED_DEADLINE is not set
--# CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
--CONFIG_ARCH_R8A7740=y
--CONFIG_MACH_ARMADILLO800EVA=y
--# CONFIG_SH_TIMER_TMU is not set
--CONFIG_ARM_THUMB=y
--CONFIG_CACHE_L2X0=y
--CONFIG_ARM_ERRATA_430973=y
--CONFIG_ARM_ERRATA_458693=y
--CONFIG_ARM_ERRATA_460075=y
--CONFIG_PL310_ERRATA_588369=y
--CONFIG_ARM_ERRATA_720789=y
--CONFIG_PL310_ERRATA_727915=y
--CONFIG_ARM_ERRATA_743622=y
--CONFIG_ARM_ERRATA_751472=y
--CONFIG_PL310_ERRATA_753970=y
--CONFIG_ARM_ERRATA_754322=y
--CONFIG_PL310_ERRATA_769419=y
--CONFIG_ARM_ERRATA_775420=y
--CONFIG_AEABI=y
--# CONFIG_OABI_COMPAT is not set
--CONFIG_FORCE_MAX_ZONEORDER
--CONFIG_ZBOOT_ROM_TEXT=0x0
--CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_ARM_APPENDED_DTB=y
--CONFIG_KEXEC=y
--CONFIG_VFP=y
--CONFIG_NEON=y
--# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
--CONFIG_PM_RUNTIME=y
--CONFIG_NET=y
--CONFIG_PACKET=y
--CONFIG_UNIX=y
--CONFIG_INET=y
--CONFIG_IP_PNP=y
--CONFIG_IP_PNP_DHCP=y
--# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
--# CONFIG_INET_XFRM_MODE_TUNNEL is not set
--# CONFIG_INET_XFRM_MODE_BEET is not set
--# CONFIG_INET_LRO is not set
--# CONFIG_INET_DIAG is not set
--# CONFIG_IPV6 is not set
--# CONFIG_WIRELESS is not set
--CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--CONFIG_SCSI=y
--CONFIG_BLK_DEV_SD=y
--CONFIG_MD=y
--CONFIG_BLK_DEV_DM=y
--CONFIG_NETDEVICES=y
--# CONFIG_NET_VENDOR_BROADCOM is not set
--# CONFIG_NET_VENDOR_CHELSIO is not set
--# CONFIG_NET_VENDOR_CIRRUS is not set
--# CONFIG_NET_VENDOR_FARADAY is not set
--# CONFIG_NET_VENDOR_INTEL is not set
--# CONFIG_NET_VENDOR_MARVELL is not set
--# CONFIG_NET_VENDOR_MICREL is not set
--# CONFIG_NET_VENDOR_NATSEMI is not set
--CONFIG_SH_ETH=y
--# CONFIG_NET_VENDOR_SEEQ is not set
--# CONFIG_NET_VENDOR_SMSC is not set
--# CONFIG_NET_VENDOR_STMICRO is not set
--# CONFIG_WLAN is not set
--# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
--CONFIG_INPUT_EVDEV=y
--# CONFIG_KEYBOARD_ATKBD is not set
--CONFIG_KEYBOARD_GPIO=y
--# CONFIG_INPUT_MOUSE is not set
--CONFIG_INPUT_TOUCHSCREEN=y
--CONFIG_TOUCHSCREEN_ST1232=y
--# CONFIG_SERIO is not set
--# CONFIG_LEGACY_PTYS is not set
--CONFIG_SERIAL_SH_SCI=y
--CONFIG_SERIAL_SH_SCI_NR_UARTS=8
--CONFIG_SERIAL_SH_SCI_CONSOLE=y
--# CONFIG_HW_RANDOM is not set
--CONFIG_I2C=y
--CONFIG_I2C_GPIO=y
--CONFIG_I2C_SH_MOBILE=y
--# CONFIG_HWMON is not set
--CONFIG_REGULATOR=y
--CONFIG_MEDIA_SUPPORT=y
--CONFIG_VIDEO_DEV=y
--CONFIG_MEDIA_CAMERA_SUPPORT=y
--CONFIG_V4L_PLATFORM_DRIVERS=y
--CONFIG_SOC_CAMERA=y
--CONFIG_SOC_CAMERA_MT9T112=y
--CONFIG_VIDEO_SH_MOBILE_CEU=y
--CONFIG_FB=y
--CONFIG_FB_SH_MOBILE_LCDC=y
--CONFIG_FB_SH_MOBILE_HDMI=y
--CONFIG_LCD_CLASS_DEVICE=y
--CONFIG_FRAMEBUFFER_CONSOLE=y
--CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
--CONFIG_LOGO=y
--# CONFIG_LOGO_LINUX_MONO is not set
--# CONFIG_LOGO_LINUX_VGA16 is not set
--# CONFIG_SND_SUPPORT_OLD_API is not set
--# CONFIG_SND_VERBOSE_PROCFS is not set
--# CONFIG_SND_DRIVERS is not set
--# CONFIG_SND_ARM is not set
--CONFIG_SND_SOC_SH4_FSI=y
--# CONFIG_HID_SUPPORT is not set
--CONFIG_USB=y
--CONFIG_USB_RENESAS_USBHS=y
--CONFIG_USB_GADGET=y
--CONFIG_USB_RENESAS_USBHS_UDC=y
--CONFIG_USB_ETH=m
--CONFIG_MMC=y
--CONFIG_MMC_SDHI=y
--CONFIG_MMC_SH_MMCIF=y
--CONFIG_RTC_CLASS=y
--CONFIG_RTC_DRV_S35390A=y
--CONFIG_DMADEVICES=y
--CONFIG_SH_DMAE=y
--CONFIG_UIO=y
--CONFIG_UIO_PDRV_GENIRQ=y
--# CONFIG_DNOTIFY is not set
--CONFIG_MSDOS_FS=y
--CONFIG_VFAT_FS=y
--CONFIG_TMPFS=y
--# CONFIG_MISC_FILESYSTEMS is not set
--CONFIG_NFS_FS=y
--CONFIG_NFS_V3_ACL=y
--CONFIG_NFS_V4=y
--CONFIG_NFS_V4_1=y
--CONFIG_ROOT_NFS=y
--CONFIG_NLS_CODEPAGE_437=y
--CONFIG_NLS_ISO8859_1=y
--# CONFIG_ENABLE_WARN_DEPRECATED is not set
--# CONFIG_ENABLE_MUST_CHECK is not set
--# CONFIG_ARM_UNWIND is not set
--CONFIG_CRYPTO=y
--CONFIG_CRYPTO_CBC=y
--CONFIG_CRYPTO_MD5=y
--CONFIG_CRYPTO_DES=y
--CONFIG_CRYPTO_ANSI_CPRNG=y
--CONFIG_XZ_DEC=y
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 9948699..641f6ee 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1113,6 +1113,71 @@ static const unsigned int flctl_ctrl_pins[] = {
+ static const unsigned int flctl_ctrl_mux[] = {
+ 	A5_FCDE_MARK, A4_FOE_MARK, RD_FSC_MARK, WE0_FWE_MARK, FRB_MARK,
+ };
++/* - FSIA ------------------------------------------------------------------- */
++static const unsigned int fsia_mclk_in_pins[] = {
++	/* CK */
++	4,
++};
++static const unsigned int fsia_mclk_in_mux[] = {
++	FSIACK_MARK,
++};
++static const unsigned int fsia_mclk_out_pins[] = {
++	/* OMC */
++	8,
++};
++static const unsigned int fsia_mclk_out_mux[] = {
++	FSIAOMC_MARK,
++};
++static const unsigned int fsia_sclk_in_pins[] = {
++	/* ILR, IBT */
++	5, 6,
++};
++static const unsigned int fsia_sclk_in_mux[] = {
++	FSIAILR_MARK, FSIAIBT_MARK,
++};
++static const unsigned int fsia_sclk_out_pins[] = {
++	/* OLR, OBT */
++	9, 10,
++};
++static const unsigned int fsia_sclk_out_mux[] = {
++	FSIAOLR_MARK, FSIAOBT_MARK,
++};
++static const unsigned int fsia_data_in_pins[] = {
++	/* ISLD */
++	7,
++};
++static const unsigned int fsia_data_in_mux[] = {
++	FSIAISLD_MARK,
++};
++static const unsigned int fsia_data_out_pins[] = {
++	/* OSLD */
++	11,
++};
++static const unsigned int fsia_data_out_mux[] = {
++	FSIAOSLD_MARK,
++};
++static const unsigned int fsia_spdif_0_pins[] = {
++	/* SPDIF */
++	11,
++};
++static const unsigned int fsia_spdif_0_mux[] = {
++	FSIASPDIF_11_MARK,
++};
++static const unsigned int fsia_spdif_1_pins[] = {
++	/* SPDIF */
++	15,
++};
++static const unsigned int fsia_spdif_1_mux[] = {
++	FSIASPDIF_15_MARK,
++};
++/* - FSIB ------------------------------------------------------------------- */
++static const unsigned int fsib_mclk_in_pins[] = {
++	/* CK */
++	4,
++};
++static const unsigned int fsib_mclk_in_mux[] = {
++	FSIBCK_MARK,
++};
+ /* - MMCIF ------------------------------------------------------------------ */
+ static const unsigned int mmc0_data1_0_pins[] = {
+ 	/* D[0] */
+@@ -1278,6 +1343,15 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(flctl_ce0),
+ 	SH_PFC_PIN_GROUP(flctl_ce1),
+ 	SH_PFC_PIN_GROUP(flctl_ctrl),
++	SH_PFC_PIN_GROUP(fsia_mclk_in),
++	SH_PFC_PIN_GROUP(fsia_mclk_out),
++	SH_PFC_PIN_GROUP(fsia_sclk_in),
++	SH_PFC_PIN_GROUP(fsia_sclk_out),
++	SH_PFC_PIN_GROUP(fsia_data_in),
++	SH_PFC_PIN_GROUP(fsia_data_out),
++	SH_PFC_PIN_GROUP(fsia_spdif_0),
++	SH_PFC_PIN_GROUP(fsia_spdif_1),
++	SH_PFC_PIN_GROUP(fsib_mclk_in),
+ 	SH_PFC_PIN_GROUP(mmc0_data1_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data4_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data8_0),
+@@ -1331,6 +1405,21 @@ static const char * const flctl_groups[] = {
+ 	"flctl_ctrl",
+ };
+ 
++static const char * const fsia_groups[] = {
++	"fsia_mclk_in",
++	"fsia_mclk_out",
++	"fsia_sclk_in",
++	"fsia_sclk_out",
++	"fsia_data_in",
++	"fsia_data_out",
++	"fsia_spdif_0",
++	"fsia_spdif_1",
++};
++
++static const char * const fsib_groups[] = {
++	"fsib_mclk_in",
++};
++
+ static const char * const mmc0_groups[] = {
+ 	"mmc0_data1_0",
+ 	"mmc0_data4_0",
+@@ -1366,6 +1455,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(ceu),
+ 	SH_PFC_FUNCTION(flctl),
++	SH_PFC_FUNCTION(fsia),
++	SH_PFC_FUNCTION(fsib),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
 -- 
-1.7.10.4
+1.8.1.5
 
