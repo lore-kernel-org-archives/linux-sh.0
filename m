@@ -1,24 +1,111 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 23:39:09 +0000
-Subject: [PATCH v2 0/4] Add USB support to R8A7778/BOCK-W
-Message-Id: <201304130339.09876.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:00:17 +0000
+Subject: [PATCH 36/37] sh-pfc: r8a7740: Replace GPIO_PORTx enum with GPIO port numbers
+Message-Id: <1366671618-8796-37-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+The PFC GPIO API implementation moved to using port numbers. Replace all
+GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
+enum values are identical to the port number on this platform.
 
-   Here's the set of 4 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130412' tag and the R8A7779/Marzen patchset I've just posted.
- It was created to add support of R8A7778/BOCK-W USB to the platform code and
-the USB common PHY driver, and so spans both arch/arm/mach-shmobile/ and
-drivers/usb/phy/ subtrees.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 71 ++++++++++++++++++++----------------
+ 1 file changed, 39 insertions(+), 32 deletions(-)
 
-[1/4] rcar-phy: add R8A7778 support
-[2/4] ARM: shmobile: r8a7778: add USB support
-[3/4] ARM: shmobile: BOCK-W: add USB support
-[4/4] ARM: shmobile: BOCK-W: enable USB in defconfig
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 9f44fd6..6af8fae 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -30,6 +30,13 @@
+ 	PORT_10(fn, pfx##20, sfx),					\
+ 	PORT_1(fn, pfx##210, sfx),	PORT_1(fn, pfx##211, sfx)
+ 
++#undef _GPIO_PORT
++#define _GPIO_PORT(gpio, sfx)						\
++	[gpio] = {							\
++		.name = __stringify(PORT##gpio),			\
++		.enum_id = PORT##gpio##_DATA,				\
++	}
++
+ #define IRQC_PIN_MUX(irq, pin)						\
+ static const unsigned int intc_irq##irq##_pins[] = {			\
+ 	pin,								\
+@@ -3616,38 +3623,38 @@ static const struct pinmux_data_reg pinmux_data_regs[] = {
+ };
+ 
+ static const struct pinmux_irq pinmux_irqs[] = {
+-	PINMUX_IRQ(irq_pin(0), GPIO_PORT2,   GPIO_PORT13),	/* IRQ0A */
+-	PINMUX_IRQ(irq_pin(1), GPIO_PORT20),		/* IRQ1A */
+-	PINMUX_IRQ(irq_pin(2), GPIO_PORT11,  GPIO_PORT12),	/* IRQ2A */
+-	PINMUX_IRQ(irq_pin(3), GPIO_PORT10,  GPIO_PORT14),	/* IRQ3A */
+-	PINMUX_IRQ(irq_pin(4), GPIO_PORT15,  GPIO_PORT172),/* IRQ4A */
+-	PINMUX_IRQ(irq_pin(5), GPIO_PORT0,   GPIO_PORT1),	/* IRQ5A */
+-	PINMUX_IRQ(irq_pin(6), GPIO_PORT121, GPIO_PORT173),/* IRQ6A */
+-	PINMUX_IRQ(irq_pin(7), GPIO_PORT120, GPIO_PORT209),/* IRQ7A */
+-	PINMUX_IRQ(irq_pin(8), GPIO_PORT119),		/* IRQ8A */
+-	PINMUX_IRQ(irq_pin(9), GPIO_PORT118, GPIO_PORT210),/* IRQ9A */
+-	PINMUX_IRQ(irq_pin(10), GPIO_PORT19),		/* IRQ10A */
+-	PINMUX_IRQ(irq_pin(11), GPIO_PORT104),		/* IRQ11A */
+-	PINMUX_IRQ(irq_pin(12), GPIO_PORT42,  GPIO_PORT97),	/* IRQ12A */
+-	PINMUX_IRQ(irq_pin(13), GPIO_PORT64,  GPIO_PORT98),	/* IRQ13A */
+-	PINMUX_IRQ(irq_pin(14), GPIO_PORT63,  GPIO_PORT99),	/* IRQ14A */
+-	PINMUX_IRQ(irq_pin(15), GPIO_PORT62,  GPIO_PORT100),/* IRQ15A */
+-	PINMUX_IRQ(irq_pin(16), GPIO_PORT68,  GPIO_PORT211),/* IRQ16A */
+-	PINMUX_IRQ(irq_pin(17), GPIO_PORT69),		/* IRQ17A */
+-	PINMUX_IRQ(irq_pin(18), GPIO_PORT70),		/* IRQ18A */
+-	PINMUX_IRQ(irq_pin(19), GPIO_PORT71),		/* IRQ19A */
+-	PINMUX_IRQ(irq_pin(20), GPIO_PORT67),		/* IRQ20A */
+-	PINMUX_IRQ(irq_pin(21), GPIO_PORT202),		/* IRQ21A */
+-	PINMUX_IRQ(irq_pin(22), GPIO_PORT95),		/* IRQ22A */
+-	PINMUX_IRQ(irq_pin(23), GPIO_PORT96),		/* IRQ23A */
+-	PINMUX_IRQ(irq_pin(24), GPIO_PORT180),		/* IRQ24A */
+-	PINMUX_IRQ(irq_pin(25), GPIO_PORT38),		/* IRQ25A */
+-	PINMUX_IRQ(irq_pin(26), GPIO_PORT58,  GPIO_PORT81),	/* IRQ26A */
+-	PINMUX_IRQ(irq_pin(27), GPIO_PORT57,  GPIO_PORT168),/* IRQ27A */
+-	PINMUX_IRQ(irq_pin(28), GPIO_PORT56,  GPIO_PORT169),/* IRQ28A */
+-	PINMUX_IRQ(irq_pin(29), GPIO_PORT50,  GPIO_PORT170),/* IRQ29A */
+-	PINMUX_IRQ(irq_pin(30), GPIO_PORT49,  GPIO_PORT171),/* IRQ30A */
+-	PINMUX_IRQ(irq_pin(31), GPIO_PORT41,  GPIO_PORT167),/* IRQ31A */
++	PINMUX_IRQ(irq_pin(0), 2,   13),	/* IRQ0A */
++	PINMUX_IRQ(irq_pin(1), 20),		/* IRQ1A */
++	PINMUX_IRQ(irq_pin(2), 11,  12),	/* IRQ2A */
++	PINMUX_IRQ(irq_pin(3), 10,  14),	/* IRQ3A */
++	PINMUX_IRQ(irq_pin(4), 15,  172),	/* IRQ4A */
++	PINMUX_IRQ(irq_pin(5), 0,   1),		/* IRQ5A */
++	PINMUX_IRQ(irq_pin(6), 121, 173),	/* IRQ6A */
++	PINMUX_IRQ(irq_pin(7), 120, 209),	/* IRQ7A */
++	PINMUX_IRQ(irq_pin(8), 119),		/* IRQ8A */
++	PINMUX_IRQ(irq_pin(9), 118, 210),	/* IRQ9A */
++	PINMUX_IRQ(irq_pin(10), 19),		/* IRQ10A */
++	PINMUX_IRQ(irq_pin(11), 104),		/* IRQ11A */
++	PINMUX_IRQ(irq_pin(12), 42,  97),	/* IRQ12A */
++	PINMUX_IRQ(irq_pin(13), 64,  98),	/* IRQ13A */
++	PINMUX_IRQ(irq_pin(14), 63,  99),	/* IRQ14A */
++	PINMUX_IRQ(irq_pin(15), 62,  100),	/* IRQ15A */
++	PINMUX_IRQ(irq_pin(16), 68,  211),	/* IRQ16A */
++	PINMUX_IRQ(irq_pin(17), 69),		/* IRQ17A */
++	PINMUX_IRQ(irq_pin(18), 70),		/* IRQ18A */
++	PINMUX_IRQ(irq_pin(19), 71),		/* IRQ19A */
++	PINMUX_IRQ(irq_pin(20), 67),		/* IRQ20A */
++	PINMUX_IRQ(irq_pin(21), 202),		/* IRQ21A */
++	PINMUX_IRQ(irq_pin(22), 95),		/* IRQ22A */
++	PINMUX_IRQ(irq_pin(23), 96),		/* IRQ23A */
++	PINMUX_IRQ(irq_pin(24), 180),		/* IRQ24A */
++	PINMUX_IRQ(irq_pin(25), 38),		/* IRQ25A */
++	PINMUX_IRQ(irq_pin(26), 58,  81),	/* IRQ26A */
++	PINMUX_IRQ(irq_pin(27), 57,  168),	/* IRQ27A */
++	PINMUX_IRQ(irq_pin(28), 56,  169),	/* IRQ28A */
++	PINMUX_IRQ(irq_pin(29), 50,  170),	/* IRQ29A */
++	PINMUX_IRQ(irq_pin(30), 49,  171),	/* IRQ30A */
++	PINMUX_IRQ(irq_pin(31), 41,  167),	/* IRQ31A */
+ };
+ 
+ const struct sh_pfc_soc_info r8a7740_pinmux_info = {
+-- 
+1.8.1.5
 
-WBR, Sergei
