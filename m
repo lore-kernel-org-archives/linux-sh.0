@@ -1,80 +1,218 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Apr 2013 21:57:07 +0000
-Subject: [PATCH v5 2/9] ehci-platform: add pre_setup() method to platform data
-Message-Id: <201304200157.07752.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:09 +0000
+Subject: [PATCH 06/35] sh-pfc: sh7372: Add INTC pin groups and functions
+Message-Id: <1366671758-8954-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Sometimes there is a need  to initialize some non-standard registers mapped to
-the EHCI region before accessing the standard EHCI registers.  Add pre_setup()
-method with 'struct usb_hcd *' parameter to be called just before ehci_setup()
-to the 'ehci-platform'  driver's platform data for this purpose...
-
-While at it, add the missing incomplete declaration of 'struct platform_device'
-to <linux/usb/ehci_pdriver.h>...
-
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Suggested-by: Alan Stern <stern@rowland.harvard.edu>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Alan Stern <stern@rowland.harvard.edu>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 3:
-- added ACK from Alan Stern.
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 161 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 161 insertions(+)
 
-Changes since version 2:
-- replaced #include with incomplete declarations of 'struct platform_device' and
-  'struct usb_hcd';
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- changed init() method to pre_setup() with different parameters and call site.
-
- drivers/usb/host/ehci-platform.c |    6 ++++++
- include/linux/usb/ehci_pdriver.h |    4 ++++
- 2 files changed, 10 insertions(+)
-
-Index: renesas/drivers/usb/host/ehci-platform.c
-=================================--- renesas.orig/drivers/usb/host/ehci-platform.c
-+++ renesas/drivers/usb/host/ehci-platform.c
-@@ -46,6 +46,12 @@ static int ehci_platform_reset(struct us
- 	ehci->big_endian_desc = pdata->big_endian_desc;
- 	ehci->big_endian_mmio = pdata->big_endian_mmio;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 73b9e25..def6e2c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -34,6 +34,28 @@
+ 	PORT_10(fn, pfx##16, sfx),	PORT_10(fn, pfx##17, sfx), \
+ 	PORT_10(fn, pfx##18, sfx),	PORT_1(fn, pfx##190, sfx)
  
-+	if (pdata->pre_setup) {
-+		retval = pdata->pre_setup(hcd);
-+		if (retval < 0)
-+			return retval;
-+	}
++#define IRQC_PIN_MUX(irq, pin)						\
++static const unsigned int intc_irq##irq##_pins[] = {			\
++	pin,								\
++};									\
++static const unsigned int intc_irq##irq##_mux[] = {			\
++	IRQ##irq##_MARK,						\
++}
 +
- 	ehci->caps = hcd->regs + pdata->caps_offset;
- 	retval = ehci_setup(hcd);
- 	if (retval)
-Index: renesas/include/linux/usb/ehci_pdriver.h
-=================================--- renesas.orig/include/linux/usb/ehci_pdriver.h
-+++ renesas/include/linux/usb/ehci_pdriver.h
-@@ -19,6 +19,9 @@
- #ifndef __USB_CORE_EHCI_PDRIVER_H
- #define __USB_CORE_EHCI_PDRIVER_H
++#define IRQC_PINS_MUX(irq, pin0, pin1)					\
++static const unsigned int intc_irq##irq##_0_pins[] = {			\
++	pin0,								\
++};									\
++static const unsigned int intc_irq##irq##_0_mux[] = {			\
++	IRQ##irq##_##pin0##_MARK,					\
++};									\
++static const unsigned int intc_irq##irq##_1_pins[] = {			\
++	pin1,								\
++};									\
++static const unsigned int intc_irq##irq##_1_mux[] = {			\
++	IRQ##irq##_##pin1##_MARK,					\
++}
++
+ enum {
+ 	PINMUX_RESERVED = 0,
  
-+struct platform_device;
-+struct usb_hcd;
-+
- /**
-  * struct usb_ehci_pdata - platform_data for generic ehci driver
-  *
-@@ -50,6 +53,7 @@ struct usb_ehci_pdata {
- 	/* Turn on only VBUS suspend power and hotplug detection,
- 	 * turn off everything else */
- 	void (*power_suspend)(struct platform_device *pdev);
-+	int (*pre_setup)(struct usb_hcd *hcd);
+@@ -1186,6 +1208,39 @@ static const unsigned int hdmi_pins[] = {
+ static const unsigned int hdmi_mux[] = {
+ 	HDMI_HPD_MARK, HDMI_CEC_MARK,
+ };
++/* - INTC ------------------------------------------------------------------- */
++IRQC_PINS_MUX(0, 6, 162);
++IRQC_PIN_MUX(1, 12);
++IRQC_PINS_MUX(2, 4, 5);
++IRQC_PINS_MUX(3, 8, 16);
++IRQC_PINS_MUX(4, 17, 163);
++IRQC_PIN_MUX(5, 18);
++IRQC_PINS_MUX(6, 39, 164);
++IRQC_PINS_MUX(7, 40, 167);
++IRQC_PINS_MUX(8, 41, 168);
++IRQC_PINS_MUX(9, 42, 169);
++IRQC_PIN_MUX(10, 65);
++IRQC_PIN_MUX(11, 67);
++IRQC_PINS_MUX(12, 80, 137);
++IRQC_PINS_MUX(13, 81, 145);
++IRQC_PINS_MUX(14, 82, 146);
++IRQC_PINS_MUX(15, 83, 147);
++IRQC_PINS_MUX(16, 84, 170);
++IRQC_PIN_MUX(17, 85);
++IRQC_PIN_MUX(18, 86);
++IRQC_PIN_MUX(19, 87);
++IRQC_PIN_MUX(20, 92);
++IRQC_PIN_MUX(21, 93);
++IRQC_PIN_MUX(22, 94);
++IRQC_PIN_MUX(23, 95);
++IRQC_PIN_MUX(24, 112);
++IRQC_PIN_MUX(25, 119);
++IRQC_PINS_MUX(26, 121, 172);
++IRQC_PINS_MUX(27, 122, 180);
++IRQC_PINS_MUX(28, 123, 181);
++IRQC_PINS_MUX(29, 129, 182);
++IRQC_PINS_MUX(30, 130, 183);
++IRQC_PINS_MUX(31, 138, 184);
+ /* - MMCIF ------------------------------------------------------------------ */
+ static const unsigned int mmc0_data1_0_pins[] = {
+ 	/* D[0] */
+@@ -1361,6 +1416,57 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(fsia_spdif_1),
+ 	SH_PFC_PIN_GROUP(fsib_mclk_in),
+ 	SH_PFC_PIN_GROUP(hdmi),
++	SH_PFC_PIN_GROUP(intc_irq0_0),
++	SH_PFC_PIN_GROUP(intc_irq0_1),
++	SH_PFC_PIN_GROUP(intc_irq1),
++	SH_PFC_PIN_GROUP(intc_irq2_0),
++	SH_PFC_PIN_GROUP(intc_irq2_1),
++	SH_PFC_PIN_GROUP(intc_irq3_0),
++	SH_PFC_PIN_GROUP(intc_irq3_1),
++	SH_PFC_PIN_GROUP(intc_irq4_0),
++	SH_PFC_PIN_GROUP(intc_irq4_1),
++	SH_PFC_PIN_GROUP(intc_irq5),
++	SH_PFC_PIN_GROUP(intc_irq6_0),
++	SH_PFC_PIN_GROUP(intc_irq6_1),
++	SH_PFC_PIN_GROUP(intc_irq7_0),
++	SH_PFC_PIN_GROUP(intc_irq7_1),
++	SH_PFC_PIN_GROUP(intc_irq8_0),
++	SH_PFC_PIN_GROUP(intc_irq8_1),
++	SH_PFC_PIN_GROUP(intc_irq9_0),
++	SH_PFC_PIN_GROUP(intc_irq9_1),
++	SH_PFC_PIN_GROUP(intc_irq10),
++	SH_PFC_PIN_GROUP(intc_irq11),
++	SH_PFC_PIN_GROUP(intc_irq12_0),
++	SH_PFC_PIN_GROUP(intc_irq12_1),
++	SH_PFC_PIN_GROUP(intc_irq13_0),
++	SH_PFC_PIN_GROUP(intc_irq13_1),
++	SH_PFC_PIN_GROUP(intc_irq14_0),
++	SH_PFC_PIN_GROUP(intc_irq14_1),
++	SH_PFC_PIN_GROUP(intc_irq15_0),
++	SH_PFC_PIN_GROUP(intc_irq15_1),
++	SH_PFC_PIN_GROUP(intc_irq16_0),
++	SH_PFC_PIN_GROUP(intc_irq16_1),
++	SH_PFC_PIN_GROUP(intc_irq17),
++	SH_PFC_PIN_GROUP(intc_irq18),
++	SH_PFC_PIN_GROUP(intc_irq19),
++	SH_PFC_PIN_GROUP(intc_irq20),
++	SH_PFC_PIN_GROUP(intc_irq21),
++	SH_PFC_PIN_GROUP(intc_irq22),
++	SH_PFC_PIN_GROUP(intc_irq23),
++	SH_PFC_PIN_GROUP(intc_irq24),
++	SH_PFC_PIN_GROUP(intc_irq25),
++	SH_PFC_PIN_GROUP(intc_irq26_0),
++	SH_PFC_PIN_GROUP(intc_irq26_1),
++	SH_PFC_PIN_GROUP(intc_irq27_0),
++	SH_PFC_PIN_GROUP(intc_irq27_1),
++	SH_PFC_PIN_GROUP(intc_irq28_0),
++	SH_PFC_PIN_GROUP(intc_irq28_1),
++	SH_PFC_PIN_GROUP(intc_irq29_0),
++	SH_PFC_PIN_GROUP(intc_irq29_1),
++	SH_PFC_PIN_GROUP(intc_irq30_0),
++	SH_PFC_PIN_GROUP(intc_irq30_1),
++	SH_PFC_PIN_GROUP(intc_irq31_0),
++	SH_PFC_PIN_GROUP(intc_irq31_1),
+ 	SH_PFC_PIN_GROUP(mmc0_data1_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data4_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data8_0),
+@@ -1433,6 +1539,60 @@ static const char * const hdmi_groups[] = {
+ 	"hdmi",
  };
  
- #endif /* __USB_CORE_EHCI_PDRIVER_H */
++static const char * const intc_groups[] = {
++	"intc_irq0_0",
++	"intc_irq0_1",
++	"intc_irq1",
++	"intc_irq2_0",
++	"intc_irq2_1",
++	"intc_irq3_0",
++	"intc_irq3_1",
++	"intc_irq4_0",
++	"intc_irq4_1",
++	"intc_irq5",
++	"intc_irq6_0",
++	"intc_irq6_1",
++	"intc_irq7_0",
++	"intc_irq7_1",
++	"intc_irq8_0",
++	"intc_irq8_1",
++	"intc_irq9_0",
++	"intc_irq9_1",
++	"intc_irq10",
++	"intc_irq11",
++	"intc_irq12_0",
++	"intc_irq12_1",
++	"intc_irq13_0",
++	"intc_irq13_1",
++	"intc_irq14_0",
++	"intc_irq14_1",
++	"intc_irq15_0",
++	"intc_irq15_1",
++	"intc_irq16_0",
++	"intc_irq16_1",
++	"intc_irq17",
++	"intc_irq18",
++	"intc_irq19",
++	"intc_irq20",
++	"intc_irq21",
++	"intc_irq22",
++	"intc_irq23",
++	"intc_irq24",
++	"intc_irq25",
++	"intc_irq26_0",
++	"intc_irq26_1",
++	"intc_irq27_0",
++	"intc_irq27_1",
++	"intc_irq28_0",
++	"intc_irq28_1",
++	"intc_irq29_0",
++	"intc_irq29_1",
++	"intc_irq30_0",
++	"intc_irq30_1",
++	"intc_irq31_0",
++	"intc_irq31_1",
++};
++
+ static const char * const mmc0_groups[] = {
+ 	"mmc0_data1_0",
+ 	"mmc0_data4_0",
+@@ -1471,6 +1631,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(fsia),
+ 	SH_PFC_FUNCTION(fsib),
+ 	SH_PFC_FUNCTION(hdmi),
++	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+-- 
+1.8.1.5
+
