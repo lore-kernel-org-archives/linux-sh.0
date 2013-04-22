@@ -1,40 +1,66 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 03 Apr 2013 16:13:56 +0000
-Subject: [PATCH/RFC 3/3] ARM: shmobile: kzm9g-reference: add a TWD DT node
-Message-Id: <1365005636-17526-4-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:00:10 +0000
+Subject: [PATCH 29/37] ARM: shmobile: r8a7740: Remove INTC function GPIOs
+Message-Id: <1366671618-8796-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch enables the use of TWD on kzm9g-reference.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 34 ---------------------------
+ 1 file changed, 34 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index b6f759e..ed9dd45 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -40,6 +40,13 @@
- 		reg = <0x41000000 0x1e800000>;
- 	};
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 2656a6d..ef6ddb6 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -100,40 +100,6 @@ enum {
  
-+	timer@f0000600 {
-+		compatible = "arm,cortex-a9-twd-timer";
-+		reg = <0xf0000600 0x20>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <1 13 0x4>;
-+	};
-+
- 	reg_1p8v: regulator@0 {
- 		compatible = "regulator-fixed";
- 		regulator-name = "fixed-1.8V";
+ 	GPIO_PORT210, GPIO_PORT211,
+ 
+-	/* IRQ */
+-	GPIO_FN_IRQ0_PORT2,	GPIO_FN_IRQ0_PORT13,
+-	GPIO_FN_IRQ1,
+-	GPIO_FN_IRQ2_PORT11,	GPIO_FN_IRQ2_PORT12,
+-	GPIO_FN_IRQ3_PORT10,	GPIO_FN_IRQ3_PORT14,
+-	GPIO_FN_IRQ4_PORT15,	GPIO_FN_IRQ4_PORT172,
+-	GPIO_FN_IRQ5_PORT0,	GPIO_FN_IRQ5_PORT1,
+-	GPIO_FN_IRQ6_PORT121,	GPIO_FN_IRQ6_PORT173,
+-	GPIO_FN_IRQ7_PORT120,	GPIO_FN_IRQ7_PORT209,
+-	GPIO_FN_IRQ8,
+-	GPIO_FN_IRQ9_PORT118,	GPIO_FN_IRQ9_PORT210,
+-	GPIO_FN_IRQ10,
+-	GPIO_FN_IRQ11,
+-	GPIO_FN_IRQ12_PORT42,	GPIO_FN_IRQ12_PORT97,
+-	GPIO_FN_IRQ13_PORT64,	GPIO_FN_IRQ13_PORT98,
+-	GPIO_FN_IRQ14_PORT63,	GPIO_FN_IRQ14_PORT99,
+-	GPIO_FN_IRQ15_PORT62,	GPIO_FN_IRQ15_PORT100,
+-	GPIO_FN_IRQ16_PORT68,	GPIO_FN_IRQ16_PORT211,
+-	GPIO_FN_IRQ17,
+-	GPIO_FN_IRQ18,
+-	GPIO_FN_IRQ19,
+-	GPIO_FN_IRQ20,
+-	GPIO_FN_IRQ21,
+-	GPIO_FN_IRQ22,
+-	GPIO_FN_IRQ23,
+-	GPIO_FN_IRQ24,
+-	GPIO_FN_IRQ25,
+-	GPIO_FN_IRQ26_PORT58,	GPIO_FN_IRQ26_PORT81,
+-	GPIO_FN_IRQ27_PORT57,	GPIO_FN_IRQ27_PORT168,
+-	GPIO_FN_IRQ28_PORT56,	GPIO_FN_IRQ28_PORT169,
+-	GPIO_FN_IRQ29_PORT50,	GPIO_FN_IRQ29_PORT170,
+-	GPIO_FN_IRQ30_PORT49,	GPIO_FN_IRQ30_PORT171,
+-	GPIO_FN_IRQ31_PORT41,	GPIO_FN_IRQ31_PORT167,
+-
+ 	/* Function */
+ 
+ 	/* DBGT */
 -- 
-1.7.2.5
+1.8.1.5
 
