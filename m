@@ -1,86 +1,320 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Apr 2013 11:07:10 +0000
-Subject: [PATCH v7 6/7] imx074: support asynchronous probing
-Message-Id: <1365419231-14830-7-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:00:18 +0000
+Subject: [PATCH 37/37] ARM: shmobile: r8a7740: Remove all GPIOs
+Message-Id: <1366671618-8796-38-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-Both synchronous and asynchronous imx074 subdevice probing is supported by
-this patch.
+Function GPIOs are not used anymore, and all code use the GPIO numbers
+directly. Remove the GPIOs enumeration.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/i2c/soc_camera/imx074.c |   24 +++++++++++++++++++++---
- 1 files changed, 21 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 288 --------------------------
+ 1 file changed, 288 deletions(-)
 
-diff --git a/drivers/media/i2c/soc_camera/imx074.c b/drivers/media/i2c/soc_camera/imx074.c
-index a6a5060..624d7c7 100644
---- a/drivers/media/i2c/soc_camera/imx074.c
-+++ b/drivers/media/i2c/soc_camera/imx074.c
-@@ -18,6 +18,7 @@
- #include <linux/module.h>
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index ed30a1d..b34d19b 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -28,294 +28,6 @@
+ #define MD_CK1	(1 << 1)
+ #define MD_CK0	(1 << 0)
  
- #include <media/soc_camera.h>
-+#include <media/v4l2-async.h>
- #include <media/v4l2-clk.h>
- #include <media/v4l2-subdev.h>
- #include <media/v4l2-chip-ident.h>
-@@ -79,6 +80,7 @@ struct imx074 {
- 	struct v4l2_subdev		subdev;
- 	const struct imx074_datafmt	*fmt;
- 	struct v4l2_clk			*clk;
-+	struct v4l2_async_subdev_list	asdl;
- };
- 
- static const struct imx074_datafmt imx074_colour_fmts[] = {
-@@ -455,14 +457,28 @@ static int imx074_probe(struct i2c_client *client,
- 
- 	priv->fmt	= &imx074_colour_fmts[0];
- 
-+	priv->asdl.subdev = &priv->subdev;
-+	priv->asdl.dev = &client->dev;
-+
- 	priv->clk = v4l2_clk_get(&client->dev, "mclk");
--	if (IS_ERR(priv->clk))
--		return PTR_ERR(priv->clk);
-+	if (IS_ERR(priv->clk)) {
-+		dev_info(&client->dev, "Error %ld getting clock\n", PTR_ERR(priv->clk));
-+		return -EPROBE_DEFER;
-+	}
-+
-+	ret = soc_camera_power_init(&client->dev, ssdd);
-+	if (ret < 0)
-+		goto epwrinit;
- 
- 	ret = imx074_video_probe(client);
- 	if (ret < 0)
--		v4l2_clk_put(priv->clk);
-+		goto eprobe;
- 
-+	return v4l2_async_register_subdev(&priv->asdl);
-+
-+epwrinit:
-+eprobe:
-+	v4l2_clk_put(priv->clk);
- 	return ret;
- }
- 
-@@ -471,7 +487,9 @@ static int imx074_remove(struct i2c_client *client)
- 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
- 	struct imx074 *priv = to_imx074(client);
- 
-+	v4l2_async_unregister_subdev(&priv->asdl);
- 	v4l2_clk_put(priv->clk);
-+
- 	if (ssdd->free_bus)
- 		ssdd->free_bus(ssdd);
- 
+-/*
+- * Pin Function Controller:
+- *	GPIO_FN_xx - GPIO used to select pin function
+- *	GPIO_PORTxx - GPIO mapped to real I/O pin on CPU
+- */
+-enum {
+-	/* PORT */
+-	GPIO_PORT0, GPIO_PORT1, GPIO_PORT2, GPIO_PORT3, GPIO_PORT4,
+-	GPIO_PORT5, GPIO_PORT6, GPIO_PORT7, GPIO_PORT8, GPIO_PORT9,
+-
+-	GPIO_PORT10, GPIO_PORT11, GPIO_PORT12, GPIO_PORT13, GPIO_PORT14,
+-	GPIO_PORT15, GPIO_PORT16, GPIO_PORT17, GPIO_PORT18, GPIO_PORT19,
+-
+-	GPIO_PORT20, GPIO_PORT21, GPIO_PORT22, GPIO_PORT23, GPIO_PORT24,
+-	GPIO_PORT25, GPIO_PORT26, GPIO_PORT27, GPIO_PORT28, GPIO_PORT29,
+-
+-	GPIO_PORT30, GPIO_PORT31, GPIO_PORT32, GPIO_PORT33, GPIO_PORT34,
+-	GPIO_PORT35, GPIO_PORT36, GPIO_PORT37, GPIO_PORT38, GPIO_PORT39,
+-
+-	GPIO_PORT40, GPIO_PORT41, GPIO_PORT42, GPIO_PORT43, GPIO_PORT44,
+-	GPIO_PORT45, GPIO_PORT46, GPIO_PORT47, GPIO_PORT48, GPIO_PORT49,
+-
+-	GPIO_PORT50, GPIO_PORT51, GPIO_PORT52, GPIO_PORT53, GPIO_PORT54,
+-	GPIO_PORT55, GPIO_PORT56, GPIO_PORT57, GPIO_PORT58, GPIO_PORT59,
+-
+-	GPIO_PORT60, GPIO_PORT61, GPIO_PORT62, GPIO_PORT63, GPIO_PORT64,
+-	GPIO_PORT65, GPIO_PORT66, GPIO_PORT67, GPIO_PORT68, GPIO_PORT69,
+-
+-	GPIO_PORT70, GPIO_PORT71, GPIO_PORT72, GPIO_PORT73, GPIO_PORT74,
+-	GPIO_PORT75, GPIO_PORT76, GPIO_PORT77, GPIO_PORT78, GPIO_PORT79,
+-
+-	GPIO_PORT80, GPIO_PORT81, GPIO_PORT82, GPIO_PORT83, GPIO_PORT84,
+-	GPIO_PORT85, GPIO_PORT86, GPIO_PORT87, GPIO_PORT88, GPIO_PORT89,
+-
+-	GPIO_PORT90, GPIO_PORT91, GPIO_PORT92, GPIO_PORT93, GPIO_PORT94,
+-	GPIO_PORT95, GPIO_PORT96, GPIO_PORT97, GPIO_PORT98, GPIO_PORT99,
+-
+-	GPIO_PORT100, GPIO_PORT101, GPIO_PORT102, GPIO_PORT103, GPIO_PORT104,
+-	GPIO_PORT105, GPIO_PORT106, GPIO_PORT107, GPIO_PORT108, GPIO_PORT109,
+-
+-	GPIO_PORT110, GPIO_PORT111, GPIO_PORT112, GPIO_PORT113, GPIO_PORT114,
+-	GPIO_PORT115, GPIO_PORT116, GPIO_PORT117, GPIO_PORT118, GPIO_PORT119,
+-
+-	GPIO_PORT120, GPIO_PORT121, GPIO_PORT122, GPIO_PORT123, GPIO_PORT124,
+-	GPIO_PORT125, GPIO_PORT126, GPIO_PORT127, GPIO_PORT128, GPIO_PORT129,
+-
+-	GPIO_PORT130, GPIO_PORT131, GPIO_PORT132, GPIO_PORT133, GPIO_PORT134,
+-	GPIO_PORT135, GPIO_PORT136, GPIO_PORT137, GPIO_PORT138, GPIO_PORT139,
+-
+-	GPIO_PORT140, GPIO_PORT141, GPIO_PORT142, GPIO_PORT143, GPIO_PORT144,
+-	GPIO_PORT145, GPIO_PORT146, GPIO_PORT147, GPIO_PORT148, GPIO_PORT149,
+-
+-	GPIO_PORT150, GPIO_PORT151, GPIO_PORT152, GPIO_PORT153, GPIO_PORT154,
+-	GPIO_PORT155, GPIO_PORT156, GPIO_PORT157, GPIO_PORT158, GPIO_PORT159,
+-
+-	GPIO_PORT160, GPIO_PORT161, GPIO_PORT162, GPIO_PORT163, GPIO_PORT164,
+-	GPIO_PORT165, GPIO_PORT166, GPIO_PORT167, GPIO_PORT168, GPIO_PORT169,
+-
+-	GPIO_PORT170, GPIO_PORT171, GPIO_PORT172, GPIO_PORT173, GPIO_PORT174,
+-	GPIO_PORT175, GPIO_PORT176, GPIO_PORT177, GPIO_PORT178, GPIO_PORT179,
+-
+-	GPIO_PORT180, GPIO_PORT181, GPIO_PORT182, GPIO_PORT183, GPIO_PORT184,
+-	GPIO_PORT185, GPIO_PORT186, GPIO_PORT187, GPIO_PORT188, GPIO_PORT189,
+-
+-	GPIO_PORT190, GPIO_PORT191, GPIO_PORT192, GPIO_PORT193, GPIO_PORT194,
+-	GPIO_PORT195, GPIO_PORT196, GPIO_PORT197, GPIO_PORT198, GPIO_PORT199,
+-
+-	GPIO_PORT200, GPIO_PORT201, GPIO_PORT202, GPIO_PORT203, GPIO_PORT204,
+-	GPIO_PORT205, GPIO_PORT206, GPIO_PORT207, GPIO_PORT208, GPIO_PORT209,
+-
+-	GPIO_PORT210, GPIO_PORT211,
+-
+-	/* Function */
+-
+-	/* DBGT */
+-	GPIO_FN_DBGMDT2,	GPIO_FN_DBGMDT1,	GPIO_FN_DBGMDT0,
+-	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
+-	GPIO_FN_DBGMD21,
+-
+-	/* FMSI */
+-	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
+-	GPIO_FN_FMSISLD_PORT6,
+-	GPIO_FN_FMSIILR,	GPIO_FN_FMSIIBT,
+-	GPIO_FN_FMSIOLR,	GPIO_FN_FMSIOBT,
+-	GPIO_FN_FMSICK,		GPIO_FN_FMSOILR,
+-	GPIO_FN_FMSOIBT,	GPIO_FN_FMSOOLR,
+-	GPIO_FN_FMSOOBT,	GPIO_FN_FMSOSLD,
+-	GPIO_FN_FMSOCK,
+-
+-	/* LCD0 */
+-	GPIO_FN_LCDC0_SELECT,
+-
+-	/* LCD1 */
+-	GPIO_FN_LCDC1_SELECT,
+-
+-	/* RSPI */
+-	GPIO_FN_RSPI_SSL0_A,	GPIO_FN_RSPI_SSL1_A,
+-	GPIO_FN_RSPI_SSL2_A,	GPIO_FN_RSPI_SSL3_A,
+-	GPIO_FN_RSPI_MOSI_A,	GPIO_FN_RSPI_MISO_A,
+-	GPIO_FN_RSPI_CK_A,
+-
+-	/* TPU0 */
+-	GPIO_FN_TPU0TO0,	GPIO_FN_TPU0TO1,
+-	GPIO_FN_TPU0TO3,
+-	GPIO_FN_TPU0TO2_PORT66, /* TPU0TO2 Port 66/202 */
+-	GPIO_FN_TPU0TO2_PORT202,
+-
+-	/* SSP1 0 */
+-	GPIO_FN_STP0_IPD0,	GPIO_FN_STP0_IPD1,	GPIO_FN_STP0_IPD2,
+-	GPIO_FN_STP0_IPD3,	GPIO_FN_STP0_IPD4,	GPIO_FN_STP0_IPD5,
+-	GPIO_FN_STP0_IPD6,	GPIO_FN_STP0_IPD7,	GPIO_FN_STP0_IPEN,
+-	GPIO_FN_STP0_IPCLK,	GPIO_FN_STP0_IPSYNC,
+-
+-	/* SSP1 1 */
+-	GPIO_FN_STP1_IPD1,	GPIO_FN_STP1_IPD2,	GPIO_FN_STP1_IPD3,
+-	GPIO_FN_STP1_IPD4,	GPIO_FN_STP1_IPD5,	GPIO_FN_STP1_IPD6,
+-	GPIO_FN_STP1_IPD7,	GPIO_FN_STP1_IPCLK,	GPIO_FN_STP1_IPSYNC,
+-
+-	GPIO_FN_STP1_IPD0_PORT186, /* MSEL5CR_23_0 */
+-	GPIO_FN_STP1_IPEN_PORT187,
+-
+-	GPIO_FN_STP1_IPD0_PORT194, /* MSEL5CR_23_1 */
+-	GPIO_FN_STP1_IPEN_PORT193,
+-
+-	/* SIM */
+-	GPIO_FN_SIM_RST,	GPIO_FN_SIM_CLK,
+-	GPIO_FN_SIM_D_PORT22, /* SIM_D  Port 22/199 */
+-	GPIO_FN_SIM_D_PORT199,
+-
+-	/* MSIOF2 */
+-	GPIO_FN_MSIOF2_TXD,	GPIO_FN_MSIOF2_RXD,	GPIO_FN_MSIOF2_TSCK,
+-	GPIO_FN_MSIOF2_SS2,	GPIO_FN_MSIOF2_TSYNC,	GPIO_FN_MSIOF2_SS1,
+-	GPIO_FN_MSIOF2_MCK1,	GPIO_FN_MSIOF2_MCK0,	GPIO_FN_MSIOF2_RSYNC,
+-	GPIO_FN_MSIOF2_RSCK,
+-
+-	/* KEYSC */
+-	GPIO_FN_KEYIN4,		GPIO_FN_KEYIN5,
+-	GPIO_FN_KEYIN6,		GPIO_FN_KEYIN7,
+-	GPIO_FN_KEYOUT0,	GPIO_FN_KEYOUT1,	GPIO_FN_KEYOUT2,
+-	GPIO_FN_KEYOUT3,	GPIO_FN_KEYOUT4,	GPIO_FN_KEYOUT5,
+-	GPIO_FN_KEYOUT6,	GPIO_FN_KEYOUT7,
+-
+-	GPIO_FN_KEYIN0_PORT43, /* MSEL4CR_18_0 */
+-	GPIO_FN_KEYIN1_PORT44,
+-	GPIO_FN_KEYIN2_PORT45,
+-	GPIO_FN_KEYIN3_PORT46,
+-
+-	GPIO_FN_KEYIN0_PORT58, /* MSEL4CR_18_1 */
+-	GPIO_FN_KEYIN1_PORT57,
+-	GPIO_FN_KEYIN2_PORT56,
+-	GPIO_FN_KEYIN3_PORT55,
+-
+-	/* VOU */
+-	GPIO_FN_DV_D0,	GPIO_FN_DV_D1,	GPIO_FN_DV_D2,	GPIO_FN_DV_D3,
+-	GPIO_FN_DV_D4,	GPIO_FN_DV_D5,	GPIO_FN_DV_D6,	GPIO_FN_DV_D7,
+-	GPIO_FN_DV_D8,	GPIO_FN_DV_D9,	GPIO_FN_DV_D10,	GPIO_FN_DV_D11,
+-	GPIO_FN_DV_D12,	GPIO_FN_DV_D13,	GPIO_FN_DV_D14,	GPIO_FN_DV_D15,
+-	GPIO_FN_DV_CLK,
+-	GPIO_FN_DV_VSYNC,
+-	GPIO_FN_DV_HSYNC,
+-
+-	/* MEMC */
+-	GPIO_FN_MEMC_AD0,	GPIO_FN_MEMC_AD1,	GPIO_FN_MEMC_AD2,
+-	GPIO_FN_MEMC_AD3,	GPIO_FN_MEMC_AD4,	GPIO_FN_MEMC_AD5,
+-	GPIO_FN_MEMC_AD6,	GPIO_FN_MEMC_AD7,	GPIO_FN_MEMC_AD8,
+-	GPIO_FN_MEMC_AD9,	GPIO_FN_MEMC_AD10,	GPIO_FN_MEMC_AD11,
+-	GPIO_FN_MEMC_AD12,	GPIO_FN_MEMC_AD13,	GPIO_FN_MEMC_AD14,
+-	GPIO_FN_MEMC_AD15,	GPIO_FN_MEMC_CS0,	GPIO_FN_MEMC_INT,
+-	GPIO_FN_MEMC_NWE,	GPIO_FN_MEMC_NOE,
+-
+-	GPIO_FN_MEMC_CS1, /* MSEL4CR_6_0 */
+-	GPIO_FN_MEMC_ADV,
+-	GPIO_FN_MEMC_WAIT,
+-	GPIO_FN_MEMC_BUSCLK,
+-
+-	GPIO_FN_MEMC_A1, /* MSEL4CR_6_1 */
+-	GPIO_FN_MEMC_DREQ0,
+-	GPIO_FN_MEMC_DREQ1,
+-	GPIO_FN_MEMC_A0,
+-
+-	/* MSIOF0 */
+-	GPIO_FN_MSIOF0_SS1,	GPIO_FN_MSIOF0_SS2,
+-	GPIO_FN_MSIOF0_RXD,	GPIO_FN_MSIOF0_TXD,
+-	GPIO_FN_MSIOF0_MCK0,	GPIO_FN_MSIOF0_MCK1,
+-	GPIO_FN_MSIOF0_RSYNC,	GPIO_FN_MSIOF0_RSCK,
+-	GPIO_FN_MSIOF0_TSCK,	GPIO_FN_MSIOF0_TSYNC,
+-
+-	/* MSIOF1 */
+-	GPIO_FN_MSIOF1_RSCK,	GPIO_FN_MSIOF1_RSYNC,
+-	GPIO_FN_MSIOF1_MCK0,	GPIO_FN_MSIOF1_MCK1,
+-
+-	GPIO_FN_MSIOF1_SS2_PORT116,	GPIO_FN_MSIOF1_SS1_PORT117,
+-	GPIO_FN_MSIOF1_RXD_PORT118,	GPIO_FN_MSIOF1_TXD_PORT119,
+-	GPIO_FN_MSIOF1_TSYNC_PORT120,
+-	GPIO_FN_MSIOF1_TSCK_PORT121,	/* MSEL4CR_10_0 */
+-
+-	GPIO_FN_MSIOF1_SS1_PORT67,	GPIO_FN_MSIOF1_TSCK_PORT72,
+-	GPIO_FN_MSIOF1_TSYNC_PORT73,	GPIO_FN_MSIOF1_TXD_PORT74,
+-	GPIO_FN_MSIOF1_RXD_PORT75,
+-	GPIO_FN_MSIOF1_SS2_PORT202,	/* MSEL4CR_10_1 */
+-
+-	/* GPIO */
+-	GPIO_FN_GPO0,	GPIO_FN_GPI0,
+-	GPIO_FN_GPO1,	GPIO_FN_GPI1,
+-
+-	/* USB0 */
+-	GPIO_FN_USB0_OCI,	GPIO_FN_USB0_PPON,	GPIO_FN_VBUS,
+-
+-	/* USB1 */
+-	GPIO_FN_USB1_OCI,	GPIO_FN_USB1_PPON,
+-
+-	/* BBIF1 */
+-	GPIO_FN_BBIF1_RXD,	GPIO_FN_BBIF1_TXD,	GPIO_FN_BBIF1_TSYNC,
+-	GPIO_FN_BBIF1_TSCK,	GPIO_FN_BBIF1_RSCK,	GPIO_FN_BBIF1_RSYNC,
+-	GPIO_FN_BBIF1_FLOW,	GPIO_FN_BBIF1_RX_FLOW_N,
+-
+-	/* BBIF2 */
+-	GPIO_FN_BBIF2_TXD2_PORT5, /* MSEL5CR_0_0 */
+-	GPIO_FN_BBIF2_RXD2_PORT60,
+-	GPIO_FN_BBIF2_TSYNC2_PORT6,
+-	GPIO_FN_BBIF2_TSCK2_PORT59,
+-
+-	GPIO_FN_BBIF2_RXD2_PORT90, /* MSEL5CR_0_1 */
+-	GPIO_FN_BBIF2_TXD2_PORT183,
+-	GPIO_FN_BBIF2_TSCK2_PORT89,
+-	GPIO_FN_BBIF2_TSYNC2_PORT184,
+-
+-	/* FLCTL / PCMCIA */
+-	GPIO_FN_IOIS16, /* ? */
+-
+-	GPIO_FN_A0,	GPIO_FN_A1,	GPIO_FN_A2,	GPIO_FN_A3,
+-	GPIO_FN_A4_FOE,		/* share with FLCTL */
+-	GPIO_FN_A5_FCDE,	/* share with FLCTL */
+-	GPIO_FN_A6,	GPIO_FN_A7,	GPIO_FN_A8,	GPIO_FN_A9,
+-	GPIO_FN_A10,	GPIO_FN_A11,	GPIO_FN_A12,	GPIO_FN_A13,
+-	GPIO_FN_A14,	GPIO_FN_A15,	GPIO_FN_A16,	GPIO_FN_A17,
+-	GPIO_FN_A18,	GPIO_FN_A19,	GPIO_FN_A20,	GPIO_FN_A21,
+-	GPIO_FN_A22,	GPIO_FN_A23,	GPIO_FN_A24,	GPIO_FN_A25,
+-	GPIO_FN_A26,
+-
+-	GPIO_FN_CKO,
+-	GPIO_FN_WAIT_PORT177,	/* WAIT Port 90/177 */
+-	GPIO_FN_WAIT_PORT90,
+-
+-	GPIO_FN_FCE0,	GPIO_FN_FCE1,	GPIO_FN_FRB, /* FLCTL */
+-
+-	/* IRDA */
+-	GPIO_FN_IRDA_FIRSEL,	GPIO_FN_IRDA_IN,	GPIO_FN_IRDA_OUT,
+-
+-	/* ATAPI */
+-	GPIO_FN_IDE_D0,		GPIO_FN_IDE_D1,		GPIO_FN_IDE_D2,
+-	GPIO_FN_IDE_D3,		GPIO_FN_IDE_D4,		GPIO_FN_IDE_D5,
+-	GPIO_FN_IDE_D6,		GPIO_FN_IDE_D7,		GPIO_FN_IDE_D8,
+-	GPIO_FN_IDE_D9,		GPIO_FN_IDE_D10,	GPIO_FN_IDE_D11,
+-	GPIO_FN_IDE_D12,	GPIO_FN_IDE_D13,	GPIO_FN_IDE_D14,
+-	GPIO_FN_IDE_D15,	GPIO_FN_IDE_A0,		GPIO_FN_IDE_A1,
+-	GPIO_FN_IDE_A2,		GPIO_FN_IDE_CS0,	GPIO_FN_IDE_CS1,
+-	GPIO_FN_IDE_IOWR,	GPIO_FN_IDE_IORD,	GPIO_FN_IDE_IORDY,
+-	GPIO_FN_IDE_INT,	GPIO_FN_IDE_RST,	GPIO_FN_IDE_DIRECTION,
+-	GPIO_FN_IDE_EXBUF_ENB,	GPIO_FN_IDE_IODACK,	GPIO_FN_IDE_IODREQ,
+-
+-	/* DMA0 */
+-	GPIO_FN_DREQ0,		GPIO_FN_DACK0,
+-
+-	/* DMA1 */
+-	GPIO_FN_DREQ1,		GPIO_FN_DACK1,
+-
+-	/* SYSC */
+-	GPIO_FN_RESETOUTS,
+-	GPIO_FN_RESETP_PULLUP,
+-	GPIO_FN_RESETP_PLAIN,
+-
+-	/* SDENC */
+-	GPIO_FN_SDENC_CPG,
+-	GPIO_FN_SDENC_DV_CLKI,
+-
+-	/* IRREM */
+-	GPIO_FN_IROUT,
+-
+-	/* DEBUG */
+-	GPIO_FN_EDEBGREQ_PULLDOWN,
+-	GPIO_FN_EDEBGREQ_PULLUP,
+-
+-	GPIO_FN_TRACEAUD_FROM_VIO,
+-	GPIO_FN_TRACEAUD_FROM_LCDC0,
+-	GPIO_FN_TRACEAUD_FROM_MEMC,
+-};
+-
+ /* DMA slave IDs */
+ enum {
+ 	SHDMA_SLAVE_INVALID,
 -- 
-1.7.2.5
+1.8.1.5
 
