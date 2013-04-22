@@ -1,39 +1,89 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:40 +0000
-Subject: [PATCH 02/28] sh: sh7269: Fix compilation by adding missing includes
-Message-Id: <1364954706-14727-3-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 22 Apr 2013 03:06:30 +0000
+Subject: [PATCH] ARM: shmobile: lager: Add GPIO LEDs
+Message-Id: <1366599990-31751-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The board has 3 LEDs connected to GPIOs. Add a led-gpio device to
+support them.
 
-struct resource is defined in linux/ioport.h. Include it.
+Based on "ARM: shmobile: marzen: Add GPIO LEDs" by Laurent Pinchart.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c |    2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c | 37 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
 
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-index 1825b0b..4c17fb6 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-@@ -9,7 +9,9 @@
-  * for more details.
-  */
- 
-+#include <linux/bug.h>
- #include <linux/init.h>
-+#include <linux/ioport.h>
+Tested on lager board.
+Based on the tag renesas-next-20130419 of my renesas tree.
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 6114edd..a8aa04f 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -21,13 +21,49 @@
+ #include <linux/interrupt.h>
+ #include <linux/irqchip.h>
  #include <linux/kernel.h>
- #include <cpu/pfc.h>
++#include <linux/leds.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
+ #include <mach/common.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
++/* LEDS */
++static struct gpio_led lager_leds[] = {
++	{
++		.name		= "led8",
++		.gpio		= RCAR_GP_PIN(5, 17),
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led7",
++		.gpio		= RCAR_GP_PIN(4, 23),
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led6",
++		.gpio		= RCAR_GP_PIN(4, 22),
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},
++};
++
++static struct gpio_led_platform_data lager_leds_pdata = {
++	.leds		= lager_leds,
++	.num_leds	= ARRAY_SIZE(lager_leds),
++};
++
++static struct platform_device leds_device = {
++	.name	= "leds-gpio",
++	.id	= 0,
++	.dev	= {
++		.platform_data  = &lager_leds_pdata,
++	},
++};
++
++static struct platform_device *lager_devices[] __initdata = {
++	&leds_device,
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+@@ -46,6 +82,7 @@ static void __init lager_add_standard_devices(void)
+ 	r8a7790_pinmux_init();
+ 
+ 	r8a7790_add_standard_devices();
++	platform_add_devices(lager_devices, ARRAY_SIZE(lager_devices));
+ }
+ 
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-1.7.10.4
+1.8.2.1
 
