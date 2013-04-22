@@ -1,141 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:07 +0000
-Subject: [PATCH 04/35] sh-pfc: sh7372: Add FSI pin groups and functions
-Message-Id: <1366671758-8954-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 22 Apr 2013 09:07:54 +0000
+Subject: [PATCH 1/2 v7] dma: sh: add Kconfig
+Message-Id: <5174FDEA.9050301@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds Kconfig in the drivers/dma/sh.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 91 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 91 insertions(+)
+ about v7:
+  - rebase this patch on the current remotes/origin/next branch of slave-dma.git.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 9948699..641f6ee 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1113,6 +1113,71 @@ static const unsigned int flctl_ctrl_pins[] = {
- static const unsigned int flctl_ctrl_mux[] = {
- 	A5_FCDE_MARK, A4_FOE_MARK, RD_FSC_MARK, WE0_FWE_MARK, FRB_MARK,
- };
-+/* - FSIA ------------------------------------------------------------------- */
-+static const unsigned int fsia_mclk_in_pins[] = {
-+	/* CK */
-+	4,
-+};
-+static const unsigned int fsia_mclk_in_mux[] = {
-+	FSIACK_MARK,
-+};
-+static const unsigned int fsia_mclk_out_pins[] = {
-+	/* OMC */
-+	8,
-+};
-+static const unsigned int fsia_mclk_out_mux[] = {
-+	FSIAOMC_MARK,
-+};
-+static const unsigned int fsia_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	5, 6,
-+};
-+static const unsigned int fsia_sclk_in_mux[] = {
-+	FSIAILR_MARK, FSIAIBT_MARK,
-+};
-+static const unsigned int fsia_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	9, 10,
-+};
-+static const unsigned int fsia_sclk_out_mux[] = {
-+	FSIAOLR_MARK, FSIAOBT_MARK,
-+};
-+static const unsigned int fsia_data_in_pins[] = {
-+	/* ISLD */
-+	7,
-+};
-+static const unsigned int fsia_data_in_mux[] = {
-+	FSIAISLD_MARK,
-+};
-+static const unsigned int fsia_data_out_pins[] = {
-+	/* OSLD */
-+	11,
-+};
-+static const unsigned int fsia_data_out_mux[] = {
-+	FSIAOSLD_MARK,
-+};
-+static const unsigned int fsia_spdif_0_pins[] = {
-+	/* SPDIF */
-+	11,
-+};
-+static const unsigned int fsia_spdif_0_mux[] = {
-+	FSIASPDIF_11_MARK,
-+};
-+static const unsigned int fsia_spdif_1_pins[] = {
-+	/* SPDIF */
-+	15,
-+};
-+static const unsigned int fsia_spdif_1_mux[] = {
-+	FSIASPDIF_15_MARK,
-+};
-+/* - FSIB ------------------------------------------------------------------- */
-+static const unsigned int fsib_mclk_in_pins[] = {
-+	/* CK */
-+	4,
-+};
-+static const unsigned int fsib_mclk_in_mux[] = {
-+	FSIBCK_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_0_pins[] = {
- 	/* D[0] */
-@@ -1278,6 +1343,15 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(flctl_ce0),
- 	SH_PFC_PIN_GROUP(flctl_ce1),
- 	SH_PFC_PIN_GROUP(flctl_ctrl),
-+	SH_PFC_PIN_GROUP(fsia_mclk_in),
-+	SH_PFC_PIN_GROUP(fsia_mclk_out),
-+	SH_PFC_PIN_GROUP(fsia_sclk_in),
-+	SH_PFC_PIN_GROUP(fsia_sclk_out),
-+	SH_PFC_PIN_GROUP(fsia_data_in),
-+	SH_PFC_PIN_GROUP(fsia_data_out),
-+	SH_PFC_PIN_GROUP(fsia_spdif_0),
-+	SH_PFC_PIN_GROUP(fsia_spdif_1),
-+	SH_PFC_PIN_GROUP(fsib_mclk_in),
- 	SH_PFC_PIN_GROUP(mmc0_data1_0),
- 	SH_PFC_PIN_GROUP(mmc0_data4_0),
- 	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1331,6 +1405,21 @@ static const char * const flctl_groups[] = {
- 	"flctl_ctrl",
- };
- 
-+static const char * const fsia_groups[] = {
-+	"fsia_mclk_in",
-+	"fsia_mclk_out",
-+	"fsia_sclk_in",
-+	"fsia_sclk_out",
-+	"fsia_data_in",
-+	"fsia_data_out",
-+	"fsia_spdif_0",
-+	"fsia_spdif_1",
-+};
+ drivers/dma/Kconfig    |   10 +---------
+ drivers/dma/sh/Kconfig |   11 +++++++++++
+ 2 files changed, 12 insertions(+), 9 deletions(-)
+ create mode 100644 drivers/dma/sh/Kconfig
+
+diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
+index afe5b19..e992489 100644
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -172,15 +172,7 @@ config TEGRA20_APB_DMA
+ 	  This DMA controller transfers data from memory to peripheral fifo
+ 	  or vice versa. It does not support memory to memory data transfer.
+
+-
+-
+-config SH_DMAE
+-	tristate "Renesas SuperH DMAC support"
+-	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
+-	depends on !SH_DMA_API
+-	select DMA_ENGINE
+-	help
+-	  Enable support for the Renesas SuperH DMA controllers.
++source "drivers/dma/sh/Kconfig"
+
+ config COH901318
+ 	bool "ST-Ericsson COH901318 DMA support"
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+new file mode 100644
+index 0000000..7e85ad6
+--- /dev/null
++++ b/drivers/dma/sh/Kconfig
+@@ -0,0 +1,11 @@
++#
++# DMA engine configuration for sh
++#
 +
-+static const char * const fsib_groups[] = {
-+	"fsib_mclk_in",
-+};
-+
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1_0",
- 	"mmc0_data4_0",
-@@ -1366,6 +1455,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(ceu),
- 	SH_PFC_FUNCTION(flctl),
-+	SH_PFC_FUNCTION(fsia),
-+	SH_PFC_FUNCTION(fsib),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
++config SH_DMAE
++	tristate "Renesas SuperH DMAC support"
++	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
++	depends on !SH_DMA_API
++	select DMA_ENGINE
++	help
++	  Enable support for the Renesas SuperH DMA controllers.
 -- 
-1.8.1.5
-
+1.7.1
