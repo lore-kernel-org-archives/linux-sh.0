@@ -1,243 +1,59 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:16 +0000
-Subject: [PATCH 35/37] sh-pfc: r8a7740: Remove function GPIOs
-Message-Id: <1366671618-8796-36-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 22:59:59 +0000
+Subject: [PATCH 18/37] ARM: shmobile: bonito: Register pinctrl mapping for INTC
+Message-Id: <1366671618-8796-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-No r8a7740 platform use the function GPIOs API. Remove it.
+Replace the GPIO-based INTC pinmux configuration by a pinctrl mapping.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 205 -----------------------------------
- 1 file changed, 205 deletions(-)
+ arch/arm/mach-shmobile/board-bonito.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index fb7a3e8..9f44fd6 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -3197,208 +3197,6 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi2),
- };
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index b6620662..5076f4d 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -369,6 +369,17 @@ static void __init bonito_map_io(void)
+ #define VCCQ1CR		IOMEM(0xE6058140)
+ #define VCCQ1LCDCR	IOMEM(0xE6058186)
  
--#define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
--
--static const struct pinmux_func pinmux_func_gpios[] = {
--	/* Function */
--
--	/* DBGT */
--	GPIO_FN(DBGMDT2),	GPIO_FN(DBGMDT1),	GPIO_FN(DBGMDT0),
--	GPIO_FN(DBGMD10),	GPIO_FN(DBGMD11),	GPIO_FN(DBGMD20),
--	GPIO_FN(DBGMD21),
--
--	/* FMSI */
--	GPIO_FN(FMSISLD_PORT1), /* FMSISLD Port 1/6 */
--	GPIO_FN(FMSISLD_PORT6),
--	GPIO_FN(FMSIILR),	GPIO_FN(FMSIIBT),	GPIO_FN(FMSIOLR),
--	GPIO_FN(FMSIOBT),	GPIO_FN(FMSICK),	GPIO_FN(FMSOILR),
--	GPIO_FN(FMSOIBT),	GPIO_FN(FMSOOLR),	GPIO_FN(FMSOOBT),
--	GPIO_FN(FMSOSLD),	GPIO_FN(FMSOCK),
--
--	/* RSPI */
--	GPIO_FN(RSPI_SSL0_A),	GPIO_FN(RSPI_SSL1_A),	GPIO_FN(RSPI_SSL2_A),
--	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
--	GPIO_FN(RSPI_MISO_A),
--
--	/* TPU0 */
--	GPIO_FN(TPU0TO0),	GPIO_FN(TPU0TO1),	GPIO_FN(TPU0TO3),
--	GPIO_FN(TPU0TO2_PORT66), /* TPU0TO2 Port 66/202 */
--	GPIO_FN(TPU0TO2_PORT202),
--
--	/* SSP1 0 */
--	GPIO_FN(STP0_IPD0),	GPIO_FN(STP0_IPD1),	GPIO_FN(STP0_IPD2),
--	GPIO_FN(STP0_IPD3),	GPIO_FN(STP0_IPD4),	GPIO_FN(STP0_IPD5),
--	GPIO_FN(STP0_IPD6),	GPIO_FN(STP0_IPD7),	GPIO_FN(STP0_IPEN),
--	GPIO_FN(STP0_IPCLK),	GPIO_FN(STP0_IPSYNC),
--
--	/* SSP1 1 */
--	GPIO_FN(STP1_IPD1),	GPIO_FN(STP1_IPD2),	GPIO_FN(STP1_IPD3),
--	GPIO_FN(STP1_IPD4),	GPIO_FN(STP1_IPD5),	GPIO_FN(STP1_IPD6),
--	GPIO_FN(STP1_IPD7),	GPIO_FN(STP1_IPCLK),	GPIO_FN(STP1_IPSYNC),
--
--	GPIO_FN(STP1_IPD0_PORT186), /* MSEL5CR_23_0 */
--	GPIO_FN(STP1_IPEN_PORT187),
--
--	GPIO_FN(STP1_IPD0_PORT194), /* MSEL5CR_23_1 */
--	GPIO_FN(STP1_IPEN_PORT193),
--
--	/* SIM */
--	GPIO_FN(SIM_RST),	GPIO_FN(SIM_CLK),
--	GPIO_FN(SIM_D_PORT22), /* SIM_D  Port 22/199 */
--	GPIO_FN(SIM_D_PORT199),
--
--	/* MSIOF2 */
--	GPIO_FN(MSIOF2_TXD),	GPIO_FN(MSIOF2_RXD),	GPIO_FN(MSIOF2_TSCK),
--	GPIO_FN(MSIOF2_SS2),	GPIO_FN(MSIOF2_TSYNC),	GPIO_FN(MSIOF2_SS1),
--	GPIO_FN(MSIOF2_MCK1),	GPIO_FN(MSIOF2_MCK0),	GPIO_FN(MSIOF2_RSYNC),
--	GPIO_FN(MSIOF2_RSCK),
--
--	/* KEYSC */
--	GPIO_FN(KEYIN4),	GPIO_FN(KEYIN5),
--	GPIO_FN(KEYIN6),	GPIO_FN(KEYIN7),
--	GPIO_FN(KEYOUT0),	GPIO_FN(KEYOUT1),	GPIO_FN(KEYOUT2),
--	GPIO_FN(KEYOUT3),	GPIO_FN(KEYOUT4),	GPIO_FN(KEYOUT5),
--	GPIO_FN(KEYOUT6),	GPIO_FN(KEYOUT7),
--
--	GPIO_FN(KEYIN0_PORT43), /* MSEL4CR_18_0 */
--	GPIO_FN(KEYIN1_PORT44),
--	GPIO_FN(KEYIN2_PORT45),
--	GPIO_FN(KEYIN3_PORT46),
--
--	GPIO_FN(KEYIN0_PORT58), /* MSEL4CR_18_1 */
--	GPIO_FN(KEYIN1_PORT57),
--	GPIO_FN(KEYIN2_PORT56),
--	GPIO_FN(KEYIN3_PORT55),
--
--	/* VOU */
--	GPIO_FN(DV_D0),		GPIO_FN(DV_D1),		GPIO_FN(DV_D2),
--	GPIO_FN(DV_D3),		GPIO_FN(DV_D4),		GPIO_FN(DV_D5),
--	GPIO_FN(DV_D6),		GPIO_FN(DV_D7),		GPIO_FN(DV_D8),
--	GPIO_FN(DV_D9),		GPIO_FN(DV_D10),	GPIO_FN(DV_D11),
--	GPIO_FN(DV_D12),	GPIO_FN(DV_D13),	GPIO_FN(DV_D14),
--	GPIO_FN(DV_D15),	GPIO_FN(DV_CLK),
--	GPIO_FN(DV_VSYNC),	GPIO_FN(DV_HSYNC),
--
--	/* MEMC */
--	GPIO_FN(MEMC_AD0),	GPIO_FN(MEMC_AD1),	GPIO_FN(MEMC_AD2),
--	GPIO_FN(MEMC_AD3),	GPIO_FN(MEMC_AD4),	GPIO_FN(MEMC_AD5),
--	GPIO_FN(MEMC_AD6),	GPIO_FN(MEMC_AD7),	GPIO_FN(MEMC_AD8),
--	GPIO_FN(MEMC_AD9),	GPIO_FN(MEMC_AD10),	GPIO_FN(MEMC_AD11),
--	GPIO_FN(MEMC_AD12),	GPIO_FN(MEMC_AD13),	GPIO_FN(MEMC_AD14),
--	GPIO_FN(MEMC_AD15),	GPIO_FN(MEMC_CS0),	GPIO_FN(MEMC_INT),
--	GPIO_FN(MEMC_NWE),	GPIO_FN(MEMC_NOE),	GPIO_FN(MEMC_CS1),
--	GPIO_FN(MEMC_A1),	GPIO_FN(MEMC_ADV),	GPIO_FN(MEMC_DREQ0),
--	GPIO_FN(MEMC_WAIT),	GPIO_FN(MEMC_DREQ1),	GPIO_FN(MEMC_BUSCLK),
--	GPIO_FN(MEMC_A0),
--
--	/* MSIOF0 */
--	GPIO_FN(MSIOF0_SS1),	GPIO_FN(MSIOF0_SS2),	GPIO_FN(MSIOF0_RXD),
--	GPIO_FN(MSIOF0_TXD),	GPIO_FN(MSIOF0_MCK0),	GPIO_FN(MSIOF0_MCK1),
--	GPIO_FN(MSIOF0_RSYNC),	GPIO_FN(MSIOF0_RSCK),	GPIO_FN(MSIOF0_TSCK),
--	GPIO_FN(MSIOF0_TSYNC),
--
--	/* MSIOF1 */
--	GPIO_FN(MSIOF1_RSCK),	GPIO_FN(MSIOF1_RSYNC),
--	GPIO_FN(MSIOF1_MCK0),	GPIO_FN(MSIOF1_MCK1),
--
--	GPIO_FN(MSIOF1_SS2_PORT116),	GPIO_FN(MSIOF1_SS1_PORT117),
--	GPIO_FN(MSIOF1_RXD_PORT118),	GPIO_FN(MSIOF1_TXD_PORT119),
--	GPIO_FN(MSIOF1_TSYNC_PORT120),
--	GPIO_FN(MSIOF1_TSCK_PORT121),	/* MSEL4CR_10_0 */
--
--	GPIO_FN(MSIOF1_SS1_PORT67),	GPIO_FN(MSIOF1_TSCK_PORT72),
--	GPIO_FN(MSIOF1_TSYNC_PORT73),	GPIO_FN(MSIOF1_TXD_PORT74),
--	GPIO_FN(MSIOF1_RXD_PORT75),
--	GPIO_FN(MSIOF1_SS2_PORT202),	/* MSEL4CR_10_1 */
--
--	/* GPIO */
--	GPIO_FN(GPO0),	GPIO_FN(GPI0),
--	GPIO_FN(GPO1),	GPIO_FN(GPI1),
--
--	/* USB0 */
--	GPIO_FN(USB0_OCI),	GPIO_FN(USB0_PPON),	GPIO_FN(VBUS),
--
--	/* USB1 */
--	GPIO_FN(USB1_OCI),	GPIO_FN(USB1_PPON),
--
--	/* BBIF1 */
--	GPIO_FN(BBIF1_RXD),	GPIO_FN(BBIF1_TXD),	GPIO_FN(BBIF1_TSYNC),
--	GPIO_FN(BBIF1_TSCK),	GPIO_FN(BBIF1_RSCK),	GPIO_FN(BBIF1_RSYNC),
--	GPIO_FN(BBIF1_FLOW),	GPIO_FN(BBIF1_RX_FLOW_N),
--
--	/* BBIF2 */
--	GPIO_FN(BBIF2_TXD2_PORT5), /* MSEL5CR_0_0 */
--	GPIO_FN(BBIF2_RXD2_PORT60),
--	GPIO_FN(BBIF2_TSYNC2_PORT6),
--	GPIO_FN(BBIF2_TSCK2_PORT59),
--
--	GPIO_FN(BBIF2_RXD2_PORT90), /* MSEL5CR_0_1 */
--	GPIO_FN(BBIF2_TXD2_PORT183),
--	GPIO_FN(BBIF2_TSCK2_PORT89),
--	GPIO_FN(BBIF2_TSYNC2_PORT184),
--
--	/* FLCTL / PCMCIA */
--	GPIO_FN(IOIS16), /* ? */
--
--	GPIO_FN(A0),	GPIO_FN(A1),	GPIO_FN(A2),	GPIO_FN(A3),
--	GPIO_FN(A4_FOE),	GPIO_FN(A5_FCDE),	/* share with FLCTL */
--	GPIO_FN(A6),	GPIO_FN(A7),	GPIO_FN(A8),	GPIO_FN(A9),
--	GPIO_FN(A10),	GPIO_FN(A11),	GPIO_FN(A12),	GPIO_FN(A13),
--	GPIO_FN(A14),	GPIO_FN(A15),	GPIO_FN(A16),	GPIO_FN(A17),
--	GPIO_FN(A18),	GPIO_FN(A19),	GPIO_FN(A20),	GPIO_FN(A21),
--	GPIO_FN(A22),	GPIO_FN(A23),	GPIO_FN(A24),	GPIO_FN(A25),
--	GPIO_FN(A26),
--
--	GPIO_FN(CKO),
--	GPIO_FN(WAIT_PORT177), /* WAIT Port 90/177 */
--	GPIO_FN(WAIT_PORT90),
--
--	GPIO_FN(FCE0),	GPIO_FN(FCE1),	GPIO_FN(FRB), /* FLCTL */
--
--	/* IRDA */
--	GPIO_FN(IRDA_FIRSEL),	GPIO_FN(IRDA_IN),	GPIO_FN(IRDA_OUT),
--
--	/* ATAPI */
--	GPIO_FN(IDE_D0),	GPIO_FN(IDE_D1),	GPIO_FN(IDE_D2),
--	GPIO_FN(IDE_D3),	GPIO_FN(IDE_D4),	GPIO_FN(IDE_D5),
--	GPIO_FN(IDE_D6),	GPIO_FN(IDE_D7),	GPIO_FN(IDE_D8),
--	GPIO_FN(IDE_D9),	GPIO_FN(IDE_D10),	GPIO_FN(IDE_D11),
--	GPIO_FN(IDE_D12),	GPIO_FN(IDE_D13),	GPIO_FN(IDE_D14),
--	GPIO_FN(IDE_D15),	GPIO_FN(IDE_A0),	GPIO_FN(IDE_A1),
--	GPIO_FN(IDE_A2),	GPIO_FN(IDE_CS0),	GPIO_FN(IDE_CS1),
--	GPIO_FN(IDE_IOWR),	GPIO_FN(IDE_IORD),	GPIO_FN(IDE_IORDY),
--	GPIO_FN(IDE_INT),	GPIO_FN(IDE_RST),	GPIO_FN(IDE_DIRECTION),
--	GPIO_FN(IDE_EXBUF_ENB),	GPIO_FN(IDE_IODACK),	GPIO_FN(IDE_IODREQ),
--
--	/* DMA0 */
--	GPIO_FN(DREQ0),	GPIO_FN(DACK0),
--
--	/* DMA1 */
--	GPIO_FN(DREQ1),	GPIO_FN(DACK1),
--
--	/* SYSC */
--	GPIO_FN(RESETOUTS),
--
--	/* IRREM */
--	GPIO_FN(IROUT),
--
--	/* SDENC */
--	GPIO_FN(SDENC_CPG),
--	GPIO_FN(SDENC_DV_CLKI),
--
--	/* SYSC */
--	GPIO_FN(RESETP_PULLUP),
--	GPIO_FN(RESETP_PLAIN),
--
--	/* DEBUG */
--	GPIO_FN(EDEBGREQ_PULLDOWN),
--	GPIO_FN(EDEBGREQ_PULLUP),
--
--	GPIO_FN(TRACEAUD_FROM_VIO),
--	GPIO_FN(TRACEAUD_FROM_LCDC0),
--	GPIO_FN(TRACEAUD_FROM_MEMC),
--};
--
- static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	PORTCR(0,	0xe6050000), /* PORT0CR */
- 	PORTCR(1,	0xe6050001), /* PORT1CR */
-@@ -3872,9 +3670,6 @@ const struct sh_pfc_soc_info r8a7740_pinmux_info = {
- 	.functions	= pinmux_functions,
- 	.nr_functions	= ARRAY_SIZE(pinmux_functions),
++/*
++ * HACK: The FPGA mappings should be associated with the FPGA device, but we
++ * don't have one at the moment. Associate them with the PFC device to make
++ * sure they will be applied.
++ */
++static const struct pinctrl_map fpga_pinctrl_map[] = {
++	/* FPGA */
++	PIN_MAP_MUX_GROUP_DEFAULT("pfc-r8a7740", "pfc-r8a7740",
++				  "intc_irq10", "intc"),
++};
++
+ static const struct pinctrl_map scifa5_pinctrl_map[] = {
+ 	/* SCIFA5 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.5", "pfc-r8a7740",
+@@ -381,6 +392,8 @@ static void __init bonito_init(void)
  
--	.func_gpios	= pinmux_func_gpios,
--	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
--
- 	.cfg_regs	= pinmux_config_regs,
- 	.data_regs	= pinmux_data_regs,
+ 	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
  
++	pinctrl_register_mappings(fpga_pinctrl_map,
++				  ARRAY_SIZE(fpga_pinctrl_map));
+ 	r8a7740_pinmux_init();
+ 	bonito_fpga_init();
+ 
+@@ -412,7 +425,6 @@ static void __init bonito_init(void)
+ 		gpio_request(GPIO_FN_CS5B,		NULL);
+ 		gpio_request(GPIO_FN_CS6A,		NULL);
+ 		gpio_request(GPIO_FN_CS5A_PORT105,	NULL);
+-		gpio_request(GPIO_FN_IRQ10,		NULL);
+ 
+ 		val = bonito_fpga_read(BVERR);
+ 		pr_info("bonito version: cpu %02x, base %02x\n",
 -- 
 1.8.1.5
 
