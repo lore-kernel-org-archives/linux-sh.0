@@ -1,7 +1,7 @@
 From: Prabhakar Lad <prabhakar.csengg@gmail.com>
-Date: Mon, 15 Apr 2013 14:34:58 +0000
+Date: Mon, 22 Apr 2013 07:29:46 +0000
 Subject: Re: [PATCH v9 02/20] V4L2: support asynchronous subdevice registration
-Message-Id: <CA+V-a8seAopcoXuUHP3yz+mcA6rg=crej8Yc8B+7JfdXO2607Q@mail.gmail.com>
+Message-Id: <CA+V-a8uLsr8MkLs8rjEohqEo=7x-PJq37nhVuAUzsfF5j_uJiA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de> <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
@@ -12,6 +12,8 @@ To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: linux-media@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
 Hi Guennadi,
+
+Thanks for the patch!
 
 On Fri, Apr 12, 2013 at 9:10 PM, Guennadi Liakhovetski
 <g.liakhovetski@gmx.de> wrote:
@@ -28,62 +30,12 @@ On Fri, Apr 12, 2013 at 9:10 PM, Guennadi Liakhovetski
 > that will be called upon various related events.
 >
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->
-> v9: addressed Laurent's comments (thanks)
-> 1. moved valid hw->bus_type check
-> 2. made v4l2_async_unregister() void
-> 3. renamed struct v4l2_async_hw_device to struct v4l2_async_hw_info
-> 4. merged struct v4l2_async_subdev_list into struct v4l2_subdev
-> 5. fixed a typo
-> 6. made subdev_num unsigned
->
->  drivers/media/v4l2-core/Makefile     |    3 +-
->  drivers/media/v4l2-core/v4l2-async.c |  284 ++++++++++++++++++++++++++++++++++
->  include/media/v4l2-async.h           |   99 ++++++++++++
->  include/media/v4l2-subdev.h          |   10 ++
->  4 files changed, 395 insertions(+), 1 deletions(-)
->  create mode 100644 drivers/media/v4l2-core/v4l2-async.c
->  create mode 100644 include/media/v4l2-async.h
 
-Cant wait until its stable, so thought of fixing it!
-Finally I removed some spare time to fix the issue which i was being
-pointing from past so many versions.
-What was happening is bound() callback was being called for the bridge driver
-for every subdevice in the subdevlist. This should not happen the
-bound callback in the
-bridge driver should only be called only if the interested subdev is
-present in subdev list.
-Following is the fix for it.
+with this https://patchwork.linuxtv.org/patch/18096/ patch applied, yo
+can add my
+
+Acked-by: Lad, Prabhakar <prabhakar.csengg@gmail.com>
+Tested-by: Lad, Prabhakar <prabhakar.csengg@gmail.com>
 
 Regards,
---Prabhakar Lad
-
-diff --git a/drivers/media/v4l2-core/v4l2-async.c
-b/drivers/media/v4l2-core/v4l2-async.c
-index 98db2e0..d817cda 100644
---- a/drivers/media/v4l2-core/v4l2-async.c
-+++ b/drivers/media/v4l2-core/v4l2-async.c
-@@ -83,7 +83,20 @@ static int v4l2_async_test_notify(struct
-v4l2_async_notifier *notifier,
-                                  struct v4l2_async_subdev_list *asdl,
-                                  struct v4l2_async_subdev *asd)
- {
--       int ret;
-+       int ret, i, found = 0;
-+
-+       /* scan through the waiting list and see if the async
-+        * subdev is present in it.
-+        */
-+       for (i = 0; i < notifier->subdev_num; i++) {
-+               if (asd = notifier->subdev[i]) {
-+                       found = 1;
-+                       break;
-+               }
-+       }
-+       /* The async subdev 'asd' is not intrseted by waiting list */
-+       if (!found)
-+               return 0;
-
-        /* Remove from the waiting list */
-        list_del(&asd->list);
+--Prabhakar
