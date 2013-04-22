@@ -1,58 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:10 +0000
-Subject: [PATCH 14/30] ARM: shmobile: sh7372: remove DIV4_ZT* clocks
-Message-Id: <1364879246-9470-15-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 22:59:49 +0000
+Subject: [PATCH 08/37] sh-pfc: r8a7740: Hardcode the LCDC0 output
+Message-Id: <1366671618-8796-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The r8a7740 has two LCDC units and two sets of LCDC output signals. By
+default LCDC0 is routed to the LCD0 signals, and LCDC1 to the LCD1
+signals. However, LCDC1 can be routed to the LCD0 signals by setting bit
+MSEL6 in MSEL3CR (the LCD0 signals are further pinmuxed the usual way).
 
-DIV4_ZT* clocks are for debugging and trace bus clock.
-It is not necessary to control it from Linux/Software.
+This could be configured by duplicating the LCD0 pin groups for LCDC1.
+However, this would unnecessarily complicate the LCD pin groups, as no
+r8a7740 board supported in mainline use such a configuration. Hardcode
+the MSEL3CR MSEL6 bit to 0 for now.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |    6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 14 +-------------
+ 1 file changed, 1 insertion(+), 13 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 45d21fe..6c23e3f 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -342,7 +342,7 @@ static struct clk_div4_table div4_table = {
- };
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 5a77d39..9afc7b0 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -277,8 +277,6 @@ enum {
+ 	SCIFB_CTS_PORT173_MARK,
  
- enum { DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_CSIR,
--       DIV4_ZTR, DIV4_ZT, DIV4_ZX, DIV4_HP,
-+       DIV4_ZX, DIV4_HP,
-        DIV4_ISPB, DIV4_S, DIV4_ZB, DIV4_ZB3, DIV4_CP,
-        DIV4_DDRP, DIV4_NR };
+ 	/* LCD0 */
+-	LCDC0_SELECT_MARK,
+-
+ 	LCD0_D0_MARK,	LCD0_D1_MARK,	LCD0_D2_MARK,	LCD0_D3_MARK,
+ 	LCD0_D4_MARK,	LCD0_D5_MARK,	LCD0_D6_MARK,	LCD0_D7_MARK,
+ 	LCD0_D8_MARK,	LCD0_D9_MARK,	LCD0_D10_MARK,	LCD0_D11_MARK,
+@@ -301,8 +299,6 @@ enum {
+ 	LCD0_LCLK_PORT102_MARK,
  
-@@ -355,8 +355,6 @@ static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_B] = DIV4(FRQCRA, 8, 0x6fff, CLK_ENABLE_ON_INIT),
- 	[DIV4_M1] = DIV4(FRQCRA, 4, 0x6fff, CLK_ENABLE_ON_INIT),
- 	[DIV4_CSIR] = DIV4(FRQCRA, 0, 0x6fff, 0),
--	[DIV4_ZTR] = DIV4(FRQCRB, 20, 0x6fff, 0),
--	[DIV4_ZT] = DIV4(FRQCRB, 16, 0x6fff, 0),
- 	[DIV4_ZX] = DIV4(FRQCRB, 12, 0x6fff, 0),
- 	[DIV4_HP] = DIV4(FRQCRB, 4, 0x6fff, 0),
- 	[DIV4_ISPB] = DIV4(FRQCRC, 20, 0x6fff, 0),
-@@ -516,8 +514,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("b_clk", &div4_clks[DIV4_B]),
- 	CLKDEV_CON_ID("m1_clk", &div4_clks[DIV4_M1]),
- 	CLKDEV_CON_ID("csir_clk", &div4_clks[DIV4_CSIR]),
--	CLKDEV_CON_ID("ztr_clk", &div4_clks[DIV4_ZTR]),
--	CLKDEV_CON_ID("zt_clk", &div4_clks[DIV4_ZT]),
- 	CLKDEV_CON_ID("zx_clk", &div4_clks[DIV4_ZX]),
- 	CLKDEV_CON_ID("hp_clk", &div4_clks[DIV4_HP]),
- 	CLKDEV_CON_ID("ispb_clk", &div4_clks[DIV4_ISPB]),
+ 	/* LCD1 */
+-	LCDC1_SELECT_MARK,
+-
+ 	LCD1_D0_MARK,	LCD1_D1_MARK,	LCD1_D2_MARK,	LCD1_D3_MARK,
+ 	LCD1_D4_MARK,	LCD1_D5_MARK,	LCD1_D6_MARK,	LCD1_D7_MARK,
+ 	LCD1_D8_MARK,	LCD1_D9_MARK,	LCD1_D10_MARK,	LCD1_D11_MARK,
+@@ -1002,7 +998,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(IRQ27_PORT57_MARK,		PORT57_FN0,	MSEL1CR_27_1),
+ 
+ 	/* Port58 */
+-	PINMUX_DATA(LCD0_D0_MARK,		PORT58_FN1),
++	PINMUX_DATA(LCD0_D0_MARK,		PORT58_FN1,	MSEL3CR_6_0),
+ 	PINMUX_DATA(KEYOUT7_MARK,		PORT58_FN3),
+ 	PINMUX_DATA(KEYIN0_PORT58_MARK,		PORT58_FN4,	MSEL4CR_18_1),
+ 	PINMUX_DATA(DV_D0_MARK,			PORT58_FN6),
+@@ -1649,10 +1645,6 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(IRQ16_PORT211_MARK,		PORT211_FN0,	MSEL1CR_16_1),
+ 	PINMUX_DATA(HDMI_CEC_MARK,		PORT211_FN1),
+ 
+-	/* LCDC select */
+-	PINMUX_DATA(LCDC0_SELECT_MARK,				MSEL3CR_6_0),
+-	PINMUX_DATA(LCDC1_SELECT_MARK,				MSEL3CR_6_1),
+-
+ 	/* SDENC */
+ 	PINMUX_DATA(SDENC_CPG_MARK,				MSEL4CR_19_0),
+ 	PINMUX_DATA(SDENC_DV_CLKI_MARK,				MSEL4CR_19_1),
+@@ -3578,10 +3570,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	/* IRREM */
+ 	GPIO_FN(IROUT),
+ 
+-	/* LCDC */
+-	GPIO_FN(LCDC0_SELECT),
+-	GPIO_FN(LCDC1_SELECT),
+-
+ 	/* SDENC */
+ 	GPIO_FN(SDENC_CPG),
+ 	GPIO_FN(SDENC_DV_CLKI),
 -- 
-1.7.10.4
+1.8.1.5
 
