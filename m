@@ -1,126 +1,53 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 08 Apr 2013 09:36:20 +0000
-Subject: [PATCH 08/10] sh-pfc: r8a7790: Don't use GPIO enum entries
-Message-Id: <1365413782-17036-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:25 +0000
+Subject: [PATCH 22/35] ARM: shmobile: mackerel: Register pinctrl mapping for USBHS
+Message-Id: <1366671758-8954-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Refactor the GPIO macro magic to use GPIO numbers directly instead of
-the GPIO_GP_x_y enum entries. This will allow removing the GPIO enum
-entries from the mach/r8a7790.h header.
+Replace the GPIO-based USBHS pinmux configuration by a pinctrl mapping.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 90 ++++++++++++++++++++++++------------
- 1 file changed, 60 insertions(+), 30 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 51219e1..1656915 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -24,39 +24,69 @@
- #include <linux/kernel.h>
- #include <linux/platform_data/gpio-rcar.h>
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 552284d..26fbfd3 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1384,6 +1384,14 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 	/* TCA6416 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("0-0020", "pfc-sh7372",
+ 				  "intc_irq9_0", "intc"),
++	/* USBHS0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.0", "pfc-sh7372",
++				  "usb0_vbus", "usb0"),
++	/* USBHS1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
++				  "usb1_vbus", "usb1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
++				  "usb1_otg_id_0", "usb1"),
+ };
  
--#include <mach/r8a7790.h>
--
- #include "core.h"
- #include "sh_pfc.h"
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+@@ -1433,13 +1441,10 @@ static void __init mackerel_init(void)
+ 	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
  
--#define CPU_32_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
--	PORT_1(fn, pfx##31, sfx)
--
--#define CPU_32_PORT1(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx)
--
--#define CPU_32_PORT2(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx)
--
--/* GP_0_0_DATA -> GP_5_31_DATA (except for GP1[30],GP1[31],GP2[30],GP2[31]) */
--#define CPU_ALL_PORT(fn, pfx, sfx)				\
--	CPU_32_PORT(fn, pfx##_0_, sfx),				\
--	CPU_32_PORT1(fn, pfx##_1_, sfx),			\
--	CPU_32_PORT2(fn, pfx##_2_, sfx),			\
--	CPU_32_PORT(fn, pfx##_3_, sfx),				\
--	CPU_32_PORT(fn, pfx##_4_, sfx),				\
--	CPU_32_PORT(fn, pfx##_5_, sfx)				\
--
--#define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
--#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN)
--
--#define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
--#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
-+#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
-+
-+#define PORT_GP_32(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
-+	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
-+	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
-+	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
-+	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
-+	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
-+	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
-+	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
-+	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
-+	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
-+	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
-+	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
-+	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
-+	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
-+	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
-+	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
-+
-+#define PORT_GP_32_REV(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
-+	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
-+	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
-+	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
-+	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
-+	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
-+	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
-+	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
-+	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
-+	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
-+	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
-+	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
-+	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
-+	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
-+	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
-+	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
-+
-+#define CPU_ALL_PORT(fn, sfx)						\
-+	PORT_GP_32(0, fn, sfx),						\
-+	PORT_GP_32(1, fn, sfx),						\
-+	PORT_GP_32(2, fn, sfx),						\
-+	PORT_GP_32(3, fn, sfx),						\
-+	PORT_GP_32(4, fn, sfx),						\
-+	PORT_GP_32(5, fn, sfx)
-+
-+#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
-+
-+#define _GP_GPIO(bank, pin, _name, sfx)					\
-+	[(bank * 32) + pin] = {						\
-+		.name = __stringify(_name),				\
-+		.enum_id = _name##_DATA,				\
-+	}
-+
-+#define _GP_DATA(bank, pin, name, sfx)					\
-+	PINMUX_DATA(name##_DATA, name##_FN)
-+
-+#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
-+#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
-+#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
+ 	/* USBHS0 */
+-	gpio_request(GPIO_FN_VBUS0_0, NULL);
+ 	gpio_request_pulldown(GPIO_PORT168CR); /* VBUS0_0 pull down */
  
- #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
- #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+ 	/* USBHS1 */
+-	gpio_request(GPIO_FN_VBUS0_1, NULL);
+ 	gpio_request_pulldown(GPIO_PORT167CR); /* VBUS0_1 pull down */
+-	gpio_request(GPIO_FN_IDIN_1_113, NULL);
+ 
+ 	/* FSI2 port A (ak4643) */
+ 	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
 -- 
 1.8.1.5
 
