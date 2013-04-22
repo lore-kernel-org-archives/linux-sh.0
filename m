@@ -1,47 +1,67 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 23:45:22 +0000
-Subject: [PATCH v2 4/4] ARM: shmobile: BOCK-W: enable USB in defconfig
-Message-Id: <201304130345.22855.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:30 +0000
+Subject: [PATCH 27/35] ARM: shmobile: ap4evb: Register pinctrl mapping for LCD
+Message-Id: <1366671758-8954-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Enable USB platform EHCI/OHCI and common PHY drivers in 'bockw_defconfig'.
-Enable USB storage driver and SCSI disk driver that it needs as well...
+Replace the GPIO-based LCD pinmux configuration by a pinctrl mapping.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/bockw_defconfig |   11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 29 +++++++----------------------
+ 1 file changed, 7 insertions(+), 22 deletions(-)
 
-Index: renesas/arch/arm/configs/bockw_defconfig
-=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
-+++ renesas/arch/arm/configs/bockw_defconfig
-@@ -48,6 +48,8 @@ CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
-+CONFIG_SCSI=y
-+CONFIG_BLK_DEV_SD=y
- CONFIG_NETDEVICES=y
- # CONFIG_NET_CADENCE is not set
- # CONFIG_NET_VENDOR_BROADCOM is not set
-@@ -71,7 +73,14 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
- # CONFIG_HWMON is not set
--# CONFIG_USB_SUPPORT is not set
-+CONFIG_USB=y
-+CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
-+CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_OHCI_HCD_PLATFORM=y
-+CONFIG_USB_EHCI_HCD_PLATFORM=y
-+CONFIG_USB_STORAGE=y
-+CONFIG_USB_RCAR_PHY=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index c7a9efc..c6e1e44 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1107,6 +1107,13 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
+ 				  "keysc_in04_0", "keysc"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc", "pfc-sh7372",
+ 				  "keysc_out5", "keysc"),
++#ifndef CONFIG_AP4EVB_QHD
++	/* LCDC */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh7372",
++				  "lcd_data18", "lcd"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh7372",
++				  "lcd_sync", "lcd"),
++#endif
+ 	/* MMCIF */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
+ 				  "mmc0_data8_0", "mmc0"),
+@@ -1245,28 +1252,6 @@ static void __init ap4evb_init(void)
+ 	 * For WVGA Panel (18-bit RGB, CONFIG_AP4EVB_WVGA=y) and
+ 	 * IRQ7 for Touch Panel, set dip switches S3, S43 to ON, OFF.
+ 	 */
+-
+-	gpio_request(GPIO_FN_LCDD17,   NULL);
+-	gpio_request(GPIO_FN_LCDD16,   NULL);
+-	gpio_request(GPIO_FN_LCDD15,   NULL);
+-	gpio_request(GPIO_FN_LCDD14,   NULL);
+-	gpio_request(GPIO_FN_LCDD13,   NULL);
+-	gpio_request(GPIO_FN_LCDD12,   NULL);
+-	gpio_request(GPIO_FN_LCDD11,   NULL);
+-	gpio_request(GPIO_FN_LCDD10,   NULL);
+-	gpio_request(GPIO_FN_LCDD9,    NULL);
+-	gpio_request(GPIO_FN_LCDD8,    NULL);
+-	gpio_request(GPIO_FN_LCDD7,    NULL);
+-	gpio_request(GPIO_FN_LCDD6,    NULL);
+-	gpio_request(GPIO_FN_LCDD5,    NULL);
+-	gpio_request(GPIO_FN_LCDD4,    NULL);
+-	gpio_request(GPIO_FN_LCDD3,    NULL);
+-	gpio_request(GPIO_FN_LCDD2,    NULL);
+-	gpio_request(GPIO_FN_LCDD1,    NULL);
+-	gpio_request(GPIO_FN_LCDD0,    NULL);
+-	gpio_request(GPIO_FN_LCDDISP,  NULL);
+-	gpio_request(GPIO_FN_LCDDCK,   NULL);
+-
+ 	gpio_request_one(189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
+ 	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+-- 
+1.8.1.5
+
