@@ -1,38 +1,48 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 21 Apr 2013 18:43:01 +0000
-Subject: [PATCH v2 5/5] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
-Message-Id: <201304212243.02148.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:22 +0000
+Subject: [PATCH 19/35] ARM: shmobile: mackerel: Register pinctrl mapping for SMSC911x
+Message-Id: <1366671758-8954-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Replace the GPIO-based SMSC911x pinmux configuration by a pinctrl
+mapping.
 
-Add the VIN and ML86V7667 drivers to 'bockw_defconfig'.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/bockw_defconfig |    7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/mach-shmobile/board-mackerel.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-Index: renesas/arch/arm/configs/bockw_defconfig
-=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
-+++ renesas/arch/arm/configs/bockw_defconfig
-@@ -76,6 +76,13 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HWMON is not set
- CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
-+CONFIG_MEDIA_SUPPORT=y
-+CONFIG_MEDIA_CAMERA_SUPPORT=y
-+CONFIG_V4L_PLATFORM_DRIVERS=y
-+CONFIG_SOC_CAMERA=y
-+CONFIG_VIDEO_RCAR_VIN=y
-+# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
-+CONFIG_VIDEO_ML86V7667=y
- CONFIG_USB=y
- CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
- CONFIG_USB_EHCI_HCD=y
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index cfcd028..f515c57 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1373,6 +1373,11 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 				  "sdhi2_data4", "sdhi2"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh7372",
+ 				  "sdhi2_ctrl", "sdhi2"),
++	/* SMSC911X */
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
++				  "bsc_cs5a", "bsc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
++				  "intc_irq6_0", "intc"),
+ };
+ 
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+@@ -1416,10 +1421,6 @@ static void __init mackerel_init(void)
+ 				  ARRAY_SIZE(mackerel_pinctrl_map));
+ 	sh7372_pinmux_init();
+ 
+-	/* enable SMSC911X */
+-	gpio_request(GPIO_FN_CS5A,	NULL);
+-	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+-
+ 	/* backlight, off by default */
+ 	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
+ 
+-- 
+1.8.1.5
+
