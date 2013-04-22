@@ -1,104 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 02 Apr 2013 04:20:02 +0000
-Subject: [PATCH 3/5 v3] ARM: shmobile: bockw: add SMSC ethernet support
-Message-Id: <87obdx5ztd.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:14 +0000
+Subject: [PATCH 11/35] ARM: shmobile: mackerel: Register pinctrl mapping for the ADXL34X
+Message-Id: <1366671758-8954-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
- <87fvzb56n3.wl%kuninori.morimoto.gx@renesas.com>
- <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sj395zvv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds SMSC ethernet support on Bock-W
+Replace the GPIO-based ADXL34X pinmux configuration by a pinctrl
+mapping.
 
-Bock-W SMSC needs FPGA settings which enables interrupt.
-This patch does it on bockw_init() function.
-As notes for future, this FPGA settings should be updated,
-since this FPGA is using cascaded interrupt.
-Current code is assuming that this FPGA interrupt user is only SMSC.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2 -> v3
+ arch/arm/mach-shmobile/board-mackerel.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
- - C code only
-
- arch/arm/mach-shmobile/Kconfig       |    1 +
- arch/arm/mach-shmobile/board-bockw.c |   38 ++++++++++++++++++++++++++++++++++
- 2 files changed, 39 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 9125e14..b2219bd 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -119,6 +119,7 @@ config MACH_BOCKW
- 	bool "BOCK-W platform"
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
-+	select RENESAS_INTC_IRQPIN
- 	select USE_OF
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 5b452e1..d252c6e 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1303,6 +1303,9 @@ static struct i2c_board_info i2c1_devices[] = {
+ };
  
- config MACH_MARZEN
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 56ab56e..38e5e50 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -19,14 +19,52 @@
-  */
+ static const struct pinctrl_map mackerel_pinctrl_map[] = {
++	/* ADXL34X */
++	PIN_MAP_MUX_GROUP_DEFAULT("1-0053", "pfc-sh7372",
++				  "intc_irq21", "intc"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1454,8 +1457,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_IRQ7_40,	NULL);
+ 	irq_set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
  
- #include <linux/platform_device.h>
-+#include <linux/smsc911x.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r8a7778.h>
- #include <asm/mach/arch.h>
+-	/* enable Accelerometer */
+-	gpio_request(GPIO_FN_IRQ21,	NULL);
++	/* Accelerometer */
+ 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
  
-+static struct smsc911x_platform_config smsc911x_data = {
-+	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
-+	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
-+	.flags		= SMSC911X_USE_32BIT,
-+	.phy_interface	= PHY_INTERFACE_MODE_MII,
-+};
-+
-+static struct resource smsc911x_resources[] = {
-+	DEFINE_RES_MEM(0x18300000, 0x1000),
-+	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
-+};
-+
-+#define IRQ0MR	0x30
- static void __init bockw_init(void)
- {
-+	void __iomem *fpga;
-+
- 	r8a7778_clock_init();
-+	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+
-+	fpga = ioremap_nocache(0x18200000, SZ_1M);
-+	if (fpga) {
-+		/*
-+		 * CAUTION
-+		 *
-+		 * IRQ0/1 is cascaded interrupt from FPGA.
-+		 * it should be cared in the future
-+		 * Now, it is assuming IRQ0 was used only from SMSC.
-+		 */
-+		u16 val = ioread16(fpga + IRQ0MR);
-+		val &= ~(1 << 4); /* enable SMSC911x */
-+		iowrite16(val, fpga + IRQ0MR);
-+		iounmap(fpga);
-+
-+		platform_device_register_resndata(
-+			&platform_bus, "smsc911x", -1,
-+			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
-+			&smsc911x_data, sizeof(smsc911x_data));
-+	}
- }
- 
- static const char *bockw_boards_compat_dt[] __initdata = {
+ 	/* SDHI0 PORT172 card-detect IRQ26 */
 -- 
-1.7.9.5
+1.8.1.5
 
