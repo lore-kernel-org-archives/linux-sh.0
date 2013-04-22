@@ -1,180 +1,198 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:08:21 +0000
-Subject: [PATCH 06/11] ARM: shmobile: Initial r8a7790 Lager board support
-Message-Id: <1364954906-16014-7-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:16:23 +0000
+Subject: [PATCH 2/4] sh-pfc: sh73a0: Add VCCQ MC0 regulator
+Message-Id: <1366672585-9098-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The sh73a0 has an internal power gate on the VCCQ power supply for the
+SDHI0 device that is controlled (for some strange reason) by a bit in a
+PFC register.
 
-Lager base board support making use of 2 GiB of memory,
-the r8a7790 SoC with the SCIF0 serial port and CA15 with
-ARM architected timer.
+Export a regulator to control the SDHI0 VCCQ power supply.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/Makefile           |    1 +
- arch/arm/boot/dts/r8a7790-lager.dts  |   31 +++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig       |    9 ++++++-
- arch/arm/mach-shmobile/Makefile      |    1 +
- arch/arm/mach-shmobile/board-lager.c |   46 ++++++++++++++++++++++++++++++++++
- 5 files changed, 87 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm/boot/dts/r8a7790-lager.dts
- create mode 100644 arch/arm/mach-shmobile/board-lager.c
+ drivers/pinctrl/sh-pfc/Kconfig      |   1 +
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 134 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 135 insertions(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index a99b0f7..47b6be7 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -138,6 +138,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7779-marzen-reference.dtb \
-+	r8a7790-lager.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
- 	r8a73a4-ape6evm.dtb \
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-new file mode 100644
-index 0000000..09a84fc
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -0,0 +1,31 @@
-+/*
-+ * Device Tree Source for the Lager board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
+diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
+index 103e8bf..4ff2b50 100644
+--- a/drivers/pinctrl/sh-pfc/Kconfig
++++ b/drivers/pinctrl/sh-pfc/Kconfig
+@@ -72,6 +72,7 @@ config PINCTRL_PFC_SH73A0
+ 	def_bool y
+ 	depends on ARCH_SH73A0
+ 	select PINCTRL_SH_PFC
++	select REGULATOR
+ 
+ config PINCTRL_PFC_SH7720
+ 	def_bool y
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 587f777..ea1fcbe 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -20,7 +20,11 @@
+  */
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/module.h>
+ #include <linux/pinctrl/pinconf-generic.h>
++#include <linux/regulator/driver.h>
++#include <linux/regulator/machine.h>
++#include <linux/slab.h>
+ 
+ #include <mach/sh73a0.h>
+ #include <mach/irqs.h>
+@@ -3888,6 +3892,92 @@ static const struct pinmux_irq pinmux_irqs[] = {
+ 	PINMUX_IRQ(EXT_IRQ16L(9), 308),
+ };
+ 
++/* -----------------------------------------------------------------------------
++ * VCCQ MC0 regulator
 + */
 +
-+/dts-v1/;
-+/include/ "r8a7790.dtsi"
-+
-+/ {
-+	model = "Lager";
-+	compatible = "renesas,lager", "renesas,r8a7790";
-+
-+	chosen {
-+		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x80000000>;
-+	};
-+
-+	lbsc {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index c0da6af..549e059 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -154,6 +154,11 @@ config MACH_MARZEN_REFERENCE
- 
- 	   This is intended to aid developers
- 
-+config MACH_LAGER
-+	bool "Lager board"
-+	depends on ARCH_R8A7790
-+	select USE_OF
-+
- config MACH_KZM9D
- 	bool "KZM9D board"
- 	depends on ARCH_EMEV2
-@@ -194,7 +199,8 @@ config MEMORY_START
- 	hex "Physical memory start address"
- 	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
- 				MACH_MACKEREL || MACH_BONITO || \
--				MACH_ARMADILLO800EVA || MACH_APE6EVM
-+				MACH_ARMADILLO800EVA || MACH_APE6EVM || \
-+				MACH_LAGER
- 	default "0x41000000" if MACH_KOTA2
- 	default "0x00000000"
- 	---help---
-@@ -204,6 +210,7 @@ config MEMORY_START
- 
- config MEMORY_SIZE
- 	hex "Physical memory size"
-+	default "0x80000000" if MACH_LAGER
- 	default "0x40000000" if MACH_APE6EVM
- 	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
- 				MACH_ARMADILLO800EVA
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index ec2524e..068f1da 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -44,6 +44,7 @@ obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
-+obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-new file mode 100644
-index 0000000..ea6f9e5
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -0,0 +1,46 @@
-+/*
-+ * Lager board support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/interrupt.h>
-+#include <linux/irqchip.h>
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include <mach/common.h>
-+#include <mach/r8a7790.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+
-+static void __init lager_add_standard_devices(void)
++static void __sh73a0_vccq_mc0_enable(struct regulator_dev *reg, bool enable)
 +{
-+	r8a7790_clock_init();
-+	r8a7790_add_standard_devices();
++	struct sh_pfc *pfc = reg->reg_data;
++	void __iomem *addr = pfc->window[1].virt + 4;
++	unsigned long flags;
++	u32 value;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	value = ioread32(addr);
++
++	if (enable)
++		value |= BIT(28);
++	else
++		value &= ~BIT(28);
++
++	iowrite32(value, addr);
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
 +}
 +
-+static const char *lager_boards_compat_dt[] __initdata = {
-+	"renesas,lager",
-+	NULL,
++static int sh73a0_vccq_mc0_enable(struct regulator_dev *reg)
++{
++	__sh73a0_vccq_mc0_enable(reg, true);
++	return 0;
++}
++
++static int sh73a0_vccq_mc0_disable(struct regulator_dev *reg)
++{
++	__sh73a0_vccq_mc0_enable(reg, false);
++	return 0;
++}
++
++static int sh73a0_vccq_mc0_is_enabled(struct regulator_dev *reg)
++{
++	struct sh_pfc *pfc = reg->reg_data;
++	void __iomem *addr = pfc->window[1].virt + 4;
++	unsigned long flags;
++	u32 value;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++	value = ioread32(addr);
++	spin_unlock_irqrestore(&pfc->lock, flags);
++
++	return !!(value & BIT(28));
++}
++
++static int sh73a0_vccq_mc0_get_voltage(struct regulator_dev *reg)
++{
++	return 1800000;
++}
++
++static struct regulator_ops sh73a0_vccq_mc0_ops = {
++	.enable = sh73a0_vccq_mc0_enable,
++	.disable = sh73a0_vccq_mc0_disable,
++	.is_enabled = sh73a0_vccq_mc0_is_enabled,
++	.get_voltage = sh73a0_vccq_mc0_get_voltage,
 +};
 +
-+DT_MACHINE_START(LAGER_DT, "lager")
-+	.init_irq	= irqchip_init,
-+	.init_time	= shmobile_timer_init,
-+	.init_machine	= lager_add_standard_devices,
-+	.dt_compat	= lager_boards_compat_dt,
-+MACHINE_END
++static const struct regulator_desc sh73a0_vccq_mc0_desc = {
++	.owner = THIS_MODULE,
++	.name = "vccq_mc0",
++	.type = REGULATOR_VOLTAGE,
++	.ops = &sh73a0_vccq_mc0_ops,
++};
++
++static struct regulator_consumer_supply sh73a0_vccq_mc0_consumers[] = {
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
++static const struct regulator_init_data sh73a0_vccq_mc0_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies = ARRAY_SIZE(sh73a0_vccq_mc0_consumers),
++	.consumer_supplies = sh73a0_vccq_mc0_consumers,
++};
++
++/* -----------------------------------------------------------------------------
++ * Pin bias
++ */
++
+ #define PORTnCR_PULMD_OFF	(0 << 6)
+ #define PORTnCR_PULMD_DOWN	(2 << 6)
+ #define PORTnCR_PULMD_UP	(3 << 6)
+@@ -3934,7 +4024,51 @@ static void sh73a0_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
+ 	iowrite8(value, addr);
+ }
+ 
++/* -----------------------------------------------------------------------------
++ * SoC information
++ */
++
++struct sh73a0_pinmux_data {
++	struct regulator_dev *vccq_mc0;
++};
++
++static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
++{
++	struct sh73a0_pinmux_data *data;
++	struct regulator_config cfg = { };
++	int ret;
++
++	data = devm_kzalloc(pfc->dev, sizeof(*data), GFP_KERNEL);
++	if (data = NULL)
++		return -ENOMEM;
++
++	cfg.dev = pfc->dev;
++	cfg.init_data = &sh73a0_vccq_mc0_init_data;
++	cfg.driver_data = pfc;
++
++	data->vccq_mc0 = regulator_register(&sh73a0_vccq_mc0_desc, &cfg);
++	if (IS_ERR(data->vccq_mc0)) {
++		ret = PTR_ERR(data->vccq_mc0);
++		dev_err(pfc->dev, "Failed to register VCCQ MC0 regulator: %d\n",
++			ret);
++		return ret;
++	}
++
++	pfc->soc_data = data;
++
++	return 0;
++}
++
++static void sh73a0_pinmux_soc_cleanup(struct sh_pfc *pfc)
++{
++	struct sh73a0_pinmux_data *data = pfc->soc_data;
++
++	regulator_unregister(data->vccq_mc0);
++}
++
+ static const struct sh_pfc_soc_operations sh73a0_pinmux_ops = {
++	.init = sh73a0_pinmux_soc_init,
++	.cleanup = sh73a0_pinmux_soc_cleanup,
+ 	.get_bias = sh73a0_pinmux_get_bias,
+ 	.set_bias = sh73a0_pinmux_set_bias,
+ };
 -- 
-1.7.10.4
+1.8.1.5
 
