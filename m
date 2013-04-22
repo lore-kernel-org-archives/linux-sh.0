@@ -1,144 +1,94 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 23:37:36 +0000
-Subject: [PATCH v4 9/9] rcar-phy: handle platform data
-Message-Id: <201304130337.37259.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:06 +0000
+Subject: [PATCH 03/35] sh-pfc: sh7372: Add FLCTL pin groups and functions
+Message-Id: <1366671758-8954-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Set the USBPCTRL0 register from the passed platform data in rcar_usb_phy_init();
-don't reset it to 0 in  rcar_usb_phy_shutdown()  anymore as that does not make
-sense.  Also, don't allow the driver's probe to succeed when the platform data
-are not supplied with a device.
-
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 3:
-- moved USBPCTRL0 register bit #define's from patch #7, removing the prefixes;
-- implemented parsing of the platform data to set USBPCTRL0 register.
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 44 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-Changes since version 2:
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
- drivers/usb/phy/rcar-phy.c |   53 +++++++++++++++++++++++++++++++++++++++------
- 1 file changed, 46 insertions(+), 7 deletions(-)
-
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -1,8 +1,9 @@
- /*
-  * Renesas R-Car USB phy driver
-  *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2012-2013 Renesas Solutions Corp.
-  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License version 2 as
-@@ -11,10 +12,11 @@
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 3da8319..9948699 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1081,6 +1081,38 @@ static const unsigned int ceu_field_pins[] = {
+ static const unsigned int ceu_field_mux[] = {
+ 	VIO_FIELD_MARK,
+ };
++/* - FLCTL ------------------------------------------------------------------ */
++static const unsigned int flctl_data_pins[] = {
++	/* NAF[0:15] */
++	46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
++};
++static const unsigned int flctl_data_mux[] = {
++	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
++	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
++	D8_NAF8_MARK, D9_NAF9_MARK, D10_NAF10_MARK, D11_NAF11_MARK,
++	D12_NAF12_MARK, D13_NAF13_MARK, D14_NAF14_MARK, D15_NAF15_MARK,
++};
++static const unsigned int flctl_ce0_pins[] = {
++	/* CE */
++	68,
++};
++static const unsigned int flctl_ce0_mux[] = {
++	FCE0_MARK,
++};
++static const unsigned int flctl_ce1_pins[] = {
++	/* CE */
++	66,
++};
++static const unsigned int flctl_ce1_mux[] = {
++	FCE1_MARK,
++};
++static const unsigned int flctl_ctrl_pins[] = {
++	/* FCDE, FOE, FSC, FWE, FRB */
++	24, 23, 69, 70, 73,
++};
++static const unsigned int flctl_ctrl_mux[] = {
++	A5_FCDE_MARK, A4_FOE_MARK, RD_FSC_MARK, WE0_FWE_MARK, FRB_MARK,
++};
+ /* - MMCIF ------------------------------------------------------------------ */
+ static const unsigned int mmc0_data1_0_pins[] = {
+ 	/* D[0] */
+@@ -1242,6 +1274,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(ceu_clk_2),
+ 	SH_PFC_PIN_GROUP(ceu_sync),
+ 	SH_PFC_PIN_GROUP(ceu_field),
++	SH_PFC_PIN_GROUP(flctl_data),
++	SH_PFC_PIN_GROUP(flctl_ce0),
++	SH_PFC_PIN_GROUP(flctl_ce1),
++	SH_PFC_PIN_GROUP(flctl_ctrl),
+ 	SH_PFC_PIN_GROUP(mmc0_data1_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data4_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data8_0),
+@@ -1288,6 +1324,13 @@ static const char * const ceu_groups[] = {
+ 	"ceu_field",
+ };
  
- #include <linux/delay.h>
- #include <linux/io.h>
--#include <linux/usb/otg.h>
- #include <linux/platform_device.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
-+#include <linux/usb/otg.h>
-+#include <linux/usb/rcar-phy.h>
- 
- /* REGS block */
- #define USBPCTRL0	0x00
-@@ -24,6 +26,25 @@
- #define USBOH0		0x1C
- #define USBCTL0		0x58
- 
-+/* USBPCTRL0 */
-+#define OVC2		(1 << 10) /* Switches the OVC input pin for port 2: */
-+				/* 1: USB_OVC2, 0: OVC2			*/
-+#define OVC1_VBUS1	(1 << 9) /* Switches the OVC input pin for port 1: */
-+				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
-+				/* Function mode: set to 0		*/
-+#define OVC0		(1 << 8) /* Switches the OVC input pin for port 0: */
-+				/* 1: USB_OVC0 pin, 0: OVC0		*/
-+#define OVC2_ACT 	(1 << 6) /* Host mode: OVC2 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+#define PENC		(1 << 4) /* Function mode: output level of PENC1 pin: */
-+				/* 1: high, 0: low			*/
-+#define OVC0_ACT 	(1 << 3) /* Host mode: OVC0 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+#define OVC1_ACT	(1 << 1) /* Host mode: OVC1 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+				/* Function mode: be sure to set to 1	*/
-+#define PORT1		(1 << 0) /* Selects port 1 mode:		*/
-+				/* 1: function, 0: host			*/
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
- #define PLL_ENB		(1 << 1)
-@@ -55,7 +76,9 @@ static int rcar_usb_phy_init(struct usb_
- {
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
-+	struct rcar_phy_platform_data *pdata = dev->platform_data;
- 	void __iomem *reg0 = priv->reg0;
-+	const u8 ovcn_act[] = { OVC0_ACT, OVC1_ACT, OVC2_ACT };
- 	int i;
- 	u32 val;
- 	unsigned long flags;
-@@ -89,8 +112,21 @@ static int rcar_usb_phy_init(struct usb_
- 		/* (4) USB-PHY reset clear */
- 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
- 
--		/* set platform specific port settings */
--		iowrite32(0x00000000, (reg0 + USBPCTRL0));
-+		/* Board specific port settings */
-+		val = 0;
-+		if (pdata->port1_func)
-+			val |= PORT1;
-+		if (pdata->penc1)
-+			val |= PENC;
-+		for (i = 0; i < 3; i++) {
-+			/* OVCn bits follow each other in the right order */
-+			if (pdata->ovc_pin[i].select_3_3v)
-+				val |= OVC0 << i;
-+			/* OVCn_ACT bits are spaced by irregular intervals */
-+			if (pdata->ovc_pin[i].active_high)
-+				val |= ovcn_act[i];
-+		}
-+		iowrite32(val, (reg0 + USBPCTRL0));
- 
- 		/*
- 		 * Bus alignment settings
-@@ -117,10 +153,8 @@ static void rcar_usb_phy_shutdown(struct
- 
- 	spin_lock_irqsave(&priv->lock, flags);
- 
--	if (priv->counter-- = 1) { /* last user */
--		iowrite32(0x00000000, (reg0 + USBPCTRL0));
-+	if (priv->counter-- = 1)	/* last user */
- 		iowrite32(0x00000000, (reg0 + USBPCTRL1));
--	}
- 
- 	spin_unlock_irqrestore(&priv->lock, flags);
- }
-@@ -133,6 +167,11 @@ static int rcar_usb_phy_probe(struct pla
- 	void __iomem *reg0;
- 	int ret;
- 
-+	if (!pdev->dev.platform_data) {
-+		dev_err(dev, "No platform data\n");
-+		return -EINVAL;
-+	}
++static const char * const flctl_groups[] = {
++	"flctl_data",
++	"flctl_ce0",
++	"flctl_ce1",
++	"flctl_ctrl",
++};
 +
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
+ static const char * const mmc0_groups[] = {
+ 	"mmc0_data1_0",
+ 	"mmc0_data4_0",
+@@ -1322,6 +1365,7 @@ static const char * const sdhi2_groups[] = {
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(ceu),
++	SH_PFC_FUNCTION(flctl),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+-- 
+1.8.1.5
+
