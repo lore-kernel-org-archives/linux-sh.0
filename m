@@ -1,216 +1,171 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Apr 2013 11:07:11 +0000
-Subject: [PATCH v7 7/7] ARM: shmobile: convert ap4evb to asynchronously register camera subdevices
-Message-Id: <1365419231-14830-8-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 22 Apr 2013 23:02:11 +0000
+Subject: [PATCH 08/35] sh-pfc: sh7372: Add LCDC pin groups and functions
+Message-Id: <1366671758-8954-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-Register the imx074 camera I2C and the CSI-2 platform devices directly
-in board platform data instead of letting the sh_mobile_ceu_camera driver
-and the soc-camera framework register them at their run-time. This uses
-the V4L2 asynchronous subdevice probing capability.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |  103 +++++++++++++++++++-------------
- arch/arm/mach-shmobile/clock-sh7372.c |    1 +
- 2 files changed, 62 insertions(+), 42 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 121 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 121 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 38f1259..450e06b 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -50,6 +50,7 @@
- #include <media/sh_mobile_ceu.h>
- #include <media/sh_mobile_csi2.h>
- #include <media/soc_camera.h>
-+#include <media/v4l2-async.h>
- 
- #include <sound/sh_fsi.h>
- #include <sound/simple_card.h>
-@@ -871,22 +872,32 @@ static struct platform_device leds_device = {
- 	},
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 50cbff6..8503747 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1310,6 +1310,103 @@ static const unsigned int keysc_out8_mux[] = {
+ 	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
+ 	KEYOUT4_MARK, KEYOUT5_MARK, KEYOUT6_MARK, KEYOUT7_MARK,
+ };
++/* - LCD -------------------------------------------------------------------- */
++static const unsigned int lcd_data8_pins[] = {
++	/* D[0:7] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++};
++static const unsigned int lcd_data8_mux[] = {
++	/* LCDC */
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++};
++static const unsigned int lcd_data9_pins[] = {
++	/* D[0:8] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129,
++	137, 138, 139, 140, 141, 142, 143, 144,
++};
++static const unsigned int lcd_data9_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK,
++};
++static const unsigned int lcd_data12_pins[] = {
++	/* D[0:11] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129, 130, 131, 132,
++};
++static const unsigned int lcd_data12_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK,	LCDD10_MARK, LCDD11_MARK,
++};
++static const unsigned int lcd_data16_pins[] = {
++	/* D[0:15] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129, 130, 131, 132, 133, 134, 135, 136,
++};
++static const unsigned int lcd_data16_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK,	LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
++};
++static const unsigned int lcd_data18_pins[] = {
++	/* D[0:17] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129, 130, 131, 132, 133, 134, 135, 136,
++	137, 138,
++};
++static const unsigned int lcd_data18_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK,	LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
++	LCDD16_MARK, LCDD17_MARK,
++};
++static const unsigned int lcd_data24_pins[] = {
++	/* D[0:23] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129, 130, 131, 132, 133, 134, 135, 136,
++	137, 138, 139, 140, 141, 142, 143, 144,
++};
++static const unsigned int lcd_data24_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK,	LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
++	LCDD16_MARK, LCDD17_MARK, LCDD18_MARK, LCDD19_MARK,
++	LCDD20_MARK, LCDD21_MARK, LCDD22_MARK, LCDD23_MARK,
++};
++static const unsigned int lcd_display_pins[] = {
++	/* DON */
++	151,
++};
++static const unsigned int lcd_display_mux[] = {
++	LCDDON_MARK,
++};
++static const unsigned int lcd_lclk_pins[] = {
++	/* LCLK */
++	150,
++};
++static const unsigned int lcd_lclk_mux[] = {
++	LCDLCLK_MARK,
++};
++static const unsigned int lcd_sync_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	146, 145, 147, 149,
++};
++static const unsigned int lcd_sync_mux[] = {
++	LCDVSYN_MARK, LCDHSYN_MARK, LCDDCK_MARK, LCDDISP_MARK,
++};
++static const unsigned int lcd_sys_pins[] = {
++	/* CS, WR, RD, RS */
++	145, 147, 148, 149,
++};
++static const unsigned int lcd_sys_mux[] = {
++	LCDCS_MARK, LCDWR_MARK, LCDRD_MARK, LCDRS_MARK,
++};
+ /* - MMCIF ------------------------------------------------------------------ */
+ static const unsigned int mmc0_data1_0_pins[] = {
+ 	/* D[0] */
+@@ -1545,6 +1642,16 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(keysc_out5),
+ 	SH_PFC_PIN_GROUP(keysc_out6),
+ 	SH_PFC_PIN_GROUP(keysc_out8),
++	SH_PFC_PIN_GROUP(lcd_data8),
++	SH_PFC_PIN_GROUP(lcd_data9),
++	SH_PFC_PIN_GROUP(lcd_data12),
++	SH_PFC_PIN_GROUP(lcd_data16),
++	SH_PFC_PIN_GROUP(lcd_data18),
++	SH_PFC_PIN_GROUP(lcd_data24),
++	SH_PFC_PIN_GROUP(lcd_display),
++	SH_PFC_PIN_GROUP(lcd_lclk),
++	SH_PFC_PIN_GROUP(lcd_sync),
++	SH_PFC_PIN_GROUP(lcd_sys),
+ 	SH_PFC_PIN_GROUP(mmc0_data1_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data4_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data8_0),
+@@ -1683,6 +1790,19 @@ static const char * const keysc_groups[] = {
+ 	"keysc_out8",
  };
  
--static struct i2c_board_info imx074_info = {
--	I2C_BOARD_INFO("imx074", 0x1a),
-+/* I2C */
-+static struct soc_camera_subdev_desc imx074_desc;
-+static struct i2c_board_info i2c0_devices[] = {
-+	{
-+		I2C_BOARD_INFO("ak4643", 0x13),
-+	}, {
-+		I2C_BOARD_INFO("imx074", 0x1a),
-+		.platform_data = &imx074_desc,
-+	},
- };
- 
--static struct soc_camera_link imx074_link = {
--	.bus_id		= 0,
--	.board_info	= &imx074_info,
--	.i2c_adapter_id	= 0,
--	.module_name	= "imx074",
-+static struct i2c_board_info i2c1_devices[] = {
-+	{
-+		I2C_BOARD_INFO("r2025sd", 0x32),
-+	},
- };
- 
--static struct platform_device ap4evb_camera = {
--	.name   = "soc-camera-pdrv",
--	.id     = 0,
--	.dev    = {
--		.platform_data = &imx074_link,
-+static struct resource csi2_resources[] = {
-+	{
-+		.name	= "CSI2",
-+		.start	= 0xffc90000,
-+		.end	= 0xffc90fff,
-+		.flags	= IORESOURCE_MEM,
-+	}, {
-+		.start	= intcs_evt2irq(0x17a0),
-+		.flags  = IORESOURCE_IRQ,
- 	},
- };
- 
-@@ -895,7 +906,7 @@ static struct sh_csi2_client_config csi2_clients[] = {
- 		.phy		= SH_CSI2_PHY_MAIN,
- 		.lanes		= 0,		/* default: 2 lanes */
- 		.channel	= 0,
--		.pdev		= &ap4evb_camera,
-+		.name		= "imx074",
- 	},
- };
- 
-@@ -906,31 +917,50 @@ static struct sh_csi2_pdata csi2_info = {
- 	.flags		= SH_CSI2_ECC | SH_CSI2_CRC,
- };
- 
--static struct resource csi2_resources[] = {
--	[0] = {
--		.name	= "CSI2",
--		.start	= 0xffc90000,
--		.end	= 0xffc90fff,
--		.flags	= IORESOURCE_MEM,
-+static struct platform_device csi2_device = {
-+	.name		= "sh-mobile-csi2",
-+	.id		= 0,
-+	.num_resources	= ARRAY_SIZE(csi2_resources),
-+	.resource	= csi2_resources,
-+	.dev		= {
-+		.platform_data = &csi2_info,
- 	},
--	[1] = {
--		.start	= intcs_evt2irq(0x17a0),
--		.flags  = IORESOURCE_IRQ,
++static const char * const lcd_groups[] = {
++	"lcd_data8",
++	"lcd_data9",
++	"lcd_data12",
++	"lcd_data16",
++	"lcd_data18",
++	"lcd_data24",
++	"lcd_display",
++	"lcd_lclk",
++	"lcd_sync",
++	"lcd_sys",
 +};
 +
-+static struct soc_camera_async_subdev csi2_sd = {
-+	.asd.hw = {
-+		.bus_type = V4L2_ASYNC_BUS_PLATFORM,
-+		.match.platform.name = "sh-mobile-csi2.0",
- 	},
-+	.role = SOCAM_SUBDEV_DATA_PROCESSOR,
- };
- 
--static struct sh_mobile_ceu_companion csi2 = {
--	.id		= 0,
--	.num_resources	= ARRAY_SIZE(csi2_resources),
--	.resource	= csi2_resources,
--	.platform_data	= &csi2_info,
-+static struct soc_camera_async_subdev imx074_sd = {
-+	.asd.hw = {
-+		.bus_type = V4L2_ASYNC_BUS_I2C,
-+		.match.i2c = {
-+			.adapter_id = 0,
-+			.address = 0x1a,
-+		},
-+	},
-+	.role = SOCAM_SUBDEV_DATA_SOURCE,
- };
- 
-+static struct v4l2_async_subdev *ceu_subdevs[] = {
-+	/* Single 2-element group */
-+	&csi2_sd.asd,
-+	&imx074_sd.asd,
-+};
-+
-+/* 0-terminated array of group-sizes */
-+static int ceu_subdev_sizes[] = {ARRAY_SIZE(ceu_subdevs), 0};
-+
- static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
- 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
- 	.max_width = 8188,
- 	.max_height = 8188,
--	.csi2 = &csi2,
-+	.asd = ceu_subdevs,
-+	.asd_sizes = ceu_subdev_sizes,
- };
- 
- static struct resource ceu_resources[] = {
-@@ -975,7 +1005,7 @@ static struct platform_device *ap4evb_devices[] __initdata = {
- 	&lcdc_device,
- 	&lcdc1_device,
- 	&ceu_device,
--	&ap4evb_camera,
-+	&csi2_device,
- 	&meram_device,
- };
- 
-@@ -1070,19 +1100,6 @@ static struct i2c_board_info tsc_device = {
- 	/*.irq is selected on ap4evb_init */
- };
- 
--/* I2C */
--static struct i2c_board_info i2c0_devices[] = {
--	{
--		I2C_BOARD_INFO("ak4643", 0x13),
--	},
--};
--
--static struct i2c_board_info i2c1_devices[] = {
--	{
--		I2C_BOARD_INFO("r2025sd", 0x32),
--	},
--};
--
- 
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
- #define GPIO_PORT10CR	IOMEM(0xE605100A)
-@@ -1097,6 +1114,7 @@ static void __init ap4evb_init(void)
- 		{ "A3SP", &sdhi0_device, },
- 		{ "A3SP", &sdhi1_device, },
- 		{ "A4R", &ceu_device, },
-+		{ "A4R", &csi2_device, },
- 	};
- 	u32 srcr4;
- 	struct clk *clk;
-@@ -1324,6 +1342,7 @@ static void __init ap4evb_init(void)
- 	sh7372_pm_init();
- 	pm_clk_add(&fsi_device.dev, "spu2");
- 	pm_clk_add(&lcdc1_device.dev, "hdmi");
-+	pm_clk_add(&csi2_device.dev, "csir");
- }
- 
- MACHINE_START(AP4EVB, "ap4evb")
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 45d21fe..2e8cb42 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -617,6 +617,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
- 	CLKDEV_ICK_ID("xcka", "sh_fsi2", &fsiack_clk),
- 	CLKDEV_ICK_ID("xckb", "sh_fsi2", &fsibck_clk),
-+	CLKDEV_ICK_ID("csir", "sh-mobile-csi2.0", &div4_clks[DIV4_CSIR]),
- };
- 
- void __init sh7372_clock_init(void)
+ static const char * const mmc0_groups[] = {
+ 	"mmc0_data1_0",
+ 	"mmc0_data4_0",
+@@ -1723,6 +1843,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(hdmi),
+ 	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(keysc),
++	SH_PFC_FUNCTION(lcd),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
 -- 
-1.7.2.5
+1.8.1.5
 
