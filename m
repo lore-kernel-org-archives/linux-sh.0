@@ -1,68 +1,152 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:07:19 +0000
-Subject: [PATCH 23/30] ARM: shmobile: r8a7740: move global functions to r8a7740.h
-Message-Id: <1364879246-9470-24-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 17:10:59 +0000
+Subject: [PATCH v3 2/4] ARM: shmobile: r8a7779: add VIN support
+Message-Id: <201304232110.59718.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
+References: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-There is no reason each CPU's own function has to exist in common.h.
-r8a7740_xxx() go to r8a7740.h
+Add VIN clocks and platform devices for R8A7779 SoC; add function to register
+the VIN platform devices.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: added 'id' parameter check to r8a7779_add_vin_device(), renamed some
+variables, annotated vin[01]_resources[] and 'vin[01]_info' as '__initdata'.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/include/mach/common.h  |    9 ---------
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    9 +++++++++
- 2 files changed, 9 insertions(+), 9 deletions(-)
+Changes since version 2:
+- annotated vin[01]_resources[] and 'vin[01]_info' as '__initdata' since they're
+  kmemdup()'ed while registering the platform devices anyway;
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 48eeca9..4d5410d 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -19,15 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
- 			      struct cpuidle_driver *drv, int index);
- extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
- 
--extern void r8a7740_meram_workaround(void);
--extern void r8a7740_init_irq(void);
--extern void r8a7740_map_io(void);
--extern void r8a7740_add_early_devices(void);
--extern void r8a7740_add_standard_devices(void);
--extern void r8a7740_clock_init(u8 md_ck);
--extern void r8a7740_pinmux_init(void);
--extern void r8a7740_pm_init(void);
--
- extern void r8a7779_init_delay(void);
- extern void r8a7779_init_irq(void);
- extern void r8a7779_init_irq_extpin(int irlm);
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 59d252f..5a879bb 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -606,6 +606,15 @@ enum {
- 	SHDMA_SLAVE_USBHS_RX,
+Changes since the original posting:
+- added 'id' parameter check to r8a7779_add_vin_device().
+
+ arch/arm/mach-shmobile/clock-r8a7779.c        |   10 ++++++
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 ++
+ arch/arm/mach-shmobile/setup-r8a7779.c        |   38 ++++++++++++++++++++++++++
+ 3 files changed, 51 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -112,7 +112,9 @@ static struct clk *main_clks[] = {
  };
  
-+extern void r8a7740_meram_workaround(void);
-+extern void r8a7740_init_irq(void);
-+extern void r8a7740_map_io(void);
-+extern void r8a7740_add_early_devices(void);
-+extern void r8a7740_add_standard_devices(void);
-+extern void r8a7740_clock_init(u8 md_ck);
-+extern void r8a7740_pinmux_init(void);
-+extern void r8a7740_pm_init(void);
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
++	MSTP120,
+ 	MSTP116, MSTP115, MSTP114,
++	MSTP110, MSTP109, MSTP108,
+ 	MSTP103, MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+@@ -125,9 +127,13 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP120] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 20, 0), /* VIN3 */
+ 	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
+ 	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
+ 	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
++	[MSTP110] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 10, 0), /* VIN0 */
++	[MSTP109] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  9, 0), /* VIN1 */
++	[MSTP108] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  8, 0), /* VIN2 */
+ 	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
+ 	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
+ 	[MSTP100] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  0, 0), /* USB0/1 */
+@@ -162,10 +168,14 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&clkp_clk),
+ 
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("rcar_vin.3", &mstp_clks[MSTP120]), /* VIN3 */
+ 	CLKDEV_DEV_ID("rcar-pcie", &mstp_clks[MSTP116]), /* PCIe */
+ 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
+ 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
+ 	CLKDEV_DEV_ID("sh-eth", &mstp_clks[MSTP114]), /* Ether */
++	CLKDEV_DEV_ID("rcar_vin.0", &mstp_clks[MSTP110]), /* VIN0 */
++	CLKDEV_DEV_ID("rcar_vin.1", &mstp_clks[MSTP109]), /* VIN1 */
++	CLKDEV_DEV_ID("rcar_vin.2", &mstp_clks[MSTP108]), /* VIN2 */
+ 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
+ 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
+ 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -5,6 +5,7 @@
+ #include <linux/pm_domain.h>
+ #include <linux/sh_eth.h>
+ #include <linux/usb/rcar-phy.h>
++#include <linux/platform_data/camera-rcar.h>
+ 
+ struct platform_device;
+ 
+@@ -35,6 +36,8 @@ extern void r8a7779_add_standard_devices
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
++extern void r8a7779_add_vin_device(int idx,
++				   struct rcar_vin_platform_data *pdata);
+ extern void r8a7779_init_late(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -559,6 +559,33 @@ static struct resource ether_resources[]
+ 	},
+ };
+ 
++#define R8A7779_VIN(idx) \
++static struct resource vin##idx##_resources[] __initdata = {		\
++	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
++	DEFINE_RES_IRQ(gic_iid(0x5f + (idx))),				\
++};									\
++									\
++static struct platform_device_info vin##idx##_info __initdata = {	\
++	.parent		= &platform_bus,				\
++	.name		= "rcar_vin",					\
++	.id		= idx,						\
++	.res		= vin##idx##_resources,				\
++	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
++	.dma_mask	= DMA_BIT_MASK(32),				\
++}
 +
- #ifdef CONFIG_PM
- extern void __init r8a7740_init_pm_domains(void);
- #else
--- 
-1.7.10.4
-
++R8A7779_VIN(0);
++R8A7779_VIN(1);
++R8A7779_VIN(2);
++R8A7779_VIN(3);
++
++static struct platform_device_info *vin_info_table[] __initdata = {
++	&vin0_info,
++	&vin1_info,
++	&vin2_info,
++	&vin3_info,
++};
++
+ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -610,6 +637,17 @@ void __init r8a7779_add_usb_phy_device(s
+ 					  pdata, sizeof(*pdata));
+ }
+ 
++void __init r8a7779_add_vin_device(int id,
++				   struct rcar_vin_platform_data *pdata)
++{
++	BUG_ON(id < 0 || id > 3);
++
++	vin_info_table[id]->data = pdata;
++	vin_info_table[id]->size_data = sizeof(struct rcar_vin_platform_data);
++
++	platform_device_register_full(vin_info_table[id]);
++}
++
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
