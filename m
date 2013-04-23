@@ -1,115 +1,124 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Apr 2013 00:06:05 +0000
-Subject: [PATCH 5/9] ARM: mach-shmobile: armadillo800eva: Add backlight support
-Message-Id: <1366761969-16759-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 17:13:29 +0000
+Subject: [PATCH v3 3/4] ARM: shmobile: Marzen: add VIN and ADV7180 support
+Message-Id: <201304232113.30512.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-The flat panel backlight on the Armadillo 800 EVA board is driven by the
-TPU PWM output.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms@verge.net.au>
+Add ADV7180 platform devices on the Marzen board, configure VIN1/3 pins, and
+register VIN1/3 devices with the ADV7180 specific platform data.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: removed superfluous tabulation and inserted empty lines in the  macro
+definition, updated the copyrights, annotated VIN platform data as '__initdata']
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 51 +++++++++++++++++++++++++-
- 1 file changed, 49 insertions(+), 2 deletions(-)
+Changes since version 2:
+- annotated 'vin_platform_data' as '__initdata' since they're kmemdup()'ed while
+  registering the platform devices anyway.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index ff04d1e..3c4fcef 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -30,6 +30,8 @@
- #include <linux/gpio_keys.h>
- #include <linux/regulator/driver.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_data/pwm-rmob.h>
-+#include <linux/pwm_backlight.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/gpio-regulator.h>
- #include <linux/regulator/machine.h>
-@@ -381,7 +383,48 @@ static struct platform_device sh_eth_device = {
- 	.num_resources = ARRAY_SIZE(sh_eth_resources),
+Changes since the original posting:
+- used a macro to define the camera platform devices;
+- updated the copyrights;
+- refreshed the patch.
+
+ arch/arm/mach-shmobile/board-marzen.c |   44 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 43 insertions(+), 1 deletion(-)
+
+Index: renesas/arch/arm/mach-shmobile/board-marzen.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
++++ renesas/arch/arm/mach-shmobile/board-marzen.c
+@@ -1,8 +1,9 @@
+ /*
+  * marzen board support
+  *
+- * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
+  * Copyright (C) 2011  Magnus Damm
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -37,6 +38,7 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
++#include <media/soc_camera.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -178,12 +180,40 @@ static struct platform_device leds_devic
+ 	},
  };
  
--/* LCDC */
-+/* PWM */
-+static struct resource pwm_resources[] = {
-+	[0] = {
-+		.start = 0xe6600000,
-+		.end = 0xe66000ff,
-+		.flags = IORESOURCE_MEM,
-+	},
++static struct rcar_vin_platform_data vin_platform_data __initdata = {
++	.flags	= RCAR_VIN_BT656,
 +};
 +
-+static struct rmob_tpu_pwm_platform_data pwm_device_data = {
-+	.channels[2] = {
-+		.enabled = true,
-+		.active_low = 1,
-+	}
++#define MARZEN_CAMERA(idx)					\
++static struct i2c_board_info camera##idx##_info = {		\
++	I2C_BOARD_INFO("adv7180", 0x20 + (idx)),		\
++};								\
++								\
++static struct soc_camera_link iclink##idx##_adv7180 = {		\
++	.bus_id		= 1 + 2 * (idx),			\
++	.i2c_adapter_id	= 0,					\
++	.board_info	= &camera##idx##_info,			\
++};								\
++								\
++static struct platform_device camera##idx##_device = {		\
++	.name	= "soc-camera-pdrv",				\
++	.id	= idx,						\
++	.dev	= {						\
++		.platform_data	= &iclink##idx##_adv7180,	\
++	},							\
 +};
 +
-+static struct platform_device pwm_device = {
-+	.name = "rmob_tpu_pwm",
-+	.id = -1,
-+	.dev = {
-+		.platform_data = &pwm_device_data,
-+	},
-+	.num_resources = ARRAY_SIZE(pwm_resources),
-+	.resource = pwm_resources,
-+};
++MARZEN_CAMERA(0);
++MARZEN_CAMERA(1);
 +
-+/* LCDC and backlight */
-+static struct platform_pwm_backlight_data pwm_backlight_data = {
-+	.pwm_id = RMOB_TPU_PWM_ID(0, 2),
-+	.lth_brightness = 50,
-+	.max_brightness = 255,
-+	.dft_brightness = 255,
-+	.pwm_period_ns = 33333, /* 30kHz */
-+};
-+
-+static struct platform_device pwm_backlight_device = {
-+	.name = "pwm-backlight",
-+	.dev = {
-+		.platform_data = &pwm_backlight_data,
-+	},
-+};
-+
- static struct fb_videomode lcdc0_mode = {
- 	.name		= "AMPIER/AM-800480",
- 	.xres		= 800,
-@@ -1019,6 +1062,8 @@ static struct i2c_board_info i2c2_devices[] = {
-  */
- static struct platform_device *eva_devices[] __initdata = {
- 	&lcdc0_device,
-+	&pwm_device,
-+	&pwm_backlight_device,
- 	&gpio_keys_device,
- 	&sh_eth_device,
- 	&vcc_sdhi0,
-@@ -1090,6 +1135,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
- 	/* ST1232 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-r8a7740",
- 				  "intc_irq10", "intc"),
-+	/* TPU0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rmob_tpu_pwm", "pfc-r8a7740",
-+				  "tpu0_to2_1", "tpu0"),
- 	/* USBHS */
- 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7740",
- 				  "intc_irq7_1", "intc"),
-@@ -1149,7 +1197,6 @@ static void __init eva_init(void)
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
+ 	&thermal_device,
+ 	&hspi_device,
+ 	&leds_device,
++	&camera0_device,
++	&camera1_device,
+ };
  
- 	/* LCDC0 */
- 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
--	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+@@ -219,6 +249,16 @@ static const struct pinctrl_map marzen_p
+ 	/* USB2 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
+ 				  "usb2", "usb2"),
++	/* VIN1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7779",
++				  "vin1_clk", "vin1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7779",
++				  "vin1_data8", "vin1"),
++	/* VIN3 */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.3", "pfc-r8a7779",
++				  "vin3_clk", "vin3"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.3", "pfc-r8a7779",
++				  "vin3_data8", "vin3"),
+ };
  
- 	/* Touchscreen */
- 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
--- 
-1.8.1.5
-
+ static void __init marzen_init(void)
+@@ -235,6 +275,8 @@ static void __init marzen_init(void)
+ 
+ 	r8a7779_add_standard_devices();
+ 	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
++	r8a7779_add_vin_device(1, &vin_platform_data);
++	r8a7779_add_vin_device(3, &vin_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+ 
