@@ -1,36 +1,24 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:15 +0000
-Subject: [PATCH 34/37] ARM: shmobile: r8a7740: Remove HDMI function GPIOs
-Message-Id: <1366671618-8796-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 17:06:44 +0000
+Subject: [PATCH v3 0/4] R-Car VIN driver with R8A7779/Marzen support
+Message-Id: <201304232106.45889.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+Hello.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 4 ----
- 1 file changed, 4 deletions(-)
+   Here's the set of 4 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130422' tag and my recent yet unapplied USB patches. Here we
+add the VIN (Video In) driver and its platform code working on the R8A7779/
+Marzen with ADV7180 I2C video decoder. The driver patch also applies without
+issues to Mauro's 'media_tree.git'...
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index cb8e3fb..ed30a1d 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -300,10 +300,6 @@ enum {
- 	GPIO_FN_RESETP_PULLUP,
- 	GPIO_FN_RESETP_PLAIN,
- 
--	/* HDMI */
--	GPIO_FN_HDMI_HPD,
--	GPIO_FN_HDMI_CEC,
--
- 	/* SDENC */
- 	GPIO_FN_SDENC_CPG,
- 	GPIO_FN_SDENC_DV_CLKI,
--- 
-1.8.1.5
+[1/4] V4L2: soc_camera: Renesas R-Car VIN driver
+[2/4] ARM: shmobile: r8a7779: add VIN support
+[3/4] ARM: shmobile: Marzen: add VIN and ADV7180 support
+[4/4] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
 
+WBR, Sergei
