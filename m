@@ -1,36 +1,43 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 22 Apr 2013 12:33:40 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 23 Apr 2013 02:09:46 +0000
 Subject: Re: [PATCH v2 0/1] Add I2C support to R8A7778/BOCK-W
-Message-Id: <51752E24.6030800@cogentembedded.com>
+Message-Id: <20130423020946.GN12017@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201304200217.32844.sergei.shtylyov@cogentembedded.com>
- <5171C4FE.9000807@cogentembedded.com> <20130422045248.GO15680@verge.net.au>
-In-Reply-To: <20130422045248.GO15680@verge.net.au>
+ <5171C4FE.9000807@cogentembedded.com>
+ <20130422045248.GO15680@verge.net.au>
+ <51752E24.6030800@cogentembedded.com>
+In-Reply-To: <51752E24.6030800@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Mon, Apr 22, 2013 at 04:33:40PM +0400, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 22-04-2013 8:52, Simon Horman wrote:
+> 
+> >>>    Here's the patch against the Simon Horman's 'renesas.git' repo,
+> >>>'renesas-next-20130417' tag and my recent yet unapplied USB patches.
+> 
+> >>    Sorry, it's against 'renesas-next-20130419' tag now.
+> 
+> >Sorry, it doesn't seem to apply cleanly on top of
+> >renesas-next-20130417 or renesas-next-20130419.
+> 
+>    It's also atop of USB the patches.
 
-On 22-04-2013 8:52, Simon Horman wrote:
+Sorry for missing that.
 
->>>     Here's the patch against the Simon Horman's 'renesas.git' repo,
->>> 'renesas-next-20130417' tag and my recent yet unapplied USB patches.
+> >Could you please rebase, add Morimoto-san's Acked-by and repost?
+> 
+>    I don't think we're in a hurry to apply this before USB patches
+> but if you insist, I'll exchange these patchsets in my series and
+> repost.
 
->>     Sorry, it's against 'renesas-next-20130419' tag now.
+I'm comfortable with waiting if you are.
 
-> Sorry, it doesn't seem to apply cleanly on top of
-> renesas-next-20130417 or renesas-next-20130419.
-
-    It's also atop of USB the patches.
-
-> Could you please rebase, add Morimoto-san's Acked-by and repost?
-
-    I don't think we're in a hurry to apply this before USB patches but if you 
-insist, I'll exchange these patchsets in my series and repost.
-
-> Thanks
-
-WBR, Sergei
-
+Please let me know if/when any of your series are ready.
+I try to keep on top of things things but there are a number
+of patches in-flight so there is ample scope for error on my part.
