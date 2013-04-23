@@ -1,129 +1,48 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 23:36:23 +0000
-Subject: [PATCH v4 8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-Message-Id: <201304130336.24079.sergei.shtylyov@cogentembedded.com>
+From: Katsuya Matsubara <matsu@igel.co.jp>
+Date: Tue, 23 Apr 2013 10:51:36 +0000
+Subject: [PATCH 2/3] [media] sh_veu: keep power supply until the m2m context is released
+Message-Id: <1366714297-2784-3-git-send-email-matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366714297-2784-1-git-send-email-matsu@igel.co.jp>
+In-Reply-To: <1366714297-2784-1-git-send-email-matsu@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mauro Carvalho Chehab <mchehab@redhat.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Katsuya Matsubara <matsu@igel.co.jp>
 
-Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
-platform data, we now need a way to pass those platform data from the board file
-to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
-r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
-passed platform data using platform_device_register_resndata() call; creating
-this function envolves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
-so that it will no longer be registered for the generic R8A7779 machine (where
-we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
-to load as well.
+In the sh_veu driver, only the interrupt handler 'sh_veu_bh'
+can invoke the v4l2_m2m_job_finish() function.
+So the hardware must be alive for handling interrupts
+until returning from v4l2_m2m_ctx_release().
 
-For the Marzen board, this new function will be called from marzen_init() to
-register the USB PHY device early enough.
-
-Note that the board and the SoC code have to be in one patch to keep the code
-bisectable...
-
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
 ---
-Changes since version 3:
-- removed the initializer for 'usb_phy_platform_data';
-- refreshed the 'board-marzen.c' file.
+ drivers/media/platform/sh_veu.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- added a note about bisectability to the changelog.
-
- arch/arm/mach-shmobile/board-marzen.c         |    3 +++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        |   16 ++++++++--------
- 3 files changed, 13 insertions(+), 8 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/board-marzen.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
-+++ renesas/arch/arm/mach-shmobile/board-marzen.c
-@@ -57,6 +57,8 @@ static struct regulator_consumer_supply 
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
+diff --git a/drivers/media/platform/sh_veu.c b/drivers/media/platform/sh_veu.c
+index f88c0e8..fa86c6f 100644
+--- a/drivers/media/platform/sh_veu.c
++++ b/drivers/media/platform/sh_veu.c
+@@ -1032,8 +1032,6 @@ static int sh_veu_release(struct file *file)
  
-+static struct rcar_phy_platform_data usb_phy_platform_data;
-+
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
- 	[0] = {
-@@ -231,6 +233,7 @@ static void __init marzen_init(void)
- 	r8a7779_pinmux_init();
+ 	dev_dbg(veu->dev, "Releasing instance %p\n", veu_file);
  
- 	r8a7779_add_standard_devices();
-+	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -4,6 +4,7 @@
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
-+#include <linux/usb/rcar-phy.h>
- 
- struct platform_device;
- 
-@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(vo
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
-+extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -408,13 +408,6 @@ static struct resource usb_phy_resources
- 	},
- };
- 
--static struct platform_device usb_phy_device = {
--	.name		= "rcar_usb_phy",
--	.id		= -1,
--	.resource	= usb_phy_resources,
--	.num_resources	= ARRAY_SIZE(usb_phy_resources),
--};
+-	pm_runtime_put(veu->dev);
 -
- /* USB */
- static struct usb_phy *phy;
+ 	if (veu_file = veu->capture) {
+ 		veu->capture = NULL;
+ 		vb2_queue_release(v4l2_m2m_get_vq(veu->m2m_ctx, V4L2_BUF_TYPE_VIDEO_CAPTURE));
+@@ -1049,6 +1047,8 @@ static int sh_veu_release(struct file *file)
+ 		veu->m2m_ctx = NULL;
+ 	}
  
-@@ -586,7 +579,6 @@ static struct platform_device *r8a7779_d
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
--	&usb_phy_device,
- };
- 
- static struct platform_device *r8a7779_standard_devices[] __initdata = {
-@@ -621,6 +613,14 @@ void __init r8a7779_add_ether_device(str
- 					  pdata, sizeof(*pdata));
- }
- 
-+void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
-+{
-+	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
-+					  usb_phy_resources,
-+					  ARRAY_SIZE(usb_phy_resources),
-+					  pdata, sizeof(*pdata));
-+}
++	pm_runtime_put(veu->dev);
 +
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
+ 	kfree(veu_file);
  
+ 	return 0;
+-- 
+1.7.0.4
+
