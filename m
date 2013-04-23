@@ -1,109 +1,33 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 26 Apr 2013 16:27:44 +0000
-Subject: [PATCH 3/6] ARM: shmobile: sh73a0: remove "0x" prefix from DT node names
-Message-Id: <1366993667-23294-4-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 15:11:55 +0000
+Subject: [PATCH v6 0/9] Reorganize R8A7779/Marzen USB code
+Message-Id: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The convention for Device Tree node names is <device>@<hex-address>, where
-the part after '@' shouldn't contain the "0x" prefix. Fix the sh73a0.dtsi
-DT names.
+Hello.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
- arch/arm/boot/dts/sh73a0.dtsi |   18 +++++++++---------
- 1 files changed, 9 insertions(+), 9 deletions(-)
+   Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130422' tag.  It was created to fix the shortcomings in the
+R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
+spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
+to touch both subtrees). The patches were conceived with the complete
+bisectability goal in mind.
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 039205c..eaa9171 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -155,7 +155,7 @@
- 		dma-requests = <256>;
- 	};
- 
--	i2c0: i2c@0xe6820000 {
-+	i2c0: i2c@e6820000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -167,7 +167,7 @@
- 			      0 170 0x4>;
- 	};
- 
--	i2c1: i2c@0xe6822000 {
-+	i2c1: i2c@e6822000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -179,7 +179,7 @@
- 			      0 54 0x4>;
- 	};
- 
--	i2c2: i2c@0xe6824000 {
-+	i2c2: i2c@e6824000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -191,7 +191,7 @@
- 			      0 174 0x4>;
- 	};
- 
--	i2c3: i2c@0xe6826000 {
-+	i2c3: i2c@e6826000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -203,7 +203,7 @@
- 			      0 186 0x4>;
- 	};
- 
--	i2c4: i2c@0xe6828000 {
-+	i2c4: i2c@e6828000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -226,7 +226,7 @@
- 		renesas,event-quality = <3>;
- 	};
- 
--	mmcif: mmcif@0x10010000 {
-+	mmcif: mmcif@e6bd0000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0xe6bd0000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -236,7 +236,7 @@
- 		status = "disabled";
- 	};
- 
--	sdhi0: sdhi@0xee100000 {
-+	sdhi0: sdhi@ee100000 {
- 		compatible = "renesas,r8a7740-sdhi";
- 		reg = <0xee100000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -248,7 +248,7 @@
- 	};
- 
- 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
--	sdhi1: sdhi@0xee120000 {
-+	sdhi1: sdhi@ee120000 {
- 		compatible = "renesas,r8a7740-sdhi";
- 		reg = <0xee120000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -259,7 +259,7 @@
- 		status = "disabled";
- 	};
- 
--	sdhi2: sdhi@0xee140000 {
-+	sdhi2: sdhi@ee140000 {
- 		compatible = "renesas,r8a7740-sdhi";
- 		reg = <0xee140000 0x100>;
- 		interrupt-parent = <&gic>;
--- 
-1.7.2.5
+[1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
+[2/9] ehci-platform: add pre_setup() method to platform data
+[3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
+[4/9] rcar-phy: remove EHCI internal buffer setup
+[5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
+[6/9] rcar-phy: correct base address
+[7/9] rcar-phy: add platform data
+[8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
+[9/9] rcar-phy: handle platform data
 
+   Felipe, please ACK or NAK the rcar-phy patches ASAP. It's time consuming for
+me to keep all these patches fresh atop of ever changing 'next' branch....
+
+WBR, Sergei
