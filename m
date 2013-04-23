@@ -1,85 +1,145 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 28 Apr 2013 20:47:49 +0000
-Subject: Re: [PATCH v3 3/3] sh-pfc: r8a7779: add Ether pin groups
-Message-Id: <25803389.4rHaf62G13@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 15:42:07 +0000
+Subject: [PATCH v6 9/9] rcar-phy: handle platform data
+Message-Id: <201304231942.08507.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304270248.22740.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304270248.22740.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+Set the USBPCTRL0 register from the passed platform data in rcar_usb_phy_init();
+don't reset it to 0 in  rcar_usb_phy_shutdown()  anymore as that does not make
+sense.  Also, don't allow the driver's probe to succeed when the platform data
+are not supplied with a device.
 
-On Sunday 28 April 2013 20:57:35 Sergei Shtylyov wrote:
-> On 27-04-2013 18:33, Sergei Shtylyov wrote:
-> >>> Add Ether RMII/LINK/MAGIC pin groups to R8A7779 PFC driver.
-> >>> 
-> >>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >>> 
-> >>> ---
-> >>> Changes from the original posting:
-> >>> - moved all pin groups to stay in the alphabetical order with the
-> >>> others.
-> >>> 
-> >>>   drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   42 ++++++++++++++++++++++++++
-> >>>   1 file changed, 42 insertions(+)
-> >>> 
-> >>> Index: renesas/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-> >>> =================================> >>> --- renesas.orig/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-> >>> +++ renesas/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-> >>> @@ -1640,6 +1640,38 @@ static const unsigned int du1_cde_pins[]
-> >>>   static const unsigned int du1_cde_mux[] = {
-> >>>       DU1_CDE_MARK
-> >>>   };
-> >>> 
-> >>> +/* - Ether
-> >>> ------------------------------------------------------------------ */
-> >>> +static const unsigned int ether_rmii_pins[] = {
-> >>> +    /*
-> >>> +     * ETH_TXD0, ETH_TXD1, ETH_TX_EN,  ETH_REFCLK,
-> >>> +     * ETH_RXD0, ETH_RXD1, ETH_CRS_DV, ETH_RX_ER,
-> >>> +     * ETH_MDIO, ETH_MDC
-> >>> +     */
-> >>> +    RCAR_GP_PIN(2, 27), RCAR_GP_PIN(2, 16), RCAR_GP_PIN(2, 18),
-> >>> +    RCAR_GP_PIN(2, 26),
-> >>> +    RCAR_GP_PIN(2, 20), RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 17),
-> >>> +    RCAR_GP_PIN(2, 19),
-> >>> +    RCAR_GP_PIN(2, 29), RCAR_GP_PIN(2, 28),
-> >>> +};
-> >>> +static const unsigned int ether_rmii_mux[] = {
-> >>> +    ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK,  ETH_REFCLK_MARK,
-> >>> +    ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_CRS_DV_MARK, ETH_RX_ER_MARK,
-> >>> +    ETH_MDIO_MARK, ETH_MDC_MARK,
-> >>> +};
-> >>> +static const unsigned int ether_link_pins[] = {
-> >>> +    /* ETH_LINK */
-> >>> +    RCAR_GP_PIN(2, 24),
-> >>> +};
-> >>> +static const unsigned int ether_link_mux[] = {
-> >>> +    ETH_LINK_MARK,
-> >>> +};
-> >>> +static const unsigned int ether_magic_pins[] = {
-> >>> +    /* ETH_MAGIC */
-> >>> +    RCAR_GP_PIN(2, 25),
-> >>> +};
-> >>> +static const unsigned int ether_magic_mux[] = {
-> >>> +    ETH_MAGIC_MARK,
-> >>> +};
-> >> 
-> >> I wonder whether we should rename MAGIC to WOL (Wake On LAN), but that's
-> >> out of scope for this patch.
-> >> 
-> >     I don't think it's a good idea to remove the SoC's signals at will.
-> 
->     s/remove/rename/, of course. Would make it harder to find them back in
-> the manuals, for example.
+The patch has been tested on the Marzen and BOCK-W boards.
 
-Agreed. We should fix the manuals then :-D
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
--- 
-Regards,
+---
+Changes since version 3:
+- moved USBPCTRL0 register bit #define's from patch #7, removing the prefixes;
+- implemented parsing of the platform data to set USBPCTRL0 register.
 
-Laurent Pinchart
+Changes since version 2:
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+ drivers/usb/phy/rcar-phy.c |   53 +++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 46 insertions(+), 7 deletions(-)
+
+Index: renesas/drivers/usb/phy/rcar-phy.c
+=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
++++ renesas/drivers/usb/phy/rcar-phy.c
+@@ -1,8 +1,9 @@
+ /*
+  * Renesas R-Car USB phy driver
+  *
+- * Copyright (C) 2012 Renesas Solutions Corp.
++ * Copyright (C) 2012-2013 Renesas Solutions Corp.
+  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013 Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+@@ -11,10 +12,11 @@
+ 
+ #include <linux/delay.h>
+ #include <linux/io.h>
+-#include <linux/usb/otg.h>
+ #include <linux/platform_device.h>
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
++#include <linux/usb/otg.h>
++#include <linux/usb/rcar-phy.h>
+ 
+ /* REGS block */
+ #define USBPCTRL0	0x00
+@@ -24,6 +26,25 @@
+ #define USBOH0		0x1C
+ #define USBCTL0		0x58
+ 
++/* USBPCTRL0 */
++#define OVC2		(1 << 10) /* Switches the OVC input pin for port 2: */
++				/* 1: USB_OVC2, 0: OVC2			*/
++#define OVC1_VBUS1	(1 << 9) /* Switches the OVC input pin for port 1: */
++				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
++				/* Function mode: set to 0		*/
++#define OVC0		(1 << 8) /* Switches the OVC input pin for port 0: */
++				/* 1: USB_OVC0 pin, 0: OVC0		*/
++#define OVC2_ACT 	(1 << 6) /* Host mode: OVC2 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++#define PENC		(1 << 4) /* Function mode: output level of PENC1 pin: */
++				/* 1: high, 0: low			*/
++#define OVC0_ACT 	(1 << 3) /* Host mode: OVC0 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++#define OVC1_ACT	(1 << 1) /* Host mode: OVC1 polarity:		*/
++				/* 1: active-high, 0: active-low	*/
++				/* Function mode: be sure to set to 1	*/
++#define PORT1		(1 << 0) /* Selects port 1 mode:		*/
++				/* 1: function, 0: host			*/
+ /* USBPCTRL1 */
+ #define PHY_RST		(1 << 2)
+ #define PLL_ENB		(1 << 1)
+@@ -55,7 +76,9 @@ static int rcar_usb_phy_init(struct usb_
+ {
+ 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
+ 	struct device *dev = phy->dev;
++	struct rcar_phy_platform_data *pdata = dev->platform_data;
+ 	void __iomem *reg0 = priv->reg0;
++	const u8 ovcn_act[] = { OVC0_ACT, OVC1_ACT, OVC2_ACT };
+ 	int i;
+ 	u32 val;
+ 	unsigned long flags;
+@@ -89,8 +112,21 @@ static int rcar_usb_phy_init(struct usb_
+ 		/* (4) USB-PHY reset clear */
+ 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
+ 
+-		/* set platform specific port settings */
+-		iowrite32(0x00000000, (reg0 + USBPCTRL0));
++		/* Board specific port settings */
++		val = 0;
++		if (pdata->port1_func)
++			val |= PORT1;
++		if (pdata->penc1)
++			val |= PENC;
++		for (i = 0; i < 3; i++) {
++			/* OVCn bits follow each other in the right order */
++			if (pdata->ovc_pin[i].select_3_3v)
++				val |= OVC0 << i;
++			/* OVCn_ACT bits are spaced by irregular intervals */
++			if (pdata->ovc_pin[i].active_high)
++				val |= ovcn_act[i];
++		}
++		iowrite32(val, (reg0 + USBPCTRL0));
+ 
+ 		/*
+ 		 * Bus alignment settings
+@@ -117,10 +153,8 @@ static void rcar_usb_phy_shutdown(struct
+ 
+ 	spin_lock_irqsave(&priv->lock, flags);
+ 
+-	if (priv->counter-- = 1) { /* last user */
+-		iowrite32(0x00000000, (reg0 + USBPCTRL0));
++	if (priv->counter-- = 1)	/* last user */
+ 		iowrite32(0x00000000, (reg0 + USBPCTRL1));
+-	}
+ 
+ 	spin_unlock_irqrestore(&priv->lock, flags);
+ }
+@@ -133,6 +167,11 @@ static int rcar_usb_phy_probe(struct pla
+ 	void __iomem *reg0;
+ 	int ret;
+ 
++	if (!pdev->dev.platform_data) {
++		dev_err(dev, "No platform data\n");
++		return -EINVAL;
++	}
++
+ 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res0) {
+ 		dev_err(dev, "Not enough platform resources\n");
 
