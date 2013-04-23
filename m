@@ -1,30 +1,44 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Apr 2013 22:42:36 +0000
-Subject: [PATCH v7 0/9] Reorganize R8A7779/Marzen USB code
-Message-Id: <201305010242.37483.sergei.shtylyov@cogentembedded.com>
+From: Katsuya Matsubara <matsu@igel.co.jp>
+Date: Tue, 23 Apr 2013 10:51:37 +0000
+Subject: [PATCH 3/3] [media] sh_veu: fix the buffer size calculation
+Message-Id: <1366714297-2784-4-git-send-email-matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366714297-2784-1-git-send-email-matsu@igel.co.jp>
+In-Reply-To: <1366714297-2784-1-git-send-email-matsu@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mauro Carvalho Chehab <mchehab@redhat.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Katsuya Matsubara <matsu@igel.co.jp>
 
-Hello.
+The 'bytesperline' value only indicates the stride of the Y plane
+if the color format is planar, such as NV12. When calculating
+the total plane size, the size of CbCr plane must also be considered.
 
-   Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130426' tag.  It was created to fix the shortcomings in the
-R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
-spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
-to touch both subtrees). The patches were conceived with the complete
-bisectability goal in mind.
+Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
+---
+ drivers/media/platform/sh_veu.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-[1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
-[2/9] ehci-platform: add pre_setup() method to platform data
-[3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
-[4/9] rcar-phy: remove EHCI internal buffer setup
-[5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
-[6/9] rcar-phy: correct base address
-[7/9] rcar-phy: add platform data
-[8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-[9/9] rcar-phy: handle platform data
+diff --git a/drivers/media/platform/sh_veu.c b/drivers/media/platform/sh_veu.c
+index fa86c6f..358dac5 100644
+--- a/drivers/media/platform/sh_veu.c
++++ b/drivers/media/platform/sh_veu.c
+@@ -904,11 +904,11 @@ static int sh_veu_queue_setup(struct vb2_queue *vq,
+ 		if (ftmp.fmt.pix.width != pix->width ||
+ 		    ftmp.fmt.pix.height != pix->height)
+ 			return -EINVAL;
+-		size = pix->bytesperline ? pix->bytesperline * pix->height :
+-			pix->width * pix->height * fmt->depth >> 3;
++		size = pix->bytesperline ? pix->bytesperline * pix->height * fmt->depth / fmt->ydepth :
++			pix->width * pix->height * fmt->depth / fmt->ydepth;
+ 	} else {
+ 		vfmt = sh_veu_get_vfmt(veu, vq->type);
+-		size = vfmt->bytesperline * vfmt->frame.height;
++		size = vfmt->bytesperline * vfmt->frame.height * vfmt->fmt->depth / vfmt->fmt->ydepth;
+ 	}
+ 
+ 	if (count < 2)
+-- 
+1.7.0.4
 
-WBR, Sergei
