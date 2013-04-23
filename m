@@ -1,23 +1,97 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 12 Apr 2013 08:42:37 +0000
-Subject: Re: [PATCH 1/3 v3] sh-pfc: Add r8a7778 pinmux support
-Message-Id: <20130412084236.GB10632@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 15:30:21 +0000
+Subject: [PATCH v6 6/9] rcar-phy: correct base address
+Message-Id: <201304231930.22352.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8761zspawj.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8761zspawj.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Apr 12, 2013 at 09:59:50AM +0200, Laurent Pinchart wrote:
-> Hi Morimoto-san,
-> 
-> Thank you for the patch.
-> 
-> On Thursday 11 April 2013 22:37:20 Kuninori Morimoto wrote:
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The memory region that is used by the driver overlaps EHCI and OHCI  register
+regions for absolutely no reason now  -- fix it  by adding offset of 0x800 to
+the base address, changing the register #define's accordingly. This has extra
+positive effect that we now can use devm_ioremap_resource()...
 
-Thanks, queued-up for v3.11 in the pinmux branch.
+Note that the driver and the SoC code have to be in one patch to keep the code
+bisectable...
+
+The patch has been tested on the Marzen board.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+Changes since version 4:
+- refreshed the patch.
+
+Changes since version 2:
+- refreshed atop of the prior patches;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- added a note about bisectability to the changelog.
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
+ drivers/usb/phy/rcar-phy.c             |   28 ++++++++++------------------
+ 2 files changed, 11 insertions(+), 19 deletions(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -391,7 +391,7 @@ static struct platform_device sata_devic
+ /* USB PHY */
+ static struct resource usb_phy_resources[] = {
+ 	[0] = {
+-		.start		= 0xffe70000,
++		.start		= 0xffe70800,
+ 		.end		= 0xffe70900 - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+Index: renesas/drivers/usb/phy/rcar-phy.c
+=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
++++ renesas/drivers/usb/phy/rcar-phy.c
+@@ -16,13 +16,13 @@
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
+ 
+-/* USBH common register */
+-#define USBPCTRL0	0x0800
+-#define USBPCTRL1	0x0804
+-#define USBST		0x0808
+-#define USBEH0		0x080C
+-#define USBOH0		0x081C
+-#define USBCTL0		0x0858
++/* REGS block */
++#define USBPCTRL0	0x00
++#define USBPCTRL1	0x04
++#define USBST		0x08
++#define USBEH0		0x0C
++#define USBOH0		0x1C
++#define USBCTL0		0x58
+ 
+ /* USBPCTRL1 */
+ #define PHY_RST		(1 << 2)
+@@ -139,17 +139,9 @@ static int rcar_usb_phy_probe(struct pla
+ 		return -EINVAL;
+ 	}
+ 
+-	/*
+-	 * CAUTION
+-	 *
+-	 * Because this phy address is also mapped under OHCI/EHCI address area,
+-	 * this driver can't use devm_request_and_ioremap(dev, res) here
+-	 */
+-	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
+-	if (!reg0) {
+-		dev_err(dev, "ioremap error\n");
+-		return -ENOMEM;
+-	}
++	reg0 = devm_ioremap_resource(dev, res0);
++	if (IS_ERR(reg0))
++		return PTR_ERR(reg0);
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv) {
