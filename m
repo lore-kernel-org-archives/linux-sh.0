@@ -1,61 +1,77 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 03 Apr 2013 06:33:28 +0000
-Subject: [PATCH 04/04] ARM: shmobile: sh73a0 pinmux platform device cleanup
-Message-Id: <20130403063328.2500.86264.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 15:20:40 +0000
+Subject: [PATCH v6 3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
+Message-Id: <201304231920.41469.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130403063246.2500.65318.sendpatchset@w520>
-In-Reply-To: <20130403063246.2500.65318.sendpatchset@w520>
+References: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
+registers) using the pre_setup() method in 'struct usb_ehci_pdata'.
 
-Use DEFINE_RES_MEM() and platform_device_register_simple()
-to save a couple of lines of code.
+The patch has been tested on the Marzen board.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
+Changes since version 4:
+- refreshed the patch.
 
- arch/arm/mach-shmobile/setup-sh73a0.c |   25 ++++++-------------------
- 1 file changed, 6 insertions(+), 19 deletions(-)
+Changes since version 3:
+- lowercased the SoC name in the subject.
 
---- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-04-03 15:19:37.000000000 +0900
-@@ -61,29 +61,16 @@ void __init sh73a0_map_io(void)
- 	iotable_init(sh73a0_io_desc, ARRAY_SIZE(sh73a0_io_desc));
+Changes since version 2:
+- added #include <linux/usb/hcd.h>;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- changed from init() platform device method to pre_setup() as per the previous
+  patch.
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -33,6 +33,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/usb/otg.h>
++#include <linux/usb/hcd.h>
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+@@ -435,10 +436,25 @@ static void usb_power_off(struct platfor
+ 	pm_runtime_disable(&pdev->dev);
  }
  
--static struct resource sh73a0_pfc_resources[] = {
--	[0] = {
--		.start	= 0xe6050000,
--		.end	= 0xe6057fff,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= 0xe605801c,
--		.end	= 0xe6058027,
--		.flags	= IORESOURCE_MEM,
--	}
--};
--
--static struct platform_device sh73a0_pfc_device = {
--	.name		= "pfc-sh73a0",
--	.id		= -1,
--	.resource	= sh73a0_pfc_resources,
--	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
-+/* PFC */
-+static const struct resource pfc_resources[] = {
-+	DEFINE_RES_MEM(0xe6050000, 0x8000),
-+	DEFINE_RES_MEM(0xe605801c, 0x000c),
++static int ehci_init_internal_buffer(struct usb_hcd *hcd)
++{
++	/*
++	 * Below are recommended values from the datasheet;
++	 * see [USB :: Setting of EHCI Internal Buffer].
++	 */
++	/* EHCI IP internal buffer setting */
++	iowrite32(0x00ff0040, hcd->regs + 0x0094);
++	/* EHCI IP internal buffer enable */
++	iowrite32(0x00000001, hcd->regs + 0x009C);
++
++	return 0;
++}
++
+ static struct usb_ehci_pdata ehcix_pdata = {
+ 	.power_on	= usb_power_on,
+ 	.power_off	= usb_power_off,
+ 	.power_suspend	= usb_power_off,
++	.pre_setup	= ehci_init_internal_buffer,
  };
  
- void __init sh73a0_pinmux_init(void)
- {
--	platform_device_register(&sh73a0_pfc_device);
-+	platform_device_register_simple("pfc-sh73a0", -1, pfc_resources,
-+					ARRAY_SIZE(pfc_resources));
- }
- 
- static struct plat_sci_port scif0_platform_data = {
+ static struct resource ehci0_resources[] = {
