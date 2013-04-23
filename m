@@ -1,129 +1,96 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:52 +0000
-Subject: [PATCH 14/28] sh-pfc: r8a7779: Remove GPIO data
-Message-Id: <1364954706-14727-15-git-send-email-horms+renesas@verge.net.au>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 23 Apr 2013 11:00:06 +0000
+Subject: [PATCH v8 1/2] dma: sh: add Kconfig
+Message-Id: <517669B6.7040801@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds Kconfig in the drivers/dma/sh. This patch also adds
+a new config "SH_DMAE_BASE" and the "config SH_DMAE" depends on it.
+Since some drivers (e.g. sh_mmcif.c) depends on shdma-base.c if
+CONFIG_DMA_ENGINE=y, the "config SH_DMAE_BASE" is set as "bool".
 
-GPIOs are now handled by a separate driver, remove GPIO data from the
-SoC information structure.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   58 +---------------------------------
- 1 file changed, 1 insertion(+), 57 deletions(-)
+ about v8:
+  - add a new config "SH_DMAE_BASE".
+  - the original config "SH_DMAE" depends on "SH_DMAE_BASE".
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 41d8bda..e448ff1 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -85,18 +85,12 @@
- 	}
- 
- #define _GP_DATA(bank, pin, name, sfx)					\
--	PINMUX_DATA(name##_DATA, name##_FN, name##_IN, name##_OUT)
+ drivers/dma/Kconfig     |   10 +---------
+ drivers/dma/Makefile    |    2 +-
+ drivers/dma/sh/Kconfig  |   18 ++++++++++++++++++
+ drivers/dma/sh/Makefile |    2 +-
+ 4 files changed, 21 insertions(+), 11 deletions(-)
+ create mode 100644 drivers/dma/sh/Kconfig
+
+diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
+index afe5b19..e992489 100644
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -172,15 +172,7 @@ config TEGRA20_APB_DMA
+ 	  This DMA controller transfers data from memory to peripheral fifo
+ 	  or vice versa. It does not support memory to memory data transfer.
+
 -
--#define _GP_INOUTSEL(bank, pin, name, sfx)	name##_IN, name##_OUT
--#define _GP_INDT(bank, pin, name, sfx)		name##_DATA
-+	PINMUX_DATA(name##_DATA, name##_FN)
- 
- #define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
- #define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
- #define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
- 
--#define GP_INOUTSEL(bank) PORT_GP_32_REV(bank, _GP_INOUTSEL, unused)
--#define GP_INDT(bank) PORT_GP_32_REV(bank, _GP_INDT, unused)
 -
- #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
- #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
- 							  FN_##ipsr, FN_##fn)
-@@ -108,14 +102,6 @@ enum {
- 	GP_ALL(DATA), /* GP_0_0_DATA -> GP_6_8_DATA */
- 	PINMUX_DATA_END,
- 
--	PINMUX_INPUT_BEGIN,
--	GP_ALL(IN), /* GP_0_0_IN -> GP_6_8_IN */
--	PINMUX_INPUT_END,
--
--	PINMUX_OUTPUT_BEGIN,
--	GP_ALL(OUT), /* GP_0_0_OUT -> GP_6_8_OUT */
--	PINMUX_OUTPUT_END,
--
- 	PINMUX_FUNCTION_BEGIN,
- 	GP_ALL(FN), /* GP_0_0_FN -> GP_6_8_FN */
- 
-@@ -3549,45 +3535,6 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	    /* SEL_I2C1 [2] */
- 	    FN_SEL_I2C1_0, FN_SEL_I2C1_1, FN_SEL_I2C1_2, FN_SEL_I2C1_3 }
- 	},
--	{ PINMUX_CFG_REG("INOUTSEL0", 0xffc40004, 32, 1) { GP_INOUTSEL(0) } },
--	{ PINMUX_CFG_REG("INOUTSEL1", 0xffc41004, 32, 1) { GP_INOUTSEL(1) } },
--	{ PINMUX_CFG_REG("INOUTSEL2", 0xffc42004, 32, 1) { GP_INOUTSEL(2) } },
--	{ PINMUX_CFG_REG("INOUTSEL3", 0xffc43004, 32, 1) { GP_INOUTSEL(3) } },
--	{ PINMUX_CFG_REG("INOUTSEL4", 0xffc44004, 32, 1) { GP_INOUTSEL(4) } },
--	{ PINMUX_CFG_REG("INOUTSEL5", 0xffc45004, 32, 1) { GP_INOUTSEL(5) } },
--	{ PINMUX_CFG_REG("INOUTSEL6", 0xffc46004, 32, 1) {
--		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
--		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
--		0, 0, 0, 0, 0, 0, 0, 0,
--		0, 0,
--		0, 0,
--		0, 0,
--		GP_6_8_IN, GP_6_8_OUT,
--		GP_6_7_IN, GP_6_7_OUT,
--		GP_6_6_IN, GP_6_6_OUT,
--		GP_6_5_IN, GP_6_5_OUT,
--		GP_6_4_IN, GP_6_4_OUT,
--		GP_6_3_IN, GP_6_3_OUT,
--		GP_6_2_IN, GP_6_2_OUT,
--		GP_6_1_IN, GP_6_1_OUT,
--		GP_6_0_IN, GP_6_0_OUT, }
--	},
--	{ },
--};
--
--static const struct pinmux_data_reg pinmux_data_regs[] = {
--	{ PINMUX_DATA_REG("INDT0", 0xffc40008, 32) { GP_INDT(0) } },
--	{ PINMUX_DATA_REG("INDT1", 0xffc41008, 32) { GP_INDT(1) } },
--	{ PINMUX_DATA_REG("INDT2", 0xffc42008, 32) { GP_INDT(2) } },
--	{ PINMUX_DATA_REG("INDT3", 0xffc43008, 32) { GP_INDT(3) } },
--	{ PINMUX_DATA_REG("INDT4", 0xffc44008, 32) { GP_INDT(4) } },
--	{ PINMUX_DATA_REG("INDT5", 0xffc45008, 32) { GP_INDT(5) } },
--	{ PINMUX_DATA_REG("INDT6", 0xffc46008, 32) {
--		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
--		0, 0, 0, 0, 0, 0, 0, GP_6_8_DATA,
--		GP_6_7_DATA, GP_6_6_DATA, GP_6_5_DATA, GP_6_4_DATA,
--		GP_6_3_DATA, GP_6_2_DATA, GP_6_1_DATA, GP_6_0_DATA }
--	},
- 	{ },
- };
- 
-@@ -3596,8 +3543,6 @@ const struct sh_pfc_soc_info r8a7779_pinmux_info = {
- 
- 	.unlock_reg = 0xfffc0000, /* PMMR */
- 
--	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
--	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
- 
- 	.pins = pinmux_pins,
-@@ -3608,7 +3553,6 @@ const struct sh_pfc_soc_info r8a7779_pinmux_info = {
- 	.nr_functions = ARRAY_SIZE(pinmux_functions),
- 
- 	.cfg_regs = pinmux_config_regs,
--	.data_regs = pinmux_data_regs,
- 
- 	.gpio_data = pinmux_data,
- 	.gpio_data_size = ARRAY_SIZE(pinmux_data),
+-config SH_DMAE
+-	tristate "Renesas SuperH DMAC support"
+-	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
+-	depends on !SH_DMA_API
+-	select DMA_ENGINE
+-	help
+-	  Enable support for the Renesas SuperH DMA controllers.
++source "drivers/dma/sh/Kconfig"
+
+ config COH901318
+ 	bool "ST-Ericsson COH901318 DMA support"
+diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+index 268e626..a2b0df5 100644
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -19,7 +19,7 @@ obj-$(CONFIG_DW_DMAC) += dw_dmac.o
+ obj-$(CONFIG_AT_HDMAC) += at_hdmac.o
+ obj-$(CONFIG_MX3_IPU) += ipu/
+ obj-$(CONFIG_TXX9_DMAC) += txx9dmac.o
+-obj-$(CONFIG_SH_DMAE) += sh/
++obj-$(CONFIG_SH_DMAE_BASE) += sh/
+ obj-$(CONFIG_COH901318) += coh901318.o coh901318_lli.o
+ obj-$(CONFIG_AMCC_PPC440SPE_ADMA) += ppc4xx/
+ obj-$(CONFIG_IMX_SDMA) += imx-sdma.o
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+new file mode 100644
+index 0000000..2407998
+--- /dev/null
++++ b/drivers/dma/sh/Kconfig
+@@ -0,0 +1,18 @@
++#
++# DMA engine configuration for sh
++#
++
++config SH_DMAE_BASE
++	bool "Renesas SuperH DMA Engine support"
++	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
++	depends on !SH_DMA_API
++	default y
++	select DMA_ENGINE
++	help
++	  Enable support for the Renesas SuperH DMA Engine.
++
++config SH_DMAE
++	tristate "Renesas SuperH DMAC support"
++	depends on SH_DMAE_BASE
++	help
++	  Enable support for the Renesas SuperH DMA controllers.
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index 54ae957..eceaf46 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -1,2 +1,2 @@
+-obj-$(CONFIG_SH_DMAE) += shdma-base.o
++obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o
+ obj-$(CONFIG_SH_DMAE) += shdma.o
 -- 
-1.7.10.4
-
+1.7.1
