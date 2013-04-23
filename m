@@ -1,64 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:08 +0000
-Subject: [PATCH 05/35] sh-pfc: sh7372: Add HDMI pin groups and functions
-Message-Id: <1366671758-8954-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Katsuya Matsubara <matsu@igel.co.jp>
+Date: Tue, 23 Apr 2013 10:51:35 +0000
+Subject: [PATCH 1/3] [media] sh_veu: invoke v4l2_m2m_job_finish() even if a job has been aborted
+Message-Id: <1366714297-2784-2-git-send-email-matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366714297-2784-1-git-send-email-matsu@igel.co.jp>
+In-Reply-To: <1366714297-2784-1-git-send-email-matsu@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mauro Carvalho Chehab <mchehab@redhat.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Katsuya Matsubara <matsu@igel.co.jp>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+v4l2_m2m_job_finish() should be invoked even if the current
+ongoing job has been aborted since v4l2_m2m_ctx_release() which
+has issued the job abort may wait until the finish function is invoked.
+
+Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ drivers/media/platform/sh_veu.c |    5 +----
+ 1 files changed, 1 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 641f6ee..73b9e25 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1178,6 +1178,14 @@ static const unsigned int fsib_mclk_in_pins[] = {
- static const unsigned int fsib_mclk_in_mux[] = {
- 	FSIBCK_MARK,
- };
-+/* - HDMI ------------------------------------------------------------------- */
-+static const unsigned int hdmi_pins[] = {
-+	/* HPD, CEC */
-+	169, 170,
-+};
-+static const unsigned int hdmi_mux[] = {
-+	HDMI_HPD_MARK, HDMI_CEC_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_0_pins[] = {
- 	/* D[0] */
-@@ -1352,6 +1360,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(fsia_spdif_0),
- 	SH_PFC_PIN_GROUP(fsia_spdif_1),
- 	SH_PFC_PIN_GROUP(fsib_mclk_in),
-+	SH_PFC_PIN_GROUP(hdmi),
- 	SH_PFC_PIN_GROUP(mmc0_data1_0),
- 	SH_PFC_PIN_GROUP(mmc0_data4_0),
- 	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1420,6 +1429,10 @@ static const char * const fsib_groups[] = {
- 	"fsib_mclk_in",
- };
+diff --git a/drivers/media/platform/sh_veu.c b/drivers/media/platform/sh_veu.c
+index cb54c69..f88c0e8 100644
+--- a/drivers/media/platform/sh_veu.c
++++ b/drivers/media/platform/sh_veu.c
+@@ -1137,10 +1137,7 @@ static irqreturn_t sh_veu_isr(int irq, void *dev_id)
  
-+static const char * const hdmi_groups[] = {
-+	"hdmi",
-+};
-+
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1_0",
- 	"mmc0_data4_0",
-@@ -1457,6 +1470,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(flctl),
- 	SH_PFC_FUNCTION(fsia),
- 	SH_PFC_FUNCTION(fsib),
-+	SH_PFC_FUNCTION(hdmi),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
+ 	veu->xaction++;
+ 
+-	if (!veu->aborting)
+-		return IRQ_WAKE_THREAD;
+-
+-	return IRQ_HANDLED;
++	return IRQ_WAKE_THREAD;
+ }
+ 
+ static int sh_veu_probe(struct platform_device *pdev)
 -- 
-1.8.1.5
+1.7.0.4
 
