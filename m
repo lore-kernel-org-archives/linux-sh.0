@@ -1,55 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 04 Apr 2013 03:29:47 +0000
-Subject: [RFC/PATCH 1/7] ARM: shmobile: prune defconfig
-Message-Id: <1365046193-19369-2-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 15:53:41 +0000
+Subject: [PATCH v5 0/3] Add USB support to R8A7778/BOCK-W
+Message-Id: <201304231953.42505.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365046193-19369-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Remove a number of lines from the shmobile defconfig as they seem to
-be orthogonal to shmobile, not necessary for booting boards,
-and as far as I know not present in a number of the shmobile
-board defconfigs.
+Hello.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/shmobile_defconfig |   12 ------------
- 1 file changed, 12 deletions(-)
+   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130422' tag and the R8A7779/Marzen patchset I've posted.
+ It was created to add support of R8A7778/BOCK-W USB to the platform code and
+the USB common PHY driver, and so spans both arch/arm/mach-shmobile/ and
+drivers/usb/phy/ subtrees.
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 0f2d80d..90f5600 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -3,15 +3,9 @@ CONFIG_SYSVIPC=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT
--# CONFIG_UTS_NS is not set
--# CONFIG_IPC_NS is not set
--# CONFIG_PID_NS is not set
- CONFIG_CC_OPTIMIZE_FOR_SIZE=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
--CONFIG_MODULES=y
--CONFIG_MODULE_UNLOAD=y
--CONFIG_MODULE_FORCE_UNLOAD=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
-@@ -145,9 +139,3 @@ CONFIG_NLS_ISO8859_1=y
- # CONFIG_ENABLE_WARN_DEPRECATED is not set
- # CONFIG_ENABLE_MUST_CHECK is not set
- # CONFIG_ARM_UNWIND is not set
--CONFIG_CRYPTO=y
--CONFIG_CRYPTO_CBC=y
--CONFIG_CRYPTO_MD5=y
--CONFIG_CRYPTO_DES=y
--CONFIG_CRYPTO_ANSI_CPRNG=y
--CONFIG_XZ_DEC=y
--- 
-1.7.10.4
+[1/3] rcar-phy: add R8A7778 support
+[2/3] ARM: shmobile: r8a7778: add USB support
+[3/3] ARM: shmobile: BOCK-W: add USB support
 
+The patch #4 (ARM: shmobile: BOCK-W: enable USB in defconfig) that has been
+already merged, is not reposted.
+
+WBR, Sergei
