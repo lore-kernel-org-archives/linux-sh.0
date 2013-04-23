@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 22 Apr 2013 10:06:26 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 23 Apr 2013 00:32:39 +0000
 Subject: Re: [PATCH 1/3 v3] sh-pfc: r8a7778: add common PFC macro helper
-Message-Id: <3998361.LvOaInl8Ye@avalon>
+Message-Id: <87mwsq5bob.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <8738un6wwd.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <8738un6wwd.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,76 +10,35 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san,
 
-On Thursday 18 April 2013 20:07:34 Kuninori Morimoto wrote:
-> pfc-r8a7778 will have many devices pfc support in the future,
-> and current pfc-r8a7778 is using pin/mux definition macro for SCIF.
-> The device definition style using macro is readable code IMO,
-> but creating new macro for each devices is not good sense.
-> This patch adds common SH_PFC_xx() macro for each new feature devices
+Hi Laurent
+
+> On Thursday 18 April 2013 20:07:34 Kuninori Morimoto wrote:
+> > pfc-r8a7778 will have many devices pfc support in the future,
+> > and current pfc-r8a7778 is using pin/mux definition macro for SCIF.
+> > The device definition style using macro is readable code IMO,
+> > but creating new macro for each devices is not good sense.
+> > This patch adds common SH_PFC_xx() macro for each new feature devices
+> > 
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+(snip)
+> > +#define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
+> > +	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
+> > +						     arg3##_MARK, arg4##_MARK }
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v2 -> v3
+> What's your plan for groups of more than 4 pins ? :-)
 > 
->  - new patch
-> 
->  drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   26 ++++++++++++++++++--------
->  1 file changed, 18 insertions(+), 8 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c index ddbd27b..139f9dd 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> @@ -1303,15 +1303,25 @@ static struct sh_pfc_pin pinmux_pins[] = {
->   */
->  #define PIN_NUMBER(row, col)		(1000+((row)-1)*25+(col)-1)
-> 
-> -/* - SCIF macro
-> ------------------------------------------------------------- */ -#define
-> SCIF_PFC_PIN(name, args...)					\
-> +/* - macro */
-> +#define SH_PFC_PINS(name, args...) \
->  	static const unsigned int name ##_pins[] = { args }
-> -#define SCIF_PFC_DAT(name, tx, rx)					\
-> -	static const unsigned int name ##_mux[]  = { tx##_MARK, rx##_MARK, }
-> -#define SCIF_PFC_CTR(name, cts, rts)					\
-> -	static const unsigned int name ##_mux[]  = { cts##_MARK, rts##_MARK, }
-> -#define SCIF_PFC_CLK(name, sck)					\
-> -	static const unsigned int name ##_mux[]  = { sck##_MARK, }
-> +#define SH_PFC_MUX1(name, arg1)					\
-> +	static const unsigned int name ##_mux[]  = { arg1##_MARK }
-> +#define SH_PFC_MUX2(name, arg1, arg2)					\
-> +	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, }
-> +#define SH_PFC_MUX3(name, arg1, arg2, arg3)					\
-> +	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK,	
-\
-> +						     arg3##_MARK }
-> +#define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
-> +	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
-> +						     arg3##_MARK, arg4##_MARK }
+> At some point, when the groups get large, I think it's better to define the 
+> arrays explicitly.
 
-What's your plan for groups of more than 4 pins ? :-)
+Yes, I think so.
 
-At some point, when the groups get large, I think it's better to define the 
-arrays explicitly.
+I am not forcing use of macro here.
+If you can use these macros, you can use it.
+If it is not match for your new pin, you can use array style.
+I don't care so much.
+Fortunately, these SCIF/SDHI cases, these can use macro.
 
-I'm fine with this patch though.
-
-> +/* - SCIF macro
-> ------------------------------------------------------------- */ +#define
-> SCIF_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
-> +#define SCIF_PFC_DAT(name, tx, rx)	SH_PFC_MUX2(name, tx, rx)
-> +#define SCIF_PFC_CTR(name, cts, rts)	SH_PFC_MUX2(name, cts, rts)
-> +#define SCIF_PFC_CLK(name, sck)		SH_PFC_MUX1(name, sck)
-> 
->  /* - HSCIF0
-> ----------------------------------------------------------------- */
-> SCIF_PFC_PIN(hscif0_data_a,	RCAR_GP_PIN(1, 17),	RCAR_GP_PIN(1, 18));
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Best regards
+---
+Kuninori Morimoto
