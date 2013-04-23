@@ -1,289 +1,63 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 04:38:35 +0000
+From: Katsuya MATSUBARA <matsu@igel.co.jp>
+Date: Tue, 23 Apr 2013 05:45:49 +0000
 Subject: Re: [PATCH v2 1/4] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <5176104B.7000401@cogentembedded.com>
+Message-Id: <20130423.144549.45370868.matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304200231.31802.sergei.shtylyov@cogentembedded.com> <20130423.120834.239982915.matsu@igel.co.jp>
-In-Reply-To: <20130423.120834.239982915.matsu@igel.co.jp>
+References: <201304200231.31802.sergei.shtylyov@cogentembedded.com>
+	<20130423.120834.239982915.matsu@igel.co.jp>
+	<5176104B.7000401@cogentembedded.com>
+In-Reply-To: <5176104B.7000401@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
-To: Katsuya MATSUBARA <matsu@igel.co.jp>
+To: sergei.shtylyov@cogentembedded.com
 Cc: g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, vladimir.barinov@cogentembedded.com, mukawa@igel.co.jp
 
-Hello.
 
-On 04/23/2013 07:08 AM, Katsuya MATSUBARA wrote:
+ Hi,
 
-> Hi Sergei,
->
-> Thanks for the patch.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 08:38:35 +0400
 
-    It's not mine. :-)
-
->
->> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> On 04/23/2013 07:08 AM, Katsuya MATSUBARA wrote:
+>=20
+>>> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+>>>
+(snip)
+>>> +/* Register offsets for R-=F3ar VIN */
+>> Are you using a 2-byte character in the string 'R-Car'?
+>=20
+>    Hm, you have surprised me: indeed KMail chose UTF-8 and, even worse,
+> quoted-printable encoding. I played some with the settings, let's see
+> what
+> will it do...
+>=20
+> [...]
+>=20
 >>
->> Add Renesas R-Car VIN (Video In) V4L2 driver.
->>
->> Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
->>
->> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->> [Sergei: removed deprecated IRQF_DISABLED flag.]
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>>> +
+>>> +/* Register bit fields for R-=F3ar VIN */
+>> s/R-=F3ar/R-Car/
+>=20
+>     Sorry, I see no difference. :-)
 
-[...]
+Replacing the UTF-8 character 'C'(0xd0 0xa1) in the two above
+comments in your patch with ASCII character 'C' (0x43) can
+solve the encoding issue.
 
->> Index: renesas/drivers/media/platform/soc_camera/rcar_vin.c
->> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D>> --- /dev/null
->> +++ renesas/drivers/media/platform/soc_camera/rcar_vin.c
->> @@ -0,0 +1,1784 @@
->> +/*
->> + * SoC-camera host driver for Renesas R-Car VIN unit
->> + *
->> + * Copyright (C) 2011-2013 Renesas Solutions Corp.
->> + * Copyright (C) 2013 Cogent Embedded, Inc., <source@cogentembedded.com>
->> + *
->> + * Based on V4L2 Driver for SuperH Mobile CEU interface "sh_mobile_ceu_=
-camera.c"
->> + *
->> + * Copyright (C) 2008 Magnus Damm
->> + *
->> + * This program is free software; you can redistribute  it and/or modif=
-y it
->> + * under  the terms of  the GNU General  Public License as published by=
- the
->> + * Free Software Foundation;  either version 2 of the  License, or (at =
-your
->> + * option) any later version.
->> + */
->> +
->> +#include <linux/kernel.h>
->> +#include <linux/module.h>
->> +#include <linux/interrupt.h>
->> +#include <linux/slab.h>
->> +#include <linux/delay.h>
->> +#include <linux/platform_device.h>
->> +#include <linux/pm_runtime.h>
->> +#include <linux/platform_data/camera-rcar.h>
->> +
->> +#include <media/videobuf2-dma-contig.h>
->> +#include <media/soc_camera.h>
->> +#include <media/soc_mediabus.h>
->> +
->> +#define DRV_NAME "rcar_vin"
->> +
->> +/* Register offsets for R-=F3ar VIN */
-> Are you using a 2-byte character in the string 'R-Car'?
-
-    Hm, you have surprised me: indeed KMail chose UTF-8 and, even worse,
-quoted-printable encoding. I played some with the settings, let's see what
-will it do...
-
-[...]
-
->
->> +
->> +/* Register bit fields for R-=F3ar VIN */
-> s/R-=F3ar/R-Car/
-
-     Sorry, I see no difference. :-)
-
->
->> +
->> +#define is_continuous_transfer(priv)	(priv->vb_count > MAX_BUFFER_NUM ?=
- \
->> +					 true : false)
->> +
-
-[...]
-
->> +
->> +	/* Number of hardware slots */
->> +	if (priv->vb_count > MAX_BUFFER_NUM)
-> You can use the is_continuous_transfer() macro here.
-
-    You're right.
-
-[...]
-
->
->> +
->> +	/* input interface */
->> +	switch (icd->current_fmt->code) {
->> +	case V4L2_MBUS_FMT_YUYV8_1X16:
->> +		/* BT.601/BT.1358 16bit YCbCr422 */
->> +		vnmc |=3D VNMC_INF_YUV16;
->> +		input_is_yuv =3D 1;
->> +		break;
->> +	case V4L2_MBUS_FMT_YUYV8_2X8:
->> +		input_is_yuv =3D 1;
->> +		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
->> +		vnmc |=3D priv->pdata->flags & RCAR_VIN_BT656 ?
->> +			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
->> +	default:
->> +		break;
->> +	}
-> Does this (first) implemenation unsupport RGB inputs yet
-> though the h/w supports them?
-
-    Yes, we have only tested BT.601/656 input.
-
-> If so, 'is_input_yuv' could be useless since it must
-> be set to 1 in any case.
-
-    The *default* label doesn't set it, does it?
-
->
->> +
->> +	/* output format */
->> +	switch (icd->current_fmt->host_fmt->fourcc) {
->> +	case V4L2_PIX_FMT_NV16:
->> +		iowrite32(((cam->width * cam->height) + 0x7f) & ~0x7f,
->> +			  priv->base + VNUVAOF_REG);
->> +		dmr =3D VNDMR_DTMD_YCSEP;
->> +		output_is_yuv =3D 1;
->> +		break;
->> +	case V4L2_PIX_FMT_YUYV:
->> +		dmr =3D VNDMR_BPSM;
->> +		output_is_yuv =3D 1;
->> +		break;
->> +	case V4L2_PIX_FMT_UYVY:
->> +		dmr =3D 0;
->> +		output_is_yuv =3D 1;
->> +		break;
->> +	case V4L2_PIX_FMT_RGB555X:
->> +		dmr =3D VNDMR_DTMD_ARGB1555;
->> +		break;
->> +	case V4L2_PIX_FMT_RGB565:
->> +		dmr =3D 0;
->> +		break;
->> +	case V4L2_PIX_FMT_RGB32:
->> +		dmr =3D VNDMR_EXRGB;
->> +		break;
-> VIN in R8A7778(R-CarM1A) does not support the RGB32 output,
-> but R8A7779(R-CarH1) and uPD35004(R-CarE1) ones support it.
-
-    Indeed...
-
->
->> +
->> +	if (!priv->request_to_stop) {
->> +		if (is_continuous_transfer(priv))
->> +			slot =3D (ioread32(priv->base + VNMS_REG) &
->> +				VNMS_FBS_MASK) >> VNMS_FBS_SHIFT;
->> +		else
->> +			slot =3D 0;
->> +
->> +		priv->queue_buf[slot]->v4l2_buf.field =3D priv->field;
->> +		priv->queue_buf[slot]->v4l2_buf.sequence =3D priv->sequence++;
->> +		do_gettimeofday(&priv->queue_buf[slot]->v4l2_buf.timestamp);
->> +		vb2_buffer_done(priv->queue_buf[slot], VB2_BUF_STATE_DONE);
->> +		priv->queue_buf[slot] =3D NULL;
->> +
->> +		if (priv->state !=3D STOPPING)
->> +			can_run =3D rcar_vin_fill_hw_slot(priv);
->> +
->> +		if (hw_stopped || !can_run)
->> +			priv->state =3D STOPPED;
-> The continuous capturing should require an explicit stop
-> operation when there is no buffer to be set into the MBx
-> register because the h/w can keep running even if no more
-> buffers are supplied.
-
-     Understood. I'll defer this to Vladimir though...
-
->
->> +/* rect is guaranteed to not exceed the scaled camera rectangle */
->> +static int rcar_vin_set_rect(struct soc_camera_device *icd)
->> +{
->> +	struct soc_camera_host *ici =3D to_soc_camera_host(icd->parent);
->> +	struct rcar_vin_cam *cam =3D icd->host_priv;
->> +	struct rcar_vin_priv *priv =3D ici->priv;
->> +	unsigned int left_offset, top_offset;
->> +	unsigned char dsize;
->> +	struct v4l2_rect *cam_subrect =3D &cam->subrect;
->> +
->> +	dev_dbg(icd->parent, "Crop %ux%u@%u:%u\n",
->> +		icd->user_width, icd->user_height, cam->vin_left, cam->vin_top);
->> +
->> +	left_offset =3D cam->vin_left;
->> +	top_offset =3D cam->vin_top;
->> +
->> +	dsize =3D priv->data_through ? true : false;
->> +
->> +	dev_dbg(icd->parent, "Cam %ux%u@%u:%u\n",
->> +		cam->width, cam->height, cam->vin_left, cam->vin_top);
->> +	dev_dbg(icd->parent, "Cam subrect %ux%u@%u:%u\n",
->> +		cam_subrect->width, cam_subrect->height,
->> +		cam_subrect->left, cam_subrect->top);
->> +
->> +	/* Set Start/End Pixel/Line Pre-Clip */
->> +	iowrite32(left_offset << dsize, priv->base + VNSPPRC_REG);
->> +	iowrite32((left_offset + cam->width - 1) << dsize,
->> +		  priv->base + VNEPPRC_REG);
-> The 'data through' mode could exist only in R-CarE1's VIN.
-> So values for clipping do not have to be doubled
-> in case of M1A and H1.
-
-     Ideed, seems so. I'll defer this to Vladimir...
-
-> > +
-> > +	data_through =3D pixfmt =3D V4L2_PIX_FMT_RGB32;
-> > +	can_scale =3D !data_through && pixfmt !=3D V4L2_PIX_FMT_NV16;
-> As mentioned above, there must be no such restriction for scaling
-> in case of M1A and H1.
-
-    OK.
-
->
->> Index: renesas/include/linux/platform_data/camera-rcar.h
->> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D>> --- /dev/null
->> +++ renesas/include/linux/platform_data/camera-rcar.h
->> @@ -0,0 +1,25 @@
->> +/*
->> + * Platform data for Renesas R-Car VIN soc-camera driver
->> + *
->> + * Copyright (C) 2011-2013 Renesas Solutions Corp.
->> + * Copyright (C) 2013 Cogent Embedded, Inc., <source@cogentembedded.com>
->> + *
->> + * This program is free software; you can redistribute  it and/or modif=
-y it
->> + * under  the terms of  the GNU General  Public License as published by=
- the
->> + * Free Software Foundation;  either version 2 of the  License, or (at =
-your
->> + * option) any later version.
->> + */
->> +
->> +#ifndef __CAMERA_RCAR_H_
->> +#define __CAMERA_RCAR_H_
->> +
->> +#define RCAR_VIN_HSYNC_ACTIVE_LOW	(1 << 0)
->> +#define RCAR_VIN_VSYNC_ACTIVE_LOW	(1 << 1)
->> +#define RCAR_VIN_BT601			(1 << 2)
->> +#define RCAR_VIN_BT656			(1 << 3)
->> +
->> +struct rcar_vin_platform_data {
->> +	unsigned int flags;
->> +};
->> +
->> +#endif /* __CAMERA_RCAR_H_ */
-> I am concern that there could be some difference of VIN
-> functionalities that I mentioned above in between R-Car SoC series;
-> uPD35004(R-CarE1), R8A7778(R-CarM1A), and R8A7779(R-CarH1).
-> Some flags can be added for the platform data to let the driver
-> know such the difference.
-
-    Platform data flags is not the best solution for this case.
-The driver should instead match on several device names.
-It should be possible with the platform devices.
-
-PS: I'll be thankful to you if in the future you cut out the parts of the
-patch you're not replying to, not to have me scrolling the large
-mail for your remarks, and cutting out the unrelated code myself.
-
-WBR, Sergei
-
+00000cf0  2b 2f 2a 20 52 65 67 69  73 74 65 72 20 6f 66 66  |+/* Register o=
+ff|
+00000d00  73 65 74 73 20 66 6f 72  20 52 2d d0 a1 61 72 20  |sets for R-..a=
+r |
+                                            ^^^^^
+000012a0  74 65 72 20 2a 2f 0a 2b  0a 2b 2f 2a 20 52 65 67  |ter */.+.+/* R=
+eg|
+000012b0  69 73 74 65 72 20 62 69  74 20 66 69 65 6c 64 73  |ister bit fiel=
+ds|
+000012c0  20 66 6f 72 20 52 2d d0  a1 61 72 20 56 49 4e 20  | for R-..ar VI=
+N |
+                               ^^^^^^
+Thanks,
+---
+Katsuya Matsubara / IGEL Co., Ltd
+matsu@igel.co.jp
