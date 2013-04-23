@@ -1,54 +1,41 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 23:44:27 +0000
-Subject: [PATCH v2 3/4] ARM: shmobile: BOCK-W: add USB support
-Message-Id: <201304130344.28060.sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 17:34:51 +0000
+Subject: [PATCH v3 5/5] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
+Message-Id: <201304232134.52153.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201304232118.43686.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304232118.43686.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Register the USB PHY device from bockw_init(), passing the platform  data to it.
-Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
-get registered too...
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-The patch has been tested on the BOCK-W board.
+Add the VIN and ML86V7667 drivers to 'bockw_defconfig'.
 
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Changes since the original posting:
-- removed initializer for no longer existing field in 'usb_phy_platform_data',
-  modified the comment to the 'ferrite_bead' field initializer.
+ arch/arm/configs/bockw_defconfig |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
- arch/arm/mach-shmobile/board-bockw.c |    6 ++++++
- 1 file changed, 6 insertions(+)
+Index: renesas/arch/arm/configs/bockw_defconfig
+=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
++++ renesas/arch/arm/configs/bockw_defconfig
+@@ -76,6 +76,13 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HWMON is not set
+ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
++CONFIG_MEDIA_SUPPORT=y
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SOC_CAMERA=y
++CONFIG_VIDEO_RCAR_VIN=y
++# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
++CONFIG_VIDEO_ML86V7667=y
+ CONFIG_USB=y
+ CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
+ CONFIG_USB_EHCI_HCD=y
 
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -53,6 +53,10 @@ static struct resource smsc911x_resource
- 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
- };
- 
-+static struct rcar_phy_platform_data usb_phy_platform_data = {
-+	.ferrite_bead	= true,		/* not sure about this... */
-+};
-+
- #define IRQ0MR	0x30
- static void __init bockw_init(void)
- {
-@@ -61,6 +65,7 @@ static void __init bockw_init(void)
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
- 
- 	fpga = ioremap_nocache(0x18200000, SZ_1M);
- 	if (fpga) {
-@@ -97,4 +102,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_machine	= bockw_init,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
-+	.init_late      = r8a7778_init_late,
- MACHINE_END
