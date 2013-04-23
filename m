@@ -1,38 +1,82 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 03 Apr 2013 16:13:53 +0000
-Subject: [PATCH/RFC 0/3] ARM: shmobile: kzm9g-reference: enable TWD
-Message-Id: <1365005636-17526-1-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 15:17:47 +0000
+Subject: [PATCH v6 2/9] ehci-platform: add pre_setup() method to platform data
+Message-Id: <201304231917.48349.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The first patch in this series is required for the result to work, but is 
-modifying a generic driver, so, it should be considered separately, and if 
-accepted, it can be applied separately too. Patches 2 and 3 are RFC, 
-because I'm not sure, whether this is indeed the right way to enable TWD 
-on kzm9g-reference.
+Sometimes there is a need  to initialize some non-standard registers mapped to
+the EHCI region before accessing the standard EHCI registers.  Add pre_setup()
+method with 'struct usb_hcd *' parameter to be called just before ehci_setup()
+to the 'ehci-platform'  driver's platform data for this purpose...
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+While at it, add the missing incomplete declaration of 'struct platform_device'
+to <linux/usb/ehci_pdriver.h>...
 
-Guennadi Liakhovetski (3):
-  ARM: also support TWD clock, instantiated from platform data
-  ARM: shmobile: initialise clock early on kzm9g-reference
-  ARM: shmobile: kzm9g-reference: add a TWD DT node
+The patch has been tested on the Marzen and BOCK-W boards.
 
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |    7 +++++++
- arch/arm/kernel/smp_twd.c                      |    2 +-
- arch/arm/mach-shmobile/board-kzm9g-reference.c |    8 +++++++-
- arch/arm/mach-shmobile/setup-sh73a0.c          |   13 +++++++++----
- 4 files changed, 24 insertions(+), 6 deletions(-)
+Suggested-by: Alan Stern <stern@rowland.harvard.edu>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
 
--- 
-1.7.2.5
-
-Thanks
-Guennadi
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Changes since version 3:
+- added ACK from Alan Stern.
+
+Changes since version 2:
+- replaced #include with incomplete declarations of 'struct platform_device' and
+  'struct usb_hcd';
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- changed init() method to pre_setup() with different parameters and call site.
+
+ drivers/usb/host/ehci-platform.c |    6 ++++++
+ include/linux/usb/ehci_pdriver.h |    4 ++++
+ 2 files changed, 10 insertions(+)
+
+Index: renesas/drivers/usb/host/ehci-platform.c
+=================================--- renesas.orig/drivers/usb/host/ehci-platform.c
++++ renesas/drivers/usb/host/ehci-platform.c
+@@ -46,6 +46,12 @@ static int ehci_platform_reset(struct us
+ 	ehci->big_endian_desc = pdata->big_endian_desc;
+ 	ehci->big_endian_mmio = pdata->big_endian_mmio;
+ 
++	if (pdata->pre_setup) {
++		retval = pdata->pre_setup(hcd);
++		if (retval < 0)
++			return retval;
++	}
++
+ 	ehci->caps = hcd->regs + pdata->caps_offset;
+ 	retval = ehci_setup(hcd);
+ 	if (retval)
+Index: renesas/include/linux/usb/ehci_pdriver.h
+=================================--- renesas.orig/include/linux/usb/ehci_pdriver.h
++++ renesas/include/linux/usb/ehci_pdriver.h
+@@ -19,6 +19,9 @@
+ #ifndef __USB_CORE_EHCI_PDRIVER_H
+ #define __USB_CORE_EHCI_PDRIVER_H
+ 
++struct platform_device;
++struct usb_hcd;
++
+ /**
+  * struct usb_ehci_pdata - platform_data for generic ehci driver
+  *
+@@ -50,6 +53,7 @@ struct usb_ehci_pdata {
+ 	/* Turn on only VBUS suspend power and hotplug detection,
+ 	 * turn off everything else */
+ 	void (*power_suspend)(struct platform_device *pdev);
++	int (*pre_setup)(struct usb_hcd *hcd);
+ };
+ 
+ #endif /* __USB_CORE_EHCI_PDRIVER_H */
