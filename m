@@ -1,54 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 29 Apr 2013 11:43:51 +0000
-Subject: Re: [PATCH] sh_eth: use random MAC address if no valid one supplied
-Message-Id: <517E5CF7.4000600@cogentembedded.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 23 Apr 2013 21:23:27 +0000
+Subject: [PATCH] ARM: OMAP: remove unused variable
+Message-Id: <201304232323.27751.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304280248.11893.sergei.shtylyov@cogentembedded.com> <1405436.hE5aNhyzLb@avalon>
-In-Reply-To: <1405436.hE5aNhyzLb@avalon>
+References: <1363818875-15978-1-git-send-email-robherring2@gmail.com>
+In-Reply-To: <1363818875-15978-1-git-send-email-robherring2@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+ARM: OMAP: remove unused variable
+    
+Commit 0583fe478a7 "ARM: convert arm/arm64 arch timer to use CLKSRC_OF init"
+has left the omap5_realtime_timer_init() function with a stale variable and
+broken whitespace. This fixes both.
+    
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+I've applied this patch on top of the timer cleanup series
 
-On 29-04-2013 0:29, Laurent Pinchart wrote:
-
->> On Renesas R-Car based development boards, although a MAC address is printed
->> on all the Ethernet port labels, U-Boot  doesn't write a valid MAC address
->> to the Ether MAHR/MALR registers (there's no storage provided for the Ether
->> MAC address either), so we have to resort to using a random MAC address...
-
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> ---
->> This patch is against the 'net-next.git' repository.
-
->>   drivers/net/ethernet/renesas/sh_eth.c |    5 +++++
->>   1 file changed, 5 insertions(+)
-
->> Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
->> =================================>> --- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
->> +++ net-next/drivers/net/ethernet/renesas/sh_eth.c
->> @@ -2735,6 +2735,11 @@ static int sh_eth_drv_probe(struct platf
->>
->>   	/* read and set MAC address */
->>   	read_mac_address(ndev, pd->mac_addr);
->> +	if (!is_valid_ether_addr(ndev->dev_addr)) {
->> +		dev_warn(&pdev->dev, "no valid MAC address supplied, using "
->> +			 "a random one.\n");
-
-> Breaking log messages in the middle of a line is frowned upon, more than
-> exceeding the 80 characters per line (soft) limit. I think
-
->          dev_warn(&pdev->dev,
->                   "no valid MAC address supplied, using a random one.\n");
-
-> would be better.
-
-    Thanks, totally forgot about that when doing a patch, only remembered 
-after sending out.
-
-WBR, Sergei
-
+diff --git a/arch/arm/mach-omap2/timer.c b/arch/arm/mach-omap2/timer.c
+index 7dd6453..686e498 100644
+--- a/arch/arm/mach-omap2/timer.c
++++ b/arch/arm/mach-omap2/timer.c
+@@ -618,12 +618,10 @@ OMAP_SYS_32K_TIMER_INIT(5, 1, OMAP4_32K_SOURCE, "ti,timer-alwon",
+ 			2, OMAP4_MPU_SOURCE);
+ void __init omap5_realtime_timer_init(void)
+ {
+-	int err;
+-
+ 	omap5_sync32k_timer_init();
+ 	realtime_counter_init();
+ 
+-        clocksource_of_init();
++	clocksource_of_init();
+ }
+ #endif /* CONFIG_SOC_OMAP5 */
+ 
