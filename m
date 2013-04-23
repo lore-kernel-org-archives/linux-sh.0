@@ -1,7 +1,7 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 23 Apr 2013 04:18:23 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 23 Apr 2013 05:08:45 +0000
 Subject: Re: [PATCH 2/2 v7] sudmac: add support for SUDMAC
-Message-Id: <51760B8F.4020509@renesas.com>
+Message-Id: <87a9op6dgm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <5174FDF3.8060809@renesas.com>
 In-Reply-To: <5174FDF3.8060809@renesas.com>
@@ -10,67 +10,49 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san,
 
-Thank you for the comment.
+Hi Shimoda-san
 
-(2013/04/23 9:41), Kuninori Morimoto wrote:
-< snip >
->> diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
->> index 54ae957..16f9225 100644
->> --- a/drivers/dma/sh/Makefile
->> +++ b/drivers/dma/sh/Makefile
->> @@ -1,2 +1,3 @@
->>  obj-$(CONFIG_SH_DMAE) += shdma-base.o
->>  obj-$(CONFIG_SH_DMAE) += shdma.o
->> +obj-$(CONFIG_SUDMAC) += shdma-base.o sudmac.o
+> it can choose the SH_DMAE_BASE only, but we will use
+> "SH_DMAE_BASE && SH_DMAE" or "SH_DMAE_BASE && SH_SUDMAC".
+> So, I intend to modify the Kconfig like the "config DMA_ENGINE":
 > 
-> I'm not sure detail of it, but, I thought we can do like this.
-> Is it possible ? 
-
-It is possible, I think.
-But,
-
 > --- Kconfig ---
-> config SH_DMAE_BASE
-> 	xxx
-> 
 > config SH_DMAE
 > 	xxx
-> 	depends on SH_DMAE_BASE
+> 	select SH_DMAE_BASE
 > 
-> config SH_SUDMAC
+> config SUDMAC
 > 	xxx
-> 	depends on SH_DMAE_BASE
+> 	select SH_DMAE_BASE
+> ---------------
+> 
+> What do you think about this?
 
-it can choose the SH_DMAE_BASE only, but we will use
-"SH_DMAE_BASE && SH_DMAE" or "SH_DMAE_BASE && SH_SUDMAC".
-So, I intend to modify the Kconfig like the "config DMA_ENGINE":
 
---- Kconfig ---
+Thank you
+
+Selecting SH_DMAE_BASE only is not so strange for me,
+and (as you mentioned F2F), some driver already depends on it.
+So this SH_DMAE_BASE should be y, and SH_DMAE/SUDMAC should depend
+on it.
+
+I guess this is naturally Kconfig for me
+
+config SH_DMAE_BASE
+	bool xxx
+	default y if (SH_MOBLE && SH)
+
 config SH_DMAE
-	xxx
-	select SH_DMAE_BASE
+        xxxx
+	depends on SH_DMAE_BASE
 
 config SUDMAC
-	xxx
-	select SH_DMAE_BASE
----------------
+        xxxx
+	depends on SH_DMAE_BASE
 
-What do you think about this?
+BTW, "SH_DMAE" is mismatch naming, I guess "SHDMAC" is better ?
 
-> --- Makefile ---
-> 
-> obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o
-> obj-$(CONFIG_SH_DMAE) += shdma.o
-> obj-$(CONFIG_SUDMAC) += sudmac.o
-
-I think it is nice.
-
-Best regards,
-Yoshihiro Shimoda
-
-> Best regards
-> ---
-> Kuninori Morimoto
-> 
+Best regards
+---
+Kuninori Morimoto
