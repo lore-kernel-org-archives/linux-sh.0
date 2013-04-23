@@ -1,37 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 08 Apr 2013 02:08:44 +0000
-Subject: [PATCH 01/02] ARM: shmobile: Add second I/O range for r8a7790 PFC
-Message-Id: <20130408020844.29957.37243.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 23 Apr 2013 15:26:53 +0000
+Subject: [PATCH v6 5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
+Message-Id: <201304231926.53887.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304231911.56202.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Now that 'drivers/usb/phy/rcar-phy.c' doesn't require the second memory resource
+anymore, we can remove it from the R8A7779's USB PHY platform device.
 
-Add the GPIO I/O memory range to the r8a7790 PFC device.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-This extra I/O memory range is needed when using the PFC
-tables to drive both pin functions (using PINCTRL or
-function GPIO for old code) and actual GPIO. The goal is
-however to use a separate GPIO driver in the long run
-and when that happens this extra I/O memory range can
-be removed.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
+Changes since version 4:
+- refreshed the patch.
 
- arch/arm/mach-shmobile/setup-r8a7790.c |    1 +
- 1 file changed, 1 insertion(+)
+Changes since version 3:
+- lowercased the SoC name in the subject.
 
---- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-04-02 15:34:55.000000000 +0900
-@@ -31,6 +31,7 @@
- 
- static const struct resource pfc_resources[] = {
- 	DEFINE_RES_MEM(0xe6060000, 0x250),
-+	DEFINE_RES_MEM(0xe6050000, 0x5050),
+Changes since version 2:
+- refreshed atop of the prior patches;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- new patch in this version, split from the previous one.
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |    5 -----
+ 1 file changed, 5 deletions(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -395,11 +395,6 @@ static struct resource usb_phy_resources
+ 		.end		= 0xffe70900 - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+-	[1] = {
+-		.start		= 0xfff70000,
+-		.end		= 0xfff70900 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
  };
  
- void __init r8a7790_pinmux_init(void)
+ static struct platform_device usb_phy_device = {
