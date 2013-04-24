@@ -1,127 +1,304 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 05 Apr 2013 02:57:49 +0000
-Subject: [PATCH 2/2] ARM: shmobile: R8A7779: add Ether support
-Message-Id: <1365130669-11662-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 00:06:06 +0000
+Subject: [PATCH 6/9] ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
+Message-Id: <1366761969-16759-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365130669-11662-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365130669-11662-1-git-send-email-horms+renesas@verge.net.au>
+References: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Instead of using the LED-specific TPU PWM driver, switch to the generic
+TPU PWM driver with leds-pwm.
 
-Add Ether clock and platform device for R8A7779 SoC; add a function to register
-this device with board-specific platform data.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c        |    4 +++-
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        |   23 ++++++++++++++++++++++-
- 3 files changed, 27 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-kota2.c  | 178 ++++++++++++++++++++--------------
+ arch/arm/mach-shmobile/clock-sh73a0.c |   8 +-
+ 2 files changed, 109 insertions(+), 77 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 5436b51..31d5cd4 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -112,7 +112,7 @@ static struct clk *main_clks[] = {
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index ef5ca0e..8634789 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -26,6 +26,7 @@
+ #include <linux/irq.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/pinctrl/pinconf-generic.h>
++#include <linux/platform_data/pwm-rmob.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+@@ -37,8 +38,8 @@
+ #include <linux/input/sh_keysc.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/leds.h>
++#include <linux/leds_pwm.h>
+ #include <linux/irqchip/arm-gic.h>
+-#include <linux/platform_data/leds-renesas-tpu.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mfd/tmio.h>
+@@ -186,116 +187,137 @@ static struct platform_device gpio_leds_device = {
  };
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
--	MSTP115,
-+	MSTP115, MSTP114,
- 	MSTP103, MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -126,6 +126,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
- 	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
-+	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
- 	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
- 	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
- 	[MSTP100] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  0, 0), /* USB0/1 */
-@@ -162,6 +163,7 @@ static struct clk_lookup lookups[] = {
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
- 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
-+	CLKDEV_DEV_ID("sh-eth", &mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
- 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index af38750..b58a1f02 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -3,6 +3,7 @@
+ /* TPU LED */
+-static struct led_renesas_tpu_config led_renesas_tpu12_pdata = {
+-	.name		= "V2513",
+-	.pin_gpio_fn	= GPIO_FN_TPU1TO2,
+-	.pin_gpio	= 153,
+-	.channel_offset = 0x90,
+-	.timer_bit = 2,
+-	.max_brightness = 1000,
++static struct rmob_tpu_pwm_platform_data tpu1_pwm_pdata = {
++	.channels[2] = {
++		.enabled = true,
++		.active_low = false,
++	},
+ };
  
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
-+#include <linux/sh_eth.h>
- 
- /* Pin Function Controller:
-  * GPIO_FN_xx - GPIO used to select pin function
-@@ -352,6 +353,7 @@ extern void r8a7779_earlytimer_init(void);
- extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
-+extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 042df35..689ce67 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -1,8 +1,9 @@
- /*
-  * r8a7779 processor support
-  *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
-  * Copyright (C) 2011  Magnus Damm
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -347,6 +348,18 @@ static struct platform_device sata_device = {
+-static struct resource tpu12_resources[] = {
++static struct resource tpu1_pwm_resources[] = {
+ 	[0] = {
+-		.name	= "TPU12",
+-		.start	= 0xe6610090,
+-		.end	= 0xe66100b5,
++		.start	= 0xe6610000,
++		.end	= 0xe66100ff,
+ 		.flags	= IORESOURCE_MEM,
  	},
  };
  
-+/* Ether */
-+static struct resource ether_resources[] = {
+-static struct platform_device leds_tpu12_device = {
+-	.name = "leds-renesas-tpu",
+-	.id = 12,
++static struct platform_device tpu1_pwm_device = {
++	.name = "rmob_tpu_pwm",
++	.id = 1,
+ 	.dev = {
+-		.platform_data  = &led_renesas_tpu12_pdata,
++		.platform_data  = &tpu1_pwm_pdata,
+ 	},
+-	.num_resources	= ARRAY_SIZE(tpu12_resources),
+-	.resource	= tpu12_resources,
++	.num_resources	= ARRAY_SIZE(tpu1_pwm_resources),
++	.resource	= tpu1_pwm_resources,
+ };
+ 
+-static struct led_renesas_tpu_config led_renesas_tpu41_pdata = {
+-	.name		= "V2514",
+-	.pin_gpio_fn	= GPIO_FN_TPU4TO1,
+-	.pin_gpio	= 199,
+-	.channel_offset = 0x50,
+-	.timer_bit = 1,
+-	.max_brightness = 1000,
++static struct rmob_tpu_pwm_platform_data tpu2_pwm_pdata = {
++	.channels[1] = {
++		.enabled = true,
++		.active_low = false,
++	},
+ };
+ 
+-static struct resource tpu41_resources[] = {
++static struct resource tpu2_pwm_resources[] = {
+ 	[0] = {
+-		.name	= "TPU41",
+-		.start	= 0xe6640050,
+-		.end	= 0xe6640075,
++		.start	= 0xe6620000,
++		.end	= 0xe66200ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ };
+ 
+-static struct platform_device leds_tpu41_device = {
+-	.name = "leds-renesas-tpu",
+-	.id = 41,
++static struct platform_device tpu2_pwm_device = {
++	.name = "rmob_tpu_pwm",
++	.id = 2,
+ 	.dev = {
+-		.platform_data  = &led_renesas_tpu41_pdata,
++		.platform_data  = &tpu2_pwm_pdata,
+ 	},
+-	.num_resources	= ARRAY_SIZE(tpu41_resources),
+-	.resource	= tpu41_resources,
++	.num_resources	= ARRAY_SIZE(tpu2_pwm_resources),
++	.resource	= tpu2_pwm_resources,
+ };
+ 
+-static struct led_renesas_tpu_config led_renesas_tpu21_pdata = {
+-	.name		= "V2515",
+-	.pin_gpio_fn	= GPIO_FN_TPU2TO1,
+-	.pin_gpio	= 197,
+-	.channel_offset = 0x50,
+-	.timer_bit = 1,
+-	.max_brightness = 1000,
++static struct rmob_tpu_pwm_platform_data tpu3_pwm_pdata = {
++	.channels[0] = {
++		.enabled = true,
++		.active_low = false,
++	},
+ };
+ 
+-static struct resource tpu21_resources[] = {
++static struct resource tpu3_pwm_resources[] = {
+ 	[0] = {
+-		.name	= "TPU21",
+-		.start	= 0xe6620050,
+-		.end	= 0xe6620075,
++		.start	= 0xe6630000,
++		.end	= 0xe66300ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ };
+ 
+-static struct platform_device leds_tpu21_device = {
+-	.name = "leds-renesas-tpu",
+-	.id = 21,
++static struct platform_device tpu3_pwm_device = {
++	.name = "rmob_tpu_pwm",
++	.id = 3,
+ 	.dev = {
+-		.platform_data  = &led_renesas_tpu21_pdata,
++		.platform_data  = &tpu3_pwm_pdata,
+ 	},
+-	.num_resources	= ARRAY_SIZE(tpu21_resources),
+-	.resource	= tpu21_resources,
++	.num_resources	= ARRAY_SIZE(tpu3_pwm_resources),
++	.resource	= tpu3_pwm_resources,
+ };
+ 
+-static struct led_renesas_tpu_config led_renesas_tpu30_pdata = {
+-	.name		= "KEYLED",
+-	.pin_gpio_fn	= GPIO_FN_TPU3TO0,
+-	.pin_gpio	= 163,
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.max_brightness = 1000,
++static struct rmob_tpu_pwm_platform_data tpu4_pwm_pdata = {
++	.channels[1] = {
++		.enabled = true,
++		.active_low = false,
++	},
+ };
+ 
+-static struct resource tpu30_resources[] = {
++static struct resource tpu4_pwm_resources[] = {
+ 	[0] = {
+-		.name	= "TPU30",
+-		.start	= 0xe6630010,
+-		.end	= 0xe6630035,
++		.start	= 0xe6640000,
++		.end	= 0xe66400ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ };
+ 
+-static struct platform_device leds_tpu30_device = {
+-	.name = "leds-renesas-tpu",
+-	.id = 30,
++static struct platform_device tpu4_pwm_device = {
++	.name = "rmob_tpu_pwm",
++	.id = 4,
++	.dev = {
++		.platform_data  = &tpu4_pwm_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(tpu4_pwm_resources),
++	.resource	= tpu4_pwm_resources,
++};
++
++static struct led_pwm tpu_pwm_leds[] = {
 +	{
-+		.start	= 0xfde00000,
-+		.end	= 0xfde003ff,
-+		.flags	= IORESOURCE_MEM,
++		.name		= "V2513",
++		.pwm_id		= RMOB_TPU_PWM_ID(1, 2),
++		.max_brightness	= 1000,
 +	}, {
-+		.start	= gic_iid(0xb4),
-+		.flags	= IORESOURCE_IRQ,
++		.name		= "V2515",
++		.pwm_id		= RMOB_TPU_PWM_ID(2, 1),
++		.max_brightness	= 1000,
++	}, {
++		.name		= "KEYLED",
++		.pwm_id		= RMOB_TPU_PWM_ID(3, 0),
++		.max_brightness	= 1000,
++	}, {
++		.name		= "V2514",
++		.pwm_id		= RMOB_TPU_PWM_ID(4, 1),
++		.max_brightness	= 1000,
 +	},
 +};
 +
- static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -382,6 +395,14 @@ void __init r8a7779_add_standard_devices(void)
- 			    ARRAY_SIZE(r8a7779_late_devices));
- }
- 
-+void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
-+{
-+	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
-+					  ether_resources,
-+					  ARRAY_SIZE(ether_resources),
-+					  pdata, sizeof(*pdata));
-+}
++static struct led_pwm_platform_data leds_pwm_pdata = {
++	.num_leds = ARRAY_SIZE(tpu_pwm_leds),
++	.leds = tpu_pwm_leds,
++};
 +
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
++static struct platform_device leds_pwm_device = {
++	.name = "leds-pwm",
++	.id = 0,
+ 	.dev = {
+-		.platform_data  = &led_renesas_tpu30_pdata,
++		.platform_data = &leds_pwm_pdata,
+ 	},
+-	.num_resources	= ARRAY_SIZE(tpu30_resources),
+-	.resource	= tpu30_resources,
+ };
  
+ /* Fixed 1.8V regulator to be used by MMCIF */
+@@ -426,10 +448,11 @@ static struct platform_device *kota2_devices[] __initdata = {
+ 	&keysc_device,
+ 	&gpio_keys_device,
+ 	&gpio_leds_device,
+-	&leds_tpu12_device,
+-	&leds_tpu41_device,
+-	&leds_tpu21_device,
+-	&leds_tpu30_device,
++	&tpu1_pwm_device,
++	&tpu2_pwm_device,
++	&tpu3_pwm_device,
++	&tpu4_pwm_device,
++	&leds_pwm_device,
+ 	&mmcif_device,
+ 	&sdhi0_device,
+ 	&sdhi1_device,
+@@ -512,6 +535,15 @@ static const struct pinctrl_map kota2_pinctrl_map[] = {
+ 				  "bsc_cs5_a", "bsc"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
+ 				  "bsc_we0", "bsc"),
++	/* TPU */
++	PIN_MAP_MUX_GROUP_DEFAULT("rmob_tpu_pwm.1", "pfc-sh73a0",
++				  "tpu1_to2", "tpu1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rmob_tpu_pwm.2", "pfc-sh73a0",
++				  "tpu2_to1", "tpu2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rmob_tpu_pwm.3", "pfc-sh73a0",
++				  "tpu3_to0", "tpu3"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rmob_tpu_pwm.4", "pfc-sh73a0",
++				  "tpu4_to1", "tpu4"),
+ };
+ 
+ static void __init kota2_init(void)
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index f222837..c454dc7 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -656,10 +656,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
+-	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
+-	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
+-	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
+-	CLKDEV_DEV_ID("leds-renesas-tpu.41", &mstp_clks[MSTP300]), /* TPU4 */
++	CLKDEV_DEV_ID("rmob_tpu_pwm.1", &mstp_clks[MSTP303]), /* TPU1 */
++	CLKDEV_DEV_ID("rmob_tpu_pwm.2", &mstp_clks[MSTP302]), /* TPU2 */
++	CLKDEV_DEV_ID("rmob_tpu_pwm.3", &mstp_clks[MSTP301]), /* TPU3 */
++	CLKDEV_DEV_ID("rmob_tpu_pwm.4", &mstp_clks[MSTP300]), /* TPU4 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
+ 	CLKDEV_DEV_ID("e6826000.i2c", &mstp_clks[MSTP411]), /* I2C3 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
 -- 
-1.7.10.4
+1.8.1.5
 
