@@ -1,54 +1,115 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 09 Apr 2013 22:54:55 +0000
-Subject: [PATCH 3/4] ARM: shmobile: BOCK-W: add USB support
-Message-Id: <201304100254.55733.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 00:06:05 +0000
+Subject: [PATCH 5/9] ARM: mach-shmobile: armadillo800eva: Add backlight support
+Message-Id: <1366761969-16759-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304100247.22615.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304100247.22615.sergei.shtylyov@cogentembedded.com>
+References: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Register the USB PHY device from bockw_init(), passing the platform  data to it.
-Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
-get registered too...
+The flat panel backlight on the Armadillo 800 EVA board is driven by the
+TPU PWM output.
 
-The patch has been tested on the BOCK-W board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw.c |    7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 51 +++++++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 2 deletions(-)
 
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -53,6 +53,11 @@ static struct resource smsc911x_resource
- 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index ff04d1e..3c4fcef 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -30,6 +30,8 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/regulator/driver.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/pwm-rmob.h>
++#include <linux/pwm_backlight.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+@@ -381,7 +383,48 @@ static struct platform_device sh_eth_device = {
+ 	.num_resources = ARRAY_SIZE(sh_eth_resources),
  };
  
-+static struct rcar_phy_platform_data usb_phy_platform_data = {
-+	.usbpctrl0	= 0,
-+	.ferrite_bead	= true,		/* ??? */
+-/* LCDC */
++/* PWM */
++static struct resource pwm_resources[] = {
++	[0] = {
++		.start = 0xe6600000,
++		.end = 0xe66000ff,
++		.flags = IORESOURCE_MEM,
++	},
 +};
 +
- #define IRQ0MR	0x30
- static void __init bockw_init(void)
- {
-@@ -61,6 +66,7 @@ static void __init bockw_init(void)
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
++static struct rmob_tpu_pwm_platform_data pwm_device_data = {
++	.channels[2] = {
++		.enabled = true,
++		.active_low = 1,
++	}
++};
++
++static struct platform_device pwm_device = {
++	.name = "rmob_tpu_pwm",
++	.id = -1,
++	.dev = {
++		.platform_data = &pwm_device_data,
++	},
++	.num_resources = ARRAY_SIZE(pwm_resources),
++	.resource = pwm_resources,
++};
++
++/* LCDC and backlight */
++static struct platform_pwm_backlight_data pwm_backlight_data = {
++	.pwm_id = RMOB_TPU_PWM_ID(0, 2),
++	.lth_brightness = 50,
++	.max_brightness = 255,
++	.dft_brightness = 255,
++	.pwm_period_ns = 33333, /* 30kHz */
++};
++
++static struct platform_device pwm_backlight_device = {
++	.name = "pwm-backlight",
++	.dev = {
++		.platform_data = &pwm_backlight_data,
++	},
++};
++
+ static struct fb_videomode lcdc0_mode = {
+ 	.name		= "AMPIER/AM-800480",
+ 	.xres		= 800,
+@@ -1019,6 +1062,8 @@ static struct i2c_board_info i2c2_devices[] = {
+  */
+ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
++	&pwm_device,
++	&pwm_backlight_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
+ 	&vcc_sdhi0,
+@@ -1090,6 +1135,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* ST1232 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-r8a7740",
+ 				  "intc_irq10", "intc"),
++	/* TPU0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("rmob_tpu_pwm", "pfc-r8a7740",
++				  "tpu0_to2_1", "tpu0"),
+ 	/* USBHS */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7740",
+ 				  "intc_irq7_1", "intc"),
+@@ -1149,7 +1197,6 @@ static void __init eva_init(void)
  
- 	fpga = ioremap_nocache(0x18200000, SZ_1M);
- 	if (fpga) {
-@@ -97,4 +103,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_machine	= bockw_init,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
-+	.init_late      = r8a7778_init_late,
- MACHINE_END
+ 	/* LCDC0 */
+ 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+-	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
+ 
+ 	/* Touchscreen */
+ 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+-- 
+1.8.1.5
 
