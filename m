@@ -1,257 +1,556 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:57 +0000
-Subject: [PATCH 19/28] sh-pfc: r8a73a4: Add bias (pull-up/down) pinconf support
-Message-Id: <1364954706-14727-20-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 00:06:03 +0000
+Subject: [PATCH 3/9] pwm: Add Renesas Mobile TPU PWM driver
+Message-Id: <1366761969-16759-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
+References: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-From: Magnus Damm <damm@opensource.se>
+The Timer Pulse Unit (TPU is a 4-channels 16-bit timer used to generate
+waveforms. This driver exposes PWM functions through the PWM API for
+other drivers to use.
 
-Implement pull-up/down support for r8a73a4 similar to the implementation
-for sh73a0.
+The code is loosely based on the leds-renesas-tpu driver by Magnus Damm
+and the TPU PWM driver shipped in the Armadillo EVA 800 kernel sources.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Tested-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  197 +++++++++++++++++++++++++++++++++-
- 1 file changed, 196 insertions(+), 1 deletion(-)
+ drivers/pwm/Kconfig                    |   7 +
+ drivers/pwm/Makefile                   |   1 +
+ drivers/pwm/pwm-rmob.c                 | 462 +++++++++++++++++++++++++++++++++
+ include/linux/platform_data/pwm-rmob.h |  18 ++
+ 4 files changed, 488 insertions(+)
+ create mode 100644 drivers/pwm/pwm-rmob.c
+ create mode 100644 include/linux/platform_data/pwm-rmob.h
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-index 0177329..86a5fd3 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-@@ -17,10 +17,13 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
+index 0e0bfa0..23281f2 100644
+--- a/drivers/pwm/Kconfig
++++ b/drivers/pwm/Kconfig
+@@ -115,6 +115,13 @@ config PWM_PXA
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called pwm-pxa.
+ 
++config PWM_RMOB
++	tristate "R-Mobile TPU PWM support"
++	depends on ARCH_SHMOBILE
++	help
++	  This driver exposes the Timer Pulse Unit (TPU) PWM controller found
++	  in R-Mobile and SH-Mobile chips through the PWM API.
++
+ config PWM_SAMSUNG
+ 	tristate "Samsung PWM support"
+ 	depends on PLAT_SAMSUNG
+diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
+index 94ba21e..63742d9 100644
+--- a/drivers/pwm/Makefile
++++ b/drivers/pwm/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_PWM_LPC32XX)	+= pwm-lpc32xx.o
+ obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
+ obj-$(CONFIG_PWM_PUV3)		+= pwm-puv3.o
+ obj-$(CONFIG_PWM_PXA)		+= pwm-pxa.o
++obj-$(CONFIG_PWM_RMOB)		+= pwm-rmob.o
+ obj-$(CONFIG_PWM_SAMSUNG)	+= pwm-samsung.o
+ obj-$(CONFIG_PWM_SPEAR)		+= pwm-spear.o
+ obj-$(CONFIG_PWM_TEGRA)		+= pwm-tegra.o
+diff --git a/drivers/pwm/pwm-rmob.c b/drivers/pwm/pwm-rmob.c
+new file mode 100644
+index 0000000..c00f76d
+--- /dev/null
++++ b/drivers/pwm/pwm-rmob.c
+@@ -0,0 +1,462 @@
++/*
++ * R-Mobile TPU PWM driver
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/clk.h>
++#include <linux/err.h>
 +#include <linux/io.h>
- #include <linux/kernel.h>
-+#include <linux/pinctrl/pinconf-generic.h>
- #include <mach/irqs.h>
- #include <mach/r8a73a4.h>
- 
-+#include "core.h"
- #include "sh_pfc.h"
- 
- #define CPU_ALL_PORT(fn, pfx, sfx)					\
-@@ -1420,8 +1423,143 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(IRQ57_MARK,			PORT329_FN0),
- };
- 
-+#define R8A73A4_PIN(pin, cfgs)			\
-+	{					\
-+		.name = __stringify(PORT##pin),	\
-+		.enum_id = PORT##pin##_DATA,	\
-+		.configs = cfgs,		\
-+	}
++#include <linux/init.h>
++#include <linux/ioport.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/platform_data/pwm-rmob.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/pwm.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
 +
-+#define __O	(SH_PFC_PIN_CFG_OUTPUT)
-+#define __IO	(SH_PFC_PIN_CFG_INPUT | SH_PFC_PIN_CFG_OUTPUT)
-+#define __PUD	(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
++#define TPU_TSTR		0x00	/* Timer start register (shared) */
 +
-+#define R8A73A4_PIN_IO_PU_PD(pin)       R8A73A4_PIN(pin, __IO | __PUD)
-+#define R8A73A4_PIN_O(pin)              R8A73A4_PIN(pin, __O)
++#define TPU_TCRn		0x00	/* Timer control register */
++#define TPU_TCR_CCLR_NONE	(0 << 5)
++#define TPU_TCR_CCLR_TGRA	(1 << 5)
++#define TPU_TCR_CCLR_TGRB	(2 << 5)
++#define TPU_TCR_CCLR_TGRC	(5 << 5)
++#define TPU_TCR_CCLR_TGRD	(6 << 5)
++#define TPU_TCR_CKEG_RISING	(0 << 3)
++#define TPU_TCR_CKEG_FALLING	(1 << 3)
++#define TPU_TCR_CKEG_BOTH	(2 << 3)
++#define TPU_TMDRn		0x04	/* Timer mode register */
++#define TPU_TMDR_BFWT		(1 << 6)
++#define TPU_TMDR_BFB		(1 << 5)
++#define TPU_TMDR_BFA		(1 << 4)
++#define TPU_TMDR_MD_NORMAL	(0 << 0)
++#define TPU_TMDR_MD_PWM		(2 << 0)
++#define TPU_TIORn		0x08	/* Timer I/O control register */
++#define TPU_TIOR_IOA_0		(0 << 0)
++#define TPU_TIOR_IOA_0_CLR	(1 << 0)
++#define TPU_TIOR_IOA_0_SET	(2 << 0)
++#define TPU_TIOR_IOA_0_TOGGLE	(3 << 0)
++#define TPU_TIOR_IOA_1		(4 << 0)
++#define TPU_TIOR_IOA_1_CLR	(5 << 0)
++#define TPU_TIOR_IOA_1_SET	(6 << 0)
++#define TPU_TIOR_IOA_1_TOGGLE	(7 << 0)
++#define TPU_TIERn		0x0c	/* Timer interrupt enable register */
++#define TPU_TSRn		0x10	/* Timer status register */
++#define TPU_TCNTn		0x14	/* Timer counter */
++#define TPU_TGRAn		0x18	/* Timer general register A */
++#define TPU_TGRBn		0x1c	/* Timer general register B */
++#define TPU_TGRCn		0x20	/* Timer general register C */
++#define TPU_TGRDn		0x24	/* Timer general register D */
 +
- static struct sh_pfc_pin pinmux_pins[] = {
--	GPIO_PORT_ALL(),
-+	R8A73A4_PIN_IO_PU_PD(0), R8A73A4_PIN_IO_PU_PD(1),
-+	R8A73A4_PIN_IO_PU_PD(2), R8A73A4_PIN_IO_PU_PD(3),
-+	R8A73A4_PIN_IO_PU_PD(4), R8A73A4_PIN_IO_PU_PD(5),
-+	R8A73A4_PIN_IO_PU_PD(6), R8A73A4_PIN_IO_PU_PD(7),
-+	R8A73A4_PIN_IO_PU_PD(8), R8A73A4_PIN_IO_PU_PD(9),
-+	R8A73A4_PIN_IO_PU_PD(10), R8A73A4_PIN_IO_PU_PD(11),
-+	R8A73A4_PIN_IO_PU_PD(12), R8A73A4_PIN_IO_PU_PD(13),
-+	R8A73A4_PIN_IO_PU_PD(14), R8A73A4_PIN_IO_PU_PD(15),
-+	R8A73A4_PIN_IO_PU_PD(16), R8A73A4_PIN_IO_PU_PD(17),
-+	R8A73A4_PIN_IO_PU_PD(18), R8A73A4_PIN_IO_PU_PD(19),
-+	R8A73A4_PIN_IO_PU_PD(20), R8A73A4_PIN_IO_PU_PD(21),
-+	R8A73A4_PIN_IO_PU_PD(22), R8A73A4_PIN_IO_PU_PD(23),
-+	R8A73A4_PIN_IO_PU_PD(24), R8A73A4_PIN_IO_PU_PD(25),
-+	R8A73A4_PIN_IO_PU_PD(26), R8A73A4_PIN_IO_PU_PD(27),
-+	R8A73A4_PIN_IO_PU_PD(28), R8A73A4_PIN_IO_PU_PD(29),
-+	R8A73A4_PIN_IO_PU_PD(30),
-+	R8A73A4_PIN_IO_PU_PD(32), R8A73A4_PIN_IO_PU_PD(33),
-+	R8A73A4_PIN_IO_PU_PD(34), R8A73A4_PIN_IO_PU_PD(35),
-+	R8A73A4_PIN_IO_PU_PD(36), R8A73A4_PIN_IO_PU_PD(37),
-+	R8A73A4_PIN_IO_PU_PD(38), R8A73A4_PIN_IO_PU_PD(39),
-+	R8A73A4_PIN_IO_PU_PD(40),
-+	R8A73A4_PIN_IO_PU_PD(64), R8A73A4_PIN_IO_PU_PD(65),
-+	R8A73A4_PIN_IO_PU_PD(66), R8A73A4_PIN_IO_PU_PD(67),
-+	R8A73A4_PIN_IO_PU_PD(68), R8A73A4_PIN_IO_PU_PD(69),
-+	R8A73A4_PIN_IO_PU_PD(70), R8A73A4_PIN_IO_PU_PD(71),
-+	R8A73A4_PIN_IO_PU_PD(72), R8A73A4_PIN_IO_PU_PD(73),
-+	R8A73A4_PIN_O(74), R8A73A4_PIN_IO_PU_PD(75),
-+	R8A73A4_PIN_IO_PU_PD(76), R8A73A4_PIN_IO_PU_PD(77),
-+	R8A73A4_PIN_IO_PU_PD(78), R8A73A4_PIN_IO_PU_PD(79),
-+	R8A73A4_PIN_IO_PU_PD(80), R8A73A4_PIN_IO_PU_PD(81),
-+	R8A73A4_PIN_IO_PU_PD(82), R8A73A4_PIN_IO_PU_PD(83),
-+	R8A73A4_PIN_IO_PU_PD(84), R8A73A4_PIN_IO_PU_PD(85),
-+	R8A73A4_PIN_IO_PU_PD(96), R8A73A4_PIN_IO_PU_PD(97),
-+	R8A73A4_PIN_IO_PU_PD(98), R8A73A4_PIN_IO_PU_PD(99),
-+	R8A73A4_PIN_IO_PU_PD(100), R8A73A4_PIN_IO_PU_PD(101),
-+	R8A73A4_PIN_IO_PU_PD(102), R8A73A4_PIN_IO_PU_PD(103),
-+	R8A73A4_PIN_IO_PU_PD(104), R8A73A4_PIN_IO_PU_PD(105),
-+	R8A73A4_PIN_IO_PU_PD(106), R8A73A4_PIN_IO_PU_PD(107),
-+	R8A73A4_PIN_IO_PU_PD(108), R8A73A4_PIN_IO_PU_PD(109),
-+	R8A73A4_PIN_IO_PU_PD(110), R8A73A4_PIN_IO_PU_PD(111),
-+	R8A73A4_PIN_IO_PU_PD(112), R8A73A4_PIN_IO_PU_PD(113),
-+	R8A73A4_PIN_IO_PU_PD(114), R8A73A4_PIN_IO_PU_PD(115),
-+	R8A73A4_PIN_IO_PU_PD(116), R8A73A4_PIN_IO_PU_PD(117),
-+	R8A73A4_PIN_IO_PU_PD(118), R8A73A4_PIN_IO_PU_PD(119),
-+	R8A73A4_PIN_IO_PU_PD(120), R8A73A4_PIN_IO_PU_PD(121),
-+	R8A73A4_PIN_IO_PU_PD(122), R8A73A4_PIN_IO_PU_PD(123),
-+	R8A73A4_PIN_IO_PU_PD(124), R8A73A4_PIN_IO_PU_PD(125),
-+	R8A73A4_PIN_IO_PU_PD(126),
-+	R8A73A4_PIN_IO_PU_PD(128), R8A73A4_PIN_IO_PU_PD(129),
-+	R8A73A4_PIN_IO_PU_PD(130), R8A73A4_PIN_IO_PU_PD(131),
-+	R8A73A4_PIN_IO_PU_PD(132), R8A73A4_PIN_IO_PU_PD(133),
-+	R8A73A4_PIN_IO_PU_PD(134),
-+	R8A73A4_PIN_IO_PU_PD(160), R8A73A4_PIN_IO_PU_PD(161),
-+	R8A73A4_PIN_IO_PU_PD(162), R8A73A4_PIN_IO_PU_PD(163),
-+	R8A73A4_PIN_IO_PU_PD(164), R8A73A4_PIN_IO_PU_PD(165),
-+	R8A73A4_PIN_IO_PU_PD(166), R8A73A4_PIN_IO_PU_PD(167),
-+	R8A73A4_PIN_IO_PU_PD(168), R8A73A4_PIN_IO_PU_PD(169),
-+	R8A73A4_PIN_IO_PU_PD(170), R8A73A4_PIN_IO_PU_PD(171),
-+	R8A73A4_PIN_IO_PU_PD(172), R8A73A4_PIN_IO_PU_PD(173),
-+	R8A73A4_PIN_IO_PU_PD(174), R8A73A4_PIN_IO_PU_PD(175),
-+	R8A73A4_PIN_IO_PU_PD(176), R8A73A4_PIN_IO_PU_PD(177),
-+	R8A73A4_PIN_IO_PU_PD(178),
-+	R8A73A4_PIN_IO_PU_PD(192), R8A73A4_PIN_IO_PU_PD(193),
-+	R8A73A4_PIN_IO_PU_PD(194), R8A73A4_PIN_IO_PU_PD(195),
-+	R8A73A4_PIN_IO_PU_PD(196), R8A73A4_PIN_IO_PU_PD(197),
-+	R8A73A4_PIN_IO_PU_PD(198), R8A73A4_PIN_IO_PU_PD(199),
-+	R8A73A4_PIN_IO_PU_PD(200), R8A73A4_PIN_IO_PU_PD(201),
-+	R8A73A4_PIN_IO_PU_PD(202), R8A73A4_PIN_IO_PU_PD(203),
-+	R8A73A4_PIN_IO_PU_PD(204), R8A73A4_PIN_IO_PU_PD(205),
-+	R8A73A4_PIN_IO_PU_PD(206), R8A73A4_PIN_IO_PU_PD(207),
-+	R8A73A4_PIN_IO_PU_PD(208), R8A73A4_PIN_IO_PU_PD(209),
-+	R8A73A4_PIN_IO_PU_PD(210), R8A73A4_PIN_IO_PU_PD(211),
-+	R8A73A4_PIN_IO_PU_PD(212), R8A73A4_PIN_IO_PU_PD(213),
-+	R8A73A4_PIN_IO_PU_PD(214), R8A73A4_PIN_IO_PU_PD(215),
-+	R8A73A4_PIN_IO_PU_PD(216), R8A73A4_PIN_IO_PU_PD(217),
-+	R8A73A4_PIN_IO_PU_PD(218), R8A73A4_PIN_IO_PU_PD(219),
-+	R8A73A4_PIN_IO_PU_PD(220), R8A73A4_PIN_IO_PU_PD(221),
-+	R8A73A4_PIN_IO_PU_PD(222),
-+	R8A73A4_PIN_IO_PU_PD(224), R8A73A4_PIN_IO_PU_PD(225),
-+	R8A73A4_PIN_IO_PU_PD(226), R8A73A4_PIN_IO_PU_PD(227),
-+	R8A73A4_PIN_IO_PU_PD(228), R8A73A4_PIN_IO_PU_PD(229),
-+	R8A73A4_PIN_IO_PU_PD(230), R8A73A4_PIN_IO_PU_PD(231),
-+	R8A73A4_PIN_IO_PU_PD(232), R8A73A4_PIN_IO_PU_PD(233),
-+	R8A73A4_PIN_IO_PU_PD(234), R8A73A4_PIN_IO_PU_PD(235),
-+	R8A73A4_PIN_IO_PU_PD(236), R8A73A4_PIN_IO_PU_PD(237),
-+	R8A73A4_PIN_IO_PU_PD(238), R8A73A4_PIN_IO_PU_PD(239),
-+	R8A73A4_PIN_IO_PU_PD(240), R8A73A4_PIN_IO_PU_PD(241),
-+	R8A73A4_PIN_IO_PU_PD(242), R8A73A4_PIN_IO_PU_PD(243),
-+	R8A73A4_PIN_IO_PU_PD(244), R8A73A4_PIN_IO_PU_PD(245),
-+	R8A73A4_PIN_IO_PU_PD(246), R8A73A4_PIN_IO_PU_PD(247),
-+	R8A73A4_PIN_IO_PU_PD(248), R8A73A4_PIN_IO_PU_PD(249),
-+	R8A73A4_PIN_IO_PU_PD(250),
-+	R8A73A4_PIN_IO_PU_PD(256), R8A73A4_PIN_IO_PU_PD(257),
-+	R8A73A4_PIN_IO_PU_PD(258), R8A73A4_PIN_IO_PU_PD(259),
-+	R8A73A4_PIN_IO_PU_PD(260), R8A73A4_PIN_IO_PU_PD(261),
-+	R8A73A4_PIN_IO_PU_PD(262), R8A73A4_PIN_IO_PU_PD(263),
-+	R8A73A4_PIN_IO_PU_PD(264), R8A73A4_PIN_IO_PU_PD(265),
-+	R8A73A4_PIN_IO_PU_PD(266), R8A73A4_PIN_IO_PU_PD(267),
-+	R8A73A4_PIN_IO_PU_PD(268), R8A73A4_PIN_IO_PU_PD(269),
-+	R8A73A4_PIN_IO_PU_PD(270), R8A73A4_PIN_IO_PU_PD(271),
-+	R8A73A4_PIN_IO_PU_PD(272), R8A73A4_PIN_IO_PU_PD(273),
-+	R8A73A4_PIN_IO_PU_PD(274), R8A73A4_PIN_IO_PU_PD(275),
-+	R8A73A4_PIN_IO_PU_PD(276), R8A73A4_PIN_IO_PU_PD(277),
-+	R8A73A4_PIN_IO_PU_PD(278), R8A73A4_PIN_IO_PU_PD(279),
-+	R8A73A4_PIN_IO_PU_PD(280), R8A73A4_PIN_IO_PU_PD(281),
-+	R8A73A4_PIN_IO_PU_PD(282), R8A73A4_PIN_IO_PU_PD(283),
-+	R8A73A4_PIN_O(288), R8A73A4_PIN_IO_PU_PD(289),
-+	R8A73A4_PIN_IO_PU_PD(290), R8A73A4_PIN_IO_PU_PD(291),
-+	R8A73A4_PIN_IO_PU_PD(292), R8A73A4_PIN_IO_PU_PD(293),
-+	R8A73A4_PIN_IO_PU_PD(294), R8A73A4_PIN_IO_PU_PD(295),
-+	R8A73A4_PIN_IO_PU_PD(296), R8A73A4_PIN_IO_PU_PD(297),
-+	R8A73A4_PIN_IO_PU_PD(298), R8A73A4_PIN_IO_PU_PD(299),
-+	R8A73A4_PIN_IO_PU_PD(300), R8A73A4_PIN_IO_PU_PD(301),
-+	R8A73A4_PIN_IO_PU_PD(302), R8A73A4_PIN_IO_PU_PD(303),
-+	R8A73A4_PIN_IO_PU_PD(304), R8A73A4_PIN_IO_PU_PD(305),
-+	R8A73A4_PIN_IO_PU_PD(306), R8A73A4_PIN_IO_PU_PD(307),
-+	R8A73A4_PIN_IO_PU_PD(308),
-+	R8A73A4_PIN_IO_PU_PD(320), R8A73A4_PIN_IO_PU_PD(321),
-+	R8A73A4_PIN_IO_PU_PD(322), R8A73A4_PIN_IO_PU_PD(323),
-+	R8A73A4_PIN_IO_PU_PD(324), R8A73A4_PIN_IO_PU_PD(325),
-+	R8A73A4_PIN_IO_PU_PD(326), R8A73A4_PIN_IO_PU_PD(327),
-+	R8A73A4_PIN_IO_PU_PD(328), R8A73A4_PIN_IO_PU_PD(329),
- };
- 
- static const struct pinmux_range pinmux_ranges[] = {
-@@ -2878,8 +3016,65 @@ static const struct pinmux_irq pinmux_irqs[] = {
- 	PINMUX_IRQ(irq_pin(56), 328),
- 	PINMUX_IRQ(irq_pin(57), 329),
- };
++#define TPU_CHANNEL_OFFSET	0x10
++#define TPU_CHANNEL_SIZE	0x40
 +
-+#define PORTCR_PULMD_OFF (0 << 6)
-+#define PORTCR_PULMD_DOWN (2 << 6)
-+#define PORTCR_PULMD_UP (3 << 6)
-+#define PORTCR_PULMD_MASK (3 << 6)
-+
-+static const unsigned int r8a73a4_portcr_offsets[] = {
-+	0x00000000, 0x00001000, 0x00000000, 0x00001000,
-+	0x00001000, 0x00002000, 0x00002000, 0x00002000,
-+	0x00002000, 0x00003000, 0x00003000,
++enum tpu_pin_state {
++	TPU_PIN_INACTIVE,		/* Pin is driven inactive */
++	TPU_PIN_PWM,			/* Pin is driven by PWM */
++	TPU_PIN_ACTIVE,			/* Pin is driven active */
 +};
 +
-+static unsigned int r8a73a4_pinmux_get_bias(struct sh_pfc *pfc,
-+					    unsigned int pin)
++struct tpu_device;
++
++struct tpu_pwm_device {
++	bool timer_on;			/* Whether the timer is running */
++
++	struct rmob_tpu_pwm_channel_data *pdata;
++	struct tpu_device *tpu;
++	unsigned int channel;		/* Channel number in the TPU */
++
++	unsigned int prescaler;
++	u16 period;
++	u16 duty;
++};
++
++struct tpu_device {
++	struct platform_device *pdev;
++	struct pwm_chip chip;
++	spinlock_t lock;
++
++	void __iomem *base;
++	struct clk *clk;
++
++	struct tpu_pwm_device pwms[RMOB_TPU_CHANNEL_MAX];
++};
++
++#define to_tpu_device(c)	container_of(c, struct tpu_device, chip)
++
++static void tpu_pwm_write(struct tpu_pwm_device *pwm, int reg_nr, u16 value)
 +{
-+	void __iomem *addr;
++	void __iomem *base = pwm->tpu->base + TPU_CHANNEL_OFFSET
++			   + pwm->channel * TPU_CHANNEL_SIZE;
 +
-+	addr = pfc->window->virt + r8a73a4_portcr_offsets[pin >> 5] + pin;
++	iowrite16(value, base + reg_nr);
++}
 +
-+	switch (ioread8(addr) & PORTCR_PULMD_MASK) {
-+	case PORTCR_PULMD_UP:
-+		return PIN_CONFIG_BIAS_PULL_UP;
-+	case PORTCR_PULMD_DOWN:
-+		return PIN_CONFIG_BIAS_PULL_DOWN;
-+	case PORTCR_PULMD_OFF:
-+	default:
-+		return PIN_CONFIG_BIAS_DISABLE;
++static void tpu_pwm_set_pin(struct tpu_pwm_device *pwm,
++			    enum tpu_pin_state state)
++{
++	static const char * const states[] = { "inactive", "PWM", "active" };
++
++	dev_dbg(&pwm->tpu->pdev->dev, "%u: configuring pin as %s\n",
++		pwm->channel, states[state]);
++
++	switch (state) {
++	case TPU_PIN_INACTIVE:
++		tpu_pwm_write(pwm, TPU_TIORn, pwm->pdata->active_low ?
++			      TPU_TIOR_IOA_1 : TPU_TIOR_IOA_0);
++		break;
++	case TPU_PIN_PWM:
++		tpu_pwm_write(pwm, TPU_TIORn, pwm->pdata->active_low ?
++			      TPU_TIOR_IOA_0_SET : TPU_TIOR_IOA_1_CLR);
++		break;
++	case TPU_PIN_ACTIVE:
++		tpu_pwm_write(pwm, TPU_TIORn, pwm->pdata->active_low ?
++			      TPU_TIOR_IOA_0 : TPU_TIOR_IOA_1);
++		break;
 +	}
 +}
 +
-+static void r8a73a4_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
-+				   unsigned int bias)
++static void tpu_pwm_start_stop(struct tpu_pwm_device *pwm, int start)
 +{
-+	void __iomem *addr;
-+	u32 value;
++	unsigned long flags;
++	u16 value;
 +
-+	addr = pfc->window->virt + r8a73a4_portcr_offsets[pin >> 5] + pin;
-+	value = ioread8(addr) & ~PORTCR_PULMD_MASK;
++	spin_lock_irqsave(&pwm->tpu->lock, flags);
++	value = ioread16(pwm->tpu->base + TPU_TSTR);
 +
-+	switch (bias) {
-+	case PIN_CONFIG_BIAS_PULL_UP:
-+		value |= PORTCR_PULMD_UP;
-+		break;
-+	case PIN_CONFIG_BIAS_PULL_DOWN:
-+		value |= PORTCR_PULMD_DOWN;
-+		break;
-+	}
++	if (start)
++		value |= 1 << pwm->channel;
++	else
++		value &= ~(1 << pwm->channel);
 +
-+	iowrite8(value, addr);
++	iowrite16(value, pwm->tpu->base + TPU_TSTR);
++	spin_unlock_irqrestore(&pwm->tpu->lock, flags);
 +}
 +
-+static const struct sh_pfc_soc_operations r8a73a4_pinmux_ops = {
-+	.get_bias = r8a73a4_pinmux_get_bias,
-+	.set_bias = r8a73a4_pinmux_set_bias,
++static int tpu_pwm_timer_start(struct tpu_pwm_device *pwm)
++{
++	int ret;
++
++	if (!pwm->timer_on) {
++		/* Wake up device and enable clock. */
++		pm_runtime_get_sync(&pwm->tpu->pdev->dev);
++		ret = clk_prepare_enable(pwm->tpu->clk);
++		if (ret) {
++			dev_err(&pwm->tpu->pdev->dev, "cannot enable clock\n");
++			return ret;
++		}
++		pwm->timer_on = true;
++	}
++
++	/* Make sure the channel is stopped, as we need to reconfigure it
++	 * completely. First drive the pin to the inactive state to avoid
++	 * glitches.
++	 */
++	tpu_pwm_set_pin(pwm, TPU_PIN_INACTIVE);
++	tpu_pwm_start_stop(pwm, false);
++
++	/*
++	 * - Clear TCNT on TGRB match
++	 * - Count on rising edge
++	 * - Set prescaler
++	 * - Output 0 until TGRA, output 1 until TGRB (active low polarity)
++	 * - Output 1 until TGRA, output 0 until TGRB (active high polarity
++	 * - PWM mode
++	 */
++	tpu_pwm_write(pwm, TPU_TCRn, TPU_TCR_CCLR_TGRB | TPU_TCR_CKEG_RISING |
++		      pwm->prescaler);
++	tpu_pwm_write(pwm, TPU_TMDRn, TPU_TMDR_MD_PWM);
++	tpu_pwm_set_pin(pwm, TPU_PIN_PWM);
++	tpu_pwm_write(pwm, TPU_TGRAn, pwm->duty);
++	tpu_pwm_write(pwm, TPU_TGRBn, pwm->period);
++
++	dev_dbg(&pwm->tpu->pdev->dev, "%u: TGRA 0x%04x TGRB 0x%04x\n",
++		pwm->channel, pwm->duty, pwm->period);
++
++	/* Start the channel. */
++	tpu_pwm_start_stop(pwm, true);
++
++	return 0;
++}
++
++static void tpu_pwm_timer_stop(struct tpu_pwm_device *pwm)
++{
++	if (!pwm->timer_on)
++		return;
++
++	/* Disable channel. */
++	tpu_pwm_start_stop(pwm, false);
++
++	/* Stop clock and mark device as idle. */
++	clk_disable_unprepare(pwm->tpu->clk);
++	pm_runtime_put(&pwm->tpu->pdev->dev);
++
++	pwm->timer_on = false;
++}
++
++/* -----------------------------------------------------------------------------
++ * PWM API
++ */
++
++static int tpu_pwm_request(struct pwm_chip *chip, struct pwm_device *_pwm)
++{
++	struct tpu_device *tpu = to_tpu_device(chip);
++	struct tpu_pwm_device *pwm = &tpu->pwms[_pwm->hwpwm];
++
++	return pwm->pdata = NULL ? -EPROBE_DEFER : 0;
++}
++
++static int tpu_pwm_config(struct pwm_chip *chip, struct pwm_device *_pwm,
++			  int duty_ns, int period_ns)
++{
++	static const unsigned int prescalers[] = { 1, 4, 16, 64 };
++	struct tpu_device *tpu = to_tpu_device(chip);
++	struct tpu_pwm_device *pwm = &tpu->pwms[_pwm->hwpwm];
++	unsigned int prescaler;
++	bool duty_only;
++	u32 clk_rate;
++	u32 period;
++	u32 duty;
++	int ret;
++
++	if (period_ns <= 0 || duty_ns < 0 || duty_ns > period_ns)
++		return -EINVAL;
++
++	/* Pick a prescaler to avoid overflowing the counter.
++	 * TODO: Pick the highest acceptable prescaler.
++	 */
++	clk_prepare_enable(tpu->clk);
++	clk_rate = clk_get_rate(tpu->clk);
++	clk_disable_unprepare(pwm->tpu->clk);
++
++	for (prescaler = 0; prescaler < ARRAY_SIZE(prescalers); ++prescaler) {
++		period = clk_rate / prescalers[prescaler]
++		       / (NSEC_PER_SEC / period_ns);
++		if (period <= 0xffff)
++			break;
++	}
++
++	if (prescaler = ARRAY_SIZE(prescalers) || period = 0) {
++		dev_err(&tpu->pdev->dev, "clock rate mismatch\n");
++		return -ENOTSUPP;
++	}
++
++	if (duty_ns) {
++		duty = clk_rate / prescalers[prescaler]
++		     / (NSEC_PER_SEC / duty_ns);
++		if (duty > period)
++			return -EINVAL;
++	} else {
++		duty = 0;
++	}
++
++	dev_dbg(&tpu->pdev->dev,
++		"rate %u, prescaler %u, period %u, duty %u\n",
++		clk_rate, prescalers[prescaler], period, duty);
++
++	duty_only = pwm->prescaler = prescaler && pwm->period = period;
++
++	pwm->prescaler = prescaler;
++	pwm->period = period;
++	pwm->duty = duty;
++
++	/* If the channel is disabled we're done. */
++	if (!test_bit(PWMF_ENABLED, &_pwm->flags))
++		return 0;
++
++	if (duty_only && pwm->timer_on) {
++		/* If only the duty cycle changed and the timer is already
++		 * running, there's no need to reconfigure it completely, Just
++		 * modify the duty cycle.
++		 */
++		tpu_pwm_write(pwm, TPU_TGRAn, pwm->duty);
++		dev_dbg(&tpu->pdev->dev, "%u: TGRA 0x%04x\n", pwm->channel,
++			pwm->duty);
++	} else {
++		/* Otherwise perform a full reconfiguration. */
++		ret = tpu_pwm_timer_start(pwm);
++		if (ret < 0)
++			return ret;
++	}
++
++	if (duty = 0 || duty = period) {
++		/* To avoid running the timer when not strictly required, handle
++		 * 0% and 100% duty cycles as fixed levels and stop the timer.
++		 */
++		tpu_pwm_set_pin(pwm, duty ? TPU_PIN_ACTIVE : TPU_PIN_INACTIVE);
++		tpu_pwm_timer_stop(pwm);
++	}
++
++	return 0;
++}
++
++static int tpu_pwm_enable(struct pwm_chip *chip, struct pwm_device *_pwm)
++{
++	struct tpu_device *tpu = to_tpu_device(chip);
++	struct tpu_pwm_device *pwm = &tpu->pwms[_pwm->hwpwm];
++	int ret;
++
++	ret = tpu_pwm_timer_start(pwm);
++	if (ret < 0)
++		return ret;
++
++	/* To avoid running the timer when not strictly required, handle 0% and
++	 * 100% duty cycles as fixed levels and stop the timer.
++	 */
++	if (pwm->duty = 0 || pwm->duty = pwm->period) {
++		tpu_pwm_set_pin(pwm, pwm->duty ?
++				TPU_PIN_ACTIVE : TPU_PIN_INACTIVE);
++		tpu_pwm_timer_stop(pwm);
++	}
++
++	return 0;
++}
++
++static void tpu_pwm_disable(struct pwm_chip *chip, struct pwm_device *_pwm)
++{
++	struct tpu_device *tpu = to_tpu_device(chip);
++	struct tpu_pwm_device *pwm = &tpu->pwms[_pwm->hwpwm];
++
++	/* The timer must be running to modify the pin output configuration. */
++	tpu_pwm_timer_start(pwm);
++	tpu_pwm_set_pin(pwm, TPU_PIN_INACTIVE);
++	tpu_pwm_timer_stop(pwm);
++}
++
++static const struct pwm_ops tpu_pwm_ops = {
++	.request = tpu_pwm_request,
++	.config = tpu_pwm_config,
++	.enable = tpu_pwm_enable,
++	.disable = tpu_pwm_disable,
++	.owner = THIS_MODULE,
 +};
 +
- const struct sh_pfc_soc_info r8a73a4_pinmux_info = {
- 	.name		= "r8a73a4_pfc",
-+	.ops		= &r8a73a4_pinmux_ops,
- 
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
++/* -----------------------------------------------------------------------------
++ * Probe and remove
++ */
++
++static int tpu_probe(struct platform_device *pdev)
++{
++	struct rmob_tpu_pwm_platform_data *pdata = pdev->dev.platform_data;
++	struct tpu_device *tpu;
++	struct resource *res;
++	unsigned int i;
++	int ret;
++
++	if (!pdata) {
++		dev_err(&pdev->dev, "missing platform data\n");
++		return -ENXIO;
++	}
++
++	tpu = devm_kzalloc(&pdev->dev, sizeof(*tpu), GFP_KERNEL);
++	if (tpu = NULL) {
++		dev_err(&pdev->dev, "failed to allocate driver data\n");
++		return -ENOMEM;
++	}
++
++	/* Map memory, get clock and pin control. */
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "failed to get I/O memory\n");
++		return -ENXIO;
++	}
++
++	tpu->base = devm_ioremap_nocache(&pdev->dev, res->start,
++					 resource_size(res));
++	if (tpu->base = NULL) {
++		dev_err(&pdev->dev, "failed to remap I/O memory\n");
++		return -ENXIO;
++	}
++
++	tpu->clk = devm_clk_get(&pdev->dev, NULL);
++	if (IS_ERR(tpu->clk)) {
++		dev_err(&pdev->dev, "cannot get clock\n");
++		return PTR_ERR(tpu->clk);
++	}
++
++	/* Initialize and register the device. */
++	platform_set_drvdata(pdev, tpu);
++
++	spin_lock_init(&tpu->lock);
++	tpu->pdev = pdev;
++
++	for (i = 0; i < ARRAY_SIZE(tpu->pwms); ++i) {
++		struct tpu_pwm_device *pwm = &tpu->pwms[i];
++
++		if (!pdata->channels[i].enabled)
++			continue;
++
++		pwm->tpu = tpu;
++		pwm->channel = i;
++		pwm->pdata = &pdata->channels[i];
++
++		pwm->prescaler = 0;
++		pwm->period = 0;
++		pwm->duty = 0;
++
++		pwm->timer_on = false;
++	}
++
++	tpu->chip.dev = &pdev->dev;
++	tpu->chip.ops = &tpu_pwm_ops;
++	tpu->chip.base = -1;
++	tpu->chip.npwm = RMOB_TPU_CHANNEL_MAX;
++
++	ret = pwmchip_add(&tpu->chip);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to register PWM chip\n");
++		return ret;
++	}
++
++	dev_info(&pdev->dev, "TPU PWM %d registered\n", tpu->pdev->id);
++
++	pm_runtime_enable(&pdev->dev);
++
++	return 0;
++}
++
++static int tpu_remove(struct platform_device *pdev)
++{
++	struct tpu_device *tpu = platform_get_drvdata(pdev);
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(tpu->pwms); ++i) {
++		struct tpu_pwm_device *pwm = &tpu->pwms[i];
++
++		if (!pwm->tpu)
++			continue;
++
++		tpu_pwm_timer_stop(pwm);
++	}
++
++	pm_runtime_disable(&pdev->dev);
++
++	return 0;
++}
++
++static struct platform_driver tpu_driver = {
++	.probe		= tpu_probe,
++	.remove		= tpu_remove,
++	.driver		= {
++		.name	= "rmob_tpu_pwm",
++	}
++};
++
++module_platform_driver(tpu_driver);
++
++MODULE_AUTHOR("Laurent Pinchart <laurent.pinchart@ideasonboard.com>");
++MODULE_DESCRIPTION("R-Mobile TPU PWM Driver");
++MODULE_LICENSE("GPL v2");
+diff --git a/include/linux/platform_data/pwm-rmob.h b/include/linux/platform_data/pwm-rmob.h
+new file mode 100644
+index 0000000..dd422ef
+--- /dev/null
++++ b/include/linux/platform_data/pwm-rmob.h
+@@ -0,0 +1,18 @@
++#ifndef __PWM_RMOB_TPU_H__
++#define __PWM_RMOB_TPU_H__
++
++#define RMOB_TPU_CHANNEL_MAX		4
++
++#define RMOB_TPU_PWM_ID(device, channel) \
++	((device) * RMOB_TPU_CHANNEL_MAX + (channel))
++
++struct rmob_tpu_pwm_channel_data {
++	bool enabled;
++	bool active_low;
++};
++
++struct rmob_tpu_pwm_platform_data {
++	struct rmob_tpu_pwm_channel_data channels[RMOB_TPU_CHANNEL_MAX];
++};
++
++#endif /* __PWM_RMOB_TPU_H__ */
 -- 
-1.7.10.4
+1.8.1.5
 
