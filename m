@@ -1,77 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 30 Apr 2013 22:51:27 +0000
-Subject: [PATCH v7 3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
-Message-Id: <201305010251.28029.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 22:00:27 +0000
+Subject: [PATCH v2 3/4] ARM: shmobile: kzm9g: Remove the VCCQ MC0 function GPIO
+Message-Id: <1366840828-17335-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305010242.37483.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305010242.37483.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
-registers) using the pre_setup() method in 'struct usb_ehci_pdata'.
+The VCCQ MC0 power gate is now controlled by a regulator registered by
+the PFC driver. Remove the corresponding function GPIO.
 
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 4:
-- refreshed the patch.
+ arch/arm/mach-shmobile/board-kzm9g.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-Changes since version 3:
-- lowercased the SoC name in the subject.
-
-Changes since version 2:
-- added #include <linux/usb/hcd.h>;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- changed from init() platform device method to pre_setup() as per the previous
-  patch.
-
- arch/arm/mach-shmobile/setup-r8a7779.c |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -33,6 +33,7 @@
- #include <linux/sh_timer.h>
- #include <linux/dma-mapping.h>
- #include <linux/usb/otg.h>
-+#include <linux/usb/hcd.h>
- #include <linux/usb/ehci_pdriver.h>
- #include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
-@@ -435,10 +436,25 @@ static void usb_power_off(struct platfor
- 	pm_runtime_disable(&pdev->dev);
- }
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index ceabb44..e0e027c 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -871,9 +871,6 @@ static void __init kzm_init(void)
+ 	/* Touchscreen */
+ 	gpio_request_one(223, GPIOF_IN, NULL); /* IRQ8 */
  
-+static int ehci_init_internal_buffer(struct usb_hcd *hcd)
-+{
-+	/*
-+	 * Below are recommended values from the datasheet;
-+	 * see [USB :: Setting of EHCI Internal Buffer].
-+	 */
-+	/* EHCI IP internal buffer setting */
-+	iowrite32(0x00ff0040, hcd->regs + 0x0094);
-+	/* EHCI IP internal buffer enable */
-+	iowrite32(0x00000001, hcd->regs + 0x009C);
-+
-+	return 0;
-+}
-+
- static struct usb_ehci_pdata ehcix_pdata = {
- 	.power_on	= usb_power_on,
- 	.power_off	= usb_power_off,
- 	.power_suspend	= usb_power_off,
-+	.pre_setup	= ehci_init_internal_buffer,
- };
- 
- static struct resource ehci0_resources[] = {
+-	/* enable SD */
+-	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+-- 
+1.8.1.5
+
