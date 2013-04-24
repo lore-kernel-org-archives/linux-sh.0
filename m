@@ -1,135 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:53 +0000
-Subject: [PATCH 15/28] sh-pfc: r8a7779: Split DU input and output pixel clocks
-Message-Id: <1364954706-14727-16-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 22:00:24 +0000
+Subject: [PATCH v2 0/4] sh73a0: Expose the PFC-controller SDHI power gate as a regulator
+Message-Id: <1366840828-17335-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hello,
 
-The output pixel clocks can be used without the input pixel clocks.
-Split them in different groups.
+The sh73a0 has an internal power gate on the VCCQ power supply for the SDHI0
+device that is controlled (for some strange reason) by a bit in a PFC
+register.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   60 ++++++++++++++++++++++------------
- 1 file changed, 39 insertions(+), 21 deletions(-)
+This patch set exposes the power gate as a regulator. As the only currently
+supported board (kzm9g) has the VCCQ_MC0 pins directly connected to an always
+on 3.3V supply, the code assumes that the external VCCQ power supply can't be
+controlled. This could be fixed later by setting the regulator supply name.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index e448ff1..62dcdcd 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1498,19 +1498,26 @@ static const unsigned int du0_rgb888_mux[] = {
- 	DU0_DB7_MARK, DU0_DB6_MARK, DU0_DB5_MARK, DU0_DB4_MARK,
- 	DU0_DB3_MARK, DU0_DB2_MARK, DU0_DB1_MARK, DU0_DB0_MARK,
- };
--static const unsigned int du0_clk_0_pins[] = {
--	/* CLKIN, CLKOUT */
--	29, 180,
-+static const unsigned int du0_clk_in_pins[] = {
-+	/* CLKIN */
-+	29,
- };
--static const unsigned int du0_clk_0_mux[] = {
--	DU0_DOTCLKIN_MARK, DU0_DOTCLKOUT0_MARK,
-+static const unsigned int du0_clk_in_mux[] = {
-+	DU0_DOTCLKIN_MARK,
- };
--static const unsigned int du0_clk_1_pins[] = {
--	/* CLKIN, CLKOUT */
--	29, 30,
-+static const unsigned int du0_clk_out_0_pins[] = {
-+	/* CLKOUT */
-+	180,
- };
--static const unsigned int du0_clk_1_mux[] = {
--	DU0_DOTCLKIN_MARK, DU0_DOTCLKOUT1_MARK,
-+static const unsigned int du0_clk_out_0_mux[] = {
-+	DU0_DOTCLKOUT0_MARK,
-+};
-+static const unsigned int du0_clk_out_1_pins[] = {
-+	/* CLKOUT */
-+	30,
-+};
-+static const unsigned int du0_clk_out_1_mux[] = {
-+	DU0_DOTCLKOUT1_MARK,
- };
- static const unsigned int du0_sync_0_pins[] = {
- 	/* VSYNC, HSYNC, DISP */
-@@ -1571,12 +1578,19 @@ static const unsigned int du1_rgb888_mux[] = {
- 	DU1_DB7_MARK, DU1_DB6_MARK, DU1_DB5_MARK, DU1_DB4_MARK,
- 	DU1_DB3_MARK, DU1_DB2_MARK, DU1_DB1_MARK, DU1_DB0_MARK,
- };
--static const unsigned int du1_clk_pins[] = {
--	/* CLKIN, CLKOUT */
--	58, 59,
-+static const unsigned int du1_clk_in_pins[] = {
-+	/* CLKIN */
-+	58,
-+};
-+static const unsigned int du1_clk_in_mux[] = {
-+	DU1_DOTCLKIN_MARK,
-+};
-+static const unsigned int du1_clk_out_pins[] = {
-+	/* CLKOUT */
-+	59,
- };
--static const unsigned int du1_clk_mux[] = {
--	DU1_DOTCLKIN_MARK, DU1_DOTCLKOUT_MARK,
-+static const unsigned int du1_clk_out_mux[] = {
-+	DU1_DOTCLKOUT_MARK,
- };
- static const unsigned int du1_sync_0_pins[] = {
- 	/* VSYNC, HSYNC, DISP */
-@@ -2369,15 +2383,17 @@ static const unsigned int usb2_mux[] = {
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du0_rgb666),
- 	SH_PFC_PIN_GROUP(du0_rgb888),
--	SH_PFC_PIN_GROUP(du0_clk_0),
--	SH_PFC_PIN_GROUP(du0_clk_1),
-+	SH_PFC_PIN_GROUP(du0_clk_in),
-+	SH_PFC_PIN_GROUP(du0_clk_out_0),
-+	SH_PFC_PIN_GROUP(du0_clk_out_1),
- 	SH_PFC_PIN_GROUP(du0_sync_0),
- 	SH_PFC_PIN_GROUP(du0_sync_1),
- 	SH_PFC_PIN_GROUP(du0_oddf),
- 	SH_PFC_PIN_GROUP(du0_cde),
- 	SH_PFC_PIN_GROUP(du1_rgb666),
- 	SH_PFC_PIN_GROUP(du1_rgb888),
--	SH_PFC_PIN_GROUP(du1_clk),
-+	SH_PFC_PIN_GROUP(du1_clk_in),
-+	SH_PFC_PIN_GROUP(du1_clk_out),
- 	SH_PFC_PIN_GROUP(du1_sync_0),
- 	SH_PFC_PIN_GROUP(du1_sync_1),
- 	SH_PFC_PIN_GROUP(du1_oddf),
-@@ -2492,8 +2508,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- static const char * const du0_groups[] = {
- 	"du0_rgb666",
- 	"du0_rgb888",
--	"du0_clk_0",
--	"du0_clk_1",
-+	"du0_clk_in",
-+	"du0_clk_out_0",
-+	"du0_clk_out_1",
- 	"du0_sync_0",
- 	"du0_sync_1",
- 	"du0_oddf",
-@@ -2503,7 +2520,8 @@ static const char * const du0_groups[] = {
- static const char * const du1_groups[] = {
- 	"du1_rgb666",
- 	"du1_rgb888",
--	"du1_clk",
-+	"du1_clk_in",
-+	"du1_clk_out",
- 	"du1_sync_0",
- 	"du1_sync_1",
- 	"du1_oddf",
+As this series turns the power off when not needed it might bring additional
+power saving, but this hasn't been measured. If the patches are considered too
+complex a simpler approach would be to turn the power gate on when the SDHI
+function is selected.
+
+The patches are based on tags/renesas-next-20130422. They have been tested on
+kzm9g. They are available in my git tree at
+
+	git://linuxtv.org/pinchartl/fbdev.git pinmux/3.9/sh73a0
+
+Changes compared to v1:
+
+- Renamed __sh73a0_vccq_mc0_enable to sh73a0_vccq_mc0_endisable
+- Fix the reported voltage value (3.3V instead of 1.8V)
+- Make patch 2/4 commit message more explicit
+
+Laurent Pinchart (4):
+  sh-pfc: Add support for SoC-specific initialization
+  sh-pfc: sh73a0: Add VCCQ MC0 regulator
+  ARM: shmobile: kzm9g: Remove the VCCQ MC0 function GPIO
+  ARM: shmobile: kzm9g-reference: Remove the VCCQ MC0 function GPIO
+
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   1 -
+ arch/arm/mach-shmobile/board-kzm9g.c           |   3 -
+ drivers/pinctrl/sh-pfc/Kconfig                 |   1 +
+ drivers/pinctrl/sh-pfc/core.c                  |  16 ++-
+ drivers/pinctrl/sh-pfc/core.h                  |   1 +
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c            | 134 +++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/sh_pfc.h                |   2 +
+ 7 files changed, 153 insertions(+), 5 deletions(-)
+
 -- 
-1.7.10.4
+Regards,
+
+Laurent Pinchart
 
