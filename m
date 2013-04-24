@@ -1,122 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:50 +0000
-Subject: [PATCH 12/28] sh-pfc: Configure pins as GPIOs at request time when handled externally
-Message-Id: <1364954706-14727-13-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 24 Apr 2013 09:59:19 +0000
+Subject: [PATCH v2] mmc: tmio: reset the controller after power-up
+Message-Id: <Pine.LNX.4.64.1304241143460.11670@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, hechtb@gmail.com, Horman Simon <simon@horms.net>, Damm Magnus <magnus.damm@gmail.com>, "^[$B0p5H$5$s^[(B" <jinso.inayoshi@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Nguyen Hong Ky <nh-ky@jinso.co.jp>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This fixes two reported problems:
+1. after a system resume the controller isn't functioning until a command
+   runs on a timeout and a controller reset is performed.
+2. if a card is ejected during a running write operation, its re-insertion
+   isn't detected.
 
-When a GPIO is handled by a separate driver the pinmux
-gpio_set_direction() handler won't be called. The pin mux type then need
-to be configured to GPIO at request time.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reported-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+Reported-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/core.c    |   37 ++++++++++++++++---------------------
- drivers/pinctrl/sh-pfc/pinctrl.c |   11 +++++++++++
- 2 files changed, 27 insertions(+), 21 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 97e6ea3..ced9a95 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -268,7 +268,7 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 	int ret;
- 
- 	switch (pinmux_type) {
--
-+	case PINMUX_TYPE_GPIO:
- 	case PINMUX_TYPE_FUNCTION:
- 		range = NULL;
- 		break;
-@@ -297,6 +297,8 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 	enum_id = 0;
- 	field = 0;
- 	value = 0;
-+
-+	/* Iterate over all the configuration fields we need to update. */
- 	while (1) {
- 		pos = sh_pfc_mark_to_enum(pfc, mark, pos, &enum_id);
- 		if (pos < 0)
-@@ -305,18 +307,20 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 		if (!enum_id)
- 			break;
- 
--		/* first check if this is a function enum */
-+		/* Check if the configuration field selects a function. If it
-+		 * doesn't, skip the field if it's not applicable to the
-+		 * requested pinmux type.
-+		 */
- 		in_range = sh_pfc_enum_in_range(enum_id, &pfc->info->function);
- 		if (!in_range) {
--			/* not a function enum */
--			if (range) {
--				/*
--				 * other range exists, so this pin is
--				 * a regular GPIO pin that now is being
--				 * bound to a specific direction.
--				 *
--				 * for this case we only allow function enums
--				 * and the enums that match the other range.
-+			if (pinmux_type = PINMUX_TYPE_FUNCTION) {
-+				/* Functions are allowed to modify all
-+				 * fields.
-+				 */
-+				in_range = 1;
-+			} else if (pinmux_type != PINMUX_TYPE_GPIO) {
-+				/* Input/output types can only modify fields
-+				 * that correspond to their respective ranges.
- 				 */
- 				in_range = sh_pfc_enum_in_range(enum_id, range);
- 
-@@ -327,17 +331,8 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 				 */
- 				if (in_range && enum_id = range->force)
- 					continue;
--			} else {
--				/*
--				 * no other range exists, so this pin
--				 * must then be of the function type.
--				 *
--				 * allow function type pins to select
--				 * any combination of function/in/out
--				 * in their MARK lists.
--				 */
--				in_range = 1;
- 			}
-+			/* GPIOs are only allowed to modify function fields. */
+v2: this patch supersedes the earlier "mmc: tmio: postpone controller 
+reset during resume" in that it extends the number of cases, in which the 
+reset is applied. It turned out, it is needed not only after a resume, but 
+also for recovery after an interrupted write. It also now applies on top 
+of "[PATCH v2] MMC: tmio: fix unbalanced power-on calls with clock-gating 
+enabled" http://article.gmane.org/gmane.linux.kernel.mmc/20233. Reporters 
+are cordially invited to add their "Tested-by" tags ;-)
+
+Chris, both these patches are fixes. Not sure whether it's still a good 
+idea to push them for 3.9, maybe better get them into 3.10 and then to 
+stable?
+
+ drivers/mmc/host/tmio_mmc_pio.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 1d5ef64..fcb9503 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -863,6 +863,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			tmio_mmc_clk_update(mmc);
+ 			pm_runtime_get_sync(dev);
  		}
++		if (host->power = TMIO_MMC_OFF_STOP)
++			tmio_mmc_reset(host);
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		if (host->power = TMIO_MMC_OFF_STOP)
+ 			/* power up SD card and the bus */
+@@ -1161,7 +1163,6 @@ int tmio_mmc_host_resume(struct device *dev)
+ 	struct mmc_host *mmc = dev_get_drvdata(dev);
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
  
- 		if (!in_range)
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index aef268b..3492ec9 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -182,6 +182,17 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
- 		goto done;
- 	}
+-	tmio_mmc_reset(host);
+ 	tmio_mmc_enable_dma(host, true);
  
-+	if (!pfc->gpio) {
-+		/* If GPIOs are handled externally the pin mux type need to be
-+		 * set to GPIO here.
-+		 */
-+		const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
-+
-+		ret = sh_pfc_config_mux(pfc, pin->enum_id, PINMUX_TYPE_GPIO);
-+		if (ret < 0)
-+			goto done;
-+	}
-+
- 	cfg->type = PINMUX_TYPE_GPIO;
- 
- 	ret = 0;
+ 	/* The MMC core will perform the complete set up */
 -- 
-1.7.10.4
+1.7.2.5
 
