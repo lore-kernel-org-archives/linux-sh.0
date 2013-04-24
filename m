@@ -1,63 +1,65 @@
-From: Katsuya MATSUBARA <matsu@igel.co.jp>
-Date: Tue, 23 Apr 2013 05:45:49 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Apr 2013 15:53:54 +0000
 Subject: Re: [PATCH v2 1/4] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <20130423.144549.45370868.matsu@igel.co.jp>
+Message-Id: <CANqRtoQCtvUwxS6dO6y9_qCB8Ftur4LwwjnbSZJpZ2QYk14uzQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201304200231.31802.sergei.shtylyov@cogentembedded.com>
-	<20130423.120834.239982915.matsu@igel.co.jp>
-	<5176104B.7000401@cogentembedded.com>
-In-Reply-To: <5176104B.7000401@cogentembedded.com>
+In-Reply-To: <201304200231.31802.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: sergei.shtylyov@cogentembedded.com
-Cc: g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, vladimir.barinov@cogentembedded.com, mukawa@igel.co.jp
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <mchehab@redhat.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Phil Edworthy <phil.edworthy@renesas.com>, "matsu@igel.co.jp" <matsu@igel.co.jp>, vladimir.barinov@cogentembedded.com
 
+Hi Sergei,
 
- Hi,
+On Fri, Apr 19, 2013 at 11:31 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+>
+> Add Renesas R-Car VIN (Video In) V4L2 driver.
+>
+> Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
+>
+> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> [Sergei: removed deprecated IRQF_DISABLED flag.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+> ---
+> Changes since the original posting:
+> - added IRQF_SHARED flag in devm_request_irq() call (since on R8A7778 VIN0/1
+>   share the same IRQ) and removed deprecated IRQF_DISABLED flag.
+>
+>  drivers/media/platform/soc_camera/Kconfig    |    7
+>  drivers/media/platform/soc_camera/Makefile   |    1
+>  drivers/media/platform/soc_camera/rcar_vin.c | 1784 +++++++++++++++++++++++++++
+>  include/linux/platform_data/camera-rcar.h    |   25
+>  4 files changed, 1817 insertions(+)
+>
+> Index: renesas/drivers/media/platform/soc_camera/Kconfig
+> =================================> --- renesas.orig/drivers/media/platform/soc_camera/Kconfig
+> +++ renesas/drivers/media/platform/soc_camera/Kconfig
+> @@ -45,6 +45,13 @@ config VIDEO_PXA27x
+>         ---help---
+>           This is a v4l2 driver for the PXA27x Quick Capture Interface
+>
+> +config VIDEO_RCAR_VIN
+> +       tristate "R-Car Video Input (VIN) support"
+> +       depends on VIDEO_DEV && SOC_CAMERA && (ARCH_R8A7778 || ARCH_R8A7779)
+> +       select VIDEOBUF2_DMA_CONTIG
+> +       ---help---
+> +         This is a v4l2 driver for the R-Car VIN Interface
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 08:38:35 +0400
+Thanks for your work on this. I believe there are multiple SoCs
+containing VIN hardware, so limiting to r8a7778 and r8a7779 doesn't
+make sense to me. Actually, our other drivers do not have this kind of
+detailed dependency control.
 
-> On 04/23/2013 07:08 AM, Katsuya MATSUBARA wrote:
->=20
->>> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->>>
-(snip)
->>> +/* Register offsets for R-=F3ar VIN */
->> Are you using a 2-byte character in the string 'R-Car'?
->=20
->    Hm, you have surprised me: indeed KMail chose UTF-8 and, even worse,
-> quoted-printable encoding. I played some with the settings, let's see
-> what
-> will it do...
->=20
-> [...]
->=20
->>
->>> +
->>> +/* Register bit fields for R-=F3ar VIN */
->> s/R-=F3ar/R-Car/
->=20
->     Sorry, I see no difference. :-)
+So based on that, would it be possible for you to change the above
+dependency to:
 
-Replacing the UTF-8 character 'C'(0xd0 0xa1) in the two above
-comments in your patch with ASCII character 'C' (0x43) can
-solve the encoding issue.
+depends on VIDEO_DEV && SOC_CAMERA
 
-00000cf0  2b 2f 2a 20 52 65 67 69  73 74 65 72 20 6f 66 66  |+/* Register o=
-ff|
-00000d00  73 65 74 73 20 66 6f 72  20 52 2d d0 a1 61 72 20  |sets for R-..a=
-r |
-                                            ^^^^^
-000012a0  74 65 72 20 2a 2f 0a 2b  0a 2b 2f 2a 20 52 65 67  |ter */.+.+/* R=
-eg|
-000012b0  69 73 74 65 72 20 62 69  74 20 66 69 65 6c 64 73  |ister bit fiel=
-ds|
-000012c0  20 66 6f 72 20 52 2d d0  a1 61 72 20 56 49 4e 20  | for R-..ar VI=
-N |
-                               ^^^^^^
 Thanks,
----
-Katsuya Matsubara / IGEL Co., Ltd
-matsu@igel.co.jp
+
+/ magnus
