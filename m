@@ -1,30 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 23:26:32 +0000
-Subject: [PATCH v4 0/9] Reorganize R8A7779/Marzen USB code
-Message-Id: <201304130326.33430.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 20:50:10 +0000
+Subject: [PATCH v2 05/11] ARM: mach-shmobile: clock-r8a7740: add TPU PWM support
+Message-Id: <1366836616-21475-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Hello.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-   Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130412' tag.  It was created to fix the shortcomings in the
-R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
-spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
-to touch both subtrees). The patches were conceived with the complete
-bisectability goal in mind.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index b12c476..6ad4640 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -461,7 +461,7 @@ enum {
+ 
+ 	MSTP329, MSTP328, MSTP323, MSTP320,
+ 	MSTP314, MSTP313, MSTP312,
+-	MSTP309,
++	MSTP309, MSTP304,
+ 
+ 	MSTP416, MSTP415, MSTP407, MSTP406,
+ 
+@@ -499,6 +499,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 13, 0), /* SDHI1 */
+ 	[MSTP312] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 12, 0), /* MMC */
+ 	[MSTP309] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3,  9, 0), /* GEther */
++	[MSTP304] = SH_CLK_MSTP32(&div4_clks[DIV4_CP],	SMSTPCR3,  4, 0), /* TPU0 */
+ 
+ 	[MSTP416] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 16, 0), /* USBHOST */
+ 	[MSTP415] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 15, 0), /* SDHI2 */
+@@ -596,6 +597,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
++	CLKDEV_DEV_ID("renesas_tpu_pwm",	&mstp_clks[MSTP304]),
+ 
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
+ 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
+-- 
+1.8.1.5
 
-[1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
-[2/9] ehci-platform: add pre_setup() method to platform data
-[3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
-[4/9] rcar-phy: remove EHCI internal buffer setup
-[5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
-[6/9] rcar-phy: correct base address
-[7/9] rcar-phy: add platform data
-[8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-[9/9] rcar-phy: handle platform data
-
-WBR, Sergei
