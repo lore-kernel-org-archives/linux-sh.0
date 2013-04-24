@@ -1,152 +1,78 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 30 Apr 2013 07:11:21 +0000
-Subject: [PATCH 2/4] dmaengine: add support for DMA multiplexer DT nodes
-Message-Id: <1367305883-2997-3-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 20:50:05 +0000
+Subject: [PATCH v2 00/11] Renesas TPU PWM support
+Message-Id: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Vinod Koul <vinod.koul@intel.com>, Tony Lindgren <tony@atomide.com>, devicetree-discuss@lists.ozlabs.org, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-If a slave can use any of several DMA controllers on the system, multiple
-DMA descriptors can be listed in its "dmas" DT property with the same
-channel name and different DMA controller phandles. However, if multiple
-such slaves can use any of a set of DMA controllers on the system, listing
-them all in each slave's "dmas" property becomes counterproductive. This
-patch adds support for a "dma-mux" DT node, whose sole purpose is to group
-such DMA controller DT nodes. Slaves can then specify the group's phandle
-in their "dmas" property. DMA controllers, belonging to the same group
-must have the same #dma-cells number and use the same slave IDs.
+Hello,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
- Documentation/devicetree/bindings/dma/dma.txt |   44 +++++++++++++++++++++++++
- drivers/dma/of-dma.c                          |   39 ++++++++++++++++------
- 2 files changed, 73 insertions(+), 10 deletions(-)
+This is the second version of the Renesas TPU PWM unit support patches. The
+patch series deprecates and removes the leds-renesas-tpu driver in favor of a
+combination of leds-pwm and pwm-rmob. As an added bonus patches 9/11 and 10/11
+remove function GPIOs support from the sh73a0 platform. Along with the other
+PFC-related patches recently posted on the list, mach-shmobile is now free of
+function GPIOs. We still need volunteer(s) to migrate arch/sh.
 
-diff --git a/Documentation/devicetree/bindings/dma/dma.txt b/Documentation/devicetree/bindings/dma/dma.txt
-index 8f504e6..a861298 100644
---- a/Documentation/devicetree/bindings/dma/dma.txt
-+++ b/Documentation/devicetree/bindings/dma/dma.txt
-@@ -31,6 +31,50 @@ Example:
- 		dma-requests = <127>;
- 	};
- 
-+* DMA multiplexer
-+
-+Several DMA controllers with the same #dma-cells number and the same request
-+line IDs can be grouped under a DMA multiplexer super-node, if slaves can use
-+DMA channels on any of them.
-+
-+Required property:
-+- compatible:		Must include "dma-mux".
-+
-+Some standard optional properties can be helpful:
-+
-+Optional properties:
-+- compatible:		You will probably also want to include compatibility
-+			with "simple-bus" to automatically create platform
-+			devices from subnodes.
-+- ranges:		Map DMA controller memory areas in the parent address
-+			space.
-+- #address-cells:	Number of address cells in case automatic propagation
-+			with the help of "ranges" doesn't work.
-+- #size-cells:		Number of size cells.
-+
-+Example:
-+
-+	dmac: dma-mux {
-+		compatible = "simple-bus", "dma-mux";
-+		ranges;
-+
-+		dma0: dma@10000000 {
-+			#dma-cells = <1>;
-+			...
-+		};
-+
-+		dma1: dma@20000000 {
-+			#dma-cells = <1>;
-+			...
-+		};
-+	};
-+
-+	mmc0: mmc@30000000 {
-+			dmas = <&dmac 1
-+				&dmac 2>;
-+			dma-names = "tx", "rx";
-+			...
-+	};
- 
- * DMA client
- 
-diff --git a/drivers/dma/of-dma.c b/drivers/dma/of-dma.c
-index 69d04d2..bd7652b 100644
---- a/drivers/dma/of-dma.c
-+++ b/drivers/dma/of-dma.c
-@@ -183,8 +183,8 @@ static int of_dma_match_channel(struct device_node *np, char *name, int index,
- 	if (strcmp(name, s))
- 		return -ENODEV;
- 
--	if (of_parse_phandle_with_args(np, "dmas", "#dma-cells", index,
--				       dma_spec))
-+	if (of_parse_phandle_with_child_args(np, "dmas", "#dma-cells", index,
-+					     dma_spec, "dma-mux"))
- 		return -ENODEV;
- 
- 	return 0;
-@@ -217,22 +217,41 @@ struct dma_chan *of_dma_request_slave_channel(struct device_node *np,
- 	}
- 
- 	for (i = 0; i < count; i++) {
-+		struct device_node *dma = NULL, *parent;
-+		bool is_mux;
-+
- 		if (of_dma_match_channel(np, name, i, &dma_spec))
- 			continue;
- 
--		ofdma = of_dma_get_controller(&dma_spec);
-+		parent = of_node_get(dma_spec.np->parent);
-+		is_mux = of_device_is_compatible(parent, "dma-mux");
- 
--		if (!ofdma)
--			continue;
-+		do {
-+			if (is_mux) {
-+				dma = of_get_next_available_child(parent, dma);
-+				if (!dma)
-+					break;
-+				dma_spec.np = dma;
-+			}
-+
-+			ofdma = of_dma_get_controller(&dma_spec);
- 
--		chan = ofdma->of_dma_xlate(&dma_spec, ofdma);
-+			if (!ofdma)
-+				continue;
- 
--		of_dma_put_controller(ofdma);
-+			chan = ofdma->of_dma_xlate(&dma_spec, ofdma);
- 
--		of_node_put(dma_spec.np);
-+			of_dma_put_controller(ofdma);
-+
-+			of_node_put(dma_spec.np);
-+
-+			if (chan) {
-+				of_node_put(parent);
-+				return chan;
-+			}
-+		} while (dma);
- 
--		if (chan)
--			return chan;
-+		of_node_put(parent);
- 	}
- 
- 	return NULL;
+I've tested the code on Armadillo only as I don't have access to a kota2
+board. This is why I've added backlight support to Armadillo as part of this
+set.
+
+The patches are based on a merge of "[PATCH 00/37] Fully migrate r8a7740 to
+pinctrl", "[PATCH 0/4] sh73a0: Expose the PFC-controller SDHI power gate as a
+regulator" and "[PATCH] sh-pfc: r8a7740: Add bias (pull-up/down) pinconf
+support". I've pushed them to
+
+	git://linuxtv.org/pinchartl/fbdev.git pinmux/3.9/tpu
+
+Changes compared to v1:
+
+- Renamed the pwm-rmob driver to pwm-renesas-tpu, as TPU units are found in
+  Renesas SH-Mobile, R-Mobile and R-Car SoCs.
+- Added TPU clock and pin groups for r8a7790.
+
+Laurent Pinchart (11):
+  sh-pfc: sh73a0: Add TPU pin groups and functions
+  sh-pfc: r8a7740: Add TPU pin groups and functions
+  sh-pfc: r8a7790: Add TPU pin groups and functions
+  pwm: Add Renesas TPU PWM driver
+  ARM: mach-shmobile: clock-r8a7740: add TPU PWM support
+  ARM: mach-shmobile: clock-r8a7790: add TPU PWM support
+  ARM: mach-shmobile: armadillo800eva: Add backlight support
+  ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
+  sh-pfc: sh73a0: Remove function GPIOs
+  ARM: shmobile: sh73a0: Remove all GPIOs
+  leds: Remove leds-renesas-tpu driver
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  51 ++-
+ arch/arm/mach-shmobile/board-kota2.c           | 178 +++++---
+ arch/arm/mach-shmobile/clock-r8a7740.c         |   4 +-
+ arch/arm/mach-shmobile/clock-r8a7790.c         |  11 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c          |   8 +-
+ arch/arm/mach-shmobile/include/mach/sh73a0.h   | 373 +--------------
+ drivers/leds/Kconfig                           |  12 -
+ drivers/leds/Makefile                          |   1 -
+ drivers/leds/leds-renesas-tpu.c                | 336 --------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c           |  50 ++
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c           |  41 ++
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c            | 608 +++++++++----------------
+ drivers/pwm/Kconfig                            |   7 +
+ drivers/pwm/Makefile                           |   1 +
+ drivers/pwm/pwm-renesas-tpu.c                  | 462 +++++++++++++++++++
+ include/linux/platform_data/leds-renesas-tpu.h |  14 -
+ include/linux/platform_data/pwm-renesas-tpu.h  |  18 +
+ 17 files changed, 963 insertions(+), 1212 deletions(-)
+ delete mode 100644 drivers/leds/leds-renesas-tpu.c
+ create mode 100644 drivers/pwm/pwm-renesas-tpu.c
+ delete mode 100644 include/linux/platform_data/leds-renesas-tpu.h
+ create mode 100644 include/linux/platform_data/pwm-renesas-tpu.h
+
 -- 
-1.7.2.5
+Regards,
+
+Laurent Pinchart
 
