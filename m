@@ -1,98 +1,96 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 30 Apr 2013 14:06:22 +0000
-Subject: Re: [PATCH v9 02/20] V4L2: support asynchronous subdevice registration
-Message-Id: <Pine.LNX.4.64.1304301604550.3302@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 22:00:25 +0000
+Subject: [PATCH v2 1/4] sh-pfc: Add support for SoC-specific initialization
+Message-Id: <1366840828-17335-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
- <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
- <20130430135301.GD16843@pengutronix.de>
-In-Reply-To: <20130430135301.GD16843@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sascha Hauer <s.hauer@pengutronix.de>
-Cc: linux-media@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-sh@vger.kernel.org
 
-Hi Sascha
+Add two optional init and cleanup SoC operations and call them from the
+core at probe and remove time.
 
-On Tue, 30 Apr 2013, Sascha Hauer wrote:
-
-> Hi Guennadi,
-> 
-> On Fri, Apr 12, 2013 at 05:40:22PM +0200, Guennadi Liakhovetski wrote:
-> > Currently bridge device drivers register devices for all subdevices
-> > synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor
-> > is attached to a video bridge device, the bridge driver will create an I2C
-> > device and wait for the respective I2C driver to probe. This makes linking
-> > of devices straight forward, but this approach cannot be used with
-> > intrinsically asynchronous and unordered device registration systems like
-> > the Flattened Device Tree. To support such systems this patch adds an
-> > asynchronous subdevice registration framework to V4L2. To use it respective
-> > (e.g. I2C) subdevice drivers must register themselves with the framework.
-> > A bridge driver on the other hand must register notification callbacks,
-> > that will be called upon various related events.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> > +
-> > +static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
-> > +						    struct v4l2_async_subdev_list *asdl)
-> > +{
-> > +	struct v4l2_subdev *sd = v4l2_async_to_subdev(asdl);
-> > +	struct v4l2_async_subdev *asd = NULL;
-> > +	bool (*match)(struct device *,
-> > +		      struct v4l2_async_hw_info *);
-> > +
-> > +	list_for_each_entry (asd, &notifier->waiting, list) {
-> > +		struct v4l2_async_hw_info *hw = &asd->hw;
-> > +
-> > +		/* bus_type has been verified valid before */
-> > +		switch (hw->bus_type) {
-> > +		case V4L2_ASYNC_BUS_CUSTOM:
-> > +			match = hw->match.custom.match;
-> > +			if (!match)
-> > +				/* Match always */
-> > +				return asd;
-> > +			break;
-> > +		case V4L2_ASYNC_BUS_PLATFORM:
-> > +			match = match_platform;
-> > +			break;
-> > +		case V4L2_ASYNC_BUS_I2C:
-> > +			match = match_i2c;
-> > +			break;
-> > +		default:
-> > +			/* Cannot happen, unless someone breaks us */
-> > +			WARN_ON(true);
-> > +			return NULL;
-> > +		}
-> > +
-> > +		if (match && match(sd->dev, hw))
-> > +			break;
-> > +	}
-> > +
-> > +	return asd;
-> 
-> 'asd' can never be NULL here. You have to explicitly return NULL when
-> leaving the loop without match.
-
-I've already proposed a fix for this and Laurent has proposed a simplified 
-version.
-
-Thanks
-Guennadi
-
-> 
-> Sascha
-> 
-> 
-> -- 
-> Pengutronix e.K.                           |                             |
-> Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-> Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
-> Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
-> 
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/pinctrl/sh-pfc/core.c   | 16 +++++++++++++++-
+ drivers/pinctrl/sh-pfc/core.h   |  1 +
+ drivers/pinctrl/sh-pfc/sh_pfc.h |  2 ++
+ 3 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 4540ce3..5576e8a 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -372,6 +372,12 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 
+ 	spin_lock_init(&pfc->lock);
+ 
++	if (info->ops && info->ops->init) {
++		ret = info->ops->init(pfc);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	pinctrl_provide_dummies();
+ 
+ 	/*
+@@ -379,7 +385,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	 */
+ 	ret = sh_pfc_register_pinctrl(pfc);
+ 	if (unlikely(ret != 0))
+-		return ret;
++		goto error;
+ 
+ #ifdef CONFIG_GPIO_SH_PFC
+ 	/*
+@@ -401,6 +407,11 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	dev_info(pfc->dev, "%s support registered\n", info->name);
+ 
+ 	return 0;
++
++error:
++	if (info->ops && info->ops->cleanup)
++		info->ops->cleanup(pfc);
++	return ret;
+ }
+ 
+ static int sh_pfc_remove(struct platform_device *pdev)
+@@ -412,6 +423,9 @@ static int sh_pfc_remove(struct platform_device *pdev)
+ #endif
+ 	sh_pfc_unregister_pinctrl(pfc);
+ 
++	if (pfc->info->ops && pfc->info->ops->cleanup)
++		pfc->info->ops->cleanup(pfc);
++
+ 	platform_set_drvdata(pdev, NULL);
+ 
+ 	return 0;
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index e847afb..f02ba1d 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -28,6 +28,7 @@ struct sh_pfc_pinctrl;
+ struct sh_pfc {
+ 	struct device *dev;
+ 	const struct sh_pfc_soc_info *info;
++	void *soc_data;
+ 	spinlock_t lock;
+ 
+ 	unsigned int num_windows;
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index b170761..acb1bb0 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -129,6 +129,8 @@ struct pinmux_range {
+ struct sh_pfc;
+ 
+ struct sh_pfc_soc_operations {
++	int (*init)(struct sh_pfc *pfc);
++	void (*cleanup)(struct sh_pfc *pfc);
+ 	unsigned int (*get_bias)(struct sh_pfc *pfc, unsigned int pin);
+ 	void (*set_bias)(struct sh_pfc *pfc, unsigned int pin,
+ 			 unsigned int bias);
+-- 
+1.8.1.5
+
