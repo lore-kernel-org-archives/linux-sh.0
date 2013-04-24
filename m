@@ -1,41 +1,103 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Apr 2013 08:18:46 +0000
-Subject: [PATCH] ARM: shmobile: use r8a7790 timer setup code on Lager
-Message-Id: <1365668326-22518-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 20:50:07 +0000
+Subject: [PATCH v2 02/11] sh-pfc: r8a7740: Add TPU pin groups and functions
+Message-Id: <1366836616-21475-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365668326-22518-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365668326-22518-1-git-send-email-horms+renesas@verge.net.au>
+References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-From: Magnus Damm <damm@opensource.se>
-
-Use the r8a7790 timer init function on Lager
-to make sure the architected timer is started
-regardless of boot loader setting.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 50 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index ea6f9e5..f587187 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -40,7 +40,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index e5ef587..f6ea47c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2745,6 +2745,42 @@ static const unsigned int sdhi2_wp_1_pins[] = {
+ static const unsigned int sdhi2_wp_1_mux[] = {
+ 	SDHI2_WP_PORT25_MARK,
+ };
++/* - TPU0 ------------------------------------------------------------------- */
++static const unsigned int tpu0_to0_pins[] = {
++	/* TO */
++	23,
++};
++static const unsigned int tpu0_to0_mux[] = {
++	TPU0TO0_MARK,
++};
++static const unsigned int tpu0_to1_pins[] = {
++	/* TO */
++	21,
++};
++static const unsigned int tpu0_to1_mux[] = {
++	TPU0TO1_MARK,
++};
++static const unsigned int tpu0_to2_0_pins[] = {
++	/* TO */
++	66,
++};
++static const unsigned int tpu0_to2_0_mux[] = {
++	TPU0TO2_PORT66_MARK,
++};
++static const unsigned int tpu0_to2_1_pins[] = {
++	/* TO */
++	202,
++};
++static const unsigned int tpu0_to2_1_mux[] = {
++	TPU0TO2_PORT202_MARK,
++};
++static const unsigned int tpu0_to3_pins[] = {
++	/* TO */
++	180,
++};
++static const unsigned int tpu0_to3_mux[] = {
++	TPU0TO3_MARK,
++};
  
- DT_MACHINE_START(LAGER_DT, "lager")
- 	.init_irq	= irqchip_init,
--	.init_time	= shmobile_timer_init,
-+	.init_time	= r8a7790_timer_init,
- 	.init_machine	= lager_add_standard_devices,
- 	.dt_compat	= lager_boards_compat_dt,
- MACHINE_END
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(bsc_data8),
+@@ -2926,6 +2962,11 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_wp_0),
+ 	SH_PFC_PIN_GROUP(sdhi2_cd_1),
+ 	SH_PFC_PIN_GROUP(sdhi2_wp_1),
++	SH_PFC_PIN_GROUP(tpu0_to0),
++	SH_PFC_PIN_GROUP(tpu0_to1),
++	SH_PFC_PIN_GROUP(tpu0_to2_0),
++	SH_PFC_PIN_GROUP(tpu0_to2_1),
++	SH_PFC_PIN_GROUP(tpu0_to3),
+ };
+ 
+ static const char * const bsc_groups[] = {
+@@ -3176,6 +3217,14 @@ static const char * const sdhi2_groups[] = {
+ 	"sdhi2_wp_1",
+ };
+ 
++static const char * const tpu0_groups[] = {
++	"tpu0_to0",
++	"tpu0_to1",
++	"tpu0_to2_0",
++	"tpu0_to2_1",
++	"tpu0_to3",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(ceu0),
+@@ -3200,6 +3249,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(tpu0),
+ };
+ 
+ #undef PORTCR
 -- 
-1.7.10.4
+1.8.1.5
 
