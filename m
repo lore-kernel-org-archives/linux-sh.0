@@ -1,40 +1,266 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 04 Apr 2013 13:45:41 +0000
-Subject: [PATCH 3/6] ARM: shmobile: r8a7740: Add I2C DT clock names
-Message-Id: <1365083144-16085-3-git-send-email-hechtb+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 00:06:01 +0000
+Subject: [PATCH 1/9] sh-pfc: sh73a0: Add TPU pin groups and functions
+Message-Id: <1366761969-16759-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Add clock association for i2c0 and i2c1 for the new DT names.
-
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |    2 ++
- 1 file changed, 2 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 213 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 213 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index c0d39aa..d4fdb56 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -551,6 +551,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_tmu.4",		&mstp_clks[MSTP111]),
- 	CLKDEV_DEV_ID("sh_tmu.5",		&mstp_clks[MSTP111]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
-+	CLKDEV_DEV_ID("fff20000.i2c",		&mstp_clks[MSTP116]),
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
- 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
- 	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP125]),
-@@ -584,6 +585,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
-+	CLKDEV_DEV_ID("e6c20000.i2c",		&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("e6850000.sdhi",          &mstp_clks[MSTP314]),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index ea1fcbe..e4e0c92 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2542,6 +2542,157 @@ static const unsigned int sdhi2_ctrl_pins[] = {
+ static const unsigned int sdhi2_ctrl_mux[] = {
+ 	SDHICMD2_MARK, SDHICLK2_MARK,
+ };
++/* - TPU0 ------------------------------------------------------------------- */
++static const unsigned int tpu0_to0_pins[] = {
++	/* TO */
++	55,
++};
++static const unsigned int tpu0_to0_mux[] = {
++	TPU0TO0_MARK,
++};
++static const unsigned int tpu0_to1_pins[] = {
++	/* TO */
++	59,
++};
++static const unsigned int tpu0_to1_mux[] = {
++	TPU0TO1_MARK,
++};
++static const unsigned int tpu0_to2_pins[] = {
++	/* TO */
++	140,
++};
++static const unsigned int tpu0_to2_mux[] = {
++	TPU0TO2_MARK,
++};
++static const unsigned int tpu0_to3_pins[] = {
++	/* TO */
++	141,
++};
++static const unsigned int tpu0_to3_mux[] = {
++	TPU0TO3_MARK,
++};
++/* - TPU1 ------------------------------------------------------------------- */
++static const unsigned int tpu1_to0_pins[] = {
++	/* TO */
++	246,
++};
++static const unsigned int tpu1_to0_mux[] = {
++	TPU1TO0_MARK,
++};
++static const unsigned int tpu1_to1_0_pins[] = {
++	/* TO */
++	28,
++};
++static const unsigned int tpu1_to1_0_mux[] = {
++	PORT28_TPU1TO1_MARK,
++};
++static const unsigned int tpu1_to1_1_pins[] = {
++	/* TO */
++	29,
++};
++static const unsigned int tpu1_to1_1_mux[] = {
++	PORT29_TPU1TO1_MARK,
++};
++static const unsigned int tpu1_to2_pins[] = {
++	/* TO */
++	153,
++};
++static const unsigned int tpu1_to2_mux[] = {
++	TPU1TO2_MARK,
++};
++static const unsigned int tpu1_to3_pins[] = {
++	/* TO */
++	145,
++};
++static const unsigned int tpu1_to3_mux[] = {
++	TPU1TO3_MARK,
++};
++/* - TPU2 ------------------------------------------------------------------- */
++static const unsigned int tpu2_to0_pins[] = {
++	/* TO */
++	248,
++};
++static const unsigned int tpu2_to0_mux[] = {
++	TPU2TO0_MARK,
++};
++static const unsigned int tpu2_to1_pins[] = {
++	/* TO */
++	197,
++};
++static const unsigned int tpu2_to1_mux[] = {
++	TPU2TO1_MARK,
++};
++static const unsigned int tpu2_to2_pins[] = {
++	/* TO */
++	50,
++};
++static const unsigned int tpu2_to2_mux[] = {
++	TPU2TO2_MARK,
++};
++static const unsigned int tpu2_to3_pins[] = {
++	/* TO */
++	51,
++};
++static const unsigned int tpu2_to3_mux[] = {
++	TPU2TO3_MARK,
++};
++/* - TPU3 ------------------------------------------------------------------- */
++static const unsigned int tpu3_to0_pins[] = {
++	/* TO */
++	163,
++};
++static const unsigned int tpu3_to0_mux[] = {
++	TPU3TO0_MARK,
++};
++static const unsigned int tpu3_to1_pins[] = {
++	/* TO */
++	247,
++};
++static const unsigned int tpu3_to1_mux[] = {
++	TPU3TO1_MARK,
++};
++static const unsigned int tpu3_to2_pins[] = {
++	/* TO */
++	54,
++};
++static const unsigned int tpu3_to2_mux[] = {
++	TPU3TO2_MARK,
++};
++static const unsigned int tpu3_to3_pins[] = {
++	/* TO */
++	53,
++};
++static const unsigned int tpu3_to3_mux[] = {
++	TPU3TO3_MARK,
++};
++/* - TPU4 ------------------------------------------------------------------- */
++static const unsigned int tpu4_to0_pins[] = {
++	/* TO */
++	241,
++};
++static const unsigned int tpu4_to0_mux[] = {
++	TPU4TO0_MARK,
++};
++static const unsigned int tpu4_to1_pins[] = {
++	/* TO */
++	199,
++};
++static const unsigned int tpu4_to1_mux[] = {
++	TPU4TO1_MARK,
++};
++static const unsigned int tpu4_to2_pins[] = {
++	/* TO */
++	58,
++};
++static const unsigned int tpu4_to2_mux[] = {
++	TPU4TO2_MARK,
++};
++static const unsigned int tpu4_to3_pins[] = {
++	/* TO */
++};
++static const unsigned int tpu4_to3_mux[] = {
++	TPU4TO3_MARK,
++};
+ /* - USB -------------------------------------------------------------------- */
+ static const unsigned int usb_vbus_pins[] = {
+ 	/* VBUS */
+@@ -2693,6 +2844,27 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_data1),
+ 	SH_PFC_PIN_GROUP(sdhi2_data4),
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(tpu0_to0),
++	SH_PFC_PIN_GROUP(tpu0_to1),
++	SH_PFC_PIN_GROUP(tpu0_to2),
++	SH_PFC_PIN_GROUP(tpu0_to3),
++	SH_PFC_PIN_GROUP(tpu1_to0),
++	SH_PFC_PIN_GROUP(tpu1_to1_0),
++	SH_PFC_PIN_GROUP(tpu1_to1_1),
++	SH_PFC_PIN_GROUP(tpu1_to2),
++	SH_PFC_PIN_GROUP(tpu1_to3),
++	SH_PFC_PIN_GROUP(tpu2_to0),
++	SH_PFC_PIN_GROUP(tpu2_to1),
++	SH_PFC_PIN_GROUP(tpu2_to2),
++	SH_PFC_PIN_GROUP(tpu2_to3),
++	SH_PFC_PIN_GROUP(tpu3_to0),
++	SH_PFC_PIN_GROUP(tpu3_to1),
++	SH_PFC_PIN_GROUP(tpu3_to2),
++	SH_PFC_PIN_GROUP(tpu3_to3),
++	SH_PFC_PIN_GROUP(tpu4_to0),
++	SH_PFC_PIN_GROUP(tpu4_to1),
++	SH_PFC_PIN_GROUP(tpu4_to2),
++	SH_PFC_PIN_GROUP(tpu4_to3),
+ 	SH_PFC_PIN_GROUP(usb_vbus),
+ };
+ 
+@@ -2912,6 +3084,42 @@ static const char * const usb_groups[] = {
+ 	"usb_vbus",
+ };
+ 
++static const char * const tpu0_groups[] = {
++	"tpu0_to0",
++	"tpu0_to1",
++	"tpu0_to2",
++	"tpu0_to3",
++};
++
++static const char * const tpu1_groups[] = {
++	"tpu1_to0",
++	"tpu1_to1_0",
++	"tpu1_to1_1",
++	"tpu1_to2",
++	"tpu1_to3",
++};
++
++static const char * const tpu2_groups[] = {
++	"tpu2_to0",
++	"tpu2_to1",
++	"tpu2_to2",
++	"tpu2_to3",
++};
++
++static const char * const tpu3_groups[] = {
++	"tpu3_to0",
++	"tpu3_to1",
++	"tpu3_to2",
++	"tpu3_to3",
++};
++
++static const char * const tpu4_groups[] = {
++	"tpu4_to0",
++	"tpu4_to1",
++	"tpu4_to2",
++	"tpu4_to3",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(fsia),
+@@ -2937,6 +3145,11 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(tpu0),
++	SH_PFC_FUNCTION(tpu1),
++	SH_PFC_FUNCTION(tpu2),
++	SH_PFC_FUNCTION(tpu3),
++	SH_PFC_FUNCTION(tpu4),
+ 	SH_PFC_FUNCTION(usb),
+ };
+ 
 -- 
-1.7.9.5
+1.8.1.5
 
