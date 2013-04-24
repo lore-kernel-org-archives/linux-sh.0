@@ -1,52 +1,51 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:00:05 +0000
-Subject: [PATCH 24/37] sh-pfc: r8a7740: Remove GETHER function GPIOS
-Message-Id: <1366671618-8796-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 00:06:04 +0000
+Subject: [PATCH 4/9] ARM: mach-shmobile: clock-r8a7740: add TPU PWM support
+Message-Id: <1366761969-16759-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366761969-16759-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-
-All r8a7740 platforms now use the pinctrl API to control the GETHER
-pins, the corresponding function GPIOS are unused. Remove them.
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 20 --------------------
- 1 file changed, 20 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index c78eda8..58fbe6b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -3410,26 +3410,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(IDE_INT),	GPIO_FN(IDE_RST),	GPIO_FN(IDE_DIRECTION),
- 	GPIO_FN(IDE_EXBUF_ENB),	GPIO_FN(IDE_IODACK),	GPIO_FN(IDE_IODREQ),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index b12c476..a5ca9c6 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -461,7 +461,7 @@ enum {
  
--	/* RMII */
--	GPIO_FN(RMII_CRS_DV),	GPIO_FN(RMII_RX_ER),	GPIO_FN(RMII_RXD0),
--	GPIO_FN(RMII_RXD1),	GPIO_FN(RMII_TX_EN),	GPIO_FN(RMII_TXD0),
--	GPIO_FN(RMII_MDC),	GPIO_FN(RMII_TXD1),	GPIO_FN(RMII_MDIO),
--	GPIO_FN(RMII_REF50CK),	GPIO_FN(RMII_REF125CK),	/* for GMII */
--
--	/* GEther */
--	GPIO_FN(ET_TX_CLK),	GPIO_FN(ET_TX_EN),	GPIO_FN(ET_ETXD0),
--	GPIO_FN(ET_ETXD1),	GPIO_FN(ET_ETXD2),	GPIO_FN(ET_ETXD3),
--	GPIO_FN(ET_ETXD4),	GPIO_FN(ET_ETXD5), /* for GEther */
--	GPIO_FN(ET_ETXD6),	GPIO_FN(ET_ETXD7), /* for GEther */
--	GPIO_FN(ET_COL),	GPIO_FN(ET_TX_ER),	GPIO_FN(ET_RX_CLK),
--	GPIO_FN(ET_RX_DV),	GPIO_FN(ET_ERXD0),	GPIO_FN(ET_ERXD1),
--	GPIO_FN(ET_ERXD2),	GPIO_FN(ET_ERXD3),
--	GPIO_FN(ET_ERXD4),	GPIO_FN(ET_ERXD5), /* for GEther */
--	GPIO_FN(ET_ERXD6),	GPIO_FN(ET_ERXD7), /* for GEther */
--	GPIO_FN(ET_RX_ER),	GPIO_FN(ET_CRS),	GPIO_FN(ET_MDC),
--	GPIO_FN(ET_MDIO),	GPIO_FN(ET_LINK),	GPIO_FN(ET_PHY_INT),
--	GPIO_FN(ET_WOL),	GPIO_FN(ET_GTX_CLK),
--
- 	/* DMA0 */
- 	GPIO_FN(DREQ0),	GPIO_FN(DACK0),
+ 	MSTP329, MSTP328, MSTP323, MSTP320,
+ 	MSTP314, MSTP313, MSTP312,
+-	MSTP309,
++	MSTP309, MSTP304,
  
+ 	MSTP416, MSTP415, MSTP407, MSTP406,
+ 
+@@ -499,6 +499,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 13, 0), /* SDHI1 */
+ 	[MSTP312] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 12, 0), /* MMC */
+ 	[MSTP309] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3,  9, 0), /* GEther */
++	[MSTP304] = SH_CLK_MSTP32(&div4_clks[DIV4_CP],	SMSTPCR3,  4, 0), /* TPU0 */
+ 
+ 	[MSTP416] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 16, 0), /* USBHOST */
+ 	[MSTP415] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 15, 0), /* SDHI2 */
+@@ -596,6 +597,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
++	CLKDEV_DEV_ID("rmob_tpu_pwm",		&mstp_clks[MSTP304]),
+ 
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
+ 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
 -- 
 1.8.1.5
 
