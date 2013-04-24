@@ -1,120 +1,94 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:05 +0000
-Subject: [PATCH 02/35] sh-pfc: sh7372: Add CEU pin groups and functions
-Message-Id: <1366671758-8954-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 20:50:08 +0000
+Subject: [PATCH v2 03/11] sh-pfc: r8a7790: Add TPU pin groups and functions
+Message-Id: <1366836616-21475-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 70 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 70 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 41 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 9545b3c..3da8319 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1029,6 +1029,58 @@ static const unsigned int bsc_wait_pins[] = {
- static const unsigned int bsc_wait_mux[] = {
- 	WAIT_MARK,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 1656915..5be2999 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2342,6 +2342,35 @@ static const unsigned int scifb2_data_c_pins[] = {
+ static const unsigned int scifb2_data_c_mux[] = {
+ 	SCIFB2_RXD_C_MARK, SCIFB2_TXD_C_MARK,
  };
-+/* - CEU -------------------------------------------------------------------- */
-+static const unsigned int ceu_data_0_7_pins[] = {
-+	/* D[0:7] */
-+	102, 103, 104, 105, 106, 107, 108, 109,
++/* - TPU0 ------------------------------------------------------------------- */
++static const unsigned int tpu0_to0_pins[] = {
++	/* TO */
++	RCAR_GP_PIN(0, 20),
 +};
-+static const unsigned int ceu_data_0_7_mux[] = {
-+	VIO_D0_MARK, VIO_D1_MARK, VIO_D2_MARK, VIO_D3_MARK,
-+	VIO_D4_MARK, VIO_D5_MARK, VIO_D6_MARK, VIO_D7_MARK,
++static const unsigned int tpu0_to0_mux[] = {
++	TPU0TO0_MARK,
 +};
-+static const unsigned int ceu_data_8_15_pins[] = {
-+	/* D[8:15] */
-+	110, 111, 112, 113, 114, 115, 116, 117,
++static const unsigned int tpu0_to1_pins[] = {
++	/* TO */
++	RCAR_GP_PIN(0, 21),
 +};
-+static const unsigned int ceu_data_8_15_mux[] = {
-+	VIO_D8_MARK, VIO_D9_MARK, VIO_D10_MARK, VIO_D11_MARK,
-+	VIO_D12_MARK, VIO_D13_MARK, VIO_D14_MARK, VIO_D15_MARK,
++static const unsigned int tpu0_to1_mux[] = {
++	TPU0TO1_MARK,
 +};
-+static const unsigned int ceu_clk_0_pins[] = {
-+	/* CKO */
-+	120,
++static const unsigned int tpu0_to2_pins[] = {
++	/* TO */
++	RCAR_GP_PIN(0, 22),
 +};
-+static const unsigned int ceu_clk_0_mux[] = {
-+	VIO_CKO_MARK,
++static const unsigned int tpu0_to2_mux[] = {
++	TPU0TO2_MARK,
 +};
-+static const unsigned int ceu_clk_1_pins[] = {
-+	/* CKO */
-+	16,
++static const unsigned int tpu0_to3_pins[] = {
++	/* TO */
++	RCAR_GP_PIN(0, 23),
 +};
-+static const unsigned int ceu_clk_1_mux[] = {
-+	VIO_CKO1_MARK,
++static const unsigned int tpu0_to3_mux[] = {
++	TPU0TO3_MARK,
 +};
-+static const unsigned int ceu_clk_2_pins[] = {
-+	/* CKO */
-+	17,
-+};
-+static const unsigned int ceu_clk_2_mux[] = {
-+	VIO_CKO2_MARK,
-+};
-+static const unsigned int ceu_sync_pins[] = {
-+	/* CLK, VD, HD */
-+	118, 100, 101,
-+};
-+static const unsigned int ceu_sync_mux[] = {
-+	VIO_CLK_MARK, VIO_VD_MARK, VIO_HD_MARK,
-+};
-+static const unsigned int ceu_field_pins[] = {
-+	/* FIELD */
-+	119,
-+};
-+static const unsigned int ceu_field_mux[] = {
-+	VIO_FIELD_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_0_pins[] = {
- 	/* D[0] */
-@@ -1183,6 +1235,13 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(bsc_rd_we16),
- 	SH_PFC_PIN_GROUP(bsc_bs),
- 	SH_PFC_PIN_GROUP(bsc_rdwr),
-+	SH_PFC_PIN_GROUP(ceu_data_0_7),
-+	SH_PFC_PIN_GROUP(ceu_data_8_15),
-+	SH_PFC_PIN_GROUP(ceu_clk_0),
-+	SH_PFC_PIN_GROUP(ceu_clk_1),
-+	SH_PFC_PIN_GROUP(ceu_clk_2),
-+	SH_PFC_PIN_GROUP(ceu_sync),
-+	SH_PFC_PIN_GROUP(ceu_field),
- 	SH_PFC_PIN_GROUP(mmc0_data1_0),
- 	SH_PFC_PIN_GROUP(mmc0_data4_0),
- 	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1219,6 +1278,16 @@ static const char * const bsc_groups[] = {
- 	"bsc_rdwr",
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(eth_link),
+@@ -2416,6 +2445,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scifb2_clk_b),
+ 	SH_PFC_PIN_GROUP(scifb2_ctrl_b),
+ 	SH_PFC_PIN_GROUP(scifb2_data_c),
++	SH_PFC_PIN_GROUP(tpu0_to0),
++	SH_PFC_PIN_GROUP(tpu0_to1),
++	SH_PFC_PIN_GROUP(tpu0_to2),
++	SH_PFC_PIN_GROUP(tpu0_to3),
  };
  
-+static const char * const ceu_groups[] = {
-+	"ceu_data_0_7",
-+	"ceu_data_8_15",
-+	"ceu_clk_0",
-+	"ceu_clk_1",
-+	"ceu_clk_2",
-+	"ceu_sync",
-+	"ceu_field",
+ static const char * const eth_groups[] = {
+@@ -2520,6 +2553,13 @@ static const char * const scifb2_groups[] = {
+ 	"scifb2_data_c",
+ };
+ 
++static const char * const tpu0_groups[] = {
++	"tpu0_to0",
++	"tpu0_to1",
++	"tpu0_to2",
++	"tpu0_to3",
 +};
 +
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1_0",
- 	"mmc0_data4_0",
-@@ -1252,6 +1321,7 @@ static const char * const sdhi2_groups[] = {
- 
  static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
-+	SH_PFC_FUNCTION(ceu),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(eth),
+ 	SH_PFC_FUNCTION(intc),
+@@ -2531,6 +2571,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scifb0),
+ 	SH_PFC_FUNCTION(scifb1),
+ 	SH_PFC_FUNCTION(scifb2),
++	SH_PFC_FUNCTION(tpu0),
+ };
+ 
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
 -- 
 1.8.1.5
 
