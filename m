@@ -1,56 +1,53 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 08 Apr 2013 09:36:22 +0000
-Subject: [PATCH 10/10] ARM: shmobile: lager: Initialize pinmux
-Message-Id: <1365413782-17036-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 20:50:11 +0000
+Subject: [PATCH v2 06/11] ARM: mach-shmobile: clock-r8a7790: add TPU PWM support
+Message-Id: <1366836616-21475-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-
-Initialize r8a7790 pinmuxing and register mappings for the two debug
-serial ports.
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index f587187..c863bc7 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -21,15 +21,30 @@
- #include <linux/interrupt.h>
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <mach/common.h>
- #include <mach/r8a7790.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index bedd20c..b393592 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -48,6 +48,7 @@
+ #define CPG_LEN 0x1000
  
-+static const struct pinctrl_map lager_pinctrl_map[] = {
-+	/* SCIF0 (CN19: DEBUG SERIAL0) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
-+				  "scif0_data", "scif0"),
-+	/* SCIF1 (CN20: DEBUG SERIAL1) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
-+				  "scif1_data", "scif1"),
+ #define SMSTPCR2 0xe6150138
++#define SMSTPCR3 0xe615013c
+ #define SMSTPCR7 0xe615014c
+ 
+ #define MODEMR		0xE6160060
+@@ -178,11 +179,17 @@ static struct clk div6_clks[DIV6_NR] = {
+ };
+ 
+ /* MSTP */
+-enum { MSTP721, MSTP720,
+-	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
++enum {
++	MSTP721, MSTP720,
++	MSTP304,
++	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
++	MSTP_NR
 +};
 +
- static void __init lager_add_standard_devices(void)
- {
- 	r8a7790_clock_init();
-+
-+	pinctrl_register_mappings(lager_pinctrl_map,
-+				  ARRAY_SIZE(lager_pinctrl_map));
-+	r8a7790_pinmux_init();
-+
- 	r8a7790_add_standard_devices();
- }
- 
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
++	[MSTP304] = SH_CLK_MSTP32(&cp_clk, SMSTPCR3, 4, 0), /* TPU0 */
+ 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
 -- 
 1.8.1.5
 
