@@ -1,89 +1,200 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 22 Apr 2013 17:52:22 +0000
-Subject: Re: [PATCH v5 0/9] Reorganize R8A7779/Marzen USB code
-Message-Id: <517578D6.2050409@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 22:00:26 +0000
+Subject: [PATCH v2 2/4] sh-pfc: sh73a0: Add VCCQ MC0 regulator
+Message-Id: <1366840828-17335-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304200155.13492.sergei.shtylyov@cogentembedded.com>
- <20130422145122.GQ14496@n2100.arm.linux.org.uk>
-In-Reply-To: <20130422145122.GQ14496@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+The sh73a0 has an internal power gate on the VCCQ power supply for the
+SDHI0 device that is controlled (for some strange reason) by a bit in a
+PFC register. This feature should be exposed as a regulator.
 
-Hello.
+As the same register is also used for pin control purposes there is no
+way to achieve atomic read/write sequences with a separate regulator
+driver. We thus need to implement the regulator here.
 
-On 04/22/2013 06:51 PM, Russell King - ARM Linux wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/Kconfig      |   1 +
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 134 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 135 insertions(+)
 
->
->> Hello.
->>
->>     Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
->> 'renesas-next-20130419' tag.  It was created to fix the shortcomings in the
->> R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
->> spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
->> to touch both subtrees). The patches were conceived with the complete
->> bisectability goal in mind.
->>
->> [1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
->> [2/9] ehci-platform: add pre_setup() method to platform data
->> [3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
->> [4/9] rcar-phy: remove EHCI internal buffer setup
->> [5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
->> [6/9] rcar-phy: correct base address
->> [7/9] rcar-phy: add platform data
->> [8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
->> [9/9] rcar-phy: handle platform data
-> Please can you rethink how you use get_maintainers.pl and send out
-> patches?
->
-> Sending them "To" everyone who get_maintainers.pl spits out is all well
-> and good, but it means that there's no discrimination between those who
-> have a primary interest in the patches and those who don't.
-
-    Heh, yet I completely ignore the "commit signers" list that it has
-a habit to spitting out. :-)
-
-> Examples of people with a primary interest: those maintaining the
-> platforms and/or those who you want to merge your patches.  These
-> should be on the To: line.
->
-> Those who don't: everyone else who may have an interest - these go on
-> the Cc: line.
->
-> You're about the only person I regularly get patches for platforms which
-> are sent To: me all the time, and really they are not "important" for
-> me (though they are important enough for me to be Cc'd).
-
-    OK, I'll try to make this distinction in the future. I just didn't 
-think the
-difference between To: and Cc: was really that important to anyone.
-
-> What I'm saying is that having come back from a vacation last Tuesday,
-> I could not just scan through this mailbox for all messages marked "To"
-> me and treat those as being more important than everything else, because
-> soo many of yours were captured by that.  And I'm still tacking the
-> backlog today, almost a week later.
-
-     Sorry about that.
-
-> Please be more considerate to those who you're mailing.
->
-> (Also, make sure you don't honor the Mail-Followup-To: header, which
-> will lead your mailer to keep placing all recipients into the To:
-> header on reply - because it breaks the above reasoning.  The To:
-> header should be those recipients who you are directly discussing, and
-> Cc: is for "interested side parties".)
-
-    That would be somewhat tougher, as I'm usually quick to hit the send
-button after completing the email, so can forget to change people from
-To: list to CC: list... but I'll have to promise to try to give it more 
-attention
-from now on.
-
-> Thanks.
-
-WBR, Sergei
+diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
+index 103e8bf..4ff2b50 100644
+--- a/drivers/pinctrl/sh-pfc/Kconfig
++++ b/drivers/pinctrl/sh-pfc/Kconfig
+@@ -72,6 +72,7 @@ config PINCTRL_PFC_SH73A0
+ 	def_bool y
+ 	depends on ARCH_SH73A0
+ 	select PINCTRL_SH_PFC
++	select REGULATOR
+ 
+ config PINCTRL_PFC_SH7720
+ 	def_bool y
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 587f777..e189146 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -20,7 +20,11 @@
+  */
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/module.h>
+ #include <linux/pinctrl/pinconf-generic.h>
++#include <linux/regulator/driver.h>
++#include <linux/regulator/machine.h>
++#include <linux/slab.h>
+ 
+ #include <mach/sh73a0.h>
+ #include <mach/irqs.h>
+@@ -3888,6 +3892,92 @@ static const struct pinmux_irq pinmux_irqs[] = {
+ 	PINMUX_IRQ(EXT_IRQ16L(9), 308),
+ };
+ 
++/* -----------------------------------------------------------------------------
++ * VCCQ MC0 regulator
++ */
++
++static void sh73a0_vccq_mc0_endisable(struct regulator_dev *reg, bool enable)
++{
++	struct sh_pfc *pfc = reg->reg_data;
++	void __iomem *addr = pfc->window[1].virt + 4;
++	unsigned long flags;
++	u32 value;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	value = ioread32(addr);
++
++	if (enable)
++		value |= BIT(28);
++	else
++		value &= ~BIT(28);
++
++	iowrite32(value, addr);
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
++}
++
++static int sh73a0_vccq_mc0_enable(struct regulator_dev *reg)
++{
++	sh73a0_vccq_mc0_endisable(reg, true);
++	return 0;
++}
++
++static int sh73a0_vccq_mc0_disable(struct regulator_dev *reg)
++{
++	sh73a0_vccq_mc0_endisable(reg, false);
++	return 0;
++}
++
++static int sh73a0_vccq_mc0_is_enabled(struct regulator_dev *reg)
++{
++	struct sh_pfc *pfc = reg->reg_data;
++	void __iomem *addr = pfc->window[1].virt + 4;
++	unsigned long flags;
++	u32 value;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++	value = ioread32(addr);
++	spin_unlock_irqrestore(&pfc->lock, flags);
++
++	return !!(value & BIT(28));
++}
++
++static int sh73a0_vccq_mc0_get_voltage(struct regulator_dev *reg)
++{
++	return 3300000;
++}
++
++static struct regulator_ops sh73a0_vccq_mc0_ops = {
++	.enable = sh73a0_vccq_mc0_enable,
++	.disable = sh73a0_vccq_mc0_disable,
++	.is_enabled = sh73a0_vccq_mc0_is_enabled,
++	.get_voltage = sh73a0_vccq_mc0_get_voltage,
++};
++
++static const struct regulator_desc sh73a0_vccq_mc0_desc = {
++	.owner = THIS_MODULE,
++	.name = "vccq_mc0",
++	.type = REGULATOR_VOLTAGE,
++	.ops = &sh73a0_vccq_mc0_ops,
++};
++
++static struct regulator_consumer_supply sh73a0_vccq_mc0_consumers[] = {
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
++static const struct regulator_init_data sh73a0_vccq_mc0_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies = ARRAY_SIZE(sh73a0_vccq_mc0_consumers),
++	.consumer_supplies = sh73a0_vccq_mc0_consumers,
++};
++
++/* -----------------------------------------------------------------------------
++ * Pin bias
++ */
++
+ #define PORTnCR_PULMD_OFF	(0 << 6)
+ #define PORTnCR_PULMD_DOWN	(2 << 6)
+ #define PORTnCR_PULMD_UP	(3 << 6)
+@@ -3934,7 +4024,51 @@ static void sh73a0_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
+ 	iowrite8(value, addr);
+ }
+ 
++/* -----------------------------------------------------------------------------
++ * SoC information
++ */
++
++struct sh73a0_pinmux_data {
++	struct regulator_dev *vccq_mc0;
++};
++
++static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
++{
++	struct sh73a0_pinmux_data *data;
++	struct regulator_config cfg = { };
++	int ret;
++
++	data = devm_kzalloc(pfc->dev, sizeof(*data), GFP_KERNEL);
++	if (data = NULL)
++		return -ENOMEM;
++
++	cfg.dev = pfc->dev;
++	cfg.init_data = &sh73a0_vccq_mc0_init_data;
++	cfg.driver_data = pfc;
++
++	data->vccq_mc0 = regulator_register(&sh73a0_vccq_mc0_desc, &cfg);
++	if (IS_ERR(data->vccq_mc0)) {
++		ret = PTR_ERR(data->vccq_mc0);
++		dev_err(pfc->dev, "Failed to register VCCQ MC0 regulator: %d\n",
++			ret);
++		return ret;
++	}
++
++	pfc->soc_data = data;
++
++	return 0;
++}
++
++static void sh73a0_pinmux_soc_cleanup(struct sh_pfc *pfc)
++{
++	struct sh73a0_pinmux_data *data = pfc->soc_data;
++
++	regulator_unregister(data->vccq_mc0);
++}
++
+ static const struct sh_pfc_soc_operations sh73a0_pinmux_ops = {
++	.init = sh73a0_pinmux_soc_init,
++	.cleanup = sh73a0_pinmux_soc_cleanup,
+ 	.get_bias = sh73a0_pinmux_get_bias,
+ 	.set_bias = sh73a0_pinmux_set_bias,
+ };
+-- 
+1.8.1.5
 
