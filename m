@@ -1,94 +1,115 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Apr 2013 15:40:29 +0000
-Subject: [PATCH v9 09/20] mx2-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1365781240-16149-10-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Apr 2013 20:50:12 +0000
+Subject: [PATCH v2 07/11] ARM: mach-shmobile: armadillo800eva: Add backlight support
+Message-Id: <1366836616-21475-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-sh@vger.kernel.org
+Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-When adding and removing a client, the mx2-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
+The flat panel backlight on the Armadillo 800 EVA board is driven by the
+TPU PWM output.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/media/platform/soc_camera/mx2_camera.c |   28 +++++++++++++++--------
- 1 files changed, 18 insertions(+), 10 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 51 +++++++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/mx2_camera.c b/drivers/media/platform/soc_camera/mx2_camera.c
-index 772e071..45a0276 100644
---- a/drivers/media/platform/soc_camera/mx2_camera.c
-+++ b/drivers/media/platform/soc_camera/mx2_camera.c
-@@ -412,13 +412,26 @@ static void mx2_camera_deactivate(struct mx2_camera_dev *pcdev)
- 	writel(0, pcdev->base_emma + PRP_CNTL);
- }
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index ff04d1e..fca1817 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -30,6 +30,8 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/regulator/driver.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/pwm-renesas-tpu.h>
++#include <linux/pwm_backlight.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+@@ -381,7 +383,48 @@ static struct platform_device sh_eth_device = {
+ 	.num_resources = ARRAY_SIZE(sh_eth_resources),
+ };
  
-+static int mx2_camera_add_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "Camera driver attached to camera %d\n",
-+		 icd->devnum);
+-/* LCDC */
++/* PWM */
++static struct resource pwm_resources[] = {
++	[0] = {
++		.start = 0xe6600000,
++		.end = 0xe66000ff,
++		.flags = IORESOURCE_MEM,
++	},
++};
 +
-+	return 0;
-+}
++static struct tpu_pwm_platform_data pwm_device_data = {
++	.channels[2] = {
++		.enabled = true,
++		.active_low = 1,
++	}
++};
 +
-+static void mx2_camera_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "Camera driver detached from camera %d\n",
-+		 icd->devnum);
-+}
++static struct platform_device pwm_device = {
++	.name = "renesas_tpu_pwm",
++	.id = -1,
++	.dev = {
++		.platform_data = &pwm_device_data,
++	},
++	.num_resources = ARRAY_SIZE(pwm_resources),
++	.resource = pwm_resources,
++};
 +
- /*
-  * The following two functions absolutely depend on the fact, that
-  * there can be only one camera on mx2 camera sensor interface
++/* LCDC and backlight */
++static struct platform_pwm_backlight_data pwm_backlight_data = {
++	.pwm_id = TPU_PWM_ID(0, 2),
++	.lth_brightness = 50,
++	.max_brightness = 255,
++	.dft_brightness = 255,
++	.pwm_period_ns = 33333, /* 30kHz */
++};
++
++static struct platform_device pwm_backlight_device = {
++	.name = "pwm-backlight",
++	.dev = {
++		.platform_data = &pwm_backlight_data,
++	},
++};
++
+ static struct fb_videomode lcdc0_mode = {
+ 	.name		= "AMPIER/AM-800480",
+ 	.xres		= 800,
+@@ -1019,6 +1062,8 @@ static struct i2c_board_info i2c2_devices[] = {
   */
--static int mx2_camera_add_device(struct soc_camera_device *icd)
-+static int mx2_camera_clock_start(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct mx2_camera_dev *pcdev = ici->priv;
- 	int ret;
- 	u32 csicr1;
-@@ -439,9 +452,6 @@ static int mx2_camera_add_device(struct soc_camera_device *icd)
+ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
++	&pwm_device,
++	&pwm_backlight_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
+ 	&vcc_sdhi0,
+@@ -1090,6 +1135,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* ST1232 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-r8a7740",
+ 				  "intc_irq10", "intc"),
++	/* TPU0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_tpu_pwm", "pfc-r8a7740",
++				  "tpu0_to2_1", "tpu0"),
+ 	/* USBHS */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7740",
+ 				  "intc_irq7_1", "intc"),
+@@ -1149,7 +1197,6 @@ static void __init eva_init(void)
  
- 	pcdev->frame_count = 0;
+ 	/* LCDC0 */
+ 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+-	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
  
--	dev_info(icd->parent, "Camera driver attached to camera %d\n",
--		 icd->devnum);
--
- 	return 0;
- 
- exit_csi_ahb:
-@@ -450,14 +460,10 @@ exit_csi_ahb:
- 	return ret;
- }
- 
--static void mx2_camera_remove_device(struct soc_camera_device *icd)
-+static void mx2_camera_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct mx2_camera_dev *pcdev = ici->priv;
- 
--	dev_info(icd->parent, "Camera driver detached from camera %d\n",
--		 icd->devnum);
--
- 	mx2_camera_deactivate(pcdev);
- }
- 
-@@ -1271,6 +1277,8 @@ static struct soc_camera_host_ops mx2_soc_camera_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= mx2_camera_add_device,
- 	.remove		= mx2_camera_remove_device,
-+	.clock_start	= mx2_camera_clock_start,
-+	.clock_stop	= mx2_camera_clock_stop,
- 	.set_fmt	= mx2_camera_set_fmt,
- 	.set_crop	= mx2_camera_set_crop,
- 	.get_formats	= mx2_camera_get_formats,
+ 	/* Touchscreen */
+ 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
 -- 
-1.7.2.5
+1.8.1.5
 
