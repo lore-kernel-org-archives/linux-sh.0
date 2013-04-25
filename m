@@ -1,43 +1,140 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 26 Apr 2013 16:27:42 +0000
-Subject: [PATCH 1/6] ARM: shmobile: armadillo800eva: remove left-overs
-Message-Id: <1366993667-23294-2-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 25 Apr 2013 10:14:54 +0000
+Subject: [PATCH] drm: shmobile: Use devm_* managed functions
+Message-Id: <1366884894-18231-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-A comment and a #define in board-armadillo800eva.c have been left over
-after recent changes and are no longer relevant or needed, remove them.
+This simplifies cleanup paths and fixes a probe time crash in the error
+path when trying to cleanup mode setting before it was initialized.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    9 ---------
- 1 files changed, 0 insertions(+), 9 deletions(-)
+ drivers/gpu/drm/shmobile/shmob_drm_drv.c   | 28 +++++++++-------------------
+ drivers/gpu/drm/shmobile/shmob_drm_plane.c |  7 +------
+ 2 files changed, 10 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index ff04d1e..acfc267 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -673,15 +673,6 @@ static struct platform_device vcc_sdhi1 = {
- };
+diff --git a/drivers/gpu/drm/shmobile/shmob_drm_drv.c b/drivers/gpu/drm/shmobile/shmob_drm_drv.c
+index f6e0b53..29d15e3 100644
+--- a/drivers/gpu/drm/shmobile/shmob_drm_drv.c
++++ b/drivers/gpu/drm/shmobile/shmob_drm_drv.c
+@@ -90,7 +90,7 @@ static int shmob_drm_setup_clocks(struct shmob_drm_device *sdev,
+ 		return -EINVAL;
+ 	}
  
- /* SDHI0 */
--/*
-- * FIXME
-- *
-- * It use polling mode here, since
-- * CD (= Card Detect) pin is not connected to SDHI0_CD.
-- * We can use IRQ31 as card detect irq,
-- * but it needs chattering removal operation
-- */
--#define IRQ31	irq_pin(31)
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	clk = clk_get(sdev->dev, clkname);
++	clk = devm_clk_get(sdev->dev, clkname);
+ 	if (IS_ERR(clk)) {
+ 		dev_err(sdev->dev, "cannot get dot clock %s\n", clkname);
+ 		return PTR_ERR(clk);
+@@ -106,21 +106,12 @@ static int shmob_drm_setup_clocks(struct shmob_drm_device *sdev,
+ 
+ static int shmob_drm_unload(struct drm_device *dev)
+ {
+-	struct shmob_drm_device *sdev = dev->dev_private;
+-
+ 	drm_kms_helper_poll_fini(dev);
+ 	drm_mode_config_cleanup(dev);
+ 	drm_vblank_cleanup(dev);
+ 	drm_irq_uninstall(dev);
+ 
+-	if (sdev->clock)
+-		clk_put(sdev->clock);
+-
+-	if (sdev->mmio)
+-		iounmap(sdev->mmio);
+-
+ 	dev->dev_private = NULL;
+-	kfree(sdev);
+ 
+ 	return 0;
+ }
+@@ -139,7 +130,7 @@ static int shmob_drm_load(struct drm_device *dev, unsigned long flags)
+ 		return -EINVAL;
+ 	}
+ 
+-	sdev = kzalloc(sizeof(*sdev), GFP_KERNEL);
++	sdev = devm_kzalloc(&pdev->dev, sizeof(*sdev), GFP_KERNEL);
+ 	if (sdev = NULL) {
+ 		dev_err(dev->dev, "failed to allocate private data\n");
+ 		return -ENOMEM;
+@@ -156,29 +147,28 @@ static int shmob_drm_load(struct drm_device *dev, unsigned long flags)
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (res = NULL) {
+ 		dev_err(&pdev->dev, "failed to get memory resource\n");
+-		ret = -EINVAL;
+-		goto done;
++		return -EINVAL;
+ 	}
+ 
+-	sdev->mmio = ioremap_nocache(res->start, resource_size(res));
++	sdev->mmio = devm_ioremap_nocache(&pdev->dev, res->start,
++					  resource_size(res));
+ 	if (sdev->mmio = NULL) {
+ 		dev_err(&pdev->dev, "failed to remap memory resource\n");
+-		ret = -ENOMEM;
+-		goto done;
++		return -ENOMEM;
+ 	}
+ 
+ 	ret = shmob_drm_setup_clocks(sdev, pdata->clk_source);
+ 	if (ret < 0)
+-		goto done;
++		return ret;
+ 
+ 	ret = shmob_drm_init_interface(sdev);
+ 	if (ret < 0)
+-		goto done;
++		return ret;
+ 
+ 	ret = shmob_drm_modeset_init(sdev);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "failed to initialize mode setting\n");
+-		goto done;
++		return ret;
+ 	}
+ 
+ 	for (i = 0; i < 4; ++i) {
+diff --git a/drivers/gpu/drm/shmobile/shmob_drm_plane.c b/drivers/gpu/drm/shmobile/shmob_drm_plane.c
+index e1eb899..6898f6f 100644
+--- a/drivers/gpu/drm/shmobile/shmob_drm_plane.c
++++ b/drivers/gpu/drm/shmobile/shmob_drm_plane.c
+@@ -221,11 +221,8 @@ static int shmob_drm_plane_disable(struct drm_plane *plane)
+ 
+ static void shmob_drm_plane_destroy(struct drm_plane *plane)
+ {
+-	struct shmob_drm_plane *splane = to_shmob_plane(plane);
+-
+ 	shmob_drm_plane_disable(plane);
+ 	drm_plane_cleanup(plane);
+-	kfree(splane);
+ }
+ 
+ static const struct drm_plane_funcs shmob_drm_plane_funcs = {
+@@ -251,7 +248,7 @@ int shmob_drm_plane_create(struct shmob_drm_device *sdev, unsigned int index)
+ 	struct shmob_drm_plane *splane;
+ 	int ret;
+ 
+-	splane = kzalloc(sizeof(*splane), GFP_KERNEL);
++	splane = devm_kzalloc(sdev->dev, sizeof(*splane), GFP_KERNEL);
+ 	if (splane = NULL)
+ 		return -ENOMEM;
+ 
+@@ -261,8 +258,6 @@ int shmob_drm_plane_create(struct shmob_drm_device *sdev, unsigned int index)
+ 	ret = drm_plane_init(sdev->ddev, &splane->plane, 1,
+ 			     &shmob_drm_plane_funcs, formats,
+ 			     ARRAY_SIZE(formats), false);
+-	if (ret < 0)
+-		kfree(splane);
+ 
+ 	return ret;
+ }
 -- 
-1.7.2.5
+Regards,
+
+Laurent Pinchart
 
