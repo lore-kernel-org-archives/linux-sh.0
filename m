@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 24 Apr 2013 07:40:22 +0000
+Date: Thu, 25 Apr 2013 00:23:57 +0000
 Subject: Re: [PATCH 0/4] sh73a0: Expose the PFC-controller SDHI power gate as a regulator
-Message-Id: <20130424074022.GC847@verge.net.au>
+Message-Id: <20130425002357.GA8692@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1366672585-9098-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1366672585-9098-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,46 +10,51 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 23, 2013 at 01:16:21AM +0200, Laurent Pinchart wrote:
-> Hello,
+On Wed, Apr 24, 2013 at 04:40:22PM +0900, Simon Horman wrote:
+> On Tue, Apr 23, 2013 at 01:16:21AM +0200, Laurent Pinchart wrote:
+> > Hello,
+> > 
+> > The sh73a0 has an internal power gate on the VCCQ power supply for the SDHI0
+> > device that is controlled (for some strange reason) by a bit in a PFC
+> > register.
+> > 
+> > This patch set exposes the power gate as a regulator. As the only currently
+> > supported board (kzm9g) has the VCCQ_MC0 pins directly connected to an always
+> > on 3.3V supply, the code assumes that the external VCCQ power supply can't be
+> > controlled. This could be fixed later by setting the regulator supply name.
+> > 
+> > As this series turns the power off when not needed it might bring additional
+> > power saving, but this hasn't been measured. If the patches are considered too
+> > complex a simpler approach would be to turn the power gate on when the SDHI
+> > function is selected.
+> > 
+> > The patches are based on tags/renesas-next-20130422. They have been tested on
+> > kzm9g.
+> > 
+> > Laurent Pinchart (4):
+> >   sh-pfc: Add support for SoC-specific initialization
+> >   sh-pfc: sh73a0: Add VCCQ MC0 regulator
+> >   ARM: shmobile: kzm9g: Remove the VCCQ MC0 function GPIO
+> >   ARM: shmobile: kzm9g-reference: Remove the VCCQ MC0 function GPIO
+> > 
+> >  arch/arm/mach-shmobile/board-kzm9g-reference.c |   1 -
+> >  arch/arm/mach-shmobile/board-kzm9g.c           |   3 -
+> >  drivers/pinctrl/sh-pfc/Kconfig                 |   1 +
+> >  drivers/pinctrl/sh-pfc/core.c                  |  16 ++-
+> >  drivers/pinctrl/sh-pfc/core.h                  |   1 +
+> >  drivers/pinctrl/sh-pfc/pfc-sh73a0.c            | 134 +++++++++++++++++++++++++
+> >  drivers/pinctrl/sh-pfc/sh_pfc.h                |   2 +
+> >  7 files changed, 153 insertions(+), 5 deletions(-)
 > 
-> The sh73a0 has an internal power gate on the VCCQ power supply for the SDHI0
-> device that is controlled (for some strange reason) by a bit in a PFC
-> register.
+> I have rebased the pinmux branch on renesas-boards3-for-v3.10 to
+> supply dependencies. That tag includes the renesas-pinmux2-for-v3.10
+> tag which the pinmux branch was previously based on.
 > 
-> This patch set exposes the power gate as a regulator. As the only currently
-> supported board (kzm9g) has the VCCQ_MC0 pins directly connected to an always
-> on 3.3V supply, the code assumes that the external VCCQ power supply can't be
-> controlled. This could be fixed later by setting the regulator supply name.
+> I have applied this entire series on the resulting pinmux branch.
 > 
-> As this series turns the power off when not needed it might bring additional
-> power saving, but this hasn't been measured. If the patches are considered too
-> complex a simpler approach would be to turn the power gate on when the SDHI
-> function is selected.
-> 
-> The patches are based on tags/renesas-next-20130422. They have been tested on
-> kzm9g.
-> 
-> Laurent Pinchart (4):
->   sh-pfc: Add support for SoC-specific initialization
->   sh-pfc: sh73a0: Add VCCQ MC0 regulator
->   ARM: shmobile: kzm9g: Remove the VCCQ MC0 function GPIO
->   ARM: shmobile: kzm9g-reference: Remove the VCCQ MC0 function GPIO
-> 
->  arch/arm/mach-shmobile/board-kzm9g-reference.c |   1 -
->  arch/arm/mach-shmobile/board-kzm9g.c           |   3 -
->  drivers/pinctrl/sh-pfc/Kconfig                 |   1 +
->  drivers/pinctrl/sh-pfc/core.c                  |  16 ++-
->  drivers/pinctrl/sh-pfc/core.h                  |   1 +
->  drivers/pinctrl/sh-pfc/pfc-sh73a0.c            | 134 +++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/sh_pfc.h                |   2 +
->  7 files changed, 153 insertions(+), 5 deletions(-)
+> I plan to push this when I tag renesas-next-20130424 later today.
+> If not I will tag and push renesas-next-20130425 tomorrow.   
 
-I have rebased the pinmux branch on renesas-boards3-for-v3.10 to
-supply dependencies. That tag includes the renesas-pinmux2-for-v3.10
-tag which the pinmux branch was previously based on.
-
-I have applied this entire series on the resulting pinmux branch.
-
-I plan to push this when I tag renesas-next-20130424 later today.
-If not I will tag and push renesas-next-20130425 tomorrow.   
+As there was subsequently some discussion of this series
+and a v2 posted I have dropped these changes for now.
+Please ping me when you feel they are ready.
