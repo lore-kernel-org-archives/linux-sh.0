@@ -1,59 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 25 Apr 2013 12:27:32 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 25 Apr 2013 12:37:50 +0000
 Subject: Re: [PATCH v2 2/4] sh-pfc: sh73a0: Add VCCQ MC0 regulator
-Message-Id: <1698292.2RjPeMUeES@avalon>
+Message-Id: <20130425123749.GU5019@opensource.wolfsonmicro.com>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1584447.hzGuNzEEzM"
+Content-Type: multipart/mixed; boundary="MljkYTiQARTYtn+v"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1366840828-17335-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1366840828-17335-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-sh@vger.kernel.org
 
 
---nextPart1584447.hzGuNzEEzM
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+--MljkYTiQARTYtn+v
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Thursday 25 April 2013 13:16:49 Mark Brown wrote:
-> On Thu, Apr 25, 2013 at 01:18:39PM +0200, Laurent Pinchart wrote:
-> > On Thursday 25 April 2013 12:07:18 Mark Brown wrote:
-> > > You could use an MMIO regmap providing the performance isn't critical
-> > > enough for that to cause problems.
-> > 
-> > Can you share a regmap object between two separate drivers for two
-> > separate
-> > platform devices ?
-> 
-> Yes, this is commonly done with MFDs for example.
+On Thu, Apr 25, 2013 at 02:27:32PM +0200, Laurent Pinchart wrote:
+> On Thursday 25 April 2013 13:16:49 Mark Brown wrote:
 
-I've had a quick look at the code, the regmap is passed through platform data 
-to the subdevices. With such an approach I could even pass the lock down to 
-the regulator driver (not that it would be a good idea of course).
+> > Yes, this is commonly done with MFDs for example.
 
-I'll push the code as-is for now, but I'll this in mind when migrating the PFC 
-driver to regmap.
+> I've had a quick look at the code, the regmap is passed through platform =
+data=20
+> to the subdevices. With such an approach I could even pass the lock down =
+to=20
+> the regulator driver (not that it would be a good idea of course).
 
--- 
-Regards,
+Yes, or if the subdevice knows that its parent will always have a regmap
+it can use dev_get_regmap() on the parent.
 
-Laurent Pinchart
-
---nextPart1584447.hzGuNzEEzM
+--MljkYTiQARTYtn+v
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.19 (GNU/Linux)
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQEcBAABAgAGBQJReSE8AAoJEIkPb2GL7hl1/ZQIAIr28d1ppTBMm0m2gzmu0ERs
-G9UFC0otR01TE2bqQWAznhvP4wjuG5pJH7Ht/PkaV0O9fB7FGI1+yvQ1FOfEOoax
-AzY+3uFNP/ky7XtN9iGRE/ReCxE4nGZu7RZ3BGXr8PcE+311BuKJ/trcvkGRPcdA
-rqgw7tgajldBJzk6fZd6US+eTFTMsmU/wqyTOdZ2gHXba4j7I3XWByKHDWDJ/o6T
-W+XOPM0Qp/Ek0CFQC/+36PBFh4AzVszgHnJae0sDo3JQvTQ8PpsEECdiyLuGnEhv
-4TX2EAJi9MW/mHSZ7MX7CBA1NefYNoSM3zDRfoKNLifkkTTmn3K+f6kZnm4/+d8=
-=hsME
+iQIcBAEBAgAGBQJReSOMAAoJELSic+t+oim9YioP/Ap4ve6YfcUrMFselkOqUNA/
+6wS0zjqmyvVEKq1qvJNfXIpek5xjd4tqEgf2VFAPvdCFrHFMgybN4mzf74C+Q2td
+RoxpRLx49nLphIrDIAPRvMMQ1HUBU4q512OSlArZRPp+EtnynwzOUQgFQ7JllaQa
+mu4B0QKCTnGpG5pH7ugyQE86jTH15aGHqPFaNEZrosx2wVgbev7tbo9DDrPJPomh
+AfjHZrLLrH02Eo2iiNiSgX83n7I79maNNiZeCxg+86eqQD8P5lcU22YB0UfSINDI
+vDeilc6UwbZIxMs6//XuqWOoi/GUSoZSmXrRj2VqofJX9dgPeKoHyJ2hFnAZjTg0
+qRGzVtxLo2SugK6NbSpeqKVLpSBtOawUolyNSko0Sa87D4wvnafWD2JlJZat735x
+Hca3Wz/tpVQDww1mZsjVpneuQ4bl6sB87vu+HauzqTIeR2V1OvEYw4Zy8OT6eDGw
+4XlpTZg2NZws40X2ofo+e4OrZHqv0ov85SNI2snSkMYYuWJtHSxI20SYx+7FIlw0
+2wBT1AfZjqsbNnDoWwINXHh4IOaHS1IXkrJijBvBxVWEtTTZTOWNt4kKX5ieZhG+
+8akKtH12Euvx1asCMfyhN4T98jU9L3g7x0tsV0Sz5SjfG3beslSoPdjq7Ua6ulWl
+o9KAXKCmCdTGAO9e7N7O
+=1hzS
 -----END PGP SIGNATURE-----
 
---nextPart1584447.hzGuNzEEzM--
-
+--MljkYTiQARTYtn+v--
