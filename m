@@ -1,200 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Apr 2013 22:00:26 +0000
-Subject: [PATCH v2 2/4] sh-pfc: sh73a0: Add VCCQ MC0 regulator
-Message-Id: <1366840828-17335-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 25 Apr 2013 11:07:18 +0000
+Subject: Re: [PATCH v2 2/4] sh-pfc: sh73a0: Add VCCQ MC0 regulator
+Message-Id: <20130425110718.GS5019@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="5UN41tlPsqEEbq75"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1366840828-17335-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366840828-17335-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-sh@vger.kernel.org
 
-The sh73a0 has an internal power gate on the VCCQ power supply for the
-SDHI0 device that is controlled (for some strange reason) by a bit in a
-PFC register. This feature should be exposed as a regulator.
 
-As the same register is also used for pin control purposes there is no
-way to achieve atomic read/write sequences with a separate regulator
-driver. We thus need to implement the regulator here.
+--5UN41tlPsqEEbq75
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/Kconfig      |   1 +
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 134 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 135 insertions(+)
+On Thu, Apr 25, 2013 at 12:00:26AM +0200, Laurent Pinchart wrote:
 
-diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-index 103e8bf..4ff2b50 100644
---- a/drivers/pinctrl/sh-pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -72,6 +72,7 @@ config PINCTRL_PFC_SH73A0
- 	def_bool y
- 	depends on ARCH_SH73A0
- 	select PINCTRL_SH_PFC
-+	select REGULATOR
- 
- config PINCTRL_PFC_SH7720
- 	def_bool y
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 587f777..e189146 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -20,7 +20,11 @@
-  */
- #include <linux/io.h>
- #include <linux/kernel.h>
-+#include <linux/module.h>
- #include <linux/pinctrl/pinconf-generic.h>
-+#include <linux/regulator/driver.h>
-+#include <linux/regulator/machine.h>
-+#include <linux/slab.h>
- 
- #include <mach/sh73a0.h>
- #include <mach/irqs.h>
-@@ -3888,6 +3892,92 @@ static const struct pinmux_irq pinmux_irqs[] = {
- 	PINMUX_IRQ(EXT_IRQ16L(9), 308),
- };
- 
-+/* -----------------------------------------------------------------------------
-+ * VCCQ MC0 regulator
-+ */
-+
-+static void sh73a0_vccq_mc0_endisable(struct regulator_dev *reg, bool enable)
-+{
-+	struct sh_pfc *pfc = reg->reg_data;
-+	void __iomem *addr = pfc->window[1].virt + 4;
-+	unsigned long flags;
-+	u32 value;
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	value = ioread32(addr);
-+
-+	if (enable)
-+		value |= BIT(28);
-+	else
-+		value &= ~BIT(28);
-+
-+	iowrite32(value, addr);
-+
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+}
-+
-+static int sh73a0_vccq_mc0_enable(struct regulator_dev *reg)
-+{
-+	sh73a0_vccq_mc0_endisable(reg, true);
-+	return 0;
-+}
-+
-+static int sh73a0_vccq_mc0_disable(struct regulator_dev *reg)
-+{
-+	sh73a0_vccq_mc0_endisable(reg, false);
-+	return 0;
-+}
-+
-+static int sh73a0_vccq_mc0_is_enabled(struct regulator_dev *reg)
-+{
-+	struct sh_pfc *pfc = reg->reg_data;
-+	void __iomem *addr = pfc->window[1].virt + 4;
-+	unsigned long flags;
-+	u32 value;
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+	value = ioread32(addr);
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+
-+	return !!(value & BIT(28));
-+}
-+
-+static int sh73a0_vccq_mc0_get_voltage(struct regulator_dev *reg)
-+{
-+	return 3300000;
-+}
-+
-+static struct regulator_ops sh73a0_vccq_mc0_ops = {
-+	.enable = sh73a0_vccq_mc0_enable,
-+	.disable = sh73a0_vccq_mc0_disable,
-+	.is_enabled = sh73a0_vccq_mc0_is_enabled,
-+	.get_voltage = sh73a0_vccq_mc0_get_voltage,
-+};
-+
-+static const struct regulator_desc sh73a0_vccq_mc0_desc = {
-+	.owner = THIS_MODULE,
-+	.name = "vccq_mc0",
-+	.type = REGULATOR_VOLTAGE,
-+	.ops = &sh73a0_vccq_mc0_ops,
-+};
-+
-+static struct regulator_consumer_supply sh73a0_vccq_mc0_consumers[] = {
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
-+
-+static const struct regulator_init_data sh73a0_vccq_mc0_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies = ARRAY_SIZE(sh73a0_vccq_mc0_consumers),
-+	.consumer_supplies = sh73a0_vccq_mc0_consumers,
-+};
-+
-+/* -----------------------------------------------------------------------------
-+ * Pin bias
-+ */
-+
- #define PORTnCR_PULMD_OFF	(0 << 6)
- #define PORTnCR_PULMD_DOWN	(2 << 6)
- #define PORTnCR_PULMD_UP	(3 << 6)
-@@ -3934,7 +4024,51 @@ static void sh73a0_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
- 	iowrite8(value, addr);
- }
- 
-+/* -----------------------------------------------------------------------------
-+ * SoC information
-+ */
-+
-+struct sh73a0_pinmux_data {
-+	struct regulator_dev *vccq_mc0;
-+};
-+
-+static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
-+{
-+	struct sh73a0_pinmux_data *data;
-+	struct regulator_config cfg = { };
-+	int ret;
-+
-+	data = devm_kzalloc(pfc->dev, sizeof(*data), GFP_KERNEL);
-+	if (data = NULL)
-+		return -ENOMEM;
-+
-+	cfg.dev = pfc->dev;
-+	cfg.init_data = &sh73a0_vccq_mc0_init_data;
-+	cfg.driver_data = pfc;
-+
-+	data->vccq_mc0 = regulator_register(&sh73a0_vccq_mc0_desc, &cfg);
-+	if (IS_ERR(data->vccq_mc0)) {
-+		ret = PTR_ERR(data->vccq_mc0);
-+		dev_err(pfc->dev, "Failed to register VCCQ MC0 regulator: %d\n",
-+			ret);
-+		return ret;
-+	}
-+
-+	pfc->soc_data = data;
-+
-+	return 0;
-+}
-+
-+static void sh73a0_pinmux_soc_cleanup(struct sh_pfc *pfc)
-+{
-+	struct sh73a0_pinmux_data *data = pfc->soc_data;
-+
-+	regulator_unregister(data->vccq_mc0);
-+}
-+
- static const struct sh_pfc_soc_operations sh73a0_pinmux_ops = {
-+	.init = sh73a0_pinmux_soc_init,
-+	.cleanup = sh73a0_pinmux_soc_cleanup,
- 	.get_bias = sh73a0_pinmux_get_bias,
- 	.set_bias = sh73a0_pinmux_set_bias,
- };
--- 
-1.8.1.5
+> As the same register is also used for pin control purposes there is no
+> way to achieve atomic read/write sequences with a separate regulator
+> driver. We thus need to implement the regulator here.
 
+You could use an MMIO regmap providing the performance isn't critical
+enough for that to cause problems.
+
+But this looks basically OK if we can't do that for some reason.
+
+Acked-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+
+--5UN41tlPsqEEbq75
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJReQ5fAAoJELSic+t+oim9j7YP/0f7eILtVUI4e2x3njsxdnZ1
+nVlIjYbFHpbnueYHwRAauDz5z2JIiGuUerTBjgCYUs4ZWHFqus0nBNo8dwz2QD89
+MRRaZaKzttcLgXPLdEJUP0ugP9YdTvuc2YXTRpyWCjC/u3bSS7JihsK6h/v/t0l0
+O7P1qm58gCW9xbwHqEJIdcp6A/7oelydVE2eTcz3eHXbHNpuoGgNG0a7z2C4D8o9
+X6wH3KPUZwpwWn4adqfm1+3uIKEmxCX8PpmFUuyPxNNRLn94OWTQLDtnoKIiwbg4
+X1l5u5P+edeoRKut8DcCi0u7MVBZIFEt7N+hDiRedjOkwBQXZotOpMHVgXpqh4Fo
+c7owDHVmX+i37xcsEda4nDyAlOkNiAEzSDtOJUAzeNzOrXny12iSRcMRPur8c08e
+Ub35V8WS6JG2ExJhdOSTxeVF+TOIiiRx4iAhErUXTfJcZLb7YLCvJYruzI3jGW22
+M2rJlbFEVhujBCjyVBj7hiiCG6AXha0Yv3wgyfSqPtBMP6dmnJ6AyKV9+TER/EAV
+JzVY8A9pySC2DGz/wAxFnYYTZeZs8pVIqBN8WdGFV1arPr13bVEStkg9YgOZQaiP
+HbHwW4x1SrulNTvOhOPcjW3Fsv3Pv+dY44vzk1lBqLKDc37JbepMFrRSThjfNXbw
+XtNFg6Z5Tc+DBSsEQsiQ
+=vJnB
+-----END PGP SIGNATURE-----
+
+--5UN41tlPsqEEbq75--
