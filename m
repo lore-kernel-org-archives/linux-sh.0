@@ -1,89 +1,138 @@
-From: Zhang Rui <rui.zhang@intel.com>
-Date: Tue, 02 Apr 2013 13:19:30 +0000
-Subject: Re: [PATCH 2/2 v2] thermal: rcar: add pm_runtime_xxx() support
-Message-Id: <1364908770.2190.40.camel@rzhang1-mobl4>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 26 Apr 2013 22:43:24 +0000
+Subject: [PATCH v3 1/3] sh-pfc: r8a7778: add VIN pin groups
+Message-Id: <201304270243.24959.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87620gqbbe.wl%kuninori.morimoto.gx@renesas.com>
-	 <874ng0qb9f.wl%kuninori.morimoto.gx@renesas.com>
-	 <1364200856.2465.48.camel@rzhang1-mobl4>
-	 <871ub3j9r3.wl%kuninori.morimoto.gx@renesas.com>
-	 <87sj3iiu5m.wl%kuninori.morimoto.gx@renesas.com>
-	 <87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
-	 <87obe6itfy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87obe6itfy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-pm@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, 2013-03-25 at 23:08 -0700, Kuninori Morimoto wrote:
-> Current rcar_thermal() didn't care about own power.
-> Without this patch, rcar_thermal doesn't work on APE6 board
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-applied.
+Add VIN DATA[0:8]/CLK/HSYNC/VSYNC pin groups to R8A7778 PFC driver.
+While at it, add SH_PFC_MUX8() macro for 8-bit data busses.
 
-thanks,
-rui
-> ---
-> v1 -> v2
-> 
->  - fixup pm_runtime_xxx() timing
->  - fixup compile error
-> 
->  drivers/thermal/rcar_thermal.c |   11 +++++++++++
->  1 file changed, 11 insertions(+)
-> 
-> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-> index c199623..0f0f951 100644
-> --- a/drivers/thermal/rcar_thermal.c
-> +++ b/drivers/thermal/rcar_thermal.c
-> @@ -24,6 +24,7 @@
->  #include <linux/io.h>
->  #include <linux/module.h>
->  #include <linux/platform_device.h>
-> +#include <linux/pm_runtime.h>
->  #include <linux/reboot.h>
->  #include <linux/slab.h>
->  #include <linux/spinlock.h>
-> @@ -377,6 +378,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
->  	spin_lock_init(&common->lock);
->  	common->dev = dev;
->  
-> +	pm_runtime_enable(dev);
-> +	pm_runtime_get_sync(dev);
-> +
->  	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
->  	if (irq) {
->  		int ret;
-> @@ -468,12 +472,16 @@ error_unregister:
->  			rcar_thermal_irq_disable(priv);
->  	}
->  
-> +	pm_runtime_put_sync(dev);
-> +	pm_runtime_disable(dev);
-> +
->  	return ret;
->  }
->  
->  static int rcar_thermal_remove(struct platform_device *pdev)
->  {
->  	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
-> +	struct device *dev = &pdev->dev;
->  	struct rcar_thermal_priv *priv;
->  
->  	rcar_thermal_for_each_priv(priv, common) {
-> @@ -484,6 +492,9 @@ static int rcar_thermal_remove(struct platform_device *pdev)
->  
->  	platform_set_drvdata(pdev, NULL);
->  
-> +	pm_runtime_put_sync(dev);
-> +	pm_runtime_disable(dev);
-> +
->  	return 0;
->  }
->  
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: updated the copyrights, added SH_PFC_MUX8() macro for 8-bit data bus,
+made use of SH_PFC_*() macros to define the pin groups.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
+---
+Changes from version 2:
+- fixed whitespace errors/warnings reported by scripts/checkpatch.pl.
 
+Changes from the original posting:
+- new patch in this series, extracted from R8A7778/BOCK-W VIN patch series;
+- added SH_PFC_MUX8() macro for 8-bit data busses;
+- made use of SH_PFC_*() macros to define the pin groups.
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   60 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
+
+Index: renesas/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+=================================--- renesas.orig/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ renesas/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * based on
+  * Copyright (C) 2011  Renesas Solutions Corp.
+@@ -1316,6 +1317,11 @@ static struct sh_pfc_pin pinmux_pins[]  #define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
+ 	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
+ 						     arg3##_MARK, arg4##_MARK }
++#define SH_PFC_MUX8(name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) \
++	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
++						     arg3##_MARK, arg4##_MARK, \
++						     arg5##_MARK, arg6##_MARK, \
++						     arg7##_MARK, arg8##_MARK, }
+ 
+ /* - SCIF macro ------------------------------------------------------------- */
+ #define SCIF_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
+@@ -1501,6 +1507,40 @@ SDHI_PFC_WPPN(sdhi2_wp_a,	SD2_WP_A);
+ SDHI_PFC_PINS(sdhi2_wp_b,	RCAR_GP_PIN(3, 28));
+ SDHI_PFC_WPPN(sdhi2_wp_b,	SD2_WP_B);
+ 
++/* - VIN macros ------------------------------------------------------------- */
++#define VIN_PFC_PINS(name, args...)		SH_PFC_PINS(name, args)
++#define VIN_PFC_DAT8(name, d0, d1, d2, d3, d4, d5, d6, d7)	\
++	SH_PFC_MUX8(name, d0, d1, d2, d3, d4, d5, d6, d7)
++#define VIN_PFC_CLK(name, clk)			SH_PFC_MUX1(name, clk)
++#define VIN_PFC_SYNC(name, hsync, vsync)	SH_PFC_MUX2(name, hsync, vsync)
++
++/* - VIN0 ------------------------------------------------------------------- */
++VIN_PFC_PINS(vin0_data8,	RCAR_GP_PIN(3, 29),	RCAR_GP_PIN(3, 30),
++				RCAR_GP_PIN(3, 31),	RCAR_GP_PIN(4, 0),
++				RCAR_GP_PIN(4, 1),	RCAR_GP_PIN(4, 2),
++				RCAR_GP_PIN(4, 3),	RCAR_GP_PIN(4, 4));
++VIN_PFC_DAT8(vin0_data8,	VI0_DATA0_VI0_B0,	VI0_DATA1_VI0_B1,
++				VI0_DATA2_VI0_B2,	VI0_DATA3_VI0_B3,
++				VI0_DATA4_VI0_B4,	VI0_DATA5_VI0_B5,
++				VI0_DATA6_VI0_G0,	VI0_DATA7_VI0_G1);
++VIN_PFC_PINS(vin0_clk,		RCAR_GP_PIN(3, 24));
++VIN_PFC_CLK(vin0_clk,		VI0_CLK);
++VIN_PFC_PINS(vin0_sync,		RCAR_GP_PIN(3, 27),	RCAR_GP_PIN(3, 28));
++VIN_PFC_SYNC(vin0_sync,		VI0_HSYNC,		VI0_VSYNC);
++/* - VIN1 ------------------------------------------------------------------- */
++VIN_PFC_PINS(vin1_data8,	RCAR_GP_PIN(3, 25),	RCAR_GP_PIN(3, 26),
++				RCAR_GP_PIN(3, 27),	RCAR_GP_PIN(3, 28),
++				RCAR_GP_PIN(4, 5),	RCAR_GP_PIN(4, 6),
++				RCAR_GP_PIN(4, 7),	RCAR_GP_PIN(4, 8));
++VIN_PFC_DAT8(vin1_data8,	VI1_DATA0,		VI1_DATA1,
++				VI1_DATA2,		VI1_DATA3,
++				VI1_DATA4,		VI1_DATA5,
++				VI1_DATA6,		VI1_DATA7);
++VIN_PFC_PINS(vin1_clk,		RCAR_GP_PIN(4, 9));
++VIN_PFC_CLK(vin1_clk,		VI1_CLK);
++VIN_PFC_PINS(vin1_sync,		RCAR_GP_PIN(3, 21),	RCAR_GP_PIN(3, 22));
++VIN_PFC_SYNC(vin1_sync,		VI1_HSYNC,		VI1_VSYNC);
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hscif0_data_a),
+ 	SH_PFC_PIN_GROUP(hscif0_data_b),
+@@ -1570,6 +1610,12 @@ static const struct sh_pfc_pin_group pin
+ 	SH_PFC_PIN_GROUP(sdhi2_data4_b),
+ 	SH_PFC_PIN_GROUP(sdhi2_wp_a),
+ 	SH_PFC_PIN_GROUP(sdhi2_wp_b),
++	SH_PFC_PIN_GROUP(vin0_data8),
++	SH_PFC_PIN_GROUP(vin0_clk),
++	SH_PFC_PIN_GROUP(vin0_sync),
++	SH_PFC_PIN_GROUP(vin1_data8),
++	SH_PFC_PIN_GROUP(vin1_clk),
++	SH_PFC_PIN_GROUP(vin1_sync),
+ };
+ 
+ static const char * const hscif0_groups[] = {
+@@ -1677,6 +1723,18 @@ static const char * const sdhi2_groups[]
+ 	"sdhi2_wp_b",
+ };
+ 
++static const char * const vin0_groups[] = {
++	"vin0_data8",
++	"vin0_clk",
++	"vin0_sync",
++};
++
++static const char * const vin1_groups[] = {
++	"vin1_data8",
++	"vin1_clk",
++	"vin1_sync",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(hscif0),
+ 	SH_PFC_FUNCTION(hscif1),
+@@ -1690,6 +1748,8 @@ static const struct sh_pfc_function pinm
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(vin0),
++	SH_PFC_FUNCTION(vin1),
+ };
+ 
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
