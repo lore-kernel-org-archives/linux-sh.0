@@ -1,62 +1,165 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Apr 2013 00:48:47 +0000
-Subject: Re: [PATCH v3] irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
-Message-Id: <20130410004846.GF2462@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Apr 2013 16:27:43 +0000
+Subject: [PATCH 2/6] ARM: shmobile: add SDHI and MMCIF interfaces to armadillo800eva-reference
+Message-Id: <1366993667-23294-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304081002190.29945@axis700.grange>
- <CANqRtoS7fkYd8iX3yAh7xoTNR39UiquWooUSr8+BjbBSUNozFQ@mail.gmail.com>
-In-Reply-To: <CANqRtoS7fkYd8iX3yAh7xoTNR39UiquWooUSr8+BjbBSUNozFQ@mail.gmail.com>
+References: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 10, 2013 at 07:23:06AM +0900, Magnus Damm wrote:
-> Hi Guennadi,
-> 
-> On Mon, Apr 8, 2013 at 5:08 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > Most Renesas irqpin controllers have 4-bit sense fields, however, some
-> > have different widths. This patch adds a DT binding to optionally
-> > specify such non-standard values.
-> >
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> >
-> > v3: move the code to a common location, where device configuration
-> > parameters are retrieved
-> 
-> Thanks for rearranging the code, this looks good to me.
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+Add SDHI0, SDHI1 and MMCIF interfaces to armadillo800eva-reference. With
+no pinctrl DT support we cannot use GPIO card-detection and regulator
+switching.
 
-Thanks, queued-up in the renesas-intc-irqpin branch.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   21 +++++++++++-
+ arch/arm/boot/dts/r8a7740.dtsi                     |   33 ++++++++++++++++++
+ .../board-armadillo800eva-reference.c              |   36 +++++++++++++++++++-
+ 3 files changed, 88 insertions(+), 2 deletions(-)
 
-> To be clear, I prefer your approach over a per-SoC compatible string.
-> 
-> In general I think a per-SoC compatible string is nice in theory, but
-> I don't think it is correct to use it to describe a change in a IP
-> block that just happens to included in the SoC. Instead the version of
-> the IP block shall be used with the compatible value. In some cases it
-> may not be easy to retrieve such a version.
-> 
-> The per-SoC compatible string may look good but they come with at
-> least two drawbacks. Either
-> 1) the driver has to be updated for each new SoC even though the
-> device IP the driver is handling hasn't changed which leads to
-> 1.1) more need for pointless per-SoC compatible string patches to be
-> merged and tracked and back ported
-> and
-> 1.2) less chance of running a standard distro lacking per-SoC
-> compatible string but has actual code for support
-> or
-> 2) to ship soon the per-SoC DT will use SoC compatible strings
-> matching other SoC names which works but is even more confusing.
-> 
-> For the INTC irqpin case I believe this approach with a single
-> property is the best.
-> 
-> Thanks,
-> 
-> / magnus
-> 
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 09ea22c..3752637 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -32,7 +32,6 @@
+ 		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
+-
+ };
+ 
+ &i2c0 {
+@@ -43,3 +42,23 @@
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
+ 	};
+ };
++
++&mmcif0 {
++	vmmc-supply = <&reg_3p3v>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
++};
++
++&sdhi0 {
++	vmmc-supply = <&reg_3p3v>;
++	bus-width = <4>;
++	broken-cd;
++	status = "okay";
++};
++
++&sdhi1 {
++	vmmc-supply = <&reg_3p3v>;
++	bus-width = <4>;
++	status = "okay";
++};
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 25dc930..e9a90d8 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -135,4 +135,37 @@
+ 			      0 72 0x4
+ 			      0 73 0x4>;
+ 	};
++
++	mmcif0: mmcif@e6bd0000 {
++		compatible = "renesas,sh-mmcif", "renesas,sh7372-mmcif";
++		reg = <0xe6bd0000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 56 4
++				0 57 4>;
++		status = "disabled";
++	};
++
++	sdhi0: sdhi@e6850000 {
++		compatible = "renesas,r8a7740-sdhi";
++		reg = <0xe6850000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 117 4
++				0 118 4
++				0 119 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
++
++	sdhi1: sdhi@e6860000 {
++		compatible = "renesas,r8a7740-sdhi";
++		reg = <0xe6860000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 121 4
++				0 122 4
++				0 123 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 03b85fe..d26a9da 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -123,6 +123,27 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* SCIFA1 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
+ 				  "scifa1_data", "scifa1"),
++	/* MMCIF */
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.sh-mmcif", "pfc-r8a7740",
++				  "mmc0_data8_1", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.sh-mmcif", "pfc-r8a7740",
++				  "mmc0_ctrl_1", "mmc0"),
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("e6850000.sdhi", "pfc-r8a7740",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("e6850000.sdhi", "pfc-r8a7740",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("e6850000.sdhi", "pfc-r8a7740",
++				  "sdhi0_wp", "sdhi0"),
++	/* SDHI1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("e6860000.sdhi", "pfc-r8a7740",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("e6860000.sdhi", "pfc-r8a7740",
++				  "sdhi1_ctrl", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("e6860000.sdhi", "pfc-r8a7740",
++				  "sdhi1_cd", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("e6860000.sdhi", "pfc-r8a7740",
++				  "sdhi1_wp", "sdhi1"),
+ };
+ 
+ static void __init eva_clock_init(void)
+@@ -165,7 +186,6 @@ clock_error:
+  */
+ static void __init eva_init(void)
+ {
+-
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
+ 
+@@ -180,6 +200,20 @@ static void __init eva_init(void)
+ 	 */
+ 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 
++	/* SDHI0 */
++	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
++	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
++	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
++
++	/* We can switch CON8/CON14 by SW1.5, but only after DBGMD_SELECT_B */
++	gpio_request_one(6, GPIOF_IN, NULL);
++	if (!gpio_get_value(6)) {
++		/* CON14 disabled, CON8 (SDHI1) enabled */
++
++		/* SDSLOT2_PON */
++		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
++	}
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+-- 
+1.7.2.5
+
