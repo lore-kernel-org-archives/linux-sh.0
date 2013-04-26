@@ -1,133 +1,97 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:24:04 +0000
-Subject: Re: [PATCH] MMC: tmio: fix unbalanced power-on calls with clock-gating enabled
-Message-Id: <3707076.C3cH4Fjh9W@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Apr 2013 06:26:16 +0000
+Subject: [PATCH 7/6] DMA: shdma: add DT binding documentation
+Message-Id: <Pine.LNX.4.64.1304260823050.30844@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304221611100.23906@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304221611100.23906@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>
+To: devicetree-discuss@lists.ozlabs.org
+Cc: Arnd Bergmann <arnd@arndb.de>, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org
 
-Hi Guennadi,
+SHDMA uses only standard DMA Device Tree bindings. This patch adds
+documentation, exactly describing the use of the bindings and providing
+examples.
 
-Thanks for the patch.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-On Monday 22 April 2013 16:14:40 Guennadi Liakhovetski wrote:
-> With MMC clock gating enabled the MMC core currently calls MMC host driver's
-> .set_ios() method with .power_mode = MMC_POWER_ON and the clock value set
-> either to 0 or to the target rate. The tmio MMC driver then wrongly
-> translates the latter calls to card slot power-on requests, even when the
-> slot already was on. This patch fixes the driver to avoid needlessly
-> incrementing power-supplying regulator's use count.
-> 
-> Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
->
-> ---
->  drivers/mmc/host/tmio_mmc.h     |   20 ++++++++++++++++++--
->  drivers/mmc/host/tmio_mmc_pio.c |   16 +++++++++-------
->  2 files changed, 27 insertions(+), 9 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> index d857f5c..3cc589a 100644
-> --- a/drivers/mmc/host/tmio_mmc.h
-> +++ b/drivers/mmc/host/tmio_mmc.h
-> @@ -40,6 +40,22 @@
-> 
->  struct tmio_mmc_data;
-> 
-> +/*
-> + * We differentiate between the following 3 power states:
-> + * 1. card slot powered off, controller stopped. This is used, when either
-> + *    there is no card in the slot, or the card really has to be powered
-> + *    down.
-> + * 2. card slot powered on, controller stopped. This is used, when a card
-> + *    is in the slot, but no activity is currently taking place. This is a
-> + *    power-saving mode with card-state preserved. This state can be
-> + *    entered, e.g. when MMC clock-gating is used.
-> + * 3. card slot powered on, controller running. This is the actual active
-> + *    state.
-> + */
-> +enum tmio_mmc_power {
-> +	TMIO_MMC_OFF_STOP,	/* card power off, controller stopped */
-> +	TMIO_MMC_ON_STOP,	/* card power on, controller stopped */
-> +	TMIO_MMC_ON_RUN,	/* card power on, controller running */
-> +};
-> +
->  struct tmio_mmc_host {
->  	void __iomem *ctl;
->  	unsigned long bus_shift;
-> @@ -48,8 +64,8 @@ struct tmio_mmc_host {
->  	struct mmc_data         *data;
->  	struct mmc_host         *mmc;
-> 
-> -	/* Controller power state */
-> -	bool			power;
-> +	/* Controller and card power state */
-> +	enum tmio_mmc_power	power;
-> 
->  	/* Callbacks for clock / power control */
->  	void (*set_pwr)(struct platform_device *host, int state);
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c
-> b/drivers/mmc/host/tmio_mmc_pio.c index f508ecb..d442eab 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -859,25 +859,27 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc,
-> struct mmc_ios *ios) * is kept positive, so no suspending actually takes
-> place.
->  	 */
->  	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
-> -		if (!host->power) {
-> +		if (host->power != TMIO_MMC_ON_RUN) {
->  			tmio_mmc_clk_update(mmc);
->  			pm_runtime_get_sync(dev);
->  		}
->  		tmio_mmc_set_clock(host, ios->clock);
-> -		if (!host->power) {
-> +		if (host->power = TMIO_MMC_OFF_STOP)
->  			/* power up SD card and the bus */
->  			tmio_mmc_power_on(host, ios->vdd);
-> -			host->power = true;
-> -		}
-> +		host->power = TMIO_MMC_ON_RUN;
->  		/* start bus clock */
->  		tmio_mmc_clk_start(host);
->  	} else if (ios->power_mode != MMC_POWER_UP) {
->  		if (host->power) {
+This patch adds the missing documentation to the patch series "DMA: shdma: 
+add Device Tree support"
+http://thread.gmane.org/gmane.linux.ports.sh.devel/21972
+Arnd, Vinod, I hope, now this series can be applied :)
 
-Maybe host->power != TMIO_MMC_OFF_STOP ?
+ Documentation/devicetree/bindings/dma/shdma.txt |   61 +++++++++++++++++++++++
+ 1 files changed, 61 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/dma/shdma.txt
 
-Otherwise the patch looks good to me.
-
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
->  			struct tmio_mmc_data *pdata = host->pdata;
-> -			if (ios->power_mode = MMC_POWER_OFF)
-> +			if (ios->power_mode = MMC_POWER_OFF) {
->  				tmio_mmc_power_off(host);
-> +				host->power = TMIO_MMC_OFF_STOP;
-> +			} else {
-> +				host->power = TMIO_MMC_ON_STOP;
-> +			}
->  			tmio_mmc_clk_stop(host);
-> -			host->power = false;
->  			pm_runtime_put(dev);
->  			if (pdata->clk_disable)
->  				pdata->clk_disable(host->pdev);
-> @@ -1025,7 +1027,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
->  				  mmc->caps & MMC_CAP_NONREMOVABLE ||
->  				  mmc->slot.cd_irq >= 0);
-> 
-> -	_host->power = false;
-> +	_host->power = TMIO_MMC_OFF_STOP;
->  	pm_runtime_enable(&pdev->dev);
->  	ret = pm_runtime_resume(&pdev->dev);
->  	if (ret < 0)
+diff --git a/Documentation/devicetree/bindings/dma/shdma.txt b/Documentation/devicetree/bindings/dma/shdma.txt
+new file mode 100644
+index 0000000..f99618e
+--- /dev/null
++++ b/Documentation/devicetree/bindings/dma/shdma.txt
+@@ -0,0 +1,61 @@
++* SHDMA Device Tree bindings
++
++Only generic DMA controller bindings are used for SHDMA DT nodes.
++
++* DMA controller
++
++Required properties:
++- compatible:	should be "renesas,shdma"
++- #dma-cells:	should be <1>, see "dmas" property below
++
++Optional properties (currently unused):
++- dma-channels:	number of DMA channels
++- dma-requests:	number of DMA request signals
++
++Example:
++	dma0: shdma@fe000020 {
++		compatible = "renesas,shdma";
++		reg = <0xfe000020 0x89e0>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 129 4
++				0 109 4
++				0 110 4
++				0 111 4
++				0 112 4
++				0 113 4
++				0 114 4
++				0 115 4
++				0 116 4
++				0 117 4
++				0 118 4
++				0 119 4
++				0 120 4
++				0 121 4
++				0 122 4
++				0 123 4
++				0 124 4
++				0 125 4
++				0 126 4
++				0 127 4
++				0 128 4>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14", "ch15",
++				"ch16", "ch17", "ch18", "ch19";
++		#dma-cells = <1>;
++		dma-channels = <20>;
++		dma-requests = <256>;
++	};
++
++* DMA client
++
++Required properties:
++- dmas:		a list of <[DMA controller phandle] [MID/RID value]> pairs
++- dma-names:	a list of DMA channel names, one per "dmas" entry
++
++Example:
++	dmas = <&dma0 0xd1
++		&dma0 0xd2>;
++	dma-names = "tx", "rx";
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.2.5
 
