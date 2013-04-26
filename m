@@ -1,91 +1,72 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 23 Apr 2013 13:01:25 +0000
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Fri, 26 Apr 2013 08:44:22 +0000
 Subject: Re: [PATCH v9 02/20] V4L2: support asynchronous subdevice registration
-Message-Id: <Pine.LNX.4.64.1304231435540.1422@axis700.grange>
+Message-Id: <20130426084422.GB16843@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
- <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de> <516BEB1D.80105@samsung.com>
- <1489465.QAtJQiYEWC@avalon>
-In-Reply-To: <1489465.QAtJQiYEWC@avalon>
+ <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-media@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Hi Laurent
+Hi Guennadi,
 
-On Mon, 22 Apr 2013, Laurent Pinchart wrote:
+On Fri, Apr 12, 2013 at 05:40:22PM +0200, Guennadi Liakhovetski wrote:
+> +
+> +static bool match_i2c(struct device *dev, struct v4l2_async_hw_info *hw_dev)
+> +{
+> +	struct i2c_client *client = i2c_verify_client(dev);
+> +	return client &&
+> +		hw_dev->bus_type = V4L2_ASYNC_BUS_I2C &&
+> +		hw_dev->match.i2c.adapter_id = client->adapter->nr &&
+> +		hw_dev->match.i2c.address = client->addr;
+> +}
+> +
+> +static bool match_platform(struct device *dev, struct v4l2_async_hw_info *hw_dev)
+> +{
+> +	return hw_dev->bus_type = V4L2_ASYNC_BUS_PLATFORM &&
+> +		!strcmp(hw_dev->match.platform.name, dev_name(dev));
+> +}
 
-> Hi Guennadi and Sylwester,
-> 
-> On Monday 15 April 2013 13:57:17 Sylwester Nawrocki wrote:
-> > On 04/12/2013 05:40 PM, Guennadi Liakhovetski wrote:
+I recently solved the same problem without being aware of your series.
 
-[snip]
+How about registering the asynchronous subdevices with a 'void *key'
+instead of a bus specific matching function? With platform based devices
+the key could simply be a pointer to some dummy value which is used by
+both the subdevice and the device in its platform_data. for the shmobile
+patch you have later in this series this would become:
 
-> > > +
-> > > +		if (notifier->unbind)
-> > > +			notifier->unbind(notifier, asdl);
-> > > +	}
-> > > +
-> > > +	mutex_unlock(&list_lock);
-> > > +
-> > > +	if (dev) {
-> > > +		while (i--) {
-> > > +			if (dev[i] && device_attach(dev[i]) < 0)
-> 
-> This is my last major pain point.
-> 
-> To avoid race conditions we need circular references (see http://www.mail-archive.com/linux-media@vger.kernel.org/msg61092.html). We will thus need a 
-> way to break the circle by explictly requesting the subdev to release its 
-> resources. I'm afraid I have no well-designed solution for that at the moment.
+static int csi2_r2025sd_key;
 
-I think we really can design the framework to allow a _safe_ unloading of 
-the bridge driver. An rmmod run is not an immediate death - we have time 
-to clean up and release all resources properly. As an example, I just had 
-a network interface running, but rmmod-ing of one of hardware drivers just 
-safely destroyed the interface. In our case, rmmod <bridge> should just 
-signal the subdevice to release the clock reference. Whether we have the 
-required - is a separate question.
+static struct r2025sd_platform_data r2025sd_pdata {
+	.key = &csi2_r2025sd_key,
+};
 
-Currently a call to v4l2_clk_get() increments the clock owner use-count. 
-This isn't a problem for soc-camera, since there the soc-camera core owns 
-the clock. For other bridge drivers they would probably own the clock 
-themselves, so, incrementing their use-count would block their modules in 
-memory. To avoid that we have to remove that use-count incrementing.
+static struct i2c_board_info i2c1_devices[] = {
+	{
+		I2C_BOARD_INFO("r2025sd", 0x32),
+		.platform_data = &r2025sd_pdata,
+	},
+};
 
-The crash, described in the referenced mail can happen if the subdevice 
-driver calls (typically) v4l2_clk_enable() on a clock, that's already been 
-freed. Wouldn't a locked look-up in the global clock list in v4l2-clk.c 
-prevent such a crash? E.g.
+static struct sh_csi2_pdata csi2_info = {
+ 	.flags		= SH_CSI2_ECC | SH_CSI2_CRC,
+	.key = &csi2_r2025sd_key,
+};
 
-int v4l2_clk_enable(struct v4l2_clk *clk)
-{
-	struct v4l2_clk *tmp;
-	int ret = -ENODEV;
+For devicetree based devices the pointer to the subdevices devicenode
+could be used as key.
 
-	mutex_lock(&clk_lock);
-	list_for_each_entry(tmp, &clk_list, list)
-		if (tmp = clk) {
-			ret = !try_module_get(clk->ops->owner);
-			if (ret)
-				ret = -EFAULT;
-			break;
-		}
-	mutex_unlock(&clk_lock);
+I think this would make your matching code easier and also bus type
+agnostic.
 
-	if (ret < 0)
-		return ret;
+Sascha
 
-	...
-}
-
-We'd have to do a similar locked look-up in v4l2_clk_put().
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+-- 
+Pengutronix e.K.                           |                             |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
+Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
