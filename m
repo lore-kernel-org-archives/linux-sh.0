@@ -1,51 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Apr 2013 20:50:10 +0000
-Subject: [PATCH v2 05/11] ARM: mach-shmobile: clock-r8a7740: add TPU PWM support
-Message-Id: <1366836616-21475-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Apr 2013 16:27:42 +0000
+Subject: [PATCH 1/6] ARM: shmobile: armadillo800eva: remove left-overs
+Message-Id: <1366993667-23294-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms@verge.net.au>
+A comment and a #define in board-armadillo800eva.c have been left over
+after recent changes and are no longer relevant or needed, remove them.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    9 ---------
+ 1 files changed, 0 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index b12c476..6ad4640 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -461,7 +461,7 @@ enum {
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index ff04d1e..acfc267 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -673,15 +673,6 @@ static struct platform_device vcc_sdhi1 = {
+ };
  
- 	MSTP329, MSTP328, MSTP323, MSTP320,
- 	MSTP314, MSTP313, MSTP312,
--	MSTP309,
-+	MSTP309, MSTP304,
- 
- 	MSTP416, MSTP415, MSTP407, MSTP406,
- 
-@@ -499,6 +499,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 13, 0), /* SDHI1 */
- 	[MSTP312] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 12, 0), /* MMC */
- 	[MSTP309] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3,  9, 0), /* GEther */
-+	[MSTP304] = SH_CLK_MSTP32(&div4_clks[DIV4_CP],	SMSTPCR3,  4, 0), /* TPU0 */
- 
- 	[MSTP416] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 16, 0), /* USBHOST */
- 	[MSTP415] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 15, 0), /* SDHI2 */
-@@ -596,6 +597,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
- 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
-+	CLKDEV_DEV_ID("renesas_tpu_pwm",	&mstp_clks[MSTP304]),
- 
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
- 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
+ /* SDHI0 */
+-/*
+- * FIXME
+- *
+- * It use polling mode here, since
+- * CD (= Card Detect) pin is not connected to SDHI0_CD.
+- * We can use IRQ31 as card detect irq,
+- * but it needs chattering removal operation
+- */
+-#define IRQ31	irq_pin(31)
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
 -- 
-1.8.1.5
+1.7.2.5
 
