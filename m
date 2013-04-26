@@ -1,27 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 18 Apr 2013 14:25:11 +0000
-Subject: Re: [PATCH 3/4] ARM: shmobile: Marzen: add VIN and ADV7180 support
-Message-Id: <51700247.2000905@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Apr 2013 15:47:16 +0000
+Subject: [PATCH 0/3] mmc: sdhi / tmio: add DT DMA
+Message-Id: <1366991239-22602-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304180206.39465.sergei.shtylyov@cogentembedded.com>
- <201304180215.01218.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304180215.01218.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Samuel Ortiz <sameo@linux.intel.com>, Vinod Koul <vinod.koul@intel.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-On 18-04-2013 2:15, I wrote:
+These 3 patches add Device Tree DMA support to the TMIO MMC driver, when 
+used on SDHI platforms.
 
-> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Samuel: these patches touch an mfd header file lightly, I think, it's 
+better just to get your ack than to make a separate patch via your tree.
 
-> Add ADV7180 platform devices on the Marzen board, configure VIN1/3 pins, and
-> register VIN1/3 devices with the ADV7180 specific platform data.
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Guennadi Liakhovetski (3):
+  mmc: sdhi/tmio: make DMA filter implementation specific
+  mmc: sdhi/tmio: switch to using dmaengine_slave_config()
+  mmc: sdhi/tmio: add DT DMA support
 
-    I'm going to repost this patch recasted using a macro for camera sensor data.
+ drivers/mmc/host/sh_mobile_sdhi.c |   24 ++++++++++++------
+ drivers/mmc/host/tmio_mmc_dma.c   |   48 +++++++++++++++++++++++++++----------
+ include/linux/mfd/tmio.h          |    5 ++++
+ 3 files changed, 56 insertions(+), 21 deletions(-)
 
-WBR, Sergei
+-- 
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
