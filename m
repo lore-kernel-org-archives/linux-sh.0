@@ -1,102 +1,118 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 20 Apr 2013 20:36:01 +0000
-Subject: [PATCH 4/5] ARM: shmobile: BOCK-W: add VIN and ML86V7667 support
-Message-Id: <201304210036.02003.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Apr 2013 15:47:17 +0000
+Subject: [PATCH 1/3] mmc: sdhi/tmio: make DMA filter implementation specific
+Message-Id: <1366991239-22602-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304210013.46110.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304210013.46110.sergei.shtylyov@cogentembedded.com>
+References: <1366991239-22602-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1366991239-22602-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Samuel Ortiz <sameo@linux.intel.com>, Vinod Koul <vinod.koul@intel.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+So far only the SDHI implementation uses TMIO MMC with DMA. That way a DMA
+channel filter function, defined in the TMIO driver wasn't a problem.
+However, such a filter function is DMA controller specific. Since the SDHI
+glue is only running on systems with the SHDMA DMA controller, the filter
+function can safely be provided by it. Move it into SDHI.
 
-Add ML86V7667 platform devices on BOCK-W board, configure VIN0/1 pins, and
-register VIN0/1 devices with the ML86V7667 specific platform data.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: some macro/comment cleanup; updated the copyrights.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c |   40 +++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c |    9 +++++++++
+ drivers/mmc/host/tmio_mmc_dma.c   |   12 ++----------
+ include/linux/mfd/tmio.h          |    3 +++
+ 3 files changed, 14 insertions(+), 10 deletions(-)
 
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2013  Renesas Solutions Corp.
-  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -23,6 +24,8 @@
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-+#include <linux/pinctrl/machine.h>
-+#include <media/soc_camera.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7778.h>
-@@ -56,12 +59,41 @@ static struct resource smsc911x_resource
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index fe90853..e0088d7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -20,6 +20,7 @@
  
- static struct rcar_phy_platform_data usb_phy_platform_data;
+ #include <linux/kernel.h>
+ #include <linux/clk.h>
++#include <linux/dmaengine.h>
+ #include <linux/slab.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/module.h>
+@@ -124,6 +125,13 @@ static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+ 	mmc_detect_change(dev_get_drvdata(&pdev->dev), msecs_to_jiffies(100));
+ }
  
-+static struct rcar_vin_platform_data vin_platform_data = {
-+	.flags	= RCAR_VIN_BT656,
-+};
++static bool sh_mobile_sdhi_filter(struct dma_chan *chan, void *arg)
++{
++	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
++	chan->private = arg;
++	return true;
++}
 +
-+/* In the default configuration both decoders reside on I2C bus 0 */
-+#define BOCKW_CAMERA(idx)						\
-+static struct i2c_board_info camera##idx##_info = {			\
-+	I2C_BOARD_INFO("ml86v7667", 0x41 + 2 * (idx)),			\
-+};									\
-+									\
-+static struct soc_camera_link iclink##idx##_ml86v7667 = {		\
-+	.bus_id		= idx,						\
-+	.i2c_adapter_id	= 0,						\
-+	.board_info	= &camera##idx##_info,				\
-+};
+ static const struct sh_mobile_sdhi_ops sdhi_ops = {
+ 	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
+ };
+@@ -191,6 +199,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			priv->dma_priv.chan_priv_tx = &priv->param_tx.shdma_slave;
+ 			priv->dma_priv.chan_priv_rx = &priv->param_rx.shdma_slave;
+ 			priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
++			priv->dma_priv.filter = sh_mobile_sdhi_filter;
+ 			mmc_data->dma = &priv->dma_priv;
+ 		}
+ 	}
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index fff9286..dc4b10b 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -261,14 +261,6 @@ out:
+ 	spin_unlock_irq(&host->lock);
+ }
+ 
+-/* It might be necessary to make filter MFD specific */
+-static bool tmio_mmc_filter(struct dma_chan *chan, void *arg)
+-{
+-	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
+-	chan->private = arg;
+-	return true;
+-}
+-
+ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata)
+ {
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+@@ -281,7 +273,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		dma_cap_zero(mask);
+ 		dma_cap_set(DMA_SLAVE, mask);
+ 
+-		host->chan_tx = dma_request_channel(mask, tmio_mmc_filter,
++		host->chan_tx = dma_request_channel(mask, pdata->dma->filter,
+ 						    pdata->dma->chan_priv_tx);
+ 		dev_dbg(&host->pdev->dev, "%s: TX: got channel %p\n", __func__,
+ 			host->chan_tx);
+@@ -289,7 +281,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_tx)
+ 			return;
+ 
+-		host->chan_rx = dma_request_channel(mask, tmio_mmc_filter,
++		host->chan_rx = dma_request_channel(mask, pdata->dma->filter,
+ 						    pdata->dma->chan_priv_rx);
+ 		dev_dbg(&host->pdev->dev, "%s: RX: got channel %p\n", __func__,
+ 			host->chan_rx);
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 99bf3e66..0990d8a 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -81,10 +81,13 @@ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+ 
++struct dma_chan;
 +
-+BOCKW_CAMERA(0);
-+BOCKW_CAMERA(1);
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_data_a", "scif0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_ctrl", "scif0"),
-+	/* VIN0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.0", "pfc-r8a7778",
-+				  "vin0_clk", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.0", "pfc-r8a7778",
-+				  "vin0_data8", "vin0"),
-+	/* VIN1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7778",
-+				  "vin1_clk", "vin1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7778",
-+				  "vin1_data8", "vin1"),
+ struct tmio_mmc_dma {
+ 	void *chan_priv_tx;
+ 	void *chan_priv_rx;
+ 	int alignment_shift;
++	bool (*filter)(struct dma_chan *chan, void *arg);
  };
  
- #define FPGA	0x18200000
-@@ -74,6 +106,14 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
- 	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
-+	r8a7778_add_vin_device(0, &vin_platform_data);
-+	r8a7778_add_vin_device(1, &vin_platform_data);
-+	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 0,
-+				      &iclink0_ml86v7667,
-+				      sizeof(iclink0_ml86v7667));
-+	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 1,
-+				      &iclink1_ml86v7667,
-+				      sizeof(iclink1_ml86v7667));
- 
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
+ struct tmio_mmc_host;
+-- 
+1.7.2.5
+
