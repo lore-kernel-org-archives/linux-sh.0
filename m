@@ -1,19 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Apr 2013 01:47:27 +0000
-Subject: Re: [PATCH 0/6] ARM: shmobile: r8a7740: add MMCIF and SDHI to DT
-Message-Id: <20130430014727.GC22535@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 27 Apr 2013 20:44:24 +0000
+Subject: [PATCH] sh_eth: add R8A77781 support
+Message-Id: <201304280044.25139.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-On Fri, Apr 26, 2013 at 06:27:41PM +0200, Guennadi Liakhovetski wrote:
-> These patches add DT support for MMCIF and SDHI including DMA on 
-> armadillo800eva-reference r8a7740 board. They require my previous 
-> SHDMA DT and SDHI and MMCIF DMA patches.
+Add support for another ARM member of the R-Car family, R-Car M1A, also known as
+R8A77781 -- it will share the code with previously added R8A77790.
 
-Please repost once there is a branch or rc release that those patches
-have been merged into which I can base a branch on.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+This patch is for the 'net-next.git' repository but it may not be fit for
+immediate applying as R-Car M1A support will only be merged in 3.10-rc1...
+
+ drivers/net/ethernet/renesas/Kconfig  |    3 ++-
+ drivers/net/ethernet/renesas/sh_eth.c |    4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/Kconfig
+=================================--- net-next.orig/drivers/net/ethernet/renesas/Kconfig
++++ net-next/drivers/net/ethernet/renesas/Kconfig
+@@ -8,7 +8,8 @@ config SH_ETH
+ 		(CPU_SUBTYPE_SH7710 || CPU_SUBTYPE_SH7712 || \
+ 		 CPU_SUBTYPE_SH7763 || CPU_SUBTYPE_SH7619 || \
+ 		 CPU_SUBTYPE_SH7724 || CPU_SUBTYPE_SH7734 || \
+-		 CPU_SUBTYPE_SH7757 || ARCH_R8A7740 || ARCH_R8A7779)
++		 CPU_SUBTYPE_SH7757 || ARCH_R8A7740 || \
++		 ARCH_R8A7778 || ARCH_R8A7779)
+ 	select CRC32
+ 	select NET_CORE
+ 	select MII
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -342,7 +342,7 @@ static void sh_eth_select_mii(struct net
+ #endif
+ 
+ /* There is CPU dependent code */
+-#if defined(CONFIG_ARCH_R8A7779)
++#if defined(CONFIG_ARCH_R8A7778) || defined(CONFIG_ARCH_R8A7779)
+ #define SH_ETH_RESET_DEFAULT	1
+ static void sh_eth_set_duplex(struct net_device *ndev)
+ {
+@@ -370,7 +370,7 @@ static void sh_eth_set_rate(struct net_d
+ 	}
+ }
+ 
+-/* R8A7779 */
++/* R8A7778/9 */
+ static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
+ 	.set_duplex	= sh_eth_set_duplex,
+ 	.set_rate	= sh_eth_set_rate,
