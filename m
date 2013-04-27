@@ -1,77 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 03 Apr 2013 02:04:55 +0000
-Subject: [PATCH 17/28] sh-pfc: r8a73a4: Support sparse GPIO numbers
-Message-Id: <1364954706-14727-18-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 27 Apr 2013 22:48:11 +0000
+Subject: [PATCH] sh_eth: use random MAC address if no valid one supplied
+Message-Id: <201304280248.11893.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954706-14727-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Renesas R-Car based development boards, although a MAC address is printed on
+all the Ethernet port labels, U-Boot  doesn't write a valid MAC address  to the
+Ether MAHR/MALR registers (there's no storage provided for the Ether MAC address
+either), so we have to resort to using a random MAC address...
 
-The r8a73a4 SoC has sparse GPIO numbers. Declare ranges for pin numbers
-in the PFC SoC data. Pin numbers shall be used with the GPIO API from
-this point on.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    2 +-
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c          |   16 ++++++++++++++++
- 2 files changed, 17 insertions(+), 1 deletion(-)
+This patch is against the 'net-next.git' repository.
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a73a4.h b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-index f0b1b4a..2d4af4a 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-@@ -86,7 +86,7 @@ enum {
- 	GPIO_PORT325, GPIO_PORT326, GPIO_PORT327, GPIO_PORT328, GPIO_PORT329,
- 
- 	/* Port0 */
--	GPIO_FN_LCDD0,
-+	GPIO_FN_LCDD0 = 330,
- 	GPIO_FN_PDM2_CLK_0,
- 	GPIO_FN_DU0_DR0,
- 	GPIO_FN_IRQ0,
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-index 47d75d5..5dd68fb9 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-@@ -1424,6 +1424,20 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 	GPIO_PORT_ALL(),
- };
- 
-+static const struct pinmux_range pinmux_ranges[] = {
-+	{.begin = 0, .end = 30,},
-+	{.begin = 32, .end = 40,},
-+	{.begin = 64, .end = 85,},
-+	{.begin = 96, .end = 126,},
-+	{.begin = 128, .end = 134,},
-+	{.begin = 160, .end = 178,},
-+	{.begin = 192, .end = 222,},
-+	{.begin = 224, .end = 250,},
-+	{.begin = 256, .end = 283,},
-+	{.begin = 288, .end = 308,},
-+	{.begin = 320, .end = 329,},
-+};
-+
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
- 
- static const struct pinmux_func pinmux_func_gpios[] = {
-@@ -2815,6 +2829,8 @@ const struct sh_pfc_soc_info r8a73a4_pinmux_info = {
- 
- 	.pins = pinmux_pins,
- 	.nr_pins = ARRAY_SIZE(pinmux_pins),
-+	.ranges = pinmux_ranges,
-+	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
- 	.func_gpios = pinmux_func_gpios,
- 	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
- 
--- 
-1.7.10.4
+ drivers/net/ethernet/renesas/sh_eth.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2735,6 +2735,11 @@ static int sh_eth_drv_probe(struct platf
+ 
+ 	/* read and set MAC address */
+ 	read_mac_address(ndev, pd->mac_addr);
++	if (!is_valid_ether_addr(ndev->dev_addr)) {
++		dev_warn(&pdev->dev, "no valid MAC address supplied, using "
++			 "a random one.\n");
++		eth_hw_addr_random(ndev);
++	}
+ 
+ 	/* ioremap the TSU registers */
+ 	if (mdp->cd->tsu) {
