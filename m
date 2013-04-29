@@ -1,141 +1,82 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Apr 2013 15:40:34 +0000
-Subject: [PATCH v9 14/20] sh-mobile-ceu-camera: add primitive OF support
-Message-Id: <1365781240-16149-15-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 29 Apr 2013 22:37:50 +0000
+Subject: [PATCH] ARM: shmobile: BOCK-W: add Ether support
+Message-Id: <201304300237.50896.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Add an OF hook to sh_mobile_ceu_camera.c, no properties so far. Booting
-with DT also requires platform data to be optional.
+Register Ether device from bockw_init(), passing the platform data to it, adding
+only the RMII pin group to bockw_pinctrl_map[].  Although the LINK signal exists
+on the board, it's connected to the link/activity LED  output of the PHY, thus
+the link disappears and reappears after each packet. We'd be better off ignoring
+such signal and getting the link state from the PHY indirectly.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Also, Ether has pin conflict with VIN1, so the latter is not registered when the
+'sh_eth' driver is enabled now.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |   33 ++++++++++++++------
- 1 files changed, 23 insertions(+), 10 deletions(-)
+The patch is atop of Simon Horman's 'renesas.git' repo, 'renesas-next-20130426'
+tag and my recent yet unapplied patches.
 
-diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-index 9037472..fcc13d8 100644
---- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-+++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-@@ -27,6 +27,7 @@
- #include <linux/kernel.h>
- #include <linux/mm.h>
- #include <linux/moduleparam.h>
-+#include <linux/of.h>
- #include <linux/time.h>
- #include <linux/slab.h>
- #include <linux/device.h>
-@@ -118,6 +119,7 @@ struct sh_mobile_ceu_dev {
+Note that it's compile time dependent on the David Miller's 'net-next.git' repo,
+so probably is not fit for immediate applying. One also needs my  yet unmerged
+patch "sh_eth: use random MAC address if no valid one supplied" in order for the
+driver to work:
+
+http://marc.info/?l=linux-sh&m6726502117160
+
+ arch/arm/mach-shmobile/board-bockw.c |   22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -67,6 +67,20 @@ static struct sh_mobile_sdhi_info sdhi0_
  
- 	enum v4l2_field field;
- 	int sequence;
-+	unsigned long flags;
+ static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
  
- 	unsigned int image_mode:1;
- 	unsigned int is_16bit:1;
-@@ -706,7 +708,7 @@ static void sh_mobile_ceu_set_rect(struct soc_camera_device *icd)
- 	}
- 
- 	/* CSI2 special configuration */
--	if (pcdev->pdata->csi2) {
-+	if (pcdev->csi2_pdev) {
- 		in_width = ((in_width - 2) * 2);
- 		left_offset *= 2;
- 	}
-@@ -810,7 +812,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
- 	/* Make choises, based on platform preferences */
- 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
--		if (pcdev->pdata->flags & SH_CEU_FLAG_HSYNC_LOW)
-+		if (pcdev->flags & SH_CEU_FLAG_HSYNC_LOW)
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
-@@ -818,7 +820,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
- 
- 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
--		if (pcdev->pdata->flags & SH_CEU_FLAG_VSYNC_LOW)
-+		if (pcdev->flags & SH_CEU_FLAG_VSYNC_LOW)
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
-@@ -873,11 +875,11 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
- 	value |= common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW ? 1 << 1 : 0;
- 	value |= common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW ? 1 << 0 : 0;
- 
--	if (pcdev->pdata->csi2) /* CSI2 mode */
-+	if (pcdev->csi2_pdev) /* CSI2 mode */
- 		value |= 3 << 12;
- 	else if (pcdev->is_16bit)
- 		value |= 1 << 12;
--	else if (pcdev->pdata->flags & SH_CEU_FLAG_LOWER_8BIT)
-+	else if (pcdev->flags & SH_CEU_FLAG_LOWER_8BIT)
- 		value |= 2 << 12;
- 
- 	ceu_write(pcdev, CAMCR, value);
-@@ -1052,7 +1054,7 @@ static int sh_mobile_ceu_get_formats(struct soc_camera_device *icd, unsigned int
- 		return 0;
- 	}
- 
--	if (!pcdev->pdata->csi2) {
-+	if (!pcdev->pdata || !pcdev->pdata->csi2) {
- 		/* Are there any restrictions in the CSI-2 case? */
- 		ret = sh_mobile_ceu_try_bus_param(icd, fmt->bits_per_sample);
- 		if (ret < 0)
-@@ -2107,13 +2109,17 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
- 	init_completion(&pcdev->complete);
- 
- 	pcdev->pdata = pdev->dev.platform_data;
--	if (!pcdev->pdata) {
-+	if (!pcdev->pdata && !pdev->dev.of_node) {
- 		dev_err(&pdev->dev, "CEU platform data not set.\n");
- 		return -EINVAL;
- 	}
- 
--	pcdev->max_width = pcdev->pdata->max_width ? : 2560;
--	pcdev->max_height = pcdev->pdata->max_height ? : 1920;
-+	/* TODO: implement per-device bus flags */
-+	if (pcdev->pdata) {
-+		pcdev->max_width = pcdev->pdata->max_width ? : 2560;
-+		pcdev->max_height = pcdev->pdata->max_height ? : 1920;
-+		pcdev->flags = pcdev->pdata->flags;
-+	}
- 
- 	base = devm_ioremap_resource(&pdev->dev, res);
- 	if (IS_ERR(base))
-@@ -2168,7 +2174,7 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
- 		goto exit_free_ctx;
- 
- 	/* CSI2 interfacing */
--	csi2 = pcdev->pdata->csi2;
-+	csi2 = pcdev->pdata ? pcdev->pdata->csi2 : NULL;
- 	if (csi2) {
- 		struct platform_device *csi2_pdev  			platform_device_alloc("sh-mobile-csi2", csi2->id);
-@@ -2290,10 +2296,17 @@ static const struct dev_pm_ops sh_mobile_ceu_dev_pm_ops = {
- 	.runtime_resume = sh_mobile_ceu_runtime_nop,
- };
- 
-+static const struct of_device_id sh_mobile_ceu_of_match[] = {
-+	{ .compatible = "renesas,sh-mobile-ceu" },
-+	{ }
++static struct sh_eth_plat_data ether_platform_data __initdata = {
++	.phy		= 0x01,
++	.edmac_endian	= EDMAC_LITTLE_ENDIAN,
++	.register_type	= SH_ETH_REG_FAST_RCAR,
++	.phy_interface	= PHY_INTERFACE_MODE_RMII,
++	/*
++	 * Although the LINK signal is available on the board, it's connected to
++	 * the link/activity LED output of the PHY, thus the link disappears and
++	 * reappears after each packet.  We'd be better off ignoring such signal
++	 * and getting the link state from the PHY indirectly.
++	 */
++	.no_ether_link	= 1,
 +};
-+MODULE_DEVICE_TABLE(of, sh_mobile_ceu_of_match);
 +
- static struct platform_driver sh_mobile_ceu_driver = {
- 	.driver		= {
- 		.name	= "sh_mobile_ceu",
- 		.pm	= &sh_mobile_ceu_dev_pm_ops,
-+		.of_match_table = sh_mobile_ceu_of_match,
- 	},
- 	.probe		= sh_mobile_ceu_probe,
- 	.remove		= sh_mobile_ceu_remove,
--- 
-1.7.2.5
-
+ static struct rcar_vin_platform_data vin_platform_data __initdata = {
+ 	.flags	= RCAR_VIN_BT656,
+ };
+@@ -87,6 +101,9 @@ BOCKW_CAMERA(0);
+ BOCKW_CAMERA(1);
+ 
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
++	/* Ether */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
++				  "ether_rmii", "ether"),
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+ 				  "scif0_data_a", "scif0"),
+@@ -125,8 +142,11 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
++	r8a7778_add_ether_device(&ether_platform_data);
+ 	r8a7778_add_vin_device(0, &vin_platform_data);
+-	r8a7778_add_vin_device(1, &vin_platform_data);
++	/* VIN1 has a pin conflict with Ether */
++	if (!IS_ENABLED(CONFIG_SH_ETH))
++		r8a7778_add_vin_device(1, &vin_platform_data);
+ 	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 0,
+ 				      &iclink0_ml86v7667,
+ 				      sizeof(iclink0_ml86v7667));
