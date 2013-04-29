@@ -1,43 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 23:02:26 +0000
-Subject: [PATCH 23/35] ARM: shmobile: ap4evb: Register pinctrl mapping for CEU
-Message-Id: <1366671758-8954-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 29 Apr 2013 11:12:24 +0000
+Subject: [PATCH v3 3/4] ARM: shmobile: kzm9g: Remove the VCCQ MC0 function GPIO
+Message-Id: <1367233945-20630-4-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based CEU pinmux configuration by a pinctrl mapping.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The VCCQ MC0 power gate is now controlled by a regulator registered by
+the PFC driver. Remove the corresponding function GPIO.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 45f78ca..f42e731 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1086,6 +1086,9 @@ static struct i2c_board_info i2c1_devices[] = {
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index e2d3324..3e54505 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -784,9 +784,6 @@ static void __init kzm_init(void)
+ 	/* Touchscreen */
+ 	gpio_request_one(223, GPIOF_IN, NULL); /* IRQ8 */
  
- 
- static const struct pinctrl_map ap4evb_pinctrl_map[] = {
-+	/* CEU */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
-+				  "ceu_clk_0", "ceu"),
- 	/* MMCIF */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
- 				  "mmc0_data8_0", "mmc0"),
-@@ -1288,8 +1291,6 @@ static void __init ap4evb_init(void)
- 	 */
- 
- 	/* MIPI-CSI stuff */
--	gpio_request(GPIO_FN_VIO_CKO, NULL);
+-	/* enable SD */
+-	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
 -
- 	clk = clk_get(NULL, "vck1_clk");
- 	if (!IS_ERR(clk)) {
- 		clk_set_rate(clk, clk_round_rate(clk, 13000000));
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 -- 
 1.8.1.5
 
