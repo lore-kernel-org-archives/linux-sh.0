@@ -1,60 +1,77 @@
 From: Sascha Hauer <s.hauer@pengutronix.de>
-Date: Mon, 29 Apr 2013 10:01:05 +0000
+Date: Tue, 30 Apr 2013 13:53:01 +0000
 Subject: Re: [PATCH v9 02/20] V4L2: support asynchronous subdevice registration
-Message-Id: <20130429100105.GH32299@pengutronix.de>
+Message-Id: <20130430135301.GD16843@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
  <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
- <20130426084422.GB16843@pengutronix.de>
- <Pine.LNX.4.64.1304262302500.5698@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304262302500.5698@axis700.grange>
+In-Reply-To: <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: linux-media@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-On Fri, Apr 26, 2013 at 11:07:24PM +0200, Guennadi Liakhovetski wrote:
-> Hi Sascha
-> 
-> On Fri, 26 Apr 2013, Sascha Hauer wrote:
-> 
-> > Hi Guennadi,
-> > 
-> > On Fri, Apr 12, 2013 at 05:40:22PM +0200, Guennadi Liakhovetski wrote:
-> > > +
-> > > +static bool match_i2c(struct device *dev, struct v4l2_async_hw_info *hw_dev)
-> > > +{
-> > > +	struct i2c_client *client = i2c_verify_client(dev);
-> > > +	return client &&
-> > > +		hw_dev->bus_type = V4L2_ASYNC_BUS_I2C &&
-> > > +		hw_dev->match.i2c.adapter_id = client->adapter->nr &&
-> > > +		hw_dev->match.i2c.address = client->addr;
-> > > +}
-> > > +
-> > > +static bool match_platform(struct device *dev, struct v4l2_async_hw_info *hw_dev)
-> > > +{
-> > > +	return hw_dev->bus_type = V4L2_ASYNC_BUS_PLATFORM &&
-> > > +		!strcmp(hw_dev->match.platform.name, dev_name(dev));
-> > > +}
-> > 
-> > I recently solved the same problem without being aware of your series.
-> > 
-> > How about registering the asynchronous subdevices with a 'void *key'
-> > instead of a bus specific matching function?
-> 
-> Personally I don't think adding dummy data is a good idea. You can of 
-> course use pointers to real data, even just to the device object itself. 
-> But I really was trying to unbind host and subdevice devices, similar how 
-> clocks or pinmux entries or regulators are matched to their users. In the 
-> DT case we already use phandles to bind entities / pads / in whatever 
-> terms you prefer to think;-)
+Hi Guennadi,
 
-Do you have some preview patches for doing asynchronous subdevice
-registration with devicetree? I mean this series and the v4l2 of parser
-patches are not enough for the whole picture, right?
+On Fri, Apr 12, 2013 at 05:40:22PM +0200, Guennadi Liakhovetski wrote:
+> Currently bridge device drivers register devices for all subdevices
+> synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor
+> is attached to a video bridge device, the bridge driver will create an I2C
+> device and wait for the respective I2C driver to probe. This makes linking
+> of devices straight forward, but this approach cannot be used with
+> intrinsically asynchronous and unordered device registration systems like
+> the Flattened Device Tree. To support such systems this patch adds an
+> asynchronous subdevice registration framework to V4L2. To use it respective
+> (e.g. I2C) subdevice drivers must register themselves with the framework.
+> A bridge driver on the other hand must register notification callbacks,
+> that will be called upon various related events.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+> +
+> +static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
+> +						    struct v4l2_async_subdev_list *asdl)
+> +{
+> +	struct v4l2_subdev *sd = v4l2_async_to_subdev(asdl);
+> +	struct v4l2_async_subdev *asd = NULL;
+> +	bool (*match)(struct device *,
+> +		      struct v4l2_async_hw_info *);
+> +
+> +	list_for_each_entry (asd, &notifier->waiting, list) {
+> +		struct v4l2_async_hw_info *hw = &asd->hw;
+> +
+> +		/* bus_type has been verified valid before */
+> +		switch (hw->bus_type) {
+> +		case V4L2_ASYNC_BUS_CUSTOM:
+> +			match = hw->match.custom.match;
+> +			if (!match)
+> +				/* Match always */
+> +				return asd;
+> +			break;
+> +		case V4L2_ASYNC_BUS_PLATFORM:
+> +			match = match_platform;
+> +			break;
+> +		case V4L2_ASYNC_BUS_I2C:
+> +			match = match_i2c;
+> +			break;
+> +		default:
+> +			/* Cannot happen, unless someone breaks us */
+> +			WARN_ON(true);
+> +			return NULL;
+> +		}
+> +
+> +		if (match && match(sd->dev, hw))
+> +			break;
+> +	}
+> +
+> +	return asd;
+
+'asd' can never be NULL here. You have to explicitly return NULL when
+leaving the loop without match.
 
 Sascha
+
 
 -- 
 Pengutronix e.K.                           |                             |
