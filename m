@@ -1,129 +1,194 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Apr 2013 05:06:58 +0000
-Subject: [PATCH 02/30] ARM: shmobile: r8a73a4 SCIF support V3
-Message-Id: <1364879246-9470-3-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 30 Apr 2013 23:11:15 +0000
+Subject: [PATCH v6 1/3] rcar-phy: add R8A7778 support
+Message-Id: <201305010311.16062.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364879246-9470-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The driver currently only supports R8A7779 SoC. Compared to it, R8A7778 USB-PHY
+has extra register range containing two high-speed signal quality characteristic
+control registers which should be set up  during USB-PHY  startup depending on
+whether a ferrite bead is in use or not.  So, we now handle an optional second
+memory range in the driver's probe method, add the 'ferrite_bead' field to the
+driver's platform data, and add an extra (optional) step to the USB-PHY startup
+routine which sets up the extended registers.
 
-V3 of SCIF serial port support for the r8a73a4 SoC.
-This is done by adding platform devices for SCIFA0
--> SCIFA1 as well as SCIFB0 -> SCIFB3 together with
-clock bindings. DT device description is excluded at
-this point since such bindings are still under
-development.
+Also mark in the driver's Kconfig section  that R8A7778 is  now supported and
+generally clarify that section, uppercasing the word "phy", while at it... 
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The patch has been tested on the Marzen and BOCK-W boards.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Felipe Balbi <balbi@ti.com>
+
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c |   15 ++++++++++-
- arch/arm/mach-shmobile/setup-r8a73a4.c |   43 ++++++++++++++++++++++++++++++++
- 2 files changed, 57 insertions(+), 1 deletion(-)
+Changes since version 5:
+- renamed the header file into <linux/platform_data/usb-rcar-phy.h>.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 15d479d..037713b 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -28,6 +28,7 @@
- #define CPG_LEN 0x270
+Changes since version 3:
+- removed stray debugging printk() call.
+
+Changes since version 2:
+- moved 'ferrite_bead' bitfield to the start of 'struct rcar_phy_platform_data'
+  which allowed to cut the size of the structure from 8 bytes back to 4;
+- added a comment about only 2 USB ports on R8A7778'
+- added an ACK from Felipe Balbi.
+
+Changes since the original posting:
+- made the necessary changes atop of the R8A7779/Marzen pathset version 4.
+
+ drivers/usb/phy/Kconfig                    |    8 +++---
+ drivers/usb/phy/rcar-phy.c                 |   37 ++++++++++++++++++++++++-----
+ include/linux/platform_data/usb-rcar-phy.h |    4 ++-
+ 3 files changed, 38 insertions(+), 11 deletions(-)
+
+Index: renesas/drivers/usb/phy/Kconfig
+=================================--- renesas.orig/drivers/usb/phy/Kconfig
++++ renesas/drivers/usb/phy/Kconfig
+@@ -55,13 +55,13 @@ config MV_U3D_PHY
+ 	  SoC.
  
- #define MPCKCR 0xe6150080
-+#define SMSTPCR2 0xe6150138
+ config USB_RCAR_PHY
+-	tristate "Renesas R-Car USB phy support"
++	tristate "Renesas R-Car USB PHY support"
+ 	depends on USB || USB_GADGET
+ 	select USB_OTG_UTILS
+ 	help
+-	  Say Y here to add support for the Renesas R-Car USB phy driver.
+-	  This chip is typically used as USB phy for USB host, gadget.
+-	  This driver supports: R8A7779
++	  Say Y here to add support for the Renesas R-Car USB common PHY driver.
++	  This device is typically used as USB PHY for USB host, gadget.
++	  This driver supports R8A7778 and R8A7779.
  
- static struct clk_mapping cpg_mapping = {
- 	.phys   = CPG_BASE,
-@@ -55,11 +56,23 @@ static struct clk *main_clks[] = {
- 	&extal2_clk,
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called rcar-phy.
+Index: renesas/drivers/usb/phy/rcar-phy.c
+=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
++++ renesas/drivers/usb/phy/rcar-phy.c
+@@ -26,15 +26,21 @@
+ #define USBOH0		0x1C
+ #define USBCTL0		0x58
+ 
++/* High-speed signal quality characteristic control registers (R8A7778 only) */
++#define HSQCTL1		0x24
++#define HSQCTL2		0x28
++
+ /* USBPCTRL0 */
+-#define OVC2		(1 << 10) /* Switches the OVC input pin for port 2: */
++#define OVC2		(1 << 10) /* (R8A7779 only)			*/
++				/* Switches the OVC input pin for port 2: */
+ 				/* 1: USB_OVC2, 0: OVC2			*/
+ #define OVC1_VBUS1	(1 << 9) /* Switches the OVC input pin for port 1: */
+ 				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
+ 				/* Function mode: set to 0		*/
+ #define OVC0		(1 << 8) /* Switches the OVC input pin for port 0: */
+ 				/* 1: USB_OVC0 pin, 0: OVC0		*/
+-#define OVC2_ACT 	(1 << 6) /* Host mode: OVC2 polarity:		*/
++#define OVC2_ACT 	(1 << 6) /* (R8A7779 only)			*/
++				/* Host mode: OVC2 polarity:		*/
+ 				/* 1: active-high, 0: active-low	*/
+ #define PENC		(1 << 4) /* Function mode: output level of PENC1 pin: */
+ 				/* 1: high, 0: low			*/
+@@ -59,6 +65,7 @@ struct rcar_usb_phy_priv {
+ 	spinlock_t lock;
+ 
+ 	void __iomem *reg0;
++	void __iomem *reg1;
+ 	int counter;
  };
  
--enum { MSTP_NR };
-+enum { MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP_NR };
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP204] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
-+	[MSTP203] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
-+	[MSTP206] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
-+	[MSTP207] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
-+	[MSTP216] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
-+	[MSTP217] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 17, 0), /* SCIFB3 */
- };
+@@ -78,6 +85,7 @@ static int rcar_usb_phy_init(struct usb_
+ 	struct device *dev = phy->dev;
+ 	struct rcar_phy_platform_data *pdata = dev->platform_data;
+ 	void __iomem *reg0 = priv->reg0;
++	void __iomem *reg1 = priv->reg1;
+ 	const u8 ovcn_act[] = { OVC0_ACT, OVC1_ACT, OVC2_ACT };
+ 	int i;
+ 	u32 val;
+@@ -96,7 +104,16 @@ static int rcar_usb_phy_init(struct usb_
+ 		/* (2) start USB-PHY internal PLL */
+ 		iowrite32(PHY_ENB | PLL_ENB, (reg0 + USBPCTRL1));
  
- static struct clk_lookup lookups[] = {
-+	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
-+	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
-+	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
-+	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
-+	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
-+	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
- };
+-		/* (3) USB module status check */
++		/* (3) set USB-PHY in accord with the conditions of usage */
++		if (reg1) {
++			u32 hsqctl1 = pdata->ferrite_bead ? 0x41 : 0;
++			u32 hsqctl2 = pdata->ferrite_bead ? 0x0d : 7;
++
++			iowrite32(hsqctl1, reg1 + HSQCTL1);
++			iowrite32(hsqctl2, reg1 + HSQCTL2);
++		}
++
++		/* (4) USB module status check */
+ 		for (i = 0; i < 1024; i++) {
+ 			udelay(10);
+ 			val = ioread32(reg0 + USBST);
+@@ -109,7 +126,7 @@ static int rcar_usb_phy_init(struct usb_
+ 			goto phy_init_end;
+ 		}
  
- void __init r8a73a4_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 69156bc..746a3dc 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -21,13 +21,56 @@
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <linux/serial_sci.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a73a4.h>
- #include <asm/mach/arch.h>
+-		/* (4) USB-PHY reset clear */
++		/* (5) USB-PHY reset clear */
+ 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
  
-+#define SCIF_COMMON(scif_type, baseaddr, irq)			\
-+	.type		= scif_type,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,				\
-+	.irqs		= SCIx_IRQ_MUXED(irq)
-+
-+#define SCIFA_DATA(index, baseaddr, irq)		\
-+[index] = {						\
-+	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
-+	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
-+}
-+
-+#define SCIFB_DATA(index, baseaddr, irq)	\
-+[index] = {					\
-+	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
-+	.scscr = SCSCR_RE | SCSCR_TE,		\
-+}
-+
-+enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFB3 };
-+
-+static const struct plat_sci_port scif[] = {
-+	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
-+	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
-+	SCIFB_DATA(SCIFB0, 0xe6c50000, gic_spi(145)), /* SCIFB0 */
-+	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
-+	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
-+	SCIFB_DATA(SCIFB3, 0xe6cf0000, gic_spi(151)), /* SCIFB3 */
-+};
-+
-+static inline void r8a73a4_register_scif(int idx)
-+{
-+	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
-+				      sizeof(struct plat_sci_port));
-+}
-+
- void __init r8a73a4_add_standard_devices(void)
+ 		/* Board specific port settings */
+@@ -162,9 +179,9 @@ static void rcar_usb_phy_shutdown(struct
+ static int rcar_usb_phy_probe(struct platform_device *pdev)
  {
-+	r8a73a4_register_scif(SCIFA0);
-+	r8a73a4_register_scif(SCIFA1);
-+	r8a73a4_register_scif(SCIFB0);
-+	r8a73a4_register_scif(SCIFB1);
-+	r8a73a4_register_scif(SCIFB2);
-+	r8a73a4_register_scif(SCIFB3);
- }
+ 	struct rcar_usb_phy_priv *priv;
+-	struct resource *res0;
++	struct resource *res0, *res1;
+ 	struct device *dev = &pdev->dev;
+-	void __iomem *reg0;
++	void __iomem *reg0, *reg1 = NULL;
+ 	int ret;
  
- #ifdef CONFIG_USE_OF
--- 
-1.7.10.4
+ 	if (!pdev->dev.platform_data) {
+@@ -182,6 +199,13 @@ static int rcar_usb_phy_probe(struct pla
+ 	if (IS_ERR(reg0))
+ 		return PTR_ERR(reg0);
+ 
++	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (res1) {
++		reg1 = devm_ioremap_resource(dev, res1);
++		if (IS_ERR(reg1))
++			return PTR_ERR(reg1);
++	}
++
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv) {
+ 		dev_err(dev, "priv data allocation error\n");
+@@ -189,6 +213,7 @@ static int rcar_usb_phy_probe(struct pla
+ 	}
+ 
+ 	priv->reg0		= reg0;
++	priv->reg1		= reg1;
+ 	priv->counter		= 0;
+ 	priv->phy.dev		= dev;
+ 	priv->phy.label		= dev_name(dev);
+Index: renesas/include/linux/platform_data/usb-rcar-phy.h
+=================================--- renesas.orig/include/linux/platform_data/usb-rcar-phy.h
++++ renesas/include/linux/platform_data/usb-rcar-phy.h
+@@ -13,6 +13,8 @@
+ #include <linux/types.h>
+ 
+ struct rcar_phy_platform_data {
++	bool ferrite_bead:1;	/* (R8A7778 only)			*/
++
+ 	bool port1_func:1;	/* true: port 1 used by function, false: host */
+ 	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
+ 	struct {		/* Overcurrent pin control for ports 0..2 */
+@@ -20,7 +22,7 @@ struct rcar_phy_platform_data {
+ 				/* Set to false on port 1 in function mode */
+ 		bool active_high:1; /* true: active  high, false: active low */
+ 				/* Set to true  on port 1 in function mode */
+-	} ovc_pin[3];
++	} ovc_pin[3];		/* (R8A7778 only has 2 ports)		*/
+ };
+ 
+ #endif /* __USB_RCAR_PHY_H */
 
