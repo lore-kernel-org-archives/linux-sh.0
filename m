@@ -1,44 +1,19 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 26 Apr 2013 16:27:41 +0000
-Subject: [PATCH 0/6] ARM: shmobile: r8a7740: add MMCIF and SDHI to DT
-Message-Id: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 30 Apr 2013 01:47:27 +0000
+Subject: Re: [PATCH 0/6] ARM: shmobile: r8a7740: add MMCIF and SDHI to DT
+Message-Id: <20130430014727.GC22535@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1366993667-23294-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-These patches add DT support for MMCIF and SDHI including DMA on 
-armadillo800eva-reference r8a7740 board. They require my previous 
-SHDMA DT and SDHI and MMCIF DMA patches.
+On Fri, Apr 26, 2013 at 06:27:41PM +0200, Guennadi Liakhovetski wrote:
+> These patches add DT support for MMCIF and SDHI including DMA on 
+> armadillo800eva-reference r8a7740 board. They require my previous 
+> SHDMA DT and SDHI and MMCIF DMA patches.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-
-Guennadi Liakhovetski (6):
-  ARM: shmobile: armadillo800eva: remove left-overs
-  ARM: shmobile: add SDHI and MMCIF interfaces to
-    armadillo800eva-reference
-  ARM: shmobile: sh73a0: remove "0x" prefix from DT node names
-  ARM: shmobile: r8a7740: add MMCIF DMA definitions
-  ARM: shmobile: r8a7740: add DT node for one DMAC instance
-  ARM: shmobile: armadillo800eva-reference: add DMA support for MMCIF
-    and SDHI
-
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   30 +++++++++++-
- arch/arm/boot/dts/r8a7740.dtsi                     |   53 ++++++++++++++++++++
- arch/arm/boot/dts/sh73a0.dtsi                      |   18 +++---
- .../board-armadillo800eva-reference.c              |   36 +++++++++++++-
- arch/arm/mach-shmobile/board-armadillo800eva.c     |    9 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h      |    2 +
- arch/arm/mach-shmobile/setup-r8a7740.c             |   12 +++++
- 7 files changed, 140 insertions(+), 20 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Please repost once there is a branch or rc release that those patches
+have been merged into which I can base a branch on.
