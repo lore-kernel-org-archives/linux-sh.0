@@ -1,72 +1,124 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 11 Apr 2013 08:15:01 +0000
-Subject: [PATCH 2/2] ARM: shmobile: force enable of r8a7790 arch timer
-Message-Id: <1365668101-21723-3-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 30 Apr 2013 07:11:22 +0000
+Subject: [PATCH 3/4] ARM: shmobile: move r8a7740 DMA controller DT node under a "dma-mux" node
+Message-Id: <1367305883-2997-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
+References: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1367305883-2997-1-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Vinod Koul <vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Magnus Damm <damm@opensource.se>
+On r8a7740 multiple DMA controllers can serve the same slaves with the
+same DMA slave IDs. To use this feature DMA controller DT nodes have
+to be grouped under "dma-mux" multiplexer nodes and slaves have to be
+modified to reference multiplexer nodes instead of individual DMA DT
+nodes. Future patches shall add further DMA controller DT nodes under
+the same DMA multiplexer DT node.
 
-Implement a SoC-specific timer init function for
-r8a7790 that makes sure the architected timer
-is started regardless of boot loader setting.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7790.c        |   14 +++++++++++++-
- 2 files changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 9bd6f5c..2e919e6 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -4,5 +4,6 @@
- void r8a7790_add_standard_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
-+void r8a7790_timer_init(void);
+Applies on top of my earlier "ARM: shmobile: r8a7740: add DT node for one 
+DMAC instance" patch still under review.
+
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   12 +++---
+ arch/arm/boot/dts/r8a7740.dtsi                     |   43 +++++++++++--------
+ 2 files changed, 31 insertions(+), 24 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index c201445..1983d49 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -47,8 +47,8 @@
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <8>;
+ 	non-removable;
+-	dmas = <&dma0 0xd1
+-		&dma0 0xd2>;
++	dmas = <&dmac 0xd1
++		&dmac 0xd2>;
+ 	dma-names = "tx", "rx";
+ 	status = "okay";
+ };
+@@ -57,8 +57,8 @@
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <4>;
+ 	broken-cd;
+-	dmas = <&dma0 0xc1
+-		&dma0 0xc2>;
++	dmas = <&dmac 0xc1
++		&dmac 0xc2>;
+ 	dma-names = "tx", "rx";
+ 	status = "okay";
+ };
+@@ -66,8 +66,8 @@
+ &sdhi1 {
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <4>;
+-	dmas = <&dma0 0xc9
+-		&dma0 0xca>;
++	dmas = <&dmac 0xc9
++		&dmac 0xca>;
+ 	dma-names = "tx", "rx";
+ 	status = "okay";
+ };
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 054bc1a..965ca4c 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -112,24 +112,31 @@
+ 			      0 149 0x4>;
+ 	};
  
- #endif /* __ASM_R8A7790_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index cfccf6c..49de2d5 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -118,6 +118,18 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_irqc(0);
- }
+-	dma0: shdma@fe008020 {
+-		compatible = "renesas,shdma";
+-		reg = <0xfe008020 0x270
+-			0xfe009000 0xc>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 34 4
+-				0 28 4
+-				0 29 4
+-				0 30 4
+-				0 31 4
+-				0 32 4
+-				0 33 4>;
+-		interrupt-names = "error",
+-				"ch0", "ch1", "ch2", "ch3",
+-				"ch4", "ch5";
+-		#dma-cells = <1>;
+-		dma-channels = <6>;
+-		dma-requests = <256>;
++	dmac: dma-mux0 {
++		compatible = "simple-bus", "dma-mux";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		dma0: shdma@fe008020 {
++			compatible = "renesas,shdma";
++			reg = <0xfe008020 0x270>,
++				<0xfe009000 0xc>;
++			interrupt-parent = <&gic>;
++			interrupts = <0 34 4
++					0 28 4
++					0 29 4
++					0 30 4
++					0 31 4
++					0 32 4
++					0 33 4>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5";
++			#dma-cells = <1>;
++			dma-channels = <6>;
++			dma-requests = <256>;
++		};
+ 	};
  
-+void __init r8a7790_timer_init(void)
-+{
-+	void __iomem *cntcr;
-+
-+	/* make sure arch timer is started by setting bit 0 of CNTCT */
-+	cntcr = ioremap(0xe6080000, PAGE_SIZE);
-+	iowrite32(1, cntcr);
-+	iounmap(cntcr);
-+
-+	shmobile_timer_init();
-+}
-+
- #ifdef CONFIG_USE_OF
- void __init r8a7790_add_standard_devices_dt(void)
- {
-@@ -132,7 +144,7 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
- 	.init_irq	= irqchip_init,
- 	.init_machine	= r8a7790_add_standard_devices_dt,
--	.init_time	= shmobile_timer_init,
-+	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= r8a7790_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
+ 	i2c0: i2c@fff20000 {
 -- 
-1.7.10.4
+1.7.2.5
 
