@@ -1,73 +1,152 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Apr 2013 11:07:04 +0000
-Subject: [PATCH v7 0/7] V4L2 clock and async patches and soc-camera example
-Message-Id: <1365419231-14830-1-git-send-email-g.liakhovetski@gmx.de>
+Date: Tue, 30 Apr 2013 07:11:21 +0000
+Subject: [PATCH 2/4] dmaengine: add support for DMA multiplexer DT nodes
+Message-Id: <1367305883-2997-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Vinod Koul <vinod.koul@intel.com>, Tony Lindgren <tony@atomide.com>, devicetree-discuss@lists.ozlabs.org, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Update of V4l2 clock and asynchronous probing patches. Various review 
-comments are addressed, as described in individual patches. (Yes, this is 
-an exact copy of the text in v6 ;-) )
+If a slave can use any of several DMA controllers on the system, multiple
+DMA descriptors can be listed in its "dmas" DT property with the same
+channel name and different DMA controller phandles. However, if multiple
+such slaves can use any of a set of DMA controllers on the system, listing
+them all in each slave's "dmas" property becomes counterproductive. This
+patch adds support for a "dma-mux" DT node, whose sole purpose is to group
+such DMA controller DT nodes. Slaves can then specify the group's phandle
+in their "dmas" property. DMA controllers, belonging to the same group
+must have the same #dma-cells number and use the same slave IDs.
 
-A common notice for v7: while patches 1 and 2 introduce the new API, 
-patches 3-7 use it. Reviewer comments mainly addressed the API itself, 
-users have been updated to reflect the changes.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ Documentation/devicetree/bindings/dma/dma.txt |   44 +++++++++++++++++++++++++
+ drivers/dma/of-dma.c                          |   39 ++++++++++++++++------
+ 2 files changed, 73 insertions(+), 10 deletions(-)
 
-Guennadi Liakhovetski (7):
-  media: V4L2: add temporary clock helpers
-  media: V4L2: support asynchronous subdevice registration
-  media: soc-camera: switch I2C subdevice drivers to use v4l2-clk
-  soc-camera: add V4L2-async support
-  sh_mobile_ceu_camera: add asynchronous subdevice probing support
-  imx074: support asynchronous probing
-  ARM: shmobile: convert ap4evb to asynchronously register camera
-    subdevices
-
- arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
- arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
- drivers/media/i2c/soc_camera/imx074.c              |   36 +-
- drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
- drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
- drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
- drivers/media/i2c/soc_camera/mt9t112.c             |   19 +-
- drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
- drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
- drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
- drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
- drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
- drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
- drivers/media/i2c/soc_camera/ov9640.h              |    1 +
- drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
- drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
- drivers/media/i2c/soc_camera/tw9910.c              |   18 +-
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |  134 +++--
- drivers/media/platform/soc_camera/sh_mobile_csi2.c |  163 +++--
- drivers/media/platform/soc_camera/soc_camera.c     |  666 ++++++++++++++++----
- .../platform/soc_camera/soc_camera_platform.c      |    2 +-
- drivers/media/v4l2-core/Makefile                   |    3 +-
- drivers/media/v4l2-core/v4l2-async.c               |  263 ++++++++
- drivers/media/v4l2-core/v4l2-clk.c                 |  177 ++++++
- include/media/sh_mobile_ceu.h                      |    2 +
- include/media/sh_mobile_csi2.h                     |    2 +-
- include/media/soc_camera.h                         |   36 +-
- include/media/v4l2-async.h                         |  105 +++
- include/media/v4l2-clk.h                           |   54 ++
- 29 files changed, 1677 insertions(+), 304 deletions(-)
- create mode 100644 drivers/media/v4l2-core/v4l2-async.c
- create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
- create mode 100644 include/media/v4l2-async.h
- create mode 100644 include/media/v4l2-clk.h
-
+diff --git a/Documentation/devicetree/bindings/dma/dma.txt b/Documentation/devicetree/bindings/dma/dma.txt
+index 8f504e6..a861298 100644
+--- a/Documentation/devicetree/bindings/dma/dma.txt
++++ b/Documentation/devicetree/bindings/dma/dma.txt
+@@ -31,6 +31,50 @@ Example:
+ 		dma-requests = <127>;
+ 	};
+ 
++* DMA multiplexer
++
++Several DMA controllers with the same #dma-cells number and the same request
++line IDs can be grouped under a DMA multiplexer super-node, if slaves can use
++DMA channels on any of them.
++
++Required property:
++- compatible:		Must include "dma-mux".
++
++Some standard optional properties can be helpful:
++
++Optional properties:
++- compatible:		You will probably also want to include compatibility
++			with "simple-bus" to automatically create platform
++			devices from subnodes.
++- ranges:		Map DMA controller memory areas in the parent address
++			space.
++- #address-cells:	Number of address cells in case automatic propagation
++			with the help of "ranges" doesn't work.
++- #size-cells:		Number of size cells.
++
++Example:
++
++	dmac: dma-mux {
++		compatible = "simple-bus", "dma-mux";
++		ranges;
++
++		dma0: dma@10000000 {
++			#dma-cells = <1>;
++			...
++		};
++
++		dma1: dma@20000000 {
++			#dma-cells = <1>;
++			...
++		};
++	};
++
++	mmc0: mmc@30000000 {
++			dmas = <&dmac 1
++				&dmac 2>;
++			dma-names = "tx", "rx";
++			...
++	};
+ 
+ * DMA client
+ 
+diff --git a/drivers/dma/of-dma.c b/drivers/dma/of-dma.c
+index 69d04d2..bd7652b 100644
+--- a/drivers/dma/of-dma.c
++++ b/drivers/dma/of-dma.c
+@@ -183,8 +183,8 @@ static int of_dma_match_channel(struct device_node *np, char *name, int index,
+ 	if (strcmp(name, s))
+ 		return -ENODEV;
+ 
+-	if (of_parse_phandle_with_args(np, "dmas", "#dma-cells", index,
+-				       dma_spec))
++	if (of_parse_phandle_with_child_args(np, "dmas", "#dma-cells", index,
++					     dma_spec, "dma-mux"))
+ 		return -ENODEV;
+ 
+ 	return 0;
+@@ -217,22 +217,41 @@ struct dma_chan *of_dma_request_slave_channel(struct device_node *np,
+ 	}
+ 
+ 	for (i = 0; i < count; i++) {
++		struct device_node *dma = NULL, *parent;
++		bool is_mux;
++
+ 		if (of_dma_match_channel(np, name, i, &dma_spec))
+ 			continue;
+ 
+-		ofdma = of_dma_get_controller(&dma_spec);
++		parent = of_node_get(dma_spec.np->parent);
++		is_mux = of_device_is_compatible(parent, "dma-mux");
+ 
+-		if (!ofdma)
+-			continue;
++		do {
++			if (is_mux) {
++				dma = of_get_next_available_child(parent, dma);
++				if (!dma)
++					break;
++				dma_spec.np = dma;
++			}
++
++			ofdma = of_dma_get_controller(&dma_spec);
+ 
+-		chan = ofdma->of_dma_xlate(&dma_spec, ofdma);
++			if (!ofdma)
++				continue;
+ 
+-		of_dma_put_controller(ofdma);
++			chan = ofdma->of_dma_xlate(&dma_spec, ofdma);
+ 
+-		of_node_put(dma_spec.np);
++			of_dma_put_controller(ofdma);
++
++			of_node_put(dma_spec.np);
++
++			if (chan) {
++				of_node_put(parent);
++				return chan;
++			}
++		} while (dma);
+ 
+-		if (chan)
+-			return chan;
++		of_node_put(parent);
+ 	}
+ 
+ 	return NULL;
 -- 
 1.7.2.5
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
