@@ -1,63 +1,141 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Apr 2013 23:35:10 +0000
-Subject: [PATCH v4 7/9] rcar-phy: add platform data
-Message-Id: <201304130335.10480.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 30 Apr 2013 07:11:20 +0000
+Subject: [PATCH 1/4] OF: add a new phandle parsing function for grouped nodes
+Message-Id: <1367305883-2997-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Vinod Koul <vinod.koul@intel.com>, Tony Lindgren <tony@atomide.com>, devicetree-discuss@lists.ozlabs.org, linux-kernel@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong since this
-register contains board-specific USB ports configuration and so its value should
-be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file with
-the 'struct rcar_phy_platform_data' containing various bit fields describing
-USB pin configuration.
+Sometimes it is useful to group similar DT nodes under a common parent,
+when a different node can reference the group, meaning, that any subnode
+will do the job. An example of such a group is a DMA multiplexer, when a
+DMA slave can be served by any DMA controller from the group. This patch
+slightly extends an internal __of_parse_phandle_with_args() function to
+accept one more optional parameter and exports a new API function
+of_parse_phandle_with_child_args(), which allows the caller to provide a
+compatibility string for a group. In this case the function returns the
+first matching node. Once a matching node is found, standard DT iterators
+can be used to look for further matches.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
-Changes since version 3:
-- moved USBPCTRL0 register bit #define's to patch #9;
-- replaced USBPCTRL0 register value in the platform data structure by a set of
-  bit fields describing the configuration of the board, rewrote changelog;
+ drivers/of/base.c  |   28 +++++++++++++++++++++++++---
+ include/linux/of.h |   16 ++++++++++++++++
+ 2 files changed, 41 insertions(+), 3 deletions(-)
 
-Changes since version 2:
-- added #include <linux/types.h>;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
- include/linux/usb/rcar-phy.h |   26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
-
-Index: renesas/include/linux/usb/rcar-phy.h
-=================================--- /dev/null
-+++ renesas/include/linux/usb/rcar-phy.h
-@@ -0,0 +1,26 @@
-+/*
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
+diff --git a/drivers/of/base.c b/drivers/of/base.c
+index 321d3ef..d114515 100644
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -1066,11 +1066,16 @@ EXPORT_SYMBOL(of_parse_phandle);
+  * @cells_name:	property name that specifies phandles' arguments count
+  * @index:	index of a phandle to parse out
+  * @out_args:	optional pointer to output arguments structure (will be filled)
++ * @parent:	optional parent-compatibility string
+  *
+  * This function is useful to parse lists of phandles and their arguments.
+  * Returns 0 on success and fills out_args, on error returns appropriate
+  * errno value.
+  *
++ * If @parent is specified and the DT node, pointed by the currently iterated
++ * phandle is compatible with it, it is assumed, that the phandle is a parent of
++ * DT nodes with equal cell counts. In that case the first child is taken.
 + *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
+  * Caller is responsible to call of_node_put() on the returned out_args->node
+  * pointer.
+  *
+@@ -1094,7 +1099,8 @@ EXPORT_SYMBOL(of_parse_phandle);
+ static int __of_parse_phandle_with_args(const struct device_node *np,
+ 					const char *list_name,
+ 					const char *cells_name, int index,
+-					struct of_phandle_args *out_args)
++					struct of_phandle_args *out_args,
++					const char *parent)
+ {
+ 	const __be32 *list, *list_end;
+ 	int rc = 0, size, cur_index = 0;
+@@ -1129,6 +1135,12 @@ static int __of_parse_phandle_with_args(const struct device_node *np,
+ 					 np->full_name);
+ 				goto err;
+ 			}
++			if (parent && of_device_is_compatible(node, parent)) {
++				struct device_node *child +					of_get_next_available_child(node, NULL);
++				of_node_put(node);
++				node = child;
++			}
+ 			if (of_property_read_u32(node, cells_name, &count)) {
+ 				pr_err("%s: could not get %s for %s\n",
+ 					 np->full_name, cells_name,
+@@ -1199,10 +1211,20 @@ int of_parse_phandle_with_args(const struct device_node *np, const char *list_na
+ {
+ 	if (index < 0)
+ 		return -EINVAL;
+-	return __of_parse_phandle_with_args(np, list_name, cells_name, index, out_args);
++	return __of_parse_phandle_with_args(np, list_name, cells_name, index, out_args, NULL);
+ }
+ EXPORT_SYMBOL(of_parse_phandle_with_args);
+ 
++int of_parse_phandle_with_child_args(const struct device_node *np, const char *list_name,
++				     const char *cells_name, int index,
++				     struct of_phandle_args *out_args, const char *parent)
++{
++	if (index < 0)
++		return -EINVAL;
++	return __of_parse_phandle_with_args(np, list_name, cells_name, index, out_args, parent);
++}
++EXPORT_SYMBOL(of_parse_phandle_with_child_args);
 +
-+#ifndef __RCAR_PHY_H
-+#define __RCAR_PHY_H
+ /**
+  * of_count_phandle_with_args() - Find the number of phandles references in a property
+  * @np:		pointer to a device tree node containing a list
+@@ -1221,7 +1243,7 @@ EXPORT_SYMBOL(of_parse_phandle_with_args);
+ int of_count_phandle_with_args(const struct device_node *np, const char *list_name,
+ 				const char *cells_name)
+ {
+-	return __of_parse_phandle_with_args(np, list_name, cells_name, -1, NULL);
++	return __of_parse_phandle_with_args(np, list_name, cells_name, -1, NULL, NULL);
+ }
+ EXPORT_SYMBOL(of_count_phandle_with_args);
+ 
+diff --git a/include/linux/of.h b/include/linux/of.h
+index a0f1292..30ae71f 100644
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -277,6 +277,12 @@ extern struct device_node *of_parse_phandle(const struct device_node *np,
+ extern int of_parse_phandle_with_args(const struct device_node *np,
+ 	const char *list_name, const char *cells_name, int index,
+ 	struct of_phandle_args *out_args);
++extern int of_parse_phandle_with_child_args(const struct device_node *np,
++					    const char *list_name,
++					    const char *cells_name,
++					    int index,
++					    struct of_phandle_args *out_args,
++					    const char *parent);
+ extern int of_count_phandle_with_args(const struct device_node *np,
+ 	const char *list_name, const char *cells_name);
+ 
+@@ -469,6 +475,16 @@ static inline int of_parse_phandle_with_args(struct device_node *np,
+ 	return -ENOSYS;
+ }
+ 
++static inline int of_parse_phandle_with_child_args(const struct device_node *np,
++						   const char *list_name,
++						   const char *cells_name,
++						   int index,
++						   struct of_phandle_args *out_args,
++						   const char *parent)
++{
++	return -ENOSYS;
++}
 +
-+#include <linux/types.h>
-+
-+struct rcar_phy_platform_data {
-+	bool port1_func:1;	/* true: port 1 used by function, false: host */
-+	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
-+	struct {		/* Overcurrent pin control for ports 0..2 */
-+		bool select_3_3v:1; /* true: USB_OVCn pin, false: OVCn pin */
-+				/* Set to false on port 1 in function mode */
-+		bool active_high:1; /* true: active  high, false: active low */
-+				/* Set to true  on port 1 in function mode */
-+	} ovc_pin[3];
-+};
-+
-+#endif /* __RCAR_PHY_H */
+ static inline int of_count_phandle_with_args(struct device_node *np,
+ 					     const char *list_name,
+ 					     const char *cells_name)
+-- 
+1.7.2.5
+
