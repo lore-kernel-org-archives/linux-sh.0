@@ -1,80 +1,120 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 22:59:56 +0000
-Subject: [PATCH 15/37] ARM: shmobile: armadillo800eva: Replace GPIO_PORTx with GPIO port numbers
-Message-Id: <1366671618-8796-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 30 Apr 2013 22:53:55 +0000
+Subject: [PATCH v7 4/9] rcar-phy: remove EHCI internal buffer setup
+Message-Id: <201305010253.56243.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The PFC GPIO API implementation moved to using port numbers. Replace all
-GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
-enum values are identical to the port number on this platform.
+Now that the EHCI internal  buffer setup is done by the platform code, we  can
+remove  such code from this driver as it  never  really belonged here.  We also
+no longer need the 2nd memory region now (2nd EHCI controller is simply missing
+in e.g. R8A7778 SoC).
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The patch has been tested on the Marzen and BOCK-W boards.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Felipe Balbi <balbi@ti.com>
+
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+Changes since version 6:
+- added an ACK from Felipe Balbi.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index e034953..ff04d1e 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -579,7 +579,7 @@ static struct regulator_init_data vcc_sdhi0_init_data = {
- static struct fixed_voltage_config vcc_sdhi0_info = {
- 	.supply_name = "SDHI0 Vcc",
- 	.microvolts = 3300000,
--	.gpio = GPIO_PORT75,
-+	.gpio = 75,
- 	.enable_high = 1,
- 	.init_data = &vcc_sdhi0_init_data,
- };
-@@ -610,7 +610,7 @@ static struct regulator_init_data vccq_sdhi0_init_data = {
- };
- 
- static struct gpio vccq_sdhi0_gpios[] = {
--	{GPIO_PORT17, GPIOF_OUT_INIT_LOW, "vccq-sdhi0" },
-+	{17, GPIOF_OUT_INIT_LOW, "vccq-sdhi0" },
- };
- 
- static struct gpio_regulator_state vccq_sdhi0_states[] = {
-@@ -621,7 +621,7 @@ static struct gpio_regulator_state vccq_sdhi0_states[] = {
- static struct gpio_regulator_config vccq_sdhi0_info = {
- 	.supply_name = "vqmmc",
- 
--	.enable_gpio = GPIO_PORT74,
-+	.enable_gpio = 74,
- 	.enable_high = 1,
- 	.enabled_at_boot = 0,
- 
-@@ -659,7 +659,7 @@ static struct regulator_init_data vcc_sdhi1_init_data = {
- static struct fixed_voltage_config vcc_sdhi1_info = {
- 	.supply_name = "SDHI1 Vcc",
- 	.microvolts = 3300000,
--	.gpio = GPIO_PORT16,
-+	.gpio = 16,
- 	.enable_high = 1,
- 	.init_data = &vcc_sdhi1_init_data,
- };
-@@ -688,7 +688,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
--	.cd_gpio	= GPIO_PORT167,
-+	.cd_gpio	= 167,
- };
- 
- static struct resource sdhi0_resources[] = {
-@@ -731,7 +731,7 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 			  MMC_CAP_POWER_OFF_CARD,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	/* Port72 cannot generate IRQs, will be used in polling mode. */
--	.cd_gpio	= GPIO_PORT72,
-+	.cd_gpio	= 72,
- };
- 
- static struct resource sdhi1_resources[] = {
--- 
-1.8.1.5
+Changes since version 2:
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
 
+Changes since the original posting:
+- split R8A7779 SoC file change to a separate patch.
+
+ drivers/usb/phy/rcar-phy.c |   28 ++++------------------------
+ 1 file changed, 4 insertions(+), 24 deletions(-)
+
+Index: renesas/drivers/usb/phy/rcar-phy.c
+=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
++++ renesas/drivers/usb/phy/rcar-phy.c
+@@ -23,8 +23,6 @@
+ #define USBEH0		0x080C
+ #define USBOH0		0x081C
+ #define USBCTL0		0x0858
+-#define EIIBC1		0x0094
+-#define EIIBC2		0x009C
+ 
+ /* USBPCTRL1 */
+ #define PHY_RST		(1 << 2)
+@@ -40,7 +38,6 @@ struct rcar_usb_phy_priv {
+ 	spinlock_t lock;
+ 
+ 	void __iomem *reg0;
+-	void __iomem *reg1;
+ 	int counter;
+ };
+ 
+@@ -59,7 +56,6 @@ static int rcar_usb_phy_init(struct usb_
+ 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
+ 	struct device *dev = phy->dev;
+ 	void __iomem *reg0 = priv->reg0;
+-	void __iomem *reg1 = priv->reg1;
+ 	int i;
+ 	u32 val;
+ 	unsigned long flags;
+@@ -97,19 +93,6 @@ static int rcar_usb_phy_init(struct usb_
+ 		iowrite32(0x00000000, (reg0 + USBPCTRL0));
+ 
+ 		/*
+-		 * EHCI IP internal buffer setting
+-		 * EHCI IP internal buffer enable
+-		 *
+-		 * These are recommended value of a datasheet
+-		 * see [USB :: EHCI internal buffer setting]
+-		 */
+-		iowrite32(0x00ff0040, (reg0 + EIIBC1));
+-		iowrite32(0x00ff0040, (reg1 + EIIBC1));
+-
+-		iowrite32(0x00000001, (reg0 + EIIBC2));
+-		iowrite32(0x00000001, (reg1 + EIIBC2));
+-
+-		/*
+ 		 * Bus alignment settings
+ 		 */
+ 
+@@ -145,14 +128,13 @@ static void rcar_usb_phy_shutdown(struct
+ static int rcar_usb_phy_probe(struct platform_device *pdev)
+ {
+ 	struct rcar_usb_phy_priv *priv;
+-	struct resource *res0, *res1;
++	struct resource *res0;
+ 	struct device *dev = &pdev->dev;
+-	void __iomem *reg0, *reg1;
++	void __iomem *reg0;
+ 	int ret;
+ 
+ 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+-	if (!res0 || !res1) {
++	if (!res0) {
+ 		dev_err(dev, "Not enough platform resources\n");
+ 		return -EINVAL;
+ 	}
+@@ -164,8 +146,7 @@ static int rcar_usb_phy_probe(struct pla
+ 	 * this driver can't use devm_request_and_ioremap(dev, res) here
+ 	 */
+ 	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
+-	reg1 = devm_ioremap_nocache(dev, res1->start, resource_size(res1));
+-	if (!reg0 || !reg1) {
++	if (!reg0) {
+ 		dev_err(dev, "ioremap error\n");
+ 		return -ENOMEM;
+ 	}
+@@ -177,7 +158,6 @@ static int rcar_usb_phy_probe(struct pla
+ 	}
+ 
+ 	priv->reg0		= reg0;
+-	priv->reg1		= reg1;
+ 	priv->counter		= 0;
+ 	priv->phy.dev		= dev;
+ 	priv->phy.label		= dev_name(dev);
