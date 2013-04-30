@@ -1,80 +1,98 @@
-From: Sascha Hauer <s.hauer@pengutronix.de>
-Date: Tue, 30 Apr 2013 13:53:01 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 30 Apr 2013 14:06:22 +0000
 Subject: Re: [PATCH v9 02/20] V4L2: support asynchronous subdevice registration
-Message-Id: <20130430135301.GD16843@pengutronix.de>
+Message-Id: <Pine.LNX.4.64.1304301604550.3302@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1365781240-16149-1-git-send-email-g.liakhovetski@gmx.de>
  <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1365781240-16149-3-git-send-email-g.liakhovetski@gmx.de>
+ <20130430135301.GD16843@pengutronix.de>
+In-Reply-To: <20130430135301.GD16843@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Sascha Hauer <s.hauer@pengutronix.de>
 Cc: linux-media@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Hi Guennadi,
+Hi Sascha
 
-On Fri, Apr 12, 2013 at 05:40:22PM +0200, Guennadi Liakhovetski wrote:
-> Currently bridge device drivers register devices for all subdevices
-> synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor
-> is attached to a video bridge device, the bridge driver will create an I2C
-> device and wait for the respective I2C driver to probe. This makes linking
-> of devices straight forward, but this approach cannot be used with
-> intrinsically asynchronous and unordered device registration systems like
-> the Flattened Device Tree. To support such systems this patch adds an
-> asynchronous subdevice registration framework to V4L2. To use it respective
-> (e.g. I2C) subdevice drivers must register themselves with the framework.
-> A bridge driver on the other hand must register notification callbacks,
-> that will be called upon various related events.
+On Tue, 30 Apr 2013, Sascha Hauer wrote:
+
+> Hi Guennadi,
 > 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> +
-> +static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
-> +						    struct v4l2_async_subdev_list *asdl)
-> +{
-> +	struct v4l2_subdev *sd = v4l2_async_to_subdev(asdl);
-> +	struct v4l2_async_subdev *asd = NULL;
-> +	bool (*match)(struct device *,
-> +		      struct v4l2_async_hw_info *);
-> +
-> +	list_for_each_entry (asd, &notifier->waiting, list) {
-> +		struct v4l2_async_hw_info *hw = &asd->hw;
-> +
-> +		/* bus_type has been verified valid before */
-> +		switch (hw->bus_type) {
-> +		case V4L2_ASYNC_BUS_CUSTOM:
-> +			match = hw->match.custom.match;
-> +			if (!match)
-> +				/* Match always */
-> +				return asd;
-> +			break;
-> +		case V4L2_ASYNC_BUS_PLATFORM:
-> +			match = match_platform;
-> +			break;
-> +		case V4L2_ASYNC_BUS_I2C:
-> +			match = match_i2c;
-> +			break;
-> +		default:
-> +			/* Cannot happen, unless someone breaks us */
-> +			WARN_ON(true);
-> +			return NULL;
-> +		}
-> +
-> +		if (match && match(sd->dev, hw))
-> +			break;
-> +	}
-> +
-> +	return asd;
+> On Fri, Apr 12, 2013 at 05:40:22PM +0200, Guennadi Liakhovetski wrote:
+> > Currently bridge device drivers register devices for all subdevices
+> > synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor
+> > is attached to a video bridge device, the bridge driver will create an I2C
+> > device and wait for the respective I2C driver to probe. This makes linking
+> > of devices straight forward, but this approach cannot be used with
+> > intrinsically asynchronous and unordered device registration systems like
+> > the Flattened Device Tree. To support such systems this patch adds an
+> > asynchronous subdevice registration framework to V4L2. To use it respective
+> > (e.g. I2C) subdevice drivers must register themselves with the framework.
+> > A bridge driver on the other hand must register notification callbacks,
+> > that will be called upon various related events.
+> > 
+> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> > ---
+> > +
+> > +static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
+> > +						    struct v4l2_async_subdev_list *asdl)
+> > +{
+> > +	struct v4l2_subdev *sd = v4l2_async_to_subdev(asdl);
+> > +	struct v4l2_async_subdev *asd = NULL;
+> > +	bool (*match)(struct device *,
+> > +		      struct v4l2_async_hw_info *);
+> > +
+> > +	list_for_each_entry (asd, &notifier->waiting, list) {
+> > +		struct v4l2_async_hw_info *hw = &asd->hw;
+> > +
+> > +		/* bus_type has been verified valid before */
+> > +		switch (hw->bus_type) {
+> > +		case V4L2_ASYNC_BUS_CUSTOM:
+> > +			match = hw->match.custom.match;
+> > +			if (!match)
+> > +				/* Match always */
+> > +				return asd;
+> > +			break;
+> > +		case V4L2_ASYNC_BUS_PLATFORM:
+> > +			match = match_platform;
+> > +			break;
+> > +		case V4L2_ASYNC_BUS_I2C:
+> > +			match = match_i2c;
+> > +			break;
+> > +		default:
+> > +			/* Cannot happen, unless someone breaks us */
+> > +			WARN_ON(true);
+> > +			return NULL;
+> > +		}
+> > +
+> > +		if (match && match(sd->dev, hw))
+> > +			break;
+> > +	}
+> > +
+> > +	return asd;
+> 
+> 'asd' can never be NULL here. You have to explicitly return NULL when
+> leaving the loop without match.
 
-'asd' can never be NULL here. You have to explicitly return NULL when
-leaving the loop without match.
+I've already proposed a fix for this and Laurent has proposed a simplified 
+version.
 
-Sascha
+Thanks
+Guennadi
 
+> 
+> Sascha
+> 
+> 
+> -- 
+> Pengutronix e.K.                           |                             |
+> Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+> Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
+> Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+> 
 
--- 
-Pengutronix e.K.                           |                             |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
