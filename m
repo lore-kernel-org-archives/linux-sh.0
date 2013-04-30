@@ -1,63 +1,76 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 15:33:00 +0000
-Subject: [PATCH v6 7/9] rcar-phy: add platform data
-Message-Id: <201304231933.00604.sergei.shtylyov@cogentembedded.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 30 Apr 2013 10:37:27 +0000
+Subject: Re: [PATCH v6 7/9] rcar-phy: add platform data
+Message-Id: <20130430103727.GE12161@arwen.pp.htv.fi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="maH1Gajj2nflutpK"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <201304231933.00604.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304231933.00604.sergei.shtylyov@cogentembedded.com>
 To: linux-sh@vger.kernel.org
 
-Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong since this
-register contains board-specific USB ports configuration and so its value should
-be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file with
-the 'struct rcar_phy_platform_data' containing various bit fields describing
-USB pin configuration.
+--maH1Gajj2nflutpK
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Hi,
 
----
-Changes since version 3:
-- moved USBPCTRL0 register bit #define's to patch #9;
-- replaced USBPCTRL0 register value in the platform data structure by a set of
-  bit fields describing the configuration of the board, rewrote changelog;
+On Tue, Apr 23, 2013 at 07:33:00PM +0400, Sergei Shtylyov wrote:
+> Currently the driver hard-codes USBPCTRL0 register to 0.  It is wrong sin=
+ce this
+> register contains board-specific USB ports configuration and so its value=
+ should
+> be somehow passed via the platform data.  Add <linux/usb/rcar-phy.h> file=
+ with
+> the 'struct rcar_phy_platform_data' containing various bit fields describ=
+ing
+> USB pin configuration.
+>=20
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+>=20
+> ---
+> Changes since version 3:
+> - moved USBPCTRL0 register bit #define's to patch #9;
+> - replaced USBPCTRL0 register value in the platform data structure by a s=
+et of
+>   bit fields describing the configuration of the board, rewrote changelog;
+>=20
+> Changes since version 2:
+> - added #include <linux/types.h>;
+> - added ACKs from Simon Horman and Kuninori Morimoto.
+>=20
+>  include/linux/usb/rcar-phy.h |   26 ++++++++++++++++++++++++++
 
-Changes since version 2:
-- added #include <linux/types.h>;
-- added ACKs from Simon Horman and Kuninori Morimoto.
+the new location for platform_data is include/linux/platform_data/
 
- include/linux/usb/rcar-phy.h |   26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
+In fact, musb.h should move there eventually.
 
-Index: renesas/include/linux/usb/rcar-phy.h
-=================================--- /dev/null
-+++ renesas/include/linux/usb/rcar-phy.h
-@@ -0,0 +1,26 @@
-+/*
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#ifndef __RCAR_PHY_H
-+#define __RCAR_PHY_H
-+
-+#include <linux/types.h>
-+
-+struct rcar_phy_platform_data {
-+	bool port1_func:1;	/* true: port 1 used by function, false: host */
-+	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
-+	struct {		/* Overcurrent pin control for ports 0..2 */
-+		bool select_3_3v:1; /* true: USB_OVCn pin, false: OVCn pin */
-+				/* Set to false on port 1 in function mode */
-+		bool active_high:1; /* true: active  high, false: active low */
-+				/* Set to true  on port 1 in function mode */
-+	} ovc_pin[3];
-+};
-+
-+#endif /* __RCAR_PHY_H */
+--=20
+balbi
+
+--maH1Gajj2nflutpK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJRf57nAAoJEIaOsuA1yqREJUUP/2bfPEUUvl+6MRKF8QycgoOJ
+/ExE5yiADHoAu3VUJFXCArAPZ2vLfJlLjhYrWSHRHQWpKF4odIuEdJ7vkToU1S61
+DJ373RVMBWN/foXBngK0avnAxy4Xs/YB64YeL7YMqQXfsCze9HtJz2P58fDxBeWW
+MuBjTz4RbbpkQU7oFnINJB8crlTXSI//syNpn6JrCb0SA9upD8af7OMKGPYZhkRy
+EW00DpqHtPtXDKs8idQHS52gLbBog8oBVXpWoCGw/vjHekAuRvijpfQj5y9xUe6C
+QQ0ddTVxsghgNitYB1ob5KwDvERsO2En08jKZ7TvH3W+elYREYQeK4CkT8gmpzzZ
+2al29Whcwo2y2jGWWNZDs4l8gYyjS5VNOl4+km8rdDCT2JcZQPOtZqWyQSdGkFel
+pF4eOcFj2BxWDff0sx+x3kLzCUhDne6T0fR8kdRWFZcOcqxVYodKnQsbt4R8z9fb
+iVN/JGwdOP5a1F2p3Ns+lyG8T0NqbQ3+bKrK6nJbZDGi/evLeytAJPEF8goFV+qm
+17GwgVoQhrkrIZJUYHipHOW7vxdR7UkRLcgU6waYsJHKeAKeNFAGKcg9zVmFHj1a
+dqXy32ZE/BbGzZwb5iN1nPGojGfdfVMSWzuWeMLV2n6FNig3xv7wkQ3Avf+O2OpK
+nmaSFkwc+/MDxjblrjna
+=x+AR
+-----END PGP SIGNATURE-----
+
+--maH1Gajj2nflutpK--
