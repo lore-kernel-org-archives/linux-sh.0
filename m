@@ -1,118 +1,69 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Apr 2013 22:33:32 +0000
-Subject: [PATCH v2 3/4] ARM: shmobile: Marzen: add VIN and ADV7180 support
-Message-Id: <201304200233.33555.sergei.shtylyov@cogentembedded.com>
+Date: Tue, 30 Apr 2013 23:00:30 +0000
+Subject: [PATCH v7 7/9] rcar-phy: add platform data
+Message-Id: <201305010300.31009.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Currently the driver hard-codes  USBPCTRL0 register to 0. It is wrong since this
+register contains board-specific USB ports configuration and so its value should
+be somehow passed via the platform data.  Add the global header file containing
+'struct rcar_phy_platform_data' consisting of the various bit fields describing
+USB ports' pin configuration.
 
-Add ADV7180 platform devices on the Marzen board, configure VIN1/3 pins, and
-register VIN1/3 devices with the ADV7180 specific platform data.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: removed superfluous tabulation and inserted empty lines in the macro
-definition; updated the copyrights]
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
 ---
-Changes since the original posting:
-- used a macro to define the camera platform devices;
-- updated the copyrights;
-- refreshed the patch.
+Changes since version 6:
+- renamed the header file into <linux/platform_data/usb-rcar-phy.h>, renamed the
+  guarding #define accordingly;
+- rephrased the changelog.
 
- arch/arm/mach-shmobile/board-marzen.c |   44 +++++++++++++++++++++++++++++++++-
- 1 file changed, 43 insertions(+), 1 deletion(-)
+Changes since version 3:
+- moved USBPCTRL0 register bit #define's to patch #9;
+- replaced USBPCTRL0 register value in the platform data structure by a set of
+  bit fields describing the configuration of the board, rewrote changelog;
 
-Index: renesas/arch/arm/mach-shmobile/board-marzen.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
-+++ renesas/arch/arm/mach-shmobile/board-marzen.c
-@@ -1,8 +1,9 @@
- /*
-  * marzen board support
-  *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
-  * Copyright (C) 2011  Magnus Damm
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -37,6 +38,7 @@
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <media/soc_camera.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -178,12 +180,40 @@ static struct platform_device leds_devic
- 	},
- };
- 
-+static struct rcar_vin_platform_data vin_platform_data = {
-+	.flags	= RCAR_VIN_BT656,
+Changes since version 2:
+- added #include <linux/types.h>;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+ include/linux/platform_data/usb-rcar-phy.h |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+Index: renesas/include/linux/platform_data/usb-rcar-phy.h
+=================================--- /dev/null
++++ renesas/include/linux/platform_data/usb-rcar-phy.h
+@@ -0,0 +1,26 @@
++/*
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Cogent Embedded, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef __USB_RCAR_PHY_H
++#define __USB_RCAR_PHY_H
++
++#include <linux/types.h>
++
++struct rcar_phy_platform_data {
++	bool port1_func:1;	/* true: port 1 used by function, false: host */
++	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
++	struct {		/* Overcurrent pin control for ports 0..2 */
++		bool select_3_3v:1; /* true: USB_OVCn pin, false: OVCn pin */
++				/* Set to false on port 1 in function mode */
++		bool active_high:1; /* true: active  high, false: active low */
++				/* Set to true  on port 1 in function mode */
++	} ovc_pin[3];
 +};
 +
-+#define MARZEN_CAMERA(idx)					\
-+static struct i2c_board_info camera##idx##_info = {		\
-+	I2C_BOARD_INFO("adv7180", 0x20 + (idx)),		\
-+};								\
-+								\
-+static struct soc_camera_link iclink##idx##_adv7180 = {		\
-+	.bus_id		= 1 + 2 * (idx),			\
-+	.i2c_adapter_id	= 0,					\
-+	.board_info	= &camera##idx##_info,			\
-+};								\
-+								\
-+static struct platform_device camera##idx##_device = {		\
-+	.name	= "soc-camera-pdrv",				\
-+	.id	= idx,						\
-+	.dev	= {						\
-+		.platform_data	= &iclink##idx##_adv7180,	\
-+	},							\
-+};
-+
-+MARZEN_CAMERA(0);
-+MARZEN_CAMERA(1);
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
- 	&hspi_device,
- 	&leds_device,
-+	&camera0_device,
-+	&camera1_device,
- };
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-@@ -219,6 +249,16 @@ static const struct pinctrl_map marzen_p
- 	/* USB2 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
- 				  "usb2", "usb2"),
-+	/* VIN1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7779",
-+				  "vin1_clk", "vin1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7779",
-+				  "vin1_data8", "vin1"),
-+	/* VIN3 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.3", "pfc-r8a7779",
-+				  "vin3_clk", "vin3"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.3", "pfc-r8a7779",
-+				  "vin3_data8", "vin3"),
- };
- 
- static void __init marzen_init(void)
-@@ -235,6 +275,8 @@ static void __init marzen_init(void)
- 
- 	r8a7779_add_standard_devices();
- 	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
-+	r8a7779_add_vin_device(1, &vin_platform_data);
-+	r8a7779_add_vin_device(3, &vin_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
++#endif /* __USB_RCAR_PHY_H */
+
