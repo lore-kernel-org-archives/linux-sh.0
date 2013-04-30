@@ -1,97 +1,63 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 23 Apr 2013 15:30:21 +0000
-Subject: [PATCH v6 6/9] rcar-phy: correct base address
-Message-Id: <201304231930.22352.sergei.shtylyov@cogentembedded.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 30 Apr 2013 10:36:49 +0000
+Subject: Re: [PATCH v6 6/9] rcar-phy: correct base address
+Message-Id: <20130430103649.GD12161@arwen.pp.htv.fi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="3Pql8miugIZX0722"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <201304231930.22352.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304231930.22352.sergei.shtylyov@cogentembedded.com>
 To: linux-sh@vger.kernel.org
 
-The memory region that is used by the driver overlaps EHCI and OHCI  register
-regions for absolutely no reason now  -- fix it  by adding offset of 0x800 to
-the base address, changing the register #define's accordingly. This has extra
-positive effect that we now can use devm_ioremap_resource()...
+--3Pql8miugIZX0722
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Note that the driver and the SoC code have to be in one patch to keep the code
-bisectable...
+On Tue, Apr 23, 2013 at 07:30:21PM +0400, Sergei Shtylyov wrote:
+> The memory region that is used by the driver overlaps EHCI and OHCI  regi=
+ster
+> regions for absolutely no reason now  -- fix it  by adding offset of 0x80=
+0 to
+> the base address, changing the register #define's accordingly. This has e=
+xtra
+> positive effect that we now can use devm_ioremap_resource()...
+>=20
+> Note that the driver and the SoC code have to be in one patch to keep the=
+ code
+> bisectable...
+>=20
+> The patch has been tested on the Marzen board.
+>=20
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-The patch has been tested on the Marzen board.
+Acked-by: Felipe Balbi <balbi@ti.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+--=20
+balbi
 
----
-Changes since version 4:
-- refreshed the patch.
+--3Pql8miugIZX0722
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-Changes since the original posting:
-- added a note about bisectability to the changelog.
+iQIcBAEBAgAGBQJRf57BAAoJEIaOsuA1yqREzGQP/RklL7uxQgBhMdpN0eDFMav+
+W+GzEKv7cdk9yeeT39O7lOOivoWw3SysFqbK/ViZHYRy1EvMi/Cr3Y2RhHyH7RU4
+1r7oCodwW3mZaKHMeX/P/qlu0Sz1vZA19jybR6JKENo2/k20kL1HrFjjBvmG7eHW
+XDWCT6q5b2ch5ombsxTYXX3Qk6tYGk4T6P91Ka5ALViAXiEErIfuxuf0dJMvtOU+
+lC0NqMnZ8VSKMOpiVjS39PVC7CXTuGRpsEla/2DJ78CLHR+DXkMtMmvzIbDbh7CQ
+tJUvoKmpFS/6PK5ttoIT+E+4EuoJWROJfAG1gtlHoiamPcfUP8UA6eHYrSEYNND5
+modiJrxILXQVF2FdPt3wbfjxdpIoyroGqlxUOLO5OgjSlMrhVUtCE1Q+KaKxx/G3
+1NfIuL075RlyEP8LHPC9ldsaUqm7CFpFUNZQUaX9msbbtW+jg2E96YE+7qfxnSDO
+BrD2WMrQq6HULyUniKG3fLDibMq0hQhlusuPF9RJoFu1Ci8+PLV0dZPtzSyXDvJ4
+9ESVTPeODw1Ebn3Sy909G9p8A+WBAsLEcbBIB9PPvE5CTTpX9m8cz6yxHEBebXmQ
+qjE+fDPZKSWkcIOFhVsFD6FI3fLW8yo58jwsyauclSqttPUVhPBfp0yGUqnTVcvl
++E7L3EXmsc7FWo0WgEiM
+=lbjm
+-----END PGP SIGNATURE-----
 
- arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
- drivers/usb/phy/rcar-phy.c             |   28 ++++++++++------------------
- 2 files changed, 11 insertions(+), 19 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -391,7 +391,7 @@ static struct platform_device sata_devic
- /* USB PHY */
- static struct resource usb_phy_resources[] = {
- 	[0] = {
--		.start		= 0xffe70000,
-+		.start		= 0xffe70800,
- 		.end		= 0xffe70900 - 1,
- 		.flags		= IORESOURCE_MEM,
- 	},
-Index: renesas/drivers/usb/phy/rcar-phy.c
-=================================--- renesas.orig/drivers/usb/phy/rcar-phy.c
-+++ renesas/drivers/usb/phy/rcar-phy.c
-@@ -16,13 +16,13 @@
- #include <linux/spinlock.h>
- #include <linux/module.h>
- 
--/* USBH common register */
--#define USBPCTRL0	0x0800
--#define USBPCTRL1	0x0804
--#define USBST		0x0808
--#define USBEH0		0x080C
--#define USBOH0		0x081C
--#define USBCTL0		0x0858
-+/* REGS block */
-+#define USBPCTRL0	0x00
-+#define USBPCTRL1	0x04
-+#define USBST		0x08
-+#define USBEH0		0x0C
-+#define USBOH0		0x1C
-+#define USBCTL0		0x58
- 
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
-@@ -139,17 +139,9 @@ static int rcar_usb_phy_probe(struct pla
- 		return -EINVAL;
- 	}
- 
--	/*
--	 * CAUTION
--	 *
--	 * Because this phy address is also mapped under OHCI/EHCI address area,
--	 * this driver can't use devm_request_and_ioremap(dev, res) here
--	 */
--	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
--	if (!reg0) {
--		dev_err(dev, "ioremap error\n");
--		return -ENOMEM;
--	}
-+	reg0 = devm_ioremap_resource(dev, res0);
-+	if (IS_ERR(reg0))
-+		return PTR_ERR(reg0);
- 
- 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
- 	if (!priv) {
+--3Pql8miugIZX0722--
