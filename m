@@ -1,44 +1,45 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 15 May 2013 14:45:42 +0000
-Subject: Re: [RFC PATCH net-next v2 2/3] sh_eth: add support RMIIMODE register
-Message-Id: <51939F96.4090307@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 01 May 2013 05:38:21 +0000
+Subject: Re: [PATCH v2 1/4] V4L2: soc_camera: Renesas R-Car VIN driver
+Message-Id: <Pine.LNX.4.64.1305010733400.8781@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368499073-21975-1-git-send-email-horms+renesas@verge.net.au> <1368499073-21975-3-git-send-email-horms+renesas@verge.net.au> <519240C7.1060406@cogentembedded.com> <20130515005117.GC12246@verge.net.au>
-In-Reply-To: <20130515005117.GC12246@verge.net.au>
+References: <201304200231.31802.sergei.shtylyov@cogentembedded.com>
+ <Pine.LNX.4.64.1304201201370.10520@axis700.grange> <517D7195.1020301@cogentembedded.com>
+ <518000EE.40502@cogentembedded.com>
+In-Reply-To: <518000EE.40502@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, mchehab@redhat.com, Linux Media Mailing List <linux-media@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp
 
-Hello.
+On Tue, 30 Apr 2013, Vladimir Barinov wrote:
 
-On 15-05-2013 4:51, Simon Horman wrote:
+[snip]
 
->>> This change is motivated by the lager board which uses the r8a7790 SoC,
->>> an R-Car SoC. For this board setting the RMIIMODE register is necessary.
+> > > > +static int rcar_vin_init_videobuf2(struct vb2_queue *vq,
+> > > > +                   struct soc_camera_device *icd)
+> > > > +{
+> > > > +    vq->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+> > > > +    vq->io_modes = VB2_MMAP | VB2_USERPTR;
+> > > > +    vq->drv_priv = icd;
+> > > > +    vq->ops = &rcar_vin_vb2_ops;
+> > > > +    vq->mem_ops = &vb2_dma_contig_memops;
+> > > > +    vq->buf_struct_size = sizeof(struct rcar_vin_buffer);
+> > 
+> > > Please, add
+> > 
+> > >     vq->timestamp_type = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
+> > 
+> There is not such field in "struct vb2_queue".
 
->>> This patch assumes this is valid for all R-Car SoCs.
+Please, look at the current kernel, e.g. the "next" tree, within days 
+this will be in Linus' tree too. Mainline submissions should always be 
+developed against the newest kernel version.
 
->>     No, RMIIMODE register is not documented on R8A7778/9 SoCs and
->> this location is described as reserved. How's it called in R8A7790
->> manual, CXR15?
-
-> It appears to be undocumented in the R8A7790 I have.
-> Empirically it seems necessary for the lager/R8A7790.
-
-    I wonder where you got the info then (and what writing 1 to this 
-register means)...
-
-> To be honest I am entirely unsure of its relevance to other SoCs.
-
-> I wonder if a better approach would be to add a flag to platform
-> data rather than struct sh_eth_cpu_data. This would allow the register
-> to only be accessed on boards where it is known to be useful.
-
-    Maybe...
-
->>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
-WBR, Sergei
-
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
