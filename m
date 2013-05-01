@@ -1,57 +1,75 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 08:59:48 +0000
-Subject: [GIT PULL] Renesas ARM based r8a7790 SoC updates for v3.11
-Message-Id: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 01 May 2013 09:09:09 +0000
+Subject: Re: [PATCH v3 4/5] ARM: shmobile: BOCK-W: add VIN and ML86V7667 support
+Message-Id: <20130501090909.GA2562@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365668101-21723-1-git-send-email-horms+renesas@verge.net.au>
+References: <201304232118.43686.sergei.shtylyov@cogentembedded.com>
+ <201304232132.52741.sergei.shtylyov@cogentembedded.com>
+ <517B06FA.3000303@cogentembedded.com>
+In-Reply-To: <517B06FA.3000303@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd, Hi Olof,
+On Sat, Apr 27, 2013 at 03:00:10AM +0400, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 04/23/2013 09:32 PM, Sergei Shtylyov wrote:
+> 
+> >From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> >
+> >Add ML86V7667 platform devices on BOCK-W board, configure VIN0/1 pins, and
+> >register VIN0/1 devices with the ML86V7667 specific platform data.
+> >
+> >Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> >[Sergei: some macro/comment cleanup; updated the copyrights, removed duplicate
+> >#include, annotated all platform data as '__initdata'.]
+> >Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> >
+> >---
+> >Changes since version 2:
+> >- removed duplicate #include <linux/pinctrl/machine.h>;
+> >- annotated all platform data as '__initdata' since they're kmemdup()'ed while
+> >   registering the platform devices anyway;
+> >- resolved rejects, refreshed the patch.
+> >
+> >  arch/arm/mach-shmobile/board-bockw.c |   39 +++++++++++++++++++++++++++++++++++
+> >  1 file changed, 39 insertions(+)
+> >
+> >Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+> >=================================> >--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
+> >+++ renesas/arch/arm/mach-shmobile/board-bockw.c
+> 
+> [...]
+> 
+> >@@ -80,6 +101,16 @@ static const struct pinctrl_map bockw_pi
+> >  				  "sdhi0_data4", "sdhi0"),
+> >  	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
+> >  				  "sdhi0_wp", "sdhi0"),
+> >+	/* VIN0 */
+> >+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.0", "pfc-r8a7778",
+> >+				  "vin0_clk", "vin0"),
+> >+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.0", "pfc-r8a7778",
+> >+				  "vin0_data8", "vin0"),
+> >+	/* VIN1 */
+> >+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7778",
+> >+				  "vin1_clk", "vin1"),
+> >+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7778",
+> >+				  "vin1_data8", "vin1"),
+> >  };
+> 
+>     It turned out that VIN1 signal VI1_CLK conflicts with Ether
+> signal ETH_REF_CLK.
+> So I'm a bit at a loss here: whether I should totally remove VIN1
+> device if I'm going
+> to add Ether device, or add a BOCK-W specific submenu to Kconfig, or
+> add driver
+> specific #ifdef's in the code to disable VIN1 if sh_eth driver is
+> enabled?...
 
-The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+My preference, in order is:
 
-  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-r8a7790-for-v3.11
-
-for you to fetch changes up to 3318ce6ff5a5dbebe472103966a2c6d7d9542ec3:
-
-  ARM: shmobile: clock-r8a7790: add TPU PWM support (2013-05-27 17:50:51 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based r8a7790 SoC updates for v3.11
-
-* Increased clock coverage by Kuninori Morimoto.
-* TOU PWM clock support by Laurent Pinchart.
-* Clean-up from Maxime Ripard to remove unnecessary init_irq declaration in
-  machine description.
-* Clean-up from Magnus Damm to remove unused GIC CPU interface portions
-  of r8a7790.dtsi
-* Clean-up from Laurent Pinchart to make clock arrays static
-
-----------------------------------------------------------------
-Kuninori Morimoto (3):
-      ARM: shmobile: r8a7790: add main clock
-      ARM: shmobile: r8a7790: add div4 clocks
-      ARM: shmobile: r8a7790: add div6 clocks
-
-Laurent Pinchart (2):
-      ARM: shmobile: r8a7790: Make private clock arrays static
-      ARM: shmobile: clock-r8a7790: add TPU PWM support
-
-Magnus Damm (1):
-      ARM: shmobile: Remove unused r8a7790 GIC CPU interface DT bits
-
-Maxime Ripard (1):
-      ARM: shmobile: r8a7790: Remove init_irq declaration in machine description
-
- arch/arm/boot/dts/r8a7790.dtsi         |    6 -
- arch/arm/mach-shmobile/clock-r8a7790.c |  238 +++++++++++++++++++++++++++++++-
- arch/arm/mach-shmobile/setup-r8a7790.c |    2 -
- 3 files changed, 231 insertions(+), 15 deletions(-)
+* Remove VIN1 (is it used?)
+* Kconfig-foo
+* #ifdef nastiness
