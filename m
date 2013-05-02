@@ -1,54 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 25 May 2013 01:49:26 +0000
-Subject: Re: [PATCH 02/17 v2] mtd: m25p80: add support for the Spansion s25fl008k chip
-Message-Id: <20130525014925.GB28458@verge.net.au>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Thu, 02 May 2013 16:40:37 +0000
+Subject: Re: [PATCH/RFC 0/4] dmaengine: add DT support for DMA multiplexers
+Message-Id: <20130502162837.GM1960@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li7fwgk8.wl%kuninori.morimoto.gx@renesas.com>
- <87d2si4cdn.wl%kuninori.morimoto.gx@renesas.com>
- <87a9nm4cax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a9nm4cax.wl%kuninori.morimoto.gx@renesas.com>
+References: <1367305883-2997-1-git-send-email-g.liakhovetski@gmx.de>
+ <20130430104354.GF1960@intel.com>
+ <Pine.LNX.4.64.1304301405510.1489@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1304301405510.1489@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, David Woodhouse <dwmw2@infradead.org>, linux-mtd@lists.infradead.org
-Cc: Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Tony Lindgren <tony@atomide.com>, devicetree-discuss@lists.ozlabs.org, linux-kernel@vger.kernel.org, Russell King <linux@arm.linux.org.uk>
 
-On Wed, May 22, 2013 at 08:15:05PM -0700, Kuninori Morimoto wrote:
-> Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Apr 30, 2013 at 02:17:13PM +0200, Guennadi Liakhovetski wrote:
+> (added Russell to CC, sorry for not including initially)
+> 
+> Hi Vinod
+> 
+> On Tue, 30 Apr 2013, Vinod Koul wrote:
+> 
+> > On Tue, Apr 30, 2013 at 09:11:19AM +0200, Guennadi Liakhovetski wrote:
+> > > Previously an issue has been discussed, arising on sh-/r-mobile ARM-based 
+> > > systems. There we typically have multiple DMA controller instances with 
+> > > exactly equal or very similar capabilities. Each of them can serve the same 
+> > > slaves, using the same slave identifiers (request line IDs). With the 
+> > > present DMA DT implementation _each_ such DMA slave would have to reference 
+> > > _each_ of those DMA controllers in its DMA bindings, e.g.
+> > But why... if that is the case then we havent define DT-bindings clearly enough
+> 
+> Sorry, what do you mean "why?" Why each slave has to reference each DMA 
+> controller? We have discussed this A LOT before... My understanding is, 
+> that we decided, that the sh-/r-mobile case of multiple equal DMA 
+> controllers is an exception and that we don't want to punish everyone for 
+> it. So, the design includes only explicit requesting of specific DMA 
+> request lines on specific DMA controllers, no wild-cards. If a slave DMA 
+> channel can be provided by several DMA controllers we decided to list them 
+> all explicitly too. And for the sh-/r-mobile case a DMA-mux DT node has 
+> been proposed. This is exactly what this patch series is implementing. Is 
+> my understanding wrong?
+> 
+> > And we havent merged that yet, so why not fix that in first set itself
+> 
+> Sorry, don't understand. The series isn't merged yet, that's right. That's 
+> why I explicitly mention this dependency here. But this isn't a fix. This 
+> is a new feature. The first patch-series only touches a specific DMA 
+> controller driver and relevant platforms. No core changes, so, it's not 
+> that intrusive and can be applied quickly. Whereas this series affects the 
+> core and might need a more careful consideration, discussion, etc.
+What i mean from above is if we were already defining the sh-DT binding then why
+wasnt this taken care in the orignal definition?
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+It would make sense to have proper binding which works well for both of these
+case, why a two shot approach?
 
-I'm not quite sure of the history of this patch,
-but I have added David Woodhouse and linux-mtd
-to the recipients of this email. Davit, is it possible
-for you to pick this patch up?
-
-> ---
-> v1 -> v2
-> 
->  - no change
-> 
->  drivers/mtd/devices/m25p80.c |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
-> index 2f3d2a5..1bad33a 100644
-> --- a/drivers/mtd/devices/m25p80.c
-> +++ b/drivers/mtd/devices/m25p80.c
-> @@ -780,6 +780,7 @@ static const struct spi_device_id m25p_ids[] = {
->  	{ "s25sl016a",  INFO(0x010214,      0,  64 * 1024,  32, 0) },
->  	{ "s25sl032a",  INFO(0x010215,      0,  64 * 1024,  64, 0) },
->  	{ "s25sl064a",  INFO(0x010216,      0,  64 * 1024, 128, 0) },
-> +	{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K) },
->  	{ "s25fl016k",  INFO(0xef4015,      0,  64 * 1024,  32, SECT_4K) },
->  	{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },
->  
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+--
+~Vinod
