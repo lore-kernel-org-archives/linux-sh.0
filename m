@@ -1,36 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 May 2013 04:20:31 +0000
-Subject: Re: [PATCH] ARM: shmobile: fix sleep-r8a7740.S miscompiles
-Message-Id: <20130509042031.GA7832@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 03 May 2013 07:40:01 +0000
+Subject: Re: [PATCH v3 2/3] sh-pfc: r8a7778: add Ether pin groups
+Message-Id: <CACRpkdb7qDWiLgsMaiVVp5FKAa8h4ndRfJxqwUtgh3gZxF5eCw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305081418.05091.arnd@arndb.de>
- <20130509032544.GB13994@verge.net.au>
-In-Reply-To: <20130509032544.GB13994@verge.net.au>
+References: <201304270246.43931.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304270246.43931.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, May 09, 2013 at 12:25:44PM +0900, Simon Horman wrote:
-> On Wed, May 08, 2013 at 02:18:04PM +0200, Arnd Bergmann wrote:
-> > The newly added sleep-r8a7740.S file in shmobile does not
-> > actually build because of renamed symbols.
-> > 
-> > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> > Cc: Bastian Hecht <hechtb+renesas@gmail.com>
-> > Cc: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> > 
-> > Simon, please apply to whichever branch of yours has the broken commit,
-> > or fold this patch into Bastian's patch.
-> > 
-> > linux-next doesn't build for me because of this, mainline is still fine.
-> 
-> Sure, will do.
-> 
-> I am traveling today so I may not be able to deal with this
-> properly until tomorrow.
+On Sun, Apr 28, 2013 at 10:55 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Saturday 27 April 2013 18:41:27 Sergei Shtylyov wrote:
+>> On 27-04-2013 4:48, Laurent Pinchart wrote:
 
-I have queued this up in the soc-r8a7740 branch, where the problem was
-added. I have pushed this branch along with a refreshed next branch.
-This change should appear in linux-next in the not to distant future.
+>> > I really don't think the macros make the code more readable here,
+>> > especially with the explicit array/macros mix, but I won't nack the patch
+>> > just for that.
+>>
+>> But you won't ACK it either? :-)
+>
+> I definitely wouldn't have written the code that way, but the patch looks OK
+> to me and can be applied. According to Documentation/SubmittingPatches that's
+> equivalent to
+>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+If Laurent is OK with it, I'm OK with it.
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+
+Yours,
+Linus Walleij
