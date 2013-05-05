@@ -1,49 +1,23 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 15 May 2013 01:48:42 +0000
-Subject: Re: [PATCH 11/20] ARM: shmobile: sh73a0: Remove init_irq declaration in machine description
-Message-Id: <20130515014842.GQ12246@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Sun, 05 May 2013 20:03:16 +0000
+Subject: Re: [PATCH v2 3/3] sh-pfc: r8a7779: add Ether pin groups
+Message-Id: <CACRpkdZc3PjNgGcBvVkhak2Xo3uMOKmkgGHH3cQpmUVe=fQ+Og@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368545933-7430-12-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-12-git-send-email-maxime.ripard@free-electrons.com>
+References: <201304270110.17551.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304270110.17551.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, May 14, 2013 at 05:38:44PM +0200, Maxime Ripard wrote:
-> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> specified") removed the need to explictly setup the init_irq field in
-> the machine description when using only irqchip_init. Remove that
-> declaration for shmobile as well.
-> 
-> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> ---
->  arch/arm/mach-shmobile/setup-sh73a0.c | 2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-> index fdf3894..73dd75b 100644
-> --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> @@ -22,7 +22,6 @@
->  #include <linux/init.h>
->  #include <linux/interrupt.h>
->  #include <linux/irq.h>
-> -#include <linux/irqchip.h>
->  #include <linux/platform_device.h>
->  #include <linux/of_platform.h>
->  #include <linux/delay.h>
-> @@ -1035,7 +1034,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
->  	.map_io		= sh73a0_map_io,
->  	.init_early	= sh73a0_init_delay,
->  	.nr_irqs	= NR_IRQS_LEGACY,
-> -	.init_irq	= irqchip_init,
->  	.init_machine	= sh73a0_add_standard_devices_dt,
->  	.dt_compat	= sh73a0_boards_compat_dt,
->  MACHINE_END
+On Fri, Apr 26, 2013 at 11:10 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
 
-Queued up for v3.11 in the soc-sh73a0 branch of my renesas tree
-on kernel.org. It is included in the renesas-next-20130515 tag of
-that tree and should appear in linux-next in the not to distant future.
+> Add Ether RMII/LINK/MAGIC pin groups to R8A7779 PFC driver.
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+
+Yours,
+Linus Walleij
