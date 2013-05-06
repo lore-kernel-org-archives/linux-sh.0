@@ -1,30 +1,71 @@
-From: Jamie Iles <jamie@jamieiles.com>
-Date: Mon, 20 May 2013 22:42:14 +0000
-Subject: Re: [PATCH 04/20] ARM: picoxcell: Remove init_irq declaration in machine description
-Message-Id: <20130520224214.GA4659@page>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 06 May 2013 22:50:36 +0000
+Subject: Re: [PATCH v4 19/88] sh-pfc: r8a7779: Add USB pin groups and functions
+Message-Id: <518833BC.3020903@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368545933-7430-5-git-send-email-maxime.ripard@free-electrons.com>
- <20130514162046.GA16346@page> <519496AC.1070809@free-electrons.com>
-In-Reply-To: <519496AC.1070809@free-electrons.com>
+References: <1363215633-4264-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1363215633-4264-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Thu, May 16, 2013 at 10:19:56AM +0200, Maxime Ripard wrote:
-> Hi Jamie,
->=20
-> Le 14/05/2013 18:20, Jamie Iles a =E9crit :
-> > Hi Maxime,
-> >=20
-> > Thanks for this, I'll add it to my tree.  I've modified it slightly to =
+Hello.
 
-> > kill off the other irq includes, hopefully that's okay with you.
->=20
-> Yes, I was pretty conservative since I was not familiar with most of the
-> code, but yes, I'm fine with the changes.
+On 03/14/2013 01:59 AM, Laurent Pinchart wrote:
 
-Thanks Maxime, applied to picoxcell-next.
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>   drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 42 ++++++++++++++++++++++++++++++++++++
+>   1 file changed, 42 insertions(+)
+>
+> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+> index 946572bc..6043d2c 100644
+> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+> @@ -2198,6 +2198,30 @@ static const unsigned int sdhi3_wp_pins[] = {
+>   static const unsigned int sdhi3_wp_mux[] = {
+>   	SD3_WP_MARK,
+>   };
+> +/* - USB0 ------------------------------------------------------------------- */
+> +static const unsigned int usb0_pins[] = {
+> +	/* OVC */
+> +	150, 154,
+> +};
+> +static const unsigned int usb0_mux[] = {
+> +	USB_OVC0_MARK, USB_PENC0_MARK,
+> +};
+> +/* - USB1 ------------------------------------------------------------------- */
+> +static const unsigned int usb1_pins[] = {
+> +	/* OVC */
+> +	152, 155,
+> +};
+> +static const unsigned int usb1_mux[] = {
+> +	USB_OVC1_MARK, USB_PENC1_MARK,
+> +};
+> +/* - USB2 ------------------------------------------------------------------- */
+> +static const unsigned int usb2_pins[] = {
+> +	/* OVC, PENC */
+> +	125, 156,
+> +};
+> +static const unsigned int usb2_mux[] = {
+> +	USB_OVC2_MARK, USB_PENC2_MARK,
+> +};
+>   
 
-Jamie
+    The PENCn and USB_OVCn were erroneously grouped together (I've already
+explained that the latter is usually unused 3.3V signal). This causes 
+the following
+(false) error messages when booting on Marzen:
+
+sh-pfc pfc-r8a7779: pin GP_4_22 already requested by sh-hspi.0; cannot 
+claim for
+  ehci-platform.0
+sh-pfc pfc-r8a7779: pin-150 (ehci-platform.0) status -22
+sh-pfc pfc-r8a7779: could not request pin 150 on device sh-pfc
+
+     GP_4_22 is multiplexed with USB_OVC0 (unused on Marzen) and HSPI_CLK0.
+This needs fixing.
+
+WBR, Sergei
+
