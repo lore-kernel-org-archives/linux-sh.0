@@ -1,25 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 25 May 2013 01:52:11 +0000
-Subject: Re: [PATCH 04/17 v2] sh-pfc: r8a7778: add HSPI pin groups
-Message-Id: <20130525015209.GD28458@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 08 May 2013 12:18:04 +0000
+Subject: [PATCH] ARM: shmobile: fix sleep-r8a7740.S miscompiles
+Message-Id: <201305081418.05091.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877giq4c8l.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <877giq4c8l.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 22, 2013 at 08:16:30PM -0700, Kuninori Morimoto wrote:
-> Add HSPI CLK/CS/RX/TX pin groups to R8A7778 PFC driver.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
-> 
->  - alphabetical change
-> 
->  drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   61 ++++++++++++++++++++++++++++++++++
->  1 file changed, 61 insertions(+)
+The newly added sleep-r8a7740.S file in shmobile does not
+actually build because of renamed symbols.
 
-Thanks, I will queue this up for v3.11 in the pinmux branch.
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Bastian Hecht <hechtb+renesas@gmail.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>
+---
+
+Simon, please apply to whichever branch of yours has the broken commit,
+or fold this patch into Bastian's patch.
+
+linux-next doesn't build for me because of this, mainline is still fine.
+
+diff --git a/arch/arm/mach-shmobile/sleep-r8a7740.S b/arch/arm/mach-shmobile/sleep-r8a7740.S
+index 435531b..982eacb 100644
+--- a/arch/arm/mach-shmobile/sleep-r8a7740.S
++++ b/arch/arm/mach-shmobile/sleep-r8a7740.S
+@@ -32,7 +32,7 @@ ENTRY(r8a7740_shutdown)
+ wfi_loop:
+ 	bl	cpu_v7_do_idle
+ 	b wfi_loop
+-ENDPROC(r8a7740)
++ENDPROC(r8a7740_shutdown)
+ 
+ 	.text
+ ENTRY(v7_cpu_resume)
+@@ -53,5 +53,5 @@ ENDPROC(v7_cpu_resume)
+ ENTRY(r8a7740_resume)
+ 	ldr	pc, 1f
+ 1:	.long	v7_cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
+-ENDPROC(r8a7740_resume_core_standby)
++ENDPROC(r8a7740_resume)
+ #endif
