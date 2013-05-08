@@ -1,287 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 26 May 2013 13:05:55 +0000
-Subject: [PATCH 4/6] ARM: shmobile: r8a73a4: add div6 clocks
-Message-Id: <1369573557-11071-5-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 08 May 2013 23:39:09 +0000
+Subject: [PATCH v7 3/3] ARM: shmobile: BOCK-W: add USB support
+Message-Id: <201305090339.10053.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
+References: <201305090333.00333.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201305090333.00333.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Register the USB PHY device from bockw_init(), passing the platform  data to it.
+Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
+get registered too...
 
-DIV6 clocks control each core clocks.
+Don't forget to add USB PENC0/1 pins to bockw_pinctrl_map[].
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The patch has been tested on the BOCK-W board.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c |  182 ++++++++++++++++++++++++++++----
- 1 file changed, 163 insertions(+), 19 deletions(-)
+Changes since version 6:
+- added USB PENC0/1 pins to bockw_pinctrl_map[].
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 147314a..f6227bb 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -28,19 +28,34 @@
- #define CPG_BASE 0xe6150000
- #define CPG_LEN 0x270
- 
--#define MPCKCR 0xe6150080
- #define SMSTPCR2 0xe6150138
- #define SMSTPCR5 0xe6150144
- 
- #define FRQCRA		0xE6150000
- #define FRQCRB		0xE6150004
--#define CKSCR		0xE61500C0
-+#define VCLKCR1		0xE6150008
-+#define VCLKCR2		0xE615000C
-+#define VCLKCR3		0xE615001C
-+#define VCLKCR4		0xE6150014
-+#define VCLKCR5		0xE6150034
-+#define ZBCKCR		0xE6150010
-+#define SD0CKCR		0xE6150074
-+#define SD1CKCR		0xE6150078
-+#define SD2CKCR		0xE615007C
-+#define MMC0CKCR	0xE6150240
-+#define MMC1CKCR	0xE6150244
-+#define FSIACKCR	0xE6150018
-+#define FSIBCKCR	0xE6150090
-+#define MPCKCR		0xe6150080
-+#define SPUVCKCR	0xE6150094
-+#define HSICKCR		0xE615026C
-+#define M4CKCR		0xE6150098
- #define PLLECR		0xE61500D0
- #define PLL1CR		0xE6150028
- #define PLL2CR		0xE615002C
- #define PLL2SCR		0xE61501F4
- #define PLL2HCR		0xE61501E4
--
-+#define CKSCR		0xE61500C0
- 
- #define CPG_MAP(o) ((o - CPG_BASE) + cpg_mapping.base)
- 
-@@ -81,6 +96,13 @@ SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
- SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
- SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
- 
-+/* External FSIACK/FSIBCK clock */
-+static struct clk fsiack_clk = {
-+};
-+
-+static struct clk fsibck_clk = {
-+};
-+
- /*
-  *		PLL clocks
-  */
-@@ -170,6 +192,8 @@ static struct clk *main_clks[] = {
- 	&extal2_div4_clk,
- 	&main_clk,
- 	&main_div2_clk,
-+	&fsiack_clk,
-+	&fsibck_clk,
- 	&pll1_clk,
- 	&pll1_div2_clk,
- 	&pll2_clk,
-@@ -216,6 +240,111 @@ static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_HP]	= SH_CLK_DIV4(&pll1_clk, FRQCRB,  4, 0x0dff, 0),
- };
- 
-+enum {
-+	DIV6_ZB,
-+	DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
-+	DIV6_MMC0, DIV6_MMC1,
-+	DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_VCK4, DIV6_VCK5,
-+	DIV6_FSIA, DIV6_FSIB,
-+	DIV6_MP, DIV6_M4, DIV6_HSI, DIV6_SPUV,
-+	DIV6_NR };
-+
-+static struct clk *div6_parents[8] = {
-+	[0] = &pll1_div2_clk,
-+	[1] = &pll2s_clk,
-+	[3] = &extal2_clk,
-+	[4] = &main_div2_clk,
-+	[6] = &extalr_clk,
-+};
-+
-+static struct clk *fsia_parents[4] = {
-+	[0] = &pll1_div2_clk,
-+	[1] = &pll2s_clk,
-+	[2] = &fsiack_clk,
-+};
-+
-+static struct clk *fsib_parents[4] = {
-+	[0] = &pll1_div2_clk,
-+	[1] = &pll2s_clk,
-+	[2] = &fsibck_clk,
-+};
-+
-+static struct clk *mp_parents[4] = {
-+	[0] = &pll1_div2_clk,
-+	[1] = &pll2s_clk,
-+	[2] = &extal2_clk,
-+	[3] = &extal2_clk,
-+};
-+
-+static struct clk *m4_parents[2] = {
-+	[0] = &pll2s_clk,
-+};
-+
-+static struct clk *hsi_parents[4] = {
-+	[0] = &pll2h_clk,
-+	[1] = &pll1_div2_clk,
-+	[3] = &pll2s_clk,
-+};
-+
-+/*** FIXME ***
-+ * SH_CLK_DIV6_EXT() macro doesn't care .mapping
-+ * but, it is necessary on R-Car (= ioremap() base CPG)
-+ * The difference between
-+ * SH_CLK_DIV6_EXT() <--> SH_CLK_MAP_DIV6_EXT()
-+ * is only .mapping
-+ */
-+#define SH_CLK_MAP_DIV6_EXT(_reg, _flags, _parents,			\
-+			    _num_parents, _src_shift, _src_width)	\
-+{									\
-+	.enable_reg	= (void __iomem *)_reg,				\
-+	.enable_bit	= 0, /* unused */				\
-+	.flags		= _flags | CLK_MASK_DIV_ON_DISABLE,		\
-+	.div_mask	= SH_CLK_DIV6_MSK,				\
-+	.parent_table	= _parents,					\
-+	.parent_num	= _num_parents,					\
-+	.src_shift	= _src_shift,					\
-+	.src_width	= _src_width,					\
-+	.mapping	= &cpg_mapping,					\
-+}
-+
-+static struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_ZB] = SH_CLK_MAP_DIV6_EXT(ZBCKCR, CLK_ENABLE_ON_INIT,
-+				div6_parents, 2, 7, 1),
-+	[DIV6_SDHI0] = SH_CLK_MAP_DIV6_EXT(SD0CKCR, 0,
-+				div6_parents, 2, 6, 2),
-+	[DIV6_SDHI1] = SH_CLK_MAP_DIV6_EXT(SD1CKCR, 0,
-+				div6_parents, 2, 6, 2),
-+	[DIV6_SDHI2] = SH_CLK_MAP_DIV6_EXT(SD2CKCR, 0,
-+				div6_parents, 2, 6, 2),
-+	[DIV6_MMC0] = SH_CLK_MAP_DIV6_EXT(MMC0CKCR, 0,
-+				div6_parents, 2, 6, 2),
-+	[DIV6_MMC1] = SH_CLK_MAP_DIV6_EXT(MMC1CKCR, 0,
-+				div6_parents, 2, 6, 2),
-+	[DIV6_VCK1] = SH_CLK_MAP_DIV6_EXT(VCLKCR1, 0, /* didn't care bit[6-7] */
-+				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
-+	[DIV6_VCK2] = SH_CLK_MAP_DIV6_EXT(VCLKCR2, 0, /* didn't care bit[6-7] */
-+				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
-+	[DIV6_VCK3] = SH_CLK_MAP_DIV6_EXT(VCLKCR3, 0, /* didn't care bit[6-7] */
-+				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
-+	[DIV6_VCK4] = SH_CLK_MAP_DIV6_EXT(VCLKCR4, 0, /* didn't care bit[6-7] */
-+				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
-+	[DIV6_VCK5] = SH_CLK_MAP_DIV6_EXT(VCLKCR5, 0, /* didn't care bit[6-7] */
-+				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
-+	[DIV6_FSIA] = SH_CLK_MAP_DIV6_EXT(FSIACKCR, 0,
-+				fsia_parents, ARRAY_SIZE(fsia_parents), 6, 2),
-+	[DIV6_FSIB] = SH_CLK_MAP_DIV6_EXT(FSIBCKCR, 0,
-+				fsib_parents, ARRAY_SIZE(fsib_parents), 6, 2),
-+	[DIV6_MP] = SH_CLK_MAP_DIV6_EXT(MPCKCR, 0, /* it needs bit[9-11] control */
-+				mp_parents, ARRAY_SIZE(mp_parents), 6, 2),
-+	/* pll2s will be selected always for M4 */
-+	[DIV6_M4] = SH_CLK_MAP_DIV6_EXT(M4CKCR, 0, /* it needs bit[9] control */
-+				m4_parents, ARRAY_SIZE(m4_parents), 6, 1),
-+	[DIV6_HSI] = SH_CLK_MAP_DIV6_EXT(HSICKCR, 0, /* it needs bit[9] control */
-+				hsi_parents, ARRAY_SIZE(hsi_parents), 6, 2),
-+	[DIV6_SPUV] = SH_CLK_MAP_DIV6_EXT(SPUVCKCR, 0,
-+				mp_parents, ARRAY_SIZE(mp_parents), 6, 2),
-+};
-+
- /* MSTP */
- enum {
- 	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
-@@ -224,12 +353,12 @@ enum {
- };
- 
- static struct clk mstp_clks[MSTP_NR] = {
--	[MSTP204] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
--	[MSTP203] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
--	[MSTP206] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
--	[MSTP207] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
--	[MSTP216] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
--	[MSTP217] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 17, 0), /* SCIFB3 */
-+	[MSTP204] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 4, 0), /* SCIFA0 */
-+	[MSTP203] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 3, 0), /* SCIFA1 */
-+	[MSTP206] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 6, 0), /* SCIFB0 */
-+	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
-+	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
-+	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
- 	[MSTP522] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR5, 22, 0), /* Thermal */
- };
- 
-@@ -240,6 +369,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("extal2",			&extal2_clk),
- 	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
- 	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
-+	CLKDEV_CON_ID("fsiack",			&fsiack_clk),
-+	CLKDEV_CON_ID("fsibck",			&fsibck_clk),
- 
- 	/* pll clock */
- 	CLKDEV_CON_ID("pll1",			&pll1_clk),
-@@ -248,6 +379,25 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pll2s",			&pll2s_clk),
- 	CLKDEV_CON_ID("pll2h",			&pll2h_clk),
- 
-+	/* DIV6 */
-+	CLKDEV_CON_ID("zb",			&div6_clks[DIV6_ZB]),
-+	CLKDEV_CON_ID("sdhi0",			&div6_clks[DIV6_SDHI0]),
-+	CLKDEV_CON_ID("sdhi1",			&div6_clks[DIV6_SDHI1]),
-+	CLKDEV_CON_ID("sdhi2",			&div6_clks[DIV6_SDHI2]),
-+	CLKDEV_CON_ID("mmc0",			&div6_clks[DIV6_MMC0]),
-+	CLKDEV_CON_ID("mmc1",			&div6_clks[DIV6_MMC1]),
-+	CLKDEV_CON_ID("vck1",			&div6_clks[DIV6_VCK1]),
-+	CLKDEV_CON_ID("vck2",			&div6_clks[DIV6_VCK2]),
-+	CLKDEV_CON_ID("vck3",			&div6_clks[DIV6_VCK3]),
-+	CLKDEV_CON_ID("vck4",			&div6_clks[DIV6_VCK4]),
-+	CLKDEV_CON_ID("vck5",			&div6_clks[DIV6_VCK5]),
-+	CLKDEV_CON_ID("fsia",			&div6_clks[DIV6_FSIA]),
-+	CLKDEV_CON_ID("fsib",			&div6_clks[DIV6_FSIB]),
-+	CLKDEV_CON_ID("mp",			&div6_clks[DIV6_MP]),
-+	CLKDEV_CON_ID("m4",			&div6_clks[DIV6_M4]),
-+	CLKDEV_CON_ID("hsi",			&div6_clks[DIV6_HSI]),
-+	CLKDEV_CON_ID("spuv",			&div6_clks[DIV6_SPUV]),
-+
- 	/* MSTP */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
-@@ -263,19 +413,10 @@ static struct clk_lookup lookups[] = {
- 
- void __init r8a73a4_clock_init(void)
- {
--	void __iomem *cpg_base, *reg;
-+	void __iomem *reg;
- 	int k, ret = 0;
- 	u32 ckscr;
- 
--	/* fix MPCLK to EXTAL2 for now.
--	 * this is needed until more detailed clock topology is supported
--	 */
--	cpg_base = ioremap_nocache(CPG_BASE, CPG_LEN);
--	BUG_ON(!cpg_base);
--	reg = cpg_base + (MPCKCR - CPG_BASE);
--	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
--	iounmap(cpg_base);
--
- 	reg = ioremap_nocache(CKSCR, PAGE_SIZE);
- 	BUG_ON(!reg);
- 	ckscr = ioread32(reg);
-@@ -303,6 +444,9 @@ void __init r8a73a4_clock_init(void)
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
- 
- 	if (!ret)
-+		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
-+
-+	if (!ret)
- 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
- 
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
--- 
-1.7.10.4
+Changes since version 4:
+- annotated 'usb_phy_platform_data' as '__initdata' since it's kmemdup()'ed
+  while registering the platform device anyway;
+- refreshed the patch.
 
+Changes since version 3:
+- removed initializer for 'usb_phy_platform_data' letting it be set to all 0s;
+- refreshed the patch.
+
+Changes since version 2:
+- refreshed the patch.
+
+Changes since the original posting:
+- removed initializer for no longer existing field in 'usb_phy_platform_data',
+  modified the comment to the 'ferrite_bead' field initializer.
+
+ arch/arm/mach-shmobile/board-bockw.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -63,6 +63,8 @@ static struct sh_mobile_sdhi_info sdhi0_
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ };
+ 
++static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
++
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+@@ -78,6 +80,10 @@ static const struct pinctrl_map bockw_pi
+ 				  "sdhi0_data4", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
+ 				  "sdhi0_wp", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
++				  "usb0", "usb0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
++				  "usb1", "usb1"),
+ };
+ 
+ #define FPGA	0x18200000
+@@ -91,6 +97,7 @@ static void __init bockw_init(void)
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
++	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
+ 
+ 	pinctrl_register_mappings(bockw_pinctrl_map,
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
+@@ -146,4 +153,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
+ 	.init_machine	= bockw_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= bockw_boards_compat_dt,
++	.init_late      = r8a7778_init_late,
+ MACHINE_END
