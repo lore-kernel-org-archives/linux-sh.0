@@ -1,85 +1,81 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:28 +0000
-Subject: [PATCH v4 07/21] ARM: shmobile: r8a7779: Add pin control device to device tree
-Message-Id: <1369138482-5871-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Jiang Liu <liuj97@gmail.com>
+Date: Wed, 08 May 2013 15:51:31 +0000
+Subject: [PATCH v5, part4 34/41] mm/SH: prepare for removing num_physpages and simplify mem_init()
+Message-Id: <1368028298-7401-35-git-send-email-jiang.liu@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1368028298-7401-1-git-send-email-jiang.liu@huawei.com>
+In-Reply-To: <1368028298-7401-1-git-send-email-jiang.liu@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Jiang Liu <jiang.liu@huawei.com>, David Rientjes <rientjes@google.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, James Bottomley <James.Bottomley@HansenPartnership.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, David Howells <dhowells@redhat.com>, Mark Salter <msalter@redhat.com>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
 
-Add a pfc node to the r8a7779 device tree and remove manual pinmux
-initialization from the corresponding board files.
+Prepare for removing num_physpages and simplify mem_init().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Wen Congyang <wency@cn.fujitsu.com>
+Cc: Tang Chen <tangchen@cn.fujitsu.com>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 ---
- arch/arm/boot/dts/r8a7779.dtsi                  |  5 +++++
- arch/arm/mach-shmobile/board-marzen-reference.c | 17 ++++++++---------
- 2 files changed, 13 insertions(+), 9 deletions(-)
+ arch/sh/mm/init.c |   25 ++++---------------------
+ 1 file changed, 4 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 7f146c6..9dfc438 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -101,6 +101,11 @@
- 		interrupts = <0 81 0x4>;
- 	};
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index aecd913..3826596 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -407,24 +407,18 @@ unsigned int mem_init_done = 0;
  
-+	pfc: pfc@fffc0000 {
-+		compatible = "renesas,pfc-r8a7779";
-+		reg = <0xfffc0000 0x23c>;
-+	};
-+
- 	thermal@ffc48000 {
- 		compatible = "renesas,rcar-thermal";
- 		reg = <0xffc48000 0x38>;
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 5332e89..fa7fc07 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -28,24 +28,24 @@
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
- 	/* SCIF2 (CN18: DEBUG0) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
- 				  "scif2_data_c", "scif2"),
- 	/* SCIF4 (CN19: DEBUG1) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
- 				  "scif4_data", "scif4"),
- 	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_wp", "sdhi0"),
- 	/* SMSC */
--	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "fffc0000.pfc",
- 				  "intc_irq1_b", "intc"),
--	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "fffc0000.pfc",
- 				  "lbsc_ex_cs0", "lbsc"),
- };
- 
-@@ -53,7 +53,6 @@ static void __init marzen_init(void)
+ void __init mem_init(void)
  {
- 	pinctrl_register_mappings(marzen_pinctrl_map,
- 				  ARRAY_SIZE(marzen_pinctrl_map));
--	r8a7779_pinmux_init();
+-	int codesize, datasize, initsize;
+-	int nid;
++	pg_data_t *pgdat;
  
- 	r8a7779_add_standard_devices_dt();
- }
+ 	iommu_init();
+ 
+-	num_physpages = 0;
+ 	high_memory = NULL;
+ 
+-	for_each_online_node(nid) {
+-		pg_data_t *pgdat = NODE_DATA(nid);
++	for_each_online_pgdat(pgdat) {
+ 		void *node_high_memory;
+ 
+-		num_physpages += pgdat->node_present_pages;
+-
+ 		if (pgdat->node_spanned_pages)
+ 			free_all_bootmem_node(pgdat);
+ 
+-
+ 		node_high_memory = (void *)__va((pgdat->node_start_pfn +
+ 						 pgdat->node_spanned_pages) <<
+ 						 PAGE_SHIFT);
+@@ -441,19 +435,8 @@ void __init mem_init(void)
+ 
+ 	vsyscall_init();
+ 
+-	codesize =  (unsigned long) &_etext - (unsigned long) &_text;
+-	datasize =  (unsigned long) &_edata - (unsigned long) &_etext;
+-	initsize =  (unsigned long) &__init_end - (unsigned long) &__init_begin;
+-
+-	printk(KERN_INFO "Memory: %luk/%luk available (%dk kernel code, "
+-	       "%dk data, %dk init)\n",
+-		nr_free_pages() << (PAGE_SHIFT-10),
+-		num_physpages << (PAGE_SHIFT-10),
+-		codesize >> 10,
+-		datasize >> 10,
+-		initsize >> 10);
+-
+-	printk(KERN_INFO "virtual kernel memory layout:\n"
++	mem_init_print_info(NULL);
++	pr_info("virtual kernel memory layout:\n"
+ 		"    fixmap  : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+ #ifdef CONFIG_HIGHMEM
+ 		"    pkmap   : 0x%08lx - 0x%08lx   (%4ld kB)\n"
 -- 
-1.8.1.5
+1.7.9.5
 
