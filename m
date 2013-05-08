@@ -1,42 +1,29 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 15 May 2013 02:57:28 +0000
-Subject: [PATCH v2 2/4] ARM: shmobile: marzen-reference: Update lan device name in pinctrl maps
-Message-Id: <1368586650-26263-3-git-send-email-horms+renesas@verge.net.au>
+From: "John P. Goldman" <gliceaga@mendoza-conicet.gob.ar>
+Date: Wed, 08 May 2013 08:46:28 +0000
+Subject: dringender Vorschlag
+Message-Id: <351326728.69416.1368002788604.JavaMail.root@correo.mendoza-conicet.gob.ar>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-fbdev@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The ethernet device is instantiated from the device tree, use the
-correct name in the pinctrl mappings.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-marzen-reference.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Entschuldigungen für kommen in Ihre Privatsphäre! Ich bin Rechtsanwalt
+Werner Erich Zeller; Ich habe einen meiner einflussreichen und
+wohlhabenden Kunden zum Tode; und er hatte eine sehr geheime und private
+Investitionen von €15,000,000.00 bei einer privaten Bank in Großbritannien
+hier zu Lebzeiten. Diese Investition wurde ohne einen deklarierten
+nächsten Angehörigen und begünstigte. Jetzt brauche ich Sie arbeiten mit
+mir als mein Partner zu erholen und zu je 50 % Aktienfonds. Alle Dokumente
+werden rechtlich beantragt und beschafft, und in 5 Werktage, wird diese
+Transaktion auftreten. Aber ich brauche einen ernsten, treuen und
+glaubwürdigen Partner.
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 480d882..5332e89 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -43,9 +43,9 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
- 				  "sdhi0_wp", "sdhi0"),
- 	/* SMSC */
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
- 				  "intc_irq1_b", "intc"),
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
- 				  "lbsc_ex_cs0", "lbsc"),
- };
- 
--- 
-1.8.2.1
+Bitte senden Sie mir eine vertrauliche Antwort, wenn Sie denken, Sie
+vertraut werden können und sind von den Qualitäten! Ich warte auf Ihre
+schnelle Antwort.
 
+Werner Erich Zeller (Rechtsanwalt)
+Rufen Sie + 44-702-409-0820 (Office)
