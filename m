@@ -1,38 +1,33 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 05 May 2013 11:36:42 +0000
-Subject: Re: [PATCH v3 2/3] sh-pfc: r8a7778: add Ether pin groups
-Message-Id: <5186444A.8010807@cogentembedded.com>
+Date: Thu, 09 May 2013 00:05:40 +0000
+Subject: [PATCH] ARM: shmobile: r8a7778: correct model name in Kconfig
+Message-Id: <201305090405.41053.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304270246.43931.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201304270246.43931.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+The correct model name is R-Car M1A or R8A77781; R8A77780 corresponds to R-Car
+M1S which is a SH based SoC.  
 
-On 03-05-2013 11:40, Linus Walleij wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->>>> I really don't think the macros make the code more readable here,
->>>> especially with the explicit array/macros mix, but I won't nack the patch
->>>> just for that.
+---
+The patch is against the current Linus' tree.
 
->>> But you won't ACK it either? :-)
+ arch/arm/mach-shmobile/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->> I definitely wouldn't have written the code that way, but the patch looks OK
->> to me and can be applied. According to Documentation/SubmittingPatches that's
->> equivalent to
-
->> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> If Laurent is OK with it, I'm OK with it.
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-
-    How about patch #3 of this series?
-
-> Yours,
-> Linus Walleij
-
-WBR, Sergei
-
+Index: linux/arch/arm/mach-shmobile/Kconfig
+=================================--- linux.orig/arch/arm/mach-shmobile/Kconfig
++++ linux/arch/arm/mach-shmobile/Kconfig
+@@ -36,7 +36,7 @@ config ARCH_R8A7740
+ 	select RENESAS_INTC_IRQPIN
+ 
+ config ARCH_R8A7778
+-	bool "R-Car M1 (R8A77780)"
++	bool "R-Car M1A (R8A77781)"
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select ARM_GIC
