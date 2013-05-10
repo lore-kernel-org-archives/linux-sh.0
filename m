@@ -1,49 +1,97 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 15 May 2013 09:15:01 +0000
-Subject: Re: [PATCH v2 4/4] ARM: shmobile: marzen-reference: Set SMSC lan to use irq-push-pull
-Message-Id: <10371644.BMkVSLAUGy@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 May 2013 08:05:19 +0000
+Subject: [PATCH 2/2] ARM: shmobile: lager: enable Ether
+Message-Id: <1368173119-27345-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
- <1368586650-26263-5-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368586650-26263-5-git-send-email-horms+renesas@verge.net.au>
+References: <1368173119-27345-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368173119-27345-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Thanks for the patch.
+---
 
-On Wednesday 15 May 2013 11:57:30 Simon Horman wrote:
-> This change makes the DTS consistent with the platform data
-> that exists in board-marzen.c.
-> 
-> Empirically it does not appear to be necessary.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
+---
+ arch/arm/boot/dts/r8a7790-lager.dts  |  2 +-
+ arch/arm/mach-shmobile/board-lager.c | 26 ++++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+), 1 deletion(-)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  arch/arm/boot/dts/r8a7779-marzen-reference.dts | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> b/arch/arm/boot/dts/r8a7779-marzen-reference.dts index 10cfc7f..fe32e1a
-> 100644
-> --- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> @@ -40,6 +40,7 @@
->  		phy-mode = "mii";
->  		interrupt-parent = <&irqpin0>;
->  		interrupts = <1 0x4>;
-> +		smsc,irq-push-pull;
->  		reg-io-width = <4>;
->  		vddvario-supply = <&fixedregulator3v3>;
->  		vdd33a-supply = <&fixedregulator3v3>;
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 09a84fc..b2f61f0 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,lager", "renesas,r8a7790";
+ 
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel";
++		bootargs = "console=ttySC6,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
+ 	};
+ 
+ 	memory@40000000 {
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 6a1ba38..0b8112d 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/gpio.h>
+ #include <linux/interrupt.h>
+ #include <linux/irqchip.h>
+ #include <linux/kernel.h>
+@@ -52,6 +53,15 @@ static struct gpio_led_platform_data lager_leds_pdata = {
+ 	.num_leds	= ARRAY_SIZE(lager_leds),
+ };
+ 
++/* Ether */
++static struct sh_eth_plat_data ether_platdata = {
++	.phy			= 0x1,
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.register_type		= SH_ETH_REG_FAST_RCAR,
++	.phy_interface		= PHY_INTERFACE_MODE_RMII,
++	.ether_link_active_low	= 1,
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+@@ -59,6 +69,17 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
+ 				  "scif1_data", "scif1"),
++	/* Ether */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "eth_link", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "eth_magic", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "eth_mdio", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "eth_rmii", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "intc_irq0", "intc"),
+ };
+ 
+ static void __init lager_add_standard_devices(void)
+@@ -73,6 +94,11 @@ static void __init lager_add_standard_devices(void)
+ 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
+ 				      &lager_leds_pdata,
+ 				      sizeof(lager_leds_pdata));
++
++	/* Ether RESET */
++	gpio_request_one(RCAR_GP_PIN(5, 31), GPIOF_OUT_INIT_HIGH, NULL);
++
++	r8a7790_add_ether_device(&ether_platdata);
+ }
+ 
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.2.1
 
