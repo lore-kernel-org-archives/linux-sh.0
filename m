@@ -1,38 +1,39 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 31 May 2013 16:02:31 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: sdhi: pass DMA filter from platform code
-Message-Id: <3675801.kLfsmmiSOq@wuerfel>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 10 May 2013 14:48:36 +0000
+Subject: [RFC/PATCH 1/2] gpio-rcar: Make the platform data gpio_base field signed
+Message-Id: <1368197317-13169-2-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370008605-3745603-1-git-send-email-arnd@arndb.de>
- <2862988.jnTv0iSQcj@wuerfel>
- <alpine.DEB.2.00.1305311721160.7395@axis700.grange>
-In-Reply-To: <alpine.DEB.2.00.1305311721160.7395@axis700.grange>
+References: <1368197317-13169-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1368197317-13169-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <damm@opensource.se>
 
-On Friday 31 May 2013 17:30:01 Guennadi Liakhovetski wrote:
-> On Fri, 31 May 2013, Arnd Bergmann wrote:
-> > On Friday 31 May 2013 16:52:13 Guennadi Liakhovetski wrote:
+The gpio_base field is used to specify the desired GPIO base for the
+GPIO controller. The GPIO core can automatically allocate a GPIO number
+range when the base is set to -1. To make this possible, make the field
+signed.
 
-> > I think it's more a matter of using the API correctly. The dmaengine
-> > API is an abstraction to separate the slave driver from the master
-> > through well-defined calls. If you make additional assumptions
-> > in the slave driver about the master, that is a layering violation.
-> 
-> I think it is a common practice, see e.g.
-> 
-> drivers/mmc/host/omap_hsmmc.c
-> drivers/mmc/host/davinci_mmc.c
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ include/linux/platform_data/gpio-rcar.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Yes, those should be fixed as well.
+diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
+index cc472f6..fb2c718 100644
+--- a/include/linux/platform_data/gpio-rcar.h
++++ b/include/linux/platform_data/gpio-rcar.h
+@@ -17,7 +17,7 @@
+ #define __GPIO_RCAR_H__
+ 
+ struct gpio_rcar_config {
+-	unsigned int gpio_base;
++	int gpio_base;
+ 	unsigned int irq_base;
+ 	unsigned int number_of_pins;
+ 	const char *pctl_name;
+-- 
+1.8.1.5
 
-> And what do you do for DT-based platforms?
-
-Once the driver is DT-enabled, we no longer have to pass
-a filter function at all because the slave id and all settings
-will get pulled out of the DT using the dma engine's xlate()
-callback.
-
-	Arnd
