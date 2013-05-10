@@ -1,97 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 May 2013 08:05:19 +0000
-Subject: [PATCH 2/2] ARM: shmobile: lager: enable Ether
-Message-Id: <1368173119-27345-3-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 10 May 2013 10:35:01 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: lager: enable Ether
+Message-Id: <518CCD55.6070101@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368173119-27345-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368173119-27345-1-git-send-email-horms+renesas@verge.net.au>
+ <1368173119-27345-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368173119-27345-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Hello.
 
----
+On 10-05-2013 12:05, Simon Horman wrote:
 
-This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
----
- arch/arm/boot/dts/r8a7790-lager.dts  |  2 +-
- arch/arm/mach-shmobile/board-lager.c | 26 ++++++++++++++++++++++++++
- 2 files changed, 27 insertions(+), 1 deletion(-)
+> Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 09a84fc..b2f61f0 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,lager", "renesas,r8a7790";
- 
- 	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+		bootargs = "console=ttySC6,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
- 	};
- 
- 	memory@40000000 {
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 6a1ba38..0b8112d 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/gpio.h>
- #include <linux/interrupt.h>
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
-@@ -52,6 +53,15 @@ static struct gpio_led_platform_data lager_leds_pdata = {
- 	.num_leds	= ARRAY_SIZE(lager_leds),
- };
- 
-+/* Ether */
-+static struct sh_eth_plat_data ether_platdata = {
-+	.phy			= 0x1,
-+	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-+	.register_type		= SH_ETH_REG_FAST_RCAR,
-+	.phy_interface		= PHY_INTERFACE_MODE_RMII,
-+	.ether_link_active_low	= 1,
-+};
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
-@@ -59,6 +69,17 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* SCIF1 (CN20: DEBUG SERIAL1) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
- 				  "scif1_data", "scif1"),
-+	/* Ether */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-+				  "eth_link", "eth"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-+				  "eth_magic", "eth"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-+				  "eth_mdio", "eth"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-+				  "eth_rmii", "eth"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-+				  "intc_irq0", "intc"),
- };
- 
- static void __init lager_add_standard_devices(void)
-@@ -73,6 +94,11 @@ static void __init lager_add_standard_devices(void)
- 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
- 				      &lager_leds_pdata,
- 				      sizeof(lager_leds_pdata));
-+
-+	/* Ether RESET */
-+	gpio_request_one(RCAR_GP_PIN(5, 31), GPIOF_OUT_INIT_HIGH, NULL);
-+
-+	r8a7790_add_ether_device(&ether_platdata);
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
--- 
-1.8.2.1
+> ---
+
+> This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
+> ---
+>   arch/arm/boot/dts/r8a7790-lager.dts  |  2 +-
+>   arch/arm/mach-shmobile/board-lager.c | 26 ++++++++++++++++++++++++++
+>   2 files changed, 27 insertions(+), 1 deletion(-)
+
+> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+> index 09a84fc..b2f61f0 100644
+> --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> @@ -16,7 +16,7 @@
+>   	compatible = "renesas,lager", "renesas,r8a7790";
+>
+>   	chosen {
+> -		bootargs = "console=ttySC6,115200 ignore_loglevel";
+> +		bootargs = "console=ttySC6,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
+>   	};
+>
+>   	memory@40000000 {
+
+    Perhaps you shouldn't mix .dts changes with source changes?
+
+> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+> index 6a1ba38..0b8112d 100644
+> --- a/arch/arm/mach-shmobile/board-lager.c
+> +++ b/arch/arm/mach-shmobile/board-lager.c
+[...]
+> @@ -59,6 +69,17 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+>   	/* SCIF1 (CN20: DEBUG SERIAL1) */
+>   	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
+>   				  "scif1_data", "scif1"),
+> +	/* Ether */
+> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
+> +				  "eth_link", "eth"),
+> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
+> +				  "eth_magic", "eth"),
+> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
+> +				  "eth_mdio", "eth"),
+> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
+> +				  "eth_rmii", "eth"),
+
+     I thought MDIO bus was a part of RMII. At least Wikipedia told me 
+so. :-)
+
+WBR, Sergei
 
