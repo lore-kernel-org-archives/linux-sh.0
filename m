@@ -1,57 +1,58 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Fri, 17 May 2013 14:00:06 +0000
-Subject: Re: [PATCH v7 7/9] rcar-phy: add platform data
-Message-Id: <20130517140006.GK14133@arwen.pp.htv.fi>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="BFVE2HhgxTpCzM8t"
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 May 2013 20:42:37 +0000
+Subject: Re: Build regressions/improvements in v3.10-rc1 (sh)
+Message-Id: <alpine.DEB.2.00.1305122241070.5463@ayla.of.borg>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sh@vger.kernel.org
+References: <alpine.DEB.2.00.1305122130270.3789@ayla.of.borg> <alpine.DEB.2.00.1305122239040.5463@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.00.1305122239040.5463@ayla.of.borg>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux Kernel Development <linux-kernel@vger.kernel.org>
+Cc: linux-sh@vger.kernel.org
 
---BFVE2HhgxTpCzM8t
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Sun, 12 May 2013, Geert Uytterhoeven wrote:
+> However, the full list of errors isn't that unmanageable, so I'm following
+> up with a digested list...
 
-On Wed, May 01, 2013 at 03:00:30AM +0400, Sergei Shtylyov wrote:
-> Currently the driver hard-codes  USBPCTRL0 register to 0. It is wrong sin=
-ce this
-> register contains board-specific USB ports configuration and so its value=
- should
-> be somehow passed via the platform data.  Add the global header file cont=
-aining
-> 'struct rcar_phy_platform_data' consisting of the various bit fields desc=
-ribing
-> USB ports' pin configuration.
->=20
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+arch/sh/kernel/kgdb.c:225:32: error: implicit declaration of function 'task_stack_page' [-Werror=implicit-function-declaration]: 3 errors in 3 logs
+arch/sh/kernel/kgdb.c:242:23: error: dereferencing pointer to incomplete type: 3 errors in 3 logs
+arch/sh/kernel/kgdb.c:243:22: error: dereferencing pointer to incomplete type: 3 errors in 3 logs
+arch/sh/kernel/kgdb.c:310:27: error: 'SIGTRAP' undeclared (first use in this function): 3 errors in 3 logs
+	v3.10-rc1/sh4/sh-randconfig v3.10-rc1/sh4/sh-allyesconfig v3.10-rc1/sh4/sh-allmodconfig
 
-Acked-by: Felipe Balbi <balbi@ti.com>
 
---=20
-balbi
+drivers/net/wireless/libertas/if_cs.c:830:3: error: implicit declaration of function 'ioport_unmap' [-Werror=implicit-function-declaration]: 2 errors in 2 logs
+drivers/net/wireless/libertas/if_cs.c:882:2: error: implicit declaration of function 'ioport_map' [-Werror=implicit-function-declaration]: 2 errors in 2 logs
+drivers/net/wireless/orinoco/orinoco_cs.c:154:2: error: implicit declaration of function 'ioport_map' [-Werror=implicit-function-declaration]: 2 errors in 2 logs
+drivers/net/wireless/orinoco/orinoco_cs.c:206:3: error: implicit declaration of function 'ioport_unmap' [-Werror=implicit-function-declaration]: 2 errors in 2 logs
+drivers/net/wireless/orinoco/spectrum_cs.c:217:2: error: implicit declaration of function 'ioport_map' [-Werror=implicit-function-declaration]: 2 errors in 2 logs
+drivers/net/wireless/orinoco/spectrum_cs.c:274:3: error: implicit declaration of function 'ioport_unmap' [-Werror=implicit-function-declaration]: 2 errors in 2 logs
+	v3.10-rc1/sh4/sh-allyesconfig v3.10-rc1/sh4/sh-allmodconfig
 
---BFVE2HhgxTpCzM8t
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+	Missing I/O ops
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJRljfmAAoJEIaOsuA1yqREs+QP/36NQai1qlTACudPeyBR+T09
-eaqAyG9Jd9HHmZNbJMD/CpFMncbc+oiR1p8Hh7EW5KQ7PvL+3gl+hCvKt81W+J8l
-lWvMfzzjUJM7sGd7I1aGTe39GkD070t+T9MaNyI41Wq5d4UNnZ0DZFzWGDBOUNLt
-tTx1eBxnYBT78+dt0xVYZlt//0ORi/bEKMRpdgw2dhKX1OJou9aoIHpA0CGebfMi
-N6sfyZv4McYOqHnLBRpm7RNGYpm4/xv7ZsJXGmqSgegdx9/+wVnVcgXeq4KdLKA4
-HdLiW3UjD4JAAuFUCsWWe9R5WyqGIC+X/vn1GOKXAQArqPRUfTmCbPzmZvp70dHQ
-HPLjMQl0OIqs3s22uPn8xKqoz5wOiDpMRYwxkXS9a3Mg09BGOFnfmfjKDiD2iH5G
-2CLZPyZJLlIwWoJ8H3o7dWzyz8KY5G6TPjE+bajtcfOWQYKP0Q/oACZhlIeOgusD
-72EeEapR3Czce2zFjAwzH5+8pdWhPE7+7ydrD62G+CHioIt5MUz9Ja6ZWRgV+1ZX
-E2EzXbLwux2oiPuVNGtBK4ieIG9kTGMictzpGFjdxAX4CK42QY0sG+6VuiSSD6UI
-pcUjqn5JbdHLz/5EHAusiVNYWDc05LlKd4pdx8mFxG77wOrcdUiAdNQ7l0+Iv0nY
-fZzUq/+j/2h1NJ4RYPpI
-=qRNB
------END PGP SIGNATURE-----
+ERROR: "__ashrdi3" [fs/ntfs/ntfs.ko] undefined!: 1 errors in 1 logs
+ERROR: "__ashrdi3" [fs/xfs/xfs.ko] undefined!: 1 errors in 1 logs
+	v3.10-rc1/sh4/titan_defconfig
 
---BFVE2HhgxTpCzM8t--
+	Missing gcc lib helpers
+
+
+ERROR: "max_low_pfn" [drivers/block/aoe/aoe.ko] undefined!: 1 errors in 1 logs
+ERROR: "min_low_pfn" [drivers/block/aoe/aoe.ko] undefined!: 1 errors in 1 logs
+	v3.10-rc1/sh4/titan_defconfig
+
+	Missing export (handle like MIPS?)
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
