@@ -1,37 +1,37 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Mon, 13 May 2013 09:44:08 +0000
-Subject: [PATCH 09/14] ARM: mvebu: Remove init_irq declaration in machine description
-Message-Id: <1368438253-28218-10-git-send-email-maxime.ripard@free-electrons.com>
+From: Jason Cooper <jason@lakedaemon.net>
+Date: Mon, 13 May 2013 15:19:34 +0000
+Subject: Re: [PATCH 09/14] ARM: mvebu: Remove init_irq declaration in machine description
+Message-Id: <20130513151934.GM31290@titan.lakedaemon.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+ <1368438253-28218-10-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-10-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for mvebu as well.
+On Mon, May 13, 2013 at 11:44:08AM +0200, Maxime Ripard wrote:
+> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+> specified") removed the need to explictly setup the init_irq field in
+> the machine description when using only irqchip_init. Remove that
+> declaration for mvebu as well.
+> 
+> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+> ---
+>  arch/arm/mach-mvebu/armada-370-xp.c | 1 -
+>  1 file changed, 1 deletion(-)
 
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
----
- arch/arm/mach-mvebu/armada-370-xp.c | 1 -
- 1 file changed, 1 deletion(-)
+Maxime,
 
-diff --git a/arch/arm/mach-mvebu/armada-370-xp.c b/arch/arm/mach-mvebu/armada-370-xp.c
-index 42a4cb3..8500002 100644
---- a/arch/arm/mach-mvebu/armada-370-xp.c
-+++ b/arch/arm/mach-mvebu/armada-370-xp.c
-@@ -96,7 +96,6 @@ DT_MACHINE_START(ARMADA_XP_DT, "Marvell Armada 370/XP (Device Tree)")
- 	.init_machine	= armada_370_xp_dt_init,
- 	.map_io		= armada_370_xp_map_io,
- 	.init_early	= armada_370_xp_init_early,
--	.init_irq	= irqchip_init,
- 	.init_time	= armada_370_xp_timer_and_clk_init,
- 	.restart	= mvebu_restart,
- 	.dt_compat	= armada_370_xp_dt_compat,
--- 
-1.8.1.2
+Do do want the individual submaintainers to take these?  Or, send one
+branch to Arnd and Olof?  I'm fine with either one as any merge
+conflicts should be trivial.
 
+In either case,
+
+Acked-by: Jason Cooper <jason@lakedaemon.net>
+
+thx,
+
+Jason.
