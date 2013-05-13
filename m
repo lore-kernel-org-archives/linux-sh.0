@@ -1,50 +1,33 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Mon, 13 May 2013 09:44:07 +0000
-Subject: [PATCH 08/14] ARM: msm: Remove init_irq declaration in machine description
-Message-Id: <1368438253-28218-9-git-send-email-maxime.ripard@free-electrons.com>
+From: David Brown <davidb@codeaurora.org>
+Date: Mon, 13 May 2013 18:26:49 +0000
+Subject: Re: [PATCH 08/14] ARM: msm: Remove init_irq declaration in machine description
+Message-Id: <20130513182648.GA26913@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+ <1368438253-28218-9-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-9-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for msm as well.
+On Mon, May 13, 2013 at 11:44:07AM +0200, Maxime Ripard wrote:
+> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+> specified") removed the need to explictly setup the init_irq field in
+> the machine description when using only irqchip_init. Remove that
+> declaration for msm as well.
+> 
+> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+> ---
+>  arch/arm/mach-msm/board-dt-8660.c | 1 -
+>  arch/arm/mach-msm/board-dt-8960.c | 1 -
+>  2 files changed, 2 deletions(-)
 
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
----
- arch/arm/mach-msm/board-dt-8660.c | 1 -
- arch/arm/mach-msm/board-dt-8960.c | 1 -
- 2 files changed, 2 deletions(-)
+I'll pull this into my msm-cleanup tree.
 
-diff --git a/arch/arm/mach-msm/board-dt-8660.c b/arch/arm/mach-msm/board-dt-8660.c
-index 7dcfc53..1360226 100644
---- a/arch/arm/mach-msm/board-dt-8660.c
-+++ b/arch/arm/mach-msm/board-dt-8660.c
-@@ -44,7 +44,6 @@ static const char *msm8x60_fluid_match[] __initdata = {
- DT_MACHINE_START(MSM_DT, "Qualcomm MSM (Flattened Device Tree)")
- 	.smp = smp_ops(msm_smp_ops),
- 	.map_io = msm_map_msm8x60_io,
--	.init_irq = irqchip_init,
- 	.init_machine = msm8x60_dt_init,
- 	.init_late = msm8x60_init_late,
- 	.init_time	= msm_dt_timer_init,
-diff --git a/arch/arm/mach-msm/board-dt-8960.c b/arch/arm/mach-msm/board-dt-8960.c
-index 7301936..1e8eb1d 100644
---- a/arch/arm/mach-msm/board-dt-8960.c
-+++ b/arch/arm/mach-msm/board-dt-8960.c
-@@ -31,7 +31,6 @@ static const char * const msm8960_dt_match[] __initconst = {
- DT_MACHINE_START(MSM8960_DT, "Qualcomm MSM (Flattened Device Tree)")
- 	.smp = smp_ops(msm_smp_ops),
- 	.map_io = msm_map_msm8960_io,
--	.init_irq = irqchip_init,
- 	.init_time	= msm_dt_timer_init,
- 	.init_machine = msm_dt_init,
- 	.dt_compat = msm8960_dt_match,
+David
+
 -- 
-1.8.1.2
-
+sent by an employee of the Qualcomm Innovation Center, Inc.
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
+hosted by The Linux Foundation
