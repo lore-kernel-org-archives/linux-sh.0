@@ -1,22 +1,50 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 31 May 2013 15:04:17 +0000
-Subject: Re: [PATCH v2] dmaengine: shdma: fix a build failure on platforms with no DMA support
-Message-Id: <4422231.HoYmB8LUsn@wuerfel>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:44:07 +0000
+Subject: [PATCH 08/14] ARM: msm: Remove init_irq declaration in machine description
+Message-Id: <1368438253-28218-9-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305310423360.1470@axis700.grange>
- <alpine.DEB.2.00.1305311504460.6919@axis700.grange> <51A8BB0D.9060907@ti.com>
-In-Reply-To: <51A8BB0D.9060907@ti.com>
+References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Friday 31 May 2013 10:00:29 Dan Murphy wrote:
-> My consideration was that since this is an exported symbol that a driver
-> could call this API explicitly without checking for
-> the function pointer first, there is a potential of calling a NULL pointer.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for msm as well.
 
-Drivers never call a filter function directly, so that is not an issue.
-Even if a driver would try it, that would not actually compile.
-	
-	Arnd
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-msm/board-dt-8660.c | 1 -
+ arch/arm/mach-msm/board-dt-8960.c | 1 -
+ 2 files changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-msm/board-dt-8660.c b/arch/arm/mach-msm/board-dt-8660.c
+index 7dcfc53..1360226 100644
+--- a/arch/arm/mach-msm/board-dt-8660.c
++++ b/arch/arm/mach-msm/board-dt-8660.c
+@@ -44,7 +44,6 @@ static const char *msm8x60_fluid_match[] __initdata = {
+ DT_MACHINE_START(MSM_DT, "Qualcomm MSM (Flattened Device Tree)")
+ 	.smp = smp_ops(msm_smp_ops),
+ 	.map_io = msm_map_msm8x60_io,
+-	.init_irq = irqchip_init,
+ 	.init_machine = msm8x60_dt_init,
+ 	.init_late = msm8x60_init_late,
+ 	.init_time	= msm_dt_timer_init,
+diff --git a/arch/arm/mach-msm/board-dt-8960.c b/arch/arm/mach-msm/board-dt-8960.c
+index 7301936..1e8eb1d 100644
+--- a/arch/arm/mach-msm/board-dt-8960.c
++++ b/arch/arm/mach-msm/board-dt-8960.c
+@@ -31,7 +31,6 @@ static const char * const msm8960_dt_match[] __initconst = {
+ DT_MACHINE_START(MSM8960_DT, "Qualcomm MSM (Flattened Device Tree)")
+ 	.smp = smp_ops(msm_smp_ops),
+ 	.map_io = msm_map_msm8960_io,
+-	.init_irq = irqchip_init,
+ 	.init_time	= msm_dt_timer_init,
+ 	.init_machine = msm_dt_init,
+ 	.dt_compat = msm8960_dt_match,
+-- 
+1.8.1.2
+
