@@ -1,60 +1,37 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Tue, 28 May 2013 21:20:34 +0000
-Subject: Re: [PATCH 09/12] ARM: shmobile: r8a7740: Add Suspend-To-RAM A3SM
-Message-Id: <CABYn4syN6_RdQ4M7vQvCQTLaf9DGtwBNxZ5E-qJfnW0j43oOVw@mail.gmail.com>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:44:08 +0000
+Subject: [PATCH 09/14] ARM: mvebu: Remove init_irq declaration in machine description
+Message-Id: <1368438253-28218-10-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
- <1369645193-3595-10-git-send-email-horms+renesas@verge.net.au>
- <20130528035019.GI13532@quad.lixom.net>
- <20130528052900.GB25005@verge.net.au>
-In-Reply-To: <20130528052900.GB25005@verge.net.au>
+References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-2013/5/28 Simon Horman <horms@verge.net.au>:
-> On Mon, May 27, 2013 at 08:50:19PM -0700, Olof Johansson wrote:
->> Hi,
->>
->> On Mon, May 27, 2013 at 05:59:50PM +0900, Simon Horman wrote:
->> > From: Bastian Hecht <hechtb@gmail.com>
->> >
->> > We add 2 Suspend to RAM modes:
->> > - A3SM PLL0 on/off:     Power domain A3SM that contains the ARM core
->> >                         and the 2nd level cache with either PLL0 on
->> >                         or off
->> >
->> > As the suspend to memory mechanism we use A3SM PLL off. A3SM PLL on
->> > is included here too, so CPUIdle can use both power down modes (not
->> > included in this patch).
->> >
->> > The setup of the SYSC regarding the external IRQs is taken from
->> > pm-sh7372.c from Magnus Damm.
->> >
->> > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
->>
->> Missing S-o-b from you, Simon?
->
-> Oops sorry about that.
->
->> > +   .text
->> > +ENTRY(v7_cpu_resume)
->> > +   bl      v7_invalidate_l1
->> > +   b       cpu_resume
->> > +ENDPROC(v7_cpu_resume)
->>
->> This is a global namespace so it'll conflict with i.MX whenever
->> you multiplatform enable shmobile. Might want to pick a more
->> unique name.
->
-> Bastian, could you suggest an alternate name?
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for mvebu as well.
 
-It should really be a temporary thing, as this should be handled in
-the generic ARM code. So how about:
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-mvebu/armada-370-xp.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-r8a7740_cpu_resume()
+diff --git a/arch/arm/mach-mvebu/armada-370-xp.c b/arch/arm/mach-mvebu/armada-370-xp.c
+index 42a4cb3..8500002 100644
+--- a/arch/arm/mach-mvebu/armada-370-xp.c
++++ b/arch/arm/mach-mvebu/armada-370-xp.c
+@@ -96,7 +96,6 @@ DT_MACHINE_START(ARMADA_XP_DT, "Marvell Armada 370/XP (Device Tree)")
+ 	.init_machine	= armada_370_xp_dt_init,
+ 	.map_io		= armada_370_xp_map_io,
+ 	.init_early	= armada_370_xp_init_early,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= armada_370_xp_timer_and_clk_init,
+ 	.restart	= mvebu_restart,
+ 	.dt_compat	= armada_370_xp_dt_compat,
+-- 
+1.8.1.2
 
-Cheers,
-
- Bastian
