@@ -1,48 +1,30 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 26 May 2013 13:05:23 +0000
-Subject: [PATCH] ARM: shmobile: emev2: Remove init_irq declaration in machine description
-Message-Id: <1369573523-10980-2-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 13 May 2013 08:53:50 +0000
+Subject: [PATCH 0/3] ARM: mach-shmobile: lager: support GPIO switche
+Message-Id: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369573523-10980-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369573523-10980-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
+This short series adds support for accessing the 4 pins of SW2 as
+gpio keys 1 - 4.
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for shmobile as well.
+As the gpio-keys driver requires IRQ_TYPE_EDGE_BOTH support for this
+has been added to the R-Car GPIO driver.
 
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-emev2.c |    2 --
- 1 file changed, 2 deletions(-)
+Simon Horman (3):
+  gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH
+  ARM: shmobile: r8a7790: Configure R-Car GPIO for IRQ_TYPE_EDGE_BOTH
+  ARM: mach-shmobile: lager: support GPIO switches
 
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 899a86c..66694e0 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -20,7 +20,6 @@
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
--#include <linux/irqchip.h>
- #include <linux/platform_device.h>
- #include <linux/platform_data/gpio-em.h>
- #include <linux/of_platform.h>
-@@ -454,7 +453,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.init_early	= emev2_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_irq	= irqchip_init,
- 	.init_machine	= emev2_add_standard_devices_dt,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
+ arch/arm/mach-shmobile/board-lager.c    | 22 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7790.c  |  1 +
+ drivers/gpio/gpio-rcar.c                | 27 ++++++++++++++++++++++-----
+ include/linux/platform_data/gpio-rcar.h |  1 +
+ 4 files changed, 46 insertions(+), 5 deletions(-)
+
 -- 
-1.7.10.4
+1.8.2.1
 
