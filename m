@@ -1,160 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:38 +0000
-Subject: [PATCH v4 17/21] ARM: shmobile: kzm9g-reference: Move pinctrl mappings to device tree
-Message-Id: <1369138482-5871-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:44:01 +0000
+Subject: [PATCH 02/14] ARM: zynq: Remove init_irq declaration in machine description
+Message-Id: <1368438253-28218-3-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for zynq as well.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Michal Simek <monstr@monstr.eu>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   | 51 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 40 --------------------
- 2 files changed, 51 insertions(+), 40 deletions(-)
+ arch/arm/mach-zynq/common.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index b6f759e..475535f 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -145,19 +145,70 @@
- 	};
- };
- 
-+&i2c3 {
-+	pinctrl-0 = <&i2c3_pins>;
-+	pinctrl-names = "default";
-+};
-+
- &mmcif {
-+	pinctrl-0 = <&mmcif_pins>;
-+	pinctrl-names = "default";
-+
- 	bus-width = <8>;
- 	vmmc-supply = <&reg_1p8v>;
- 	status = "okay";
- };
- 
-+&pfc {
-+	pinctrl-0 = <&scifa4_pins>;
-+	pinctrl-names = "default";
-+
-+	i2c3_pins: i2c3 {
-+		renesas,groups = "i2c3_1";
-+		renesas,function = "i2c3";
-+	};
-+
-+	mmcif_pins: mmcif {
-+		mux {
-+			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
-+			renesas,function = "mmc0";
-+		};
-+		cfg {
-+			renesas,groups = "mmc0_data8_0";
-+			renesas,pins = "PORT279";
-+			renesas,pull-up = <1>;
-+		};
-+	};
-+
-+	scifa4_pins: scifa4 {
-+		renesas,groups = "scifa4_data", "scifa4_ctrl";
-+		renesas,function = "scifa4";
-+	};
-+
-+	sdhi0_pins: sdhi0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi2_pins: sdhi2 {
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+	};
-+};
-+
- &sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
- 	vmmc-supply = <&reg_3p3v>;
- 	bus-width = <4>;
- 	status = "okay";
- };
- 
- &sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
- 	vmmc-supply = <&reg_3p3v>;
- 	bus-width = <4>;
- 	broken-cd;
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 6ff6ca2..fc2bb37 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -27,55 +27,15 @@
- #include <linux/irqchip.h>
- #include <linux/input.h>
- #include <linux/of_platform.h>
--#include <linux/pinctrl/machine.h>
--#include <linux/pinctrl/pinconf-generic.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
- #include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
--static unsigned long pin_pullup_conf[] = {
--	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 0),
--};
--
--static const struct pinctrl_map kzm_pinctrl_map[] = {
--	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
--				  "i2c3_1", "i2c3"),
--	/* MMCIF */
--	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
--				  "mmc0_data8_0", "mmc0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
--				  "mmc0_ctrl_0", "mmc0"),
--	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
--				    "PORT279", pin_pullup_conf),
--	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
--				      "mmc0_data8_0", pin_pullup_conf),
--	/* SCIFA4 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
--				  "scifa4_data", "scifa4"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
--				  "scifa4_ctrl", "scifa4"),
--	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
--				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
--				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
--				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
--				  "sdhi0_wp", "sdhi0"),
--	/* SDHI2 */
--	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
--				  "sdhi2_data4", "sdhi2"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
--				  "sdhi2_ctrl", "sdhi2"),
--};
--
- static void __init kzm_init(void)
- {
- 	sh73a0_add_standard_devices_dt();
--	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
- 
- 	/* enable SD */
- 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+diff --git a/arch/arm/mach-zynq/common.c b/arch/arm/mach-zynq/common.c
+index 5bfe703..8bc3acb 100644
+--- a/arch/arm/mach-zynq/common.c
++++ b/arch/arm/mach-zynq/common.c
+@@ -106,7 +106,6 @@ static const char * const zynq_dt_match[] = {
+ MACHINE_START(XILINX_EP107, "Xilinx Zynq Platform")
+ 	.smp		= smp_ops(zynq_smp_ops),
+ 	.map_io		= zynq_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= zynq_init_machine,
+ 	.init_time	= zynq_timer_init,
+ 	.dt_compat	= zynq_dt_match,
 -- 
-1.8.1.5
+1.8.1.2
 
