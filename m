@@ -1,21 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 23 May 2013 13:14:50 +0000
-Subject: Re: [PATCH 09/17 v2] ARM: shmobile: bockw: add I2C device support
-Message-Id: <519E164A.2050900@cogentembedded.com>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:44:11 +0000
+Subject: [PATCH 12/14] ARM: vexpress: Remove init_irq declaration in machine description
+Message-Id: <1368438253-28218-13-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zjvm2xia.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zjvm2xia.wl%kuninori.morimoto.gx@renesas.com>
+References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 23-05-2013 7:20, Kuninori Morimoto wrote:
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for vexpress as well.
 
-     I still would like a proper changelog here.
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-vexpress/v2m.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-> Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-WBR, Sergei
+diff --git a/arch/arm/mach-vexpress/v2m.c b/arch/arm/mach-vexpress/v2m.c
+index 8802030..c419b76 100644
+--- a/arch/arm/mach-vexpress/v2m.c
++++ b/arch/arm/mach-vexpress/v2m.c
+@@ -458,7 +458,6 @@ DT_MACHINE_START(VEXPRESS_DT, "ARM-Versatile Express")
+ 	.smp		= smp_ops(vexpress_smp_ops),
+ 	.map_io		= v2m_dt_map_io,
+ 	.init_early	= v2m_dt_init_early,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= v2m_dt_timer_init,
+ 	.init_machine	= v2m_dt_init,
+ MACHINE_END
+-- 
+1.8.1.2
 
