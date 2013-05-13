@@ -1,34 +1,53 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Fri, 31 May 2013 15:57:04 +0000
-Subject: [PATCH v3 4/5] ARM: shmobile: r8a7790: don't use external clock for SCIFs
-Message-Id: <1370015825-29383-5-git-send-email-ulrich.hecht@gmail.com>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:44:10 +0000
+Subject: [PATCH 11/14] ARM: sirf: Remove init_irq declaration in machine description
+Message-Id: <1368438253-28218-12-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This is an external component and may or may not be there, while the
-internal clock always works.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for sirf as well.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-prima2/common.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 5b7a770..a380bdc 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -96,7 +96,7 @@ void __init r8a7790_pinmux_init(void)
- [index] = {						\
- 	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,			\
--	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+	.scscr = SCSCR_RE | SCSCR_TE,	\
- }
- 
- #define HSCIF_DATA(index, baseaddr, irq)		\
+diff --git a/arch/arm/mach-prima2/common.c b/arch/arm/mach-prima2/common.c
+index 4f94cd8..52e28cf 100644
+--- a/arch/arm/mach-prima2/common.c
++++ b/arch/arm/mach-prima2/common.c
+@@ -55,7 +55,6 @@ DT_MACHINE_START(ATLAS6_DT, "Generic ATLAS6 (Flattened Device Tree)")
+ 	/* Maintainer: Barry Song <baohua.song@csr.com> */
+ 	.nr_irqs	= 128,
+ 	.map_io         = sirfsoc_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= sirfsoc_init_time,
+ 	.init_machine	= sirfsoc_mach_init,
+ 	.init_late	= sirfsoc_init_late,
+@@ -74,7 +73,6 @@ DT_MACHINE_START(PRIMA2_DT, "Generic PRIMA2 (Flattened Device Tree)")
+ 	/* Maintainer: Barry Song <baohua.song@csr.com> */
+ 	.nr_irqs	= 128,
+ 	.map_io         = sirfsoc_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= sirfsoc_init_time,
+ 	.dma_zone_size	= SZ_256M,
+ 	.init_machine	= sirfsoc_mach_init,
+@@ -94,7 +92,6 @@ DT_MACHINE_START(MARCO_DT, "Generic MARCO (Flattened Device Tree)")
+ 	/* Maintainer: Barry Song <baohua.song@csr.com> */
+ 	.smp            = smp_ops(sirfsoc_smp_ops),
+ 	.map_io         = sirfsoc_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= sirfsoc_init_time,
+ 	.init_machine	= sirfsoc_mach_init,
+ 	.init_late	= sirfsoc_init_late,
 -- 
-1.7.10.4
+1.8.1.2
 
