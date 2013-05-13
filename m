@@ -1,77 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:34 +0000
-Subject: [PATCH v4 13/21] ARM: shmobile: armadillo-reference: Move pinctrl mappings to device tree
-Message-Id: <1369138482-5871-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:44:02 +0000
+Subject: [PATCH 03/14] ARM: nomadik: Remove init_irq declaration in machine description
+Message-Id: <1368438253-28218-4-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for nomadik as well.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 10 ++++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  9 ---------
- 2 files changed, 10 insertions(+), 9 deletions(-)
+ arch/arm/mach-nomadik/cpu-8815.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 09ea22c..4a7ae32 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -43,3 +43,13 @@
- 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
- 	};
- };
-+
-+&pfc {
-+	pinctrl-0 = <&scifa1_pins>;
-+	pinctrl-names = "default";
-+
-+	scifa1_pins: scifa1 {
-+		renesas,groups = "scifa1_data";
-+		renesas,function = "scifa1";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index f25b6aa..4ddd299 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,7 +24,6 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <linux/io.h>
--#include <linux/pinctrl/machine.h>
- #include <mach/common.h>
- #include <mach/r8a7740.h>
- #include <asm/mach/arch.h>
-@@ -119,12 +118,6 @@
-  *	usbhsf_power_ctrl()
-  */
+diff --git a/arch/arm/mach-nomadik/cpu-8815.c b/arch/arm/mach-nomadik/cpu-8815.c
+index 59f6ff5..3d43f95 100644
+--- a/arch/arm/mach-nomadik/cpu-8815.c
++++ b/arch/arm/mach-nomadik/cpu-8815.c
+@@ -323,7 +323,6 @@ static const char * cpu8815_board_compat[] = {
  
--static const struct pinctrl_map eva_pinctrl_map[] = {
--	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
--				  "scifa1_data", "scifa1"),
--};
--
- static void __init eva_clock_init(void)
- {
- 	struct clk *system	= clk_get(NULL, "system_clk");
-@@ -169,8 +162,6 @@ static void __init eva_init(void)
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	eva_clock_init();
- 
--	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--
- 	r8a7740_meram_workaround();
- 
- #ifdef CONFIG_CACHE_L2X0
+ DT_MACHINE_START(NOMADIK_DT, "Nomadik STn8815")
+ 	.map_io		= cpu8815_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= cpu8815_timer_init_of,
+ 	.init_machine	= cpu8815_init_of,
+ 	.restart	= cpu8815_restart,
 -- 
-1.8.1.5
+1.8.1.2
 
