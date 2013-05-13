@@ -1,32 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 28 May 2013 05:37:01 +0000
-Subject: Re: [GIT PULL] Renesas ARM and SH based SoC pinmux fixes for v3.10 #2
-Message-Id: <20130528053701.GE25005@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 13 May 2013 08:53:52 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7790: Configure R-Car GPIO for IRQ_TYPE_EDGE_BOTH
+Message-Id: <1368435233-8587-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369461157-19256-1-git-send-email-horms+renesas@verge.net.au>
- <20130528022840.GA13532@quad.lixom.net>
-In-Reply-To: <20130528022840.GA13532@quad.lixom.net>
+References: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 27, 2013 at 07:28:40PM -0700, Olof Johansson wrote:
-> On Sat, May 25, 2013 at 02:52:36PM +0900, Simon Horman wrote:
-> > Hi Arnd, Hi Olof,
-> > 
-> > The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
-> > 
-> >   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux-fixes2-for-v3.10
-> 
-> Hi Simon,
-> 
-> For fixes, especially if you have only one per branch, please just
-> send one pull so we don't get a crazy number of merge changesets in the
-> history. We don't split them into categories during -rcs.
+"gpio-rcar: Support IRQ_TYPE_EDGE_BOTH" adds support to the R-Car GPIO
+driver for IRQ_TYPE_EDGE_BOTH. As hardware support for this feature is
+not universal for all SoCs a flag, has_both_edge_trigger, has been
+added to the platform data of the driver to allow this feature to be
+enabled.
 
-Understood. I'll just use a fixes branch from now on.
+As the r8a7790 SoC hardware supports this feature enable it.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+
+This patch has a build-time dependency on
+"gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH".
+---
+ arch/arm/mach-shmobile/setup-r8a7790.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index eeef5f6..b461d93 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -45,6 +45,7 @@ static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data = {	\
+ 	.irq_base	= 0,						\
+ 	.number_of_pins	= 32,						\
+ 	.pctl_name	= "pfc-r8a7790",				\
++	.has_both_edge_trigger = 1,					\
+ };									\
+ 
+ R8A7790_GPIO(0);
+-- 
+1.8.2.1
+
