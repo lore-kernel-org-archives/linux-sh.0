@@ -1,43 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 25 May 2013 06:42:18 +0000
-Subject: [PATCH] ARM: shmobile: sh73a0: Update CMT clockevent rating to 80
-Message-Id: <1369464138-21530-2-git-send-email-horms+renesas@verge.net.au>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:44:00 +0000
+Subject: [PATCH 01/14] ARM: sunxi: Remove init_irq declaration in machine description
+Message-Id: <1368438253-28218-2-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369464138-21530-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369464138-21530-1-git-send-email-horms+renesas@verge.net.au>
+References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Update the CMT clockevent rating from 125 to 80.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for sunxi as well.
 
-This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
-introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
-Avoid dummy clockevent being preferred over real").
-
-The patch noted above reduces the rating of dummy clockevent from 400 to 100.
-This patch reduces the rating of CMT so that it is once again less than that
-of the dummy clockevent.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-sunxi/sunxi.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index fdf3894..9696f36 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
- 	.name = "CMT10",
- 	.channel_offset = 0x10,
- 	.timer_bit = 0,
--	.clockevent_rating = 125,
-+	.clockevent_rating = 80,
- 	.clocksource_rating = 125,
- };
- 
+diff --git a/arch/arm/mach-sunxi/sunxi.c b/arch/arm/mach-sunxi/sunxi.c
+index 706ce35..4de1edf 100644
+--- a/arch/arm/mach-sunxi/sunxi.c
++++ b/arch/arm/mach-sunxi/sunxi.c
+@@ -117,7 +117,6 @@ static const char * const sunxi_board_dt_compat[] = {
+ DT_MACHINE_START(SUNXI_DT, "Allwinner A1X (Device Tree)")
+ 	.init_machine	= sunxi_dt_init,
+ 	.map_io		= sunxi_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= sunxi_timer_init,
+ 	.dt_compat	= sunxi_board_dt_compat,
+ MACHINE_END
 -- 
-1.7.10.4
+1.8.1.2
 
