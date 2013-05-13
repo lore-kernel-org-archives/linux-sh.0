@@ -1,66 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 May 2013 02:44:38 +0000
-Subject: Re: [PATCH] dmaengine: shdma: fix a build failure on platforms with no DMA support
-Message-Id: <20130531024438.GB32564@verge.net.au>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:44:05 +0000
+Subject: [PATCH 06/14] ARM: bcm281xx: Remove init_irq declaration in machine description
+Message-Id: <1368438253-28218-7-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305301650290.29171@axis700.grange>
- <51A77CF1.7040105@ti.com>
-In-Reply-To: <51A77CF1.7040105@ti.com>
+References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 30, 2013 at 11:23:13AM -0500, Dan Murphy wrote:
-> On 05/30/2013 11:02 AM, Guennadi Liakhovetski wrote:
-> > On platforms with no support for the shdma dmaengine driver build is
-> > currently failing with
-> >
-> > drivers/built-in.o: In function `sh_mobile_sdhi_probe':
-> > drivers/mmc/host/sh_mobile_sdhi.c:170: undefined reference to`shdma_chan_filter'
-> >
-> > Fix the breakage by defining shdma_chan_filter to NULL in such
-> > configurations.
-> >
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> >
-> > This is for "next." Compile-tested only. I'll test it on hardware next 
-> > week, but I don't think it shall break anything.
-> >
-> >  include/linux/sh_dma.h |    4 ++++
-> >  1 files changed, 4 insertions(+), 0 deletions(-)
-> >
-> > diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-> > index b64d6be..1fd8a20 100644
-> > --- a/include/linux/sh_dma.h
-> > +++ b/include/linux/sh_dma.h
-> > @@ -99,6 +99,10 @@ struct sh_dmae_pdata {
-> >  #define CHCR_TE	0x00000002
-> >  #define CHCR_IE	0x00000004
-> >  
-> > +#if IS_ENABLED(CONFIG_SH_DMAE)
-> >  bool shdma_chan_filter(struct dma_chan *chan, void *arg);
-> > +#else
-> > +#define shdma_chan_filter NULL
-> Would this not be better as a
-> #else
-> static inline bool shdma_chan_filter(struct dma_chan *chan, void *arg)
-> {
->     return false;
-> }
-> #endif
-> 
-> Otherwise runtime will call a NULL pointer
-> 
-> > +#endif
-> >  
-> >  #endif
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for bcm281xx as well.
 
-Hi Guennadi,
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-bcm/board_bcm.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-thanks for this. I will wait for a refresh (as we discussed earlier today).
-Can I confirm that this is a fix for v3.10? If so, could ou note
-that when you post your revised patch?
+diff --git a/arch/arm/mach-bcm/board_bcm.c b/arch/arm/mach-bcm/board_bcm.c
+index 22e8421..24556cf 100644
+--- a/arch/arm/mach-bcm/board_bcm.c
++++ b/arch/arm/mach-bcm/board_bcm.c
+@@ -54,7 +54,6 @@ static void __init board_init(void)
+ static const char * const bcm11351_dt_compat[] = { "bcm,bcm11351", NULL, };
+ 
+ DT_MACHINE_START(BCM11351_DT, "Broadcom Application Processor")
+-	.init_irq = irqchip_init,
+ 	.init_time = clocksource_of_init,
+ 	.init_machine = board_init,
+ 	.dt_compat = bcm11351_dt_compat,
+-- 
+1.8.1.2
 
-Thanks
