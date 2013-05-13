@@ -1,66 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 08:59:43 +0000
-Subject: [PATCH 02/12] ARM: shmobile: r8a7740 pinmux platform device cleanup
-Message-Id: <1369645193-3595-3-git-send-email-horms+renesas@verge.net.au>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 May 2013 09:43:59 +0000
+Subject: [PATCH 00/14] Cleanup irqchip_init calls
+Message-Id: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi everyone,
 
-Use DEFINE_RES_MEM() and platform_device_register_simple()
-to save a couple of lines of code.
+This is a splitted up version of the patch I previously sent to
+remove the explicit declaration of irqchip_init as the init_irq callback in
+the machine descriptions.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7740.c |   24 +++++-------------------
- 1 file changed, 5 insertions(+), 19 deletions(-)
+Since it was a pretty tricky patch to merge, since it was touching a lot of
+different platforms, I splitted it for each platforms, and rebased it on top
+of 3.10-rc1.
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 326a4ab..3a6b6fe 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -70,29 +70,15 @@ void __init r8a7740_map_io(void)
- }
- 
- /* PFC */
--static struct resource r8a7740_pfc_resources[] = {
--	[0] = {
--		.start	= 0xe6050000,
--		.end	= 0xe6057fff,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= 0xe605800c,
--		.end	= 0xe605802b,
--		.flags	= IORESOURCE_MEM,
--	}
--};
--
--static struct platform_device r8a7740_pfc_device = {
--	.name		= "pfc-r8a7740",
--	.id		= -1,
--	.resource	= r8a7740_pfc_resources,
--	.num_resources	= ARRAY_SIZE(r8a7740_pfc_resources),
-+static const struct resource pfc_resources[] = {
-+	DEFINE_RES_MEM(0xe6050000, 0x8000),
-+	DEFINE_RES_MEM(0xe605800c, 0x0020),
- };
- 
- void __init r8a7740_pinmux_init(void)
- {
--	platform_device_register(&r8a7740_pfc_device);
-+	platform_device_register_simple("pfc-r8a7740", -1, pfc_resources,
-+					ARRAY_SIZE(pfc_resources));
- }
- 
- static struct renesas_intc_irqpin_config irqpin0_platform_data = {
+Thanks,
+Maxime
+
+Maxime Ripard (14):
+  ARM: sunxi: Remove init_irq declaration in machine description
+  ARM: zynq: Remove init_irq declaration in machine description
+  ARM: nomadik: Remove init_irq declaration in machine description
+  ARM: picoxcell: Remove init_irq declaration in machine description
+  ARM: shmobile: Remove init_irq declaration in machine description
+  ARM: bcm281xx: Remove init_irq declaration in machine description
+  ARM: spear: Remove init_irq declaration in machine description
+  ARM: msm: Remove init_irq declaration in machine description
+  ARM: mvebu: Remove init_irq declaration in machine description
+  ARM: mxs: Remove init_irq declaration in machine description
+  ARM: sirf: Remove init_irq declaration in machine description
+  ARM: vexpress: Remove init_irq declaration in machine description
+  ARM: virt: Remove init_irq declaration in machine description
+  ARM: vt8500: Remove init_irq declaration in machine description
+
+ arch/arm/mach-bcm/board_bcm.c                  | 1 -
+ arch/arm/mach-msm/board-dt-8660.c              | 1 -
+ arch/arm/mach-msm/board-dt-8960.c              | 1 -
+ arch/arm/mach-mvebu/armada-370-xp.c            | 1 -
+ arch/arm/mach-mxs/mach-mxs.c                   | 1 -
+ arch/arm/mach-nomadik/cpu-8815.c               | 1 -
+ arch/arm/mach-picoxcell/common.c               | 1 -
+ arch/arm/mach-prima2/common.c                  | 3 ---
+ arch/arm/mach-shmobile/board-ape6evm.c         | 1 -
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
+ arch/arm/mach-shmobile/board-lager.c           | 1 -
+ arch/arm/mach-shmobile/setup-emev2.c           | 1 -
+ arch/arm/mach-shmobile/setup-r8a73a4.c         | 1 -
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 1 -
+ arch/arm/mach-shmobile/setup-sh73a0.c          | 1 -
+ arch/arm/mach-spear/spear1310.c                | 1 -
+ arch/arm/mach-spear/spear1340.c                | 1 -
+ arch/arm/mach-spear/spear300.c                 | 1 -
+ arch/arm/mach-spear/spear310.c                 | 1 -
+ arch/arm/mach-spear/spear320.c                 | 1 -
+ arch/arm/mach-spear/spear6xx.c                 | 1 -
+ arch/arm/mach-sunxi/sunxi.c                    | 1 -
+ arch/arm/mach-vexpress/v2m.c                   | 1 -
+ arch/arm/mach-virt/virt.c                      | 1 -
+ arch/arm/mach-vt8500/vt8500.c                  | 1 -
+ arch/arm/mach-zynq/common.c                    | 1 -
+ 26 files changed, 28 deletions(-)
+
 -- 
-1.7.10.4
+1.8.1.2
 
