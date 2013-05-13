@@ -1,32 +1,106 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 23 May 2013 01:40:03 +0000
-Subject: [Announce] Renesas branches rebased on v3.10-rc2
-Message-Id: <20130523014003.GN22608@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 13 May 2013 08:53:51 +0000
+Subject: [PATCH 1/3] gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH
+Message-Id: <1368435233-8587-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+As hardware support for this feature is not universal for all SoCs a flag,
+has_both_edge_trigger, has been added to the platform data of the driver to
+allow this feature to be enabled.
 
-I have rebased all branches of the renesas tree that are targeted
-at v3.11 on top of v3.10-rc2. I have also merged these into
-a new next branch which I have pushed and tagged as renesas-next-20130523.
-This should appear in linux-next in the not to distant future.
+The motivation for this is to allow use of the gpio-keys driver on the
+lager board which is based on the r8a7790 SoC. This patch has been lightly
+exercised using that driver on that board.
 
-There are a few -fixes branches which resolve problems in v3.10-rc1. I will
-get pull requests to arm-soc for those branches in the not to distant
-future. The target for -fixes branches is v3.10.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/gpio/gpio-rcar.c                | 27 ++++++++++++++++++++++-----
+ include/linux/platform_data/gpio-rcar.h |  1 +
+ 2 files changed, 23 insertions(+), 5 deletions(-)
 
-As this took a while I am a little behind with picking up patches that
-have been posted, but I hope to catch up over the next few days.
-
-Moving forwards, assuming that nothing dramatic happens I will start
-sending pull requests to arm-soc for the non-fixes branches so they
-can be included in v3.11. At this stage I plan to start doing that
-next week.
-
-Known problems: Booting marzen-reference seems flakey and I'm entirely
-unsure why.
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index 0f3d647..33d8f6a 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -49,6 +49,7 @@ struct gpio_rcar_priv {
+ #define POSNEG 0x20
+ #define EDGLEVEL 0x24
+ #define FILONOFF 0x28
++#define BOTHEDGE 0x4c
+ 
+ static inline u32 gpio_rcar_read(struct gpio_rcar_priv *p, int offs)
+ {
+@@ -91,7 +92,8 @@ static void gpio_rcar_irq_enable(struct irq_data *d)
+ static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
+ 						  unsigned int hwirq,
+ 						  bool active_high_rising_edge,
+-						  bool level_trigger)
++						  bool level_trigger,
++						  bool both)
+ {
+ 	unsigned long flags;
+ 
+@@ -111,6 +113,11 @@ static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
+ 	/* Select "Interrupt Input Mode" in IOINTSEL */
+ 	gpio_rcar_modify_bit(p, IOINTSEL, hwirq, true);
+ 
++	if (p->config.has_both_edge_trigger && !level_trigger) {
++		/* Select one edge or both edges in BOTHEDGE */
++		gpio_rcar_modify_bit(p, IOINTSEL, hwirq, both);
++	}
++
+ 	/* Write INTCLR in case of edge trigger */
+ 	if (!level_trigger)
+ 		gpio_rcar_write(p, INTCLR, BIT(hwirq));
+@@ -127,16 +134,26 @@ static int gpio_rcar_irq_set_type(struct irq_data *d, unsigned int type)
+ 
+ 	switch (type & IRQ_TYPE_SENSE_MASK) {
+ 	case IRQ_TYPE_LEVEL_HIGH:
+-		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, true);
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, true,
++						      false);
+ 		break;
+ 	case IRQ_TYPE_LEVEL_LOW:
+-		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, true);
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, true,
++						      false);
+ 		break;
+ 	case IRQ_TYPE_EDGE_RISING:
+-		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false);
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false,
++						      false);
+ 		break;
+ 	case IRQ_TYPE_EDGE_FALLING:
+-		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, false);
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, false,
++						      false);
++		break;
++	case IRQ_TYPE_EDGE_BOTH:
++		if (!p->config.has_both_edge_trigger)
++			return -EINVAL;
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false,
++						      true);
+ 		break;
+ 	default:
+ 		return -EINVAL;
+diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
+index cc472f6..dfea5c6 100644
+--- a/include/linux/platform_data/gpio-rcar.h
++++ b/include/linux/platform_data/gpio-rcar.h
+@@ -21,6 +21,7 @@ struct gpio_rcar_config {
+ 	unsigned int irq_base;
+ 	unsigned int number_of_pins;
+ 	const char *pctl_name;
++	unsigned has_both_edge_trigger:1;
+ };
+ 
+ #define RCAR_GP_PIN(bank, pin)		(((bank) * 32) + (pin))
+-- 
+1.8.2.1
 
