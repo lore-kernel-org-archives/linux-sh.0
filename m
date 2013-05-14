@@ -1,46 +1,34 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 15 May 2013 00:18:20 +0000
-Subject: [PATCH v3 20/20] ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
-Message-Id: <1368577100-3530-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 14 May 2013 21:35:10 +0000
+Subject: [PATCH 0/2] marzen-reference ethernet patches
+Message-Id: <1368567312-11640-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-LED2 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+Hello,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+Here are two small patches that attemps to fix ethernet support for the
+marzen-reference board. Unfortunately this doesn't seem to be enough, I still
+can't get any meaningful interrupt from the smsc911x ethernet controller.
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 07ef31f..0533c31 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -47,6 +47,19 @@
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led2 {
-+			gpios = <&gpio4 29 0>;
-+		};
-+		led3 {
-+			gpios = <&gpio4 30 0>;
-+		};
-+		led4 {
-+			gpios = <&gpio4 31 0>;
-+		};
-+	};
- };
- 
- &pfc {
+I'm probably not going to spend more time on this, it would be appreciated if
+anyone could take over.
+
+Laurent Pinchart (2):
+  ARM: shmobile: marzen-reference: Reference the correct IRQ for
+    ethernet
+  ARM: shmobile: marzen-reference: Update lan device name in pinctrl
+    maps
+
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 4 ++--
+ arch/arm/mach-shmobile/board-marzen-reference.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
 -- 
-1.8.1.5
+Regards,
+
+Laurent Pinchart
 
