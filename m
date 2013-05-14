@@ -1,36 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 May 2013 09:51:30 +0000
-Subject: Re: [PATCH 2/2 v3] ARM: shmobile: r8a7790: add __initdata on resource and device data
-Message-Id: <20130527095129.GA31428@verge.net.au>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:49 +0000
+Subject: [PATCH 16/20] ARM: mxs: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-17-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li718cpi.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87li718cpi.wl%kuninori.morimoto.gx@renesas.com>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, May 26, 2013 at 05:54:04PM -0700, Kuninori Morimoto wrote:
-> These data will be kmemdup()'ed on
-> platform_device_add_resources() and platform_device_add_data()
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for mxs as well.
 
-This appears to cause a build failure.
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-mxs/mach-mxs.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-include/linux/platform_device.h: In function ‘r8a7790_add_standard_devices’:
-arch/arm/mach-shmobile/setup-r8a7790.c:125: error: irqc0_resources causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:121: error: irqc0_data causes a section type conflict
-include/linux/platform_device.h: In function ‘r8a7790_pinmux_init’:
-arch/arm/mach-shmobile/setup-r8a7790.c:49: error: r8a7790_gpio0_resources causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:49: error: r8a7790_gpio0_platform_data causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:50: error: r8a7790_gpio1_resources causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:50: error: r8a7790_gpio1_platform_data causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:51: error: r8a7790_gpio2_resources causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:51: error: r8a7790_gpio2_platform_data causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:52: error: r8a7790_gpio3_resources causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:52: error: r8a7790_gpio3_platform_data causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:53: error: r8a7790_gpio4_resources causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:53: error: r8a7790_gpio4_platform_data causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:54: error: r8a7790_gpio5_resources causes a section type conflict
-arch/arm/mach-shmobile/setup-r8a7790.c:54: error: r8a7790_gpio5_platform_data causes a section type conflict
+diff --git a/arch/arm/mach-mxs/mach-mxs.c b/arch/arm/mach-mxs/mach-mxs.c
+index 5b62b64..66fe810 100644
+--- a/arch/arm/mach-mxs/mach-mxs.c
++++ b/arch/arm/mach-mxs/mach-mxs.c
+@@ -19,7 +19,6 @@
+ #include <linux/err.h>
+ #include <linux/gpio.h>
+ #include <linux/init.h>
+-#include <linux/irqchip.h>
+ #include <linux/irqchip/mxs.h>
+ #include <linux/micrel_phy.h>
+ #include <linux/of_address.h>
+@@ -435,7 +434,6 @@ static const char *mxs_dt_compat[] __initdata = {
+ 
+ DT_MACHINE_START(MXS, "Freescale MXS (Device Tree)")
+ 	.map_io		= debug_ll_io_init,
+-	.init_irq	= irqchip_init,
+ 	.handle_irq	= icoll_handle_irq,
+ 	.init_time	= mxs_timer_init,
+ 	.init_machine	= mxs_machine_init,
+-- 
+1.8.1.2
+
