@@ -1,41 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 09:59:33 +0000
-Subject: [PATCH 9/9] ARM: shmobile: r8a7778: correct model name in Kconfig
-Message-Id: <1369648773-7941-10-git-send-email-horms+renesas@verge.net.au>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:50 +0000
+Subject: [PATCH 17/20] ARM: sirf: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-18-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for sirf as well.
 
-The correct model name is R-Car M1A or R8A77781; R8A77780 corresponds to R-Car
-M1S which is a SH based SoC.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[horms+renesas@verge.net.au: manually applied to soc-r8a7778 branch]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Barry Song <Baohua.Song@csr.com>
 ---
- arch/arm/mach-shmobile/Kconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-prima2/common.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 06da4d3..58eb689 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -36,7 +36,7 @@ config ARCH_R8A7740
- 	select RENESAS_INTC_IRQPIN
- 
- config ARCH_R8A7778
--	bool "R-Car M1 (R8A77780)"
-+	bool "R-Car M1A (R8A77781)"
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select CPU_V7
- 	select SH_CLK_CPG
+diff --git a/arch/arm/mach-prima2/common.c b/arch/arm/mach-prima2/common.c
+index 4f94cd8..a9f475c 100644
+--- a/arch/arm/mach-prima2/common.c
++++ b/arch/arm/mach-prima2/common.c
+@@ -9,7 +9,6 @@
+ #include <linux/clocksource.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/irqchip.h>
+ #include <asm/sizes.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -55,7 +54,6 @@ DT_MACHINE_START(ATLAS6_DT, "Generic ATLAS6 (Flattened Device Tree)")
+ 	/* Maintainer: Barry Song <baohua.song@csr.com> */
+ 	.nr_irqs	= 128,
+ 	.map_io         = sirfsoc_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= sirfsoc_init_time,
+ 	.init_machine	= sirfsoc_mach_init,
+ 	.init_late	= sirfsoc_init_late,
+@@ -74,7 +72,6 @@ DT_MACHINE_START(PRIMA2_DT, "Generic PRIMA2 (Flattened Device Tree)")
+ 	/* Maintainer: Barry Song <baohua.song@csr.com> */
+ 	.nr_irqs	= 128,
+ 	.map_io         = sirfsoc_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= sirfsoc_init_time,
+ 	.dma_zone_size	= SZ_256M,
+ 	.init_machine	= sirfsoc_mach_init,
+@@ -94,7 +91,6 @@ DT_MACHINE_START(MARCO_DT, "Generic MARCO (Flattened Device Tree)")
+ 	/* Maintainer: Barry Song <baohua.song@csr.com> */
+ 	.smp            = smp_ops(sirfsoc_smp_ops),
+ 	.map_io         = sirfsoc_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= sirfsoc_init_time,
+ 	.init_machine	= sirfsoc_mach_init,
+ 	.init_late	= sirfsoc_init_late,
 -- 
-1.7.10.4
+1.8.1.2
 
