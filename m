@@ -1,22 +1,46 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 31 May 2013 10:22:24 +0000
-Subject: Re: [PATCH 1/5] serial: sh-sci: HSCIF support
-Message-Id: <20130531102224.GB30177@linux-sh.org>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:45 +0000
+Subject: [PATCH 12/20] ARM: bcm281xx: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-13-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369743728-26084-2-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1369743728-26084-2-git-send-email-ulrich.hecht@gmail.com>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 28, 2013 at 02:22:04PM +0200, Ulrich Hecht wrote:
-> Adds support for "High Speed Serial Communications Interface with FIFO",
-> essentially a SCIF with 128-byte FIFOs and more accurate baud rate
-> generator.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for bcm281xx as well.
 
-Looks good to me.
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Christian Daudt <csd@broadcom.com>
+---
+ arch/arm/mach-bcm/board_bcm.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+diff --git a/arch/arm/mach-bcm/board_bcm.c b/arch/arm/mach-bcm/board_bcm.c
+index 22e8421..2859932 100644
+--- a/arch/arm/mach-bcm/board_bcm.c
++++ b/arch/arm/mach-bcm/board_bcm.c
+@@ -15,7 +15,6 @@
+ #include <linux/init.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
+-#include <linux/irqchip.h>
+ #include <linux/clocksource.h>
+ 
+ #include <asm/mach/arch.h>
+@@ -54,7 +53,6 @@ static void __init board_init(void)
+ static const char * const bcm11351_dt_compat[] = { "bcm,bcm11351", NULL, };
+ 
+ DT_MACHINE_START(BCM11351_DT, "Broadcom Application Processor")
+-	.init_irq = irqchip_init,
+ 	.init_time = clocksource_of_init,
+ 	.init_machine = board_init,
+ 	.dt_compat = bcm11351_dt_compat,
+-- 
+1.8.1.2
+
