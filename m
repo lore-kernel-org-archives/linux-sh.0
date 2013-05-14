@@ -1,57 +1,34 @@
-From: Jiang Liu <liuj97@gmail.com>
-Date: Wed, 29 May 2013 14:44:49 +0000
-Subject: [PATCH, v2 10/13] mm/SH: prepare for killing free_all_bootmem_node()
-Message-Id: <1369838692-26860-11-git-send-email-jiang.liu@huawei.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 14 May 2013 02:39:28 +0000
+Subject: [PATCH v2 0/3]
+Message-Id: <1368499171-22427-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369838692-26860-1-git-send-email-jiang.liu@huawei.com>
-In-Reply-To: <1369838692-26860-1-git-send-email-jiang.liu@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Jiang Liu <jiang.liu@huawei.com>, David Rientjes <rientjes@google.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, James Bottomley <James.Bottomley@HansenPartnership.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, David Howells <dhowells@redhat.com>, Mark Salter <msalter@redhat.com>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Prepare for killing free_all_bootmem_node() by using
-free_all_bootmem().
+Hi,
 
-Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Wen Congyang <wency@cn.fujitsu.com>
-Cc: Tang Chen <tangchen@cn.fujitsu.com>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
----
- arch/sh/mm/init.c | 16 ++++------------
- 1 file changed, 4 insertions(+), 12 deletions(-)
+this short series enables the on-board ethernet
+of the r8a7790 SoC for on lager board.
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index c9a517c..33890fd 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -412,19 +412,11 @@ void __init mem_init(void)
- 	iommu_init();
- 
- 	high_memory = NULL;
-+	for_each_online_pgdat(pgdat)
-+		high_memory = max_t(void *, high_memory,
-+				    __va(pgdat_end_pfn(pgdat) << PAGE_SHIFT));
- 
--	for_each_online_pgdat(pgdat) {
--		void *node_high_memory;
--
--		if (pgdat->node_spanned_pages)
--			free_all_bootmem_node(pgdat);
--
--		node_high_memory = (void *)__va((pgdat->node_start_pfn +
--						 pgdat->node_spanned_pages) <<
--						 PAGE_SHIFT);
--		if (node_high_memory > high_memory)
--			high_memory = node_high_memory;
--	}
-+	free_all_bootmem();
- 
- 	/* Set this up early, so we can take care of the zero page */
- 	cpu_cache_init();
+It is based on the renesas-next-20130513 tag of my renesas tree.
+
+Dependencies noted in individual patches.
+
+Simon Horman (3):
+  ARM: shmobile: r8a7790: add Ether support
+  ARM: shmobile: lager: enable Ether
+  ARM: shmobile: lager: enable nfsroot in DTS
+
+ arch/arm/boot/dts/r8a7790-lager.dts           |  2 +-
+ arch/arm/mach-shmobile/board-lager.c          | 25 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c        |  4 ++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        | 15 +++++++++++++++
+ 5 files changed, 48 insertions(+), 1 deletion(-)
+
 -- 
-1.8.1.2
+1.8.2.1
 
