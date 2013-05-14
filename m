@@ -1,83 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 14 May 2013 02:44:44 +0000
-Subject: Re: [PATCH 1/3] gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH
-Message-Id: <20130514024443.GB20239@verge.net.au>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:38 +0000
+Subject: [PATCH 05/20] ARM: shmobile: ape6evm: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-6-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
- <1368435233-8587-2-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoQ2gLVRz-a1PoQeuy_=XVKMR8x+47NDT9FFQWdRu17c7A@mail.gmail.com>
-In-Reply-To: <CANqRtoQ2gLVRz-a1PoQeuy_=XVKMR8x+47NDT9FFQWdRu17c7A@mail.gmail.com>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 13, 2013 at 07:14:41PM +0900, Magnus Damm wrote:
-> On Mon, May 13, 2013 at 5:53 PM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > As hardware support for this feature is not universal for all SoCs a flag,
-> > has_both_edge_trigger, has been added to the platform data of the driver to
-> > allow this feature to be enabled.
-> >
-> > The motivation for this is to allow use of the gpio-keys driver on the
-> > lager board which is based on the r8a7790 SoC. This patch has been lightly
-> > exercised using that driver on that board.
-> >
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  drivers/gpio/gpio-rcar.c                | 27 ++++++++++++++++++++++-----
-> >  include/linux/platform_data/gpio-rcar.h |  1 +
-> >  2 files changed, 23 insertions(+), 5 deletions(-)
-> 
-> Thanks for the patch, Simon!
-> 
-> > diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-> > index 0f3d647..33d8f6a 100644
-> > --- a/drivers/gpio/gpio-rcar.c
-> > +++ b/drivers/gpio/gpio-rcar.c
-> > @@ -49,6 +49,7 @@ struct gpio_rcar_priv {
-> >  #define POSNEG 0x20
-> >  #define EDGLEVEL 0x24
-> >  #define FILONOFF 0x28
-> > +#define BOTHEDGE 0x4c
-> >
-> >  static inline u32 gpio_rcar_read(struct gpio_rcar_priv *p, int offs)
-> >  {
-> > @@ -111,6 +113,11 @@ static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
-> >         /* Select "Interrupt Input Mode" in IOINTSEL */
-> >         gpio_rcar_modify_bit(p, IOINTSEL, hwirq, true);
-> >
-> > +       if (p->config.has_both_edge_trigger && !level_trigger) {
-> > +               /* Select one edge or both edges in BOTHEDGE */
-> > +               gpio_rcar_modify_bit(p, IOINTSEL, hwirq, both);
-> > +       }
-> > +
-> >         /* Write INTCLR in case of edge trigger */
-> >         if (!level_trigger)
-> >                 gpio_rcar_write(p, INTCLR, BIT(hwirq));
-> 
-> In your hunk above I suspect you want to setup the BOTHEDGE register
-> instead of IOINTSEL.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for shmobile as well.
 
-Thanks, I will fix that.
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-shmobile/board-ape6evm.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-> Also, I wonder how BOTHEDGE should be set in the case of level
-> trigger. Say that the user first selects edge trigger and then
-> reconfigures to level, then you probably want to make sure the
-> BOTHEDGE register is cleared.
-> 
-> So may want to do something like this (untested):
-> 
->        if (p->config.has_both_edge_trigger) {
->                /* Select one edge or both edges in BOTHEDGE */
->                gpio_rcar_modify_bit(p, BOTHEDGE, hwirq, both);
->        }
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 55b8c9f..8dfbdba 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -20,7 +20,6 @@
+ 
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+@@ -87,7 +86,6 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+-	.init_irq	= irqchip_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+-- 
+1.8.1.2
 
-Sure, if you think so.
-
-> Also, please double check that the register access sequences in the
-> documentation are still kept, please see "6.7.1 Setting Edge-Sensitive
-> Interrupt Input Mode" in the H2 data sheet. It looks like you want to
-> move this setting so it happens before IOINTSEL.
-
-Thanks, I will fix that.
