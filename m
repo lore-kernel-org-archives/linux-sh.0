@@ -1,11 +1,10 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 14 May 2013 08:38:17 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 14 May 2013 09:24:48 +0000
 Subject: Re: [PATCH 3/3] ARM: mach-shmobile: lager: support GPIO switches
-Message-Id: <20130514083816.GB24811@verge.net.au>
+Message-Id: <18009427.QVeP3MCVSV@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
- <1368435233-8587-4-git-send-email-horms+renesas@verge.net.au>
- <9256981.LFpgU8cctr@avalon> <20130514025941.GC20239@verge.net.au>
+ <20130514025941.GC20239@verge.net.au>
  <CANqRtoTj+FnxrtOayxQYCxkyuP4XGeCaXpNUbPsFV4kyBD_48Q@mail.gmail.com>
 In-Reply-To: <CANqRtoTj+FnxrtOayxQYCxkyuP4XGeCaXpNUbPsFV4kyBD_48Q@mail.gmail.com>
 MIME-Version: 1.0
@@ -13,59 +12,64 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 14, 2013 at 03:09:08PM +0900, Magnus Damm wrote:
-> Hi Simon and Laurent,
-> 
+Hi Magnus,
+
+On Tuesday 14 May 2013 15:09:08 Magnus Damm wrote:
 > On Tue, May 14, 2013 at 11:59 AM, Simon Horman <horms@verge.net.au> wrote:
 > > On Tue, May 14, 2013 at 12:35:20AM +0200, Laurent Pinchart wrote:
-> >> Hi Simon,
-> >>
-> >> Thank you for the patch.
-> >>
 > >> On Monday 13 May 2013 17:53:53 Simon Horman wrote:
 > >> > The lager board has pins 1 - 4 of SW2 wired up to GPIO pins.
 > >> > This patch allows access to those pins as KEYS 1 - 4 using
 > >> > gpio-keys.
-> >> >
+> >> > 
 > >> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >> >
+> >> > 
 > >> > ---
-> >> >
+> >> > 
 > >> > This patch has run time dependencies on
 > >> > 1. "gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH"
-> >> > 2. "ARM: shmobile: r8a7790: Configure R-Car GPIO for IRQ_TYPE_EDGE_BOTH"
-> >> >
+> >> > 2. "ARM: shmobile: r8a7790: Configure R-Car GPIO for
+> >> > IRQ_TYPE_EDGE_BOTH"
+> >> > 
 > >> > Without those dependencies satisfied the gpio-keys driver will
 > >> > fail to be initialise itself. The boot should be otherwise successful
 > >> > and the board otherwise functional.
 > >> > ---
+> >> > 
 > >> >  arch/arm/mach-shmobile/board-lager.c | 22 ++++++++++++++++++++++
 > >> >  1 file changed, 22 insertions(+)
-> >> >
+> >> > 
 > >> > diff --git a/arch/arm/mach-shmobile/board-lager.c
 > >> > b/arch/arm/mach-shmobile/board-lager.c index 6a1ba38..4d1b42b 100644
 > >> > --- a/arch/arm/mach-shmobile/board-lager.c
 > >> > +++ b/arch/arm/mach-shmobile/board-lager.c
 > >> > @@ -18,7 +18,10 @@
-> >> >   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
+> >> > 
+> >> >   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 
+> >> >   02110-1301
+> >> > 
 > >> > USA */
-> >> >
+> >> > 
 > >> > +#include <linux/gpio.h>
 > >> > +#include <linux/gpio_keys.h>
+> >> > 
 > >> >  #include <linux/interrupt.h>
+> >> > 
 > >> > +#include <linux/input.h>
-> >>
+> >> 
 > >> My dictionary lists input before interrupt :-)
-> >
+> > 
 > > Thanks, I will fix that.
-> >
+> > 
 > >> >  #include <linux/irqchip.h>
 > >> >  #include <linux/kernel.h>
 > >> >  #include <linux/leds.h>
-> >> > @@ -52,6 +55,22 @@ static struct gpio_led_platform_data lager_leds_pdata = {
-> >> > .num_leds   = ARRAY_SIZE(lager_leds),
+> >> > 
+> >> > @@ -52,6 +55,22 @@ static struct gpio_led_platform_data
+> >> > lager_leds_pdata = { .num_leds   = ARRAY_SIZE(lager_leds),
+> >> > 
 > >> >  };
-> >> >
+> >> > 
 > >> > +/* GPIO KEY */
 > >> > +#define GPIO_KEY(c, g, d, ...) \
 > >> > +   { .code = c, .gpio = g, .desc = d, .active_low = 1 }
@@ -82,12 +86,12 @@ On Tue, May 14, 2013 at 03:09:08PM +0900, Magnus Damm wrote:
 > >> > +   .nbuttons       = ARRAY_SIZE(gpio_buttons),
 > >> > +};
 > >> > +
-> >>
+> >> 
 > >> Could you please also update the lager dts file ?
-> >
+> > 
 > > I wonder if in that case we can remove the C code above.
 > > And probably the C code for the GPIO leds too.
-> >
+> > 
 > > Magnus, could you clarify how you would like
 > > C-code and DTS to look on the lager board?
 > 
@@ -99,11 +103,23 @@ On Tue, May 14, 2013 at 03:09:08PM +0900, Magnus Damm wrote:
 > file for Lager where you put the DT version of your GPIO LED / switch
 > code. At the time when we can configure the PFC via PINCTRL DT then I
 > believe we should be able to replace most of the platform device code
-> with DT versions. At that we should hopefully be able to ditch all the
-> C board code, or maybe we need to keep some around until we have the
-> common clocks going...
+> with DT versions.
 
-Hi Magnus,
+I've sent an RFC for gpio-rcar DT bindings, and I'll send one for sh-pfc in 
+the next few days. DT support for GPIO and PINCTRL should then hopefully be 
+available very soon.
 
-thanks for the clarification. That all sounds reasonable
-and I will see about making it so.
+> At that we should hopefully be able to ditch all the C board code,
+
+Will we also ditch non-reference board files ?
+
+> or maybe we need to keep some around until we have the common clocks
+> going...
+
+What's the status of CCF support development in sh-mobile ?
+
+-- 
+Regards,
+
+Laurent Pinchart
+
