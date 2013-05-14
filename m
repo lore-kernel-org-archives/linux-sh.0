@@ -1,30 +1,45 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Mon, 13 May 2013 09:58:06 +0000
-Subject: Re: [PATCH 07/14] ARM: spear: Remove init_irq declaration in machine description
-Message-Id: <CAKohpo=TRXoZ2L0vUor4834QNbf0UxaB9AVYY-r-3mAKYTgjig@mail.gmail.com>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:39 +0000
+Subject: [PATCH 06/20] ARM: shmobile: kzm9g: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-7-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368438253-28218-8-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368438253-28218-8-git-send-email-maxime.ripard@free-electrons.com>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 13 May 2013 15:14, Maxime Ripard <maxime.ripard@free-electrons.com> wrote:
-> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> specified") removed the need to explictly setup the init_irq field in
-> the machine description when using only irqchip_init. Remove that
-> declaration for spear as well.
->
-> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> ---
->  arch/arm/mach-spear/spear1310.c | 1 -
->  arch/arm/mach-spear/spear1340.c | 1 -
->  arch/arm/mach-spear/spear300.c  | 1 -
->  arch/arm/mach-spear/spear310.c  | 1 -
->  arch/arm/mach-spear/spear320.c  | 1 -
->  arch/arm/mach-spear/spear6xx.c  | 1 -
->  6 files changed, 6 deletions(-)
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for shmobile as well.
 
-Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index aefa50d..b7ee96e 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -24,7 +24,6 @@
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+ #include <linux/pinctrl/machine.h>
+@@ -100,7 +99,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= kzm_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+-- 
+1.8.1.2
+
