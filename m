@@ -1,85 +1,37 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 15 May 2013 00:18:06 +0000
-Subject: [PATCH v3 06/20] ARM: shmobile: r8a7779: Add pin control device to device tree
-Message-Id: <1368577100-3530-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 14 May 2013 21:35:11 +0000
+Subject: [PATCH 1/2] ARM: shmobile: marzen-reference: Reference the correct IRQ for ethernet
+Message-Id: <1368567312-11640-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add a pfc node to the r8a7779 device tree and remove manual pinmux
-initialization from the corresponding board files.
+The SMSC ethernet controller uses an external IRQ line that goes through
+the irqpin controller. Set the interrupt parent to irqpin0 and fix the
+interrupt number.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779.dtsi                  |  5 +++++
- arch/arm/mach-shmobile/board-marzen-reference.c | 17 ++++++++---------
- 2 files changed, 13 insertions(+), 9 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 7f146c6..9dfc438 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -101,6 +101,11 @@
- 		interrupts = <0 81 0x4>;
- 	};
- 
-+	pfc: pfc@fffc0000 {
-+		compatible = "renesas,pfc-r8a7779";
-+		reg = <0xfffc0000 0x23c>;
-+	};
-+
- 	thermal@ffc48000 {
- 		compatible = "renesas,rcar-thermal";
- 		reg = <0xffc48000 0x38>;
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 5332e89..fa7fc07 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -28,24 +28,24 @@
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
- 	/* SCIF2 (CN18: DEBUG0) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
- 				  "scif2_data_c", "scif2"),
- 	/* SCIF4 (CN19: DEBUG1) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
- 				  "scif4_data", "scif4"),
- 	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_wp", "sdhi0"),
- 	/* SMSC */
--	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "fffc0000.pfc",
- 				  "intc_irq1_b", "intc"),
--	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "fffc0000.pfc",
- 				  "lbsc_ex_cs0", "lbsc"),
- };
- 
-@@ -53,7 +53,6 @@ static void __init marzen_init(void)
- {
- 	pinctrl_register_mappings(marzen_pinctrl_map,
- 				  ARRAY_SIZE(marzen_pinctrl_map));
--	r8a7779_pinmux_init();
- 
- 	r8a7779_add_standard_devices_dt();
- }
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 72be4c8..10cfc7f 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -38,8 +38,8 @@
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x18000000 0x100>;
+ 		phy-mode = "mii";
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 28 0x4>;
++		interrupt-parent = <&irqpin0>;
++		interrupts = <1 0x4>;
+ 		reg-io-width = <4>;
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
 -- 
 1.8.1.5
 
