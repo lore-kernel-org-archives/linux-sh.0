@@ -1,88 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 01 May 2013 22:35:05 +0000
-Subject: Re: [PATCH v3 4/5] ARM: shmobile: BOCK-W: add VIN and ML86V7667 support
-Message-Id: <20130501223501.GA6517@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 14 May 2013 22:07:54 +0000
+Subject: Re: [PATCH 1/3] ARM: shmobile: irqpin: fix handling of spurious interrupts in DT case
+Message-Id: <9440947.bdAq5SKB5F@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201304232118.43686.sergei.shtylyov@cogentembedded.com>
- <201304232132.52741.sergei.shtylyov@cogentembedded.com>
- <517B06FA.3000303@cogentembedded.com>
- <20130501090909.GA2562@verge.net.au>
- <518135F9.9010509@cogentembedded.com>
-In-Reply-To: <518135F9.9010509@cogentembedded.com>
+References: <Pine.LNX.4.64.1303211659580.32438@axis700.grange>
+ <20130327104747.GE3040@verge.net.au> <20130328053044.GA25938@verge.net.au>
+In-Reply-To: <20130328053044.GA25938@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 01, 2013 at 07:34:17PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 01-05-2013 13:09, Simon Horman wrote:
-> 
-> >>On 04/23/2013 09:32 PM, Sergei Shtylyov wrote:
-> 
-> >>>From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> 
-> >>>Add ML86V7667 platform devices on BOCK-W board, configure VIN0/1 pins, and
-> >>>register VIN0/1 devices with the ML86V7667 specific platform data.
-> 
-> >>>Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> >>>[Sergei: some macro/comment cleanup; updated the copyrights, removed duplicate
-> >>>#include, annotated all platform data as '__initdata'.]
-> >>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>>---
-> >>>Changes since version 2:
-> >>>- removed duplicate #include <linux/pinctrl/machine.h>;
-> >>>- annotated all platform data as '__initdata' since they're kmemdup()'ed while
-> >>>   registering the platform devices anyway;
-> >>>- resolved rejects, refreshed the patch.
-> 
-> >>>  arch/arm/mach-shmobile/board-bockw.c |   39 +++++++++++++++++++++++++++++++++++
-> >>>  1 file changed, 39 insertions(+)
-> 
-> >>>Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-> >>>=================================> >>>--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-> >>>+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-> 
-> >>[...]
-> 
-> >>>@@ -80,6 +101,16 @@ static const struct pinctrl_map bockw_pi
-> >>>  				  "sdhi0_data4", "sdhi0"),
-> >>>  	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
-> >>>  				  "sdhi0_wp", "sdhi0"),
-> >>>+	/* VIN0 */
-> >>>+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.0", "pfc-r8a7778",
-> >>>+				  "vin0_clk", "vin0"),
-> >>>+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.0", "pfc-r8a7778",
-> >>>+				  "vin0_data8", "vin0"),
-> >>>+	/* VIN1 */
-> >>>+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7778",
-> >>>+				  "vin1_clk", "vin1"),
-> >>>+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_vin.1", "pfc-r8a7778",
-> >>>+				  "vin1_data8", "vin1"),
-> >>>  };
-> 
-> >>     It turned out that VIN1 signal VI1_CLK conflicts with Ether
-> >>signal ETH_REF_CLK.
-> >>So I'm a bit at a loss here: whether I should totally remove VIN1
-> >>device if I'm going
-> >>to add Ether device, or add a BOCK-W specific submenu to Kconfig, or
-> >>add driver
-> >>specific #ifdef's in the code to disable VIN1 if sh_eth driver is
-> >>enabled?...
-> 
-> >My preference, in order is:
-> 
-> >* Remove VIN1 (is it used?)
-> 
->    At least video decoders are connected to both VIN0 and VIN1.
-> 
-> >* Kconfig-foo
-> >* #ifdef nastiness
-> 
->    I took the 3rd approach but luckily it was possible without
-> #ifdef, using *if* (!IS_ENABLED(CONFIG_SH_ETH)) statement. Working
-> patch posted on Monday.
+On Thursday 28 March 2013 14:30:45 Simon Horman wrote:
+> On Wed, Mar 27, 2013 at 07:47:47PM +0900, Simon Horman wrote:
+> > On Thu, Mar 21, 2013 at 05:05:36PM +0100, Guennadi Liakhovetski wrote:
+> > > To disable spurious interrupts, that get triggered on certain hardware,
+> > > the irqpin driver masks them on the parent interrupt controller. To
+> > > specify such broken devices a .control_parent parameter can be provided
+> > > in the platform data. In the DT case we need a property, to do the same.
+> > > However, this is not enough to correctly handle spurious interrupts in
+> > > the DT case. In the non-DT case all interrupts get mapped statically
+> > > during probing, therefore, if a spurious interrupt arrives, it can
+> > > easily be mapped back to hardware registers and bits and handled. In the
+> > > DT case interrupts are mapped only when a device, using that interrupt
+> > > is instantiated from DT. So, spurious interrupts occur unmapped and thus
+> > > cannot be handled properly. This patch fixes this by mapping such
+> > > interrupts as they occur.
+> > > 
+> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> > 
+> > Thanks, queued up for v3.10 in the intc-external-irq branch of the renesas
+> > tree.
+>
+> As requested by Magnus I have dropped this patch.
 
-Thanks.
+I'm running into similar spurious interrupt issues on both kzm9g-reference and 
+marzen-reference. Magnus, you've rejected this patch, how would you like the 
+issue to be fixed ? Could you please provide a patch ? This is blocking 
+pinctrl DT testing, as I can't get any board to boot properly through DT with 
+ethernet support.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
