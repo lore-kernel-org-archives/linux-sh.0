@@ -1,33 +1,41 @@
-From: David Brown <davidb@codeaurora.org>
-Date: Mon, 13 May 2013 18:26:49 +0000
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 08:32:49 +0000
 Subject: Re: [PATCH 08/14] ARM: msm: Remove init_irq declaration in machine description
-Message-Id: <20130513182648.GA26913@codeaurora.org>
+Message-Id: <5191F6B1.9080000@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
  <1368438253-28218-9-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368438253-28218-9-git-send-email-maxime.ripard@free-electrons.com>
+ <20130513182648.GA26913@codeaurora.org>
+In-Reply-To: <20130513182648.GA26913@codeaurora.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 13, 2013 at 11:44:07AM +0200, Maxime Ripard wrote:
-> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> specified") removed the need to explictly setup the init_irq field in
-> the machine description when using only irqchip_init. Remove that
-> declaration for msm as well.
-> 
-> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> ---
->  arch/arm/mach-msm/board-dt-8660.c | 1 -
->  arch/arm/mach-msm/board-dt-8960.c | 1 -
->  2 files changed, 2 deletions(-)
+Hi David,
 
-I'll pull this into my msm-cleanup tree.
+Le 13/05/2013 20:26, David Brown a =E9crit :
+> On Mon, May 13, 2013 at 11:44:07AM +0200, Maxime Ripard wrote:
+>> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+>> specified") removed the need to explictly setup the init_irq field in
+>> the machine description when using only irqchip_init. Remove that
+>> declaration for msm as well.
+>>
+>> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+>> ---
+>>  arch/arm/mach-msm/board-dt-8660.c | 1 -
+>>  arch/arm/mach-msm/board-dt-8960.c | 1 -
+>>  2 files changed, 2 deletions(-)
+>=20
+> I'll pull this into my msm-cleanup tree.
 
-David
+Like I said in other mails from this thread, I'll send a v2, so you
+might want to hold off this patch until then.
 
--- 
-sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
-hosted by The Linux Foundation
+Thanks!
+Maxime
+
+--=20
+Maxime Ripard, Free Electrons
+Embedded Linux, Kernel and Android engineering
+http://free-electrons.com
