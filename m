@@ -1,37 +1,45 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 15 May 2013 12:52:23 +0000
-Subject: Re: marzen pinctl conflict for renesas-next-20130515v2 + v3.10-rc1
-Message-Id: <51938507.8010306@cogentembedded.com>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:43 +0000
+Subject: [PATCH 10/20] ARM: shmobile: r8a7790: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-11-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130515084658.GA19115@verge.net.au>
-In-Reply-To: <20130515084658.GA19115@verge.net.au>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for shmobile as well.
 
-On 15-05-2013 16:38, Laurent Pinchart wrote:
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7790.c | 2 --
+ 1 file changed, 2 deletions(-)
 
->>> I am preparing to rebase the branches of the renesas tree which
->>> are targeted for v3.11 on top of v3.10-rc1. In the course of
->>> doing so I have noticed a problem on the marzen board which appears
->>> to be related to pinmux.
-
->>> On boot, using the default config I see the following:
-
->>> sh-pfc pfc-r8a7779: pin GP_4_22 already requested by sh-hspi.0; cannot
->>> claim for ehci-platform.0 sh-pfc pfc-r8a7779: pin-150 (ehci-platform.0)
->>> status -22
->>> sh-pfc pfc-r8a7779: could not request pin 150 on device sh-pfc
-
->> I have already reported this. Laurent prepared a fix, which I somewhat
->> criticized, but he never published a second version.
-
-> I've posted v2 earlier today.
-
-    Saw it after replying to Simon, thanks.
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 49de2d5..2a7a276 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -19,7 +19,6 @@
+  */
+ 
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
+@@ -142,7 +141,6 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a7790_add_standard_devices_dt,
+ 	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+-- 
+1.8.1.2
 
