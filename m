@@ -1,84 +1,91 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 30 May 2013 01:32:55 +0000
-Subject: Re: [PATCH 2/9] ARM: shmobile: add GPIO IRQ macro
-Message-Id: <CANqRtoQEY0pEAdtTcUCzOTADBcV8aebKEUD8wQHoLwibo1++8A@mail.gmail.com>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:33 +0000
+Subject: [PATCHv2 00/20] Cleanup irqchip_init calls
+Message-Id: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
- <1369648773-7941-3-git-send-email-horms+renesas@verge.net.au>
- <20130528040729.GN13532@quad.lixom.net>
- <CANqRtoTUyaqfK3Droq3EuMZy-p2gzzTtcSTp=wiSM-3j0f4+Dg@mail.gmail.com>
- <20130528061828.GA20031@quad.lixom.net>
-In-Reply-To: <20130528061828.GA20031@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hey Olof,
+Hi everyone,
 
-On Tue, May 28, 2013 at 3:18 PM, Olof Johansson <olof@lixom.net> wrote:
-> On Tue, May 28, 2013 at 02:53:04PM +0900, Magnus Damm wrote:
->> Hi Olof,
->>
->> On Tue, May 28, 2013 at 1:07 PM, Olof Johansson <olof@lixom.net> wrote:
->> > On Mon, May 27, 2013 at 06:59:26PM +0900, Simon Horman wrote:
->> >> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->> >>
->> >> R-Car series gpio_rcar driver can control GPIO IRQ today.
->> >> It needs base IRQ number for gpio_rcar_config :: .irq_base
->> >> This patch adds macro for GPIO IRQ.
->> >> This patch was tested on Bock-W board
->> >>
->> >> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->> >> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->> >> ---
->> >>  arch/arm/mach-shmobile/include/mach/irqs.h |    5 +++++
->> >>  1 file changed, 5 insertions(+)
->> >>
->> >> diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
->> >> index b2074e2..d241bfd 100644
->> >> --- a/arch/arm/mach-shmobile/include/mach/irqs.h
->> >> +++ b/arch/arm/mach-shmobile/include/mach/irqs.h
->> >> @@ -16,4 +16,9 @@
->> >>  #define IRQPIN_BASE          2000
->> >>  #define irq_pin(nr)          ((nr) + IRQPIN_BASE)
->> >>
->> >> +/* GPIO IRQ */
->> >> +#define _GPIO_IRQ_BASE               2500
->> >> +#define GPIO_IRQ_BASE(x)     (_GPIO_IRQ_BASE + (32 * x))
->> >> +#define GPIO_IRQ(x, y)               (_GPIO_IRQ_BASE + (32 * x) + y)
->> >> +
->> >>  #endif /* __ASM_MACH_IRQS_H */
->> >
->> > Hmm. It'd be real nice to see some effort on moving this over to sparse
->> > irq instead. That'll be needed for full device tree conversion anyway. And
->> > with that, the static irq bases will be gone, so drivers and some of
->> > the platform code will need to be adjusted accordingly.
->>
->> I believe we've been doing sparse IRQ for ages, this is just to make
->> non-DT stuff more readable.
->>
->> Or was there some particular other interface you wanted us to use for
->> non-DT board code?
->
-> Sorry, terminology confusion on my side. Most other platforms sorted
-> this out when they moved to sparse irq, removing most hardcoded interrupt
-> numbers at the same time and handling it through DT. But since shmobile
-> still has a ways to go on DT conversion things are a bit different.
->
-> Either way, once things have been converted fully to DT, most of these
-> static numberings can/should be possible to remove.
+This is a splitted up version of the patch I previously sent to
+remove the explicit declaration of irqchip_init as the init_irq callback in
+the machine descriptions.
 
-Yes, exactly! Please note that the current drivers are written to be
-DT aware and the IRQ code makes use of IRQ domains, so like you say
-the DT -reference board code does not need to make use of these kind
-of macros.
+Since it was a pretty tricky patch to merge, since it was touching a lot of
+different platforms, I splitted it for each platforms, and rebased it on top
+of 3.10-rc1.
 
-However, we are still not able to swith to DT fully due to lack of DT
-support for PINMUX/GPIO. One even larger road block is the common
-clock framework. And then we have the I/O power domains used with
-Runtime PM on sh7372.
+The best way to merge it is probably that each one of us take into their tree
+the patches that are relevant for our architecture and send them to arm-soc
+later on.
 
-Thanks for your help,
+Thanks,
+Maxime
 
-/ magnus
+Changes from v1:
+  - Removed the dead include of linux/irqchip.h
+  - Splitted the shmobile changes into several patches
+
+Maxime Ripard (20):
+  ARM: sunxi: Remove init_irq declaration in machine description
+  ARM: zynq: Remove init_irq declaration in machine description
+  ARM: nomadik: Remove init_irq declaration in machine description
+  ARM: picoxcell: Remove init_irq declaration in machine description
+  ARM: shmobile: ape6evm: Remove init_irq declaration in machine
+    description
+  ARM: shmobile: kzm9g: Remove init_irq declaration in machine
+    description
+  ARM: shmobile: lager: Remove init_irq declaration in machine
+    description
+  ARM: shmobile: emev2: Remove init_irq declaration in machine
+    description
+  ARM: shmobile: r8a73a4: Remove init_irq declaration in machine
+    description
+  ARM: shmobile: r8a7790: Remove init_irq declaration in machine
+    description
+  ARM: shmobile: sh73a0: Remove init_irq declaration in machine
+    description
+  ARM: bcm281xx: Remove init_irq declaration in machine description
+  ARM: spear: Remove init_irq declaration in machine description
+  ARM: msm: Remove init_irq declaration in machine description
+  ARM: mvebu: Remove init_irq declaration in machine description
+  ARM: mxs: Remove init_irq declaration in machine description
+  ARM: sirf: Remove init_irq declaration in machine description
+  ARM: vexpress: Remove init_irq declaration in machine description
+  ARM: virt: Remove init_irq declaration in machine description
+  ARM: vt8500: Remove init_irq declaration in machine description
+
+ arch/arm/mach-bcm/board_bcm.c                  | 2 --
+ arch/arm/mach-msm/board-dt-8660.c              | 2 --
+ arch/arm/mach-msm/board-dt-8960.c              | 2 --
+ arch/arm/mach-mvebu/armada-370-xp.c            | 2 --
+ arch/arm/mach-mxs/mach-mxs.c                   | 2 --
+ arch/arm/mach-nomadik/cpu-8815.c               | 2 --
+ arch/arm/mach-picoxcell/common.c               | 2 --
+ arch/arm/mach-prima2/common.c                  | 4 ----
+ arch/arm/mach-shmobile/board-ape6evm.c         | 2 --
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 2 --
+ arch/arm/mach-shmobile/board-lager.c           | 2 --
+ arch/arm/mach-shmobile/setup-emev2.c           | 2 --
+ arch/arm/mach-shmobile/setup-r8a73a4.c         | 2 --
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 2 --
+ arch/arm/mach-shmobile/setup-sh73a0.c          | 2 --
+ arch/arm/mach-spear/spear1310.c                | 2 --
+ arch/arm/mach-spear/spear1340.c                | 2 --
+ arch/arm/mach-spear/spear300.c                 | 2 --
+ arch/arm/mach-spear/spear310.c                 | 2 --
+ arch/arm/mach-spear/spear320.c                 | 2 --
+ arch/arm/mach-spear/spear6xx.c                 | 2 --
+ arch/arm/mach-sunxi/sunxi.c                    | 2 --
+ arch/arm/mach-vexpress/v2m.c                   | 2 --
+ arch/arm/mach-virt/virt.c                      | 2 --
+ arch/arm/mach-vt8500/vt8500.c                  | 2 --
+ arch/arm/mach-zynq/common.c                    | 2 --
+ 26 files changed, 54 deletions(-)
+
+-- 
+1.8.1.2
+
