@@ -1,47 +1,46 @@
 From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Thu, 16 May 2013 08:18:14 +0000
-Subject: Re: [PATCHv2 00/20] Cleanup irqchip_init calls
-Message-Id: <51949646.4000107@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:37 +0000
+Subject: [PATCH 04/20] ARM: picoxcell: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-5-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
- <201305151455.12603.arnd@arndb.de>
-In-Reply-To: <201305151455.12603.arnd@arndb.de>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for picoxcell as well.
 
-Le 15/05/2013 14:55, Arnd Bergmann a =E9crit :
-> On Tuesday 14 May 2013, Maxime Ripard wrote:
->> This is a splitted up version of the patch I previously sent to
->> remove the explicit declaration of irqchip_init as the init_irq callback=
- in
->> the machine descriptions.
->>
->> Since it was a pretty tricky patch to merge, since it was touching a lot=
- of
->> different platforms, I splitted it for each platforms, and rebased it on=
- top
->> of 3.10-rc1.
->>
->> The best way to merge it is probably that each one of us take into their=
- tree
->> the patches that are relevant for our architecture and send them to arm-=
-soc
->> later on.
->=20
-> Sounds good to me. I'm sure that some platform maintainers will fail to
-> apply this though. Could you send whatever remains as a separate branch
-> in a couple of weeks so we can directly apply it to next/cleanup?
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Jamie Iles <jamie@jamieiles.com>
+---
+ arch/arm/mach-picoxcell/common.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-Ok, I will.
+diff --git a/arch/arm/mach-picoxcell/common.c b/arch/arm/mach-picoxcell/common.c
+index 70b441a..c2721ce 100644
+--- a/arch/arm/mach-picoxcell/common.c
++++ b/arch/arm/mach-picoxcell/common.c
+@@ -9,7 +9,6 @@
+  */
+ #include <linux/delay.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/irqdomain.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+@@ -87,7 +86,6 @@ static void picoxcell_wdt_restart(char mode, const char *cmd)
+ DT_MACHINE_START(PICOXCELL, "Picochip picoXcell")
+ 	.map_io		= picoxcell_map_io,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= dw_apb_timer_init,
+ 	.init_machine	= picoxcell_init_machine,
+ 	.dt_compat	= picoxcell_dt_match,
+-- 
+1.8.1.2
 
-Thanks,
-Maxime
-
---=20
-Maxime Ripard, Free Electrons
-Embedded Linux, Kernel and Android engineering
-http://free-electrons.com
