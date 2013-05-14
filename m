@@ -1,38 +1,45 @@
-From: Tejun Heo <tj@kernel.org>
-Date: Tue, 28 May 2013 11:58:11 +0000
-Subject: Re: [PATCH 0/3] Optimize R-Car SATA driver
-Message-Id: <20130528115811.GA31529@mtj.dyndns.org>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:42 +0000
+Subject: [PATCH 09/20] ARM: shmobile: r8a73a4: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-10-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305280238.17867.sergei.shtylyov@cogentembedded.com>
- <20130528002047.GA18531@mtj.dyndns.org>
- <51A49AA9.2070002@cogentembedded.com>
-In-Reply-To: <51A49AA9.2070002@cogentembedded.com>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-ide@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 28, 2013 at 03:53:13PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 28-05-2013 4:20, Tejun Heo wrote:
-> 
-> >>    Here's the set of 3 patches against the Tejun Heo's 'libata.git' repo's
-> >>'for-3.11' branch.
-> >>    They deal with some shortcomings in the R-Car SATA driver and generally
-> >>optimize it. I've come up with them while trying to add NCQ support to this
-> >>driver.
-> 
-> >>[1/3] sata_rcar: kill superfluous code in sata_rcar_bmdma_fill_sg()
-> >>[2/3] sata_rcar: correct 'sata_rcar_sht'
-> >>[3/3] sata_rcar: add 'base' local variable to some functions
-> 
-> >Applied to libata/for-3.11.
-> 
->    Again, I don't see these commits on git.kernel.org thru cgit...
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for shmobile as well.
 
-Still traveling.  Just pushed out.  :)
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 2 --
+ 1 file changed, 2 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index c5a75a7..0b78896 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -18,7 +18,6 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/irq-renesas-irqc.h>
+@@ -194,7 +193,6 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a73a4_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
 -- 
-tejun
+1.8.1.2
+
