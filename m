@@ -1,34 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 May 2013 02:07:48 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8A7779: fix Ether device name
-Message-Id: <20130531020748.GA29074@verge.net.au>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:53 +0000
+Subject: [PATCH 20/20] ARM: vt8500: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-21-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645206-3682-1-git-send-email-horms+renesas@verge.net.au>
- <1369645206-3682-3-git-send-email-horms+renesas@verge.net.au>
- <20130528040043.GL13532@quad.lixom.net>
- <51A744A4.5020909@cogentembedded.com>
-In-Reply-To: <51A744A4.5020909@cogentembedded.com>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 30, 2013 at 04:23:00PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 28-05-2013 8:00, Olof Johansson wrote:
-> 
-> >>From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>While recasting the commit "ARM: shmobile: R8A7779: add Ether support", I made a
-> >>typo in the platform device's name: used underscore instead of hyphen.
-> 
-> >Minor nit: if this has been merged, then including the SHA is useful too.
-> 
->    Yes, it has been merged in 3.10. Simon, can you do this without
-> me reposting the patch? The defective commit's SHA1 ID is
-> dace48d04dee46a3409d5e13cd98031522e46377.
->    Note that there is analogous R8A7778 Ether fix, the SHA1 for its
-> defective commit is 524219146a89aee5366326c225ccd71231419d89.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for vt8500 as well.
 
-Thanks, I will fix up the commit messages.
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-vt8500/vt8500.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-vt8500/vt8500.c b/arch/arm/mach-vt8500/vt8500.c
+index 1dd281e..70a5ac9 100644
+--- a/arch/arm/mach-vt8500/vt8500.c
++++ b/arch/arm/mach-vt8500/vt8500.c
+@@ -20,7 +20,6 @@
+ 
+ #include <linux/clocksource.h>
+ #include <linux/io.h>
+-#include <linux/irqchip.h>
+ #include <linux/pm.h>
+ 
+ #include <asm/mach-types.h>
+@@ -178,7 +177,6 @@ static const char * const vt8500_dt_compat[] = {
+ DT_MACHINE_START(WMT_DT, "VIA/Wondermedia SoC (Device Tree Support)")
+ 	.dt_compat	= vt8500_dt_compat,
+ 	.map_io		= vt8500_map_io,
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= vt8500_init,
+ 	.init_time	= clocksource_of_init,
+ 	.restart	= vt8500_restart,
+-- 
+1.8.1.2
+
