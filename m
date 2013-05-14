@@ -1,55 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 13 May 2013 22:33:42 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 14 May 2013 02:40:37 +0000
 Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7790: Configure R-Car GPIO for IRQ_TYPE_EDGE_BOTH
-Message-Id: <2257564.fgMO2c8G9k@avalon>
+Message-Id: <20130514024034.GA20239@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
  <1368435233-8587-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368435233-8587-3-git-send-email-horms+renesas@verge.net.au>
+ <2257564.fgMO2c8G9k@avalon>
+In-Reply-To: <2257564.fgMO2c8G9k@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
-
-On Monday 13 May 2013 17:53:52 Simon Horman wrote:
-> "gpio-rcar: Support IRQ_TYPE_EDGE_BOTH" adds support to the R-Car GPIO
-> driver for IRQ_TYPE_EDGE_BOTH. As hardware support for this feature is
-> not universal for all SoCs a flag, has_both_edge_trigger, has been
-> added to the platform data of the driver to allow this feature to be
-> enabled.
-
-What about moving this information to a platform ID table in the gpio-rcar 
-driver ?
-
-> As the r8a7790 SoC hardware supports this feature enable it.
+On Tue, May 14, 2013 at 12:33:42AM +0200, Laurent Pinchart wrote:
+> Hi Simon,
 > 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> On Monday 13 May 2013 17:53:52 Simon Horman wrote:
+> > "gpio-rcar: Support IRQ_TYPE_EDGE_BOTH" adds support to the R-Car GPIO
+> > driver for IRQ_TYPE_EDGE_BOTH. As hardware support for this feature is
+> > not universal for all SoCs a flag, has_both_edge_trigger, has been
+> > added to the platform data of the driver to allow this feature to be
+> > enabled.
 > 
-> ---
-> 
-> This patch has a build-time dependency on
-> "gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH".
-> ---
->  arch/arm/mach-shmobile/setup-r8a7790.c | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c
-> b/arch/arm/mach-shmobile/setup-r8a7790.c index eeef5f6..b461d93 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-> @@ -45,6 +45,7 @@ static struct gpio_rcar_config
-> r8a7790_gpio##idx##_platform_data = {	\ .irq_base	= 0,						
-\
->  	.number_of_pins	= 32,						\
->  	.pctl_name	= "pfc-r8a7790",				\
-> +	.has_both_edge_trigger = 1,					\
->  };									\
-> 
->  R8A7790_GPIO(0);
--- 
-Regards,
+> What about moving this information to a platform ID table in the gpio-rcar 
+> driver ?
 
-Laurent Pinchart
+Magnus, do you have an opinion on this?
 
+> > As the r8a7790 SoC hardware supports this feature enable it.
+> > 
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > 
+> > ---
+> > 
+> > This patch has a build-time dependency on
+> > "gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH".
+> > ---
+> >  arch/arm/mach-shmobile/setup-r8a7790.c | 1 +
+> >  1 file changed, 1 insertion(+)
+> > 
+> > diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c
+> > b/arch/arm/mach-shmobile/setup-r8a7790.c index eeef5f6..b461d93 100644
+> > --- a/arch/arm/mach-shmobile/setup-r8a7790.c
+> > +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+> > @@ -45,6 +45,7 @@ static struct gpio_rcar_config
+> > r8a7790_gpio##idx##_platform_data = {	\ .irq_base	= 0,						
+> \
+> >  	.number_of_pins	= 32,						\
+> >  	.pctl_name	= "pfc-r8a7790",				\
+> > +	.has_both_edge_trigger = 1,					\
+> >  };									\
+> > 
+> >  R8A7790_GPIO(0);
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
