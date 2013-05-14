@@ -1,45 +1,85 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 10 May 2013 08:30:16 +0000
-Subject: Re: [PULL] Renesas TPU PWM support
-Message-Id: <20130510083015.GC27435@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 14 May 2013 02:37:52 +0000
+Subject: [RFC PATCH net-next v2 2/3] sh_eth: add support RMIIMODE register
+Message-Id: <1368499073-21975-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2913226.V7YaaHlrKR@avalon>
-In-Reply-To: <2913226.V7YaaHlrKR@avalon>
+References: <1368499073-21975-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368499073-21975-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-On Fri, May 10, 2013 at 04:25:50PM +0900, Simon Horman wrote:
-> On Thu, May 09, 2013 at 01:23:43PM +0200, Laurent Pinchart wrote:
-> > Hi Simon,
-> > 
-> > The following changes since commit 12e47d7dae97ea9474da500a555dc781d3b7ee55:
-> > 
-> >   Merge branch 'heads/soc-sh73a0' into next (2013-05-09 12:53:26 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://linuxtv.org/pinchartl/fbdev.git pinmux/3.9/tpu
-> > 
-> > for you to fetch changes up to 56c8a8e245ddc6e1601e230d366139fba8432273:
-> > 
-> >   leds: Remove leds-renesas-tpu driver (2013-05-09 13:00:18 +0200)
-> > 
-> > The patches have already been posted to the list, I've just rebased them on 
-> > top of renesas-next-20130509. Feel free to pick them up manually or rebase 
-> > them if needed, or even ask me to rebase them on top of a different 
-> > branch/tag.
-> 
-> Hi Laurent,
-> 
-> I had hoped to get to this today but I didn't quite make it.
-> I should be able to process it on Monday.
+This change is motivated by the lager board which uses the r8a7790 SoC,
+an R-Car SoC. For this board setting the RMIIMODE register is necessary.
 
-It turns out that I had a bit more time than expected this afternoon.
+This patch assumes this is valid for all R-Car SoCs.
 
-I am a bit unsure of how to handle applying this patchset to
-different branches without creating a dependency nightmare.
-So for now I have queued-up all the patches for v3.11 in the pinmux
-branch. I will push this and a renesas-next-20130510 tag once my
-build and boot tests finish (successfully!).
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+--
+
+v2
+* Split from patch to add r8a7790 support to driver (ifdef nastiness)
+* As suggested by Sergei Shtylyov
+  - Add a field to struct sh_eth_cpu_data to indicate if the
+    rmiimode register is present. This replaces an extremely ugly ifdef.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 5 +++++
+ drivers/net/ethernet/renesas/sh_eth.h | 2 ++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 016cf80..ff5613d 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -190,6 +190,7 @@ static const u16 sh_eth_offset_fast_rcar[SH_ETH_MAX_REGISTER_OFFSET] = {
+ 	[RMCR]		= 0x0258,
+ 	[TFUCR]		= 0x0264,
+ 	[RFOCR]		= 0x0268,
++	[RMIIMODE]      = 0x026c,
+ 	[FCFTR]		= 0x0270,
+ 	[TRIMD]		= 0x027c,
+ };
+@@ -389,6 +390,7 @@ static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
+ 	.mpr		= 1,
+ 	.tpauser	= 1,
+ 	.hw_swap	= 1,
++	.rmiimode	= 1,
+ };
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7724)
+ #define SH_ETH_RESET_DEFAULT	1
+@@ -1276,6 +1278,9 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
+ 	if (ret)
+ 		goto out;
+ 
++	if (mdp->cd->rmiimode)
++		sh_eth_write(ndev, 0x1, RMIIMODE);
++
+ 	/* Descriptor format */
+ 	sh_eth_ring_format(ndev);
+ 	if (mdp->cd->rpadir)
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index 1ddc9f2..1698bbd 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -60,6 +60,7 @@ enum {
+ 	EDOCR,
+ 	TFUCR,
+ 	RFOCR,
++	RMIIMODE,
+ 	FCFTR,
+ 	RPADIR,
+ 	TRIMD,
+@@ -478,6 +479,7 @@ struct sh_eth_cpu_data {
+ 	unsigned no_ade:1;	/* E-DMAC DO NOT have ADE bit in EESR */
+ 	unsigned hw_crc:1;	/* E-DMAC have CSMR */
+ 	unsigned select_mii:1;	/* EtherC have RMII_MII (MII select register) */
++	unsigned rmiimode:1;		/* EtherC has RMIIMODE register */
+ };
+ 
+ struct sh_eth_private {
+-- 
+1.8.2.1
+
