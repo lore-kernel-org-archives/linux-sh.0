@@ -1,57 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 29 May 2013 08:16:48 +0000
-Subject: [PATCH/RFC] sh: Always link in helper functions extracted from libgcc
-Message-Id: <1369815408-12719-1-git-send-email-geert@linux-m68k.org>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 14 May 2013 15:38:47 +0000
+Subject: [PATCH 14/20] ARM: msm: Remove init_irq declaration in machine description
+Message-Id: <1368545933-7430-15-git-send-email-maxime.ripard@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-arm-kernel@lists.infradead.org
 
-E.g. landisk_defconfig, which has CONFIG_NTFS_FS=m:
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for msm as well.
 
-ERROR: "__ashrdi3" [fs/ntfs/ntfs.ko] undefined!
-
-For "lib-y", if no symbols in a compilation unit are referenced by other
-units, the compilation unit will not be included in vmlinux.
-This breaks modules that do reference those symbols.
-
-Use "obj-y" instead to fix this.
-
-Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
 ---
-http://kisskb.ellerman.id.au/kisskb/buildresult/8838077/
+ arch/arm/mach-msm/board-dt-8660.c | 2 --
+ arch/arm/mach-msm/board-dt-8960.c | 2 --
+ 2 files changed, 4 deletions(-)
 
-This doesn't fix all cases. There are others, e.g. udivsi3.
-This is also not limited to sh, many architectures handle this in the same
-way.
-
-A simple solution is to unconditionally include all helper functions.
-A more complex solution is to make the choice of "lib-y" or "obj-y" depend
-on CONFIG_MODULES:
-  obj-$(CONFIG_MODULES) += ...
-  lib-y($CONFIG_MODULES) += ...
-  
-What do you think?
-Thanks for your comments!
-
- arch/sh/lib/Makefile |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
-index 7b95f29..3baff31 100644
---- a/arch/sh/lib/Makefile
-+++ b/arch/sh/lib/Makefile
-@@ -6,7 +6,7 @@ lib-y  = delay.o memmove.o memchr.o \
- 	 checksum.o strlen.o div64.o div64-generic.o
+diff --git a/arch/arm/mach-msm/board-dt-8660.c b/arch/arm/mach-msm/board-dt-8660.c
+index 7dcfc53..492f5cd 100644
+--- a/arch/arm/mach-msm/board-dt-8660.c
++++ b/arch/arm/mach-msm/board-dt-8660.c
+@@ -11,7 +11,6 @@
+  */
  
- # Extracted from libgcc
--lib-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
-+obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
- 	 ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
- 	 udiv_qrnnd.o
+ #include <linux/init.h>
+-#include <linux/irqchip.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
  
+@@ -44,7 +43,6 @@ static const char *msm8x60_fluid_match[] __initdata = {
+ DT_MACHINE_START(MSM_DT, "Qualcomm MSM (Flattened Device Tree)")
+ 	.smp = smp_ops(msm_smp_ops),
+ 	.map_io = msm_map_msm8x60_io,
+-	.init_irq = irqchip_init,
+ 	.init_machine = msm8x60_dt_init,
+ 	.init_late = msm8x60_init_late,
+ 	.init_time	= msm_dt_timer_init,
+diff --git a/arch/arm/mach-msm/board-dt-8960.c b/arch/arm/mach-msm/board-dt-8960.c
+index 7301936..bb55309 100644
+--- a/arch/arm/mach-msm/board-dt-8960.c
++++ b/arch/arm/mach-msm/board-dt-8960.c
+@@ -11,7 +11,6 @@
+  */
+ 
+ #include <linux/init.h>
+-#include <linux/irqchip.h>
+ #include <linux/of_platform.h>
+ 
+ #include <asm/mach/arch.h>
+@@ -31,7 +30,6 @@ static const char * const msm8960_dt_match[] __initconst = {
+ DT_MACHINE_START(MSM8960_DT, "Qualcomm MSM (Flattened Device Tree)")
+ 	.smp = smp_ops(msm_smp_ops),
+ 	.map_io = msm_map_msm8960_io,
+-	.init_irq = irqchip_init,
+ 	.init_time	= msm_dt_timer_init,
+ 	.init_machine = msm_dt_init,
+ 	.dt_compat = msm8960_dt_match,
 -- 
-1.7.0.4
+1.8.1.2
 
