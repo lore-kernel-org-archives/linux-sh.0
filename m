@@ -1,53 +1,96 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 09:59:24 +0000
-Subject: [GIT PULL] Renesas ARM based r8a7778 SoC updates for v3.11
-Message-Id: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:17 +0000
+Subject: [PATCH v3 17/20] ARM: shmobile: kzm9g-reference: Move SDHI regulators to DT
+Message-Id: <1368577100-3530-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd, Hi Olof,
+Create two GPIO-controlled fixed-voltage regulators in the
+kzm9g-reference DT and remove manual configuration of the corresponding
+GPIOs from board code.
 
-The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   | 22 ++++++++++++++++++++--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |  6 ------
+ 2 files changed, 20 insertions(+), 8 deletions(-)
 
-  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 475535f..cdfd71a 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -58,6 +58,24 @@
+ 		regulator-boot-on;
+ 	};
+ 
++	vmmc_sdhi0: regulator@2 {
++	        compatible = "regulator-fixed";
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 15 0>;
++		enable-active-high;
++	};
++
++	vmmc_sdhi2: regulator@3 {
++	        compatible = "regulator-fixed";
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 14 0>;
++		enable-active-high;
++	};
++
+ 	lan9220@10000000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x10000000 0x100>;
+@@ -200,7 +218,7 @@
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	vmmc-supply = <&reg_3p3v>;
++	vmmc-supply = <&vmmc_sdhi0>;
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
+@@ -209,7 +227,7 @@
+ 	pinctrl-0 = <&sdhi2_pins>;
+ 	pinctrl-names = "default";
+ 
+-	vmmc-supply = <&reg_3p3v>;
++	vmmc-supply = <&vmmc_sdhi2>;
+ 	bus-width = <4>;
+ 	broken-cd;
+ 	status = "okay";
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index fc2bb37..1847b4d 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -21,7 +21,6 @@
+  */
+ 
+ #include <linux/delay.h>
+-#include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+ #include <linux/irqchip.h>
+@@ -37,11 +36,6 @@ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+ 
+-	/* enable SD */
+-	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+-	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+-- 
+1.8.1.5
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-r8a7778-for-v3.11
-
-for you to fetch changes up to 35019d7f4aba4c4ccece584b872a8ebcdd62e6fa:
-
-  ARM: shmobile: r8a7778: correct model name in Kconfig (2013-05-27 18:22:42 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based sh7778 SoC updates for v3.11
-
-* Correction of model name in Kconfig by Sergei Shtylyov
-* Registration of SDHI and PFC devices by Kuninori Morimoto
-* Extended clock coverage by Kuninori Morimoto
-* Correction of ethernet device's platform driver name by Sergei Shtylyov
-
-----------------------------------------------------------------
-Kuninori Morimoto (7):
-      ARM: shmobile: use do{ }while() on SH_CLK_SET_RATIO()
-      ARM: shmobile: add GPIO IRQ macro
-      ARM: shmobile: r8a7778: fixup Ether setup code position
-      ARM: shmobile: r8a7778: use fixed ratio clock
-      ARM: shmobile: r8a7778: Register PFC device
-      ARM: shmobile: r8a7778: add SDHI clock support
-      ARM: shmobile: r8a7778: Register SDHI device
-
-Sergei Shtylyov (2):
-      ARM: shmobile: r8a7778: fix Ether device name
-      ARM: shmobile: r8a7778: correct model name in Kconfig
-
- arch/arm/mach-shmobile/Kconfig                |    3 +-
- arch/arm/mach-shmobile/clock-r8a7778.c        |  156 ++++++++++++++++++++++---
- arch/arm/mach-shmobile/include/mach/clock.h   |    4 +-
- arch/arm/mach-shmobile/include/mach/irqs.h    |    5 +
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    3 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   65 ++++++++---
- 6 files changed, 206 insertions(+), 30 deletions(-)
