@@ -1,42 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 08:59:42 +0000
-Subject: [PATCH 01/12] ARM: shmobile: remove ";" from SH_FIXED_RATIO_CLK*() macro
-Message-Id: <1369645193-3595-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:18 +0000
+Subject: [PATCH v3 18/20] ARM: shmobile: kzm9g-reference: Add LED1-LED4 to the device tree
+Message-Id: <1368577100-3530-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/clock.h |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
-index 76ac612..8902044 100644
---- a/arch/arm/mach-shmobile/include/mach/clock.h
-+++ b/arch/arm/mach-shmobile/include/mach/clock.h
-@@ -24,11 +24,11 @@ struct clk name = {			\
- }
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index cdfd71a..21b0fe3 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -88,6 +88,22 @@
+ 		vddvario-supply = <&reg_1p8v>;
+ 		vdd33a-supply = <&reg_3p3v>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 20 1>; /* Active low */
++		};
++		led2 {
++			gpios = <&pfc 21 1>; /* Active low */
++		};
++		led3 {
++			gpios = <&pfc 22 1>; /* Active low */
++		};
++		led4 {
++			gpios = <&pfc 23 1>; /* Active low */
++		};
++	};
+ };
  
- #define SH_FIXED_RATIO_CLK(name, p, r)		\
--static SH_FIXED_RATIO_CLKg(name, p, r);
-+static SH_FIXED_RATIO_CLKg(name, p, r)
- 
- #define SH_FIXED_RATIO_CLK_SET(name, p, m, d)	\
- 	SH_CLK_RATIO(name, m, d);		\
--	SH_FIXED_RATIO_CLK(name, p, name);
-+	SH_FIXED_RATIO_CLK(name, p, name)
- 
- #define SH_CLK_SET_RATIO(p, m, d)	\
- {			\
+ &i2c0 {
 -- 
-1.7.10.4
+1.8.1.5
 
