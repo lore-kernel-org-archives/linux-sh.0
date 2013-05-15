@@ -1,52 +1,61 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 28 May 2013 03:30:27 +0000
-Subject: Re: [PATCH 06/12] ARM: shmobile: r8a7740: Add I2C DT clock names
-Message-Id: <20130528033027.GG13532@quad.lixom.net>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 15 May 2013 09:07:21 +0000
+Subject: [PATCH] pinctrl: sh-pfc: fix r8a7790 Function Select register tables
+Message-Id: <Pine.LNX.4.64.1305151057310.10596@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
- <1369645193-3595-7-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645193-3595-7-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+Fix several errors in Peripheral Function Select register tables for
+r8a7790, which prevent various function pins from being correctly
+configured.
 
-On Mon, May 27, 2013 at 05:59:47PM +0900, Simon Horman wrote:
-> From: Bastian Hecht <hechtb@gmail.com>
-> 
-> Add clock association for i2c0 and i2c1 for the new DT names.
-> 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/mach-shmobile/clock-r8a7740.c |    2 ++
->  1 file changed, 2 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-> index a2a612f..b12c476 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-> @@ -551,6 +551,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh_tmu.4",		&mstp_clks[MSTP111]),
->  	CLKDEV_DEV_ID("sh_tmu.5",		&mstp_clks[MSTP111]),
->  	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
-> +	CLKDEV_DEV_ID("fff20000.i2c",		&mstp_clks[MSTP116]),
->  	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
->  	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
->  	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP125]),
-> @@ -585,6 +586,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("e6138010.timer",		&mstp_clks[MSTP329]),
->  	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
->  	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
-> +	CLKDEV_DEV_ID("e6c20000.i2c",		&mstp_clks[MSTP323]),
->  	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
->  	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
->  	CLKDEV_DEV_ID("e6850000.sdhi",          &mstp_clks[MSTP314]),
-> -- 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   14 ++++++--------
+ 1 files changed, 6 insertions(+), 8 deletions(-)
 
-Same here w.r.t. OF_DEV_AUXDATA().
-
-
--Olof
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 5be2999..39a9083 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -3175,7 +3175,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_SIM0_D_B, 0, 0, 0, 0, 0, 0, 0, }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR11", 0xE606004C, 32,
+-			     2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3) {
++			     2, 3, 3, 2, 4, 3, 2, 2, 2, 2, 2, 1, 4) {
+ 		/* IP11_31_30 [2] */
+ 		FN_SSI_SCK0129, FN_CAN_CLK_B, FN_MOUT0, 0,
+ 		/* IP11_29_27 [3] */
+@@ -3441,12 +3441,10 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_SEL_SOF0_0, FN_SEL_SOF0_1, }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL2", 0xE6060094, 32,
+-			     2, 1, 1, 1, 1, 2, 1, 2, 1,
+-			     2, 1, 1, 1, 3, 3, 2, 3, 2, 2) {
+-		/* RESEVED [2] */
++			     3, 1, 1, 1, 2, 1, 2, 1,
++			     3, 1, 1, 3, 3, 2, 3, 2, 2) {
++		/* RESEVED [3] */
+ 		0, 0, 0, 0, 0, 0, 0, 0,
+-		/* RESEVED [1] */
+-		0, 0,
+ 		/* SEL_TMU1 [1] */
+ 		FN_SEL_TMU1_0, FN_SEL_TMU1_1,
+ 		/* SEL_HSCIF1 [1] */
+@@ -3462,8 +3460,8 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* SEL_CAN1 [1] */
+ 		FN_SEL_CAN1_0, FN_SEL_CAN1_1,
+ 		/* RESEVED [2] */
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		/* RESEVED [1] */
++		0, 0, 0, 0,
++		/* RESEVED [1] (actually TX2, RX2 vs. TX2_B, RX2_B of SCIF2) */
+ 		0, 0,
+ 		/* SEL_ADI [1] */
+ 		FN_SEL_ADI_0, FN_SEL_ADI_1,
+-- 
+1.7.2.5
