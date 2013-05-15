@@ -1,29 +1,61 @@
-From: "John P. Goldman" <gliceaga@mendoza-conicet.gob.ar>
-Date: Wed, 08 May 2013 08:46:28 +0000
-Subject: dringender Vorschlag
-Message-Id: <351326728.69416.1368002788604.JavaMail.root@correo.mendoza-conicet.gob.ar>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:14 +0000
+Subject: [PATCH v3 14/20] ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
+Message-Id: <1368577100-3530-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-fbdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Reference the st1232 reset GPIO from the device tree and remove it from
+board code.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 1 +
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 7 -------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-Entschuldigungen für kommen in Ihre Privatsphäre! Ich bin Rechtsanwalt
-Werner Erich Zeller; Ich habe einen meiner einflussreichen und
-wohlhabenden Kunden zum Tode; und er hatte eine sehr geheime und private
-Investitionen von €15,000,000.00 bei einer privaten Bank in Großbritannien
-hier zu Lebzeiten. Diese Investition wurde ohne einen deklarierten
-nächsten Angehörigen und begünstigte. Jetzt brauche ich Sie arbeiten mit
-mir als mein Partner zu erholen und zu je 50 % Aktienfonds. Alle Dokumente
-werden rechtlich beantragt und beschafft, und in 5 Werktage, wird diese
-Transaktion auftreten. Aber ich brauche einen ernsten, treuen und
-glaubwürdigen Partner.
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index a6c6606..a037776 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -43,6 +43,7 @@
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
+ 		pinctrl-0 = <&st1232_pins>;
+ 		pinctrl-names = "default";
++		gpios = <&pfc 166 1>;
+ 	};
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 4ddd299..002d8d3 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -158,7 +158,6 @@ clock_error:
+  */
+ static void __init eva_init(void)
+ {
+-
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
+ 
+@@ -171,12 +170,6 @@ static void __init eva_init(void)
+ 
+ 	r8a7740_add_standard_devices_dt();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+-
+ 	r8a7740_pm_init();
+ }
+ 
+-- 
+1.8.1.5
 
-Bitte senden Sie mir eine vertrauliche Antwort, wenn Sie denken, Sie
-vertraut werden können und sind von den Qualitäten! Ich warte auf Ihre
-schnelle Antwort.
-
-Werner Erich Zeller (Rechtsanwalt)
-Rufen Sie + 44-702-409-0820 (Office)
