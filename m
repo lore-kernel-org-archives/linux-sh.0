@@ -1,86 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:27 +0000
-Subject: [PATCH v4 06/21] ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
-Message-Id: <1369138482-5871-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 15 May 2013 02:57:26 +0000
+Subject: [PATCH v2 0/4] marzen-reference ethernet patches
+Message-Id: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add GPIO controller nodes to the r8a7778 core device tree.
+Hi,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7778.dtsi | 51 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
+this series builds on work by Laurent Pinchart and in turn
+prior work by Guennadi Liakhovetski and myself.
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index c8dbf14..0639e8b 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -33,8 +33,59 @@
- 		      <0xfe430000 0x100>;
- 	};
- 
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc40000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc41000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc42000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc43000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc44000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 27>;
-+	};
-+
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7778";
- 		reg = <0xfffc000 0x118>;
-+		#gpio-range-cells = <3>;
- 	};
- };
+The four small patches attepts to fix SMSC ethernet support for
+the marzen-reference board. It does seem to be sufficient in order
+to initialise the NIC and complete a boot using nfsroot.
+However, as reported by Laurent earlier, there appear to be
+some issues with spurious interrupts.
+
+This series is based on the renesas-next-20130515v2 tag of
+my renesas branch.
+
+Laurent Pinchart (2):
+  ARM: shmobile: marzen-reference: Reference the correct IRQ for
+    ethernet
+  ARM: shmobile: marzen-reference: Update lan device name in pinctrl
+    maps
+
+Simon Horman (2):
+  ARM: shmobile: marzen-reference: Initialise irqpin
+  ARM: shmobile: marzen-reference: Set SMSC lan to use irq-push-pull
+
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  |  5 +++--
+ arch/arm/mach-shmobile/board-marzen-reference.c | 12 +++++++++---
+ 2 files changed, 12 insertions(+), 5 deletions(-)
+
 -- 
-1.8.1.5
+1.8.2.1
 
