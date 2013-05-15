@@ -1,31 +1,25 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 13 May 2013 01:27:08 +0000
-Subject: Re: [PATCH v4 3/4] sh-pfc: r8a7778: add Ether pin groups
-Message-Id: <20130513012708.GB7826@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 15 May 2013 21:53:29 +0000
+Subject: [PATCH v4 0/3] R8A7779/Marzen R-Car VIN driver support
+Message-Id: <201305160153.29827.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305090315.50774.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305090315.50774.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 09, 2013 at 03:21:58AM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 05/09/2013 03:15 AM, Sergei Shtylyov wrote:
-> 
-> >Add Ether RMII/LINK/MAGIC pin groups to R8A7778 PFC driver.
-> >
-> >Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >
-> 
->    Oh, dammit! I completely forgot to add:
-> 
-> Acked-by: Laurent Pinchart<laurent.pinchart@ideasonboard.com>
-> 
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> 
-> WBR, Sergei
+Hello.
 
-Thanks, queued-up for v3.11 in the pinmux branch.
+   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130515v2' tag and my recent yet unapplied USB/I2C patches.
+Here we add the VIN driver platform code for the R8A7779/Marzen with ADV7180
+I2C video decoder.
+
+[1/3] ARM: shmobile: r8a7779: add VIN support
+[2/3] ARM: shmobile: Marzen: add VIN and ADV7180 support
+[3/3] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
+
+   The VIN driver itself has been excluded from the series as it will be developed
+against Mauro's 'media_tree.git' plus some yet unapplied patches in the future...
+
+WBR, Sergei
