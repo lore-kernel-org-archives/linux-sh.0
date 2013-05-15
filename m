@@ -1,37 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 15 May 2013 02:57:30 +0000
-Subject: [PATCH v2 4/4] ARM: shmobile: marzen-reference: Set SMSC lan to use irq-push-pull
-Message-Id: <1368586650-26263-5-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 15 May 2013 09:15:01 +0000
+Subject: Re: [PATCH v2 4/4] ARM: shmobile: marzen-reference: Set SMSC lan to use irq-push-pull
+Message-Id: <10371644.BMkVSLAUGy@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
+ <1368586650-26263-5-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368586650-26263-5-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This change makes the DTS consistent with the platform data
-that exists in board-marzen.c.
+Hi Simon,
 
-Empirically it does not appear to be necessary.
+Thanks for the patch.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 1 +
- 1 file changed, 1 insertion(+)
+On Wednesday 15 May 2013 11:57:30 Simon Horman wrote:
+> This change makes the DTS consistent with the platform data
+> that exists in board-marzen.c.
+> 
+> Empirically it does not appear to be necessary.
+> 
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 10cfc7f..fe32e1a 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -40,6 +40,7 @@
- 		phy-mode = "mii";
- 		interrupt-parent = <&irqpin0>;
- 		interrupts = <1 0x4>;
-+		smsc,irq-push-pull;
- 		reg-io-width = <4>;
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+>  arch/arm/boot/dts/r8a7779-marzen-reference.dts | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+> b/arch/arm/boot/dts/r8a7779-marzen-reference.dts index 10cfc7f..fe32e1a
+> 100644
+> --- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+> +++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+> @@ -40,6 +40,7 @@
+>  		phy-mode = "mii";
+>  		interrupt-parent = <&irqpin0>;
+>  		interrupts = <1 0x4>;
+> +		smsc,irq-push-pull;
+>  		reg-io-width = <4>;
+>  		vddvario-supply = <&fixedregulator3v3>;
+>  		vdd33a-supply = <&fixedregulator3v3>;
 -- 
-1.8.2.1
+Regards,
+
+Laurent Pinchart
 
