@@ -1,7 +1,7 @@
 From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-Date: Wed, 15 May 2013 08:39:23 +0000
+Date: Wed, 15 May 2013 08:39:40 +0000
 Subject: Re: [PATCH] mmc: mmcif: don't clear masked interrupts
-Message-Id: <519349BB.6080200@jinso.co.jp>
+Message-Id: <519349CC.3050606@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1305150746480.10596@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1305150746480.10596@axis700.grange>
@@ -9,7 +9,6 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Chris Ball <cjb@laptop.org>
 
 On 05/15/2013 02:50 PM, Guennadi Liakhovetski wrote:
 > Masking events on MMCIF means, an occurrence of the masked event won't raise
