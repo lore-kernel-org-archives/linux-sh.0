@@ -1,53 +1,77 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 08:59:53 +0000
-Subject: [PATCH 12/12] ARM: shmobile: clock-r8a7740: add TPU PWM support
-Message-Id: <1369645193-3595-13-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:12 +0000
+Subject: [PATCH v3 12/20] ARM: shmobile: armadillo-reference: Move pinctrl mappings to device tree
+Message-Id: <1368577100-3530-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Replace the pinctrl mappings in board code by device tree mappings.
+For devices that are still instantiated from board code reference the
+mappings as the default pin controller state to apply them at boot time.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 10 ++++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  9 ---------
+ 2 files changed, 10 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index b12c476..6ad4640 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -461,7 +461,7 @@ enum {
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 09ea22c..4a7ae32 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -43,3 +43,13 @@
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
+ 	};
+ };
++
++&pfc {
++	pinctrl-0 = <&scifa1_pins>;
++	pinctrl-names = "default";
++
++	scifa1_pins: scifa1 {
++		renesas,groups = "scifa1_data";
++		renesas,function = "scifa1";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index f25b6aa..4ddd299 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -24,7 +24,6 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+-#include <linux/pinctrl/machine.h>
+ #include <mach/common.h>
+ #include <mach/r8a7740.h>
+ #include <asm/mach/arch.h>
+@@ -119,12 +118,6 @@
+  *	usbhsf_power_ctrl()
+  */
  
- 	MSTP329, MSTP328, MSTP323, MSTP320,
- 	MSTP314, MSTP313, MSTP312,
--	MSTP309,
-+	MSTP309, MSTP304,
+-static const struct pinctrl_map eva_pinctrl_map[] = {
+-	/* SCIFA1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
+-				  "scifa1_data", "scifa1"),
+-};
+-
+ static void __init eva_clock_init(void)
+ {
+ 	struct clk *system	= clk_get(NULL, "system_clk");
+@@ -169,8 +162,6 @@ static void __init eva_init(void)
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
  
- 	MSTP416, MSTP415, MSTP407, MSTP406,
+-	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+-
+ 	r8a7740_meram_workaround();
  
-@@ -499,6 +499,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 13, 0), /* SDHI1 */
- 	[MSTP312] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 12, 0), /* MMC */
- 	[MSTP309] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3,  9, 0), /* GEther */
-+	[MSTP304] = SH_CLK_MSTP32(&div4_clks[DIV4_CP],	SMSTPCR3,  4, 0), /* TPU0 */
- 
- 	[MSTP416] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 16, 0), /* USBHOST */
- 	[MSTP415] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 15, 0), /* SDHI2 */
-@@ -596,6 +597,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
- 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
-+	CLKDEV_DEV_ID("renesas_tpu_pwm",	&mstp_clks[MSTP304]),
- 
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
- 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
+ #ifdef CONFIG_CACHE_L2X0
 -- 
-1.7.10.4
+1.8.1.5
 
