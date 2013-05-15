@@ -1,55 +1,65 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 15 May 2013 01:46:04 +0000
+Date: Wed, 15 May 2013 01:49:01 +0000
 Subject: Re: [PATCH 05/20] ARM: shmobile: ape6evm: Remove init_irq declaration in machine description
-Message-Id: <20130515014604.GK12246@verge.net.au>
+Message-Id: <20130515014901.GR12246@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
  <1368545933-7430-6-git-send-email-maxime.ripard@free-electrons.com>
  <20130515005907.GD12246@verge.net.au>
-In-Reply-To: <20130515005907.GD12246@verge.net.au>
+ <20130515014604.GK12246@verge.net.au>
+In-Reply-To: <20130515014604.GK12246@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 15, 2013 at 09:59:07AM +0900, Simon Horman wrote:
-> On Tue, May 14, 2013 at 05:38:38PM +0200, Maxime Ripard wrote:
-> > Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> > specified") removed the need to explictly setup the init_irq field in
-> > the machine description when using only irqchip_init. Remove that
-> > declaration for shmobile as well.
+On Wed, May 15, 2013 at 10:46:04AM +0900, Simon Horman wrote:
+> On Wed, May 15, 2013 at 09:59:07AM +0900, Simon Horman wrote:
+> > On Tue, May 14, 2013 at 05:38:38PM +0200, Maxime Ripard wrote:
+> > > Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+> > > specified") removed the need to explictly setup the init_irq field in
+> > > the machine description when using only irqchip_init. Remove that
+> > > declaration for shmobile as well.
+> > > 
+> > > Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+> > > ---
+> > >  arch/arm/mach-shmobile/board-ape6evm.c | 2 --
+> > >  1 file changed, 2 deletions(-)
+> > > 
+> > > diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+> > > index 55b8c9f..8dfbdba 100644
+> > > --- a/arch/arm/mach-shmobile/board-ape6evm.c
+> > > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
+> > > @@ -20,7 +20,6 @@
+> > >  
+> > >  #include <linux/gpio.h>
+> > >  #include <linux/interrupt.h>
+> > > -#include <linux/irqchip.h>
+> > >  #include <linux/kernel.h>
+> > >  #include <linux/pinctrl/machine.h>
+> > >  #include <linux/platform_device.h>
+> > > @@ -87,7 +86,6 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
+> > >  };
+> > >  
+> > >  DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+> > > -	.init_irq	= irqchip_init,
+> > >  	.init_time	= shmobile_timer_init,
+> > >  	.init_machine	= ape6evm_add_standard_devices,
+> > >  	.dt_compat	= ape6evm_boards_compat_dt,
 > > 
-> > Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> > ---
-> >  arch/arm/mach-shmobile/board-ape6evm.c | 2 --
-> >  1 file changed, 2 deletions(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-> > index 55b8c9f..8dfbdba 100644
-> > --- a/arch/arm/mach-shmobile/board-ape6evm.c
-> > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> > @@ -20,7 +20,6 @@
-> >  
-> >  #include <linux/gpio.h>
-> >  #include <linux/interrupt.h>
-> > -#include <linux/irqchip.h>
-> >  #include <linux/kernel.h>
-> >  #include <linux/pinctrl/machine.h>
-> >  #include <linux/platform_device.h>
-> > @@ -87,7 +86,6 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
-> >  };
-> >  
-> >  DT_MACHINE_START(APE6EVM_DT, "ape6evm")
-> > -	.init_irq	= irqchip_init,
-> >  	.init_time	= shmobile_timer_init,
-> >  	.init_machine	= ape6evm_add_standard_devices,
-> >  	.dt_compat	= ape6evm_boards_compat_dt,
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 > 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> Sorry, what I should have said is:
+> 
+> Queued up for v3.11 in the boards-spe6evm branch of my renesas tree
 
-Sorry, what I should have said is:
+s/spe6evm/ape6evm/
 
-Queued up for v3.11 in the boards-spe6evm branch of my renesas tree
-on kernel.org. It is included in the renesas-next-20130515 tag of
-that tree and should appear in linux-next in the not to distant future.
-
+> on kernel.org. It is included in the renesas-next-20130515 tag of
+> that tree and should appear in linux-next in the not to distant future.
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
