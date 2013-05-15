@@ -1,52 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 08:59:34 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7779: Add PCIe clocks
-Message-Id: <1369645206-3682-2-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 15 May 2013 10:46:49 +0000
+Subject: [PATCH v2 1/2] pinctrl: sh-pfc: fix r8a7790 Function Select register tables
+Message-Id: <Pine.LNX.4.64.1305151238040.10596@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645206-3682-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645206-3682-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Phil Edworthy <Phil.Edworthy@renesas.com>
+Fix several errors in Peripheral Function Select register tables for
+r8a7790, which prevent various function pins from being correctly
+configured.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 31d5cd4..9daeb8c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -112,7 +112,7 @@ static struct clk *main_clks[] = {
- };
- 
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
--	MSTP115, MSTP114,
-+	MSTP116, MSTP115, MSTP114,
- 	MSTP103, MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -125,6 +125,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
- 	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
- 	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
- 	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
-@@ -161,6 +162,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&clkp_clk),
- 
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("rcar-pcie", &mstp_clks[MSTP116]), /* PCIe */
- 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
- 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
- 	CLKDEV_DEV_ID("sh-eth", &mstp_clks[MSTP114]), /* Ether */
+v2: fix a fixed bit-count, thanks to Laurent for catching
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   14 ++++++--------
+ 1 files changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 5be2999..a2f83ae 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -3175,7 +3175,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_SIM0_D_B, 0, 0, 0, 0, 0, 0, 0, }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR11", 0xE606004C, 32,
+-			     2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3) {
++			     2, 3, 3, 2, 4, 3, 2, 2, 2, 2, 2, 1, 4) {
+ 		/* IP11_31_30 [2] */
+ 		FN_SSI_SCK0129, FN_CAN_CLK_B, FN_MOUT0, 0,
+ 		/* IP11_29_27 [3] */
+@@ -3441,12 +3441,10 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_SEL_SOF0_0, FN_SEL_SOF0_1, }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL2", 0xE6060094, 32,
+-			     2, 1, 1, 1, 1, 2, 1, 2, 1,
+-			     2, 1, 1, 1, 3, 3, 2, 3, 2, 2) {
+-		/* RESEVED [2] */
++			     3, 1, 1, 1, 2, 1, 2, 1, 2,
++			     1, 1, 1, 3, 3, 2, 3, 2, 2) {
++		/* RESEVED [3] */
+ 		0, 0, 0, 0, 0, 0, 0, 0,
+-		/* RESEVED [1] */
+-		0, 0,
+ 		/* SEL_TMU1 [1] */
+ 		FN_SEL_TMU1_0, FN_SEL_TMU1_1,
+ 		/* SEL_HSCIF1 [1] */
+@@ -3462,8 +3460,8 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* SEL_CAN1 [1] */
+ 		FN_SEL_CAN1_0, FN_SEL_CAN1_1,
+ 		/* RESEVED [2] */
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		/* RESEVED [1] */
++		0, 0, 0, 0,
++		/* RESEVED [1] (actually TX2, RX2 vs. TX2_B, RX2_B of SCIF2) */
+ 		0, 0,
+ 		/* SEL_ADI [1] */
+ 		FN_SEL_ADI_0, FN_SEL_ADI_1,
 -- 
-1.7.10.4
+1.7.2.5
 
