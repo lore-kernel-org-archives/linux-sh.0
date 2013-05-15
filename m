@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 15 May 2013 00:18:19 +0000
-Subject: [PATCH v3 19/20] ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
-Message-Id: <1368577100-3530-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:03 +0000
+Subject: [PATCH v3 03/20] ARM: shmobile: r8a7740: Add pin control device to device tree
+Message-Id: <1368577100-3530-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,110 +10,73 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+Add a pfc node to the r8a7740 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 35 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-marzen-reference.c | 27 -------------------
- 2 files changed, 35 insertions(+), 27 deletions(-)
+ arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
+ 2 files changed, 16 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 10cfc7f..07ef31f 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -37,6 +37,9 @@
- 	lan0@18000000 {
- 		compatible = "smsc,lan9220", "smsc,lan9115";
- 		reg = <0x18000000 0x100>;
-+		pinctrl-0 = <&lan0_pins>;
-+		pinctrl-names = "default";
-+
- 		phy-mode = "mii";
- 		interrupt-parent = <&irqpin0>;
- 		interrupts = <1 0x4>;
-@@ -45,3 +48,35 @@
- 		vdd33a-supply = <&fixedregulator3v3>;
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 25dc930..2fa3708 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -135,4 +135,12 @@
+ 			      0 72 0x4
+ 			      0 73 0x4>;
  	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a7740";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605800c 0x20>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
  };
-+
-+&pfc {
-+	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	lan0_pins: lan0 {
-+		intc {
-+			renesas,groups = "intc_irq1_b";
-+			renesas,function = "intc";
-+		};
-+		lbsc {
-+			renesas,groups = "lbsc_ex_cs0";
-+			renesas,function = "lbsc";
-+		};
-+	};
-+
-+	scif2_pins: scif2 {
-+		renesas,groups = "scif2_data_c";
-+		renesas,function = "scif2";
-+	};
-+
-+	scif4_pins: scif4 {
-+		renesas,groups = "scif4_data";
-+		renesas,function = "scif4";
-+	};
-+
-+	sdhi0_pins: sdhi0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
-+				 "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index fa7fc07..3d1c439 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,41 +19,14 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 03b85fe..f25b6aa 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -121,7 +121,7 @@
  
--#include <linux/pinctrl/machine.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <asm/irq.h>
- #include <asm/mach/arch.h>
+ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* SCIFA1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
+ 				  "scifa1_data", "scifa1"),
+ };
  
--static const struct pinctrl_map marzen_pinctrl_map[] = {
--	/* SCIF2 (CN18: DEBUG0) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
--				  "scif2_data_c", "scif2"),
--	/* SCIF4 (CN19: DEBUG1) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
--				  "scif4_data", "scif4"),
--	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_wp", "sdhi0"),
--	/* SMSC */
--	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "fffc0000.pfc",
--				  "intc_irq1_b", "intc"),
--	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "fffc0000.pfc",
--				  "lbsc_ex_cs0", "lbsc"),
--};
+@@ -170,22 +170,22 @@ static void __init eva_init(void)
+ 	eva_clock_init();
+ 
+ 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+-	r8a7740_pinmux_init();
+ 
+ 	r8a7740_meram_workaround();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
 -
- static void __init marzen_init(void)
- {
--	pinctrl_register_mappings(marzen_pinctrl_map,
--				  ARRAY_SIZE(marzen_pinctrl_map));
--
- 	r8a7779_add_standard_devices_dt();
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+ #endif
+ 
+ 	r8a7740_add_standard_devices_dt();
++
++	/*
++	 * Touchscreen
++	 * TODO: Move reset GPIO over to .dts when we can reference it
++	 */
++	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
++
+ 	r8a7740_pm_init();
  }
  
 -- 
