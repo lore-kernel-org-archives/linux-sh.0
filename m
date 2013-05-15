@@ -1,57 +1,46 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 16 May 2013 15:07:21 +0000
-Subject: Re: [PATCH 05/12] ARM: shmobile: r8a7778: add HSPI support
-Message-Id: <5194F629.8050503@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:20 +0000
+Subject: [PATCH v3 20/20] ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
+Message-Id: <1368577100-3530-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bo8bwg3b.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bo8bwg3b.wl%kuninori.morimoto.gx@renesas.com>
+References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 16-05-2013 11:15, Kuninori Morimoto wrote:
+LED2 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
-> Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-[...]
-
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-> index 87b74a5..8f011cb 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7778.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-> @@ -198,6 +198,29 @@ void __init r8a7778_add_i2c_device(int id)
->   		i2c_resources + (2 * id), 2);
->   }
->
-> +/* HSPI */
-> +static struct resource hspi_resources[] = {
-
-    You can annotate this with '__initdata'.
-
-> +	/* HSPI0 */
-> +	DEFINE_RES_MEM(0xfffc7000, 0x18),
-> +	DEFINE_RES_IRQ(gic_iid(0x5f)),
-> +	/* HSPI1 */
-> +	DEFINE_RES_MEM(0xfffc8000, 0x18),
-> +	DEFINE_RES_IRQ(gic_iid(0x74)),
-> +	/* HSPI2 */
-> +	DEFINE_RES_MEM(0xfffc6000, 0x18),
-> +	DEFINE_RES_IRQ(gic_iid(0x75)),
-> +};
-> +
-> +void __init r8a7778_add_hspi_device(int id)
-> +{
-> +	BUG_ON(id < 0 || id > 2);
-> +
-> +	platform_device_register_simple(
-> +		"sh-hspi", id,
-> +		hspi_resources + (2 * id), 2);
-> +}
-> +
-> +
-
-WBR, Sergei
-
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 07ef31f..0533c31 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -47,6 +47,19 @@
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led2 {
++			gpios = <&gpio4 29 0>;
++		};
++		led3 {
++			gpios = <&gpio4 30 0>;
++		};
++		led4 {
++			gpios = <&gpio4 31 0>;
++		};
++	};
+ };
+ 
+ &pfc {
+-- 
+1.8.1.5
 
