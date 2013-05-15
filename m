@@ -1,36 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:30 +0000
-Subject: [PATCH v4 09/21] ARM: shmobile: r8a7790: Add pin control device to device tree
-Message-Id: <1369138482-5871-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 15 May 2013 02:57:28 +0000
+Subject: [PATCH v2 2/4] ARM: shmobile: marzen-reference: Update lan device name in pinctrl maps
+Message-Id: <1368586650-26263-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the r8a7790 device tree.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The ethernet device is instantiated from the device tree, use the
+correct name in the pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/board-marzen-reference.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7a17110..c14fbd1 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -60,4 +60,9 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
- 	};
-+
-+	pfc: pfc@e6060000 {
-+		compatible = "renesas,pfc-r8a7790";
-+		reg = <0 0xe6060000 0 0x250>;
-+	};
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 480d882..5332e89 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -43,9 +43,9 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
+ 				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
+ 				  "lbsc_ex_cs0", "lbsc"),
  };
+ 
 -- 
-1.8.1.5
+1.8.2.1
 
