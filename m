@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 15 May 2013 00:18:08 +0000
-Subject: [PATCH v3 08/20] ARM: shmobile: r8a7790: Add pin control device to device tree
-Message-Id: <1368577100-3530-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:15 +0000
+Subject: [PATCH v3 15/20] ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
+Message-Id: <1368577100-3530-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,27 +10,39 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the r8a7790 device tree.
+LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7a17110..ee21061 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -60,4 +60,9 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index a037776..746c64a 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -33,6 +33,21 @@
+ 		regulator-boot-on;
  	};
-+
-+	pfc: pfc@e6060000 {
-+		compatible = "renesas,pfc-r8a7790";
-+		reg = <0xe6060000 0x250>;
+ 
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 102 0>;
++		};
++		led2 {
++			gpios = <&pfc 111 0>;
++		};
++		led3 {
++			gpios = <&pfc 110 0>;
++		};
++		led4 {
++			gpios = <&pfc 177 0>;
++		};
 +	};
  };
+ 
+ &i2c0 {
 -- 
 1.8.1.5
 
