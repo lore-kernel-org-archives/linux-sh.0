@@ -1,70 +1,78 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Mon, 13 May 2013 09:43:59 +0000
-Subject: [PATCH 00/14] Cleanup irqchip_init calls
-Message-Id: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:05 +0000
+Subject: [PATCH v3 05/20] ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
+Message-Id: <1368577100-3530-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi everyone,
+Add GPIO controller nodes to the r8a7778 core device tree.
 
-This is a splitted up version of the patch I previously sent to
-remove the explicit declaration of irqchip_init as the init_irq callback in
-the machine descriptions.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 45 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
 
-Since it was a pretty tricky patch to merge, since it was touching a lot of
-different platforms, I splitted it for each platforms, and rebased it on top
-of 3.10-rc1.
-
-Thanks,
-Maxime
-
-Maxime Ripard (14):
-  ARM: sunxi: Remove init_irq declaration in machine description
-  ARM: zynq: Remove init_irq declaration in machine description
-  ARM: nomadik: Remove init_irq declaration in machine description
-  ARM: picoxcell: Remove init_irq declaration in machine description
-  ARM: shmobile: Remove init_irq declaration in machine description
-  ARM: bcm281xx: Remove init_irq declaration in machine description
-  ARM: spear: Remove init_irq declaration in machine description
-  ARM: msm: Remove init_irq declaration in machine description
-  ARM: mvebu: Remove init_irq declaration in machine description
-  ARM: mxs: Remove init_irq declaration in machine description
-  ARM: sirf: Remove init_irq declaration in machine description
-  ARM: vexpress: Remove init_irq declaration in machine description
-  ARM: virt: Remove init_irq declaration in machine description
-  ARM: vt8500: Remove init_irq declaration in machine description
-
- arch/arm/mach-bcm/board_bcm.c                  | 1 -
- arch/arm/mach-msm/board-dt-8660.c              | 1 -
- arch/arm/mach-msm/board-dt-8960.c              | 1 -
- arch/arm/mach-mvebu/armada-370-xp.c            | 1 -
- arch/arm/mach-mxs/mach-mxs.c                   | 1 -
- arch/arm/mach-nomadik/cpu-8815.c               | 1 -
- arch/arm/mach-picoxcell/common.c               | 1 -
- arch/arm/mach-prima2/common.c                  | 3 ---
- arch/arm/mach-shmobile/board-ape6evm.c         | 1 -
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
- arch/arm/mach-shmobile/board-lager.c           | 1 -
- arch/arm/mach-shmobile/setup-emev2.c           | 1 -
- arch/arm/mach-shmobile/setup-r8a73a4.c         | 1 -
- arch/arm/mach-shmobile/setup-r8a7790.c         | 1 -
- arch/arm/mach-shmobile/setup-sh73a0.c          | 1 -
- arch/arm/mach-spear/spear1310.c                | 1 -
- arch/arm/mach-spear/spear1340.c                | 1 -
- arch/arm/mach-spear/spear300.c                 | 1 -
- arch/arm/mach-spear/spear310.c                 | 1 -
- arch/arm/mach-spear/spear320.c                 | 1 -
- arch/arm/mach-spear/spear6xx.c                 | 1 -
- arch/arm/mach-sunxi/sunxi.c                    | 1 -
- arch/arm/mach-vexpress/v2m.c                   | 1 -
- arch/arm/mach-virt/virt.c                      | 1 -
- arch/arm/mach-vt8500/vt8500.c                  | 1 -
- arch/arm/mach-zynq/common.c                    | 1 -
- 26 files changed, 28 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index c8dbf14..d612a9a 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -33,6 +33,51 @@
+ 		      <0xfe430000 0x100>;
+ 	};
+ 
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc40000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc41000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc42000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc43000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc44000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7778";
+ 		reg = <0xfffc000 0x118>;
 -- 
-1.8.1.2
+1.8.1.5
 
