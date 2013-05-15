@@ -1,48 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 16 May 2013 07:15:44 +0000
-Subject: [PATCH 07/12] ARM: shmobile: bockw: add I2C device support
-Message-Id: <878v3fwg2r.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 15 May 2013 00:18:10 +0000
+Subject: [PATCH v3 10/20] ARM: shmobile: sh7372: Add pin control device to device tree
+Message-Id: <1368577100-3530-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add a pfc node to the sh7372 device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/sh7372.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 3958910..632717e 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -63,6 +63,13 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
+index 677fc60..ce19398 100644
+--- a/arch/arm/boot/dts/sh7372.dtsi
++++ b/arch/arm/boot/dts/sh7372.dtsi
+@@ -18,4 +18,12 @@
+ 			compatible = "arm,cortex-a8";
+ 		};
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-sh7372";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
  };
- 
-+/* I2C */
-+static struct i2c_board_info i2c0_devices[] = {
-+	{
-+		I2C_BOARD_INFO("rx8581", 0x51),
-+	},
-+};
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-@@ -91,6 +98,10 @@ static void __init bockw_init(void)
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+	r8a7778_add_i2c_device(0);
-+
-+	i2c_register_board_info(0, i2c0_devices,
-+				ARRAY_SIZE(i2c0_devices));
- 
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
 -- 
-1.7.9.5
+1.8.1.5
 
