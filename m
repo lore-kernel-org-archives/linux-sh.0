@@ -1,49 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 31 May 2013 07:32:32 +0000
-Subject: Re: [RFC/PATCH v2 2/2] gpio-rcar: Add DT support
-Message-Id: <4646425.XBU4xZJKKv@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 15 May 2013 08:46:58 +0000
+Subject: marzen pinctl conflict for renesas-next-20130515v2 + v3.10-rc1
+Message-Id: <20130515084658.GA19115@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369136406-23800-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <4678059.RuWR6CiQ8n@avalon>
- <CACRpkda4rRWcVkdGPcSvJeQq_KaJE5uxD+0P62Ot8=Xuf2-B+A@mail.gmail.com>
-In-Reply-To: <CACRpkda4rRWcVkdGPcSvJeQq_KaJE5uxD+0P62Ot8=Xuf2-B+A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Linus,
+Hi Laurent,
 
-On Friday 31 May 2013 09:01:44 Linus Walleij wrote:
-> On Fri, May 31, 2013 at 3:20 AM, Laurent Pinchart wrote:
-> > I've so far pushed GPIO and pinctrl patches for SH through Simon's tree
-> > due to the many cross-dependencies between SH arch code and the GPIO and
-> > pinctrl drivers. As the situation now stabilizes, we could now push the
-> > patches through their respective subsystem trees.
-> > 
-> > Simon, Linus, any opinion/preference on that ?
-> 
-> Depends, if they are still large patch sets I'd prefer Simon to
-> take it, but once the drivers are in place and going to maintenance
-> mode I'll handle them in pinctrl.
+I am preparing to rebase the branches of the renesas tree which
+are targeted for v3.11 on top of v3.10-rc1. In the course of
+doing so I have noticed a problem on the marzen board which appears
+to be related to pinmux.
 
-Let's make the switch for v3.12 then if that's fine with you.
+On boot, using the default config I see the following:
 
-> >> The above ranges are part of that document.
-> > 
-> > What about replacing that with
-> > 
-> >   - gpio-ranges: Range of pins managed by the GPIO controller.
-> > 
-> > Please refer to gpio.txt in this directory for details of gpio-ranges
-> > property and the common GPIO bindings used by client devices.
-> 
-> Go for it!
+sh-pfc pfc-r8a7779: pin GP_4_22 already requested by sh-hspi.0; cannot claim for ehci-platform.0
+sh-pfc pfc-r8a7779: pin-150 (ehci-platform.0) status -22
+sh-pfc pfc-r8a7779: could not request pin 150 on device sh-pfc
+ehci-platform ehci-platform.0: Error applying setting, reverse things back
+Unable to handle kernel NULL pointer dereference at virtual address 00000036
 
-Thanks.
+Looking at pfc-r8a7779 and the SoC documentation it seems
+that HSPI0 and USB0 do indeed use different functions of
+GPIO pin 4 22 (and other pins too).
 
--- 
-Regards,
+I am unsure how this should be managed by either the pinmux driver
+or the board code.
 
-Laurent Pinchart
-
+For reference I have pushed a merge of renesas-next-20130515v2 and
+v3.10-rc1 as renesas-next-20130515v2+v3.10-rc1. If you have a marzen
+board you should be able to reproduce the problem with that tree.
