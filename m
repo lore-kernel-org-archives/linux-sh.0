@@ -1,37 +1,42 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Thu, 30 May 2013 15:08:39 +0000
-Subject: [PATCH v2 0/5] HSCIF support
-Message-Id: <1369926524-3425-1-git-send-email-ulrich.hecht@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 15 May 2013 02:57:27 +0000
+Subject: [PATCH v2 1/4] ARM: shmobile: marzen-reference: Reference the correct IRQ for ethernet
+Message-Id: <1368586650-26263-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi!
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This is the same as v1, except the alphabetical order of the pin
-groups/functions has been restored.
+The SMSC ethernet controller uses an external IRQ line that goes through
+the irqpin controller. Set the interrupt parent to irqpin0 and fix the
+interrupt number.
 
-CU
-Uli
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Ulrich Hecht (5):
-  serial: sh-sci: HSCIF support
-  ARM: shmobile: r8a7790: HSCIF support
-  sh-pfc: r8a7790: add HSCIF pin groups
-  ARM: shmobile: r8a7790: don't use external clock for SCIFs
-  ARM: shmobile: lager: map HSCIF0/1 to unused pins
-
- arch/arm/mach-shmobile/board-lager.c   |    4 +
- arch/arm/mach-shmobile/clock-r8a7790.c |    6 +-
- arch/arm/mach-shmobile/setup-r8a7790.c |   16 ++-
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c   |  211 +++++++++++++++++++++++++++++---
- drivers/tty/serial/sh-sci.c            |  102 +++++++++++++--
- include/linux/serial_sci.h             |   12 +-
- include/uapi/linux/serial_core.h       |    3 +
- 7 files changed, 325 insertions(+), 29 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 72be4c8..10cfc7f 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -38,8 +38,8 @@
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x18000000 0x100>;
+ 		phy-mode = "mii";
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 28 0x4>;
++		interrupt-parent = <&irqpin0>;
++		interrupts = <1 0x4>;
+ 		reg-io-width = <4>;
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
 -- 
-1.7.10.4
+1.8.2.1
 
