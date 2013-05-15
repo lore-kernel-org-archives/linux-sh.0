@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 15 May 2013 00:59:26 +0000
+Date: Wed, 15 May 2013 01:46:39 +0000
 Subject: Re: [PATCH 07/20] ARM: shmobile: lager: Remove init_irq declaration in machine description
-Message-Id: <20130515005926.GF12246@verge.net.au>
+Message-Id: <20130515014639.GM12246@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
  <1368545933-7430-8-git-send-email-maxime.ripard@free-electrons.com>
@@ -43,5 +43,9 @@ On Tue, May 14, 2013 at 05:38:40PM +0200, Maxime Ripard wrote:
 >  	.init_machine	= lager_add_standard_devices,
 >  	.dt_compat	= lager_boards_compat_dt,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Sorry, what I should have said is:
+
+Queued up for v3.11 in the boards-lager branch of my renesas tree
+on kernel.org. It is included in the renesas-next-20130515 tag of
+that tree and should appear in linux-next in the not to distant future.
 
