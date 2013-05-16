@@ -1,68 +1,80 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 25 May 2013 00:39:50 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: irqpin: add a DT property to enable masking on parent
-Message-Id: <20130525003950.GA4476@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 May 2013 07:16:05 +0000
+Subject: [PATCH 09/12] ARM: shmobile: bockw: add MMCIF support
+Message-Id: <8761yjwg26.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305241109530.1090@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1305241109530.1090@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, May 24, 2013 at 11:13:03AM +0200, Guennadi Liakhovetski wrote:
-> To disable spurious interrupts, that get triggered on certain hardware, the
-> irqpin driver masks them on the parent interrupt controller. To specify
-> such broken devices a .control_parent parameter can be provided in the
-> platform data. In the DT case we need a property, to do the same.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> These two patches simply split the earlier "ARM: shmobile: irqpin: fix 
-> handling of spurious interrupts in DT case" patch into two parts. 
-> Otherwise no change.
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-bockw.c |   32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-Magnus,
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 769069e..2f51e8b 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -41,6 +41,23 @@
+  * SW41		SCIF	RCAN
+  */
+ 
++/*
++ * MMC (CN26) pin
++ *
++ * SW6	(D2)	3 pin
++ * SW7	(D5)	ON
++ * SW8	(D3)	3 pin
++ * SW10	(D4)	1 pin
++ * SW12	(CLK)	1 pin
++ * SW13	(D6)	3 pin
++ * SW14	(CMD)	ON
++ * SW15	(D6)	1 pin
++ * SW16	(D0)	ON
++ * SW17	(D1)	ON
++ * SW18	(D7)	3 pin
++ * SW19	(MMC)	1 pin
++ */
++
+ /* Dummy supplies, where voltage doesn't matter */
+ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+@@ -100,10 +117,24 @@ static struct spi_board_info spi_board_info[] __initdata = {
+ 	},
+ };
+ 
++/* MMC */
++static struct sh_mmcif_plat_data sh_mmcif_plat = {
++	.sup_pclk	= 0,
++	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
++	.caps		= MMC_CAP_4_BIT_DATA |
++			  MMC_CAP_8_BIT_DATA |
++			  MMC_CAP_NEEDS_POLL,
++};
++
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* HSPI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7778",
+ 				  "hspi0_a", "hspi0"),
++	/* MMC */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif", "pfc-r8a7778",
++				  "mmc_data8", "mmc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif", "pfc-r8a7778",
++				  "mmc_ctrl", "mmc"),
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+ 				  "scif0_data_a", "scif0"),
+@@ -133,6 +164,7 @@ static void __init bockw_init(void)
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_i2c_device(0);
+ 	r8a7778_add_hspi_device(0);
++	r8a7778_add_mmc_device(&sh_mmcif_plat);
+ 
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+-- 
+1.7.9.5
 
-could you please review this series?
-
-> 
->  .../interrupt-controller/renesas,intc-irqpin.txt   |    2 ++
->  drivers/irqchip/irq-renesas-intc-irqpin.c          |    7 +++++--
->  2 files changed, 7 insertions(+), 2 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-> index c6f09b7..152b10a 100644
-> --- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-> +++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-> @@ -11,3 +11,5 @@ Optional properties:
->    resource allocation properties
->  - sense-bitfield-width: width of a single sense bitfield in the SENSE register,
->    if different from the default 4 bits
-> +- control-parent: disable and enable interrupts on the parent interrupt
-> +  controller, needed for some broken implementations
-> diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-> index 4aca1b2..82cec63 100644
-> --- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-> +++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-> @@ -348,11 +348,14 @@ static int intc_irqpin_probe(struct platform_device *pdev)
->  	}
->  
->  	/* deal with driver instance configuration */
-> -	if (pdata)
-> +	if (pdata) {
->  		memcpy(&p->config, pdata, sizeof(*pdata));
-> -	else
-> +	} else {
->  		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
->  				     &p->config.sense_bitfield_width);
-> +		p->config.control_parent = of_property_read_bool(pdev->dev.of_node,
-> +								 "control-parent");
-> +	}
->  	if (!p->config.sense_bitfield_width)
->  		p->config.sense_bitfield_width = 4; /* default to 4 bits */
->  
-> -- 
-> 1.7.2.5
-> 
