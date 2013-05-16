@@ -1,55 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 15 May 2013 01:46:22 +0000
-Subject: Re: [PATCH 06/20] ARM: shmobile: kzm9g: Remove init_irq declaration in machine description
-Message-Id: <20130515014622.GL12246@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 May 2013 07:14:25 +0000
+Subject: [PATCH] mtd: m25p80: add support for the Spansion s25fl008k chip
+Message-Id: <87ip2jwg4z.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368545933-7430-7-git-send-email-maxime.ripard@free-electrons.com>
- <20130515005917.GE12246@verge.net.au>
-In-Reply-To: <20130515005917.GE12246@verge.net.au>
+References: <87li7fwgk8.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87li7fwgk8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, "goda (RSO)" <yusuke.goda.sx@renesas.com>, linux-mtd@lists.infradead.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On Wed, May 15, 2013 at 09:59:17AM +0900, Simon Horman wrote:
-> On Tue, May 14, 2013 at 05:38:39PM +0200, Maxime Ripard wrote:
-> > Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> > specified") removed the need to explictly setup the init_irq field in
-> > the machine description when using only irqchip_init. Remove that
-> > declaration for shmobile as well.
-> > 
-> > Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> > ---
-> >  arch/arm/mach-shmobile/board-kzm9g-reference.c | 2 --
-> >  1 file changed, 2 deletions(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > index aefa50d..b7ee96e 100644
-> > --- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > +++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > @@ -24,7 +24,6 @@
-> >  #include <linux/gpio.h>
-> >  #include <linux/io.h>
-> >  #include <linux/irq.h>
-> > -#include <linux/irqchip.h>
-> >  #include <linux/input.h>
-> >  #include <linux/of_platform.h>
-> >  #include <linux/pinctrl/machine.h>
-> > @@ -100,7 +99,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
-> >  	.map_io		= sh73a0_map_io,
-> >  	.init_early	= sh73a0_init_delay,
-> >  	.nr_irqs	= NR_IRQS_LEGACY,
-> > -	.init_irq	= irqchip_init,
-> >  	.init_machine	= kzm_init,
-> >  	.init_time	= shmobile_timer_init,
-> >  	.dt_compat	= kzm9g_boards_compat_dt,
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mtd/devices/m25p80.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-Sorry, what I should have said is:
-
-Queued up for v3.11 in the boards-kzm9g branch of my renesas tree
-on kernel.org. It is included in the renesas-next-20130515 tag of
-that tree and should appear in linux-next in the not to distant future.
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index 5b6b072..058172c 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -777,6 +777,7 @@ static const struct spi_device_id m25p_ids[] = {
+ 	{ "s25sl016a",  INFO(0x010214,      0,  64 * 1024,  32, 0) },
+ 	{ "s25sl032a",  INFO(0x010215,      0,  64 * 1024,  64, 0) },
+ 	{ "s25sl064a",  INFO(0x010216,      0,  64 * 1024, 128, 0) },
++	{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K) },
+ 	{ "s25fl016k",  INFO(0xef4015,      0,  64 * 1024,  32, SECT_4K) },
+ 	{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },
+ 
+-- 
+1.7.9.5
 
