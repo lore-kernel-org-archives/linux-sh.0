@@ -1,103 +1,28 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 15 May 2013 00:18:00 +0000
-Subject: [PATCH v3 00/20] SH pinctrl DT support
-Message-Id: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 16 May 2013 21:22:33 +0000
+Subject: [PATCH v4 0/3] R8A7778/BOCK-W R-Car VIN driver support
+Message-Id: <201305170122.33996.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+Hello.
 
-Here's the third version of the SuperH and SH Mobile pin controllers (PFC) DT
-support patch set.
+   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130515v2' tag and my recent yet unapplied patches. Here we
+add the VIN platform code working on
+the R8A7778/BOCK-W with ML86V7667. The driver patch also applies (with offsets)
+to Mauro's 'media_tree.git'...
 
-The patches are based on tags/renesas-next-20130513 from Simon's tree
-(git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git), the R-Car
-GPIO DT bindings proposal ("[RFC/PATCH 0/2] R-Car GPIO DT bindings") and the
-marzen-reference ethernet patches ("[PATCH 0/2] marzen-reference ethernet
-patches") I've previously posted. The result is available in my tree at
+[1/3] ARM: shmobile: r8a7778: add VIN support
+[2/3] ARM: shmobile: BOCK-W: add VIN and ML86V7667 support
+[3/3] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
 
-        git://linuxtv.org/pinchartl/fbdev.git pinmux/3.9/dt
+   The patch containing OKI ML86V7667 video decoder driver has been removed
+from the series as it should be applied to the 'media_tree.git' repo. The patch
+containing the VIN PFC support has been also removed from the series and has
+now been merged.
 
-The series is pretty self-explanatory. DT bindings are added in patch 01/20,
-and the following patches gradually move SoC code and board code over to the
-device tree for the armadilla800eva-reference, kzm9g-reference and
-marzen-reference boards. The code has been tested on the three boards, but
-only kzm9g can currently boot to userspace with network support due to lack of
-DT bindings or other ethernet issues on the two other boards. armadillo800eva
-and marzen have thus received less testing.
-
-Comments will be very appreciated on the DT bindings (01/20). Points I'm a bit
-unsure about include:
-
-- Should the driver support pin configuration subnodes as currently
-  implemented, or should the subnodes be promoted to regular pin configuration
-  nodes, with clients referencing multiple nodes ?
-- Should the driver allow mixing function and configuration properties in a pin
-  configuration node as currently implemented, or should it restrict the pin
-  configuration nodes to either a function or one (or more) configuration(s) ?
-- Should we specify common bindings for pinconf-generic instead of using
-  Renesas-specific properties ? (If the answer to this question is yes, please
-  help :-)).
-
-Changes since v2:
-
-- Added pin configuration properties
-- Rewrote all arch changes
-
-Changes since v1:
-
-- Fixed gpio cell number 2 documentation
-- Added missing gpio-controller and #gpio-cells properties to r8a7740 DT
-- Split kzm9g DT patch into SoC and board patches
-- Dropped pinctrl mappings move to DT
-
-Laurent Pinchart (20):
-  sh-pfc: Add DT support
-  ARM: shmobile: r8a73a4: Add pin control device to device tree
-  ARM: shmobile: r8a7740: Add pin control device to device tree
-  ARM: shmobile: r8a7778: Add pin control device to device tree
-  ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
-  ARM: shmobile: r8a7779: Add pin control device to device tree
-  ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
-  ARM: shmobile: r8a7790: Add pin control device to device tree
-  ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
-  ARM: shmobile: sh7372: Add pin control device to device tree
-  ARM: shmobile: sh73a0: Add pin control device to device tree
-  ARM: shmobile: armadillo-reference: Move pinctrl mappings to device
-    tree
-  ARM: shmobile: armadillo-reference: Add st1232 pin mappings
-  ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
-  ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
-  ARM: shmobile: kzm9g-reference: Move pinctrl mappings to device tree
-  ARM: shmobile: kzm9g-reference: Move SDHI regulators to DT
-  ARM: shmobile: kzm9g-reference: Add LED1-LED4 to the device tree
-  ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
-  ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
-
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       | 143 ++++++++++++
- arch/arm/boot/dts/r8a73a4.dtsi                     |   7 +
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |  33 +++
- arch/arm/boot/dts/r8a7740.dtsi                     |   8 +
- arch/arm/boot/dts/r8a7778.dtsi                     |  50 +++++
- arch/arm/boot/dts/r8a7779-marzen-reference.dts     |  48 ++++
- arch/arm/boot/dts/r8a7779.dtsi                     |  69 ++++++
- arch/arm/boot/dts/r8a7790.dtsi                     |  59 +++++
- arch/arm/boot/dts/sh7372.dtsi                      |   8 +
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |  89 +++++++-
- arch/arm/boot/dts/sh73a0.dtsi                      |   8 +
- .../board-armadillo800eva-reference.c              |  18 +-
- arch/arm/mach-shmobile/board-kzm9g-reference.c     |  47 ----
- arch/arm/mach-shmobile/board-marzen-reference.c    |  28 ---
- drivers/pinctrl/sh-pfc/core.c                      |  66 +++++-
- drivers/pinctrl/sh-pfc/pinctrl.c                   | 244 +++++++++++++++++++++
- 16 files changed, 829 insertions(+), 96 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-
--- 
-Regards,
-
-Laurent Pinchart
-
+WBR, Sergei
