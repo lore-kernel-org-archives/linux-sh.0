@@ -1,52 +1,33 @@
-From: Tony Prisk <linux@prisktech.co.nz>
-Date: Wed, 15 May 2013 18:52:03 +0000
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Thu, 16 May 2013 08:18:57 +0000
 Subject: Re: [PATCH 20/20] ARM: vt8500: Remove init_irq declaration in machine description
-Message-Id: <5193D953.5040202@prisktech.co.nz>
+Message-Id: <51949671.1070907@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
  <1368545933-7430-21-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-21-git-send-email-maxime.ripard@free-electrons.com>
+ <5193D953.5040202@prisktech.co.nz>
+In-Reply-To: <5193D953.5040202@prisktech.co.nz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On 15/05/13 03:38, Maxime Ripard wrote:
-> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> specified") removed the need to explictly setup the init_irq field in
-> the machine description when using only irqchip_init. Remove that
-> declaration for vt8500 as well.
->
-> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> ---
->   arch/arm/mach-vt8500/vt8500.c | 2 --
->   1 file changed, 2 deletions(-)
->
-> diff --git a/arch/arm/mach-vt8500/vt8500.c b/arch/arm/mach-vt8500/vt8500.c
-> index 1dd281e..70a5ac9 100644
-> --- a/arch/arm/mach-vt8500/vt8500.c
-> +++ b/arch/arm/mach-vt8500/vt8500.c
-> @@ -20,7 +20,6 @@
->   
->   #include <linux/clocksource.h>
->   #include <linux/io.h>
-> -#include <linux/irqchip.h>
->   #include <linux/pm.h>
->   
->   #include <asm/mach-types.h>
-> @@ -178,7 +177,6 @@ static const char * const vt8500_dt_compat[] = {
->   DT_MACHINE_START(WMT_DT, "VIA/Wondermedia SoC (Device Tree Support)")
->   	.dt_compat	= vt8500_dt_compat,
->   	.map_io		= vt8500_map_io,
-> -	.init_irq	= irqchip_init,
->   	.init_machine	= vt8500_init,
->   	.init_time	= clocksource_of_init,
->   	.restart	= vt8500_restart,
-I don't have any plans to touch this driver, so please send direct to 
-arm-soc as Arnd
-requested.
+Hi Tony,
 
-Acked-by: Tony Prisk <linux@prisktech.co.nz>
+Le 15/05/2013 20:52, Tony Prisk a =E9crit :
+> I don't have any plans to touch this driver, so please send direct to
+> arm-soc as Arnd
+> requested.
+>=20
+> Acked-by: Tony Prisk <linux@prisktech.co.nz>
 
-Regards
-Tony Prisk
+Thanks!
+
+I will send it then.
+
+Maxime
+
+--=20
+Maxime Ripard, Free Electrons
+Embedded Linux, Kernel and Android engineering
+http://free-electrons.com
