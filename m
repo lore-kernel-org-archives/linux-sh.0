@@ -1,313 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 29 May 2013 15:48:50 +0000
-Subject: Re: [PATCH v2 04/11] pwm: Add Renesas TPU PWM driver
-Message-Id: <22098838.zqKo9eB0Jt@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 May 2013 07:15:07 +0000
+Subject: [PATCH 03/12] sh-pfc: r8a7778: add MMCIF pin groups
+Message-Id: <87ehd7wg3s.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366836616-21475-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1366836616-21475-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20130523214517.GA18249@avionic-0098.adnet.avionic-design.de>
-In-Reply-To: <20130523214517.GA18249@avionic-0098.adnet.avionic-design.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thierry Reding <thierry.reding@avionic-design.de>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-leds@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-Hi Thierry,
+Add MMCIF CLK/CMD/DATA groups to R8A7778 PFC driver.
 
-On Thursday 23 May 2013 23:45:17 Thierry Reding wrote:
-> On Wed, Apr 24, 2013 at 10:50:09PM +0200, Laurent Pinchart wrote:
-> > The Timer Pulse Unit (TPU is a 4-channels 16-bit timer used to generate
-> > waveforms. This driver exposes PWM functions through the PWM API for
-> > other drivers to use.
-> > 
-> > The code is loosely based on the leds-renesas-tpu driver by Magnus Damm
-> > and the TPU PWM driver shipped in the Armadillo EVA 800 kernel sources.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > Tested-by: Simon Horman <horms@verge.net.au>
-> 
-> Sorry for taking so long to look at this...
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   39 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
-No worries. Thank you for the review.
-
-> > diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-> > index 0e0bfa0..d57ef66 100644
-> > --- a/drivers/pwm/Kconfig
-> > +++ b/drivers/pwm/Kconfig
-> > @@ -115,6 +115,13 @@ config PWM_PXA
-> > 
-> >  	  To compile this driver as a module, choose M here: the module
-> >  	  will be called pwm-pxa.
-> > 
-> > +config PWM_RENESAS_TPU
-> > +	tristate "Renesas TPU PWM support"
-> > +	depends on ARCH_SHMOBILE
-> > +	help
-> > +	  This driver exposes the Timer Pulse Unit (TPU) PWM controller found
-> > +	  in Renesas chips through the PWM API.
-> 
-> If the driver can be built, it'd be good to include a short sentence
-> saying what it will be called, just like for the other drivers.
-
-OK.
-
-> > diff --git a/drivers/pwm/pwm-renesas-tpu.c b/drivers/pwm/pwm-renesas-tpu.c
-> 
-> [...]
-> 
-> > +struct tpu_pwm_device {
-> > +	bool timer_on;			/* Whether the timer is running */
-> > +
-> > +	struct tpu_pwm_channel_data *pdata;
-> > +	struct tpu_device *tpu;
-> > +	unsigned int channel;		/* Channel number in the TPU */
-> 
-> I don't think you need this. The pwm_device.hwpwm field carries the same
-> information.
-> 
-> > +
-> > +	unsigned int prescaler;
-> > +	u16 period;
-> > +	u16 duty;
-> > +};
-> > +
-> > +struct tpu_device {
-> > +	struct platform_device *pdev;
-> > +	struct pwm_chip chip;
-> > +	spinlock_t lock;
-> > +
-> > +	void __iomem *base;
-> > +	struct clk *clk;
-> > +
-> > +	struct tpu_pwm_device pwms[TPU_CHANNEL_MAX];
-> > +};
-> 
-> Can't you reuse the infrastructure built into the PWM subsystem? You can
-> associate chip-specific data with each PWM device. You can look at the
-> pwm-atmel-tcb and pwm-bfin drivers for usage examples. In a nutshell you
-> hook the .request() function and setup the driver-specific structure and
-> associate them with the PWM using pwm_set_chip_data().
-> 
-> This has the advantage that you don't need the pwms array in tpu_device
-> and you also don't need TPU_CHANNEL_MAX because only the pwm_chip.npwm
-> field needs to contain the number of channels.
-
-I've actually thought about that, but decided not to do so. It looked pretty 
-weird to allocate PWM devices at .request() time, so I decided to allocate the 
-devices once only at probe time. Is it considered better to allocate/free PWM 
-devices every time they're requested/released ?
-
-> > +static int tpu_pwm_timer_start(struct tpu_pwm_device *pwm)
-> > +{
-> > +	int ret;
-> > +
-> > +	if (!pwm->timer_on) {
-> > +		/* Wake up device and enable clock. */
-> > +		pm_runtime_get_sync(&pwm->tpu->pdev->dev);
-> > +		ret = clk_prepare_enable(pwm->tpu->clk);
-> > +		if (ret) {
-> > +			dev_err(&pwm->tpu->pdev->dev, "cannot enable clock\n");
-> > +			return ret;
-> > +		}
-> > +		pwm->timer_on = true;
-> > +	}
-> > +
-> > +	/* Make sure the channel is stopped, as we need to reconfigure it
-> > +	 * completely. First drive the pin to the inactive state to avoid
-> > +	 * glitches.
-> > +	 */
-> 
-> Can you please stick to the standard coding style for block comments?
-> That is:
-> 
-> 	/*
-> 	 * Make sure...
-> 	 * ...
-> 	 * glitches.
-> 	 */
-
-Sure.
-
-> > +/* ----------------------------------------------------------------------
-> > + * PWM API
-> > + */
-> 
-> I find these separators more distracting than helpful. But if you have a
-> strong preference for them I can live with it.
-
-I wouldn't have put them here if they didn't help me reading the code :-) I 
-can remove them if you have a strong objection.
-
-> > +
-> > +static int tpu_pwm_request(struct pwm_chip *chip, struct pwm_device
-> > *_pwm)
-> > +{
-> > +	struct tpu_device *tpu = to_tpu_device(chip);
-> > +	struct tpu_pwm_device *pwm = &tpu->pwms[_pwm->hwpwm];
-> > +
-> > +	return pwm->pdata = NULL ? -EPROBE_DEFER : 0;
-> > +}
-> 
-> If you use the same method as the pwm-bfin or pwm-atmel-tcb drivers, you
-> could initialize each PWM channel here and associated them with the PWM
-> device using pwm_set_chip_data() (as I hinted at earlier).
-> 
-> > +static int tpu_pwm_config(struct pwm_chip *chip, struct pwm_device *_pwm,
-> > +			  int duty_ns, int period_ns)
-> 
-> [...]
-> 
-> > +	if (period_ns <= 0 || duty_ns < 0 || duty_ns > period_ns)
-> > +		return -EINVAL;
-> 
-> The core already performs these checks so they can be dropped.
-
-Good point.
-
-> > +	/* Pick a prescaler to avoid overflowing the counter.
-> > +	 * TODO: Pick the highest acceptable prescaler.
-> > +	 */
-> > +	clk_prepare_enable(tpu->clk);
-> 
-> Shouldn't you check the return value here?
-
-I will.
-
-> > +	clk_rate = clk_get_rate(tpu->clk);
-> > +	clk_disable_unprepare(pwm->tpu->clk);
-> 
-> And does the clock really need to be enabled to obtain the rate?
-
-Actually it doesn't seem so. I'll test that and remove the enable/disable 
-calls if possible.
-
-> > +	for (prescaler = 0; prescaler < ARRAY_SIZE(prescalers); ++prescaler) 
-{
-> > +		period = clk_rate / prescalers[prescaler]
-> > +		       / (NSEC_PER_SEC / period_ns);
-> 
-> I prefer to have the operator on the previous line, as in:
-> 
-> 		period = clk_rate / prescalers[prescaler] /
-> 			 (NSEC_PER_SEC / period_ns);
-
-And I prefer the opposite :-) I can change that if you insist.
-
-> > +	duty_only = pwm->prescaler = prescaler && pwm->period = period;
-> 
-> Maybe the following would be easier to read?
-> 
-> 	if (prescaler = pwm->prescaler && period = pwm->period)
-> 		duty_only = true;
-> 
-> And initialize duty_only = false when declaring it.
-
-I agree, I'll change that.
-
-> > +static int tpu_probe(struct platform_device *pdev)
-> > +{
-> > +	struct tpu_pwm_platform_data *pdata = pdev->dev.platform_data;
-> > +	struct tpu_device *tpu;
-> > +	struct resource *res;
-> > +	unsigned int i;
-> > +	int ret;
-> > +
-> > +	if (!pdata) {
-> > +		dev_err(&pdev->dev, "missing platform data\n");
-> > +		return -ENXIO;
-> > +	}
-> > +
-> > +	tpu = devm_kzalloc(&pdev->dev, sizeof(*tpu), GFP_KERNEL);
-> > +	if (tpu = NULL) {
-> > +		dev_err(&pdev->dev, "failed to allocate driver data\n");
-> > +		return -ENOMEM;
-> > +	}
-> > +
-> > +	/* Map memory, get clock and pin control. */
-> > +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> > +	if (!res) {
-> > +		dev_err(&pdev->dev, "failed to get I/O memory\n");
-> > +		return -ENXIO;
-> > +	}
-> > +
-> > +	tpu->base = devm_ioremap_nocache(&pdev->dev, res->start,
-> > +					 resource_size(res));
-> > +	if (tpu->base = NULL) {
-> > +		dev_err(&pdev->dev, "failed to remap I/O memory\n");
-> > +		return -ENXIO;
-> > +	}
-> 
-> Isn't this mising a request_mem_region()? Couldn't you just use a call
-> to devm_ioremap_resource() instead?
-
-I will do so.
-
-> > +static struct platform_driver tpu_driver = {
-> > +	.probe		= tpu_probe,
-> > +	.remove		= tpu_remove,
-> > +	.driver		= {
-> > +		.name	= "renesas_tpu_pwm",
-> 
-> Can this perhaps be renamed to "renesas-tpu-pwm" for consistency with
-> other drivers?
-
-Sure.
-
-> And I think this is missing
-> 
-> 		.owner = THIS_MODULE,
-> 
-> as well. I know not all drivers have this either, but I have that on my
-> TODO already.
-
-Indeed. There was a discussion not too long ago on the linux arm kernel 
-mailing list about setting the owner field in the module_platform_driver() 
-macro (possibly by turning platform_register_driver() into a macro that sets 
-the owner field). I think that's a good idea, but I'll initialize .owner here 
-in the meantime.
-
-> > diff --git a/include/linux/platform_data/pwm-renesas-tpu.h
-> > b/include/linux/platform_data/pwm-renesas-tpu.h
-> [...]
-> 
-> > +#define TPU_CHANNEL_MAX		4
-> > +
-> > +#define TPU_PWM_ID(device, channel) \
-> > +	((device) * TPU_CHANNEL_MAX + (channel))
-> 
-> Please don't do this. It assumes a global namespace for PWM devices.
-> However the global namespace is only for compatibility with legacy code
-> and shouldn't be depended on by new drivers. You should be using either
-> DT to dynamically refer to PWM devices or use a PWM lookup table. Refer
-> to Documentation/pwm.txt for details.
-
-The goal is to move everything to DT. In the meantime I'll use a lookup table.
-> 
-> > +struct tpu_pwm_channel_data {
-> > +	bool enabled;
-> > +	bool active_low;
-> 
-> Maybe this should be enum pwm_polarity?
-
-Good idea. I will also add support for the .set_polarity() operation.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index 137dd59..8a8060c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -1434,6 +1434,33 @@ SCIF_PFC_CLK(hscif1_clk_a,	HSCK1_A);
+ SCIF_PFC_PIN(hscif1_clk_b,	RCAR_GP_PIN(4, 2));
+ SCIF_PFC_CLK(hscif1_clk_b,	HSCK1_B);
  
-> > +};
-> > +
-> > +struct tpu_pwm_platform_data {
-> > +	struct tpu_pwm_channel_data channels[TPU_CHANNEL_MAX];
-> > +};
-> 
-> This could be a little difficult to handle in the absence of
-> TPU_CHANNEL_MAX. Depending on the hardware, I suppose you could just
-> handle it via the .request() function. In that case all channels would
-> be disabled by default and enabled automatically when requested by a
-> user driver.
-
-I would still need to pass the initial polarity configuration for each 
-channel, although we could argue that the client driver should be responsible 
-for configuring the polarity.
-
++/* - MMC macro -------------------------------------------------------------- */
++#define MMC_PFC_PINS(name, args...)		SH_PFC_PINS(name, args)
++#define MMC_PFC_CTRL(name, clk, cmd)		SH_PFC_MUX2(name, clk, cmd)
++#define MMC_PFC_DAT1(name, d0)			SH_PFC_MUX1(name, d0)
++#define MMC_PFC_DAT4(name, d0, d1, d2, d3)	SH_PFC_MUX4(name, d0, d1, d2, d3)
++#define MMC_PFC_DAT8(name, d0, d1, d2, d3, d4, d5, d6, d7)\
++						SH_PFC_MUX8(name, d0, d1, d2, d3, \
++								  d4, d5, d6, d7)
++
++/* - MMC -------------------------------------------------------------------- */
++MMC_PFC_PINS(mmc_ctrl,		RCAR_GP_PIN(1, 5),	RCAR_GP_PIN(1, 6));
++MMC_PFC_CTRL(mmc_ctrl,		MMC_CLK,		MMC_CMD);
++MMC_PFC_PINS(mmc_data1,		RCAR_GP_PIN(1, 7));
++MMC_PFC_DAT1(mmc_data1,		MMC_D0);
++MMC_PFC_PINS(mmc_data4,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
++				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6));
++MMC_PFC_DAT4(mmc_data4,		MMC_D0,			MMC_D1,
++				MMC_D2,			MMC_D3);
++MMC_PFC_PINS(mmc_data8,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
++				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6),
++				RCAR_GP_PIN(1, 4),	RCAR_GP_PIN(1, 0),
++				RCAR_GP_PIN(0, 30),	RCAR_GP_PIN(0, 31));
++MMC_PFC_DAT8(mmc_data8,		MMC_D0,			MMC_D1,
++				MMC_D2,			MMC_D3,
++				MMC_D4,			MMC_D5,
++				MMC_D6,			MMC_D7);
++
+ /* - SCIF CLOCK ------------------------------------------------------------- */
+ SCIF_PFC_PIN(scif_clk,		RCAR_GP_PIN(1, 16));
+ SCIF_PFC_CLK(scif_clk,		SCIF_CLK);
+@@ -1661,6 +1688,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
+ 	SH_PFC_PIN_GROUP(hscif1_clk_a),
+ 	SH_PFC_PIN_GROUP(hscif1_clk_b),
++	SH_PFC_PIN_GROUP(mmc_ctrl),
++	SH_PFC_PIN_GROUP(mmc_data1),
++	SH_PFC_PIN_GROUP(mmc_data4),
++	SH_PFC_PIN_GROUP(mmc_data8),
+ 	SH_PFC_PIN_GROUP(scif_clk),
+ 	SH_PFC_PIN_GROUP(scif0_data_a),
+ 	SH_PFC_PIN_GROUP(scif0_data_b),
+@@ -1785,6 +1816,13 @@ static const char * const hscif1_groups[] = {
+ 	"hscif1_clk_b",
+ };
+ 
++static const char * const mmc_groups[] = {
++	"mmc_ctrl",
++	"mmc_data1",
++	"mmc_data4",
++	"mmc_data8",
++};
++
+ static const char * const scif_clk_groups[] = {
+ 	"scif_clk",
+ };
+@@ -1905,6 +1943,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(hspi2),
+ 	SH_PFC_FUNCTION(hscif0),
+ 	SH_PFC_FUNCTION(hscif1),
++	SH_PFC_FUNCTION(mmc),
+ 	SH_PFC_FUNCTION(scif_clk),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
 -- 
-Regards,
+1.7.9.5
 
-Laurent Pinchart
