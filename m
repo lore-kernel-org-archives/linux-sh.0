@@ -1,41 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 16 May 2013 06:38:36 +0000
-Subject: Re: [PATCH] mmc: mmcif: don't clear masked interrupts
-Message-Id: <87mwrvwhsn.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 16 May 2013 04:48:01 +0000
+Subject: [PATCH] ARM: shmobile: marzen: Use error values in usb_power_*
+Message-Id: <1368679681-10779-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305150746480.10596@axis700.grange>
-	<519349BB.6080200@jinso.co.jp>
-In-Reply-To: <519349BB.6080200@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Chris Ball <cjb@laptop.org>
+To: linux-arm-kernel@lists.infradead.org
 
+This patch updates the marzen board code as if USB PHY isn't enabled
+they phy will have a value set by ERR_PTR() rather than be NULL.
 
-Hi
-At Wed, 15 May 2013 17:39:23 +0900,
-Nguyen Viet Dung wrote:
-> 
-> On 05/15/2013 02:50 PM, Guennadi Liakhovetski wrote:
-> > Masking events on MMCIF means, an occurrence of the masked event won't raise
-> > an interrupt, but the event bit will still be set in the interrupt status
-> > register. If simultaneously a different event occurs, that was enabled, both
-> > flags will be set. However, only the unmasked event bit should be cleared in
-> > the status register in such a case. Clearing also the masked bit can lead to
-> > lost interrupts, which indeed can be observed on the armadillo800eva r8a7740
-> > board with an eMMC chip. The problem has been introduced by the recent "mmc:
-> > sh_mmcif: simplify IRQ processing" patch. Fix the problem by only clearing
-> > enabled interrupts.
-> >
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> 
-> tested-by: Nguyen Viet Dung<nv-dung@jinso.co.jp>
+Without this patch a NULL pointer dereference  and kernel panic
+occurs on initialisation of USB on marzen.
 
-on Bock-W board
+This resolves a regression introduced in 3.10-rc1 by
+b7fa5c2aec5be083eb2719b405089703608e9bc6
+("usb: phy: return -ENXIO when PHY layer isn't enabled").
 
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Best regards
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/board-marzen.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 9105285..b9594e9 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -212,8 +212,8 @@ static struct platform_device *marzen_devices[] __initdata = {
+ static struct usb_phy *phy;
+ static int usb_power_on(struct platform_device *pdev)
+ {
+-	if (!phy)
+-		return -EIO;
++	if (IS_ERR(phy))
++		return PTR_ERR(phy);
+ 
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_get_sync(&pdev->dev);
+@@ -225,7 +225,7 @@ static int usb_power_on(struct platform_device *pdev)
+ 
+ static void usb_power_off(struct platform_device *pdev)
+ {
+-	if (!phy)
++	if (IS_ERR(phy))
+ 		return;
+ 
+ 	usb_phy_shutdown(phy);
+-- 
+1.8.2.1
+
