@@ -1,30 +1,47 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 15 May 2013 12:55:12 +0000
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Thu, 16 May 2013 08:18:14 +0000
 Subject: Re: [PATCHv2 00/20] Cleanup irqchip_init calls
-Message-Id: <201305151455.12603.arnd@arndb.de>
+Message-Id: <51949646.4000107@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+ <201305151455.12603.arnd@arndb.de>
+In-Reply-To: <201305151455.12603.arnd@arndb.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 14 May 2013, Maxime Ripard wrote:
-> This is a splitted up version of the patch I previously sent to
-> remove the explicit declaration of irqchip_init as the init_irq callback in
-> the machine descriptions.
-> 
-> Since it was a pretty tricky patch to merge, since it was touching a lot of
-> different platforms, I splitted it for each platforms, and rebased it on top
-> of 3.10-rc1.
-> 
-> The best way to merge it is probably that each one of us take into their tree
-> the patches that are relevant for our architecture and send them to arm-soc
-> later on.
+Hi Arnd,
 
-Sounds good to me. I'm sure that some platform maintainers will fail to
-apply this though. Could you send whatever remains as a separate branch
-in a couple of weeks so we can directly apply it to next/cleanup?
+Le 15/05/2013 14:55, Arnd Bergmann a =E9crit :
+> On Tuesday 14 May 2013, Maxime Ripard wrote:
+>> This is a splitted up version of the patch I previously sent to
+>> remove the explicit declaration of irqchip_init as the init_irq callback=
+ in
+>> the machine descriptions.
+>>
+>> Since it was a pretty tricky patch to merge, since it was touching a lot=
+ of
+>> different platforms, I splitted it for each platforms, and rebased it on=
+ top
+>> of 3.10-rc1.
+>>
+>> The best way to merge it is probably that each one of us take into their=
+ tree
+>> the patches that are relevant for our architecture and send them to arm-=
+soc
+>> later on.
+>=20
+> Sounds good to me. I'm sure that some platform maintainers will fail to
+> apply this though. Could you send whatever remains as a separate branch
+> in a couple of weeks so we can directly apply it to next/cleanup?
 
-	Arnd
+Ok, I will.
+
+Thanks,
+Maxime
+
+--=20
+Maxime Ripard, Free Electrons
+Embedded Linux, Kernel and Android engineering
+http://free-electrons.com
