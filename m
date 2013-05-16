@@ -1,65 +1,102 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 15 May 2013 01:49:01 +0000
-Subject: Re: [PATCH 05/20] ARM: shmobile: ape6evm: Remove init_irq declaration in machine description
-Message-Id: <20130515014901.GR12246@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 May 2013 07:15:24 +0000
+Subject: [PATCH 05/12] ARM: shmobile: r8a7778: add HSPI support
+Message-Id: <87bo8bwg3b.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368545933-7430-6-git-send-email-maxime.ripard@free-electrons.com>
- <20130515005907.GD12246@verge.net.au>
- <20130515014604.GK12246@verge.net.au>
-In-Reply-To: <20130515014604.GK12246@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, May 15, 2013 at 10:46:04AM +0900, Simon Horman wrote:
-> On Wed, May 15, 2013 at 09:59:07AM +0900, Simon Horman wrote:
-> > On Tue, May 14, 2013 at 05:38:38PM +0200, Maxime Ripard wrote:
-> > > Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> > > specified") removed the need to explictly setup the init_irq field in
-> > > the machine description when using only irqchip_init. Remove that
-> > > declaration for shmobile as well.
-> > > 
-> > > Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> > > ---
-> > >  arch/arm/mach-shmobile/board-ape6evm.c | 2 --
-> > >  1 file changed, 2 deletions(-)
-> > > 
-> > > diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-> > > index 55b8c9f..8dfbdba 100644
-> > > --- a/arch/arm/mach-shmobile/board-ape6evm.c
-> > > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> > > @@ -20,7 +20,6 @@
-> > >  
-> > >  #include <linux/gpio.h>
-> > >  #include <linux/interrupt.h>
-> > > -#include <linux/irqchip.h>
-> > >  #include <linux/kernel.h>
-> > >  #include <linux/pinctrl/machine.h>
-> > >  #include <linux/platform_device.h>
-> > > @@ -87,7 +86,6 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
-> > >  };
-> > >  
-> > >  DT_MACHINE_START(APE6EVM_DT, "ape6evm")
-> > > -	.init_irq	= irqchip_init,
-> > >  	.init_time	= shmobile_timer_init,
-> > >  	.init_machine	= ape6evm_add_standard_devices,
-> > >  	.dt_compat	= ape6evm_boards_compat_dt,
-> > 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Sorry, what I should have said is:
-> 
-> Queued up for v3.11 in the boards-spe6evm branch of my renesas tree
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    6 ++++++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   23 +++++++++++++++++++++++
+ 3 files changed, 30 insertions(+)
 
-s/spe6evm/ape6evm/
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 1386c59..c2c1895 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -108,6 +108,7 @@ enum {
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
++	MSTP007,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -127,10 +128,12 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
+ 	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
+ 	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP007] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  7, 0), /* HSPI */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* main */
++	CLKDEV_CON_ID("shyway_clk",	&s_clk),
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
+@@ -150,6 +153,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
++	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ };
+ 
+ void __init r8a7778_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index a428bc6..ca8bc14 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -25,6 +25,7 @@ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
++extern void r8a7778_add_hspi_device(int id);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 87b74a5..8f011cb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -198,6 +198,29 @@ void __init r8a7778_add_i2c_device(int id)
+ 		i2c_resources + (2 * id), 2);
+ }
+ 
++/* HSPI */
++static struct resource hspi_resources[] = {
++	/* HSPI0 */
++	DEFINE_RES_MEM(0xfffc7000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x5f)),
++	/* HSPI1 */
++	DEFINE_RES_MEM(0xfffc8000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x74)),
++	/* HSPI2 */
++	DEFINE_RES_MEM(0xfffc6000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x75)),
++};
++
++void __init r8a7778_add_hspi_device(int id)
++{
++	BUG_ON(id < 0 || id > 2);
++
++	platform_device_register_simple(
++		"sh-hspi", id,
++		hspi_resources + (2 * id), 2);
++}
++
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
+-- 
+1.7.9.5
 
-> on kernel.org. It is included in the renesas-next-20130515 tag of
-> that tree and should appear in linux-next in the not to distant future.
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
