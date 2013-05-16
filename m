@@ -1,43 +1,93 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 22 May 2013 14:39:40 +0000
-Subject: Re: [PATCH FOR v3.10 v2] ARM: shmobile: kzm9g-reference: Update CMT clocksource rating to 80
-Message-Id: <20130522143940.GF32012@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 May 2013 07:15:35 +0000
+Subject: [PATCH 06/12] ARM: shmobile: r8a7778: add MMCIF support
+Message-Id: <87a9nvwg30.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369232020-22681-1-git-send-email-horms+renesas@verge.net.au>
- <519CD3F0.7050002@cogentembedded.com>
-In-Reply-To: <519CD3F0.7050002@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, May 22, 2013 at 06:19:28PM +0400, Sergei Shtylyov wrote:
-> On 22-05-2013 18:13, Simon Horman wrote:
-> 
-> >Update the CMT clocksource rating from 125 to 80.
-> 
-> >This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
-> >introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
-> >Avoid dummy clockevent being preferred over real").
-> 
-> >The patch noted above reduces the rating of dummy clockevent from 400 to 100.
-> >This patch reduces the rating of CMT so that it is once again less than that
-> >of the dummy clockevent.
-> 
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> >---
-> 
-> >I also plan to reduce the rating of the STI clocksource to less than 100.
-> >However, as I am not aware of any problems relating to STI in v3.10-rc
-> >my plan is to update STI in the v3.11 timeframe.
-> >---
-> >  arch/arm/mach-shmobile/setup-sh73a0.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
->    BTW, shouldn't the subject be "ARM: shmobile: sh73a0: Update CMT
-> clocksource rating to 80"?
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    3 +++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   13 +++++++++++++
+ 3 files changed, 18 insertions(+)
 
-Yes, silly me.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index c2c1895..842aed7 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -103,6 +103,7 @@ static struct clk *main_clks[] = {
+ };
+ 
+ enum {
++	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+ 	MSTP030,
+@@ -112,6 +113,7 @@ enum {
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
+ 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+@@ -137,6 +139,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_mmcif",	&mstp_clks[MSTP331]), /* MMC */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index ca8bc14..fcf3c90 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -18,6 +18,7 @@
+ #ifndef __ASM_R8A7778_H__
+ #define __ASM_R8A7778_H__
+ 
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
+ 
+@@ -26,6 +27,7 @@ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
++extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 8f011cb..b0cc4ba 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -220,6 +220,19 @@ void __init r8a7778_add_hspi_device(int id)
+ 		hspi_resources + (2 * id), 2);
+ }
+ 
++/* MMC */
++static struct resource mmc_resources[] = {
++	DEFINE_RES_MEM(0xffe4e000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x5d)),
++};
++
++void __init r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info)
++{
++	platform_device_register_resndata(
++		&platform_bus, "sh_mmcif", -1,
++		mmc_resources, ARRAY_SIZE(mmc_resources),
++		info, sizeof(*info));
++}
+ 
+ void __init r8a7778_add_standard_devices(void)
+ {
+-- 
+1.7.9.5
 
-I'll fix that.
