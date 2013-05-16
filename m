@@ -1,27 +1,40 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Fri, 31 May 2013 07:04:02 +0000
-Subject: Re: [PATCH] thermal: rcar: set up I/O base before requesting IRQ
-Message-Id: <CAO3366wx7b3M3VYxxYmW67=rLE2-J=e7yDuEX2VvhYhz4E1uYg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 May 2013 07:13:30 +0000
+Subject: [PATCH] spi: hspi: fixup long delay time
+Message-Id: <87k3mzwg6h.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369817336-1953-1-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1369817336-1953-1-git-send-email-ulrich.hecht@gmail.com>
+References: <87li7fwgk8.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87li7fwgk8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Grant Likely <grant.likely@secretlab.ca>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, "goda (RSO)" <yusuke.goda.sx@renesas.com>, spi-devel-general@lists.sourceforge.net
 
-On Fri, May 31, 2013 at 7:48 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, May 29, 2013 at 10:48:56AM +0200, Ulrich Hecht wrote:
->> It is used by the interrupt handler. Fixes crash when booting via kexec
->> on APE6 board.
->
-> could you clarify the target of this fix?
-> Is it for next and thus v3.11 or is it applicable to v3.10.
-> In the case of the latter is it also applicable to earlier
-> kernel versions and thus relevant to -stable.
+Current HSPI driver is using msleep(20) on hspi_status_check_timeout(),
+but it was too long delay for SPI device.
+Bock-W board SPI access was too slow without this patch.
+This patch uses udelay(10) for it.
 
-The bug has been introduced by commit e0a5172 (thermal: rcar: add
-interrupt support), between v3.8-rc2 and v3.9-rc1.
+Tested-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/spi/spi-sh-hspi.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-CU
-Uli
+diff --git a/drivers/spi/spi-sh-hspi.c b/drivers/spi/spi-sh-hspi.c
+index 60cfae5..eab593e 100644
+--- a/drivers/spi/spi-sh-hspi.c
++++ b/drivers/spi/spi-sh-hspi.c
+@@ -89,7 +89,7 @@ static int hspi_status_check_timeout(struct hspi_priv *hspi, u32 mask, u32 val)
+ 		if ((mask & hspi_read(hspi, SPSR)) = val)
+ 			return 0;
+ 
+-		msleep(20);
++		udelay(10);
+ 	}
+ 
+ 	dev_err(hspi->dev, "timeout\n");
+-- 
+1.7.9.5
+
