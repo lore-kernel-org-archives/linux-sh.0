@@ -1,48 +1,93 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 23 May 2013 03:21:16 +0000
-Subject: [PATCH 13/17 v2] ARM: shmobile: bockw defconfig: add M25P80 support
-Message-Id: <87txlu2xg6.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 16 May 2013 07:15:56 +0000
+Subject: [PATCH 08/12] ARM: shmobile: bockw: add SPI FLASH support
+Message-Id: <877gizwg2g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+HSPI0 Spansion S25FL008K chip
+
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/board-bockw.c |   37 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
 
- - no change
-
- arch/arm/configs/bockw_defconfig |    8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index cb7638d..55e00ff 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -49,6 +49,12 @@ CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
-+CONFIG_MTD=y
-+CONFIG_MTD_CHAR=y
-+CONFIG_MTD_BLOCK=y
-+CONFIG_MTD_CFI=y
-+CONFIG_MTD_CFI_AMDSTD=y
-+CONFIG_MTD_M25P80=y
- CONFIG_SCSI=y
- CONFIG_BLK_DEV_SD=y
- CONFIG_NETDEVICES=y
-@@ -76,6 +82,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HWMON is not set
- CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
-+CONFIG_SPI=y
-+CONFIG_SPI_SH_HSPI=y
- CONFIG_USB=y
- CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
- CONFIG_USB_EHCI_HCD=y
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 632717e..769069e 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -20,11 +20,14 @@
+ 
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mtd/partitions.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/flash.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+@@ -70,7 +73,37 @@ static struct i2c_board_info i2c0_devices[] = {
+ 	},
+ };
+ 
++/* HSPI*/
++static struct mtd_partition m25p80_spi_flash_partitions[] = {
++	{
++		.name	= "data(spi)",
++		.size	= 0x0100000,
++		.offset	= 0,
++	},
++};
++
++static struct flash_platform_data spi_flash_data = {
++	.name		= "m25p80",
++	.type		= "s25fl008k",
++	.parts		= m25p80_spi_flash_partitions,
++	.nr_parts	= ARRAY_SIZE(m25p80_spi_flash_partitions),
++};
++
++static struct spi_board_info spi_board_info[] __initdata = {
++	{
++		.modalias	= "m25p80",
++		.max_speed_hz	= 104000000,
++		.chip_select	= 0,
++		.bus_num	= 0,
++		.mode		= SPI_MODE_0,
++		.platform_data	= &spi_flash_data,
++	},
++};
++
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
++	/* HSPI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7778",
++				  "hspi0_a", "hspi0"),
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+ 				  "scif0_data_a", "scif0"),
+@@ -99,10 +132,14 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_i2c_device(0);
++	r8a7778_add_hspi_device(0);
+ 
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+ 
++	spi_register_board_info(spi_board_info,
++				ARRAY_SIZE(spi_board_info));
++
+ 	pinctrl_register_mappings(bockw_pinctrl_map,
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
+ 	r8a7778_pinmux_init();
 -- 
 1.7.9.5
 
