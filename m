@@ -1,80 +1,99 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 31 May 2013 08:22:31 +0000
-Subject: Re: [PATCH v6] V4L2: I2C: ML86V7667 video decoder driver
-Message-Id: <201305311022.31321.hverkuil@xs4all.nl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 17 May 2013 13:00:23 +0000
+Subject: Re: [PATCH 05/11] ARM: shmobile: APE6EVM LAN9220 support
+Message-Id: <Pine.LNX.4.64.1305171458550.31481@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305292252.29007.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305292252.29007.sergei.shtylyov@cogentembedded.com>
+References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
+ <1364954906-16014-6-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364954906-16014-6-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: mchehab@redhat.com, linux-media@vger.kernel.org, matsu@igel.co.jp, linux-sh@vger.kernel.org, vladimir.barinov@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hi!
+Hi Simon, Magnus
 
-On Wed May 29 2013 20:52:28 Sergei Shtylyov wrote:
-> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+On Wed, 3 Apr 2013, Simon Horman wrote:
+
+> From: Magnus Damm <damm@opensource.se>
 > 
-> Add OKI Semiconductor ML86V7667 video decoder driver.
+> Add LAN9220 support to the APE6EVM board using C and DT.
+> At this point the PFC driver lacks DT bindings so to
+> configure the PFC we use PINCTRL in C board code.
 > 
-
-I've accepted this patch, but I've added a patch to fix this function:
-
-> +static int ml86v7667_querystd(struct v4l2_subdev *sd, v4l2_std_id *std)
-> +{
-> +	struct i2c_client *client = v4l2_get_subdevdata(sd);
-> +	int status;
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   23 ++++++++++++++++++-
+>  arch/arm/mach-shmobile/board-ape6evm.c |   38 ++++++++++++++++++++++++++++++++
+>  2 files changed, 60 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+> index 833f703..f603c69 100644
+> --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+> @@ -16,7 +16,7 @@
+>  	compatible = "renesas,ape6evm", "renesas,r8a73a4";
+>  
+>  	chosen {
+> -		bootargs = "console=ttySC0,115200 ignore_loglevel";
+> +		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
+>  	};
+>  
+>  	memory@40000000 {
+> @@ -24,8 +24,29 @@
+>  		reg = <0 0x40000000 0 0x40000000>;
+>  	};
+>  
+> +	ape6evm_fixed_3v3: fixedregulator@0 {
+> +		compatible = "regulator-fixed";
+> +		regulator-name = "3V3";
+> +		regulator-min-microvolt = <3300000>;
+> +		regulator-max-microvolt = <3300000>;
+> +		regulator-always-on;
+> +	};
 > +
-> +	status = i2c_smbus_read_byte_data(client, STATUS_REG);
-> +	if (status < 0)
-> +		return status;
+>  	lbsc {
+>  		#address-cells = <1>;
+>  		#size-cells = <1>;
 > +
-> +	if (!(status & STATUS_HLOCK_DETECT))
-> +		return V4L2_STD_UNKNOWN;
-> +
-> +	*std = status & STATUS_NTSCPAL ? V4L2_STD_625_50 : V4L2_STD_525_60;
-> +
-> +	return 0;
-> +}
-> +
+> +		ethernet@8000000 {
+> +			compatible = "smsc,lan9118", "smsc,lan9115";
+> +			reg = <0x08000000 0x1000>;
+> +			interrupt-parent = <&irqc1>;
+> +			interrupts = <8 0x4>;
+> +			phy-mode = "mii";
+> +			reg-io-width = <4>;
+> +			smsc,irq-active-high;
+> +			smsc,irq-push-pull;
+> +			vdd33a-supply = <&ape6evm_fixed_3v3>;
+> +			vddvario-supply = <&ape6evm_fixed_3v3>;
+> +		};
+>  	};
+>  };
 
-[PATCH] ml86v7667: fix the querystd implementation
+The above didn't work in my tests without this:
 
-The *std should be set to V4L2_STD_UNKNOWN, not the function's return code.
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts 
+b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index f603c69..4fb0102 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -33,8 +33,10 @@
+ 	};
+ 
+ 	lbsc {
++		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
++		ranges = <0 0 0 0x80000000>;
+ 
+ 		ethernet@8000000 {
+ 			compatible = "smsc,lan9118", "smsc,lan9115";
 
-Also, *std should be ANDed with 525_60 or 625_50.
-
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Thanks
+Guennadi
 ---
- drivers/media/i2c/ml86v7667.c |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/media/i2c/ml86v7667.c b/drivers/media/i2c/ml86v7667.c
-index 0f256d3..cd9f86e 100644
---- a/drivers/media/i2c/ml86v7667.c
-+++ b/drivers/media/i2c/ml86v7667.c
-@@ -169,10 +169,10 @@ static int ml86v7667_querystd(struct v4l2_subdev *sd, v4l2_std_id *std)
- 	if (status < 0)
- 		return status;
- 
--	if (!(status & STATUS_HLOCK_DETECT))
--		return V4L2_STD_UNKNOWN;
--
--	*std = status & STATUS_NTSCPAL ? V4L2_STD_625_50 : V4L2_STD_525_60;
-+	if (status & STATUS_HLOCK_DETECT)
-+		*std &= status & STATUS_NTSCPAL ? V4L2_STD_625_50 : V4L2_STD_525_60;
-+	else
-+		*std = V4L2_STD_UNKNOWN;
- 
- 	return 0;
- }
--- 
-1.7.10.4
-
-I've queued this one up in my for-v3.11 branch, so you don't need to do
-anything.
-
-Regards,
-
-	Hans
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
