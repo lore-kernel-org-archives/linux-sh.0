@@ -1,53 +1,68 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 17 May 2013 20:53:44 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 17 May 2013 21:04:45 +0000
 Subject: Re: [PATCH v4] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <519698D8.7050107@cogentembedded.com>
+Message-Id: <Pine.LNX.4.64.1305172259500.5515@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305150256.36966.sergei.shtylyov@cogentembedded.com> <Pine.LNX.4.64.1305150742470.10596@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1305150742470.10596@axis700.grange>
+References: <201305150256.36966.sergei.shtylyov@cogentembedded.com>
+ <Pine.LNX.4.64.1305150742470.10596@axis700.grange> <519698D8.7050107@cogentembedded.com>
+In-Reply-To: <519698D8.7050107@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Cc: mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp, vladimir.barinov@cogentembedded.com
 
-Hello.
+On Sat, 18 May 2013, Sergei Shtylyov wrote:
 
-On 05/15/2013 09:44 AM, Guennadi Liakhovetski wrote:
+> Hello.
+> 
+> On 05/15/2013 09:44 AM, Guennadi Liakhovetski wrote:
+> 
+> > 
+> > > From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> > > 
+> > > Add Renesas R-Car VIN (Video In) V4L2 driver.
+> > > 
+> > > Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
+> > > 
+> > > Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> > > [Sergei: removed deprecated IRQF_DISABLED flag, reordered/renamed 'enum
+> > > chip_id'
+> > > values, reordered rcar_vin_id_table[] entries,  removed senseless parens
+> > > from
+> > > to_buf_list() macro, used ALIGN() macro in rcar_vin_setup(), added {} to
+> > > the
+> > > *if* statement  and  used 'bool' values instead of 0/1 where necessary,
+> > > done
+> > > some reformatting and clarified some comments.]
+> > > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> > > 
+> > > ---
+> > > This patch is against the 'media_tree.git' repo.
+> > > 
+> > > Changes since version 3:
+> > Why aren't you using this:
+> > 
+> > http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/63820
+> > 
+> > ?
+> > 
+> > Thanks
+> > Guennadi
+> 
+>     We have now incorporated the needed changes and I will post the updated
+> patch.
+> I must note that you haven't managed to get rid of all CEU references in the
+> shared
+> soc_scale_crop.c module, both in the variable names and in the comments.
 
->
->> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->>
->> Add Renesas R-Car VIN (Video In) V4L2 driver.
->>
->> Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
->>
->> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->> [Sergei: removed deprecated IRQF_DISABLED flag, reordered/renamed 'enum chip_id'
->> values, reordered rcar_vin_id_table[] entries,  removed senseless parens from
->> to_buf_list() macro, used ALIGN() macro in rcar_vin_setup(), added {} to the
->> *if* statement  and  used 'bool' values instead of 0/1 where necessary, done
->> some reformatting and clarified some comments.]
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>
->> ---
->> This patch is against the 'media_tree.git' repo.
->>
->> Changes since version 3:
-> Why aren't you using this:
->
-> http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/63820
->
-> ?
->
-> Thanks
-> Guennadi
+Ok, I'll try to remember this and prepare an improved v2. Otherwise you're 
+welcome to suggest an improvement. As long as those "ceu" occurrences 
+aren't exposed in the API, it shouldn't affect users though.
 
-     We have now incorporated the needed changes and I will post the 
-updated patch.
-I must note that you haven't managed to get rid of all CEU references in 
-the shared
-soc_scale_crop.c module, both in the variable names and in the comments.
-
-WBR, Sergei
-
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
