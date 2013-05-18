@@ -1,72 +1,59 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sat, 18 May 2013 06:57:41 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 18 May 2013 07:03:41 +0000
 Subject: Re: [PATCH v3 09/20] ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
-Message-Id: <Pine.LNX.4.64.1305180851320.9241@axis700.grange>
+Message-Id: <7692964.4oKpK3W9nB@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1368577100-3530-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <Pine.LNX.4.64.1305171423270.31481@axis700.grange>
  <14114689.gQXHdCTQYZ@avalon>
-In-Reply-To: <14114689.gQXHdCTQYZ@avalon>
+ <Pine.LNX.4.64.1305180851320.9241@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1305180851320.9241@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent
+Hi Guennadi,
 
-On Sat, 18 May 2013, Laurent Pinchart wrote:
-
-> Hi Guennadi,
-> 
-> On Friday 17 May 2013 14:26:48 Guennadi Liakhovetski wrote:
-> > Hi Laurent
-> > 
-> > On Wed, 15 May 2013, Laurent Pinchart wrote:
-> > > Add GPIO controller nodes to the r8a7790 core device tree.
+On Saturday 18 May 2013 08:57:41 Guennadi Liakhovetski wrote:
+> On Sat, 18 May 2013, Laurent Pinchart wrote:
+> > On Friday 17 May 2013 14:26:48 Guennadi Liakhovetski wrote:
+> > > On Wed, 15 May 2013, Laurent Pinchart wrote:
+> > > > Add GPIO controller nodes to the r8a7790 core device tree.
+> > > > 
+> > > > Signed-off-by: Laurent Pinchart 
+> > > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > > ---
+> > > > 
+> > > >  arch/arm/boot/dts/r8a7790.dtsi | 54 +++++++++++++++++++++++++++++++++
+> > > >  1 file changed, 54 insertions(+)
 > > > 
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > ---
-> > > 
-> > >  arch/arm/boot/dts/r8a7790.dtsi | 54 +++++++++++++++++++++++++++++++++++++
-> > >  1 file changed, 54 insertions(+)
+> > > Also here a couple of things are missing (presumably, for other SoCs you
+> > > need the same):
+> >
+> > Thank you for testing the patch set. I'll integrate the modification in
+> > the next version for r8a7778, r8a7779 and r8a7790.
 > > 
-> > Also here a couple of things are missing (presumably, for other SoCs you
-> > need the same):
+> > As the gpio-ranges property specifies the number of GPIOs handled by the
+> > controller, what's your opinion on dropping the #gpio-lines property from
+> > the bindings ?
 > 
-> Thank you for testing the patch set. I'll integrate the modification in the 
-> next version for r8a7778, r8a7779 and r8a7790.
-> 
-> As the gpio-ranges property specifies the number of GPIOs handled by the 
-> controller, what's your opinion on dropping the #gpio-lines property from the 
-> bindings ?
+> Well, gpio-ranges can contain several ranges, so, in a generic case you
+> would have to sum them up to get a total count. But if you're ok with that
+> or if your platforms only have 1 gpio gange per controller, of course,
+> that property seems redundant.
 
-Well, gpio-ranges can contain several ranges, so, in a generic case you 
-would have to sum them up to get a total count. But if you're ok with that 
-or if your platforms only have 1 gpio gange per controller, of course, 
-that property seems redundant. OTOH it is already used in r8a7779.dtsi, 
-and thus already belongs to the ABI... Not sure whether removing it would 
-be accepted.
+The gpio-rcar driver exposes a single range on all the current platforms. I 
+don't really foresee any change there in the future, but I might be 
+overlooking something. Magnus, any opinion ?
 
-Thanks
-Guennadi
+> OTOH it is already used in r8a7779.dtsi, and thus already belongs to the
+> ABI... Not sure whether removing it would be accepted.
 
-> > diff --git a/arch/arm/boot/dts/r8a7790.dtsi
-> > b/arch/arm/boot/dts/r8a7790.dtsi
-> > index 674ee39..cd1a04f 100644
-> > --- a/arch/arm/boot/dts/r8a7790.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> > @@ -51,6 +51,7 @@
-> >  		interrupts = <0 4 0x4>;
-> >  		#gpio-cells = <2>;
-> >  		gpio-controller;
-> > +		gpio-ranges = <&pfc 0 0 32>;
-> >  	};
-> > 
-> >  	gpio1: gpio@ffc41000 {
+It's only used in my DT bindings proposal that haven't been merged yet, so 
+that shouldn't be an issue :-)
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+-- 
+Regards,
+
+Laurent Pinchart
+
