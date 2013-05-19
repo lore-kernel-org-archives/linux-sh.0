@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 19 May 2013 14:35:20 +0000
+Date: Sun, 19 May 2013 22:48:32 +0000
 Subject: Re: [PATCH 2/9] pinctrl: r8a73a4: add pinmux data for MMCIF and SDHI interfaces
-Message-Id: <1845703.2DAZ2Oh1Z3@avalon>
+Message-Id: <1692796.4nnJeYK9NG@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368802520-16378-3-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1368802520-16378-3-git-send-email-g.liakhovetski@gmx.de>
@@ -12,16 +12,11 @@ To: linux-sh@vger.kernel.org
 
 Hi Guennadi,
 
-Thank you for the patch.
-
 On Friday 17 May 2013 16:55:13 Guennadi Liakhovetski wrote:
 > This patch adds pinmux groups and functions for the two MMCIF and three
 > SDHI interfaces on r8a73a4 (APE6).
 > 
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
 > ---
 >  drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  200 +++++++++++++++++++++++++++++++
 >  1 files changed, 200 insertions(+), 0 deletions(-)
@@ -180,89 +175,10 @@ Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 > +static const unsigned int mmc1_ctrl_mux[] = {
 > +	MMCCMD1_MARK, MMCCLK1_MARK,
 > +};
-> +
->  static const struct sh_pfc_pin_group pinmux_groups[] = {
->  	SH_PFC_PIN_GROUP(irqc_irq0),
->  	SH_PFC_PIN_GROUP(irqc_irq1),
-> @@ -1770,6 +1912,25 @@ static const struct sh_pfc_pin_group pinmux_groups[]
-> = { SH_PFC_PIN_GROUP(scifb3_data_b),
->  	SH_PFC_PIN_GROUP(scifb3_clk_b),
->  	SH_PFC_PIN_GROUP(scifb3_ctrl_b),
-> +	SH_PFC_PIN_GROUP(sdhi0_data1),
-> +	SH_PFC_PIN_GROUP(sdhi0_data4),
-> +	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-> +	SH_PFC_PIN_GROUP(sdhi0_cd),
-> +	SH_PFC_PIN_GROUP(sdhi0_wp),
-> +	SH_PFC_PIN_GROUP(sdhi1_data1),
-> +	SH_PFC_PIN_GROUP(sdhi1_data4),
-> +	SH_PFC_PIN_GROUP(sdhi1_ctrl),
-> +	SH_PFC_PIN_GROUP(sdhi2_data1),
-> +	SH_PFC_PIN_GROUP(sdhi2_data4),
-> +	SH_PFC_PIN_GROUP(sdhi2_ctrl),
-> +	SH_PFC_PIN_GROUP(mmc0_data1),
-> +	SH_PFC_PIN_GROUP(mmc0_data4),
-> +	SH_PFC_PIN_GROUP(mmc0_data8),
-> +	SH_PFC_PIN_GROUP(mmc0_ctrl),
-> +	SH_PFC_PIN_GROUP(mmc1_data1),
-> +	SH_PFC_PIN_GROUP(mmc1_data4),
-> +	SH_PFC_PIN_GROUP(mmc1_data8),
-> +	SH_PFC_PIN_GROUP(mmc1_ctrl),
->  };
-> 
->  static const char * const irqc_groups[] = {
-> @@ -1878,6 +2039,40 @@ static const char * const scifb3_groups[] = {
->  	"scifb3_ctrl_b",
->  };
-> 
-> +static const char * const sdhi0_groups[] = {
-> +	"sdhi0_data1",
-> +	"sdhi0_data4",
-> +	"sdhi0_ctrl",
-> +	"sdhi0_cd",
-> +	"sdhi0_wp",
-> +};
-> +
-> +static const char * const sdhi1_groups[] = {
-> +	"sdhi1_data1",
-> +	"sdhi1_data4",
-> +	"sdhi1_ctrl",
-> +};
-> +
-> +static const char * const sdhi2_groups[] = {
-> +	"sdhi2_data1",
-> +	"sdhi2_data4",
-> +	"sdhi2_ctrl",
-> +};
-> +
-> +static const char * const mmc0_groups[] = {
-> +	"mmc0_data1",
-> +	"mmc0_data4",
-> +	"mmc0_data8",
-> +	"mmc0_ctrl",
-> +};
-> +
-> +static const char * const mmc1_groups[] = {
-> +	"mmc1_data1",
-> +	"mmc1_data4",
-> +	"mmc1_data8",
-> +	"mmc1_ctrl",
-> +};
-> +
->  static const struct sh_pfc_function pinmux_functions[] = {
->  	SH_PFC_FUNCTION(irqc),
->  	SH_PFC_FUNCTION(scifa0),
-> @@ -1886,6 +2081,11 @@ static const struct sh_pfc_function
-> pinmux_functions[] = { SH_PFC_FUNCTION(scifb1),
->  	SH_PFC_FUNCTION(scifb2),
->  	SH_PFC_FUNCTION(scifb3),
-> +	SH_PFC_FUNCTION(sdhi0),
-> +	SH_PFC_FUNCTION(sdhi1),
-> +	SH_PFC_FUNCTION(sdhi2),
-> +	SH_PFC_FUNCTION(mmc0),
-> +	SH_PFC_FUNCTION(mmc1),
->  };
-> 
->  #undef PORTCR
+
+Could you please move the MMC sections to keep the functions alphabetically 
+sorted ? Some for the group and functions below.
+
 -- 
 Regards,
 
