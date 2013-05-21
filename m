@@ -1,48 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 26 May 2013 13:05:56 +0000
-Subject: [PATCH 5/6] ARM: shmobile: r8a73a4: Remove init_irq declaration in machine description
-Message-Id: <1369573557-11071-6-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 May 2013 12:14:30 +0000
+Subject: [PATCH v4 09/21] ARM: shmobile: r8a7790: Add pin control device to device tree
+Message-Id: <1369138482-5871-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Add a pfc node to the r8a7790 device tree.
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for shmobile as well.
-
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c |    2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index c5a75a7..0b78896 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -18,7 +18,6 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- #include <linux/irq.h>
--#include <linux/irqchip.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/irq-renesas-irqc.h>
-@@ -194,7 +193,6 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7a17110..c14fbd1 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -60,4 +60,9 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
+ 	};
++
++	pfc: pfc@e6060000 {
++		compatible = "renesas,pfc-r8a7790";
++		reg = <0 0xe6060000 0 0x250>;
++	};
  };
- 
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
--	.init_irq	= irqchip_init,
- 	.init_machine	= r8a73a4_add_standard_devices_dt,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
 -- 
-1.7.10.4
+1.8.1.5
 
