@@ -1,37 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 24 May 2013 14:10:34 +0000
-Subject: Re: [PATCH 06/17 v2] ARM: shmobile: r8a7778: add I2C support
-Message-Id: <519F74DA.8010607@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 May 2013 11:40:05 +0000
+Subject: [RFC/PATCH v2 1/2] gpio-rcar: Make the platform data gpio_base field signed
+Message-Id: <1369136406-23800-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874ndu4c4n.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874ndu4c4n.wl%kuninori.morimoto.gx@renesas.com>
+References: <1369136406-23800-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1369136406-23800-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+The gpio_base field is used to specify the desired GPIO base for the
+GPIO controller. The GPIO core can automatically allocate a GPIO number
+range when the base is set to -1. To make this possible, make the field
+signed.
 
-On 24-05-2013 8:39, Kuninori Morimoto wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ include/linux/platform_data/gpio-rcar.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->>> +void __init r8a7778_add_i2c_device(int id)
->>> +{
->>> +	BUG_ON(id < 0 || id > 3);
->>> +
->>> +	platform_device_register_simple(
->>> +		"i2c-rcar", id,
->>> +		i2c_resources + (2 * id), 2);
-
->>       I've already told you () is superfluous.
-
-> I can prevent misreading.
-
-    I don't think anybody familiar with arithmetic operator priorities 
-(i.e. having graduated from a primary school) can misread this.
-
-> Best regards
-> ---
-> Kuninori Morimoto
-
-WBR, Sergei
+diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
+index cc472f6..fb2c718 100644
+--- a/include/linux/platform_data/gpio-rcar.h
++++ b/include/linux/platform_data/gpio-rcar.h
+@@ -17,7 +17,7 @@
+ #define __GPIO_RCAR_H__
+ 
+ struct gpio_rcar_config {
+-	unsigned int gpio_base;
++	int gpio_base;
+ 	unsigned int irq_base;
+ 	unsigned int number_of_pins;
+ 	const char *pctl_name;
+-- 
+1.8.1.5
 
