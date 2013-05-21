@@ -1,66 +1,74 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 20 May 2013 20:20:02 +0000
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Tue, 21 May 2013 09:28:05 +0000
 Subject: Re: [PATCH v3] adv7180: add more subdev video ops
-Message-Id: <519A8572.7050700@cogentembedded.com>
+Message-Id: <201305211128.05066.hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201305132321.39495.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201305132321.39495.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org, hverkuil@xs4all.nl
-Cc: mchehab@redhat.com, vladimir.barinov@cogentembedded.com, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: mchehab@redhat.com, linux-media@vger.kernel.org, vladimir.barinov@cogentembedded.com, linux-sh@vger.kernel.org, matsu@igel.co.jp
 
-Hello.
+Hi Sergei,
 
-On 05/13/2013 11:21 PM, Sergei Shtylyov wrote:
+Sorry for the delay, I had planned to work on this during the weekend, but
+I became ill.
 
+On Mon 13 May 2013 21:21:39 Sergei Shtylyov wrote:
 > From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->
+> 
 > Add subdev video ops for ADV7180 video decoder.  This makes decoder usable on
 > the soc-camera drivers.
->
+> 
 > Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-     Hans, what's your opinion of this version? Mauro said I should ask 
-you first...
-
+> 
 > ---
 > This patch is against the 'media_tree.git' repo.
->
+> 
 > Changes from version 2:
 > - set the field format depending on video standard in try_mbus_fmt() method;
 > - removed querystd() method calls from try_mbus_fmt() and cropcap() methods;
 > - removed g_crop() method.
->
->   drivers/media/i2c/adv7180.c |   86 ++++++++++++++++++++++++++++++++++++++++++++
->   1 file changed, 86 insertions(+)
->
+
+OK, it looks good with one exception: since no cropping is supported, cropcap
+can be dropped as well. cropcap is only needed in combination with cropping
+support.
+
+Regards,
+
+	Hans
+
+> 
+>  drivers/media/i2c/adv7180.c |   86 ++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 86 insertions(+)
+> 
 > Index: media_tree/drivers/media/i2c/adv7180.c
 > =================================> --- media_tree.orig/drivers/media/i2c/adv7180.c
 > +++ media_tree/drivers/media/i2c/adv7180.c
 > @@ -1,6 +1,8 @@
->   /*
->    * adv7180.c Analog Devices ADV7180 video decoder driver
->    * Copyright (c) 2009 Intel Corporation
+>  /*
+>   * adv7180.c Analog Devices ADV7180 video decoder driver
+>   * Copyright (c) 2009 Intel Corporation
 > + * Copyright (C) 2013 Cogent Embedded, Inc.
 > + * Copyright (C) 2013 Renesas Solutions Corp.
->    *
->    * This program is free software; you can redistribute it and/or modify
->    * it under the terms of the GNU General Public License version 2 as
+>   *
+>   * This program is free software; you can redistribute it and/or modify
+>   * it under the terms of the GNU General Public License version 2 as
 > @@ -128,6 +130,7 @@ struct adv7180_state {
->   	v4l2_std_id		curr_norm;
->   	bool			autodetect;
->   	u8			input;
+>  	v4l2_std_id		curr_norm;
+>  	bool			autodetect;
+>  	u8			input;
 > +	struct v4l2_mbus_framefmt fmt;
->   };
->   #define to_adv7180_sd(_ctrl) (&container_of(_ctrl->handler,		\
->   					    struct adv7180_state,	\
+>  };
+>  #define to_adv7180_sd(_ctrl) (&container_of(_ctrl->handler,		\
+>  					    struct adv7180_state,	\
 > @@ -397,10 +400,93 @@ static void adv7180_exit_controls(struct
->   	v4l2_ctrl_handler_free(&state->ctrl_hdl);
->   }
->   
+>  	v4l2_ctrl_handler_free(&state->ctrl_hdl);
+>  }
+>  
 > +static int adv7180_enum_mbus_fmt(struct v4l2_subdev *sd, unsigned int index,
 > +				 enum v4l2_mbus_pixelcode *code)
 > +{
@@ -138,19 +146,21 @@ you first...
 > +	return 0;
 > +}
 > +
->   static const struct v4l2_subdev_video_ops adv7180_video_ops = {
->   	.querystd = adv7180_querystd,
->   	.g_input_status = adv7180_g_input_status,
->   	.s_routing = adv7180_s_routing,
+>  static const struct v4l2_subdev_video_ops adv7180_video_ops = {
+>  	.querystd = adv7180_querystd,
+>  	.g_input_status = adv7180_g_input_status,
+>  	.s_routing = adv7180_s_routing,
 > +	.enum_mbus_fmt = adv7180_enum_mbus_fmt,
 > +	.try_mbus_fmt = adv7180_try_mbus_fmt,
 > +	.g_mbus_fmt = adv7180_g_mbus_fmt,
 > +	.s_mbus_fmt = adv7180_s_mbus_fmt,
 > +	.cropcap = adv7180_cropcap,
 > +	.g_mbus_config = adv7180_g_mbus_config,
->   };
->   
->   static const struct v4l2_subdev_core_ops adv7180_core_ops = {
-
-WBR, Sergei
-
+>  };
+>  
+>  static const struct v4l2_subdev_core_ops adv7180_core_ops = {
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-media" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
