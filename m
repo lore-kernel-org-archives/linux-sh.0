@@ -1,73 +1,38 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 23 May 2013 03:22:42 +0000
-Subject: [PATCH 16/17 v2] ARM: shmobile: r8a7790: add __initdata on resource and device data
-Message-Id: <87ppwi2xdt.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 May 2013 12:14:24 +0000
+Subject: [PATCH v4 03/21] ARM: shmobile: r8a73a4: Add pin control device to device tree
+Message-Id: <1369138482-5871-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-These data will be kmemdup()'ed on
-platform_device_add_resources() and platform_device_add_data()
+Add a pfc node to the r8a73a4 device tree.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v1 -> v2
+ arch/arm/boot/dts/r8a73a4.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
- - __initdata was added on all resources
-
- arch/arm/mach-shmobile/setup-r8a7790.c |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index ed7ee24..1e18152 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -29,17 +29,17 @@
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- 
--static const struct resource pfc_resources[] = {
-+static const struct resource pfc_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xe6060000, 0x250),
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index fde2a33..358898c 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -91,4 +91,11 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 69 4>;
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a73a4";
++		reg = <0xe6050000 0x9000>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
  };
- 
- #define R8A7790_GPIO(idx)						\
--static struct resource r8a7790_gpio##idx##_resources[] = {		\
-+static struct resource r8a7790_gpio##idx##_resources[] __initdata = {	\
- 	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
- 	DEFINE_RES_IRQ(gic_spi(4 + (idx))),				\
- };									\
- 									\
--static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data = {	\
-+static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data __initdata = {	\
- 	.gpio_base	= 32 * (idx),					\
- 	.irq_base	= 0,						\
- 	.number_of_pins	= 32,						\
-@@ -101,7 +101,7 @@ void __init r8a7790_pinmux_init(void)
- 
- enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
- 
--static const struct plat_sci_port scif[] = {
-+static const struct plat_sci_port scif[] __initdata = {
- 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
- 	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
- 	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
-@@ -118,11 +118,11 @@ static inline void r8a7790_register_scif(int idx)
- 				      sizeof(struct plat_sci_port));
- }
- 
--static struct renesas_irqc_config irqc0_data = {
-+static struct renesas_irqc_config irqc0_data __initdata = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
- };
- 
--static struct resource irqc0_resources[] = {
-+static struct resource irqc0_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
- 	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
- 	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
 -- 
-1.7.9.5
+1.8.1.5
 
