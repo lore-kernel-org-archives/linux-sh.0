@@ -1,54 +1,77 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 27 May 2013 22:45:08 +0000
-Subject: [PATCH 2/3] sata_rcar: correct 'sata_rcar_sht'
-Message-Id: <201305280245.09149.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 May 2013 12:14:34 +0000
+Subject: [PATCH v4 13/21] ARM: shmobile: armadillo-reference: Move pinctrl mappings to device tree
+Message-Id: <1369138482-5871-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305280238.17867.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305280238.17867.sergei.shtylyov@cogentembedded.com>
+References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-ide@vger.kernel.org, tj@kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Using ATA_BMDMA_SHT() to intialize 'sata_rcar_sht' was suboptimal as the R-Car
-descriptor table transfer counter is 28 bits wide (bit 1 to bit 28), so that the
-'dma_boundary' field of 0xFFFF is just too small, as well as the 'sg_tablesize'
-field of 128.  Use ATA_BASE_SHT() to initialize 'sata_rcar_sht' instead and give
-proper values to the 'dma_boundary' and 'sg_tablesize' fields explicitly. 
+Replace the pinctrl mappings in board code by device tree mappings.
+For devices that are still instantiated from board code reference the
+mappings as the default pin controller state to apply them at boot time.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/ata/sata_rcar.c |   11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 10 ++++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  9 ---------
+ 2 files changed, 10 insertions(+), 9 deletions(-)
 
-Index: libata/drivers/ata/sata_rcar.c
-=================================--- libata.orig/drivers/ata/sata_rcar.c
-+++ libata/drivers/ata/sata_rcar.c
-@@ -121,6 +121,8 @@
- /* Descriptor table word 0 bit (when DTA32M = 1) */
- #define SATA_RCAR_DTEND			BIT(0)
- 
-+#define SATA_RCAR_DMA_BOUNDARY		0x1FFFFFFEUL
-+
- struct sata_rcar_priv {
- 	void __iomem *base;
- 	struct clk *clk;
-@@ -575,7 +577,14 @@ static u8 sata_rcar_bmdma_status(struct 
- }
- 
- static struct scsi_host_template sata_rcar_sht = {
--	ATA_BMDMA_SHT(DRV_NAME),
-+	ATA_BASE_SHT(DRV_NAME),
-+	/*
-+	 * This controller allows transfer chunks up to 512MB which cross 64KB
-+	 * boundaries, therefore the DMA limits are more relaxed than standard
-+	 * ATA SFF.
-+	 */
-+	.sg_tablesize		= ATA_MAX_PRD,
-+	.dma_boundary		= SATA_RCAR_DMA_BOUNDARY,
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 09ea22c..4a7ae32 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -43,3 +43,13 @@
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
+ 	};
  };
++
++&pfc {
++	pinctrl-0 = <&scifa1_pins>;
++	pinctrl-names = "default";
++
++	scifa1_pins: scifa1 {
++		renesas,groups = "scifa1_data";
++		renesas,function = "scifa1";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index f25b6aa..4ddd299 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -24,7 +24,6 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+-#include <linux/pinctrl/machine.h>
+ #include <mach/common.h>
+ #include <mach/r8a7740.h>
+ #include <asm/mach/arch.h>
+@@ -119,12 +118,6 @@
+  *	usbhsf_power_ctrl()
+  */
  
- static struct ata_port_operations sata_rcar_port_ops = {
+-static const struct pinctrl_map eva_pinctrl_map[] = {
+-	/* SCIFA1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
+-				  "scifa1_data", "scifa1"),
+-};
+-
+ static void __init eva_clock_init(void)
+ {
+ 	struct clk *system	= clk_get(NULL, "system_clk");
+@@ -169,8 +162,6 @@ static void __init eva_init(void)
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
+ 
+-	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+-
+ 	r8a7740_meram_workaround();
+ 
+ #ifdef CONFIG_CACHE_L2X0
+-- 
+1.8.1.5
 
