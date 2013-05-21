@@ -1,66 +1,100 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 09:00:47 +0000
-Subject: [PATCH 3/8] ARM: shmobile: sh73a0: add CPUFreq support
-Message-Id: <1369645252-3847-4-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 May 2013 12:14:31 +0000
+Subject: [PATCH v4 10/21] ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
+Message-Id: <1369138482-5871-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645252-3847-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645252-3847-1-git-send-email-horms+renesas@verge.net.au>
+References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add GPIO controller nodes to the r8a7790 core device tree.
 
-This patch enables the use of the generic cpufreq-cpu0 driver on sh73a0.
-Providing a regulator, a list of OPPs in DT, combined with a virtual
-cpufreq-cpu0 platform device and a clock, attached to it is everything,
-the cpufreq-cpu0 driver needs. The first sh73a0 platform, implementing
-such CPUFreq support is kzm9g-reference.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Kconfig        |    2 ++
- arch/arm/mach-shmobile/setup-sh73a0.c |    5 +++++
- 2 files changed, 7 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 61 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 1a517e2..7cfb9d1 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -169,6 +169,8 @@ config MACH_KZM9D
- config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
-+	select ARCH_HAS_CPUFREQ
-+	select ARCH_HAS_OPP
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index f8f4261..88e6ea0 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -1003,6 +1003,8 @@ static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index c14fbd1..89afccd 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -44,6 +44,66 @@
+ 		};
+ 	};
  
- void __init sh73a0_add_standard_devices_dt(void)
- {
-+	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc40000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 4 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++	};
 +
- 	/* clocks are setup late during boot in the case of DT */
- 	sh73a0_clock_init();
- 
-@@ -1010,6 +1012,9 @@ void __init sh73a0_add_standard_devices_dt(void)
- 			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table,
- 			     sh73a0_auxdata_lookup, NULL);
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc41000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 5 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++	};
 +
-+	/* Instantiate cpufreq-cpu0 */
-+	platform_device_register_full(&devinfo);
- }
- 
- static const char *sh73a0_boards_compat_dt[] __initdata = {
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc42000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 6 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc43000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 7 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc44000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 8 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++	};
++
++	gpio5: gpio@ffc45000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc45000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 9 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 32>;
++	};
++
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+ 		interrupts = <1 13 0xf08>,
+@@ -64,5 +124,6 @@
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7790";
+ 		reg = <0 0xe6060000 0 0x250>;
++		#gpio-range-cells = <3>;
+ 	};
+ };
 -- 
-1.7.10.4
+1.8.1.5
 
