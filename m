@@ -1,40 +1,85 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 29 May 2013 07:42:29 +0000
-Subject: [PATCH] ARM: shmobile: r8a7740: Don't set cpuidle driver en_core_tk_irqen field
-Message-Id: <1369813349-949-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 May 2013 12:14:28 +0000
+Subject: [PATCH v4 07/21] ARM: shmobile: r8a7779: Add pin control device to device tree
+Message-Id: <1369138482-5871-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The cpuidle_driver structure en_core_tk_irqen field has been removed.
-Don't set it.
+Add a pfc node to the r8a7779 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/cpuidle-r8a7740.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7779.dtsi                  |  5 +++++
+ arch/arm/mach-shmobile/board-marzen-reference.c | 17 ++++++++---------
+ 2 files changed, 13 insertions(+), 9 deletions(-)
 
-Simon,
-
-Most of the latest branches in your tree fail to compile when cpuidle and
-r8a7740 are enabled. This patch fixes the problem.
-
-diff --git a/arch/arm/mach-shmobile/cpuidle-r8a7740.c b/arch/arm/mach-shmobile/cpuidle-r8a7740.c
-index 48c7a6c..8990de2 100644
---- a/arch/arm/mach-shmobile/cpuidle-r8a7740.c
-+++ b/arch/arm/mach-shmobile/cpuidle-r8a7740.c
-@@ -31,7 +31,6 @@ static int r8a7740_enter_a3sm_pll_off(struct cpuidle_device *dev,
- static struct cpuidle_driver r8a7740_cpuidle_driver = {
- 	.name			= "r8a7740_cpuidle",
- 	.owner			= THIS_MODULE,
--	.en_core_tk_irqen	= 1,
- 	.state_count		= 3,
- 	.safe_state_index	= 0, /* C1 */
- 	.states[0] = ARM_CPUIDLE_WFI_STATE,
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 7f146c6..9dfc438 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -101,6 +101,11 @@
+ 		interrupts = <0 81 0x4>;
+ 	};
+ 
++	pfc: pfc@fffc0000 {
++		compatible = "renesas,pfc-r8a7779";
++		reg = <0xfffc0000 0x23c>;
++	};
++
+ 	thermal@ffc48000 {
+ 		compatible = "renesas,rcar-thermal";
+ 		reg = <0xffc48000 0x38>;
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 5332e89..fa7fc07 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -28,24 +28,24 @@
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 	/* SCIF2 (CN18: DEBUG0) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
+ 				  "scif2_data_c", "scif2"),
+ 	/* SCIF4 (CN19: DEBUG1) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
+ 				  "scif4_data", "scif4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "fffc0000.pfc",
+ 				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("18000000.lan0", "fffc0000.pfc",
+ 				  "lbsc_ex_cs0", "lbsc"),
+ };
+ 
+@@ -53,7 +53,6 @@ static void __init marzen_init(void)
+ {
+ 	pinctrl_register_mappings(marzen_pinctrl_map,
+ 				  ARRAY_SIZE(marzen_pinctrl_map));
+-	r8a7779_pinmux_init();
+ 
+ 	r8a7779_add_standard_devices_dt();
+ }
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.1.5
 
