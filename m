@@ -1,42 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 15 May 2013 02:57:27 +0000
-Subject: [PATCH v2 1/4] ARM: shmobile: marzen-reference: Reference the correct IRQ for ethernet
-Message-Id: <1368586650-26263-2-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 21 May 2013 10:37:42 +0000
+Subject: [PATCH 3/2] ARM: shmobile: r8a7790: add a "cpufreq-cpu0" platform device
+Message-Id: <Pine.LNX.4.64.1305211236180.2863@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
+References: <Pine.LNX.4.64.1305211202380.2863@axis700.grange>
+ <Pine.LNX.4.64.1305211206570.2863@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1305211206570.2863@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add a "cpufreq-cpu0" platform device, needed to activate the equally named
+CPUFreq driver.
 
-The SMSC ethernet controller uses an external IRQ line that goes through
-the irqpin controller. Set the interrupt parent to irqpin0 and fix the
-interrupt number.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 72be4c8..10cfc7f 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -38,8 +38,8 @@
- 		compatible = "smsc,lan9220", "smsc,lan9115";
- 		reg = <0x18000000 0x100>;
- 		phy-mode = "mii";
--		interrupt-parent = <&gic>;
--		interrupts = <0 28 0x4>;
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <1 0x4>;
- 		reg-io-width = <4>;
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
+It can actually be merged with patch 1 from this series
+
+ arch/arm/mach-shmobile/setup-r8a7790.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index eeef5f6..49c3166 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -166,6 +166,7 @@ void __init r8a7790_timer_init(void)
+ #ifdef CONFIG_USE_OF
+ void __init r8a7790_add_standard_devices_dt(void)
+ {
++	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
 -- 
-1.8.2.1
+1.7.2.5
 
