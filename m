@@ -1,47 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 08:59:52 +0000
-Subject: [PATCH 11/12] ARM: shmobile: fix sleep-r8a7740.S miscompiles
-Message-Id: <1369645193-3595-12-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 May 2013 12:14:37 +0000
+Subject: [PATCH v4 16/21] ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
+Message-Id: <1369138482-5871-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
-The newly added sleep-r8a7740.S file in shmobile does not
-actually build because of renamed symbols.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Cc: Bastian Hecht <hechtb+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/sleep-r8a7740.S |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/sleep-r8a7740.S b/arch/arm/mach-shmobile/sleep-r8a7740.S
-index 435531b..982eacb 100644
---- a/arch/arm/mach-shmobile/sleep-r8a7740.S
-+++ b/arch/arm/mach-shmobile/sleep-r8a7740.S
-@@ -32,7 +32,7 @@ ENTRY(r8a7740_shutdown)
- wfi_loop:
- 	bl	cpu_v7_do_idle
- 	b wfi_loop
--ENDPROC(r8a7740)
-+ENDPROC(r8a7740_shutdown)
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index a037776..746c64a 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -33,6 +33,21 @@
+ 		regulator-boot-on;
+ 	};
  
- 	.text
- ENTRY(v7_cpu_resume)
-@@ -53,5 +53,5 @@ ENDPROC(v7_cpu_resume)
- ENTRY(r8a7740_resume)
- 	ldr	pc, 1f
- 1:	.long	v7_cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
--ENDPROC(r8a7740_resume_core_standby)
-+ENDPROC(r8a7740_resume)
- #endif
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 102 0>;
++		};
++		led2 {
++			gpios = <&pfc 111 0>;
++		};
++		led3 {
++			gpios = <&pfc 110 0>;
++		};
++		led4 {
++			gpios = <&pfc 177 0>;
++		};
++	};
+ };
+ 
+ &i2c0 {
 -- 
-1.7.10.4
+1.8.1.5
 
