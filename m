@@ -1,67 +1,79 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Tue, 21 May 2013 09:35:59 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 21 May 2013 14:28:08 +0000
 Subject: Re: [PATCH v3] adv7180: add more subdev video ops
-Message-Id: <201305211135.59706.hverkuil@xs4all.nl>
+Message-Id: <519B8478.9010305@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305132321.39495.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305132321.39495.sergei.shtylyov@cogentembedded.com>
+References: <201305132321.39495.sergei.shtylyov@cogentembedded.com> <201305211135.59706.hverkuil@xs4all.nl>
+In-Reply-To: <201305211135.59706.hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: Hans Verkuil <hverkuil@xs4all.nl>
 Cc: mchehab@redhat.com, linux-media@vger.kernel.org, vladimir.barinov@cogentembedded.com, linux-sh@vger.kernel.org, matsu@igel.co.jp
 
-On Mon 13 May 2013 21:21:39 Sergei Shtylyov wrote:
-> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> 
-> Add subdev video ops for ADV7180 video decoder.  This makes decoder usable on
-> the soc-camera drivers.
-> 
-> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
-> This patch is against the 'media_tree.git' repo.
-> 
-> Changes from version 2:
-> - set the field format depending on video standard in try_mbus_fmt() method;
-> - removed querystd() method calls from try_mbus_fmt() and cropcap() methods;
-> - removed g_crop() method.
-> 
->  drivers/media/i2c/adv7180.c |   86 ++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 86 insertions(+)
-> 
-> Index: media_tree/drivers/media/i2c/adv7180.c
-> =================================> --- media_tree.orig/drivers/media/i2c/adv7180.c
-> +++ media_tree/drivers/media/i2c/adv7180.c
+Hello.
+
+On 21-05-2013 13:35, Hans Verkuil wrote:
+
+>> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+
+>> Add subdev video ops for ADV7180 video decoder.  This makes decoder usable on
+>> the soc-camera drivers.
+
+>> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>> ---
+>> This patch is against the 'media_tree.git' repo.
+
+>> Changes from version 2:
+>> - set the field format depending on video standard in try_mbus_fmt() method;
+>> - removed querystd() method calls from try_mbus_fmt() and cropcap() methods;
+>> - removed g_crop() method.
+
+>>   drivers/media/i2c/adv7180.c |   86 ++++++++++++++++++++++++++++++++++++++++++++
+>>   1 file changed, 86 insertions(+)
+>>
+>> Index: media_tree/drivers/media/i2c/adv7180.c
+>> =================================>> --- media_tree.orig/drivers/media/i2c/adv7180.c
+>> +++ media_tree/drivers/media/i2c/adv7180.c
 
 
-> +
-> +static int adv7180_try_mbus_fmt(struct v4l2_subdev *sd,
-> +				struct v4l2_mbus_framefmt *fmt)
-> +{
-> +	struct adv7180_state *state = to_state(sd);
-> +
-> +	fmt->code = V4L2_MBUS_FMT_YUYV8_2X8;
-> +	fmt->colorspace = V4L2_COLORSPACE_SMPTE170M;
-> +	fmt->field = state->curr_norm & V4L2_STD_525_60 ?
-> +		     V4L2_FIELD_INTERLACED_BT : V4L2_FIELD_INTERLACED_TB;
+>> +
+>> +static int adv7180_try_mbus_fmt(struct v4l2_subdev *sd,
+>> +				struct v4l2_mbus_framefmt *fmt)
+>> +{
+>> +	struct adv7180_state *state = to_state(sd);
+>> +
+>> +	fmt->code = V4L2_MBUS_FMT_YUYV8_2X8;
+>> +	fmt->colorspace = V4L2_COLORSPACE_SMPTE170M;
+>> +	fmt->field = state->curr_norm & V4L2_STD_525_60 ?
+>> +		     V4L2_FIELD_INTERLACED_BT : V4L2_FIELD_INTERLACED_TB;
 
-Just noticed this: use V4L2_FIELD_INTERLACED as that does the right thing.
-No need to split in _BT and _TB.
+> Just noticed this: use V4L2_FIELD_INTERLACED as that does the right thing.
+> No need to split in _BT and _TB.
 
-> +	fmt->width = 720;
-> +	fmt->height = state->curr_norm & V4L2_STD_525_60 ? 480 : 576;
-> +
-> +	return 0;
-> +}
+    Hm, testers have reported that _BT vs _TB do make a difference. I'll 
+try to look into how V4L2 handles interlacing for different standards.
 
-Actually, all this code can be simplified substantially: the try/g/s_mbus_fmt
-functions are really all identical since the data returned is only dependent
-on the current standard. So this means you can use just a single function for
-all three ops, and you can do away with adding struct v4l2_mbus_framefmt to
-adv7180_state.
+>> +	fmt->width = 720;
+>> +	fmt->height = state->curr_norm & V4L2_STD_525_60 ? 480 : 576;
+>> +
+>> +	return 0;
+>> +}
 
-Regards,
+> Actually, all this code can be simplified substantially: the try/g/s_mbus_fmt
+> functions are really all identical since the data returned is only dependent
+> on the current standard. So this means you can use just a single function for
+> all three ops, and you can do away with adding struct v4l2_mbus_framefmt to
+> adv7180_state.
 
-	Hans
+    Hm, I wonder how "get" and "set" methods can be identical... I'll 
+look into this some more.
+
+> Regards,
+
+> 	Hans
+
+WBR, Sergei
+
