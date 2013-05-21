@@ -1,41 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 30 May 2013 08:51:52 +0000
-Subject: [PATCH 00/05] ARM: shmobile: r8a73a4 SMP and CPU Hotplug prototype v2
-Message-Id: <20130530085152.24374.64208.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 May 2013 12:14:35 +0000
+Subject: [PATCH v4 14/21] ARM: shmobile: armadillo-reference: Add st1232 pin mappings
+Message-Id: <1369138482-5871-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: r8a73a4 SMP and CPU Hotplug prototype v2
+Add pin mappings for the st1232 device to the device tree and reference
+them as the default state for the device.
 
-[PATCH 01/05] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)
-[PATCH 02/05] ARM: shmobile: r8a73a4 CPU Hotplug prototype v1 (CA15 x 4)
-[PATCH 03/05] ARM: shmobile: r8a73a4 CA15 setup WFE as NOP
-[PATCH 04/05] ARM: shmobile: r8a73a4 SMP CA7 prototype (+ CA7 x 4)
-[PATCH 05/05] ARM: shmobile: r8a73a4 CA7 setup arch timer
-
-Here's V2 of r8a73a4 SMP prototype support. This time support for
-both CA15 and CA7 is included.
-
-It is worth noting that only prototype support for the actual SoC
-is included here. It is included as SMP support, but since CA7 cores
-perform differently compared to CA15 the system will not behave in a
-deterministic way unless either big.LITTLE MP patches are used to
-extend the scheduler or c-groups are used to separate CA15 and CA7.
-
-All 8 cores boot up as expected but certainly needs more work.
-
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
- Written against linux.git 7b55eab81ecbbd44e76ac14c67479b82807c261b
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 4a7ae32..a6c6606 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -41,6 +41,8 @@
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
++		pinctrl-0 = <&st1232_pins>;
++		pinctrl-names = "default";
+ 	};
+ };
  
- arch/arm/boot/dts/r8a73a4.dtsi                |   49 ++++
- arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/board-ape6evm.c        |    1 
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 
- arch/arm/mach-shmobile/setup-r8a73a4.c        |    1 
- arch/arm/mach-shmobile/smp-r8a73a4.c          |  274 ++++++++++++++++++++++++-
- 6 files changed, 321 insertions(+), 6 deletions(-)
+@@ -52,4 +54,9 @@
+ 		renesas,groups = "scifa1_data";
+ 		renesas,function = "scifa1";
+ 	};
++
++	st1232_pins: st1232 {
++		renesas,groups = "intc_irq10";
++		renesas,function = "intc";
++	};
+ };
+-- 
+1.8.1.5
+
