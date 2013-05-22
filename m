@@ -1,99 +1,100 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 17 May 2013 13:00:23 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 22 May 2013 14:32:04 +0000
 Subject: Re: [PATCH 05/11] ARM: shmobile: APE6EVM LAN9220 support
-Message-Id: <Pine.LNX.4.64.1305171458550.31481@axis700.grange>
+Message-Id: <20130522143204.GE32012@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
  <1364954906-16014-6-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364954906-16014-6-git-send-email-horms+renesas@verge.net.au>
+ <Pine.LNX.4.64.1305171458550.31481@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1305171458550.31481@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon, Magnus
-
-On Wed, 3 Apr 2013, Simon Horman wrote:
-
-> From: Magnus Damm <damm@opensource.se>
+On Fri, May 17, 2013 at 03:00:23PM +0200, Guennadi Liakhovetski wrote:
+> Hi Simon, Magnus
 > 
-> Add LAN9220 support to the APE6EVM board using C and DT.
-> At this point the PFC driver lacks DT bindings so to
-> configure the PFC we use PINCTRL in C board code.
+> On Wed, 3 Apr 2013, Simon Horman wrote:
 > 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   23 ++++++++++++++++++-
->  arch/arm/mach-shmobile/board-ape6evm.c |   38 ++++++++++++++++++++++++++++++++
->  2 files changed, 60 insertions(+), 1 deletion(-)
+> > From: Magnus Damm <damm@opensource.se>
+> > 
+> > Add LAN9220 support to the APE6EVM board using C and DT.
+> > At this point the PFC driver lacks DT bindings so to
+> > configure the PFC we use PINCTRL in C board code.
+> > 
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > ---
+> >  arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   23 ++++++++++++++++++-
+> >  arch/arm/mach-shmobile/board-ape6evm.c |   38 ++++++++++++++++++++++++++++++++
+> >  2 files changed, 60 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+> > index 833f703..f603c69 100644
+> > --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+> > +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+> > @@ -16,7 +16,7 @@
+> >  	compatible = "renesas,ape6evm", "renesas,r8a73a4";
+> >  
+> >  	chosen {
+> > -		bootargs = "console=ttySC0,115200 ignore_loglevel";
+> > +		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
+> >  	};
+> >  
+> >  	memory@40000000 {
+> > @@ -24,8 +24,29 @@
+> >  		reg = <0 0x40000000 0 0x40000000>;
+> >  	};
+> >  
+> > +	ape6evm_fixed_3v3: fixedregulator@0 {
+> > +		compatible = "regulator-fixed";
+> > +		regulator-name = "3V3";
+> > +		regulator-min-microvolt = <3300000>;
+> > +		regulator-max-microvolt = <3300000>;
+> > +		regulator-always-on;
+> > +	};
+> > +
+> >  	lbsc {
+> >  		#address-cells = <1>;
+> >  		#size-cells = <1>;
+> > +
+> > +		ethernet@8000000 {
+> > +			compatible = "smsc,lan9118", "smsc,lan9115";
+> > +			reg = <0x08000000 0x1000>;
+> > +			interrupt-parent = <&irqc1>;
+> > +			interrupts = <8 0x4>;
+> > +			phy-mode = "mii";
+> > +			reg-io-width = <4>;
+> > +			smsc,irq-active-high;
+> > +			smsc,irq-push-pull;
+> > +			vdd33a-supply = <&ape6evm_fixed_3v3>;
+> > +			vddvario-supply = <&ape6evm_fixed_3v3>;
+> > +		};
+> >  	};
+> >  };
 > 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> index 833f703..f603c69 100644
+> The above didn't work in my tests without this:
+> 
+> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts 
+> b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+> index f603c69..4fb0102 100644
 > --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
 > +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> @@ -16,7 +16,7 @@
->  	compatible = "renesas,ape6evm", "renesas,r8a73a4";
->  
->  	chosen {
-> -		bootargs = "console=ttySC0,115200 ignore_loglevel";
-> +		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
+> @@ -33,8 +33,10 @@
 >  	};
 >  
->  	memory@40000000 {
-> @@ -24,8 +24,29 @@
->  		reg = <0 0x40000000 0 0x40000000>;
->  	};
->  
-> +	ape6evm_fixed_3v3: fixedregulator@0 {
-> +		compatible = "regulator-fixed";
-> +		regulator-name = "3V3";
-> +		regulator-min-microvolt = <3300000>;
-> +		regulator-max-microvolt = <3300000>;
-> +		regulator-always-on;
-> +	};
-> +
 >  	lbsc {
+> +		compatible = "simple-bus";
 >  		#address-cells = <1>;
 >  		#size-cells = <1>;
-> +
-> +		ethernet@8000000 {
-> +			compatible = "smsc,lan9118", "smsc,lan9115";
-> +			reg = <0x08000000 0x1000>;
-> +			interrupt-parent = <&irqc1>;
-> +			interrupts = <8 0x4>;
-> +			phy-mode = "mii";
-> +			reg-io-width = <4>;
-> +			smsc,irq-active-high;
-> +			smsc,irq-push-pull;
-> +			vdd33a-supply = <&ape6evm_fixed_3v3>;
-> +			vddvario-supply = <&ape6evm_fixed_3v3>;
-> +		};
->  	};
->  };
+> +		ranges = <0 0 0 0x80000000>;
+>  
+>  		ethernet@8000000 {
+>  			compatible = "smsc,lan9118", "smsc,lan9115";
+> 
 
-The above didn't work in my tests without this:
+Could you please post this as a formal patch and indicate
+if you would like it included as a fix in v3.10 or not?
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts 
-b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index f603c69..4fb0102 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -33,8 +33,10 @@
- 	};
- 
- 	lbsc {
-+		compatible = "simple-bus";
- 		#address-cells = <1>;
- 		#size-cells = <1>;
-+		ranges = <0 0 0 0x80000000>;
- 
- 		ethernet@8000000 {
- 			compatible = "smsc,lan9118", "smsc,lan9115";
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Also, I am curious to know what your tests are.
