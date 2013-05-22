@@ -1,270 +1,132 @@
-From: Chen Gang <gang.chen@asianux.com>
-Date: Thu, 23 May 2013 07:57:35 +0000
-Subject: [PATCH] arch: configuration, deleting 'CONFIG_BUG' since always need it.
-Message-Id: <519DCBEF.3090208@asianux.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 22 May 2013 06:18:17 +0000
+Subject: [PATCH] ARM: shmobile: r8a73a4 CPU Hotplug prototype v1 (CA15 x 4)
+Message-Id: <20130522061817.1906.71321.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King - ARM Linux <linux@arm.linux.org.uk>, hskinnemoen@gmail.com, egtvedt@samfundet.no, Mike Frysinger <vapier@gentoo.org>, ysato@users.sourceforge.jp, rkuo@codeaurora.org, jejb@parisc-linux.org, deller@gmx.de, Benjamin Herrenschmidt <benh@kernel.crashing.org>, "paulus@samba.org" <paulus@samba.org>, schwidefsky@de.ibm.com, heiko.carstens@de.ibm.com, linux390@de.ibm.com, lethal@linux-sh.org, jdike@addtoit.com, richard@nod.at, Thomas Gleixner <tglx@linutronix.de>, "mingo@redhat.com" <mingo@redhat.com>, hpa@zytor.com, x86@kernel.org, Arnd Bergmann <arnd@arndb.de>, "Eric W. Biederman" <ebiederm@xmission.com>, Serge Hallyn <serge.hallyn@canonical.com>, paulmck@linux.vnet.ibm.com, Frederic Weisbecker <fweisbec@gmail.com>, David Miller <davem@davemloft.net>, Andrew Morton <akpm@linux-foundation.org>, akinobu.mita@gmail.com, Catalin Marinas <Catalin.Marinas@arm.com>
-Cc: "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, uclinux-dist-devel@blackfin.uclinux.org, linux-hexagon@vger.kernel.org, linux-parisc@vger.kernel.org, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, user-mode-linux-user@lists.sourceforge.net, linux-arch@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@opensource.se>
 
-The crazy user can unset 'CONFIG_BUG' in menuconfig: "> General setup >
-Configure standard kernel features (expert users) > BUG() Support".
+Add CPU Hotplug prototype support for 4 x Cortex-A15
+included in r8a73a4.
 
-But in fact, we always need it, and quite a few of architectures have
-already implemented it (e.g. alpha, arc, arm, avr32, blackfin, cris,
-frv, ia64, m68k, mips, mn10300, parisc, powerpc, s390, sh, sparc, x86).
+Needs a rewrite to support more generic handling of
+CPU core power domains. Not ready for merge.
 
-And kernel also already has prepared a default effective implementation
-for the architectures which is unwilling to implement it by themselves
-(e.g. arm64, c6x, h8300, hexagon, m32r, metag, microblaze, openrisc,
-score, tile, um, unicore32, xtensa).
-
-So need get rid of 'CONFIG_BUG', and let it always enabled everywhere.
-
-
-Signed-off-by: Chen Gang <gang.chen@asianux.com>
+Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/Kconfig          |    1 -
- arch/avr32/Kconfig        |    1 -
- arch/blackfin/Kconfig     |    1 -
- arch/h8300/Kconfig        |    1 -
- arch/hexagon/Kconfig      |    1 -
- arch/parisc/Kconfig       |    2 --
- arch/powerpc/Kconfig      |    1 -
- arch/s390/Kconfig         |    2 +-
- arch/sh/Kconfig           |    2 +-
- arch/um/Kconfig.common    |    1 -
- arch/x86/Kconfig          |    1 -
- include/asm-generic/bug.h |   29 -----------------------------
- init/Kconfig              |   10 ----------
- lib/Kconfig.debug         |    2 +-
- 14 files changed, 3 insertions(+), 52 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index a7fc5ea..ea4a146 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -265,7 +265,6 @@ config PHYS_OFFSET
+ Developed and tested on top of v3.10-rc2, depends on
+ "[PATCH] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)"
+
+ arch/arm/mach-shmobile/smp-r8a73a4.c |   88 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 88 insertions(+)
+
+--- 0005/arch/arm/mach-shmobile/smp-r8a73a4.c
++++ work/arch/arm/mach-shmobile/smp-r8a73a4.c	2013-05-22 13:34:18.000000000 +0900
+@@ -36,6 +36,8 @@
  
- config GENERIC_BUG
- 	def_bool y
--	depends on BUG
+ #define APMU	0xe6150000
+ #define CA15WUPCR 0x2010
++#define CA15PSTR 0x2040
++#define CA15CPUNCR(n) (0x2100 + (0x10 * (n))) 
  
- source "init/Kconfig"
+ #define MERAM	0xe8080000
+ #define CCI_BASE	0xf0190000
+@@ -83,7 +85,93 @@ static int __cpuinit r8a73a4_boot_second
+ 	return 0;
+ }
  
-diff --git a/arch/avr32/Kconfig b/arch/avr32/Kconfig
-index bdc3558..7c9005a 100644
---- a/arch/avr32/Kconfig
-+++ b/arch/avr32/Kconfig
-@@ -55,7 +55,6 @@ config GENERIC_CALIBRATE_DELAY
- 
- config GENERIC_BUG
- 	def_bool y
--	depends on BUG
- 
- source "init/Kconfig"
- 
-diff --git a/arch/blackfin/Kconfig b/arch/blackfin/Kconfig
-index a117652..637dc42 100644
---- a/arch/blackfin/Kconfig
-+++ b/arch/blackfin/Kconfig
-@@ -47,7 +47,6 @@ config GENERIC_CSUM
- 
- config GENERIC_BUG
- 	def_bool y
--	depends on BUG
- 
- config ZONE_DMA
- 	def_bool y
-diff --git a/arch/h8300/Kconfig b/arch/h8300/Kconfig
-index 303e4f9..88848da 100644
---- a/arch/h8300/Kconfig
-+++ b/arch/h8300/Kconfig
-@@ -56,7 +56,6 @@ config GENERIC_CALIBRATE_DELAY
- 
- config GENERIC_BUG
-         bool
--        depends on BUG
- 
- config TIME_LOW_RES
- 	bool
-diff --git a/arch/hexagon/Kconfig b/arch/hexagon/Kconfig
-index 33a9792..f50cc8f 100644
---- a/arch/hexagon/Kconfig
-+++ b/arch/hexagon/Kconfig
-@@ -84,7 +84,6 @@ config STACKTRACE_SUPPORT
- 
- config GENERIC_BUG
- 	def_bool y
--	depends on BUG
- 
- menu "Machine selection"
- 
-diff --git a/arch/parisc/Kconfig b/arch/parisc/Kconfig
-index 6507dab..5de1f8c 100644
---- a/arch/parisc/Kconfig
-+++ b/arch/parisc/Kconfig
-@@ -10,7 +10,6 @@ config PARISC
- 	select RTC_CLASS
- 	select RTC_DRV_GENERIC
- 	select INIT_ALL_POSSIBLE
--	select BUG
- 	select HAVE_PERF_EVENTS
- 	select GENERIC_ATOMIC64 if !64BIT
- 	select ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE
-@@ -62,7 +61,6 @@ config ARCH_HAS_ILOG2_U64
- config GENERIC_BUG
- 	bool
- 	default y
--	depends on BUG
- 
- config GENERIC_HWEIGHT
- 	bool
-diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index c33e3ad..34f4ca9 100644
---- a/arch/powerpc/Kconfig
-+++ b/arch/powerpc/Kconfig
-@@ -187,7 +187,6 @@ config AUDIT_ARCH
- config GENERIC_BUG
- 	bool
- 	default y
--	depends on BUG
- 
- config SYS_SUPPORTS_APM_EMULATION
- 	default y if PMAC_APM_EMU
-diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
-index da183c5..5d7b3db 100644
---- a/arch/s390/Kconfig
-+++ b/arch/s390/Kconfig
-@@ -29,7 +29,7 @@ config GENERIC_HWEIGHT
- 	def_bool y
- 
- config GENERIC_BUG
--	def_bool y if BUG
-+	def_bool y
- 
- config GENERIC_BUG_RELATIVE_POINTERS
- 	def_bool y
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 8c868cf..d555e7f 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -84,7 +84,7 @@ config RWSEM_XCHGADD_ALGORITHM
- 
- config GENERIC_BUG
- 	def_bool y
--	depends on BUG && SUPERH32
-+	depends on SUPERH32
- 
- config GENERIC_CSUM
- 	def_bool y
-diff --git a/arch/um/Kconfig.common b/arch/um/Kconfig.common
-index bceee66..7aae42a 100644
---- a/arch/um/Kconfig.common
-+++ b/arch/um/Kconfig.common
-@@ -53,7 +53,6 @@ config GENERIC_CALIBRATE_DELAY
- config GENERIC_BUG
- 	bool
- 	default y
--	depends on BUG
- 
- config HZ
- 	int
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 723e42e..a36e1b4 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -166,7 +166,6 @@ config GENERIC_ISA_DMA
- 
- config GENERIC_BUG
- 	def_bool y
--	depends on BUG
- 	select GENERIC_BUG_RELATIVE_POINTERS if X86_64
- 
- config GENERIC_BUG_RELATIVE_POINTERS
-diff --git a/include/asm-generic/bug.h b/include/asm-generic/bug.h
-index 7d10f96..5d50903 100644
---- a/include/asm-generic/bug.h
-+++ b/include/asm-generic/bug.h
-@@ -12,8 +12,6 @@
- #ifndef __ASSEMBLY__
- #include <linux/kernel.h>
- 
--#ifdef CONFIG_BUG
--
- #ifdef CONFIG_GENERIC_BUG
- struct bug_entry {
- #ifndef CONFIG_GENERIC_BUG_RELATIVE_POINTERS
-@@ -106,33 +104,6 @@ extern void warn_slowpath_null(const char *file, const int line);
- 	unlikely(__ret_warn_on);					\
- })
- 
--#else /* !CONFIG_BUG */
--#ifndef HAVE_ARCH_BUG
--#define BUG() do {} while(0)
--#endif
--
--#ifndef HAVE_ARCH_BUG_ON
--#define BUG_ON(condition) do { if (condition) ; } while(0)
--#endif
--
--#ifndef HAVE_ARCH_WARN_ON
--#define WARN_ON(condition) ({						\
--	int __ret_warn_on = !!(condition);				\
--	unlikely(__ret_warn_on);					\
--})
--#endif
--
--#ifndef WARN
--#define WARN(condition, format...) ({					\
--	int __ret_warn_on = !!(condition);				\
--	unlikely(__ret_warn_on);					\
--})
--#endif
--
--#define WARN_TAINT(condition, taint, format...) WARN_ON(condition)
--
--#endif
--
- #define WARN_ON_ONCE(condition)	({				\
- 	static bool __section(.data.unlikely) __warned;		\
- 	int __ret_warn_once = !!(condition);			\
-diff --git a/init/Kconfig b/init/Kconfig
-index 7fb26a6..bc1dd49 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -1360,16 +1360,6 @@ config PRINTK
- 	  very difficult to diagnose system problems, saying N here is
- 	  strongly discouraged.
- 
--config BUG
--	bool "BUG() support" if EXPERT
--	default y
--	help
--          Disabling this option eliminates support for BUG and WARN, reducing
--          the size of your kernel image and potentially quietly ignoring
--          numerous fatal conditions. You should only consider disabling this
--          option for embedded systems with no facilities for reporting errors.
--          Just say Y.
--
- config ELF_CORE
- 	depends on COREDUMP
- 	default y
-diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
-index 566cf2b..54b3251 100644
---- a/lib/Kconfig.debug
-+++ b/lib/Kconfig.debug
-@@ -700,7 +700,7 @@ config HAVE_DEBUG_BUGVERBOSE
- 
- config DEBUG_BUGVERBOSE
- 	bool "Verbose BUG() reporting (adds 70K)" if DEBUG_KERNEL && EXPERT
--	depends on BUG && (GENERIC_BUG || HAVE_DEBUG_BUGVERBOSE)
-+	depends on GENERIC_BUG || HAVE_DEBUG_BUGVERBOSE
- 	default y
- 	help
- 	  Say Y here to make BUG() panics output the file name and line number
--- 
-1.7.7.6
++#ifdef CONFIG_HOTPLUG_CPU
++static int r8a73a4_cpu_kill(unsigned int cpu)
++{
++	void __iomem *p;
++	int ret = 0;
++	int k;
++
++	/* this function is running on another CPU than the offline target,
++	 * here all we need to do is to wait for the SoC to enter sleep mode.
++	 */
++	p = ioremap_nocache(APMU, 0x3000);
++	for (k = 0; k < 1000; k++) {
++		if (((__raw_readl(p + CA15PSTR) >> (cpu * 4)) & 0x03) = 3) {
++			ret = 1;
++			break;
++		}
++
++		mdelay(1);
++	}
++	iounmap(p);
++
++	return ret;
++}
++
++/* nicked from arch/arm/mach-exynos/hotplug.c */
++static inline void cpu_enter_lowpower_a15(void)
++{
++	unsigned int v;
++
++	asm volatile(
++	"	mrc	p15, 0, %0, c1, c0, 0\n"
++	"	bic	%0, %0, %1\n"
++	"	mcr	p15, 0, %0, c1, c0, 0\n"
++	  : "=&r" (v)
++	  : "Ir" (CR_C)
++	  : "cc");
++
++	flush_cache_louis();
++
++	asm volatile(
++	/*
++	* Turn off coherency
++	*/
++	"	mrc	p15, 0, %0, c1, c0, 1\n"
++	"	bic	%0, %0, %1\n"
++	"	mcr	p15, 0, %0, c1, c0, 1\n"
++	: "=&r" (v)
++	: "Ir" (0x40)
++	: "cc");
++
++	isb();
++	dsb();
++}
++
++static int r8a73a4_do_idle_core_standby(unsigned long unused)
++{
++	cpu_do_idle(); /* WFI triggers Core Standby */
++	return 0;
++}
++
++static void r8a73a4_cpu_die(unsigned int cpu)
++{
++	void __iomem *p;
++
++	/* hardware shutdown code running on the CPU that is being offlined */
++
++	/* select CPU shutdown mode */
++	p = ioremap_nocache(APMU, 0x3000);
++	__raw_writel(3, p + CA15CPUNCR(cpu)); /* CA15 Core Standby */
++	iounmap(p);
++
++	cpu_enter_lowpower_a15();
++	cpu_suspend(0, r8a73a4_do_idle_core_standby); /* really needed? */
++}
++
++static int r8a73a4_cpu_disable(unsigned int cpu)
++{
++	return 0; /* hotplug of any CPU is tested OK */
++}
++#endif
++
+ struct smp_operations r8a73a4_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= r8a73a4_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a73a4_boot_secondary,
++#ifdef CONFIG_HOTPLUG_CPU
++	.cpu_kill		= r8a73a4_cpu_kill,
++	.cpu_die		= r8a73a4_cpu_die,
++	.cpu_disable		= r8a73a4_cpu_disable,
++#endif
+ };
