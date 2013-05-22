@@ -1,57 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 29 May 2013 07:15:41 +0000
-Subject: [PATCH] sh-pfc: r8a7779: Fix merge conflict
-Message-Id: <1369811741-21270-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 22 May 2013 14:48:09 +0000
+Subject: [PATCH v3] ARM: shmobile: sh73a0: Update CMT clockevent rating to 80
+Message-Id: <1369234089-736-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Update the CMT clockevent rating from 125 to 80.
+
+This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
+introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
+Avoid dummy clockevent being preferred over real").
+
+The patch noted above reduces the rating of dummy clockevent from 400 to 100.
+This patch reduces the rating of CMT so that it is once again less than that
+of the dummy clockevent.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Hi Simon,
+I also plan to reduce the rating of the STI clockevent to less than 100.
+However, as I am not aware of any problems relating to STI in v3.10-rc
+my plan is to update STI in the v3.11 timeframe.
 
-The following commit introduced a bug in pinmux support for r8a7779.c. Would
-you be able to squash this patch into the commit when pushing it to mainline ?
+v3
+* s/kzm9g-reference/sh73a0/ in subject, as suggested by Sergei Shtylyov
 
-commit e15dfb923186955690b56406eb6e8adcbafbea40
-Author: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date:   Mon Apr 8 12:05:31 2013 +0200
+v2
+* Fix typos pointed out by Sergei Shtylyov
 
-    sh-pfc: r8a7779: Replace hardcoded pin numbers with RCAR_GP_PIN macro
-    
-    Use the RCAR_GP_PIN macro to convert from the documentation pin number
-    space to the linear pinctrl space.
-    
-    Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-    Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 6ad6fdd..96bdf48 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2425,7 +2425,6 @@ static const unsigned int sdhi3_wp_mux[] = {
- /* - USB0 ------------------------------------------------------------------- */
- static const unsigned int usb0_pins[] = {
- 	/* PENC */
--	154,
- 	RCAR_GP_PIN(4, 26),
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fdf3894..9696f36 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
+ 	.name = "CMT10",
+ 	.channel_offset = 0x10,
+ 	.timer_bit = 0,
+-	.clockevent_rating = 125,
++	.clockevent_rating = 80,
+ 	.clocksource_rating = 125,
  };
- static const unsigned int usb0_mux[] = {
-@@ -2440,7 +2439,6 @@ static const unsigned int usb0_ovc_mux[] = {
- };
- /* - USB1 ------------------------------------------------------------------- */
- static const unsigned int usb1_pins[] = {
--
- 	/* PENC */
- 	RCAR_GP_PIN(4, 27),
- };
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.2.1
 
