@@ -1,34 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 25 May 2013 01:53:36 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790: implement CPU clock scaling for CPUFreq
-Message-Id: <20130525015336.GK24005@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 22 May 2013 12:49:40 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g-reference: Update CMT clocksource rating to 80
+Message-Id: <1369226980-16203-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305211202380.2863@axis700.grange>
- <20130525013252.GD24005@verge.net.au>
-In-Reply-To: <20130525013252.GD24005@verge.net.au>
+References: <Pine.LNX.4.64.1303191827590.11768@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1303191827590.11768@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, May 25, 2013 at 10:32:53AM +0900, Simon Horman wrote:
-> On Tue, May 21, 2013 at 12:09:53PM +0200, Guennadi Liakhovetski wrote:
-> > This patch adds support for the Z-clock on r8a7790 SoCs, which is driving
-> > the Cortex A15 core. Adding an "operating-points" property to the CPU0 DT
-> > node and a regulator, this patch allows platforms to use the generic
-> > cpufreq-cpu0 driver to use SoC's DVFS capabilities.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> > 
-> > Since I cannot use the regulator, supplying the DVFS voltage to the CPU on 
-> > Lager, I only tested this patch without voltage adjustments, but that 
-> > shouldn't matter for this specific change. I did verify, using the 
-> > ondemand CPUFreq governor, that the frequency and the CPU performance 
-> > change, depending on CPU load.
-> 
-> Magnus,
-> 
-> could you please review this series?
+Update the CMT clocksource rating from 100 to 10.
 
-I noticed there is a v2 of the series, could you review that instead?
+This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
+introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
+Avoid dummy clockevent being preferred over real").
+
+The patch noted above reduces the rating of dummy clockevent from 400 to 100.
+This patch reduces the rating of CMT so that it is once again less than that
+of the dummy clockevent.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+
+I also plan to reduce the rating of the STI clocksource to less than 100.
+However, as I am not aware of any problems relating to STI in v3.10-rc
+my plan is to update STI in the v3.11 timeframe.
+---
+ arch/arm/mach-shmobile/setup-sh73a0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fdf3894..9696f36 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
+ 	.name = "CMT10",
+ 	.channel_offset = 0x10,
+ 	.timer_bit = 0,
+-	.clockevent_rating = 125,
++	.clockevent_rating = 80,
+ 	.clocksource_rating = 125,
+ };
+ 
+-- 
+1.8.2.1
+
