@@ -1,84 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:25 +0000
-Subject: [PATCH v4 04/21] ARM: shmobile: r8a7740: Add pin control device to device tree
-Message-Id: <1369138482-5871-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 22 May 2013 09:12:33 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a73a4: wait for completion when kicking the clock
+Message-Id: <Pine.LNX.4.64.1305221108500.12715@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the r8a7740 device tree and remove manual pinmux
-initialization from the corresponding board files.
+To reconfigure clocks, controlled by FRQCRA and FRQCRB, a kick bit has to
+be set and to make sure the setting has taken effect, it has to be read
+back repeatedly until it is cleared by the hardware. This patch adds the
+waiting part, that was missing until now.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
- 2 files changed, 16 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   22 ++++++++++++++++------
+ 1 files changed, 16 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 25dc930..2fa3708 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -135,4 +135,12 @@
- 			      0 72 0x4
- 			      0 73 0x4>;
- 	};
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 5f7fe62..d5176d0 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -184,6 +184,21 @@ PLL_CLOCK(pll2h_clk, &main_div2_clk, pll_parent_main_extal, 3, 5, PLL2HCR, 5);
+ 
+ SH_FIXED_RATIO_CLK(pll1_div2_clk,	pll1_clk,	div2);
+ 
++static int frqcr_kick_do(struct clk *clk)
++{
++	int i;
 +
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a7740";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605800c 0x20>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 03b85fe..f25b6aa 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -121,7 +121,7 @@
- 
- static const struct pinctrl_map eva_pinctrl_map[] = {
- 	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
- 				  "scifa1_data", "scifa1"),
- };
- 
-@@ -170,22 +170,22 @@ static void __init eva_init(void)
- 	eva_clock_init();
- 
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--	r8a7740_pinmux_init();
- 
- 	r8a7740_meram_workaround();
- 
--	/*
--	 * Touchscreen
--	 * TODO: Move reset GPIO over to .dts when we can reference it
--	 */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
++	/* set KICK bit in FRQCRB to update hardware setting, check success */
++	iowrite32(ioread32(CPG_MAP(FRQCRB)) | BIT(31), CPG_MAP(FRQCRB));
++	for (i = 1000; i; i--)
++		if (ioread32(CPG_MAP(FRQCRB)) & BIT(31))
++			cpu_relax();
++		else
++			return 0;
++
++	return -ETIMEDOUT;
++}
++
+ static struct clk *main_clks[] = {
+ 	&extalr_clk,
+ 	&extal1_clk,
+@@ -205,12 +220,7 @@ static struct clk *main_clks[] = {
+ /* DIV4 */
+ static void div4_kick(struct clk *clk)
+ {
+-	unsigned long value;
 -
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
- #endif
- 
- 	r8a7740_add_standard_devices_dt();
-+
-+	/*
-+	 * Touchscreen
-+	 * TODO: Move reset GPIO over to .dts when we can reference it
-+	 */
-+	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-+
- 	r8a7740_pm_init();
+-	/* set KICK bit in FRQCRB to update hardware setting */
+-	value = ioread32(CPG_MAP(FRQCRB));
+-	value |= (1 << 31);
+-	iowrite32(value, CPG_MAP(FRQCRB));
++	frqcr_kick_do(clk);
  }
  
+ static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10};
 -- 
-1.8.1.5
+1.7.2.5
 
