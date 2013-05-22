@@ -1,85 +1,193 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 23 May 2013 01:39:08 +0000
-Subject: Re: [PATCH v4 1/7] ARM: shmobile: Define DT bindings for timer devices
-Message-Id: <20130523013908.GC22608@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 22 May 2013 06:15:14 +0000
+Subject: [PATCH] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)
+Message-Id: <20130522061514.1512.54039.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1365679443-25456-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Apr 11, 2013 at 01:23:57PM +0200, Bastian Hecht wrote:
-> The SH mobile series currently features 3 timer devices in the kernel:
-> Compare Match Timer (CMT), Timer Unit (TMU) and MTU2. These devices
-> share register layout characteristics amongst each that enable us to
-> define common DT bindings for them.
-> 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> ---
-> v4: same. only patch 2 and 3 changed
+From: Magnus Damm <damm@opensource.se>
 
-As per my recent email regarding "ARM: shmobile: sh73a0: Add timer DT names
-to clock list", I have dropped this patch which was previously queued-up
-for v3.11.
+Add SMP prototype support for r8a73a4 by enabling
+4 x Cortex-A15. This patch only adds support for
+booting, see the incremental patch for CPU Hotplug.
 
-> 
->  .../devicetree/bindings/timer/renesas,timer.txt    |   45 ++++++++++++++++++++
->  1 file changed, 45 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/timer/renesas,timer.txt
-> 
-> diff --git a/Documentation/devicetree/bindings/timer/renesas,timer.txt b/Documentation/devicetree/bindings/timer/renesas,timer.txt
-> new file mode 100644
-> index 0000000..2c001bf
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/timer/renesas,timer.txt
-> @@ -0,0 +1,45 @@
-> +* Renesas SH Mobile Timer
-> +
-> +Bindings for several timer devices from Renesas including CMT, TMU and MTU2.
-> +
-> +Required properties:
-> +- compatible : Should be "renesas,{device}-timer",
-> +  whereas device is "cmt", "tmu" or "mtu2".
-> +- reg : Address and length of the register set for the device
-> +- interrupts : Timer interrupt
-> +- renesas,device-id : The ID of the timer device
-> +- renesas,channel-id : The channel ID of the timer device
-> +- renesas,source-quality : The viability to use this device as a free
-> +  running clock. From 0 (do not use) to 10 (best possible clock).
-> +- renesas,event-quality : The viability to use this device as an event
-> +  generator. From 0 (do not use) to 10 (best possible clock).
-> +
-> +The properties renesas,{source,event}-quality reflect the situation that the
-> +usability of the timer devices depend on the location within their SoCs. E.g.
-> +the power domain affinty affects power management, some mux-ed lines might be
-> +preferred to be assigned to other functions and other constraints.
-> +
-> +Example for CMT1 channel 0 on the R8A7740 SoC:
-> +
-> +	timer@e6138010 {
-> +		compatible = "renesas,cmt-timer";
-> +		interrupt-parent = <&intca>;
-> +		reg = <0xe6138010 0xc>;
-> +		interrupts = <0x0b00>;
-> +		renesas,device-id = <1>;
-> +		renesas,channel-id = <0>;
-> +		renesas,source-quality = <3>;
-> +		renesas,event-quality = <3>;
-> +	};
-> +
-> +Example for TMU0 channel 1 on the SH7372 SoC:
-> +	timer@fff60014 {
-> +		compatible = "renesas,tmu-timer";
-> +		interrupt-parent = <&intcs>;
-> +		reg = <0xfff60014 0xc>;
-> +		interrupts = <0xea0>;
-> +		renesas,device-id = <0>;
-> +		renesas,channel-id = <1>;
-> +		renesas,source-quality = <4>;
-> +		renesas,event-quality = <0>;
-> +	};
-> -- 
-> 1.7.9.5
-> 
+Needs a rewrite to support more generic handling of
+CPU core power domains. Not ready for merge.
+
+Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Developed and tested on top of v3.10-rc2
+
+ arch/arm/boot/dts/r8a73a4.dtsi                |   21 +++++
+ arch/arm/mach-shmobile/Makefile               |    1 
+ arch/arm/mach-shmobile/board-ape6evm.c        |    1 
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |    1 
+ arch/arm/mach-shmobile/smp-r8a73a4.c          |   89 +++++++++++++++++++++++++
+ 6 files changed, 114 insertions(+)
+
+--- 0003/arch/arm/boot/dts/r8a73a4.dtsi
++++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-05-22 13:21:21.000000000 +0900
+@@ -25,6 +25,27 @@
+ 			reg = <0>;
+ 			clock-frequency = <1500000000>;
+ 		};
++
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <1>;
++			clock-frequency = <1500000000>;
++		};
++
++		cpu2: cpu@2 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <2>;
++			clock-frequency = <1500000000>;
++		};
++
++		cpu3: cpu@3 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <3>;
++			clock-frequency = <1500000000>;
++		};
+ 	};
+ 
+ 	gic: interrupt-controller@f1001000 {
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-05-22 13:21:21.000000000 +0900
+@@ -18,6 +18,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.
+ # SMP objects
+ smp-y				:= platsmp.o headsmp.o
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o
++smp-$(CONFIG_ARCH_R8A73A4)	+= smp-r8a73a4.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
+ 
+--- 0001/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-05-22 13:21:51.000000000 +0900
+@@ -87,6 +87,7 @@ static const char *ape6evm_boards_compat
+ };
+ 
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
++	.smp		= smp_ops(r8a73a4_smp_ops),
+ 	.init_irq	= irqchip_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.init_machine	= ape6evm_add_standard_devices,
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-05-22 13:21:21.000000000 +0900
+@@ -4,5 +4,6 @@
+ void r8a73a4_add_standard_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
++extern struct smp_operations r8a73a4_smp_ops;
+ 
+ #endif /* __ASM_R8A73A4_H__ */
+--- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-05-22 13:21:44.000000000 +0900
+@@ -194,6 +194,7 @@ static const char *r8a73a4_boards_compat
+ };
+ 
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
++	.smp		= smp_ops(r8a73a4_smp_ops),
+ 	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a73a4_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+--- /dev/null
++++ work/arch/arm/mach-shmobile/smp-r8a73a4.c	2013-05-22 13:21:21.000000000 +0900
+@@ -0,0 +1,89 @@
++/*
++ * SMP support for r8a73a4
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ * Copyright (C) 2012 Takashi Yoshii <takashi.yoshii.ze@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/jiffies.h>
++#include <linux/smp.h>
++#include <linux/irqchip/arm-gic.h>
++#include <asm/cacheflush.h>
++#include <asm/io.h>
++#include <asm/smp_plat.h>
++#include <asm/suspend.h>
++#include <mach/common.h>
++#include <mach/hardware.h>
++
++#include <asm/cacheflush.h>
++#include <asm/cp15.h>
++#include <asm/smp_plat.h>
++
++#define SYSC	0xe6180000
++#define CA15BAR	0x6020
++#define RESCNT	0x801c
++
++#define APMU	0xe6150000
++#define CA15WUPCR 0x2010
++
++#define MERAM	0xe8080000
++#define CCI_BASE	0xf0190000
++#define CCI_SLAVE3	0x4000
++#define CCI_SNOOP	0x0000
++#define CCI_STATUS	0x000c
++
++static void __init r8a73a4_smp_prepare_cpus(unsigned int max_cpus)
++{
++	u32 bar;
++	void __iomem *p;
++
++	/* MERAM for jump stub, because BAR requires 256KB aligned address */
++	p = ioremap_nocache(MERAM, 16);
++	memcpy(p, shmobile_secondary_vector, 16);
++	iounmap(p);
++
++	flush_cache_louis();
++
++	/* setup reset vector and disable reset */
++	p = ioremap_nocache(SYSC, 0x9000);
++	bar = (MERAM >> 8) & 0xfffffc00;
++	__raw_writel(bar, p + CA15BAR);
++	__raw_writel(bar | 0x10, p + CA15BAR);
++	__raw_writel(__raw_readl(p + RESCNT) & ~(1 << 10), p + RESCNT);
++	iounmap(p);
++
++	/* enable snoop and DVM */
++	p = ioremap_nocache(CCI_BASE, 0x8000);
++	__raw_writel(3, p + CCI_SLAVE3 + CCI_SNOOP);	/* ca15 */
++	while (__raw_readl(p + CCI_STATUS))
++		/* wait for pending bit low */;
++	iounmap(p);
++}
++
++static int __cpuinit r8a73a4_boot_secondary(unsigned int cpu, struct task_struct *idle)
++{
++	void __iomem *p;
++
++	/* wake up CPU core */
++	p = ioremap_nocache(APMU, 0x3000);
++	__raw_writel(1 << (cpu_logical_map(cpu) & 3), p + CA15WUPCR);
++	iounmap(p);
++
++	return 0;
++}
++
++struct smp_operations r8a73a4_smp_ops __initdata = {
++	.smp_prepare_cpus	= r8a73a4_smp_prepare_cpus,
++	.smp_boot_secondary	= r8a73a4_boot_secondary,
++};
