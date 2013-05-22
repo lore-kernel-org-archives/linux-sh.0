@@ -1,72 +1,80 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 May 2013 23:59:36 +0000
-Subject: Re: [PATCH 1/2] sh-pfc: r8a7779: Don't group USB OVC and PENC pins
-Message-Id: <20130601000018.GB3673@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 22 May 2013 22:10:00 +0000
+Subject: [PATCH 2/2] ARM: shmobile: sh73a0: div4 clocks must check the kick bit before changing rate
+Message-Id: <alpine.DEB.2.00.1305230008400.20133@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
- <1369866529-6372-2-git-send-email-horms+renesas@verge.net.au>
- <CACRpkdZxWsJuvrtH-=VVqAGUCpdgS3W52R4tw5-_QGpggB+1uw@mail.gmail.com>
- <20130531001735.GA26684@verge.net.au>
- <CAOesGMiTXW0mVmbBbha5S4O64yu_vM=eLxM4JyctsfONCAo4qg@mail.gmail.com>
- <20130531054517.GC5009@verge.net.au>
- <CAOesGMgrdyFi3GMz52CVnhzmOYHbR5=29Ua0iS8cNbSjg6r-2A@mail.gmail.com>
- <CACRpkda9tjydo038exS2a=Gsvum41LyvXd=GwKh3b0Zi4rOA9g@mail.gmail.com>
-In-Reply-To: <CACRpkda9tjydo038exS2a=Gsvum41LyvXd=GwKh3b0Zi4rOA9g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, May 31, 2013 at 09:21:46AM +0200, Linus Walleij wrote:
-> On Fri, May 31, 2013 at 8:11 AM, Olof Johansson <olof@lixom.net> wrote:
-> > [Simon]
-> >> As an aside, I do expect to send some more v3.10 fixes for shmobile.
-> >> There seem to be more than usual.
-> >
-> > A little unfortunate but it's hard to do much about.
-> >
-> > Please be conservative with what you pick up for 3.10 vs 3.11 -- Linus
-> > has said he really wants to see things slow down.
-> 
-> What we might need to think about is the evolutional pace of the ARM
-> kernel - compared to a few years back we have increased the change
-> rate by orders of a magnitude (at least that is my feeling...)
-> 
-> There may be some point where we actually need to tell people to
-> hold changes back because they are just pushing too large volumes
-> through one merge window, resulting in a corresponding amount of
-> fixes.
-> 
-> This merge window both Samsung Exynos and SH mobile seem to
-> have been a little bit trigger-happy :-/
+According to the datasheet, it is not allowed to change div4 clock rates
+if an earlier rate change operation is still in progress, as indicated by
+a set kick bit.
 
-To quantify things, for shmobile I am currently aware of 4 problems that
-seem to be worthy of fixing for v3.10. A patche for one has been
-accepted into arm-soc, Patches for two are this pull request. And one more
-has a patch in the pipeline.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c |   24 +++++++++++++++++++-----
+ 1 files changed, 19 insertions(+), 5 deletions(-)
 
-These known problems seem to fall into two categories:
-
-1. Problems that have been in linux-next for a while but only recently
-   appeared in the renesas tree. These were observed when boot testing kernels
-   during the course of rebasing the renesas tree on v3.10-rcX.
-
-   I believe that these problems could and should have been
-   spotted earlier by boot testing linux-next more often,
-   allowing them to be resolved in the merge-window rather than
-   at -rc time.
-
-   I intend to make this happen.
-
-2. Problems that have been present in the renesas tree and
-   thus linux-next for a while but were not observed as
-   early as they might have been.
-
-   Statistically the rate of these problems could have
-   been reduced by accepting changes more slowly.
-   But at this point we are talking about one or two bugs out
-   of many many changes. Bugs that only affect a small
-   subset of shmobile hardware support.
-
-
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 8cb6738..2ef27a6 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -257,7 +257,7 @@ static struct clk twd_clk = {
+ 	.ops = &twd_clk_ops,
+ };
+ 
+-static struct sh_clk_ops zclk_ops;
++static struct sh_clk_ops zclk_ops, kicker_ops;
+ static const struct sh_clk_ops *div4_clk_ops;
+ 
+ static int zclk_set_rate(struct clk *clk, unsigned long rate)
+@@ -326,18 +326,32 @@ static unsigned long zclk_recalc(struct clk *clk)
+ 	return clk_get_rate(clk->parent);
+ }
+ 
+-static void zclk_extend(void)
++static int kicker_set_rate(struct clk *clk, unsigned long rate)
+ {
+-	div4_clk_ops = div4_clks[DIV4_Z].ops;
++	if (__raw_readl(FRQCRB) & (1 << 31))
++		return -EBUSY;
+ 
++	return div4_clk_ops->set_rate(clk, rate);
++}
++
++static void div4_clk_extend(void)
++{
++	int i;
++
++	div4_clk_ops = div4_clks[0].ops;
++
++	/* Add a kicker-busy check before changing the rate */
++	kicker_ops = *div4_clk_ops;
+ 	/* We extend the DIV4 clock with a 1:1 pass-through case */
+ 	zclk_ops = *div4_clk_ops;
+ 
++	kicker_ops.set_rate = kicker_set_rate;
+ 	zclk_ops.set_rate = zclk_set_rate;
+ 	zclk_ops.round_rate = zclk_round_rate;
+ 	zclk_ops.recalc = zclk_recalc;
+ 
+-	div4_clks[DIV4_Z].ops = &zclk_ops;
++	for (i = 0; i < DIV4_NR; i++)
++		div4_clks[i].ops = i = DIV4_Z ? &zclk_ops : &kicker_ops;
+ }
+ 
+ enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+@@ -702,7 +716,7 @@ void __init sh73a0_clock_init(void)
+ 	if (!ret) {
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ 		if (!ret)
+-			zclk_extend();
++			div4_clk_extend();
+ 	}
+ 
+ 	if (!ret)
+-- 
+1.7.2.5
 
