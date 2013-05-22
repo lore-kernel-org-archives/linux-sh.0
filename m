@@ -1,49 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 22 May 2013 12:49:40 +0000
-Subject: [PATCH] ARM: shmobile: kzm9g-reference: Update CMT clocksource rating to 80
-Message-Id: <1369226980-16203-1-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 22 May 2013 13:43:51 +0000
+Subject: Re: [PATCH] ARM: shmobile: kzm9g-reference: Update CMT clocksource rating to 80
+Message-Id: <519CCB97.20207@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1303191827590.11768@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1303191827590.11768@axis700.grange>
+References: <1369226980-16203-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369226980-16203-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Update the CMT clocksource rating from 100 to 10.
+Hello.
 
-This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
-introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
-Avoid dummy clockevent being preferred over real").
+On 22-05-2013 16:49, Simon Horman wrote:
 
-The patch noted above reduces the rating of dummy clockevent from 400 to 100.
-This patch reduces the rating of CMT so that it is once again less than that
-of the dummy clockevent.
+> Update the CMT clocksource rating from 100 to 10.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+    s/100/125/ and s/10/80/, apparently.
 
----
+> This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
+> introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
+> Avoid dummy clockevent being preferred over real").
 
-I also plan to reduce the rating of the STI clocksource to less than 100.
-However, as I am not aware of any problems relating to STI in v3.10-rc
-my plan is to update STI in the v3.11 timeframe.
----
- arch/arm/mach-shmobile/setup-sh73a0.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> The patch noted above reduces the rating of dummy clockevent from 400 to 100.
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index fdf3894..9696f36 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
- 	.name = "CMT10",
- 	.channel_offset = 0x10,
- 	.timer_bit = 0,
--	.clockevent_rating = 125,
-+	.clockevent_rating = 80,
- 	.clocksource_rating = 125,
- };
- 
--- 
-1.8.2.1
+    400 seems very high rating for a dummy clockevent...
+
+> This patch reduces the rating of CMT so that it is once again less than that
+> of the dummy clockevent.
+
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+> ---
+
+> I also plan to reduce the rating of the STI clocksource to less than 100.
+> However, as I am not aware of any problems relating to STI in v3.10-rc
+> my plan is to update STI in the v3.11 timeframe.
+> ---
+>   arch/arm/mach-shmobile/setup-sh73a0.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+
+> diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+> index fdf3894..9696f36 100644
+> --- a/arch/arm/mach-shmobile/setup-sh73a0.c
+> +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+> @@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
+>   	.name = "CMT10",
+>   	.channel_offset = 0x10,
+>   	.timer_bit = 0,
+> -	.clockevent_rating = 125,
+> +	.clockevent_rating = 80,
+>   	.clocksource_rating = 125,
+>   };
+
+WBR, Sergei
+
 
