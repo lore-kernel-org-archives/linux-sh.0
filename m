@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 22 May 2013 14:25:55 +0000
+Date: Wed, 22 May 2013 14:27:39 +0000
 Subject: Re: [PATCH v4 1/4] sh-pfc: r8a7778: add USB pin groups
-Message-Id: <20130522142554.GC32012@verge.net.au>
+Message-Id: <20130522142739.GD32012@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201305090312.48346.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201305090312.48346.sergei.shtylyov@cogentembedded.com>
@@ -10,20 +10,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, May 20, 2013 at 09:30:00AM +0200, Linus Walleij wrote:
-> On Thu, May 9, 2013 at 1:12 AM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
+On Wed, May 22, 2013 at 11:25:55PM +0900, Simon Horman wrote:
+> On Mon, May 20, 2013 at 09:30:00AM +0200, Linus Walleij wrote:
+> > On Thu, May 9, 2013 at 1:12 AM, Sergei Shtylyov
+> > <sergei.shtylyov@cogentembedded.com> wrote:
+> > 
+> > > Add USB0/1 PENC/USB_OVC pin groups to R8A7778 PFC driver.
+> > >
+> > > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> > >
+> > > ---
+> > > Changes from version 3:
+> > > - new patch in this series.
+> > 
+> > Acked-by: Linus Walleij <linus.walleij@linaro.org>
+> > 
+> > Sorry for the backlog, I'm a bit overloaded :-/
 > 
-> > Add USB0/1 PENC/USB_OVC pin groups to R8A7778 PFC driver.
-> >
-> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >
-> > ---
-> > Changes from version 3:
-> > - new patch in this series.
-> 
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> 
-> Sorry for the backlog, I'm a bit overloaded :-/
+> Sergei, shall I queue this up in the pinmux branch?
 
-Sergei, shall I queue this up in the pinmux branch?
+Scratch that, it is already there.
+
+I will update the pinmux branch to include Linus's ack.
+I intend to do a push to kernel.org tomorrow.
