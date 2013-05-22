@@ -1,49 +1,61 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 17 May 2013 12:28:40 +0000
-Subject: Re: [PATCH 01/12] sh-pfc: r8a7778: add I2C pin groups
-Message-Id: <51962278.6060006@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 22 May 2013 06:04:14 +0000
+Subject: [PATCH] ARM: shmobile: Always use shmobile_setup_delay() on sh73a0
+Message-Id: <20130522060414.905.98035.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87hai3wg4d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87hai3wg4d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 17-05-2013 4:21, Kuninori Morimoto wrote:
+Break out the function sh73a0_init_delay() that now
+gets called both for the C version of the code and
+the DT -reference boards. This way we handle both
+cases in the same way.
 
->>> Add I2C SDA/SCL pin groups to R8A7778 PFC driver.
+Allows us to boot with TWD only in the kernel configuration
+for C board code. TWD is not yet enabled in the case of
+DT -reference - this due to a dependency on CCF.
 
->>> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->>> ---
->>>    drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   54 ++++++++++++++++++++++++++++++++++
->>>    1 file changed, 54 insertions(+)
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
->>> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
->>> index bc20083..ed78f74 100644
->>> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
->>> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
->>> @@ -1339,6 +1339,32 @@ SH_PFC_MUX1(ether_link,		ETH_LINK);
->>>    SH_PFC_PINS(ether_magic,	RCAR_GP_PIN(4, 20));
->>>    SH_PFC_MUX1(ether_magic,	ETH_MAGIC);
->>>
->>> +/* - I2C macro ------------------------------------------------------------- */
->>> +#define I2C_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
->>> +#define I2C_PFC_DAT(name, sda, scl)	SH_PFC_MUX2(name, sda, scl)
+ Developed and tested against v3.10-rc2.
 
->>       Why not just I2C_PFC_PINS() and I2C_PFC_DATA()?
->>       Also, I don't think I2C_PFC_DAT() is a really good name, since the
->> group includes both data and clock lines. Why not just use SH_PFC_MUX2()?
+ arch/arm/mach-shmobile/setup-sh73a0.c |   11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-> We don't use SH_PFC_MUX2() directly here
-
-    But why?
-
-> it will be I2C_PFC_DATA() in v2
-
-    Again, I don't think it's a good name.
-
-WBR, Sergei
-
+--- 0002/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-05-20 17:20:48.000000000 +0900
+@@ -916,11 +916,17 @@ void __init sh73a0_add_standard_devices(
+ 			    ARRAY_SIZE(sh73a0_late_devices));
+ }
+ 
++void __init sh73a0_init_delay(void)
++{
++	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
++}
++
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak sh73a0_register_twd(void) { }
+ 
+ void __init sh73a0_earlytimer_init(void)
+ {
++	sh73a0_init_delay();
+ 	sh73a0_clock_init();
+ 	shmobile_earlytimer_init();
+ 	sh73a0_register_twd();
+@@ -939,11 +945,6 @@ void __init sh73a0_add_early_devices(voi
+ 
+ #ifdef CONFIG_USE_OF
+ 
+-void __init sh73a0_init_delay(void)
+-{
+-	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
+-}
+-
+ static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
+ 	{},
+ };
