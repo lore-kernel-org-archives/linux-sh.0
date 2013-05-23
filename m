@@ -1,54 +1,106 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 19 May 2013 16:09:51 +0000
-Subject: Re: [PATCH 4/9] ARM: shmobile: r8a7790: add clock definitions and aliases for MMCIF and SDHI
-Message-Id: <5198F94F.6070608@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 May 2013 03:19:20 +0000
+Subject: [PATCH 07/17 v2] ARM: shmobile: r8a7778: add HSPI support
+Message-Id: <8738te4c3u.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368802520-16378-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1368802520-16378-5-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-On 18-05-2013 19:34, Guennadi Liakhovetski wrote:
+ - no change
 
->>>>> Add MSTP clock definitions and fix aliases for the two MMCIF and four
->>>>> SDHI
->>>>> interfaces on r8a7790 (H2).
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    6 ++++++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   23 +++++++++++++++++++++++
+ 3 files changed, 30 insertions(+)
 
->>>>> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
->>>>> ---
->>>>>     arch/arm/mach-shmobile/clock-r8a7790.c |   26
->>>>> +++++++++++++++++++-------
->>>>>     1 files changed, 19 insertions(+), 7 deletions(-)
-
->>>>> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c
->>>>> b/arch/arm/mach-shmobile/clock-r8a7790.c
->>>>> index b393592..53a13b4 100644
->>>>> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
->>>>> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
->>>>> @@ -181,7 +181,7 @@ static struct clk div6_clks[DIV6_NR] = {
->>>>>     /* MSTP */
->>>>>     enum {
->>>>>     	MSTP721, MSTP720,
->>>>> -	MSTP304,
->>>>> +	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311,
-
->>>>      Should have broken this line here.
-
->>> Don't think so.
-
->>     At least breaking the lines at numerical tens of MSTPxxx values was a
->> tradition so far (although ten values don't fit in one line :-).
-
-> Look at the following MSTP2xx line.
-
-    Indeed, I've overlooked that. Apparently the mentioned tradition 
-hasn't been maintained in this file.
-
->>>>> MSTP305, MSTP304,
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 1386c59..c2c1895 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -108,6 +108,7 @@ enum {
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
++	MSTP007,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -127,10 +128,12 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
+ 	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
+ 	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP007] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  7, 0), /* HSPI */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* main */
++	CLKDEV_CON_ID("shyway_clk",	&s_clk),
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
+@@ -150,6 +153,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
++	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ };
+ 
+ void __init r8a7778_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index a428bc6..ca8bc14 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -25,6 +25,7 @@ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
++extern void r8a7778_add_hspi_device(int id);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 87b74a5..8f011cb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -198,6 +198,29 @@ void __init r8a7778_add_i2c_device(int id)
+ 		i2c_resources + (2 * id), 2);
+ }
+ 
++/* HSPI */
++static struct resource hspi_resources[] = {
++	/* HSPI0 */
++	DEFINE_RES_MEM(0xfffc7000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x5f)),
++	/* HSPI1 */
++	DEFINE_RES_MEM(0xfffc8000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x74)),
++	/* HSPI2 */
++	DEFINE_RES_MEM(0xfffc6000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x75)),
++};
++
++void __init r8a7778_add_hspi_device(int id)
++{
++	BUG_ON(id < 0 || id > 2);
++
++	platform_device_register_simple(
++		"sh-hspi", id,
++		hspi_resources + (2 * id), 2);
++}
++
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
+-- 
+1.7.9.5
 
