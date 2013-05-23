@@ -1,68 +1,32 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 22 May 2013 13:56:13 +0000
-Subject: Re: [PATCH] ARM: shmobile: kzm9g-reference: Update CMT clocksource rating to 80
-Message-Id: <20130522135608.GA32012@verge.net.au>
+Date: Thu, 23 May 2013 01:40:03 +0000
+Subject: [Announce] Renesas branches rebased on v3.10-rc2
+Message-Id: <20130523014003.GN22608@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369226980-16203-1-git-send-email-horms+renesas@verge.net.au>
- <519CCB97.20207@cogentembedded.com>
-In-Reply-To: <519CCB97.20207@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, May 22, 2013 at 05:43:51PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 22-05-2013 16:49, Simon Horman wrote:
-> 
-> >Update the CMT clocksource rating from 100 to 10.
-> 
->    s/100/125/ and s/10/80/, apparently.
+Hi,
 
-Thanks, I don't know what I was thinking.
+I have rebased all branches of the renesas tree that are targeted
+at v3.11 on top of v3.10-rc2. I have also merged these into
+a new next branch which I have pushed and tagged as renesas-next-20130523.
+This should appear in linux-next in the not to distant future.
 
-> 
-> >This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
-> >introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
-> >Avoid dummy clockevent being preferred over real").
-> 
-> >The patch noted above reduces the rating of dummy clockevent from 400 to 100.
-> 
->    400 seems very high rating for a dummy clockevent...
-> 
-> >This patch reduces the rating of CMT so that it is once again less than that
-> >of the dummy clockevent.
-> 
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> >---
-> 
-> >I also plan to reduce the rating of the STI clocksource to less than 100.
-> >However, as I am not aware of any problems relating to STI in v3.10-rc
-> >my plan is to update STI in the v3.11 timeframe.
-> >---
-> >  arch/arm/mach-shmobile/setup-sh73a0.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> >diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-> >index fdf3894..9696f36 100644
-> >--- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> >+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> >@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
-> >  	.name = "CMT10",
-> >  	.channel_offset = 0x10,
-> >  	.timer_bit = 0,
-> >-	.clockevent_rating = 125,
-> >+	.clockevent_rating = 80,
-> >  	.clocksource_rating = 125,
-> >  };
-> 
-> WBR, Sergei
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+There are a few -fixes branches which resolve problems in v3.10-rc1. I will
+get pull requests to arm-soc for those branches in the not to distant
+future. The target for -fixes branches is v3.10.
+
+As this took a while I am a little behind with picking up patches that
+have been posted, but I hope to catch up over the next few days.
+
+Moving forwards, assuming that nothing dramatic happens I will start
+sending pull requests to arm-soc for the non-fixes branches so they
+can be included in v3.11. At this stage I plan to start doing that
+next week.
+
+Known problems: Booting marzen-reference seems flakey and I'm entirely
+unsure why.
+
