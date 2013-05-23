@@ -1,25 +1,41 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 15 May 2013 21:53:29 +0000
-Subject: [PATCH v4 0/3] R8A7779/Marzen R-Car VIN driver support
-Message-Id: <201305160153.29827.sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 May 2013 03:14:33 +0000
+Subject: [PATCH 01/17 v2] spi: hspi: fixup long delay time
+Message-Id: <87bo824cbu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Current HSPI driver is using msleep(20) on hspi_status_check_timeout(),
+but it was too long delay for SPI device.
+Bock-W board SPI access was too slow without this patch.
+This patch uses udelay(10) for it.
 
-   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130515v2' tag and my recent yet unapplied USB/I2C patches.
-Here we add the VIN driver platform code for the R8A7779/Marzen with ADV7180
-I2C video decoder.
+Tested-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-[1/3] ARM: shmobile: r8a7779: add VIN support
-[2/3] ARM: shmobile: Marzen: add VIN and ADV7180 support
-[3/3] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
+ - no change
 
-   The VIN driver itself has been excluded from the series as it will be developed
-against Mauro's 'media_tree.git' plus some yet unapplied patches in the future...
+ drivers/spi/spi-sh-hspi.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-WBR, Sergei
+diff --git a/drivers/spi/spi-sh-hspi.c b/drivers/spi/spi-sh-hspi.c
+index 60cfae5..eab593e 100644
+--- a/drivers/spi/spi-sh-hspi.c
++++ b/drivers/spi/spi-sh-hspi.c
+@@ -89,7 +89,7 @@ static int hspi_status_check_timeout(struct hspi_priv *hspi, u32 mask, u32 val)
+ 		if ((mask & hspi_read(hspi, SPSR)) = val)
+ 			return 0;
+ 
+-		msleep(20);
++		udelay(10);
+ 	}
+ 
+ 	dev_err(hspi->dev, "timeout\n");
+-- 
+1.7.9.5
+
