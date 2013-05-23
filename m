@@ -1,63 +1,72 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 22 Apr 2013 22:59:51 +0000
-Subject: [PATCH 10/37] ARM: shmobile: armadillo800eva: Register pinctrl mapping for GETHER
-Message-Id: <1366671618-8796-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 May 2013 03:24:04 +0000
+Subject: [PATCH 17/17 v2] ARM: shmobile: r8a7778: rename sdhi device additional function
+Message-Id: <87obc22xbi.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based GETHER pinmux configuration by a pinctrl mapping.
+Other device additional function are r8a7778_add_xxx_device()
+sdhi also follow it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 25 +++++--------------------
- 1 file changed, 5 insertions(+), 20 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 8f103c4..a23988b 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1036,6 +1036,11 @@ static struct platform_device *eva_devices[] __initdata = {
+ - r8a7778_sdhi_init() was out of naming rule
+
+ arch/arm/mach-shmobile/board-bockw.c          |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7778.c        |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 2f51e8b..b8e8d9f 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -211,7 +211,7 @@ static void __init bockw_init(void)
+ 		iowrite32(ioread32(base + PUPR4) | (3 << 26), base + PUPR4);
+ 		iounmap(base);
+ 
+-		r8a7778_sdhi_init(0, &sdhi0_info);
++		r8a7778_add_sdhi_device(0, &sdhi0_info);
+ 	}
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index fcf3c90..3fcbb771 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -28,6 +28,7 @@ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
+ extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
++extern void r8a7778_add_sdhi_device(int id, struct sh_mobile_sdhi_info *info);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+@@ -35,6 +36,5 @@ extern void r8a7778_init_irq_dt(void);
+ extern void r8a7778_clock_init(void);
+ extern void r8a7778_init_irq_extpin(int irlm);
+ extern void r8a7778_pinmux_init(void);
+-extern void r8a7778_sdhi_init(int id, struct sh_mobile_sdhi_info *info);
+ 
+ #endif /* __ASM_R8A7778_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 3e128c3..749d886 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -162,7 +162,7 @@ static struct resource sdhi_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_iid(0x76)),
  };
  
- static const struct pinctrl_map eva_pinctrl_map[] = {
-+	/* GETHER */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
-+				  "gether_mii", "gether"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
-+				  "gether_int", "gether"),
- 	/* LCD0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
- 				  "lcd0_data24_0", "lcd0"),
-@@ -1128,26 +1133,6 @@ static void __init eva_init(void)
- 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
- 
- 	/* GETHER */
--	gpio_request(GPIO_FN_ET_CRS,		NULL);
--	gpio_request(GPIO_FN_ET_MDC,		NULL);
--	gpio_request(GPIO_FN_ET_MDIO,		NULL);
--	gpio_request(GPIO_FN_ET_TX_ER,		NULL);
--	gpio_request(GPIO_FN_ET_RX_ER,		NULL);
--	gpio_request(GPIO_FN_ET_ERXD0,		NULL);
--	gpio_request(GPIO_FN_ET_ERXD1,		NULL);
--	gpio_request(GPIO_FN_ET_ERXD2,		NULL);
--	gpio_request(GPIO_FN_ET_ERXD3,		NULL);
--	gpio_request(GPIO_FN_ET_TX_CLK,		NULL);
--	gpio_request(GPIO_FN_ET_TX_EN,		NULL);
--	gpio_request(GPIO_FN_ET_ETXD0,		NULL);
--	gpio_request(GPIO_FN_ET_ETXD1,		NULL);
--	gpio_request(GPIO_FN_ET_ETXD2,		NULL);
--	gpio_request(GPIO_FN_ET_ETXD3,		NULL);
--	gpio_request(GPIO_FN_ET_PHY_INT,	NULL);
--	gpio_request(GPIO_FN_ET_COL,		NULL);
--	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
--	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
--
- 	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
- 
- 	/* USB */
+-void __init r8a7778_sdhi_init(int id,
++void __init r8a7778_add_sdhi_device(int id,
+ 			      struct sh_mobile_sdhi_info *info)
+ {
+ 	BUG_ON(id < 0 || id > 2);
 -- 
-1.8.1.5
+1.7.9.5
 
