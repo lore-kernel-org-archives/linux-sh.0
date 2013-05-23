@@ -1,77 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 07 May 2013 06:36:35 +0000
-Subject: Re: [PATCH v4 19/88] sh-pfc: r8a7779: Add USB pin groups and functions
-Message-Id: <1934021.AFFPs9EP9Z@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 May 2013 03:15:05 +0000
+Subject: [PATCH 02/17 v2] mtd: m25p80: add support for the Spansion s25fl008k chip
+Message-Id: <87a9nm4cax.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363215633-4264-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363215633-4264-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-On Tuesday 07 May 2013 02:50:36 Sergei Shtylyov wrote:
-> On 03/14/2013 01:59 AM, Laurent Pinchart wrote:
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >   drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 42 ++++++++++++++++++++++++++++++
-> >   1 file changed, 42 insertions(+)
-> > 
-> > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-> > b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c index 946572bc..6043d2c 100644
-> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-> > @@ -2198,6 +2198,30 @@ static const unsigned int sdhi3_wp_pins[] = {
-> >   static const unsigned int sdhi3_wp_mux[] = {
-> >   	SD3_WP_MARK,
-> >   };
-> > 
-> > +/* - USB0 ------------------------------------------------------------ */
-> > +static const unsigned int usb0_pins[] = {
-> > +	/* OVC */
-> > +	150, 154,
-> > +};
-> > +static const unsigned int usb0_mux[] = {
-> > +	USB_OVC0_MARK, USB_PENC0_MARK,
-> > +};
-> > +/* - USB1 ------------------------------------------------------------ */
-> > +static const unsigned int usb1_pins[] = {
-> > +	/* OVC */
-> > +	152, 155,
-> > +};
-> > +static const unsigned int usb1_mux[] = {
-> > +	USB_OVC1_MARK, USB_PENC1_MARK,
-> > +};
-> > +/* - USB2 ------------------------------------------------------------ */
-> > +static const unsigned int usb2_pins[] = {
-> > +	/* OVC, PENC */
-> > +	125, 156,
-> > +};
-> > +static const unsigned int usb2_mux[] = {
-> > +	USB_OVC2_MARK, USB_PENC2_MARK,
-> > +};
-> 
-> The PENCn and USB_OVCn were erroneously grouped together (I've already
-> explained that the latter is usually unused 3.3V signal). This causes
-> the following (false) error messages when booting on Marzen:
-> 
-> sh-pfc pfc-r8a7779: pin GP_4_22 already requested by sh-hspi.0; cannot
-> claim for ehci-platform.0
-> sh-pfc pfc-r8a7779: pin-150 (ehci-platform.0) status -22
-> sh-pfc pfc-r8a7779: could not request pin 150 on device sh-pfc
-> 
-> GP_4_22 is multiplexed with USB_OVC0 (unused on Marzen) and HSPI_CLK0. This
-> needs fixing.
+ - no change
 
-Thank you for the explanation. I've sent a patch to fix this issue, could you 
-please review it ?
+ drivers/mtd/devices/m25p80.c |    1 +
+ 1 file changed, 1 insertion(+)
 
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index 2f3d2a5..1bad33a 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -780,6 +780,7 @@ static const struct spi_device_id m25p_ids[] = {
+ 	{ "s25sl016a",  INFO(0x010214,      0,  64 * 1024,  32, 0) },
+ 	{ "s25sl032a",  INFO(0x010215,      0,  64 * 1024,  64, 0) },
+ 	{ "s25sl064a",  INFO(0x010216,      0,  64 * 1024, 128, 0) },
++	{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K) },
+ 	{ "s25fl016k",  INFO(0xef4015,      0,  64 * 1024,  32, SECT_4K) },
+ 	{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
