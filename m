@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 23 May 2013 01:39:41 +0000
-Subject: Re: [PATCH] ARM: shmobile: Remove unused r8a7790 GIC CPU interface DT bits
-Message-Id: <20130523013940.GJ22608@verge.net.au>
+Date: Thu, 23 May 2013 01:39:45 +0000
+Subject: Re: [PATCH] ARM: shmobile: Remove unused r8a73a4 GIC CPU interface DT bits
+Message-Id: <20130523013944.GK22608@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130516060355.29253.21426.sendpatchset@w520>
 In-Reply-To: <20130516060355.29253.21426.sendpatchset@w520>
@@ -10,23 +10,23 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, May 16, 2013 at 03:05:16PM +0900, Magnus Damm wrote:
+On Thu, May 16, 2013 at 03:03:55PM +0900, Magnus Damm wrote:
 > From: Magnus Damm <damm@opensource.se>
 > 
-> Remove unused GIC CPU interface DT bits for r8a7790.
+> Remove unused GIC CPU interface DT bits for r8a73a4.
 > 
 > Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Thanks, queued-up for v3.11 in the soc-r8a7790 branch.
+Thanks. Queued up for v3.11 in the soc-r8a74a4 branch.
 
 > ---
 > 
->  arch/arm/boot/dts/r8a7790.dtsi |    6 ------
+>  arch/arm/boot/dts/r8a73a4.dtsi |    6 ------
 >  1 file changed, 6 deletions(-)
 > 
-> --- 0001/arch/arm/boot/dts/r8a7790.dtsi
-> +++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-05-15 14:41:08.000000000 +0900
-> @@ -36,12 +36,6 @@
+> --- 0001/arch/arm/boot/dts/r8a73a4.dtsi
+> +++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-05-15 14:40:15.000000000 +0900
+> @@ -37,12 +37,6 @@
 >  			<0 0xf1004000 0 0x2000>,
 >  			<0 0xf1006000 0 0x2000>;
 >  		interrupts = <1 9 0xf04>;
