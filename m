@@ -1,62 +1,97 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 25 May 2013 00:59:08 +0000
-Subject: Re: [PATCH] ARM: shmobile: marzen: Use error values in usb_power_*
-Message-Id: <20130525005908.GE4476@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 May 2013 03:19:40 +0000
+Subject: [PATCH 08/17 v2] ARM: shmobile: r8a7778: add MMCIF support
+Message-Id: <871u8y4c3a.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369205290-6272-1-git-send-email-horms+renesas@verge.net.au>
- <1369205290-6272-2-git-send-email-horms+renesas@verge.net.au>
- <519D217D.2060405@cogentembedded.com>
-In-Reply-To: <519D217D.2060405@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, May 22, 2013 at 11:50:21PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 05/22/2013 10:48 AM, Simon Horman wrote:
-> 
-> >This patch updates the marzen board code as if USB PHY isn't enabled
-> >they phy will have a value set by ERR_PTR() rather than be NULL.
-> >
-> >Without this patch a NULL pointer dereference  and kernel panic
-> >occurs on initialisation of USB on marzen.
-> >
-> >This resolves a regression introduced in 3.10-rc1 by
-> >b7fa5c2aec5be083eb2719b405089703608e9bc6
-> >("usb: phy: return -ENXIO when PHY layer isn't enabled").
-> >
-> >Tested-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/mach-shmobile/board-marzen.c | 6 +++---
-> >  1 file changed, 3 insertions(+), 3 deletions(-)
-> >
-> >diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-> >index 9105285..b9594e9 100644
-> >--- a/arch/arm/mach-shmobile/board-marzen.c
-> >+++ b/arch/arm/mach-shmobile/board-marzen.c
-> >@@ -212,8 +212,8 @@ static struct platform_device *marzen_devices[] __initdata = {
-> >  static struct usb_phy *phy;
-> >  static int usb_power_on(struct platform_device *pdev)
-> >  {
-> >-	if (!phy)
-> >-		return -EIO;
-> >+	if (IS_ERR(phy))
-> 
->    And even before the mentioned commit the right check should have
-> been IS_ERR_OR_NULL().
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Yes, quite true.
+ - no change
 
-> Thanks for finding/fixing this. Too bad I'll have to respin my USB
-> patches now... :-)
-> 
-> WBR, Sergei
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    3 +++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   13 +++++++++++++
+ 3 files changed, 18 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index c2c1895..842aed7 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -103,6 +103,7 @@ static struct clk *main_clks[] = {
+ };
+ 
+ enum {
++	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+ 	MSTP030,
+@@ -112,6 +113,7 @@ enum {
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
+ 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+@@ -137,6 +139,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_mmcif",	&mstp_clks[MSTP331]), /* MMC */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index ca8bc14..fcf3c90 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -18,6 +18,7 @@
+ #ifndef __ASM_R8A7778_H__
+ #define __ASM_R8A7778_H__
+ 
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
+ 
+@@ -26,6 +27,7 @@ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
++extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 8f011cb..b0cc4ba 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -220,6 +220,19 @@ void __init r8a7778_add_hspi_device(int id)
+ 		hspi_resources + (2 * id), 2);
+ }
+ 
++/* MMC */
++static struct resource mmc_resources[] = {
++	DEFINE_RES_MEM(0xffe4e000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x5d)),
++};
++
++void __init r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info)
++{
++	platform_device_register_resndata(
++		&platform_bus, "sh_mmcif", -1,
++		mmc_resources, ARRAY_SIZE(mmc_resources),
++		info, sizeof(*info));
++}
+ 
+ void __init r8a7778_add_standard_devices(void)
+ {
+-- 
+1.7.9.5
+
