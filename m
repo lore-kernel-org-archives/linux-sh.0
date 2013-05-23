@@ -1,30 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 13 May 2013 08:53:50 +0000
-Subject: [PATCH 0/3] ARM: mach-shmobile: lager: support GPIO switche
-Message-Id: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 May 2013 03:20:59 +0000
+Subject: [PATCH 12/17 v2] ARM: shmobile: bockw defconfig: add RTC RX8581 support
+Message-Id: <87vc6a2xgn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This short series adds support for accessing the 4 pins of SW2 as
-gpio keys 1 - 4.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-As the gpio-keys driver requires IRQ_TYPE_EDGE_BOTH support for this
-has been added to the R-Car GPIO driver.
+ - no change
 
-Simon Horman (3):
-  gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH
-  ARM: shmobile: r8a7790: Configure R-Car GPIO for IRQ_TYPE_EDGE_BOTH
-  ARM: mach-shmobile: lager: support GPIO switches
+ arch/arm/configs/bockw_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
- arch/arm/mach-shmobile/board-lager.c    | 22 ++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7790.c  |  1 +
- drivers/gpio/gpio-rcar.c                | 27 ++++++++++++++++++++++-----
- include/linux/platform_data/gpio-rcar.h |  1 +
- 4 files changed, 46 insertions(+), 5 deletions(-)
-
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index d662608..cb7638d 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -86,6 +86,8 @@ CONFIG_USB_STORAGE=y
+ CONFIG_USB_RCAR_PHY=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_RX8581=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
 -- 
-1.8.2.1
+1.7.9.5
 
