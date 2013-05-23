@@ -1,127 +1,48 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 15 May 2013 21:58:07 +0000
-Subject: [PATCH v4 2/3] ARM: shmobile: Marzen: add VIN and ADV7180 support
-Message-Id: <201305160158.08239.sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 May 2013 03:21:16 +0000
+Subject: [PATCH 13/17 v2] ARM: shmobile: bockw defconfig: add M25P80 support
+Message-Id: <87txlu2xg6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305160153.29827.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305160153.29827.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-
-Add ADV7180 platform devices on the Marzen board, configure VIN1/3 pins, and
-register VIN1/3 devices with the ADV7180 specific platform data.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: removed superfluous tabulation and inserted empty lines in the  macro
-definition, updated the copyrights, annotated VIN platform data as '__initdata']
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Changes since version 3:
-- changed the VIN platform device names to be R8A7779 specific;
+v1 -> v2
 
-Changes since version 2:
-- annotated 'vin_platform_data' as '__initdata' since they're kmemdup()'ed while
-  registering the platform devices anyway.
+ - no change
 
-Changes since the original posting:
-- used a macro to define the camera platform devices;
-- updated the copyrights;
-- refreshed the patch.
+ arch/arm/configs/bockw_defconfig |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
- arch/arm/mach-shmobile/board-marzen.c |   44 +++++++++++++++++++++++++++++++++-
- 1 file changed, 43 insertions(+), 1 deletion(-)
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index cb7638d..55e00ff 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -49,6 +49,12 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
++CONFIG_MTD=y
++CONFIG_MTD_CHAR=y
++CONFIG_MTD_BLOCK=y
++CONFIG_MTD_CFI=y
++CONFIG_MTD_CFI_AMDSTD=y
++CONFIG_MTD_M25P80=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+@@ -76,6 +82,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HWMON is not set
+ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
++CONFIG_SPI=y
++CONFIG_SPI_SH_HSPI=y
+ CONFIG_USB=y
+ CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
+ CONFIG_USB_EHCI_HCD=y
+-- 
+1.7.9.5
 
-Index: renesas/arch/arm/mach-shmobile/board-marzen.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
-+++ renesas/arch/arm/mach-shmobile/board-marzen.c
-@@ -1,8 +1,9 @@
- /*
-  * marzen board support
-  *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
-  * Copyright (C) 2011  Magnus Damm
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -37,6 +38,7 @@
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <media/soc_camera.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -178,12 +180,40 @@ static struct platform_device leds_devic
- 	},
- };
- 
-+static struct rcar_vin_platform_data vin_platform_data __initdata = {
-+	.flags	= RCAR_VIN_BT656,
-+};
-+
-+#define MARZEN_CAMERA(idx)					\
-+static struct i2c_board_info camera##idx##_info = {		\
-+	I2C_BOARD_INFO("adv7180", 0x20 + (idx)),		\
-+};								\
-+								\
-+static struct soc_camera_link iclink##idx##_adv7180 = {		\
-+	.bus_id		= 1 + 2 * (idx),			\
-+	.i2c_adapter_id	= 0,					\
-+	.board_info	= &camera##idx##_info,			\
-+};								\
-+								\
-+static struct platform_device camera##idx##_device = {		\
-+	.name	= "soc-camera-pdrv",				\
-+	.id	= idx,						\
-+	.dev	= {						\
-+		.platform_data	= &iclink##idx##_adv7180,	\
-+	},							\
-+};
-+
-+MARZEN_CAMERA(0);
-+MARZEN_CAMERA(1);
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
- 	&hspi_device,
- 	&leds_device,
-+	&camera0_device,
-+	&camera1_device,
- };
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-@@ -219,6 +249,16 @@ static const struct pinctrl_map marzen_p
- 	/* USB2 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
- 				  "usb2", "usb2"),
-+	/* VIN1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
-+				  "vin1_clk", "vin1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
-+				  "vin1_data8", "vin1"),
-+	/* VIN3 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
-+				  "vin3_clk", "vin3"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
-+				  "vin3_data8", "vin3"),
- };
- 
- static void __init marzen_init(void)
-@@ -235,6 +275,8 @@ static void __init marzen_init(void)
- 
- 	r8a7779_add_standard_devices();
- 	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
-+	r8a7779_add_vin_device(1, &vin_platform_data);
-+	r8a7779_add_vin_device(3, &vin_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
