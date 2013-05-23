@@ -1,84 +1,47 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 23 May 2013 03:20:40 +0000
-Subject: [PATCH 11/17 v2] ARM: shmobile: bockw: add MMCIF support
-Message-Id: <87wqqq2xh6.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 23 May 2013 13:01:47 +0000
+Subject: Re: [PATCH 11/17 v2] ARM: shmobile: bockw: add MMCIF support
+Message-Id: <519E133B.8020400@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87wqqq2xh6.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wqqq2xh6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+Hello.
 
- - no change
+On 23.05.2013 7:20, Kuninori Morimoto wrote:
 
- arch/arm/mach-shmobile/board-bockw.c |   32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+> Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[...]
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 769069e..2f51e8b 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -41,6 +41,23 @@
-  * SW41		SCIF	RCAN
-  */
- 
-+/*
-+ * MMC (CN26) pin
-+ *
-+ * SW6	(D2)	3 pin
-+ * SW7	(D5)	ON
-+ * SW8	(D3)	3 pin
-+ * SW10	(D4)	1 pin
-+ * SW12	(CLK)	1 pin
-+ * SW13	(D6)	3 pin
-+ * SW14	(CMD)	ON
-+ * SW15	(D6)	1 pin
-+ * SW16	(D0)	ON
-+ * SW17	(D1)	ON
-+ * SW18	(D7)	3 pin
-+ * SW19	(MMC)	1 pin
-+ */
-+
- /* Dummy supplies, where voltage doesn't matter */
- static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-@@ -100,10 +117,24 @@ static struct spi_board_info spi_board_info[] __initdata = {
- 	},
- };
- 
-+/* MMC */
-+static struct sh_mmcif_plat_data sh_mmcif_plat = {
-+	.sup_pclk	= 0,
-+	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
-+	.caps		= MMC_CAP_4_BIT_DATA |
-+			  MMC_CAP_8_BIT_DATA |
-+			  MMC_CAP_NEEDS_POLL,
-+};
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* HSPI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7778",
- 				  "hspi0_a", "hspi0"),
-+	/* MMC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif", "pfc-r8a7778",
-+				  "mmc_data8", "mmc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif", "pfc-r8a7778",
-+				  "mmc_ctrl", "mmc"),
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_data_a", "scif0"),
-@@ -133,6 +164,7 @@ static void __init bockw_init(void)
- 	r8a7778_add_standard_devices();
- 	r8a7778_add_i2c_device(0);
- 	r8a7778_add_hspi_device(0);
-+	r8a7778_add_mmc_device(&sh_mmcif_plat);
- 
- 	i2c_register_board_info(0, i2c0_devices,
- 				ARRAY_SIZE(i2c0_devices));
--- 
-1.7.9.5
+> diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+> index 769069e..2f51e8b 100644
+> --- a/arch/arm/mach-shmobile/board-bockw.c
+> +++ b/arch/arm/mach-shmobile/board-bockw.c
+[...]
+> @@ -100,10 +117,24 @@ static struct spi_board_info spi_board_info[] __initdata = {
+>   	},
+>   };
+>
+> +/* MMC */
+> +static struct sh_mmcif_plat_data sh_mmcif_plat = {
+
+    I keep telling you that platform data and platform device resources 
+should be annotated with __initdata if you're using 
+platfrom_device_register_*() functions as they are copied to the heap 
+memory in this case...
+
+> +	.sup_pclk	= 0,
+> +	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+> +	.caps		= MMC_CAP_4_BIT_DATA |
+> +			  MMC_CAP_8_BIT_DATA |
+> +			  MMC_CAP_NEEDS_POLL,
+> +};
+> +
+
+WBR, Sergei
 
