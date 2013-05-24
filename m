@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 24 May 2013 02:21:17 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 24 May 2013 02:59:44 +0000
 Subject: Re: [PATCH] ARM: mach-shmobile: r8a7790: add SATA support
-Message-Id: <877gip2k4l.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20130524025940.GA10536@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1369361184-20862-1-git-send-email-horms+renesas@verge.net.au>
  <878v352kb4.wl%kuninori.morimoto.gx@renesas.com>
@@ -11,9 +11,21 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Simon
-
+On Thu, May 23, 2013 at 07:17:22PM -0700, Kuninori Morimoto wrote:
+> 
+> Hi Simon
+> 
+> > Add SATA clock for r8a7790 SoC (for both device tree and usual cases).
+> > Register SATA controller as a "late" platform device on r8a7790 SoC.
+> > 
+> > Based on "ARM: mach-shmobile: r8a7779: add SATA support" by
+> > Vladimir Barinov.
+> > 
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > ---
+> 
+> > +	CLKDEV_DEV_ID("sata_rcar.1", &mstp_clks[MSTP814]),
+> (snip)
 > > +static __init void r8a7790_register_sata1(void)
 > > +{
 > > +
@@ -32,11 +44,32 @@ Hi Simon
 > > +
 > > +	platform_device_register_full(&pdevinfo);
 > > +}
+> 
+> This is a little bit strange for me.
+> Why you don't care SATA0 ?
 
-This "using local variable" make sense.
-It don't need "__initdata"
+Because the lager board only seems to expose SATA1 and I was
+interested in something I could test.
 
+I am happy to start caring about SATA0 if you think it is
+a good idea.
 
-Best regards
----
-Kuninori Morimoto
+> Can you use like this ?
+> 
+> static __init void r8a7790_register_sata(int id);
+
+Sure, but I'm unsure how you want r8a7790_register_sata to handle id.
+
+Is it just for the id field of struct platform_device_info pdevinfo?
+Or also to switch between resources somehow?
+
+> BTW, we need to decide "driver registration function naming" ?
+> In r8a7778 case, it is using 
+> 
+> 	r8a7778_add_xxx_device()
+> 	r8a7778_add_xxx_devices()
+> 
+> but r8a7778_register_xxx seems nice naming :)
+
+I chose register as it seemed to be consistent with the
+existing contents of r8a7790_add_standard_devices().
