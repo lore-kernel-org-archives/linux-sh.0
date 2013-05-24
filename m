@@ -1,51 +1,60 @@
-From: "Christian Daudt" <csd@broadcom.com>
-Date: Tue, 14 May 2013 18:04:50 +0000
-Subject: Re: [PATCH 12/20] ARM: bcm281xx: Remove init_irq declaration in machine description
-Message-Id: <51927CC2.7080101@broadcom.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 24 May 2013 09:13:03 +0000
+Subject: [PATCH 1/2] ARM: shmobile: irqpin: add a DT property to enable masking on parent
+Message-Id: <Pine.LNX.4.64.1305241109530.1090@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368545933-7430-13-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-13-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 13-05-14 08:38 AM, Maxime Ripard wrote:
-> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> specified") removed the need to explictly setup the init_irq field in
-> the machine description when using only irqchip_init. Remove that
-> declaration for bcm281xx as well.
->
-> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> Acked-by: Christian Daudt <csd@broadcom.com>
-> ---
->   arch/arm/mach-bcm/board_bcm.c | 2 --
->   1 file changed, 2 deletions(-)
->
-> diff --git a/arch/arm/mach-bcm/board_bcm.c b/arch/arm/mach-bcm/board_bcm.c
-> index 22e8421..2859932 100644
-> --- a/arch/arm/mach-bcm/board_bcm.c
-> +++ b/arch/arm/mach-bcm/board_bcm.c
-> @@ -15,7 +15,6 @@
->   #include <linux/init.h>
->   #include <linux/device.h>
->   #include <linux/platform_device.h>
-> -#include <linux/irqchip.h>
->   #include <linux/clocksource.h>
->   
->   #include <asm/mach/arch.h>
-> @@ -54,7 +53,6 @@ static void __init board_init(void)
->   static const char * const bcm11351_dt_compat[] = { "bcm,bcm11351", NULL, };
->   
->   DT_MACHINE_START(BCM11351_DT, "Broadcom Application Processor")
-> -	.init_irq = irqchip_init,
->   	.init_time = clocksource_of_init,
->   	.init_machine = board_init,
->   	.dt_compat = bcm11351_dt_compat,
-Applied.
+To disable spurious interrupts, that get triggered on certain hardware, the
+irqpin driver masks them on the parent interrupt controller. To specify
+such broken devices a .control_parent parameter can be provided in the
+platform data. In the DT case we need a property, to do the same.
 
-  Thanks,
-    csd
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
+These two patches simply split the earlier "ARM: shmobile: irqpin: fix 
+handling of spurious interrupts in DT case" patch into two parts. 
+Otherwise no change.
+
+ .../interrupt-controller/renesas,intc-irqpin.txt   |    2 ++
+ drivers/irqchip/irq-renesas-intc-irqpin.c          |    7 +++++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+index c6f09b7..152b10a 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -11,3 +11,5 @@ Optional properties:
+   resource allocation properties
+ - sense-bitfield-width: width of a single sense bitfield in the SENSE register,
+   if different from the default 4 bits
++- control-parent: disable and enable interrupts on the parent interrupt
++  controller, needed for some broken implementations
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 4aca1b2..82cec63 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -348,11 +348,14 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	/* deal with driver instance configuration */
+-	if (pdata)
++	if (pdata) {
+ 		memcpy(&p->config, pdata, sizeof(*pdata));
+-	else
++	} else {
+ 		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
+ 				     &p->config.sense_bitfield_width);
++		p->config.control_parent = of_property_read_bool(pdev->dev.of_node,
++								 "control-parent");
++	}
+ 	if (!p->config.sense_bitfield_width)
+ 		p->config.sense_bitfield_width = 4; /* default to 4 bits */
+ 
+-- 
+1.7.2.5
 
