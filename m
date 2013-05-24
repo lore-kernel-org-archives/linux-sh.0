@@ -1,93 +1,38 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Fri, 31 May 2013 12:21:00 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: irqpin: map spurious interrupts in DT case
-Message-Id: <20130531122100.BEC173E0901@localhost>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 May 2013 02:05:59 +0000
+Subject: [PATCH] libata: do not limit R-Car SATA driver to shmobile
+Message-Id: <1369361159-20724-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305241109530.1090@axis700.grange>
- <Pine.LNX.4.64.1305241112210.1090@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1305241112210.1090@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Tejun Heo <tj@kernel.org>, linux-ide@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-On Fri, 24 May 2013 11:13:07 +0200 (CEST), Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> In the non-DT case all interrupts get mapped statically during probing,
-> therefore, if a spurious interrupt arrives, it can easily be mapped back
-> to hardware registers and bits and handled. In the DT case interrupts are
-> mapped only when a device, using that interrupt is instantiated from DT.
-> So, spurious interrupts occur unmapped and thus cannot be handled properly.
-> This patch fixes this by mapping such interrupts as they occur.
+The motivation for this is to allow the driver to be
+used with the r8a7790 SoC.
 
-That sounds like a bad approach. If the driver really requires the irqs
-to be mapped, then it should do all of them when the controller is set
-up. Mapping at interrupt handling time is absolutely the wrong time to
-do it.
+I believe that rather than adding another SoC to the list of allowed SoCs
+it is better to simply remove the dependency of the driver on shmobile all
+together.
 
-Also, why is mapping the irq necessary to handle it? You don't want to
-call generic_handle_irq() on a bad interrupt because there won't be
-anything listening for it. First of all, that particular irq should be
-entirely disabled if at all possible. Second, if it isn't possible to
-disable it, then the handler function should clear the state and get out
-of the handler as quickly as possible.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/ata/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-g.
-
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  drivers/irqchip/irq-renesas-intc-irqpin.c |    8 ++++++++
->  1 files changed, 8 insertions(+), 0 deletions(-)
-> 
-> diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-> index 82cec63..e62d76d 100644
-> --- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-> +++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-> @@ -71,6 +71,7 @@ struct intc_irqpin_priv {
->  	struct intc_irqpin_iomem iomem[INTC_IRQPIN_REG_NR];
->  	struct intc_irqpin_irq irq[INTC_IRQPIN_MAX];
->  	struct renesas_intc_irqpin_config config;
-> +	unsigned int min_irq;
->  	unsigned int number_of_irqs;
->  	struct platform_device *pdev;
->  	struct irq_chip irq_chip;
-> @@ -274,6 +275,10 @@ static irqreturn_t intc_irqpin_irq_handler(int irq, void *dev_id)
->  	struct intc_irqpin_priv *p = i->p;
->  	unsigned long bit;
->  
-> +	if (!i->domain_irq)
-> +		/* unmapped: spurious IRQ, map it now */
-> +		irq_create_mapping(p->irq_domain, irq - p->min_irq);
-> +
->  	intc_irqpin_dbg(i, "demux1");
->  	bit = intc_irqpin_hwirq_mask(p, INTC_IRQPIN_REG_SOURCE, i->hw_irq);
->  
-> @@ -372,6 +377,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
->  		}
->  	}
->  
-> +	p->min_irq = INT_MAX;
->  	/* allow any number of IRQs between 1 and INTC_IRQPIN_MAX */
->  	for (k = 0; k < INTC_IRQPIN_MAX; k++) {
->  		irq = platform_get_resource(pdev, IORESOURCE_IRQ, k);
-> @@ -380,6 +386,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
->  
->  		p->irq[k].p = p;
->  		p->irq[k].requested_irq = irq->start;
-> +		if (p->min_irq > irq->start)
-> +			p->min_irq = irq->start;
->  	}
->  
->  	p->number_of_irqs = k;
-> -- 
-> 1.7.2.5
-> 
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-
+diff --git a/drivers/ata/Kconfig b/drivers/ata/Kconfig
+index a5a3ebc..aba6e93 100644
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
+@@ -263,7 +263,6 @@ config SATA_PROMISE
+ 
+ config SATA_RCAR
+ 	tristate "Renesas R-Car SATA support"
+-	depends on ARCH_SHMOBILE && ARCH_R8A7779
+ 	help
+ 	  This option enables support for Renesas R-Car Serial ATA.
+ 
 -- 
-Grant Likely, B.Sc, P.Eng.
-Secret Lab Technologies, Ltd.
+1.8.2.1
+
