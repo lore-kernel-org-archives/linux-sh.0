@@ -1,61 +1,52 @@
-From: Thierry Reding <thierry.reding@avionic-design.de>
-Date: Thu, 23 May 2013 19:12:17 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 25 May 2013 05:33:27 +0000
 Subject: Re: [PATCH v2] pwm: renesas-tpu: Add missing pwmchip_remove() call in tpu_remove()
-Message-Id: <20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="z6Eq5LdranGa6ru8"
+Message-Id: <20130525053327.GB9293@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1369057541.11578.1.camel@phoenix>
  <1454213.B1kNpQ6JtX@avalon>
  <20130523013933.GI22608@verge.net.au>
-In-Reply-To: <20130523013933.GI22608@verge.net.au>
-To: Simon Horman <horms@verge.net.au>
+ <20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
+In-Reply-To: <20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Thierry Reding <thierry.reding@avionic-design.de>
 Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Axel Lin <axel.lin@ingics.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
+On Thu, May 23, 2013 at 09:12:17PM +0200, Thierry Reding wrote:
+> On Thu, May 23, 2013 at 10:39:34AM +0900, Simon Horman wrote:
+> > On Mon, May 20, 2013 at 03:46:59PM +0200, Laurent Pinchart wrote:
+> > > Hi Axel,
+> > > 
+> > > Thank you for the patch.
+> > > 
+> > > On Monday 20 May 2013 21:45:41 Axel Lin wrote:
+> > > > Signed-off-by: Axel Lin <axel.lin@ingics.com>
+> > > 
+> > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > 
+> > Thanks. I have queued this up for v3.11 in the pinmux branch
+> > of my renesas tree on kernel.org.
+> 
+> I'd rather take this through the PWM tree along with the original driver
+> patch.
 
---z6Eq5LdranGa6ru8
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Sure that is fine.
 
-On Thu, May 23, 2013 at 10:39:34AM +0900, Simon Horman wrote:
-> On Mon, May 20, 2013 at 03:46:59PM +0200, Laurent Pinchart wrote:
-> > Hi Axel,
-> >=20
-> > Thank you for the patch.
-> >=20
-> > On Monday 20 May 2013 21:45:41 Axel Lin wrote:
-> > > Signed-off-by: Axel Lin <axel.lin@ingics.com>
-> >=20
-> > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->=20
-> Thanks. I have queued this up for v3.11 in the pinmux branch
-> of my renesas tree on kernel.org.
+I had them queued up in my tree but I have dropped them now.
+That should propogate to linux-next in the not too distant future.
 
-I'd rather take this through the PWM tree along with the original driver
-patch.
+I have also dropped the following changes from my tree
+as they appear to ether depend on the TPU PWD driver or one
+of the other patches in the list below.
 
-Thierry
+Laurent, I think it would be best if you resubmitted these patches
+once there is a stable branch available with the TPU PWD driver merged
+which I can use as a base.
 
---z6Eq5LdranGa6ru8
-Content-Type: application/pgp-signature
+ARM: mach-shmobile: armadillo800eva: Add backlight support
+ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
+leds: Remove leds-renesas-tpu driver
+sh-pfc: sh73a0: Remove function GPIOs
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.19 (GNU/Linux)
-
-iQIcBAEBAgAGBQJRnmoRAAoJEN0jrNd/PrOhxN0P/07aOzDVB//xE4rRYt2bIUlC
-N3rRVCMYaarbHkUz4arEnIWx2jIBEBuE9Ds2p2i61wTKlV4bAGxh6cZzyncDc4u3
-s+yBHDqG8sqhpet4amOjiBR0umwwKvwNxwvrV9ELkGk1qcYRsY40MBuhZkixpL0F
-o0QKeRDyxahuTsY4xqyTCsAxxnq689EP9jdeSEylQUvUgVSNdGtLKo8zryLoPZhy
-5d89AD2QiNsE/5y+uYxPNhbYpOMSKDVa2i5IclLNzqZ2tJP4/aNGA6ElgRok6CJO
-+ORm4Mpv7NNeIyVZ24UG4xaaUWfr4wJj0ESI6O4WRXPnDgVLz45a21R8DY0oMNqw
-hw+0q4vskAVdnzUlQ2NPPhVAYOKZUOfcm2tzBMiF6hVbRVNNdGJjBLWjzsXWHSM3
-d7ogTbpVVeFgSMngAfr+7lXkD0DRybZ+FA/Yf+x5VjX9pyncJV4hA0dYEZ8pyxyW
-/2ca23QaaRaOpcL/WoVSsVRCtXqPkBbtviitgYVVWtXorehF8DcLwMwXcZnNUaME
-Q9eCaEGMbZ/TZLDtmOWVRnh0RUe/x2je2NmqGtf3nxXN35ATUh6IFZP7hyJIfXzE
-WxPVt6In9kDio7kCNZsXU74AlYp/kS2Wc8svD45NLpyPXpPC825yqopfgG4cOzyl
-rfOErZoBzlEmSJViRUWi
-=91qk
------END PGP SIGNATURE-----
-
---z6Eq5LdranGa6ru8--
