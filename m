@@ -1,20 +1,19 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 25 May 2013 05:33:27 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 25 May 2013 13:42:42 +0000
 Subject: Re: [PATCH v2] pwm: renesas-tpu: Add missing pwmchip_remove() call in tpu_remove()
-Message-Id: <20130525053327.GB9293@verge.net.au>
+Message-Id: <4528298.O99iVSpig9@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369057541.11578.1.camel@phoenix>
- <1454213.B1kNpQ6JtX@avalon>
- <20130523013933.GI22608@verge.net.au>
- <20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
+References: <1369057541.11578.1.camel@phoenix> <20130523013933.GI22608@verge.net.au> <20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
 In-Reply-To: <20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Thierry Reding <thierry.reding@avionic-design.de>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Axel Lin <axel.lin@ingics.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Axel Lin <axel.lin@ingics.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thu, May 23, 2013 at 09:12:17PM +0200, Thierry Reding wrote:
+Hi Thierry,
+
+On Thursday 23 May 2013 21:12:17 Thierry Reding wrote:
 > On Thu, May 23, 2013 at 10:39:34AM +0900, Simon Horman wrote:
 > > On Mon, May 20, 2013 at 03:46:59PM +0200, Laurent Pinchart wrote:
 > > > Hi Axel,
@@ -32,21 +31,10 @@ On Thu, May 23, 2013 at 09:12:17PM +0200, Thierry Reding wrote:
 > I'd rather take this through the PWM tree along with the original driver
 > patch.
 
-Sure that is fine.
+As I will need to submit a new version of the renesas-tpu patches should I 
+fold this patch in ?
 
-I had them queued up in my tree but I have dropped them now.
-That should propogate to linux-next in the not too distant future.
+-- 
+Regards,
 
-I have also dropped the following changes from my tree
-as they appear to ether depend on the TPU PWD driver or one
-of the other patches in the list below.
-
-Laurent, I think it would be best if you resubmitted these patches
-once there is a stable branch available with the TPU PWD driver merged
-which I can use as a base.
-
-ARM: mach-shmobile: armadillo800eva: Add backlight support
-ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
-leds: Remove leds-renesas-tpu driver
-sh-pfc: sh73a0: Remove function GPIOs
-
+Laurent Pinchart
