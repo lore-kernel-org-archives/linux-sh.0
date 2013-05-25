@@ -1,80 +1,25 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 22 May 2013 22:10:00 +0000
-Subject: [PATCH 2/2] ARM: shmobile: sh73a0: div4 clocks must check the kick bit before changing rate
-Message-Id: <alpine.DEB.2.00.1305230008400.20133@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 25 May 2013 00:58:43 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: sh73a0: div4 clocks must check the kick bit before changing rate
+Message-Id: <20130525005843.GD4476@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <alpine.DEB.2.00.1305230008400.20133@axis700.grange>
+In-Reply-To: <alpine.DEB.2.00.1305230008400.20133@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-According to the datasheet, it is not allowed to change div4 clock rates
-if an earlier rate change operation is still in progress, as indicated by
-a set kick bit.
+On Thu, May 23, 2013 at 12:10:00AM +0200, Guennadi Liakhovetski wrote:
+> According to the datasheet, it is not allowed to change div4 clock rates
+> if an earlier rate change operation is still in progress, as indicated by
+> a set kick bit.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> ---
+>  arch/arm/mach-shmobile/clock-sh73a0.c |   24 +++++++++++++++++++-----
+>  1 files changed, 19 insertions(+), 5 deletions(-)
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
- arch/arm/mach-shmobile/clock-sh73a0.c |   24 +++++++++++++++++++-----
- 1 files changed, 19 insertions(+), 5 deletions(-)
+Thanks Guennadi,
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 8cb6738..2ef27a6 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -257,7 +257,7 @@ static struct clk twd_clk = {
- 	.ops = &twd_clk_ops,
- };
- 
--static struct sh_clk_ops zclk_ops;
-+static struct sh_clk_ops zclk_ops, kicker_ops;
- static const struct sh_clk_ops *div4_clk_ops;
- 
- static int zclk_set_rate(struct clk *clk, unsigned long rate)
-@@ -326,18 +326,32 @@ static unsigned long zclk_recalc(struct clk *clk)
- 	return clk_get_rate(clk->parent);
- }
- 
--static void zclk_extend(void)
-+static int kicker_set_rate(struct clk *clk, unsigned long rate)
- {
--	div4_clk_ops = div4_clks[DIV4_Z].ops;
-+	if (__raw_readl(FRQCRB) & (1 << 31))
-+		return -EBUSY;
- 
-+	return div4_clk_ops->set_rate(clk, rate);
-+}
-+
-+static void div4_clk_extend(void)
-+{
-+	int i;
-+
-+	div4_clk_ops = div4_clks[0].ops;
-+
-+	/* Add a kicker-busy check before changing the rate */
-+	kicker_ops = *div4_clk_ops;
- 	/* We extend the DIV4 clock with a 1:1 pass-through case */
- 	zclk_ops = *div4_clk_ops;
- 
-+	kicker_ops.set_rate = kicker_set_rate;
- 	zclk_ops.set_rate = zclk_set_rate;
- 	zclk_ops.round_rate = zclk_round_rate;
- 	zclk_ops.recalc = zclk_recalc;
- 
--	div4_clks[DIV4_Z].ops = &zclk_ops;
-+	for (i = 0; i < DIV4_NR; i++)
-+		div4_clks[i].ops = i = DIV4_Z ? &zclk_ops : &kicker_ops;
- }
- 
- enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
-@@ -702,7 +716,7 @@ void __init sh73a0_clock_init(void)
- 	if (!ret) {
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
- 		if (!ret)
--			zclk_extend();
-+			div4_clk_extend();
- 	}
- 
- 	if (!ret)
--- 
-1.7.2.5
-
+I will queue this up in the soc-sh73a0 branch for v3.11.
