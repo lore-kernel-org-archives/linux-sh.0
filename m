@@ -1,62 +1,43 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Tue, 14 May 2013 15:38:50 +0000
-Subject: [PATCH 17/20] ARM: sirf: Remove init_irq declaration in machine description
-Message-Id: <1368545933-7430-18-git-send-email-maxime.ripard@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 25 May 2013 06:42:18 +0000
+Subject: [PATCH] ARM: shmobile: sh73a0: Update CMT clockevent rating to 80
+Message-Id: <1369464138-21530-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+References: <1369464138-21530-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369464138-21530-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for sirf as well.
+Update the CMT clockevent rating from 125 to 80.
 
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Acked-by: Barry Song <Baohua.Song@csr.com>
+This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
+introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
+Avoid dummy clockevent being preferred over real").
+
+The patch noted above reduces the rating of dummy clockevent from 400 to 100.
+This patch reduces the rating of CMT so that it is once again less than that
+of the dummy clockevent.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-prima2/common.c | 4 ----
- 1 file changed, 4 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-prima2/common.c b/arch/arm/mach-prima2/common.c
-index 4f94cd8..a9f475c 100644
---- a/arch/arm/mach-prima2/common.c
-+++ b/arch/arm/mach-prima2/common.c
-@@ -9,7 +9,6 @@
- #include <linux/clocksource.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
--#include <linux/irqchip.h>
- #include <asm/sizes.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -55,7 +54,6 @@ DT_MACHINE_START(ATLAS6_DT, "Generic ATLAS6 (Flattened Device Tree)")
- 	/* Maintainer: Barry Song <baohua.song@csr.com> */
- 	.nr_irqs	= 128,
- 	.map_io         = sirfsoc_map_io,
--	.init_irq	= irqchip_init,
- 	.init_time	= sirfsoc_init_time,
- 	.init_machine	= sirfsoc_mach_init,
- 	.init_late	= sirfsoc_init_late,
-@@ -74,7 +72,6 @@ DT_MACHINE_START(PRIMA2_DT, "Generic PRIMA2 (Flattened Device Tree)")
- 	/* Maintainer: Barry Song <baohua.song@csr.com> */
- 	.nr_irqs	= 128,
- 	.map_io         = sirfsoc_map_io,
--	.init_irq	= irqchip_init,
- 	.init_time	= sirfsoc_init_time,
- 	.dma_zone_size	= SZ_256M,
- 	.init_machine	= sirfsoc_mach_init,
-@@ -94,7 +91,6 @@ DT_MACHINE_START(MARCO_DT, "Generic MARCO (Flattened Device Tree)")
- 	/* Maintainer: Barry Song <baohua.song@csr.com> */
- 	.smp            = smp_ops(sirfsoc_smp_ops),
- 	.map_io         = sirfsoc_map_io,
--	.init_irq	= irqchip_init,
- 	.init_time	= sirfsoc_init_time,
- 	.init_machine	= sirfsoc_mach_init,
- 	.init_late	= sirfsoc_init_late,
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fdf3894..9696f36 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
+ 	.name = "CMT10",
+ 	.channel_offset = 0x10,
+ 	.timer_bit = 0,
+-	.clockevent_rating = 125,
++	.clockevent_rating = 80,
+ 	.clocksource_rating = 125,
+ };
+ 
 -- 
-1.8.1.2
+1.7.10.4
 
