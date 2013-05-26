@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 09:00:50 +0000
-Subject: [PATCH 6/8] ARM: shmobile: sh73a0: Always use shmobile_setup_delay()
-Message-Id: <1369645252-3847-7-git-send-email-horms+renesas@verge.net.au>
+Date: Sun, 26 May 2013 13:05:57 +0000
+Subject: [PATCH 6/6] ARM: shmobile: Remove unused r8a73a4 GIC CPU interface DT bits
+Message-Id: <1369573557-11071-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645252-3847-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645252-3847-1-git-send-email-horms+renesas@verge.net.au>
+References: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,55 +12,31 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Break out the function sh73a0_init_delay() that now
-gets called both for the C version of the code and
-the DT -reference boards. This way we handle both
-cases in the same way.
-
-Allows us to boot with TWD only in the kernel configuration
-for C board code. TWD is not yet enabled in the case of
-DT -reference - this due to a dependency on CCF.
+Remove unused GIC CPU interface DT bits for r8a73a4.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |   11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a73a4.dtsi |    6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 9986515..8bb879f 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -915,11 +915,17 @@ void __init sh73a0_add_standard_devices(void)
- 			    ARRAY_SIZE(sh73a0_late_devices));
- }
- 
-+void __init sh73a0_init_delay(void)
-+{
-+	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
-+}
-+
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak sh73a0_register_twd(void) { }
- 
- void __init sh73a0_earlytimer_init(void)
- {
-+	sh73a0_init_delay();
- 	sh73a0_clock_init();
- 	shmobile_earlytimer_init();
- 	sh73a0_register_twd();
-@@ -938,11 +944,6 @@ void __init sh73a0_add_early_devices(void)
- 
- #ifdef CONFIG_USE_OF
- 
--void __init sh73a0_init_delay(void)
--{
--	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
--}
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index fde2a33..4ff2019 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -37,12 +37,6 @@
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 0xf04>;
 -
- static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
- 	{},
- };
+-		gic-cpuif@4 {
+-			compatible = "arm,gic-cpuif";
+-			cpuif-id = <4>;
+-			cpu = <&cpu0>;
+-		};
+ 	};
+ 
+ 	timer {
 -- 
 1.7.10.4
 
