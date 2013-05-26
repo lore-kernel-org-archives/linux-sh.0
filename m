@@ -1,46 +1,72 @@
-From: Axel Lin <axel.lin@ingics.com>
-Date: Sat, 25 May 2013 15:20:30 +0000
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Sun, 26 May 2013 09:18:24 +0000
 Subject: Re: [PATCH v2] pwm: renesas-tpu: Add missing pwmchip_remove() call in tpu_remove()
-Message-Id: <CAFRkauD6jgaETfnFcekJsM1irvCq45bes-Gt7BL1EP36G9+5rg@mail.gmail.com>
+Message-Id: <20130526091824.GA12361@avionic-0098.adnet.avionic-design.de>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="UugvWAfsgieZRqgk"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1369057541.11578.1.camel@phoenix>
-	<20130523013933.GI22608@verge.net.au>
-	<20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
-	<4528298.O99iVSpig9@avalon>
+ <20130523013933.GI22608@verge.net.au>
+ <20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
+ <4528298.O99iVSpig9@avalon>
 In-Reply-To: <4528298.O99iVSpig9@avalon>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Thierry Reding <thierry.reding@avionic-design.de>, Simon Horman <horms@verge.net.au>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Axel Lin <axel.lin@ingics.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-2013/5/25 Laurent Pinchart <laurent.pinchart@ideasonboard.com>:
+
+--UugvWAfsgieZRqgk
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Sat, May 25, 2013 at 03:42:42PM +0200, Laurent Pinchart wrote:
 > Hi Thierry,
->
+>=20
 > On Thursday 23 May 2013 21:12:17 Thierry Reding wrote:
->> On Thu, May 23, 2013 at 10:39:34AM +0900, Simon Horman wrote:
->> > On Mon, May 20, 2013 at 03:46:59PM +0200, Laurent Pinchart wrote:
->> > > Hi Axel,
->> > >
->> > > Thank you for the patch.
->> > >
->> > > On Monday 20 May 2013 21:45:41 Axel Lin wrote:
->> > > > Signed-off-by: Axel Lin <axel.lin@ingics.com>
->> > >
->> > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->> >
->> > Thanks. I have queued this up for v3.11 in the pinmux branch
->> > of my renesas tree on kernel.org.
->>
->> I'd rather take this through the PWM tree along with the original driver
->> patch.
->
-> As I will need to submit a new version of the renesas-tpu patches should I
+> > On Thu, May 23, 2013 at 10:39:34AM +0900, Simon Horman wrote:
+> > > On Mon, May 20, 2013 at 03:46:59PM +0200, Laurent Pinchart wrote:
+> > > > Hi Axel,
+> > > >=20
+> > > > Thank you for the patch.
+> > > >=20
+> > > > On Monday 20 May 2013 21:45:41 Axel Lin wrote:
+> > > > > Signed-off-by: Axel Lin <axel.lin@ingics.com>
+> > > >=20
+> > > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > >=20
+> > > Thanks. I have queued this up for v3.11 in the pinmux branch
+> > > of my renesas tree on kernel.org.
+> >=20
+> > I'd rather take this through the PWM tree along with the original driver
+> > patch.
+>=20
+> As I will need to submit a new version of the renesas-tpu patches should =
+I=20
 > fold this patch in ?
 
-Hi Laurent,
-I think you can fold this patch in if you are going to submit a new version
-of the renesas-tpu patches.
+Yes, that's fine with me. It'd be nice to credit Axel, though.
 
-Regards,
-Axel
+Thierry
+
+--UugvWAfsgieZRqgk
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+
+iQIcBAEBAgAGBQJRodNgAAoJEN0jrNd/PrOhgx8P/2WRvGi+BykuUiKEaAECnsCn
+DLbHFEJI5EVW1dnvK95YtFrrQTXKvU386toY4G/3DQasOGkF+adrirk3K52WwQnH
+5O3BS7omAMVmXCPp47jrRQR9CL2oDAjzm1GEIoYKQB+PQcESDZjc/R53zxLADltD
+rBnt4+FzNZQ9gRfoBpgd3lEDHGTgBPkUT62SXEvEELQMo8a668pGZ05v2G78PTUf
+Oxduq+JhG5fcbkSHG/3zXQSe6PKQp+2OUVqhoLJd1YS42gRA6UNDeXatml6+Idbe
+wqkOgx5H/YzJ0JwuW540SlSd/6NnRWONPzhpod6Qg2a1q5y7JFHoMiaronstZR+K
+SkYdqo1SL3n2aNCuDeg8Nuc62+AaQp/pdkaaT/W3al/k3dHpQIk7yt0yFoydjzxk
+bijTmHAFcdHcMt1MrwRVa+CbN6Cqknmegd0/zll9scN8Bphs+uIua65wQN/T8+Ua
+mOE723tS2Uw7/P6KAKVhh9USZkhkamm0xZpteRDXIvr37+iTQxtbZ3UeGTuWDgxC
+1qD2K2+GJYFnjtGgIXn4UonR24KH0lMkbDteLFw/tHYZjbFXcp0V0yRA0LVJzonX
+m9S/Sy9Kx2XbgFY6JEmp6ftHAOZVwVBVWJj2wiKBKDJ4mNGM+EGqUYv0Cc805N/U
+aeZExTKADdbqgmTsaDuM
+=3stA
+-----END PGP SIGNATURE-----
+
+--UugvWAfsgieZRqgk--
