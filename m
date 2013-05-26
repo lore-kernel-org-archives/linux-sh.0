@@ -1,75 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 28 May 2013 03:19:08 +0000
-Subject: [PATCH 2/2 v4] ARM: shmobile: r8a7790: add __initdata on resource and device data
-Message-Id: <8761y3aj12.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sun, 26 May 2013 13:05:23 +0000
+Subject: [PATCH] ARM: shmobile: emev2: Remove init_irq declaration in machine description
+Message-Id: <1369573523-10980-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369573523-10980-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369573523-10980-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-These data will be kmemdup()'ed on
-platform_device_add_resources() and platform_device_add_data().
-This patch removed "const" to avoid section type conflict
-with r8a7790_boards_compat_dt
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for shmobile as well.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3 -> v4
+ arch/arm/mach-shmobile/setup-emev2.c |    2 --
+ 1 file changed, 2 deletions(-)
 
- - fixed section type conflict error
-
- arch/arm/mach-shmobile/setup-r8a7790.c |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index ed7ee24..20d569d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -29,17 +29,17 @@
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- 
--static const struct resource pfc_resources[] = {
-+static struct resource pfc_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xe6060000, 0x250),
- };
- 
- #define R8A7790_GPIO(idx)						\
--static struct resource r8a7790_gpio##idx##_resources[] = {		\
-+static struct resource r8a7790_gpio##idx##_resources[] __initdata = {	\
- 	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
- 	DEFINE_RES_IRQ(gic_spi(4 + (idx))),				\
- };									\
- 									\
--static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data = {	\
-+static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data __initdata = {	\
- 	.gpio_base	= 32 * (idx),					\
- 	.irq_base	= 0,						\
- 	.number_of_pins	= 32,						\
-@@ -101,7 +101,7 @@ void __init r8a7790_pinmux_init(void)
- 
- enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
- 
--static const struct plat_sci_port scif[] = {
-+static struct plat_sci_port scif[] __initdata = {
- 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
- 	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
- 	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
-@@ -118,11 +118,11 @@ static inline void r8a7790_register_scif(int idx)
- 				      sizeof(struct plat_sci_port));
- }
- 
--static struct renesas_irqc_config irqc0_data = {
-+static struct renesas_irqc_config irqc0_data __initdata = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
- };
- 
--static struct resource irqc0_resources[] = {
-+static struct resource irqc0_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
- 	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
- 	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index 899a86c..66694e0 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -20,7 +20,6 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/platform_device.h>
+ #include <linux/platform_data/gpio-em.h>
+ #include <linux/of_platform.h>
+@@ -454,7 +453,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.init_early	= emev2_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= emev2_add_standard_devices_dt,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
 -- 
-1.7.9.5
+1.7.10.4
 
