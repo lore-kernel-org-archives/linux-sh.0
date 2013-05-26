@@ -1,90 +1,287 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Fri, 31 May 2013 15:57:02 +0000
-Subject: [PATCH v3 2/5] ARM: shmobile: r8a7790: HSCIF support
-Message-Id: <1370015825-29383-3-git-send-email-ulrich.hecht@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sun, 26 May 2013 13:05:55 +0000
+Subject: [PATCH 4/6] ARM: shmobile: r8a73a4: add div6 clocks
+Message-Id: <1369573557-11071-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Adds support for HSCIF0 and HSCIF1 on the r8a7790.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+DIV6 clocks control each core clocks.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c |    5 +++++
- arch/arm/mach-shmobile/setup-r8a7790.c |   14 +++++++++++++-
- 2 files changed, 18 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a73a4.c |  182 ++++++++++++++++++++++++++++----
+ 1 file changed, 163 insertions(+), 19 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index b393592..379bce6 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -181,6 +181,7 @@ static struct clk div6_clks[DIV6_NR] = {
- /* MSTP */
- enum {
- 	MSTP721, MSTP720,
-+	MSTP717, MSTP716,
- 	MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
- 	MSTP_NR
-@@ -196,6 +197,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
-+	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
-+	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 147314a..f6227bb 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -28,19 +28,34 @@
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x270
+ 
+-#define MPCKCR 0xe6150080
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR5 0xe6150144
+ 
+ #define FRQCRA		0xE6150000
+ #define FRQCRB		0xE6150004
+-#define CKSCR		0xE61500C0
++#define VCLKCR1		0xE6150008
++#define VCLKCR2		0xE615000C
++#define VCLKCR3		0xE615001C
++#define VCLKCR4		0xE6150014
++#define VCLKCR5		0xE6150034
++#define ZBCKCR		0xE6150010
++#define SD0CKCR		0xE6150074
++#define SD1CKCR		0xE6150078
++#define SD2CKCR		0xE615007C
++#define MMC0CKCR	0xE6150240
++#define MMC1CKCR	0xE6150244
++#define FSIACKCR	0xE6150018
++#define FSIBCKCR	0xE6150090
++#define MPCKCR		0xe6150080
++#define SPUVCKCR	0xE6150094
++#define HSICKCR		0xE615026C
++#define M4CKCR		0xE6150098
+ #define PLLECR		0xE61500D0
+ #define PLL1CR		0xE6150028
+ #define PLL2CR		0xE615002C
+ #define PLL2SCR		0xE61501F4
+ #define PLL2HCR		0xE61501E4
+-
++#define CKSCR		0xE61500C0
+ 
+ #define CPG_MAP(o) ((o - CPG_BASE) + cpg_mapping.base)
+ 
+@@ -81,6 +96,13 @@ SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
+ SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
+ SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
+ 
++/* External FSIACK/FSIBCK clock */
++static struct clk fsiack_clk = {
++};
++
++static struct clk fsibck_clk = {
++};
++
+ /*
+  *		PLL clocks
+  */
+@@ -170,6 +192,8 @@ static struct clk *main_clks[] = {
+ 	&extal2_div4_clk,
+ 	&main_clk,
+ 	&main_div2_clk,
++	&fsiack_clk,
++	&fsibck_clk,
+ 	&pll1_clk,
+ 	&pll1_div2_clk,
+ 	&pll2_clk,
+@@ -216,6 +240,111 @@ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_HP]	= SH_CLK_DIV4(&pll1_clk, FRQCRB,  4, 0x0dff, 0),
  };
  
- static struct clk_lookup lookups[] = {
-@@ -249,6 +252,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP202]),
- 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP721]),
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
-+	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
-+	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
- };
- 
- #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index ed7ee24..5b7a770 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -99,7 +99,15 @@ void __init r8a7790_pinmux_init(void)
- 	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
- }
- 
--enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
-+#define HSCIF_DATA(index, baseaddr, irq)		\
-+[index] = {						\
-+	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
-+	.scbrr_algo_id	= SCBRR_ALGO_6,			\
-+	.scscr = SCSCR_RE | SCSCR_TE,	\
++enum {
++	DIV6_ZB,
++	DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
++	DIV6_MMC0, DIV6_MMC1,
++	DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_VCK4, DIV6_VCK5,
++	DIV6_FSIA, DIV6_FSIB,
++	DIV6_MP, DIV6_M4, DIV6_HSI, DIV6_SPUV,
++	DIV6_NR };
++
++static struct clk *div6_parents[8] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2s_clk,
++	[3] = &extal2_clk,
++	[4] = &main_div2_clk,
++	[6] = &extalr_clk,
++};
++
++static struct clk *fsia_parents[4] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2s_clk,
++	[2] = &fsiack_clk,
++};
++
++static struct clk *fsib_parents[4] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2s_clk,
++	[2] = &fsibck_clk,
++};
++
++static struct clk *mp_parents[4] = {
++	[0] = &pll1_div2_clk,
++	[1] = &pll2s_clk,
++	[2] = &extal2_clk,
++	[3] = &extal2_clk,
++};
++
++static struct clk *m4_parents[2] = {
++	[0] = &pll2s_clk,
++};
++
++static struct clk *hsi_parents[4] = {
++	[0] = &pll2h_clk,
++	[1] = &pll1_div2_clk,
++	[3] = &pll2s_clk,
++};
++
++/*** FIXME ***
++ * SH_CLK_DIV6_EXT() macro doesn't care .mapping
++ * but, it is necessary on R-Car (= ioremap() base CPG)
++ * The difference between
++ * SH_CLK_DIV6_EXT() <--> SH_CLK_MAP_DIV6_EXT()
++ * is only .mapping
++ */
++#define SH_CLK_MAP_DIV6_EXT(_reg, _flags, _parents,			\
++			    _num_parents, _src_shift, _src_width)	\
++{									\
++	.enable_reg	= (void __iomem *)_reg,				\
++	.enable_bit	= 0, /* unused */				\
++	.flags		= _flags | CLK_MASK_DIV_ON_DISABLE,		\
++	.div_mask	= SH_CLK_DIV6_MSK,				\
++	.parent_table	= _parents,					\
++	.parent_num	= _num_parents,					\
++	.src_shift	= _src_shift,					\
++	.src_width	= _src_width,					\
++	.mapping	= &cpg_mapping,					\
 +}
 +
-+enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
-+       HSCIF0, HSCIF1 };
- 
- static const struct plat_sci_port scif[] = {
- 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
-@@ -110,6 +118,8 @@ static const struct plat_sci_port scif[] = {
- 	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
- 	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
- 	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
-+	HSCIF_DATA(HSCIF0, 0xe62c0000, gic_spi(154)), /* HSCIF0 */
-+	HSCIF_DATA(HSCIF1, 0xe62c8000, gic_spi(155)), /* HSCIF1 */
++static struct clk div6_clks[DIV6_NR] = {
++	[DIV6_ZB] = SH_CLK_MAP_DIV6_EXT(ZBCKCR, CLK_ENABLE_ON_INIT,
++				div6_parents, 2, 7, 1),
++	[DIV6_SDHI0] = SH_CLK_MAP_DIV6_EXT(SD0CKCR, 0,
++				div6_parents, 2, 6, 2),
++	[DIV6_SDHI1] = SH_CLK_MAP_DIV6_EXT(SD1CKCR, 0,
++				div6_parents, 2, 6, 2),
++	[DIV6_SDHI2] = SH_CLK_MAP_DIV6_EXT(SD2CKCR, 0,
++				div6_parents, 2, 6, 2),
++	[DIV6_MMC0] = SH_CLK_MAP_DIV6_EXT(MMC0CKCR, 0,
++				div6_parents, 2, 6, 2),
++	[DIV6_MMC1] = SH_CLK_MAP_DIV6_EXT(MMC1CKCR, 0,
++				div6_parents, 2, 6, 2),
++	[DIV6_VCK1] = SH_CLK_MAP_DIV6_EXT(VCLKCR1, 0, /* didn't care bit[6-7] */
++				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
++	[DIV6_VCK2] = SH_CLK_MAP_DIV6_EXT(VCLKCR2, 0, /* didn't care bit[6-7] */
++				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
++	[DIV6_VCK3] = SH_CLK_MAP_DIV6_EXT(VCLKCR3, 0, /* didn't care bit[6-7] */
++				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
++	[DIV6_VCK4] = SH_CLK_MAP_DIV6_EXT(VCLKCR4, 0, /* didn't care bit[6-7] */
++				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
++	[DIV6_VCK5] = SH_CLK_MAP_DIV6_EXT(VCLKCR5, 0, /* didn't care bit[6-7] */
++				div6_parents, ARRAY_SIZE(div6_parents), 12, 3),
++	[DIV6_FSIA] = SH_CLK_MAP_DIV6_EXT(FSIACKCR, 0,
++				fsia_parents, ARRAY_SIZE(fsia_parents), 6, 2),
++	[DIV6_FSIB] = SH_CLK_MAP_DIV6_EXT(FSIBCKCR, 0,
++				fsib_parents, ARRAY_SIZE(fsib_parents), 6, 2),
++	[DIV6_MP] = SH_CLK_MAP_DIV6_EXT(MPCKCR, 0, /* it needs bit[9-11] control */
++				mp_parents, ARRAY_SIZE(mp_parents), 6, 2),
++	/* pll2s will be selected always for M4 */
++	[DIV6_M4] = SH_CLK_MAP_DIV6_EXT(M4CKCR, 0, /* it needs bit[9] control */
++				m4_parents, ARRAY_SIZE(m4_parents), 6, 1),
++	[DIV6_HSI] = SH_CLK_MAP_DIV6_EXT(HSICKCR, 0, /* it needs bit[9] control */
++				hsi_parents, ARRAY_SIZE(hsi_parents), 6, 2),
++	[DIV6_SPUV] = SH_CLK_MAP_DIV6_EXT(SPUVCKCR, 0,
++				mp_parents, ARRAY_SIZE(mp_parents), 6, 2),
++};
++
+ /* MSTP */
+ enum {
+ 	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
+@@ -224,12 +353,12 @@ enum {
  };
  
- static inline void r8a7790_register_scif(int idx)
-@@ -147,6 +157,8 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(SCIFA2);
- 	r8a7790_register_scif(SCIF0);
- 	r8a7790_register_scif(SCIF1);
-+	r8a7790_register_scif(HSCIF0);
-+	r8a7790_register_scif(HSCIF1);
- 	r8a7790_register_irqc(0);
- }
+ static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP204] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
+-	[MSTP203] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
+-	[MSTP206] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
+-	[MSTP207] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+-	[MSTP216] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+-	[MSTP217] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 17, 0), /* SCIFB3 */
++	[MSTP204] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 4, 0), /* SCIFA0 */
++	[MSTP203] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 3, 0), /* SCIFA1 */
++	[MSTP206] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 6, 0), /* SCIFB0 */
++	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
++	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
++	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
+ 	[MSTP522] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR5, 22, 0), /* Thermal */
+ };
  
+@@ -240,6 +369,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("extal2",			&extal2_clk),
+ 	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
+ 	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
++	CLKDEV_CON_ID("fsiack",			&fsiack_clk),
++	CLKDEV_CON_ID("fsibck",			&fsibck_clk),
+ 
+ 	/* pll clock */
+ 	CLKDEV_CON_ID("pll1",			&pll1_clk),
+@@ -248,6 +379,25 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pll2s",			&pll2s_clk),
+ 	CLKDEV_CON_ID("pll2h",			&pll2h_clk),
+ 
++	/* DIV6 */
++	CLKDEV_CON_ID("zb",			&div6_clks[DIV6_ZB]),
++	CLKDEV_CON_ID("sdhi0",			&div6_clks[DIV6_SDHI0]),
++	CLKDEV_CON_ID("sdhi1",			&div6_clks[DIV6_SDHI1]),
++	CLKDEV_CON_ID("sdhi2",			&div6_clks[DIV6_SDHI2]),
++	CLKDEV_CON_ID("mmc0",			&div6_clks[DIV6_MMC0]),
++	CLKDEV_CON_ID("mmc1",			&div6_clks[DIV6_MMC1]),
++	CLKDEV_CON_ID("vck1",			&div6_clks[DIV6_VCK1]),
++	CLKDEV_CON_ID("vck2",			&div6_clks[DIV6_VCK2]),
++	CLKDEV_CON_ID("vck3",			&div6_clks[DIV6_VCK3]),
++	CLKDEV_CON_ID("vck4",			&div6_clks[DIV6_VCK4]),
++	CLKDEV_CON_ID("vck5",			&div6_clks[DIV6_VCK5]),
++	CLKDEV_CON_ID("fsia",			&div6_clks[DIV6_FSIA]),
++	CLKDEV_CON_ID("fsib",			&div6_clks[DIV6_FSIB]),
++	CLKDEV_CON_ID("mp",			&div6_clks[DIV6_MP]),
++	CLKDEV_CON_ID("m4",			&div6_clks[DIV6_M4]),
++	CLKDEV_CON_ID("hsi",			&div6_clks[DIV6_HSI]),
++	CLKDEV_CON_ID("spuv",			&div6_clks[DIV6_SPUV]),
++
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+@@ -263,19 +413,10 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a73a4_clock_init(void)
+ {
+-	void __iomem *cpg_base, *reg;
++	void __iomem *reg;
+ 	int k, ret = 0;
+ 	u32 ckscr;
+ 
+-	/* fix MPCLK to EXTAL2 for now.
+-	 * this is needed until more detailed clock topology is supported
+-	 */
+-	cpg_base = ioremap_nocache(CPG_BASE, CPG_LEN);
+-	BUG_ON(!cpg_base);
+-	reg = cpg_base + (MPCKCR - CPG_BASE);
+-	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
+-	iounmap(cpg_base);
+-
+ 	reg = ioremap_nocache(CKSCR, PAGE_SIZE);
+ 	BUG_ON(!reg);
+ 	ckscr = ioread32(reg);
+@@ -303,6 +444,9 @@ void __init r8a73a4_clock_init(void)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ 
+ 	if (!ret)
++		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -- 
 1.7.10.4
 
