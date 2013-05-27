@@ -1,34 +1,45 @@
-From: David Brown <davidb@codeaurora.org>
-Date: Wed, 15 May 2013 17:12:06 +0000
-Subject: Re: [PATCH 14/20] ARM: msm: Remove init_irq declaration in machine description
-Message-Id: <20130515171206.GA3799@codeaurora.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 08:59:47 +0000
+Subject: [PATCH 06/12] ARM: shmobile: r8a7740: Add I2C DT clock names
+Message-Id: <1369645193-3595-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368545933-7430-15-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-15-git-send-email-maxime.ripard@free-electrons.com>
+References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 14, 2013 at 05:38:47PM +0200, Maxime Ripard wrote:
-> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> specified") removed the need to explictly setup the init_irq field in
-> the machine description when using only irqchip_init. Remove that
-> declaration for msm as well.
-> 
-> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> ---
->  arch/arm/mach-msm/board-dt-8660.c | 2 --
->  arch/arm/mach-msm/board-dt-8960.c | 2 --
->  2 files changed, 4 deletions(-)
+From: Bastian Hecht <hechtb@gmail.com>
 
-I've replaced the patch in my msm-cleanup tree with this one.  I'll
-push this out once the support goes into the arm soc tree.
+Add clock association for i2c0 and i2c1 for the new DT names.
 
-David
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index a2a612f..b12c476 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -551,6 +551,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_tmu.4",		&mstp_clks[MSTP111]),
+ 	CLKDEV_DEV_ID("sh_tmu.5",		&mstp_clks[MSTP111]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
++	CLKDEV_DEV_ID("fff20000.i2c",		&mstp_clks[MSTP116]),
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
+ 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
+ 	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP125]),
+@@ -585,6 +586,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6138010.timer",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
++	CLKDEV_DEV_ID("e6c20000.i2c",		&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("e6850000.sdhi",          &mstp_clks[MSTP314]),
 -- 
-sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
-hosted by The Linux Foundation
+1.7.10.4
+
