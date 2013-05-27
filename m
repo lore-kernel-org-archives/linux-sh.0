@@ -1,31 +1,38 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Fri, 17 May 2013 16:49:43 +0000
-Subject: Re: [PATCH] <linux/of_platform.h>: fix compilation warnings with DT disabled
-Message-Id: <CACxGe6vWH1mvnd6nEO2tpGGDHOZROdCw4cYwk7x4GVEDxoNayA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 08:59:45 +0000
+Subject: [PATCH 04/12] ARM: shmobile: r8a7740: Add DT name to clock list for CMT10
+Message-Id: <1369645193-3595-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201302190258.25726.sergei.shtylyov@cogentembedded.com>
- <20130301070925.GA24369@verge.net.au> <5130B12F.20409@gmail.com>
- <5130B1A7.9060001@gmail.com> <5130B34F.2090700@cogentembedded.com>
- <5130B506.5020908@gmail.com> <5195486F.1040603@cogentembedded.com> <CAL_JsqLkshrBDDKtdf+KYufg=83Yn7zAFmHKUpoA848JzbQKmw@mail.gmail.com>
-In-Reply-To: <CAL_JsqLkshrBDDKtdf+KYufg=83Yn7zAFmHKUpoA848JzbQKmw@mail.gmail.com>
+References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robherring2@gmail.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree-discuss@lists.ozlabs.org" <devicetree-discuss@lists.ozlabs.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Rob Herring <rob.herring@calxeda.com>, vladimir.barinov@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 16, 2013 at 11:44 PM, Rob Herring <robherring2@gmail.com> wrote:
->>     I hoped to see this fix in 3.10-rc1. Is there any hope to see it in
->> 3.10-rc's?
->> The code it fixes the warnings in is already in Linus tree.
->
-> So I had this queued up, but Grant did not send DT update to Linus for
-> 3.10. The main thing we had was the preprocessor support and that went
-> thru arm-soc tree. I plan to send this and other fixes to Linus for
-> 3.10.
+From: Bastian Hecht <hechtb@gmail.com>
 
-I got gun shy from the gpio stuff and fixated on better testing of my
-tree. Everything in my tree is bug fixes so I'll be sending the pull
-request today
+This adds temporarily the alternative device name to the clock list
+that is used when booting via Device Tree setup.
 
-g.
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 5bd8da0..8fc396a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -582,6 +582,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
+ 
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
++	CLKDEV_DEV_ID("e6138010.timer",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+-- 
+1.7.10.4
+
