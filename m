@@ -1,34 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 27 May 2013 10:31:01 +0000
-Subject: Re: [PATCH 2/2 v3] ARM: shmobile: r8a7778: rename device additional function for sdhi
-Message-Id: <51A335E5.8050606@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 27 May 2013 01:39:46 +0000
+Subject: ARM: shmobile: r8a7778: rename device additional functio
+Message-Id: <87hahp8ald.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehct8ag0.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehct8ag0.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
 
-On 27-05-2013 5:42, Kuninori Morimoto wrote:
+Hi Simon
 
-> Current r8a7778 is using r8a7778_sdhi_init().
-> Now, we use r8a7778_register_xxx() instead of it
+These patches rename device additional function on r8a7778.
+These are part of "I2C/HSPI/MMC support to r8a7778/BockW/defconfig",
+but, I separeted patches into small set.
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v2 -> v3
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7778: rename device additional function for sh-eth
+      ARM: shmobile: r8a7778: rename device additional function for sdhi
 
->   - no change, but become 2nd patch
+> 1) - 2) are not SH patch but needed
+> 3) - 5) are pfc patches
+> 6) - 8) are r8a7778 patches
+> 9) - b) are bockw patches
+> c) - e) are defconfig patches
+> f) - h) are tidyup cleanup patches
 
->>> Simon
+These are f) - h) part patches as 2nd step,
+and independed from my previous 1st step patches
+("add __initdata on resource and device data" patch)
 
-> This patch exchange both board/setup.
-> Please let me know if you need separated patch
+base on  renesas-next-20130526 tag
 
-     No, separate patches will break the build/bisection.
-
-WBR, Sergei
-
+# sdhi patch exchange both board and setup files
+# please let me know if you need separeted patches.
