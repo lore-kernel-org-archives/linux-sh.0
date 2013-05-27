@@ -1,30 +1,133 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Fri, 31 May 2013 15:28:02 +0000
-Subject: Re: [PATCH 0/5] HSCIF support
-Message-Id: <CAO3366yMwF5JKad0N4HuYiXLX7HZyhsGC81KxiBJd+rJ9kntPg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 08:59:51 +0000
+Subject: [PATCH 10/12] ARM: shmobile: r8a7740: Add CPUIdle
+Message-Id: <1369645193-3595-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369743728-26084-1-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1369743728-26084-1-git-send-email-ulrich.hecht@gmail.com>
+References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 31, 2013 at 2:33 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Tue, May 28, 2013 at 9:22 PM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
->> This set implements HSCIF support for the r8a7790. Since the Lager board
->> doesn't actually have these wired up -- except HSCIF1, but those pins are
->> needed for the serial console -- it has not received real-world testing.
->
-> I may be misunderstanding, but I believe it should be possible to test
-> these HSCIF patches using the serial console port configured as HSCIF?
-> Or is there any reason why we can't do that?
+From: Bastian Hecht <hechtb@gmail.com>
 
-No, not really. I must have filed that under "dead end" when I tried
-it earlier and it didn't work (because of the missing BRG clock, but I
-didn't know that at the time).
+We make use of the r8a7740 Suspend To Ram code to plug together a
+CPUIdle driver.
 
-Anyway, I tried it and it officially works now.
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ arch/arm/mach-shmobile/Makefile               |    2 +-
+ arch/arm/mach-shmobile/cpuidle-r8a7740.c      |   62 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 +
+ arch/arm/mach-shmobile/pm-r8a7740.c           |    1 +
+ 4 files changed, 65 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/mach-shmobile/cpuidle-r8a7740.c
 
-CU
-Uli
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 0568894..2852dcf 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -30,7 +30,7 @@ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o sleep-r8a7740.o
++obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o sleep-r8a7740.o cpuidle-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ 
+diff --git a/arch/arm/mach-shmobile/cpuidle-r8a7740.c b/arch/arm/mach-shmobile/cpuidle-r8a7740.c
+new file mode 100644
+index 0000000..48c7a6c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/cpuidle-r8a7740.c
+@@ -0,0 +1,62 @@
++/*
++ * CPUIdle code for SoC r8a7740
++ *
++ * Copyright (C) 2013 Bastian Hecht
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#include <linux/cpuidle.h>
++#include <linux/module.h>
++#include <asm/cpuidle.h>
++#include <mach/common.h>
++#include <mach/r8a7740.h>
++
++#if defined(CONFIG_SUSPEND) && defined(CONFIG_CPU_IDLE)
++static int r8a7740_enter_a3sm_pll_on(struct cpuidle_device *dev,
++					struct cpuidle_driver *drv, int index)
++{
++	r8a7740_enter_a3sm_common(1);
++	return 1;
++}
++
++static int r8a7740_enter_a3sm_pll_off(struct cpuidle_device *dev,
++					struct cpuidle_driver *drv, int index)
++{
++	r8a7740_enter_a3sm_common(0);
++	return 2;
++}
++
++static struct cpuidle_driver r8a7740_cpuidle_driver = {
++	.name			= "r8a7740_cpuidle",
++	.owner			= THIS_MODULE,
++	.en_core_tk_irqen	= 1,
++	.state_count		= 3,
++	.safe_state_index	= 0, /* C1 */
++	.states[0] = ARM_CPUIDLE_WFI_STATE,
++	.states[1] = {
++		.name = "C2",
++		.desc = "A3SM PLL ON",
++		.exit_latency = 40,
++		.target_residency = 30 + 40,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = r8a7740_enter_a3sm_pll_on,
++	},
++	.states[2] = {
++		.name = "C3",
++		.desc = "A3SM PLL OFF",
++		.exit_latency = 120,
++		.target_residency = 30 + 120,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = r8a7740_enter_a3sm_pll_off,
++	},
++};
++
++void r8a7740_cpuidle_init(void)
++{
++	shmobile_cpuidle_set_driver(&r8a7740_cpuidle_driver);
++}
++#else
++void r8a7740_cpuidle_init(void) {}
++#endif
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 5cfe5d9..3b538e3 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -545,6 +545,7 @@ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+ extern void r8a7740_resume(void);
+ extern void r8a7740_shutdown(void);
++extern void r8a7740_cpuidle_init(void);
+ extern void r8a7740_enter_a3sm_common(int);
+ 
+ #ifdef CONFIG_PM
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index fe3c867..2f196bd 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -237,4 +237,5 @@ static void r8a7740_suspend_init(void) {}
+ void __init r8a7740_pm_init(void)
+ {
+ 	r8a7740_suspend_init();
++	r8a7740_cpuidle_init();
+ }
+-- 
+1.7.10.4
+
