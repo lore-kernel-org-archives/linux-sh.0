@@ -1,37 +1,48 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Mon, 13 May 2013 09:44:09 +0000
-Subject: [PATCH 10/14] ARM: mxs: Remove init_irq declaration in machine description
-Message-Id: <1368438253-28218-11-git-send-email-maxime.ripard@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 08:59:50 +0000
+Subject: [PATCH 5/7] ARM: shmobile: r8a7790: Remove init_irq declaration in machine description
+Message-Id: <1369645224-3728-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+References: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+
 Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
 specified") removed the need to explictly setup the init_irq field in
 the machine description when using only irqchip_init. Remove that
-declaration for mxs as well.
+declaration for shmobile as well.
 
 Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-mxs/mach-mxs.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-mxs/mach-mxs.c b/arch/arm/mach-mxs/mach-mxs.c
-index 5b62b64..ef892b1 100644
---- a/arch/arm/mach-mxs/mach-mxs.c
-+++ b/arch/arm/mach-mxs/mach-mxs.c
-@@ -435,7 +435,6 @@ static const char *mxs_dt_compat[] __initdata = {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 49de2d5..2a7a276 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -19,7 +19,6 @@
+  */
  
- DT_MACHINE_START(MXS, "Freescale MXS (Device Tree)")
- 	.map_io		= debug_ll_io_init,
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
+@@ -142,7 +141,6 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
 -	.init_irq	= irqchip_init,
- 	.handle_irq	= icoll_handle_irq,
- 	.init_time	= mxs_timer_init,
- 	.init_machine	= mxs_machine_init,
+ 	.init_machine	= r8a7790_add_standard_devices_dt,
+ 	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
 -- 
-1.8.1.2
+1.7.10.4
 
