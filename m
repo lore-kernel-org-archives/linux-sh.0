@@ -1,36 +1,73 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Fri, 31 May 2013 15:57:05 +0000
-Subject: [PATCH v3 5/5] ARM: shmobile: lager: map HSCIF0/1 to unused pins
-Message-Id: <1370015825-29383-6-git-send-email-ulrich.hecht@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 27 May 2013 00:54:04 +0000
+Subject: [PATCH 2/2 v3] ARM: shmobile: r8a7790: add __initdata on resource and device data
+Message-Id: <87li718cpi.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-These pins are not actually connected on the board, but at least they
-don't conflict with anything else.
+These data will be kmemdup()'ed on
+platform_device_add_resources() and platform_device_add_data()
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-lager.c |    4 ++++
- 1 file changed, 4 insertions(+)
+v2 -> v3
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 1e99b17..d8bd237 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -77,6 +77,10 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* SCIF1 (CN20: DEBUG SERIAL1) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
- 				  "scif1_data", "scif1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-r8a7790",
-+				  "hscif0_data", "hscif0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.9", "pfc-r8a7790",
-+				  "hscif1_data_b", "hscif1"),
+ - no change, but become 1st patch
+
+ arch/arm/mach-shmobile/setup-r8a7790.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index ed7ee24..1e18152 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -29,17 +29,17 @@
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
+-static const struct resource pfc_resources[] = {
++static const struct resource pfc_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
  };
  
- static void __init lager_add_standard_devices(void)
+ #define R8A7790_GPIO(idx)						\
+-static struct resource r8a7790_gpio##idx##_resources[] = {		\
++static struct resource r8a7790_gpio##idx##_resources[] __initdata = {	\
+ 	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
+ 	DEFINE_RES_IRQ(gic_spi(4 + (idx))),				\
+ };									\
+ 									\
+-static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data = {	\
++static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data __initdata = {	\
+ 	.gpio_base	= 32 * (idx),					\
+ 	.irq_base	= 0,						\
+ 	.number_of_pins	= 32,						\
+@@ -101,7 +101,7 @@ void __init r8a7790_pinmux_init(void)
+ 
+ enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
+ 
+-static const struct plat_sci_port scif[] = {
++static const struct plat_sci_port scif[] __initdata = {
+ 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+ 	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
+ 	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
+@@ -118,11 +118,11 @@ static inline void r8a7790_register_scif(int idx)
+ 				      sizeof(struct plat_sci_port));
+ }
+ 
+-static struct renesas_irqc_config irqc0_data = {
++static struct renesas_irqc_config irqc0_data __initdata = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+ };
+ 
+-static struct resource irqc0_resources[] = {
++static struct resource irqc0_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
+ 	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
+ 	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
 -- 
-1.7.10.4
+1.7.9.5
 
