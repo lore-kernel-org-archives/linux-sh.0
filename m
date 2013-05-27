@@ -1,38 +1,48 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Mon, 13 May 2013 09:44:02 +0000
-Subject: [PATCH 03/14] ARM: nomadik: Remove init_irq declaration in machine description
-Message-Id: <1368438253-28218-4-git-send-email-maxime.ripard@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 09:00:49 +0000
+Subject: [PATCH 5/8] ARM: shmobile: sh73a0: Remove init_irq declaration in machine description
+Message-Id: <1369645252-3847-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+References: <1369645252-3847-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645252-3847-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+
 Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
 specified") removed the need to explictly setup the init_irq field in
 the machine description when using only irqchip_init. Remove that
-declaration for nomadik as well.
+declaration for shmobile as well.
 
 Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-nomadik/cpu-8815.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-nomadik/cpu-8815.c b/arch/arm/mach-nomadik/cpu-8815.c
-index 59f6ff5..3d43f95 100644
---- a/arch/arm/mach-nomadik/cpu-8815.c
-+++ b/arch/arm/mach-nomadik/cpu-8815.c
-@@ -323,7 +323,6 @@ static const char * cpu8815_board_compat[] = {
- 
- DT_MACHINE_START(NOMADIK_DT, "Nomadik STn8815")
- 	.map_io		= cpu8815_map_io,
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index cd81832..9986515 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -22,7 +22,6 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+@@ -974,7 +973,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
 -	.init_irq	= irqchip_init,
- 	.init_time	= cpu8815_timer_init_of,
- 	.init_machine	= cpu8815_init_of,
- 	.restart	= cpu8815_restart,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
 -- 
-1.8.1.2
+1.7.10.4
 
