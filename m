@@ -1,32 +1,73 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 10 May 2013 14:48:35 +0000
-Subject: [RFC/PATCH 0/2] R-Car GPIO DT bindings
-Message-Id: <1368197317-13169-1-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 09:59:30 +0000
+Subject: [PATCH 6/9] ARM: shmobile: r8a7778: Register PFC device
+Message-Id: <1369648773-7941-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <damm@opensource.se>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Here's an RFC that adds DT bindings to the gpio-rcar driver. The patches have
-been compile-tested only as I don't have access to the hardware right now, but
-I'd like to already receive feedback on the bindings.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig                |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   13 +++++++++++++
+ 3 files changed, 15 insertions(+)
 
-Laurent Pinchart (2):
-  gpio-rcar: Make the platform data gpio_base field signed
-  gpio-rcar: Add DT support
-
- .../devicetree/bindings/gpio/renesas,gpio-rcar.txt | 48 +++++++++++++++++
- drivers/gpio/gpio-rcar.c                           | 63 ++++++++++++++++++----
- include/linux/platform_data/gpio-rcar.h            |  2 +-
- 3 files changed, 102 insertions(+), 11 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
-
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1a517e2..06da4d3 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -37,6 +37,7 @@ config ARCH_R8A7740
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1 (R8A77780)"
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select ARM_GIC
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index 951149e..68053fc 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -28,5 +28,6 @@ extern void r8a7778_init_irq(void);
+ extern void r8a7778_init_irq_dt(void);
+ extern void r8a7778_clock_init(void);
+ extern void r8a7778_init_irq_extpin(int irlm);
++extern void r8a7778_pinmux_init(void);
+ 
+ #endif /* __ASM_R8A7778_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 45f0e45..d82954b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -102,6 +102,19 @@ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+ 					  pdata, sizeof(*pdata));
+ }
+ 
++/* PFC */
++static struct resource pfc_resources[] = {
++	DEFINE_RES_MEM(0xfffc0000, 0x118),
++};
++
++void __init r8a7778_pinmux_init(void)
++{
++	platform_device_register_simple(
++		"pfc-r8a7778", -1,
++		pfc_resources,
++		ARRAY_SIZE(pfc_resources));
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
