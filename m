@@ -1,34 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 23 May 2013 03:21:36 +0000
-Subject: [PATCH 14/17 v2] ARM: shmobile: bockw defconfig: add MMCIF support
-Message-Id: <87sj1e2xfm.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 09:59:31 +0000
+Subject: [PATCH 7/9] ARM: shmobile: r8a7778: add SDHI clock support
+Message-Id: <1369648773-7941-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/clock-r8a7778.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
- - no change
-
- arch/arm/configs/bockw_defconfig |    1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 55e00ff..845f5cd 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -94,6 +94,7 @@ CONFIG_USB_STORAGE=y
- CONFIG_USB_RCAR_PHY=y
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
-+CONFIG_MMC_SH_MMCIF=y
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_RX8581=y
- CONFIG_UIO=y
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 5cc271e..b251e4d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -103,12 +103,16 @@ static struct clk *main_clks[] = {
+ };
+ 
+ enum {
++	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+ 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
++	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
++	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
+ 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
+@@ -122,6 +126,9 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
 -- 
-1.7.9.5
+1.7.10.4
 
