@@ -1,57 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 14 May 2013 15:45:02 +0000
-Subject: Re: [RFC PATCH net-next] sh_eth: add support for r8a7790 SoC
-Message-Id: <1624039.YHFTonitSX@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 08:59:51 +0000
+Subject: [PATCH 6/7] ARM: shmobile: Remove unused r8a7790 GIC CPU interface DT bits
+Message-Id: <1369645224-3728-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368172891-26381-1-git-send-email-horms+renesas@verge.net.au> <CANqRtoQXnxOncf-_JPsVP0MZLTGorywfoJu6Gx9R=TMJYoS3Bw@mail.gmail.com>
-In-Reply-To: <CANqRtoQXnxOncf-_JPsVP0MZLTGorywfoJu6Gx9R=TMJYoS3Bw@mail.gmail.com>
+References: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Simon Horman <horms+renesas@verge.net.au>, netdev <netdev@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Magnus Damm <damm@opensource.se>
 
-On Friday 10 May 2013 17:35:33 Magnus Damm wrote:
-> On Fri, May 10, 2013 at 5:01 PM, Simon Horman wrote:
-> > Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> > 
-> >  drivers/net/ethernet/renesas/Kconfig  |  2 +-
-> >  drivers/net/ethernet/renesas/sh_eth.c | 10 ++++++++--
-> >  drivers/net/ethernet/renesas/sh_eth.h |  1 +
-> >  3 files changed, 10 insertions(+), 3 deletions(-)
-> 
-> Thanks for your work on this driver.
-> 
-> > diff --git a/drivers/net/ethernet/renesas/Kconfig
-> > b/drivers/net/ethernet/renesas/Kconfig index bed9841..d664c0f 100644
-> > --- a/drivers/net/ethernet/renesas/Kconfig
-> > +++ b/drivers/net/ethernet/renesas/Kconfig
-> > @@ -9,7 +9,7 @@ config SH_ETH
-> > 
-> >                  CPU_SUBTYPE_SH7763 || CPU_SUBTYPE_SH7619 || \
-> >                  CPU_SUBTYPE_SH7724 || CPU_SUBTYPE_SH7734 || \
-> >                  CPU_SUBTYPE_SH7757 || ARCH_R8A7740 || \
-> > 
-> > -                ARCH_R8A7778 || ARCH_R8A7779)
-> > +                ARCH_R8A7778 || ARCH_R8A7779 || ARCH_R8A7790)
-> 
-> As much as I want to see R8A7790 support right away, wouldn't it be
-> nice _not_ to have this dependency crap in the Kconfig? We are already
-> multi-SoC within mach-shmobile ARM and soon we will be multi-subarch.
+Remove unused GIC CPU interface DT bits for r8a7790.
 
-I'm really looking forward to that. Is anyone working on getting rid of 
-CONFIG_MEMORY_START and CONFIG_MEMORY_SIZE ?
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    6 ------
+ 1 file changed, 6 deletions(-)
 
-> I actually thought that this was already taken care of. What is your
-> opinion? Perhaps there are already queued up cleanup patches that
-> handle this?
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7a17110..339d9b1 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -36,12 +36,6 @@
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 0xf04>;
+-
+-		gic-cpuif@4 {
+-			compatible = "arm,gic-cpuif";
+-			cpuif-id = <4>;
+-			cpu = <&cpu0>;
+-		};
+ 	};
+ 
+ 	timer {
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
