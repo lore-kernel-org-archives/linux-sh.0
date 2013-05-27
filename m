@@ -1,151 +1,56 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Tue, 14 May 2013 15:38:46 +0000
-Subject: [PATCH 13/20] ARM: spear: Remove init_irq declaration in machine description
-Message-Id: <1368545933-7430-14-git-send-email-maxime.ripard@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 09:00:44 +0000
+Subject: [GIT PULL] Renesas ARM based sh73a0 SoC updates for v3.11
+Message-Id: <1369645252-3847-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for spear as well.
+Hi Arnd, Hi Olof,
 
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
----
- arch/arm/mach-spear/spear1310.c | 2 --
- arch/arm/mach-spear/spear1340.c | 2 --
- arch/arm/mach-spear/spear300.c  | 2 --
- arch/arm/mach-spear/spear310.c  | 2 --
- arch/arm/mach-spear/spear320.c  | 2 --
- arch/arm/mach-spear/spear6xx.c  | 2 --
- 6 files changed, 12 deletions(-)
+The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
 
-diff --git a/arch/arm/mach-spear/spear1310.c b/arch/arm/mach-spear/spear1310.c
-index 9eaac2c..7ad0030 100644
---- a/arch/arm/mach-spear/spear1310.c
-+++ b/arch/arm/mach-spear/spear1310.c
-@@ -14,7 +14,6 @@
- #define pr_fmt(fmt) "SPEAr1310: " fmt
- 
- #include <linux/amba/pl022.h>
--#include <linux/irqchip.h>
- #include <linux/of_platform.h>
- #include <linux/pata_arasan_cf_data.h>
- #include <asm/mach/arch.h>
-@@ -60,7 +59,6 @@ static void __init spear1310_map_io(void)
- DT_MACHINE_START(SPEAR1310_DT, "ST SPEAr1310 SoC with Flattened Device Tree")
- 	.smp		=	smp_ops(spear13xx_smp_ops),
- 	.map_io		=	spear1310_map_io,
--	.init_irq	=	irqchip_init,
- 	.init_time	=	spear13xx_timer_init,
- 	.init_machine	=	spear1310_dt_init,
- 	.restart	=	spear_restart,
-diff --git a/arch/arm/mach-spear/spear1340.c b/arch/arm/mach-spear/spear1340.c
-index a04a7fe..3fb6834 100644
---- a/arch/arm/mach-spear/spear1340.c
-+++ b/arch/arm/mach-spear/spear1340.c
-@@ -17,7 +17,6 @@
- #include <linux/amba/serial.h>
- #include <linux/delay.h>
- #include <linux/of_platform.h>
--#include <linux/irqchip.h>
- #include <asm/mach/arch.h>
- #include "generic.h"
- #include <mach/spear.h>
-@@ -155,7 +154,6 @@ static const char * const spear1340_dt_board_compat[] = {
- DT_MACHINE_START(SPEAR1340_DT, "ST SPEAr1340 SoC with Flattened Device Tree")
- 	.smp		=	smp_ops(spear13xx_smp_ops),
- 	.map_io		=	spear13xx_map_io,
--	.init_irq	=	irqchip_init,
- 	.init_time	=	spear13xx_timer_init,
- 	.init_machine	=	spear1340_dt_init,
- 	.restart	=	spear_restart,
-diff --git a/arch/arm/mach-spear/spear300.c b/arch/arm/mach-spear/spear300.c
-index bac56e8..b52e48f 100644
---- a/arch/arm/mach-spear/spear300.c
-+++ b/arch/arm/mach-spear/spear300.c
-@@ -14,7 +14,6 @@
- #define pr_fmt(fmt) "SPEAr300: " fmt
- 
- #include <linux/amba/pl08x.h>
--#include <linux/irqchip.h>
- #include <linux/of_platform.h>
- #include <asm/mach/arch.h>
- #include "generic.h"
-@@ -212,7 +211,6 @@ static void __init spear300_map_io(void)
- 
- DT_MACHINE_START(SPEAR300_DT, "ST SPEAr300 SoC with Flattened Device Tree")
- 	.map_io		=	spear300_map_io,
--	.init_irq	=	irqchip_init,
- 	.init_time	=	spear3xx_timer_init,
- 	.init_machine	=	spear300_dt_init,
- 	.restart	=	spear_restart,
-diff --git a/arch/arm/mach-spear/spear310.c b/arch/arm/mach-spear/spear310.c
-index 6ffbc63..ed2029d 100644
---- a/arch/arm/mach-spear/spear310.c
-+++ b/arch/arm/mach-spear/spear310.c
-@@ -15,7 +15,6 @@
- 
- #include <linux/amba/pl08x.h>
- #include <linux/amba/serial.h>
--#include <linux/irqchip.h>
- #include <linux/of_platform.h>
- #include <asm/mach/arch.h>
- #include "generic.h"
-@@ -254,7 +253,6 @@ static void __init spear310_map_io(void)
- 
- DT_MACHINE_START(SPEAR310_DT, "ST SPEAr310 SoC with Flattened Device Tree")
- 	.map_io		=	spear310_map_io,
--	.init_irq	=	irqchip_init,
- 	.init_time	=	spear3xx_timer_init,
- 	.init_machine	=	spear310_dt_init,
- 	.restart	=	spear_restart,
-diff --git a/arch/arm/mach-spear/spear320.c b/arch/arm/mach-spear/spear320.c
-index 6eb3eec..bf634b3 100644
---- a/arch/arm/mach-spear/spear320.c
-+++ b/arch/arm/mach-spear/spear320.c
-@@ -16,7 +16,6 @@
- #include <linux/amba/pl022.h>
- #include <linux/amba/pl08x.h>
- #include <linux/amba/serial.h>
--#include <linux/irqchip.h>
- #include <linux/of_platform.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
-@@ -269,7 +268,6 @@ static void __init spear320_map_io(void)
- 
- DT_MACHINE_START(SPEAR320_DT, "ST SPEAr320 SoC with Flattened Device Tree")
- 	.map_io		=	spear320_map_io,
--	.init_irq	=	irqchip_init,
- 	.init_time	=	spear3xx_timer_init,
- 	.init_machine	=	spear320_dt_init,
- 	.restart	=	spear_restart,
-diff --git a/arch/arm/mach-spear/spear6xx.c b/arch/arm/mach-spear/spear6xx.c
-index ec8eefb..8b0295a 100644
---- a/arch/arm/mach-spear/spear6xx.c
-+++ b/arch/arm/mach-spear/spear6xx.c
-@@ -16,7 +16,6 @@
- #include <linux/amba/pl08x.h>
- #include <linux/clk.h>
- #include <linux/err.h>
--#include <linux/irqchip.h>
- #include <linux/of.h>
- #include <linux/of_address.h>
- #include <linux/of_platform.h>
-@@ -423,7 +422,6 @@ static const char *spear600_dt_board_compat[] = {
- 
- DT_MACHINE_START(SPEAR600_DT, "ST SPEAr600 (Flattened Device Tree)")
- 	.map_io		=	spear6xx_map_io,
--	.init_irq	=	irqchip_init,
- 	.init_time	=	spear6xx_timer_init,
- 	.init_machine	=	spear600_dt_init,
- 	.restart	=	spear_restart,
--- 
-1.8.1.2
+  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-sh73a0-for-v3.11
+
+for you to fetch changes up to 8a6fca8ecd467a6255bda134d89fcda9ae1556ce:
+
+  ARM: shmobile: sh73a0: div4 clocks must check the kick bit before changing rate (2013-05-25 09:57:10 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based sh73a0 SoC updates for v3.11
+
+* Change by Magnus Damm to use shmobile_setup_delay() when initialising
+  the SoC using C-code, as was already the case when initialising the
+  SoC using OF. This allows boot with TWD only.
+* CPUFreq support by Guennadi Liakhovetski
+* Clean-ups from Magnus Damm and Simon Horman to use DEFINE_RES_MEM()
+* Clean-up from Maxime Ripard to remove unnecessary init_irq declaration in
+  machine description.
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (4):
+      ARM: shmobile: sh73a0: add support for adjusting CPU frequency
+      ARM: shmobile: sh73a0: add CPUFreq support
+      ARM: shmobile: sh73a0: do not overwrite all div4 clock operations
+      ARM: shmobile: sh73a0: div4 clocks must check the kick bit before changing rate
+
+Magnus Damm (2):
+      ARM: shmobile: sh73a0 pinmux platform device cleanup
+      ARM: shmobile: sh73a0: Always use shmobile_setup_delay()
+
+Maxime Ripard (1):
+      ARM: shmobile: sh73a0: Remove init_irq declaration in machine description
+
+Simon Horman (1):
+      ARM: shmobile: sh73a0: Use DEFINE_RES_MEM*() everywhere
+
+ arch/arm/mach-shmobile/Kconfig        |    2 +
+ arch/arm/mach-shmobile/clock-sh73a0.c |  111 +++++++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/setup-sh73a0.c |  122 ++++++++-------------------------
+ 3 files changed, 141 insertions(+), 94 deletions(-)
