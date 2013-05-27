@@ -1,132 +1,79 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 22 May 2013 06:18:17 +0000
-Subject: [PATCH] ARM: shmobile: r8a73a4 CPU Hotplug prototype v1 (CA15 x 4)
-Message-Id: <20130522061817.1906.71321.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 09:59:27 +0000
+Subject: [PATCH 3/9] ARM: shmobile: r8a7778: fixup Ether setup code position
+Message-Id: <1369648773-7941-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add CPU Hotplug prototype support for 4 x Cortex-A15
-included in r8a73a4.
+Ether setup code position was scattering.
+This patch fixes it up
 
-Needs a rewrite to support more generic handling of
-CPU core power domains. Not ready for merge.
-
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-r8a7778.c |   28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
- Developed and tested on top of v3.10-rc2, depends on
- "[PATCH] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)"
-
- arch/arm/mach-shmobile/smp-r8a73a4.c |   88 ++++++++++++++++++++++++++++++++++
- 1 file changed, 88 insertions(+)
-
---- 0005/arch/arm/mach-shmobile/smp-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/smp-r8a73a4.c	2013-05-22 13:34:18.000000000 +0900
-@@ -36,6 +36,8 @@
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 30b4a33..d6ee521 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -80,12 +80,6 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 	.clocksource_rating	= 200,
+ };
  
- #define APMU	0xe6150000
- #define CA15WUPCR 0x2010
-+#define CA15PSTR 0x2040
-+#define CA15CPUNCR(n) (0x2100 + (0x10 * (n))) 
+-/* Ether */
+-static struct resource ether_resources[] = {
+-	DEFINE_RES_MEM(0xfde00000, 0x400),
+-	DEFINE_RES_IRQ(gic_iid(0x89)),
+-};
+-
+ #define r8a7778_register_tmu(idx)			\
+ 	platform_device_register_resndata(		\
+ 		&platform_bus, "sh_tmu", idx,		\
+@@ -94,6 +88,20 @@ static struct resource ether_resources[] = {
+ 		&sh_tmu##idx##_platform_data,		\
+ 		sizeof(sh_tmu##idx##_platform_data))
  
- #define MERAM	0xe8080000
- #define CCI_BASE	0xf0190000
-@@ -83,7 +85,93 @@ static int __cpuinit r8a73a4_boot_second
- 	return 0;
++/* Ether */
++static struct resource ether_resources[] = {
++	DEFINE_RES_MEM(0xfde00000, 0x400),
++	DEFINE_RES_IRQ(gic_iid(0x89)),
++};
++
++void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  pdata, sizeof(*pdata));
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
+@@ -118,14 +126,6 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_tmu(1);
  }
  
-+#ifdef CONFIG_HOTPLUG_CPU
-+static int r8a73a4_cpu_kill(unsigned int cpu)
-+{
-+	void __iomem *p;
-+	int ret = 0;
-+	int k;
-+
-+	/* this function is running on another CPU than the offline target,
-+	 * here all we need to do is to wait for the SoC to enter sleep mode.
-+	 */
-+	p = ioremap_nocache(APMU, 0x3000);
-+	for (k = 0; k < 1000; k++) {
-+		if (((__raw_readl(p + CA15PSTR) >> (cpu * 4)) & 0x03) = 3) {
-+			ret = 1;
-+			break;
-+		}
-+
-+		mdelay(1);
-+	}
-+	iounmap(p);
-+
-+	return ret;
-+}
-+
-+/* nicked from arch/arm/mach-exynos/hotplug.c */
-+static inline void cpu_enter_lowpower_a15(void)
-+{
-+	unsigned int v;
-+
-+	asm volatile(
-+	"	mrc	p15, 0, %0, c1, c0, 0\n"
-+	"	bic	%0, %0, %1\n"
-+	"	mcr	p15, 0, %0, c1, c0, 0\n"
-+	  : "=&r" (v)
-+	  : "Ir" (CR_C)
-+	  : "cc");
-+
-+	flush_cache_louis();
-+
-+	asm volatile(
-+	/*
-+	* Turn off coherency
-+	*/
-+	"	mrc	p15, 0, %0, c1, c0, 1\n"
-+	"	bic	%0, %0, %1\n"
-+	"	mcr	p15, 0, %0, c1, c0, 1\n"
-+	: "=&r" (v)
-+	: "Ir" (0x40)
-+	: "cc");
-+
-+	isb();
-+	dsb();
-+}
-+
-+static int r8a73a4_do_idle_core_standby(unsigned long unused)
-+{
-+	cpu_do_idle(); /* WFI triggers Core Standby */
-+	return 0;
-+}
-+
-+static void r8a73a4_cpu_die(unsigned int cpu)
-+{
-+	void __iomem *p;
-+
-+	/* hardware shutdown code running on the CPU that is being offlined */
-+
-+	/* select CPU shutdown mode */
-+	p = ioremap_nocache(APMU, 0x3000);
-+	__raw_writel(3, p + CA15CPUNCR(cpu)); /* CA15 Core Standby */
-+	iounmap(p);
-+
-+	cpu_enter_lowpower_a15();
-+	cpu_suspend(0, r8a73a4_do_idle_core_standby); /* really needed? */
-+}
-+
-+static int r8a73a4_cpu_disable(unsigned int cpu)
-+{
-+	return 0; /* hotplug of any CPU is tested OK */
-+}
-+#endif
-+
- struct smp_operations r8a73a4_smp_ops __initdata = {
- 	.smp_prepare_cpus	= r8a73a4_smp_prepare_cpus,
- 	.smp_boot_secondary	= r8a73a4_boot_secondary,
-+#ifdef CONFIG_HOTPLUG_CPU
-+	.cpu_kill		= r8a73a4_cpu_kill,
-+	.cpu_die		= r8a73a4_cpu_die,
-+	.cpu_disable		= r8a73a4_cpu_disable,
-+#endif
- };
+-void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+-{
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  pdata, sizeof(*pdata));
+-}
+-
+ static struct renesas_intc_irqpin_config irqpin_platform_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+ 	.sense_bitfield_width = 2,
+-- 
+1.7.10.4
+
