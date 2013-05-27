@@ -1,81 +1,41 @@
-From: Jiang Liu <liuj97@gmail.com>
-Date: Wed, 08 May 2013 15:51:31 +0000
-Subject: [PATCH v5, part4 34/41] mm/SH: prepare for removing num_physpages and simplify mem_init()
-Message-Id: <1368028298-7401-35-git-send-email-jiang.liu@huawei.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 09:59:33 +0000
+Subject: [PATCH 9/9] ARM: shmobile: r8a7778: correct model name in Kconfig
+Message-Id: <1369648773-7941-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368028298-7401-1-git-send-email-jiang.liu@huawei.com>
-In-Reply-To: <1368028298-7401-1-git-send-email-jiang.liu@huawei.com>
+References: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Jiang Liu <jiang.liu@huawei.com>, David Rientjes <rientjes@google.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, James Bottomley <James.Bottomley@HansenPartnership.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, David Howells <dhowells@redhat.com>, Mark Salter <msalter@redhat.com>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Prepare for removing num_physpages and simplify mem_init().
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Wen Congyang <wency@cn.fujitsu.com>
-Cc: Tang Chen <tangchen@cn.fujitsu.com>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+The correct model name is R-Car M1A or R8A77781; R8A77780 corresponds to R-Car
+M1S which is a SH based SoC.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[horms+renesas@verge.net.au: manually applied to soc-r8a7778 branch]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/mm/init.c |   25 ++++---------------------
- 1 file changed, 4 insertions(+), 21 deletions(-)
+ arch/arm/mach-shmobile/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index aecd913..3826596 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -407,24 +407,18 @@ unsigned int mem_init_done = 0;
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 06da4d3..58eb689 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -36,7 +36,7 @@ config ARCH_R8A7740
+ 	select RENESAS_INTC_IRQPIN
  
- void __init mem_init(void)
- {
--	int codesize, datasize, initsize;
--	int nid;
-+	pg_data_t *pgdat;
- 
- 	iommu_init();
- 
--	num_physpages = 0;
- 	high_memory = NULL;
- 
--	for_each_online_node(nid) {
--		pg_data_t *pgdat = NODE_DATA(nid);
-+	for_each_online_pgdat(pgdat) {
- 		void *node_high_memory;
- 
--		num_physpages += pgdat->node_present_pages;
--
- 		if (pgdat->node_spanned_pages)
- 			free_all_bootmem_node(pgdat);
- 
--
- 		node_high_memory = (void *)__va((pgdat->node_start_pfn +
- 						 pgdat->node_spanned_pages) <<
- 						 PAGE_SHIFT);
-@@ -441,19 +435,8 @@ void __init mem_init(void)
- 
- 	vsyscall_init();
- 
--	codesize =  (unsigned long) &_etext - (unsigned long) &_text;
--	datasize =  (unsigned long) &_edata - (unsigned long) &_etext;
--	initsize =  (unsigned long) &__init_end - (unsigned long) &__init_begin;
--
--	printk(KERN_INFO "Memory: %luk/%luk available (%dk kernel code, "
--	       "%dk data, %dk init)\n",
--		nr_free_pages() << (PAGE_SHIFT-10),
--		num_physpages << (PAGE_SHIFT-10),
--		codesize >> 10,
--		datasize >> 10,
--		initsize >> 10);
--
--	printk(KERN_INFO "virtual kernel memory layout:\n"
-+	mem_init_print_info(NULL);
-+	pr_info("virtual kernel memory layout:\n"
- 		"    fixmap  : 0x%08lx - 0x%08lx   (%4ld kB)\n"
- #ifdef CONFIG_HIGHMEM
- 		"    pkmap   : 0x%08lx - 0x%08lx   (%4ld kB)\n"
+ config ARCH_R8A7778
+-	bool "R-Car M1 (R8A77780)"
++	bool "R-Car M1A (R8A77781)"
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select CPU_V7
+ 	select SH_CLK_CPG
 -- 
-1.7.9.5
+1.7.10.4
 
