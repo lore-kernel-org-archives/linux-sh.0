@@ -1,50 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 26 May 2013 13:05:51 +0000
-Subject: [PATCH 0/6] Renesas ARM based r8a73a0 SoC updates for v3.11
-Message-Id: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 09:59:28 +0000
+Subject: [PATCH 4/9] ARM: shmobile: r8a7778: fix Ether device name
+Message-Id: <1369648773-7941-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369648773-7941-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
+While recasting the commit "ARM: shmobile: R8A7778: add Ether support", I made a
+typo in the platform device's name: used underscore instead of hyphen.
 
-are available in the git repository at:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7778.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-r8a73a4-for-v3.11
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index d6ee521..45f0e45 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -96,7 +96,7 @@ static struct resource ether_resources[] = {
+ 
+ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+ {
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++	platform_device_register_resndata(&platform_bus, "sh-eth", -1,
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
+ 					  pdata, sizeof(*pdata));
+-- 
+1.7.10.4
 
-for you to fetch changes up to d7f17c1c0ddbd61ad24ae93ad9ec21fc223659ba:
-
-  ARM: shmobile: Remove unused r8a73a4 GIC CPU interface DT bits (2013-05-26 20:17:43 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based r8a73a0 SoC updates for v3.11
-
-Clean-up from Maxime Ripard to remove unnecessary init_irq declaration in
-machine description.
-
-Clean-up from Magnus Damm to remove unused GIC CPU interface portions
-of r8a73a4.dtsi
-
-Increased clock coverage from Kuninori Morimoto.
-
-----------------------------------------------------------------
-Kuninori Morimoto (4):
-      ARM: shmobile: r8a73a4: add main clock
-      ARM: shmobile: r8a73a4: add pll clocks
-      ARM: shmobile: r8a73a4: add div4 clocks
-      ARM: shmobile: r8a73a4: add div6 clocks
-
-Magnus Damm (1):
-      ARM: shmobile: Remove unused r8a73a4 GIC CPU interface DT bits
-
-Maxime Ripard (1):
-      ARM: shmobile: r8a73a4: Remove init_irq declaration in machine description
-
- arch/arm/boot/dts/r8a73a4.dtsi         |    6 -
- arch/arm/mach-shmobile/clock-r8a73a4.c |  375 ++++++++++++++++++++++++++++++--
- arch/arm/mach-shmobile/setup-r8a73a4.c |    2 -
- 3 files changed, 359 insertions(+), 24 deletions(-)
