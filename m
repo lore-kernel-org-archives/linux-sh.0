@@ -1,82 +1,73 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 08 May 2013 23:39:09 +0000
-Subject: [PATCH v7 3/3] ARM: shmobile: BOCK-W: add USB support
-Message-Id: <201305090339.10053.sergei.shtylyov@cogentembedded.com>
+Date: Mon, 27 May 2013 22:43:23 +0000
+Subject: [PATCH 1/3] sata_rcar: kill superfluous code in sata_rcar_bmdma_fill_sg()
+Message-Id: <201305280243.23983.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305090333.00333.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305090333.00333.sergei.shtylyov@cogentembedded.com>
+References: <201305280238.17867.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201305280238.17867.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-ide@vger.kernel.org, tj@kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Register the USB PHY device from bockw_init(), passing the platform  data to it.
-Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
-get registered too...
-
-Don't forget to add USB PENC0/1 pins to bockw_pinctrl_map[].
-
-The patch has been tested on the BOCK-W board.
+I've modified sata_rcar_bmdma_fill_sg() to take care of splitting long scatter/
+gather segments due to the descriptor table transfer counter being only 28 bits
+wide (bit 1 to bit 28) but that was in vain as even if 'sata_rcar_sht' specified
+a correct 'dma_boundary' field, the DMA and block layers would have split the
+S/G segments on the necassary boundaries. Since the driver uses ATA_BMDMA_SHT()
+to initilaize 'sata_rcar_sht', the boundary is much smaller, only 0xFFFF, so the
+code I've added is even more useless, and it's better to just remove it.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Changes since version 6:
-- added USB PENC0/1 pins to bockw_pinctrl_map[].
+ drivers/ata/sata_rcar.c |   24 ++++++------------------
+ 1 file changed, 6 insertions(+), 18 deletions(-)
 
-Changes since version 4:
-- annotated 'usb_phy_platform_data' as '__initdata' since it's kmemdup()'ed
-  while registering the platform device anyway;
-- refreshed the patch.
-
-Changes since version 3:
-- removed initializer for 'usb_phy_platform_data' letting it be set to all 0s;
-- refreshed the patch.
-
-Changes since version 2:
-- refreshed the patch.
-
-Changes since the original posting:
-- removed initializer for no longer existing field in 'usb_phy_platform_data',
-  modified the comment to the 'ferrite_bead' field initializer.
-
- arch/arm/mach-shmobile/board-bockw.c |    8 ++++++++
- 1 file changed, 8 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -63,6 +63,8 @@ static struct sh_mobile_sdhi_info sdhi0_
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+Index: libata/drivers/ata/sata_rcar.c
+=================================--- libata.orig/drivers/ata/sata_rcar.c
++++ libata/drivers/ata/sata_rcar.c
+@@ -474,11 +474,10 @@ static void sata_rcar_bmdma_fill_sg(stru
+ 	struct ata_port *ap = qc->ap;
+ 	struct ata_bmdma_prd *prd = ap->bmdma_prd;
+ 	struct scatterlist *sg;
+-	unsigned int si, pi;
++	unsigned int si;
  
-+static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-@@ -78,6 +80,10 @@ static const struct pinctrl_map bockw_pi
- 				  "sdhi0_data4", "sdhi0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
- 				  "sdhi0_wp", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
-+				  "usb0", "usb0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
-+				  "usb1", "usb1"),
- };
+-	pi = 0;
+ 	for_each_sg(qc->sg, sg, qc->n_elem, si) {
+-		u32 addr, sg_len, len;
++		u32 addr, sg_len;
  
- #define FPGA	0x18200000
-@@ -91,6 +97,7 @@ static void __init bockw_init(void)
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
+ 		/*
+ 		 * Note: h/w doesn't support 64-bit, so we unconditionally
+@@ -487,24 +486,13 @@ static void sata_rcar_bmdma_fill_sg(stru
+ 		addr = (u32)sg_dma_address(sg);
+ 		sg_len = sg_dma_len(sg);
  
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
-@@ -146,4 +153,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_machine	= bockw_init,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
-+	.init_late      = r8a7778_init_late,
- MACHINE_END
+-		/* H/w transfer count is only 29 bits long, let's be careful */
+-		while (sg_len) {
+-			len = sg_len;
+-			if (len > 0x1ffffffe)
+-				len = 0x1ffffffe;
+-
+-			prd[pi].addr = cpu_to_le32(addr);
+-			prd[pi].flags_len = cpu_to_le32(len);
+-			VPRINTK("PRD[%u] = (0x%X, 0x%X)\n", pi, addr, len);
+-
+-			pi++;
+-			sg_len -= len;
+-			addr += len;
+-		}
++		prd[si].addr = cpu_to_le32(addr);
++		prd[si].flags_len = cpu_to_le32(sg_len);
++		VPRINTK("PRD[%u] = (0x%X, 0x%X)\n", si, addr, sg_len);
+ 	}
+ 
+ 	/* end-of-table flag */
+-	prd[pi - 1].addr |= cpu_to_le32(SATA_RCAR_DTEND);
++	prd[si - 1].addr |= cpu_to_le32(SATA_RCAR_DTEND);
+ }
+ 
+ static void sata_rcar_qc_prep(struct ata_queued_cmd *qc)
