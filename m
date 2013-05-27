@@ -1,52 +1,61 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 13 May 2013 17:09:00 +0000
-Subject: Re: [PATCH 09/14] ARM: mvebu: Remove init_irq declaration in machine description
-Message-Id: <CAOesGMgD6j9BE-kVe1rJjNFRtoV=e08B=o9hyhk1xfKLjsRF2g@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 27 May 2013 01:41:08 +0000
+Subject: [PATCH 1/2 v3] ARM: shmobile: r8a7778: rename device additional function for sh-eth
+Message-Id: <87fvx98aj2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368438253-28218-10-git-send-email-maxime.ripard@free-electrons.com>
- <20130513151934.GM31290@titan.lakedaemon.net>
- <51910C81.5050501@free-electrons.com>
-In-Reply-To: <51910C81.5050501@free-electrons.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Mon, May 13, 2013 at 8:53 AM, Maxime Ripard
-<maxime.ripard@free-electrons.com> wrote:
-> Hi Jason,
->
-> Le 13/05/2013 17:19, Jason Cooper a =E9crit :
->> On Mon, May 13, 2013 at 11:44:08AM +0200, Maxime Ripard wrote:
->>> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
->>> specified") removed the need to explictly setup the init_irq field in
->>> the machine description when using only irqchip_init. Remove that
->>> declaration for mvebu as well.
->>>
->>> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
->>> ---
->>>  arch/arm/mach-mvebu/armada-370-xp.c | 1 -
->>>  1 file changed, 1 deletion(-)
->>
->> Maxime,
->>
->> Do do want the individual submaintainers to take these?  Or, send one
->> branch to Arnd and Olof?  I'm fine with either one as any merge
->> conflicts should be trivial.
->
-> I don't have a strong opinion on this one, I guess both will be fine.
-> Arnd, Olof, what do you prefer?
->
-> I'll probably have to send a v2 anyway, I forgot to remove the include
-> of the irqchip headers.
+Current r8a7778 is using r8a7778_add_ether_device().
+Here, this "ether" means "sh-eth".
 
-Since each and every patch applies cleanly and things work well both
-before and after, let's have each maintainer that is active apply
-their own. If there are platforms that don't have a significant number
-of patches, i.e. if they're not collecting a branch, then we can apply
-those. Please follow up with us with the stragglers, I'll assume the
-rest will come in through the respective maintainers.
+Now, we use r8a7778_register_xxx() instead of r8a7778_add_xxx_device()
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
--Olof
+  - new added
+
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    4 +++-
+ arch/arm/mach-shmobile/setup-r8a7778.c        |    2 +-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index ae65b45..695cd76 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -23,7 +23,7 @@
+ 
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+-extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
++
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+ extern void r8a7778_init_irq_dt(void);
+@@ -32,4 +32,6 @@ extern void r8a7778_init_irq_extpin(int irlm);
+ extern void r8a7778_pinmux_init(void);
+ extern void r8a7778_sdhi_init(int id, struct sh_mobile_sdhi_info *info);
+ 
++extern void r8a7778_register_sheth(struct sh_eth_plat_data *pdata);
++
+ #endif /* __ASM_R8A7778_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 9191acc..9bff1e1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -95,7 +95,7 @@ static struct resource ether_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_iid(0x89)),
+ };
+ 
+-void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
++void __init r8a7778_register_sheth(struct sh_eth_plat_data *pdata)
+ {
+ 	platform_device_register_resndata(&platform_bus, "sh-eth", -1,
+ 					  ether_resources,
+-- 
+1.7.9.5
+
