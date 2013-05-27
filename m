@@ -1,37 +1,51 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 25 May 2013 06:45:00 +0000
-Subject: [GIT PULL] Renesas ARM based SoC pinmux fix for v3.10 (repost)
-Message-Id: <1369464301-22539-1-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 08:59:46 +0000
+Subject: [PATCH 05/12] ARM: shmobile: r8a7740: Make private clock arrays static
+Message-Id: <1369645193-3595-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-[ Repost after hopefully resolving a local mail configuration problem ]
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Hi Olof, Hi Arnd,
+Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
+non-static. Compiling support for both SoCs thus result in a symbol
+redefinition. Fix it by defining the arrays as static.
 
-The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+To avoid further similar issues, also define the main_clks as static.
 
-  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-are available in the git repository at:
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 8fc396a..a2a612f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -266,7 +266,7 @@ static struct clk fsiack_clk = {
+ static struct clk fsibck_clk = {
+ };
+ 
+-struct clk *main_clks[] = {
++static struct clk *main_clks[] = {
+ 	&extalr_clk,
+ 	&extal1_clk,
+ 	&extal2_clk,
+@@ -317,7 +317,7 @@ enum {
+ 	DIV4_NR
+ };
+ 
+-struct clk div4_clks[DIV4_NR] = {
++static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_I]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_ZG]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_B]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA,  8, 0x6fff, CLK_ENABLE_ON_INIT),
+-- 
+1.7.10.4
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux-fixes2-for-v3.10
-
-for you to fetch changes up to 16a31ebde0763580ed6891094249e1bd4a329be1:
-
-  sh-pfc: r8a7779: Don't group USB OVC and PENC pins (2013-05-22 22:01:59 +0900)
-
-----------------------------------------------------------------
-Correction to USB OVC and PENC pin groupings on r8a7779 SoC.
-This avoids conflicts when the USB_OVCn pins are used by another function.
-This has been observed to be a problem in v3.10-rc1.
-
-----------------------------------------------------------------
-Laurent Pinchart (1):
-      sh-pfc: r8a7779: Don't group USB OVC and PENC pins
-
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   45 +++++++++++++++++++++++++++-------
- 1 file changed, 36 insertions(+), 9 deletions(-)
