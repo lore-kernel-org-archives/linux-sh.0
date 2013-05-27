@@ -1,46 +1,89 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Tue, 14 May 2013 15:38:51 +0000
-Subject: [PATCH 18/20] ARM: vexpress: Remove init_irq declaration in machine description
-Message-Id: <1368545933-7430-19-git-send-email-maxime.ripard@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 08:59:52 +0000
+Subject: [PATCH 2/7] ARM: shmobile: r8a7790: add div4 clocks
+Message-Id: <1369645224-3728-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
+References: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for vexpress as well.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Acked-by: Pawel Moll <pawel.moll@arm.com>
+DIV4 clocks control SD* core clocks.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-vexpress/v2m.c | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c |   32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-diff --git a/arch/arm/mach-vexpress/v2m.c b/arch/arm/mach-vexpress/v2m.c
-index 8802030..d601697 100644
---- a/arch/arm/mach-vexpress/v2m.c
-+++ b/arch/arm/mach-vexpress/v2m.c
-@@ -9,7 +9,6 @@
- #include <linux/clocksource.h>
- #include <linux/smp.h>
- #include <linux/init.h>
--#include <linux/irqchip.h>
- #include <linux/of_address.h>
- #include <linux/of_fdt.h>
- #include <linux/of_irq.h>
-@@ -458,7 +457,6 @@ DT_MACHINE_START(VEXPRESS_DT, "ARM-Versatile Express")
- 	.smp		= smp_ops(vexpress_smp_ops),
- 	.map_io		= v2m_dt_map_io,
- 	.init_early	= v2m_dt_init_early,
--	.init_irq	= irqchip_init,
- 	.init_time	= v2m_dt_timer_init,
- 	.init_machine	= v2m_dt_init,
- MACHINE_END
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 850e47f..c85e643 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -51,6 +51,7 @@
+ #define SMSTPCR7 0xe615014c
+ 
+ #define MODEMR		0xE6160060
++#define SDCKCR		0xE6150074
+ 
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+@@ -131,6 +132,29 @@ static struct clk *main_clks[] = {
+ 	&cp_clk,
+ };
+ 
++/* SDHI (DIV4) clock */
++static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
++
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors = divisors,
++	.nr_divisors = ARRAY_SIZE(divisors),
++};
++
++static struct clk_div4_table div4_table = {
++	.div_mult_table = &div4_div_mult_table,
++};
++
++enum {
++	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
++};
++
++struct clk div4_clks[DIV4_NR] = {
++	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
++	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
++	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
++};
++
++/* MSTP */
+ enum { MSTP721, MSTP720,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -173,6 +197,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("qspi",		&qspi_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
+ 
++	/* DIV4 */
++	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
++	CLKDEV_CON_ID("sd0",		&div4_clks[DIV4_SD0]),
++	CLKDEV_CON_ID("sd1",		&div4_clks[DIV4_SD1]),
++
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+@@ -233,6 +262,9 @@ void __init r8a7790_clock_init(void)
+ 		ret = clk_register(main_clks[k]);
+ 
+ 	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -- 
-1.8.1.2
+1.7.10.4
 
