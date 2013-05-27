@@ -1,129 +1,121 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 26 May 2013 13:05:52 +0000
-Subject: [PATCH 1/6] ARM: shmobile: r8a73a4: add main clock
-Message-Id: <1369573557-11071-2-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 27 May 2013 00:53:37 +0000
+Subject: [PATCH 1/2 v3] ARM: shmobile: r8a7778: add __initdata on resource and device data
+Message-Id: <87mwrh8cqa.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369573557-11071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Almost all clock needs main clock which is basis clock on r8a73a4.
-This patch adds it, and, set parent clock via CKSCR register.
+These data will be kmemdup()'ed on
+platform_device_add_resources() and platform_device_add_data()
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c |   53 ++++++++++++++++++++++++++++++++
- 1 file changed, 53 insertions(+)
+v2 -> v3
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index e710c00..42942b4 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -22,6 +22,7 @@
- #include <linux/kernel.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
+ - no change, but become 1st patch
+
+ arch/arm/mach-shmobile/setup-r8a7778.c |   24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index a02efce..9191acc 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -47,7 +47,7 @@
+ 	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ }
  
- #define CPG_BASE 0xe6150000
-@@ -31,6 +32,8 @@
- #define SMSTPCR2 0xe6150138
- #define SMSTPCR5 0xe6150144
- 
-+#define CKSCR		0xE61500C0
-+
- static struct clk_mapping cpg_mapping = {
- 	.phys   = CPG_BASE,
- 	.len    = CPG_LEN,
-@@ -51,10 +54,32 @@ static struct clk extal2_clk = {
- 	.mapping	= &cpg_mapping,
+-static struct plat_sci_port scif_platform_data[] = {
++static struct plat_sci_port scif_platform_data[] __initdata = {
+ 	SCIF_INFO(0xffe40000, gic_iid(0x66)),
+ 	SCIF_INFO(0xffe41000, gic_iid(0x67)),
+ 	SCIF_INFO(0xffe42000, gic_iid(0x68)),
+@@ -57,24 +57,24 @@ static struct plat_sci_port scif_platform_data[] = {
  };
  
-+static struct sh_clk_ops followparent_clk_ops = {
-+	.recalc	= followparent_recalc,
-+};
-+
-+static struct clk main_clk = {
-+	/* .parent will be set r8a73a4_clock_init */
-+	.ops	= &followparent_clk_ops,
-+};
-+
-+SH_CLK_RATIO(div2,	1, 2);
-+SH_CLK_RATIO(div4,	1, 4);
-+
-+SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
-+SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
-+SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
-+SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
-+
- static struct clk *main_clks[] = {
- 	&extalr_clk,
- 	&extal1_clk,
-+	&extal1_div2_clk,
- 	&extal2_clk,
-+	&extal2_div2_clk,
-+	&extal2_div4_clk,
-+	&main_clk,
-+	&main_div2_clk,
+ /* TMU */
+-static struct resource sh_tmu0_resources[] = {
++static struct resource sh_tmu0_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xffd80008, 12),
+ 	DEFINE_RES_IRQ(gic_iid(0x40)),
  };
  
- enum {
-@@ -74,6 +99,13 @@ static struct clk mstp_clks[MSTP_NR] = {
+-static struct sh_timer_config sh_tmu0_platform_data = {
++static struct sh_timer_config sh_tmu0_platform_data __initdata = {
+ 	.name			= "TMU00",
+ 	.channel_offset		= 0x4,
+ 	.timer_bit		= 0,
+ 	.clockevent_rating	= 200,
  };
  
- static struct clk_lookup lookups[] = {
-+	/* main clock */
-+	CLKDEV_CON_ID("extal1",			&extal1_clk),
-+	CLKDEV_CON_ID("extal1_div2",		&extal1_div2_clk),
-+	CLKDEV_CON_ID("extal2",			&extal2_clk),
-+	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
-+	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
-+
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
-@@ -90,6 +122,7 @@ void __init r8a73a4_clock_init(void)
- {
- 	void __iomem *cpg_base, *reg;
- 	int k, ret = 0;
-+	u32 ckscr;
+-static struct resource sh_tmu1_resources[] = {
++static struct resource sh_tmu1_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xffd80014, 12),
+ 	DEFINE_RES_IRQ(gic_iid(0x41)),
+ };
  
- 	/* fix MPCLK to EXTAL2 for now.
- 	 * this is needed until more detailed clock topology is supported
-@@ -100,6 +133,26 @@ void __init r8a73a4_clock_init(void)
- 	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
- 	iounmap(cpg_base);
+-static struct sh_timer_config sh_tmu1_platform_data = {
++static struct sh_timer_config sh_tmu1_platform_data __initdata = {
+ 	.name			= "TMU01",
+ 	.channel_offset		= 0x10,
+ 	.timer_bit		= 1,
+@@ -90,7 +90,7 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 		sizeof(sh_tmu##idx##_platform_data))
  
-+	reg = ioremap_nocache(CKSCR, PAGE_SIZE);
-+	BUG_ON(!reg);
-+	ckscr = ioread32(reg);
-+	iounmap(reg);
-+
-+	switch ((ckscr >> 28) & 0x3) {
-+	case 0:
-+		main_clk.parent = &extal1_clk;
-+		break;
-+	case 1:
-+		main_clk.parent = &extal1_div2_clk;
-+		break;
-+	case 2:
-+		main_clk.parent = &extal2_clk;
-+		break;
-+	case 3:
-+		main_clk.parent = &extal2_div2_clk;
-+		break;
-+	}
-+
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
+ /* Ether */
+-static struct resource ether_resources[] = {
++static struct resource ether_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xfde00000, 0x400),
+ 	DEFINE_RES_IRQ(gic_iid(0x89)),
+ };
+@@ -104,17 +104,17 @@ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+ }
  
+ /* PFC/GPIO */
+-static struct resource pfc_resources[] = {
++static struct resource pfc_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xfffc0000, 0x118),
+ };
+ 
+ #define R8A7778_GPIO(idx)						\
+-static struct resource r8a7778_gpio##idx##_resources[] = {		\
++static struct resource r8a7778_gpio##idx##_resources[] __initdata = {	\
+ 	DEFINE_RES_MEM(0xffc40000 + 0x1000 * (idx), 0x30),		\
+ 	DEFINE_RES_IRQ(gic_iid(0x87)),					\
+ };									\
+ 									\
+-static struct gpio_rcar_config r8a7778_gpio##idx##_platform_data = {	\
++static struct gpio_rcar_config r8a7778_gpio##idx##_platform_data __initdata = { \
+ 	.gpio_base	= 32 * (idx),					\
+ 	.irq_base	= GPIO_IRQ_BASE(idx),				\
+ 	.number_of_pins	= 32,						\
+@@ -150,7 +150,7 @@ void __init r8a7778_pinmux_init(void)
+ }
+ 
+ /* SDHI */
+-static struct resource sdhi_resources[] = {
++static struct resource sdhi_resources[] __initdata = {
+ 	/* SDHI0 */
+ 	DEFINE_RES_MEM(0xFFE4C000, 0x100),
+ 	DEFINE_RES_IRQ(gic_iid(0x77)),
+@@ -197,12 +197,12 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_tmu(1);
+ }
+ 
+-static struct renesas_intc_irqpin_config irqpin_platform_data = {
++static struct renesas_intc_irqpin_config irqpin_platform_data __initdata = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+ 	.sense_bitfield_width = 2,
+ };
+ 
+-static struct resource irqpin_resources[] = {
++static struct resource irqpin_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
+ 	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
+ 	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
 -- 
-1.7.10.4
+1.7.9.5
 
