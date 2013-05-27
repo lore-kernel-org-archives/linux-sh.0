@@ -1,84 +1,175 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 15 May 2013 00:18:03 +0000
-Subject: [PATCH v3 03/20] ARM: shmobile: r8a7740: Add pin control device to device tree
-Message-Id: <1368577100-3530-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 27 May 2013 09:00:48 +0000
+Subject: [PATCH 4/8] ARM: shmobile: sh73a0: Use DEFINE_RES_MEM*() everywhere
+Message-Id: <1369645252-3847-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1368577100-3530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add a pfc node to the r8a7740 device tree and remove manual pinmux
-initialization from the corresponding board files.
+Convert code to use DEFINE_RES_MEM*() macros.
+These macros were already used in this file,
+this change makes their usage consistent throughout the file.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
- 2 files changed, 16 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c |   79 ++++++---------------------------
+ 1 file changed, 13 insertions(+), 66 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 25dc930..2fa3708 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -135,4 +135,12 @@
- 			      0 72 0x4
- 			      0 73 0x4>;
- 	};
-+
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a7740";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605800c 0x20>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 03b85fe..f25b6aa 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -121,7 +121,7 @@
- 
- static const struct pinctrl_map eva_pinctrl_map[] = {
- 	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
- 				  "scifa1_data", "scifa1"),
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 88e6ea0..cd81832 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -275,12 +275,7 @@ static struct sh_timer_config tmu00_platform_data = {
  };
  
-@@ -170,22 +170,22 @@ static void __init eva_init(void)
- 	eva_clock_init();
+ static struct resource tmu00_resources[] = {
+-	[0] = {
+-		.name	= "TMU00",
+-		.start	= 0xfff60008,
+-		.end	= 0xfff60013,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xfff60008, 0xc, "TMU00"),
+ 	[1] = {
+ 		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
+ 		.flags	= IORESOURCE_IRQ,
+@@ -305,12 +300,7 @@ static struct sh_timer_config tmu01_platform_data = {
+ };
  
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--	r8a7740_pinmux_init();
+ static struct resource tmu01_resources[] = {
+-	[0] = {
+-		.name	= "TMU01",
+-		.start	= 0xfff60014,
+-		.end	= 0xfff6001f,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xfff60014, 0xc, "TMU00"),
+ 	[1] = {
+ 		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
+ 		.flags	= IORESOURCE_IRQ,
+@@ -328,12 +318,7 @@ static struct platform_device tmu01_device = {
+ };
  
- 	r8a7740_meram_workaround();
+ static struct resource i2c0_resources[] = {
+-	[0] = {
+-		.name	= "IIC0",
+-		.start	= 0xe6820000,
+-		.end	= 0xe6820425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6820000, 0x426, "IIC0"),
+ 	[1] = {
+ 		.start	= gic_spi(167),
+ 		.end	= gic_spi(170),
+@@ -342,12 +327,7 @@ static struct resource i2c0_resources[] = {
+ };
  
--	/*
--	 * Touchscreen
--	 * TODO: Move reset GPIO over to .dts when we can reference it
--	 */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
--
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
- #endif
+ static struct resource i2c1_resources[] = {
+-	[0] = {
+-		.name	= "IIC1",
+-		.start	= 0xe6822000,
+-		.end	= 0xe6822425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6822000, 0x426, "IIC1"),
+ 	[1] = {
+ 		.start	= gic_spi(51),
+ 		.end	= gic_spi(54),
+@@ -356,12 +336,7 @@ static struct resource i2c1_resources[] = {
+ };
  
- 	r8a7740_add_standard_devices_dt();
-+
-+	/*
-+	 * Touchscreen
-+	 * TODO: Move reset GPIO over to .dts when we can reference it
-+	 */
-+	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-+
- 	r8a7740_pm_init();
- }
+ static struct resource i2c2_resources[] = {
+-	[0] = {
+-		.name	= "IIC2",
+-		.start	= 0xe6824000,
+-		.end	= 0xe6824425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6824000, 0x426, "IIC2"),
+ 	[1] = {
+ 		.start	= gic_spi(171),
+ 		.end	= gic_spi(174),
+@@ -370,12 +345,7 @@ static struct resource i2c2_resources[] = {
+ };
  
+ static struct resource i2c3_resources[] = {
+-	[0] = {
+-		.name	= "IIC3",
+-		.start	= 0xe6826000,
+-		.end	= 0xe6826425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6826000, 0x426, "IIC3"),
+ 	[1] = {
+ 		.start	= gic_spi(183),
+ 		.end	= gic_spi(186),
+@@ -384,12 +354,7 @@ static struct resource i2c3_resources[] = {
+ };
+ 
+ static struct resource i2c4_resources[] = {
+-	[0] = {
+-		.name	= "IIC4",
+-		.start	= 0xe6828000,
+-		.end	= 0xe6828425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6828000, 0x426, "IIC4"),
+ 	[1] = {
+ 		.start	= gic_spi(187),
+ 		.end	= gic_spi(190),
+@@ -610,12 +575,7 @@ static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
+ };
+ 
+ static struct resource sh73a0_dmae_resources[] = {
+-	{
+-		/* Registers including DMAOR and channels including DMARSx */
+-		.start  = 0xfe000020,
+-		.end    = 0xfe008a00 - 1,
+-		.flags  = IORESOURCE_MEM,
+-	},
++	DEFINE_RES_MEM(0xfe000020, 0x89e0),
+ 	{
+ 		.name	= "error_irq",
+ 		.start  = gic_spi(129),
+@@ -714,18 +674,10 @@ static struct sh_dmae_pdata sh73a0_mpdma_platform_data = {
+ 
+ /* Resource order important! */
+ static struct resource sh73a0_mpdma_resources[] = {
+-	{
+-		/* Channel registers and DMAOR */
+-		.start	= 0xec618020,
+-		.end	= 0xec61828f,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* DMARSx */
+-		.start	= 0xec619000,
+-		.end	= 0xec61900b,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	/* Channel registers and DMAOR */
++	DEFINE_RES_MEM(0xec618020, 0x270),
++	/* DMARSx */
++	DEFINE_RES_MEM(0xec619000, 0xc),
+ 	{
+ 		.name	= "error_irq",
+ 		.start	= gic_spi(181),
+@@ -772,12 +724,7 @@ static struct platform_device pmu_device = {
+ 
+ /* an IPMMU module for ICB */
+ static struct resource ipmmu_resources[] = {
+-	[0] = {
+-		.name	= "IPMMU",
+-		.start	= 0xfe951000,
+-		.end	= 0xfe9510ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	DEFINE_RES_MEM_NAMED(0xfe951000, 0x100, "IPMMU"),
+ };
+ 
+ static const char * const ipmmu_dev_names[] = {
 -- 
-1.8.1.5
+1.7.10.4
 
