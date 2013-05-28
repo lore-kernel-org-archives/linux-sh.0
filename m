@@ -1,49 +1,99 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:40 +0000
-Subject: [PATCH v4 19/21] ARM: shmobile: kzm9g-reference: Add LED1-LED4 to the device tree
-Message-Id: <1369138482-5871-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 28 May 2013 04:23:01 +0000
+Subject: [PATCH 3/3 v3] ARM: shmobile: r8a7778: add MMCIF support
+Message-Id: <87zjvf91i5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+Add a platform device for the r8a7778 MMCIF.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index cdfd71a..21b0fe3 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -88,6 +88,22 @@
- 		vddvario-supply = <&reg_1p8v>;
- 		vdd33a-supply = <&reg_3p3v>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&pfc 20 1>; /* Active low */
-+		};
-+		led2 {
-+			gpios = <&pfc 21 1>; /* Active low */
-+		};
-+		led3 {
-+			gpios = <&pfc 22 1>; /* Active low */
-+		};
-+		led4 {
-+			gpios = <&pfc 23 1>; /* Active low */
-+		};
-+	};
+ - __initdata was added
+
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    3 +++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   13 +++++++++++++
+ 3 files changed, 18 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index c2c1895..18d44f5 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -103,6 +103,7 @@ static struct clk *main_clks[] = {
  };
  
- &i2c0 {
+ enum {
++	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+ 	MSTP030,
+@@ -112,6 +113,7 @@ enum {
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
+ 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+@@ -137,6 +139,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_mmcif", &mstp_clks[MSTP331]), /* MMC */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index ca8bc14..fcf3c90 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -18,6 +18,7 @@
+ #ifndef __ASM_R8A7778_H__
+ #define __ASM_R8A7778_H__
+ 
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
+ 
+@@ -26,6 +27,7 @@ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
++extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index fdc483d..17bc1d2 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -220,6 +220,19 @@ void __init r8a7778_add_hspi_device(int id)
+ 		hspi_resources + (2 * id), 2);
+ }
+ 
++/* MMC */
++static struct resource mmc_resources[] __initdata = {
++	DEFINE_RES_MEM(0xffe4e000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x5d)),
++};
++
++void __init r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info)
++{
++	platform_device_register_resndata(
++		&platform_bus, "sh_mmcif", -1,
++		mmc_resources, ARRAY_SIZE(mmc_resources),
++		info, sizeof(*info));
++}
+ 
+ void __init r8a7778_add_standard_devices(void)
+ {
 -- 
-1.8.1.5
+1.7.9.5
 
