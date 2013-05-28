@@ -1,72 +1,63 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 08:59:41 +0000
-Subject: [GIT PULL] Renesas ARM based r8a7740 SoC updates for v3.11
-Message-Id: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 28 May 2013 03:58:48 +0000
+Subject: Re: [GIT PULL] Renesas ARM based r8a7740 SoC updates for v3.11
+Message-Id: <20130528035848.GK13532@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd, Hi Olof,
+Hi Simon,
 
-The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+On Mon, May 27, 2013 at 05:59:41PM +0900, Simon Horman wrote:
+> Hi Arnd, Hi Olof,
+> 
+> The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+> 
+>   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-r8a7740-for-v3.11
+> 
+> for you to fetch changes up to 0a9e1c1eef2b050a16685952ce20575348b94d5c:
+> 
+>   ARM: shmobile: clock-r8a7740: add TPU PWM support (2013-05-27 17:45:27 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM based r8a7740 SoC updates for v3.11
+> 
+> * Clean-ups from Kuninori Morimoto, Magnus Damm and Laurent Pinchart.
+> * Extended clock coverage by Bastian Hecht.
+> * Support for initialising GIC from OF by Bastian Hecht.
+> * Support for reference DT initialisation by Bastian Hecht.
+>   This is used in conjunction with other changes initialise
+>   the Armadillo 800 eva board in DT as much as possible.
+> * Suspend to RAM and CPUIdle support by Bastian Hecht
+> * Build fix for fallout by Arnd Bergmann from suspend to RAM change.
 
-  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
+So, looking at this branch, I think you need to reorganize your patches a bit.
+You seem to have fallen back to the case of only sorting patches by what
+Renesas SoC they are for, while they are clearly of different kinds such that
+we would prefer to see them sorted differently for arm-soc.
 
-are available in the git repository at:
+For example, the fix from Arnd should go in a shared shmobile fixes branch,
+ideally. Some of the DT initialization should maybe go in a separate
+(shmobile-shared) DT branch. Clock, suspend/resume and other patches can go in
+a shared SoC branch across all of shmobile though.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-r8a7740-for-v3.11
+Care to respin? I had a handful of comments on the patches as well, and I'll
+continue to look at some of the other ones.
 
-for you to fetch changes up to 0a9e1c1eef2b050a16685952ce20575348b94d5c:
+Since you'll have to respin, we might as well see the reshuffling into shared
+shmobile branches, so I'll drop the three merges I had already done of
+SoC-specific branches. I'll follow up on the ones I claimed to have merged.
+None had been pushed out anyway.
 
-  ARM: shmobile: clock-r8a7740: add TPU PWM support (2013-05-27 17:45:27 +0900)
 
-----------------------------------------------------------------
-Renesas ARM based r8a7740 SoC updates for v3.11
+Regards,
 
-* Clean-ups from Kuninori Morimoto, Magnus Damm and Laurent Pinchart.
-* Extended clock coverage by Bastian Hecht.
-* Support for initialising GIC from OF by Bastian Hecht.
-* Support for reference DT initialisation by Bastian Hecht.
-  This is used in conjunction with other changes initialise
-  the Armadillo 800 eva board in DT as much as possible.
-* Suspend to RAM and CPUIdle support by Bastian Hecht
-* Build fix for fallout by Arnd Bergmann from suspend to RAM change.
-
-----------------------------------------------------------------
-Arnd Bergmann (1):
-      ARM: shmobile: fix sleep-r8a7740.S miscompiles
-
-Bastian Hecht (7):
-      ARM: shmobile: r8a7740: Add interim sh-eth device name to clocks list
-      ARM: shmobile: r8a7740: Add DT name to clock list for CMT10
-      ARM: shmobile: r8a7740: Add I2C DT clock names
-      ARM: shmobile: r8a7740: Add OF support to initialze the GIC
-      ARM: shmobile: r8a7740: Prepare for reference DT setup
-      ARM: shmobile: r8a7740: Add Suspend-To-RAM A3SM
-      ARM: shmobile: r8a7740: Add CPUIdle
-
-Kuninori Morimoto (1):
-      ARM: shmobile: remove ";" from SH_FIXED_RATIO_CLK*() macro
-
-Laurent Pinchart (2):
-      ARM: shmobile: r8a7740: Make private clock arrays static
-      ARM: shmobile: clock-r8a7740: add TPU PWM support
-
-Magnus Damm (1):
-      ARM: shmobile: r8a7740 pinmux platform device cleanup
-
- arch/arm/boot/dts/r8a7740.dtsi                |  117 ++++++++++++++++++
- arch/arm/mach-shmobile/Makefile               |    2 +-
- arch/arm/mach-shmobile/clock-r8a7740.c        |   12 +-
- arch/arm/mach-shmobile/cpuidle-r8a7740.c      |   62 ++++++++++
- arch/arm/mach-shmobile/include/mach/clock.h   |    4 +-
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    7 ++
- arch/arm/mach-shmobile/intc-r8a7740.c         |   24 +++-
- arch/arm/mach-shmobile/pm-r8a7740.c           |  165 ++++++++++++++++++++++++-
- arch/arm/mach-shmobile/setup-r8a7740.c        |   78 +++++-------
- arch/arm/mach-shmobile/sleep-r8a7740.S        |   57 +++++++++
- 10 files changed, 469 insertions(+), 59 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/cpuidle-r8a7740.c
- create mode 100644 arch/arm/mach-shmobile/sleep-r8a7740.S
+-Olof
