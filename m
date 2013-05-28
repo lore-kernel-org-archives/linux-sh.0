@@ -1,193 +1,75 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 22 May 2013 06:15:14 +0000
-Subject: [PATCH] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)
-Message-Id: <20130522061514.1512.54039.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 28 May 2013 03:19:08 +0000
+Subject: [PATCH 2/2 v4] ARM: shmobile: r8a7790: add __initdata on resource and device data
+Message-Id: <8761y3aj12.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+These data will be kmemdup()'ed on
+platform_device_add_resources() and platform_device_add_data().
+This patch removed "const" to avoid section type conflict
+with r8a7790_boards_compat_dt
 
-Add SMP prototype support for r8a73a4 by enabling
-4 x Cortex-A15. This patch only adds support for
-booting, see the incremental patch for CPU Hotplug.
-
-Needs a rewrite to support more generic handling of
-CPU core power domains. Not ready for merge.
-
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+v3 -> v4
 
- Developed and tested on top of v3.10-rc2
+ - fixed section type conflict error
 
- arch/arm/boot/dts/r8a73a4.dtsi                |   21 +++++
- arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/board-ape6evm.c        |    1 
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 
- arch/arm/mach-shmobile/setup-r8a73a4.c        |    1 
- arch/arm/mach-shmobile/smp-r8a73a4.c          |   89 +++++++++++++++++++++++++
- 6 files changed, 114 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7790.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
---- 0003/arch/arm/boot/dts/r8a73a4.dtsi
-+++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-05-22 13:21:21.000000000 +0900
-@@ -25,6 +25,27 @@
- 			reg = <0>;
- 			clock-frequency = <1500000000>;
- 		};
-+
-+		cpu1: cpu@1 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <1>;
-+			clock-frequency = <1500000000>;
-+		};
-+
-+		cpu2: cpu@2 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <2>;
-+			clock-frequency = <1500000000>;
-+		};
-+
-+		cpu3: cpu@3 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <3>;
-+			clock-frequency = <1500000000>;
-+		};
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index ed7ee24..20d569d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -29,17 +29,17 @@
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
  
- 	gic: interrupt-controller@f1001000 {
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-05-22 13:21:21.000000000 +0900
-@@ -18,6 +18,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.
- # SMP objects
- smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o
-+smp-$(CONFIG_ARCH_R8A73A4)	+= smp-r8a73a4.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
- 
---- 0001/arch/arm/mach-shmobile/board-ape6evm.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-05-22 13:21:51.000000000 +0900
-@@ -87,6 +87,7 @@ static const char *ape6evm_boards_compat
+-static const struct resource pfc_resources[] = {
++static struct resource pfc_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
  };
  
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
-+	.smp		= smp_ops(r8a73a4_smp_ops),
- 	.init_irq	= irqchip_init,
- 	.init_time	= shmobile_timer_init,
- 	.init_machine	= ape6evm_add_standard_devices,
---- 0001/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-05-22 13:21:21.000000000 +0900
-@@ -4,5 +4,6 @@
- void r8a73a4_add_standard_devices(void);
- void r8a73a4_clock_init(void);
- void r8a73a4_pinmux_init(void);
-+extern struct smp_operations r8a73a4_smp_ops;
+ #define R8A7790_GPIO(idx)						\
+-static struct resource r8a7790_gpio##idx##_resources[] = {		\
++static struct resource r8a7790_gpio##idx##_resources[] __initdata = {	\
+ 	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
+ 	DEFINE_RES_IRQ(gic_spi(4 + (idx))),				\
+ };									\
+ 									\
+-static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data = {	\
++static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data __initdata = {	\
+ 	.gpio_base	= 32 * (idx),					\
+ 	.irq_base	= 0,						\
+ 	.number_of_pins	= 32,						\
+@@ -101,7 +101,7 @@ void __init r8a7790_pinmux_init(void)
  
- #endif /* __ASM_R8A73A4_H__ */
---- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-05-22 13:21:44.000000000 +0900
-@@ -194,6 +194,7 @@ static const char *r8a73a4_boards_compat
+ enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
+ 
+-static const struct plat_sci_port scif[] = {
++static struct plat_sci_port scif[] __initdata = {
+ 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+ 	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
+ 	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
+@@ -118,11 +118,11 @@ static inline void r8a7790_register_scif(int idx)
+ 				      sizeof(struct plat_sci_port));
+ }
+ 
+-static struct renesas_irqc_config irqc0_data = {
++static struct renesas_irqc_config irqc0_data __initdata = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
  };
  
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
-+	.smp		= smp_ops(r8a73a4_smp_ops),
- 	.init_irq	= irqchip_init,
- 	.init_machine	= r8a73a4_add_standard_devices_dt,
- 	.init_time	= shmobile_timer_init,
---- /dev/null
-+++ work/arch/arm/mach-shmobile/smp-r8a73a4.c	2013-05-22 13:21:21.000000000 +0900
-@@ -0,0 +1,89 @@
-+/*
-+ * SMP support for r8a73a4
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2012 Takashi Yoshii <takashi.yoshii.ze@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/delay.h>
-+#include <linux/jiffies.h>
-+#include <linux/smp.h>
-+#include <linux/irqchip/arm-gic.h>
-+#include <asm/cacheflush.h>
-+#include <asm/io.h>
-+#include <asm/smp_plat.h>
-+#include <asm/suspend.h>
-+#include <mach/common.h>
-+#include <mach/hardware.h>
-+
-+#include <asm/cacheflush.h>
-+#include <asm/cp15.h>
-+#include <asm/smp_plat.h>
-+
-+#define SYSC	0xe6180000
-+#define CA15BAR	0x6020
-+#define RESCNT	0x801c
-+
-+#define APMU	0xe6150000
-+#define CA15WUPCR 0x2010
-+
-+#define MERAM	0xe8080000
-+#define CCI_BASE	0xf0190000
-+#define CCI_SLAVE3	0x4000
-+#define CCI_SNOOP	0x0000
-+#define CCI_STATUS	0x000c
-+
-+static void __init r8a73a4_smp_prepare_cpus(unsigned int max_cpus)
-+{
-+	u32 bar;
-+	void __iomem *p;
-+
-+	/* MERAM for jump stub, because BAR requires 256KB aligned address */
-+	p = ioremap_nocache(MERAM, 16);
-+	memcpy(p, shmobile_secondary_vector, 16);
-+	iounmap(p);
-+
-+	flush_cache_louis();
-+
-+	/* setup reset vector and disable reset */
-+	p = ioremap_nocache(SYSC, 0x9000);
-+	bar = (MERAM >> 8) & 0xfffffc00;
-+	__raw_writel(bar, p + CA15BAR);
-+	__raw_writel(bar | 0x10, p + CA15BAR);
-+	__raw_writel(__raw_readl(p + RESCNT) & ~(1 << 10), p + RESCNT);
-+	iounmap(p);
-+
-+	/* enable snoop and DVM */
-+	p = ioremap_nocache(CCI_BASE, 0x8000);
-+	__raw_writel(3, p + CCI_SLAVE3 + CCI_SNOOP);	/* ca15 */
-+	while (__raw_readl(p + CCI_STATUS))
-+		/* wait for pending bit low */;
-+	iounmap(p);
-+}
-+
-+static int __cpuinit r8a73a4_boot_secondary(unsigned int cpu, struct task_struct *idle)
-+{
-+	void __iomem *p;
-+
-+	/* wake up CPU core */
-+	p = ioremap_nocache(APMU, 0x3000);
-+	__raw_writel(1 << (cpu_logical_map(cpu) & 3), p + CA15WUPCR);
-+	iounmap(p);
-+
-+	return 0;
-+}
-+
-+struct smp_operations r8a73a4_smp_ops __initdata = {
-+	.smp_prepare_cpus	= r8a73a4_smp_prepare_cpus,
-+	.smp_boot_secondary	= r8a73a4_boot_secondary,
-+};
+-static struct resource irqc0_resources[] = {
++static struct resource irqc0_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
+ 	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
+ 	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
+-- 
+1.7.9.5
+
