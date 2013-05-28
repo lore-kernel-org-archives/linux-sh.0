@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 25 May 2013 01:01:02 +0000
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 28 May 2013 02:45:40 +0000
 Subject: Re: [PATCH 05/11] ARM: shmobile: APE6EVM LAN9220 support
-Message-Id: <20130525010102.GF4476@verge.net.au>
+Message-Id: <20130528024540.GC13532@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
  <1364954906-16014-6-git-send-email-horms+renesas@verge.net.au>
@@ -14,73 +14,12 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi,
+
+Sorry, a bit behind on email and just discovered this.
+
 On Wed, May 22, 2013 at 07:22:59PM +0200, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> On Wed, 22 May 2013, Simon Horman wrote:
-> 
-> > On Fri, May 17, 2013 at 03:00:23PM +0200, Guennadi Liakhovetski wrote:
-> > > Hi Simon, Magnus
-> > > 
-> > > On Wed, 3 Apr 2013, Simon Horman wrote:
-> > > 
-> > > > From: Magnus Damm <damm@opensource.se>
-> > > > 
-> > > > Add LAN9220 support to the APE6EVM board using C and DT.
-> > > > At this point the PFC driver lacks DT bindings so to
-> > > > configure the PFC we use PINCTRL in C board code.
-> > > > 
-> > > > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > > > ---
-> > > >  arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   23 ++++++++++++++++++-
-> > > >  arch/arm/mach-shmobile/board-ape6evm.c |   38 ++++++++++++++++++++++++++++++++
-> > > >  2 files changed, 60 insertions(+), 1 deletion(-)
-> > > > 
-> > > > diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> > > > index 833f703..f603c69 100644
-> > > > --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> > > > +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> > > > @@ -16,7 +16,7 @@
-> > > >  	compatible = "renesas,ape6evm", "renesas,r8a73a4";
-> > > >  
-> > > >  	chosen {
-> > > > -		bootargs = "console=ttySC0,115200 ignore_loglevel";
-> > > > +		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
-> > > >  	};
-> > > >  
-> > > >  	memory@40000000 {
-> > > > @@ -24,8 +24,29 @@
-> > > >  		reg = <0 0x40000000 0 0x40000000>;
-> > > >  	};
-> > > >  
-> > > > +	ape6evm_fixed_3v3: fixedregulator@0 {
-> > > > +		compatible = "regulator-fixed";
-> > > > +		regulator-name = "3V3";
-> > > > +		regulator-min-microvolt = <3300000>;
-> > > > +		regulator-max-microvolt = <3300000>;
-> > > > +		regulator-always-on;
-> > > > +	};
-> > > > +
-> > > >  	lbsc {
-> > > >  		#address-cells = <1>;
-> > > >  		#size-cells = <1>;
-> > > > +
-> > > > +		ethernet@8000000 {
-> > > > +			compatible = "smsc,lan9118", "smsc,lan9115";
-> > > > +			reg = <0x08000000 0x1000>;
-> > > > +			interrupt-parent = <&irqc1>;
-> > > > +			interrupts = <8 0x4>;
-> > > > +			phy-mode = "mii";
-> > > > +			reg-io-width = <4>;
-> > > > +			smsc,irq-active-high;
-> > > > +			smsc,irq-push-pull;
-> > > > +			vdd33a-supply = <&ape6evm_fixed_3v3>;
-> > > > +			vddvario-supply = <&ape6evm_fixed_3v3>;
-> > > > +		};
-> > > >  	};
-> > > >  };
-> > > 
+
 > > > The above didn't work in my tests without this:
 > > > 
 > > > diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts 
@@ -110,12 +49,6 @@ On Wed, May 22, 2013 at 07:22:59PM +0200, Guennadi Liakhovetski wrote:
 > ethernet. But if more devices are added to it in the future, maybe 
 > different ranges values would be needed. I think actually, lbsc should map 
 > the 3 BSC areas, so, the correct property would be
-
-I believe the original patches are past the point where they
-can be updated.
-
-With regards to the correct values, perhaps Magnus can help here?
-
 > 
 > +		ranges = <0 0 0 0x14000000>;
 > 
@@ -125,4 +58,10 @@ With regards to the correct values, perhaps Magnus can help here?
 > the "simple-bus" property the lbsc node doesn't get scanned, so, no device 
 > is added. Without "ranges" addresses cannot be mapped correctly.
 
-Ok, it sounds like it should be fixed for v3.10.
+Since it's a flat mapping you can just specify an empty "ranges" property, no
+need to actually define contents.
+
+For more info, see http://devicetree.org/Device_Tree_Usage#Ranges_.28Address_Translation.29
+
+
+-Olof
