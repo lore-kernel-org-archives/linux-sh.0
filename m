@@ -1,154 +1,44 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Mon, 27 May 2013 11:03:31 +0000
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 28 May 2013 03:54:46 +0000
 Subject: Re: [PATCH 10/12] ARM: shmobile: r8a7740: Add CPUIdle
-Message-Id: <51A33D83.905@linaro.org>
+Message-Id: <20130528035446.GJ13532@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
  <1369645193-3595-11-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645193-3595-11-git-send-email-horms+renesas@verge.net.au>
+ <51A33D83.905@linaro.org>
+In-Reply-To: <51A33D83.905@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 05/27/2013 10:59 AM, Simon Horman wrote:
-> From: Bastian Hecht <hechtb@gmail.com>
->=20
-> We make use of the r8a7740 Suspend To Ram code to plug together a
-> CPUIdle driver.
->=20
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-> ---
+On Mon, May 27, 2013 at 01:03:31PM +0200, Daniel Lezcano wrote:
+> On 05/27/2013 10:59 AM, Simon Horman wrote:
+> > From: Bastian Hecht <hechtb@gmail.com>
+> > 
+> > We make use of the r8a7740 Suspend To Ram code to plug together a
+> > CPUIdle driver.
+> > 
+> > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+> > Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+> > ---
+> 
+> Shouldn't it go through Rafael's tree ? Or does the patch contains some
+> dependencies on a code only visible in the ARM tree ?
 
-Shouldn't it go through Rafael's tree ? Or does the patch contains some
-dependencies on a code only visible in the ARM tree ?
+Missing S-o-b from Simon. But this patch clearly builds on the preceding
+one in the series, so merging them independently might not make much
+sense. Getting an ack from Rafael would be nice though.
 
->  arch/arm/mach-shmobile/Makefile               |    2 +-
->  arch/arm/mach-shmobile/cpuidle-r8a7740.c      |   62 +++++++++++++++++++=
-++++++
->  arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 +
->  arch/arm/mach-shmobile/pm-r8a7740.c           |    1 +
->  4 files changed, 65 insertions(+), 1 deletion(-)
->  create mode 100644 arch/arm/mach-shmobile/cpuidle-r8a7740.c
->=20
-> diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Mak=
-efile
-> index 0568894..2852dcf 100644
-> --- a/arch/arm/mach-shmobile/Makefile
-> +++ b/arch/arm/mach-shmobile/Makefile
-> @@ -30,7 +30,7 @@ obj-$(CONFIG_SUSPEND)		+=3D suspend.o
->  obj-$(CONFIG_CPU_IDLE)		+=3D cpuidle.o
->  obj-$(CONFIG_ARCH_SHMOBILE)	+=3D pm-rmobile.o
->  obj-$(CONFIG_ARCH_SH7372)	+=3D pm-sh7372.o sleep-sh7372.o
-> -obj-$(CONFIG_ARCH_R8A7740)	+=3D pm-r8a7740.o sleep-r8a7740.o
-> +obj-$(CONFIG_ARCH_R8A7740)	+=3D pm-r8a7740.o sleep-r8a7740.o cpuidle-r8a=
-7740.o
->  obj-$(CONFIG_ARCH_R8A7779)	+=3D pm-r8a7779.o
->  obj-$(CONFIG_ARCH_SH73A0)	+=3D pm-sh73a0.o
-> =20
-> diff --git a/arch/arm/mach-shmobile/cpuidle-r8a7740.c b/arch/arm/mach-shm=
-obile/cpuidle-r8a7740.c
-> new file mode 100644
-> index 0000000..48c7a6c
-> --- /dev/null
-> +++ b/arch/arm/mach-shmobile/cpuidle-r8a7740.c
-> @@ -0,0 +1,62 @@
-> +/*
-> + * CPUIdle code for SoC r8a7740
-> + *
-> + * Copyright (C) 2013 Bastian Hecht
-> + *
-> + * This file is subject to the terms and conditions of the GNU General P=
-ublic
-> + * License.  See the file "COPYING" in the main directory of this archive
-> + * for more details.
-> + */
-> +#include <linux/cpuidle.h>
-> +#include <linux/module.h>
-> +#include <asm/cpuidle.h>
-> +#include <mach/common.h>
-> +#include <mach/r8a7740.h>
-> +
-> +#if defined(CONFIG_SUSPEND) && defined(CONFIG_CPU_IDLE)
-> +static int r8a7740_enter_a3sm_pll_on(struct cpuidle_device *dev,
-> +					struct cpuidle_driver *drv, int index)
-> +{
-> +	r8a7740_enter_a3sm_common(1);
-> +	return 1;
-> +}
-> +
-> +static int r8a7740_enter_a3sm_pll_off(struct cpuidle_device *dev,
-> +					struct cpuidle_driver *drv, int index)
-> +{
-> +	r8a7740_enter_a3sm_common(0);
-> +	return 2;
-> +}
-> +
-> +static struct cpuidle_driver r8a7740_cpuidle_driver =3D {
-> +	.name			=3D "r8a7740_cpuidle",
-> +	.owner			=3D THIS_MODULE,
-> +	.en_core_tk_irqen	=3D 1,
-> +	.state_count		=3D 3,
-> +	.safe_state_index	=3D 0, /* C1 */
-> +	.states[0] =3D ARM_CPUIDLE_WFI_STATE,
-> +	.states[1] =3D {
-> +		.name =3D "C2",
-> +		.desc =3D "A3SM PLL ON",
-> +		.exit_latency =3D 40,
-> +		.target_residency =3D 30 + 40,
-> +		.flags =3D CPUIDLE_FLAG_TIME_VALID,
-> +		.enter =3D r8a7740_enter_a3sm_pll_on,
-> +	},
-> +	.states[2] =3D {
-> +		.name =3D "C3",
-> +		.desc =3D "A3SM PLL OFF",
-> +		.exit_latency =3D 120,
-> +		.target_residency =3D 30 + 120,
-> +		.flags =3D CPUIDLE_FLAG_TIME_VALID,
-> +		.enter =3D r8a7740_enter_a3sm_pll_off,
-> +	},
-> +};
-> +
-> +void r8a7740_cpuidle_init(void)
-> +{
-> +	shmobile_cpuidle_set_driver(&r8a7740_cpuidle_driver);
-> +}
-> +#else
-> +void r8a7740_cpuidle_init(void) {}
-> +#endif
-> diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mac=
-h-shmobile/include/mach/r8a7740.h
-> index 5cfe5d9..3b538e3 100644
-> --- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-> +++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-> @@ -545,6 +545,7 @@ extern void r8a7740_pinmux_init(void);
->  extern void r8a7740_pm_init(void);
->  extern void r8a7740_resume(void);
->  extern void r8a7740_shutdown(void);
-> +extern void r8a7740_cpuidle_init(void);
->  extern void r8a7740_enter_a3sm_common(int);
-> =20
->  #ifdef CONFIG_PM
-> diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile=
-/pm-r8a7740.c
-> index fe3c867..2f196bd 100644
-> --- a/arch/arm/mach-shmobile/pm-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-> @@ -237,4 +237,5 @@ static void r8a7740_suspend_init(void) {}
->  void __init r8a7740_pm_init(void)
->  {
->  	r8a7740_suspend_init();
-> +	r8a7740_cpuidle_init();
->  }
->=20
+I was going to say that it should probably go under drivers/cpuidle as
+well, but that just seems silly -- there is practically no code to share
+with any other platform in this small driver, AND there's not really
+any subsystem-internal data exposed. So it might just make more sense
+to keep it under arch/arm instead.
+
+Likewise, looking at the kirkwood and calxeda drivers under drivers/cpuidle,
+I'm wondering why we thought it was a good idea to merge them there, besides
+getting caught up in the "nothing can live under arch/arm any more" frenzy.
 
 
---=20
- <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for ARM=
- SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
-
+-Olof
