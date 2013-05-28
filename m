@@ -1,31 +1,32 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 28 May 2013 02:28:40 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 28 May 2013 05:37:01 +0000
 Subject: Re: [GIT PULL] Renesas ARM and SH based SoC pinmux fixes for v3.10 #2
-Message-Id: <20130528022840.GA13532@quad.lixom.net>
+Message-Id: <20130528053701.GE25005@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1369461157-19256-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369461157-19256-1-git-send-email-horms+renesas@verge.net.au>
+ <20130528022840.GA13532@quad.lixom.net>
+In-Reply-To: <20130528022840.GA13532@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, May 25, 2013 at 02:52:36PM +0900, Simon Horman wrote:
-> Hi Arnd, Hi Olof,
+On Mon, May 27, 2013 at 07:28:40PM -0700, Olof Johansson wrote:
+> On Sat, May 25, 2013 at 02:52:36PM +0900, Simon Horman wrote:
+> > Hi Arnd, Hi Olof,
+> > 
+> > The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+> > 
+> >   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
+> > 
+> > are available in the git repository at:
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux-fixes2-for-v3.10
 > 
-> The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+> Hi Simon,
 > 
->   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux-fixes2-for-v3.10
+> For fixes, especially if you have only one per branch, please just
+> send one pull so we don't get a crazy number of merge changesets in the
+> history. We don't split them into categories during -rcs.
 
-Hi Simon,
-
-For fixes, especially if you have only one per branch, please just
-send one pull so we don't get a crazy number of merge changesets in the
-history. We don't split them into categories during -rcs.
-
-
--Olof
+Understood. I'll just use a fixes branch from now on.
