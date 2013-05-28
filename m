@@ -1,111 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:29 +0000
-Subject: [PATCH v4 08/21] ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
-Message-Id: <1369138482-5871-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 28 May 2013 12:22:08 +0000
+Subject: [PATCH 5/5] ARM: shmobile: lager: map HSCIF0/1 to unused pins
+Message-Id: <1369743728-26084-6-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add GPIO controller nodes to the r8a7779 core device tree.
+These pins are not actually connected on the board, but at least they
+don't conflict with anything else.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 71 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 71 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 9dfc438..2bbb4cb 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -48,6 +48,76 @@
-                       <0xf0000100 0x100>;
-         };
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 1e99b17..d8bd237 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -77,6 +77,10 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
+ 				  "scif1_data", "scif1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-r8a7790",
++				  "hscif0_data", "hscif0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.9", "pfc-r8a7790",
++				  "hscif1_data_b", "hscif1"),
+ };
  
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc40000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 141 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc41000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc42000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 143 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc43000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc44000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 145 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+	};
-+
-+	gpio5: gpio@ffc45000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc45000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 146 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 32>;
-+	};
-+
-+	gpio6: gpio@ffc46000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc46000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 147 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 192 9>;
-+	};
-+
- 	irqpin0: irqpin@fe780010 {
- 		compatible = "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
-@@ -104,6 +174,7 @@
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7779";
- 		reg = <0xfffc0000 0x23c>;
-+		#gpio-range-cells = <3>;
- 	};
- 
- 	thermal@ffc48000 {
+ static void __init lager_add_standard_devices(void)
 -- 
-1.8.1.5
+1.7.10.4
 
