@@ -1,125 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 14 May 2013 09:24:48 +0000
-Subject: Re: [PATCH 3/3] ARM: mach-shmobile: lager: support GPIO switches
-Message-Id: <18009427.QVeP3MCVSV@avalon>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 28 May 2013 12:22:03 +0000
+Subject: [PATCH 0/5] HSCIF support
+Message-Id: <1369743728-26084-1-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368435233-8587-1-git-send-email-horms+renesas@verge.net.au>
- <20130514025941.GC20239@verge.net.au>
- <CANqRtoTj+FnxrtOayxQYCxkyuP4XGeCaXpNUbPsFV4kyBD_48Q@mail.gmail.com>
-In-Reply-To: <CANqRtoTj+FnxrtOayxQYCxkyuP4XGeCaXpNUbPsFV4kyBD_48Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Hi!
 
-On Tuesday 14 May 2013 15:09:08 Magnus Damm wrote:
-> On Tue, May 14, 2013 at 11:59 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Tue, May 14, 2013 at 12:35:20AM +0200, Laurent Pinchart wrote:
-> >> On Monday 13 May 2013 17:53:53 Simon Horman wrote:
-> >> > The lager board has pins 1 - 4 of SW2 wired up to GPIO pins.
-> >> > This patch allows access to those pins as KEYS 1 - 4 using
-> >> > gpio-keys.
-> >> > 
-> >> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >> > 
-> >> > ---
-> >> > 
-> >> > This patch has run time dependencies on
-> >> > 1. "gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH"
-> >> > 2. "ARM: shmobile: r8a7790: Configure R-Car GPIO for
-> >> > IRQ_TYPE_EDGE_BOTH"
-> >> > 
-> >> > Without those dependencies satisfied the gpio-keys driver will
-> >> > fail to be initialise itself. The boot should be otherwise successful
-> >> > and the board otherwise functional.
-> >> > ---
-> >> > 
-> >> >  arch/arm/mach-shmobile/board-lager.c | 22 ++++++++++++++++++++++
-> >> >  1 file changed, 22 insertions(+)
-> >> > 
-> >> > diff --git a/arch/arm/mach-shmobile/board-lager.c
-> >> > b/arch/arm/mach-shmobile/board-lager.c index 6a1ba38..4d1b42b 100644
-> >> > --- a/arch/arm/mach-shmobile/board-lager.c
-> >> > +++ b/arch/arm/mach-shmobile/board-lager.c
-> >> > @@ -18,7 +18,10 @@
-> >> > 
-> >> >   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 
-> >> >   02110-1301
-> >> > 
-> >> > USA */
-> >> > 
-> >> > +#include <linux/gpio.h>
-> >> > +#include <linux/gpio_keys.h>
-> >> > 
-> >> >  #include <linux/interrupt.h>
-> >> > 
-> >> > +#include <linux/input.h>
-> >> 
-> >> My dictionary lists input before interrupt :-)
-> > 
-> > Thanks, I will fix that.
-> > 
-> >> >  #include <linux/irqchip.h>
-> >> >  #include <linux/kernel.h>
-> >> >  #include <linux/leds.h>
-> >> > 
-> >> > @@ -52,6 +55,22 @@ static struct gpio_led_platform_data
-> >> > lager_leds_pdata = { .num_leds   = ARRAY_SIZE(lager_leds),
-> >> > 
-> >> >  };
-> >> > 
-> >> > +/* GPIO KEY */
-> >> > +#define GPIO_KEY(c, g, d, ...) \
-> >> > +   { .code = c, .gpio = g, .desc = d, .active_low = 1 }
-> >> > +
-> >> > +static struct gpio_keys_button gpio_buttons[] = {
-> >> > +   GPIO_KEY(KEY_4,         RCAR_GP_PIN(1, 28),     "SW2-pin4"),
-> >> > +   GPIO_KEY(KEY_3,         RCAR_GP_PIN(1, 26),     "SW2-pin3"),
-> >> > +   GPIO_KEY(KEY_2,         RCAR_GP_PIN(1, 24),     "SW2-pin2"),
-> >> > +   GPIO_KEY(KEY_1,         RCAR_GP_PIN(1, 14),     "SW2-pin1"),
-> >> > +};
-> >> > +
-> >> > +static struct gpio_keys_platform_data lager_keys_pdata = {
-> >> > +   .buttons        = gpio_buttons,
-> >> > +   .nbuttons       = ARRAY_SIZE(gpio_buttons),
-> >> > +};
-> >> > +
-> >> 
-> >> Could you please also update the lager dts file ?
-> > 
-> > I wonder if in that case we can remove the C code above.
-> > And probably the C code for the GPIO leds too.
-> > 
-> > Magnus, could you clarify how you would like
-> > C-code and DTS to look on the lager board?
-> 
-> I'd like C and DTS to coexist in parallel until we can ditch C fully.
-> I believe there is a need for us to be able to back port the C code.
-> For the future we want to use DTS.
-> 
-> To support DTS for Lager I think you should create a -reference DTS
-> file for Lager where you put the DT version of your GPIO LED / switch
-> code. At the time when we can configure the PFC via PINCTRL DT then I
-> believe we should be able to replace most of the platform device code
-> with DT versions.
+This set implements HSCIF support for the r8a7790. Since the Lager board
+doesn't actually have these wired up -- except HSCIF1, but those pins are
+needed for the serial console -- it has not received real-world testing. 
+The timing seems to work out, however, and the HSCIF is virtually identical
+to the SCIF anyway as far as the features actually used by the driver are
+concerned, so not all that much can go wrong.
 
-I've sent an RFC for gpio-rcar DT bindings, and I'll send one for sh-pfc in 
-the next few days. DT support for GPIO and PINCTRL should then hopefully be 
-available very soon.
+The set also contains a patch that switches the SCIFs to the internal clock. 
+While the Lager board does have an external clock and it seems to work with
+SCIF0, it does not seem to do anything for SCIF1 or the HSCIFs, and the
+internal clock works just fine for all interfaces.
 
-> At that we should hopefully be able to ditch all the C board code,
+Comments are welcome.
 
-Will we also ditch non-reference board files ?
+CU
+Uli
 
-> or maybe we need to keep some around until we have the common clocks
-> going...
+Ulrich Hecht (5):
+  serial: sh-sci: HSCIF support
+  ARM: shmobile: r8a7790: HSCIF support
+  sh-pfc: r8a7790: add HSCIF pin groups
+  ARM: shmobile: r8a7790: don't use external clock for SCIFs
+  ARM: shmobile: lager: map HSCIF0/1 to unused pins
 
-What's the status of CCF support development in sh-mobile ?
+ arch/arm/mach-shmobile/board-lager.c   |    4 +
+ arch/arm/mach-shmobile/clock-r8a7790.c |    6 +-
+ arch/arm/mach-shmobile/setup-r8a7790.c |   16 ++-
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c   |  181 ++++++++++++++++++++++++++++++++
+ drivers/tty/serial/sh-sci.c            |  102 ++++++++++++++++--
+ include/linux/serial_sci.h             |   12 ++-
+ include/uapi/linux/serial_core.h       |    3 +
+ 7 files changed, 310 insertions(+), 14 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
