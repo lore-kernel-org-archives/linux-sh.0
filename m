@@ -1,134 +1,108 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 30 May 2013 08:52:11 +0000
-Subject: [PATCH 02/05] ARM: shmobile: r8a73a4 CPU Hotplug prototype v1 (CA15 x 4)
-Message-Id: <20130530085211.24374.15664.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 28 May 2013 04:22:39 +0000
+Subject: [PATCH 2/3 v3] ARM: shmobile: r8a7778: add HSPI support
+Message-Id: <871u8rag38.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130530085152.24374.64208.sendpatchset@w520>
-In-Reply-To: <20130530085152.24374.64208.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add a platform device for the r8a7778 HSPI.
 
-Add CPU Hotplug prototype support for 4 x Cortex-A15
-included in r8a73a4.
-
-Needs a rewrite to support more generic handling of
-CPU core power domains. Not ready for merge.
-
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+v2 -> v3
 
- Developed and tested on top of v3.10-rc2, depends on
- "[PATCH] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)"
+ - __initdata was added
 
- arch/arm/mach-shmobile/smp-r8a73a4.c |   88 ++++++++++++++++++++++++++++++++++
- 1 file changed, 88 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    6 ++++++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   23 +++++++++++++++++++++++
+ 3 files changed, 30 insertions(+)
 
---- 0005/arch/arm/mach-shmobile/smp-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/smp-r8a73a4.c	2013-05-22 13:34:18.000000000 +0900
-@@ -36,6 +36,8 @@
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 1386c59..c2c1895 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -108,6 +108,7 @@ enum {
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
++	MSTP007,
+ 	MSTP_NR };
  
- #define APMU	0xe6150000
- #define CA15WUPCR 0x2010
-+#define CA15PSTR 0x2040
-+#define CA15CPUNCR(n) (0x2100 + (0x10 * (n))) 
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -127,10 +128,12 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
+ 	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
+ 	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP007] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  7, 0), /* HSPI */
+ };
  
- #define MERAM	0xe8080000
- #define CCI_BASE	0xf0190000
-@@ -83,7 +85,93 @@ static int __cpuinit r8a73a4_boot_second
- 	return 0;
+ static struct clk_lookup lookups[] = {
+ 	/* main */
++	CLKDEV_CON_ID("shyway_clk",	&s_clk),
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
+@@ -150,6 +153,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
++	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ };
+ 
+ void __init r8a7778_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index a428bc6..ca8bc14 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -25,6 +25,7 @@ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
++extern void r8a7778_add_hspi_device(int id);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index eaa6b06..fdc483d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -198,6 +198,29 @@ void __init r8a7778_add_i2c_device(int id)
+ 		i2c_resources + (2 * id), 2);
  }
  
-+#ifdef CONFIG_HOTPLUG_CPU
-+static int r8a73a4_cpu_kill(unsigned int cpu)
++/* HSPI */
++static struct resource hspi_resources[] __initdata = {
++	/* HSPI0 */
++	DEFINE_RES_MEM(0xfffc7000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x5f)),
++	/* HSPI1 */
++	DEFINE_RES_MEM(0xfffc8000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x74)),
++	/* HSPI2 */
++	DEFINE_RES_MEM(0xfffc6000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x75)),
++};
++
++void __init r8a7778_add_hspi_device(int id)
 +{
-+	void __iomem *p;
-+	int ret = 0;
-+	int k;
++	BUG_ON(id < 0 || id > 2);
 +
-+	/* this function is running on another CPU than the offline target,
-+	 * here all we need to do is to wait for the SoC to enter sleep mode.
-+	 */
-+	p = ioremap_nocache(APMU, 0x3000);
-+	for (k = 0; k < 1000; k++) {
-+		if (((__raw_readl(p + CA15PSTR) >> (cpu * 4)) & 0x03) = 3) {
-+			ret = 1;
-+			break;
-+		}
-+
-+		mdelay(1);
-+	}
-+	iounmap(p);
-+
-+	return ret;
++	platform_device_register_simple(
++		"sh-hspi", id,
++		hspi_resources + (2 * id), 2);
 +}
 +
-+/* nicked from arch/arm/mach-exynos/hotplug.c */
-+static inline void cpu_enter_lowpower_a15(void)
-+{
-+	unsigned int v;
 +
-+	asm volatile(
-+	"	mrc	p15, 0, %0, c1, c0, 0\n"
-+	"	bic	%0, %0, %1\n"
-+	"	mcr	p15, 0, %0, c1, c0, 0\n"
-+	  : "=&r" (v)
-+	  : "Ir" (CR_C)
-+	  : "cc");
-+
-+	flush_cache_louis();
-+
-+	asm volatile(
-+	/*
-+	* Turn off coherency
-+	*/
-+	"	mrc	p15, 0, %0, c1, c0, 1\n"
-+	"	bic	%0, %0, %1\n"
-+	"	mcr	p15, 0, %0, c1, c0, 1\n"
-+	: "=&r" (v)
-+	: "Ir" (0x40)
-+	: "cc");
-+
-+	isb();
-+	dsb();
-+}
-+
-+static int r8a73a4_do_idle_core_standby(unsigned long unused)
-+{
-+	cpu_do_idle(); /* WFI triggers Core Standby */
-+	return 0;
-+}
-+
-+static void r8a73a4_cpu_die(unsigned int cpu)
-+{
-+	void __iomem *p;
-+
-+	/* hardware shutdown code running on the CPU that is being offlined */
-+
-+	/* select CPU shutdown mode */
-+	p = ioremap_nocache(APMU, 0x3000);
-+	__raw_writel(3, p + CA15CPUNCR(cpu)); /* CA15 Core Standby */
-+	iounmap(p);
-+
-+	cpu_enter_lowpower_a15();
-+	cpu_suspend(0, r8a73a4_do_idle_core_standby); /* really needed? */
-+}
-+
-+static int r8a73a4_cpu_disable(unsigned int cpu)
-+{
-+	return 0; /* hotplug of any CPU is tested OK */
-+}
-+#endif
-+
- struct smp_operations r8a73a4_smp_ops __initdata = {
- 	.smp_prepare_cpus	= r8a73a4_smp_prepare_cpus,
- 	.smp_boot_secondary	= r8a73a4_boot_secondary,
-+#ifdef CONFIG_HOTPLUG_CPU
-+	.cpu_kill		= r8a73a4_cpu_kill,
-+	.cpu_die		= r8a73a4_cpu_die,
-+	.cpu_disable		= r8a73a4_cpu_disable,
-+#endif
- };
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
+-- 
+1.7.9.5
+
