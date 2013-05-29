@@ -1,53 +1,57 @@
-From: Michal Simek <michal.simek@xilinx.com>
-Date: Tue, 14 May 2013 15:49:08 +0000
-Subject: Re: [PATCH 02/20] ARM: zynq: Remove init_irq declaration in machine description
-Message-Id: <4e7a6946-b165-4440-9785-e0d538b608e0@CO9EHSMHS013.ehs.local>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 29 May 2013 08:16:48 +0000
+Subject: [PATCH/RFC] sh: Always link in helper functions extracted from libgcc
+Message-Id: <1369815408-12719-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368545933-7430-1-git-send-email-maxime.ripard@free-electrons.com>
- <1368545933-7430-3-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368545933-7430-3-git-send-email-maxime.ripard@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On 05/14/2013 05:38 PM, Maxime Ripard wrote:
-> Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-> specified") removed the need to explictly setup the init_irq field in
-> the machine description when using only irqchip_init. Remove that
-> declaration for zynq as well.
-> 
-> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> Acked-by: Michal Simek <monstr@monstr.eu>
-> ---
->  arch/arm/mach-zynq/common.c | 2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/arch/arm/mach-zynq/common.c b/arch/arm/mach-zynq/common.c
-> index 5bfe703..4c0199b8 100644
-> --- a/arch/arm/mach-zynq/common.c
-> +++ b/arch/arm/mach-zynq/common.c
-> @@ -25,7 +25,6 @@
->  #include <linux/of_irq.h>
->  #include <linux/of_platform.h>
->  #include <linux/of.h>
-> -#include <linux/irqchip.h>
->  
->  #include <asm/mach/arch.h>
->  #include <asm/mach/map.h>
-> @@ -106,7 +105,6 @@ static const char * const zynq_dt_match[] = {
->  MACHINE_START(XILINX_EP107, "Xilinx Zynq Platform")
->  	.smp		= smp_ops(zynq_smp_ops),
->  	.map_io		= zynq_map_io,
-> -	.init_irq	= irqchip_init,
->  	.init_machine	= zynq_init_machine,
->  	.init_time	= zynq_timer_init,
->  	.dt_compat	= zynq_dt_match,
-> 
+E.g. landisk_defconfig, which has CONFIG_NTFS_FS=m:
 
-Subject should contain v2 but anyway I have added it my zynq repo.
+ERROR: "__ashrdi3" [fs/ntfs/ntfs.ko] undefined!
 
-Thanks,
-Michal
+For "lib-y", if no symbols in a compilation unit are referenced by other
+units, the compilation unit will not be included in vmlinux.
+This breaks modules that do reference those symbols.
 
+Use "obj-y" instead to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+http://kisskb.ellerman.id.au/kisskb/buildresult/8838077/
+
+This doesn't fix all cases. There are others, e.g. udivsi3.
+This is also not limited to sh, many architectures handle this in the same
+way.
+
+A simple solution is to unconditionally include all helper functions.
+A more complex solution is to make the choice of "lib-y" or "obj-y" depend
+on CONFIG_MODULES:
+  obj-$(CONFIG_MODULES) += ...
+  lib-y($CONFIG_MODULES) += ...
+  
+What do you think?
+Thanks for your comments!
+
+ arch/sh/lib/Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
+index 7b95f29..3baff31 100644
+--- a/arch/sh/lib/Makefile
++++ b/arch/sh/lib/Makefile
+@@ -6,7 +6,7 @@ lib-y  = delay.o memmove.o memchr.o \
+ 	 checksum.o strlen.o div64.o div64-generic.o
+ 
+ # Extracted from libgcc
+-lib-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
++obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
+ 	 ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
+ 	 udiv_qrnnd.o
+ 
+-- 
+1.7.0.4
 
