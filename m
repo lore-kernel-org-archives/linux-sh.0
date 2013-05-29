@@ -1,42 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 17 May 2013 00:31:42 +0000
-Subject: Re: [PATCH 02/12] sh-pfc: r8a7778: add HSPI pin groups
-Message-Id: <87y5bev444.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 May 2013 22:28:47 +0000
+Subject: [GIT PULL] Renesas ARM based SoC fixes for v3.10
+Message-Id: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fvxnwg43.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fvxnwg43.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
 
-Hi Sergei
+  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
 
-> > Add HSPI CLK/CS/RX/TX pin groups to R8A7778 PFC driver.
-> 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >   drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   61 ++++++++++++++++++++++++++++++++++
-> >   1 file changed, 61 insertions(+)
-> 
-> > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> > index ed78f74..137dd59 100644
-> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> > @@ -1365,6 +1365,43 @@ I2C_PFC_DAT(i2c3_b,	SDA3_B,			SCL3_B);
-> >   I2C_PFC_PIN(i2c3_c,	RCAR_GP_PIN(1, 22),	RCAR_GP_PIN(1, 23));
-> >   I2C_PFC_DAT(i2c3_c,	SDA3_C,			SCL3_C);
-> >
-> > +/* - HSPI macro --------------------------------------------------------------*/
-> > +#define HSPI_PFC_PIN(name, args...)		SH_PFC_PINS(name, args)
-> > +#define HSPI_PFC_DAT(name, clk, cs, rx, tx)	SH_PFC_MUX4(name, clk, cs, rx, tx)
-> 
->     Same comments about the dubious macro naming as in I2C patch. Also, 
-> I that suspect CS signal is optional.
+are available in the git repository at:
 
-I want existing style. r8a7779 doesn't separate it
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git 
 
-Best regards
----
-Kuninori Morimoto
+for you to fetch changes up to c7f413548dce3d25609c12efe963b3e6c8e678f3:
+
+  ARM: shmobile: sh73a0: Update CMT clockevent rating to 80 (2013-05-28 14:46:38 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC fixes for v3.10
+
+* Correction to USB OVC and PENC pin groupings on r8a7779 SoC.
+  This avoids conflicts when the USB_OVCn pins are used by another function.
+  This has been observed to be a problem in v3.10-rc1.
+
+* Update CMT clock rating for sh73a0 SoC to resolve boot failure
+  on kzm9g-reference. This resolves a regression between v3.9 and v3.10-rc1.
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      sh-pfc: r8a7779: Don't group USB OVC and PENC pins
+
+Simon Horman (1):
+      ARM: shmobile: sh73a0: Update CMT clockevent rating to 80
+
+ arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c  |   45 ++++++++++++++++++++++++++-------
+ 2 files changed, 37 insertions(+), 10 deletions(-)
