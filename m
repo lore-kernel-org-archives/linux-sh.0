@@ -1,72 +1,66 @@
-From: Thierry Reding <thierry.reding@avionic-design.de>
-Date: Sun, 26 May 2013 09:18:24 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 29 May 2013 14:39:51 +0000
 Subject: Re: [PATCH v2] pwm: renesas-tpu: Add missing pwmchip_remove() call in tpu_remove()
-Message-Id: <20130526091824.GA12361@avionic-0098.adnet.avionic-design.de>
+Message-Id: <3139245.zTJ3azFhlR@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="UugvWAfsgieZRqgk"
+Content-Type: multipart/mixed; boundary="nextPart1868329.yMO35QUxc7"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369057541.11578.1.camel@phoenix>
- <20130523013933.GI22608@verge.net.au>
- <20130523191217.GB17462@avionic-0098.adnet.avionic-design.de>
- <4528298.O99iVSpig9@avalon>
-In-Reply-To: <4528298.O99iVSpig9@avalon>
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+References: <1369057541.11578.1.camel@phoenix> <4528298.O99iVSpig9@avalon> <20130526091824.GA12361@avionic-0098.adnet.avionic-design.de>
+In-Reply-To: <20130526091824.GA12361@avionic-0098.adnet.avionic-design.de>
+To: Thierry Reding <thierry.reding@avionic-design.de>
 Cc: Simon Horman <horms@verge.net.au>, Axel Lin <axel.lin@ingics.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
 
---UugvWAfsgieZRqgk
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+--nextPart1868329.yMO35QUxc7
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-On Sat, May 25, 2013 at 03:42:42PM +0200, Laurent Pinchart wrote:
-> Hi Thierry,
->=20
-> On Thursday 23 May 2013 21:12:17 Thierry Reding wrote:
-> > On Thu, May 23, 2013 at 10:39:34AM +0900, Simon Horman wrote:
-> > > On Mon, May 20, 2013 at 03:46:59PM +0200, Laurent Pinchart wrote:
-> > > > Hi Axel,
-> > > >=20
-> > > > Thank you for the patch.
-> > > >=20
-> > > > On Monday 20 May 2013 21:45:41 Axel Lin wrote:
-> > > > > Signed-off-by: Axel Lin <axel.lin@ingics.com>
-> > > >=20
-> > > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > >=20
-> > > Thanks. I have queued this up for v3.11 in the pinmux branch
-> > > of my renesas tree on kernel.org.
-> >=20
-> > I'd rather take this through the PWM tree along with the original driver
-> > patch.
->=20
-> As I will need to submit a new version of the renesas-tpu patches should =
-I=20
-> fold this patch in ?
+Hi Thierry,
 
-Yes, that's fine with me. It'd be nice to credit Axel, though.
+On Sunday 26 May 2013 11:18:24 Thierry Reding wrote:
+> On Sat, May 25, 2013 at 03:42:42PM +0200, Laurent Pinchart wrote:
+> > On Thursday 23 May 2013 21:12:17 Thierry Reding wrote:
+> > > On Thu, May 23, 2013 at 10:39:34AM +0900, Simon Horman wrote:
+> > > > On Mon, May 20, 2013 at 03:46:59PM +0200, Laurent Pinchart wrote:
+> > > > > On Monday 20 May 2013 21:45:41 Axel Lin wrote:
+> > > > > > Signed-off-by: Axel Lin <axel.lin@ingics.com>
+> > > > > 
+> > > > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > > > 
+> > > > Thanks. I have queued this up for v3.11 in the pinmux branch
+> > > > of my renesas tree on kernel.org.
+> > > 
+> > > I'd rather take this through the PWM tree along with the original driver
+> > > patch.
+> > 
+> > As I will need to submit a new version of the renesas-tpu patches should I
+> > fold this patch in ?
+> 
+> Yes, that's fine with me. It'd be nice to credit Axel, though.
 
-Thierry
+Sure. I'll add Axel's SoB line to the patch.
 
---UugvWAfsgieZRqgk
-Content-Type: application/pgp-signature
+-- 
+Regards,
+
+Laurent Pinchart
+
+--nextPart1868329.yMO35QUxc7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.19 (GNU/Linux)
 
-iQIcBAEBAgAGBQJRodNgAAoJEN0jrNd/PrOhgx8P/2WRvGi+BykuUiKEaAECnsCn
-DLbHFEJI5EVW1dnvK95YtFrrQTXKvU386toY4G/3DQasOGkF+adrirk3K52WwQnH
-5O3BS7omAMVmXCPp47jrRQR9CL2oDAjzm1GEIoYKQB+PQcESDZjc/R53zxLADltD
-rBnt4+FzNZQ9gRfoBpgd3lEDHGTgBPkUT62SXEvEELQMo8a668pGZ05v2G78PTUf
-Oxduq+JhG5fcbkSHG/3zXQSe6PKQp+2OUVqhoLJd1YS42gRA6UNDeXatml6+Idbe
-wqkOgx5H/YzJ0JwuW540SlSd/6NnRWONPzhpod6Qg2a1q5y7JFHoMiaronstZR+K
-SkYdqo1SL3n2aNCuDeg8Nuc62+AaQp/pdkaaT/W3al/k3dHpQIk7yt0yFoydjzxk
-bijTmHAFcdHcMt1MrwRVa+CbN6Cqknmegd0/zll9scN8Bphs+uIua65wQN/T8+Ua
-mOE723tS2Uw7/P6KAKVhh9USZkhkamm0xZpteRDXIvr37+iTQxtbZ3UeGTuWDgxC
-1qD2K2+GJYFnjtGgIXn4UonR24KH0lMkbDteLFw/tHYZjbFXcp0V0yRA0LVJzonX
-m9S/Sy9Kx2XbgFY6JEmp6ftHAOZVwVBVWJj2wiKBKDJ4mNGM+EGqUYv0Cc805N/U
-aeZExTKADdbqgmTsaDuM
-=3stA
+iQEcBAABAgAGBQJRphM9AAoJEIkPb2GL7hl1FyoH/iDam1oxOC4Q+vSOkoB1QN4u
+OkJJ92apZwXx7vULqYtdUEl70vA9/XA5ecFO/IPvgKFw7oByrbmo5zJKyeuLXfTS
+tAIHVx+u3z28tznMV04Q0affzklSq2cJFmZ0UUDcrUaMXsTKt/suk2KJTf2rHkWU
+y8zetsecc6X7MagCycs8Hgt/KNOk3g5daYUgV+BFd1C6cu2Vc3VLbSH6+01lTW3Z
+dVWXkWNLaZ5LCe3r2YziQ+Yhm9JhDRLU9VdFGdqbARzvbi/yHfmOY8v+N052y5Rb
+FCTBouOkJVAIpe2jGPfiW2lxL5Ge0RKJokDRIG8pSdpwcwVBUhQowKmpXViut14=
+=g0Oy
 -----END PGP SIGNATURE-----
 
---UugvWAfsgieZRqgk--
+--nextPart1868329.yMO35QUxc7--
+
