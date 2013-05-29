@@ -1,43 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 29 May 2013 22:28:49 +0000
-Subject: [PATCH 2/2] ARM: shmobile: sh73a0: Update CMT clockevent rating to 80
-Message-Id: <1369866529-6372-3-git-send-email-horms+renesas@verge.net.au>
+From: Jiang Liu <liuj97@gmail.com>
+Date: Wed, 29 May 2013 14:44:49 +0000
+Subject: [PATCH, v2 10/13] mm/SH: prepare for killing free_all_bootmem_node()
+Message-Id: <1369838692-26860-11-git-send-email-jiang.liu@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
+References: <1369838692-26860-1-git-send-email-jiang.liu@huawei.com>
+In-Reply-To: <1369838692-26860-1-git-send-email-jiang.liu@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Jiang Liu <jiang.liu@huawei.com>, David Rientjes <rientjes@google.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, James Bottomley <James.Bottomley@HansenPartnership.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, David Howells <dhowells@redhat.com>, Mark Salter <msalter@redhat.com>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
 
-Update the CMT clockevent rating from 125 to 80.
+Prepare for killing free_all_bootmem_node() by using
+free_all_bootmem().
 
-This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
-introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
-Avoid dummy clockevent being preferred over real").
-
-The patch noted above reduces the rating of dummy clockevent from 400 to 100.
-This patch reduces the rating of CMT so that it is once again less than that
-of the dummy clockevent.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Wen Congyang <wency@cn.fujitsu.com>
+Cc: Tang Chen <tangchen@cn.fujitsu.com>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/mm/init.c | 16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index fdf3894..9696f36 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
- 	.name = "CMT10",
- 	.channel_offset = 0x10,
- 	.timer_bit = 0,
--	.clockevent_rating = 125,
-+	.clockevent_rating = 80,
- 	.clocksource_rating = 125,
- };
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index c9a517c..33890fd 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -412,19 +412,11 @@ void __init mem_init(void)
+ 	iommu_init();
  
+ 	high_memory = NULL;
++	for_each_online_pgdat(pgdat)
++		high_memory = max_t(void *, high_memory,
++				    __va(pgdat_end_pfn(pgdat) << PAGE_SHIFT));
+ 
+-	for_each_online_pgdat(pgdat) {
+-		void *node_high_memory;
+-
+-		if (pgdat->node_spanned_pages)
+-			free_all_bootmem_node(pgdat);
+-
+-		node_high_memory = (void *)__va((pgdat->node_start_pfn +
+-						 pgdat->node_spanned_pages) <<
+-						 PAGE_SHIFT);
+-		if (node_high_memory > high_memory)
+-			high_memory = node_high_memory;
+-	}
++	free_all_bootmem();
+ 
+ 	/* Set this up early, so we can take care of the zero page */
+ 	cpu_cache_init();
 -- 
-1.7.10.4
+1.8.1.2
 
