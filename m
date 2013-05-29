@@ -1,38 +1,43 @@
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
-Date: Mon, 13 May 2013 09:44:01 +0000
-Subject: [PATCH 02/14] ARM: zynq: Remove init_irq declaration in machine description
-Message-Id: <1368438253-28218-3-git-send-email-maxime.ripard@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 29 May 2013 22:28:49 +0000
+Subject: [PATCH 2/2] ARM: shmobile: sh73a0: Update CMT clockevent rating to 80
+Message-Id: <1369866529-6372-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
-In-Reply-To: <1368438253-28218-1-git-send-email-maxime.ripard@free-electrons.com>
+References: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for zynq as well.
+Update the CMT clockevent rating from 125 to 80.
 
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Acked-by: Michal Simek <monstr@monstr.eu>
+This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
+introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
+Avoid dummy clockevent being preferred over real").
+
+The patch noted above reduces the rating of dummy clockevent from 400 to 100.
+This patch reduces the rating of CMT so that it is once again less than that
+of the dummy clockevent.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-zynq/common.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-zynq/common.c b/arch/arm/mach-zynq/common.c
-index 5bfe703..8bc3acb 100644
---- a/arch/arm/mach-zynq/common.c
-+++ b/arch/arm/mach-zynq/common.c
-@@ -106,7 +106,6 @@ static const char * const zynq_dt_match[] = {
- MACHINE_START(XILINX_EP107, "Xilinx Zynq Platform")
- 	.smp		= smp_ops(zynq_smp_ops),
- 	.map_io		= zynq_map_io,
--	.init_irq	= irqchip_init,
- 	.init_machine	= zynq_init_machine,
- 	.init_time	= zynq_timer_init,
- 	.dt_compat	= zynq_dt_match,
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fdf3894..9696f36 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
+ 	.name = "CMT10",
+ 	.channel_offset = 0x10,
+ 	.timer_bit = 0,
+-	.clockevent_rating = 125,
++	.clockevent_rating = 80,
+ 	.clocksource_rating = 125,
+ };
+ 
 -- 
-1.8.1.2
+1.7.10.4
 
