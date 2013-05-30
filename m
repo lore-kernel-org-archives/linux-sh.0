@@ -1,183 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 29 May 2013 08:01:05 +0000
-Subject: Re: [PATCH v4 02/21] sh-pfc: Add DT support
-Message-Id: <1544149.k900vg9Sxe@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 30 May 2013 16:02:12 +0000
+Subject: [PATCH] dmaengine: shdma: fix a build failure on platforms with no DMA support
+Message-Id: <Pine.LNX.4.64.1305301650290.29171@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1369138482-5871-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CACRpkdZNv5AO48Bmquyr8mBQvgjBMCk3Ob8ngutSq8RV1HFT0w@mail.gmail.com>
-In-Reply-To: <CACRpkdZNv5AO48Bmquyr8mBQvgjBMCk3Ob8ngutSq8RV1HFT0w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+On platforms with no support for the shdma dmaengine driver build is
+currently failing with
 
-Thanks for the review.
+drivers/built-in.o: In function `sh_mobile_sdhi_probe':
+drivers/mmc/host/sh_mobile_sdhi.c:170: undefined reference to`shdma_chan_filter'
 
-On Friday 24 May 2013 10:52:42 Linus Walleij wrote:
-> On Tue, May 21, 2013 at 2:14 PM, Laurent Pinchart wrote:
-> > Support device instantiation through the device tree. The compatible
-> > property is used to select the SoC pinmux information.
-> > 
-> > Set the gpio_chip device field to the PFC device to enable automatic
-> > GPIO OF support.
-> > 
-> > Cc: devicetree-discuss@lists.ozlabs.org
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> (...)
-> 
-> (Again I'm rather nervous about all the device tree binding reviewing being
-> dropped in the lap of Linux subsystem maintainers and then expecting them
-> to be good and OS-neutral... Not your fault though.)
+Fix the breakage by defining shdma_chan_filter to NULL in such
+configurations.
 
-I agree with you. I'm open to review from other OS vendors :-)
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-> > +Pin Configuration Node Properties:
-> > +
-> > +- renesas,pins : An array of strings, each string containing the name of
-> > +  a pin.
-> > +- renesas,groups : An array of strings, each string containing the name
-> > +  of a pin group.
-> > +
-> > +- renesas,function: A string containing the name of the function to mux
-> > +  to the pin group(s) specified by the renesas,groups property
-> > +
-> > +  Valid values for pin, group and function names can be found in the
-> > +  group and function arrays of the PFC data file corresponding to the
-> > +  SoC (drivers/pinctrl/sh-pfc/pfc-*.c)
-> > +
-> > +- renesas,pull-up: An integer representing the pull-up strength to be
-> > +  applied to all pins specified by the renesas,pins and renesas-groups
-> > +  properties. 0 disables the pull-up, 1 enables it. Other values should
-> > + not be used.
->
-> Then just use a boolean.
+This is for "next." Compile-tested only. I'll test it on hardware next 
+week, but I don't think it shall break anything.
 
-I meant that other values should not be used for now. Future revisions of the 
-GPIO core might allow controlling the pull-up strength, hence the integer 
-property. Same for the pull-down property. This is especially true if we 
-device to implement generic pinconf bindings.
+ include/linux/sh_dma.h |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-> > +- renesas,pull-down: An integer representing the pull-down strength to be
-> > +  applied to all pins specified by the renesas,pins and renesas-groups
-> > +  properties. 0 disables the pull-down, 1 enables it. Other values should
-> > +  not be used.
-> 
-> Just use a boolean oneliner then.
-> 
-> But I prefer that you define something really generic in
-> Documentation/devicetree/bindings/pinconf.txt for anyone using
-> generic pin config, then reference that.
-> 
-> This way we can have a more general config binding for any system
-> using generic pin config, mapping to the configs we have in
-> <linux/pinctrl/pinconf-generic.h>
-> 
-> The upside is that we could move the pinconf generic parsing code
-> to drivers/pinctrl/pinconf-generic.c and thus avoid code duplication.
-> 
-> We have so far not tried much to standardize pinctrl bindings, but
-> this would be a good opportunity.
-
-I agree. I'll reply to the "[PATCH v2 6/9] pinctrl-tz1090: add TZ1090 pinctrl 
-driver" mail thread to further discuss the pinconf generic bindings.
-
-> > +On SH7372, SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO
-> > +controller node.
-> > +
-> > +Required Properties:
-> > +
-> > +  - gpio-controller: Marks the device node as a gpio controller.
-> > +
-> > +  - #gpio-cells: Should be 2. The first cell is the pin number and the
-> > +    second cell is used to specify optional parameters as bit flags.
-> > +    Only the GPIO active low flag (bit 0) is currently supported.
-> 
-> I suggest these properties shall be defined in an include file using that
-> new include hierarchy, since you're using pinconf generic.
-> 
-> include/dt-bindings/gpio/gpio.h
-> Referenced by <dt-bindings/gpio/gpio.h> in the .dts[i] files.
-
-Agreed, I'll fix that.
-
-> In Linux-next you find how tegra machines and the imx6sl DTs have
-> started to use this facility for symbolic names.
-> 
-> And for that you should reference
-> <dt-bindings/gpio/gpio.h>
-> 
-> Use the symbolic names GPIO_ACTIVE_HIGH and GPIO_ACTIVE_LOW
-> here.
-> 
-> (...)
-> 
-> > +Example 2: A GPIO LED node that references a GPIO
-> > +
-> > +       leds {
-> > +               compatible = "gpio-leds";
-> > +               led1 {
-> > +                       gpios = <&pfc 20 1>; /* Active low */
-> 
-> #include <dt-bindings/gpio/gpio.h>
-> gpios = <&pfc 20 GPIO_ACTIVE_LOW>;
-> 
-> (...)
-> 
-> > +Example 3: KZM-A9-GT (SH-Mobile AG5) default pin state hog and pin
-> > control maps +           for the MMCIF and SCIFA4 devices
-> > +
-> > +       &pfc {
-> > +               pinctrl-0 = <&scifa4_pins>;
-> > +               pinctrl-names = "default";
-> > +
-> > +               mmcif_pins: mmcif {
-> > +                       mux {
-> > +                               renesas,groups = "mmc0_data8_0",
-> > "mmc0_ctrl_0"; +                               renesas,function = "mmc0";
-> > +                       };
-> > +                       cfg {
-> > +                               renesas,groups = "mmc0_data8_0";
-> > +                               renesas,pins = "PORT279";
-> > +                               renesas,pull-up = <1>;
-> 
-> Just
-> renesas,pull-up;
-> 
-> Or go for the generic pinconf binding I'm suggesting.
-> Then I guess it'd be something like:
-> 
-> pinconf-bias-pull-up;
-> 
-> (Quite readable.)
-> 
-> (...)
-> 
-> > +++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-> > +static const struct sh_pfc_config_param sh_pfc_config_params[] = {
-> > +       { "renesas,pull-up", PIN_CONFIG_BIAS_PULL_UP },
-> > +       { "renesas,pull-down", PIN_CONFIG_BIAS_PULL_DOWN },
-> > +};
-> 
-> So these should be checked as booleans instead:
->
-> > +       for (i = 0; i < ARRAY_SIZE(sh_pfc_config_params); ++i) {
-> > +               const struct sh_pfc_config_param *param > > +                       &sh_pfc_config_params[i];
-> > +               unsigned long config;
-> > +               u32 val;
-> > +
-> > +               ret = of_property_read_u32(np, param->name, &val);
-> 
-> of_property_read_bool()
-> 
-> Though I much rather like this code added as helper lib in pinconf-
-> generic.c. Use drivers/pinctrl/pinconf.h for API.
-
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index b64d6be..1fd8a20 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -99,6 +99,10 @@ struct sh_dmae_pdata {
+ #define CHCR_TE	0x00000002
+ #define CHCR_IE	0x00000004
+ 
++#if IS_ENABLED(CONFIG_SH_DMAE)
+ bool shdma_chan_filter(struct dma_chan *chan, void *arg);
++#else
++#define shdma_chan_filter NULL
++#endif
+ 
+ #endif
 -- 
-Regards,
+1.7.2.5
 
-Laurent Pinchart
