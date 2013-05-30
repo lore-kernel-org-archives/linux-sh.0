@@ -1,23 +1,34 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 08 May 2013 23:09:40 +0000
-Subject: [PATCH v4 0/3] Add Ether/USB/VIN pin groups for R8A777[89]
-Message-Id: <201305090309.41113.sergei.shtylyov@cogentembedded.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Thu, 30 May 2013 15:08:43 +0000
+Subject: [PATCH v2 4/5] ARM: shmobile: r8a7790: don't use external clock for SCIFs
+Message-Id: <1369926524-3425-5-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+This is an external component and may or may not be there, while the
+internal clock always works.
 
-   Here's 4 patches against the Simon Horman's 'renesas.git' repository,
-'renesas-next-20130426' tag. We define the Ether/VIN/USB pin groups for RA87778/
-RA87779 SoCs. Note that patch #2 has been moved from R8A7778/BOCK-W VIN patch
-series and patch #1 just added.
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7790.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-[1/4] sh-pfc: r8a7778: add USB pin groups
-[2/4] sh-pfc: r8a7778: add VIN pin groups
-[3/4] sh-pfc: r8a7778: add Ether pin groups
-[4/4] sh-pfc: r8a7779: add Ether pin groups
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 5b7a770..a380bdc 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -96,7 +96,7 @@ void __init r8a7790_pinmux_init(void)
+ [index] = {						\
+ 	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,			\
+-	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
++	.scscr = SCSCR_RE | SCSCR_TE,	\
+ }
+ 
+ #define HSCIF_DATA(index, baseaddr, irq)		\
+-- 
+1.7.10.4
 
-WBR, Sergei
