@@ -1,38 +1,79 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 May 2013 12:14:24 +0000
-Subject: [PATCH v4 03/21] ARM: shmobile: r8a73a4: Add pin control device to device tree
-Message-Id: <1369138482-5871-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 30 May 2013 08:52:20 +0000
+Subject: [PATCH 03/05] ARM: shmobile: r8a73a4 CA15 setup WFE as NOP
+Message-Id: <20130530085220.24374.94574.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1369138482-5871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130530085152.24374.64208.sendpatchset@w520>
+In-Reply-To: <20130530085152.24374.64208.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the r8a73a4 device tree.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Configure CA15 included in r8a73a4 to treat WFE as NOP.
+
+This works around hardware issue found in APE6, needed
+for CA7 cluster to work together with CA15 cluster.
+
+Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index fde2a33..358898c 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -91,4 +91,11 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 69 4>;
- 	};
+ arch/arm/mach-shmobile/smp-r8a73a4.c |   24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- 0006/arch/arm/mach-shmobile/smp-r8a73a4.c
++++ work/arch/arm/mach-shmobile/smp-r8a73a4.c	2013-05-22 14:16:59.000000000 +0900
+@@ -45,6 +45,20 @@
+ #define CCI_SNOOP	0x0000
+ #define CCI_STATUS	0x000c
+ 
++static inline void r8a73a4_execute_wfe_as_nop(void)
++{
++	unsigned int v;
 +
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a73a4";
-+		reg = <0xe6050000 0x9000>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
- };
--- 
-1.8.1.5
-
++	/* set bit 7 in ACTLR */
++	asm volatile(
++	"	mrc	p15, 0, %0, c1, c0, 1\n"
++	"	orr	%0, %0, #0x40\n"
++	"	mcr	p15, 0, %0, c1, c0, 1\n"
++	  : "=&r" (v)
++	  :
++	  : "cc");
++}
++
+ static void __init r8a73a4_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	u32 bar;
+@@ -71,6 +85,8 @@ static void __init r8a73a4_smp_prepare_c
+ 	while (__raw_readl(p + CCI_STATUS))
+ 		/* wait for pending bit low */;
+ 	iounmap(p);
++
++	r8a73a4_execute_wfe_as_nop();
+ }
+ 
+ static int __cpuinit r8a73a4_boot_secondary(unsigned int cpu, struct task_struct *idle)
+@@ -85,6 +101,13 @@ static int __cpuinit r8a73a4_boot_second
+ 	return 0;
+ }
+ 
++static void __cpuinit r8a73a4_secondary_init(unsigned int cpu)
++{
++	/* CA15 need SW workaround */
++	if (cpu_logical_map(cpu) < 4)
++		r8a73a4_execute_wfe_as_nop();
++}
++
+ #ifdef CONFIG_HOTPLUG_CPU
+ static int r8a73a4_cpu_kill(unsigned int cpu)
+ {
+@@ -169,6 +192,7 @@ static int r8a73a4_cpu_disable(unsigned
+ struct smp_operations r8a73a4_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= r8a73a4_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a73a4_boot_secondary,
++	.smp_secondary_init	= r8a73a4_secondary_init,
+ #ifdef CONFIG_HOTPLUG_CPU
+ 	.cpu_kill		= r8a73a4_cpu_kill,
+ 	.cpu_die		= r8a73a4_cpu_die,
