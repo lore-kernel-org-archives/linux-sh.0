@@ -1,48 +1,134 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 27 May 2013 08:59:50 +0000
-Subject: [PATCH 5/7] ARM: shmobile: r8a7790: Remove init_irq declaration in machine description
-Message-Id: <1369645224-3728-6-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 30 May 2013 08:52:11 +0000
+Subject: [PATCH 02/05] ARM: shmobile: r8a73a4 CPU Hotplug prototype v1 (CA15 x 4)
+Message-Id: <20130530085211.24374.15664.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645224-3728-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130530085152.24374.64208.sendpatchset@w520>
+In-Reply-To: <20130530085152.24374.64208.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
+From: Magnus Damm <damm@opensource.se>
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for shmobile as well.
+Add CPU Hotplug prototype support for 4 x Cortex-A15
+included in r8a73a4.
 
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Needs a rewrite to support more generic handling of
+CPU core power domains. Not ready for merge.
+
+Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c |    2 --
- 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 49de2d5..2a7a276 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -19,7 +19,6 @@
-  */
+ Developed and tested on top of v3.10-rc2, depends on
+ "[PATCH] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)"
+
+ arch/arm/mach-shmobile/smp-r8a73a4.c |   88 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 88 insertions(+)
+
+--- 0005/arch/arm/mach-shmobile/smp-r8a73a4.c
++++ work/arch/arm/mach-shmobile/smp-r8a73a4.c	2013-05-22 13:34:18.000000000 +0900
+@@ -36,6 +36,8 @@
  
- #include <linux/irq.h>
--#include <linux/irqchip.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/serial_sci.h>
-@@ -142,7 +141,6 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
+ #define APMU	0xe6150000
+ #define CA15WUPCR 0x2010
++#define CA15PSTR 0x2040
++#define CA15CPUNCR(n) (0x2100 + (0x10 * (n))) 
+ 
+ #define MERAM	0xe8080000
+ #define CCI_BASE	0xf0190000
+@@ -83,7 +85,93 @@ static int __cpuinit r8a73a4_boot_second
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_HOTPLUG_CPU
++static int r8a73a4_cpu_kill(unsigned int cpu)
++{
++	void __iomem *p;
++	int ret = 0;
++	int k;
++
++	/* this function is running on another CPU than the offline target,
++	 * here all we need to do is to wait for the SoC to enter sleep mode.
++	 */
++	p = ioremap_nocache(APMU, 0x3000);
++	for (k = 0; k < 1000; k++) {
++		if (((__raw_readl(p + CA15PSTR) >> (cpu * 4)) & 0x03) = 3) {
++			ret = 1;
++			break;
++		}
++
++		mdelay(1);
++	}
++	iounmap(p);
++
++	return ret;
++}
++
++/* nicked from arch/arm/mach-exynos/hotplug.c */
++static inline void cpu_enter_lowpower_a15(void)
++{
++	unsigned int v;
++
++	asm volatile(
++	"	mrc	p15, 0, %0, c1, c0, 0\n"
++	"	bic	%0, %0, %1\n"
++	"	mcr	p15, 0, %0, c1, c0, 0\n"
++	  : "=&r" (v)
++	  : "Ir" (CR_C)
++	  : "cc");
++
++	flush_cache_louis();
++
++	asm volatile(
++	/*
++	* Turn off coherency
++	*/
++	"	mrc	p15, 0, %0, c1, c0, 1\n"
++	"	bic	%0, %0, %1\n"
++	"	mcr	p15, 0, %0, c1, c0, 1\n"
++	: "=&r" (v)
++	: "Ir" (0x40)
++	: "cc");
++
++	isb();
++	dsb();
++}
++
++static int r8a73a4_do_idle_core_standby(unsigned long unused)
++{
++	cpu_do_idle(); /* WFI triggers Core Standby */
++	return 0;
++}
++
++static void r8a73a4_cpu_die(unsigned int cpu)
++{
++	void __iomem *p;
++
++	/* hardware shutdown code running on the CPU that is being offlined */
++
++	/* select CPU shutdown mode */
++	p = ioremap_nocache(APMU, 0x3000);
++	__raw_writel(3, p + CA15CPUNCR(cpu)); /* CA15 Core Standby */
++	iounmap(p);
++
++	cpu_enter_lowpower_a15();
++	cpu_suspend(0, r8a73a4_do_idle_core_standby); /* really needed? */
++}
++
++static int r8a73a4_cpu_disable(unsigned int cpu)
++{
++	return 0; /* hotplug of any CPU is tested OK */
++}
++#endif
++
+ struct smp_operations r8a73a4_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= r8a73a4_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a73a4_boot_secondary,
++#ifdef CONFIG_HOTPLUG_CPU
++	.cpu_kill		= r8a73a4_cpu_kill,
++	.cpu_die		= r8a73a4_cpu_die,
++	.cpu_disable		= r8a73a4_cpu_disable,
++#endif
  };
- 
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
--	.init_irq	= irqchip_init,
- 	.init_machine	= r8a7790_add_standard_devices_dt,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= r8a7790_boards_compat_dt,
--- 
-1.7.10.4
-
