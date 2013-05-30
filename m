@@ -1,108 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 28 May 2013 04:22:39 +0000
-Subject: [PATCH 2/3 v3] ARM: shmobile: r8a7778: add HSPI support
-Message-Id: <871u8rag38.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 30 May 2013 08:51:52 +0000
+Subject: [PATCH 00/05] ARM: shmobile: r8a73a4 SMP and CPU Hotplug prototype v2
+Message-Id: <20130530085152.24374.64208.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a platform device for the r8a7778 HSPI.
+ARM: shmobile: r8a73a4 SMP and CPU Hotplug prototype v2
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[PATCH 01/05] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)
+[PATCH 02/05] ARM: shmobile: r8a73a4 CPU Hotplug prototype v1 (CA15 x 4)
+[PATCH 03/05] ARM: shmobile: r8a73a4 CA15 setup WFE as NOP
+[PATCH 04/05] ARM: shmobile: r8a73a4 SMP CA7 prototype (+ CA7 x 4)
+[PATCH 05/05] ARM: shmobile: r8a73a4 CA7 setup arch timer
+
+Here's V2 of r8a73a4 SMP prototype support. This time support for
+both CA15 and CA7 is included.
+
+It is worth noting that only prototype support for the actual SoC
+is included here. It is included as SMP support, but since CA7 cores
+perform differently compared to CA15 the system will not behave in a
+deterministic way unless either big.LITTLE MP patches are used to
+extend the scheduler or c-groups are used to separate CA15 and CA7.
+
+All 8 cores boot up as expected but certainly needs more work.
+
+Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-v2 -> v3
 
- - __initdata was added
-
- arch/arm/mach-shmobile/clock-r8a7778.c        |    6 ++++++
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   23 +++++++++++++++++++++++
- 3 files changed, 30 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 1386c59..c2c1895 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -108,6 +108,7 @@ enum {
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015,
-+	MSTP007,
- 	MSTP_NR };
+ Written against linux.git 7b55eab81ecbbd44e76ac14c67479b82807c261b
  
- static struct clk mstp_clks[MSTP_NR] = {
-@@ -127,10 +128,12 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
- 	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
- 	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
-+	[MSTP007] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  7, 0), /* HSPI */
- };
- 
- static struct clk_lookup lookups[] = {
- 	/* main */
-+	CLKDEV_CON_ID("shyway_clk",	&s_clk),
- 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
- 
- 	/* MSTP32 clocks */
-@@ -150,6 +153,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
-+	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
-+	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
-+	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
- };
- 
- void __init r8a7778_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index a428bc6..ca8bc14 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -25,6 +25,7 @@ extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7778_add_i2c_device(int id);
-+extern void r8a7778_add_hspi_device(int id);
- 
- extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index eaa6b06..fdc483d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -198,6 +198,29 @@ void __init r8a7778_add_i2c_device(int id)
- 		i2c_resources + (2 * id), 2);
- }
- 
-+/* HSPI */
-+static struct resource hspi_resources[] __initdata = {
-+	/* HSPI0 */
-+	DEFINE_RES_MEM(0xfffc7000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x5f)),
-+	/* HSPI1 */
-+	DEFINE_RES_MEM(0xfffc8000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x74)),
-+	/* HSPI2 */
-+	DEFINE_RES_MEM(0xfffc6000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x75)),
-+};
-+
-+void __init r8a7778_add_hspi_device(int id)
-+{
-+	BUG_ON(id < 0 || id > 2);
-+
-+	platform_device_register_simple(
-+		"sh-hspi", id,
-+		hspi_resources + (2 * id), 2);
-+}
-+
-+
- void __init r8a7778_add_standard_devices(void)
- {
- 	int i;
--- 
-1.7.9.5
-
+ arch/arm/boot/dts/r8a73a4.dtsi                |   49 ++++
+ arch/arm/mach-shmobile/Makefile               |    1 
+ arch/arm/mach-shmobile/board-ape6evm.c        |    1 
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |    1 
+ arch/arm/mach-shmobile/smp-r8a73a4.c          |  274 ++++++++++++++++++++++++-
+ 6 files changed, 321 insertions(+), 6 deletions(-)
