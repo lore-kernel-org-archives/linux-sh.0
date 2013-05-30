@@ -1,33 +1,35 @@
-From: phil.edworthy@renesas.com
-Date: Tue, 28 May 2013 14:08:33 +0000
-Subject: Re: [PATCH v5] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <OF9A21FD79.EFF60097-ON80257B79.004D3CC5-80257B79.004DB2B3@eu.necel.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 30 May 2013 09:31:06 +0000
+Subject: [PATCH] pinctrl: sh-pfc: r8a7779: Fix missing MOD_SEL2 entry
+Message-Id: <1369906266-30205-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305180101.11383.sergei.shtylyov@cogentembedded.com>
- <OFC9B7B505.2CDF0AA3-ON80257B71.00291B65-80257B71.002952EB@eu.necel.com>
- <519A1FFC.6000304@cogentembedded.com>
- <OF0ABE628B.1C271A20-ON80257B72.002ED824-80257B72.003627CD@LocalDomain>
- <OF7D5F7F7E.CF4ED120-ON80257B72.0042ED42-80257B72.004332EB@eu.necel.com>
- <519B88E8.3040101@cogentembedded.com>
-In-Reply-To: <519B88E8.3040101@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: g.liakhovetski@gmx.de, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, matsu@igel.co.jp, mchehab@redhat.com, vladimir.barinov@cogentembedded.com
+To: linux-sh@vger.kernel.org
 
-Hi Sergei, Vladimir,
+The list of functions selected by the MOD_SEL2 register was missing
+an entry. This caused all entries after this to modify the MOD_SEL2
+register incorrectly.
 
-> > Oops, the comments about the captured image contents are my fault.
-> > However, the unhandled irq after stopping capture is still an issue.
-> 
->     Thanks for letting us know.
-The good news is that your driver works fine. 
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-The problem I saw only occurs when your patches were integrated into 
-Simon's next branch (which was renesas-next-20130515v2+v3.10-rc1), so I 
-guess something in the rc1 caused problems. Once I tested the driver 
-against 3.9, it works fine.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 13feaa0..5dfeb3e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2525,7 +2525,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	    /* SEL_SCIF [2] */
+ 	    FN_SEL_SCIF_0, FN_SEL_SCIF_1, FN_SEL_SCIF_2, FN_SEL_SCIF_3,
+ 	    /* SEL_CANCLK [2] */
+-	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2,
++	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2, 0,
+ 	    /* SEL_CAN0 [1] */
+ 	    FN_SEL_CAN0_0, FN_SEL_CAN0_1,
+ 	    /* SEL_HSCIF1 [1] */
+-- 
+1.7.9.5
 
-Thanks
-Phil
