@@ -1,96 +1,49 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 30 May 2013 05:33:49 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 30 May 2013 13:26:26 +0000
 Subject: Re: [PATCH 05/11] ARM: shmobile: APE6EVM LAN9220 support
-Message-Id: <Pine.LNX.4.64.1305300700150.24272@axis700.grange>
+Message-Id: <201305301526.26225.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1364954906-16014-1-git-send-email-horms+renesas@verge.net.au>
- <1364954906-16014-6-git-send-email-horms+renesas@verge.net.au>
- <Pine.LNX.4.64.1305171458550.31481@axis700.grange>
- <20130522143204.GE32012@verge.net.au>
- <Pine.LNX.4.64.1305221911380.12715@axis700.grange>
- <20130528024540.GC13532@quad.lixom.net>
- <Pine.LNX.4.64.1305290819190.14157@axis700.grange>
  <CAOesGMjLiNTR7cqjSmyy2Ux1srgkC5cPO+D8UsRcgHbW8GQ26Q@mail.gmail.com>
-In-Reply-To: <CAOesGMjLiNTR7cqjSmyy2Ux1srgkC5cPO+D8UsRcgHbW8GQ26Q@mail.gmail.com>
+ <Pine.LNX.4.64.1305300700150.24272@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1305300700150.24272@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 29 May 2013, Olof Johansson wrote:
+On Thursday 30 May 2013, Guennadi Liakhovetski wrote:
+> Ok, I didn't write the original implementation of that bus and, therefore, 
+> didn't decide how many address cells it shall use. My task was to fix it. 
+> And yes, I agree, that there are 2 ways to fix the memory mapping: either 
+> define ranges to map from 64-bits to 32-bits, or to change all devices on 
+> the bus (currently there's only 1) to use 64-bit "reg" property and use 
+> "ranges" with no arguments. Since that bus is clearly within a 32-bit 
+> area, I would prefer the former solution not to have to drag 64 bits 
+> around an make device nodes simpler. Can we keep this approach or are you 
+> strongly against it?
 
-> On Tue, May 28, 2013 at 11:26 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > Hi Olof
-> >
-> > On Mon, 27 May 2013, Olof Johansson wrote:
-> >
-> >> Hi,
-> >>
-> >> Sorry, a bit behind on email and just discovered this.
-> >>
-> >> On Wed, May 22, 2013 at 07:22:59PM +0200, Guennadi Liakhovetski wrote:
-> >>
-> >> > > > The above didn't work in my tests without this:
-> >> > > >
-> >> > > > diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> >> > > > b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> >> > > > index f603c69..4fb0102 100644
-> >> > > > --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> >> > > > +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> >> > > > @@ -33,8 +33,10 @@
-> >> > > >         };
-> >> > > >
-> >> > > >         lbsc {
-> >> > > > +               compatible = "simple-bus";
-> >> > > >                 #address-cells = <1>;
-> >> > > >                 #size-cells = <1>;
-> >> > > > +               ranges = <0 0 0 0x80000000>;
-> >> > > >
-> >> > > >                 ethernet@8000000 {
-> >> > > >                         compatible = "smsc,lan9118", "smsc,lan9115";
-> >> > > >
-> >> > >
-> >> > > Could you please post this as a formal patch and indicate
-> >> > > if you would like it included as a fix in v3.10 or not?
-> >> >
-> >> > Can do that, sure, just thought maybe it would be better to fix the
-> >> > original patch. Besides, I wasn't sure what the correct values for
-> >> > "ranges" are, I just picked up something, that would be sufficient for
-> >> > ethernet. But if more devices are added to it in the future, maybe
-> >> > different ranges values would be needed. I think actually, lbsc should map
-> >> > the 3 BSC areas, so, the correct property would be
-> >> >
-> >> > +           ranges = <0 0 0 0x14000000>;
-> >> >
-> >> > > Also, I am curious to know what your tests are.
-> >> >
-> >> > Just booting with NFS root. I think, anything involving ethernet. Without
-> >> > the "simple-bus" property the lbsc node doesn't get scanned, so, no device
-> >> > is added. Without "ranges" addresses cannot be mapped correctly.
-> >>
-> >> Since it's a flat mapping you can just specify an empty "ranges" property, no
-> >> need to actually define contents.
-> >
-> > Yes, I knew about that, but does this also hold for busses with different
-> > #address-cells properties, i.e. between 64- and 32-bit busses?
-> 
-> Oh, good question -- I don't think it does. But why go down, you might
-> as well use 2 cells in that part of the tree too?
+I believe we should attempt to have the DT representation as close as
+possible to what the hardware actually does. If this is a AHB bus
+or something else that is known to be always 32 bit, I would use
+a ranges property and #address-cells=<1>, but if this is a 64-bit
+wide AXIv4 instance I would use #address-cells=<2> and probably
+omit the ranges.
 
-Ok, I didn't write the original implementation of that bus and, therefore, 
-didn't decide how many address cells it shall use. My task was to fix it. 
-And yes, I agree, that there are 2 ways to fix the memory mapping: either 
-define ranges to map from 64-bits to 32-bits, or to change all devices on 
-the bus (currently there's only 1) to use 64-bit "reg" property and use 
-"ranges" with no arguments. Since that bus is clearly within a 32-bit 
-area, I would prefer the former solution not to have to drag 64 bits 
-around an make device nodes simpler. Can we keep this approach or are you 
-strongly against it?
+There is also the case where a device is attached to an external bus
+that has 0-based addressing. In that case I would put the actual
+translation into the ranges property, with all addresses that
+are translated by the bus controller, such as
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+      lbsc {
+               compatible = "simple-bus";
+               #address-cells = <1>;
+               #size-cells = <1>;
+               ranges = <0 0x08000000 0 0x1000000>; /* 16 MB @ 128 MB */
+
+               ethernet@0 {
+			compatible = "smsc,lan9118", "smsc,lan9115";
+			reg = <0 0x1000>;
+			...
+
+	Arnd
