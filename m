@@ -1,222 +1,151 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 18 Jun 2013 22:09:25 +0000
-Subject: [PATCH 2/2] sh_eth: add NAPI support
-Message-Id: <201306190209.26217.sergei.shtylyov@cogentembedded.com>
+Date: Sat, 01 Jun 2013 21:55:04 +0000
+Subject: [PATCH v8 8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
+Message-Id: <201306020155.04976.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The driver hasn't used NAPI so far; implement its support at last...
+Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
+platform data, we now need a way to pass those platform data from the board file
+to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
+r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
+passed platform data using platform_device_register_resndata() call; creating
+this function involves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
+so that it will no longer be registered for the generic R8A7779 machine (where
+we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
+to load as well.
+
+For the Marzen board, this new function will be called from marzen_init() to
+register the USB PHY device early enough.
+
+Note that the board and the SoC code have to be in one patch to keep the code
+bisectable...
+
+The patch has been tested on the Marzen board.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
 ---
-The patch is against the Dave Miller's 'net-next.git' repo.
+Changes since version 6:
+- renamed the R-Car PHY driver header file in #include.
 
- drivers/net/ethernet/renesas/sh_eth.c |   85 +++++++++++++++++++++++++++++-----
- drivers/net/ethernet/renesas/sh_eth.h |    1 
- 2 files changed, 74 insertions(+), 12 deletions(-)
+Changes since version 5:
+- annotated USB PHY resources and platform data as '__initdata' since they're
+  kmemdup()'ed while registering the platform device anyway;
+- fixed typo in the changelog.
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1244,7 +1244,7 @@ static int sh_eth_txfree(struct net_devi
+Changes since version 4:
+- refreshed the patch.
+
+Changes since version 3:
+- removed the initializer for 'usb_phy_platform_data';
+- refreshed the 'board-marzen.c' file.
+
+Changes since version 2:
+- refreshed atop of the prior patches;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- added a note about bisectability to the changelog.
+
+ arch/arm/mach-shmobile/board-marzen.c         |    3 +++
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7779.c        |   18 +++++++++---------
+ 3 files changed, 14 insertions(+), 9 deletions(-)
+
+Index: renesas/arch/arm/mach-shmobile/board-marzen.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
++++ renesas/arch/arm/mach-shmobile/board-marzen.c
+@@ -57,6 +57,8 @@ static struct regulator_consumer_supply 
+ 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+ };
+ 
++static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
++
+ /* SMSC LAN89218 */
+ static struct resource smsc911x_resources[] = {
+ 	[0] = {
+@@ -232,6 +234,7 @@ static void __init marzen_init(void)
+ 	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
+ 
+ 	r8a7779_add_standard_devices();
++	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
  }
  
- /* Packet receive function */
--static int sh_eth_rx(struct net_device *ndev, u32 intr_status)
-+static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 	struct sh_eth_rxdesc *rxdesc;
-@@ -1252,6 +1252,7 @@ static int sh_eth_rx(struct net_device *
- 	int entry = mdp->cur_rx % mdp->num_rx_ring;
- 	int boguscnt = (mdp->dirty_rx + mdp->num_rx_ring) - mdp->cur_rx;
- 	struct sk_buff *skb;
-+	int exceeded = 0;
- 	u16 pkt_len = 0;
- 	u32 desc_status;
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -4,6 +4,7 @@
+ #include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
+ #include <linux/sh_eth.h>
++#include <linux/platform_data/usb-rcar-phy.h>
  
-@@ -1267,6 +1268,12 @@ static int sh_eth_rx(struct net_device *
- 		if (--boguscnt < 0)
- 			break;
+ struct platform_device;
  
-+		if (*quota <= 0) {
-+			exceeded = 1;
-+			break;
-+		}
-+		(*quota)--;
-+
- 		if (!(desc_status & RDFEND))
- 			ndev->stats.rx_length_errors++;
+@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(vo
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
++extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
+ extern void r8a7779_init_late(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -389,7 +389,7 @@ static struct platform_device sata_devic
+ };
  
-@@ -1343,7 +1350,7 @@ static int sh_eth_rx(struct net_device *
- 		sh_eth_write(ndev, EDRRR_R, EDRRR);
- 	}
+ /* USB PHY */
+-static struct resource usb_phy_resources[] = {
++static struct resource usb_phy_resources[] __initdata = {
+ 	[0] = {
+ 		.start		= 0xffe70800,
+ 		.end		= 0xffe70900 - 1,
+@@ -397,13 +397,6 @@ static struct resource usb_phy_resources
+ 	},
+ };
  
--	return 0;
-+	return exceeded;
+-static struct platform_device usb_phy_device = {
+-	.name		= "rcar_usb_phy",
+-	.id		= -1,
+-	.resource	= usb_phy_resources,
+-	.num_resources	= ARRAY_SIZE(usb_phy_resources),
+-};
+-
+ /* USB */
+ static struct usb_phy *phy;
+ 
+@@ -575,7 +568,6 @@ static struct platform_device *r8a7779_d
+ 	&scif5_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
+-	&usb_phy_device,
+ };
+ 
+ static struct platform_device *r8a7779_standard_devices[] __initdata = {
+@@ -610,6 +602,14 @@ void __init r8a7779_add_ether_device(str
+ 					  pdata, sizeof(*pdata));
  }
  
- static void sh_eth_rcv_snd_disable(struct net_device *ndev)
-@@ -1484,7 +1491,7 @@ static irqreturn_t sh_eth_interrupt(int 
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 	struct sh_eth_cpu_data *cd = mdp->cd;
- 	irqreturn_t ret = IRQ_NONE;
--	unsigned long intr_status;
-+	unsigned long intr_status, intr_enable;
- 
- 	spin_lock(&mdp->lock);
- 
-@@ -1495,25 +1502,41 @@ static irqreturn_t sh_eth_interrupt(int 
- 	 * and we need to fully handle it in sh_eth_error() in order to quench
- 	 * it as it doesn't get cleared by just writing 1 to the ECI bit...
- 	 */
--	intr_status &= sh_eth_read(ndev, EESIPR) | DMAC_M_ECI;
--	/* Clear interrupt */
--	if (intr_status & (EESR_RX_CHECK | cd->tx_check | cd->eesr_err_check)) {
--		sh_eth_write(ndev, intr_status, EESR);
-+	intr_enable = sh_eth_read(ndev, EESIPR);
-+	intr_status &= intr_enable | DMAC_M_ECI;
-+	if (intr_status & (EESR_RX_CHECK | cd->tx_check | cd->eesr_err_check))
- 		ret = IRQ_HANDLED;
--	} else
-+	else
- 		goto other_irq;
- 
--	if (intr_status & EESR_RX_CHECK)
--		sh_eth_rx(ndev, intr_status);
-+	if (intr_status & EESR_RX_CHECK) {
-+		if (napi_schedule_prep(&mdp->napi)) {
-+			/* Mask Rx interrupts */
-+			sh_eth_write(ndev, intr_enable & ~EESR_RX_CHECK,
-+				     EESIPR);
-+			__napi_schedule(&mdp->napi);
-+		} else {
-+			dev_warn(&ndev->dev,
-+				 "ignoring interrupt, status 0x%08lx, mask 0x%08lx.\n",
-+				 intr_status, intr_enable);
-+		}
-+	}
- 
- 	/* Tx Check */
- 	if (intr_status & cd->tx_check) {
-+		/* Clear Tx interrupts */
-+		sh_eth_write(ndev, intr_status & cd->tx_check, EESR);
-+
- 		sh_eth_txfree(ndev);
- 		netif_wake_queue(ndev);
- 	}
- 
--	if (intr_status & cd->eesr_err_check)
-+	if (intr_status & cd->eesr_err_check) {
-+		/* Clear error interrupts */
-+		sh_eth_write(ndev, intr_status & cd->eesr_err_check, EESR);
-+
- 		sh_eth_error(ndev, intr_status);
-+	}
- 
- other_irq:
- 	spin_unlock(&mdp->lock);
-@@ -1521,6 +1544,33 @@ other_irq:
- 	return ret;
- }
- 
-+static int sh_eth_poll(struct napi_struct *napi, int budget)
++void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
 +{
-+	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
-+						  napi);
-+	struct net_device *ndev = napi->dev;
-+	int quota = budget;
-+	unsigned long intr_status;
-+
-+	for (;;) {
-+		intr_status = sh_eth_read(ndev, EESR);
-+		if (!(intr_status & EESR_RX_CHECK))
-+			break;
-+		/* Clear Rx interrupts */
-+		sh_eth_write(ndev, intr_status & EESR_RX_CHECK, EESR);
-+
-+		if (sh_eth_rx(ndev, intr_status, &quota))
-+			goto out;
-+	}
-+
-+	napi_complete(napi);
-+
-+	/* Reenable Rx interrupts */
-+	sh_eth_write(ndev, mdp->cd->eesipr_value, EESIPR);
-+out:
-+	return budget - quota;
++	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
++					  usb_phy_resources,
++					  ARRAY_SIZE(usb_phy_resources),
++					  pdata, sizeof(*pdata));
 +}
 +
- /* PHY state control function */
- static void sh_eth_adjust_link(struct net_device *ndev)
- {
-@@ -1832,6 +1882,8 @@ static int sh_eth_open(struct net_device
- 	if (ret)
- 		goto out_free_irq;
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
  
-+	napi_enable(&mdp->napi);
-+
- 	return ret;
- 
- out_free_irq:
-@@ -1927,6 +1979,8 @@ static int sh_eth_close(struct net_devic
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 
-+	napi_disable(&mdp->napi);
-+
- 	netif_stop_queue(ndev);
- 
- 	/* Disable interrupts by clearing the interrupt mask. */
-@@ -2616,10 +2670,12 @@ static int sh_eth_drv_probe(struct platf
- 		}
- 	}
- 
-+	netif_napi_add(ndev, &mdp->napi, sh_eth_poll, 64);
-+
- 	/* network device register */
- 	ret = register_netdev(ndev);
- 	if (ret)
--		goto out_release;
-+		goto out_napi_del;
- 
- 	/* mdio bus init */
- 	ret = sh_mdio_init(ndev, pdev->id, pd);
-@@ -2637,6 +2693,9 @@ static int sh_eth_drv_probe(struct platf
- out_unregister:
- 	unregister_netdev(ndev);
- 
-+out_napi_del:
-+	netif_napi_del(&mdp->napi);
-+
- out_release:
- 	/* net_dev free */
- 	if (ndev)
-@@ -2649,9 +2708,11 @@ out:
- static int sh_eth_drv_remove(struct platform_device *pdev)
- {
- 	struct net_device *ndev = platform_get_drvdata(pdev);
-+	struct sh_eth_private *mdp = netdev_priv(ndev);
- 
- 	sh_mdio_release(ndev);
- 	unregister_netdev(ndev);
-+	netif_napi_del(&mdp->napi);
- 	pm_runtime_disable(&pdev->dev);
- 	free_netdev(ndev);
- 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.h
-@@ -505,6 +505,7 @@ struct sh_eth_private {
- 	u32 cur_tx, dirty_tx;
- 	u32 rx_buf_sz;		/* Based on MTU+slack. */
- 	int edmac_endian;
-+	struct napi_struct napi;
- 	/* MII transceiver section. */
- 	u32 phy_id;					/* PHY ID */
- 	struct mii_bus *mii_bus;	/* MDIO bus control */
