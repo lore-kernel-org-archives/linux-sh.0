@@ -1,57 +1,28 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Jun 2013 22:50:42 +0000
-Subject: Re: [PATCH v4 7/8] sh_eth: consolidate sh_eth_reset()
-Message-Id: <51AFC0C2.1050103@cogentembedded.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Sat, 01 Jun 2013 04:41:03 +0000
+Subject: Re: [GIT PULL] Renesas ARM based SoC fixes for v3.10
+Message-Id: <20130601044103.GB4267@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306060106.51082.sergei.shtylyov@cogentembedded.com> <201306060119.30971.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306060119.30971.sergei.shtylyov@cogentembedded.com>
+References: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Thu, May 30, 2013 at 07:28:47AM +0900, Simon Horman wrote:
+> The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+> 
+>   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git 
 
-On 06/06/2013 01:19 AM, Sergei Shtylyov wrote:
+Hi, no tag or branch? Looks like you forgot to push.
 
-> From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->
-> This driver has sh_eth_reset() function for each SoC and this function is=
- almost
-> always the same, except for the several a bit different variations for Gi=
-gabit
-> Ethernet.  Consolidate every variation into a single function -- which al=
-lows
-> us to get rid of some more #ifdef'fery.
->
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> [Sergei: moved the new sh_eth_reset() upper to decrease the patch  size, =
- fixed
-> function call continuation lines' indentation, reworded the changelog, re=
-worded
-> the subject, changing the prefix.]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
-> ---
-> Changes in version 4:
-> - moved the new sh_eth_reset() upper to desrease the patch size;
+I don't see any branch or tag at c7f413548dce3d25609c12efe963b3e6c8e678f3 in
+that tree, so it's not a case of pushing branch but forgetting tag.
 
-Oops, I forgot to test-compile this change:
 
-drivers/net/ethernet/renesas/sh_eth.c: In function =91sh_eth_reset=92:
-drivers/net/ethernet/renesas/sh_eth.c:745:2: error: implicit declaration=20
-of function =91sh_eth_is_gether=92 [-Werror=3Dimplicit-function-declaration]
-drivers/net/ethernet/renesas/sh_eth.c: At top level:
-drivers/net/ethernet/renesas/sh_eth.c:857:12: error: static declaration=20
-of =91sh_eth_is_gether=92 follows non-static declaration
-drivers/net/ethernet/renesas/sh_eth.c:745:6: note: previous implicit=20
-declaration of =91sh_eth_is_gether=92 was here
-cc1: some warnings being treated as errors
-make[1]: *** [drivers/net/ethernet/renesas/sh_eth.o] Error 1
-make: *** [drivers/net/ethernet/renesas/sh_eth.o] Error 2
-
-I guess I have to repost the whole series now? :-(
-
-WBR, Sergei
-
+-Olof
