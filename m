@@ -1,34 +1,70 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 11 Jun 2013 06:50:26 +0000
-Subject: Re: [GIT PULL 000/130] Renesas ARM based SoC pinmux and GPIO update for
-Message-Id: <20130611065026.GE6688@quad.lixom.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 01 Jun 2013 22:40:55 +0000
+Subject: [PATCH v3] ARM: shmobile: BOCK-W: add Ether support
+Message-Id: <201306020240.55702.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 05, 2013 at 05:24:51PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> Please note that this pull-request is based on renesas-fixes-for-v3.10
-> in order to avoid a messy conflict.
+Register Ether device from bockw_init(), passing the platform data to it, adding
+only the RMII pin group to bockw_pinctrl_map[].  Although the LINK signal exists
+on the board, it's connected to the link/activity LED  output of the PHY, thus
+the link disappears and reappears after each packet. We'd be better off ignoring
+such signal and getting the link state from the PHY indirectly.
 
-Thanks for doing that. It's quite common that platform maintainers forget to
-deal with conflicts due to fixes, which can sometimes be a bit annoying. :-)
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+---
+The patch is atop of Simon's 'renesas.git' repo, 'renesas-next-20130528' tag
+and the USB patches just reposted. I decided to move it ahead of the VIN patches
+as it can be merged right now since all dependecies have been already met.
 
-> The following changes since commit 5600a8485603b240790005b9b58de4c4f6ada69d:
-> 
->   ARM: shmobile: sh73a0: Update CMT clockevent rating to 80 (2013-06-04 14:37:53 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux-for-v3.11
+Changes from version 2:
+- resolved rejects due to patch move;
+- removed the code dealing with the pin conflict with VIN1 and the note related
+  to it from the changelog.
 
-Pulled into next/drivers. Thanks!
+Changes from the original posting:
+- refreshed the patch.
 
+ arch/arm/mach-shmobile/board-bockw.c |   18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
--Olof
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -65,7 +65,24 @@ static struct sh_mobile_sdhi_info sdhi0_
+ 
+ static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
+ 
++static struct sh_eth_plat_data ether_platform_data __initdata = {
++	.phy		= 0x01,
++	.edmac_endian	= EDMAC_LITTLE_ENDIAN,
++	.register_type	= SH_ETH_REG_FAST_RCAR,
++	.phy_interface	= PHY_INTERFACE_MODE_RMII,
++	/*
++	 * Although the LINK signal is available on the board, it's connected to
++	 * the link/activity LED output of the PHY, thus the link disappears and
++	 * reappears after each packet.  We'd be better off ignoring such signal
++	 * and getting the link state from the PHY indirectly.
++	 */
++	.no_ether_link	= 1,
++};
++
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
++	/* Ether */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
++				  "ether_rmii", "ether"),
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+ 				  "scif0_data_a", "scif0"),
+@@ -98,6 +115,7 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
++	r8a7778_add_ether_device(&ether_platform_data);
+ 
+ 	pinctrl_register_mappings(bockw_pinctrl_map,
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
