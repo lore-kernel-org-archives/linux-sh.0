@@ -1,59 +1,74 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Jun 2013 21:09:51 +0000
-Subject: [PATCH v4 1/8] sh_eth: remove #ifdef around EDSR and GECMR bit definitions
-Message-Id: <201306060109.51853.sergei.shtylyov@cogentembedded.com>
+Date: Sat, 01 Jun 2013 21:52:28 +0000
+Subject: [PATCH v8 7/9] phy-rcar-usb: add platform data
+Message-Id: <201306020152.29275.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Currently the driver hard-codes  USBPCTRL0 register to 0. It is wrong since this
+register contains board-specific USB ports configuration and so its value should
+be somehow passed via the platform data.  Add the global header file containing
+'struct rcar_phy_platform_data' consisting of the various bit fields describing
+USB ports' pin configuration.
 
-SH7757 also has EDSR, so add a comment about it to 'enum EDSR_BIT'.
-
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-[Sergei: folded in the former patch #2, updated the changelog, reworded the
-subject, changing the prefix.]
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Felipe Balbi <balbi@ti.com>
 
 ---
-Changes in version 4:
-- folded in the former patch #2, updated the changelog accordingly;
-- reworded the subject, changing the prefix.
+Changes since version 7:
+- changed the patch subject to reflect the PHY driver rename;
+- added an ACK from Felipe Balbi.
 
-Changes in version 3:
-- fix comment.
+Changes since version 6:
+- renamed the header file into <linux/platform_data/usb-rcar-phy.h>, renamed the
+  guarding #define accordingly;
+- rephrased the changelog.
 
- drivers/net/ethernet/renesas/sh_eth.h |    7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
+Changes since version 3:
+- moved USBPCTRL0 register bit #define's to patch #9;
+- replaced USBPCTRL0 register value in the platform data structure by a set of
+  bit fields describing the configuration of the board, rewrote changelog;
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.h
-@@ -166,19 +166,16 @@ enum {
- /*
-  * Register's bits
-  */
--#if defined(CONFIG_CPU_SUBTYPE_SH7734) || defined(CONFIG_CPU_SUBTYPE_SH7763) ||\
--    defined(CONFIG_ARCH_R8A7740)
--/* EDSR */
-+/* EDSR : sh7734, sh7757, sh7763, and r8a7740 only */
- enum EDSR_BIT {
- 	EDSR_ENT = 0x01, EDSR_ENR = 0x02,
- };
- #define EDSR_ENALL (EDSR_ENT|EDSR_ENR)
- 
--/* GECMR */
-+/* GECMR : sh7734, sh7763 and r8a7740 only */
- enum GECMR_BIT {
- 	GECMR_10 = 0x0, GECMR_100 = 0x04, GECMR_1000 = 0x01,
- };
--#endif
- 
- /* EDMR */
- enum DMAC_M_BIT {
+Changes since version 2:
+- added #include <linux/types.h>;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+ include/linux/platform_data/usb-rcar-phy.h |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+Index: renesas/include/linux/platform_data/usb-rcar-phy.h
+=================================--- /dev/null
++++ renesas/include/linux/platform_data/usb-rcar-phy.h
+@@ -0,0 +1,26 @@
++/*
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Cogent Embedded, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef __USB_RCAR_PHY_H
++#define __USB_RCAR_PHY_H
++
++#include <linux/types.h>
++
++struct rcar_phy_platform_data {
++	bool port1_func:1;	/* true: port 1 used by function, false: host */
++	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
++	struct {		/* Overcurrent pin control for ports 0..2 */
++		bool select_3_3v:1; /* true: USB_OVCn pin, false: OVCn pin */
++				/* Set to false on port 1 in function mode */
++		bool active_high:1; /* true: active  high, false: active low */
++				/* Set to true  on port 1 in function mode */
++	} ovc_pin[3];
++};
++
++#endif /* __USB_RCAR_PHY_H */
 
