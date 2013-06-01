@@ -1,49 +1,32 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Fri, 21 Jun 2013 10:01:09 +0000
-Subject: Re: [PATCH 1/2] regulators: max8973: fix multiple instance support
-Message-Id: <20130621100109.GO27646@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="MdEjg5WkSuUg8x46"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 01 Jun 2013 21:28:05 +0000
+Subject: [PATCH v8 0/9] Reorganize R8A7779/Marzen USB code
+Message-Id: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1306210825040.27277@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306210825040.27277@axis700.grange>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Hello.
 
---MdEjg5WkSuUg8x46
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+   Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130528' tag.  It was created to fix the shortcomings in the
+R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
+spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
+to touch both subtrees). The patches were conceived with the complete
+bisectability goal in mind.
 
-On Fri, Jun 21, 2013 at 08:30:22AM +0200, Guennadi Liakhovetski wrote:
-> Currently the max8973 regulator driver uses a single static struct of
-> regulator operations for all chip instances, but can overwrite some of its
-> members depending on configuration. This will affect all other MAX8973
-> instances on the system. This patch fixes this bug by allocating a separate
-> copy of the struct for each chip instance.
+[1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
+[2/9] ehci-platform: add pre_setup() method to platform data
+[3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
+[4/9] phy-rcar-usb: remove EHCI internal buffer setup
+[5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
+[6/9] phy-rcar-usb: correct base address
+[7/9] phy-rcar-usb: add platform data
+[8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
+[9/9] phy-rcar-usb: handle platform data
 
-Applied, thanks.
+   The patchset is completely ready to be merged now.
 
---MdEjg5WkSuUg8x46
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.20 (GNU/Linux)
-
-iQIcBAEBAgAGBQJRxCRiAAoJELSic+t+oim9xQgQAJSdRNzHJ0X6ciAgJIGqh3vK
-S88sMEpiT7Q4lswVPjSc8n9xd8cPpHwemXzOTB7IfB28a3Yz6DE9c2T6KSesuYcH
-nn4rULpVEdPKcJns9WLU5YzytlSNBuyVxYhfap9sXBPRPbUnUvM7FeE3rA99UHBP
-y1cCFD5u+rkrrf13OnwpJiMPT3ofRKBYik2kNpruUjGPa6ni+zsx6/13LAuChrUY
-Ej6gZbqT1JX1fCw1qi/EkkcKse75qAEfb9ndI4ufbizCux7HiVeBX5UQOPzL7AKo
-agOFSLGgTStZAOytKyyowYh5fLQnLXa/Ua527HpjhWOAHfeJqrzmqvieqIgYZNuA
-W3mCcmbJSmYX7/XMvaUkhVywzPJrmNKQ51LHy9+iW2i5KBVjrP4CP290qyt6KFje
-CPIaKjLB9NgZj5duN60SV8LhM6VkgOlmV3o7esfVbG8qrTZBFXhCtDd1vCu5WS/7
-5HfBHqfszupCIG9bJGD7I/41vhIcb43GsXoAt8+w8i1sda0u4dC6w9bAMb2pOXsy
-CwxCMqXvo1uM7SKPHJhGdDwqA4dmCbwqytMCrwkUVS2jiu42JsqjtRwd2JI3GtH0
-H+E6HI49gfTpO/k87+BSKTX4B3MlR7iNMk+9QAFBB8Nct8mwXpg31iHp5SeHmWNB
-f6cYSv4pULYxTF62Y3Nl
-=dyJV
------END PGP SIGNATURE-----
-
---MdEjg5WkSuUg8x46--
+WBR, Sergei
