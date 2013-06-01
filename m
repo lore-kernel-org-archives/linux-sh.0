@@ -1,98 +1,77 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:22:08 +0000
-Subject: [PATCH 10/11] ARM: shmobile: bockw: add SDHI0 support
-Message-Id: <1370593329-27559-11-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 01 Jun 2013 21:37:01 +0000
+Subject: [PATCH v8 3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
+Message-Id: <201306020137.01998.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+References: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
+registers) using the pre_setup() method in 'struct usb_ehci_pdata'.
 
-This patch is directly accessing to PUPR4 register which can
-control SDHI0 CD/WP pin pull-up setting.
-It should be replaced in the future.
+The patch has been tested on the Marzen board.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/mach-shmobile/board-bockw.c | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+Changes since version 4:
+- refreshed the patch.
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 4d65715..2b6103e 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -18,6 +18,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/mfd/tmio.h>
-+#include <linux/mmc/host.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
-@@ -54,16 +56,28 @@ static struct resource smsc911x_resources[] = {
- 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
- };
- 
-+/* SDHI */
-+static struct sh_mobile_sdhi_info sdhi0_info = {
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
-+	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
-+};
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_data_a", "scif0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_ctrl", "scif0"),
-+	/* SDHI0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
-+				  "sdhi0", "sdhi0"),
- };
- 
- #define FPGA	0x18200000
- #define IRQ0MR	0x30
-+#define PFC	0xfffc0000
-+#define PUPR4	0x110
- static void __init bockw_init(void)
- {
- 	void __iomem *base;
-@@ -76,6 +90,7 @@ static void __init bockw_init(void)
- 				  ARRAY_SIZE(bockw_pinctrl_map));
- 	r8a7778_pinmux_init();
- 
-+	/* for SMSC */
- 	base = ioremap_nocache(FPGA, SZ_1M);
- 	if (base) {
- 		/*
-@@ -98,6 +113,20 @@ static void __init bockw_init(void)
- 			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
- 			&smsc911x_data, sizeof(smsc911x_data));
- 	}
-+
-+	/* for SDHI */
-+	base = ioremap_nocache(PFC, 0x200);
-+	if (base) {
-+		/*
-+		 * FIXME
-+		 *
-+		 * SDHI CD/WP pin needs pull-up
-+		 */
-+		iowrite32(ioread32(base + PUPR4) | (3 << 26), base + PUPR4);
-+		iounmap(base);
-+
-+		r8a7778_sdhi_init(0, &sdhi0_info);
-+	}
+Changes since version 3:
+- lowercased the SoC name in the subject.
+
+Changes since version 2:
+- added #include <linux/usb/hcd.h>;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- changed from init() platform device method to pre_setup() as per the previous
+  patch.
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -33,6 +33,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/usb/otg.h>
++#include <linux/usb/hcd.h>
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+@@ -435,10 +436,25 @@ static void usb_power_off(struct platfor
+ 	pm_runtime_disable(&pdev->dev);
  }
  
- static const char *bockw_boards_compat_dt[] __initdata = {
--- 
-1.8.2.1
-
++static int ehci_init_internal_buffer(struct usb_hcd *hcd)
++{
++	/*
++	 * Below are recommended values from the datasheet;
++	 * see [USB :: Setting of EHCI Internal Buffer].
++	 */
++	/* EHCI IP internal buffer setting */
++	iowrite32(0x00ff0040, hcd->regs + 0x0094);
++	/* EHCI IP internal buffer enable */
++	iowrite32(0x00000001, hcd->regs + 0x009C);
++
++	return 0;
++}
++
+ static struct usb_ehci_pdata ehcix_pdata = {
+ 	.power_on	= usb_power_on,
+ 	.power_off	= usb_power_off,
+ 	.power_suspend	= usb_power_off,
++	.pre_setup	= ehci_init_internal_buffer,
+ };
+ 
+ static struct resource ehci0_resources[] = {
