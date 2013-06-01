@@ -1,88 +1,105 @@
-From: "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
-Date: Sun, 23 Jun 2013 13:59:39 +0000
-Subject: [PATCH 43/45] sh: Use get/put_online_cpus_atomic() to prevent CPU offline
-Message-Id: <20130623134735.19094.47323.stgit@srivatsabhat.in.ibm.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 01 Jun 2013 21:50:25 +0000
+Subject: [PATCH v8 6/9] phy-rcar-usb: correct base address
+Message-Id: <201306020150.25655.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130623133642.19094.16038.stgit@srivatsabhat.in.ibm.com>
-In-Reply-To: <20130623133642.19094.16038.stgit@srivatsabhat.in.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: peterz@infradead.org, tj@kernel.org, oleg@redhat.com, paulmck@linux.vnet.ibm.com, rusty@rustcorp.com.au, mingo@kernel.org, akpm@linux-foundation.org, namhyung@kernel.org, walken@google.com, vincent.guittot@linaro.org, laijs@cn.fujitsu.com
-Cc: rostedt@goodmis.org, wangyun@linux.vnet.ibm.com, xiaoguangrong@linux.vnet.ibm.com, sbw@mit.edu, fweisbec@gmail.com, zhong@linux.vnet.ibm.com, nikunj@linux.vnet.ibm.com, srivatsa.bhat@linux.vnet.ibm.com, linux-pm@vger.kernel.org, linux-arch@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Once stop_machine() is gone from the CPU offline path, we won't be able
-to depend on disabling preemption to prevent CPUs from going offline
-from under us.
+The memory region that is used by the driver overlaps EHCI and OHCI  register
+regions for absolutely no reason now  -- fix it  by adding offset of 0x800 to
+the base address, changing the register #define's accordingly. This has extra
+positive effect that we now can use devm_ioremap_resource()...
 
-Use the get/put_online_cpus_atomic() APIs to prevent CPUs from going
-offline, while invoking from atomic context.
+Note that the driver and the SoC code have to be in one patch to keep the code
+bisectable...
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Srivatsa S. Bhat <srivatsa.bhat@linux.vnet.ibm.com>
+The patch has been tested on the Marzen board.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Felipe Balbi <balbi@ti.com>
+
 ---
+Changes since version 7:
+- renamed the PHY driver and changed the patch subject accordingly.
 
- arch/sh/kernel/smp.c |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+Changes since version 6:
+- added an ACK from Felipe Balbi.
 
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
-index 4569645..42ec182 100644
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -357,7 +357,7 @@ static void flush_tlb_mm_ipi(void *mm)
-  */
- void flush_tlb_mm(struct mm_struct *mm)
- {
--	preempt_disable();
-+	get_online_cpus_atomic();
+Changes since version 4:
+- refreshed the patch.
+
+Changes since version 2:
+- refreshed atop of the prior patches;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- added a note about bisectability to the changelog.
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
+ drivers/usb/phy/phy-rcar-usb.c         |   28 ++++++++++------------------
+ 2 files changed, 11 insertions(+), 19 deletions(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -391,7 +391,7 @@ static struct platform_device sata_devic
+ /* USB PHY */
+ static struct resource usb_phy_resources[] = {
+ 	[0] = {
+-		.start		= 0xffe70000,
++		.start		= 0xffe70800,
+ 		.end		= 0xffe70900 - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+Index: renesas/drivers/usb/phy/phy-rcar-usb.c
+=================================--- renesas.orig/drivers/usb/phy/phy-rcar-usb.c
++++ renesas/drivers/usb/phy/phy-rcar-usb.c
+@@ -16,13 +16,13 @@
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
  
- 	if ((atomic_read(&mm->mm_users) != 1) || (current->mm != mm)) {
- 		smp_call_function(flush_tlb_mm_ipi, (void *)mm, 1);
-@@ -369,7 +369,7 @@ void flush_tlb_mm(struct mm_struct *mm)
+-/* USBH common register */
+-#define USBPCTRL0	0x0800
+-#define USBPCTRL1	0x0804
+-#define USBST		0x0808
+-#define USBEH0		0x080C
+-#define USBOH0		0x081C
+-#define USBCTL0		0x0858
++/* REGS block */
++#define USBPCTRL0	0x00
++#define USBPCTRL1	0x04
++#define USBST		0x08
++#define USBEH0		0x0C
++#define USBOH0		0x1C
++#define USBCTL0		0x58
+ 
+ /* USBPCTRL1 */
+ #define PHY_RST		(1 << 2)
+@@ -139,17 +139,9 @@ static int rcar_usb_phy_probe(struct pla
+ 		return -EINVAL;
  	}
- 	local_flush_tlb_mm(mm);
  
--	preempt_enable();
-+	put_online_cpus_atomic();
- }
+-	/*
+-	 * CAUTION
+-	 *
+-	 * Because this phy address is also mapped under OHCI/EHCI address area,
+-	 * this driver can't use devm_request_and_ioremap(dev, res) here
+-	 */
+-	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
+-	if (!reg0) {
+-		dev_err(dev, "ioremap error\n");
+-		return -ENOMEM;
+-	}
++	reg0 = devm_ioremap_resource(dev, res0);
++	if (IS_ERR(reg0))
++		return PTR_ERR(reg0);
  
- struct flush_tlb_data {
-@@ -390,7 +390,7 @@ void flush_tlb_range(struct vm_area_struct *vma,
- {
- 	struct mm_struct *mm = vma->vm_mm;
- 
--	preempt_disable();
-+	get_online_cpus_atomic();
- 	if ((atomic_read(&mm->mm_users) != 1) || (current->mm != mm)) {
- 		struct flush_tlb_data fd;
- 
-@@ -405,7 +405,7 @@ void flush_tlb_range(struct vm_area_struct *vma,
- 				cpu_context(i, mm) = 0;
- 	}
- 	local_flush_tlb_range(vma, start, end);
--	preempt_enable();
-+	put_online_cpus_atomic();
- }
- 
- static void flush_tlb_kernel_range_ipi(void *info)
-@@ -433,7 +433,7 @@ static void flush_tlb_page_ipi(void *info)
- 
- void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
- {
--	preempt_disable();
-+	get_online_cpus_atomic();
- 	if ((atomic_read(&vma->vm_mm->mm_users) != 1) ||
- 	    (current->mm != vma->vm_mm)) {
- 		struct flush_tlb_data fd;
-@@ -448,7 +448,7 @@ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
- 				cpu_context(i, vma->vm_mm) = 0;
- 	}
- 	local_flush_tlb_page(vma, page);
--	preempt_enable();
-+	put_online_cpus_atomic();
- }
- 
- static void flush_tlb_one_ipi(void *info)
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv) {
 
