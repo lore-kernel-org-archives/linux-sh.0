@@ -1,41 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:35 +0000
-Subject: [PATCH 05/27] ARM: shmobile: use do{ }while() on SH_CLK_SET_RATIO()
-Message-Id: <1370591517-20239-6-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 01 Jun 2013 21:48:42 +0000
+Subject: [PATCH v8 5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
+Message-Id: <201306020148.43282.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Now that 'drivers/usb/phy/phy-rcar-usb.c' doesn't require the second memory
+resource anymore, we can remove it from the R8A7779's USB PHY platform device.
 
-SH_CLK_SET_RATIO() will be trouble without this patch
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/clock.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Changes since version 7:
+- updated the driver file name in the changelog.
 
-diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
-index 8902044..03e5607 100644
---- a/arch/arm/mach-shmobile/include/mach/clock.h
-+++ b/arch/arm/mach-shmobile/include/mach/clock.h
-@@ -31,9 +31,9 @@ static SH_FIXED_RATIO_CLKg(name, p, r)
- 	SH_FIXED_RATIO_CLK(name, p, name)
- 
- #define SH_CLK_SET_RATIO(p, m, d)	\
--{			\
-+do {			\
- 	(p)->mul = m;	\
- 	(p)->div = d;	\
--}
-+} while (0)
- 
- #endif
--- 
-1.8.2.1
+Changes since version 4:
+- refreshed the patch.
 
+Changes since version 3:
+- lowercased the SoC name in the subject.
+
+Changes since version 2:
+- refreshed atop of the prior patches;
+- added a note about testing to the changelog;
+- added ACKs from Simon Horman and Kuninori Morimoto.
+
+Changes since the original posting:
+- new patch in this version, split from the previous one.
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |    5 -----
+ 1 file changed, 5 deletions(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -395,11 +395,6 @@ static struct resource usb_phy_resources
+ 		.end		= 0xffe70900 - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+-	[1] = {
+-		.start		= 0xfff70000,
+-		.end		= 0xfff70900 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+ };
+ 
+ static struct platform_device usb_phy_device = {
