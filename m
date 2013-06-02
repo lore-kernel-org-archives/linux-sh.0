@@ -1,53 +1,76 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 10 Jun 2013 15:27:29 +0000
-Subject: Re: [PATCH 01/06] ARM: shmobile: Introduce SHMOBILE_FIXUP() helper
-Message-Id: <201306101727.29876.arnd@arndb.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 02 Jun 2013 18:56:22 +0000
+Subject: Re: [PATCH v6] V4L2: soc_camera: Renesas R-Car VIN driver
+Message-Id: <51AB9556.2080900@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605073410.15758.37563.sendpatchset@w520>
- <201306061917.52550.arnd@arndb.de>
- <CANqRtoSKAm_9VXus=zzer2ELrS2NmZ=znZCSJH65imTXGk5ong@mail.gmail.com>
-In-Reply-To: <CANqRtoSKAm_9VXus=zzer2ELrS2NmZ=znZCSJH65imTXGk5ong@mail.gmail.com>
+References: <201305240211.29665.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201305240211.29665.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org
+Cc: magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp, vladimir.barinov@cogentembedded.com
 
-On Monday 10 June 2013, Magnus Damm wrote:
-> On Fri, Jun 7, 2013 at 2:17 AM, Arnd Bergmann <arnd@arndb.de> wrote:
-> > On Thursday 06 June 2013, Magnus Damm wrote:
-> 
-> My approach with this series was more to make sure all boards keep on
-> working regardless what their boot loader pass. This since I too do
-> not trust the boot loader - especially on older boards. Perhaps the
-> more acceptable approach is to pretend to start trusting the
-> information by the boot loader and deal with the fallout if that
-> happens. Things may break when removing CONFIG_MEMORY_START/SIZE since
-> the MEM_SIZE and PHYS_OFFSET change in arch/arm/kernel/atags_parse.c
-> 
-> Anyway I can update my romImage series so it uses appended DTB with
-> both AP4EVB and Mackerel. Then this series can simply be thrown away.
+Hello.
 
-That sounds like a good idea, but it seems that AP4EVB does not
-yet use DT_MACHINE_START, so I suspect you will need more work.
+On 05/24/2013 02:11 AM, Sergei Shtylyov wrote:
 
-> > The easiest way is probably to declare that multiplatform booting
-> > on shmobile is only supported for DT-enabled boards and that support
-> > for non-DT booting will be removed at the same time as
-> > non-multiplatform booting on shmobile. This is the same thing we are
-> > doing e.g. on Exynos and the various Marvell embedded (non-PXA/MMP)
-> > chips.  The time line for this not set yet, and I think that will
-> > be one of the hot topics at this year's ARM subarch maintainer summit
-> > that I hope we will have the chance to do during the kernel summit.
-> > FWIW, my take on this is that at some point we will require both DT
-> > and multiplatform for all ARMv6 and ARMv7 platforms anyway (not
-> > for the older ones, in particular StrongARM and XScale), but we have
-> > to come up with a timing that works for everyone.
-> 
-> Yeah, I agree with your idea but I wonder about the timing. Actually,
-> I was thinking that the prime candidate boards for multiplatform are
-> our DT -reference boards. Still blocked on common clock framework
-> though... I will try to sort out the memory bits first.
+> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+>
+> Add Renesas R-Car VIN (Video In) V4L2 driver.
+>
+> Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
+>
+> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> [Sergei: removed deprecated IRQF_DISABLED flag, reordered/renamed 'enum chip_id'
+> values, reordered rcar_vin_id_table[] entries,  removed senseless parens from
+> to_buf_list() macro, used ALIGN() macro in rcar_vin_setup(), added {} to the
+> *if* statement  and  used 'bool' values instead of 0/1 where necessary, removed
+> unused macros, done some reformatting and clarified some comments.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+> ---
+> This patch is against the 'media_tree.git' repo.
+> It requires two following patches from Guennadi Liakhovetski:
+>
+> https://patchwork.linuxtv.org/patch/18209/
+> https://patchwork.linuxtv.org/patch/18210/
+>
 
-Ok.
+[...]
+> Index: media_tree/include/linux/platform_data/camera-rcar.h
+> =================================> --- /dev/null
+> +++ media_tree/include/linux/platform_data/camera-rcar.h
+> @@ -0,0 +1,25 @@
+> +/*
+> + * Platform data for Renesas R-Car VIN soc-camera driver
+> + *
+> + * Copyright (C) 2011-2013 Renesas Solutions Corp.
+> + * Copyright (C) 2013 Cogent Embedded, Inc., <source@cogentembedded.com>
+> + *
+> + * This program is free software; you can redistribute  it and/or modify it
+> + * under  the terms of  the GNU General  Public License as published by the
+> + * Free Software Foundation;  either version 2 of the  License, or (at your
+> + * option) any later version.
+> + */
+> +
+> +#ifndef __CAMERA_RCAR_H_
+> +#define __CAMERA_RCAR_H_
+> +
+> +#define RCAR_VIN_HSYNC_ACTIVE_LOW	(1 << 0)
+> +#define RCAR_VIN_VSYNC_ACTIVE_LOW	(1 << 1)
+> +#define RCAR_VIN_BT601			(1 << 2)
+> +#define RCAR_VIN_BT656			(1 << 3)
+> +
+> +struct rcar_vin_platform_data {
+> +	unsigned int flags;
+> +};
+> +
+> +#endif /* __CAMERA_RCAR_H_ */
 
-	Arnd
+    I wonder how to deal with a cross tree dependency caused by this file.
+Perhaps the VIN platform code could be merged thru the media tree (or
+maybe vice versa, all patches merged thru the Renesas tree)?
+
+WBR, Sergei
+
