@@ -1,69 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 03:38:47 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7790: don't use external clock for SCIFs
-Message-Id: <1371440327-30512-3-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 02 Jun 2013 18:52:36 +0000
+Subject: Re: [PATCH v3 1/1] ARM: shmobile: r8a7778: add I2C support
+Message-Id: <51AB9474.3040900@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371440327-30512-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371440327-30512-1-git-send-email-horms+renesas@verge.net.au>
+References: <201304232012.57619.sergei.shtylyov@cogentembedded.com>
+ <201304232015.59697.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201304232015.59697.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Hello.
 
-This is an external component and may or may not be there, while the
-internal clock always works.
+On 04/23/2013 08:15 PM, Sergei Shtylyov wrote:
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7790.c |   16 ++++++++++++++--
- 1 file changed, 14 insertions(+), 2 deletions(-)
+> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+>
+> Add I2C clocks and platform devices for R8A7778 SoC.
+> Don't forget to also add the peripheral clock which the I2C driver uses.
+>
+> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> [Sergei: changed the registration function to platform_device_register_simple(),
+> annotated I2C resources as '__initdata', regrouped MSTPxxx *enum* members, added
+> the copyright.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 49de2d5..6531f3d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -64,10 +64,18 @@ void __init r8a7790_pinmux_init(void)
- [index] = {						\
- 	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,			\
--	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+	.scscr = SCSCR_RE | SCSCR_TE,	\
- }
- 
--enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
-+#define HSCIF_DATA(index, baseaddr, irq)		\
-+[index] = {						\
-+	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
-+	.scbrr_algo_id	= SCBRR_ALGO_6,			\
-+	.scscr = SCSCR_RE | SCSCR_TE,	\
-+}
-+
-+enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
-+       HSCIF0, HSCIF1 };
- 
- static const struct plat_sci_port scif[] = {
- 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
-@@ -78,6 +86,8 @@ static const struct plat_sci_port scif[] = {
- 	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
- 	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
- 	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
-+	HSCIF_DATA(HSCIF0, 0xe62c0000, gic_spi(154)), /* HSCIF0 */
-+	HSCIF_DATA(HSCIF1, 0xe62c8000, gic_spi(155)), /* HSCIF1 */
- };
- 
- static inline void r8a7790_register_scif(int idx)
-@@ -115,6 +125,8 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(SCIFA2);
- 	r8a7790_register_scif(SCIF0);
- 	r8a7790_register_scif(SCIF1);
-+	r8a7790_register_scif(HSCIF0);
-+	r8a7790_register_scif(HSCIF1);
- 	r8a7790_register_irqc(0);
- }
- 
--- 
-1.7.10.4
+    Simon, I'm calling back this patch. Morimoto-san's patch posted recently
+(preferably to be reposted once more) should be used instead.
+
+WBR, Sergei
 
