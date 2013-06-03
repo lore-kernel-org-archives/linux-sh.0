@@ -1,30 +1,68 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 19 Jun 2013 12:27:54 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: irqpin: add a DT property to enable masking on parent
-Message-Id: <20130619122754.GD32292@verge.net.au>
+From: phil.edworthy@renesas.com
+Date: Mon, 03 Jun 2013 07:46:43 +0000
+Subject: Re: [PATCH] pinctrl: sh-pfc: r8a7779: Fix missing MOD_SEL2 entry
+Message-Id: <OF9CCF4A0F.6AF3205B-ON80257B7F.002A6EBA-80257B7F.002ABC66@eu.necel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1306190751090.6945@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306190751090.6945@axis700.grange>
+References: <1369906266-30205-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1369906266-30205-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree-discuss@lists.ozlabs.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jun 19, 2013 at 07:53:09AM +0200, Guennadi Liakhovetski wrote:
-> To disable spurious interrupts, that get triggered on certain hardware, the
-> irqpin driver masks them on the parent interrupt controller. To specify
-> such broken devices a .control_parent parameter can be provided in the
-> platform data. In the DT case we need a property, to do the same.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Acked-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
-> v2: rebased on top of the current tree, also added Acked-by from Magnus
-> 
->  .../interrupt-controller/renesas,intc-irqpin.txt   |    2 ++
->  drivers/irqchip/irq-renesas-intc-irqpin.c          |    7 +++++--
->  2 files changed, 7 insertions(+), 2 deletions(-)
+Hi Simon,
 
-Thanks, I will queue this up in the dt branch.
+> > > On Friday 31 May 2013 11:43:18 Simon Horman wrote:
+> > > > On Fri, May 31, 2013 at 03:37:15AM +0200, Laurent Pinchart wrote:
+> > > > > Hi Phil,
+> > > > > 
+> > > > > Thank you for the patch.
+> > > > > 
+> > > > > On Thursday 30 May 2013 10:31:06 Phil Edworthy wrote:
+> > > > > > The list of functions selected by the MOD_SEL2 register was 
+> > missing
+> > > > > > an entry. This caused all entries after this to modify the 
+> > MOD_SEL2
+> > > > > > register incorrectly.
+> > > > > > 
+> > > > > > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+> > > > > 
+> > > > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > > > 
+> > > > Thanks Phil, thanks Laurent,
+> > > > 
+> > > > can I clarify that this is targeted at v3.11 and not necessary for 
+
+> > v3.10 or
+> > > > earlier releases.
+> > > 
+> > > Pushing the patch to v3.10 and v3.9 stable would be nice, as the bug 
+is 
+> > > present there as well.
+> > 
+> > Not sure if you meant pushing to v3.10, or waiting until a v3.10 
+stable 
+> > appears. Either would be good...
+> 
+> I am planning to try and getting it included in v3.10.
+> 
+> I think it would help if the changelog was fleshed out a bit.
+> 
+> Could you include some information on what the result of the bug is.
+> I assume it effects the marzen board (from an upstream kernel point of
+> view), it would be good to not that too.
+
+Actually, I've not seen it on the Marzen board, but on another board 
+called Hurricane. The bug showed up when selecting i2c2_c pins.
+ 
+> Also, could you include something like this in the revised changelog?
+> 
+> 
+> This bug has been present since pinmux support was added for the
+> r8a7779 SoC by  881023d28b465eb457067dc8bbca0f24d8b34279 ("sh-pfc: Add
+> r8a7779 pinmux support") in v3.8-rc4.
+
+No problem, I'll send a new patch later today.
+
+Thanks
+Phil
