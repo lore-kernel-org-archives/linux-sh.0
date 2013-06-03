@@ -1,91 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 13 Jun 2013 17:08:42 +0000
-Subject: Re: [RFC/PATCH v2 2/2] gpio-rcar: Add DT support
-Message-Id: <2687390.IKNGX5KlWy@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 03 Jun 2013 07:52:28 +0000
+Subject: [PATCH v2] pinctrl: sh-pfc: r8a7779: Fix missing MOD_SEL2 entry
+Message-Id: <1370245948-2769-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369136406-23800-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1369136406-23800-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20130612114911.638683E0A56@localhost>
-In-Reply-To: <20130612114911.638683E0A56@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Grant,
+The list of functions selected by the MOD_SEL2 register was missing
+an entry. This caused all entries after this to modify the MOD_SEL2
+register incorrectly.
 
-Thanks for the review.
+This bug showed up when selecting i2c2_c pins on the Renesas Hurricane board.
 
-On Wednesday 12 June 2013 12:49:11 Grant Likely wrote:
-> On Tue, 21 May 2013 13:40:06 +0200, Laurent Pinchart wrote:
-> > Add DT bindings for the gpio-rcar driver and read the device
-> > configuration from the DT node at probe time if available.
-> > 
-> > Cc: devicetree-discuss@lists.ozlabs.org
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  .../devicetree/bindings/gpio/renesas,gpio-rcar.txt | 52 +++++++++++++++++
-> >  drivers/gpio/gpio-rcar.c                           | 66 ++++++++++++++---
-> >  2 files changed, 108 insertions(+), 10 deletions(-)
-> >  create mode 100644
-> >  Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+This bug has been present since pinmux support was added for the
+r8a7779 SoC by 881023d28b465eb457067dc8bbca0f24d8b34279 ("sh-pfc: Add
+r8a7779 pinmux support") in v3.8-rc4.
 
-[snip]
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v2: Improved the changelog
 
-> > diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-> > index 0f3d647..c153837 100644
-> > --- a/drivers/gpio/gpio-rcar.c
-> > +++ b/drivers/gpio/gpio-rcar.c
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-[snip]
-
-> > +static void gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
-> > +{
-> > +	struct gpio_rcar_config *pdata = p->pdev->dev.platform_data;
-> > +#ifdef CONFIG_OF
-> > +	struct device_node *np = p->pdev->dev.of_node;
-> > +	struct of_phandle_args args;
-> > +	int ret;
-> > +#endif
-> > +
-> > +	if (pdata)
-> > +		p->config = *pdata;
-> > +#ifdef CONFIG_OF
-> > +	else if (np) {
-> 
-> Try this:
-> 	else if ((IS_ENABLED(CONFIG_OF)) && np) {
-> 
-> It's much better than adding #ifdef blocks to .c files. In v3.11 a bunch
-> of the OF forward declarations get pulled out from under the #ifdef
-> block so that you can use the above construct.
-
-As a pull request has already been sent to the ARM SoC maintainers, and given 
-that this isn't a critical issue, I'll address it as a follow-up patch if 
-that's fine with you.
-
-> > +		ret = of_parse_phandle_with_args(np, "gpio-ranges",
-> > +				"#gpio-range-cells", 0, &args);
-> > +		p->config.number_of_pins = ret = 0 && args.args_count = 3
-> > +					 ? args.args[2]
-> > +					 : RCAR_MAX_GPIO_PER_BANK;
-> > +		p->config.gpio_base = -1;
-> > +	}
-> > +#endif
-> > +
-> > +	if (p->config.number_of_pins = 0 ||
-> > +	    p->config.number_of_pins > RCAR_MAX_GPIO_PER_BANK) {
-> > +		dev_warn(&p->pdev->dev,
-> > +			 "Invalid number of gpio lines %u, using %u\n",
-> > +			 p->config.number_of_pins, RCAR_MAX_GPIO_PER_BANK);
-> > +		p->config.number_of_pins = RCAR_MAX_GPIO_PER_BANK;
-> > +	}
-> > +}
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 13feaa0..5dfeb3e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2525,7 +2525,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	    /* SEL_SCIF [2] */
+ 	    FN_SEL_SCIF_0, FN_SEL_SCIF_1, FN_SEL_SCIF_2, FN_SEL_SCIF_3,
+ 	    /* SEL_CANCLK [2] */
+-	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2,
++	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2, 0,
+ 	    /* SEL_CAN0 [1] */
+ 	    FN_SEL_CAN0_0, FN_SEL_CAN0_1,
+ 	    /* SEL_HSCIF1 [1] */
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
