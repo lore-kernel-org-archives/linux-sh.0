@@ -1,49 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:33 +0000
-Subject: [PATCH 042/130] ARM: shmobile: mackerel: Register pinctrl mapping for ST1232
-Message-Id: <1370420821-28420-43-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 03 Jun 2013 08:34:24 +0000
+Subject: Re: Build regressions/improvements in v3.10-rc4
+Message-Id: <alpine.DEB.2.00.1306031022150.19041@ayla.of.borg>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <alpine.DEB.2.00.1306031018320.18831@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.00.1306031018320.18831@ayla.of.borg>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux Kernel Development <linux-kernel@vger.kernel.org>
+Cc: x86@kernel.org, Linux/PPC Development <linuxppc-dev@lists.ozlabs.org>, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On Mon, 3 Jun 2013, Geert Uytterhoeven wrote:
+> JFYI, when comparing v3.10-rc4 to v3.10-rc3[3], the summaries are:
+>   - build errors: +6/-2
+>   - build warnings: +66/-132
 
-Replace the GPIO-based ST1232 pinmux configuration by a pinctrl mapping.
+  + arch/powerpc/sysdev/mpic.c: error: case label does not reduce to an integer constant:  => 890:9, 898:9, 886:9, 894:9
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-mackerel.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+powerpc-randconfig
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 49b66a8..8350635 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1384,6 +1384,9 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 				  "bsc_cs5a", "bsc"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
- 				  "intc_irq6_0", "intc"),
-+	/* ST1232 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-sh7372",
-+				  "intc_irq7_0", "intc"),
- };
- 
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
-@@ -1465,8 +1468,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_IRQ9_42,	NULL);
- 	irq_set_irq_type(IRQ9, IRQ_TYPE_LEVEL_HIGH);
- 
--	/* enable Touchscreen */
--	gpio_request(GPIO_FN_IRQ7_40,	NULL);
-+	/* Touchscreen */
- 	irq_set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
- 
- 	/* Accelerometer */
--- 
-1.8.2.1
+  + error: No rule to make target /etc/sound/msndinit.bin:  => N/A
+  + error: No rule to make target /etc/sound/msndperm.bin:  => N/A
 
+i386-randconfig
+
+  + error: spi-rspi.c: undefined reference to `shdma_chan_filter':  => .text+0x64f28), .text+0x65108)
+  
+sh-randconfig
+
+There seems to be something wrong with the dependencies for SH_DMAE_BASE,
+with more failures in linux-next for kota2_defconfig and marzen_defconfig
+on ARM (http://kisskb.ellerman.id.au/kisskb/buildresult/8848370/ resp.
+ http://kisskb.ellerman.id.au/kisskb/buildresult/8848367/)
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/6290/ (all 120 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/6268/ (all 120 configs)
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
