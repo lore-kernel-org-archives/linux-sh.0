@@ -1,51 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:23 +0000
-Subject: [PATCH 092/130] ARM: shmobile: r8a7740: Remove FSI function GPIOs
-Message-Id: <1370420821-28420-93-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 04 Jun 2013 05:11:39 +0000
+Subject: [PATCH 3/6 v4] ARM: shmobile: r8a7778: add support MMC clock
+Message-Id: <8761xu5uk7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds r8a7778 MMC clock support.
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 14 --------------
- 1 file changed, 14 deletions(-)
+v3 -> v4
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 08b7da0..001302f 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -107,20 +107,6 @@ enum {
- 	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
- 	GPIO_FN_DBGMD21,
+ - separated into "clock" support
+
+ arch/arm/mach-shmobile/clock-r8a7778.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index c2c1895..18d44f5 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -103,6 +103,7 @@ static struct clk *main_clks[] = {
+ };
  
--	/* FSI-A */
--	GPIO_FN_FSIAISLD_PORT0,		/* FSIAISLD Port 0/5 */
--	GPIO_FN_FSIAISLD_PORT5,
--	GPIO_FN_FSIASPDIF_PORT9,	/* FSIASPDIF Port 9/18 */
--	GPIO_FN_FSIASPDIF_PORT18,
--	GPIO_FN_FSIAOSLD1,	GPIO_FN_FSIAOSLD2,
--	GPIO_FN_FSIAOLR,	GPIO_FN_FSIAOBT,
--	GPIO_FN_FSIAOSLD,	GPIO_FN_FSIAOMC,
--	GPIO_FN_FSIACK,		GPIO_FN_FSIAILR,
--	GPIO_FN_FSIAIBT,
--
--	/* FSI-B */
--	GPIO_FN_FSIBCK,
--
- 	/* FMSI */
- 	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
- 	GPIO_FN_FMSISLD_PORT6,
+ enum {
++	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+ 	MSTP030,
+@@ -112,6 +113,7 @@ enum {
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
+ 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+@@ -137,6 +139,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_mmcif", &mstp_clks[MSTP331]), /* MMC */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
 -- 
-1.8.2.1
+1.7.9.5
 
