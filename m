@@ -1,177 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:33 +0000
-Subject: [PATCH 03/27] ARM: shmobile: sh73a0: Use DEFINE_RES_MEM*() everywhere
-Message-Id: <1370591517-20239-4-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 04 Jun 2013 05:10:24 +0000
+Subject: [PATCH 1/6 v4] ARM: shmobile: r8a7778: add support I2C clock
+Message-Id: <878v2q5umc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Convert code to use DEFINE_RES_MEM*() macros.
-These macros were already used in this file,
-this change makes their usage consistent throughout the file.
+This patch adds r8a7778 I2C clock support.
+It also adds peripheral_clk which is requiested
+from i2c-rcar driver
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 79 ++++++-----------------------------
- 1 file changed, 13 insertions(+), 66 deletions(-)
+v3 -> v4
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index fdf3894..3bc33a5 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -288,12 +288,7 @@ static struct sh_timer_config tmu00_platform_data = {
+ - separated into "clock" support
+
+ arch/arm/mach-shmobile/clock-r8a7778.c |   14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index b251e4d..1386c59 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -105,7 +105,8 @@ static struct clk *main_clks[] = {
+ enum {
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+-	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++	MSTP030,
++	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
+ 
+@@ -114,6 +115,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
++	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
++	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
++	[MSTP028] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 28, 0), /* I2C2 */
++	[MSTP027] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 27, 0), /* I2C3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 24, 0), /* SCIF2 */
+@@ -125,11 +130,18 @@ static struct clk mstp_clks[MSTP_NR] = {
  };
  
- static struct resource tmu00_resources[] = {
--	[0] = {
--		.name	= "TMU00",
--		.start	= 0xfff60008,
--		.end	= 0xfff60013,
--		.flags	= IORESOURCE_MEM,
--	},
-+	[0] = DEFINE_RES_MEM_NAMED(0xfff60008, 0xc, "TMU00"),
- 	[1] = {
- 		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
- 		.flags	= IORESOURCE_IRQ,
-@@ -318,12 +313,7 @@ static struct sh_timer_config tmu01_platform_data = {
- };
- 
- static struct resource tmu01_resources[] = {
--	[0] = {
--		.name	= "TMU01",
--		.start	= 0xfff60014,
--		.end	= 0xfff6001f,
--		.flags	= IORESOURCE_MEM,
--	},
-+	[0] = DEFINE_RES_MEM_NAMED(0xfff60014, 0xc, "TMU00"),
- 	[1] = {
- 		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
- 		.flags	= IORESOURCE_IRQ,
-@@ -341,12 +331,7 @@ static struct platform_device tmu01_device = {
- };
- 
- static struct resource i2c0_resources[] = {
--	[0] = {
--		.name	= "IIC0",
--		.start	= 0xe6820000,
--		.end	= 0xe6820425 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
-+	[0] = DEFINE_RES_MEM_NAMED(0xe6820000, 0x426, "IIC0"),
- 	[1] = {
- 		.start	= gic_spi(167),
- 		.end	= gic_spi(170),
-@@ -355,12 +340,7 @@ static struct resource i2c0_resources[] = {
- };
- 
- static struct resource i2c1_resources[] = {
--	[0] = {
--		.name	= "IIC1",
--		.start	= 0xe6822000,
--		.end	= 0xe6822425 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
-+	[0] = DEFINE_RES_MEM_NAMED(0xe6822000, 0x426, "IIC1"),
- 	[1] = {
- 		.start	= gic_spi(51),
- 		.end	= gic_spi(54),
-@@ -369,12 +349,7 @@ static struct resource i2c1_resources[] = {
- };
- 
- static struct resource i2c2_resources[] = {
--	[0] = {
--		.name	= "IIC2",
--		.start	= 0xe6824000,
--		.end	= 0xe6824425 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
-+	[0] = DEFINE_RES_MEM_NAMED(0xe6824000, 0x426, "IIC2"),
- 	[1] = {
- 		.start	= gic_spi(171),
- 		.end	= gic_spi(174),
-@@ -383,12 +358,7 @@ static struct resource i2c2_resources[] = {
- };
- 
- static struct resource i2c3_resources[] = {
--	[0] = {
--		.name	= "IIC3",
--		.start	= 0xe6826000,
--		.end	= 0xe6826425 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
-+	[0] = DEFINE_RES_MEM_NAMED(0xe6826000, 0x426, "IIC3"),
- 	[1] = {
- 		.start	= gic_spi(183),
- 		.end	= gic_spi(186),
-@@ -397,12 +367,7 @@ static struct resource i2c3_resources[] = {
- };
- 
- static struct resource i2c4_resources[] = {
--	[0] = {
--		.name	= "IIC4",
--		.start	= 0xe6828000,
--		.end	= 0xe6828425 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
-+	[0] = DEFINE_RES_MEM_NAMED(0xe6828000, 0x426, "IIC4"),
- 	[1] = {
- 		.start	= gic_spi(187),
- 		.end	= gic_spi(190),
-@@ -623,12 +588,7 @@ static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
- };
- 
- static struct resource sh73a0_dmae_resources[] = {
--	{
--		/* Registers including DMAOR and channels including DMARSx */
--		.start  = 0xfe000020,
--		.end    = 0xfe008a00 - 1,
--		.flags  = IORESOURCE_MEM,
--	},
-+	DEFINE_RES_MEM(0xfe000020, 0x89e0),
- 	{
- 		.name	= "error_irq",
- 		.start  = gic_spi(129),
-@@ -727,18 +687,10 @@ static struct sh_dmae_pdata sh73a0_mpdma_platform_data = {
- 
- /* Resource order important! */
- static struct resource sh73a0_mpdma_resources[] = {
--	{
--		/* Channel registers and DMAOR */
--		.start	= 0xec618020,
--		.end	= 0xec61828f,
--		.flags	= IORESOURCE_MEM,
--	},
--	{
--		/* DMARSx */
--		.start	= 0xec619000,
--		.end	= 0xec61900b,
--		.flags	= IORESOURCE_MEM,
--	},
-+	/* Channel registers and DMAOR */
-+	DEFINE_RES_MEM(0xec618020, 0x270),
-+	/* DMARSx */
-+	DEFINE_RES_MEM(0xec619000, 0xc),
- 	{
- 		.name	= "error_irq",
- 		.start	= gic_spi(181),
-@@ -785,12 +737,7 @@ static struct platform_device pmu_device = {
- 
- /* an IPMMU module for ICB */
- static struct resource ipmmu_resources[] = {
--	[0] = {
--		.name	= "IPMMU",
--		.start	= 0xfe951000,
--		.end	= 0xfe9510ff,
--		.flags	= IORESOURCE_MEM,
--	},
-+	DEFINE_RES_MEM_NAMED(0xfe951000, 0x100, "IPMMU"),
- };
- 
- static const char * const ipmmu_dev_names[] = {
+ static struct clk_lookup lookups[] = {
++	/* main */
++	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
++
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
 -- 
-1.8.2.1
+1.7.9.5
 
