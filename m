@@ -1,50 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:34 +0000
-Subject: [PATCH 043/130] ARM: shmobile: mackerel: Register pinctrl mapping for TCA6416
-Message-Id: <1370420821-28420-44-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 04 Jun 2013 05:11:24 +0000
+Subject: [PATCH 2/6 v4] ARM: shmobile: r8a7778: add support HSPI clock
+Message-Id: <877gia5ukn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds r8a7778 HSPI clock support.
+It also adds shyway_clk which is requiested
+from sh-hspi driver
 
-Replace the GPIO-based TCA6416 pinmux configuration by a pinctrl
-mapping.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+v3 -> v4
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 8350635..397e73c 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1387,6 +1387,9 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 	/* ST1232 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-sh7372",
- 				  "intc_irq7_0", "intc"),
-+	/* TCA6416 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("0-0020", "pfc-sh7372",
-+				  "intc_irq9_0", "intc"),
+ - separated into "clock" support
+
+ arch/arm/mach-shmobile/clock-r8a7778.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 1386c59..c2c1895 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -108,6 +108,7 @@ enum {
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
++	MSTP007,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -127,10 +128,12 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
+ 	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
+ 	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP007] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  7, 0), /* HSPI */
  };
  
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
-@@ -1464,8 +1467,7 @@ static void __init mackerel_init(void)
- 		clk_put(clk);
- 	}
+ static struct clk_lookup lookups[] = {
+ 	/* main */
++	CLKDEV_CON_ID("shyway_clk",	&s_clk),
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
  
--	/* enable Keypad */
--	gpio_request(GPIO_FN_IRQ9_42,	NULL);
-+	/* Keypad */
- 	irq_set_irq_type(IRQ9, IRQ_TYPE_LEVEL_HIGH);
+ 	/* MSTP32 clocks */
+@@ -150,6 +153,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
++	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ };
  
- 	/* Touchscreen */
+ void __init r8a7778_clock_init(void)
 -- 
-1.8.2.1
+1.7.9.5
 
