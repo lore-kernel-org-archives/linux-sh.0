@@ -1,64 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:30 +0000
-Subject: [PATCH 039/130] ARM: shmobile: mackerel: Register pinctrl mapping for SCIF
-Message-Id: <1370420821-28420-40-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 04 Jun 2013 07:46:56 +0000
+Subject: [PATCH 2/2] ARM: shmobile: sh73a0: Update CMT clockevent rating to 80
+Message-Id: <1370332016-16017-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370332016-16017-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370332016-16017-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Update the CMT clockevent rating from 125 to 80.
 
-Replace the GPIO-based SCIF pinmux configuration by a pinctrl mapping.
+This resolves a boot-failure regression for kzm9g-reference in v3.10-rc1
+introduced by f7db706b132f11c79ae1d74b2382e0926cf31644 ("ARM: 7674/1: smp:
+Avoid dummy clockevent being preferred over real").
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The patch noted above reduces the rating of dummy clockevent from 400 to 100.
+This patch reduces the rating of CMT so that it is once again less than that
+of the dummy clockevent.
+
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 07eeb55..bd3666b 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1346,6 +1346,12 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 				  "lcd_data24", "lcd"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh7372",
- 				  "lcd_sync", "lcd"),
-+	/* SCIFA0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-sh7372",
-+				  "scifa0_data", "scifa0"),
-+	/* SCIFA2 (GT-720F GPS module) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh7372",
-+				  "scifa2_data", "scifa2"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -1414,10 +1420,6 @@ static void __init mackerel_init(void)
- 				  ARRAY_SIZE(mackerel_pinctrl_map));
- 	sh7372_pinmux_init();
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fdf3894..9696f36 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -252,7 +252,7 @@ static struct sh_timer_config cmt10_platform_data = {
+ 	.name = "CMT10",
+ 	.channel_offset = 0x10,
+ 	.timer_bit = 0,
+-	.clockevent_rating = 125,
++	.clockevent_rating = 80,
+ 	.clocksource_rating = 125,
+ };
  
--	/* enable SCIFA0 */
--	gpio_request(GPIO_FN_SCIFA0_TXD, NULL);
--	gpio_request(GPIO_FN_SCIFA0_RXD, NULL);
--
- 	/* enable SMSC911X */
- 	gpio_request(GPIO_FN_CS5A,	NULL);
- 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
-@@ -1470,10 +1472,6 @@ static void __init mackerel_init(void)
- 	/* SDHI0 PORT172 card-detect IRQ26 */
- 	gpio_request(GPIO_FN_IRQ26_172, NULL);
- 
--	/* enable GPS module (GT-720F) */
--	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
--	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
--
- 	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
- 	srcr4 = __raw_readl(SRCR4);
- 	__raw_writel(srcr4 | (1 << 13), SRCR4);
 -- 
 1.8.2.1
 
