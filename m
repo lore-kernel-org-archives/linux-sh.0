@@ -1,81 +1,70 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jun 2013 19:08:12 +0000
-Subject: [PATCH v11 02/21] soc-camera: add host clock callbacks to start and stop the master clock
-Message-Id: <1371236911-15131-3-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 04 Jun 2013 05:12:22 +0000
+Subject: [PATCH 6/6 v4] ARM: shmobile: r8a7778: add support MMC driver
+Message-Id: <871u8i5uj1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-Currently soc-camera uses a single camera host callback to activate the
-interface master clock and to configure the interface for a specific
-client. However, during probing we might not have the information about
-a client, we just need to activate the clock. Add new camera host driver
-callbacks to only start and stop the clock without and client-specific
-configuration.
+Add a platform device for the r8a7778 MMC.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/platform/soc_camera/soc_camera.c |   19 +++++++++++++++++--
- include/media/soc_camera.h                     |    2 ++
- 2 files changed, 19 insertions(+), 2 deletions(-)
+v3 -> v4
 
-diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
-index 832f059..df90565 100644
---- a/drivers/media/platform/soc_camera/soc_camera.c
-+++ b/drivers/media/platform/soc_camera/soc_camera.c
-@@ -513,10 +513,23 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
- 	if (ici->icd)
- 		return -EBUSY;
+ - separated into "driver" support
+
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   13 +++++++++++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index ca8bc14..fcf3c90 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -18,6 +18,7 @@
+ #ifndef __ASM_R8A7778_H__
+ #define __ASM_R8A7778_H__
  
-+	if (ici->ops->clock_start) {
-+		ret = ici->ops->clock_start(ici);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
- 	ret = ici->ops->add(icd);
--	if (!ret)
--		ici->icd = icd;
-+	if (ret < 0)
-+		goto eadd;
-+
-+	ici->icd = icd;
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
  
-+	return 0;
-+
-+eadd:
-+	if (ici->ops->clock_stop)
-+		ici->ops->clock_stop(ici);
- 	return ret;
+@@ -26,6 +27,7 @@ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
++extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index fdc483d..17bc1d2 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -220,6 +220,19 @@ void __init r8a7778_add_hspi_device(int id)
+ 		hspi_resources + (2 * id), 2);
  }
  
-@@ -528,6 +541,8 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
- 		return;
++/* MMC */
++static struct resource mmc_resources[] __initdata = {
++	DEFINE_RES_MEM(0xffe4e000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x5d)),
++};
++
++void __init r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info)
++{
++	platform_device_register_resndata(
++		&platform_bus, "sh_mmcif", -1,
++		mmc_resources, ARRAY_SIZE(mmc_resources),
++		info, sizeof(*info));
++}
  
- 	ici->ops->remove(icd);
-+	if (ici->ops->clock_stop)
-+		ici->ops->clock_stop(ici);
- 	ici->icd = NULL;
- }
- 
-diff --git a/include/media/soc_camera.h b/include/media/soc_camera.h
-index 5a46ce2..64415ee 100644
---- a/include/media/soc_camera.h
-+++ b/include/media/soc_camera.h
-@@ -74,6 +74,8 @@ struct soc_camera_host_ops {
- 	struct module *owner;
- 	int (*add)(struct soc_camera_device *);
- 	void (*remove)(struct soc_camera_device *);
-+	int (*clock_start)(struct soc_camera_host *);
-+	void (*clock_stop)(struct soc_camera_host *);
- 	/*
- 	 * .get_formats() is called for each client device format, but
- 	 * .put_formats() is only called once. Further, if any of the calls to
+ void __init r8a7778_add_standard_devices(void)
+ {
 -- 
-1.7.2.5
+1.7.9.5
 
