@@ -1,52 +1,73 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Jun 2013 07:20:13 +0000
-Subject: Re: [PATCH 00/03] ARM: shmobile: Remove legacy memory bits
-Message-Id: <20130612072013.GA6006@verge.net.au>
+Date: Tue, 04 Jun 2013 01:45:21 +0000
+Subject: Re: drivers/ata/sata_rcar.c:183:2: warning: large integer implicitly truncated to unsigned type
+Message-Id: <20130604014521.GN23054@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130610094638.20803.18484.sendpatchset@w520>
- <201306101700.22787.arnd@arndb.de>
- <20130611074623.GA10440@verge.net.au>
- <CANqRtoSm81_Ncxa0R4ZYHjwGq7=jNymY9q1qvfphtOe20PuJFg@mail.gmail.com>
-In-Reply-To: <CANqRtoSm81_Ncxa0R4ZYHjwGq7=jNymY9q1qvfphtOe20PuJFg@mail.gmail.com>
+References: <51a59c1b.AMyrU/XAl1VcZ02t%fengguang.wu@intel.com>
+ <20130529072447.GC12650@localhost>
+In-Reply-To: <20130529072447.GC12650@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Fengguang Wu <fengguang.wu@intel.com>
+Cc: kbuild-all@01.org, Tejun Heo <tj@kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-ide@vger.kernel.org, Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-On Wed, Jun 12, 2013 at 03:26:01PM +0900, Magnus Damm wrote:
+Hi Sergei, Hi Vladimir,
+
+could you look into a fix for this?
+
+I believe that it is a result of my patch "libata: do not limit R-Car SATA
+driver to shmobile", which now allows the R-Car SATA driver to be compiled
+for a (much) wider range of hardware.
+
+On Wed, May 29, 2013 at 03:24:47PM +0800, Fengguang Wu wrote:
+> 
 > Hi Simon,
 > 
-> On Tue, Jun 11, 2013 at 4:46 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Jun 10, 2013 at 05:00:22PM +0200, Arnd Bergmann wrote:
-> >> On Monday 10 June 2013, Magnus Damm wrote:
-> >> > ARM: shmobile: Remove legacy memory bits
-> >> >
-> >> > [PATCH 01/03] ARM: shmobile: Enable ARM_PATCH_PHYS_VIRT
-> >> > [PATCH 02/03] ARM: shmobile: Remove MEMORY_START/SIZE
-> >> > [PATCH 03/03] ARM: shmobile: Remove mach/memory.h
-> >> >
-> >> > Now when all users are gone this series removes the legacy memory code
-> >> > and enables CONFIG_ARM_PATCH_PHYS_VIRT. Depends on the following code:
-> >> >
-> >> > [PATCH v2] ARM: shmobile: uImage load address rework
-> >> > [PATCH] ARM: shmobile: Rework sh7372 sleep code to use virt_to_phys()
-> >> > [PATCH 00/06] ARM: shmobile: SMP virt_to_phys() conversion
-> >> > [PATCH 00/02] ARM: shmobile: romImage update
-> >> >
-> >> > The romImage series above still needs to be updated.
-> >> >
-> >> > This is the final bit of code not to rely on CONFIG_MEMORY_START/SIZE
-> >> > which in turn is one component that we need for ARCH_MULTIPLATFORM.
-> >> >
-> >> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> >>
-> >> Looks all good to me.
-> >
-> > I will queue these up once all the dependencies are ready.
+> First bad commit might be:
 > 
-> Thanks, I believe they are now.
+> tree:   git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next master
+> head:   1ca94a12e6c269b0dfc10424c27ff295b3420e9c
+> commit: 5c23341ff66c9280c2e76dc9795cd14497ea780f libata: do not limit R-Car SATA driver to shmobile
+> date:   5 days ago
+> config: make ARCH=powerpc allmodconfig
 > 
-> I will update the Mackerel romImage support as an incremental patch.
-
-Thanks, I have this and the dependencies queued up locally.
-I will push them after doing some build and boot tests.
+> All warnings:
+> 
+>    drivers/ata/sata_rcar.c: In function 'sata_rcar_thaw':
+> >> drivers/ata/sata_rcar.c:183:2: warning: large integer implicitly truncated to unsigned type [-Woverflow]
+> 
+> vim +183 drivers/ata/sata_rcar.c
+> 
+> 163cf81d Vladimir Barinov 2013-02-20  167  
+> 163cf81d Vladimir Barinov 2013-02-20  168  static void sata_rcar_freeze(struct ata_port *ap)
+> 163cf81d Vladimir Barinov 2013-02-20  169  {
+> 163cf81d Vladimir Barinov 2013-02-20  170  	struct sata_rcar_priv *priv = ap->host->private_data;
+> 163cf81d Vladimir Barinov 2013-02-20  171  
+> 163cf81d Vladimir Barinov 2013-02-20  172  	/* mask */
+> 163cf81d Vladimir Barinov 2013-02-20  173  	iowrite32(0x7ff, priv->base + SATAINTMASK_REG);
+> 163cf81d Vladimir Barinov 2013-02-20  174  
+> 163cf81d Vladimir Barinov 2013-02-20  175  	ata_sff_freeze(ap);
+> 163cf81d Vladimir Barinov 2013-02-20  176  }
+> 163cf81d Vladimir Barinov 2013-02-20  177  
+> 163cf81d Vladimir Barinov 2013-02-20  178  static void sata_rcar_thaw(struct ata_port *ap)
+> 163cf81d Vladimir Barinov 2013-02-20  179  {
+> 163cf81d Vladimir Barinov 2013-02-20  180  	struct sata_rcar_priv *priv = ap->host->private_data;
+> 163cf81d Vladimir Barinov 2013-02-20  181  
+> 163cf81d Vladimir Barinov 2013-02-20  182  	/* ack */
+> 163cf81d Vladimir Barinov 2013-02-20 @183  	iowrite32(~SATA_RCAR_INT_MASK, priv->base + SATAINTSTAT_REG);
+> 163cf81d Vladimir Barinov 2013-02-20  184  
+> 163cf81d Vladimir Barinov 2013-02-20  185  	ata_sff_thaw(ap);
+> 163cf81d Vladimir Barinov 2013-02-20  186  
+> 163cf81d Vladimir Barinov 2013-02-20  187  	/* unmask */
+> 163cf81d Vladimir Barinov 2013-02-20  188  	iowrite32(0x7ff & ~SATA_RCAR_INT_MASK, priv->base + SATAINTMASK_REG);
+> 163cf81d Vladimir Barinov 2013-02-20  189  }
+> 163cf81d Vladimir Barinov 2013-02-20  190  
+> 163cf81d Vladimir Barinov 2013-02-20  191  static void sata_rcar_ioread16_rep(void __iomem *reg, void *buffer, int count)
+> 
+> 
+> 
+> ---
+> 0-DAY kernel build testing backend              Open Source Technology Center
+> http://lists.01.org/mailman/listinfo/kbuild                 Intel Corporation
+> 
