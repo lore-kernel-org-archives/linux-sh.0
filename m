@@ -1,42 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:24:56 +0000
-Subject: [PATCH 005/130] ARM: shmobile: add GPIO IRQ macro
-Message-Id: <1370420821-28420-6-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Jun 2013 02:18:34 +0000
+Subject: Re: [PATCH] sh-pfc: r8a7779: Fix merge conflict
+Message-Id: <20130604021834.GS23054@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, May 29, 2013 at 09:15:41AM +0200, Laurent Pinchart wrote:
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 2 --
+>  1 file changed, 2 deletions(-)
+> 
+> Hi Simon,
+> 
+> The following commit introduced a bug in pinmux support for r8a7779.c. Would
+> you be able to squash this patch into the commit when pushing it to mainline ?
 
-R-Car series gpio_rcar driver can control GPIO IRQ today.
-It needs base IRQ number for gpio_rcar_config :: .irq_base
-This patch adds macro for GPIO IRQ.
-This patch was tested on Bock-W board
+Done. It should appear the next time I push into the renesas tree.
+Hopefully later today.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/irqs.h | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
-index b2074e2..d241bfd 100644
---- a/arch/arm/mach-shmobile/include/mach/irqs.h
-+++ b/arch/arm/mach-shmobile/include/mach/irqs.h
-@@ -16,4 +16,9 @@
- #define IRQPIN_BASE		2000
- #define irq_pin(nr)		((nr) + IRQPIN_BASE)
- 
-+/* GPIO IRQ */
-+#define _GPIO_IRQ_BASE		2500
-+#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
-+#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
-+
- #endif /* __ASM_MACH_IRQS_H */
--- 
-1.8.2.1
-
+> 
+> commit e15dfb923186955690b56406eb6e8adcbafbea40
+> Author: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Date:   Mon Apr 8 12:05:31 2013 +0200
+> 
+>     sh-pfc: r8a7779: Replace hardcoded pin numbers with RCAR_GP_PIN macro
+>     
+>     Use the RCAR_GP_PIN macro to convert from the documentation pin number
+>     space to the linear pinctrl space.
+>     
+>     Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+>     Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+> index 6ad6fdd..96bdf48 100644
+> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+> @@ -2425,7 +2425,6 @@ static const unsigned int sdhi3_wp_mux[] = {
+>  /* - USB0 ------------------------------------------------------------------- */
+>  static const unsigned int usb0_pins[] = {
+>  	/* PENC */
+> -	154,
+>  	RCAR_GP_PIN(4, 26),
+>  };
+>  static const unsigned int usb0_mux[] = {
+> @@ -2440,7 +2439,6 @@ static const unsigned int usb0_ovc_mux[] = {
+>  };
+>  /* - USB1 ------------------------------------------------------------------- */
+>  static const unsigned int usb1_pins[] = {
+> -
+>  	/* PENC */
+>  	RCAR_GP_PIN(4, 27),
+>  };
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
