@@ -1,56 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Jun 2013 08:40:39 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add thermal driver support
-Message-Id: <1372236040-16737-2-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Jun 2013 12:16:20 +0000
+Subject: Re: [PATCH 3/3 v3] ARM: shmobile: bockw: add SDHI0 support
+Message-Id: <20130604121614.GA15017@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372236040-16737-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372236040-16737-1-git-send-email-horms+renesas@verge.net.au>
+References: <8738uwpavc.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8738uwpavc.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-You can get current thermal by
-> cat /sys/class/thermal/thermal_zone?/temp
+On Mon, Apr 22, 2013 at 02:24:51PM +0900, Simon Horman wrote:
+> On Thu, Apr 18, 2013 at 08:09:32PM -0700, Kuninori Morimoto wrote:
+> > This patch is directly accessing to PUPR4 register which can
+> > control SDHI0 CD/WP pin pull-up setting.
+> > It should be replaced in the future.
+> > 
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > ---
+> > v2 -> v3
+> > 
+> >  - used new sdhi pinctrl
+> > 
+> >  arch/arm/mach-shmobile/board-bockw.c |   35 ++++++++++++++++++++++++++++++++++
+> >  1 file changed, 35 insertions(+)
+> 
+> I have merged the pinmux branch into the boards-bockw branch
+> and queued-up this patch for v3.11 there.
 
-Based on similar work for the r8a73a4 by Kuninori Morimoto.
+I have dropped this patch as it currently seems to be causing a build failure.
+Please resolve this and re-post.
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7790.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 28f9475..06c720f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -149,6 +149,17 @@ static struct resource irqc0_resources[] __initdata = {
- 					  &irqc##idx##_data,		\
- 					  sizeof(struct renesas_irqc_config))
- 
-+static struct resource thermal_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xe61f0000, 0x14),
-+	DEFINE_RES_MEM(0xe61f0100, 0x38),
-+	DEFINE_RES_IRQ(gic_spi(69)),
-+};
-+
-+#define r8a7790_register_thermal()					\
-+	platform_device_register_simple("rcar_thermal", -1,		\
-+					thermal_resources,		\
-+					ARRAY_SIZE(thermal_resources))
-+
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_register_scif(SCIFA0);
-@@ -162,6 +173,7 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(HSCIF0);
- 	r8a7790_register_scif(HSCIF1);
- 	r8a7790_register_irqc(0);
-+	r8a7790_register_thermal();
- }
- 
- void __init r8a7790_timer_init(void)
--- 
-1.8.2.1
+  CC      arch/arm/mach-shmobile/board-bockw.o
+arch/arm/mach-shmobile/board-bockw.c:60: error: variable ‘sdhi0_info’ has initializer but incomplete type
+arch/arm/mach-shmobile/board-bockw.c:61: error: unknown field ‘tmio_caps’ specified in initializer
+arch/arm/mach-shmobile/board-bockw.c:61: warning: excess elements in struct initializer
+arch/arm/mach-shmobile/board-bockw.c:61: warning: (near initialization for ‘sdhi0_info’)
+arch/arm/mach-shmobile/board-bockw.c:62: error: unknown field ‘tmio_ocr_mask’ specified in initializer
+arch/arm/mach-shmobile/board-bockw.c:62: warning: excess elements in struct initializer
+arch/arm/mach-shmobile/board-bockw.c:62: warning: (near initialization for ‘sdhi0_info’)
+arch/arm/mach-shmobile/board-bockw.c:63: error: unknown field ‘tmio_flags’ specified in initializer
+arch/arm/mach-shmobile/board-bockw.c:63: warning: excess elements in struct initializer
+arch/arm/mach-shmobile/board-bockw.c:63: warning: (near initialization for ‘sdhi0_info’)
+arch/arm/mach-shmobile/board-bockw.c: In function ‘bockw_init’:
+arch/arm/mach-shmobile/board-bockw.c:134: error: implicit declaration of function ‘r8a7778_sdhi_init’
 
