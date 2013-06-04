@@ -1,32 +1,53 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Thu, 06 Jun 2013 11:43:28 +0000
-Subject: Re: [PATCH v2] MMC: tmio: fix unbalanced power-on calls with clock-gating enabled
-Message-Id: <871u8f8nxb.fsf@octavius.laptop.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Jun 2013 05:20:43 +0000
+Subject: Re: [PATCH 1/8] ARM: shmobile: sh73a0 pinmux platform device cleanup
+Message-Id: <20130604052043.GX23054@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304230916270.1422@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304230916270.1422@axis700.grange> (Guennadi
-	Liakhovetski's message of "Tue, 23 Apr 2013 09:29:44 +0200 (CEST)")
+References: <1369645252-3847-1-git-send-email-horms+renesas@verge.net.au>
+ <1369645252-3847-2-git-send-email-horms+renesas@verge.net.au>
+ <51A36A02.9050200@cogentembedded.com>
+ <20130528040243.GM13532@quad.lixom.net>
+In-Reply-To: <20130528040243.GM13532@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+On Mon, May 27, 2013 at 09:02:43PM -0700, Olof Johansson wrote:
+> On Mon, May 27, 2013 at 06:13:22PM +0400, Sergei Shtylyov wrote:
+> > Hello.
+> > 
+> > On 27-05-2013 13:00, Simon Horman wrote:
+> > 
+> > >From: Magnus Damm <damm@opensource.se>
+> > 
+> > >Use DEFINE_RES_MEM() and platform_device_register_simple()
+> > >to save a couple of lines of code.
+> > 
+> > >Signed-off-by: Magnus Damm <damm@opensource.se>
+> > >Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > >---
+> > >  arch/arm/mach-shmobile/setup-sh73a0.c |   25 ++++++-------------------
+> > >  1 file changed, 6 insertions(+), 19 deletions(-)
+> > 
+> > >diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+> > >index fdf3894..f8f4261 100644
+> > >--- a/arch/arm/mach-shmobile/setup-sh73a0.c
+> > >+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+> > >@@ -61,29 +61,16 @@ void __init sh73a0_map_io(void)
+> > [...]
+> > >+/* PFC */
+> > >+static const struct resource pfc_resources[] = {
+> > 
+> >    Should have been annotated as __initdata... too late, need
+> > another patch.
+> 
+> See comments on other patches/pull requests, I think there's time to revisit
+> this. I.e. I'll hold off on pulling this based on the other feedback.
 
-On Tue, Apr 23 2013, Guennadi Liakhovetski wrote:
-> With MMC clock gating enabled the MMC core currently calls MMC host driver's
-> .set_ios() method with .power_mode = MMC_POWER_ON and the clock value set
-> either to 0 or to the target rate. The tmio MMC driver then wrongly
-> translates the latter calls to card slot power-on requests, even when the
-> slot already was on. This patch fixes the driver to avoid needlessly
-> incrementing power-supplying regulator's use count.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+As I am respining I will fix this.
 
-This doesn't apply to mmc-next -- please could you rebase/resend?
-
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+However, it had been reviewed and I think that ordinarily
+it would be reasonable to perform further clean-up
+work in a subsequent patch.
