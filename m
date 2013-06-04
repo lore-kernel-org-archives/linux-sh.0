@@ -1,69 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 04 Jun 2013 02:09:13 +0000
-Subject: [PATCH] thermal: rcar: set up I/O base before requesting IRQ
-Message-Id: <1370311753-6463-1-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Jun 2013 02:10:26 +0000
+Subject: Re: [PATCH] thermal: rcar: set up I/O base before requesting IRQ
+Message-Id: <20130604021026.GP23054@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1369817336-1953-1-git-send-email-ulrich.hecht@gmail.com>
 In-Reply-To: <1369817336-1953-1-git-send-email-ulrich.hecht@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Zhang Rui <rui.zhang@intel.com>, linux-pm@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Ulrich Hecht <ulrich.hecht@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+On Fri, May 31, 2013 at 09:04:02AM +0200, Ulrich Hecht wrote:
+> On Fri, May 31, 2013 at 7:48 AM, Simon Horman <horms@verge.net.au> wrote:
+> > On Wed, May 29, 2013 at 10:48:56AM +0200, Ulrich Hecht wrote:
+> >> It is used by the interrupt handler. Fixes crash when booting via kexec
+> >> on APE6 board.
+> >
+> > could you clarify the target of this fix?
+> > Is it for next and thus v3.11 or is it applicable to v3.10.
+> > In the case of the latter is it also applicable to earlier
+> > kernel versions and thus relevant to -stable.
+> 
+> The bug has been introduced by commit e0a5172 (thermal: rcar: add
+> interrupt support), between v3.8-rc2 and v3.9-rc1.
 
-It is used by the interrupt handler. Fixes crash when booting via kexec
-on APE6 board.
+Thanks and sorry for the delay, I have been travelling.
 
-This problem was introduced by e0a5172e9eec7f0d3c476e013c51dab62f3fc666
-("thermal: rcar: add interrupt support") which was introduced in v3.8-rc3.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[horms+renesas@verge.net.au: enhanced changelog to include commit
-  that cuases the problem ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/thermal/rcar_thermal.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
-
-Hi Zhang,
-
-could you consider this fix for v3.10?
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 8d7edd4..7641dcc 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -395,13 +395,6 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 			return -ENODEV;
- 		}
- 
--		ret = devm_request_irq(dev, irq->start, rcar_thermal_irq, 0,
--				       dev_name(dev), common);
--		if (ret) {
--			dev_err(dev, "irq request failed\n ");
--			return ret;
--		}
--
- 		/*
- 		 * rcar_has_irq_support() will be enabled
- 		 */
-@@ -409,6 +402,13 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 		if (IS_ERR(common->base))
- 			return PTR_ERR(common->base);
- 
-+		ret = devm_request_irq(dev, irq->start, rcar_thermal_irq, 0,
-+				       dev_name(dev), common);
-+		if (ret) {
-+			dev_err(dev, "irq request failed\n ");
-+			return ret;
-+		}
-+
- 		/* enable temperature comparation */
- 		rcar_thermal_common_write(common, ENR, 0x00030303);
- 
--- 
-1.8.2.1
-
+I have reposed this patch with an updated changelog, including
+the information above, with the hope that Zhang Rui will
+pick up the change for v3.10.
