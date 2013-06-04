@@ -1,52 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 18 Jun 2013 07:32:07 +0000
-Subject: Re: [PATCH/RFC] arm: arch_timer: Do not set C3STOP in case CPU_IDLE=n
-Message-Id: <CANqRtoTu7U6x6QmiV8JsCxeF8WU3n_bndFgR0Tif5TwEpFXbLA@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Jun 2013 05:10:06 +0000
+Subject: Re: [PATCH 10/12] ARM: shmobile: r8a7740: Add CPUIdle
+Message-Id: <20130604051006.GV23054@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130617002056.7646.54131.sendpatchset@w520>
-	<20130617145352.GG6809@e106331-lin.cambridge.arm.com>
-In-Reply-To: <20130617145352.GG6809@e106331-lin.cambridge.arm.com>
+References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
+ <1369645193-3595-11-git-send-email-horms+renesas@verge.net.au>
+ <51A33D83.905@linaro.org> <20130528035446.GJ13532@quad.lixom.net>
+In-Reply-To: <20130528035446.GJ13532@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Rutland <mark.rutland@arm.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Marc Zyngier <Marc.Zyngier@arm.com>, Catalin Marinas <Catalin.Marinas@arm.com>, "horms@verge.net.au" <horms@verge.net.au>, "john.stultz@linaro.org" <john.stultz@linaro.org>, "shinya.kuribayashi.px@renesas.com" <shinya.kuribayashi.px@renesas.com>, "tglx@linutronix.de" <tglx@linutronix.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark,
+On Mon, May 27, 2013 at 08:54:46PM -0700, Olof Johansson wrote:
+> On Mon, May 27, 2013 at 01:03:31PM +0200, Daniel Lezcano wrote:
+> > On 05/27/2013 10:59 AM, Simon Horman wrote:
+> > > From: Bastian Hecht <hechtb@gmail.com>
+> > > 
+> > > We make use of the r8a7740 Suspend To Ram code to plug together a
+> > > CPUIdle driver.
+> > > 
+> > > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+> > > Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+> > > ---
+> > 
+> > Shouldn't it go through Rafael's tree ? Or does the patch contains some
+> > dependencies on a code only visible in the ARM tree ?
+> 
+> Missing S-o-b from Simon. But this patch clearly builds on the preceding
+> one in the series, so merging them independently might not make much
+> sense. Getting an ack from Rafael would be nice though.
+> 
+> I was going to say that it should probably go under drivers/cpuidle as
+> well, but that just seems silly -- there is practically no code to share
+> with any other platform in this small driver, AND there's not really
+> any subsystem-internal data exposed. So it might just make more sense
+> to keep it under arch/arm instead.
+> 
+> Likewise, looking at the kirkwood and calxeda drivers under drivers/cpuidle,
+> I'm wondering why we thought it was a good idea to merge them there, besides
+> getting caught up in the "nothing can live under arch/arm any more" frenzy.
 
-On Mon, Jun 17, 2013 at 11:53 PM, Mark Rutland <mark.rutland@arm.com> wrote:
-> On Mon, Jun 17, 2013 at 01:20:56AM +0100, Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> Modify the ARM architected timer driver to not set C3STOP
->> in case CPU_IDLE is disabled. This is a short term fix that
->> allows use of high resolution timers even though no additional
->> clock event is registered.
->>
->> Not-really-Signed-off-by: Magnus Damm <damm@opensource.se>
->> ---
->>
->>  If someone cares about this case then perhaps it should be
->>  moved up to the clock event main code. The same issue should
->>  in theory trigger on all architectures, perhaps x86 people
->>  hunting for low latency may try to disable CPU_IDLE?
->
-> I think that changing tick_is_oneshot_capable and friends to only worry about
-> C3STOP when CPU_IDLE is enabled would be a nicer solution. That way you enable
-> all clock_event_devices with C3STOP to function as high resolution timers when
-> CPU_IDLE's selected. Presenting the hardware differently depending on CPU_IDLE
-> feels wrong.
-
-I agree that doing this in the clock event driver is a bit odd. So
-because of that I just posted this patch:
-
-[PATCH/RFC] clockevents: Ignore C3STOP when CPUIdle is disabled
-
-> Having some other clock_event_device would be a nicer solution still.
-
-No doubt that another clock event device helps, but mainly together
-with CPU Idle IMO.
-
-Thanks for your comments!
-
-/ magnus
+After discussion with Magnus I have decided to drop these changes.
+We can revisit them for a future release.
