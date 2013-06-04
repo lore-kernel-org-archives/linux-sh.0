@@ -1,48 +1,48 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 24 Jun 2013 17:58:03 +0000
-Subject: Re: [PATCH v2 3/4] ARM: shmobile: ape6evm: add CPUFreq support
-Message-Id: <51C888AB.8010304@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 04 Jun 2013 07:46:54 +0000
+Subject: [GIT PULL v3] Renesas ARM based SoC fixes for v3.10
+Message-Id: <1370332016-16017-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1306241257190.19735@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306241257190.19735@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Olof, Hi Arnd,
 
-On 06/24/2013 03:05 PM, Guennadi Liakhovetski wrote:
+I have revised this series to include Linus Walleij's ack for
+"sh-pfc: r8a7779: Don't group USB OVC and PENC pins" and double
+checked that I actually pushed the tag this time.
 
-> This patch adds OPPs to the CA15 DT node and a max8973 DT node to support
-> clock and voltage scaling, using the cpufreq-cpu0 CPUFreq driver.
+The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
+  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
 
-> v2: Subject to Mark acking v2 of my max8973 DT patch, this should be the
-> updated version of my original ape6evm CPUFreq patch. This version puts
-> all max8973 regulator bindings directly under the respective I2C device
-> node instead of creating 2 additional levels.
+are available in the git repository at:
 
->   arch/arm/boot/dts/r8a73a4-ape6evm.dts |   22 ++++++++++++++++++++++
->   1 files changed, 22 insertions(+), 0 deletions(-)
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes-for-v3.10
 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> index 4fb0102..27c5e06 100644
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> @@ -52,3 +52,25 @@
->   		};
->   	};
->   };
-> +
-> +&i2c5 {
-> +	vdd_dvfs: max8973@1b {
-> +		compatible = "maxium,max8973";
+for you to fetch changes up to 5600a8485603b240790005b9b58de4c4f6ada69d:
 
-    Er, perhaps "maxim"? Or is there some other corporation I don't know 
-about?
+  ARM: shmobile: sh73a0: Update CMT clockevent rating to 80 (2013-06-04 14:37:53 +0900)
 
-WBR, Sergei
+----------------------------------------------------------------
+Renesas ARM based SoC fixes for v3.10
 
+* Correction to USB OVC and PENC pin groupings on r8a7779 SoC.
+  This avoids conflicts when the USB_OVCn pins are used by another function.
+  This has been observed to be a problem in v3.10-rc1.
+
+* Update CMT clock rating for sh73a0 SoC to resolve boot failure
+  on kzm9g-reference. This resolves a regression between v3.9 and v3.10-rc1.
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      sh-pfc: r8a7779: Don't group USB OVC and PENC pins
+
+Simon Horman (1):
+      ARM: shmobile: sh73a0: Update CMT clockevent rating to 80
+
+ arch/arm/mach-shmobile/setup-sh73a0.c |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c  | 45 ++++++++++++++++++++++++++++-------
+ 2 files changed, 37 insertions(+), 10 deletions(-)
