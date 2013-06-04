@@ -1,129 +1,72 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:18 +0000
-Subject: [PATCH 05/23] ARM: shmobile: r8a73a4: add main clock
-Message-Id: <1370503716-31155-6-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 04 Jun 2013 05:12:08 +0000
+Subject: [PATCH 5/6 v4] ARM: shmobile: r8a7778: add support HSPI driver
+Message-Id: <8738sy5ujf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add a platform device for the r8a7778 HSPI.
 
-Almost all clock needs main clock which is basis clock on r8a73a4.
-This patch adds it, and, set parent clock via CKSCR register.
-
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c | 53 ++++++++++++++++++++++++++++++++++
- 1 file changed, 53 insertions(+)
+v3 -> v4
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index e710c00..42942b4 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -22,6 +22,7 @@
- #include <linux/kernel.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
+ - separated into "driver" support
+
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   23 +++++++++++++++++++++++
+ 2 files changed, 24 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index a428bc6..ca8bc14 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -25,6 +25,7 @@ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
++extern void r8a7778_add_hspi_device(int id);
  
- #define CPG_BASE 0xe6150000
-@@ -31,6 +32,8 @@
- #define SMSTPCR2 0xe6150138
- #define SMSTPCR5 0xe6150144
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index eaa6b06..fdc483d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -198,6 +198,29 @@ void __init r8a7778_add_i2c_device(int id)
+ 		i2c_resources + (2 * id), 2);
+ }
  
-+#define CKSCR		0xE61500C0
-+
- static struct clk_mapping cpg_mapping = {
- 	.phys   = CPG_BASE,
- 	.len    = CPG_LEN,
-@@ -51,10 +54,32 @@ static struct clk extal2_clk = {
- 	.mapping	= &cpg_mapping,
- };
- 
-+static struct sh_clk_ops followparent_clk_ops = {
-+	.recalc	= followparent_recalc,
++/* HSPI */
++static struct resource hspi_resources[] __initdata = {
++	/* HSPI0 */
++	DEFINE_RES_MEM(0xfffc7000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x5f)),
++	/* HSPI1 */
++	DEFINE_RES_MEM(0xfffc8000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x74)),
++	/* HSPI2 */
++	DEFINE_RES_MEM(0xfffc6000, 0x18),
++	DEFINE_RES_IRQ(gic_iid(0x75)),
 +};
 +
-+static struct clk main_clk = {
-+	/* .parent will be set r8a73a4_clock_init */
-+	.ops	= &followparent_clk_ops,
-+};
++void __init r8a7778_add_hspi_device(int id)
++{
++	BUG_ON(id < 0 || id > 2);
 +
-+SH_CLK_RATIO(div2,	1, 2);
-+SH_CLK_RATIO(div4,	1, 4);
++	platform_device_register_simple(
++		"sh-hspi", id,
++		hspi_resources + (2 * id), 2);
++}
 +
-+SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
-+SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
-+SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
-+SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
 +
- static struct clk *main_clks[] = {
- 	&extalr_clk,
- 	&extal1_clk,
-+	&extal1_div2_clk,
- 	&extal2_clk,
-+	&extal2_div2_clk,
-+	&extal2_div4_clk,
-+	&main_clk,
-+	&main_div2_clk,
- };
- 
- enum {
-@@ -74,6 +99,13 @@ static struct clk mstp_clks[MSTP_NR] = {
- };
- 
- static struct clk_lookup lookups[] = {
-+	/* main clock */
-+	CLKDEV_CON_ID("extal1",			&extal1_clk),
-+	CLKDEV_CON_ID("extal1_div2",		&extal1_div2_clk),
-+	CLKDEV_CON_ID("extal2",			&extal2_clk),
-+	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
-+	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
-+
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
-@@ -90,6 +122,7 @@ void __init r8a73a4_clock_init(void)
+ void __init r8a7778_add_standard_devices(void)
  {
- 	void __iomem *cpg_base, *reg;
- 	int k, ret = 0;
-+	u32 ckscr;
- 
- 	/* fix MPCLK to EXTAL2 for now.
- 	 * this is needed until more detailed clock topology is supported
-@@ -100,6 +133,26 @@ void __init r8a73a4_clock_init(void)
- 	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
- 	iounmap(cpg_base);
- 
-+	reg = ioremap_nocache(CKSCR, PAGE_SIZE);
-+	BUG_ON(!reg);
-+	ckscr = ioread32(reg);
-+	iounmap(reg);
-+
-+	switch ((ckscr >> 28) & 0x3) {
-+	case 0:
-+		main_clk.parent = &extal1_clk;
-+		break;
-+	case 1:
-+		main_clk.parent = &extal1_div2_clk;
-+		break;
-+	case 2:
-+		main_clk.parent = &extal2_clk;
-+		break;
-+	case 3:
-+		main_clk.parent = &extal2_div2_clk;
-+		break;
-+	}
-+
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
- 
+ 	int i;
 -- 
-1.8.2.1
+1.7.9.5
 
