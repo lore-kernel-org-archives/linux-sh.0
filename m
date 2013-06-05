@@ -1,50 +1,53 @@
-From: Masami Hiramatsu <masami.hiramatsu.pt@hitachi.com>
-Date: Wed, 19 Jun 2013 11:42:44 +0000
-Subject: [PATCH] sh/kprobes: Fix illslot handler not to unregister but disarm kprobe
-Message-Id: <20130619114244.19843.90351.stgit@mhiramat-M0-7522>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:42 +0000
+Subject: [PATCH 051/130] ARM: shmobile: ap4evb: Register pinctrl mapping for SMSC911x
+Message-Id: <1370420821-28420-52-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Sasha Levin <sasha.levin@oracle.com>, Andrew Morton <akpm@linux-foundation.org>, Paul Mundt <lethal@linux-sh.org>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, yrl.pp-manager.tt@hitachi.com
+To: linux-arm-kernel@lists.infradead.org
 
-Fix illegal slot exception handler not to unregister the kprobe
-but just to disarm it. Since the unregister_kprobe must sleep (by
-synchronize_sched), it must not be called from any exception/
-interrupt handlers. Disarming is safe because it just recovers
-original instruction code.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Masami Hiramatsu <masami.hiramatsu.pt@hitachi.com>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Sasha Levin <sasha.levin@oracle.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Replace the GPIO-based SMSC911x pinmux configuration by a pinctrl
+mapping.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/kernel/kprobes.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
-index 42b46e6..5ec8182 100644
---- a/arch/sh/kernel/kprobes.c
-+++ b/arch/sh/kernel/kprobes.c
-@@ -82,7 +82,7 @@ int __kprobes arch_trampoline_kprobe(struct kprobe *p)
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 3163983..9ee8bcd 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1136,6 +1136,11 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
+ 				  "sdhi1_data4", "sdhi1"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
+ 				  "sdhi1_ctrl", "sdhi1"),
++	/* SMSC911X */
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
++				  "bsc_cs5a", "bsc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
++				  "intc_irq6_0", "intc"),
+ };
  
- /**
-  * If an illegal slot instruction exception occurs for an address
-- * containing a kprobe, remove the probe.
-+ * containing a kprobe, disarm the probe.
-  *
-  * Returns 0 if the exception was handled successfully, 1 otherwise.
-  */
-@@ -93,7 +93,7 @@ int __kprobes kprobe_handle_illslot(unsigned long pc)
- 	if (p != NULL) {
- 		printk("Warning: removing kprobe from delay slot: 0x%.8x\n",
- 		       (unsigned int)pc + 2);
--		unregister_kprobe(p);
-+		arch_disarm_kprobe(p);
- 		return 0;
- 	}
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+@@ -1168,10 +1173,6 @@ static void __init ap4evb_init(void)
+ 				  ARRAY_SIZE(ap4evb_pinctrl_map));
+ 	sh7372_pinmux_init();
  
-
+-	/* enable SMSC911X */
+-	gpio_request(GPIO_FN_CS5A,	NULL);
+-	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+-
+ 	/* enable Debug switch (S6) */
+ 	gpio_request_one(32, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 	gpio_request_one(33, GPIOF_IN | GPIOF_EXPORT, NULL);
+-- 
+1.8.2.1
 
