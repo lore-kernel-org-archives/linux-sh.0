@@ -1,50 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:24 +0000
-Subject: [PATCH 033/130] ARM: shmobile: mackerel: Register pinctrl mapping for the ADXL34X
-Message-Id: <1370420821-28420-34-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 04:32:13 +0000
+Subject: [PATCH 4/7] ARM: shmobile: Remove unused r8a7790 GIC CPU interface DT bits
+Message-Id: <1370406736-32272-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Replace the GPIO-based ADXL34X pinmux configuration by a pinctrl
-mapping.
+Remove unused GIC CPU interface DT bits for r8a7790.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index fa3407d..d40d9da 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1309,6 +1309,9 @@ static struct i2c_board_info i2c1_devices[] = {
- };
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7a17110..339d9b1 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -36,12 +36,6 @@
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 0xf04>;
+-
+-		gic-cpuif@4 {
+-			compatible = "arm,gic-cpuif";
+-			cpuif-id = <4>;
+-			cpu = <&cpu0>;
+-		};
+ 	};
  
- static const struct pinctrl_map mackerel_pinctrl_map[] = {
-+	/* ADXL34X */
-+	PIN_MAP_MUX_GROUP_DEFAULT("1-0053", "pfc-sh7372",
-+				  "intc_irq21", "intc"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -1460,8 +1463,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_IRQ7_40,	NULL);
- 	irq_set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
- 
--	/* enable Accelerometer */
--	gpio_request(GPIO_FN_IRQ21,	NULL);
-+	/* Accelerometer */
- 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
- 
- 	/* SDHI0 PORT172 card-detect IRQ26 */
+ 	timer {
 -- 
 1.8.2.1
 
