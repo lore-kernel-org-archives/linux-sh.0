@@ -1,41 +1,72 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:14 +0000
-Subject: [PATCH 04/24] drm/rcar-du: Don't ignore rcar_du_crtc_create() return value
-Message-Id: <1372326574-4315-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:40 +0000
+Subject: [PATCH 049/130] ARM: shmobile: ap4evb: Register pinctrl mapping for LCD
+Message-Id: <1370420821-28420-50-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Handle error cases correctly.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based LCD pinmux configuration by a pinctrl mapping.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 29 +++++++----------------------
+ 1 file changed, 7 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 9c63f39..06cacf6 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -191,8 +191,11 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 	if (ret < 0)
- 		return ret;
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index c7a9efc..c6e1e44 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1107,6 +1107,13 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
+ 				  "keysc_in04_0", "keysc"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc", "pfc-sh7372",
+ 				  "keysc_out5", "keysc"),
++#ifndef CONFIG_AP4EVB_QHD
++	/* LCDC */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh7372",
++				  "lcd_data18", "lcd"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh7372",
++				  "lcd_sync", "lcd"),
++#endif
+ 	/* MMCIF */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
+ 				  "mmc0_data8_0", "mmc0"),
+@@ -1245,28 +1252,6 @@ static void __init ap4evb_init(void)
+ 	 * For WVGA Panel (18-bit RGB, CONFIG_AP4EVB_WVGA=y) and
+ 	 * IRQ7 for Touch Panel, set dip switches S3, S43 to ON, OFF.
+ 	 */
+-
+-	gpio_request(GPIO_FN_LCDD17,   NULL);
+-	gpio_request(GPIO_FN_LCDD16,   NULL);
+-	gpio_request(GPIO_FN_LCDD15,   NULL);
+-	gpio_request(GPIO_FN_LCDD14,   NULL);
+-	gpio_request(GPIO_FN_LCDD13,   NULL);
+-	gpio_request(GPIO_FN_LCDD12,   NULL);
+-	gpio_request(GPIO_FN_LCDD11,   NULL);
+-	gpio_request(GPIO_FN_LCDD10,   NULL);
+-	gpio_request(GPIO_FN_LCDD9,    NULL);
+-	gpio_request(GPIO_FN_LCDD8,    NULL);
+-	gpio_request(GPIO_FN_LCDD7,    NULL);
+-	gpio_request(GPIO_FN_LCDD6,    NULL);
+-	gpio_request(GPIO_FN_LCDD5,    NULL);
+-	gpio_request(GPIO_FN_LCDD4,    NULL);
+-	gpio_request(GPIO_FN_LCDD3,    NULL);
+-	gpio_request(GPIO_FN_LCDD2,    NULL);
+-	gpio_request(GPIO_FN_LCDD1,    NULL);
+-	gpio_request(GPIO_FN_LCDD0,    NULL);
+-	gpio_request(GPIO_FN_LCDDISP,  NULL);
+-	gpio_request(GPIO_FN_LCDDCK,   NULL);
+-
+ 	gpio_request_one(189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
+ 	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
  
--	for (i = 0; i < ARRAY_SIZE(rcdu->crtcs); ++i)
--		rcar_du_crtc_create(rcdu, i);
-+	for (i = 0; i < ARRAY_SIZE(rcdu->crtcs); ++i) {
-+		ret = rcar_du_crtc_create(rcdu, i);
-+		if (ret < 0)
-+			return ret;
-+	}
- 
- 	rcdu->used_crtcs = 0;
- 	rcdu->num_crtcs = i;
 -- 
-1.8.1.5
+1.8.2.1
 
