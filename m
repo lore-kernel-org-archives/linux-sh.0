@@ -1,115 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 20 Jun 2013 12:30:34 +0000
-Subject: Re: [PATCH] clocksource: sh_cmt: 32-bit control register support
-Message-Id: <20130620123033.GC27177@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 05 Jun 2013 08:28:35 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: sdhi: pass DMA filter from platform code
+Message-Id: <Pine.LNX.4.64.1306051020340.19739@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130617064052.3573.68839.sendpatchset@w520>
- <CANqRtoSqFPcwq0Wt7fj13izay14X_bi+UyUQe=4OGaNThsQt6Q@mail.gmail.com>
- <20130619123122.GF32292@verge.net.au>
- <5467150.8XmYprs6xq@avalon>
-In-Reply-To: <5467150.8XmYprs6xq@avalon>
+References: <1370008605-3745603-1-git-send-email-arnd@arndb.de>
+ <2862988.jnTv0iSQcj@wuerfel>
+ <alpine.DEB.2.00.1305311721160.7395@axis700.grange>
+ <3675801.kLfsmmiSOq@wuerfel>
+In-Reply-To: <3675801.kLfsmmiSOq@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, john stultz <johnstul@us.ibm.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 19, 2013 at 02:58:01PM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Wednesday 19 June 2013 21:31:23 Simon Horman wrote:
-> > On Tue, Jun 18, 2013 at 10:27:44PM +0900, Magnus Damm wrote:
-> > > On Tue, Jun 18, 2013 at 9:30 PM, Laurent Pinchart wrote:
-> > > > On Tuesday 18 June 2013 20:54:47 Magnus Damm wrote:
-> > > >> On Tue, Jun 18, 2013 at 7:35 PM, Laurent Pinchart wrote:
-> > > >> > On Tuesday 18 June 2013 14:39:38 Magnus Damm wrote:
-> > > >> >> On Tue, Jun 18, 2013 at 3:37 AM, Laurent Pinchart wrote:
-> > > >> >> > On Monday 17 June 2013 15:40:52 Magnus Damm wrote:
-> > > >> >> >> From: Magnus Damm <damm@opensource.se>
-> > > >> >> >> 
-> > > >> >> >> Add support for CMT hardware with 32-bit control and counter
-> > > >> >> >> registers, as found on r8a73a4 and r8a7790. To use the CMT
-> > > >> >> >> with 32-bit hardware a second I/O memory resource needs to
-> > > >> >> >> point out the CMSTR register and it needs to be 32 bit wide.
-> > > >> >> > 
-> > > >> >> > Is a memory second resource required ? Can't we use a single
-> > > >> >> > resource that will contain all the registers ?
-> > > >> >> 
-> > > >> >> The CMT hardware block comes with a shared timer start stop register
-> > > >> >> that historically has been left out of the resource. The location of
-> > > >> >> this register has so far been pointed out by the "channel offset"
-> > > >> >> platform data member, together with information about which bit that
-> > > >> >> happens to be assigned to the timer channel. This start stop
-> > > >> >> register has happened to be kept in the same page of I/O memory as
-> > > >> >> the main timer channel resource, so at this point we're sort of
-> > > >> >> "lucky" that a single ioremap() has covered all cases.
-> > > >> >> 
-> > > >> >> With this patch it becomes optional to instead of platform data use
-> > > >> >> a second resource to point out the timer start/stop register. While
-> > > >> >> we do that we can also use the size of that resource to determine
-> > > >> >> the I/O access width, which happens to be something that is needed
-> > > >> >> to enable the driver on certain SoCs.
-> > > >> > 
-> > > >> > OK, I get it now. I've had a quick look at the documentation, and I'm
-> > > >> > wondering whether we shouldn't register a single platform device that
-> > > >> > span all the channels contained in the CMT, instead of registering
-> > > >> > one platform device per channel.
-> > > >> 
-> > > >> I both agree with you and disagree because of the current state of
-> > > >> timers in the linux kernel. I would have liked a single platform
-> > > >> device with all channles if this would be a generic timer driver that
-> > > >> from user space could be configured to associate channels with various
-> > > >> subsystems like PWM, clocksource, clockevent.
-> > > >> 
-> > > >> At this point the driver is doing clockevent and clocksource only, and
-> > > >> no sane user wants 84 channels of equivalent hardware blocks for those
-> > > >> two.
-> > > > 
-> > > > Of course, but we could always select which channels to register
-> > > > clockevents and clocksources for in platform data. That won't fix the
-> > > > overall problem, but it's one step forward.
-> > > 
-> > > But that's pretty much what we're doing, but only listing timer
-> > > channels that will be used. Of course, moving around things can be
-> > > done but I can't see why we want to do that if we have no selection of
-> > > drivers for the actual timer channels. Also, each timer channel may
-> > > have it's own unique set of possible parent clocks. That's something
-> > > we want to tie in to DT together with CCF. Solving those things
-> > > together makes sense IMO.
-> 
-> If you want to solve this along with the CCF implementation, please go ahead 
-> :-) I'm not too familiar with timers so I don't know what the best approach 
-> would be API-wise, but from a DT point of view we should have one node per 
-> timer. If we can't get there in a single step moving first to one platform 
-> device per CMT and then adding an API to select timers would be acceptable to 
-> me.
-> 
-> > > >> So based on that I'd rather do it like today and let people write
-> > > >> custom drivers for whatever applications they may use the other
-> > > >> channels for.
-> > > >> 
-> > > >> So if you're in hacking mode, why don't you figure out some way timers
-> > > >> can be configured from user space? =)
-> > > > 
-> > > > I don't have *that* much free time at the moment I'm afraid, and I'm
-> > > > sure you know why :-)
-> > > 
-> > > Yes I do, and that's why I asked. =)
-> > > 
-> > > >> If so then we can use DT to describe the actual hardware and let the
-> > > >> software policy be decided via some configuration mechanism.
-> > > > 
-> > > > Don't we also need timers during early boot, when userspace isn't
-> > > > available yet ?
-> > > 
-> > > It depends on the rest of the system. It is possible to boot to user
-> > > space without a timer, but I don't recommend it. =)
-> > 
-> > Hi,
-> > 
-> > I am holding off on this patch until some consensus is reached.
-> 
-> I don't think there's a need to hold off, this patch doesn't worsen the 
-> situation, cleanups would go on top.
+Hi Arnd
 
-Thanks, I will queue this up in the clocksource branch.
+On Fri, 31 May 2013, Arnd Bergmann wrote:
+
+> On Friday 31 May 2013 17:30:01 Guennadi Liakhovetski wrote:
+> > On Fri, 31 May 2013, Arnd Bergmann wrote:
+> > > On Friday 31 May 2013 16:52:13 Guennadi Liakhovetski wrote:
+> 
+> > > I think it's more a matter of using the API correctly. The dmaengine
+> > > API is an abstraction to separate the slave driver from the master
+> > > through well-defined calls. If you make additional assumptions
+> > > in the slave driver about the master, that is a layering violation.
+> > 
+> > I think it is a common practice, see e.g.
+> > 
+> > drivers/mmc/host/omap_hsmmc.c
+> > drivers/mmc/host/davinci_mmc.c
+> 
+> Yes, those should be fixed as well.
+
+Then we'll have to fix quite a few of those - I only looked under 
+drivers/mmc for now.
+
+But isn't that a separate issue? The problem we have to address now is 
+broken compilation, for which, I think, my patch is the simplest solution. 
+DMA slave drivers being DMAC implementation agnostic is good, no doubt 
+about that, even though many of them will ever only use one DMAC type, but 
+isn't that a separate issue? Fixing it would require patching 3 locations: 
+a header to add a callback field, arches to add filters and drivers to 
+actually call them instead of hard-coded functions. In the worst case 
+those changes would go via 3 different git-trees, so, might take 3 kernel 
+releases... Ok, at least two if we puch the header change together with 
+arch updates via the same tree with suitable acks, still, that's too long, 
+IMHO.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
