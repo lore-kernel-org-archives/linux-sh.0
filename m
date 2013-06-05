@@ -1,38 +1,53 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:09 +0000
-Subject: [PATCH 078/130] ARM: shmobile: bonito: Don't configure LCDC routing manually
-Message-Id: <1370420821-28420-79-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 04:32:16 +0000
+Subject: [PATCH 7/7] ARM: shmobile: marzen-reference: add irqpin support in DT
+Message-Id: <1370406736-32272-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-LCDC routing is configured automatically in the PFC driver, don't
-configure it manually in board code.
+Add an irqpin interrupt controller DT node on marzen-reference.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bonito.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7779.dtsi | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index 2781c7f..b373e9c 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -451,7 +451,6 @@ static void __init bonito_init(void)
- 		    BIT_ON(bsw2, 2)) {	/* S38.2 = OFF */
- 			pinctrl_register_mappings(lcdc0_pinctrl_map,
- 						  ARRAY_SIZE(lcdc0_pinctrl_map));
--			gpio_request(GPIO_FN_LCDC0_SELECT, NULL);
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index fe5c6f2..7f146c6 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -48,6 +48,23 @@
+                       <0xf0000100 0x100>;
+         };
  
- 			gpio_request_one(61, GPIOF_OUT_INIT_HIGH,
- 					 NULL); /* LCDDON */
++	irqpin0: irqpin@fe780010 {
++		compatible = "renesas,intc-irqpin";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xfe78001c 4>,
++			<0xfe780010 4>,
++			<0xfe780024 4>,
++			<0xfe780044 4>,
++			<0xfe780064 4>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 27 0x4
++				0 28 0x4
++				0 29 0x4
++				0 30 0x4>;
++		sense-bitfield-width = <2>;
++	};
++
+ 	i2c0: i2c@0xffc70000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
 -- 
 1.8.2.1
 
