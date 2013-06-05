@@ -1,39 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 09:28:49 +0000
-Subject: [PATCH 3/3] ARM: shmobile: r8a7790: don't use external clock for SCIFs
-Message-Id: <1371461329-26467-4-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:24 +0000
+Subject: [PATCH 033/130] ARM: shmobile: mackerel: Register pinctrl mapping for the ADXL34X
+Message-Id: <1370420821-28420-34-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371461329-26467-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371461329-26467-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This is an external component and may or may not be there, while the
-internal clock always works.
+Replace the GPIO-based ADXL34X pinmux configuration by a pinctrl
+mapping.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 896d374..6531f3d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -64,7 +64,7 @@ void __init r8a7790_pinmux_init(void)
- [index] = {						\
- 	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,			\
--	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+	.scscr = SCSCR_RE | SCSCR_TE,	\
- }
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index fa3407d..d40d9da 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1309,6 +1309,9 @@ static struct i2c_board_info i2c1_devices[] = {
+ };
  
- #define HSCIF_DATA(index, baseaddr, irq)		\
+ static const struct pinctrl_map mackerel_pinctrl_map[] = {
++	/* ADXL34X */
++	PIN_MAP_MUX_GROUP_DEFAULT("1-0053", "pfc-sh7372",
++				  "intc_irq21", "intc"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1460,8 +1463,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_IRQ7_40,	NULL);
+ 	irq_set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
+ 
+-	/* enable Accelerometer */
+-	gpio_request(GPIO_FN_IRQ21,	NULL);
++	/* Accelerometer */
+ 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
+ 
+ 	/* SDHI0 PORT172 card-detect IRQ26 */
 -- 
-1.7.10.4
+1.8.2.1
 
