@@ -1,20 +1,23 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 08:41:23 +0000
+Date: Wed, 05 Jun 2013 08:51:27 +0000
 Subject: Re: [PATCH 00/15] ARM: shmobile: uImage load address rework
-Message-Id: <CANqRtoQ6Y444_O=ieboon_+afEQGah3+ffvro=EjZcL65N5yFw@mail.gmail.com>
+Message-Id: <CANqRtoThDhpe17R5tq+RuSgt_72tuWUoK+5fGLK508tCxKj2jw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130605070616.13311.69049.sendpatchset@w520>
- <2463304.ZF9315IS5c@wuerfel>
-In-Reply-To: <2463304.ZF9315IS5c@wuerfel>
+ <87a9n5582w.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a9n5582w.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+Hi Morimoto-san,
 
-On Wed, Jun 5, 2013 at 5:29 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Wednesday 05 June 2013 16:06:16 Magnus Damm wrote:
+On Wed, Jun 5, 2013 at 4:29 PM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+>
+> Hi
+>
 >> ARM: shmobile: uImage load address rework
 >>
 >> [PATCH 01/15] ARM: shmobile: Per-board uImage load addresses
@@ -32,25 +35,25 @@ On Wed, Jun 5, 2013 at 5:29 PM, Arnd Bergmann <arnd@arndb.de> wrote:
 >> [PATCH 13/15] ARM: shmobile: Marzen uImage rework
 >> [PATCH 14/15] ARM: shmobile: Armadillo800EVA reference uImage rework
 >> [PATCH 15/15] ARM: shmobile: Remove MEMORY_START uImage load address
->>
->> Rework the mach-shmobile uImage load address calculation by storing
->> the per-board load addresses in Makefile.boot. This removes the
->> CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
->> it possible to create safe kernel images that boot on multiple boards.
->>
->> This is one of several series of code that reworks code not to rely on
->> CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
 >
-> Looks good to me. I just really wouldn't bother creating so many patches
-> for this when you just modify a single file multiple times. A single
-> patch would be just as good, unless you are desperate to top the LWN
-> patch statistics ;-)
+> I tested these patches on Bock-W board (as 0x60008000 binary),
+> and on Mackerel board (as 0x40008000 binary)
+> These work well for me :)
 
-Yes, you got it, always desperate! =)
+Thanks for testing.
 
-I guess I had some idea that people could reply to each board specific
-email with information about testing and potential issues, but so far
-I have not seen anyone taking advantage of that opportunity.
+> I have same opinion with Laurent.
+> 5) and 14) can be 1 patch if you need to sent v2 patches :P
+
+Gotcha!
+
+> for 6), 12) patch
+>
+> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> for all patches
+>
+> Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 Thanks,
 
