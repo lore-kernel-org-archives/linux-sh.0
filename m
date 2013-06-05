@@ -1,47 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:22:03 +0000
-Subject: [PATCH 05/11] ARM: shmobile: bockw: add CN9 SCIF/RCAN selection dipswitch explanation
-Message-Id: <1370593329-27559-6-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 04:31:53 +0000
+Subject: [PATCH 6/6] ARM: shmobile: kzm9g: enable AS3711 PMIC in defconfig
+Message-Id: <1370406713-26599-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370406713-26599-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370406713-26599-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Debug serial (= SCIF0) is connected to CN9 upper side,
-and it is shared by RCAN.
-This patch adds SCIF/RCAN dipswitch explanation on
-comment area for developers.
+An AS3711 PMIC is used on kzm9g to supply CPU power and LCD backlight.
+This patch enables it in board defconfig.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/configs/kzm9g_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index badde08..3ce020a 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -26,6 +26,14 @@
- #include <mach/r8a7778.h>
- #include <asm/mach/arch.h>
- 
-+/*
-+ *	CN9(Upper side) SCIF/RCAN selection
-+ *
-+ *		1,4	3,6
-+ * SW40		SCIF	RCAN
-+ * SW41		SCIF	RCAN
-+ */
-+
- static struct smsc911x_platform_config smsc911x_data = {
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
- 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index f6e585b..1ad0280 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -84,9 +84,12 @@ CONFIG_I2C_CHARDEV=y
+ CONFIG_I2C_SH_MOBILE=y
+ CONFIG_GPIO_PCF857X=y
+ # CONFIG_HWMON is not set
++CONFIG_MFD_AS3711=y
+ CONFIG_REGULATOR=y
++CONFIG_REGULATOR_AS3711=y
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
++CONFIG_BACKLIGHT_AS3711=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_LOGO=y
+ CONFIG_FB_SH_MOBILE_MERAM=y
 -- 
 1.8.2.1
 
