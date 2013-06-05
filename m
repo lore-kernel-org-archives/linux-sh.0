@@ -1,52 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:44 +0000
-Subject: [PATCH 14/27] ARM: shmobile: r8a7779: Add PCIe clocks
-Message-Id: <1370591517-20239-15-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 06:59:06 +0000
+Subject: [PATCH 02/15] ARM: shmobile: AG5EVM uImage rework
+Message-Id: <20130605070633.13311.4000.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130605070616.13311.69049.sendpatchset@w520>
+In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Phil Edworthy <Phil.Edworthy@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Add AG5EVM specific load address to Makefile.boot
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 31d5cd4..9daeb8c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -112,7 +112,7 @@ static struct clk *main_clks[] = {
- };
- 
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
--	MSTP115, MSTP114,
-+	MSTP116, MSTP115, MSTP114,
- 	MSTP103, MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -125,6 +125,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
- 	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
- 	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
- 	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
-@@ -161,6 +162,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&clkp_clk),
- 
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("rcar-pcie", &mstp_clks[MSTP116]), /* PCIe */
- 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
- 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
- 	CLKDEV_DEV_ID("sh-eth", &mstp_clks[MSTP114]), /* Ether */
--- 
-1.8.2.1
+ arch/arm/mach-shmobile/Makefile.boot |    2 ++
+ 1 file changed, 2 insertions(+)
 
+--- 0009/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 16:06:50.000000000 +0900
+@@ -1,6 +1,8 @@
+ loadaddr-y	:= $(shell /bin/bash -c 'printf "0x%08x" \
+ 		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
+ 
++loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
++
+ __ZRELADDR	:= $(shell /bin/bash -c \
+ 		     'echo $(loadaddr-y) | tr " " "\n" | sort | uniq')
+ 
