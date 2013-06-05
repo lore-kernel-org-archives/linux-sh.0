@@ -1,39 +1,86 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 08 Jun 2013 00:07:13 +0000
-Subject: [PATCH 9/9] sh_eth: remove dependencies from Kconfig
-Message-Id: <201306080407.14357.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:57 +0000
+Subject: [PATCH 066/130] sh-pfc: r8a7740: Hardcode the LCDC0 output
+Message-Id: <1370420821-28420-67-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Since dependence on the certain SoCs is no  longer  necessary to compile the
-driver, remove the dependency list from its Kconfig entry which is a popular
-demand anyway...
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The r8a7740 has two LCDC units and two sets of LCDC output signals. By
+default LCDC0 is routed to the LCD0 signals, and LCDC1 to the LCD1
+signals. However, LCDC1 can be routed to the LCD0 signals by setting bit
+MSEL6 in MSEL3CR (the LCD0 signals are further pinmuxed the usual way).
 
+This could be configured by duplicating the LCD0 pin groups for LCDC1.
+However, this would unnecessarily complicate the LCD pin groups, as no
+r8a7740 board supported in mainline use such a configuration. Hardcode
+the MSEL3CR MSEL6 bit to 0 for now.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/net/ethernet/renesas/Kconfig |    6 ------
- 1 file changed, 6 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 14 +-------------
+ 1 file changed, 1 insertion(+), 13 deletions(-)
 
-Index: net-next/drivers/net/ethernet/renesas/Kconfig
-=================================--- net-next.orig/drivers/net/ethernet/renesas/Kconfig
-+++ net-next/drivers/net/ethernet/renesas/Kconfig
-@@ -4,12 +4,6 @@
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 5a77d39..9afc7b0 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -277,8 +277,6 @@ enum {
+ 	SCIFB_CTS_PORT173_MARK,
  
- config SH_ETH
- 	tristate "Renesas SuperH Ethernet support"
--	depends on (SUPERH || ARCH_SHMOBILE) && \
--		(CPU_SUBTYPE_SH7710 || CPU_SUBTYPE_SH7712 || \
--		 CPU_SUBTYPE_SH7763 || CPU_SUBTYPE_SH7619 || \
--		 CPU_SUBTYPE_SH7724 || CPU_SUBTYPE_SH7734 || \
--		 CPU_SUBTYPE_SH7757 || ARCH_R8A7740 || \
--		 ARCH_R8A7778 || ARCH_R8A7779)
- 	select CRC32
- 	select NET_CORE
- 	select MII
+ 	/* LCD0 */
+-	LCDC0_SELECT_MARK,
+-
+ 	LCD0_D0_MARK,	LCD0_D1_MARK,	LCD0_D2_MARK,	LCD0_D3_MARK,
+ 	LCD0_D4_MARK,	LCD0_D5_MARK,	LCD0_D6_MARK,	LCD0_D7_MARK,
+ 	LCD0_D8_MARK,	LCD0_D9_MARK,	LCD0_D10_MARK,	LCD0_D11_MARK,
+@@ -301,8 +299,6 @@ enum {
+ 	LCD0_LCLK_PORT102_MARK,
+ 
+ 	/* LCD1 */
+-	LCDC1_SELECT_MARK,
+-
+ 	LCD1_D0_MARK,	LCD1_D1_MARK,	LCD1_D2_MARK,	LCD1_D3_MARK,
+ 	LCD1_D4_MARK,	LCD1_D5_MARK,	LCD1_D6_MARK,	LCD1_D7_MARK,
+ 	LCD1_D8_MARK,	LCD1_D9_MARK,	LCD1_D10_MARK,	LCD1_D11_MARK,
+@@ -1002,7 +998,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(IRQ27_PORT57_MARK,		PORT57_FN0,	MSEL1CR_27_1),
+ 
+ 	/* Port58 */
+-	PINMUX_DATA(LCD0_D0_MARK,		PORT58_FN1),
++	PINMUX_DATA(LCD0_D0_MARK,		PORT58_FN1,	MSEL3CR_6_0),
+ 	PINMUX_DATA(KEYOUT7_MARK,		PORT58_FN3),
+ 	PINMUX_DATA(KEYIN0_PORT58_MARK,		PORT58_FN4,	MSEL4CR_18_1),
+ 	PINMUX_DATA(DV_D0_MARK,			PORT58_FN6),
+@@ -1649,10 +1645,6 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(IRQ16_PORT211_MARK,		PORT211_FN0,	MSEL1CR_16_1),
+ 	PINMUX_DATA(HDMI_CEC_MARK,		PORT211_FN1),
+ 
+-	/* LCDC select */
+-	PINMUX_DATA(LCDC0_SELECT_MARK,				MSEL3CR_6_0),
+-	PINMUX_DATA(LCDC1_SELECT_MARK,				MSEL3CR_6_1),
+-
+ 	/* SDENC */
+ 	PINMUX_DATA(SDENC_CPG_MARK,				MSEL4CR_19_0),
+ 	PINMUX_DATA(SDENC_DV_CLKI_MARK,				MSEL4CR_19_1),
+@@ -3578,10 +3570,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	/* IRREM */
+ 	GPIO_FN(IROUT),
+ 
+-	/* LCDC */
+-	GPIO_FN(LCDC0_SELECT),
+-	GPIO_FN(LCDC1_SELECT),
+-
+ 	/* SDENC */
+ 	GPIO_FN(SDENC_CPG),
+ 	GPIO_FN(SDENC_DV_CLKI),
+-- 
+1.8.2.1
+
