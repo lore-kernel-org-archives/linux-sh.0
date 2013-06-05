@@ -1,67 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:27 +0000
-Subject: [PATCH 03/12] ARM: shmobile: r8a7779: setup EHCI internal buffer
-Message-Id: <1371106836-25388-4-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 06:59:45 +0000
+Subject: [PATCH 07/15] ARM: shmobile: Bonito uImage rework
+Message-Id: <20130605070712.13311.11335.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130605070616.13311.69049.sendpatchset@w520>
+In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <damm@opensource.se>
 
-Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
-registers) using the pre_setup() method in 'struct usb_ehci_pdata'.
+Add Bonito specific load address to Makefile.boot
 
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 533d7fd..a3d0e55 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -33,6 +33,7 @@
- #include <linux/sh_timer.h>
- #include <linux/dma-mapping.h>
- #include <linux/usb/otg.h>
-+#include <linux/usb/hcd.h>
- #include <linux/usb/ehci_pdriver.h>
- #include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
-@@ -435,10 +436,25 @@ static void usb_power_off(struct platform_device *pdev)
- 	pm_runtime_disable(&pdev->dev);
- }
- 
-+static int ehci_init_internal_buffer(struct usb_hcd *hcd)
-+{
-+	/*
-+	 * Below are recommended values from the datasheet;
-+	 * see [USB :: Setting of EHCI Internal Buffer].
-+	 */
-+	/* EHCI IP internal buffer setting */
-+	iowrite32(0x00ff0040, hcd->regs + 0x0094);
-+	/* EHCI IP internal buffer enable */
-+	iowrite32(0x00000001, hcd->regs + 0x009C);
-+
-+	return 0;
-+}
-+
- static struct usb_ehci_pdata ehcix_pdata = {
- 	.power_on	= usb_power_on,
- 	.power_off	= usb_power_off,
- 	.power_suspend	= usb_power_off,
-+	.pre_setup	= ehci_init_internal_buffer,
- };
- 
- static struct resource ehci0_resources[] = {
--- 
-1.8.2.1
+ arch/arm/mach-shmobile/Makefile.boot |    1 +
+ 1 file changed, 1 insertion(+)
 
+--- 0014/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 16:17:11.000000000 +0900
+@@ -6,6 +6,7 @@ loadaddr-$(CONFIG_MACH_AP4EVB) += 0x4000
+ loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
++loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
+ 
+ __ZRELADDR	:= $(shell /bin/bash -c \
+ 		     'echo $(loadaddr-y) | tr " " "\n" | sort | uniq')
