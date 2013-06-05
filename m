@@ -1,95 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 19 Jun 2013 13:22:34 +0000
-Subject: [PATCH 3/4] pinctrl: r8a7790: fix two pin numbers
-Message-Id: <1371648155-18479-4-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:08:12 +0000
+Subject: [PATCH 14/15] ARM: shmobile: Armadillo800EVA reference uImage rework
+Message-Id: <20130605070812.13311.58716.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130605070616.13311.69049.sendpatchset@w520>
+In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-Fix two erroneous MMCIF1 pin numbers on r8a7790.
+Add uImage load address to Makefile.boot for the recently
+added Armadillo800EVA DT Reference code
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 16 +++++++---------
- 1 file changed, 7 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 1e7a5eb..14f3ec2 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -2506,8 +2506,7 @@ static const unsigned int tpu0_to3_pins[] = {
- static const unsigned int tpu0_to3_mux[] = {
- 	TPU0TO3_MARK,
- };
--
--/* - MMCIF ------------------------------------------------------------------ */
-+/* - MMCIF0 ----------------------------------------------------------------- */
- static const unsigned int mmc0_data1_pins[] = {
- 	/* D[0] */
- 	RCAR_GP_PIN(3, 18),
-@@ -2541,7 +2540,7 @@ static const unsigned int mmc0_ctrl_pins[] = {
- static const unsigned int mmc0_ctrl_mux[] = {
- 	MMC0_CLK_MARK, MMC0_CMD_MARK,
- };
--
-+/* - MMCIF1 ----------------------------------------------------------------- */
- static const unsigned int mmc1_data1_pins[] = {
- 	/* D[0] */
- 	RCAR_GP_PIN(3, 26),
-@@ -2562,7 +2561,7 @@ static const unsigned int mmc1_data8_pins[] = {
- 	RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 27),
- 	RCAR_GP_PIN(3, 28), RCAR_GP_PIN(3, 29),
- 	RCAR_GP_PIN(3, 30), RCAR_GP_PIN(3, 31),
--	RCAR_GP_PIN(3, 13), RCAR_GP_PIN(3, 14),
-+	RCAR_GP_PIN(3, 14), RCAR_GP_PIN(3, 15),
- };
- static const unsigned int mmc1_data8_mux[] = {
- 	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
-@@ -2575,8 +2574,7 @@ static const unsigned int mmc1_ctrl_pins[] = {
- static const unsigned int mmc1_ctrl_mux[] = {
- 	MMC1_CLK_MARK, MMC1_CMD_MARK,
- };
--
--/* - SDHI ------------------------------------------------------------------- */
-+/* - SDHI0 ------------------------------------------------------------------ */
- static const unsigned int sdhi0_data1_pins[] = {
- 	/* D0 */
- 	RCAR_GP_PIN(3, 2),
-@@ -2612,7 +2610,7 @@ static const unsigned int sdhi0_wp_pins[] = {
- static const unsigned int sdhi0_wp_mux[] = {
- 	SD0_WP_MARK,
- };
--
-+/* - SDHI1 ------------------------------------------------------------------ */
- static const unsigned int sdhi1_data1_pins[] = {
- 	/* D0 */
- 	RCAR_GP_PIN(3, 10),
-@@ -2648,7 +2646,7 @@ static const unsigned int sdhi1_wp_pins[] = {
- static const unsigned int sdhi1_wp_mux[] = {
- 	SD1_WP_MARK,
- };
--
-+/* - SDHI2 ------------------------------------------------------------------ */
- static const unsigned int sdhi2_data1_pins[] = {
- 	/* D0 */
- 	RCAR_GP_PIN(3, 18),
-@@ -2684,7 +2682,7 @@ static const unsigned int sdhi2_wp_pins[] = {
- static const unsigned int sdhi2_wp_mux[] = {
- 	SD2_WP_MARK,
- };
--
-+/* - SDHI3 ------------------------------------------------------------------ */
- static const unsigned int sdhi3_data1_pins[] = {
- 	/* D0 */
- 	RCAR_GP_PIN(3, 26),
--- 
-1.8.2.1
+ arch/arm/mach-shmobile/Makefile.boot |    1 +
+ 1 file changed, 1 insertion(+)
 
+--- 0015/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-05 15:59:33.000000000 +0900
+@@ -4,6 +4,7 @@ loadaddr-$(CONFIG_MACH_AG5EVM) += 0x4000
+ loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
+ loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
++loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KOTA2) += 0x41008000
