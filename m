@@ -1,41 +1,56 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 21 Jun 2013 13:14:14 +0000
-Subject: Re: [GIT PULL 0/4] Renesas ARM based SoC pinmux and GPIO update for v3.11 #2
-Message-Id: <201306211514.14568.arnd@arndb.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:55:22 +0000
+Subject: [PATCH 01/02] ARM: shmobile: Let romImage rely on default ATAGS
+Message-Id: <20130605075522.17653.20769.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130605075514.17653.77135.sendpatchset@w520>
+In-Reply-To: <20130605075514.17653.77135.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 19 June 2013, Simon Horman wrote:
-> please consider these pinmux updates for v3.11.
-> 
-> This pull-request is based on renesas-pinmux-for-v3.11 which you
-> have already pulled.
-> 
-> The following changes since commit 5fcf4a3c3a5bc08bf72a50ef1332501a3c1b96bb:
-> 
->   ARM: shmobile: marzen: Use RCAR_GP_PIN macro (2013-06-05 17:18:24 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux2-for-v3.11
-> 
-> for you to fetch changes up to cd622017eb3e0ab841502df88fb7fda3c3a58eb9:
-> 
->   sh-pfc: r8a7778: tidyup MMC_D1 pin (2013-06-18 16:13:28 +0900)
-> 
-> ----------------------------------------------------------------
-> Second Round of Renesas ARM based SoC pinmux and GPIO update for v3.11
-> 
-> tidyup MMC_D1 pin for r8a7778 SoC
-> fix two pin numbers and add HSCIF pin groups to r8a7790 SoC
-> add pinmux data for MMCIF and SDHI interfaces for r8a73a4 SoC
-> 
+From: Magnus Damm <damm@opensource.se>
 
-Pulled into next/drivers, thanks!
+Remove the ATAGS data structure from head-shmobile.S
+since a default ATAGS is already provided by the code
+in arch/arm/kernel/atags_parser.c. Passing a NULL as
+ATAGS is valid. For actual hardware specific setup
+the fixup callback in the board code may be used.
 
-	Arnd
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/compressed/head-shmobile.S |   19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
+
+--- 0001/arch/arm/boot/compressed/head-shmobile.S
++++ work/arch/arm/boot/compressed/head-shmobile.S	2013-06-05 11:59:06.000000000 +0900
+@@ -55,26 +55,9 @@ __tmp_stack:
+ __continue:
+ #endif /* CONFIG_ZBOOT_ROM_MMC || CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI */
+ 
+-	b	1f
+-__atags:@ tag #1
+-	.long	12			@ tag->hdr.size = tag_size(tag_core);
+-	.long	0x54410001		@ tag->hdr.tag = ATAG_CORE;
+-	.long   0			@ tag->u.core.flags = 0;
+-	.long	0			@ tag->u.core.pagesize = 0;
+-	.long	0			@ tag->u.core.rootdev = 0;
+-	@ tag #2
+-	.long	8			@ tag->hdr.size = tag_size(tag_mem32);
+-	.long	0x54410002		@ tag->hdr.tag = ATAG_MEM;
+-	.long	CONFIG_MEMORY_SIZE	@ tag->u.mem.size = CONFIG_MEMORY_SIZE;
+-	.long	CONFIG_MEMORY_START	@ @ tag->u.mem.start = CONFIG_MEMORY_START;
+-	@ tag #3
+-	.long	0			@ tag->hdr.size = 0
+-	.long	0			@ tag->hdr.tag = ATAG_NONE;
+-1:
+-
+ 	/* Set board ID necessary for boot */
+ 	ldr	r7, 1f				@ Set machine type register
+-	adr	r8, __atags			@ Set atag register
++	mov	r8, #0				@ pass null pointer as atag
+ 	b	2f
+ 
+ 1 :	.long MACH_TYPE
