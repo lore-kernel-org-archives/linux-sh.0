@@ -1,87 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:01:01 +0000
-Subject: [PATCH 11/11] ARM: shmobile: r8a7790: add clock definitions and aliases for MMCIF and SDHI
-Message-Id: <1371106861-25626-12-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:38 +0000
+Subject: [PATCH 047/130] ARM: shmobile: ap4evb: Register pinctrl mapping for HDMI
+Message-Id: <1370420821-28420-48-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add MSTP clock definitions and fix aliases for the two MMCIF and four SDHI
-interfaces on r8a7790 (H2).
+Replace the GPIO-based HDMI pinmux configuration by a pinctrl mapping.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-[horms+renesas@verge.net.au: applied manually]
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 26 +++++++++++++++++++-------
- 1 file changed, 19 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 379bce6..5d71313 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -182,7 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
- enum {
- 	MSTP721, MSTP720,
- 	MSTP717, MSTP716,
--	MSTP304,
-+	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
- 	MSTP_NR
- };
-@@ -190,6 +190,12 @@ enum {
- static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
- 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
-+	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
-+	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
-+	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_SD1], SMSTPCR3, 13, 0), /* SDHI1 */
-+	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SD2], SMSTPCR3, 12, 0), /* SDHI2 */
-+	[MSTP311] = SH_CLK_MSTP32(&div6_clks[DIV6_SD3], SMSTPCR3, 11, 0), /* SDHI3 */
-+	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1], SMSTPCR3, 5, 0), /* MMC1 */
- 	[MSTP304] = SH_CLK_MSTP32(&cp_clk, SMSTPCR3, 4, 0), /* TPU0 */
- 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
- 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
-@@ -232,14 +238,8 @@ static struct clk_lookup lookups[] = {
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 2f03685..2dfa235 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1099,6 +1099,9 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
+ 	/* FSIB (HDMI) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-sh7372",
+ 				  "fsib_mclk_in", "fsib"),
++	/* HDMI */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-mobile-hdmi", "pfc-sh7372",
++				  "hdmi", "hdmi"),
+ 	/* MMCIF */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
+ 				  "mmc0_data8_0", "mmc0"),
+@@ -1305,10 +1308,6 @@ static void __init ap4evb_init(void)
  
- 	/* DIV4 */
- 	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
--	CLKDEV_CON_ID("sd0",		&div4_clks[DIV4_SD0]),
--	CLKDEV_CON_ID("sd1",		&div4_clks[DIV4_SD1]),
+ 	sh7372_add_standard_devices();
  
- 	/* DIV6 */
--	CLKDEV_CON_ID("sd2",		&div6_clks[DIV6_SD2]),
--	CLKDEV_CON_ID("sd3",		&div6_clks[DIV6_SD3]),
--	CLKDEV_CON_ID("mmc0",		&div6_clks[DIV6_MMC0]),
--	CLKDEV_CON_ID("mmc1",		&div6_clks[DIV6_MMC1]),
- 	CLKDEV_CON_ID("ssp",		&div6_clks[DIV6_SSP]),
- 	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
- 
-@@ -254,6 +254,18 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
-+	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
-+	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
-+	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
-+	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
-+	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP312]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
-+	CLKDEV_DEV_ID("ee160000.sdhi", &mstp_clks[MSTP311]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
-+	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
-+	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
- };
- 
- #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-	/* HDMI */
+-	gpio_request(GPIO_FN_HDMI_HPD, NULL);
+-	gpio_request(GPIO_FN_HDMI_CEC, NULL);
+-
+ 	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
+ #define SRCR4 IOMEM(0xe61580bc)
+ 	srcr4 = __raw_readl(SRCR4);
 -- 
 1.8.2.1
 
