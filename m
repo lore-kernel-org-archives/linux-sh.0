@@ -1,44 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:17 +0000
-Subject: [PATCH 07/24] drm/rcar-du: Clarify comment regarding plane Y source coordinate
-Message-Id: <1372326574-4315-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:32 +0000
+Subject: [PATCH 041/130] ARM: shmobile: mackerel: Register pinctrl mapping for SMSC911x
+Message-Id: <1370420821-28420-42-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The R8A7790 DU documentation contains further information regarding the
-plane Y source coordinate. Update the comment accordingly.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based SMSC911x pinmux configuration by a pinctrl
+mapping.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index a65f81d..38ebd20 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -103,9 +103,12 @@ void rcar_du_plane_update_base(struct rcar_du_plane *plane)
- 	struct rcar_du_device *rcdu = plane->dev;
- 	unsigned int index = plane->hwindex;
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 4be236d..49b66a8 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1379,6 +1379,11 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 				  "sdhi2_data4", "sdhi2"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh7372",
+ 				  "sdhi2_ctrl", "sdhi2"),
++	/* SMSC911X */
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
++				  "bsc_cs5a", "bsc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
++				  "intc_irq6_0", "intc"),
+ };
  
--	/* According to the datasheet the Y position is expressed in raster line
--	 * units. However, 32bpp formats seem to require a doubled Y position
--	 * value. Similarly, for the second plane, NV12 and NV21 formats seem to
-+	/* The Y position is expressed in raster line units and must be doubled
-+	 * for 32bpp formats, according to the R8A7790 datasheet. No mention of
-+	 * doubling the Y position is found in the R8A7779 datasheet, but the
-+	 * rule seems to apply there as well.
-+	 *
-+	 * Similarly, for the second plane, NV12 and NV21 formats seem to
- 	 * require a halved Y position value.
- 	 */
- 	rcar_du_plane_write(rcdu, index, PnSPXR, plane->src_x);
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+@@ -1422,10 +1427,6 @@ static void __init mackerel_init(void)
+ 				  ARRAY_SIZE(mackerel_pinctrl_map));
+ 	sh7372_pinmux_init();
+ 
+-	/* enable SMSC911X */
+-	gpio_request(GPIO_FN_CS5A,	NULL);
+-	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+-
+ 	/* backlight, off by default */
+ 	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
+ 
 -- 
-1.8.1.5
+1.8.2.1
 
