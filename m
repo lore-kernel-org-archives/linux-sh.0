@@ -1,120 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:21 +0000
-Subject: [PATCH 11/24] drm/rcar-du: Rename platform data fields to match what they describe
-Message-Id: <1372326574-4315-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:00 +0000
+Subject: [PATCH 069/130] ARM: shmobile: armadillo800eva: Register pinctrl mapping for CEU0
+Message-Id: <1370420821-28420-70-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The struct rcar_du_encoder_data encoder::field describes the encoder
-type, and the rcar_du_encoder_lvds_data and rcar_du_encoder_vga_data
-structures describe connector properties. Rename them accordingly.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based CEU0 pinmux configuration by a pinctrl mapping.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h |  3 ++-
- drivers/gpu/drm/rcar-du/rcar_du_kms.c     |  5 ++---
- include/linux/platform_data/rcar-du.h     | 19 +++++++++++++------
- 4 files changed, 18 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 24 +++++++++---------------
+ 1 file changed, 9 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 15a5643..0d0375c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -137,7 +137,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 	switch (type) {
- 	case RCAR_DU_ENCODER_LVDS:
- 		return rcar_du_lvds_connector_init(rcdu, renc,
--						   &data->u.lvds.panel);
-+						   &data->connector.lvds.panel);
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 328f650..4327f7e 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1046,6 +1046,15 @@ static struct platform_device *eva_devices[] __initdata = {
+ };
  
- 	case RCAR_DU_ENCODER_VGA:
- 		return rcar_du_vga_connector_init(rcdu, renc);
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index 4f76e16..08cde12 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -14,10 +14,11 @@
- #ifndef __RCAR_DU_ENCODER_H__
- #define __RCAR_DU_ENCODER_H__
- 
-+#include <linux/platform_data/rcar-du.h>
-+
- #include <drm/drm_crtc.h>
- 
- struct rcar_du_device;
--struct rcar_du_encoder_data;
- 
- struct rcar_du_encoder {
- 	struct drm_encoder encoder;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 3f8483c..a8eef16 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -191,7 +191,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 		const struct rcar_du_encoder_data *pdata  			&rcdu->pdata->encoders[i];
- 
--		if (pdata->encoder = RCAR_DU_ENCODER_UNUSED)
-+		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
- 			continue;
- 
- 		if (pdata->output >= ARRAY_SIZE(rcdu->crtcs)) {
-@@ -201,8 +201,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 			continue;
- 		}
- 
--		rcar_du_encoder_init(rcdu, pdata->encoder, pdata->output,
--				     pdata);
-+		rcar_du_encoder_init(rcdu, pdata->type, pdata->output, pdata);
+ static const struct pinctrl_map eva_pinctrl_map[] = {
++	/* CEU0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
++				  "ceu0_data_0_7", "ceu0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
++				  "ceu0_clk_0", "ceu0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
++				  "ceu0_sync", "ceu0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
++				  "ceu0_field", "ceu0"),
+ 	/* GETHER */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
+ 				  "gether_mii", "gether"),
+@@ -1165,21 +1174,6 @@ static void __init eva_init(void)
+ 		usb = &usbhsf_device;
  	}
  
- 	/* Set the possible CRTCs and possible clones. All encoders can be
-diff --git a/include/linux/platform_data/rcar-du.h b/include/linux/platform_data/rcar-du.h
-index 80587fd..64cd863 100644
---- a/include/linux/platform_data/rcar-du.h
-+++ b/include/linux/platform_data/rcar-du.h
-@@ -28,22 +28,29 @@ struct rcar_du_panel_data {
- 	struct drm_mode_modeinfo mode;
- };
- 
--struct rcar_du_encoder_lvds_data {
-+struct rcar_du_connector_lvds_data {
- 	struct rcar_du_panel_data panel;
- };
- 
--struct rcar_du_encoder_vga_data {
-+struct rcar_du_connector_vga_data {
- 	/* TODO: Add DDC information for EDID retrieval */
- };
- 
-+/*
-+ * struct rcar_du_encoder_data - Encoder platform data
-+ * @type: the encoder type (RCAR_DU_ENCODER_*)
-+ * @output: the DU output the connector is connected to
-+ * @connector.lvds: platform data for LVDS connectors
-+ * @connector.vga: platform data for VGA connectors
-+ */
- struct rcar_du_encoder_data {
--	enum rcar_du_encoder_type encoder;
-+	enum rcar_du_encoder_type type;
- 	unsigned int output;
- 
- 	union {
--		struct rcar_du_encoder_lvds_data lvds;
--		struct rcar_du_encoder_vga_data vga;
--	} u;
-+		struct rcar_du_connector_lvds_data lvds;
-+		struct rcar_du_connector_vga_data vga;
-+	} connector;
- };
- 
- struct rcar_du_platform_data {
+-	/* CEU0 */
+-	gpio_request(GPIO_FN_VIO0_D7,		NULL);
+-	gpio_request(GPIO_FN_VIO0_D6,		NULL);
+-	gpio_request(GPIO_FN_VIO0_D5,		NULL);
+-	gpio_request(GPIO_FN_VIO0_D4,		NULL);
+-	gpio_request(GPIO_FN_VIO0_D3,		NULL);
+-	gpio_request(GPIO_FN_VIO0_D2,		NULL);
+-	gpio_request(GPIO_FN_VIO0_D1,		NULL);
+-	gpio_request(GPIO_FN_VIO0_D0,		NULL);
+-	gpio_request(GPIO_FN_VIO0_CLK,		NULL);
+-	gpio_request(GPIO_FN_VIO0_HD,		NULL);
+-	gpio_request(GPIO_FN_VIO0_VD,		NULL);
+-	gpio_request(GPIO_FN_VIO0_FIELD,	NULL);
+-	gpio_request(GPIO_FN_VIO_CKO,		NULL);
+-
+ 	/* CON1/CON15 Camera */
+ 	gpio_request_one(173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
+ 	gpio_request_one(172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
 -- 
-1.8.1.5
+1.8.2.1
 
