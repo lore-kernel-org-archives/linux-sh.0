@@ -1,76 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:26 +0000
-Subject: [PATCH 02/12] ehci-platform: add pre_setup() method to platform data
-Message-Id: <1371106836-25388-3-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:08:21 +0000
+Subject: [PATCH 15/15] ARM: shmobile: Remove MEMORY_START uImage load address
+Message-Id: <20130605070821.13311.23849.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130605070616.13311.69049.sendpatchset@w520>
+In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <damm@opensource.se>
 
-Sometimes there is a need  to initialize some non-standard registers mapped to
-the EHCI region before accessing the standard EHCI registers.  Add pre_setup()
-method with 'struct usb_hcd *' parameter to be called just before ehci_setup()
-to the 'ehci-platform'  driver's platform data for this purpose...
+Remove the CONFIG_MEMORY_START dependency in Makefile.boot
+now when we keep track of board specific load addresses.
 
-While at it, add the missing incomplete declaration of 'struct platform_device'
-to <linux/usb/ehci_pdriver.h>...
-
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Suggested-by: Alan Stern <stern@rowland.harvard.edu>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Alan Stern <stern@rowland.harvard.edu>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/usb/host/ehci-platform.c | 6 ++++++
- include/linux/usb/ehci_pdriver.h | 4 ++++
- 2 files changed, 10 insertions(+)
 
-diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
-index f47f259..d1f5cea 100644
---- a/drivers/usb/host/ehci-platform.c
-+++ b/drivers/usb/host/ehci-platform.c
-@@ -48,6 +48,12 @@ static int ehci_platform_reset(struct usb_hcd *hcd)
- 	ehci->big_endian_desc = pdata->big_endian_desc;
- 	ehci->big_endian_mmio = pdata->big_endian_mmio;
- 
-+	if (pdata->pre_setup) {
-+		retval = pdata->pre_setup(hcd);
-+		if (retval < 0)
-+			return retval;
-+	}
-+
- 	ehci->caps = hcd->regs + pdata->caps_offset;
- 	retval = ehci_setup(hcd);
- 	if (retval)
-diff --git a/include/linux/usb/ehci_pdriver.h b/include/linux/usb/ehci_pdriver.h
-index 99238b0..7eb4dcd 100644
---- a/include/linux/usb/ehci_pdriver.h
-+++ b/include/linux/usb/ehci_pdriver.h
-@@ -19,6 +19,9 @@
- #ifndef __USB_CORE_EHCI_PDRIVER_H
- #define __USB_CORE_EHCI_PDRIVER_H
- 
-+struct platform_device;
-+struct usb_hcd;
-+
- /**
-  * struct usb_ehci_pdata - platform_data for generic ehci driver
-  *
-@@ -50,6 +53,7 @@ struct usb_ehci_pdata {
- 	/* Turn on only VBUS suspend power and hotplug detection,
- 	 * turn off everything else */
- 	void (*power_suspend)(struct platform_device *pdev);
-+	int (*pre_setup)(struct usb_hcd *hcd);
- };
- 
- #endif /* __USB_CORE_EHCI_PDRIVER_H */
--- 
-1.8.2.1
+ arch/arm/mach-shmobile/Makefile.boot |    5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
+--- 0021/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 17:09:37.000000000 +0900
+@@ -1,6 +1,5 @@
+-loadaddr-y	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
+-
++# per-board load address for uImage
++loadaddr-y	: loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
+ loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
+ loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
