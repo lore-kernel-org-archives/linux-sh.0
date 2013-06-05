@@ -1,57 +1,137 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 07:34:50 +0000
-Subject: [PATCH 05/06] ARM: shmobile: Kota2 memory size fixup
-Message-Id: <20130605073450.15758.62483.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:53 +0000
+Subject: [PATCH 062/130] sh-pfc: r8a7740: Add GETHER pin groups and functions
+Message-Id: <1370420821-28420-63-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605073410.15758.37563.sendpatchset@w520>
-In-Reply-To: <20130605073410.15758.37563.sendpatchset@w520>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Specify the Kota2 memory configuration via
-a board specific fixup callback, and also
-select ATAGS to make sure the callback is
-executed as expected.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 82 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 82 insertions(+)
 
- arch/arm/mach-shmobile/Kconfig       |    1 +
- arch/arm/mach-shmobile/board-kota2.c |    4 ++++
- 2 files changed, 5 insertions(+)
-
---- 0007/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-06-04 15:24:49.000000000 +0900
-@@ -114,6 +114,7 @@ config MACH_MACKEREL
- config MACH_KOTA2
- 	bool "KOTA2 board"
- 	depends on ARCH_SH73A0
-+	select ATAGS
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index f17a39a..1b98990 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1795,6 +1795,72 @@ static const unsigned int bsc_rdwr_pins[] = {
+ static const unsigned int bsc_rdwr_mux[] = {
+ 	RDWR_MARK,
+ };
++/* - GETHER ----------------------------------------------------------------- */
++static const unsigned int gether_rmii_pins[] = {
++	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK, MDC, MDIO */
++	195, 196, 194, 193, 200, 201, 199, 159, 202, 208,
++};
++static const unsigned int gether_rmii_mux[] = {
++	RMII_RXD0_MARK, RMII_RXD1_MARK, RMII_RX_ER_MARK, RMII_CRS_DV_MARK,
++	RMII_TXD0_MARK, RMII_TXD1_MARK, RMII_TX_EN_MARK, RMII_REF50CK_MARK,
++	RMII_MDC_MARK, RMII_MDIO_MARK,
++};
++static const unsigned int gether_mii_pins[] = {
++	/* RXD[0:3], RX_CLK, RX_DV, RX_ER
++	 * TXD[0:3], TX_CLK, TX_EN, TX_ER
++	 * CRS, COL, MDC, MDIO,
++	 */
++	185, 186, 187, 188, 174, 161, 204,
++	171, 170, 169, 168, 184, 183, 203,
++	205, 163, 206, 207,
++};
++static const unsigned int gether_mii_mux[] = {
++	ET_ERXD0_MARK, ET_ERXD1_MARK, ET_ERXD2_MARK, ET_ERXD3_MARK,
++	ET_RX_CLK_MARK, ET_RX_DV_MARK, ET_RX_ER_MARK,
++	ET_ETXD0_MARK, ET_ETXD1_MARK, ET_ETXD2_MARK, ET_ETXD3_MARK,
++	ET_TX_CLK_MARK, ET_TX_EN_MARK, ET_TX_ER_MARK,
++	ET_CRS_MARK, ET_COL_MARK, ET_MDC_MARK, ET_MDIO_MARK,
++};
++static const unsigned int gether_gmii_pins[] = {
++	/* RXD[0:7], RX_CLK, RX_DV, RX_ER
++	 * TXD[0:7], GTX_CLK, TX_CLK, TX_EN, TX_ER
++	 * CRS, COL, MDC, MDIO, REF125CK_MARK,
++	 */
++	185, 186, 187, 188, 189, 190, 191, 192, 174, 161, 204,
++	171, 170, 169, 168, 167, 166, 173, 172, 176, 184, 183, 203,
++	205, 163, 206, 207,
++};
++static const unsigned int gether_gmii_mux[] = {
++	ET_ERXD0_MARK, ET_ERXD1_MARK, ET_ERXD2_MARK, ET_ERXD3_MARK,
++	ET_ERXD4_MARK, ET_ERXD5_MARK, ET_ERXD6_MARK, ET_ERXD7_MARK,
++	ET_RX_CLK_MARK, ET_RX_DV_MARK, ET_RX_ER_MARK,
++	ET_ETXD0_MARK, ET_ETXD1_MARK, ET_ETXD2_MARK, ET_ETXD3_MARK,
++	ET_ETXD4_MARK, ET_ETXD5_MARK, ET_ETXD6_MARK, ET_ETXD7_MARK,
++	ET_GTX_CLK_MARK, ET_TX_CLK_MARK, ET_TX_EN_MARK, ET_TX_ER_MARK,
++	ET_CRS_MARK, ET_COL_MARK, ET_MDC_MARK, ET_MDIO_MARK,
++	RMII_REF125CK_MARK,
++};
++static const unsigned int gether_int_pins[] = {
++	/* PHY_INT */
++	164,
++};
++static const unsigned int gether_int_mux[] = {
++	ET_PHY_INT_MARK,
++};
++static const unsigned int gether_link_pins[] = {
++	/* LINK */
++	177,
++};
++static const unsigned int gether_link_mux[] = {
++	ET_LINK_MARK,
++};
++static const unsigned int gether_wol_pins[] = {
++	/* WOL */
++	175,
++};
++static const unsigned int gether_wol_mux[] = {
++	ET_WOL_MARK,
++};
+ /* - INTC ------------------------------------------------------------------- */
+ IRQC_PINS_MUX(0, 0, 2);
+ IRQC_PINS_MUX(0, 1, 13);
+@@ -2513,6 +2579,12 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(bsc_rd_we32),
+ 	SH_PFC_PIN_GROUP(bsc_bs),
+ 	SH_PFC_PIN_GROUP(bsc_rdwr),
++	SH_PFC_PIN_GROUP(gether_rmii),
++	SH_PFC_PIN_GROUP(gether_mii),
++	SH_PFC_PIN_GROUP(gether_gmii),
++	SH_PFC_PIN_GROUP(gether_int),
++	SH_PFC_PIN_GROUP(gether_link),
++	SH_PFC_PIN_GROUP(gether_wol),
+ 	SH_PFC_PIN_GROUP(intc_irq0_0),
+ 	SH_PFC_PIN_GROUP(intc_irq0_1),
+ 	SH_PFC_PIN_GROUP(intc_irq1),
+@@ -2666,6 +2738,15 @@ static const char * const bsc_groups[] = {
+ 	"bsc_rdwr",
+ };
  
---- 0001/arch/arm/mach-shmobile/board-kota2.c
-+++ work/arch/arm/mach-shmobile/board-kota2.c	2013-06-04 15:23:00.000000000 +0900
-@@ -51,6 +51,7 @@
- #include <asm/mach/arch.h>
- #include <asm/mach/time.h>
- #include <asm/hardware/cache-l2x0.h>
-+#include <asm/setup.h>
- #include <asm/traps.h>
- 
- /* Dummy supplies, where voltage doesn't matter */
-@@ -541,7 +542,10 @@ static void __init kota2_init(void)
- 	platform_add_devices(kota2_devices, ARRAY_SIZE(kota2_devices));
- }
- 
-+SHMOBILE_FIXUP(kota2, 0x41000000, 0x1e000000)
++static const char * const gether_groups[] = {
++	"gether_rmii",
++	"gether_mii",
++	"gether_gmii",
++	"gether_int",
++	"gether_link",
++	"gether_wol",
++};
 +
- MACHINE_START(KOTA2, "kota2")
-+	.fixup		= kota2_fixup,
- 	.smp		= smp_ops(sh73a0_smp_ops),
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_add_early_devices,
+ static const char * const intc_groups[] = {
+ 	"intc_irq0_0",
+ 	"intc_irq0_1",
+@@ -2849,6 +2930,7 @@ static const char * const sdhi2_groups[] = {
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
++	SH_PFC_FUNCTION(gether),
+ 	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(lcd0),
+ 	SH_PFC_FUNCTION(lcd1),
+-- 
+1.8.2.1
+
