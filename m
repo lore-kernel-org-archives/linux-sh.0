@@ -1,90 +1,41 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 19 Jun 2013 13:22:22 +0000
-Subject: [PATCH 4/5] ARM: shmobile: bockw: add MMCIF support
-Message-Id: <1371648143-18376-5-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 04:32:30 +0000
+Subject: [PATCH 3/4] irqchip: renesas-irqc: Fix irqc_probe error handling
+Message-Id: <1370406751-3852-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Axel Lin <axel.lin@ingics.com>
 
-This patch enables CN26 MMCIF
+The code in goto err3 path is wrong because it will call fee_irq() with k = 0,
+which means it does free_irq(p->irq[-1].requested_irq, &p->irq[-1]);
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+ drivers/irqchip/irq-renesas-irqc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 7d42f12..7d48461 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -41,6 +41,23 @@
-  * SW41		SCIF	RCAN
-  */
+diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+index 649cd69..3651f77 100644
+--- a/drivers/irqchip/irq-renesas-irqc.c
++++ b/drivers/irqchip/irq-renesas-irqc.c
+@@ -252,8 +252,8 @@ static int irqc_probe(struct platform_device *pdev)
  
-+/*
-+ * MMC (CN26) pin
-+ *
-+ * SW6	(D2)	3 pin
-+ * SW7	(D5)	ON
-+ * SW8	(D3)	3 pin
-+ * SW10	(D4)	1 pin
-+ * SW12	(CLK)	1 pin
-+ * SW13	(D6)	3 pin
-+ * SW14	(CMD)	ON
-+ * SW15	(D6)	1 pin
-+ * SW16	(D0)	ON
-+ * SW17	(D1)	ON
-+ * SW18	(D7)	3 pin
-+ * SW19	(MMC)	1 pin
-+ */
-+
- /* Dummy supplies, where voltage doesn't matter */
- static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-@@ -114,6 +131,15 @@ static struct spi_board_info spi_board_info[] __initdata = {
- 	},
- };
+ 	return 0;
+ err3:
+-	for (; k >= 0; k--)
+-		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
++	while (--k >= 0)
++		free_irq(p->irq[k].requested_irq, &p->irq[k]);
  
-+/* MMC */
-+static struct sh_mmcif_plat_data sh_mmcif_plat = {
-+	.sup_pclk	= 0,
-+	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
-+	.caps		= MMC_CAP_4_BIT_DATA |
-+			  MMC_CAP_8_BIT_DATA |
-+			  MMC_CAP_NEEDS_POLL,
-+};
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* Ether */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
-@@ -121,6 +147,11 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* HSPI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7778",
- 				  "hspi0_a", "hspi0"),
-+	/* MMC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif", "pfc-r8a7778",
-+				  "mmc_data8", "mmc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif", "pfc-r8a7778",
-+				  "mmc_ctrl", "mmc"),
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_data_a", "scif0"),
-@@ -145,6 +176,7 @@ static void __init bockw_init(void)
- 	r8a7778_add_ether_device(&ether_platform_data);
- 	r8a7778_add_i2c_device(0);
- 	r8a7778_add_hspi_device(0);
-+	r8a7778_add_mmc_device(&sh_mmcif_plat);
- 
- 	i2c_register_board_info(0, i2c0_devices,
- 				ARRAY_SIZE(i2c0_devices));
+ 	irq_domain_remove(p->irq_domain);
+ err2:
 -- 
 1.8.2.1
 
