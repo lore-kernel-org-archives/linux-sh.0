@@ -1,36 +1,66 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 15 Jun 2013 01:01:48 +0000
-Subject: Re: [PATCH 00/11] Renesas ARM-based SoC updates for v3.11 #2
-Message-Id: <20130615010148.GN18124@quad.lixom.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:45:53 +0000
+Subject: [PATCH] ARM: shmobile: Rework sh7372 sleep code to use virt_to_phys()
+Message-Id: <20130605074553.16962.7736.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jun 13, 2013 at 04:00:50PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> this pull-request is based on renesas-soc-for-v3.11 which you have
-> previously pulled.
-> 
-> This pull may cause various conflicts though I believe all of them are not
-> difficult to resolve. The renesas-next-20130613 tag in my tree illustrates
-> how I have handled the conflicts with both changes already in arm-soc and
-> changes I intend to send pull requests for in the near future.
-> 
-> The following changes since commit 413bfd0e67894c930242482cd15ac09a800e2ab8:
-> 
->   ARM: shmobile: sh73a0: div4 clocks must check the kick bit before changing rate (2013-06-07 14:24:52 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.11
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, pulled. Looked like all add/add conflicts. Those clock ID enums, and
-their sort of random line wrapping, is odd though. I'm sure it corresponds to
-some hardware docs but it seems completely random for someone reading the code.
+Instead of having a hard coded virt-to-phys address
+conversion code in sleep-sh7372.S, rework the code
+to do the conversion in C using virt_to_phys().
 
--Olof
+This removes the need for PLAT_PHYS_OFFSET which
+in turn is needed for ARCH_MULTIPLATFORM.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Tested with A3SM Suspend-to-RAM on Mackerel.
+
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 ++
+ arch/arm/mach-shmobile/pm-sh7372.c           |    3 +++
+ arch/arm/mach-shmobile/sleep-sh7372.S        |    5 ++++-
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2013-06-05 16:40:41.000000000 +0900
+@@ -75,6 +75,8 @@ extern void sh7372_intcs_resume(void);
+ extern void sh7372_intca_suspend(void);
+ extern void sh7372_intca_resume(void);
+ 
++extern unsigned long sh7372_cpu_resume;
++
+ #ifdef CONFIG_PM
+ extern void __init sh7372_init_pm_domains(void);
+ #else
+--- 0001/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2013-06-05 16:40:41.000000000 +0900
+@@ -524,6 +524,9 @@ void __init sh7372_pm_init(void)
+ 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
+ 	__raw_writel(0, PDNSEL);
+ 
++	/* pass physical address of cpu_resume() to assembly resume code */
++	sh7372_cpu_resume = virt_to_phys(cpu_resume);
++
+ 	sh7372_pm_setup_smfram();
+ 
+ 	sh7372_suspend_init();
+--- 0001/arch/arm/mach-shmobile/sleep-sh7372.S
++++ work/arch/arm/mach-shmobile/sleep-sh7372.S	2013-06-05 16:41:01.000000000 +0900
+@@ -40,7 +40,10 @@
+ 	.global sh7372_resume_core_standby_sysc
+ sh7372_resume_core_standby_sysc:
+ 	ldr     pc, 1f
+-1:	.long   cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
++
++	.globl	sh7372_cpu_resume
++sh7372_cpu_resume:
++1:	.space	4
+ 
+ #define SPDCR 0xe6180008
+ 
