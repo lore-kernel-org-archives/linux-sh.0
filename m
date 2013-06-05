@@ -1,42 +1,84 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 04:32:13 +0000
-Subject: [PATCH 4/7] ARM: shmobile: Remove unused r8a7790 GIC CPU interface DT bits
-Message-Id: <1370406736-32272-5-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:32 +0000
+Subject: [PATCH 101/130] ARM: shmobile: r8a7790: Register GPIO devices
+Message-Id: <1370420821-28420-102-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Remove unused GIC CPU interface DT bits for r8a7790.
+Move GPIOs handling from the PFC device to separate GPIO devices.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 35 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7a17110..339d9b1 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -36,12 +36,6 @@
- 			<0 0xf1004000 0 0x2000>,
- 			<0 0xf1006000 0 0x2000>;
- 		interrupts = <1 9 0xf04>;
--
--		gic-cpuif@4 {
--			compatible = "arm,gic-cpuif";
--			cpuif-id = <4>;
--			cpu = <&cpu0>;
--		};
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 49de2d5..eeef5f6 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -23,6 +23,7 @@
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
++#include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/irq-renesas-irqc.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -31,13 +32,45 @@
  
- 	timer {
+ static const struct resource pfc_resources[] = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
+-	DEFINE_RES_MEM(0xe6050000, 0x5050),
+ };
+ 
++#define R8A7790_GPIO(idx)						\
++static struct resource r8a7790_gpio##idx##_resources[] = {		\
++	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
++	DEFINE_RES_IRQ(gic_spi(4 + (idx))),				\
++};									\
++									\
++static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data = {	\
++	.gpio_base	= 32 * (idx),					\
++	.irq_base	= 0,						\
++	.number_of_pins	= 32,						\
++	.pctl_name	= "pfc-r8a7790",				\
++};									\
++
++R8A7790_GPIO(0);
++R8A7790_GPIO(1);
++R8A7790_GPIO(2);
++R8A7790_GPIO(3);
++R8A7790_GPIO(4);
++R8A7790_GPIO(5);
++
++#define r8a7790_register_gpio(idx)					\
++	platform_device_register_resndata(&platform_bus, "gpio_rcar", idx, \
++		r8a7790_gpio##idx##_resources,				\
++		ARRAY_SIZE(r8a7790_gpio##idx##_resources),		\
++		&r8a7790_gpio##idx##_platform_data,			\
++		sizeof(r8a7790_gpio##idx##_platform_data))
++
+ void __init r8a7790_pinmux_init(void)
+ {
+ 	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources,
+ 					ARRAY_SIZE(pfc_resources));
++	r8a7790_register_gpio(0);
++	r8a7790_register_gpio(1);
++	r8a7790_register_gpio(2);
++	r8a7790_register_gpio(3);
++	r8a7790_register_gpio(4);
++	r8a7790_register_gpio(5);
+ }
+ 
+ #define SCIF_COMMON(scif_type, baseaddr, irq)			\
 -- 
 1.8.2.1
 
