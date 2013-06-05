@@ -1,47 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 28 Jun 2013 10:30:26 +0000
-Subject: [PATCH 06/06] ARM: shmobile: Remove unused sh73a0 auxdata table
-Message-Id: <20130628103026.31451.71277.sendpatchset@w520>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 05 Jun 2013 08:29:52 +0000
+Subject: Re: [PATCH 01/05] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)
+Message-Id: <51AEF700.7010003@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130628102930.31451.85334.sendpatchset@w520>
-In-Reply-To: <20130628102930.31451.85334.sendpatchset@w520>
+References: <20130530085152.24374.64208.sendpatchset@w520>
+ <20130530085201.24374.97084.sendpatchset@w520>
+In-Reply-To: <20130530085201.24374.97084.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Magnus,
 
-Pass NULL to of_platform_populate instead of passing
-an empty list. This cleans up the code and reduces the
-number of lines.
+On 5/30/2013 5:52 PM, Magnus Damm wrote:
+> --- 0003/arch/arm/boot/dts/r8a73a4.dtsi
+> +++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-05-22 13:21:21.000000000 +0900
+> @@ -25,6 +25,27 @@
+>  			reg = <0>;
+>  			clock-frequency = <1500000000>;
+>  		};
+> +
+> +		cpu1: cpu@1 {
+> +			device_type = "cpu";
+> +			compatible = "arm,cortex-a15";
+> +			reg = <1>;
+> +			clock-frequency = <1500000000>;
+> +		};
+> +
+> +		cpu2: cpu@2 {
+> +			device_type = "cpu";
+> +			compatible = "arm,cortex-a15";
+> +			reg = <2>;
+> +			clock-frequency = <1500000000>;
+> +		};
+> +
+> +		cpu3: cpu@3 {
+> +			device_type = "cpu";
+> +			compatible = "arm,cortex-a15";
+> +			reg = <3>;
+> +			clock-frequency = <1500000000>;
+> +		};
+>  	};
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+The frequency of the EXTAL on APE6EVM machine is 26MHz, and the Generic
+Timers are clocked at EXTAL x1/2 (MHz).  Do not copy-and-paste wrong
+clock-frequency properties currently we have, but fix cpu0 along with
+adding cpu1..3, please.
 
- arch/arm/mach-shmobile/setup-sh73a0.c |    7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-06-28 19:16:07.000000000 +0900
-@@ -958,10 +958,6 @@ void __init sh73a0_add_early_devices(voi
- 
- #ifdef CONFIG_USE_OF
- 
--static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
--	{},
--};
--
- void __init sh73a0_add_standard_devices_dt(void)
- {
- 	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
-@@ -971,8 +967,7 @@ void __init sh73a0_add_standard_devices_
- 
- 	platform_add_devices(sh73a0_devices_dt,
- 			     ARRAY_SIZE(sh73a0_devices_dt));
--	of_platform_populate(NULL, of_default_bus_match_table,
--			     sh73a0_auxdata_lookup, NULL);
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	/* Instantiate cpufreq-cpu0 */
- 	platform_device_register_full(&devinfo);
+Furthermore you don't have (should not) to use clock-frequency property
+if you set up CNTFRQ to an appropriate value one by one in PATCH 05/05.
+--
+Shinya Kuribayashi
+Renesas Electronics
