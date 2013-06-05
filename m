@@ -1,38 +1,58 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 28 Jun 2013 05:20:43 +0000
-Subject: [PATCH 0/2] ARM: shmobile: lager: Add DT reference
-Message-Id: <1372396845-28767-1-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:45 +0000
+Subject: [PATCH 054/130] ARM: shmobile: ap4evb: Register pinctrl mapping for USBHS
+Message-Id: <1370420821-28420-55-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-this short series adds DT reference to Lager.
+Replace the GPIO-based USBHS pinmux configuration by a pinctrl mapping.
 
-The intention of this is to allow the board to be
-brought up as much as possible using DT. And for
-this to act as a basis for further DT coverage
-of devices present on the Lager and its r8a7790 SoC.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
 
-Simon Horman (2):
-  ARM: shmobile: r8a7790:  Initialise clocks and SCIF in
-    r8a7790_add_dt_devices()
-  ARM: shmobile: lager: Add DT reference
-
- arch/arm/boot/dts/Makefile                     |  1 +
- arch/arm/boot/dts/r8a7790-lager-reference.dts  | 31 ++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                 | 11 ++++++++
- arch/arm/mach-shmobile/Makefile                |  1 +
- arch/arm/mach-shmobile/board-lager-reference.c | 36 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/r8a7790.h  |  1 +
- arch/arm/mach-shmobile/setup-r8a7790.c         | 11 +++++++-
- 7 files changed, 91 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-lager-reference.c
-
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 152a5f7..297bf5e 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1137,6 +1137,13 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
+ 	PIN_MAP_MUX_GROUP_DEFAULT("1-0048", "pfc-sh7372",
+ 				  "intc_irq7_0", "intc"),
+ #endif
++	/* USBHS1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
++				  "usb1_vbus", "usb1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
++				  "usb1_otg_id_0", "usb1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
++				  "usb1_otg_ctrl_0", "usb1"),
+ };
+ 
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+@@ -1175,14 +1182,6 @@ static void __init ap4evb_init(void)
+ 	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 
+-	/* USB enable */
+-	gpio_request(GPIO_FN_VBUS0_1,    NULL);
+-	gpio_request(GPIO_FN_IDIN_1_18,  NULL);
+-	gpio_request(GPIO_FN_PWEN_1_115, NULL);
+-	gpio_request(GPIO_FN_OVCN_1_114, NULL);
+-	gpio_request(GPIO_FN_EXTLP_1,    NULL);
+-	gpio_request(GPIO_FN_OVCN2_1,    NULL);
+-
+ 	/* setup USB phy */
+ 	__raw_writew(0x8a0a, IOMEM(0xE6058130));	/* USBCR4 */
+ 
 -- 
 1.8.2.1
 
