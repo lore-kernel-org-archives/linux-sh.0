@@ -1,67 +1,268 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 Jun 2013 09:46:57 +0000
-Subject: [PATCH 02/03] ARM: shmobile: Remove MEMORY_START/SIZE
-Message-Id: <20130610094657.20803.96780.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:40 +0000
+Subject: [PATCH 109/130] sh-pfc: sh73a0: Add TPU pin groups and functions
+Message-Id: <1370420821-28420-110-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130610094638.20803.18484.sendpatchset@w520>
-In-Reply-To: <20130610094638.20803.18484.sendpatchset@w520>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Remove CONFIG_MEMORY_START and CONFIG_MEMORY_SIZE from mach-shmobile.
-
-Boards should use DT to specify their memory setup. Boards that still
-not support DT may pass ATAGS with memory information from the boot
-loader. If those ATAGS turn out to be incorrect then appended DTB with
-memory information should be used as a workaround.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 213 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 213 insertions(+)
 
- arch/arm/mach-shmobile/Kconfig |   31 -------------------------------
- 1 file changed, 31 deletions(-)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index b783724..78f7ae8 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2542,6 +2542,157 @@ static const unsigned int sdhi2_ctrl_pins[] = {
+ static const unsigned int sdhi2_ctrl_mux[] = {
+ 	SDHICMD2_MARK, SDHICLK2_MARK,
+ };
++/* - TPU0 ------------------------------------------------------------------- */
++static const unsigned int tpu0_to0_pins[] = {
++	/* TO */
++	55,
++};
++static const unsigned int tpu0_to0_mux[] = {
++	TPU0TO0_MARK,
++};
++static const unsigned int tpu0_to1_pins[] = {
++	/* TO */
++	59,
++};
++static const unsigned int tpu0_to1_mux[] = {
++	TPU0TO1_MARK,
++};
++static const unsigned int tpu0_to2_pins[] = {
++	/* TO */
++	140,
++};
++static const unsigned int tpu0_to2_mux[] = {
++	TPU0TO2_MARK,
++};
++static const unsigned int tpu0_to3_pins[] = {
++	/* TO */
++	141,
++};
++static const unsigned int tpu0_to3_mux[] = {
++	TPU0TO3_MARK,
++};
++/* - TPU1 ------------------------------------------------------------------- */
++static const unsigned int tpu1_to0_pins[] = {
++	/* TO */
++	246,
++};
++static const unsigned int tpu1_to0_mux[] = {
++	TPU1TO0_MARK,
++};
++static const unsigned int tpu1_to1_0_pins[] = {
++	/* TO */
++	28,
++};
++static const unsigned int tpu1_to1_0_mux[] = {
++	PORT28_TPU1TO1_MARK,
++};
++static const unsigned int tpu1_to1_1_pins[] = {
++	/* TO */
++	29,
++};
++static const unsigned int tpu1_to1_1_mux[] = {
++	PORT29_TPU1TO1_MARK,
++};
++static const unsigned int tpu1_to2_pins[] = {
++	/* TO */
++	153,
++};
++static const unsigned int tpu1_to2_mux[] = {
++	TPU1TO2_MARK,
++};
++static const unsigned int tpu1_to3_pins[] = {
++	/* TO */
++	145,
++};
++static const unsigned int tpu1_to3_mux[] = {
++	TPU1TO3_MARK,
++};
++/* - TPU2 ------------------------------------------------------------------- */
++static const unsigned int tpu2_to0_pins[] = {
++	/* TO */
++	248,
++};
++static const unsigned int tpu2_to0_mux[] = {
++	TPU2TO0_MARK,
++};
++static const unsigned int tpu2_to1_pins[] = {
++	/* TO */
++	197,
++};
++static const unsigned int tpu2_to1_mux[] = {
++	TPU2TO1_MARK,
++};
++static const unsigned int tpu2_to2_pins[] = {
++	/* TO */
++	50,
++};
++static const unsigned int tpu2_to2_mux[] = {
++	TPU2TO2_MARK,
++};
++static const unsigned int tpu2_to3_pins[] = {
++	/* TO */
++	51,
++};
++static const unsigned int tpu2_to3_mux[] = {
++	TPU2TO3_MARK,
++};
++/* - TPU3 ------------------------------------------------------------------- */
++static const unsigned int tpu3_to0_pins[] = {
++	/* TO */
++	163,
++};
++static const unsigned int tpu3_to0_mux[] = {
++	TPU3TO0_MARK,
++};
++static const unsigned int tpu3_to1_pins[] = {
++	/* TO */
++	247,
++};
++static const unsigned int tpu3_to1_mux[] = {
++	TPU3TO1_MARK,
++};
++static const unsigned int tpu3_to2_pins[] = {
++	/* TO */
++	54,
++};
++static const unsigned int tpu3_to2_mux[] = {
++	TPU3TO2_MARK,
++};
++static const unsigned int tpu3_to3_pins[] = {
++	/* TO */
++	53,
++};
++static const unsigned int tpu3_to3_mux[] = {
++	TPU3TO3_MARK,
++};
++/* - TPU4 ------------------------------------------------------------------- */
++static const unsigned int tpu4_to0_pins[] = {
++	/* TO */
++	241,
++};
++static const unsigned int tpu4_to0_mux[] = {
++	TPU4TO0_MARK,
++};
++static const unsigned int tpu4_to1_pins[] = {
++	/* TO */
++	199,
++};
++static const unsigned int tpu4_to1_mux[] = {
++	TPU4TO1_MARK,
++};
++static const unsigned int tpu4_to2_pins[] = {
++	/* TO */
++	58,
++};
++static const unsigned int tpu4_to2_mux[] = {
++	TPU4TO2_MARK,
++};
++static const unsigned int tpu4_to3_pins[] = {
++	/* TO */
++};
++static const unsigned int tpu4_to3_mux[] = {
++	TPU4TO3_MARK,
++};
+ /* - USB -------------------------------------------------------------------- */
+ static const unsigned int usb_vbus_pins[] = {
+ 	/* VBUS */
+@@ -2693,6 +2844,27 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_data1),
+ 	SH_PFC_PIN_GROUP(sdhi2_data4),
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(tpu0_to0),
++	SH_PFC_PIN_GROUP(tpu0_to1),
++	SH_PFC_PIN_GROUP(tpu0_to2),
++	SH_PFC_PIN_GROUP(tpu0_to3),
++	SH_PFC_PIN_GROUP(tpu1_to0),
++	SH_PFC_PIN_GROUP(tpu1_to1_0),
++	SH_PFC_PIN_GROUP(tpu1_to1_1),
++	SH_PFC_PIN_GROUP(tpu1_to2),
++	SH_PFC_PIN_GROUP(tpu1_to3),
++	SH_PFC_PIN_GROUP(tpu2_to0),
++	SH_PFC_PIN_GROUP(tpu2_to1),
++	SH_PFC_PIN_GROUP(tpu2_to2),
++	SH_PFC_PIN_GROUP(tpu2_to3),
++	SH_PFC_PIN_GROUP(tpu3_to0),
++	SH_PFC_PIN_GROUP(tpu3_to1),
++	SH_PFC_PIN_GROUP(tpu3_to2),
++	SH_PFC_PIN_GROUP(tpu3_to3),
++	SH_PFC_PIN_GROUP(tpu4_to0),
++	SH_PFC_PIN_GROUP(tpu4_to1),
++	SH_PFC_PIN_GROUP(tpu4_to2),
++	SH_PFC_PIN_GROUP(tpu4_to3),
+ 	SH_PFC_PIN_GROUP(usb_vbus),
+ };
+ 
+@@ -2912,6 +3084,42 @@ static const char * const usb_groups[] = {
+ 	"usb_vbus",
+ };
+ 
++static const char * const tpu0_groups[] = {
++	"tpu0_to0",
++	"tpu0_to1",
++	"tpu0_to2",
++	"tpu0_to3",
++};
++
++static const char * const tpu1_groups[] = {
++	"tpu1_to0",
++	"tpu1_to1_0",
++	"tpu1_to1_1",
++	"tpu1_to2",
++	"tpu1_to3",
++};
++
++static const char * const tpu2_groups[] = {
++	"tpu2_to0",
++	"tpu2_to1",
++	"tpu2_to2",
++	"tpu2_to3",
++};
++
++static const char * const tpu3_groups[] = {
++	"tpu3_to0",
++	"tpu3_to1",
++	"tpu3_to2",
++	"tpu3_to3",
++};
++
++static const char * const tpu4_groups[] = {
++	"tpu4_to0",
++	"tpu4_to1",
++	"tpu4_to2",
++	"tpu4_to3",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(fsia),
+@@ -2937,6 +3145,11 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(tpu0),
++	SH_PFC_FUNCTION(tpu1),
++	SH_PFC_FUNCTION(tpu2),
++	SH_PFC_FUNCTION(tpu3),
++	SH_PFC_FUNCTION(tpu4),
+ 	SH_PFC_FUNCTION(usb),
+ };
+ 
+-- 
+1.8.2.1
 
---- 0007/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-06-05 12:06:25.000000000 +0900
-@@ -199,37 +199,6 @@ config CPU_HAS_INTEVT
-         bool
- 	default y
- 
--menu "Memory configuration"
--
--config MEMORY_START
--	hex "Physical memory start address"
--	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
--				MACH_MACKEREL || MACH_BONITO || \
--				MACH_ARMADILLO800EVA || MACH_APE6EVM || \
--				MACH_LAGER
--	default "0x41000000" if MACH_KOTA2
--	default "0x00000000"
--	---help---
--	  Tweak this only when porting to a new machine which does not
--	  already have a defconfig. Changing it from the known correct
--	  value on any of the known systems will only lead to disaster.
--
--config MEMORY_SIZE
--	hex "Physical memory size"
--	default "0x80000000" if MACH_LAGER
--	default "0x40000000" if MACH_APE6EVM
--	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
--				MACH_ARMADILLO800EVA
--	default "0x1e000000" if MACH_KOTA2
--	default "0x10000000" if MACH_AP4EVB || MACH_MACKEREL
--	default "0x04000000"
--	help
--	  This sets the default memory size assumed by your kernel. It can
--	  be overridden as normal by the 'mem=' argument on the kernel command
--	  line.
--
--endmenu
--
- menu "Timer and clock configuration"
- 
- config SHMOBILE_TIMER_HZ
