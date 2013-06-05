@@ -1,94 +1,232 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:16 +0000
-Subject: [PATCH 06/24] drm/rcar-du: Fix buffer pitch alignment
-Message-Id: <1372326574-4315-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:24:59 +0000
+Subject: [PATCH 008/130] sh-pfc: Add entries for INTC external IRQs
+Message-Id: <1370420821-28420-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The DU requires a 16 pixels pitch alignement. Make sure dumb buffers are
-allocated with the correct pitch, and validate the pitch when creating
-frame buffers.
+From: Bastian Hecht <hechtb@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+We add all necessary entries to support the external IRQs from the INTC.
+
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 19 ++++++++++++++++++-
- drivers/gpu/drm/rcar-du/rcar_du_kms.h |  3 +++
- 3 files changed, 22 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 174 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 174 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 2a85056..bcda2e0 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -200,7 +200,7 @@ static struct drm_driver rcar_du_driver = {
- 	.prime_fd_to_handle	= drm_gem_prime_fd_to_handle,
- 	.gem_prime_import	= drm_gem_cma_dmabuf_import,
- 	.gem_prime_export	= drm_gem_cma_dmabuf_export,
--	.dumb_create		= drm_gem_cma_dumb_create,
-+	.dumb_create		= rcar_du_dumb_create,
- 	.dumb_map_offset	= drm_gem_cma_dumb_map_offset,
- 	.dumb_destroy		= drm_gem_cma_dumb_destroy,
- 	.fops			= &rcar_du_fops,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 06cacf6..d30c2e2 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -138,11 +138,25 @@ void rcar_du_encoder_mode_commit(struct drm_encoder *encoder)
-  * Frame buffer
-  */
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index bbd87d2..d95040c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -30,6 +30,22 @@
+ 	PORT_10(fn, pfx##20, sfx),					\
+ 	PORT_1(fn, pfx##210, sfx),	PORT_1(fn, pfx##211, sfx)
  
-+int rcar_du_dumb_create(struct drm_file *file, struct drm_device *dev,
-+			struct drm_mode_create_dumb *args)
-+{
-+	unsigned int min_pitch = DIV_ROUND_UP(args->width * args->bpp, 8);
-+	unsigned int align;
-+
-+	/* The pitch must be aligned to a 16 pixels boundary. */
-+	align = 16 * args->bpp / 8;
-+	args->pitch = roundup(max(args->pitch, min_pitch), align);
-+
-+	return drm_gem_cma_dumb_create(file, dev, args);
++#define IRQC_PIN_MUX(irq, pin)						\
++static const unsigned int intc_irq##irq##_pins[] = {			\
++	pin,								\
++};									\
++static const unsigned int intc_irq##irq##_mux[] = {			\
++	IRQ##irq##_MARK,						\
 +}
 +
- static struct drm_framebuffer *
- rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
- 		  struct drm_mode_fb_cmd2 *mode_cmd)
- {
- 	const struct rcar_du_format_info *format;
-+	unsigned int align;
- 
- 	format = rcar_du_format_info(mode_cmd->pixel_format);
- 	if (format = NULL) {
-@@ -151,7 +165,10 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
- 		return ERR_PTR(-EINVAL);
- 	}
- 
--	if (mode_cmd->pitches[0] & 15 || mode_cmd->pitches[0] >= 8192) {
-+	align = 16 * format->bpp / 8;
++#define IRQC_PINS_MUX(irq, idx, pin)					\
++static const unsigned int intc_irq##irq##_##idx##_pins[] = {		\
++	pin,								\
++};									\
++static const unsigned int intc_irq##irq##_##idx##_mux[] = {		\
++	IRQ##irq##_PORT##pin##_MARK,					\
++}
 +
-+	if (mode_cmd->pitches[0] & (align - 1) ||
-+	    mode_cmd->pitches[0] >= 8192) {
- 		dev_dbg(dev->dev, "invalid pitch value %u\n",
- 			mode_cmd->pitches[0]);
- 		return ERR_PTR(-EINVAL);
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.h b/drivers/gpu/drm/rcar-du/rcar_du_kms.h
-index e4d8db0..dba4722 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.h
-@@ -56,4 +56,7 @@ void rcar_du_encoder_mode_commit(struct drm_encoder *encoder);
+ enum {
+ 	PINMUX_RESERVED = 0,
  
- int rcar_du_modeset_init(struct rcar_du_device *rcdu);
+@@ -1658,6 +1674,59 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
+ };
  
-+int rcar_du_dumb_create(struct drm_file *file, struct drm_device *dev,
-+			struct drm_mode_create_dumb *args);
++/* - INTC ------------------------------------------------------------------- */
++IRQC_PINS_MUX(0, 0, 2);
++IRQC_PINS_MUX(0, 1, 13);
++IRQC_PIN_MUX(1, 20);
++IRQC_PINS_MUX(2, 0, 11);
++IRQC_PINS_MUX(2, 1, 12);
++IRQC_PINS_MUX(3, 0, 10);
++IRQC_PINS_MUX(3, 1, 14);
++IRQC_PINS_MUX(4, 0, 15);
++IRQC_PINS_MUX(4, 1, 172);
++IRQC_PINS_MUX(5, 0, 0);
++IRQC_PINS_MUX(5, 1, 1);
++IRQC_PINS_MUX(6, 0, 121);
++IRQC_PINS_MUX(6, 1, 173);
++IRQC_PINS_MUX(7, 0, 120);
++IRQC_PINS_MUX(7, 1, 209);
++IRQC_PIN_MUX(8, 119);
++IRQC_PINS_MUX(9, 0, 118);
++IRQC_PINS_MUX(9, 1, 210);
++IRQC_PIN_MUX(10, 19);
++IRQC_PIN_MUX(11, 104);
++IRQC_PINS_MUX(12, 0, 42);
++IRQC_PINS_MUX(12, 1, 97);
++IRQC_PINS_MUX(13, 0, 64);
++IRQC_PINS_MUX(13, 1, 98);
++IRQC_PINS_MUX(14, 0, 63);
++IRQC_PINS_MUX(14, 1, 99);
++IRQC_PINS_MUX(15, 0, 62);
++IRQC_PINS_MUX(15, 1, 100);
++IRQC_PINS_MUX(16, 0, 68);
++IRQC_PINS_MUX(16, 1, 211);
++IRQC_PIN_MUX(17, 69);
++IRQC_PIN_MUX(18, 70);
++IRQC_PIN_MUX(19, 71);
++IRQC_PIN_MUX(20, 67);
++IRQC_PIN_MUX(21, 202);
++IRQC_PIN_MUX(22, 95);
++IRQC_PIN_MUX(23, 96);
++IRQC_PIN_MUX(24, 180);
++IRQC_PIN_MUX(25, 38);
++IRQC_PINS_MUX(26, 0, 58);
++IRQC_PINS_MUX(26, 1, 81);
++IRQC_PINS_MUX(27, 0, 57);
++IRQC_PINS_MUX(27, 1, 168);
++IRQC_PINS_MUX(28, 0, 56);
++IRQC_PINS_MUX(28, 1, 169);
++IRQC_PINS_MUX(29, 0, 50);
++IRQC_PINS_MUX(29, 1, 170);
++IRQC_PINS_MUX(30, 0, 49);
++IRQC_PINS_MUX(30, 1, 171);
++IRQC_PINS_MUX(31, 0, 41);
++IRQC_PINS_MUX(31, 1, 167);
 +
- #endif /* __RCAR_DU_KMS_H__ */
+ /* - LCD0 ------------------------------------------------------------------- */
+ static const unsigned int lcd0_data8_pins[] = {
+ 	/* D[0:7] */
+@@ -2054,6 +2123,57 @@ static const unsigned int sdhi2_wp_1_mux[] = {
+ };
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(intc_irq0_0),
++	SH_PFC_PIN_GROUP(intc_irq0_1),
++	SH_PFC_PIN_GROUP(intc_irq1),
++	SH_PFC_PIN_GROUP(intc_irq2_0),
++	SH_PFC_PIN_GROUP(intc_irq2_1),
++	SH_PFC_PIN_GROUP(intc_irq3_0),
++	SH_PFC_PIN_GROUP(intc_irq3_1),
++	SH_PFC_PIN_GROUP(intc_irq4_0),
++	SH_PFC_PIN_GROUP(intc_irq4_1),
++	SH_PFC_PIN_GROUP(intc_irq5_0),
++	SH_PFC_PIN_GROUP(intc_irq5_1),
++	SH_PFC_PIN_GROUP(intc_irq6_0),
++	SH_PFC_PIN_GROUP(intc_irq6_1),
++	SH_PFC_PIN_GROUP(intc_irq7_0),
++	SH_PFC_PIN_GROUP(intc_irq7_1),
++	SH_PFC_PIN_GROUP(intc_irq8),
++	SH_PFC_PIN_GROUP(intc_irq9_0),
++	SH_PFC_PIN_GROUP(intc_irq9_1),
++	SH_PFC_PIN_GROUP(intc_irq10),
++	SH_PFC_PIN_GROUP(intc_irq11),
++	SH_PFC_PIN_GROUP(intc_irq12_0),
++	SH_PFC_PIN_GROUP(intc_irq12_1),
++	SH_PFC_PIN_GROUP(intc_irq13_0),
++	SH_PFC_PIN_GROUP(intc_irq13_1),
++	SH_PFC_PIN_GROUP(intc_irq14_0),
++	SH_PFC_PIN_GROUP(intc_irq14_1),
++	SH_PFC_PIN_GROUP(intc_irq15_0),
++	SH_PFC_PIN_GROUP(intc_irq15_1),
++	SH_PFC_PIN_GROUP(intc_irq16_0),
++	SH_PFC_PIN_GROUP(intc_irq16_1),
++	SH_PFC_PIN_GROUP(intc_irq17),
++	SH_PFC_PIN_GROUP(intc_irq18),
++	SH_PFC_PIN_GROUP(intc_irq19),
++	SH_PFC_PIN_GROUP(intc_irq20),
++	SH_PFC_PIN_GROUP(intc_irq21),
++	SH_PFC_PIN_GROUP(intc_irq22),
++	SH_PFC_PIN_GROUP(intc_irq23),
++	SH_PFC_PIN_GROUP(intc_irq24),
++	SH_PFC_PIN_GROUP(intc_irq25),
++	SH_PFC_PIN_GROUP(intc_irq26_0),
++	SH_PFC_PIN_GROUP(intc_irq26_1),
++	SH_PFC_PIN_GROUP(intc_irq27_0),
++	SH_PFC_PIN_GROUP(intc_irq27_1),
++	SH_PFC_PIN_GROUP(intc_irq28_0),
++	SH_PFC_PIN_GROUP(intc_irq28_1),
++	SH_PFC_PIN_GROUP(intc_irq29_0),
++	SH_PFC_PIN_GROUP(intc_irq29_1),
++	SH_PFC_PIN_GROUP(intc_irq30_0),
++	SH_PFC_PIN_GROUP(intc_irq30_1),
++	SH_PFC_PIN_GROUP(intc_irq31_0),
++	SH_PFC_PIN_GROUP(intc_irq31_1),
+ 	SH_PFC_PIN_GROUP(lcd0_data8),
+ 	SH_PFC_PIN_GROUP(lcd0_data9),
+ 	SH_PFC_PIN_GROUP(lcd0_data12),
+@@ -2103,6 +2223,60 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_wp_1),
+ };
+ 
++static const char * const intc_groups[] = {
++	"intc_irq0_0",
++	"intc_irq0_1",
++	"intc_irq1",
++	"intc_irq2_0",
++	"intc_irq2_1",
++	"intc_irq3_0",
++	"intc_irq3_1",
++	"intc_irq4_0",
++	"intc_irq4_1",
++	"intc_irq5_0",
++	"intc_irq5_1",
++	"intc_irq6_0",
++	"intc_irq6_1",
++	"intc_irq7_0",
++	"intc_irq7_1",
++	"intc_irq8",
++	"intc_irq9_0",
++	"intc_irq9_1",
++	"intc_irq10",
++	"intc_irq11",
++	"intc_irq12_0",
++	"intc_irq12_1",
++	"intc_irq13_0",
++	"intc_irq13_1",
++	"intc_irq14_0",
++	"intc_irq14_1",
++	"intc_irq15_0",
++	"intc_irq15_1",
++	"intc_irq16_0",
++	"intc_irq16_1",
++	"intc_irq17",
++	"intc_irq18",
++	"intc_irq19",
++	"intc_irq20",
++	"intc_irq21",
++	"intc_irq22",
++	"intc_irq23",
++	"intc_irq24",
++	"intc_irq25",
++	"intc_irq26_0",
++	"intc_irq26_1",
++	"intc_irq27_0",
++	"intc_irq27_1",
++	"intc_irq28_0",
++	"intc_irq28_1",
++	"intc_irq29_0",
++	"intc_irq29_1",
++	"intc_irq30_0",
++	"intc_irq30_1",
++	"intc_irq31_0",
++	"intc_irq31_1",
++};
++
+ static const char * const lcd0_groups[] = {
+ 	"lcd0_data8",
+ 	"lcd0_data9",
 -- 
-1.8.1.5
+1.8.2.1
 
