@@ -1,60 +1,63 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 06 Jun 2013 01:55:01 +0000
-Subject: Re: [PATCH v4 12/13] mmc: add DT bindings for more MMC capability flags
-Message-Id: <CAOesGMh6VZHDrt6FvAXij-6Nz4m0C40hRPbzJbNK6Y4O7GxFBg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 04:32:28 +0000
+Subject: [PATCH 1/4] irqchip: irqc: Add runtime PM support
+Message-Id: <1370406751-3852-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-	<1360941242-18153-13-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-13-git-send-email-g.liakhovetski@gmx.de>
+References: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, "devicetree-discuss@lists.ozlabs.org" <devicetree-discuss@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+This was tested using the SMSC LAN on the APE6EVM board.
 
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/irqchip/irq-renesas-irqc.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-On Fri, Feb 15, 2013 at 7:14 AM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> Many MMC capability flags are platform-dependent and are traditionally set
-> in platform data. With DT often each such capability requires a special
-> binding. Add bindings for MMC_CAP_SD_HIGHSPEED, MMC_CAP_MMC_HIGHSPEED,
-> MMC_CAP_POWER_OFF_CARD and MMC_CAP_SDIO_IRQ capabilities. Also add code to
-> DT parser to look up "keep-power-in-suspend" and "enable-sdio-wakeup"
-> bindings and set MMC_PM_KEEP_POWER and MMC_PM_WAKE_SDIO_IRQ respectively,
-> if found.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+index 927bff3..649cd69 100644
+--- a/drivers/irqchip/irq-renesas-irqc.c
++++ b/drivers/irqchip/irq-renesas-irqc.c
+@@ -19,6 +19,7 @@
+ 
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+ #include <linux/ioport.h>
+@@ -181,6 +182,9 @@ static int irqc_probe(struct platform_device *pdev)
+ 		goto err1;
+ 	}
+ 
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
+ 	/* allow any number of IRQs between 1 and IRQC_IRQ_MAX */
+ 	for (k = 0; k < IRQC_IRQ_MAX; k++) {
+ 		irq = platform_get_resource(pdev, IORESOURCE_IRQ, k);
+@@ -255,6 +259,8 @@ err3:
+ err2:
+ 	iounmap(p->iomem);
+ err1:
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	kfree(p);
+ err0:
+ 	return ret;
+@@ -270,6 +276,8 @@ static int irqc_remove(struct platform_device *pdev)
+ 
+ 	irq_domain_remove(p->irq_domain);
+ 	iounmap(p->iomem);
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	kfree(p);
+ 	return 0;
+ }
+-- 
+1.8.2.1
 
-I just came across this patch after it was merged (with no review from
-any device tree maintainer :()
-
-> ---
->  Documentation/devicetree/bindings/mmc/mmc.txt |    4 ++++
->  drivers/mmc/core/host.c                       |   13 +++++++++++++
->  2 files changed, 17 insertions(+), 0 deletions(-)
->
-> diff --git a/Documentation/devicetree/bindings/mmc/mmc.txt b/Documentation/devicetree/bindings/mmc/mmc.txt
-> index 24c8552..d9ab51f 100644
-> --- a/Documentation/devicetree/bindings/mmc/mmc.txt
-> +++ b/Documentation/devicetree/bindings/mmc/mmc.txt
-> @@ -25,6 +25,10 @@ Optional properties:
->  - max-frequency: maximum operating clock frequency
->  - no-1-8-v: when present, denotes that 1.8v card voltage is not supported on
->    this system, even if the controller claims it is.
-> +- cap-sd-highspeed: SD high-speed timing is supported
-> +- cap-mmc-highspeed: MMC high-speed timing is supported
-> +- cap-power-off-card: powering off the card is safe
-> +- cap-sdio-irq: enable SDIO IRQ signalling on this interface
-
-These are bad names for describing hardware properties. There is no
-reason to carry over the "cap" prefix from the internal usage of the
-hardware characteristics in the kernel.
-
-Other drivers use, for example "supports-highspeed", which this
-duplicates to some extent. More work should have been done to
-commonalize them. Etc.
-
-
--Olof
