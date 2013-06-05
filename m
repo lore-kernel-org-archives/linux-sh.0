@@ -1,54 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 19 Jun 2013 19:32:18 +0000
-Subject: Re: [PATCH] dmaengine: shdma: fix a build failure on platforms with no DMA support
-Message-Id: <Pine.LNX.4.64.1306192125480.12502@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:55:31 +0000
+Subject: [PATCH 02/02] ARM: shmobile: Remove romImage CONFIG_MEMORY_START
+Message-Id: <20130605075531.17653.38073.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305301650290.29171@axis700.grange>
- <51A77CF1.7040105@ti.com> <20130531024438.GB32564@verge.net.au>
- <CAGa+x8413povhYWx+BSj=TdzQDAuYFXmjF4A2kXvQt+=n+380w@mail.gmail.com>
-In-Reply-To: <CAGa+x8413povhYWx+BSj=TdzQDAuYFXmjF4A2kXvQt+=n+380w@mail.gmail.com>
+References: <20130605075514.17653.77135.sendpatchset@w520>
+In-Reply-To: <20130605075514.17653.77135.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Vinod
+From: Magnus Damm <damm@opensource.se>
 
-On Wed, 19 Jun 2013, Kevin Hilman wrote:
+Instead of relying on CONFIG_MEMORY_START for memory
+base address, let each romImage board header file
+specify this information.
 
-> On Thu, May 30, 2013 at 7:44 PM, Simon Horman <horms@verge.net.au> wrote:
-> 
-> [...]
-> 
-> > thanks for this. I will wait for a refresh (as we discussed earlier today).
-> > Can I confirm that this is a fix for v3.10? If so, could ou note
-> > that when you post your revised patch?
-> 
-> Any progress on this patch?
-> 
-> The SH-mobile defconfigs are still all failing in linux-next.
+This is reworks code not to rely on CONFIG_MEMORY_START
+which in turn is needed for ARCH_MULTIPLATFORM.
 
-In
-
-https://patchwork.kernel.org/patch/2640061/
-
-I proposed a simple immediate fix for this problem. Arnd at the same time 
-developed an alternative solution:
-
-https://patchwork.kernel.org/patch/2644121/
-https://patchwork.kernel.org/patch/2644111/
-
-Which, I think, is a much larger change and isn't suitable as a bug-fix 
-this late in the release cycle. Instead those patches address other issues 
-with the shdma drivers, which might need to be carefully studied and 
-solutions have to be found, which, however, would require more work and 
-need a longer time. What is your opinion on this? Would you agree to apply 
-v2 of this patch, as referenced above or would you prefer a different 
-solution?
-
-Thanks
-Guennadi
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+ arch/arm/boot/compressed/head-shmobile.S    |    2 +-
+ arch/arm/mach-shmobile/include/mach/zboot.h |    2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+--- 0025/arch/arm/boot/compressed/head-shmobile.S
++++ work/arch/arm/boot/compressed/head-shmobile.S	2013-06-05 11:56:07.000000000 +0900
+@@ -46,7 +46,7 @@ __image_start:
+ __image_end:
+ 	.long	_got_end
+ __load_base:
+-	.long	CONFIG_MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
++	.long	MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
+ __loaded:
+ 	.long	__continue
+ 	.align
+--- 0001/arch/arm/mach-shmobile/include/mach/zboot.h
++++ work/arch/arm/mach-shmobile/include/mach/zboot.h	2013-06-05 11:55:55.000000000 +0900
+@@ -12,9 +12,11 @@
+ 
+ #ifdef CONFIG_MACH_AP4EVB
+ #define MACH_TYPE	MACH_TYPE_AP4EVB
++#define MEMORY_START	0x40000000
+ #include "mach/head-ap4evb.txt"
+ #elif defined(CONFIG_MACH_MACKEREL)
+ #define MACH_TYPE	MACH_TYPE_MACKEREL
++#define MEMORY_START	0x40000000
+ #include "mach/head-mackerel.txt"
+ #else
+ #error "unsupported board."
