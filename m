@@ -1,94 +1,64 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 Jun 2013 08:23:31 +0000
-Subject: [PATCH v10 04/21] omap1-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1370939028-8352-5-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:07 +0000
+Subject: [PATCH 076/130] ARM: shmobile: bonito: Register pinctrl mapping for INTC
+Message-Id: <1370420821-28420-77-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-When adding and removing a client, the omap1-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Replace the GPIO-based INTC pinmux configuration by a pinctrl mapping.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/soc_camera/omap1_camera.c |   27 ++++++++++++++-------
- 1 files changed, 18 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/board-bonito.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/soc_camera/omap1_camera.c b/drivers/media/platform/soc_camera/omap1_camera.c
-index c42c23e..6769193 100644
---- a/drivers/media/platform/soc_camera/omap1_camera.c
-+++ b/drivers/media/platform/soc_camera/omap1_camera.c
-@@ -893,13 +893,26 @@ static void sensor_reset(struct omap1_cam_dev *pcdev, bool reset)
- 		CAM_WRITE(pcdev, GPIO, !reset);
- }
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index b6620662..5076f4d 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -369,6 +369,17 @@ static void __init bonito_map_io(void)
+ #define VCCQ1CR		IOMEM(0xE6058140)
+ #define VCCQ1LCDCR	IOMEM(0xE6058186)
  
-+static int omap1_cam_add_device(struct soc_camera_device *icd)
-+{
-+	dev_dbg(icd->parent, "OMAP1 Camera driver attached to camera %d\n",
-+			icd->devnum);
++/*
++ * HACK: The FPGA mappings should be associated with the FPGA device, but we
++ * don't have one at the moment. Associate them with the PFC device to make
++ * sure they will be applied.
++ */
++static const struct pinctrl_map fpga_pinctrl_map[] = {
++	/* FPGA */
++	PIN_MAP_MUX_GROUP_DEFAULT("pfc-r8a7740", "pfc-r8a7740",
++				  "intc_irq10", "intc"),
++};
 +
-+	return 0;
-+}
-+
-+static void omap1_cam_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_dbg(icd->parent,
-+		"OMAP1 Camera driver detached from camera %d\n", icd->devnum);
-+}
-+
- /*
-  * The following two functions absolutely depend on the fact, that
-  * there can be only one camera on OMAP1 camera sensor interface
-  */
--static int omap1_cam_add_device(struct soc_camera_device *icd)
-+static int omap1_cam_clock_start(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct omap1_cam_dev *pcdev = ici->priv;
- 	u32 ctrlclock;
+ static const struct pinctrl_map scifa5_pinctrl_map[] = {
+ 	/* SCIFA5 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.5", "pfc-r8a7740",
+@@ -381,6 +392,8 @@ static void __init bonito_init(void)
  
-@@ -937,14 +950,11 @@ static int omap1_cam_add_device(struct soc_camera_device *icd)
+ 	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
  
- 	sensor_reset(pcdev, false);
++	pinctrl_register_mappings(fpga_pinctrl_map,
++				  ARRAY_SIZE(fpga_pinctrl_map));
+ 	r8a7740_pinmux_init();
+ 	bonito_fpga_init();
  
--	dev_dbg(icd->parent, "OMAP1 Camera driver attached to camera %d\n",
--			icd->devnum);
- 	return 0;
- }
+@@ -412,7 +425,6 @@ static void __init bonito_init(void)
+ 		gpio_request(GPIO_FN_CS5B,		NULL);
+ 		gpio_request(GPIO_FN_CS6A,		NULL);
+ 		gpio_request(GPIO_FN_CS5A_PORT105,	NULL);
+-		gpio_request(GPIO_FN_IRQ10,		NULL);
  
--static void omap1_cam_remove_device(struct soc_camera_device *icd)
-+static void omap1_cam_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct omap1_cam_dev *pcdev = ici->priv;
- 	u32 ctrlclock;
- 
-@@ -965,9 +975,6 @@ static void omap1_cam_remove_device(struct soc_camera_device *icd)
- 	CAM_WRITE(pcdev, CTRLCLOCK, ctrlclock & ~MCLK_EN);
- 
- 	clk_disable(pcdev->clk);
--
--	dev_dbg(icd->parent,
--		"OMAP1 Camera driver detached from camera %d\n", icd->devnum);
- }
- 
- /* Duplicate standard formats based on host capability of byte swapping */
-@@ -1525,6 +1532,8 @@ static struct soc_camera_host_ops omap1_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= omap1_cam_add_device,
- 	.remove		= omap1_cam_remove_device,
-+	.clock_start	= omap1_cam_clock_start,
-+	.clock_stop	= omap1_cam_clock_stop,
- 	.get_formats	= omap1_cam_get_formats,
- 	.set_crop	= omap1_cam_set_crop,
- 	.set_fmt	= omap1_cam_set_fmt,
+ 		val = bonito_fpga_read(BVERR);
+ 		pr_info("bonito version: cpu %02x, base %02x\n",
 -- 
-1.7.2.5
+1.8.2.1
 
