@@ -1,95 +1,207 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 26 Jun 2013 14:40:51 +0000
-Subject: [PATCH/RFC v3 2/7] ARM: shmobile: sh73a0: add support for the DMA0 controller in DT
-Message-Id: <1372257656-9944-3-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:36 +0000
+Subject: [PATCH 105/130] sh-pfc: sh73a0: Add VCCQ MC0 regulator
+Message-Id: <1370420821-28420-106-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a Device Tree node for the DMA0 controller on sh73a0 and
-auxdata to supply platform data to the driver. To enable the
-DMA0 controller it also has to be taken out of reset.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+The sh73a0 has an internal power gate on the VCCQ power supply for the
+SDHI0 device that is controlled (for some strange reason) by a bit in a
+PFC register. This feature should be exposed as a regulator.
+
+As the same register is also used for pin control purposes there is no
+way to achieve atomic read/write sequences with a separate regulator
+driver. We thus need to implement the regulator here.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi         |   36 +++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c |    4 +++
- 2 files changed, 40 insertions(+), 0 deletions(-)
+ drivers/pinctrl/sh-pfc/Kconfig      |   1 +
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 134 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 135 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index b977502..e730246 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -119,6 +119,42 @@
- 			      0 32 0x4>;
- 	};
+diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
+index 32161c4..636a882 100644
+--- a/drivers/pinctrl/sh-pfc/Kconfig
++++ b/drivers/pinctrl/sh-pfc/Kconfig
+@@ -72,6 +72,7 @@ config PINCTRL_PFC_SH73A0
+ 	def_bool y
+ 	depends on ARCH_SH73A0
+ 	select PINCTRL_SH_PFC
++	select REGULATOR
  
-+	dma0: shdma@fe000020 {
-+		compatible = "renesas,shdma";
-+		reg = <0xfe000020 0x89e0>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 129 4
-+				0 109 4
-+				0 110 4
-+				0 111 4
-+				0 112 4
-+				0 113 4
-+				0 114 4
-+				0 115 4
-+				0 116 4
-+				0 117 4
-+				0 118 4
-+				0 119 4
-+				0 120 4
-+				0 121 4
-+				0 122 4
-+				0 123 4
-+				0 124 4
-+				0 125 4
-+				0 126 4
-+				0 127 4
-+				0 128 4>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12", "ch13", "ch14", "ch15",
-+				"ch16", "ch17", "ch18", "ch19";
-+		#dma-cells = <1>;
-+		dma-channels = <20>;
-+		dma-requests = <256>;
-+	};
-+
- 	i2c0: i2c@e6820000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 96e7ca1e..f95ecc7 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -959,6 +959,7 @@ void __init sh73a0_add_early_devices(void)
- #ifdef CONFIG_USE_OF
+ config PINCTRL_PFC_SH7720
+ 	def_bool y
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 587f777..b783724 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -20,7 +20,11 @@
+  */
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/module.h>
+ #include <linux/pinctrl/pinconf-generic.h>
++#include <linux/regulator/driver.h>
++#include <linux/regulator/machine.h>
++#include <linux/slab.h>
  
- static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
-+	OF_DEV_AUXDATA("renesas,shdma", 0xfe000020, "sh-dma-engine.0", &sh73a0_dmae_platform_data),
- 	{},
+ #include <mach/sh73a0.h>
+ #include <mach/irqs.h>
+@@ -3888,6 +3892,92 @@ static const struct pinmux_irq pinmux_irqs[] = {
+ 	PINMUX_IRQ(EXT_IRQ16L(9), 308),
  };
  
-@@ -969,6 +970,9 @@ void __init sh73a0_add_standard_devices_dt(void)
- 	/* clocks are setup late during boot in the case of DT */
- 	sh73a0_clock_init();
- 
-+	/* Clear software reset bit on SY-DMAC module */
-+	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
++/* -----------------------------------------------------------------------------
++ * VCCQ MC0 regulator
++ */
 +
- 	platform_add_devices(sh73a0_devices_dt,
- 			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table,
++static void sh73a0_vccq_mc0_endisable(struct regulator_dev *reg, bool enable)
++{
++	struct sh_pfc *pfc = reg->reg_data;
++	void __iomem *addr = pfc->window[1].virt + 4;
++	unsigned long flags;
++	u32 value;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	value = ioread32(addr);
++
++	if (enable)
++		value |= BIT(28);
++	else
++		value &= ~BIT(28);
++
++	iowrite32(value, addr);
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
++}
++
++static int sh73a0_vccq_mc0_enable(struct regulator_dev *reg)
++{
++	sh73a0_vccq_mc0_endisable(reg, true);
++	return 0;
++}
++
++static int sh73a0_vccq_mc0_disable(struct regulator_dev *reg)
++{
++	sh73a0_vccq_mc0_endisable(reg, false);
++	return 0;
++}
++
++static int sh73a0_vccq_mc0_is_enabled(struct regulator_dev *reg)
++{
++	struct sh_pfc *pfc = reg->reg_data;
++	void __iomem *addr = pfc->window[1].virt + 4;
++	unsigned long flags;
++	u32 value;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++	value = ioread32(addr);
++	spin_unlock_irqrestore(&pfc->lock, flags);
++
++	return !!(value & BIT(28));
++}
++
++static int sh73a0_vccq_mc0_get_voltage(struct regulator_dev *reg)
++{
++	return 3300000;
++}
++
++static struct regulator_ops sh73a0_vccq_mc0_ops = {
++	.enable = sh73a0_vccq_mc0_enable,
++	.disable = sh73a0_vccq_mc0_disable,
++	.is_enabled = sh73a0_vccq_mc0_is_enabled,
++	.get_voltage = sh73a0_vccq_mc0_get_voltage,
++};
++
++static const struct regulator_desc sh73a0_vccq_mc0_desc = {
++	.owner = THIS_MODULE,
++	.name = "vccq_mc0",
++	.type = REGULATOR_VOLTAGE,
++	.ops = &sh73a0_vccq_mc0_ops,
++};
++
++static struct regulator_consumer_supply sh73a0_vccq_mc0_consumers[] = {
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
++static const struct regulator_init_data sh73a0_vccq_mc0_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies = ARRAY_SIZE(sh73a0_vccq_mc0_consumers),
++	.consumer_supplies = sh73a0_vccq_mc0_consumers,
++};
++
++/* -----------------------------------------------------------------------------
++ * Pin bias
++ */
++
+ #define PORTnCR_PULMD_OFF	(0 << 6)
+ #define PORTnCR_PULMD_DOWN	(2 << 6)
+ #define PORTnCR_PULMD_UP	(3 << 6)
+@@ -3934,7 +4024,51 @@ static void sh73a0_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
+ 	iowrite8(value, addr);
+ }
+ 
++/* -----------------------------------------------------------------------------
++ * SoC information
++ */
++
++struct sh73a0_pinmux_data {
++	struct regulator_dev *vccq_mc0;
++};
++
++static int sh73a0_pinmux_soc_init(struct sh_pfc *pfc)
++{
++	struct sh73a0_pinmux_data *data;
++	struct regulator_config cfg = { };
++	int ret;
++
++	data = devm_kzalloc(pfc->dev, sizeof(*data), GFP_KERNEL);
++	if (data = NULL)
++		return -ENOMEM;
++
++	cfg.dev = pfc->dev;
++	cfg.init_data = &sh73a0_vccq_mc0_init_data;
++	cfg.driver_data = pfc;
++
++	data->vccq_mc0 = regulator_register(&sh73a0_vccq_mc0_desc, &cfg);
++	if (IS_ERR(data->vccq_mc0)) {
++		ret = PTR_ERR(data->vccq_mc0);
++		dev_err(pfc->dev, "Failed to register VCCQ MC0 regulator: %d\n",
++			ret);
++		return ret;
++	}
++
++	pfc->soc_data = data;
++
++	return 0;
++}
++
++static void sh73a0_pinmux_soc_exit(struct sh_pfc *pfc)
++{
++	struct sh73a0_pinmux_data *data = pfc->soc_data;
++
++	regulator_unregister(data->vccq_mc0);
++}
++
+ static const struct sh_pfc_soc_operations sh73a0_pinmux_ops = {
++	.init = sh73a0_pinmux_soc_init,
++	.exit = sh73a0_pinmux_soc_exit,
+ 	.get_bias = sh73a0_pinmux_get_bias,
+ 	.set_bias = sh73a0_pinmux_set_bias,
+ };
 -- 
-1.7.2.5
+1.8.2.1
 
