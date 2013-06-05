@@ -1,85 +1,95 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:36 +0000
-Subject: [PATCH 23/23] ARM: shmobile: sh73a0: div4 clocks must check the kick bit before changing rate
-Message-Id: <1370503716-31155-24-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:52 +0000
+Subject: [PATCH 121/130] sh-pfc: r8a7778: add MMCIF pin groups
+Message-Id: <1370420821-28420-122-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-According to the datasheet, it is not allowed to change div4 clock rates
-if an earlier rate change operation is still in progress, as indicated by
-a set kick bit.
+Add MMCIF CLK/CMD/DATA groups to R8A7778 PFC driver.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c | 24 +++++++++++++++++++-----
- 1 file changed, 19 insertions(+), 5 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 38 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index d05cf90..d9fd033 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -257,7 +257,7 @@ static struct clk twd_clk = {
- 	.ops = &twd_clk_ops,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index bf5e3d8..1dcbabc 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -1434,6 +1434,32 @@ I2C_PFC_MUX(i2c3_b,	SDA3_B,			SCL3_B);
+ I2C_PFC_PIN(i2c3_c,	RCAR_GP_PIN(1, 22),	RCAR_GP_PIN(1, 23));
+ I2C_PFC_MUX(i2c3_c,	SDA3_C,			SCL3_C);
+ 
++/* - MMC macro -------------------------------------------------------------- */
++#define MMC_PFC_PINS(name, args...)		SH_PFC_PINS(name, args)
++#define MMC_PFC_CTRL(name, clk, cmd)		SH_PFC_MUX2(name, clk, cmd)
++#define MMC_PFC_DAT1(name, d0)			SH_PFC_MUX1(name, d0)
++#define MMC_PFC_DAT4(name, d0, d1, d2, d3)	SH_PFC_MUX4(name, d0, d1, d2, d3)
++#define MMC_PFC_DAT8(name, d0, d1, d2, d3, d4, d5, d6, d7)	\
++			SH_PFC_MUX8(name, d0, d1, d2, d3, d4, d5, d6, d7)
++
++/* - MMC -------------------------------------------------------------------- */
++MMC_PFC_PINS(mmc_ctrl,		RCAR_GP_PIN(1, 5),	RCAR_GP_PIN(1, 6));
++MMC_PFC_CTRL(mmc_ctrl,		MMC_CLK,		MMC_CMD);
++MMC_PFC_PINS(mmc_data1,		RCAR_GP_PIN(1, 7));
++MMC_PFC_DAT1(mmc_data1,		MMC_D0);
++MMC_PFC_PINS(mmc_data4,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
++				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6));
++MMC_PFC_DAT4(mmc_data4,		MMC_D0,			MMC_D1,
++				MMC_D2,			MMC_D3);
++MMC_PFC_PINS(mmc_data8,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
++				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6),
++				RCAR_GP_PIN(1, 4),	RCAR_GP_PIN(1, 0),
++				RCAR_GP_PIN(0, 30),	RCAR_GP_PIN(0, 31));
++MMC_PFC_DAT8(mmc_data8,		MMC_D0,			MMC_D1,
++				MMC_D2,			MMC_D3,
++				MMC_D4,			MMC_D5,
++				MMC_D6,			MMC_D7);
++
+ /* - SCIF CLOCK ------------------------------------------------------------- */
+ SCIF_PFC_PIN(scif_clk,		RCAR_GP_PIN(1, 16));
+ SCIF_PFC_CLK(scif_clk,		SCIF_CLK);
+@@ -1661,6 +1687,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(i2c3_a),
+ 	SH_PFC_PIN_GROUP(i2c3_b),
+ 	SH_PFC_PIN_GROUP(i2c3_c),
++	SH_PFC_PIN_GROUP(mmc_ctrl),
++	SH_PFC_PIN_GROUP(mmc_data1),
++	SH_PFC_PIN_GROUP(mmc_data4),
++	SH_PFC_PIN_GROUP(mmc_data8),
+ 	SH_PFC_PIN_GROUP(scif_clk),
+ 	SH_PFC_PIN_GROUP(scif0_data_a),
+ 	SH_PFC_PIN_GROUP(scif0_data_b),
+@@ -1785,6 +1815,13 @@ static const char * const i2c3_groups[] = {
+ 	"i2c3_c",
  };
  
--static struct sh_clk_ops zclk_ops;
-+static struct sh_clk_ops zclk_ops, kicker_ops;
- static const struct sh_clk_ops *div4_clk_ops;
- 
- static int zclk_set_rate(struct clk *clk, unsigned long rate)
-@@ -324,18 +324,32 @@ static unsigned long zclk_recalc(struct clk *clk)
- 	return clk_get_rate(clk->parent);
- }
- 
--static void zclk_extend(void)
-+static int kicker_set_rate(struct clk *clk, unsigned long rate)
- {
--	div4_clk_ops = div4_clks[DIV4_Z].ops;
-+	if (__raw_readl(FRQCRB) & (1 << 31))
-+		return -EBUSY;
++static const char * const mmc_groups[] = {
++	"mmc_ctrl",
++	"mmc_data1",
++	"mmc_data4",
++	"mmc_data8",
++};
 +
-+	return div4_clk_ops->set_rate(clk, rate);
-+}
-+
-+static void div4_clk_extend(void)
-+{
-+	int i;
-+
-+	div4_clk_ops = div4_clks[0].ops;
- 
-+	/* Add a kicker-busy check before changing the rate */
-+	kicker_ops = *div4_clk_ops;
- 	/* We extend the DIV4 clock with a 1:1 pass-through case */
- 	zclk_ops = *div4_clk_ops;
- 
-+	kicker_ops.set_rate = kicker_set_rate;
- 	zclk_ops.set_rate = zclk_set_rate;
- 	zclk_ops.round_rate = zclk_round_rate;
- 	zclk_ops.recalc = zclk_recalc;
- 
--	div4_clks[DIV4_Z].ops = &zclk_ops;
-+	for (i = 0; i < DIV4_NR; i++)
-+		div4_clks[i].ops = i = DIV4_Z ? &zclk_ops : &kicker_ops;
- }
- 
- enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
-@@ -697,7 +711,7 @@ void __init sh73a0_clock_init(void)
- 	if (!ret) {
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
- 		if (!ret)
--			zclk_extend();
-+			div4_clk_extend();
- 	}
- 
- 	if (!ret)
+ static const char * const scif_clk_groups[] = {
+ 	"scif_clk",
+ };
+@@ -1905,6 +1942,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(i2c1),
+ 	SH_PFC_FUNCTION(i2c2),
+ 	SH_PFC_FUNCTION(i2c3),
++	SH_PFC_FUNCTION(mmc),
+ 	SH_PFC_FUNCTION(scif_clk),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
 -- 
 1.8.2.1
 
