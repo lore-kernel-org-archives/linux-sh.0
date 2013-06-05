@@ -1,59 +1,68 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 26 Jun 2013 14:40:53 +0000
-Subject: [PATCH v3 4/7] ARM: shmobile: r8a7740: add MMCIF DMA definitions
-Message-Id: <1372257656-9944-5-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:59 +0000
+Subject: [PATCH 068/130] ARM: shmobile: armadillo800eva: Register pinctrl mapping for GETHER
+Message-Id: <1370420821-28420-69-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Add DMA channel slave IDs and configuration entries for the r8a7740
-MMCIF controller.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Replace the GPIO-based GETHER pinmux configuration by a pinctrl mapping.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7740.c        |   10 ++++++++++
- 2 files changed, 12 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 25 +++++--------------------
+ 1 file changed, 5 insertions(+), 20 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index b34d19b..56f3750 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -42,6 +42,8 @@ enum {
- 	SHDMA_SLAVE_FSIB_TX,
- 	SHDMA_SLAVE_USBHS_TX,
- 	SHDMA_SLAVE_USBHS_RX,
-+	SHDMA_SLAVE_MMCIF_TX,
-+	SHDMA_SLAVE_MMCIF_RX,
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 8d8b362..328f650 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1046,6 +1046,11 @@ static struct platform_device *eva_devices[] __initdata = {
  };
  
- extern void r8a7740_meram_workaround(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 00c5a70..6b3ed42 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -588,6 +588,16 @@ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
- 		.addr		= 0xfe1f0064,
- 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xb5,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
- 	},
- };
+ static const struct pinctrl_map eva_pinctrl_map[] = {
++	/* GETHER */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
++				  "gether_mii", "gether"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
++				  "gether_int", "gether"),
+ 	/* LCD0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
+ 				  "lcd0_data24_0", "lcd0"),
+@@ -1139,26 +1144,6 @@ static void __init eva_init(void)
+ 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
  
+ 	/* GETHER */
+-	gpio_request(GPIO_FN_ET_CRS,		NULL);
+-	gpio_request(GPIO_FN_ET_MDC,		NULL);
+-	gpio_request(GPIO_FN_ET_MDIO,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_ER,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_ER,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD0,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD1,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD2,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD3,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_CLK,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_EN,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD0,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD1,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD2,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD3,		NULL);
+-	gpio_request(GPIO_FN_ET_PHY_INT,	NULL);
+-	gpio_request(GPIO_FN_ET_COL,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
+-
+ 	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
+ 
+ 	/* USB */
 -- 
-1.7.2.5
+1.8.2.1
 
