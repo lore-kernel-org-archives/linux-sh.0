@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:47 +0000
-Subject: [PATCH 116/130] sh-pfc: r8a7778: fixup IRQ1A settings
-Message-Id: <1370420821-28420-117-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:08 +0000
+Subject: [PATCH 017/130] sh-pfc: r8a7740: Add SCIFA1 data group
+Message-Id: <1370420821-28420-18-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,30 +10,63 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Bastian Hecht <hechtb@gmail.com>
 
-IP2[31] func2 is IRQ1A, not IRQ3A
+Add SCIFA1 as preparation to switch to pinctrl in board files.
 
-Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index bc20083..6b2c6b5 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -2080,7 +2080,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 			     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 			     1, 1, 1, 1, 3, 2, 3, 3, 3, 3) {
- 		/* IP2_31 [1] */
--		FN_MLB_CLK,	FN_IRQ3_A,
-+		FN_MLB_CLK,	FN_IRQ1_A,
- 		/* IP2_30 [1] */
- 		FN_RD_WR_B,	FN_IRQ0,
- 		/* IP2_29 [1] */
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index d95040c..4753f54 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1999,6 +1999,14 @@ static const unsigned int mmc0_ctrl_1_pins[] = {
+ static const unsigned int mmc0_ctrl_1_mux[] = {
+ 	MMC1_CMD_PORT104_MARK, MMC1_CLK_PORT103_MARK,
+ };
++/* - SCIFA1 ----------------------------------------------------------------- */
++static const unsigned int scifa1_data_pins[] = {
++	/* RXD, TXD */
++	195, 196,
++};
++static const unsigned int scifa1_data_mux[] = {
++	SCIFA1_RXD_MARK, SCIFA1_TXD_MARK,
++};
+ /* - SDHI0 ------------------------------------------------------------------ */
+ static const unsigned int sdhi0_data1_pins[] = {
+ 	/* D0 */
+@@ -2204,6 +2212,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(mmc0_data4_1),
+ 	SH_PFC_PIN_GROUP(mmc0_data8_1),
+ 	SH_PFC_PIN_GROUP(mmc0_ctrl_1),
++	SH_PFC_PIN_GROUP(scifa1_data),
+ 	SH_PFC_PIN_GROUP(sdhi0_data1),
+ 	SH_PFC_PIN_GROUP(sdhi0_data4),
+ 	SH_PFC_PIN_GROUP(sdhi0_ctrl),
+@@ -2316,6 +2325,10 @@ static const char * const mmc0_groups[] = {
+ 	"mmc0_ctrl_1",
+ };
+ 
++static const char * const scifa1_groups[] = {
++	"scifa1_data",
++};
++
+ static const char * const sdhi0_groups[] = {
+ 	"sdhi0_data1",
+ 	"sdhi0_data4",
+@@ -2346,6 +2359,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(lcd0),
+ 	SH_PFC_FUNCTION(lcd1),
+ 	SH_PFC_FUNCTION(mmc0),
++	SH_PFC_FUNCTION(scifa1),
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
 -- 
 1.8.2.1
 
