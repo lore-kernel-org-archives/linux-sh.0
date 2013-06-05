@@ -1,86 +1,76 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jun 2013 19:08:20 +0000
-Subject: [PATCH v11 10/21] soc-camera: make .clock_{start,stop} compulsory, .add / .remove optional
-Message-Id: <1371236911-15131-11-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:29 +0000
+Subject: [PATCH 038/130] ARM: shmobile: mackerel: Register pinctrl mapping for LCD
+Message-Id: <1370420821-28420-39-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-All existing soc-camera host drivers use .clock_start() and .clock_stop()
-callbacks to activate and deactivate their camera interfaces, whereas
-.add() and .remove() callbacks are usually dummy. Make the former two
-compulsory and the latter two optional.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Replace the GPIO-based LCD pinmux configuration by a pinctrl mapping.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/soc_camera/soc_camera.c |   27 +++++++++++------------
- 1 files changed, 13 insertions(+), 14 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 33 +++++----------------------------
+ 1 file changed, 5 insertions(+), 28 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
-index df90565..e503f03 100644
---- a/drivers/media/platform/soc_camera/soc_camera.c
-+++ b/drivers/media/platform/soc_camera/soc_camera.c
-@@ -513,23 +513,22 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
- 	if (ici->icd)
- 		return -EBUSY;
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index e5bcd18..07eeb55 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1341,6 +1341,11 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 	/* HDMI */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-mobile-hdmi", "pfc-sh7372",
+ 				  "hdmi", "hdmi"),
++	/* LCDC */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh7372",
++				  "lcd_data24", "lcd"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh7372",
++				  "lcd_sync", "lcd"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1417,34 +1422,6 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_CS5A,	NULL);
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
  
--	if (ici->ops->clock_start) {
--		ret = ici->ops->clock_start(ici);
-+	ret = ici->ops->clock_start(ici);
-+	if (ret < 0)
-+		return ret;
-+
-+	if (ici->ops->add) {
-+		ret = ici->ops->add(icd);
- 		if (ret < 0)
--			return ret;
-+			goto eadd;
- 	}
- 
--	ret = ici->ops->add(icd);
--	if (ret < 0)
--		goto eadd;
+-	/* LCDC */
+-	gpio_request(GPIO_FN_LCDD23,   NULL);
+-	gpio_request(GPIO_FN_LCDD22,   NULL);
+-	gpio_request(GPIO_FN_LCDD21,   NULL);
+-	gpio_request(GPIO_FN_LCDD20,   NULL);
+-	gpio_request(GPIO_FN_LCDD19,   NULL);
+-	gpio_request(GPIO_FN_LCDD18,   NULL);
+-	gpio_request(GPIO_FN_LCDD17,   NULL);
+-	gpio_request(GPIO_FN_LCDD16,   NULL);
+-	gpio_request(GPIO_FN_LCDD15,   NULL);
+-	gpio_request(GPIO_FN_LCDD14,   NULL);
+-	gpio_request(GPIO_FN_LCDD13,   NULL);
+-	gpio_request(GPIO_FN_LCDD12,   NULL);
+-	gpio_request(GPIO_FN_LCDD11,   NULL);
+-	gpio_request(GPIO_FN_LCDD10,   NULL);
+-	gpio_request(GPIO_FN_LCDD9,    NULL);
+-	gpio_request(GPIO_FN_LCDD8,    NULL);
+-	gpio_request(GPIO_FN_LCDD7,    NULL);
+-	gpio_request(GPIO_FN_LCDD6,    NULL);
+-	gpio_request(GPIO_FN_LCDD5,    NULL);
+-	gpio_request(GPIO_FN_LCDD4,    NULL);
+-	gpio_request(GPIO_FN_LCDD3,    NULL);
+-	gpio_request(GPIO_FN_LCDD2,    NULL);
+-	gpio_request(GPIO_FN_LCDD1,    NULL);
+-	gpio_request(GPIO_FN_LCDD0,    NULL);
+-	gpio_request(GPIO_FN_LCDDISP,  NULL);
+-	gpio_request(GPIO_FN_LCDDCK,   NULL);
 -
- 	ici->icd = icd;
+ 	/* backlight, off by default */
+ 	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
  
- 	return 0;
- 
- eadd:
--	if (ici->ops->clock_stop)
--		ici->ops->clock_stop(ici);
-+	ici->ops->clock_stop(ici);
- 	return ret;
- }
- 
-@@ -540,9 +539,9 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
- 	if (WARN_ON(icd != ici->icd))
- 		return;
- 
--	ici->ops->remove(icd);
--	if (ici->ops->clock_stop)
--		ici->ops->clock_stop(ici);
-+	if (ici->ops->remove)
-+		ici->ops->remove(icd);
-+	ici->ops->clock_stop(ici);
- 	ici->icd = NULL;
- }
- 
-@@ -1413,8 +1412,8 @@ int soc_camera_host_register(struct soc_camera_host *ici)
- 	    ((!ici->ops->init_videobuf ||
- 	      !ici->ops->reqbufs) &&
- 	     !ici->ops->init_videobuf2) ||
--	    !ici->ops->add ||
--	    !ici->ops->remove ||
-+	    !ici->ops->clock_start ||
-+	    !ici->ops->clock_stop ||
- 	    !ici->ops->poll ||
- 	    !ici->v4l2_dev.dev)
- 		return -EINVAL;
 -- 
-1.7.2.5
+1.8.2.1
 
