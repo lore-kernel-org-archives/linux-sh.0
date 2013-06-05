@@ -1,41 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:32 +0000
-Subject: [PATCH 02/27] ARM: shmobile: r8a7778: correct model name in Kconfig
-Message-Id: <1370591517-20239-3-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 10:44:56 +0000
+Subject: [PATCH 03/03] ARM: shmobile: Add second memory bank to DTS for APE6EVM
+Message-Id: <20130605104456.1720.70240.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130605104427.1720.68752.sendpatchset@w520>
+In-Reply-To: <20130605104427.1720.68752.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
 
-The correct model name is R-Car M1A or R8A77781; R8A77780 corresponds to R-Car
-M1S which is a SH based SoC.
+Add 1GiB of DRAM at 0x2_0000_0000 to APE6EVM
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[horms+renesas@verge.net.au: manually applied]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 1a517e2..52e8c6e 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -36,7 +36,7 @@ config ARCH_R8A7740
- 	select RENESAS_INTC_IRQPIN
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts	2013-04-08 10:27:20.000000000 +0900
+@@ -24,6 +24,11 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
  
- config ARCH_R8A7778
--	bool "R-Car M1 (R8A77780)"
-+	bool "R-Car M1A (R8A77781)"
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select ARM_GIC
--- 
-1.8.2.1
-
++	memory@200000000 {
++		device_type = "memory";
++		reg = <2 0x00000000 0 0x40000000>;
++	};
++
+ 	ape6evm_fixed_3v3: fixedregulator@0 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "3V3";
