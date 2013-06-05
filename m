@@ -1,36 +1,46 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 27 Jun 2013 09:47:55 +0000
-Subject: [PATCH v2 0/3] ARM: shmobile: r8a73a4: add I2C devices and CPUFreq support
-Message-Id: <1372326479-15028-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:55 +0000
+Subject: [PATCH 124/130] pinctrl: sh-pfc: r8a7779: Fix missing MOD_SEL2 entry
+Message-Id: <1370420821-28420-125-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-CPUFreq voltage scaling support for APE6EVM uses an I2C PMIC. This patch 
-series adds support for I2C on r8a73a4 and adds required hooks to APE6EVM. 
-This patch series is identical to v1 with the only difference, that a 
-patch from it has been split into two upon maintainer's request.
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+The list of functions selected by the MOD_SEL2 register was missing
+an entry. This caused all entries after this to modify the MOD_SEL2
+register incorrectly.
 
-Guennadi Liakhovetski (3):
-  ARM: shmobile: r8a73a4: add clocks for I2C controllers
-  ARM: shmobile: r8a73a4: add I2C controller DT nodes
-  ARM: shmobile: ape6evm: add CPUFreq support
+This bug showed up when selecting i2c2_c pins on the Renesas Hurricane board.
 
- arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   22 +++++++++
- arch/arm/boot/dts/r8a73a4.dtsi         |   81 ++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a73a4.c |   25 +++++++++-
- 3 files changed, 126 insertions(+), 2 deletions(-)
+This bug has been present since pinmux support was added for the
+r8a7779 SoC by 881023d28b465eb457067dc8bbca0f24d8b34279 ("sh-pfc: Add
+r8a7779 pinmux support") in v3.8-rc4.
 
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 96bdf48..8e22ca6 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -3768,7 +3768,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	    /* SEL_SCIF [2] */
+ 	    FN_SEL_SCIF_0, FN_SEL_SCIF_1, FN_SEL_SCIF_2, FN_SEL_SCIF_3,
+ 	    /* SEL_CANCLK [2] */
+-	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2,
++	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2, 0,
+ 	    /* SEL_CAN0 [1] */
+ 	    FN_SEL_CAN0_0, FN_SEL_CAN0_1,
+ 	    /* SEL_HSCIF1 [1] */
+-- 
+1.8.2.1
+
