@@ -1,61 +1,137 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 20 Jun 2013 13:08:14 +0000
-Subject: [PATCH 3/3] ARM: shmobile: irqpin: add a DT property to enable masking on parent
-Message-Id: <1371733694-27368-4-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:23 +0000
+Subject: [PATCH 032/130] sh-pfc: sh7372: Add USB pin groups and functions
+Message-Id: <1370420821-28420-33-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-To disable spurious interrupts, that get triggered on certain hardware, the
-irqpin driver masks them on the parent interrupt controller. To specify
-such broken devices a .control_parent parameter can be provided in the
-platform data. In the DT case we need a property, to do the same.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../bindings/interrupt-controller/renesas,intc-irqpin.txt          | 2 ++
- drivers/irqchip/irq-renesas-intc-irqpin.c                          | 7 +++++--
- 2 files changed, 7 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 82 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 82 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-index 66fcaf5..1f8b0c5 100644
---- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-+++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-@@ -12,3 +12,5 @@ Optional properties:
-   properties
- - sense-bitfield-width: width of a single sense bitfield in the SENSE register,
-   if different from the default 4 bits
-+- control-parent: disable and enable interrupts on the parent interrupt
-+  controller, needed for some broken implementations
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index 4aca1b2..82cec63 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -348,11 +348,14 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	}
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 46466bb..4dc2ccb 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1680,6 +1680,64 @@ static const unsigned int sdhi2_ctrl_pins[] = {
+ static const unsigned int sdhi2_ctrl_mux[] = {
+ 	SDHICMD2_MARK, SDHICLK2_MARK,
+ };
++/* - USB0 ------------------------------------------------------------------- */
++static const unsigned int usb0_vbus_pins[] = {
++	/* VBUS */
++	167,
++};
++static const unsigned int usb0_vbus_mux[] = {
++	VBUS0_0_MARK,
++};
++static const unsigned int usb0_otg_id_pins[] = {
++	/* IDIN */
++	113,
++};
++static const unsigned int usb0_otg_id_mux[] = {
++	IDIN_0_MARK,
++};
++static const unsigned int usb0_otg_ctrl_pins[] = {
++	/* PWEN, EXTLP, OVCN, OVCN2 */
++	116, 114, 117, 115,
++};
++static const unsigned int usb0_otg_ctrl_mux[] = {
++	PWEN_0_MARK, EXTLP_0_MARK, OVCN_0_MARK, OVCN2_0_MARK,
++};
++/* - USB1 ------------------------------------------------------------------- */
++static const unsigned int usb1_vbus_pins[] = {
++	/* VBUS */
++	168,
++};
++static const unsigned int usb1_vbus_mux[] = {
++	VBUS0_1_MARK,
++};
++static const unsigned int usb1_otg_id_0_pins[] = {
++	/* IDIN */
++	113,
++};
++static const unsigned int usb1_otg_id_0_mux[] = {
++	IDIN_1_113_MARK,
++};
++static const unsigned int usb1_otg_id_1_pins[] = {
++	/* IDIN */
++	18,
++};
++static const unsigned int usb1_otg_id_1_mux[] = {
++	IDIN_1_18_MARK,
++};
++static const unsigned int usb1_otg_ctrl_0_pins[] = {
++	/* PWEN, EXTLP, OVCN, OVCN2 */
++	115, 116, 114, 117, 113,
++};
++static const unsigned int usb1_otg_ctrl_0_mux[] = {
++	PWEN_1_115_MARK, EXTLP_1_MARK, OVCN_1_114_MARK, OVCN2_1_MARK,
++};
++static const unsigned int usb1_otg_ctrl_1_pins[] = {
++	/* PWEN, EXTLP, OVCN, OVCN2 */
++	138, 116, 162, 117, 18,
++};
++static const unsigned int usb1_otg_ctrl_1_mux[] = {
++	PWEN_1_138_MARK, EXTLP_1_MARK, OVCN_1_162_MARK, OVCN2_1_MARK,
++};
  
- 	/* deal with driver instance configuration */
--	if (pdata)
-+	if (pdata) {
- 		memcpy(&p->config, pdata, sizeof(*pdata));
--	else
-+	} else {
- 		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
- 				     &p->config.sense_bitfield_width);
-+		p->config.control_parent = of_property_read_bool(pdev->dev.of_node,
-+								 "control-parent");
-+	}
- 	if (!p->config.sense_bitfield_width)
- 		p->config.sense_bitfield_width = 4; /* default to 4 bits */
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(bsc_data8),
+@@ -1822,6 +1880,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_data1),
+ 	SH_PFC_PIN_GROUP(sdhi2_data4),
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(usb0_vbus),
++	SH_PFC_PIN_GROUP(usb0_otg_id),
++	SH_PFC_PIN_GROUP(usb0_otg_ctrl),
++	SH_PFC_PIN_GROUP(usb1_vbus),
++	SH_PFC_PIN_GROUP(usb1_otg_id_0),
++	SH_PFC_PIN_GROUP(usb1_otg_id_1),
++	SH_PFC_PIN_GROUP(usb1_otg_ctrl_0),
++	SH_PFC_PIN_GROUP(usb1_otg_ctrl_1),
+ };
  
+ static const char * const bsc_groups[] = {
+@@ -2024,6 +2090,20 @@ static const char * const sdhi2_groups[] = {
+ 	"sdhi2_ctrl",
+ };
+ 
++static const char * const usb0_groups[] = {
++	"usb0_vbus",
++	"usb0_otg_id",
++	"usb0_otg_ctrl",
++};
++
++static const char * const usb1_groups[] = {
++	"usb1_vbus",
++	"usb1_otg_id_0",
++	"usb1_otg_id_1",
++	"usb1_otg_ctrl_0",
++	"usb1_otg_ctrl_1",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(ceu),
+@@ -2045,6 +2125,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(usb0),
++	SH_PFC_FUNCTION(usb1),
+ };
+ 
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
 -- 
 1.8.2.1
 
