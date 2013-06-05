@@ -1,63 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 04:32:28 +0000
-Subject: [PATCH 1/4] irqchip: irqc: Add runtime PM support
-Message-Id: <1370406751-3852-2-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:03:26 +0000
+Subject: Re: [PATCH 1/4] irqchip: irqc: Add runtime PM support
+Message-Id: <CANqRtoTxxtj-uKyM58dKfH6GV62G8nweQeh9W3+VW==USOkj9A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
+ <1370406751-3852-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370406751-3852-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This was tested using the SMSC LAN on the APE6EVM board.
+Hi Simon and Morimoto-san,
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/irqchip/irq-renesas-irqc.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+On Wed, Jun 5, 2013 at 1:32 PM, Simon Horman <horms+renesas@verge.net.au> wrote:
+> This was tested using the SMSC LAN on the APE6EVM board.
+>
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  drivers/irqchip/irq-renesas-irqc.c | 8 ++++++++
+>  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-index 927bff3..649cd69 100644
---- a/drivers/irqchip/irq-renesas-irqc.c
-+++ b/drivers/irqchip/irq-renesas-irqc.c
-@@ -19,6 +19,7 @@
- 
- #include <linux/init.h>
- #include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
- #include <linux/spinlock.h>
- #include <linux/interrupt.h>
- #include <linux/ioport.h>
-@@ -181,6 +182,9 @@ static int irqc_probe(struct platform_device *pdev)
- 		goto err1;
- 	}
- 
-+	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_get_sync(&pdev->dev);
-+
- 	/* allow any number of IRQs between 1 and IRQC_IRQ_MAX */
- 	for (k = 0; k < IRQC_IRQ_MAX; k++) {
- 		irq = platform_get_resource(pdev, IORESOURCE_IRQ, k);
-@@ -255,6 +259,8 @@ err3:
- err2:
- 	iounmap(p->iomem);
- err1:
-+	pm_runtime_put_sync(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
- 	kfree(p);
- err0:
- 	return ret;
-@@ -270,6 +276,8 @@ static int irqc_remove(struct platform_device *pdev)
- 
- 	irq_domain_remove(p->irq_domain);
- 	iounmap(p->iomem);
-+	pm_runtime_put_sync(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
- 	kfree(p);
- 	return 0;
- }
--- 
-1.8.2.1
+Thanks for your patch. I am trying to understand how this controls the
+actual hardware. Which clock and/or power domain is being controlled
+using this patch?
 
+Cheers,
+
+/ magnus
