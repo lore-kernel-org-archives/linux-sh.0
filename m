@@ -1,85 +1,74 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 04:32:10 +0000
-Subject: [PATCH 1/7] ARM: shmobile: r8a7740: Add OF support to initialze the GIC
-Message-Id: <1370406736-32272-2-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:26 +0000
+Subject: [PATCH 035/130] ARM: shmobile: mackerel: Register pinctrl mapping for FLCTL
+Message-Id: <1370420821-28420-36-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-We add a variant to initalize the interrupt controller in case we describe
-the GIC using the Device Tree and not platform data.
+Replace the GPIO-based FLCTL pinmux configuration by a pinctrl mapping.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |  1 +
- arch/arm/mach-shmobile/intc-r8a7740.c         | 24 ++++++++++++++++++------
- 2 files changed, 19 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 31 +++++++------------------------
+ 1 file changed, 7 insertions(+), 24 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index abdc4d4..19c0423 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -534,6 +534,7 @@ enum {
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index fdd7e3f..955fefd 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1321,6 +1321,13 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 				  "ceu_sync", "ceu"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
+ 				  "ceu_field", "ceu"),
++	/* FLCTL */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
++				  "flctl_data", "flctl"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
++				  "flctl_ce0", "flctl"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
++				  "flctl_ctrl", "flctl"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1478,30 +1485,6 @@ static void __init mackerel_init(void)
+ 	/* SDHI0 PORT172 card-detect IRQ26 */
+ 	gpio_request(GPIO_FN_IRQ26_172, NULL);
  
- extern void r8a7740_meram_workaround(void);
- extern void r8a7740_init_irq(void);
-+extern void r8a7740_init_irq_of(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
- extern void r8a7740_add_standard_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index b741c84..8871f77 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -20,19 +20,15 @@
- 
- #include <linux/init.h>
- #include <linux/io.h>
-+#include <linux/irqchip.h>
- #include <linux/irqchip/arm-gic.h>
- 
--void __init r8a7740_init_irq(void)
-+static void __init r8a7740_init_irq_common(void)
- {
--	void __iomem *gic_dist_base = ioremap_nocache(0xc2800000, 0x1000);
--	void __iomem *gic_cpu_base = ioremap_nocache(0xc2000000, 0x1000);
- 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
- 	void __iomem *intc_msk_base = ioremap_nocache(0xe6900040, 0x10);
- 	void __iomem *pfc_inta_ctrl = ioremap_nocache(0xe605807c, 0x4);
- 
--	/* initialize the Generic Interrupt Controller PL390 r0p0 */
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+-	/* FLCTL */
+-	gpio_request(GPIO_FN_D0_NAF0, NULL);
+-	gpio_request(GPIO_FN_D1_NAF1, NULL);
+-	gpio_request(GPIO_FN_D2_NAF2, NULL);
+-	gpio_request(GPIO_FN_D3_NAF3, NULL);
+-	gpio_request(GPIO_FN_D4_NAF4, NULL);
+-	gpio_request(GPIO_FN_D5_NAF5, NULL);
+-	gpio_request(GPIO_FN_D6_NAF6, NULL);
+-	gpio_request(GPIO_FN_D7_NAF7, NULL);
+-	gpio_request(GPIO_FN_D8_NAF8, NULL);
+-	gpio_request(GPIO_FN_D9_NAF9, NULL);
+-	gpio_request(GPIO_FN_D10_NAF10, NULL);
+-	gpio_request(GPIO_FN_D11_NAF11, NULL);
+-	gpio_request(GPIO_FN_D12_NAF12, NULL);
+-	gpio_request(GPIO_FN_D13_NAF13, NULL);
+-	gpio_request(GPIO_FN_D14_NAF14, NULL);
+-	gpio_request(GPIO_FN_D15_NAF15, NULL);
+-	gpio_request(GPIO_FN_FCE0, NULL);
+-	gpio_request(GPIO_FN_WE0_FWE, NULL);
+-	gpio_request(GPIO_FN_FRB, NULL);
+-	gpio_request(GPIO_FN_A4_FOE, NULL);
+-	gpio_request(GPIO_FN_A5_FCDE, NULL);
+-	gpio_request(GPIO_FN_RD_FSC, NULL);
 -
- 	/* route signals to GIC */
- 	iowrite32(0x0, pfc_inta_ctrl);
- 
-@@ -54,3 +50,19 @@ void __init r8a7740_init_irq(void)
- 	iounmap(intc_msk_base);
- 	iounmap(pfc_inta_ctrl);
- }
-+
-+void __init r8a7740_init_irq_of(void)
-+{
-+	irqchip_init();
-+	r8a7740_init_irq_common();
-+}
-+
-+void __init r8a7740_init_irq(void)
-+{
-+	void __iomem *gic_dist_base = ioremap_nocache(0xc2800000, 0x1000);
-+	void __iomem *gic_cpu_base = ioremap_nocache(0xc2000000, 0x1000);
-+
-+	/* initialize the Generic Interrupt Controller PL390 r0p0 */
-+	gic_init(0, 29, gic_dist_base, gic_cpu_base);
-+	r8a7740_init_irq_common();
-+}
+ 	/* enable GPS module (GT-720F) */
+ 	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+ 	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
 -- 
 1.8.2.1
 
