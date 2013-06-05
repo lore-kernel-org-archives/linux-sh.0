@@ -1,60 +1,29 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:36 +0000
-Subject: [PATCH 03/15] ARM: shmobile: Remove romImage CONFIG_MEMORY_START
-Message-Id: <1371456768-1084-4-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:55:14 +0000
+Subject: [PATCH 00/02] ARM: shmobile: romImage update
+Message-Id: <20130605075514.17653.77135.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+ARM: shmobile: romImage update
 
-Instead of relying on CONFIG_MEMORY_START for memory
-base address, let each romImage board header file
-specify this information.
+[PATCH 01/02] ARM: shmobile: Let romImage rely on default ATAGS
+[PATCH 02/02] ARM: shmobile: Remove romImage CONFIG_MEMORY_START
 
-This is reworks code not to rely on CONFIG_MEMORY_START
-which in turn is needed for ARCH_MULTIPLATFORM.
+Rework the mach-shmobile romImage code to remove memory configuration
+kept in the kernel configuration.
+
+This is one of several series of code that reworks code not to rely on
+CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/compressed/head-shmobile.S    |    2 +-
+
+ Written against renesas.git renesas-next-20130604v2
+
+ arch/arm/boot/compressed/head-shmobile.S    |   21 ++-------------------
  arch/arm/mach-shmobile/include/mach/zboot.h |    2 ++
- 2 files changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
-index 19b2304..e2d6363 100644
---- a/arch/arm/boot/compressed/head-shmobile.S
-+++ b/arch/arm/boot/compressed/head-shmobile.S
-@@ -46,7 +46,7 @@ __image_start:
- __image_end:
- 	.long	_got_end
- __load_base:
--	.long	CONFIG_MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
-+	.long	MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
- __loaded:
- 	.long	__continue
- 	.align
-diff --git a/arch/arm/mach-shmobile/include/mach/zboot.h b/arch/arm/mach-shmobile/include/mach/zboot.h
-index 9320aff..308b5cf 100644
---- a/arch/arm/mach-shmobile/include/mach/zboot.h
-+++ b/arch/arm/mach-shmobile/include/mach/zboot.h
-@@ -12,9 +12,11 @@
- 
- #ifdef CONFIG_MACH_AP4EVB
- #define MACH_TYPE	MACH_TYPE_AP4EVB
-+#define MEMORY_START	0x40000000
- #include "mach/head-ap4evb.txt"
- #elif defined(CONFIG_MACH_MACKEREL)
- #define MACH_TYPE	MACH_TYPE_MACKEREL
-+#define MEMORY_START	0x40000000
- #include "mach/head-mackerel.txt"
- #else
- #error "unsupported board."
--- 
-1.7.10.4
-
+ 2 files changed, 4 insertions(+), 19 deletions(-)
