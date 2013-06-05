@@ -1,290 +1,70 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 04:32:11 +0000
-Subject: [PATCH 2/7] ARM: shmobile: r8a7740: Prepare for reference DT setup
-Message-Id: <1370406736-32272-3-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:20 +0000
+Subject: [PATCH 089/130] ARM: shmobile: r8a7740: Remove BSC function GPIOs
+Message-Id: <1370420821-28420-90-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-We need three steps to prepare for the new Armadillo reference DT board code:
- - Split the device list into r8a7740_early_devices used by the old platform
-   data setup (board-armadillo.c) and r8a7740_devices_dt used by both
-   setup variants.
- - Introduce new r8a7740_init_delay() to be more flexible about calling
-   shmobile_setup_delay().
- - For the generic r8a7740 support, we switch to device tree setup for
-   the GIC, the irqpin devices and the I2C controllers.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-This is slightly similar to commit 3b00f9342623a5ebc
-"ARM: shmobile: sh73a0: Do not use early devices with DT reference"
-
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi                | 117 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/r8a7740.h |   2 +
- arch/arm/mach-shmobile/setup-r8a7740.c        |  54 ++++++------
- 3 files changed, 148 insertions(+), 25 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 27 ++-------------------------
+ 1 file changed, 2 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 798fa35..25dc930 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -18,4 +18,121 @@
- 			compatible = "arm,cortex-a9";
- 		};
- 	};
-+
-+	gic: interrupt-controller@c2800000 {
-+		compatible = "arm,cortex-a9-gic";
-+		#interrupt-cells = <3>;
-+		#address-cells = <1>;
-+		interrupt-controller;
-+		reg = <0xc2800000 0x1000>,
-+		      <0xc2000000 0x1000>;
-+	};
-+
-+	/* irqpin0: IRQ0 - IRQ7 */
-+	irqpin0: irqpin@e6900000 {
-+		compatible = "renesas,intc-irqpin";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xe6900000 4>,
-+			<0xe6900010 4>,
-+			<0xe6900020 1>,
-+			<0xe6900040 1>,
-+			<0xe6900060 1>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4>;
-+	};
-+
-+	/* irqpin1: IRQ8 - IRQ15 */
-+	irqpin1: irqpin@e6900004 {
-+		compatible = "renesas,intc-irqpin";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xe6900004 4>,
-+			<0xe6900014 4>,
-+			<0xe6900024 1>,
-+			<0xe6900044 1>,
-+			<0xe6900064 1>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4>;
-+	};
-+
-+	/* irqpin2: IRQ16 - IRQ23 */
-+	irqpin2: irqpin@e6900008 {
-+		compatible = "renesas,intc-irqpin";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xe6900008 4>,
-+			<0xe6900018 4>,
-+			<0xe6900028 1>,
-+			<0xe6900048 1>,
-+			<0xe6900068 1>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4>;
-+	};
-+
-+	/* irqpin3: IRQ24 - IRQ31 */
-+	irqpin3: irqpin@e690000c {
-+		compatible = "renesas,intc-irqpin";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xe690000c 4>,
-+			<0xe690001c 4>,
-+			<0xe690002c 1>,
-+			<0xe690004c 1>,
-+			<0xe690006c 1>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4
-+			      0 149 0x4>;
-+	};
-+
-+	i2c0: i2c@fff20000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0xfff20000 0x425>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 201 0x4
-+			      0 202 0x4
-+			      0 203 0x4
-+			      0 204 0x4>;
-+	};
-+
-+	i2c1: i2c@e6c20000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0xe6c20000 0x425>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 70 0x4
-+			      0 71 0x4
-+			      0 72 0x4
-+			      0 73 0x4>;
-+	};
- };
 diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 19c0423..1cf6869 100644
+index dea430e..61cff39 100644
 --- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
 +++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -533,11 +533,13 @@ enum {
- };
+@@ -297,11 +297,7 @@ enum {
+ 	GPIO_FN_BBIF2_TSCK2_PORT89,
+ 	GPIO_FN_BBIF2_TSYNC2_PORT184,
  
- extern void r8a7740_meram_workaround(void);
-+extern void r8a7740_init_delay(void);
- extern void r8a7740_init_irq(void);
- extern void r8a7740_init_irq_of(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
- extern void r8a7740_add_standard_devices(void);
-+extern void r8a7740_add_standard_devices_dt(void);
- extern void r8a7740_clock_init(u8 md_ck);
- extern void r8a7740_pinmux_init(void);
- extern void r8a7740_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 326a4ab..9284e6f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -531,11 +531,7 @@ static struct platform_device ipmmu_device = {
- 	.num_resources  = ARRAY_SIZE(ipmmu_resources),
- };
+-	/* BSC / FLCTL / PCMCIA */
+-	GPIO_FN_CS0,	GPIO_FN_CS2,	GPIO_FN_CS4,
+-	GPIO_FN_CS5B,	GPIO_FN_CS6A,
+-	GPIO_FN_CS5A_PORT105, /* CS5A PORT 19/105 */
+-	GPIO_FN_CS5A_PORT19,
++	/* FLCTL / PCMCIA */
+ 	GPIO_FN_IOIS16, /* ? */
  
--static struct platform_device *r8a7740_early_devices[] __initdata = {
--	&irqpin0_device,
--	&irqpin1_device,
--	&irqpin2_device,
--	&irqpin3_device,
-+static struct platform_device *r8a7740_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
- 	&scif2_device,
-@@ -546,6 +542,13 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif7_device,
- 	&scifb_device,
- 	&cmt10_device,
-+};
-+
-+static struct platform_device *r8a7740_early_devices[] __initdata = {
-+	&irqpin0_device,
-+	&irqpin1_device,
-+	&irqpin2_device,
-+	&irqpin3_device,
- 	&tmu00_device,
- 	&tmu01_device,
- 	&tmu02_device,
-@@ -965,6 +968,8 @@ void __init r8a7740_add_standard_devices(void)
- 	/* add devices */
- 	platform_add_devices(r8a7740_early_devices,
- 			    ARRAY_SIZE(r8a7740_early_devices));
-+	platform_add_devices(r8a7740_devices_dt,
-+			    ARRAY_SIZE(r8a7740_devices_dt));
- 	platform_add_devices(r8a7740_late_devices,
- 			     ARRAY_SIZE(r8a7740_late_devices));
+ 	GPIO_FN_A0,	GPIO_FN_A1,	GPIO_FN_A2,	GPIO_FN_A3,
+@@ -314,26 +310,7 @@ enum {
+ 	GPIO_FN_A22,	GPIO_FN_A23,	GPIO_FN_A24,	GPIO_FN_A25,
+ 	GPIO_FN_A26,
  
-@@ -986,6 +991,8 @@ void __init r8a7740_add_early_devices(void)
- {
- 	early_platform_add_devices(r8a7740_early_devices,
- 				   ARRAY_SIZE(r8a7740_early_devices));
-+	early_platform_add_devices(r8a7740_devices_dt,
-+				   ARRAY_SIZE(r8a7740_devices_dt));
- 
- 	/* setup early console here as well */
- 	shmobile_setup_console();
-@@ -993,33 +1000,29 @@ void __init r8a7740_add_early_devices(void)
- 
- #ifdef CONFIG_USE_OF
- 
--void __init r8a7740_add_early_devices_dt(void)
--{
--	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
+-	GPIO_FN_D0_NAF0,	GPIO_FN_D1_NAF1,	/* share with FLCTL */
+-	GPIO_FN_D2_NAF2,	GPIO_FN_D3_NAF3,	/* share with FLCTL */
+-	GPIO_FN_D4_NAF4,	GPIO_FN_D5_NAF5,	/* share with FLCTL */
+-	GPIO_FN_D6_NAF6,	GPIO_FN_D7_NAF7,	/* share with FLCTL */
+-	GPIO_FN_D8_NAF8,	GPIO_FN_D9_NAF9,	/* share with FLCTL */
+-	GPIO_FN_D10_NAF10,	GPIO_FN_D11_NAF11,	/* share with FLCTL */
+-	GPIO_FN_D12_NAF12,	GPIO_FN_D13_NAF13,	/* share with FLCTL */
+-	GPIO_FN_D14_NAF14,	GPIO_FN_D15_NAF15,	/* share with FLCTL */
 -
--	early_platform_add_devices(r8a7740_early_devices,
--				   ARRAY_SIZE(r8a7740_early_devices));
+-	GPIO_FN_D16,	GPIO_FN_D17,	GPIO_FN_D18,	GPIO_FN_D19,
+-	GPIO_FN_D20,	GPIO_FN_D21,	GPIO_FN_D22,	GPIO_FN_D23,
+-	GPIO_FN_D24,	GPIO_FN_D25,	GPIO_FN_D26,	GPIO_FN_D27,
+-	GPIO_FN_D28,	GPIO_FN_D29,	GPIO_FN_D30,	GPIO_FN_D31,
 -
--	/* setup early console here as well */
--	shmobile_setup_console();
--}
--
- static const struct of_dev_auxdata r8a7740_auxdata_lookup[] __initconst = {
- 	{ }
- };
- 
- void __init r8a7740_add_standard_devices_dt(void)
- {
--	/* clocks are setup late during boot in the case of DT */
--	r8a7740_clock_init(0);
--
--	platform_add_devices(r8a7740_early_devices,
--			    ARRAY_SIZE(r8a7740_early_devices));
--
-+	platform_add_devices(r8a7740_devices_dt,
-+			    ARRAY_SIZE(r8a7740_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table,
- 			     r8a7740_auxdata_lookup, NULL);
- }
- 
-+void __init r8a7740_init_delay(void)
-+{
-+	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
-+};
-+
-+static void __init r8a7740_generic_init(void)
-+{
-+	r8a7740_clock_init(0);
-+	r8a7740_add_standard_devices_dt();
-+}
-+
- static const char *r8a7740_boards_compat_dt[] __initdata = {
- 	"renesas,r8a7740",
- 	NULL,
-@@ -1027,9 +1030,10 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
- 
- DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
- 	.map_io		= r8a7740_map_io,
--	.init_early	= r8a7740_add_early_devices_dt,
--	.init_irq	= r8a7740_init_irq,
--	.init_machine	= r8a7740_add_standard_devices_dt,
-+	.init_early	= r8a7740_init_delay,
-+	.init_irq	= r8a7740_init_irq_of,
-+	.init_machine	= r8a7740_generic_init,
-+	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a7740_boards_compat_dt,
- MACHINE_END
+-	GPIO_FN_WE0_FWE,	/* share with FLCTL */
+-	GPIO_FN_WE1,
+-	GPIO_FN_WE2_ICIORD,	/* share with PCMCIA */
+-	GPIO_FN_WE3_ICIOWR,	/* share with PCMCIA */
+-	GPIO_FN_CKO,	GPIO_FN_BS,	GPIO_FN_RDWR,
+-	GPIO_FN_RD_FSC,		/* share with FLCTL */
++	GPIO_FN_CKO,
+ 	GPIO_FN_WAIT_PORT177,	/* WAIT Port 90/177 */
+ 	GPIO_FN_WAIT_PORT90,
  
 -- 
 1.8.2.1
