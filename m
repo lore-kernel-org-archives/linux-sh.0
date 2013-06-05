@@ -1,109 +1,49 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 08 Jun 2013 00:05:59 +0000
-Subject: [PATCH 8/9] sh_eth: get R8A777x support out of #ifdef
-Message-Id: <201306080405.59474.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:33 +0000
+Subject: [PATCH 042/130] ARM: shmobile: mackerel: Register pinctrl mapping for ST1232
+Message-Id: <1370420821-28420-43-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Get the R-Car code/data in the driver out of #ifdef by adding "r8a777x-ether" to
-the platfrom driver's  ID table; since it's the last #ifdef, we remove CARDNAME
-from the  ID table and no longer check  the driver data before  assigning it to
-'mdp->cd'...
-Change the Ether platform device's name in the ARM platform code accordingly.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Replace the GPIO-based ST1232 pinmux configuration by a pinctrl mapping.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Note that the Ether device on R8A777[89]  cannot yet be used due to  the typo in
-the device name when registering the platform device -- I'll fix this in the ARM
-tree. Moreover, the only working Ether board code (for the BOCK-W board) will be
-merged only in 3.11...
+ arch/arm/mach-shmobile/board-mackerel.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a7778.c |    2 +-
- arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
- drivers/net/ethernet/renesas/sh_eth.c  |   14 +++++---------
- 3 files changed, 7 insertions(+), 11 deletions(-)
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 49b66a8..8350635 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1384,6 +1384,9 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 				  "bsc_cs5a", "bsc"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
+ 				  "intc_irq6_0", "intc"),
++	/* ST1232 */
++	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-sh7372",
++				  "intc_irq7_0", "intc"),
+ };
+ 
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+@@ -1465,8 +1468,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_IRQ9_42,	NULL);
+ 	irq_set_irq_type(IRQ9, IRQ_TYPE_LEVEL_HIGH);
+ 
+-	/* enable Touchscreen */
+-	gpio_request(GPIO_FN_IRQ7_40,	NULL);
++	/* Touchscreen */
+ 	irq_set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
+ 
+ 	/* Accelerometer */
+-- 
+1.8.2.1
 
-Index: net-next/arch/arm/mach-shmobile/clock-r8a7778.c
-=================================--- net-next.orig/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ net-next/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -77,7 +77,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 
- static struct clk_lookup lookups[] = {
- 	/* MSTP32 clocks */
--	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
-Index: net-next/arch/arm/mach-shmobile/clock-r8a7779.c
-=================================--- net-next.orig/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ net-next/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -163,7 +163,7 @@ static struct clk_lookup lookups[] = {
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
- 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
--	CLKDEV_DEV_ID("sh-eth", &mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
- 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -356,8 +356,7 @@ static void __maybe_unused sh_eth_set_du
- }
- 
- /* There is CPU dependent code */
--#if defined(CONFIG_ARCH_R8A7778) || defined(CONFIG_ARCH_R8A7779)
--static void sh_eth_set_rate(struct net_device *ndev)
-+static void sh_eth_set_rate_r8a777x(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 
-@@ -374,9 +373,9 @@ static void sh_eth_set_rate(struct net_d
- }
- 
- /* R8A7778/9 */
--static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
-+static struct sh_eth_cpu_data r8a777x_data = {
- 	.set_duplex	= sh_eth_set_duplex,
--	.set_rate	= sh_eth_set_rate,
-+	.set_rate	= sh_eth_set_rate_r8a777x,
- 
- 	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
- 	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
-@@ -392,7 +391,6 @@ static struct sh_eth_cpu_data sh_eth_my_
- 	.tpauser	= 1,
- 	.hw_swap	= 1,
- };
--#endif
- 
- static void sh_eth_set_rate_sh7724(struct net_device *ndev)
- {
-@@ -2566,9 +2564,7 @@ static int sh_eth_drv_probe(struct platf
- 	mdp->reg_offset = sh_eth_get_register_offset(pd->register_type);
- 
- 	/* set cpu data */
--	mdp->cd = &sh_eth_my_cpu_data;
--	if (id->driver_data)
--		mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
-+	mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
- 	sh_eth_set_default_cpu_data(mdp->cd);
- 
- 	/* set function */
-@@ -2692,7 +2688,7 @@ static struct platform_device_id sh_eth_
- 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
- 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
- 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
--	{ CARDNAME },
-+	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
- 	{ }
- };
- MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
