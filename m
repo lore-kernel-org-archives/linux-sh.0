@@ -1,299 +1,117 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 19 Jun 2013 13:22:33 +0000
-Subject: [PATCH 2/4] sh-pfc: r8a7790: add HSCIF pin groups
-Message-Id: <1371648155-18479-3-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 05 Jun 2013 21:14:06 +0000
+Subject: [PATCH v4 4/8] sh_eth: remove SH_ETH_HAS_TSU
+Message-Id: <201306060114.06411.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
+References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Adds HSCIF data/clk/ctrl groups to R8A7790 PFC driver.
+Remove SH_ETH_HAS_TSU #define's and #ifdef's. Set three 'struct net_device_ops'
+methods that depend on the presence of TSU basing on the 'tsu' field of 'struct
+sh_eth_cpu_data'.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+[Sergei: made two method assignments one-liners, added the changelog, reworded
+the subject, changing the prefix.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 211 ++++++++++++++++++++++++++++++++---
- 1 file changed, 196 insertions(+), 15 deletions(-)
+Changes in version 4:
+- made two method assignments one-liners;
+- refreshed the patch;
+- added the changelog;
+- reworded the subject, changing the prefix.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 85d77a4..1e7a5eb 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -1979,6 +1979,141 @@ static const unsigned int scif1_clk_e_pins[] = {
- static const unsigned int scif1_clk_e_mux[] = {
- 	SCK1_E_MARK,
+ drivers/net/ethernet/renesas/sh_eth.c |   20 ++++++++------------
+ 1 file changed, 8 insertions(+), 12 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -431,7 +431,6 @@ static struct sh_eth_cpu_data sh_eth_my_
  };
-+/* - HSCIF0 ----------------------------------------------------------------- */
-+static const unsigned int hscif0_data_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 8), RCAR_GP_PIN(5, 9),
-+};
-+static const unsigned int hscif0_data_mux[] = {
-+	HRX0_MARK, HTX0_MARK,
-+};
-+static const unsigned int hscif0_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(5, 7),
-+};
-+static const unsigned int hscif0_clk_mux[] = {
-+	HSCK0_MARK,
-+};
-+static const unsigned int hscif0_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(5, 11), RCAR_GP_PIN(5, 10),
-+};
-+static const unsigned int hscif0_ctrl_mux[] = {
-+	HRTS0_N_MARK, HCTS0_N_MARK,
-+};
-+static const unsigned int hscif0_data_b_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(1, 23), RCAR_GP_PIN(1, 12),
-+};
-+static const unsigned int hscif0_data_b_mux[] = {
-+	HRX0_B_MARK, HTX0_B_MARK,
-+};
-+static const unsigned int hscif0_ctrl_b_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(1, 29), RCAR_GP_PIN(1, 28),
-+};
-+static const unsigned int hscif0_ctrl_b_mux[] = {
-+	HRTS0_N_B_MARK, HCTS0_N_B_MARK,
-+};
-+static const unsigned int hscif0_data_c_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 13), RCAR_GP_PIN(5, 16),
-+};
-+static const unsigned int hscif0_data_c_mux[] = {
-+	HRX0_C_MARK, HTX0_C_MARK,
-+};
-+static const unsigned int hscif0_ctrl_c_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(5, 3), RCAR_GP_PIN(5, 7),
-+};
-+static const unsigned int hscif0_ctrl_c_mux[] = {
-+	HRTS0_N_C_MARK, HCTS0_N_C_MARK,
-+};
-+static const unsigned int hscif0_data_d_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(3, 20), RCAR_GP_PIN(3, 21),
-+};
-+static const unsigned int hscif0_data_d_mux[] = {
-+	HRX0_D_MARK, HTX0_D_MARK,
-+};
-+static const unsigned int hscif0_ctrl_d_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(3, 23), RCAR_GP_PIN(3, 22),
-+};
-+static const unsigned int hscif0_ctrl_d_mux[] = {
-+	HRTS0_N_D_MARK, HCTS0_N_D_MARK,
-+};
-+static const unsigned int hscif0_data_e_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 22),
-+};
-+static const unsigned int hscif0_data_e_mux[] = {
-+	HRX0_E_MARK, HTX0_E_MARK,
-+};
-+static const unsigned int hscif0_ctrl_e_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(2, 24), RCAR_GP_PIN(2, 23),
-+};
-+static const unsigned int hscif0_ctrl_e_mux[] = {
-+	HRTS0_N_E_MARK, HCTS0_N_E_MARK,
-+};
-+static const unsigned int hscif0_data_f_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(2, 23), RCAR_GP_PIN(2, 25),
-+};
-+static const unsigned int hscif0_data_f_mux[] = {
-+	HRX0_F_MARK, HTX0_F_MARK,
-+};
-+static const unsigned int hscif0_ctrl_f_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(2, 26), RCAR_GP_PIN(2, 24),
-+};
-+static const unsigned int hscif0_ctrl_f_mux[] = {
-+	HRTS0_N_F_MARK, HCTS0_N_F_MARK,
-+};
-+/* - HSCIF1 ----------------------------------------------------------------- */
-+static const unsigned int hscif1_data_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(4, 28), RCAR_GP_PIN(4, 29),
-+};
-+static const unsigned int hscif1_data_mux[] = {
-+	HRX1_MARK, HTX1_MARK,
-+};
-+static const unsigned int hscif1_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(4, 27),
-+};
-+static const unsigned int hscif1_clk_mux[] = {
-+	HSCK1_MARK,
-+};
-+static const unsigned int hscif1_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(4, 31), RCAR_GP_PIN(4, 30),
-+};
-+static const unsigned int hscif1_ctrl_mux[] = {
-+	HRTS1_N_MARK, HCTS1_N_MARK,
-+};
-+static const unsigned int hscif1_data_b_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(1, 12), RCAR_GP_PIN(1, 18),
-+};
-+static const unsigned int hscif1_data_b_mux[] = {
-+	HRX1_B_MARK, HTX1_B_MARK,
-+};
-+static const unsigned int hscif1_clk_b_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(1, 28),
-+};
-+static const unsigned int hscif1_clk_b_mux[] = {
-+	HSCK1_B_MARK,
-+};
-+static const unsigned int hscif1_ctrl_b_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(1, 14), RCAR_GP_PIN(1, 13),
-+};
-+static const unsigned int hscif1_ctrl_b_mux[] = {
-+	HRTS1_N_B_MARK, HCTS1_N_B_MARK,
-+};
- /* - SCIFA0 ----------------------------------------------------------------- */
- static const unsigned int scifa0_data_pins[] = {
- 	/* RXD, TXD */
-@@ -2591,10 +2726,37 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(eth_magic),
- 	SH_PFC_PIN_GROUP(eth_mdio),
- 	SH_PFC_PIN_GROUP(eth_rmii),
-+	SH_PFC_PIN_GROUP(hscif0_data),
-+	SH_PFC_PIN_GROUP(hscif0_clk),
-+	SH_PFC_PIN_GROUP(hscif0_ctrl),
-+	SH_PFC_PIN_GROUP(hscif0_data_b),
-+	SH_PFC_PIN_GROUP(hscif0_ctrl_b),
-+	SH_PFC_PIN_GROUP(hscif0_data_c),
-+	SH_PFC_PIN_GROUP(hscif0_ctrl_c),
-+	SH_PFC_PIN_GROUP(hscif0_data_d),
-+	SH_PFC_PIN_GROUP(hscif0_ctrl_d),
-+	SH_PFC_PIN_GROUP(hscif0_data_e),
-+	SH_PFC_PIN_GROUP(hscif0_ctrl_e),
-+	SH_PFC_PIN_GROUP(hscif0_data_f),
-+	SH_PFC_PIN_GROUP(hscif0_ctrl_f),
-+	SH_PFC_PIN_GROUP(hscif1_data),
-+	SH_PFC_PIN_GROUP(hscif1_clk),
-+	SH_PFC_PIN_GROUP(hscif1_ctrl),
-+	SH_PFC_PIN_GROUP(hscif1_data_b),
-+	SH_PFC_PIN_GROUP(hscif1_clk_b),
-+	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
- 	SH_PFC_PIN_GROUP(intc_irq0),
- 	SH_PFC_PIN_GROUP(intc_irq1),
- 	SH_PFC_PIN_GROUP(intc_irq2),
- 	SH_PFC_PIN_GROUP(intc_irq3),
-+	SH_PFC_PIN_GROUP(mmc0_data1),
-+	SH_PFC_PIN_GROUP(mmc0_data4),
-+	SH_PFC_PIN_GROUP(mmc0_data8),
-+	SH_PFC_PIN_GROUP(mmc0_ctrl),
-+	SH_PFC_PIN_GROUP(mmc1_data1),
-+	SH_PFC_PIN_GROUP(mmc1_data4),
-+	SH_PFC_PIN_GROUP(mmc1_data8),
-+	SH_PFC_PIN_GROUP(mmc1_ctrl),
- 	SH_PFC_PIN_GROUP(scif0_data),
- 	SH_PFC_PIN_GROUP(scif0_clk),
- 	SH_PFC_PIN_GROUP(scif0_ctrl),
-@@ -2659,18 +2821,6 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scifb2_clk_b),
- 	SH_PFC_PIN_GROUP(scifb2_ctrl_b),
- 	SH_PFC_PIN_GROUP(scifb2_data_c),
--	SH_PFC_PIN_GROUP(tpu0_to0),
--	SH_PFC_PIN_GROUP(tpu0_to1),
--	SH_PFC_PIN_GROUP(tpu0_to2),
--	SH_PFC_PIN_GROUP(tpu0_to3),
--	SH_PFC_PIN_GROUP(mmc0_data1),
--	SH_PFC_PIN_GROUP(mmc0_data4),
--	SH_PFC_PIN_GROUP(mmc0_data8),
--	SH_PFC_PIN_GROUP(mmc0_ctrl),
--	SH_PFC_PIN_GROUP(mmc1_data1),
--	SH_PFC_PIN_GROUP(mmc1_data4),
--	SH_PFC_PIN_GROUP(mmc1_data8),
--	SH_PFC_PIN_GROUP(mmc1_ctrl),
- 	SH_PFC_PIN_GROUP(sdhi0_data1),
- 	SH_PFC_PIN_GROUP(sdhi0_data4),
- 	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-@@ -2691,6 +2841,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi3_ctrl),
- 	SH_PFC_PIN_GROUP(sdhi3_cd),
- 	SH_PFC_PIN_GROUP(sdhi3_wp),
-+	SH_PFC_PIN_GROUP(tpu0_to0),
-+	SH_PFC_PIN_GROUP(tpu0_to1),
-+	SH_PFC_PIN_GROUP(tpu0_to2),
-+	SH_PFC_PIN_GROUP(tpu0_to3),
- };
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7757)
+ #define SH_ETH_HAS_BOTH_MODULES	1
+-#define SH_ETH_HAS_TSU	1
+ static int sh_eth_check_reset(struct net_device *ndev);
  
- static const char * const eth_groups[] = {
-@@ -2726,6 +2880,31 @@ static const char * const scif1_groups[] = {
- 	"scif1_clk_e",
- };
+ static void sh_eth_set_rate(struct net_device *ndev)
+@@ -592,7 +591,6 @@ static struct sh_eth_cpu_data *sh_eth_ge
+ }
  
-+static const char * const hscif0_groups[] = {
-+	"hscif0_data",
-+	"hscif0_clk",
-+	"hscif0_ctrl",
-+	"hscif0_data_b",
-+	"hscif0_ctrl_b",
-+	"hscif0_data_c",
-+	"hscif0_ctrl_c",
-+	"hscif0_data_d",
-+	"hscif0_ctrl_d",
-+	"hscif0_data_e",
-+	"hscif0_ctrl_e",
-+	"hscif0_data_f",
-+	"hscif0_ctrl_f",
-+};
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7734) || defined(CONFIG_CPU_SUBTYPE_SH7763)
+-#define SH_ETH_HAS_TSU	1
+ static int sh_eth_check_reset(struct net_device *ndev);
+ static void sh_eth_reset_hw_crc(struct net_device *ndev);
+ 
+@@ -693,7 +691,6 @@ static void sh_eth_reset_hw_crc(struct n
+ }
+ 
+ #elif defined(CONFIG_ARCH_R8A7740)
+-#define SH_ETH_HAS_TSU	1
+ static int sh_eth_check_reset(struct net_device *ndev);
+ 
+ static void sh_eth_chip_reset(struct net_device *ndev)
+@@ -791,7 +788,6 @@ static struct sh_eth_cpu_data sh_eth_my_
+ };
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7710) || defined(CONFIG_CPU_SUBTYPE_SH7712)
+ #define SH_ETH_RESET_DEFAULT	1
+-#define SH_ETH_HAS_TSU	1
+ static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
+ 	.tsu		= 1,
+@@ -2105,7 +2101,6 @@ static int sh_eth_do_ioctl(struct net_de
+ 	return phy_mii_ioctl(phydev, rq, cmd);
+ }
+ 
+-#if defined(SH_ETH_HAS_TSU)
+ /* For TSU_POSTn. Please refer to the manual about this (strange) bitfields */
+ static void *sh_eth_tsu_get_post_reg_offset(struct sh_eth_private *mdp,
+ 					    int entry)
+@@ -2448,7 +2443,6 @@ static int sh_eth_vlan_rx_kill_vid(struc
+ 
+ 	return 0;
+ }
+-#endif /* SH_ETH_HAS_TSU */
+ 
+ /* SuperH's TSU register init function */
+ static void sh_eth_tsu_init(struct sh_eth_private *mdp)
+@@ -2587,16 +2581,11 @@ static const u16 *sh_eth_get_register_of
+ 	return reg_offset;
+ }
+ 
+-static const struct net_device_ops sh_eth_netdev_ops = {
++static struct net_device_ops sh_eth_netdev_ops = {
+ 	.ndo_open		= sh_eth_open,
+ 	.ndo_stop		= sh_eth_close,
+ 	.ndo_start_xmit		= sh_eth_start_xmit,
+ 	.ndo_get_stats		= sh_eth_get_stats,
+-#if defined(SH_ETH_HAS_TSU)
+-	.ndo_set_rx_mode	= sh_eth_set_multicast_list,
+-	.ndo_vlan_rx_add_vid	= sh_eth_vlan_rx_add_vid,
+-	.ndo_vlan_rx_kill_vid	= sh_eth_vlan_rx_kill_vid,
+-#endif
+ 	.ndo_tx_timeout		= sh_eth_tx_timeout,
+ 	.ndo_do_ioctl		= sh_eth_do_ioctl,
+ 	.ndo_validate_addr	= eth_validate_addr,
+@@ -2677,6 +2666,13 @@ static int sh_eth_drv_probe(struct platf
+ 	sh_eth_set_default_cpu_data(mdp->cd);
+ 
+ 	/* set function */
++	if (mdp->cd->tsu) {
++		sh_eth_netdev_ops.ndo_set_rx_mode = sh_eth_set_multicast_list;
++		sh_eth_netdev_ops.ndo_vlan_rx_add_vid = sh_eth_vlan_rx_add_vid;
++		sh_eth_netdev_ops.ndo_vlan_rx_kill_vid +			sh_eth_vlan_rx_kill_vid;
++	}
 +
-+static const char * const hscif1_groups[] = {
-+	"hscif1_data",
-+	"hscif1_clk",
-+	"hscif1_ctrl",
-+	"hscif1_data_b",
-+	"hscif1_clk_b",
-+	"hscif1_ctrl_b",
-+};
-+
- static const char * const scifa0_groups[] = {
- 	"scifa0_data",
- 	"scifa0_clk",
-@@ -2850,7 +3029,11 @@ static const char * const sdhi3_groups[] = {
- 
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(eth),
-+	SH_PFC_FUNCTION(hscif0),
-+	SH_PFC_FUNCTION(hscif1),
- 	SH_PFC_FUNCTION(intc),
-+	SH_PFC_FUNCTION(mmc0),
-+	SH_PFC_FUNCTION(mmc1),
- 	SH_PFC_FUNCTION(scif0),
- 	SH_PFC_FUNCTION(scif1),
- 	SH_PFC_FUNCTION(scifa0),
-@@ -2859,13 +3042,11 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(scifb0),
- 	SH_PFC_FUNCTION(scifb1),
- 	SH_PFC_FUNCTION(scifb2),
--	SH_PFC_FUNCTION(tpu0),
--	SH_PFC_FUNCTION(mmc0),
--	SH_PFC_FUNCTION(mmc1),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
- 	SH_PFC_FUNCTION(sdhi3),
-+	SH_PFC_FUNCTION(tpu0),
- };
- 
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
--- 
-1.8.2.1
+ 	ndev->netdev_ops = &sh_eth_netdev_ops;
+ 	SET_ETHTOOL_OPS(ndev, &sh_eth_ethtool_ops);
+ 	ndev->watchdog_timeo = TX_TIMEOUT;
 
