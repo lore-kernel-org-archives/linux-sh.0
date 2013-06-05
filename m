@@ -1,62 +1,69 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Jun 2013 06:45:14 +0000
-Subject: Re: [GIT PULL 0/6] Renesas ARM based SoC defconfig updates for v3.11
-Message-Id: <20130605064511.GA14490@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:58 +0000
+Subject: [PATCH 067/130] ARM: shmobile: armadillo800eva: Register pinctrl mapping for INTC
+Message-Id: <1370420821-28420-68-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370406713-26599-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370406713-26599-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-[ fix up subject to say GIT PULL ]
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On Wed, Jun 05, 2013 at 01:31:47PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
-> 
->   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.11
-> 
-> for you to fetch changes up to 76d415dfa7d53a2f92550484d766ae475a427daf:
-> 
->   ARM: shmobile: kzm9g: enable AS3711 PMIC in defconfig (2013-06-04 21:47:10 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM based SoC defconfig updates for v3.11
-> 
-> kzm9g: Enable AS3711 PMIC
-> bockw: Enable, USB, PM_RUNTIME, I2C and SDHI
-> armadillo800eva: Correct SERIAL_SH_SCI_NR_UARTS
-> 
-> ----------------------------------------------------------------
-> Guennadi Liakhovetski (1):
->       ARM: shmobile: kzm9g: enable AS3711 PMIC in defconfig
-> 
-> Kuninori Morimoto (1):
->       ARM: shmobile: bockw: enable SDHI on defconfig
-> 
-> Nobuhiro Iwamatsu (1):
->       ARM: shmobile: armadillo800eva: Fix maximum number of SCIF
-> 
-> Sergei Shtylyov (1):
->       ARM: shmobile: bockw: enable USB in defconfig
-> 
-> Vladimir Barinov (2):
->       ARM: shmobile: bockw: enable I2C in defconfig
->       ARM: shmobile: bockw: enable CONFIG_PM_RUNTIME in defconfig
-> 
->  arch/arm/configs/armadillo800eva_defconfig |  2 +-
->  arch/arm/configs/bockw_defconfig           | 16 +++++++++++++++-
->  arch/arm/configs/kzm9g_defconfig           |  3 +++
->  3 files changed, 19 insertions(+), 2 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Replace the GPIO-based INTC pinmux configuration by a pinctrl mapping.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index b85b288..8d8b362 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1065,6 +1065,12 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 				  "sdhi0_ctrl", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7740",
+ 				  "sdhi0_wp", "sdhi0"),
++	/* ST1232 */
++	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-r8a7740",
++				  "intc_irq10", "intc"),
++	/* USBHS */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7740",
++				  "intc_irq7_1", "intc"),
+ };
+ 
+ static void __init eva_clock_init(void)
+@@ -1130,7 +1136,7 @@ static void __init eva_init(void)
+ 	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
+ 
+ 	/* Touchscreen */
+-	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
++	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 
+ 	/* GETHER */
+ 	gpio_request(GPIO_FN_ET_CRS,		NULL);
+@@ -1163,13 +1169,11 @@ static void __init eva_init(void)
+ 	} else {
+ 		/* USB Func */
+ 		/*
+-		 * A1 chip has 2 IRQ7 pin and it was controled by MSEL register.
+-		 * OTOH, usbhs interrupt needs its value (HI/LOW) to decide
+-		 * USB connection/disconnection (usbhsf_get_vbus()).
+-		 * This means we needs to select GPIO_FN_IRQ7_PORT209 first,
+-		 * and select GPIO 209 here
++		 * The USBHS interrupt handlers needs to read the IRQ pin value
++		 * (HI/LOW) to diffentiate USB connection and disconnection
++		 * events (usbhsf_get_vbus()). We thus need to select both the
++		 * intc_irq7_1 pin group and GPIO 209 here.
+ 		 */
+-		gpio_request(GPIO_FN_IRQ7_PORT209, NULL);
+ 		gpio_request_one(209, GPIOF_IN, NULL);
+ 
+ 		platform_device_register(&usbhsf_device);
+-- 
+1.8.2.1
+
