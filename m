@@ -1,47 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 28 Jun 2013 10:30:07 +0000
-Subject: [PATCH 04/06] ARM: shmobile: Remove unused r8a7779 auxdata table
-Message-Id: <20130628103007.31451.96485.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:05 +0000
+Subject: [PATCH 074/130] ARM: shmobile: bonito: Remove empty core devices array
+Message-Id: <1370420821-28420-75-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130628102930.31451.85334.sendpatchset@w520>
-In-Reply-To: <20130628102930.31451.85334.sendpatchset@w520>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Pass NULL to of_platform_populate instead of passing
-an empty list. This cleans up the code and reduces the
-number of lines.
+The core devices array is empty, passing it to platform_add_devices() is
+a no-op. Remove it.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-bonito.c | 9 ---------
+ 1 file changed, 9 deletions(-)
 
- arch/arm/mach-shmobile/setup-r8a7779.c |    7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2013-06-28 15:49:50.000000000 +0900
-@@ -665,10 +665,6 @@ void __init r8a7779_init_delay(void)
- 	shmobile_setup_delay(1000, 2, 4); /* Cortex-A9 @ 1000MHz */
- }
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index 70d992c..b111c13 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -331,12 +331,6 @@ static struct platform_device smsc_device = {
+ };
  
--static const struct of_dev_auxdata r8a7779_auxdata_lookup[] __initconst = {
--	{},
+ /*
+- * core board devices
+- */
+-static struct platform_device *bonito_core_devices[] __initdata = {
 -};
 -
- void __init r8a7779_add_standard_devices_dt(void)
- {
- 	/* clocks are setup late during boot in the case of DT */
-@@ -676,8 +672,7 @@ void __init r8a7779_add_standard_devices
+-/*
+  * base board devices
+  */
+ static struct platform_device *bonito_base_devices[] __initdata = {
+@@ -397,9 +391,6 @@ static void __init bonito_init(void)
  
- 	platform_add_devices(r8a7779_devices_dt,
- 			     ARRAY_SIZE(r8a7779_devices_dt));
--	of_platform_populate(NULL, of_default_bus_match_table,
--			     r8a7779_auxdata_lookup, NULL);
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ 	r8a7740_add_standard_devices();
  
- static const char *r8a7779_compat_dt[] __initdata = {
+-	platform_add_devices(bonito_core_devices,
+-			     ARRAY_SIZE(bonito_core_devices));
+-
+ 	/*
+ 	 * base board settings
+ 	 */
+-- 
+1.8.2.1
+
