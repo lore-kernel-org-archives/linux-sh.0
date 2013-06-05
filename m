@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 05 Jun 2013 07:29:31 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 05 Jun 2013 08:29:56 +0000
 Subject: Re: [PATCH 00/15] ARM: shmobile: uImage load address rework
-Message-Id: <87a9n5582w.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <2463304.ZF9315IS5c@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130605070616.13311.69049.sendpatchset@w520>
 In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
@@ -10,9 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi
-
+On Wednesday 05 June 2013 16:06:16 Magnus Damm wrote:
 > ARM: shmobile: uImage load address rework
 > 
 > [PATCH 01/15] ARM: shmobile: Per-board uImage load addresses
@@ -30,22 +28,18 @@ Hi
 > [PATCH 13/15] ARM: shmobile: Marzen uImage rework
 > [PATCH 14/15] ARM: shmobile: Armadillo800EVA reference uImage rework
 > [PATCH 15/15] ARM: shmobile: Remove MEMORY_START uImage load address
+> 
+> Rework the mach-shmobile uImage load address calculation by storing
+> the per-board load addresses in Makefile.boot. This removes the
+> CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
+> it possible to create safe kernel images that boot on multiple boards.
+> 
+> This is one of several series of code that reworks code not to rely on
+> CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
 
-I tested these patches on Bock-W board (as 0x60008000 binary),
-and on Mackerel board (as 0x40008000 binary)
-These work well for me :)
+Looks good to me. I just really wouldn't bother creating so many patches
+for this when you just modify a single file multiple times. A single
+patch would be just as good, unless you are desperate to top the LWN
+patch statistics ;-)
 
-I have same opinion with Laurent.
-5) and 14) can be 1 patch if you need to sent v2 patches :P
-
-for 6), 12) patch
-
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-for all patches
-
-Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Best regards
----
-Kuninori Morimoto
+	Arnd
