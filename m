@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:44 +0000
-Subject: [PATCH 113/130] sh-pfc: r8a7778: add VIN pin groups
-Message-Id: <1370420821-28420-114-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:18 +0000
+Subject: [PATCH 087/130] ARM: shmobile: r8a7740: Remove SCIF function GPIOs
+Message-Id: <1370420821-28420-88-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,128 +10,102 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add VIN DATA[0:8]/CLK/HSYNC/VSYNC pin groups to R8A7778 PFC driver.
-While at it, add SH_PFC_MUX8() macro for 8-bit data busses.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: updated the copyrights, added SH_PFC_MUX8() macro for 8-bit data bus,
-made use of SH_PFC_*() macros to define the pin groups.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 60 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 74 ---------------------------
+ 1 file changed, 74 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index 1f692e5..e518c33 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -3,6 +3,7 @@
-  *
-  * Copyright (C) 2013  Renesas Solutions Corp.
-  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * based on
-  * Copyright (C) 2011  Renesas Solutions Corp.
-@@ -1316,6 +1317,11 @@ static struct sh_pfc_pin pinmux_pins[] = {
- #define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
- 	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
- 						     arg3##_MARK, arg4##_MARK }
-+#define SH_PFC_MUX8(name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) \
-+	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
-+						     arg3##_MARK, arg4##_MARK, \
-+						     arg5##_MARK, arg6##_MARK, \
-+						     arg7##_MARK, arg8##_MARK, }
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index abdc4d4..bb207d8 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -165,80 +165,6 @@ enum {
+ 	GPIO_FN_FMSOOBT,	GPIO_FN_FMSOSLD,
+ 	GPIO_FN_FMSOCK,
  
- /* - SCIF macro ------------------------------------------------------------- */
- #define SCIF_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
-@@ -1513,6 +1519,40 @@ SH_PFC_MUX1(usb1,		PENC1);
- SH_PFC_PINS(usb1_ovc,		RCAR_GP_PIN(0, 4));
- SH_PFC_MUX1(usb1_ovc,		USB_OVC1);
+-	/* SCIFA0 */
+-	GPIO_FN_SCIFA0_SCK,	GPIO_FN_SCIFA0_CTS,
+-	GPIO_FN_SCIFA0_RTS,	GPIO_FN_SCIFA0_RXD,
+-	GPIO_FN_SCIFA0_TXD,
+-
+-	/* SCIFA1 */
+-	GPIO_FN_SCIFA1_CTS,	GPIO_FN_SCIFA1_SCK,
+-	GPIO_FN_SCIFA1_RXD,	GPIO_FN_SCIFA1_TXD,
+-	GPIO_FN_SCIFA1_RTS,
+-
+-	/* SCIFA2 */
+-	GPIO_FN_SCIFA2_SCK_PORT22, /* SCIFA2_SCK Port 22/199 */
+-	GPIO_FN_SCIFA2_SCK_PORT199,
+-	GPIO_FN_SCIFA2_RXD,	GPIO_FN_SCIFA2_TXD,
+-	GPIO_FN_SCIFA2_CTS,	GPIO_FN_SCIFA2_RTS,
+-
+-	/* SCIFA3 */
+-	GPIO_FN_SCIFA3_RTS_PORT105, /* MSEL5CR_8_0 */
+-	GPIO_FN_SCIFA3_SCK_PORT116,
+-	GPIO_FN_SCIFA3_CTS_PORT117,
+-	GPIO_FN_SCIFA3_RXD_PORT174,
+-	GPIO_FN_SCIFA3_TXD_PORT175,
+-
+-	GPIO_FN_SCIFA3_RTS_PORT161, /* MSEL5CR_8_1 */
+-	GPIO_FN_SCIFA3_SCK_PORT158,
+-	GPIO_FN_SCIFA3_CTS_PORT162,
+-	GPIO_FN_SCIFA3_RXD_PORT159,
+-	GPIO_FN_SCIFA3_TXD_PORT160,
+-
+-	/* SCIFA4 */
+-	GPIO_FN_SCIFA4_RXD_PORT12, /* MSEL5CR[12:11] = 00 */
+-	GPIO_FN_SCIFA4_TXD_PORT13,
+-
+-	GPIO_FN_SCIFA4_RXD_PORT204, /* MSEL5CR[12:11] = 01 */
+-	GPIO_FN_SCIFA4_TXD_PORT203,
+-
+-	GPIO_FN_SCIFA4_RXD_PORT94, /* MSEL5CR[12:11] = 10 */
+-	GPIO_FN_SCIFA4_TXD_PORT93,
+-
+-	GPIO_FN_SCIFA4_SCK_PORT21, /* SCIFA4_SCK Port 21/205 */
+-	GPIO_FN_SCIFA4_SCK_PORT205,
+-
+-	/* SCIFA5 */
+-	GPIO_FN_SCIFA5_TXD_PORT20, /* MSEL5CR[15:14] = 00 */
+-	GPIO_FN_SCIFA5_RXD_PORT10,
+-
+-	GPIO_FN_SCIFA5_RXD_PORT207, /* MSEL5CR[15:14] = 01 */
+-	GPIO_FN_SCIFA5_TXD_PORT208,
+-
+-	GPIO_FN_SCIFA5_TXD_PORT91, /* MSEL5CR[15:14] = 10 */
+-	GPIO_FN_SCIFA5_RXD_PORT92,
+-
+-	GPIO_FN_SCIFA5_SCK_PORT23, /* SCIFA5_SCK Port 23/206 */
+-	GPIO_FN_SCIFA5_SCK_PORT206,
+-
+-	/* SCIFA6 */
+-	GPIO_FN_SCIFA6_SCK,	GPIO_FN_SCIFA6_RXD,	GPIO_FN_SCIFA6_TXD,
+-
+-	/* SCIFA7 */
+-	GPIO_FN_SCIFA7_TXD,	GPIO_FN_SCIFA7_RXD,
+-
+-	/* SCIFAB */
+-	GPIO_FN_SCIFB_SCK_PORT190, /* MSEL5CR_17_0 */
+-	GPIO_FN_SCIFB_RXD_PORT191,
+-	GPIO_FN_SCIFB_TXD_PORT192,
+-	GPIO_FN_SCIFB_RTS_PORT186,
+-	GPIO_FN_SCIFB_CTS_PORT187,
+-
+-	GPIO_FN_SCIFB_SCK_PORT2, /* MSEL5CR_17_1 */
+-	GPIO_FN_SCIFB_RXD_PORT3,
+-	GPIO_FN_SCIFB_TXD_PORT4,
+-	GPIO_FN_SCIFB_RTS_PORT172,
+-	GPIO_FN_SCIFB_CTS_PORT173,
+-
+ 	/* LCD0 */
+ 	GPIO_FN_LCDC0_SELECT,
  
-+/* - VIN macros ------------------------------------------------------------- */
-+#define VIN_PFC_PINS(name, args...)		SH_PFC_PINS(name, args)
-+#define VIN_PFC_DAT8(name, d0, d1, d2, d3, d4, d5, d6, d7)	\
-+	SH_PFC_MUX8(name, d0, d1, d2, d3, d4, d5, d6, d7)
-+#define VIN_PFC_CLK(name, clk)			SH_PFC_MUX1(name, clk)
-+#define VIN_PFC_SYNC(name, hsync, vsync)	SH_PFC_MUX2(name, hsync, vsync)
-+
-+/* - VIN0 ------------------------------------------------------------------- */
-+VIN_PFC_PINS(vin0_data8,	RCAR_GP_PIN(3, 29),	RCAR_GP_PIN(3, 30),
-+				RCAR_GP_PIN(3, 31),	RCAR_GP_PIN(4, 0),
-+				RCAR_GP_PIN(4, 1),	RCAR_GP_PIN(4, 2),
-+				RCAR_GP_PIN(4, 3),	RCAR_GP_PIN(4, 4));
-+VIN_PFC_DAT8(vin0_data8,	VI0_DATA0_VI0_B0,	VI0_DATA1_VI0_B1,
-+				VI0_DATA2_VI0_B2,	VI0_DATA3_VI0_B3,
-+				VI0_DATA4_VI0_B4,	VI0_DATA5_VI0_B5,
-+				VI0_DATA6_VI0_G0,	VI0_DATA7_VI0_G1);
-+VIN_PFC_PINS(vin0_clk,		RCAR_GP_PIN(3, 24));
-+VIN_PFC_CLK(vin0_clk,		VI0_CLK);
-+VIN_PFC_PINS(vin0_sync,		RCAR_GP_PIN(3, 27),	RCAR_GP_PIN(3, 28));
-+VIN_PFC_SYNC(vin0_sync,		VI0_HSYNC,		VI0_VSYNC);
-+/* - VIN1 ------------------------------------------------------------------- */
-+VIN_PFC_PINS(vin1_data8,	RCAR_GP_PIN(3, 25),	RCAR_GP_PIN(3, 26),
-+				RCAR_GP_PIN(3, 27),	RCAR_GP_PIN(3, 28),
-+				RCAR_GP_PIN(4, 5),	RCAR_GP_PIN(4, 6),
-+				RCAR_GP_PIN(4, 7),	RCAR_GP_PIN(4, 8));
-+VIN_PFC_DAT8(vin1_data8,	VI1_DATA0,		VI1_DATA1,
-+				VI1_DATA2,		VI1_DATA3,
-+				VI1_DATA4,		VI1_DATA5,
-+				VI1_DATA6,		VI1_DATA7);
-+VIN_PFC_PINS(vin1_clk,		RCAR_GP_PIN(4, 9));
-+VIN_PFC_CLK(vin1_clk,		VI1_CLK);
-+VIN_PFC_PINS(vin1_sync,		RCAR_GP_PIN(3, 21),	RCAR_GP_PIN(3, 22));
-+VIN_PFC_SYNC(vin1_sync,		VI1_HSYNC,		VI1_VSYNC);
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(hscif0_data_a),
- 	SH_PFC_PIN_GROUP(hscif0_data_b),
-@@ -1586,6 +1626,12 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(usb0_ovc),
- 	SH_PFC_PIN_GROUP(usb1),
- 	SH_PFC_PIN_GROUP(usb1_ovc),
-+	SH_PFC_PIN_GROUP(vin0_data8),
-+	SH_PFC_PIN_GROUP(vin0_clk),
-+	SH_PFC_PIN_GROUP(vin0_sync),
-+	SH_PFC_PIN_GROUP(vin1_data8),
-+	SH_PFC_PIN_GROUP(vin1_clk),
-+	SH_PFC_PIN_GROUP(vin1_sync),
- };
- 
- static const char * const hscif0_groups[] = {
-@@ -1703,6 +1749,18 @@ static const char * const usb1_groups[] = {
- 	"usb1_ovc",
- };
- 
-+static const char * const vin0_groups[] = {
-+	"vin0_data8",
-+	"vin0_clk",
-+	"vin0_sync",
-+};
-+
-+static const char * const vin1_groups[] = {
-+	"vin1_data8",
-+	"vin1_clk",
-+	"vin1_sync",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(hscif0),
- 	SH_PFC_FUNCTION(hscif1),
-@@ -1718,6 +1776,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi2),
- 	SH_PFC_FUNCTION(usb0),
- 	SH_PFC_FUNCTION(usb1),
-+	SH_PFC_FUNCTION(vin0),
-+	SH_PFC_FUNCTION(vin1),
- };
- 
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
 -- 
 1.8.2.1
 
