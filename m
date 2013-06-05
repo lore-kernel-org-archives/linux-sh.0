@@ -1,55 +1,71 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:53 +0000
-Subject: [PATCH 03/11] ARM: shmobile: r8a7790: HSCIF support
-Message-Id: <1371106861-25626-4-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:19 +0000
+Subject: [PATCH 088/130] ARM: shmobile: r8a7740: Remove INTC function GPIOs
+Message-Id: <1370420821-28420-89-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Adds support for HSCIF0 and HSCIF1 on the r8a7790.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 34 ---------------------------
+ 1 file changed, 34 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index b393592..379bce6 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -181,6 +181,7 @@ static struct clk div6_clks[DIV6_NR] = {
- /* MSTP */
- enum {
- 	MSTP721, MSTP720,
-+	MSTP717, MSTP716,
- 	MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
- 	MSTP_NR
-@@ -196,6 +197,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
-+	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
-+	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
- };
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index bb207d8..dea430e 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -100,40 +100,6 @@ enum {
  
- static struct clk_lookup lookups[] = {
-@@ -249,6 +252,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP202]),
- 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP721]),
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
-+	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
-+	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
- };
+ 	GPIO_PORT210, GPIO_PORT211,
  
- #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-	/* IRQ */
+-	GPIO_FN_IRQ0_PORT2,	GPIO_FN_IRQ0_PORT13,
+-	GPIO_FN_IRQ1,
+-	GPIO_FN_IRQ2_PORT11,	GPIO_FN_IRQ2_PORT12,
+-	GPIO_FN_IRQ3_PORT10,	GPIO_FN_IRQ3_PORT14,
+-	GPIO_FN_IRQ4_PORT15,	GPIO_FN_IRQ4_PORT172,
+-	GPIO_FN_IRQ5_PORT0,	GPIO_FN_IRQ5_PORT1,
+-	GPIO_FN_IRQ6_PORT121,	GPIO_FN_IRQ6_PORT173,
+-	GPIO_FN_IRQ7_PORT120,	GPIO_FN_IRQ7_PORT209,
+-	GPIO_FN_IRQ8,
+-	GPIO_FN_IRQ9_PORT118,	GPIO_FN_IRQ9_PORT210,
+-	GPIO_FN_IRQ10,
+-	GPIO_FN_IRQ11,
+-	GPIO_FN_IRQ12_PORT42,	GPIO_FN_IRQ12_PORT97,
+-	GPIO_FN_IRQ13_PORT64,	GPIO_FN_IRQ13_PORT98,
+-	GPIO_FN_IRQ14_PORT63,	GPIO_FN_IRQ14_PORT99,
+-	GPIO_FN_IRQ15_PORT62,	GPIO_FN_IRQ15_PORT100,
+-	GPIO_FN_IRQ16_PORT68,	GPIO_FN_IRQ16_PORT211,
+-	GPIO_FN_IRQ17,
+-	GPIO_FN_IRQ18,
+-	GPIO_FN_IRQ19,
+-	GPIO_FN_IRQ20,
+-	GPIO_FN_IRQ21,
+-	GPIO_FN_IRQ22,
+-	GPIO_FN_IRQ23,
+-	GPIO_FN_IRQ24,
+-	GPIO_FN_IRQ25,
+-	GPIO_FN_IRQ26_PORT58,	GPIO_FN_IRQ26_PORT81,
+-	GPIO_FN_IRQ27_PORT57,	GPIO_FN_IRQ27_PORT168,
+-	GPIO_FN_IRQ28_PORT56,	GPIO_FN_IRQ28_PORT169,
+-	GPIO_FN_IRQ29_PORT50,	GPIO_FN_IRQ29_PORT170,
+-	GPIO_FN_IRQ30_PORT49,	GPIO_FN_IRQ30_PORT171,
+-	GPIO_FN_IRQ31_PORT41,	GPIO_FN_IRQ31_PORT167,
+-
+ 	/* Function */
+ 
+ 	/* DBGT */
 -- 
 1.8.2.1
 
