@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:31 +0000
-Subject: [PATCH 100/130] ARM: shmobile: r8a7778: add GPIO support
-Message-Id: <1370420821-28420-101-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:48 +0000
+Subject: [PATCH 117/130] pinctrl: sh-pfc: fix r8a7790 Function Select register tables
+Message-Id: <1370420821-28420-118-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,80 +10,60 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-This patch was tested on Bock-W board
+Fix several errors in Peripheral Function Select register tables for
+r8a7790, which prevent various function pins from being correctly
+configured.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 36 +++++++++++++++++++++++++++++++++-
- 1 file changed, 35 insertions(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 0ca5701..1f36ecc 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -24,6 +24,7 @@
- #include <linux/irqchip/arm-gic.h>
- #include <linux/of.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/platform_device.h>
- #include <linux/irqchip.h>
-@@ -94,17 +95,50 @@ static struct resource ether_resources[] = {
- 		&sh_tmu##idx##_platform_data,		\
- 		sizeof(sh_tmu##idx##_platform_data))
- 
--/* PFC */
-+/* PFC/GPIO */
- static struct resource pfc_resources[] = {
- 	DEFINE_RES_MEM(0xfffc0000, 0x118),
- };
- 
-+#define R8A7778_GPIO(idx)						\
-+static struct resource r8a7778_gpio##idx##_resources[] = {		\
-+	DEFINE_RES_MEM(0xffc40000 + 0x1000 * (idx), 0x30),		\
-+	DEFINE_RES_IRQ(gic_iid(0x87)),					\
-+};									\
-+									\
-+static struct gpio_rcar_config r8a7778_gpio##idx##_platform_data = {	\
-+	.gpio_base	= 32 * (idx),					\
-+	.irq_base	= GPIO_IRQ_BASE(idx),				\
-+	.number_of_pins	= 32,						\
-+	.pctl_name	= "pfc-r8a7778",				\
-+}
-+
-+R8A7778_GPIO(0);
-+R8A7778_GPIO(1);
-+R8A7778_GPIO(2);
-+R8A7778_GPIO(3);
-+R8A7778_GPIO(4);
-+
-+#define r8a7778_register_gpio(idx)				\
-+	platform_device_register_resndata(			\
-+		&platform_bus, "gpio_rcar", idx,		\
-+		r8a7778_gpio##idx##_resources,			\
-+		ARRAY_SIZE(r8a7778_gpio##idx##_resources),	\
-+		&r8a7778_gpio##idx##_platform_data,		\
-+		sizeof(r8a7778_gpio##idx##_platform_data))
-+
- void __init r8a7778_pinmux_init(void)
- {
- 	platform_device_register_simple(
- 		"pfc-r8a7778", -1,
- 		pfc_resources,
- 		ARRAY_SIZE(pfc_resources));
-+
-+	r8a7778_register_gpio(0);
-+	r8a7778_register_gpio(1);
-+	r8a7778_register_gpio(2);
-+	r8a7778_register_gpio(3);
-+	r8a7778_register_gpio(4);
- }
- 
- void __init r8a7778_add_standard_devices(void)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 5be2999..a2f83ae 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -3175,7 +3175,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_SIM0_D_B, 0, 0, 0, 0, 0, 0, 0, }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR11", 0xE606004C, 32,
+-			     2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3) {
++			     2, 3, 3, 2, 4, 3, 2, 2, 2, 2, 2, 1, 4) {
+ 		/* IP11_31_30 [2] */
+ 		FN_SSI_SCK0129, FN_CAN_CLK_B, FN_MOUT0, 0,
+ 		/* IP11_29_27 [3] */
+@@ -3441,12 +3441,10 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_SEL_SOF0_0, FN_SEL_SOF0_1, }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("MOD_SEL2", 0xE6060094, 32,
+-			     2, 1, 1, 1, 1, 2, 1, 2, 1,
+-			     2, 1, 1, 1, 3, 3, 2, 3, 2, 2) {
+-		/* RESEVED [2] */
++			     3, 1, 1, 1, 2, 1, 2, 1, 2,
++			     1, 1, 1, 3, 3, 2, 3, 2, 2) {
++		/* RESEVED [3] */
+ 		0, 0, 0, 0, 0, 0, 0, 0,
+-		/* RESEVED [1] */
+-		0, 0,
+ 		/* SEL_TMU1 [1] */
+ 		FN_SEL_TMU1_0, FN_SEL_TMU1_1,
+ 		/* SEL_HSCIF1 [1] */
+@@ -3462,8 +3460,8 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* SEL_CAN1 [1] */
+ 		FN_SEL_CAN1_0, FN_SEL_CAN1_1,
+ 		/* RESEVED [2] */
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		/* RESEVED [1] */
++		0, 0, 0, 0,
++		/* RESEVED [1] (actually TX2, RX2 vs. TX2_B, RX2_B of SCIF2) */
+ 		0, 0,
+ 		/* SEL_ADI [1] */
+ 		FN_SEL_ADI_0, FN_SEL_ADI_1,
 -- 
 1.8.2.1
 
