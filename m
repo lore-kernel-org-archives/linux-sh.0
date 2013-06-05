@@ -1,45 +1,107 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 19 Jun 2013 13:22:35 +0000
-Subject: [PATCH 4/4] sh-pfc: r8a7778: tidyup MMC_D1 pin
-Message-Id: <1371648155-18479-5-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:01 +0000
+Subject: [PATCH 010/130] sh-pfc: r8a7790: Add ETH pin groups and functions
+Message-Id: <1370420821-28420-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-MMC_D1 is RCAR_GP_PIN(1, 8), not RCAR_GP_PIN(2, 8)
-
-Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 58 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index 1dcbabc..f903910 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -1447,11 +1447,11 @@ MMC_PFC_PINS(mmc_ctrl,		RCAR_GP_PIN(1, 5),	RCAR_GP_PIN(1, 6));
- MMC_PFC_CTRL(mmc_ctrl,		MMC_CLK,		MMC_CMD);
- MMC_PFC_PINS(mmc_data1,		RCAR_GP_PIN(1, 7));
- MMC_PFC_DAT1(mmc_data1,		MMC_D0);
--MMC_PFC_PINS(mmc_data4,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
-+MMC_PFC_PINS(mmc_data4,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(1, 8),
- 				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6));
- MMC_PFC_DAT4(mmc_data4,		MMC_D0,			MMC_D1,
- 				MMC_D2,			MMC_D3);
--MMC_PFC_PINS(mmc_data8,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
-+MMC_PFC_PINS(mmc_data8,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(1, 8),
- 				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6),
- 				RCAR_GP_PIN(1, 4),	RCAR_GP_PIN(1, 0),
- 				RCAR_GP_PIN(0, 30),	RCAR_GP_PIN(0, 31));
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 42b0c55..3774242 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -20,7 +20,10 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++
+ #include <linux/kernel.h>
++#include <linux/platform_data/gpio-rcar.h>
++
+ #include <mach/r8a7790.h>
+ 
+ #include "core.h"
+@@ -1820,6 +1823,57 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
+ };
+ 
++/* - ETH -------------------------------------------------------------------- */
++static const unsigned int eth_link_pins[] = {
++	/* LINK */
++	RCAR_GP_PIN(2, 22),
++};
++static const unsigned int eth_link_mux[] = {
++	ETH_LINK_MARK,
++};
++static const unsigned int eth_magic_pins[] = {
++	/* MAGIC */
++	RCAR_GP_PIN(2, 27),
++};
++static const unsigned int eth_magic_mux[] = {
++	ETH_MAGIC_MARK,
++};
++static const unsigned int eth_mdio_pins[] = {
++	/* MDC, MDIO */
++	RCAR_GP_PIN(2, 29), RCAR_GP_PIN(2, 24),
++};
++static const unsigned int eth_mdio_mux[] = {
++	ETH_MDC_MARK, ETH_MDIO_MARK,
++};
++static const unsigned int eth_rmii_pins[] = {
++	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK */
++	RCAR_GP_PIN(2, 20), RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 19),
++	RCAR_GP_PIN(2, 18), RCAR_GP_PIN(2, 28), RCAR_GP_PIN(2, 25),
++	RCAR_GP_PIN(2, 26), RCAR_GP_PIN(2, 23),
++};
++static const unsigned int eth_rmii_mux[] = {
++	ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_RX_ER_MARK, ETH_CRS_DV_MARK,
++	ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK, ETH_REF_CLK_MARK,
++};
++
++static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(eth_link),
++	SH_PFC_PIN_GROUP(eth_magic),
++	SH_PFC_PIN_GROUP(eth_mdio),
++	SH_PFC_PIN_GROUP(eth_rmii),
++};
++
++static const char * const eth_groups[] = {
++	"eth_link",
++	"eth_magic",
++	"eth_mdio",
++	"eth_rmii",
++};
++
++static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(eth),
++};
++
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+ 
+ static const struct pinmux_func pinmux_func_gpios[] = {
+@@ -3226,6 +3280,10 @@ const struct sh_pfc_soc_info r8a7790_pinmux_info = {
+ 
+ 	.pins = pinmux_pins,
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
++	.groups = pinmux_groups,
++	.nr_groups = ARRAY_SIZE(pinmux_groups),
++	.functions = pinmux_functions,
++	.nr_functions = ARRAY_SIZE(pinmux_functions),
+ 
+ 	.func_gpios	= pinmux_func_gpios,
+ 	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
 -- 
 1.8.2.1
 
