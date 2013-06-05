@@ -1,285 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:19 +0000
-Subject: [PATCH 09/24] drm/rcar-du: Split VGA encoder and connector
-Message-Id: <1372326574-4315-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:34:59 +0000
+Subject: [PATCH 06/06] ARM: shmobile: Marzen memory size fixup
+Message-Id: <20130605073459.15758.14086.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130605073410.15758.37563.sendpatchset@w520>
+In-Reply-To: <20130605073410.15758.37563.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This prepares for the encoders rework.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Specify the Marzen memory configuration via
+a board specific fixup callback, and also
+select ATAGS to make sure the callback is
+executed as expected.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/gpu/drm/rcar-du/Makefile         |  3 +-
- drivers/gpu/drm/rcar-du/rcar_du_vga.c    | 86 +----------------------------
- drivers/gpu/drm/rcar-du/rcar_du_vga.h    |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c | 95 ++++++++++++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.h | 23 ++++++++
- 5 files changed, 123 insertions(+), 86 deletions(-)
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vgacon.h
 
-diff --git a/drivers/gpu/drm/rcar-du/Makefile b/drivers/gpu/drm/rcar-du/Makefile
-index 5def510..45a8479 100644
---- a/drivers/gpu/drm/rcar-du/Makefile
-+++ b/drivers/gpu/drm/rcar-du/Makefile
-@@ -4,6 +4,7 @@ rcar-du-drm-y := rcar_du_crtc.o \
- 		 rcar_du_lvds.o \
- 		 rcar_du_lvdscon.o \
- 		 rcar_du_plane.o \
--		 rcar_du_vga.o
-+		 rcar_du_vga.o \
-+		 rcar_du_vgacon.o
- 
- obj-$(CONFIG_DRM_RCAR_DU)	+= rcar-du-drm.o
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vga.c b/drivers/gpu/drm/rcar-du/rcar_du_vga.c
-index 327289e..369ab32 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vga.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vga.c
-@@ -1,5 +1,5 @@
- /*
-- * rcar_du_vga.c  --  R-Car Display Unit VGA DAC and Connector
-+ * rcar_du_vga.c  --  R-Car Display Unit VGA DAC
-  *
-  * Copyright (C) 2013 Renesas Corporation
-  *
-@@ -18,89 +18,7 @@
- #include "rcar_du_drv.h"
- #include "rcar_du_kms.h"
- #include "rcar_du_vga.h"
--
--/* -----------------------------------------------------------------------------
-- * Connector
-- */
--
--static int rcar_du_vga_connector_get_modes(struct drm_connector *connector)
--{
--	return 0;
--}
--
--static int rcar_du_vga_connector_mode_valid(struct drm_connector *connector,
--					    struct drm_display_mode *mode)
--{
--	return MODE_OK;
--}
--
--static const struct drm_connector_helper_funcs connector_helper_funcs = {
--	.get_modes = rcar_du_vga_connector_get_modes,
--	.mode_valid = rcar_du_vga_connector_mode_valid,
--	.best_encoder = rcar_du_connector_best_encoder,
--};
--
--static void rcar_du_vga_connector_destroy(struct drm_connector *connector)
--{
--	drm_sysfs_connector_remove(connector);
--	drm_connector_cleanup(connector);
--}
--
--static enum drm_connector_status
--rcar_du_vga_connector_detect(struct drm_connector *connector, bool force)
--{
--	return connector_status_unknown;
--}
--
--static const struct drm_connector_funcs connector_funcs = {
--	.dpms = drm_helper_connector_dpms,
--	.detect = rcar_du_vga_connector_detect,
--	.fill_modes = drm_helper_probe_single_connector_modes,
--	.destroy = rcar_du_vga_connector_destroy,
--};
--
--static int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
--				      struct rcar_du_encoder *renc)
--{
--	struct rcar_du_connector *rcon;
--	struct drm_connector *connector;
--	int ret;
--
--	rcon = devm_kzalloc(rcdu->dev, sizeof(*rcon), GFP_KERNEL);
--	if (rcon = NULL)
--		return -ENOMEM;
--
--	connector = &rcon->connector;
--	connector->display_info.width_mm = 0;
--	connector->display_info.height_mm = 0;
--
--	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
--				 DRM_MODE_CONNECTOR_VGA);
--	if (ret < 0)
--		return ret;
--
--	drm_connector_helper_add(connector, &connector_helper_funcs);
--	ret = drm_sysfs_connector_add(connector);
--	if (ret < 0)
--		return ret;
--
--	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
--	drm_object_property_set_value(&connector->base,
--		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
--
--	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
--	if (ret < 0)
--		return ret;
--
--	connector->encoder = &renc->encoder;
--	rcon->encoder = renc;
--
--	return 0;
--}
--
--/* -----------------------------------------------------------------------------
-- * Encoder
-- */
-+#include "rcar_du_vgacon.h"
- 
- static void rcar_du_vga_encoder_dpms(struct drm_encoder *encoder, int mode)
- {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vga.h b/drivers/gpu/drm/rcar-du/rcar_du_vga.h
-index 66b4d2d..b969b20 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vga.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vga.h
-@@ -1,5 +1,5 @@
- /*
-- * rcar_du_vga.h  --  R-Car Display Unit VGA DAC and Connector
-+ * rcar_du_vga.h  --  R-Car Display Unit VGA DAC
-  *
-  * Copyright (C) 2013 Renesas Corporation
-  *
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-new file mode 100644
-index 0000000..2ee3203
---- /dev/null
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-@@ -0,0 +1,95 @@
-+/*
-+ * rcar_du_vgacon.c  --  R-Car Display Unit VGA Connector
-+ *
-+ * Copyright (C) 2013 Renesas Corporation
-+ *
-+ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#include <drm/drmP.h>
-+#include <drm/drm_crtc.h>
-+#include <drm/drm_crtc_helper.h>
-+
-+#include "rcar_du_drv.h"
-+#include "rcar_du_kms.h"
-+#include "rcar_du_vgacon.h"
-+
-+static int rcar_du_vga_connector_get_modes(struct drm_connector *connector)
-+{
-+	return 0;
-+}
-+
-+static int rcar_du_vga_connector_mode_valid(struct drm_connector *connector,
-+					    struct drm_display_mode *mode)
-+{
-+	return MODE_OK;
-+}
-+
-+static const struct drm_connector_helper_funcs connector_helper_funcs = {
-+	.get_modes = rcar_du_vga_connector_get_modes,
-+	.mode_valid = rcar_du_vga_connector_mode_valid,
-+	.best_encoder = rcar_du_connector_best_encoder,
-+};
-+
-+static void rcar_du_vga_connector_destroy(struct drm_connector *connector)
-+{
-+	drm_sysfs_connector_remove(connector);
-+	drm_connector_cleanup(connector);
-+}
-+
-+static enum drm_connector_status
-+rcar_du_vga_connector_detect(struct drm_connector *connector, bool force)
-+{
-+	return connector_status_unknown;
-+}
-+
-+static const struct drm_connector_funcs connector_funcs = {
-+	.dpms = drm_helper_connector_dpms,
-+	.detect = rcar_du_vga_connector_detect,
-+	.fill_modes = drm_helper_probe_single_connector_modes,
-+	.destroy = rcar_du_vga_connector_destroy,
-+};
-+
-+int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
-+			       struct rcar_du_encoder *renc)
-+{
-+	struct rcar_du_connector *rcon;
-+	struct drm_connector *connector;
-+	int ret;
-+
-+	rcon = devm_kzalloc(rcdu->dev, sizeof(*rcon), GFP_KERNEL);
-+	if (rcon = NULL)
-+		return -ENOMEM;
-+
-+	connector = &rcon->connector;
-+	connector->display_info.width_mm = 0;
-+	connector->display_info.height_mm = 0;
-+
-+	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
-+				 DRM_MODE_CONNECTOR_VGA);
-+	if (ret < 0)
-+		return ret;
-+
-+	drm_connector_helper_add(connector, &connector_helper_funcs);
-+	ret = drm_sysfs_connector_add(connector);
-+	if (ret < 0)
-+		return ret;
-+
-+	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
-+	drm_object_property_set_value(&connector->base,
-+		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
-+
-+	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
-+	if (ret < 0)
-+		return ret;
-+
-+	connector->encoder = &renc->encoder;
-+	rcon->encoder = renc;
-+
-+	return 0;
-+}
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.h b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.h
-new file mode 100644
-index 0000000..b12b0cf
---- /dev/null
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.h
-@@ -0,0 +1,23 @@
-+/*
-+ * rcar_du_vgacon.h  --  R-Car Display Unit VGA Connector
-+ *
-+ * Copyright (C) 2013 Renesas Corporation
-+ *
-+ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __RCAR_DU_VGACON_H__
-+#define __RCAR_DU_VGACON_H__
-+
-+struct rcar_du_device;
-+struct rcar_du_encoder;
-+
-+int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
-+			       struct rcar_du_encoder *renc);
-+
-+#endif /* __RCAR_DU_VGACON_H__ */
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/Kconfig        |    1 +
+ arch/arm/mach-shmobile/board-marzen.c |    4 ++++
+ 2 files changed, 5 insertions(+)
 
+--- 0008/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-06-04 15:30:05.000000000 +0900
+@@ -143,6 +143,7 @@ config MACH_BOCKW
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
++	select ATAGS
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+--- 0001/arch/arm/mach-shmobile/board-marzen.c
++++ work/arch/arm/mach-shmobile/board-marzen.c	2013-06-04 15:34:21.000000000 +0900
+@@ -46,6 +46,7 @@
+ #include <mach/irqs.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <asm/setup.h>
+ #include <asm/traps.h>
+ 
+ /* Fixed 3.3V regulator to be used by SDHI0 */
+@@ -409,7 +410,10 @@ static void __init marzen_init(void)
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+ 
++SHMOBILE_FIXUP(marzen, 0x60000000, 0x10000000)
++
+ MACHINE_START(MARZEN, "marzen")
++	.fixup		= marzen_fixup,
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= r8a7779_add_early_devices,
