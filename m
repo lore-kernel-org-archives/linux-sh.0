@@ -1,104 +1,101 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:56 +0000
-Subject: [PATCH 26/27] ARM: shmobile: sh73a0: do not overwrite all div4 clock operations
-Message-Id: <1370591517-20239-27-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:46 +0000
+Subject: [PATCH 115/130] sh-pfc: r8a7779: add Ether pin groups
+Message-Id: <1370420821-28420-116-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-An earlier commit "ARM: shmobile: sh73a0: add support for adjusting CPU
-frequency" intended to replace some clock operations only for the Z-clock,
-instead it replaced them for all div4 clocks, since all div4 clocks share
-the same copy of clock operations. Fix this by using a separate clock
-operations structure for Z-clock.
+Add Ether RMII/LINK/MAGIC pin groups to R8A7779 PFC driver.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Laurent Pinchart<laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c | 28 +++++++++++++++-------------
- 1 file changed, 15 insertions(+), 13 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 42 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index acb9e09..d05cf90 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -257,9 +257,8 @@ static struct clk twd_clk = {
- 	.ops = &twd_clk_ops,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 37ba571..96bdf48 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1640,6 +1640,38 @@ static const unsigned int du1_cde_pins[] = {
+ static const unsigned int du1_cde_mux[] = {
+ 	DU1_CDE_MARK
+ };
++/* - Ether ------------------------------------------------------------------ */
++static const unsigned int ether_rmii_pins[] = {
++	/*
++	 * ETH_TXD0, ETH_TXD1, ETH_TX_EN,  ETH_REFCLK,
++	 * ETH_RXD0, ETH_RXD1, ETH_CRS_DV, ETH_RX_ER,
++	 * ETH_MDIO, ETH_MDC
++	 */
++	RCAR_GP_PIN(2, 27), RCAR_GP_PIN(2, 16), RCAR_GP_PIN(2, 18),
++	RCAR_GP_PIN(2, 26),
++	RCAR_GP_PIN(2, 20), RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 17),
++	RCAR_GP_PIN(2, 19),
++	RCAR_GP_PIN(2, 29), RCAR_GP_PIN(2, 28),
++};
++static const unsigned int ether_rmii_mux[] = {
++	ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK,  ETH_REFCLK_MARK,
++	ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_CRS_DV_MARK, ETH_RX_ER_MARK,
++	ETH_MDIO_MARK, ETH_MDC_MARK,
++};
++static const unsigned int ether_link_pins[] = {
++	/* ETH_LINK */
++	RCAR_GP_PIN(2, 24),
++};
++static const unsigned int ether_link_mux[] = {
++	ETH_LINK_MARK,
++};
++static const unsigned int ether_magic_pins[] = {
++	/* ETH_MAGIC */
++	RCAR_GP_PIN(2, 25),
++};
++static const unsigned int ether_magic_mux[] = {
++	ETH_MAGIC_MARK,
++};
+ /* - HSPI0 ------------------------------------------------------------------ */
+ static const unsigned int hspi0_pins[] = {
+ 	/* CLK, CS, RX, TX */
+@@ -2558,6 +2590,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(du1_sync_1),
+ 	SH_PFC_PIN_GROUP(du1_oddf),
+ 	SH_PFC_PIN_GROUP(du1_cde),
++	SH_PFC_PIN_GROUP(ether_rmii),
++	SH_PFC_PIN_GROUP(ether_link),
++	SH_PFC_PIN_GROUP(ether_magic),
+ 	SH_PFC_PIN_GROUP(hspi0),
+ 	SH_PFC_PIN_GROUP(hspi1),
+ 	SH_PFC_PIN_GROUP(hspi1_b),
+@@ -2703,6 +2738,12 @@ static const char * const du1_groups[] = {
+ 	"du1_cde",
  };
  
--static int (*div4_set_rate)(struct clk *clk, unsigned long rate);
--static unsigned long (*div4_recalc)(struct clk *clk);
--static long (*div4_round_rate)(struct clk *clk, unsigned long rate);
-+static struct sh_clk_ops zclk_ops;
-+static const struct sh_clk_ops *div4_clk_ops;
- 
- static int zclk_set_rate(struct clk *clk, unsigned long rate)
- {
-@@ -275,7 +274,7 @@ static int zclk_set_rate(struct clk *clk, unsigned long rate)
- 		/* 1:1 - switch off divider */
- 		__raw_writel(__raw_readl(FRQCRB) & ~(1 << 28), FRQCRB);
- 		/* nullify the divider to prepare for the next time */
--		ret = div4_set_rate(clk, rate / 2);
-+		ret = div4_clk_ops->set_rate(clk, rate / 2);
- 		if (!ret)
- 			ret = frqcr_kick();
- 		if (ret > 0)
-@@ -290,7 +289,7 @@ static int zclk_set_rate(struct clk *clk, unsigned long rate)
- 			 * set the divider - call the DIV4 method, it will kick
- 			 * FRQCRB too
- 			 */
--			ret = div4_set_rate(clk, rate);
-+			ret = div4_clk_ops->set_rate(clk, rate);
- 		if (ret < 0)
- 			goto esetrate;
- 	}
-@@ -302,7 +301,7 @@ esetrate:
- 
- static long zclk_round_rate(struct clk *clk, unsigned long rate)
- {
--	unsigned long div_freq = div4_round_rate(clk, rate),
-+	unsigned long div_freq = div4_clk_ops->round_rate(clk, rate),
- 		parent_freq = clk_get_rate(clk->parent);
- 
- 	if (rate > div_freq && abs(parent_freq - rate) < rate - div_freq)
-@@ -317,7 +316,7 @@ static unsigned long zclk_recalc(struct clk *clk)
- 	 * Must recalculate frequencies in case PLL0 has been changed, even if
- 	 * the divisor is unused ATM!
- 	 */
--	unsigned long div_freq = div4_recalc(clk);
-+	unsigned long div_freq = div4_clk_ops->recalc(clk);
- 
- 	if (__raw_readl(FRQCRB) & (1 << 28))
- 		return div_freq;
-@@ -327,13 +326,16 @@ static unsigned long zclk_recalc(struct clk *clk)
- 
- static void zclk_extend(void)
- {
-+	div4_clk_ops = div4_clks[DIV4_Z].ops;
++static const char * const ether_groups[] = {
++	"ether_rmii",
++	"ether_link",
++	"ether_magic",
++};
 +
- 	/* We extend the DIV4 clock with a 1:1 pass-through case */
--	div4_set_rate = div4_clks[DIV4_Z].ops->set_rate;
--	div4_round_rate = div4_clks[DIV4_Z].ops->round_rate;
--	div4_recalc = div4_clks[DIV4_Z].ops->recalc;
--	div4_clks[DIV4_Z].ops->set_rate = zclk_set_rate;
--	div4_clks[DIV4_Z].ops->round_rate = zclk_round_rate;
--	div4_clks[DIV4_Z].ops->recalc = zclk_recalc;
-+	zclk_ops = *div4_clk_ops;
-+
-+	zclk_ops.set_rate = zclk_set_rate;
-+	zclk_ops.round_rate = zclk_round_rate;
-+	zclk_ops.recalc = zclk_recalc;
-+
-+	div4_clks[DIV4_Z].ops = &zclk_ops;
- }
- 
- enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+ static const char * const hspi0_groups[] = {
+ 	"hspi0",
+ };
+@@ -2898,6 +2939,7 @@ static const char * const vin3_groups[] = {
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(du0),
+ 	SH_PFC_FUNCTION(du1),
++	SH_PFC_FUNCTION(ether),
+ 	SH_PFC_FUNCTION(hspi0),
+ 	SH_PFC_FUNCTION(hspi1),
+ 	SH_PFC_FUNCTION(hspi2),
 -- 
 1.8.2.1
 
