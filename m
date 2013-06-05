@@ -1,67 +1,47 @@
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Date: Sat, 22 Jun 2013 11:45:10 +0000
-Subject: Re: [PATCH v6] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <51C58E46.6000801@cogentembedded.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 05 Jun 2013 20:43:55 +0000
+Subject: Re: [RFC PATCH net-next v2 2/3] sh_eth: add support RMIIMODE register
+Message-Id: <51AFA30B.4080809@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51C41F66.1060300@cogentembedded.com>	<20130621.190157.27985389.matsu@igel.co.jp>	<51C42BA5.9050105@cogentembedded.com> <20130621.220444.280357674.matsu@igel.co.jp>
-In-Reply-To: <20130621.220444.280357674.matsu@igel.co.jp>
+References: <1368499073-21975-1-git-send-email-horms+renesas@verge.net.au> <1368499073-21975-3-git-send-email-horms+renesas@verge.net.au> <519240C7.1060406@cogentembedded.com> <20130515005117.GC12246@verge.net.au>
+In-Reply-To: <20130515005117.GC12246@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Katsuya MATSUBARA <matsu@igel.co.jp>
-Cc: sergei.shtylyov@cogentembedded.com, g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com
+To: Simon Horman <horms@verge.net.au>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Matsubara-san,
+Hello.
 
-Katsuya MATSUBARA wrote:
-> Hi Vladimir,
+On 05/15/2013 04:51 AM, Simon Horman wrote:
+
+>>> This change is motivated by the lager board which uses the r8a7790 SoC,
+>>> an R-Car SoC. For this board setting the RMIIMODE register is necessary.
+>>> This patch assumes this is valid for all R-Car SoCs.
+>>     No, RMIIMODE register is not documented on R8A7778/9 SoCs and
+>> this location is described as reserved. How's it called in R8A7790
+>> manual, CXR15?
+> It appears to be undocumented in the R8A7790 I have.
+
+     Of the manuals I have now this register is only documented in R-Car 
+H2 user's manual 0.50,
+
+> Empirically it seems necessary for the lager/R8A7790.
+
+    The manual confirms that.
+
+> To be honest I am entirely unsure of its relevance to other SoCs.
 >
-> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> Date: Fri, 21 Jun 2013 14:32:05 +0400
+> I wonder if a better approach would be to add a flag to platform
+> data rather than struct sh_eth_cpu_data. This would allow the register
+> to only be accessed on boards where it is known to be useful.
+
+    No, this doesn't depend on the board, judging on the H2 manual.
+You just must write it to 1 on R-Car H2 in order for Ether to operate.
+
 >
->   
->> Katsuya MATSUBARA wrote:
->>     
->>> Hi Vladimir,
->>>
->>> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->>> Date: Fri, 21 Jun 2013 13:39:50 +0400
->>>
->>> (snip)
->>>   
->>>       
->>>>> I have not seen such i2c errors during capturing and booting.
->>>>> But I have seen that querystd() in the ml86v7667 driver often
->>>>> returns V4L2_STD_UNKNOWN, although the corresponding function
->>>>>         
->>>>>           
->>>> could you try Hans's fix:
->>>> https://patchwork.kernel.org/patch/2640701/
->>>>     
->>>>         
->>> The fix has been already applied in my environment.
->>>   
->>>       
->> I've found that after some iteration of submission we disabled the
->> input signal in autodetection in ml86v7667_init(). per
->> recommendations.
->> That could be the case why the input signal is not locked.
+>>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 >>
->> On adv7180 it still has optional autodetection but Hans recommended to
->> get rid from runtime autodetection.
->> So I've added input signal detection only during boot time.
->>
->> Could you please try the attached patch?
->>     
->
-> With the patch, V4L2_STD_UNKNOWN often returned by querystd()
-> in the ml86v7667 driver has been gone.
-> But, captured images are still incorrect that means wrong
-> order of fields desite '_BT' chosen for V4L2_STD_525_60.
->   
-I've ordered the NTSC camera.
-I will return once I get it.
+WBR, Sergei
 
-Regards,
-Vladimir
 
