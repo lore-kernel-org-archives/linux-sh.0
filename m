@@ -1,80 +1,173 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:25 +0000
-Subject: [PATCH 12/23] ARM: shmobile: r8a7778: Register SDHI device
-Message-Id: <1370503716-31155-13-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:55 +0000
+Subject: [PATCH 064/130] sh-pfc: r8a7740: Add FSI pin groups and functions
+Message-Id: <1370420821-28420-65-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch adds SDHI register function which needs id number (= 0/1/2)
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7778.h |  2 ++
- arch/arm/mach-shmobile/setup-r8a7778.c        | 24 ++++++++++++++++++++++++
- 2 files changed, 26 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 118 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 118 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index 951149e..b5173b3 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -18,6 +18,7 @@
- #ifndef __ASM_R8A7778_H__
- #define __ASM_R8A7778_H__
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 71d7c1f..49da76a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1887,6 +1887,92 @@ static const unsigned int ceu1_field_pins[] = {
+ static const unsigned int ceu1_field_mux[] = {
+ 	VIO1_FIELD_MARK,
+ };
++/* - FSIA ------------------------------------------------------------------- */
++static const unsigned int fsia_mclk_in_pins[] = {
++	/* CK */
++	11,
++};
++static const unsigned int fsia_mclk_in_mux[] = {
++	FSIACK_MARK,
++};
++static const unsigned int fsia_mclk_out_pins[] = {
++	/* OMC */
++	10,
++};
++static const unsigned int fsia_mclk_out_mux[] = {
++	FSIAOMC_MARK,
++};
++static const unsigned int fsia_sclk_in_pins[] = {
++	/* ILR, IBT */
++	12, 13,
++};
++static const unsigned int fsia_sclk_in_mux[] = {
++	FSIAILR_MARK, FSIAIBT_MARK,
++};
++static const unsigned int fsia_sclk_out_pins[] = {
++	/* OLR, OBT */
++	7, 8,
++};
++static const unsigned int fsia_sclk_out_mux[] = {
++	FSIAOLR_MARK, FSIAOBT_MARK,
++};
++static const unsigned int fsia_data_in_0_pins[] = {
++	/* ISLD */
++	0,
++};
++static const unsigned int fsia_data_in_0_mux[] = {
++	FSIAISLD_PORT0_MARK,
++};
++static const unsigned int fsia_data_in_1_pins[] = {
++	/* ISLD */
++	5,
++};
++static const unsigned int fsia_data_in_1_mux[] = {
++	FSIAISLD_PORT5_MARK,
++};
++static const unsigned int fsia_data_out_0_pins[] = {
++	/* OSLD */
++	9,
++};
++static const unsigned int fsia_data_out_0_mux[] = {
++	FSIAOSLD_MARK,
++};
++static const unsigned int fsia_data_out_1_pins[] = {
++	/* OSLD */
++	0,
++};
++static const unsigned int fsia_data_out_1_mux[] = {
++	FSIAOSLD1_MARK,
++};
++static const unsigned int fsia_data_out_2_pins[] = {
++	/* OSLD */
++	1,
++};
++static const unsigned int fsia_data_out_2_mux[] = {
++	FSIAOSLD2_MARK,
++};
++static const unsigned int fsia_spdif_0_pins[] = {
++	/* SPDIF */
++	9,
++};
++static const unsigned int fsia_spdif_0_mux[] = {
++	FSIASPDIF_PORT9_MARK,
++};
++static const unsigned int fsia_spdif_1_pins[] = {
++	/* SPDIF */
++	18,
++};
++static const unsigned int fsia_spdif_1_mux[] = {
++	FSIASPDIF_PORT18_MARK,
++};
++/* - FSIB ------------------------------------------------------------------- */
++static const unsigned int fsib_mclk_in_pins[] = {
++	/* CK */
++	11,
++};
++static const unsigned int fsib_mclk_in_mux[] = {
++	FSIBCK_MARK,
++};
+ /* - GETHER ----------------------------------------------------------------- */
+ static const unsigned int gether_rmii_pins[] = {
+ 	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK, MDC, MDIO */
+@@ -2683,6 +2769,18 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(ceu1_clk),
+ 	SH_PFC_PIN_GROUP(ceu1_sync),
+ 	SH_PFC_PIN_GROUP(ceu1_field),
++	SH_PFC_PIN_GROUP(fsia_mclk_in),
++	SH_PFC_PIN_GROUP(fsia_mclk_out),
++	SH_PFC_PIN_GROUP(fsia_sclk_in),
++	SH_PFC_PIN_GROUP(fsia_sclk_out),
++	SH_PFC_PIN_GROUP(fsia_data_in_0),
++	SH_PFC_PIN_GROUP(fsia_data_in_1),
++	SH_PFC_PIN_GROUP(fsia_data_out_0),
++	SH_PFC_PIN_GROUP(fsia_data_out_1),
++	SH_PFC_PIN_GROUP(fsia_data_out_2),
++	SH_PFC_PIN_GROUP(fsia_spdif_0),
++	SH_PFC_PIN_GROUP(fsia_spdif_1),
++	SH_PFC_PIN_GROUP(fsib_mclk_in),
+ 	SH_PFC_PIN_GROUP(gether_rmii),
+ 	SH_PFC_PIN_GROUP(gether_mii),
+ 	SH_PFC_PIN_GROUP(gether_gmii),
+@@ -2860,6 +2958,24 @@ static const char * const ceu1_groups[] = {
+ 	"ceu1_field",
+ };
  
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/sh_eth.h>
- 
- extern void r8a7778_add_standard_devices(void);
-@@ -28,5 +29,6 @@ extern void r8a7778_init_irq(void);
- extern void r8a7778_init_irq_dt(void);
- extern void r8a7778_clock_init(void);
- extern void r8a7778_init_irq_extpin(int irlm);
-+extern void r8a7778_sdhi_init(int id, struct sh_mobile_sdhi_info *info);
- 
- #endif /* __ASM_R8A7778_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index d6ee521..f5b2a57 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -102,6 +102,30 @@ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
- 					  pdata, sizeof(*pdata));
- }
- 
-+/* SDHI */
-+static struct resource sdhi_resources[] = {
-+	/* SDHI0 */
-+	DEFINE_RES_MEM(0xFFE4C000, 0x100),
-+	DEFINE_RES_IRQ(gic_iid(0x77)),
-+	/* SDHI1 */
-+	DEFINE_RES_MEM(0xFFE4D000, 0x100),
-+	DEFINE_RES_IRQ(gic_iid(0x78)),
-+	/* SDHI2 */
-+	DEFINE_RES_MEM(0xFFE4F000, 0x100),
-+	DEFINE_RES_IRQ(gic_iid(0x76)),
++static const char * const fsia_groups[] = {
++	"fsia_mclk_in",
++	"fsia_mclk_out",
++	"fsia_sclk_in",
++	"fsia_sclk_out",
++	"fsia_data_in_0",
++	"fsia_data_in_1",
++	"fsia_data_out_0",
++	"fsia_data_out_1",
++	"fsia_data_out_2",
++	"fsia_spdif_0",
++	"fsia_spdif_1",
 +};
 +
-+void __init r8a7778_sdhi_init(int id,
-+			      struct sh_mobile_sdhi_info *info)
-+{
-+	BUG_ON(id < 0 || id > 2);
++static const char * const fsib_groups[] = {
++	"fsib_mclk_in",
++};
 +
-+	platform_device_register_resndata(
-+		&platform_bus, "sh_mobile_sdhi", id,
-+		sdhi_resources + (2 * id), 2,
-+		info, sizeof(*info));
-+}
-+
- void __init r8a7778_add_standard_devices(void)
- {
- 	int i;
+ static const char * const gether_groups[] = {
+ 	"gether_rmii",
+ 	"gether_mii",
+@@ -3054,6 +3170,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(ceu0),
+ 	SH_PFC_FUNCTION(ceu1),
++	SH_PFC_FUNCTION(fsia),
++	SH_PFC_FUNCTION(fsib),
+ 	SH_PFC_FUNCTION(gether),
+ 	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(lcd0),
 -- 
 1.8.2.1
 
