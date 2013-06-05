@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:11 +0000
-Subject: [PATCH 020/130] sh-pfc: r8a7779: add VIN pin groups
-Message-Id: <1370420821-28420-21-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:37 +0000
+Subject: [PATCH 046/130] ARM: shmobile: ap4evb: Register pinctrl mapping for FSI
+Message-Id: <1370420821-28420-47-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,208 +10,60 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add VIN DATA[0:7]/CLK/HSYNC/VSYNC pin groups to R8A7779 PFC driver.
+Replace the GPIO-based FSI pinmux configuration by a pinctrl mapping.
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-[horms+renesas@verge.net.au: trivial rebase on top of
- "sh-pfc: r8a7779: Don't group USB OVC and PENC pins"]
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 147 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 146 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 1590d6c..37ba571 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1,8 +1,9 @@
- /*
-  * r8a7779 processor support - PFC hardware block
-  *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
-  * Copyright (C) 2011  Magnus Damm
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -2434,6 +2435,110 @@ static const unsigned int usb2_ovc_pins[] = {
- static const unsigned int usb2_ovc_mux[] = {
- 	USB_OVC2_MARK,
- };
-+/* - VIN0 ------------------------------------------------------------------- */
-+static const unsigned int vin0_data8_pins[] = {
-+	/* D[0:7] */
-+	RCAR_GP_PIN(2, 6),  RCAR_GP_PIN(2, 7),  RCAR_GP_PIN(2, 8),
-+	RCAR_GP_PIN(2, 9),  RCAR_GP_PIN(2, 10), RCAR_GP_PIN(2, 11),
-+	RCAR_GP_PIN(2, 12), RCAR_GP_PIN(2, 13),
-+};
-+static const unsigned int vin0_data8_mux[] = {
-+	VI0_DATA0_VI0_B0_MARK, VI0_DATA1_VI0_B1_MARK, VI0_DATA2_VI0_B2_MARK,
-+	VI0_DATA3_VI0_B3_MARK, VI0_DATA4_VI0_B4_MARK, VI0_DATA5_VI0_B5_MARK,
-+	VI0_DATA6_VI0_B6_MARK, VI0_DATA7_VI0_B7_MARK,
-+};
-+static const unsigned int vin0_clk_pins[] = {
-+	/* CLK */
-+	RCAR_GP_PIN(2, 1),
-+};
-+static const unsigned int vin0_clk_mux[] = {
-+	VI0_CLK_MARK,
-+};
-+static const unsigned int vin0_sync_pins[] = {
-+	/* HSYNC, VSYNC */
-+	RCAR_GP_PIN(2, 4), RCAR_GP_PIN(2, 5),
-+};
-+static const unsigned int vin0_sync_mux[] = {
-+	VI0_HSYNC_MARK, VI0_VSYNC_MARK,
-+};
-+/* - VIN1 ------------------------------------------------------------------- */
-+static const unsigned int vin1_data8_pins[] = {
-+	/* D[0:7] */
-+	RCAR_GP_PIN(3, 1), RCAR_GP_PIN(3, 2), RCAR_GP_PIN(3, 3),
-+	RCAR_GP_PIN(3, 4), RCAR_GP_PIN(3, 5), RCAR_GP_PIN(3, 6),
-+	RCAR_GP_PIN(3, 7), RCAR_GP_PIN(3, 8),
-+};
-+static const unsigned int vin1_data8_mux[] = {
-+	VI1_DATA0_VI1_B0_MARK, VI1_DATA1_VI1_B1_MARK, VI1_DATA2_VI1_B2_MARK,
-+	VI1_DATA3_VI1_B3_MARK, VI1_DATA4_VI1_B4_MARK, VI1_DATA5_VI1_B5_MARK,
-+	VI1_DATA6_VI1_B6_MARK, VI1_DATA7_VI1_B7_MARK,
-+};
-+static const unsigned int vin1_clk_pins[] = {
-+	/* CLK */
-+	RCAR_GP_PIN(2, 30),
-+};
-+static const unsigned int vin1_clk_mux[] = {
-+	VI1_CLK_MARK,
-+};
-+static const unsigned int vin1_sync_pins[] = {
-+	/* HSYNC, VSYNC */
-+	RCAR_GP_PIN(2, 31), RCAR_GP_PIN(3, 0),
-+};
-+static const unsigned int vin1_sync_mux[] = {
-+	VI1_HSYNC_MARK, VI1_VSYNC_MARK,
-+};
-+/* - VIN2 ------------------------------------------------------------------- */
-+static const unsigned int vin2_data8_pins[] = {
-+	/* D[0:7] */
-+	RCAR_GP_PIN(1, 2),  RCAR_GP_PIN(1, 3),  RCAR_GP_PIN(1, 10),
-+	RCAR_GP_PIN(1, 11), RCAR_GP_PIN(1, 18), RCAR_GP_PIN(1, 19),
-+	RCAR_GP_PIN(1, 31), RCAR_GP_PIN(2, 0),
-+};
-+static const unsigned int vin2_data8_mux[] = {
-+	VI2_DATA0_VI2_B0_MARK, VI2_DATA1_VI2_B1_MARK, VI2_DATA2_VI2_B2_MARK,
-+	VI2_DATA3_VI2_B3_MARK, VI2_DATA4_VI2_B4_MARK, VI2_DATA5_VI2_B5_MARK,
-+	VI2_DATA6_VI2_B6_MARK, VI2_DATA7_VI2_B7_MARK,
-+};
-+static const unsigned int vin2_clk_pins[] = {
-+	/* CLK */
-+	RCAR_GP_PIN(1, 30),
-+};
-+static const unsigned int vin2_clk_mux[] = {
-+	VI2_CLK_MARK,
-+};
-+static const unsigned int vin2_sync_pins[] = {
-+	/* HSYNC, VSYNC */
-+	RCAR_GP_PIN(1, 28), RCAR_GP_PIN(1, 29),
-+};
-+static const unsigned int vin2_sync_mux[] = {
-+	VI2_HSYNC_MARK, VI2_VSYNC_MARK,
-+};
-+/* - VIN3 ------------------------------------------------------------------- */
-+static const unsigned int vin3_data8_pins[] = {
-+	/* D[0:7] */
-+	RCAR_GP_PIN(3, 9),  RCAR_GP_PIN(3, 10), RCAR_GP_PIN(3, 11),
-+	RCAR_GP_PIN(3, 12), RCAR_GP_PIN(3, 13), RCAR_GP_PIN(3, 14),
-+	RCAR_GP_PIN(3, 15), RCAR_GP_PIN(3, 16),
-+};
-+static const unsigned int vin3_data8_mux[] = {
-+	VI3_DATA0_MARK, VI3_DATA1_MARK, VI3_DATA2_MARK,
-+	VI3_DATA3_MARK, VI3_DATA4_MARK, VI3_DATA5_MARK,
-+	VI3_DATA6_MARK, VI3_DATA7_MARK,
-+};
-+static const unsigned int vin3_clk_pins[] = {
-+	/* CLK */
-+	RCAR_GP_PIN(2, 31),
-+};
-+static const unsigned int vin3_clk_mux[] = {
-+	VI3_CLK_MARK,
-+};
-+static const unsigned int vin3_sync_pins[] = {
-+	/* HSYNC, VSYNC */
-+	RCAR_GP_PIN(1, 28), RCAR_GP_PIN(1, 29),
-+};
-+static const unsigned int vin3_sync_mux[] = {
-+	VI3_HSYNC_MARK, VI3_VSYNC_MARK,
-+};
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index f42e731..2f03685 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1089,6 +1089,16 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
+ 	/* CEU */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
+ 				  "ceu_clk_0", "ceu"),
++	/* FSIA (AK4643) */
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_sclk_in", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_data_in", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_data_out", "fsia"),
++	/* FSIB (HDMI) */
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-sh7372",
++				  "fsib_mclk_in", "fsib"),
+ 	/* MMCIF */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
+ 				  "mmc0_data8_0", "mmc0"),
+@@ -1165,11 +1175,7 @@ static void __init ap4evb_init(void)
+ 	/* setup USB phy */
+ 	__raw_writew(0x8a0a, IOMEM(0xE6058130));	/* USBCR4 */
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du0_rgb666),
-@@ -2561,6 +2666,18 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(usb1_ovc),
- 	SH_PFC_PIN_GROUP(usb2),
- 	SH_PFC_PIN_GROUP(usb2_ovc),
-+	SH_PFC_PIN_GROUP(vin0_data8),
-+	SH_PFC_PIN_GROUP(vin0_clk),
-+	SH_PFC_PIN_GROUP(vin0_sync),
-+	SH_PFC_PIN_GROUP(vin1_data8),
-+	SH_PFC_PIN_GROUP(vin1_clk),
-+	SH_PFC_PIN_GROUP(vin1_sync),
-+	SH_PFC_PIN_GROUP(vin2_data8),
-+	SH_PFC_PIN_GROUP(vin2_clk),
-+	SH_PFC_PIN_GROUP(vin2_sync),
-+	SH_PFC_PIN_GROUP(vin3_data8),
-+	SH_PFC_PIN_GROUP(vin3_clk),
-+	SH_PFC_PIN_GROUP(vin3_sync),
- };
+-	/* enable FSI2 port A (ak4643) */
+-	gpio_request(GPIO_FN_FSIAIBT,	NULL);
+-	gpio_request(GPIO_FN_FSIAILR,	NULL);
+-	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+-	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
++	/* FSI2 port A (ak4643) */
+ 	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
  
- static const char * const du0_groups[] = {
-@@ -2754,6 +2871,30 @@ static const char * const usb2_groups[] = {
- 	"usb2_ovc",
- };
+ 	gpio_request(9, NULL);
+@@ -1180,8 +1186,7 @@ static void __init ap4evb_init(void)
+ 	/* card detect pin for MMC slot (CN7) */
+ 	gpio_request_one(41, GPIOF_IN, NULL);
  
-+static const char * const vin0_groups[] = {
-+	"vin0_data8",
-+	"vin0_clk",
-+	"vin0_sync",
-+};
-+
-+static const char * const vin1_groups[] = {
-+	"vin1_data8",
-+	"vin1_clk",
-+	"vin1_sync",
-+};
-+
-+static const char * const vin2_groups[] = {
-+	"vin2_data8",
-+	"vin2_clk",
-+	"vin2_sync",
-+};
-+
-+static const char * const vin3_groups[] = {
-+	"vin3_data8",
-+	"vin3_clk",
-+	"vin3_sync",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(du0),
- 	SH_PFC_FUNCTION(du1),
-@@ -2777,6 +2918,10 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(usb0),
- 	SH_PFC_FUNCTION(usb1),
- 	SH_PFC_FUNCTION(usb2),
-+	SH_PFC_FUNCTION(vin0),
-+	SH_PFC_FUNCTION(vin1),
-+	SH_PFC_FUNCTION(vin2),
-+	SH_PFC_FUNCTION(vin3),
- };
+-	/* setup FSI2 port B (HDMI) */
+-	gpio_request(GPIO_FN_FSIBCK, NULL);
++	/* FSI2 port B (HDMI) */
+ 	__raw_writew(__raw_readw(USCCR1) & ~(1 << 6), USCCR1); /* use SPDIF */
  
- static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	/* set SPU2 clock to 119.6 MHz */
 -- 
 1.8.2.1
 
