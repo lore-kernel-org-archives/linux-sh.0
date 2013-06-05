@@ -1,69 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 22:22:45 +0000
-Subject: [PATCH v5 16/22] ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
-Message-Id: <1370989371-30846-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:28 +0000
+Subject: [PATCH 037/130] ARM: shmobile: mackerel: Register pinctrl mapping for HDMI
+Message-Id: <1370420821-28420-38-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Reference the st1232 reset GPIO from the device tree and remove it from
-board code.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based HDMI pinmux configuration by a pinctrl mapping.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 2 ++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 7 -------
- 2 files changed, 2 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index a6c6606..8ec4cd1 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -10,6 +10,7 @@
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index f2e8740..e5bcd18 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1338,6 +1338,9 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 	/* FSIB (HDMI) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-sh7372",
+ 				  "fsib_mclk_in", "fsib"),
++	/* HDMI */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-mobile-hdmi", "pfc-sh7372",
++				  "hdmi", "hdmi"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1494,10 +1497,6 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+ 	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
  
- /dts-v1/;
- /include/ "r8a7740.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "armadillo 800 eva reference";
-@@ -43,6 +44,7 @@
- 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
- 		pinctrl-0 = <&st1232_pins>;
- 		pinctrl-names = "default";
-+		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
- 	};
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 4ddd299..002d8d3 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -158,7 +158,6 @@ clock_error:
-  */
- static void __init eva_init(void)
- {
+-	/* HDMI */
+-	gpio_request(GPIO_FN_HDMI_HPD, NULL);
+-	gpio_request(GPIO_FN_HDMI_CEC, NULL);
 -
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	eva_clock_init();
- 
-@@ -171,12 +170,6 @@ static void __init eva_init(void)
- 
- 	r8a7740_add_standard_devices_dt();
- 
--	/*
--	 * Touchscreen
--	 * TODO: Move reset GPIO over to .dts when we can reference it
--	 */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
--
- 	r8a7740_pm_init();
- }
- 
+ 	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
+ 	srcr4 = __raw_readl(SRCR4);
+ 	__raw_writel(srcr4 | (1 << 13), SRCR4);
 -- 
-1.8.1.5
+1.8.2.1
 
