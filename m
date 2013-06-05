@@ -1,76 +1,59 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 06:54:05 +0000
-Subject: [PATCH] ARM: shmobile: r8a7790: add __initdata on resource and device data
-Message-Id: <1371452045-21959-2-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:54 +0000
+Subject: [PATCH 123/130] Revert "ARM: shmobile: Disallow PINCTRL without GPIOLIB"
+Message-Id: <1370420821-28420-124-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371452045-21959-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371452045-21959-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-These data will be kmemdup()'ed on
-platform_device_add_resources() and platform_device_add_data()
-This patch removed "const" to avoid section type conflict
-with r8a7790_boards_compat_dt
+GPIOLIB dependency handling was added to the PINCTRL core by
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+commit 2afe8229687ec24cbc07e78449a588bb8b68f858
+Author: Haojian Zhuang <haojian.zhuang@linaro.org>
+Date:   Thu Mar 28 07:34:19 2013 +0800
+
+    pinctrl: core: add dependence of GPIOLIB
+
+There is not need to handle that dependency at the SH Mobile level
+anymore. Revert
+
+commit 6722f6cb763203cab775297b6e9d00834af0d6d7
+Author: Magnus Damm <damm@opensource.se>
+Date:   Mon Mar 18 22:58:18 2013 +0900
+
+    ARM: shmobile: Disallow PINCTRL without GPIOLIB
+
+    Modify mach-shmobile to only select PINCTRL in case of
+    ARCH_WANT_OPTIONAL_GPIOLIB is set.
+
+    This fixes a build error triggered when adding a new SoC
+    lacking GPIO software support (ARCH_WANT_OPTIONAL_GPIOLIB=n):
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index b461d93..196bd73 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -30,17 +30,17 @@
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- 
--static const struct resource pfc_resources[] = {
-+static struct resource pfc_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xe6060000, 0x250),
- };
- 
- #define R8A7790_GPIO(idx)						\
--static struct resource r8a7790_gpio##idx##_resources[] = {		\
-+static struct resource r8a7790_gpio##idx##_resources[] __initdata = {	\
- 	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
- 	DEFINE_RES_IRQ(gic_spi(4 + (idx))),				\
- };									\
- 									\
--static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data = {	\
-+static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data __initdata = {	\
- 	.gpio_base	= 32 * (idx),					\
- 	.irq_base	= 0,						\
- 	.number_of_pins	= 32,						\
-@@ -103,7 +103,7 @@ void __init r8a7790_pinmux_init(void)
- 
- enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
- 
--static const struct plat_sci_port scif[] = {
-+static struct plat_sci_port scif[] __initdata = {
- 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
- 	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
- 	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
-@@ -120,11 +120,11 @@ static inline void r8a7790_register_scif(int idx)
- 				      sizeof(struct plat_sci_port));
- }
- 
--static struct renesas_irqc_config irqc0_data = {
-+static struct renesas_irqc_config irqc0_data __initdata = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
- };
- 
--static struct resource irqc0_resources[] = {
-+static struct resource irqc0_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
- 	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
- 	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 49d993c..dfb4fee 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -645,7 +645,7 @@ config ARCH_SHMOBILE
+ 	select MULTI_IRQ_HANDLER
+ 	select NEED_MACH_MEMORY_H
+ 	select NO_IOPORT
+-	select PINCTRL if ARCH_WANT_OPTIONAL_GPIOLIB
++	select PINCTRL
+ 	select PM_GENERIC_DOMAINS if PM
+ 	select SPARSE_IRQ
+ 	help
 -- 
-1.7.10.4
+1.8.2.1
 
