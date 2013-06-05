@@ -1,75 +1,52 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 06 Jun 2013 16:38:46 +0000
-Subject: Re: [PATCH 1/4] mmc: sh_mmcif: add support for Device Tree DMA bindings
-Message-Id: <51B0BB16.6060401@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 04:31:47 +0000
+Subject: [PATCH 0/6] Renesas ARM based SoC defconfig updates for v3.11
+Message-Id: <1370406713-26599-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370533588-23642-1-git-send-email-g.liakhovetski@gmx.de> <1370533588-23642-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1370533588-23642-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Chris Ball <cjb@laptop.org>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Rob Herring <rob.herring@calxeda.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Olof, Hi Arnd,
 
-On 06/06/2013 07:46 PM, Guennadi Liakhovetski wrote:
+The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
 
-> To use DMA in the Device Tree case the driver has to be modified
-> to use suitable API to obtain DMA channels.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
->   drivers/mmc/host/sh_mmcif.c |   29 ++++++++++++++++++-----------
->   1 files changed, 18 insertions(+), 11 deletions(-)
->
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 06caaae..a0937ae 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -386,25 +386,30 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
->   
->   	host->dma_active = false;
->   
-> -	if (!pdata)
-> -		return;
-> -
-> -	if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
-> -		return;
-> +	if (pdata) {
-> +		if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
-> +			return;
-> +	} else {
-> +		if (!host->pd->dev.of_node)
+  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
 
-   Why not *else if*?
+are available in the git repository at:
 
-> +			return;
-> +	}
->   
->   	/* We can only either use DMA for both Tx and Rx or not use it at all */
->   	dma_cap_zero(mask);
->   	dma_cap_set(DMA_SLAVE, mask);
->   
-> -	host->chan_tx = dma_request_channel(mask, shdma_chan_filter,
-> -					    (void *)pdata->slave_id_tx);
-> +	host->chan_tx = dma_request_slave_channel_compat(mask, shdma_chan_filter,
-> +				pdata ? (void *)pdata->slave_id_tx : NULL,
-> +				&host->pd->dev, "tx");
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.11
 
-    Could you leave the indentation unchanged here?
+for you to fetch changes up to 76d415dfa7d53a2f92550484d766ae475a427daf:
 
-> @@ -412,15 +417,17 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
->   	if (ret < 0)
->   		goto ecfgtx;
->   
-> -	host->chan_rx = dma_request_channel(mask, shdma_chan_filter,
-> -					    (void *)pdata->slave_id_rx);
-> +	host->chan_rx = dma_request_slave_channel_compat(mask, shdma_chan_filter,
-> +				pdata ? (void *)pdata->slave_id_rx : NULL,
-> +				&host->pd->dev, "rx");
+  ARM: shmobile: kzm9g: enable AS3711 PMIC in defconfig (2013-06-04 21:47:10 +0900)
 
-    ... and here?
+----------------------------------------------------------------
+Renesas ARM based SoC defconfig updates for v3.11
 
-WBR, Sergei
+kzm9g: Enable AS3711 PMIC
+bockw: Enable, USB, PM_RUNTIME, I2C and SDHI
+armadillo800eva: Correct SERIAL_SH_SCI_NR_UARTS
 
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      ARM: shmobile: kzm9g: enable AS3711 PMIC in defconfig
+
+Kuninori Morimoto (1):
+      ARM: shmobile: bockw: enable SDHI on defconfig
+
+Nobuhiro Iwamatsu (1):
+      ARM: shmobile: armadillo800eva: Fix maximum number of SCIF
+
+Sergei Shtylyov (1):
+      ARM: shmobile: bockw: enable USB in defconfig
+
+Vladimir Barinov (2):
+      ARM: shmobile: bockw: enable I2C in defconfig
+      ARM: shmobile: bockw: enable CONFIG_PM_RUNTIME in defconfig
+
+ arch/arm/configs/armadillo800eva_defconfig |  2 +-
+ arch/arm/configs/bockw_defconfig           | 16 +++++++++++++++-
+ arch/arm/configs/kzm9g_defconfig           |  3 +++
+ 3 files changed, 19 insertions(+), 2 deletions(-)
