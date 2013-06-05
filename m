@@ -1,109 +1,32 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jun 2013 19:08:16 +0000
-Subject: [PATCH v11 06/21] mx3-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1371236911-15131-7-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 06:59:30 +0000
+Subject: [PATCH 05/15] ARM: shmobile: Armadillo800EVA uImage rework
+Message-Id: <20130605070656.13311.78020.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130605070616.13311.69049.sendpatchset@w520>
+In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-When adding and removing a client, the mx3-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add Armadillo800EVA specific load address to Makefile.boot
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/media/platform/soc_camera/mx3_camera.c |   35 ++++++++++++++---------
- 1 files changed, 21 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/mx3_camera.c b/drivers/media/platform/soc_camera/mx3_camera.c
-index 71b9b19..1047e3e 100644
---- a/drivers/media/platform/soc_camera/mx3_camera.c
-+++ b/drivers/media/platform/soc_camera/mx3_camera.c
-@@ -460,8 +460,7 @@ static int mx3_camera_init_videobuf(struct vb2_queue *q,
- }
- 
- /* First part of ipu_csi_init_interface() */
--static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam,
--				struct soc_camera_device *icd)
-+static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam)
- {
- 	u32 conf;
- 	long rate;
-@@ -505,31 +504,40 @@ static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam,
- 
- 	clk_prepare_enable(mx3_cam->clk);
- 	rate = clk_round_rate(mx3_cam->clk, mx3_cam->mclk);
--	dev_dbg(icd->parent, "Set SENS_CONF to %x, rate %ld\n", conf, rate);
-+	dev_dbg(mx3_cam->soc_host.v4l2_dev.dev, "Set SENS_CONF to %x, rate %ld\n", conf, rate);
- 	if (rate)
- 		clk_set_rate(mx3_cam->clk, rate);
- }
- 
--/* Called with .host_lock held */
- static int mx3_camera_add_device(struct soc_camera_device *icd)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
-+	dev_info(icd->parent, "MX3 Camera driver attached to camera %d\n",
-+		 icd->devnum);
-+
-+	return 0;
-+}
-+
-+static void mx3_camera_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "MX3 Camera driver detached from camera %d\n",
-+		 icd->devnum);
-+}
-+
-+/* Called with .host_lock held */
-+static int mx3_camera_clock_start(struct soc_camera_host *ici)
-+{
- 	struct mx3_camera_dev *mx3_cam = ici->priv;
- 
--	mx3_camera_activate(mx3_cam, icd);
-+	mx3_camera_activate(mx3_cam);
- 
- 	mx3_cam->buf_total = 0;
- 
--	dev_info(icd->parent, "MX3 Camera driver attached to camera %d\n",
--		 icd->devnum);
--
- 	return 0;
- }
- 
- /* Called with .host_lock held */
--static void mx3_camera_remove_device(struct soc_camera_device *icd)
-+static void mx3_camera_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct mx3_camera_dev *mx3_cam = ici->priv;
- 	struct idmac_channel **ichan = &mx3_cam->idmac_channel[0];
- 
-@@ -539,9 +547,6 @@ static void mx3_camera_remove_device(struct soc_camera_device *icd)
- 	}
- 
- 	clk_disable_unprepare(mx3_cam->clk);
--
--	dev_info(icd->parent, "MX3 Camera driver detached from camera %d\n",
--		 icd->devnum);
- }
- 
- static int test_platform_param(struct mx3_camera_dev *mx3_cam,
-@@ -1124,6 +1129,8 @@ static struct soc_camera_host_ops mx3_soc_camera_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= mx3_camera_add_device,
- 	.remove		= mx3_camera_remove_device,
-+	.clock_start	= mx3_camera_clock_start,
-+	.clock_stop	= mx3_camera_clock_stop,
- 	.set_crop	= mx3_camera_set_crop,
- 	.set_fmt	= mx3_camera_set_fmt,
- 	.try_fmt	= mx3_camera_try_fmt,
--- 
-1.7.2.5
+ arch/arm/mach-shmobile/Makefile.boot |    1 +
+ 1 file changed, 1 insertion(+)
 
+--- 0012/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 16:12:59.000000000 +0900
+@@ -4,6 +4,7 @@ loadaddr-y	:= $(shell /bin/bash -c 'prin
+ loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
+ loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
+ loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
++loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ 
+ __ZRELADDR	:= $(shell /bin/bash -c \
+ 		     'echo $(loadaddr-y) | tr " " "\n" | sort | uniq')
