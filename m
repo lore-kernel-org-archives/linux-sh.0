@@ -1,104 +1,71 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 28 Jun 2013 11:27:04 +0000
-Subject: [PATCH 01/04] ARM: shmobile: Add r8a7790 CMT00 clock event
-Message-Id: <20130628112704.23809.81183.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:11 +0000
+Subject: [PATCH 080/130] sh-pfc: r8a7740: Remove INTC function GPIOS
+Message-Id: <1370420821-28420-81-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130628112655.23809.39115.sendpatchset@w520>
-In-Reply-To: <20130628112655.23809.39115.sendpatchset@w520>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add clock event support for CMT0 timer channel 0
-to the r8a7790 SoC code. On most ARM mach-shmobile
-the CMT is hooked up to a 32KHz clock but on r8a7790
-a 31.7KHz clock is instead used.
+All r8a7740 platforms now use the pinctrl API to control the INTC pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 34 ----------------------------------
+ 1 file changed, 34 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a7790.c |    4 ++++
- arch/arm/mach-shmobile/setup-r8a7790.c |   21 +++++++++++++++++++++
- 2 files changed, 25 insertions(+)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 3b53193..0429c7d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -3200,40 +3200,6 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+ 
+ static const struct pinmux_func pinmux_func_gpios[] = {
+-	/* IRQ */
+-	GPIO_FN(IRQ0_PORT2),	GPIO_FN(IRQ0_PORT13),
+-	GPIO_FN(IRQ1),
+-	GPIO_FN(IRQ2_PORT11),	GPIO_FN(IRQ2_PORT12),
+-	GPIO_FN(IRQ3_PORT10),	GPIO_FN(IRQ3_PORT14),
+-	GPIO_FN(IRQ4_PORT15),	GPIO_FN(IRQ4_PORT172),
+-	GPIO_FN(IRQ5_PORT0),	GPIO_FN(IRQ5_PORT1),
+-	GPIO_FN(IRQ6_PORT121),	GPIO_FN(IRQ6_PORT173),
+-	GPIO_FN(IRQ7_PORT120),	GPIO_FN(IRQ7_PORT209),
+-	GPIO_FN(IRQ8),
+-	GPIO_FN(IRQ9_PORT118),	GPIO_FN(IRQ9_PORT210),
+-	GPIO_FN(IRQ10),
+-	GPIO_FN(IRQ11),
+-	GPIO_FN(IRQ12_PORT42),	GPIO_FN(IRQ12_PORT97),
+-	GPIO_FN(IRQ13_PORT64),	GPIO_FN(IRQ13_PORT98),
+-	GPIO_FN(IRQ14_PORT63),	GPIO_FN(IRQ14_PORT99),
+-	GPIO_FN(IRQ15_PORT62),	GPIO_FN(IRQ15_PORT100),
+-	GPIO_FN(IRQ16_PORT68),	GPIO_FN(IRQ16_PORT211),
+-	GPIO_FN(IRQ17),
+-	GPIO_FN(IRQ18),
+-	GPIO_FN(IRQ19),
+-	GPIO_FN(IRQ20),
+-	GPIO_FN(IRQ21),
+-	GPIO_FN(IRQ22),
+-	GPIO_FN(IRQ23),
+-	GPIO_FN(IRQ24),
+-	GPIO_FN(IRQ25),
+-	GPIO_FN(IRQ26_PORT58),	GPIO_FN(IRQ26_PORT81),
+-	GPIO_FN(IRQ27_PORT57),	GPIO_FN(IRQ27_PORT168),
+-	GPIO_FN(IRQ28_PORT56),	GPIO_FN(IRQ28_PORT169),
+-	GPIO_FN(IRQ29_PORT50),	GPIO_FN(IRQ29_PORT170),
+-	GPIO_FN(IRQ30_PORT49),	GPIO_FN(IRQ30_PORT171),
+-	GPIO_FN(IRQ31_PORT41),	GPIO_FN(IRQ31_PORT167),
+-
+ 	/* Function */
+ 
+ 	/* DBGT */
+-- 
+1.8.2.1
 
---- 0002/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-06-28 15:23:13.000000000 +0900
-@@ -47,6 +47,7 @@
- #define CPG_BASE 0xe6150000
- #define CPG_LEN 0x1000
- 
-+#define SMSTPCR1 0xe6150134
- #define SMSTPCR2 0xe6150138
- #define SMSTPCR3 0xe615013c
- #define SMSTPCR5 0xe6150144
-@@ -186,6 +187,7 @@ enum {
- 	MSTP522,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
-+	MSTP124,
- 	MSTP_NR
- };
- 
-@@ -208,6 +210,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
-+	[MSTP124] = SH_CLK_MSTP32(&rclk_clk, SMSTPCR1, 24, 0), /* CMT0 */
- };
- 
- static struct clk_lookup lookups[] = {
-@@ -270,6 +273,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
-+	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- };
- 
- #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
---- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-06-28 15:21:02.000000000 +0900
-@@ -23,6 +23,7 @@
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_timer.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/irq-renesas-irqc.h>
- #include <mach/common.h>
-@@ -160,6 +161,25 @@ static struct resource thermal_resources
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
- 
-+static struct sh_timer_config cmt00_platform_data = {
-+	.name = "CMT00",
-+	.timer_bit = 0,
-+	.clockevent_rating = 80,
-+};
-+
-+static struct resource cmt00_resources[] = {
-+	DEFINE_RES_MEM(0xffca0510, 0x0c),
-+	DEFINE_RES_MEM(0xffca0500, 0x04),
-+	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-+};
-+
-+#define r8a7790_register_cmt(idx)					\
-+	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+					  idx, cmt##idx##_resources,	\
-+					  ARRAY_SIZE(cmt##idx##_resources), \
-+					  &cmt##idx##_platform_data,	\
-+					  sizeof(struct sh_timer_config))
-+
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_register_scif(SCIFA0);
-@@ -174,6 +194,7 @@ void __init r8a7790_add_standard_devices
- 	r8a7790_register_scif(HSCIF1);
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
-+	r8a7790_register_cmt(00);
- }
- 
- void __init r8a7790_timer_init(void)
