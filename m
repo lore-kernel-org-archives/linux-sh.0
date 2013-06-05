@@ -1,74 +1,94 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 01 Jun 2013 21:52:28 +0000
-Subject: [PATCH v8 7/9] phy-rcar-usb: add platform data
-Message-Id: <201306020152.29275.sergei.shtylyov@cogentembedded.com>
+Date: Wed, 05 Jun 2013 21:15:27 +0000
+Subject: [PATCH v4 5/8] sh_eth: add IRQ flags to 'struct sh_eth_cpu_data'
+Message-Id: <201306060115.27643.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-Currently the driver hard-codes  USBPCTRL0 register to 0. It is wrong since this
-register contains board-specific USB ports configuration and so its value should
-be somehow passed via the platform data.  Add the global header file containing
-'struct rcar_phy_platform_data' consisting of the various bit fields describing
-USB ports' pin configuration.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
+The driver supports some SH and SH-Mobile SOCs. There are SOCs with two or more
+Ethernet devices, for these we need to pass IRQF_SHARED to request_irq().  Add
+the 'irq_flags' field to the 'struct sh_eth_cpu_data' instead of #ifdef'fery.
+
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+[Sergei: properly aligned request_irq() call continuation line, reworded the
+changelog, reworded the subject, changing the prefix.]
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Felipe Balbi <balbi@ti.com>
 
 ---
-Changes since version 7:
-- changed the patch subject to reflect the PHY driver rename;
-- added an ACK from Felipe Balbi.
+Changes in version 4:
+- resolved reject;
+- properly aligned request_irq() call continuation line;
+- reworded the changelog;
+- reworded the subject, changing the prefix.
 
-Changes since version 6:
-- renamed the header file into <linux/platform_data/usb-rcar-phy.h>, renamed the
-  guarding #define accordingly;
-- rephrased the changelog.
+Changes in version 3:
+- remove 'irq_flags' from 'struct sh_eth_private';
+- fix indentation.
 
-Changes since version 3:
-- moved USBPCTRL0 register bit #define's to patch #9;
-- replaced USBPCTRL0 register value in the platform data structure by a set of
-  bit fields describing the configuration of the board, rewrote changelog;
+ drivers/net/ethernet/renesas/sh_eth.c |   13 +++++--------
+ drivers/net/ethernet/renesas/sh_eth.h |    1 +
+ 2 files changed, 6 insertions(+), 8 deletions(-)
 
-Changes since version 2:
-- added #include <linux/types.h>;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
- include/linux/platform_data/usb-rcar-phy.h |   26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
-
-Index: renesas/include/linux/platform_data/usb-rcar-phy.h
-=================================--- /dev/null
-+++ renesas/include/linux/platform_data/usb-rcar-phy.h
-@@ -0,0 +1,26 @@
-+/*
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#ifndef __USB_RCAR_PHY_H
-+#define __USB_RCAR_PHY_H
-+
-+#include <linux/types.h>
-+
-+struct rcar_phy_platform_data {
-+	bool port1_func:1;	/* true: port 1 used by function, false: host */
-+	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
-+	struct {		/* Overcurrent pin control for ports 0..2 */
-+		bool select_3_3v:1; /* true: USB_OVCn pin, false: OVCn pin */
-+				/* Set to false on port 1 in function mode */
-+		bool active_high:1; /* true: active  high, false: active low */
-+				/* Set to true  on port 1 in function mode */
-+	} ovc_pin[3];
-+};
-+
-+#endif /* __USB_RCAR_PHY_H */
-
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -462,6 +462,7 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
+ 	.tx_error_check	= EESR_TWB | EESR_TABT | EESR_TDE | EESR_TFE,
+ 
++	.irq_flags	= IRQF_SHARED,
+ 	.apr		= 1,
+ 	.mpr		= 1,
+ 	.tpauser	= 1,
+@@ -570,6 +571,7 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.fdr_value	= 0x0000072f,
+ 	.rmcr_value	= 0x00000001,
+ 
++	.irq_flags	= IRQF_SHARED,
+ 	.apr		= 1,
+ 	.mpr		= 1,
+ 	.tpauser	= 1,
+@@ -650,6 +652,8 @@ static struct sh_eth_cpu_data sh_eth_my_
+ #if defined(CONFIG_CPU_SUBTYPE_SH7734)
+ 	.hw_crc     = 1,
+ 	.select_mii = 1,
++#else
++	.irq_flags	= IRQF_SHARED,
+ #endif
+ };
+ 
+@@ -1908,14 +1912,7 @@ static int sh_eth_open(struct net_device
+ 	pm_runtime_get_sync(&mdp->pdev->dev);
+ 
+ 	ret = request_irq(ndev->irq, sh_eth_interrupt,
+-#if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+-	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
+-	defined(CONFIG_CPU_SUBTYPE_SH7757)
+-				IRQF_SHARED,
+-#else
+-				0,
+-#endif
+-				ndev->name, ndev);
++			  mdp->cd->irq_flags, ndev->name, ndev);
+ 	if (ret) {
+ 		dev_err(&ndev->dev, "Can not assign IRQ number\n");
+ 		return ret;
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -463,6 +463,7 @@ struct sh_eth_cpu_data {
+ 	unsigned long tx_error_check;
+ 
+ 	/* hardware features */
++	unsigned long irq_flags;	/* IRQ configuration flags */
+ 	unsigned no_psr:1;		/* EtherC DO NOT have PSR */
+ 	unsigned apr:1;			/* EtherC have APR */
+ 	unsigned mpr:1;			/* EtherC have MPR */
