@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:37 +0000
-Subject: [PATCH 046/130] ARM: shmobile: ap4evb: Register pinctrl mapping for FSI
-Message-Id: <1370420821-28420-47-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:42 +0000
+Subject: [PATCH 111/130] sh-pfc: r8a7790: Add TPU pin groups and functions
+Message-Id: <1370420821-28420-112-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,58 +12,85 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Replace the GPIO-based FSI pinmux configuration by a pinctrl mapping.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 19 ++++++++++++-------
- 1 file changed, 12 insertions(+), 7 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 41 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index f42e731..2f03685 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1089,6 +1089,16 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
- 	/* CEU */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
- 				  "ceu_clk_0", "ceu"),
-+	/* FSIA (AK4643) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
-+				  "fsia_data_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
-+				  "fsia_data_out", "fsia"),
-+	/* FSIB (HDMI) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-sh7372",
-+				  "fsib_mclk_in", "fsib"),
- 	/* MMCIF */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
- 				  "mmc0_data8_0", "mmc0"),
-@@ -1165,11 +1175,7 @@ static void __init ap4evb_init(void)
- 	/* setup USB phy */
- 	__raw_writew(0x8a0a, IOMEM(0xE6058130));	/* USBCR4 */
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 1656915..5be2999 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2342,6 +2342,35 @@ static const unsigned int scifb2_data_c_pins[] = {
+ static const unsigned int scifb2_data_c_mux[] = {
+ 	SCIFB2_RXD_C_MARK, SCIFB2_TXD_C_MARK,
+ };
++/* - TPU0 ------------------------------------------------------------------- */
++static const unsigned int tpu0_to0_pins[] = {
++	/* TO */
++	RCAR_GP_PIN(0, 20),
++};
++static const unsigned int tpu0_to0_mux[] = {
++	TPU0TO0_MARK,
++};
++static const unsigned int tpu0_to1_pins[] = {
++	/* TO */
++	RCAR_GP_PIN(0, 21),
++};
++static const unsigned int tpu0_to1_mux[] = {
++	TPU0TO1_MARK,
++};
++static const unsigned int tpu0_to2_pins[] = {
++	/* TO */
++	RCAR_GP_PIN(0, 22),
++};
++static const unsigned int tpu0_to2_mux[] = {
++	TPU0TO2_MARK,
++};
++static const unsigned int tpu0_to3_pins[] = {
++	/* TO */
++	RCAR_GP_PIN(0, 23),
++};
++static const unsigned int tpu0_to3_mux[] = {
++	TPU0TO3_MARK,
++};
  
--	/* enable FSI2 port A (ak4643) */
--	gpio_request(GPIO_FN_FSIAIBT,	NULL);
--	gpio_request(GPIO_FN_FSIAILR,	NULL);
--	gpio_request(GPIO_FN_FSIAISLD,	NULL);
--	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
-+	/* FSI2 port A (ak4643) */
- 	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(eth_link),
+@@ -2416,6 +2445,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scifb2_clk_b),
+ 	SH_PFC_PIN_GROUP(scifb2_ctrl_b),
+ 	SH_PFC_PIN_GROUP(scifb2_data_c),
++	SH_PFC_PIN_GROUP(tpu0_to0),
++	SH_PFC_PIN_GROUP(tpu0_to1),
++	SH_PFC_PIN_GROUP(tpu0_to2),
++	SH_PFC_PIN_GROUP(tpu0_to3),
+ };
  
- 	gpio_request(9, NULL);
-@@ -1180,8 +1186,7 @@ static void __init ap4evb_init(void)
- 	/* card detect pin for MMC slot (CN7) */
- 	gpio_request_one(41, GPIOF_IN, NULL);
+ static const char * const eth_groups[] = {
+@@ -2520,6 +2553,13 @@ static const char * const scifb2_groups[] = {
+ 	"scifb2_data_c",
+ };
  
--	/* setup FSI2 port B (HDMI) */
--	gpio_request(GPIO_FN_FSIBCK, NULL);
-+	/* FSI2 port B (HDMI) */
- 	__raw_writew(__raw_readw(USCCR1) & ~(1 << 6), USCCR1); /* use SPDIF */
++static const char * const tpu0_groups[] = {
++	"tpu0_to0",
++	"tpu0_to1",
++	"tpu0_to2",
++	"tpu0_to3",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(eth),
+ 	SH_PFC_FUNCTION(intc),
+@@ -2531,6 +2571,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scifb0),
+ 	SH_PFC_FUNCTION(scifb1),
+ 	SH_PFC_FUNCTION(scifb2),
++	SH_PFC_FUNCTION(tpu0),
+ };
  
- 	/* set SPU2 clock to 119.6 MHz */
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
 -- 
 1.8.2.1
 
