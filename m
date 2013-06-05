@@ -1,35 +1,44 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 07:31:27 +0000
-Subject: Re: [PATCH 00/06] ARM: shmobile: Per-board memory size fixups
-Message-Id: <CANqRtoSwAxyDDB2WZLKNTQQrgSz9YVWsd0bcy7OqwLYWeWhhnQ@mail.gmail.com>
+Date: Wed, 05 Jun 2013 07:34:10 +0000
+Subject: [PATCH 00/06] ARM: shmobile: Per-board memory size fixups
+Message-Id: <20130605073410.15758.37563.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605073410.15758.37563.sendpatchset@w520>
-In-Reply-To: <20130605073410.15758.37563.sendpatchset@w520>
+References: <CANqRtoSwAxyDDB2WZLKNTQQrgSz9YVWsd0bcy7OqwLYWeWhhnQ@mail.gmail.com>
+In-Reply-To: <CANqRtoSwAxyDDB2WZLKNTQQrgSz9YVWsd0bcy7OqwLYWeWhhnQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 5, 2013 at 4:34 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> ARM: shmobile: Per-board memory size fixups
->
-> [PATCH 01/06] ARM: shmobile: Introduce SHMOBILE_FIXUP() helper
-> [PATCH 02/06] ARM: shmobile: AG5EVM memory config via ATAGS fixup
-> [PATCH 03/06] ARM: shmobile: AP4EVB memory config via ATAGS fixup
-> [PATCH 04/06] ARM: shmobile: Bonito memory config via ATAGS fixup
-> [PATCH 05/06] ARM: shmobile: Kota2 memory config via ATAGS fixup
-> [PATCH 06/06] ARM: shmobile: Marzen memory config via ATAGS fixup
-
-Oh, ok, the above turned out to be an old version of the patch names.
-Before I cause more confusion, the patch names are supposed to be like this:
+ARM: shmobile: Per-board memory size fixups
 
 [PATCH 01/06] ARM: shmobile: Introduce SHMOBILE_FIXUP() helper
-[PATCH 02/06] ARM: shmobile: AG5EVM memory size fixup
-[PATCH 03/06] ARM: shmobile: AP4EVB memory size fixup
-[PATCH 04/06] ARM: shmobile: Bonito memory size fixup
-[PATCH 05/06] ARM: shmobile: Kota2 memory size fixup
-[PATCH 06/06] ARM: shmobile: Marzen memory size fixup
+[PATCH 02/06] ARM: shmobile: AG5EVM memory config via ATAGS fixup
+[PATCH 03/06] ARM: shmobile: AP4EVB memory config via ATAGS fixup
+[PATCH 04/06] ARM: shmobile: Bonito memory config via ATAGS fixup
+[PATCH 05/06] ARM: shmobile: Kota2 memory config via ATAGS fixup
+[PATCH 06/06] ARM: shmobile: Marzen memory config via ATAGS fixup
 
-Thanks,
+This series adds memory size and base address fixups to
+non-DT mach-shmobile boards. This way the ATAGS code in
+arch/arm/kernel/atags_parse.c can be overriden on a per-
+board basis without the need of any global MEM_SIZE or
+PHYS_OFFSET settings.
 
-/ magnus
+This is one of several series of code that reworks code
+not to rely on CONFIG_MEMORY_START/SIZE which in turn is
+needed for ARCH_MULTIPLATFORM.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas.git renesas-next-20130604v2
+
+ arch/arm/mach-shmobile/Kconfig               |    5 +++++
+ arch/arm/mach-shmobile/board-ag5evm.c        |    4 ++++
+ arch/arm/mach-shmobile/board-ap4evb.c        |    3 +++
+ arch/arm/mach-shmobile/board-bonito.c        |    4 ++++
+ arch/arm/mach-shmobile/board-kota2.c         |    4 ++++
+ arch/arm/mach-shmobile/board-marzen.c        |    4 ++++
+ arch/arm/mach-shmobile/include/mach/common.h |   13 +++++++++++++
+ 7 files changed, 37 insertions(+)
