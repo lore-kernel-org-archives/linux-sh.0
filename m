@@ -1,45 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:24:55 +0000
-Subject: [PATCH 004/130] gpio-rcar: Add RCAR_GP_PIN macro
-Message-Id: <1370420821-28420-5-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 05 Jun 2013 21:20:53 +0000
+Subject: [PATCH v4 8/8] sh_eth: enclose PM code into #ifdef CONFIG_PM
+Message-Id: <201306060120.53740.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Pins are numbered in the R-Car family documentation using a bank number
-and a pin number in the bank. As the Linux pin number space is linear,
-we need to flatten this by multiplying the bank number by 32 and adding
-the pin number. The resulting number bear no directly visible
-relationship  to the documentation, making it error-prone.
+Put '#ifdef CONFIG_PM' around sh_eth_runtime_nop() and 'sh_eth_dev_pm_ops'.
+Add '#define SH_ETH_PM_OPS' to facilitate initialization of driver's 'pm' field
+depending on whether CONFIG_PM is enabled. 
 
-Add a RCAR_GP_PIN macro to convert from the documentation pin number
-space to the linear Linux space.
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+[Sergei: added the changelog, reworded the subject, changing the prefix.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-[horms+renesas@verge.net.au: non-trivial rebase on top of
- "sh-pfc: r8a7779: Don't group USB OVC and PENC pins"]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/linux/platform_data/gpio-rcar.h | 2 ++
- 1 file changed, 2 insertions(+)
+Changes in version 4:
+- refreshed the patch;
+- added the changelog;
+- reworded the subject, changing the prefix.
 
-diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
-index 6c0027a..2d8d694 100644
---- a/include/linux/platform_data/gpio-rcar.h
-+++ b/include/linux/platform_data/gpio-rcar.h
-@@ -24,4 +24,6 @@ struct gpio_rcar_config {
- 	unsigned has_both_edge_trigger:1;
+Changes in version 3:
+- fixed "ERROR: Macros with complex values should be enclosed in parenthesis" by
+  scripts/checkpatch.pl.
+
+ drivers/net/ethernet/renesas/sh_eth.c |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2675,6 +2675,7 @@ static int sh_eth_drv_remove(struct plat
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_PM
+ static int sh_eth_runtime_nop(struct device *dev)
+ {
+ 	/*
+@@ -2688,17 +2689,21 @@ static int sh_eth_runtime_nop(struct dev
+ 	return 0;
+ }
+ 
+-static struct dev_pm_ops sh_eth_dev_pm_ops = {
++static const struct dev_pm_ops sh_eth_dev_pm_ops = {
+ 	.runtime_suspend = sh_eth_runtime_nop,
+ 	.runtime_resume = sh_eth_runtime_nop,
+ };
++#define SH_ETH_PM_OPS (&sh_eth_dev_pm_ops)
++#else
++#define SH_ETH_PM_OPS NULL
++#endif
+ 
+ static struct platform_driver sh_eth_driver = {
+ 	.probe = sh_eth_drv_probe,
+ 	.remove = sh_eth_drv_remove,
+ 	.driver = {
+ 		   .name = CARDNAME,
+-		   .pm = &sh_eth_dev_pm_ops,
++		   .pm = SH_ETH_PM_OPS,
+ 	},
  };
  
-+#define RCAR_GP_PIN(bank, pin)		(((bank) * 32) + (pin))
-+
- #endif /* __GPIO_RCAR_H__ */
--- 
-1.8.2.1
-
