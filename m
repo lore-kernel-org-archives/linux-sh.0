@@ -1,43 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 06:58:50 +0000
-Subject: [PATCH 00/15] ARM: shmobile: uImage load address rework
-Message-Id: <20130605070616.13311.69049.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 05 Jun 2013 07:13:10 +0000
+Subject: Re: [PATCH 00/15] ARM: shmobile: uImage load address rework
+Message-Id: <1999331.JV7Y1ipABN@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130605070616.13311.69049.sendpatchset@w520>
+In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: uImage load address rework
+Hi Magnus,
 
-[PATCH 01/15] ARM: shmobile: Per-board uImage load addresses
-[PATCH 02/15] ARM: shmobile: AG5EVM uImage rework
-[PATCH 03/15] ARM: shmobile: AP4EVB uImage rework
-[PATCH 04/15] ARM: shmobile: APE6EVM uImage rework
-[PATCH 05/15] ARM: shmobile: Armadillo800EVA uImage rework
-[PATCH 06/15] ARM: shmobile: Bock-W uImage rework
-[PATCH 07/15] ARM: shmobile: Bonito uImage rework
-[PATCH 08/15] ARM: shmobile: KZM9D uImage rework
-[PATCH 09/15] ARM: shmobile: KZM9G uImage rework
-[PATCH 10/15] ARM: shmobile: Kota2 uImage rework
-[PATCH 11/15] ARM: shmobile: Lager uImage rework
-[PATCH 12/15] ARM: shmobile: Mackerel uImage rework
-[PATCH 13/15] ARM: shmobile: Marzen uImage rework
-[PATCH 14/15] ARM: shmobile: Armadillo800EVA reference uImage rework
-[PATCH 15/15] ARM: shmobile: Remove MEMORY_START uImage load address
+On Wednesday 05 June 2013 16:06:16 Magnus Damm wrote:
+> ARM: shmobile: uImage load address rework
+> 
+> [PATCH 01/15] ARM: shmobile: Per-board uImage load addresses
+> [PATCH 02/15] ARM: shmobile: AG5EVM uImage rework
+> [PATCH 03/15] ARM: shmobile: AP4EVB uImage rework
+> [PATCH 04/15] ARM: shmobile: APE6EVM uImage rework
+> [PATCH 05/15] ARM: shmobile: Armadillo800EVA uImage rework
+> [PATCH 06/15] ARM: shmobile: Bock-W uImage rework
+> [PATCH 07/15] ARM: shmobile: Bonito uImage rework
+> [PATCH 08/15] ARM: shmobile: KZM9D uImage rework
+> [PATCH 09/15] ARM: shmobile: KZM9G uImage rework
+> [PATCH 10/15] ARM: shmobile: Kota2 uImage rework
+> [PATCH 11/15] ARM: shmobile: Lager uImage rework
+> [PATCH 12/15] ARM: shmobile: Mackerel uImage rework
+> [PATCH 13/15] ARM: shmobile: Marzen uImage rework
+> [PATCH 14/15] ARM: shmobile: Armadillo800EVA reference uImage rework
+> [PATCH 15/15] ARM: shmobile: Remove MEMORY_START uImage load address
+> 
+> Rework the mach-shmobile uImage load address calculation by storing
+> the per-board load addresses in Makefile.boot. This removes the
+> CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
+> it possible to create safe kernel images that boot on multiple boards.
+> 
+> This is one of several series of code that reworks code not to rely on
+> CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
 
-Rework the mach-shmobile uImage load address calculation by storing
-the per-board load addresses in Makefile.boot. This removes the
-CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
-it possible to create safe kernel images that boot on multiple boards.
+Thank you for the patches. I've been waiting for this for a long time :-)
 
-This is one of several series of code that reworks code not to rely on
-CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
+If you need to submit a v2 you might want to squash 05/15 and 14/15.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
- Written against renesas.git renesas-next-20130604v2
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
- arch/arm/mach-shmobile/Makefile.boot |   26 ++++++++++++++++++++++----
- 1 file changed, 22 insertions(+), 4 deletions(-)
+-- 
+Regards,
+
+Laurent Pinchart
+
