@@ -1,22 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 29 Jun 2013 22:43:56 +0000
-Subject: [PATCH 0/3] R8A7778/BOCK-W: HPB-DMAC support for SDHI0
-Message-Id: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:24:56 +0000
+Subject: [PATCH 005/130] ARM: shmobile: add GPIO IRQ macro
+Message-Id: <1370420821-28420-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130628' tag. Here we add the HPB-DMAC platform code working on
-the R8A7778 and enable DMA for SDHI0 on BOCK-W. The patchset depends on the
-R-Car HPB-DMAC driver patch posted earlier.
+R-Car series gpio_rcar driver can control GPIO IRQ today.
+It needs base IRQ number for gpio_rcar_config :: .irq_base
+This patch adds macro for GPIO IRQ.
+This patch was tested on Bock-W board
 
-[1/3] ARM: shmobile: use common platform header for HPB-DMAC
-[2/3] ARM: shmobile: r8a7778: add HPB-DMAC support
-[3/3] ARM: shmobile: BOCK-W: enable DMA for SDHI0
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/irqs.h | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
+index b2074e2..d241bfd 100644
+--- a/arch/arm/mach-shmobile/include/mach/irqs.h
++++ b/arch/arm/mach-shmobile/include/mach/irqs.h
+@@ -16,4 +16,9 @@
+ #define IRQPIN_BASE		2000
+ #define irq_pin(nr)		((nr) + IRQPIN_BASE)
+ 
++/* GPIO IRQ */
++#define _GPIO_IRQ_BASE		2500
++#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
++#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
++
+ #endif /* __ASM_MACH_IRQS_H */
+-- 
+1.8.2.1
+
