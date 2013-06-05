@@ -1,67 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:25 +0000
-Subject: [PATCH 034/130] ARM: shmobile: mackerel: Register pinctrl mapping for CEU
-Message-Id: <1370420821-28420-35-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 04:31:51 +0000
+Subject: [PATCH 4/6] ARM: shmobile: bockw: enable CONFIG_PM_RUNTIME in defconfig
+Message-Id: <1370406713-26599-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370406713-26599-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370406713-26599-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Replace the GPIO-based CEU pinmux configuration by a pinctrl mapping.
+Enable CONFIG_PM_RUNTIME in 'bockw_defconfig' -- it's already used by TMU, SCI,
+I2C, and Ether drivers to control the clocks...
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 24 +++++++++---------------
- 1 file changed, 9 insertions(+), 15 deletions(-)
+ arch/arm/configs/bockw_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index d40d9da..fdd7e3f 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1312,6 +1312,15 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 	/* ADXL34X */
- 	PIN_MAP_MUX_GROUP_DEFAULT("1-0053", "pfc-sh7372",
- 				  "intc_irq21", "intc"),
-+	/* CEU */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
-+				  "ceu_data_0_7", "ceu"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
-+				  "ceu_clk_0", "ceu"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
-+				  "ceu_sync", "ceu"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
-+				  "ceu_field", "ceu"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -1497,21 +1506,6 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
- 	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
- 
--	/* CEU */
--	gpio_request(GPIO_FN_VIO_CLK, NULL);
--	gpio_request(GPIO_FN_VIO_VD, NULL);
--	gpio_request(GPIO_FN_VIO_HD, NULL);
--	gpio_request(GPIO_FN_VIO_FIELD, NULL);
--	gpio_request(GPIO_FN_VIO_CKO, NULL);
--	gpio_request(GPIO_FN_VIO_D7, NULL);
--	gpio_request(GPIO_FN_VIO_D6, NULL);
--	gpio_request(GPIO_FN_VIO_D5, NULL);
--	gpio_request(GPIO_FN_VIO_D4, NULL);
--	gpio_request(GPIO_FN_VIO_D3, NULL);
--	gpio_request(GPIO_FN_VIO_D2, NULL);
--	gpio_request(GPIO_FN_VIO_D1, NULL);
--	gpio_request(GPIO_FN_VIO_D0, NULL);
--
- 	/* HDMI */
- 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
- 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index 2c3f34e..a4bc76d 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -31,6 +31,7 @@ CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
+ CONFIG_CMDLINE_FORCE=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ # CONFIG_SUSPEND is not set
++CONFIG_PM_RUNTIME=y
+ CONFIG_NET=y
+ CONFIG_UNIX=y
+ CONFIG_INET=y
 -- 
 1.8.2.1
 
