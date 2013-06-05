@@ -1,161 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 28 Jun 2013 05:20:45 +0000
-Subject: [PATCH 2/2] ARM: shmobile: lager: Add DT reference
-Message-Id: <1372396845-28767-3-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 06:59:13 +0000
+Subject: [PATCH 03/15] ARM: shmobile: AP4EVB uImage rework
+Message-Id: <20130605070640.13311.38199.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372396845-28767-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372396845-28767-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130605070616.13311.69049.sendpatchset@w520>
+In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is sufficient to allow boot of the Lager board with
-a console without boards-lager.c compiled into the kernel.
-This is an example of a minimal but still useful initialisation
-of the board using DT as much as possible.
+From: Magnus Damm <damm@opensource.se>
 
-As such it is the same as the boot of Lager that can be achieved
-without a board file. The intention of adding this file
-is to facilitate further work to allow board specific devices to be
-initialised via DT.
+Add AP4EVB specific load address to Makefile.boot
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/Makefile                     |  1 +
- arch/arm/boot/dts/r8a7790-lager-reference.dts  | 31 ++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                 | 11 ++++++++
- arch/arm/mach-shmobile/Makefile                |  1 +
- arch/arm/mach-shmobile/board-lager-reference.c | 36 ++++++++++++++++++++++++++
- 5 files changed, 80 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-lager-reference.c
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index cb31259..f2dc697 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -165,6 +165,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva-reference.dtb \
- 	r8a7779-marzen-reference.dtb \
- 	r8a7790-lager.dtb \
-+	r8a7790-lager-reference.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
- 	r8a73a4-ape6evm.dtb \
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-new file mode 100644
-index 0000000..fa5b81b
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -0,0 +1,31 @@
-+/*
-+ * Device Tree Source for the Lager board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r8a7790.dtsi"
-+
-+/ {
-+	model = "Lager";
-+	compatible = "renesas,lager-reference", "renesas,r8a7790";
-+
-+	chosen {
-+		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x80000000>;
-+	};
-+
-+	lbsc {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index e46bc94..dc77b48 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -152,6 +152,17 @@ config MACH_LAGER
- 	depends on ARCH_R8A7790
- 	select USE_OF
+ arch/arm/mach-shmobile/Makefile.boot |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- 0010/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 16:09:11.000000000 +0900
+@@ -2,6 +2,7 @@ loadaddr-y	:= $(shell /bin/bash -c 'prin
+ 		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
  
-+config MACH_LAGER_REFERENCE
-+	bool "Lager board - Reference Device Tree Implementation"
-+	depends on ARCH_R8A7790
-+	select USE_OF
-+	---help---
-+	   Use reference implementation of Lager board support
-+	   which makes use of device tree at the expense
-+	   of not supporting a number of devices.
-+
-+	   This is intended to aid developers
-+
- config MACH_KZM9D
- 	bool "KZM9D board"
- 	depends on ARCH_EMEV2
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 6165a51..d813133 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
-+obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-new file mode 100644
-index 0000000..02c3ed2
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -0,0 +1,36 @@
-+/*
-+ * Lager board support - Reference DT implementation
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Simon Horman
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/irqchip.h>
-+#include <mach/r8a7790.h>
-+#include <asm/mach/arch.h>
-+
-+static const char *lager_boards_compat_dt[] __initdata = {
-+	"renesas,lager-reference",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(LAGER_DT, "lager")
-+	.init_irq	= irqchip_init,
-+	.init_machine	= r8a7790_add_standard_devices_dt,
-+	.init_time	= r8a7790_timer_init,
-+	.dt_compat	= lager_boards_compat_dt,
-+MACHINE_END
--- 
-1.8.2.1
-
+ loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
++loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
+ 
+ __ZRELADDR	:= $(shell /bin/bash -c \
+ 		     'echo $(loadaddr-y) | tr " " "\n" | sort | uniq')
