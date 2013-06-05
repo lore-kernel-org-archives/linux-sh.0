@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:15 +0000
-Subject: [PATCH 084/130] sh-pfc: r8a7740: Remove FSI function GPIOS
-Message-Id: <1370420821-28420-85-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:34 +0000
+Subject: [PATCH 103/130] ARM: shmobile: r8a7779 pinmux platform device cleanup
+Message-Id: <1370420821-28420-104-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,40 +10,53 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-All r8a7740 platforms now use the pinctrl API to control the FSI pins,
-the corresponding function GPIOS are unused. Remove them.
+Use DEFINE_RES_MEM() to save a couple of lines of code.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+[lp: Don't declare r8a7779_pfc_resources as const]
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 12 ------------
- 1 file changed, 12 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 17 +++--------------
+ 1 file changed, 3 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 7ab4ff2..a93fd84 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -3207,18 +3207,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(DBGMD10),	GPIO_FN(DBGMD11),	GPIO_FN(DBGMD20),
- 	GPIO_FN(DBGMD21),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index b0b3948..dbb13f2 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -65,11 +65,7 @@ void __init r8a7779_map_io(void)
+ }
  
--	/* FSI-A */
--	GPIO_FN(FSIAISLD_PORT0),	/* FSIAISLD Port 0/5 */
--	GPIO_FN(FSIAISLD_PORT5),
--	GPIO_FN(FSIASPDIF_PORT9),	/* FSIASPDIF Port 9/18 */
--	GPIO_FN(FSIASPDIF_PORT18),
--	GPIO_FN(FSIAOSLD1),	GPIO_FN(FSIAOSLD2),	GPIO_FN(FSIAOLR),
--	GPIO_FN(FSIAOBT),	GPIO_FN(FSIAOSLD),	GPIO_FN(FSIAOMC),
--	GPIO_FN(FSIACK),	GPIO_FN(FSIAILR),	GPIO_FN(FSIAIBT),
--
--	/* FSI-B */
--	GPIO_FN(FSIBCK),
--
- 	/* FMSI */
- 	GPIO_FN(FMSISLD_PORT1), /* FMSISLD Port 1/6 */
- 	GPIO_FN(FMSISLD_PORT6),
+ static struct resource r8a7779_pfc_resources[] = {
+-	[0] = {
+-		.start	= 0xfffc0000,
+-		.end	= 0xfffc023b,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	DEFINE_RES_MEM(0xfffc0000, 0x023c),
+ };
+ 
+ static struct platform_device r8a7779_pfc_device = {
+@@ -81,15 +77,8 @@ static struct platform_device r8a7779_pfc_device = {
+ 
+ #define R8A7779_GPIO(idx, npins) \
+ static struct resource r8a7779_gpio##idx##_resources[] = {		\
+-	[0] = {								\
+-		.start	= 0xffc40000 + 0x1000 * (idx),			\
+-		.end	= 0xffc4002b + 0x1000 * (idx),			\
+-		.flags	= IORESOURCE_MEM,				\
+-	},								\
+-	[1] = {								\
+-		.start	= gic_iid(0xad + (idx)),			\
+-		.flags	= IORESOURCE_IRQ,				\
+-	}								\
++	DEFINE_RES_MEM(0xffc40000 + (0x1000 * (idx)), 0x002c),		\
++	DEFINE_RES_IRQ(gic_iid(0xad + (idx))),				\
+ };									\
+ 									\
+ static struct gpio_rcar_config r8a7779_gpio##idx##_platform_data = {	\
 -- 
 1.8.2.1
 
