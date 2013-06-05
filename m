@@ -1,85 +1,106 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:57 +0000
-Subject: [PATCH 27/27] ARM: shmobile: sh73a0: div4 clocks must check the kick bit before changing rate
-Message-Id: <1370591517-20239-28-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:24:54 +0000
+Subject: [PATCH 003/130] gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH
+Message-Id: <1370420821-28420-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+As hardware support for this feature is not universal for all SoCs a flag,
+has_both_edge_trigger, has been added to the platform data of the driver to
+allow this feature to be enabled.
 
-According to the datasheet, it is not allowed to change div4 clock rates
-if an earlier rate change operation is still in progress, as indicated by
-a set kick bit.
+The motivation for this is to allow use of the gpio-keys driver on the
+lager board which is based on the r8a7790 SoC. The V2 of this patch has been
+fully exercised using that driver on that board.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c | 24 +++++++++++++++++++-----
- 1 file changed, 19 insertions(+), 5 deletions(-)
+ drivers/gpio/gpio-rcar.c                | 26 +++++++++++++++++++++-----
+ include/linux/platform_data/gpio-rcar.h |  1 +
+ 2 files changed, 22 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index d05cf90..d9fd033 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -257,7 +257,7 @@ static struct clk twd_clk = {
- 	.ops = &twd_clk_ops,
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index 0f3d647..d173d56 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -49,6 +49,7 @@ struct gpio_rcar_priv {
+ #define POSNEG 0x20
+ #define EDGLEVEL 0x24
+ #define FILONOFF 0x28
++#define BOTHEDGE 0x4c
+ 
+ static inline u32 gpio_rcar_read(struct gpio_rcar_priv *p, int offs)
+ {
+@@ -91,7 +92,8 @@ static void gpio_rcar_irq_enable(struct irq_data *d)
+ static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
+ 						  unsigned int hwirq,
+ 						  bool active_high_rising_edge,
+-						  bool level_trigger)
++						  bool level_trigger,
++						  bool both)
+ {
+ 	unsigned long flags;
+ 
+@@ -108,6 +110,10 @@ static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
+ 	/* Configure edge or level trigger in EDGLEVEL */
+ 	gpio_rcar_modify_bit(p, EDGLEVEL, hwirq, !level_trigger);
+ 
++	/* Select one edge or both edges in BOTHEDGE */
++	if (p->config.has_both_edge_trigger)
++		gpio_rcar_modify_bit(p, BOTHEDGE, hwirq, both);
++
+ 	/* Select "Interrupt Input Mode" in IOINTSEL */
+ 	gpio_rcar_modify_bit(p, IOINTSEL, hwirq, true);
+ 
+@@ -127,16 +133,26 @@ static int gpio_rcar_irq_set_type(struct irq_data *d, unsigned int type)
+ 
+ 	switch (type & IRQ_TYPE_SENSE_MASK) {
+ 	case IRQ_TYPE_LEVEL_HIGH:
+-		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, true);
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, true,
++						      false);
+ 		break;
+ 	case IRQ_TYPE_LEVEL_LOW:
+-		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, true);
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, true,
++						      false);
+ 		break;
+ 	case IRQ_TYPE_EDGE_RISING:
+-		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false);
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false,
++						      false);
+ 		break;
+ 	case IRQ_TYPE_EDGE_FALLING:
+-		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, false);
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, false,
++						      false);
++		break;
++	case IRQ_TYPE_EDGE_BOTH:
++		if (!p->config.has_both_edge_trigger)
++			return -EINVAL;
++		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false,
++						      true);
+ 		break;
+ 	default:
+ 		return -EINVAL;
+diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
+index aba7079..6c0027a 100644
+--- a/include/linux/platform_data/gpio-rcar.h
++++ b/include/linux/platform_data/gpio-rcar.h
+@@ -21,6 +21,7 @@ struct gpio_rcar_config {
+ 	unsigned int irq_base;
+ 	unsigned int number_of_pins;
+ 	const char *pctl_name;
++	unsigned has_both_edge_trigger:1;
  };
  
--static struct sh_clk_ops zclk_ops;
-+static struct sh_clk_ops zclk_ops, kicker_ops;
- static const struct sh_clk_ops *div4_clk_ops;
- 
- static int zclk_set_rate(struct clk *clk, unsigned long rate)
-@@ -324,18 +324,32 @@ static unsigned long zclk_recalc(struct clk *clk)
- 	return clk_get_rate(clk->parent);
- }
- 
--static void zclk_extend(void)
-+static int kicker_set_rate(struct clk *clk, unsigned long rate)
- {
--	div4_clk_ops = div4_clks[DIV4_Z].ops;
-+	if (__raw_readl(FRQCRB) & (1 << 31))
-+		return -EBUSY;
-+
-+	return div4_clk_ops->set_rate(clk, rate);
-+}
-+
-+static void div4_clk_extend(void)
-+{
-+	int i;
-+
-+	div4_clk_ops = div4_clks[0].ops;
- 
-+	/* Add a kicker-busy check before changing the rate */
-+	kicker_ops = *div4_clk_ops;
- 	/* We extend the DIV4 clock with a 1:1 pass-through case */
- 	zclk_ops = *div4_clk_ops;
- 
-+	kicker_ops.set_rate = kicker_set_rate;
- 	zclk_ops.set_rate = zclk_set_rate;
- 	zclk_ops.round_rate = zclk_round_rate;
- 	zclk_ops.recalc = zclk_recalc;
- 
--	div4_clks[DIV4_Z].ops = &zclk_ops;
-+	for (i = 0; i < DIV4_NR; i++)
-+		div4_clks[i].ops = i = DIV4_Z ? &zclk_ops : &kicker_ops;
- }
- 
- enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
-@@ -697,7 +711,7 @@ void __init sh73a0_clock_init(void)
- 	if (!ret) {
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
- 		if (!ret)
--			zclk_extend();
-+			div4_clk_extend();
- 	}
- 
- 	if (!ret)
+ #endif /* __GPIO_RCAR_H__ */
 -- 
 1.8.2.1
 
