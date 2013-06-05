@@ -1,72 +1,125 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 04 Jun 2013 05:12:08 +0000
-Subject: [PATCH 5/6 v4] ARM: shmobile: r8a7778: add support HSPI driver
-Message-Id: <8738sy5ujf.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:15 +0000
+Subject: [PATCH 024/130] sh-pfc: sh7372: Add CEU pin groups and functions
+Message-Id: <1370420821-28420-25-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a platform device for the r8a7778 HSPI.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3 -> v4
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 70 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
 
- - separated into "driver" support
-
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   23 +++++++++++++++++++++++
- 2 files changed, 24 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index a428bc6..ca8bc14 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -25,6 +25,7 @@ extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7778_add_i2c_device(int id);
-+extern void r8a7778_add_hspi_device(int id);
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 9545b3c..3da8319 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1029,6 +1029,58 @@ static const unsigned int bsc_wait_pins[] = {
+ static const unsigned int bsc_wait_mux[] = {
+ 	WAIT_MARK,
+ };
++/* - CEU -------------------------------------------------------------------- */
++static const unsigned int ceu_data_0_7_pins[] = {
++	/* D[0:7] */
++	102, 103, 104, 105, 106, 107, 108, 109,
++};
++static const unsigned int ceu_data_0_7_mux[] = {
++	VIO_D0_MARK, VIO_D1_MARK, VIO_D2_MARK, VIO_D3_MARK,
++	VIO_D4_MARK, VIO_D5_MARK, VIO_D6_MARK, VIO_D7_MARK,
++};
++static const unsigned int ceu_data_8_15_pins[] = {
++	/* D[8:15] */
++	110, 111, 112, 113, 114, 115, 116, 117,
++};
++static const unsigned int ceu_data_8_15_mux[] = {
++	VIO_D8_MARK, VIO_D9_MARK, VIO_D10_MARK, VIO_D11_MARK,
++	VIO_D12_MARK, VIO_D13_MARK, VIO_D14_MARK, VIO_D15_MARK,
++};
++static const unsigned int ceu_clk_0_pins[] = {
++	/* CKO */
++	120,
++};
++static const unsigned int ceu_clk_0_mux[] = {
++	VIO_CKO_MARK,
++};
++static const unsigned int ceu_clk_1_pins[] = {
++	/* CKO */
++	16,
++};
++static const unsigned int ceu_clk_1_mux[] = {
++	VIO_CKO1_MARK,
++};
++static const unsigned int ceu_clk_2_pins[] = {
++	/* CKO */
++	17,
++};
++static const unsigned int ceu_clk_2_mux[] = {
++	VIO_CKO2_MARK,
++};
++static const unsigned int ceu_sync_pins[] = {
++	/* CLK, VD, HD */
++	118, 100, 101,
++};
++static const unsigned int ceu_sync_mux[] = {
++	VIO_CLK_MARK, VIO_VD_MARK, VIO_HD_MARK,
++};
++static const unsigned int ceu_field_pins[] = {
++	/* FIELD */
++	119,
++};
++static const unsigned int ceu_field_mux[] = {
++	VIO_FIELD_MARK,
++};
+ /* - MMCIF ------------------------------------------------------------------ */
+ static const unsigned int mmc0_data1_0_pins[] = {
+ 	/* D[0] */
+@@ -1183,6 +1235,13 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(bsc_rd_we16),
+ 	SH_PFC_PIN_GROUP(bsc_bs),
+ 	SH_PFC_PIN_GROUP(bsc_rdwr),
++	SH_PFC_PIN_GROUP(ceu_data_0_7),
++	SH_PFC_PIN_GROUP(ceu_data_8_15),
++	SH_PFC_PIN_GROUP(ceu_clk_0),
++	SH_PFC_PIN_GROUP(ceu_clk_1),
++	SH_PFC_PIN_GROUP(ceu_clk_2),
++	SH_PFC_PIN_GROUP(ceu_sync),
++	SH_PFC_PIN_GROUP(ceu_field),
+ 	SH_PFC_PIN_GROUP(mmc0_data1_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data4_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data8_0),
+@@ -1219,6 +1278,16 @@ static const char * const bsc_groups[] = {
+ 	"bsc_rdwr",
+ };
  
- extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index eaa6b06..fdc483d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -198,6 +198,29 @@ void __init r8a7778_add_i2c_device(int id)
- 		i2c_resources + (2 * id), 2);
- }
- 
-+/* HSPI */
-+static struct resource hspi_resources[] __initdata = {
-+	/* HSPI0 */
-+	DEFINE_RES_MEM(0xfffc7000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x5f)),
-+	/* HSPI1 */
-+	DEFINE_RES_MEM(0xfffc8000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x74)),
-+	/* HSPI2 */
-+	DEFINE_RES_MEM(0xfffc6000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x75)),
++static const char * const ceu_groups[] = {
++	"ceu_data_0_7",
++	"ceu_data_8_15",
++	"ceu_clk_0",
++	"ceu_clk_1",
++	"ceu_clk_2",
++	"ceu_sync",
++	"ceu_field",
 +};
 +
-+void __init r8a7778_add_hspi_device(int id)
-+{
-+	BUG_ON(id < 0 || id > 2);
-+
-+	platform_device_register_simple(
-+		"sh-hspi", id,
-+		hspi_resources + (2 * id), 2);
-+}
-+
-+
- void __init r8a7778_add_standard_devices(void)
- {
- 	int i;
+ static const char * const mmc0_groups[] = {
+ 	"mmc0_data1_0",
+ 	"mmc0_data4_0",
+@@ -1252,6 +1321,7 @@ static const char * const sdhi2_groups[] = {
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
++	SH_PFC_FUNCTION(ceu),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
 -- 
-1.7.9.5
+1.8.2.1
 
