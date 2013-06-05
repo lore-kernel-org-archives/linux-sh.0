@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:27 +0000
-Subject: [PATCH 036/130] ARM: shmobile: mackerel: Register pinctrl mapping for FSI
-Message-Id: <1370420821-28420-37-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:47 +0000
+Subject: [PATCH 116/130] sh-pfc: r8a7778: fixup IRQ1A settings
+Message-Id: <1370420821-28420-117-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,60 +10,30 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Replace the GPIO-based FSI pinmux configuration by a pinctrl mapping.
+IP2[31] func2 is IRQ1A, not IRQ3A
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 19 ++++++++++++-------
- 1 file changed, 12 insertions(+), 7 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 955fefd..f2e8740 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1328,6 +1328,16 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 				  "flctl_ce0", "flctl"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
- 				  "flctl_ctrl", "flctl"),
-+	/* FSIA (AK4643) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
-+				  "fsia_data_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
-+				  "fsia_data_out", "fsia"),
-+	/* FSIB (HDMI) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-sh7372",
-+				  "fsib_mclk_in", "fsib"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -1446,11 +1456,7 @@ static void __init mackerel_init(void)
- 	gpio_request_pulldown(GPIO_PORT167CR); /* VBUS0_1 pull down */
- 	gpio_request(GPIO_FN_IDIN_1_113, NULL);
- 
--	/* enable FSI2 port A (ak4643) */
--	gpio_request(GPIO_FN_FSIAIBT,	NULL);
--	gpio_request(GPIO_FN_FSIAILR,	NULL);
--	gpio_request(GPIO_FN_FSIAISLD,	NULL);
--	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
-+	/* FSI2 port A (ak4643) */
- 	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
- 
- 	gpio_request(9,  NULL);
-@@ -1460,8 +1466,7 @@ static void __init mackerel_init(void)
- 
- 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
- 
--	/* setup FSI2 port B (HDMI) */
--	gpio_request(GPIO_FN_FSIBCK, NULL);
-+	/* FSI2 port B (HDMI) */
- 	__raw_writew(__raw_readw(USCCR1) & ~(1 << 6), USCCR1); /* use SPDIF */
- 
- 	/* set SPU2 clock to 119.6 MHz */
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index bc20083..6b2c6b5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -2080,7 +2080,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 			     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+ 			     1, 1, 1, 1, 3, 2, 3, 3, 3, 3) {
+ 		/* IP2_31 [1] */
+-		FN_MLB_CLK,	FN_IRQ3_A,
++		FN_MLB_CLK,	FN_IRQ1_A,
+ 		/* IP2_30 [1] */
+ 		FN_RD_WR_B,	FN_IRQ0,
+ 		/* IP2_29 [1] */
 -- 
 1.8.2.1
 
