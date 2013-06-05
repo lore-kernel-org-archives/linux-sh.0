@@ -1,796 +1,352 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 29 Jun 2013 22:14:15 +0000
-Subject: [PATCH v2] dma: add driver for R-Car HPB-DMAC
-Message-Id: <201306300214.16005.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:53 +0000
+Subject: [PATCH 122/130] pinctrl: r8a7790: add pinmux data for MMCIF and SDHI interfaces
+Message-Id: <1370420821-28420-123-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: djbw@fb.com, vinod.koul@intel.com
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Max Filippov <max.filippov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Add support for HPB-DMAC found in Renesas R-Car SoCs, using 'shdma-base' DMA 
-driver framework.
+This patch adds pinmux groups and functions for the two MMCIF and four
+SDHI interfaces on r8a73a4 (APE6).
 
-Based on the original patch by Phil Edworthy <phil.edworthy@renesas.com>.
-
-Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-[Sergei: removed useless #include, sorted #include's, fixed HPB_DMA_TCR_MAX,
-fixed formats and removed line breaks in the dev_dbg() calls, rephrased and
-added IRQ # to the shdma_request_irq() failure message, added MODULE_AUTHOR(),
-removed '__init' annotation from the probe() method, removed '__initdata'
-annotation from 'hpb_dmae_driver', fixed guard macro name in the header file,
-fixed #define ASYNCRSTR_ASRST20, added #define ASYNCRSTR_ASRST24, beautified
-some commets.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-The patch is against the 'next' branch of Vinod Koul's 'slave-dma.git' repo. 
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 294 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 294 insertions(+)
 
-Changes in version 2:
-- removed '__init' annotation from the probe() method and removed '__initdata'
-  annotation from 'hpb_dmae_driver';
-- added the From: header to credit the real author.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 9338422..85d77a4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2372,6 +2372,220 @@ static const unsigned int tpu0_to3_mux[] = {
+ 	TPU0TO3_MARK,
+ };
+ 
++/* - MMCIF ------------------------------------------------------------------ */
++static const unsigned int mmc0_data1_pins[] = {
++	/* D[0] */
++	RCAR_GP_PIN(3, 18),
++};
++static const unsigned int mmc0_data1_mux[] = {
++	MMC0_D0_MARK,
++};
++static const unsigned int mmc0_data4_pins[] = {
++	/* D[0:3] */
++	RCAR_GP_PIN(3, 18), RCAR_GP_PIN(3, 19),
++	RCAR_GP_PIN(3, 20), RCAR_GP_PIN(3, 21),
++};
++static const unsigned int mmc0_data4_mux[] = {
++	MMC0_D0_MARK, MMC0_D1_MARK, MMC0_D2_MARK, MMC0_D3_MARK,
++};
++static const unsigned int mmc0_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(3, 18), RCAR_GP_PIN(3, 19),
++	RCAR_GP_PIN(3, 20), RCAR_GP_PIN(3, 21),
++	RCAR_GP_PIN(3, 22), RCAR_GP_PIN(3, 23),
++	RCAR_GP_PIN(3, 6), RCAR_GP_PIN(3, 7),
++};
++static const unsigned int mmc0_data8_mux[] = {
++	MMC0_D0_MARK, MMC0_D1_MARK, MMC0_D2_MARK, MMC0_D3_MARK,
++	MMC0_D4_MARK, MMC0_D5_MARK, MMC0_D6_MARK, MMC0_D7_MARK,
++};
++static const unsigned int mmc0_ctrl_pins[] = {
++	/* CLK, CMD */
++	RCAR_GP_PIN(3, 16), RCAR_GP_PIN(3, 17),
++};
++static const unsigned int mmc0_ctrl_mux[] = {
++	MMC0_CLK_MARK, MMC0_CMD_MARK,
++};
++
++static const unsigned int mmc1_data1_pins[] = {
++	/* D[0] */
++	RCAR_GP_PIN(3, 26),
++};
++static const unsigned int mmc1_data1_mux[] = {
++	MMC1_D0_MARK,
++};
++static const unsigned int mmc1_data4_pins[] = {
++	/* D[0:3] */
++	RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 27),
++	RCAR_GP_PIN(3, 28), RCAR_GP_PIN(3, 29),
++};
++static const unsigned int mmc1_data4_mux[] = {
++	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
++};
++static const unsigned int mmc1_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 27),
++	RCAR_GP_PIN(3, 28), RCAR_GP_PIN(3, 29),
++	RCAR_GP_PIN(3, 30), RCAR_GP_PIN(3, 31),
++	RCAR_GP_PIN(3, 13), RCAR_GP_PIN(3, 14),
++};
++static const unsigned int mmc1_data8_mux[] = {
++	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
++	MMC1_D4_MARK, MMC1_D5_MARK, MMC1_D6_MARK, MMC1_D7_MARK,
++};
++static const unsigned int mmc1_ctrl_pins[] = {
++	/* CLK, CMD */
++	RCAR_GP_PIN(3, 24), RCAR_GP_PIN(3, 25),
++};
++static const unsigned int mmc1_ctrl_mux[] = {
++	MMC1_CLK_MARK, MMC1_CMD_MARK,
++};
++
++/* - SDHI ------------------------------------------------------------------- */
++static const unsigned int sdhi0_data1_pins[] = {
++	/* D0 */
++	RCAR_GP_PIN(3, 2),
++};
++static const unsigned int sdhi0_data1_mux[] = {
++	SD0_DAT0_MARK,
++};
++static const unsigned int sdhi0_data4_pins[] = {
++	/* D[0:3] */
++	RCAR_GP_PIN(3, 2), RCAR_GP_PIN(3, 3), RCAR_GP_PIN(3, 4), RCAR_GP_PIN(3, 5),
++};
++static const unsigned int sdhi0_data4_mux[] = {
++	SD0_DAT0_MARK, SD0_DAT1_MARK, SD0_DAT2_MARK, SD0_DAT3_MARK,
++};
++static const unsigned int sdhi0_ctrl_pins[] = {
++	/* CLK, CMD */
++	RCAR_GP_PIN(3, 0), RCAR_GP_PIN(3, 1),
++};
++static const unsigned int sdhi0_ctrl_mux[] = {
++	SD0_CLK_MARK, SD0_CMD_MARK,
++};
++static const unsigned int sdhi0_cd_pins[] = {
++	/* CD */
++	RCAR_GP_PIN(3, 6),
++};
++static const unsigned int sdhi0_cd_mux[] = {
++	SD0_CD_MARK,
++};
++static const unsigned int sdhi0_wp_pins[] = {
++	/* WP */
++	RCAR_GP_PIN(3, 7),
++};
++static const unsigned int sdhi0_wp_mux[] = {
++	SD0_WP_MARK,
++};
++
++static const unsigned int sdhi1_data1_pins[] = {
++	/* D0 */
++	RCAR_GP_PIN(3, 10),
++};
++static const unsigned int sdhi1_data1_mux[] = {
++	SD1_DAT0_MARK,
++};
++static const unsigned int sdhi1_data4_pins[] = {
++	/* D[0:3] */
++	RCAR_GP_PIN(3, 10), RCAR_GP_PIN(3, 11), RCAR_GP_PIN(3, 12), RCAR_GP_PIN(3, 13),
++};
++static const unsigned int sdhi1_data4_mux[] = {
++	SD1_DAT0_MARK, SD1_DAT1_MARK, SD1_DAT2_MARK, SD1_DAT3_MARK,
++};
++static const unsigned int sdhi1_ctrl_pins[] = {
++	/* CLK, CMD */
++	RCAR_GP_PIN(3, 8), RCAR_GP_PIN(3, 9),
++};
++static const unsigned int sdhi1_ctrl_mux[] = {
++	SD1_CLK_MARK, SD1_CMD_MARK,
++};
++static const unsigned int sdhi1_cd_pins[] = {
++	/* CD */
++	RCAR_GP_PIN(3, 14),
++};
++static const unsigned int sdhi1_cd_mux[] = {
++	SD1_CD_MARK,
++};
++static const unsigned int sdhi1_wp_pins[] = {
++	/* WP */
++	RCAR_GP_PIN(3, 15),
++};
++static const unsigned int sdhi1_wp_mux[] = {
++	SD1_WP_MARK,
++};
++
++static const unsigned int sdhi2_data1_pins[] = {
++	/* D0 */
++	RCAR_GP_PIN(3, 18),
++};
++static const unsigned int sdhi2_data1_mux[] = {
++	SD2_DAT0_MARK,
++};
++static const unsigned int sdhi2_data4_pins[] = {
++	/* D[0:3] */
++	RCAR_GP_PIN(3, 18), RCAR_GP_PIN(3, 19), RCAR_GP_PIN(3, 20), RCAR_GP_PIN(3, 21),
++};
++static const unsigned int sdhi2_data4_mux[] = {
++	SD2_DAT0_MARK, SD2_DAT1_MARK, SD2_DAT2_MARK, SD2_DAT3_MARK,
++};
++static const unsigned int sdhi2_ctrl_pins[] = {
++	/* CLK, CMD */
++	RCAR_GP_PIN(3, 16), RCAR_GP_PIN(3, 17),
++};
++static const unsigned int sdhi2_ctrl_mux[] = {
++	SD2_CLK_MARK, SD2_CMD_MARK,
++};
++static const unsigned int sdhi2_cd_pins[] = {
++	/* CD */
++	RCAR_GP_PIN(3, 22),
++};
++static const unsigned int sdhi2_cd_mux[] = {
++	SD2_CD_MARK,
++};
++static const unsigned int sdhi2_wp_pins[] = {
++	/* WP */
++	RCAR_GP_PIN(3, 23),
++};
++static const unsigned int sdhi2_wp_mux[] = {
++	SD2_WP_MARK,
++};
++
++static const unsigned int sdhi3_data1_pins[] = {
++	/* D0 */
++	RCAR_GP_PIN(3, 26),
++};
++static const unsigned int sdhi3_data1_mux[] = {
++	SD3_DAT0_MARK,
++};
++static const unsigned int sdhi3_data4_pins[] = {
++	/* D[0:3] */
++	RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 27), RCAR_GP_PIN(3, 28), RCAR_GP_PIN(3, 29),
++};
++static const unsigned int sdhi3_data4_mux[] = {
++	SD3_DAT0_MARK, SD3_DAT1_MARK, SD3_DAT2_MARK, SD3_DAT3_MARK,
++};
++static const unsigned int sdhi3_ctrl_pins[] = {
++	/* CLK, CMD */
++	RCAR_GP_PIN(3, 24), RCAR_GP_PIN(3, 25),
++};
++static const unsigned int sdhi3_ctrl_mux[] = {
++	SD3_CLK_MARK, SD3_CMD_MARK,
++};
++static const unsigned int sdhi3_cd_pins[] = {
++	/* CD */
++	RCAR_GP_PIN(3, 30),
++};
++static const unsigned int sdhi3_cd_mux[] = {
++	SD3_CD_MARK,
++};
++static const unsigned int sdhi3_wp_pins[] = {
++	/* WP */
++	RCAR_GP_PIN(3, 31),
++};
++static const unsigned int sdhi3_wp_mux[] = {
++	SD3_WP_MARK,
++};
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(eth_link),
+ 	SH_PFC_PIN_GROUP(eth_magic),
+@@ -2449,6 +2663,34 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(tpu0_to1),
+ 	SH_PFC_PIN_GROUP(tpu0_to2),
+ 	SH_PFC_PIN_GROUP(tpu0_to3),
++	SH_PFC_PIN_GROUP(mmc0_data1),
++	SH_PFC_PIN_GROUP(mmc0_data4),
++	SH_PFC_PIN_GROUP(mmc0_data8),
++	SH_PFC_PIN_GROUP(mmc0_ctrl),
++	SH_PFC_PIN_GROUP(mmc1_data1),
++	SH_PFC_PIN_GROUP(mmc1_data4),
++	SH_PFC_PIN_GROUP(mmc1_data8),
++	SH_PFC_PIN_GROUP(mmc1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_data1),
++	SH_PFC_PIN_GROUP(sdhi0_data4),
++	SH_PFC_PIN_GROUP(sdhi0_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_cd),
++	SH_PFC_PIN_GROUP(sdhi0_wp),
++	SH_PFC_PIN_GROUP(sdhi1_data1),
++	SH_PFC_PIN_GROUP(sdhi1_data4),
++	SH_PFC_PIN_GROUP(sdhi1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi1_cd),
++	SH_PFC_PIN_GROUP(sdhi1_wp),
++	SH_PFC_PIN_GROUP(sdhi2_data1),
++	SH_PFC_PIN_GROUP(sdhi2_data4),
++	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(sdhi2_cd),
++	SH_PFC_PIN_GROUP(sdhi2_wp),
++	SH_PFC_PIN_GROUP(sdhi3_data1),
++	SH_PFC_PIN_GROUP(sdhi3_data4),
++	SH_PFC_PIN_GROUP(sdhi3_ctrl),
++	SH_PFC_PIN_GROUP(sdhi3_cd),
++	SH_PFC_PIN_GROUP(sdhi3_wp),
+ };
+ 
+ static const char * const eth_groups[] = {
+@@ -2560,6 +2802,52 @@ static const char * const tpu0_groups[] = {
+ 	"tpu0_to3",
+ };
+ 
++static const char * const mmc0_groups[] = {
++	"mmc0_data1",
++	"mmc0_data4",
++	"mmc0_data8",
++	"mmc0_ctrl",
++};
++
++static const char * const mmc1_groups[] = {
++	"mmc1_data1",
++	"mmc1_data4",
++	"mmc1_data8",
++	"mmc1_ctrl",
++};
++
++static const char * const sdhi0_groups[] = {
++	"sdhi0_data1",
++	"sdhi0_data4",
++	"sdhi0_ctrl",
++	"sdhi0_cd",
++	"sdhi0_wp",
++};
++
++static const char * const sdhi1_groups[] = {
++	"sdhi1_data1",
++	"sdhi1_data4",
++	"sdhi1_ctrl",
++	"sdhi1_cd",
++	"sdhi1_wp",
++};
++
++static const char * const sdhi2_groups[] = {
++	"sdhi2_data1",
++	"sdhi2_data4",
++	"sdhi2_ctrl",
++	"sdhi2_cd",
++	"sdhi2_wp",
++};
++
++static const char * const sdhi3_groups[] = {
++	"sdhi3_data1",
++	"sdhi3_data4",
++	"sdhi3_ctrl",
++	"sdhi3_cd",
++	"sdhi3_wp",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(eth),
+ 	SH_PFC_FUNCTION(intc),
+@@ -2572,6 +2860,12 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scifb1),
+ 	SH_PFC_FUNCTION(scifb2),
+ 	SH_PFC_FUNCTION(tpu0),
++	SH_PFC_FUNCTION(mmc0),
++	SH_PFC_FUNCTION(mmc1),
++	SH_PFC_FUNCTION(sdhi0),
++	SH_PFC_FUNCTION(sdhi1),
++	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(sdhi3),
+ };
+ 
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+-- 
+1.8.2.1
 
- drivers/dma/sh/Kconfig                        |    6 
- drivers/dma/sh/Makefile                       |    1 
- drivers/dma/sh/rcar-hpbdma.c                  |  623 ++++++++++++++++++++++++++
- include/linux/platform_data/dma-rcar-hpbdma.h |  103 ++++
- 4 files changed, 733 insertions(+)
- create mode 100644 drivers/dma/sh/rcar-hpbdma.c
- create mode 100644 include/linux/platform_data/dma-rcar-hpbdma.h
-
-Index: slave-dma/drivers/dma/sh/Kconfig
-=================================--- slave-dma.orig/drivers/dma/sh/Kconfig
-+++ slave-dma/drivers/dma/sh/Kconfig
-@@ -22,3 +22,9 @@ config SUDMAC
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas SUDMAC controllers.
-+
-+config RCAR_HPB_DMAE
-+	tristate "Renesas R-Car HPB DMAC support"
-+	depends on SH_DMAE_BASE
-+	help
-+	  Enable support for the Renesas R-Car series DMA controllers.
-Index: slave-dma/drivers/dma/sh/Makefile
-=================================--- slave-dma.orig/drivers/dma/sh/Makefile
-+++ slave-dma/drivers/dma/sh/Makefile
-@@ -1,3 +1,4 @@
- obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
- obj-$(CONFIG_SH_DMAE) += shdma.o
- obj-$(CONFIG_SUDMAC) += sudmac.o
-+obj-$(CONFIG_RCAR_HPB_DMAE) += rcar-hpbdma.o
-Index: slave-dma/drivers/dma/sh/rcar-hpbdma.c
-=================================--- /dev/null
-+++ slave-dma/drivers/dma/sh/rcar-hpbdma.c
-@@ -0,0 +1,623 @@
-+/*
-+ * Copyright (C) 2011-2013 Renesas Electronics Corporation
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This file is based on the drivers/dma/sh/shdma.c
-+ *
-+ * Renesas SuperH DMA Engine support
-+ *
-+ * This is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * - DMA of SuperH does not have Hardware DMA chain mode.
-+ * - max DMA size is 16MB.
-+ *
-+ */
-+
-+#include <linux/dmaengine.h>
-+#include <linux/delay.h>
-+#include <linux/init.h>
-+#include <linux/interrupt.h>
-+#include <linux/module.h>
-+#include <linux/platform_data/dma-rcar-hpbdma.h>
-+#include <linux/platform_device.h>
-+#include <linux/shdma-base.h>
-+#include <linux/slab.h>
-+
-+/* DMA channel registers */
-+#define DSAR0		0x00
-+#define DDAR0		0x04
-+#define DTCR0		0x08
-+#define DSAR1		0x0C
-+#define DDAR1		0x10
-+#define DTCR1		0x14
-+#define DSASR		0x18
-+#define DDASR		0x1C
-+#define DTCSR		0x20
-+#define DPTR		0x24
-+#define DCR		0x28
-+#define DCMDR		0x2C
-+#define DSTPR		0x30
-+#define DSTSR		0x34
-+#define DDBGR		0x38
-+#define DDBGR2		0x3C
-+#define HPB_CHAN(n)	(0x40 * (n))
-+
-+/* DMA command register (DCMDR) bits */
-+#define DCMDR_BDOUT	BIT(7)
-+#define DCMDR_DQSPD	BIT(6)
-+#define DCMDR_DQSPC	BIT(5)
-+#define DCMDR_DMSPD	BIT(4)
-+#define DCMDR_DMSPC	BIT(3)
-+#define DCMDR_DQEND	BIT(2)
-+#define DCMDR_DNXT	BIT(1)
-+#define DCMDR_DMEN	BIT(0)
-+
-+/* DMA forced stop register (DSTPR) bits */
-+#define	DSTPR_DMSTP	BIT(0)
-+
-+/* DMA status register (DSTSR) bits */
-+#define	DSTSR_DMSTS	BIT(0)
-+
-+/* DMA common registers */
-+#define DTIMR		0x00
-+#define DINTSR0		0x0C
-+#define DINTSR1		0x10
-+#define DINTCR0		0x14
-+#define DINTCR1		0x18
-+#define DINTMR0		0x1C
-+#define DINTMR1		0x20
-+#define DACTSR0		0x24
-+#define DACTSR1		0x28
-+#define HSRSTR(n)	(0x40 + (n) * 4)
-+#define HPB_DMASPR(n)	(0x140 + (n) * 4)
-+#define HPB_DMLVLR0	0x160
-+#define HPB_DMLVLR1	0x164
-+#define HPB_DMSHPT0	0x168
-+#define HPB_DMSHPT1	0x16C
-+
-+#define HPB_DMA_SLAVE_NUMBER 256
-+#define HPB_DMA_TCR_MAX 0x01000000	/* 16 MiB */
-+
-+struct hpb_dmae_chan {
-+	struct shdma_chan shdma_chan;
-+	int xfer_mode;			/* DMA transfer mode */
-+#define XFER_SINGLE	1
-+#define XFER_DOUBLE	2
-+	unsigned plane_idx;		/* current DMA information set */
-+	bool first_desc;		/* first/next transfer */
-+	int xmit_shift;			/* log_2(bytes_per_xfer) */
-+	void __iomem *base;
-+	const struct hpb_dmae_slave_config *cfg;
-+	char dev_id[16];		/* unique name per DMAC of channel */
-+};
-+
-+struct hpb_dmae_device {
-+	struct shdma_dev shdma_dev;
-+	spinlock_t reg_lock;		/* comm_reg operation lock */
-+	struct hpb_dmae_pdata *pdata;
-+	void __iomem *chan_reg;
-+	void __iomem *comm_reg;
-+	void __iomem *reset_reg;
-+	void __iomem *mode_reg;
-+};
-+
-+struct hpb_dmae_regs {
-+	u32 sar; /* SAR / source address */
-+	u32 dar; /* DAR / destination address */
-+	u32 tcr; /* TCR / transfer count */
-+};
-+
-+struct hpb_desc {
-+	struct shdma_desc shdma_desc;
-+	struct hpb_dmae_regs hw;
-+	unsigned plane_idx;
-+};
-+
-+#define to_chan(schan) container_of(schan, struct hpb_dmae_chan, shdma_chan)
-+#define to_desc(sdesc) container_of(sdesc, struct hpb_desc, shdma_desc)
-+#define to_dev(sc) container_of(sc->shdma_chan.dma_chan.device, \
-+				struct hpb_dmae_device, shdma_dev.dma_dev)
-+
-+static void ch_reg_write(struct hpb_dmae_chan *hpb_dc, u32 data, u32 reg)
-+{
-+	__raw_writel(data, hpb_dc->base + reg);
-+}
-+
-+static u32 ch_reg_read(struct hpb_dmae_chan *hpb_dc, u32 reg)
-+{
-+	return __raw_readl(hpb_dc->base + reg);
-+}
-+
-+static void dcmdr_write(struct hpb_dmae_device *hpbdev, u32 data)
-+{
-+	__raw_writel(data, hpbdev->chan_reg + DCMDR);
-+}
-+
-+static void hsrstr_write(struct hpb_dmae_device *hpbdev, u32 ch)
-+{
-+	__raw_writel(0x1, hpbdev->comm_reg + HSRSTR(ch));
-+}
-+
-+static u32 dintsr_read(struct hpb_dmae_device *hpbdev, u32 ch)
-+{
-+	u32 v;
-+
-+	if (ch < 32)
-+		v = __raw_readl(hpbdev->comm_reg + DINTSR0) >> ch;
-+	else
-+		v = __raw_readl(hpbdev->comm_reg + DINTSR1) >> (ch - 32);
-+	return v & 0x1;
-+}
-+
-+static void dintcr_write(struct hpb_dmae_device *hpbdev, u32 ch)
-+{
-+	if (ch < 32)
-+		__raw_writel((0x1 << ch), hpbdev->comm_reg + DINTCR0);
-+	else
-+		__raw_writel((0x1 << (ch - 32)), hpbdev->comm_reg + DINTCR1);
-+}
-+
-+static void asyncmdr_write(struct hpb_dmae_device *hpbdev, u32 data)
-+{
-+	__raw_writel(data, hpbdev->mode_reg);
-+}
-+
-+static u32 asyncmdr_read(struct hpb_dmae_device *hpbdev)
-+{
-+	return __raw_readl(hpbdev->mode_reg);
-+}
-+
-+static void hpb_dmae_enable_int(struct hpb_dmae_device *hpbdev, u32 ch)
-+{
-+	u32 intreg;
-+
-+	spin_lock_irq(&hpbdev->reg_lock);
-+	if (ch < 32) {
-+		intreg = __raw_readl(hpbdev->comm_reg + DINTMR0);
-+		__raw_writel(BIT(ch) | intreg, hpbdev->comm_reg + DINTMR0);
-+	} else {
-+		intreg = __raw_readl(hpbdev->comm_reg + DINTMR1);
-+		__raw_writel(BIT(ch - 32) | intreg, hpbdev->comm_reg + DINTMR1);
-+	}
-+	spin_unlock_irq(&hpbdev->reg_lock);
-+}
-+
-+static void hpb_dmae_async_reset(struct hpb_dmae_device *hpbdev, u32 data)
-+{
-+	u32 rstr;
-+	int timeout = 10000;	/* 100 ms */
-+
-+	spin_lock(&hpbdev->reg_lock);
-+	rstr = __raw_readl(hpbdev->reset_reg);
-+	rstr |= data;
-+	__raw_writel(rstr, hpbdev->reset_reg);
-+	do {
-+		rstr = __raw_readl(hpbdev->reset_reg);
-+		if ((rstr & data) = data)
-+			break;
-+		udelay(10);
-+	} while (timeout--);
-+
-+	if (timeout < 0)
-+		dev_err(hpbdev->shdma_dev.dma_dev.dev,
-+			"%s timeout\n", __func__);
-+
-+	rstr &= ~data;
-+	__raw_writel(rstr, hpbdev->reset_reg);
-+	spin_unlock(&hpbdev->reg_lock);
-+}
-+
-+static void hpb_dmae_set_async_mode(struct hpb_dmae_device *hpbdev,
-+				    u32 mask, u32 data)
-+{
-+	u32 mode;
-+
-+	spin_lock_irq(&hpbdev->reg_lock);
-+	mode = asyncmdr_read(hpbdev);
-+	mode &= ~mask;
-+	mode |= data;
-+	asyncmdr_write(hpbdev, mode);
-+	spin_unlock_irq(&hpbdev->reg_lock);
-+}
-+
-+static void hpb_dmae_ctl_stop(struct hpb_dmae_device *hpbdev)
-+{
-+	dcmdr_write(hpbdev, DCMDR_DQSPD);
-+}
-+
-+static void hpb_dmae_reset(struct hpb_dmae_device *hpbdev)
-+{
-+	u32 ch;
-+
-+	for (ch = 0; ch < hpbdev->pdata->num_hw_channels; ch++)
-+		hsrstr_write(hpbdev, ch);
-+}
-+
-+static unsigned int calc_xmit_shift(struct hpb_dmae_chan *hpb_chan)
-+{
-+	struct hpb_dmae_device *hpbdev = to_dev(hpb_chan);
-+	struct hpb_dmae_pdata *pdata = hpbdev->pdata;
-+	int width = ch_reg_read(hpb_chan, DCR);
-+	int i;
-+
-+	switch (width & (DCR_SPDS_MASK | DCR_DPDS_MASK)) {
-+	case DCR_SPDS_8BIT | DCR_DPDS_8BIT:
-+	default:
-+		i = XMIT_SZ_8BIT;
-+		break;
-+	case DCR_SPDS_16BIT | DCR_DPDS_16BIT:
-+		i = XMIT_SZ_16BIT;
-+		break;
-+	case DCR_SPDS_32BIT | DCR_DPDS_32BIT:
-+		i = XMIT_SZ_32BIT;
-+		break;
-+	}
-+	return pdata->ts_shift[i];
-+}
-+
-+static void hpb_dmae_set_reg(struct hpb_dmae_chan *hpb_chan,
-+			     struct hpb_dmae_regs *hw, unsigned plane)
-+{
-+	ch_reg_write(hpb_chan, hw->sar, plane ? DSAR1 : DSAR0);
-+	ch_reg_write(hpb_chan, hw->dar, plane ? DDAR1 : DDAR0);
-+	ch_reg_write(hpb_chan, hw->tcr >> hpb_chan->xmit_shift,
-+		     plane ? DTCR1 : DTCR0);
-+}
-+
-+static void hpb_dmae_start(struct hpb_dmae_chan *hpb_chan, bool next)
-+{
-+	ch_reg_write(hpb_chan, (next ? DCMDR_DNXT : 0) | DCMDR_DMEN, DCMDR);
-+}
-+
-+static void hpb_dmae_halt(struct shdma_chan *schan)
-+{
-+	struct hpb_dmae_chan *chan = to_chan(schan);
-+
-+	ch_reg_write(chan, DCMDR_DQEND, DCMDR);
-+	ch_reg_write(chan, DSTPR_DMSTP, DSTPR);
-+}
-+
-+static const struct hpb_dmae_slave_config *
-+hpb_dmae_find_slave(struct hpb_dmae_chan *hpb_chan, int slave_id)
-+{
-+	struct hpb_dmae_device *hpbdev = to_dev(hpb_chan);
-+	struct hpb_dmae_pdata *pdata = hpbdev->pdata;
-+	int i;
-+
-+	if (slave_id >= HPB_DMA_SLAVE_NUMBER)
-+		return NULL;
-+
-+	for (i = 0; i < pdata->num_slaves; i++)
-+		if (pdata->slaves[i].id = slave_id)
-+			return pdata->slaves + i;
-+
-+	return NULL;
-+}
-+
-+static void hpb_dmae_start_xfer(struct shdma_chan *schan,
-+				struct shdma_desc *sdesc)
-+{
-+	struct hpb_dmae_chan *chan = to_chan(schan);
-+	struct hpb_dmae_device *hpbdev = to_dev(chan);
-+	struct hpb_desc *desc = to_desc(sdesc);
-+
-+	if (chan->cfg->flags & HPB_DMAE_SET_ASYNC_RESET)
-+		hpb_dmae_async_reset(hpbdev, chan->cfg->rstr);
-+
-+	desc->plane_idx = chan->plane_idx;
-+	hpb_dmae_set_reg(chan, &desc->hw, chan->plane_idx);
-+	hpb_dmae_start(chan, !chan->first_desc);
-+
-+	if (chan->xfer_mode = XFER_DOUBLE) {
-+		chan->plane_idx ^= 1;
-+		chan->first_desc = false;
-+	}
-+}
-+
-+static bool hpb_dmae_desc_completed(struct shdma_chan *schan,
-+				    struct shdma_desc *sdesc)
-+{
-+	return true;
-+}
-+
-+static bool hpb_dmae_chan_irq(struct shdma_chan *schan, int irq)
-+{
-+	struct hpb_dmae_chan *chan = to_chan(schan);
-+	struct hpb_dmae_device *hpbdev = to_dev(chan);
-+	int ch = chan->cfg->dma_ch;
-+
-+	/* Check Complete DMA Transfer */
-+	if (dintsr_read(hpbdev, ch)) {
-+		/* Clear Interrupt status */
-+		dintcr_write(hpbdev, ch);
-+		return true;
-+	}
-+	return false;
-+}
-+
-+static int hpb_dmae_desc_setup(struct shdma_chan *schan,
-+			       struct shdma_desc *sdesc,
-+			       dma_addr_t src, dma_addr_t dst, size_t *len)
-+{
-+	struct hpb_desc *desc = to_desc(sdesc);
-+
-+	if (*len > (size_t)HPB_DMA_TCR_MAX)
-+		*len = (size_t)HPB_DMA_TCR_MAX;
-+
-+	desc->hw.sar = src;
-+	desc->hw.dar = dst;
-+	desc->hw.tcr = *len;
-+
-+	return 0;
-+}
-+
-+static size_t hpb_dmae_get_partial(struct shdma_chan *schan,
-+				   struct shdma_desc *sdesc)
-+{
-+	struct hpb_desc *desc = to_desc(sdesc);
-+	struct hpb_dmae_chan *chan = to_chan(schan);
-+	u32 tcr = ch_reg_read(chan, desc->plane_idx ? DTCR1 : DTCR0);
-+
-+	return (desc->hw.tcr - tcr) << chan->xmit_shift;
-+}
-+
-+static bool hpb_dmae_channel_busy(struct shdma_chan *schan)
-+{
-+	struct hpb_dmae_chan *chan = to_chan(schan);
-+	u32 dstsr = ch_reg_read(chan, DSTSR);
-+
-+	return (dstsr & DSTSR_DMSTS) = DSTSR_DMSTS;
-+}
-+
-+static int
-+hpb_dmae_alloc_chan_resources(struct hpb_dmae_chan *hpb_chan,
-+			      const struct hpb_dmae_slave_config *cfg)
-+{
-+	struct hpb_dmae_device *hpbdev = to_dev(hpb_chan);
-+	struct hpb_dmae_pdata *pdata = hpbdev->pdata;
-+	const struct hpb_dmae_channel *channel = pdata->channels;
-+	int slave_id = cfg->id;
-+	int i, err;
-+
-+	for (i = 0; i < pdata->num_channels; i++, channel++) {
-+		if (channel->s_id = slave_id) {
-+			struct device *dev = hpb_chan->shdma_chan.dev;
-+
-+			hpb_chan->base +				hpbdev->chan_reg + HPB_CHAN(cfg->dma_ch);
-+
-+			dev_dbg(dev, "Detected Slave device\n");
-+			dev_dbg(dev, " -- slave_id       : 0x%x\n", slave_id);
-+			dev_dbg(dev, " -- cfg->dma_ch    : %d\n", cfg->dma_ch);
-+			dev_dbg(dev, " -- channel->ch_irq: %d\n",
-+				channel->ch_irq);
-+			break;
-+		}
-+	}
-+
-+	err = shdma_request_irq(&hpb_chan->shdma_chan, channel->ch_irq,
-+				IRQF_SHARED, hpb_chan->dev_id);
-+	if (err) {
-+		dev_err(hpb_chan->shdma_chan.dev,
-+			"DMA channel request_irq %d failed with error %d\n",
-+			channel->ch_irq, err);
-+		return err;
-+	}
-+
-+	hpb_chan->plane_idx = 0;
-+	hpb_chan->first_desc = true;
-+
-+	if ((cfg->dcr & (DCR_CT | DCR_DIP)) = 0) {
-+		hpb_chan->xfer_mode = XFER_SINGLE;
-+	} else if ((cfg->dcr & (DCR_CT | DCR_DIP)) = (DCR_CT | DCR_DIP)) {
-+		hpb_chan->xfer_mode = XFER_DOUBLE;
-+	} else {
-+		dev_err(hpb_chan->shdma_chan.dev, "DCR setting error");
-+		shdma_free_irq(&hpb_chan->shdma_chan);
-+		return -EINVAL;
-+	}
-+
-+	if (cfg->flags & HPB_DMAE_SET_ASYNC_MODE)
-+		hpb_dmae_set_async_mode(hpbdev, cfg->mdm, cfg->mdr);
-+	ch_reg_write(hpb_chan, cfg->dcr, DCR);
-+	ch_reg_write(hpb_chan, cfg->port, DPTR);
-+	hpb_chan->xmit_shift = calc_xmit_shift(hpb_chan);
-+	hpb_dmae_enable_int(hpbdev, cfg->dma_ch);
-+
-+	return 0;
-+}
-+
-+static int hpb_dmae_set_slave(struct shdma_chan *schan, int slave_id, bool try)
-+{
-+	struct hpb_dmae_chan *chan = to_chan(schan);
-+	const struct hpb_dmae_slave_config *sc +		hpb_dmae_find_slave(chan, slave_id);
-+
-+	if (!sc)
-+		return -ENODEV;
-+
-+	chan->cfg = sc;
-+	return hpb_dmae_alloc_chan_resources(chan, sc);
-+}
-+
-+static void hpb_dmae_setup_xfer(struct shdma_chan *schan, int slave_id)
-+{
-+}
-+
-+static dma_addr_t hpb_dmae_slave_addr(struct shdma_chan *schan)
-+{
-+	struct hpb_dmae_chan *chan = to_chan(schan);
-+
-+	return chan->cfg->addr;
-+}
-+
-+static struct shdma_desc *hpb_dmae_embedded_desc(void *buf, int i)
-+{
-+	return &((struct hpb_desc *)buf)[i].shdma_desc;
-+}
-+
-+static const struct shdma_ops hpb_dmae_ops = {
-+	.desc_completed = hpb_dmae_desc_completed,
-+	.halt_channel = hpb_dmae_halt,
-+	.channel_busy = hpb_dmae_channel_busy,
-+	.slave_addr = hpb_dmae_slave_addr,
-+	.desc_setup = hpb_dmae_desc_setup,
-+	.set_slave = hpb_dmae_set_slave,
-+	.setup_xfer = hpb_dmae_setup_xfer,
-+	.start_xfer = hpb_dmae_start_xfer,
-+	.embedded_desc = hpb_dmae_embedded_desc,
-+	.chan_irq = hpb_dmae_chan_irq,
-+	.get_partial = hpb_dmae_get_partial,
-+};
-+
-+static int hpb_dmae_chan_probe(struct hpb_dmae_device *hpbdev, int id)
-+{
-+	struct shdma_dev *sdev = &hpbdev->shdma_dev;
-+	struct platform_device *pdev +		to_platform_device(hpbdev->shdma_dev.dma_dev.dev);
-+	struct hpb_dmae_chan *new_hpb_chan;
-+	struct shdma_chan *schan;
-+
-+	/* alloc channel */
-+	new_hpb_chan = devm_kzalloc(&pdev->dev,
-+				    sizeof(struct hpb_dmae_chan), GFP_KERNEL);
-+	if (!new_hpb_chan) {
-+		dev_err(hpbdev->shdma_dev.dma_dev.dev,
-+			"No free memory for allocating DMA channels!\n");
-+		return -ENOMEM;
-+	}
-+
-+	schan = &new_hpb_chan->shdma_chan;
-+	shdma_chan_probe(sdev, schan, id);
-+
-+	if (pdev->id >= 0)
-+		snprintf(new_hpb_chan->dev_id, sizeof(new_hpb_chan->dev_id),
-+			 "hpb-dmae%d.%d", pdev->id, id);
-+	else
-+		snprintf(new_hpb_chan->dev_id, sizeof(new_hpb_chan->dev_id),
-+			 "hpb-dma.%d", id);
-+
-+	return 0;
-+}
-+
-+static int hpb_dmae_probe(struct platform_device *pdev)
-+{
-+	struct hpb_dmae_pdata *pdata = pdev->dev.platform_data;
-+	struct hpb_dmae_device *hpbdev;
-+	struct dma_device *dma_dev;
-+	struct resource *chan, *comm, *rest, *mode, *irq_res;
-+	int err, i;
-+
-+	/* get platform data */
-+	if (!pdata || !pdata->num_channels)
-+		return -ENODEV;
-+
-+	chan = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	comm = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-+	rest = platform_get_resource(pdev, IORESOURCE_MEM, 2);
-+	mode = platform_get_resource(pdev, IORESOURCE_MEM, 3);
-+
-+	irq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-+	if (!irq_res)
-+		return -ENODEV;
-+
-+	hpbdev = devm_kzalloc(&pdev->dev, sizeof(struct hpb_dmae_device),
-+			      GFP_KERNEL);
-+	if (!hpbdev) {
-+		dev_err(&pdev->dev, "Not enough memory\n");
-+		return -ENOMEM;
-+	}
-+
-+	hpbdev->chan_reg = devm_ioremap_resource(&pdev->dev, chan);
-+	if (IS_ERR(hpbdev->chan_reg))
-+		return PTR_ERR(hpbdev->chan_reg);
-+
-+	hpbdev->comm_reg = devm_ioremap_resource(&pdev->dev, comm);
-+	if (IS_ERR(hpbdev->comm_reg))
-+		return PTR_ERR(hpbdev->comm_reg);
-+
-+	hpbdev->reset_reg = devm_ioremap_resource(&pdev->dev, rest);
-+	if (IS_ERR(hpbdev->reset_reg))
-+		return PTR_ERR(hpbdev->reset_reg);
-+
-+	hpbdev->mode_reg = devm_ioremap_resource(&pdev->dev, mode);
-+	if (IS_ERR(hpbdev->mode_reg))
-+		return PTR_ERR(hpbdev->mode_reg);
-+
-+	dma_dev = &hpbdev->shdma_dev.dma_dev;
-+
-+	spin_lock_init(&hpbdev->reg_lock);
-+
-+	/* platform data */
-+	hpbdev->pdata = pdata;
-+
-+	/* reset dma controller */
-+	hpb_dmae_reset(hpbdev);
-+
-+	dma_cap_set(DMA_MEMCPY, dma_dev->cap_mask);
-+	dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
-+
-+	hpbdev->shdma_dev.ops = &hpb_dmae_ops;
-+	hpbdev->shdma_dev.desc_size = sizeof(struct hpb_desc);
-+	err = shdma_init(&pdev->dev, &hpbdev->shdma_dev, pdata->num_channels);
-+	if (err < 0)
-+		return err;
-+
-+	/* Create DMA Channel */
-+	for (i = 0; i < pdata->num_channels; i++)
-+		hpb_dmae_chan_probe(hpbdev, i);
-+
-+	platform_set_drvdata(pdev, hpbdev);
-+	dma_async_device_register(dma_dev);
-+
-+	return err;
-+}
-+
-+static void hpb_dmae_chan_remove(struct hpb_dmae_device *hpbdev)
-+{
-+	struct dma_device *dma_dev = &hpbdev->shdma_dev.dma_dev;
-+	struct shdma_chan *schan;
-+	int i;
-+
-+	shdma_for_each_chan(schan, &hpbdev->shdma_dev, i) {
-+		BUG_ON(!schan);
-+
-+		shdma_free_irq(schan);
-+		shdma_chan_remove(schan);
-+	}
-+	dma_dev->chancnt = 0;
-+}
-+
-+static int __exit hpb_dmae_remove(struct platform_device *pdev)
-+{
-+	struct hpb_dmae_device *hpbdev = platform_get_drvdata(pdev);
-+
-+	dma_async_device_unregister(&hpbdev->shdma_dev.dma_dev);
-+	hpb_dmae_chan_remove(hpbdev);
-+
-+	return 0;
-+}
-+
-+static void hpb_dmae_shutdown(struct platform_device *pdev)
-+{
-+	struct hpb_dmae_device *hpbdev = platform_get_drvdata(pdev);
-+	hpb_dmae_ctl_stop(hpbdev);
-+}
-+
-+static struct platform_driver hpb_dmae_driver = {
-+	.probe		= hpb_dmae_probe,
-+	.remove		= __exit_p(hpb_dmae_remove),
-+	.shutdown	= hpb_dmae_shutdown,
-+	.driver = {
-+		.owner	= THIS_MODULE,
-+		.name	= "hpb-dma-engine",
-+	},
-+};
-+module_platform_driver(hpb_dmae_driver);
-+
-+MODULE_AUTHOR("Max Filippov <max.filippov@cogentembedded.com>");
-+MODULE_DESCRIPTION("Renesas HPB DMA Engine driver");
-+MODULE_LICENSE("GPL");
-Index: slave-dma/include/linux/platform_data/dma-rcar-hpbdma.h
-=================================--- /dev/null
-+++ slave-dma/include/linux/platform_data/dma-rcar-hpbdma.h
-@@ -0,0 +1,103 @@
-+/*
-+ * Copyright (C) 2011-2013 Renesas Electronics Corporation
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2
-+ * as published by the Free Software Foundation.
-+ */
-+
-+#ifndef __DMA_RCAR_HPBDMA_H
-+#define __DMA_RCAR_HPBDMA_H
-+
-+#include <linux/bitops.h>
-+#include <linux/types.h>
-+
-+/* Transmit sizes and respective register values */
-+enum {
-+	XMIT_SZ_8BIT	= 0,
-+	XMIT_SZ_16BIT	= 1,
-+	XMIT_SZ_32BIT	= 2,
-+	XMIT_SZ_MAX
-+};
-+
-+/* DMA control register (DCR) bits */
-+#define	DCR_DTAMD	(1u << 26)
-+#define	DCR_DTAC	(1u << 25)
-+#define	DCR_DTAU	(1u << 24)
-+#define	DCR_DTAU1	(1u << 23)
-+#define	DCR_SWMD	(1u << 22)
-+#define	DCR_BTMD	(1u << 21)
-+#define	DCR_PKMD	(1u << 20)
-+#define	DCR_CT		(1u << 18)
-+#define	DCR_ACMD	(1u << 17)
-+#define	DCR_DIP		(1u << 16)
-+#define	DCR_SMDL	(1u << 13)
-+#define	DCR_SPDAM	(1u << 12)
-+#define	DCR_SDRMD_MASK	(3u << 10)
-+#define	DCR_SDRMD_MOD	(0u << 10)
-+#define	DCR_SDRMD_AUTO	(1u << 10)
-+#define	DCR_SDRMD_TIMER	(2u << 10)
-+#define	DCR_SPDS_MASK	(3u << 8)
-+#define	DCR_SPDS_8BIT	(0u << 8)
-+#define	DCR_SPDS_16BIT	(1u << 8)
-+#define	DCR_SPDS_32BIT	(2u << 8)
-+#define	DCR_DMDL	(1u << 5)
-+#define	DCR_DPDAM	(1u << 4)
-+#define	DCR_DDRMD_MASK	(3u << 2)
-+#define	DCR_DDRMD_MOD	(0u << 2)
-+#define	DCR_DDRMD_AUTO	(1u << 2)
-+#define	DCR_DDRMD_TIMER	(2u << 2)
-+#define	DCR_DPDS_MASK	(3u << 0)
-+#define	DCR_DPDS_8BIT	(0u << 0)
-+#define	DCR_DPDS_16BIT	(1u << 0)
-+#define	DCR_DPDS_32BIT	(2u << 0)
-+
-+/* Asynchronous reset register (ASYNCRSTR) bits */
-+#define	ASYNCRSTR_ASRST41	BIT(10)
-+#define	ASYNCRSTR_ASRST40	BIT(9)
-+#define	ASYNCRSTR_ASRST39	BIT(8)
-+#define	ASYNCRSTR_ASRST27	BIT(7)
-+#define	ASYNCRSTR_ASRST26	BIT(6)
-+#define	ASYNCRSTR_ASRST25	BIT(5)
-+#define	ASYNCRSTR_ASRST24	BIT(4)
-+#define	ASYNCRSTR_ASRST23	BIT(3)
-+#define	ASYNCRSTR_ASRST22	BIT(2)
-+#define	ASYNCRSTR_ASRST21	BIT(1)
-+#define	ASYNCRSTR_ASRST20	BIT(0)
-+
-+struct hpb_dmae_slave_config {
-+	unsigned int	id;
-+	dma_addr_t	addr;
-+	u32		dcr;
-+	u32		port;
-+	u32		rstr;
-+	u32		mdr;
-+	u32		mdm;
-+	u32		flags;
-+#define	HPB_DMAE_SET_ASYNC_RESET	BIT(0)
-+#define	HPB_DMAE_SET_ASYNC_MODE		BIT(1)
-+	u32		dma_ch;
-+};
-+
-+#define HPB_DMAE_CHANNEL(_irq, _s_id)	\
-+{					\
-+	.ch_irq		= _irq,		\
-+	.s_id		= _s_id,	\
-+}
-+
-+struct hpb_dmae_channel {
-+	unsigned int	ch_irq;
-+	unsigned int	s_id;
-+};
-+
-+struct hpb_dmae_pdata {
-+	const struct hpb_dmae_slave_config *slaves;
-+	int num_slaves;
-+	const struct hpb_dmae_channel *channels;
-+	int num_channels;
-+	const unsigned int ts_shift[XMIT_SZ_MAX];
-+	int num_hw_channels;
-+};
-+
-+#endif
