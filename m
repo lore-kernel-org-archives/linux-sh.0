@@ -1,66 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:33 +0000
-Subject: [PATCH 20/23] ARM: shmobile: sh73a0: add CPUFreq support
-Message-Id: <1370503716-31155-21-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:25 +0000
+Subject: [PATCH 034/130] ARM: shmobile: mackerel: Register pinctrl mapping for CEU
+Message-Id: <1370420821-28420-35-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch enables the use of the generic cpufreq-cpu0 driver on sh73a0.
-Providing a regulator, a list of OPPs in DT, combined with a virtual
-cpufreq-cpu0 platform device and a clock, attached to it is everything,
-the cpufreq-cpu0 driver needs. The first sh73a0 platform, implementing
-such CPUFreq support is kzm9g-reference.
+Replace the GPIO-based CEU pinmux configuration by a pinctrl mapping.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig        | 2 ++
- arch/arm/mach-shmobile/setup-sh73a0.c | 5 +++++
- 2 files changed, 7 insertions(+)
+ arch/arm/mach-shmobile/board-mackerel.c | 24 +++++++++---------------
+ 1 file changed, 9 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 1a517e2..7cfb9d1 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -169,6 +169,8 @@ config MACH_KZM9D
- config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
-+	select ARCH_HAS_CPUFREQ
-+	select ARCH_HAS_OPP
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index fdf3894..ed93e01 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -1016,6 +1016,8 @@ static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index d40d9da..fdd7e3f 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1312,6 +1312,15 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 	/* ADXL34X */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("1-0053", "pfc-sh7372",
+ 				  "intc_irq21", "intc"),
++	/* CEU */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
++				  "ceu_data_0_7", "ceu"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
++				  "ceu_clk_0", "ceu"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
++				  "ceu_sync", "ceu"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
++				  "ceu_field", "ceu"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1497,21 +1506,6 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+ 	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
  
- void __init sh73a0_add_standard_devices_dt(void)
- {
-+	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
-+
- 	/* clocks are setup late during boot in the case of DT */
- 	sh73a0_clock_init();
- 
-@@ -1023,6 +1025,9 @@ void __init sh73a0_add_standard_devices_dt(void)
- 			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table,
- 			     sh73a0_auxdata_lookup, NULL);
-+
-+	/* Instantiate cpufreq-cpu0 */
-+	platform_device_register_full(&devinfo);
- }
- 
- static const char *sh73a0_boards_compat_dt[] __initdata = {
+-	/* CEU */
+-	gpio_request(GPIO_FN_VIO_CLK, NULL);
+-	gpio_request(GPIO_FN_VIO_VD, NULL);
+-	gpio_request(GPIO_FN_VIO_HD, NULL);
+-	gpio_request(GPIO_FN_VIO_FIELD, NULL);
+-	gpio_request(GPIO_FN_VIO_CKO, NULL);
+-	gpio_request(GPIO_FN_VIO_D7, NULL);
+-	gpio_request(GPIO_FN_VIO_D6, NULL);
+-	gpio_request(GPIO_FN_VIO_D5, NULL);
+-	gpio_request(GPIO_FN_VIO_D4, NULL);
+-	gpio_request(GPIO_FN_VIO_D3, NULL);
+-	gpio_request(GPIO_FN_VIO_D2, NULL);
+-	gpio_request(GPIO_FN_VIO_D1, NULL);
+-	gpio_request(GPIO_FN_VIO_D0, NULL);
+-
+ 	/* HDMI */
+ 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
+ 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
 -- 
 1.8.2.1
 
