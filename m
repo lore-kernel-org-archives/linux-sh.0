@@ -1,48 +1,60 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:22:07 +0000
-Subject: [PATCH 09/11] ARM: shmobile: marzen: Use INTC External IRQ pin driver for SMSC
-Message-Id: <1370593329-27559-10-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:39 +0000
+Subject: [PATCH 048/130] ARM: shmobile: ap4evb: Register pinctrl mapping for KEYSC
+Message-Id: <1370420821-28420-49-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Update the marzen board to use the INTC External IRQ pin driver for SMSC.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This code was originally posted by Magnus Damm as part of
-"ARM: shmobile: INTC External IRQ pin driver on r8a7779"
-but somehow omitted when I applied that patch.
+Replace the GPIO-based KEYSC pinmux configuration by a pinctrl mapping.
 
-Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 17 +++++------------
+ 1 file changed, 5 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index fac9e0f..71f174e 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -69,7 +69,7 @@ static struct resource smsc911x_resources[] = {
- 		.flags		= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start		= gic_iid(0x3c), /* IRQ 1 */
-+		.start		= irq_pin(1), /* IRQ 1 */
- 		.flags		= IORESOURCE_IRQ,
- 	},
- };
-@@ -405,6 +405,7 @@ static void __init marzen_init(void)
- 	pinctrl_register_mappings(marzen_pinctrl_map,
- 				  ARRAY_SIZE(marzen_pinctrl_map));
- 	r8a7779_pinmux_init();
-+	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 2dfa235..c7a9efc 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1102,6 +1102,11 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
+ 	/* HDMI */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-mobile-hdmi", "pfc-sh7372",
+ 				  "hdmi", "hdmi"),
++	/* KEYSC */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc", "pfc-sh7372",
++				  "keysc_in04_0", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc", "pfc-sh7372",
++				  "keysc_out5", "keysc"),
+ 	/* MMCIF */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
+ 				  "mmc0_data8_0", "mmc0"),
+@@ -1219,18 +1224,6 @@ static void __init ap4evb_init(void)
+ 	 * IRQ28 for Touch Panel, set dip switches S3, S43 as OFF, ON.
+ 	 */
  
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+-	/* enable KEYSC */
+-	gpio_request(GPIO_FN_KEYOUT0, NULL);
+-	gpio_request(GPIO_FN_KEYOUT1, NULL);
+-	gpio_request(GPIO_FN_KEYOUT2, NULL);
+-	gpio_request(GPIO_FN_KEYOUT3, NULL);
+-	gpio_request(GPIO_FN_KEYOUT4, NULL);
+-	gpio_request(GPIO_FN_KEYIN0_136, NULL);
+-	gpio_request(GPIO_FN_KEYIN1_135, NULL);
+-	gpio_request(GPIO_FN_KEYIN2_134, NULL);
+-	gpio_request(GPIO_FN_KEYIN3_133, NULL);
+-	gpio_request(GPIO_FN_KEYIN4,     NULL);
+-
+ 	/* enable TouchScreen */
+ 	irq_set_irq_type(IRQ28, IRQ_TYPE_LEVEL_LOW);
+ 
 -- 
 1.8.2.1
 
