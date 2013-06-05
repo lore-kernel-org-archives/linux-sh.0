@@ -1,100 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 13 Jun 2013 23:45:55 +0000
-Subject: [PATCH v6 10/18] ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
-Message-Id: <1371167163-10507-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:59 +0000
+Subject: [PATCH 128/130] ARM: shmobile: bockw: add pinctrl support
+Message-Id: <1370420821-28420-129-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add GPIO controller nodes to the r8a7790 core device tree.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+SCIF0 support as 1st step
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 61 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
+ arch/arm/mach-shmobile/board-bockw.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 13caf12..1b75c1d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -38,6 +38,66 @@
- 		interrupts = <1 9 0xf04>;
- 	};
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 38e5e50..dac4365 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc40000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 4 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc41000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 5 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc42000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 6 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc43000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 7 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc44000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 8 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+	};
-+
-+	gpio5: gpio@ffc45000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc45000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 9 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 32>;
-+	};
-+
- 	timer {
- 		compatible = "arm,armv7-timer";
- 		interrupts = <1 13 0xf08>,
-@@ -58,5 +118,6 @@
- 	pfc: pfc@e6060000 {
- 		compatible = "renesas,pfc-r8a7790";
- 		reg = <0 0xe6060000 0 0x250>;
-+		#gpio-range-cells = <3>;
- 	};
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/smsc911x.h>
+ #include <mach/common.h>
+@@ -37,6 +38,14 @@ static struct resource smsc911x_resources[] = {
+ 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
  };
+ 
++static const struct pinctrl_map bockw_pinctrl_map[] = {
++	/* SCIF0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
++				  "scif0_data_a", "scif0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
++				  "scif0_ctrl", "scif0"),
++};
++
+ #define IRQ0MR	0x30
+ static void __init bockw_init(void)
+ {
+@@ -46,6 +55,10 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 
++	pinctrl_register_mappings(bockw_pinctrl_map,
++				  ARRAY_SIZE(bockw_pinctrl_map));
++	r8a7778_pinmux_init();
++
+ 	fpga = ioremap_nocache(0x18200000, SZ_1M);
+ 	if (fpga) {
+ 		/*
 -- 
-1.8.1.5
+1.8.2.1
 
