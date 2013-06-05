@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:58 +0000
-Subject: [PATCH 08/11] ARM: shmobile: r8a7778: add support HSPI driver
-Message-Id: <1371106861-25626-9-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:12 +0000
+Subject: [PATCH 021/130] sh-pfc: r8a7778: add common PFC macro helper
+Message-Id: <1370420821-28420-22-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,62 +12,56 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add a platform device for the r8a7778 HSPI.
+pfc-r8a7778 will have many devices pfc support in the future,
+and current pfc-r8a7778 is using pin/mux definition macro for SCIF.
+The device definition style using macro is readable code IMO,
+but creating new macro for each devices is not good sense.
+This patch adds common SH_PFC_xx() macro for each new feature devices
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7778.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7778.c        | 23 +++++++++++++++++++++++
- 2 files changed, 24 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 26 ++++++++++++++++++--------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index 9e5835b..af668c4 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -25,6 +25,7 @@ extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7778_add_i2c_device(int id);
-+extern void r8a7778_add_hspi_device(int id);
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index ddbd27b..139f9dd 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -1303,15 +1303,25 @@ static struct sh_pfc_pin pinmux_pins[] = {
+  */
+ #define PIN_NUMBER(row, col)		(1000+((row)-1)*25+(col)-1)
  
- extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 6625a38..a1e6930 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -151,6 +151,29 @@ void __init r8a7778_add_i2c_device(int id)
- 		i2c_resources + (2 * id), 2);
- }
+-/* - SCIF macro ------------------------------------------------------------- */
+-#define SCIF_PFC_PIN(name, args...)					\
++/* - macro */
++#define SH_PFC_PINS(name, args...) \
+ 	static const unsigned int name ##_pins[] = { args }
+-#define SCIF_PFC_DAT(name, tx, rx)					\
+-	static const unsigned int name ##_mux[]  = { tx##_MARK, rx##_MARK, }
+-#define SCIF_PFC_CTR(name, cts, rts)					\
+-	static const unsigned int name ##_mux[]  = { cts##_MARK, rts##_MARK, }
+-#define SCIF_PFC_CLK(name, sck)					\
+-	static const unsigned int name ##_mux[]  = { sck##_MARK, }
++#define SH_PFC_MUX1(name, arg1)					\
++	static const unsigned int name ##_mux[]  = { arg1##_MARK }
++#define SH_PFC_MUX2(name, arg1, arg2)					\
++	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, }
++#define SH_PFC_MUX3(name, arg1, arg2, arg3)					\
++	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK,	\
++						     arg3##_MARK }
++#define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
++	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
++						     arg3##_MARK, arg4##_MARK }
++
++/* - SCIF macro ------------------------------------------------------------- */
++#define SCIF_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
++#define SCIF_PFC_DAT(name, tx, rx)	SH_PFC_MUX2(name, tx, rx)
++#define SCIF_PFC_CTR(name, cts, rts)	SH_PFC_MUX2(name, cts, rts)
++#define SCIF_PFC_CLK(name, sck)		SH_PFC_MUX1(name, sck)
  
-+/* HSPI */
-+static struct resource hspi_resources[] __initdata = {
-+	/* HSPI0 */
-+	DEFINE_RES_MEM(0xfffc7000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x5f)),
-+	/* HSPI1 */
-+	DEFINE_RES_MEM(0xfffc8000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x74)),
-+	/* HSPI2 */
-+	DEFINE_RES_MEM(0xfffc6000, 0x18),
-+	DEFINE_RES_IRQ(gic_iid(0x75)),
-+};
-+
-+void __init r8a7778_add_hspi_device(int id)
-+{
-+	BUG_ON(id < 0 || id > 2);
-+
-+	platform_device_register_simple(
-+		"sh-hspi", id,
-+		hspi_resources + (2 * id), 2);
-+}
-+
-+
- void __init r8a7778_add_standard_devices(void)
- {
- 	int i;
+ /* - HSCIF0 ----------------------------------------------------------------- */
+ SCIF_PFC_PIN(hscif0_data_a,	RCAR_GP_PIN(1, 17),	RCAR_GP_PIN(1, 18));
 -- 
 1.8.2.1
 
