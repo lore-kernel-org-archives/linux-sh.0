@@ -1,24 +1,43 @@
-From: David Miller <davem@davemloft.net>
-Date: Sat, 08 Jun 2013 18:18:53 +0000
-Subject: Re: [PATCH 0/9] sh_eth: make driver build on any platform
-Message-Id: <20130608.111853.1706293535392213403.davem@davemloft.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:34:18 +0000
+Subject: [PATCH 01/06] ARM: shmobile: Introduce SHMOBILE_FIXUP() helper
+Message-Id: <20130605073418.15758.93704.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51B277A7.4010709@cogentembedded.com>
- <20130607.233915.1771016084489204040.davem@davemloft.net>
- <51B32D76.1030507@cogentembedded.com>
-In-Reply-To: <51B32D76.1030507@cogentembedded.com>
+References: <20130605073410.15758.37563.sendpatchset@w520>
+In-Reply-To: <20130605073410.15758.37563.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 08 Jun 2013 17:11:18 +0400
+From: Magnus Damm <damm@opensource.se>
 
->    Hold on please. It just occured to me that the series won't be
->    bisectable on anything but R-Car CPUs (I checked it only on R8A7779)
->    since I forgot that 'sh_eth_my_cpu_data' variable should be always
->    available in any configuuration until the last patch (so the patch #1
->    is somewhat incomplete). I'll respin the series today and resend.
+Introduce SHMOBILE_FIXUP() as a helper function to
+allow boards to specify their memory base and size.
 
-Too late, it's already pushed to my tree and at that point it's permanent.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/include/mach/common.h |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-06-04 13:01:40.000000000 +0900
+@@ -37,4 +37,17 @@ static inline void __init shmobile_init_
+ 	shmobile_cpuidle_init();
+ }
+ 
++#define SHMOBILE_FIXUP(boardname, mem_start, mem_size)			\
++static void __init boardname##_fixup(struct tag *tag, char **cmdline,	\
++				struct meminfo *mi)			\
++{									\
++	for (; tag->hdr.size; tag = tag_next(tag)) {			\
++		if (tag->hdr.tag = ATAG_MEM) {				\
++			tag->u.mem.start = (mem_start);			\
++			tag->u.mem.size = (mem_size);			\
++			break;						\
++		}							\
++	}								\
++}
++
+ #endif /* __ARCH_MACH_COMMON_H */
