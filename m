@@ -1,33 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 07:08:21 +0000
-Subject: [PATCH 15/15] ARM: shmobile: Remove MEMORY_START uImage load address
-Message-Id: <20130605070821.13311.23849.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:24:52 +0000
+Subject: [PATCH 001/130] gpio-rcar: R-Car GPIO IRQ share interrupt
+Message-Id: <1370420821-28420-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605070616.13311.69049.sendpatchset@w520>
-In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Remove the CONFIG_MEMORY_START dependency in Makefile.boot
-now when we keep track of board specific load addresses.
+R-Car H1 or Gen2 GPIO interrupts are assigned per each GPIO domain,
+but, Gen1 E1/M1 GPIO interrupts are shared for all GPIO domain.
+gpio-rcar driver needs IRQF_SHARED flags for these.
+This patch was tested on Bock-W board
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/gpio/gpio-rcar.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/Makefile.boot |    5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index b4ca450..0f3d647 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -333,7 +333,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	if (devm_request_irq(&pdev->dev, irq->start,
+-			     gpio_rcar_irq_handler, 0, name, p)) {
++			     gpio_rcar_irq_handler, IRQF_SHARED, name, p)) {
+ 		dev_err(&pdev->dev, "failed to request IRQ\n");
+ 		ret = -ENOENT;
+ 		goto err1;
+-- 
+1.8.2.1
 
---- 0021/arch/arm/mach-shmobile/Makefile.boot
-+++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 17:09:37.000000000 +0900
-@@ -1,6 +1,5 @@
--loadaddr-y	:= $(shell /bin/bash -c 'printf "0x%08x" \
--		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
--
-+# per-board load address for uImage
-+loadaddr-y	: loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
- loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
- loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
