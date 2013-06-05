@@ -1,32 +1,69 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 06:59:45 +0000
-Subject: [PATCH 07/15] ARM: shmobile: Bonito uImage rework
-Message-Id: <20130605070712.13311.11335.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:27 +0000
+Subject: [PATCH 036/130] ARM: shmobile: mackerel: Register pinctrl mapping for FSI
+Message-Id: <1370420821-28420-37-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605070616.13311.69049.sendpatchset@w520>
-In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add Bonito specific load address to Makefile.boot
+Replace the GPIO-based FSI pinmux configuration by a pinctrl mapping.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-mackerel.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
 
- arch/arm/mach-shmobile/Makefile.boot |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0014/arch/arm/mach-shmobile/Makefile.boot
-+++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 16:17:11.000000000 +0900
-@@ -6,6 +6,7 @@ loadaddr-$(CONFIG_MACH_AP4EVB) += 0x4000
- loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
-+loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 955fefd..f2e8740 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1328,6 +1328,16 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 				  "flctl_ce0", "flctl"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
+ 				  "flctl_ctrl", "flctl"),
++	/* FSIA (AK4643) */
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_sclk_in", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_data_in", "fsia"),
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-sh7372",
++				  "fsia_data_out", "fsia"),
++	/* FSIB (HDMI) */
++	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-sh7372",
++				  "fsib_mclk_in", "fsib"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -1446,11 +1456,7 @@ static void __init mackerel_init(void)
+ 	gpio_request_pulldown(GPIO_PORT167CR); /* VBUS0_1 pull down */
+ 	gpio_request(GPIO_FN_IDIN_1_113, NULL);
  
- __ZRELADDR	:= $(shell /bin/bash -c \
- 		     'echo $(loadaddr-y) | tr " " "\n" | sort | uniq')
+-	/* enable FSI2 port A (ak4643) */
+-	gpio_request(GPIO_FN_FSIAIBT,	NULL);
+-	gpio_request(GPIO_FN_FSIAILR,	NULL);
+-	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+-	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
++	/* FSI2 port A (ak4643) */
+ 	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+ 	gpio_request(9,  NULL);
+@@ -1460,8 +1466,7 @@ static void __init mackerel_init(void)
+ 
+ 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
+ 
+-	/* setup FSI2 port B (HDMI) */
+-	gpio_request(GPIO_FN_FSIBCK, NULL);
++	/* FSI2 port B (HDMI) */
+ 	__raw_writew(__raw_readw(USCCR1) & ~(1 << 6), USCCR1); /* use SPDIF */
+ 
+ 	/* set SPU2 clock to 119.6 MHz */
+-- 
+1.8.2.1
+
