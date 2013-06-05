@@ -1,52 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 18 Jun 2013 10:29:48 +0000
-Subject: [PATCH v2 1/2] gpio-rcar: Reference core gpio documentation in the DT bindings
-Message-Id: <1371551389-5493-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:31 +0000
+Subject: [PATCH 040/130] ARM: shmobile: mackerel: Register IRQ pinctrl mapping for SDHI0
+Message-Id: <1370420821-28420-41-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371551389-5493-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1371551389-5493-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Replaced the detailed gpio-ranges documentation with a reference to the
-code gpio DT bindings, and mention the gpio flags symbolic names.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based SDHI0 IRQ pinmux configuration by a pinctrl
+mapping.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../devicetree/bindings/gpio/renesas,gpio-rcar.txt     | 18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
-index 46d76a0..cb3dc7b 100644
---- a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
-+++ b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
-@@ -16,18 +16,12 @@ Required Properties:
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index bd3666b..4be236d 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1359,6 +1359,8 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 				  "sdhi0_ctrl", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
+ 				  "sdhi0_wp", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "intc_irq26_1", "intc"),
+ 	/* SDHI1 */
+ #if !IS_ENABLED(CONFIG_MMC_SH_MMCIF)
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
+@@ -1469,9 +1471,6 @@ static void __init mackerel_init(void)
+ 	/* Accelerometer */
+ 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
  
-   - gpio-controller: Marks the device node as a gpio controller.
-   - #gpio-cells: Should be 2. The first cell is the GPIO number and the second
--    cell is used to specify optional parameters as bit flags. Only the GPIO
--    active low flag (bit 0) is currently supported.
--  - gpio-ranges: Range of pins managed by the GPIO controller as a 4-cells
--    tuple using the following syntax.
+-	/* SDHI0 PORT172 card-detect IRQ26 */
+-	gpio_request(GPIO_FN_IRQ26_172, NULL);
 -
--    <[phandle of the pin controller node]
--     0
--     [index of the first pin]
--     [number of pins]>
--
--Please refer to gpio.txt in this directory for details of the common GPIO
--bindings used by client devices.
-+    cell specifies GPIO flags, as defined in <dt-bindings/gpio/gpio.h>. Only the
-+    GPIO_ACTIVE_HIGH and GPIO_ACTIVE_LOW flags are supported.
-+  - gpio-ranges: Range of pins managed by the GPIO controller.
-+
-+Please refer to gpio.txt in this directory for details of gpio-ranges property
-+and the common GPIO bindings used by client devices.
- 
- Example: R8A7779 (R-Car H1) GPIO controller nodes
- 
+ 	/* Reset HDMI, must be held at least one EXTALR (32768Hz) period */
+ 	srcr4 = __raw_readl(SRCR4);
+ 	__raw_writel(srcr4 | (1 << 13), SRCR4);
 -- 
-1.8.1.5
+1.8.2.1
 
