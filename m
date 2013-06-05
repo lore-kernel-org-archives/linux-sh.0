@@ -1,42 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:34 +0000
-Subject: [PATCH 04/27] ARM: shmobile: remove ";" from SH_FIXED_RATIO_CLK*() macro
-Message-Id: <1370591517-20239-5-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 04:32:12 +0000
+Subject: [PATCH 3/7] ARM: shmobile: Remove unused r8a73a4 GIC CPU interface DT bits
+Message-Id: <1370406736-32272-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Remove unused GIC CPU interface DT bits for r8a73a4.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/clock.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a73a4.dtsi | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
-index 76ac612..8902044 100644
---- a/arch/arm/mach-shmobile/include/mach/clock.h
-+++ b/arch/arm/mach-shmobile/include/mach/clock.h
-@@ -24,11 +24,11 @@ struct clk name = {			\
- }
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index fde2a33..4ff2019 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -37,12 +37,6 @@
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 0xf04>;
+-
+-		gic-cpuif@4 {
+-			compatible = "arm,gic-cpuif";
+-			cpuif-id = <4>;
+-			cpu = <&cpu0>;
+-		};
+ 	};
  
- #define SH_FIXED_RATIO_CLK(name, p, r)		\
--static SH_FIXED_RATIO_CLKg(name, p, r);
-+static SH_FIXED_RATIO_CLKg(name, p, r)
- 
- #define SH_FIXED_RATIO_CLK_SET(name, p, m, d)	\
- 	SH_CLK_RATIO(name, m, d);		\
--	SH_FIXED_RATIO_CLK(name, p, name);
-+	SH_FIXED_RATIO_CLK(name, p, name)
- 
- #define SH_CLK_SET_RATIO(p, m, d)	\
- {			\
+ 	timer {
 -- 
 1.8.2.1
 
