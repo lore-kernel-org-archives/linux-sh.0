@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:52 +0000
-Subject: [PATCH 121/130] sh-pfc: r8a7778: add MMCIF pin groups
-Message-Id: <1370420821-28420-122-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:23 +0000
+Subject: [PATCH 092/130] ARM: shmobile: r8a7740: Remove FSI function GPIOs
+Message-Id: <1370420821-28420-93-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,86 +10,42 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add MMCIF CLK/CMD/DATA groups to R8A7778 PFC driver.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 38 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 14 --------------
+ 1 file changed, 14 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index bf5e3d8..1dcbabc 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -1434,6 +1434,32 @@ I2C_PFC_MUX(i2c3_b,	SDA3_B,			SCL3_B);
- I2C_PFC_PIN(i2c3_c,	RCAR_GP_PIN(1, 22),	RCAR_GP_PIN(1, 23));
- I2C_PFC_MUX(i2c3_c,	SDA3_C,			SCL3_C);
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 08b7da0..001302f 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -107,20 +107,6 @@ enum {
+ 	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
+ 	GPIO_FN_DBGMD21,
  
-+/* - MMC macro -------------------------------------------------------------- */
-+#define MMC_PFC_PINS(name, args...)		SH_PFC_PINS(name, args)
-+#define MMC_PFC_CTRL(name, clk, cmd)		SH_PFC_MUX2(name, clk, cmd)
-+#define MMC_PFC_DAT1(name, d0)			SH_PFC_MUX1(name, d0)
-+#define MMC_PFC_DAT4(name, d0, d1, d2, d3)	SH_PFC_MUX4(name, d0, d1, d2, d3)
-+#define MMC_PFC_DAT8(name, d0, d1, d2, d3, d4, d5, d6, d7)	\
-+			SH_PFC_MUX8(name, d0, d1, d2, d3, d4, d5, d6, d7)
-+
-+/* - MMC -------------------------------------------------------------------- */
-+MMC_PFC_PINS(mmc_ctrl,		RCAR_GP_PIN(1, 5),	RCAR_GP_PIN(1, 6));
-+MMC_PFC_CTRL(mmc_ctrl,		MMC_CLK,		MMC_CMD);
-+MMC_PFC_PINS(mmc_data1,		RCAR_GP_PIN(1, 7));
-+MMC_PFC_DAT1(mmc_data1,		MMC_D0);
-+MMC_PFC_PINS(mmc_data4,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
-+				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6));
-+MMC_PFC_DAT4(mmc_data4,		MMC_D0,			MMC_D1,
-+				MMC_D2,			MMC_D3);
-+MMC_PFC_PINS(mmc_data8,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
-+				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6),
-+				RCAR_GP_PIN(1, 4),	RCAR_GP_PIN(1, 0),
-+				RCAR_GP_PIN(0, 30),	RCAR_GP_PIN(0, 31));
-+MMC_PFC_DAT8(mmc_data8,		MMC_D0,			MMC_D1,
-+				MMC_D2,			MMC_D3,
-+				MMC_D4,			MMC_D5,
-+				MMC_D6,			MMC_D7);
-+
- /* - SCIF CLOCK ------------------------------------------------------------- */
- SCIF_PFC_PIN(scif_clk,		RCAR_GP_PIN(1, 16));
- SCIF_PFC_CLK(scif_clk,		SCIF_CLK);
-@@ -1661,6 +1687,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(i2c3_a),
- 	SH_PFC_PIN_GROUP(i2c3_b),
- 	SH_PFC_PIN_GROUP(i2c3_c),
-+	SH_PFC_PIN_GROUP(mmc_ctrl),
-+	SH_PFC_PIN_GROUP(mmc_data1),
-+	SH_PFC_PIN_GROUP(mmc_data4),
-+	SH_PFC_PIN_GROUP(mmc_data8),
- 	SH_PFC_PIN_GROUP(scif_clk),
- 	SH_PFC_PIN_GROUP(scif0_data_a),
- 	SH_PFC_PIN_GROUP(scif0_data_b),
-@@ -1785,6 +1815,13 @@ static const char * const i2c3_groups[] = {
- 	"i2c3_c",
- };
- 
-+static const char * const mmc_groups[] = {
-+	"mmc_ctrl",
-+	"mmc_data1",
-+	"mmc_data4",
-+	"mmc_data8",
-+};
-+
- static const char * const scif_clk_groups[] = {
- 	"scif_clk",
- };
-@@ -1905,6 +1942,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(i2c1),
- 	SH_PFC_FUNCTION(i2c2),
- 	SH_PFC_FUNCTION(i2c3),
-+	SH_PFC_FUNCTION(mmc),
- 	SH_PFC_FUNCTION(scif_clk),
- 	SH_PFC_FUNCTION(scif0),
- 	SH_PFC_FUNCTION(scif1),
+-	/* FSI-A */
+-	GPIO_FN_FSIAISLD_PORT0,		/* FSIAISLD Port 0/5 */
+-	GPIO_FN_FSIAISLD_PORT5,
+-	GPIO_FN_FSIASPDIF_PORT9,	/* FSIASPDIF Port 9/18 */
+-	GPIO_FN_FSIASPDIF_PORT18,
+-	GPIO_FN_FSIAOSLD1,	GPIO_FN_FSIAOSLD2,
+-	GPIO_FN_FSIAOLR,	GPIO_FN_FSIAOBT,
+-	GPIO_FN_FSIAOSLD,	GPIO_FN_FSIAOMC,
+-	GPIO_FN_FSIACK,		GPIO_FN_FSIAILR,
+-	GPIO_FN_FSIAIBT,
+-
+-	/* FSI-B */
+-	GPIO_FN_FSIBCK,
+-
+ 	/* FMSI */
+ 	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
+ 	GPIO_FN_FMSISLD_PORT6,
 -- 
 1.8.2.1
 
