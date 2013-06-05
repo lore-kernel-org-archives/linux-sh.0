@@ -1,47 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 17 Jun 2013 03:28:48 +0000
-Subject: [PATCH] ARM: shmobile: sh7372 build fix for SUSPEND=n && CPU_IDLE=n
-Message-Id: <20130617032848.21337.29264.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:16 +0000
+Subject: [PATCH 085/130] sh-pfc: r8a7740: Remove HDMI function GPIOS
+Message-Id: <1370420821-28420-86-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Move the code using cpu_resume() into a function being
-wrappend in #ifdef CONFIG_SUSPEND || CONFIG_CPU_IDLE.
+All r8a7740 platforms now use the pinctrl API to control the HDMI pins,
+the corresponding function GPIOS are unused. Remove them.
 
-This fixes a build error triggered by ap4evb_defconfig.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
- Applies to renesas-next-20130613
-
- arch/arm/mach-shmobile/pm-sh7372.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2013-06-17 12:03:18.000000000 +0900
-@@ -351,6 +351,9 @@ static void sh7372_enter_a4s_common(int
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index a93fd84..fb7a3e8 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -3386,10 +3386,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SDENC_CPG),
+ 	GPIO_FN(SDENC_DV_CLKI),
  
- static void sh7372_pm_setup_smfram(void)
- {
-+	/* pass physical address of cpu_resume() to assembly resume code */
-+	sh7372_cpu_resume = virt_to_phys(cpu_resume);
-+
- 	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
- }
- #else
-@@ -524,9 +527,6 @@ void __init sh7372_pm_init(void)
- 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
- 	__raw_writel(0, PDNSEL);
- 
--	/* pass physical address of cpu_resume() to assembly resume code */
--	sh7372_cpu_resume = virt_to_phys(cpu_resume);
+-	/* HDMI */
+-	GPIO_FN(HDMI_HPD),
+-	GPIO_FN(HDMI_CEC),
 -
- 	sh7372_pm_setup_smfram();
- 
- 	sh7372_suspend_init();
+ 	/* SYSC */
+ 	GPIO_FN(RESETP_PULLUP),
+ 	GPIO_FN(RESETP_PLAIN),
+-- 
+1.8.2.1
+
