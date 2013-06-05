@@ -1,49 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 03 Jun 2013 08:34:24 +0000
-Subject: Re: Build regressions/improvements in v3.10-rc4
-Message-Id: <alpine.DEB.2.00.1306031022150.19041@ayla.of.borg>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:34:34 +0000
+Subject: [PATCH 03/06] ARM: shmobile: AP4EVB memory size fixup
+Message-Id: <20130605073434.15758.45857.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.00.1306031018320.18831@ayla.of.borg>
-In-Reply-To: <alpine.DEB.2.00.1306031018320.18831@ayla.of.borg>
+References: <20130605073410.15758.37563.sendpatchset@w520>
+In-Reply-To: <20130605073410.15758.37563.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Kernel Development <linux-kernel@vger.kernel.org>
-Cc: x86@kernel.org, Linux/PPC Development <linuxppc-dev@lists.ozlabs.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 3 Jun 2013, Geert Uytterhoeven wrote:
-> JFYI, when comparing v3.10-rc4 to v3.10-rc3[3], the summaries are:
->   - build errors: +6/-2
->   - build warnings: +66/-132
+From: Magnus Damm <damm@opensource.se>
 
-  + arch/powerpc/sysdev/mpic.c: error: case label does not reduce to an integer constant:  => 890:9, 898:9, 886:9, 894:9
+Specify the AP4EVB memory configuration via
+a board specific fixup callback, and also
+select ATAGS to make sure the callback is
+executed as expected.
 
-powerpc-randconfig
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-  + error: No rule to make target /etc/sound/msndinit.bin:  => N/A
-  + error: No rule to make target /etc/sound/msndperm.bin:  => N/A
+ arch/arm/mach-shmobile/Kconfig        |    1 +
+ arch/arm/mach-shmobile/board-ap4evb.c |    3 +++
+ 2 files changed, 4 insertions(+)
 
-i386-randconfig
-
-  + error: spi-rspi.c: undefined reference to `shdma_chan_filter':  => .text+0x64f28), .text+0x65108)
-  
-sh-randconfig
-
-There seems to be something wrong with the dependencies for SH_DMAE_BASE,
-with more failures in linux-next for kota2_defconfig and marzen_defconfig
-on ARM (http://kisskb.ellerman.id.au/kisskb/buildresult/8848370/ resp.
- http://kisskb.ellerman.id.au/kisskb/buildresult/8848367/)
-
-> [1] http://kisskb.ellerman.id.au/kisskb/head/6290/ (all 120 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/head/6268/ (all 120 configs)
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+--- 0005/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-06-04 15:08:32.000000000 +0900
+@@ -71,6 +71,7 @@ comment "SH-Mobile Board Type"
+ config MACH_AP4EVB
+ 	bool "AP4EVB board"
+ 	depends on ARCH_SH7372
++	select ATAGS
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SH_LCD_MIPI_DSI
+--- 0001/arch/arm/mach-shmobile/board-ap4evb.c
++++ work/arch/arm/mach-shmobile/board-ap4evb.c	2013-06-04 15:08:17.000000000 +0900
+@@ -1321,7 +1321,10 @@ static void __init ap4evb_init(void)
+ 	pm_clk_add(&lcdc1_device.dev, "hdmi");
+ }
+ 
++SHMOBILE_FIXUP(ap4evb, 0x40000000, 0x10000000)
++
+ MACHINE_START(AP4EVB, "ap4evb")
++	.fixup		= ap4evb_fixup,
+ 	.map_io		= sh7372_map_io,
+ 	.init_early	= sh7372_add_early_devices,
+ 	.init_irq	= sh7372_init_irq,
