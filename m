@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:20 +0000
-Subject: [PATCH 029/130] sh-pfc: sh7372: Add KEYSC pin groups and functions
-Message-Id: <1370420821-28420-30-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:21 +0000
+Subject: [PATCH 030/130] sh-pfc: sh7372: Add LCDC pin groups and functions
+Message-Id: <1370420821-28420-31-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
@@ -15,129 +15,159 @@ From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 91 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 91 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 121 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 121 insertions(+)
 
 diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index def6e2c..50cbff6 100644
+index 50cbff6..8503747 100644
 --- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
 +++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1241,6 +1241,75 @@ IRQC_PINS_MUX(28, 123, 181);
- IRQC_PINS_MUX(29, 129, 182);
- IRQC_PINS_MUX(30, 130, 183);
- IRQC_PINS_MUX(31, 138, 184);
-+/* - KEYSC ------------------------------------------------------------------ */
-+static const unsigned int keysc_in04_0_pins[] = {
-+	/* KEYIN[0:4] */
-+	136, 135, 134, 133, 132,
+@@ -1310,6 +1310,103 @@ static const unsigned int keysc_out8_mux[] = {
+ 	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
+ 	KEYOUT4_MARK, KEYOUT5_MARK, KEYOUT6_MARK, KEYOUT7_MARK,
+ };
++/* - LCD -------------------------------------------------------------------- */
++static const unsigned int lcd_data8_pins[] = {
++	/* D[0:7] */
++	121, 122, 123, 124, 125, 126, 127, 128,
 +};
-+static const unsigned int keysc_in04_0_mux[] = {
-+	KEYIN0_136_MARK, KEYIN1_135_MARK, KEYIN2_134_MARK, KEYIN3_133_MARK,
-+	KEYIN4_MARK,
++static const unsigned int lcd_data8_mux[] = {
++	/* LCDC */
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
 +};
-+static const unsigned int keysc_in04_1_pins[] = {
-+	/* KEYIN[0:4] */
-+	121, 122, 123, 124, 132,
-+};
-+static const unsigned int keysc_in04_1_mux[] = {
-+	KEYIN0_121_MARK, KEYIN1_122_MARK, KEYIN2_123_MARK, KEYIN3_124_MARK,
-+	KEYIN4_MARK,
-+};
-+static const unsigned int keysc_in5_pins[] = {
-+	/* KEYIN5 */
-+	131,
-+};
-+static const unsigned int keysc_in5_mux[] = {
-+	KEYIN5_MARK,
-+};
-+static const unsigned int keysc_in6_pins[] = {
-+	/* KEYIN6 */
-+	130,
-+};
-+static const unsigned int keysc_in6_mux[] = {
-+	KEYIN6_MARK,
-+};
-+static const unsigned int keysc_in7_pins[] = {
-+	/* KEYIN7 */
++static const unsigned int lcd_data9_pins[] = {
++	/* D[0:8] */
++	121, 122, 123, 124, 125, 126, 127, 128,
 +	129,
++	137, 138, 139, 140, 141, 142, 143, 144,
 +};
-+static const unsigned int keysc_in7_mux[] = {
-+	KEYIN7_MARK,
++static const unsigned int lcd_data9_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK,
 +};
-+static const unsigned int keysc_out4_pins[] = {
-+	/* KEYOUT[0:3] */
-+	128, 127, 126, 125,
++static const unsigned int lcd_data12_pins[] = {
++	/* D[0:11] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129, 130, 131, 132,
 +};
-+static const unsigned int keysc_out4_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
++static const unsigned int lcd_data12_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK,	LCDD10_MARK, LCDD11_MARK,
 +};
-+static const unsigned int keysc_out5_pins[] = {
-+	/* KEYOUT[0:4] */
-+	128, 127, 126, 125, 124,
++static const unsigned int lcd_data16_pins[] = {
++	/* D[0:15] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129, 130, 131, 132, 133, 134, 135, 136,
 +};
-+static const unsigned int keysc_out5_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
-+	KEYOUT4_MARK,
++static const unsigned int lcd_data16_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK,	LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
 +};
-+static const unsigned int keysc_out6_pins[] = {
-+	/* KEYOUT[0:5] */
-+	128, 127, 126, 125, 124, 123,
++static const unsigned int lcd_data18_pins[] = {
++	/* D[0:17] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129, 130, 131, 132, 133, 134, 135, 136,
++	137, 138,
 +};
-+static const unsigned int keysc_out6_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
-+	KEYOUT4_MARK, KEYOUT5_MARK,
++static const unsigned int lcd_data18_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK,	LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
++	LCDD16_MARK, LCDD17_MARK,
 +};
-+static const unsigned int keysc_out8_pins[] = {
-+	/* KEYOUT[0:7] */
-+	128, 127, 126, 125, 124, 123, 122, 121,
++static const unsigned int lcd_data24_pins[] = {
++	/* D[0:23] */
++	121, 122, 123, 124, 125, 126, 127, 128,
++	129, 130, 131, 132, 133, 134, 135, 136,
++	137, 138, 139, 140, 141, 142, 143, 144,
 +};
-+static const unsigned int keysc_out8_mux[] = {
-+	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
-+	KEYOUT4_MARK, KEYOUT5_MARK, KEYOUT6_MARK, KEYOUT7_MARK,
++static const unsigned int lcd_data24_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK,	LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
++	LCDD16_MARK, LCDD17_MARK, LCDD18_MARK, LCDD19_MARK,
++	LCDD20_MARK, LCDD21_MARK, LCDD22_MARK, LCDD23_MARK,
++};
++static const unsigned int lcd_display_pins[] = {
++	/* DON */
++	151,
++};
++static const unsigned int lcd_display_mux[] = {
++	LCDDON_MARK,
++};
++static const unsigned int lcd_lclk_pins[] = {
++	/* LCLK */
++	150,
++};
++static const unsigned int lcd_lclk_mux[] = {
++	LCDLCLK_MARK,
++};
++static const unsigned int lcd_sync_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	146, 145, 147, 149,
++};
++static const unsigned int lcd_sync_mux[] = {
++	LCDVSYN_MARK, LCDHSYN_MARK, LCDDCK_MARK, LCDDISP_MARK,
++};
++static const unsigned int lcd_sys_pins[] = {
++	/* CS, WR, RD, RS */
++	145, 147, 148, 149,
++};
++static const unsigned int lcd_sys_mux[] = {
++	LCDCS_MARK, LCDWR_MARK, LCDRD_MARK, LCDRS_MARK,
 +};
  /* - MMCIF ------------------------------------------------------------------ */
  static const unsigned int mmc0_data1_0_pins[] = {
  	/* D[0] */
-@@ -1467,6 +1536,15 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(intc_irq30_1),
- 	SH_PFC_PIN_GROUP(intc_irq31_0),
- 	SH_PFC_PIN_GROUP(intc_irq31_1),
-+	SH_PFC_PIN_GROUP(keysc_in04_0),
-+	SH_PFC_PIN_GROUP(keysc_in04_1),
-+	SH_PFC_PIN_GROUP(keysc_in5),
-+	SH_PFC_PIN_GROUP(keysc_in6),
-+	SH_PFC_PIN_GROUP(keysc_in7),
-+	SH_PFC_PIN_GROUP(keysc_out4),
-+	SH_PFC_PIN_GROUP(keysc_out5),
-+	SH_PFC_PIN_GROUP(keysc_out6),
-+	SH_PFC_PIN_GROUP(keysc_out8),
+@@ -1545,6 +1642,16 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(keysc_out5),
+ 	SH_PFC_PIN_GROUP(keysc_out6),
+ 	SH_PFC_PIN_GROUP(keysc_out8),
++	SH_PFC_PIN_GROUP(lcd_data8),
++	SH_PFC_PIN_GROUP(lcd_data9),
++	SH_PFC_PIN_GROUP(lcd_data12),
++	SH_PFC_PIN_GROUP(lcd_data16),
++	SH_PFC_PIN_GROUP(lcd_data18),
++	SH_PFC_PIN_GROUP(lcd_data24),
++	SH_PFC_PIN_GROUP(lcd_display),
++	SH_PFC_PIN_GROUP(lcd_lclk),
++	SH_PFC_PIN_GROUP(lcd_sync),
++	SH_PFC_PIN_GROUP(lcd_sys),
  	SH_PFC_PIN_GROUP(mmc0_data1_0),
  	SH_PFC_PIN_GROUP(mmc0_data4_0),
  	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1593,6 +1671,18 @@ static const char * const intc_groups[] = {
- 	"intc_irq31_1",
+@@ -1683,6 +1790,19 @@ static const char * const keysc_groups[] = {
+ 	"keysc_out8",
  };
  
-+static const char * const keysc_groups[] = {
-+	"keysc_in04_0",
-+	"keysc_in04_1",
-+	"keysc_in5",
-+	"keysc_in6",
-+	"keysc_in7",
-+	"keysc_out4",
-+	"keysc_out5",
-+	"keysc_out6",
-+	"keysc_out8",
++static const char * const lcd_groups[] = {
++	"lcd_data8",
++	"lcd_data9",
++	"lcd_data12",
++	"lcd_data16",
++	"lcd_data18",
++	"lcd_data24",
++	"lcd_display",
++	"lcd_lclk",
++	"lcd_sync",
++	"lcd_sys",
 +};
 +
  static const char * const mmc0_groups[] = {
  	"mmc0_data1_0",
  	"mmc0_data4_0",
-@@ -1632,6 +1722,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(fsib),
+@@ -1723,6 +1843,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
  	SH_PFC_FUNCTION(hdmi),
  	SH_PFC_FUNCTION(intc),
-+	SH_PFC_FUNCTION(keysc),
+ 	SH_PFC_FUNCTION(keysc),
++	SH_PFC_FUNCTION(lcd),
  	SH_PFC_FUNCTION(mmc0),
  	SH_PFC_FUNCTION(sdhi0),
  	SH_PFC_FUNCTION(sdhi1),
