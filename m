@@ -1,54 +1,57 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 28 Jun 2013 11:26:55 +0000
-Subject: [PATCH 00/04] ARM: shmobile: r8a73a4/r8a7790 CMT and Arch timer update
-Message-Id: <20130628112655.23809.39115.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 05 Jun 2013 21:16:47 +0000
+Subject: [PATCH v4 6/8] sh_eth: remove #ifdef around sh_eth_select_mii()
+Message-Id: <201306060116.48096.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-ARM: shmobile: r8a73a4/r8a7790 CMT and Arch timer update
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-[PATCH 01/04] ARM: shmobile: Add r8a7790 CMT00 clock event
-[PATCH 02/04] ARM: shmobile: Make r8a7790 Arch timer optional
-[PATCH 03/04] ARM: shmobile: Add r8a73a4 CMT10 clock event
-[PATCH 04/04] ARM: shmobile: Make r8a73a4 Arch timer optional
+We can simply remove #ifdef'fery around sh_eth_select_mii(). We have to annotate
+it with '__maybe_unused' then.
 
-Add clock event support through a CMT timer channel for the
-SoCs r8a7790 and r8a73a4 as well as APE6EVM and Lager boards.
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+[Sergei: added the changelog, reworded the subject, changing the prefix.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Also, to be able to test the CMT timers, make it possible to
-deselect Arch timer and instead rely on predefined values for
-udelay() and instead of local timer for SMP use broadcast.
-
-A nice side effect of this is that high resolution timers
-now become available. The reason for the is that the Arch
-timer sets the C3STOP flag which in turn will tell the
-time keeping code to not allow high resolution timer without
-an additional clock event. So here they are.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
+Changes in version 4:
+- refreshed the patch;
+- added the changelog;
+- reworded the subject, changing the prefix.
 
- Written against renesas.git renesas-next-20130628 plus
- [PATCH] ARM: shmobile: Sort r8a7790 MSTP entries
- [PATCH 00/06] ARM: shmobile: Remove unused auxdata tables
+Changes in version 3:
+- annotated sh_eth_select_mii() with '__maybe_unused'.
 
- For proper run time operation the following patch
- included in renesas-next-20130628 must be included
- in the CMT driver:
+ drivers/net/ethernet/renesas/sh_eth.c |    6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
- clocksource: sh_cmt: 32-bit control register support
-
- arch/arm/mach-shmobile/Kconfig                |    2 -
- arch/arm/mach-shmobile/board-ape6evm.c        |    1 
- arch/arm/mach-shmobile/board-lager.c          |    1 
- arch/arm/mach-shmobile/clock-r8a73a4.c        |    4 ++-
- arch/arm/mach-shmobile/clock-r8a7790.c        |    4 +++
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 
- arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 
- arch/arm/mach-shmobile/setup-r8a73a4.c        |   29 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7790.c        |   29 +++++++++++++++++++++++++
- 9 files changed, 69 insertions(+), 3 deletions(-)
-
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -313,10 +313,7 @@ static const u16 sh_eth_offset_fast_sh3_
+ 	[TSU_ADRL31]	= 0x01fc,
+ };
+ 
+-#if defined(CONFIG_CPU_SUBTYPE_SH7734) || \
+-	defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+-	defined(CONFIG_ARCH_R8A7740)
+-static void sh_eth_select_mii(struct net_device *ndev)
++static void __maybe_unused sh_eth_select_mii(struct net_device *ndev)
+ {
+ 	u32 value = 0x0;
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -339,7 +336,6 @@ static void sh_eth_select_mii(struct net
+ 
+ 	sh_eth_write(ndev, value, RMII_MII);
+ }
+-#endif
+ 
+ static void __maybe_unused sh_eth_set_duplex(struct net_device *ndev)
+ {
