@@ -1,84 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 01 Jun 2013 21:33:56 +0000
-Subject: [PATCH v8 2/9] ehci-platform: add pre_setup() method to platform data
-Message-Id: <201306020133.57070.sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Jun 2013 07:07:28 +0000
+Subject: [PATCH 09/15] ARM: shmobile: KZM9G uImage rework
+Message-Id: <20130605070728.13311.22698.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130605070616.13311.69049.sendpatchset@w520>
+In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Sometimes there is a need  to initialize some non-standard registers mapped to
-the EHCI region before accessing the standard EHCI registers.  Add pre_setup()
-method with 'struct usb_hcd *' parameter to be called just before ehci_setup()
-to the 'ehci-platform'  driver's platform data for this purpose...
+From: Magnus Damm <damm@opensource.se>
 
-While at it, add the missing incomplete declaration of 'struct platform_device'
-to <linux/usb/ehci_pdriver.h>...
+Add KZM9G specific load addresses to Makefile.boot,
+both the C version of the code is covered as well
+as the DT -reference code.
 
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Suggested-by: Alan Stern <stern@rowland.harvard.edu>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Alan Stern <stern@rowland.harvard.edu>
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Changes since version 7:
-- refreshed the patch.
 
-Changes since version 3:
-- added ACK from Alan Stern.
+ arch/arm/mach-shmobile/Makefile.boot |    2 ++
+ 1 file changed, 2 insertions(+)
 
-Changes since version 2:
-- replaced #include with incomplete declarations of 'struct platform_device' and
-  'struct usb_hcd';
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- changed init() method to pre_setup() with different parameters and call site.
-
- drivers/usb/host/ehci-platform.c |    6 ++++++
- include/linux/usb/ehci_pdriver.h |    4 ++++
- 2 files changed, 10 insertions(+)
-
-Index: renesas/drivers/usb/host/ehci-platform.c
-=================================--- renesas.orig/drivers/usb/host/ehci-platform.c
-+++ renesas/drivers/usb/host/ehci-platform.c
-@@ -48,6 +48,12 @@ static int ehci_platform_reset(struct us
- 	ehci->big_endian_desc = pdata->big_endian_desc;
- 	ehci->big_endian_mmio = pdata->big_endian_mmio;
+--- 0016/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 16:21:45.000000000 +0900
+@@ -8,6 +8,8 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA)
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
++loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
++loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
  
-+	if (pdata->pre_setup) {
-+		retval = pdata->pre_setup(hcd);
-+		if (retval < 0)
-+			return retval;
-+	}
-+
- 	ehci->caps = hcd->regs + pdata->caps_offset;
- 	retval = ehci_setup(hcd);
- 	if (retval)
-Index: renesas/include/linux/usb/ehci_pdriver.h
-=================================--- renesas.orig/include/linux/usb/ehci_pdriver.h
-+++ renesas/include/linux/usb/ehci_pdriver.h
-@@ -19,6 +19,9 @@
- #ifndef __USB_CORE_EHCI_PDRIVER_H
- #define __USB_CORE_EHCI_PDRIVER_H
- 
-+struct platform_device;
-+struct usb_hcd;
-+
- /**
-  * struct usb_ehci_pdata - platform_data for generic ehci driver
-  *
-@@ -50,6 +53,7 @@ struct usb_ehci_pdata {
- 	/* Turn on only VBUS suspend power and hotplug detection,
- 	 * turn off everything else */
- 	void (*power_suspend)(struct platform_device *pdev);
-+	int (*pre_setup)(struct usb_hcd *hcd);
- };
- 
- #endif /* __USB_CORE_EHCI_PDRIVER_H */
-
+ __ZRELADDR	:= $(shell /bin/bash -c \
+ 		     'echo $(loadaddr-y) | tr " " "\n" | sort | uniq')
