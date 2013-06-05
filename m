@@ -1,89 +1,118 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 Jun 2013 08:23:30 +0000
-Subject: [PATCH v10 03/21] pxa-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1370939028-8352-4-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:26:51 +0000
+Subject: [PATCH 120/130] sh-pfc: r8a7778: add HSPI pin groups
+Message-Id: <1370420821-28420-121-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-When adding and removing a client, the pxa-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add HSPI CLK/CS/RX/TX pin groups to R8A7778 PFC driver.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/soc_camera/pxa_camera.c |   28 +++++++++++++++--------
- 1 files changed, 18 insertions(+), 10 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 61 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
-diff --git a/drivers/media/platform/soc_camera/pxa_camera.c b/drivers/media/platform/soc_camera/pxa_camera.c
-index 686edf7..d4df305 100644
---- a/drivers/media/platform/soc_camera/pxa_camera.c
-+++ b/drivers/media/platform/soc_camera/pxa_camera.c
-@@ -955,33 +955,39 @@ static irqreturn_t pxa_camera_irq(int irq, void *data)
- 	return IRQ_HANDLED;
- }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index 605f8ae..bf5e3d8 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -1371,6 +1371,43 @@ SCIF_PFC_CLK(hscif1_clk_a,	HSCK1_A);
+ SCIF_PFC_PIN(hscif1_clk_b,	RCAR_GP_PIN(4, 2));
+ SCIF_PFC_CLK(hscif1_clk_b,	HSCK1_B);
  
-+static int pxa_camera_add_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "PXA Camera driver attached to camera %d\n",
-+		 icd->devnum);
++/* - HSPI macro --------------------------------------------------------------*/
++#define HSPI_PFC_PIN(name, args...)		SH_PFC_PINS(name, args)
++#define HSPI_PFC_DAT(name, clk, cs, rx, tx)	SH_PFC_MUX4(name, clk, cs, rx, tx)
 +
-+	return 0;
-+}
++/* - HSPI0 -------------------------------------------------------------------*/
++HSPI_PFC_PIN(hspi0_a,	RCAR_GP_PIN(3, 19),	RCAR_GP_PIN(3, 20),
++			RCAR_GP_PIN(3, 21),	RCAR_GP_PIN(3, 22));
++HSPI_PFC_DAT(hspi0_a,	HSPI_CLK0_A,		HSPI_CS0_A,
++			HSPI_RX0_A,		HSPI_TX0);
 +
-+static void pxa_camera_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "PXA Camera driver detached from camera %d\n",
-+		 icd->devnum);
-+}
++HSPI_PFC_PIN(hspi0_b,	RCAR_GP_PIN(2, 25),	RCAR_GP_PIN(2, 26),
++			RCAR_GP_PIN(2, 24),	RCAR_GP_PIN(2, 27));
++HSPI_PFC_DAT(hspi0_b,	HSPI_CLK0_B,		HSPI_CS0_B,
++			HSPI_RX0_B,		HSPI_TX0_B);
 +
- /*
-  * The following two functions absolutely depend on the fact, that
-  * there can be only one camera on PXA quick capture interface
-  * Called with .host_lock held
-  */
--static int pxa_camera_add_device(struct soc_camera_device *icd)
-+static int pxa_camera_clock_start(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct pxa_camera_dev *pcdev = ici->priv;
++/* - HSPI1 -------------------------------------------------------------------*/
++HSPI_PFC_PIN(hspi1_a,	RCAR_GP_PIN(3, 26),	RCAR_GP_PIN(3, 27),
++			RCAR_GP_PIN(3, 25),	RCAR_GP_PIN(3, 28));
++HSPI_PFC_DAT(hspi1_a,	HSPI_CLK1_A,		HSPI_CS1_A,
++			HSPI_RX1_A,		HSPI_TX1_A);
++
++HSPI_PFC_PIN(hspi1_b,	RCAR_GP_PIN(0, 27),	RCAR_GP_PIN(0, 26),
++			PIN_NUMBER(20, 1),	PIN_NUMBER(25, 2));
++HSPI_PFC_DAT(hspi1_b,	HSPI_CLK1_B,		HSPI_CS1_B,
++			HSPI_RX1_B,		HSPI_TX1_B);
++
++/* - HSPI2 -------------------------------------------------------------------*/
++HSPI_PFC_PIN(hspi2_a,	RCAR_GP_PIN(2, 29),	RCAR_GP_PIN(3, 8),
++			RCAR_GP_PIN(2, 28),	RCAR_GP_PIN(2, 30));
++HSPI_PFC_DAT(hspi2_a,	HSPI_CLK2_A,		HSPI_CS2_A,
++			HSPI_RX2_A,		HSPI_TX2_A);
++
++HSPI_PFC_PIN(hspi2_b,	RCAR_GP_PIN(4, 21),	RCAR_GP_PIN(4, 22),
++			RCAR_GP_PIN(4, 23),	RCAR_GP_PIN(4, 24));
++HSPI_PFC_DAT(hspi2_b,	HSPI_CLK2_B,		HSPI_CS2_B,
++			HSPI_RX2_B,		HSPI_TX2_B);
++
+ /* - I2C macro ------------------------------------------------------------- */
+ #define I2C_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
+ #define I2C_PFC_MUX(name, sda, scl)	SH_PFC_MUX2(name, sda, scl)
+@@ -1610,6 +1647,12 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
+ 	SH_PFC_PIN_GROUP(hscif1_clk_a),
+ 	SH_PFC_PIN_GROUP(hscif1_clk_b),
++	SH_PFC_PIN_GROUP(hspi0_a),
++	SH_PFC_PIN_GROUP(hspi0_b),
++	SH_PFC_PIN_GROUP(hspi1_a),
++	SH_PFC_PIN_GROUP(hspi1_b),
++	SH_PFC_PIN_GROUP(hspi2_a),
++	SH_PFC_PIN_GROUP(hspi2_b),
+ 	SH_PFC_PIN_GROUP(i2c1_a),
+ 	SH_PFC_PIN_GROUP(i2c1_b),
+ 	SH_PFC_PIN_GROUP(i2c2_a),
+@@ -1710,6 +1753,21 @@ static const char * const hscif1_groups[] = {
+ 	"hscif1_clk_b",
+ };
  
- 	pxa_camera_activate(pcdev);
- 
--	dev_info(icd->parent, "PXA Camera driver attached to camera %d\n",
--		 icd->devnum);
--
- 	return 0;
- }
- 
- /* Called with .host_lock held */
--static void pxa_camera_remove_device(struct soc_camera_device *icd)
-+static void pxa_camera_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct pxa_camera_dev *pcdev = ici->priv;
- 
--	dev_info(icd->parent, "PXA Camera driver detached from camera %d\n",
--		 icd->devnum);
--
- 	/* disable capture, disable interrupts */
- 	__raw_writel(0x3ff, pcdev->base + CICR0);
- 
-@@ -1630,6 +1636,8 @@ static struct soc_camera_host_ops pxa_soc_camera_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= pxa_camera_add_device,
- 	.remove		= pxa_camera_remove_device,
-+	.clock_start	= pxa_camera_clock_start,
-+	.clock_stop	= pxa_camera_clock_stop,
- 	.set_crop	= pxa_camera_set_crop,
- 	.get_formats	= pxa_camera_get_formats,
- 	.put_formats	= pxa_camera_put_formats,
++static const char * const hspi0_groups[] = {
++	"hspi0_a",
++	"hspi0_b",
++};
++
++static const char * const hspi1_groups[] = {
++	"hspi1_a",
++	"hspi1_b",
++};
++
++static const char * const hspi2_groups[] = {
++	"hspi2_a",
++	"hspi2_b",
++};
++
+ static const char * const i2c1_groups[] = {
+ 	"i2c1_a",
+ 	"i2c1_b",
+@@ -1841,6 +1899,9 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(ether),
+ 	SH_PFC_FUNCTION(hscif0),
+ 	SH_PFC_FUNCTION(hscif1),
++	SH_PFC_FUNCTION(hspi0),
++	SH_PFC_FUNCTION(hspi1),
++	SH_PFC_FUNCTION(hspi2),
+ 	SH_PFC_FUNCTION(i2c1),
+ 	SH_PFC_FUNCTION(i2c2),
+ 	SH_PFC_FUNCTION(i2c3),
 -- 
-1.7.2.5
+1.8.2.1
 
