@@ -1,54 +1,146 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 24 Jun 2013 21:14:47 +0000
-Subject: [PATCH v3 3/4] ARM: shmobile: ape6evm: add CPUFreq support
-Message-Id: <Pine.LNX.4.64.1306242311120.26438@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 05 Jun 2013 08:25:20 +0000
+Subject: [PATCH 029/130] sh-pfc: sh7372: Add KEYSC pin groups and functions
+Message-Id: <1370420821-28420-30-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch adds OPPs to the CA15 DT node and a max8973 DT node to support
-clock and voltage scaling, using the cpufreq-cpu0 CPUFreq driver.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 91 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
 
-v3: fix a typo s/maxium/maxim/
-
- arch/arm/boot/dts/r8a73a4-ape6evm.dts |   22 ++++++++++++++++++++++
- 1 files changed, 22 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index 4fb0102..27c5e06 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -52,3 +52,25 @@
- 		};
- 	};
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index def6e2c..50cbff6 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1241,6 +1241,75 @@ IRQC_PINS_MUX(28, 123, 181);
+ IRQC_PINS_MUX(29, 129, 182);
+ IRQC_PINS_MUX(30, 130, 183);
+ IRQC_PINS_MUX(31, 138, 184);
++/* - KEYSC ------------------------------------------------------------------ */
++static const unsigned int keysc_in04_0_pins[] = {
++	/* KEYIN[0:4] */
++	136, 135, 134, 133, 132,
++};
++static const unsigned int keysc_in04_0_mux[] = {
++	KEYIN0_136_MARK, KEYIN1_135_MARK, KEYIN2_134_MARK, KEYIN3_133_MARK,
++	KEYIN4_MARK,
++};
++static const unsigned int keysc_in04_1_pins[] = {
++	/* KEYIN[0:4] */
++	121, 122, 123, 124, 132,
++};
++static const unsigned int keysc_in04_1_mux[] = {
++	KEYIN0_121_MARK, KEYIN1_122_MARK, KEYIN2_123_MARK, KEYIN3_124_MARK,
++	KEYIN4_MARK,
++};
++static const unsigned int keysc_in5_pins[] = {
++	/* KEYIN5 */
++	131,
++};
++static const unsigned int keysc_in5_mux[] = {
++	KEYIN5_MARK,
++};
++static const unsigned int keysc_in6_pins[] = {
++	/* KEYIN6 */
++	130,
++};
++static const unsigned int keysc_in6_mux[] = {
++	KEYIN6_MARK,
++};
++static const unsigned int keysc_in7_pins[] = {
++	/* KEYIN7 */
++	129,
++};
++static const unsigned int keysc_in7_mux[] = {
++	KEYIN7_MARK,
++};
++static const unsigned int keysc_out4_pins[] = {
++	/* KEYOUT[0:3] */
++	128, 127, 126, 125,
++};
++static const unsigned int keysc_out4_mux[] = {
++	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
++};
++static const unsigned int keysc_out5_pins[] = {
++	/* KEYOUT[0:4] */
++	128, 127, 126, 125, 124,
++};
++static const unsigned int keysc_out5_mux[] = {
++	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
++	KEYOUT4_MARK,
++};
++static const unsigned int keysc_out6_pins[] = {
++	/* KEYOUT[0:5] */
++	128, 127, 126, 125, 124, 123,
++};
++static const unsigned int keysc_out6_mux[] = {
++	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
++	KEYOUT4_MARK, KEYOUT5_MARK,
++};
++static const unsigned int keysc_out8_pins[] = {
++	/* KEYOUT[0:7] */
++	128, 127, 126, 125, 124, 123, 122, 121,
++};
++static const unsigned int keysc_out8_mux[] = {
++	KEYOUT0_MARK, KEYOUT1_MARK, KEYOUT2_MARK, KEYOUT3_MARK,
++	KEYOUT4_MARK, KEYOUT5_MARK, KEYOUT6_MARK, KEYOUT7_MARK,
++};
+ /* - MMCIF ------------------------------------------------------------------ */
+ static const unsigned int mmc0_data1_0_pins[] = {
+ 	/* D[0] */
+@@ -1467,6 +1536,15 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(intc_irq30_1),
+ 	SH_PFC_PIN_GROUP(intc_irq31_0),
+ 	SH_PFC_PIN_GROUP(intc_irq31_1),
++	SH_PFC_PIN_GROUP(keysc_in04_0),
++	SH_PFC_PIN_GROUP(keysc_in04_1),
++	SH_PFC_PIN_GROUP(keysc_in5),
++	SH_PFC_PIN_GROUP(keysc_in6),
++	SH_PFC_PIN_GROUP(keysc_in7),
++	SH_PFC_PIN_GROUP(keysc_out4),
++	SH_PFC_PIN_GROUP(keysc_out5),
++	SH_PFC_PIN_GROUP(keysc_out6),
++	SH_PFC_PIN_GROUP(keysc_out8),
+ 	SH_PFC_PIN_GROUP(mmc0_data1_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data4_0),
+ 	SH_PFC_PIN_GROUP(mmc0_data8_0),
+@@ -1593,6 +1671,18 @@ static const char * const intc_groups[] = {
+ 	"intc_irq31_1",
  };
-+
-+&i2c5 {
-+	vdd_dvfs: max8973@1b {
-+		compatible = "maxim,max8973";
-+		reg = <0x1b>;
-+
-+		regulator-min-microvolt = <935000>;
-+		regulator-max-microvolt = <1200000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
+ 
++static const char * const keysc_groups[] = {
++	"keysc_in04_0",
++	"keysc_in04_1",
++	"keysc_in5",
++	"keysc_in6",
++	"keysc_in7",
++	"keysc_out4",
++	"keysc_out5",
++	"keysc_out6",
++	"keysc_out8",
 +};
 +
-+&cpu0 {
-+	cpu0-supply = <&vdd_dvfs>;
-+	operating-points = <
-+		/* kHz  uV */
-+		1950000 1115000
-+		1462500  995000
-+	>;
-+	voltage-tolerance = <1>; /* 1% */
-+};
+ static const char * const mmc0_groups[] = {
+ 	"mmc0_data1_0",
+ 	"mmc0_data4_0",
+@@ -1632,6 +1722,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(fsib),
+ 	SH_PFC_FUNCTION(hdmi),
+ 	SH_PFC_FUNCTION(intc),
++	SH_PFC_FUNCTION(keysc),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
 -- 
-1.7.2.5
+1.8.2.1
 
