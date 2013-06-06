@@ -1,100 +1,155 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 22:22:40 +0000
-Subject: [PATCH v5 11/22] ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
-Message-Id: <1370989371-30846-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 06 Jun 2013 19:45:25 +0000
+Subject: [PATCH v5 3/8] sh_eth: remove duplicate sh_eth_set_duplex() definitions
+Message-Id: <201306062345.26098.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-Add GPIO controller nodes to the r8a7790 core device tree.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Remove all the duplicate definitions of sh_eth_set_duplex() under  different
+#ifdef's, leaving only one outside the #ifdef's. We have to annotate it with
+'__maybe_unused' since it's called not from all SoC #ifdef blocks.
+
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+[Sergei: annotated sh_eth_set_duplex() as '__maybe_unused', added the changelog,
+reworded the subject, changing the prefix.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 61 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
+Changes in version 4:
+- annotated sh_eth_set_duplex() as '__maybe_unused';
+- refreshed the patch;
+- added the changelog;
+- reworded the subject, changing the prefix.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 13caf12..1b75c1d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -38,6 +38,66 @@
- 		interrupts = <1 9 0xf04>;
- 	};
+Changes in version 3:
+- remove empty sh_eth_set_duplex() for SH7619, SH7710 and SH7712 cases.
+
+ drivers/net/ethernet/renesas/sh_eth.c |   59 ++--------------------------------
+ 1 file changed, 5 insertions(+), 54 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -341,10 +341,7 @@ static void sh_eth_select_mii(struct net
+ }
+ #endif
  
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc40000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 4 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc41000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 5 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc42000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 6 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc43000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 7 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc44000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 8 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+	};
-+
-+	gpio5: gpio@ffc45000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc45000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 9 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 32>;
-+	};
-+
- 	timer {
- 		compatible = "arm,armv7-timer";
- 		interrupts = <1 13 0xf08>,
-@@ -58,5 +118,6 @@
- 	pfc: pfc@e6060000 {
- 		compatible = "renesas,pfc-r8a7790";
- 		reg = <0 0xe6060000 0 0x250>;
-+		#gpio-range-cells = <3>;
- 	};
+-/* There is CPU dependent code */
+-#if defined(CONFIG_ARCH_R8A7778) || defined(CONFIG_ARCH_R8A7779)
+-#define SH_ETH_RESET_DEFAULT	1
+-static void sh_eth_set_duplex(struct net_device *ndev)
++static void __maybe_unused sh_eth_set_duplex(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+@@ -354,6 +351,9 @@ static void sh_eth_set_duplex(struct net
+ 		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
+ }
+ 
++/* There is CPU dependent code */
++#if defined(CONFIG_ARCH_R8A7778) || defined(CONFIG_ARCH_R8A7779)
++#define SH_ETH_RESET_DEFAULT	1
+ static void sh_eth_set_rate(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -391,15 +391,6 @@ static struct sh_eth_cpu_data sh_eth_my_
  };
--- 
-1.8.1.5
-
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7724)
+ #define SH_ETH_RESET_DEFAULT	1
+-static void sh_eth_set_duplex(struct net_device *ndev)
+-{
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	if (mdp->duplex) /* Full */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
+-	else		/* Half */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
+-}
+ 
+ static void sh_eth_set_rate(struct net_device *ndev)
+ {
+@@ -443,16 +434,6 @@ static struct sh_eth_cpu_data sh_eth_my_
+ #define SH_ETH_HAS_TSU	1
+ static int sh_eth_check_reset(struct net_device *ndev);
+ 
+-static void sh_eth_set_duplex(struct net_device *ndev)
+-{
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	if (mdp->duplex) /* Full */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
+-	else		/* Half */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
+-}
+-
+ static void sh_eth_set_rate(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -552,16 +533,6 @@ out:
+ 	return ret;
+ }
+ 
+-static void sh_eth_set_duplex_giga(struct net_device *ndev)
+-{
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	if (mdp->duplex) /* Full */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
+-	else		/* Half */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
+-}
+-
+ static void sh_eth_set_rate_giga(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -584,7 +555,7 @@ static void sh_eth_set_rate_giga(struct 
+ /* SH7757(GETHERC) */
+ static struct sh_eth_cpu_data sh_eth_my_cpu_data_giga = {
+ 	.chip_reset	= sh_eth_chip_reset_giga,
+-	.set_duplex	= sh_eth_set_duplex_giga,
++	.set_duplex	= sh_eth_set_duplex,
+ 	.set_rate	= sh_eth_set_rate_giga,
+ 
+ 	.ecsr_value	= ECSR_ICD | ECSR_MPD,
+@@ -634,16 +605,6 @@ static void sh_eth_chip_reset(struct net
+ 	mdelay(1);
+ }
+ 
+-static void sh_eth_set_duplex(struct net_device *ndev)
+-{
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	if (mdp->duplex) /* Full */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
+-	else		/* Half */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
+-}
+-
+ static void sh_eth_set_rate(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -771,16 +732,6 @@ out:
+ 	return ret;
+ }
+ 
+-static void sh_eth_set_duplex(struct net_device *ndev)
+-{
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	if (mdp->duplex) /* Full */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
+-	else		/* Half */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
+-}
+-
+ static void sh_eth_set_rate(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
