@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 19 Jun 2013 13:22:20 +0000
-Subject: [PATCH 2/5] ARM: shmobile: bockw: add I2C device support
-Message-Id: <1371648143-18376-3-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:14 +0000
+Subject: [PATCH 01/23] ARM: shmobile: r8a7778: fixup Ether setup code position
+Message-Id: <1370503716-31155-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,44 +12,68 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch enables rx8581 on I2C0
+Ether setup code position was scattering.
+This patch fixes it up
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index bfe8f67..a4251cc 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -77,6 +77,13 @@ static struct sh_eth_plat_data ether_platform_data __initdata = {
- 	.no_ether_link	= 1,
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 30b4a33..d6ee521 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -80,12 +80,6 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 	.clocksource_rating	= 200,
  };
  
-+/* I2C */
-+static struct i2c_board_info i2c0_devices[] = {
-+	{
-+		I2C_BOARD_INFO("rx8581", 0x51),
-+	},
+-/* Ether */
+-static struct resource ether_resources[] = {
+-	DEFINE_RES_MEM(0xfde00000, 0x400),
+-	DEFINE_RES_IRQ(gic_iid(0x89)),
+-};
+-
+ #define r8a7778_register_tmu(idx)			\
+ 	platform_device_register_resndata(		\
+ 		&platform_bus, "sh_tmu", idx,		\
+@@ -94,6 +88,20 @@ static struct resource ether_resources[] = {
+ 		&sh_tmu##idx##_platform_data,		\
+ 		sizeof(sh_tmu##idx##_platform_data))
+ 
++/* Ether */
++static struct resource ether_resources[] = {
++	DEFINE_RES_MEM(0xfde00000, 0x400),
++	DEFINE_RES_IRQ(gic_iid(0x89)),
 +};
 +
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* Ether */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
-@@ -103,7 +110,10 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
- 	r8a7778_add_ether_device(&ether_platform_data);
-+	r8a7778_add_i2c_device(0);
++void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  pdata, sizeof(*pdata));
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
+@@ -118,14 +126,6 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_tmu(1);
+ }
  
-+	i2c_register_board_info(0, i2c0_devices,
-+				ARRAY_SIZE(i2c0_devices));
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
- 	r8a7778_pinmux_init();
+-void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+-{
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  pdata, sizeof(*pdata));
+-}
+-
+ static struct renesas_intc_irqpin_config irqpin_platform_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+ 	.sense_bitfield_width = 2,
 -- 
 1.8.2.1
 
