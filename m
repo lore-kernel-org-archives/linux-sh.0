@@ -1,41 +1,32 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Jun 2013 21:11:17 +0000
-Subject: [PATCH v4 2/8] sh_eth: use EDSR_ENALL to set EDSR
-Message-Id: <201306060111.17880.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 15:38:10 +0000
+Subject: [PATCH 0/2] ARM: shmobile: two cosmetic patches
+Message-Id: <1370533092-23555-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+This is a re-send of two earlier submitted patches, now split in smaller 
+and logically grouped series.
 
-Use now always available EDSR_ENALL instead of the bare number to set EDSR.
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-[Sergei: added the changelog, reworded the subject, changing the prefix.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Guennadi Liakhovetski (2):
+  ARM: shmobile: armadillo800eva: remove left-overs
+  ARM: shmobile: sh73a0: remove "0x" prefix from DT node names
 
+ arch/arm/boot/dts/sh73a0.dtsi                  |   18 +++++++++---------
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    9 ---------
+ 2 files changed, 9 insertions(+), 18 deletions(-)
+
+-- 
+1.7.2.5
+
+Thanks
+Guennadi
 ---
-Changes in version 4:
-- added the changelog;
-- reworded the subject, changing the prefix.
-
- drivers/net/ethernet/renesas/sh_eth.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -523,7 +523,7 @@ static int sh_eth_reset(struct net_devic
- 	int ret = 0;
- 
- 	if (sh_eth_is_gether(mdp)) {
--		sh_eth_write(ndev, 0x03, EDSR);
-+		sh_eth_write(ndev, EDSR_ENALL, EDSR);
- 		sh_eth_write(ndev, sh_eth_read(ndev, EDMR) | EDMR_SRST_GETHER,
- 				EDMR);
- 
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
