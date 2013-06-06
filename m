@@ -1,41 +1,55 @@
-From: James Hogan <james.hogan@imgtec.com>
-Date: Thu, 20 Jun 2013 12:44:26 +0000
-Subject: Re: [PATCH v7 0/3] SH pinctrl DT support
-Message-Id: <51C2F92A.5050101@imgtec.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 07:39:07 +0000
+Subject: Re: [PATCH] mmc: mmcif: don't clear masked interrupts
+Message-Id: <Pine.LNX.4.64.1306060938310.32566@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CACRpkdZh709J3pFsfbReQ20LU5W0Q1HacE0ZpssWXofKTJJ6pQ@mail.gmail.com> <51C01FAF.8050006@imgtec.com> <CACRpkdbFEKJxQfvT4xR4z1iymHPmbbCYJriVPD95P_L0oCC6Jg@mail.gmail.com>
-In-Reply-To: <CACRpkdbFEKJxQfvT4xR4z1iymHPmbbCYJriVPD95P_L0oCC6Jg@mail.gmail.com>
+References: <Pine.LNX.4.64.1305150746480.10596@axis700.grange>
+ <519349BB.6080200@jinso.co.jp> <87mwrvwhsn.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87mwrvwhsn.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, =?ISO-8859-1?Q?Heiko_St=FCbner?= <heiko@sntech.de>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree-discuss@lists.ozlabs.org" <devicetree-discuss@lists.ozlabs.org>, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Nguyen Viet Dung <nv-dung@jinso.co.jp>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-On 18/06/13 10:05, Linus Walleij wrote:
-> On Tue, Jun 18, 2013 at 10:51 AM, James Hogan <james.hogan@imgtec.com> wrote:
+Hi Chris
+
+On Wed, 15 May 2013, Kuninori Morimoto wrote:
+
+> Hi
+> At Wed, 15 May 2013 17:39:23 +0900,
+> Nguyen Viet Dung wrote:
+> > 
+> > On 05/15/2013 02:50 PM, Guennadi Liakhovetski wrote:
+> > > Masking events on MMCIF means, an occurrence of the masked event won't raise
+> > > an interrupt, but the event bit will still be set in the interrupt status
+> > > register. If simultaneously a different event occurs, that was enabled, both
+> > > flags will be set. However, only the unmasked event bit should be cleared in
+> > > the status register in such a case. Clearing also the masked bit can lead to
+> > > lost interrupts, which indeed can be observed on the armadillo800eva r8a7740
+> > > board with an eMMC chip. The problem has been introduced by the recent "mmc:
+> > > sh_mmcif: simplify IRQ processing" patch. Fix the problem by only clearing
+> > > enabled interrupts.
+> > >
+> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> > 
+> > tested-by: Nguyen Viet Dung<nv-dung@jinso.co.jp>
 > 
->> Should we be standardizing the pins/groups/function properties too,
->> since the strings are pretty much passed straight through? The usage
->> seems pretty similar between the drivers I've seen (except ugly vendor
->> prefixes), so we could presumably get away with a single implementation
->> of dt_node_to_map?
+> on Bock-W board
 > 
-> This is an orthogonal issue I'd say.
+> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-agreed.
+Here's one more for you.
 
-> Basically this goes back to the quite prolonged discussion about
-> device tree bindings and the fact that we added the
-> .dt_node_to_map() and .dt_free_map() functions in the
-> first place.
+Thanks
+Guennadi
+
+> Best regards
+> ---
+> Kuninori Morimoto
 > 
-> I'd be happy to consolidate these mapping functions where
-> possible, by moving to the core, basically.
-> 
-> But that would be a separate patch series.... interested? ;-)
 
-Mildly, but I can't guarantee I'll get the time.
-
-Cheers
-James
-
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
