@@ -1,22 +1,29 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 20 Jun 2013 00:03:28 +0000
-Subject: Re: [PATCH v2 1/2] sh_eth: define/use EESR_RX_CHECK macro
-Message-Id: <20130619.170328.1736421710188084110.davem@davemloft.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 06 Jun 2013 19:39:20 +0000
+Subject: [PATCH v5 0/8] sh_eth: deal with #ifdef'fery
+Message-Id: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306192329.24022.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306192329.24022.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 19 Jun 2013 23:29:23 +0400
+Hello.
 
-> sh_eth_interrupt() uses the same Rx interrupt mask twice to check the interrupt
-> status register -- #define EESR_RX_CHECK  and use it instead. 
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+   This series of 8 patches are against Dave's 'net-next.git' repository.
+   The series deals mostly with excess #ifdef'fery in the 'sh_eth' driver.
+It doesn't yet get rid of all the #ifdef'fery but that's a matter of another
+patchset. The last patch (it was almost in the middle of the series before),
+contrariwise, adds one missing #ifdef...
 
-Applied.
+[1/8] sh_eth: remove #ifdef around EDSR and GECMR bit definitions
+[2/8] sh_eth: use EDSR_ENALL to set EDSR
+[3/8] sh_eth: remove duplicate sh_eth_set_duplex() definitions
+[4/8] sh_eth: remove SH_ETH_HAS_TSU
+[5/8] sh_eth: add IRQ flags to 'struct sh_eth_cpu_data'
+[6/8] sh_eth: remove #ifdef around sh_eth_select_mii()
+[7/8] sh_eth: consolidate sh_eth_reset()
+[8/8] sh_eth: enclose PM code into #ifdef CONFIG_PM
+
+WBR, Sergei
