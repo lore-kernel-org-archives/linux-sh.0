@@ -1,35 +1,41 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jun 2013 15:48:20 +0000
-Subject: [PATCH v2 2/6] ARM: shmobile: kzm9g-reference: add DMA channels to the MMCIF DT
-Message-Id: <1370533704-23734-3-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:20 +0000
+Subject: [PATCH 2/5] ARM: shmobile: use do{ }while() on SH_CLK_SET_RATIO()
+Message-Id: <1370503703-31024-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370503703-31024-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503703-31024-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The MMCIF driver can use DMA for data transfer, add suitable
-Device Tree bindings.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+SH_CLK_SET_RATIO() will be trouble without this patch
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/include/mach/clock.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index b6f759e..348e973 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -149,6 +149,9 @@
- 	bus-width = <8>;
- 	vmmc-supply = <&reg_1p8v>;
- 	status = "okay";
-+	dmas = <&dma0 0xd1
-+		&dma0 0xd2>;
-+	dma-names = "tx", "rx";
- };
+diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
+index 76ac612..ce29720 100644
+--- a/arch/arm/mach-shmobile/include/mach/clock.h
++++ b/arch/arm/mach-shmobile/include/mach/clock.h
+@@ -31,9 +31,9 @@ static SH_FIXED_RATIO_CLKg(name, p, r);
+ 	SH_FIXED_RATIO_CLK(name, p, name);
  
- &sdhi0 {
+ #define SH_CLK_SET_RATIO(p, m, d)	\
+-{			\
++do {			\
+ 	(p)->mul = m;	\
+ 	(p)->div = d;	\
+-}
++} while (0)
+ 
+ #endif
 -- 
-1.7.2.5
+1.8.2.1
 
