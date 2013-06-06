@@ -1,65 +1,120 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:22 +0000
-Subject: [PATCH 091/130] ARM: shmobile: r8a7740: Remove CEU function GPIOs
-Message-Id: <1370420821-28420-92-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 15:46:26 +0000
+Subject: [PATCH 2/4] mmc: sdhi/tmio: make DMA filter implementation specific
+Message-Id: <1370533588-23642-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370533588-23642-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370533588-23642-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Vinod Koul <vinod.koul@intel.com>, Chris Ball <cjb@laptop.org>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Rob Herring <rob.herring@calxeda.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Samuel Ortiz <sameo@linux.intel.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+So far only the SDHI implementation uses TMIO MMC with DMA. That way a DMA
+channel filter function, defined in the TMIO driver wasn't a problem.
+However, such a filter function is DMA controller specific. Since the SDHI
+glue is only running on systems with the SHDMA DMA controller, the filter
+function can safely be provided by it. Move it into SDHI.
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Samuel Ortiz <sameo@linux.intel.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Samuel Ortiz <sameo@linux.intel.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 28 ---------------------------
- 1 file changed, 28 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |    9 +++++++++
+ drivers/mmc/host/tmio_mmc_dma.c   |   12 ++----------
+ include/linux/mfd/tmio.h          |    3 +++
+ 3 files changed, 14 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 0db82aa..08b7da0 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -143,34 +143,6 @@ enum {
- 	GPIO_FN_RSPI_MOSI_A,	GPIO_FN_RSPI_MISO_A,
- 	GPIO_FN_RSPI_CK_A,
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index fe90853..e0088d7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -20,6 +20,7 @@
  
--	/* VIO CKO */
--	GPIO_FN_VIO_CKO1,
--	GPIO_FN_VIO_CKO2,
--	GPIO_FN_VIO_CKO_1,
--	GPIO_FN_VIO_CKO,
+ #include <linux/kernel.h>
+ #include <linux/clk.h>
++#include <linux/dmaengine.h>
+ #include <linux/slab.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/module.h>
+@@ -124,6 +125,13 @@ static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
+ 	mmc_detect_change(dev_get_drvdata(&pdev->dev), msecs_to_jiffies(100));
+ }
+ 
++static bool sh_mobile_sdhi_filter(struct dma_chan *chan, void *arg)
++{
++	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
++	chan->private = arg;
++	return true;
++}
++
+ static const struct sh_mobile_sdhi_ops sdhi_ops = {
+ 	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
+ };
+@@ -191,6 +199,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			priv->dma_priv.chan_priv_tx = &priv->param_tx.shdma_slave;
+ 			priv->dma_priv.chan_priv_rx = &priv->param_rx.shdma_slave;
+ 			priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
++			priv->dma_priv.filter = sh_mobile_sdhi_filter;
+ 			mmc_data->dma = &priv->dma_priv;
+ 		}
+ 	}
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index fff9286..dc4b10b 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -261,14 +261,6 @@ out:
+ 	spin_unlock_irq(&host->lock);
+ }
+ 
+-/* It might be necessary to make filter MFD specific */
+-static bool tmio_mmc_filter(struct dma_chan *chan, void *arg)
+-{
+-	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
+-	chan->private = arg;
+-	return true;
+-}
 -
--	/* VIO0 */
--	GPIO_FN_VIO0_D0,	GPIO_FN_VIO0_D1,	GPIO_FN_VIO0_D2,
--	GPIO_FN_VIO0_D3,	GPIO_FN_VIO0_D4,	GPIO_FN_VIO0_D5,
--	GPIO_FN_VIO0_D6,	GPIO_FN_VIO0_D7,	GPIO_FN_VIO0_D8,
--	GPIO_FN_VIO0_D9,	GPIO_FN_VIO0_D10,	GPIO_FN_VIO0_D11,
--	GPIO_FN_VIO0_D12,	GPIO_FN_VIO0_VD,	GPIO_FN_VIO0_HD,
--	GPIO_FN_VIO0_CLK,	GPIO_FN_VIO0_FIELD,
--
--	GPIO_FN_VIO0_D13_PORT26, /* MSEL5CR_27_0 */
--	GPIO_FN_VIO0_D14_PORT25,
--	GPIO_FN_VIO0_D15_PORT24,
--
--	GPIO_FN_VIO0_D13_PORT22, /* MSEL5CR_27_1 */
--	GPIO_FN_VIO0_D14_PORT95,
--	GPIO_FN_VIO0_D15_PORT96,
--
--	/* VIO1 */
--	GPIO_FN_VIO1_D0,	GPIO_FN_VIO1_D1,	GPIO_FN_VIO1_D2,
--	GPIO_FN_VIO1_D3,	GPIO_FN_VIO1_D4,	GPIO_FN_VIO1_D5,
--	GPIO_FN_VIO1_D6,	GPIO_FN_VIO1_D7,	GPIO_FN_VIO1_VD,
--	GPIO_FN_VIO1_HD,	GPIO_FN_VIO1_CLK,	GPIO_FN_VIO1_FIELD,
--
- 	/* TPU0 */
- 	GPIO_FN_TPU0TO0,	GPIO_FN_TPU0TO1,
- 	GPIO_FN_TPU0TO3,
+ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata)
+ {
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+@@ -281,7 +273,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		dma_cap_zero(mask);
+ 		dma_cap_set(DMA_SLAVE, mask);
+ 
+-		host->chan_tx = dma_request_channel(mask, tmio_mmc_filter,
++		host->chan_tx = dma_request_channel(mask, pdata->dma->filter,
+ 						    pdata->dma->chan_priv_tx);
+ 		dev_dbg(&host->pdev->dev, "%s: TX: got channel %p\n", __func__,
+ 			host->chan_tx);
+@@ -289,7 +281,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_tx)
+ 			return;
+ 
+-		host->chan_rx = dma_request_channel(mask, tmio_mmc_filter,
++		host->chan_rx = dma_request_channel(mask, pdata->dma->filter,
+ 						    pdata->dma->chan_priv_rx);
+ 		dev_dbg(&host->pdev->dev, "%s: RX: got channel %p\n", __func__,
+ 			host->chan_rx);
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 99bf3e66..0990d8a 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -81,10 +81,13 @@ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+ void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
+ 
++struct dma_chan;
++
+ struct tmio_mmc_dma {
+ 	void *chan_priv_tx;
+ 	void *chan_priv_rx;
+ 	int alignment_shift;
++	bool (*filter)(struct dma_chan *chan, void *arg);
+ };
+ 
+ struct tmio_mmc_host;
 -- 
-1.8.2.1
+1.7.2.5
 
