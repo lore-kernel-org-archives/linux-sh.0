@@ -1,43 +1,129 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 21 Jun 2013 23:31:37 +0000
-Subject: [PATCH v5 3/3] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
-Message-Id: <201306220331.37777.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 15:46:28 +0000
+Subject: [PATCH 4/4] mmc: sdhi/tmio: add DT DMA support
+Message-Id: <1370533588-23642-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306220326.46176.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306220326.46176.sergei.shtylyov@cogentembedded.com>
+References: <1370533588-23642-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370533588-23642-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Vinod Koul <vinod.koul@intel.com>, Chris Ball <cjb@laptop.org>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Rob Herring <rob.herring@calxeda.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Add support for initialising DMA from the Device Tree.
 
-Add the VIN and ML86V7667 drivers to 'bockw_defconfig'.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
-Changes since version 4:
-- resolved reject.
+ drivers/mmc/host/sh_mobile_sdhi.c |   14 +++++++-------
+ drivers/mmc/host/tmio_mmc_dma.c   |   19 ++++++++++++-------
+ 2 files changed, 19 insertions(+), 14 deletions(-)
 
- arch/arm/configs/bockw_defconfig |    7 +++++++
- 1 file changed, 7 insertions(+)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 7f45f62..cc4c872 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -144,6 +144,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	struct tmio_mmc_host *host;
+ 	int irq, ret, i = 0;
+ 	bool multiplexed_isr = true;
++	struct tmio_mmc_dma *dma_priv;
+ 
+ 	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
+ 	if (priv = NULL) {
+@@ -152,6 +153,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	mmc_data = &priv->mmc_data;
++	dma_priv = &priv->dma_priv;
+ 
+ 	if (p) {
+ 		if (p->init) {
+@@ -184,8 +186,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			mmc_data->get_cd = sh_mobile_sdhi_get_cd;
+ 
+ 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
+-			struct tmio_mmc_dma *dma_priv = &priv->dma_priv;
+-
+ 			/*
+ 			 * Yes, we have to provide slave IDs twice to TMIO:
+ 			 * once as a filter parameter and once for channel
+@@ -195,14 +195,14 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			dma_priv->chan_priv_rx = (void *)p->dma_slave_rx;
+ 			dma_priv->slave_id_tx = p->dma_slave_tx;
+ 			dma_priv->slave_id_rx = p->dma_slave_rx;
+-
+-			dma_priv->alignment_shift = 1; /* 2-byte alignment */
+-			dma_priv->filter = shdma_chan_filter;
+-
+-			mmc_data->dma = dma_priv;
+ 		}
+ 	}
+ 
++	dma_priv->alignment_shift = 1; /* 2-byte alignment */
++	dma_priv->filter = shdma_chan_filter;
++
++	mmc_data->dma = dma_priv;
++
+ 	/*
+ 	 * All SDHI blocks support 2-byte and larger block sizes in 4-bit
+ 	 * bus width mode.
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 5fcf14f..47bdb8f 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -264,7 +264,8 @@ out:
+ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata)
+ {
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+-	if (!pdata->dma)
++	if (!pdata->dma || (!host->pdev->dev.of_node &&
++		(!pdata->dma->chan_priv_tx || !pdata->dma->chan_priv_rx)))
+ 		return;
+ 
+ 	if (!host->chan_tx && !host->chan_rx) {
+@@ -280,15 +281,17 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		dma_cap_zero(mask);
+ 		dma_cap_set(DMA_SLAVE, mask);
+ 
+-		host->chan_tx = dma_request_channel(mask, pdata->dma->filter,
+-						    pdata->dma->chan_priv_tx);
++		host->chan_tx = dma_request_slave_channel_compat(mask,
++					pdata->dma->filter, pdata->dma->chan_priv_tx,
++					&host->pdev->dev, "tx");
+ 		dev_dbg(&host->pdev->dev, "%s: TX: got channel %p\n", __func__,
+ 			host->chan_tx);
+ 
+ 		if (!host->chan_tx)
+ 			return;
+ 
+-		cfg.slave_id = pdata->dma->slave_id_tx;
++		if (pdata->dma->chan_priv_tx)
++			cfg.slave_id = pdata->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+ 		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
+ 		cfg.src_addr = 0;
+@@ -296,15 +299,17 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (ret < 0)
+ 			goto ecfgtx;
+ 
+-		host->chan_rx = dma_request_channel(mask, pdata->dma->filter,
+-						    pdata->dma->chan_priv_rx);
++		host->chan_rx = dma_request_slave_channel_compat(mask,
++					pdata->dma->filter, pdata->dma->chan_priv_rx,
++					&host->pdev->dev, "rx");
+ 		dev_dbg(&host->pdev->dev, "%s: RX: got channel %p\n", __func__,
+ 			host->chan_rx);
+ 
+ 		if (!host->chan_rx)
+ 			goto ereqrx;
+ 
+-		cfg.slave_id = pdata->dma->slave_id_rx;
++		if (pdata->dma->chan_priv_rx)
++			cfg.slave_id = pdata->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+ 		cfg.src_addr = cfg.dst_addr;
+ 		cfg.dst_addr = 0;
+-- 
+1.7.2.5
 
-Index: renesas/arch/arm/configs/bockw_defconfig
-=================================--- renesas.orig/arch/arm/configs/bockw_defconfig
-+++ renesas/arch/arm/configs/bockw_defconfig
-@@ -82,6 +82,13 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HWMON is not set
- CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
-+CONFIG_MEDIA_SUPPORT=y
-+CONFIG_MEDIA_CAMERA_SUPPORT=y
-+CONFIG_V4L_PLATFORM_DRIVERS=y
-+CONFIG_SOC_CAMERA=y
-+CONFIG_VIDEO_RCAR_VIN=y
-+# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
-+CONFIG_VIDEO_ML86V7667=y
- CONFIG_SPI=y
- CONFIG_SPI_SH_HSPI=y
- CONFIG_USB=y
