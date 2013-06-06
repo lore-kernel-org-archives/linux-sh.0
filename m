@@ -1,150 +1,158 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 14 Jun 2013 10:08:51 +0000
-Subject: Re: [PATCH] drm: shmobile: Use devm_* managed functions
-Message-Id: <1398761.oKr9Nj5ZkX@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 07:34:57 +0000
+Subject: Re: [PATCH v2] MMC: tmio: fix unbalanced power-on calls with clock-gating enabled
+Message-Id: <Pine.LNX.4.64.1306060934340.32566@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366884894-18231-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1366884894-18231-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <Pine.LNX.4.64.1304230916270.1422@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1304230916270.1422@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Airlie <airlied@linux.ie>
-Cc: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Hi Dave,
+Hi Chris
 
-Could you please take this patch in your tree for v3.11 ?
+On Tue, 23 Apr 2013, Guennadi Liakhovetski wrote:
 
-On Thursday 25 April 2013 12:14:54 Laurent Pinchart wrote:
-> This simplifies cleanup paths and fixes a probe time crash in the error
-> path when trying to cleanup mode setting before it was initialized.
+> With MMC clock gating enabled the MMC core currently calls MMC host driver's
+> .set_ios() method with .power_mode = MMC_POWER_ON and the clock value set
+> either to 0 or to the target rate. The tmio MMC driver then wrongly
+> translates the latter calls to card slot power-on requests, even when the
+> slot already was on. This patch fixes the driver to avoid needlessly
+> incrementing power-supplying regulator's use count.
 > 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+
+Can we get this one into 3.10?
+
+Thanks
+Guennadi
+
 > ---
->  drivers/gpu/drm/shmobile/shmob_drm_drv.c   | 28 +++++++++------------------
->  drivers/gpu/drm/shmobile/shmob_drm_plane.c |  7 +------
->  2 files changed, 10 insertions(+), 25 deletions(-)
 > 
-> diff --git a/drivers/gpu/drm/shmobile/shmob_drm_drv.c
-> b/drivers/gpu/drm/shmobile/shmob_drm_drv.c index f6e0b53..29d15e3 100644
-> --- a/drivers/gpu/drm/shmobile/shmob_drm_drv.c
-> +++ b/drivers/gpu/drm/shmobile/shmob_drm_drv.c
-> @@ -90,7 +90,7 @@ static int shmob_drm_setup_clocks(struct shmob_drm_device
-> *sdev, return -EINVAL;
+> v2: Also make runtime PM handling safer and more resistant to possible 
+> MMC core changes. V1 worked fine too, but theoretically if the core 
+> decided to issue a sequence like
+> 
+> 	.set_ios(ios->power_mode = MMC_POWER_ON, ios->clock != 0);
+> 	.set_ios(ios->power_mode = MMC_POWER_ON, ios->clock = 0);
+> 	.set_ios(ios->power_mode = MMC_POWER_OFF, ios->clock = 0);
+> 
+> we would end up calling pm_runtime_put() twice in a row, which is wrong. 
+> V2 only toggles the controller runtime PM status only when entering or 
+> leaving the TMIO_MMC_ON_RUN state.
+> 
+>  drivers/mmc/host/tmio_mmc.h     |   20 ++++++++++++++++++--
+>  drivers/mmc/host/tmio_mmc_pio.c |   27 +++++++++++++++++----------
+>  2 files changed, 35 insertions(+), 12 deletions(-)
+> 
+> diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+> index d857f5c..3cc589a 100644
+> --- a/drivers/mmc/host/tmio_mmc.h
+> +++ b/drivers/mmc/host/tmio_mmc.h
+> @@ -40,6 +40,22 @@
+>  
+>  struct tmio_mmc_data;
+>  
+> +/*
+> + * We differentiate between the following 3 power states:
+> + * 1. card slot powered off, controller stopped. This is used, when either there
+> + *    is no card in the slot, or the card really has to be powered down.
+> + * 2. card slot powered on, controller stopped. This is used, when a card is in
+> + *    the slot, but no activity is currently taking place. This is a power-
+> + *    saving mode with card-state preserved. This state can be entered, e.g.
+> + *    when MMC clock-gating is used.
+> + * 3. card slot powered on, controller running. This is the actual active state.
+> + */
+> +enum tmio_mmc_power {
+> +	TMIO_MMC_OFF_STOP,	/* card power off, controller stopped */
+> +	TMIO_MMC_ON_STOP,	/* card power on, controller stopped */
+> +	TMIO_MMC_ON_RUN,	/* card power on, controller running */
+> +};
+> +
+>  struct tmio_mmc_host {
+>  	void __iomem *ctl;
+>  	unsigned long bus_shift;
+> @@ -48,8 +64,8 @@ struct tmio_mmc_host {
+>  	struct mmc_data         *data;
+>  	struct mmc_host         *mmc;
+>  
+> -	/* Controller power state */
+> -	bool			power;
+> +	/* Controller and card power state */
+> +	enum tmio_mmc_power	power;
+>  
+>  	/* Callbacks for clock / power control */
+>  	void (*set_pwr)(struct platform_device *host, int state);
+> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+> index f508ecb..1d5ef64 100644
+> --- a/drivers/mmc/host/tmio_mmc_pio.c
+> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+> @@ -859,32 +859,39 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+>  	 * is kept positive, so no suspending actually takes place.
+>  	 */
+>  	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
+> -		if (!host->power) {
+> +		if (host->power != TMIO_MMC_ON_RUN) {
+>  			tmio_mmc_clk_update(mmc);
+>  			pm_runtime_get_sync(dev);
+>  		}
+>  		tmio_mmc_set_clock(host, ios->clock);
+> -		if (!host->power) {
+> +		if (host->power = TMIO_MMC_OFF_STOP)
+>  			/* power up SD card and the bus */
+>  			tmio_mmc_power_on(host, ios->vdd);
+> -			host->power = true;
+> -		}
+> +		host->power = TMIO_MMC_ON_RUN;
+>  		/* start bus clock */
+>  		tmio_mmc_clk_start(host);
+>  	} else if (ios->power_mode != MMC_POWER_UP) {
+> -		if (host->power) {
+> -			struct tmio_mmc_data *pdata = host->pdata;
+> -			if (ios->power_mode = MMC_POWER_OFF)
+> +		struct tmio_mmc_data *pdata = host->pdata;
+> +		unsigned int old_power = host->power;
+> +
+> +		if (old_power != TMIO_MMC_OFF_STOP) {
+> +			if (ios->power_mode = MMC_POWER_OFF) {
+>  				tmio_mmc_power_off(host);
+> +				host->power = TMIO_MMC_OFF_STOP;
+> +			} else {
+> +				host->power = TMIO_MMC_ON_STOP;
+> +			}
+> +		}
+> +
+> +		if (old_power = TMIO_MMC_ON_RUN) {
+>  			tmio_mmc_clk_stop(host);
+> -			host->power = false;
+>  			pm_runtime_put(dev);
+>  			if (pdata->clk_disable)
+>  				pdata->clk_disable(host->pdev);
+>  		}
 >  	}
-> 
-> -	clk = clk_get(sdev->dev, clkname);
-> +	clk = devm_clk_get(sdev->dev, clkname);
->  	if (IS_ERR(clk)) {
->  		dev_err(sdev->dev, "cannot get dot clock %s\n", clkname);
->  		return PTR_ERR(clk);
-> @@ -106,21 +106,12 @@ static int shmob_drm_setup_clocks(struct
-> shmob_drm_device *sdev,
-> 
->  static int shmob_drm_unload(struct drm_device *dev)
->  {
-> -	struct shmob_drm_device *sdev = dev->dev_private;
-> -
->  	drm_kms_helper_poll_fini(dev);
->  	drm_mode_config_cleanup(dev);
->  	drm_vblank_cleanup(dev);
->  	drm_irq_uninstall(dev);
-> 
-> -	if (sdev->clock)
-> -		clk_put(sdev->clock);
-> -
-> -	if (sdev->mmio)
-> -		iounmap(sdev->mmio);
-> -
->  	dev->dev_private = NULL;
-> -	kfree(sdev);
-> 
->  	return 0;
->  }
-> @@ -139,7 +130,7 @@ static int shmob_drm_load(struct drm_device *dev,
-> unsigned long flags) return -EINVAL;
->  	}
-> 
-> -	sdev = kzalloc(sizeof(*sdev), GFP_KERNEL);
-> +	sdev = devm_kzalloc(&pdev->dev, sizeof(*sdev), GFP_KERNEL);
->  	if (sdev = NULL) {
->  		dev_err(dev->dev, "failed to allocate private data\n");
->  		return -ENOMEM;
-> @@ -156,29 +147,28 @@ static int shmob_drm_load(struct drm_device *dev,
-> unsigned long flags) res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
->  	if (res = NULL) {
->  		dev_err(&pdev->dev, "failed to get memory resource\n");
-> -		ret = -EINVAL;
-> -		goto done;
-> +		return -EINVAL;
->  	}
-> 
-> -	sdev->mmio = ioremap_nocache(res->start, resource_size(res));
-> +	sdev->mmio = devm_ioremap_nocache(&pdev->dev, res->start,
-> +					  resource_size(res));
->  	if (sdev->mmio = NULL) {
->  		dev_err(&pdev->dev, "failed to remap memory resource\n");
-> -		ret = -ENOMEM;
-> -		goto done;
-> +		return -ENOMEM;
->  	}
-> 
->  	ret = shmob_drm_setup_clocks(sdev, pdata->clk_source);
+>  
+> -	if (host->power) {
+> +	if (host->power != TMIO_MMC_OFF_STOP) {
+>  		switch (ios->bus_width) {
+>  		case MMC_BUS_WIDTH_1:
+>  			sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x80e0);
+> @@ -1025,7 +1032,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+>  				  mmc->caps & MMC_CAP_NONREMOVABLE ||
+>  				  mmc->slot.cd_irq >= 0);
+>  
+> -	_host->power = false;
+> +	_host->power = TMIO_MMC_OFF_STOP;
+>  	pm_runtime_enable(&pdev->dev);
+>  	ret = pm_runtime_resume(&pdev->dev);
 >  	if (ret < 0)
-> -		goto done;
-> +		return ret;
+> -- 
+> 1.7.2.5
 > 
->  	ret = shmob_drm_init_interface(sdev);
->  	if (ret < 0)
-> -		goto done;
-> +		return ret;
 > 
->  	ret = shmob_drm_modeset_init(sdev);
->  	if (ret < 0) {
->  		dev_err(&pdev->dev, "failed to initialize mode setting\n");
-> -		goto done;
-> +		return ret;
->  	}
-> 
->  	for (i = 0; i < 4; ++i) {
-> diff --git a/drivers/gpu/drm/shmobile/shmob_drm_plane.c
-> b/drivers/gpu/drm/shmobile/shmob_drm_plane.c index e1eb899..6898f6f 100644
-> --- a/drivers/gpu/drm/shmobile/shmob_drm_plane.c
-> +++ b/drivers/gpu/drm/shmobile/shmob_drm_plane.c
-> @@ -221,11 +221,8 @@ static int shmob_drm_plane_disable(struct drm_plane
-> *plane)
-> 
->  static void shmob_drm_plane_destroy(struct drm_plane *plane)
->  {
-> -	struct shmob_drm_plane *splane = to_shmob_plane(plane);
-> -
->  	shmob_drm_plane_disable(plane);
->  	drm_plane_cleanup(plane);
-> -	kfree(splane);
->  }
-> 
->  static const struct drm_plane_funcs shmob_drm_plane_funcs = {
-> @@ -251,7 +248,7 @@ int shmob_drm_plane_create(struct shmob_drm_device
-> *sdev, unsigned int index) struct shmob_drm_plane *splane;
->  	int ret;
-> 
-> -	splane = kzalloc(sizeof(*splane), GFP_KERNEL);
-> +	splane = devm_kzalloc(sdev->dev, sizeof(*splane), GFP_KERNEL);
->  	if (splane = NULL)
->  		return -ENOMEM;
-> 
-> @@ -261,8 +258,6 @@ int shmob_drm_plane_create(struct shmob_drm_device
-> *sdev, unsigned int index) ret = drm_plane_init(sdev->ddev, &splane->plane,
-> 1,
->  			     &shmob_drm_plane_funcs, formats,
->  			     ARRAY_SIZE(formats), false);
-> -	if (ret < 0)
-> -		kfree(splane);
-> 
->  	return ret;
->  }
--- 
-Regards,
 
-Laurent Pinchart
-
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
