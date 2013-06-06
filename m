@@ -1,39 +1,41 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jun 2013 15:46:24 +0000
-Subject: [PATCH 0/4] mmc: MMCIF & SDHI: DT DMA support
-Message-Id: <1370533588-23642-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:47 +0000
+Subject: [PATCH 1/2] irqchip: renesas-irqc: Fix irqc_probe error handling
+Message-Id: <1370503728-31373-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370503728-31373-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503728-31373-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Vinod Koul <vinod.koul@intel.com>, Chris Ball <cjb@laptop.org>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Rob Herring <rob.herring@calxeda.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Also a re-send of four earlier submitted patches. This patch-series alone 
-is not enough to support DMA in DT on these MMC host controllers, support 
-in appropriate DMAC driver is added in a separate series. This, however, 
-doesn't introduce a dependency, series can be applied in arbitrary order.
+From: Axel Lin <axel.lin@ingics.com>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+The code in goto err3 path is wrong because it will call fee_irq() with k = 0,
+which means it does free_irq(p->irq[-1].requested_irq, &p->irq[-1]);
 
-Guennadi Liakhovetski (4):
-  mmc: sh_mmcif: add support for Device Tree DMA bindings
-  mmc: sdhi/tmio: make DMA filter implementation specific
-  mmc: sdhi/tmio: switch to using dmaengine_slave_config()
-  mmc: sdhi/tmio: add DT DMA support
-
- drivers/mmc/host/sh_mmcif.c       |   29 ++++++++++++++--------
- drivers/mmc/host/sh_mobile_sdhi.c |   24 ++++++++++++------
- drivers/mmc/host/tmio_mmc_dma.c   |   48 +++++++++++++++++++++++++++----------
- include/linux/mfd/tmio.h          |    5 ++++
- 4 files changed, 74 insertions(+), 32 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/irqchip/irq-renesas-irqc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+index 927bff3..2f404ba 100644
+--- a/drivers/irqchip/irq-renesas-irqc.c
++++ b/drivers/irqchip/irq-renesas-irqc.c
+@@ -248,8 +248,8 @@ static int irqc_probe(struct platform_device *pdev)
+ 
+ 	return 0;
+ err3:
+-	for (; k >= 0; k--)
+-		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
++	while (--k >= 0)
++		free_irq(p->irq[k].requested_irq, &p->irq[k]);
+ 
+ 	irq_domain_remove(p->irq_domain);
+ err2:
+-- 
+1.8.2.1
+
