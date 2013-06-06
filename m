@@ -1,122 +1,95 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Jun 2013 14:07:18 +0000
-Subject: Re: [PATCH 3/9] ARM: shmobile: r8a73a4: add clock definitions and aliases for MMCIF and SDHI
-Message-Id: <20130612140715.GA32751@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 07:36:50 +0000
+Subject: Re: [PATCH v2] mmc: tmio: reset the controller after power-up
+Message-Id: <Pine.LNX.4.64.1306060936280.32566@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368802520-16378-4-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1368802520-16378-4-git-send-email-g.liakhovetski@gmx.de>
+References: <Pine.LNX.4.64.1304241143460.11670@axis700.grange>
+ <Pine.LNX.4.64.1304251240360.21045@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1304251240360.21045@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, hechtb@gmail.com, Horman Simon <simon@horms.net>, Damm Magnus <magnus.damm@gmail.com>, "^[$B0p5H$5$s^[(B" <jinso.inayoshi@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Nguyen Hong Ky <nh-ky@jinso.co.jp>
 
-On Wed, Jun 12, 2013 at 05:12:28PM +0900, Simon Horman wrote:
-> On Wed, Jun 12, 2013 at 09:54:56AM +0200, Guennadi Liakhovetski wrote:
-> > Hi Simon
-> > 
-> > There haven't been any replies to this patch, your patchwork status says 
-> > "changes requested." Does anything really has to be changed here or can we 
-> > apply this patch, please?
-> 
-> There were changes requested to other patches in the series and
-> my expectation was that you would re-spin the series, thus
-> I marked all patches in the series as "changes requested."
-> 
-> However, now you mention it this patch does seem fine and I will see
-> about applying it.
+Hi Chris
 
-I have queued this up for v3.11 in the soc2 branch.
+On Thu, 25 Apr 2013, Guennadi Liakhovetski wrote:
 
+> Hi Chris
 > 
-> > Thanks
-> > Guennadi
+> On Wed, 24 Apr 2013, Guennadi Liakhovetski wrote:
+> 
+> > This fixes two reported problems:
+> > 1. after a system resume the controller isn't functioning until a command
+> >    runs on a timeout and a controller reset is performed.
+> > 2. if a card is ejected during a running write operation, its re-insertion
+> >    isn't detected.
 > > 
-> > On Fri, 17 May 2013, Guennadi Liakhovetski wrote:
-> > 
-> > > Add MSTP clock definitions and fix aliases for the two MMCIF and three SDHI
-> > > interfaces on r8a73a4 (APE6).
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > > ---
-> > >  arch/arm/mach-shmobile/clock-r8a73a4.c |   22 +++++++++++++++++-----
-> > >  1 files changed, 17 insertions(+), 5 deletions(-)
-> > > 
-> > > diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-> > > index f6227bb..5f7fe62 100644
-> > > --- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-> > > +++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-> > > @@ -29,6 +29,7 @@
-> > >  #define CPG_LEN 0x270
-> > >  
-> > >  #define SMSTPCR2 0xe6150138
-> > > +#define SMSTPCR3 0xe615013c
-> > >  #define SMSTPCR5 0xe6150144
-> > >  
-> > >  #define FRQCRA		0xE6150000
-> > > @@ -348,6 +349,7 @@ static struct clk div6_clks[DIV6_NR] = {
-> > >  /* MSTP */
-> > >  enum {
-> > >  	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
-> > > +	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305,
-> > >  	MSTP522,
-> > >  	MSTP_NR
-> > >  };
-> > > @@ -359,6 +361,11 @@ static struct clk mstp_clks[MSTP_NR] = {
-> > >  	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
-> > >  	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
-> > >  	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
-> > > +	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1],SMSTPCR3, 5, 0), /* MMCIF1 */
-> > > +	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI2],SMSTPCR3, 12, 0), /* SDHI2 */
-> > > +	[MSTP313] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI1],SMSTPCR3, 13, 0), /* SDHI1 */
-> > > +	[MSTP314] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI0],SMSTPCR3, 14, 0), /* SDHI0 */
-> > > +	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0],SMSTPCR3, 15, 0), /* MMCIF0 */
-> > >  	[MSTP522] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR5, 22, 0), /* Thermal */
-> > >  };
-> > >  
-> > > @@ -381,11 +388,6 @@ static struct clk_lookup lookups[] = {
-> > >  
-> > >  	/* DIV6 */
-> > >  	CLKDEV_CON_ID("zb",			&div6_clks[DIV6_ZB]),
-> > > -	CLKDEV_CON_ID("sdhi0",			&div6_clks[DIV6_SDHI0]),
-> > > -	CLKDEV_CON_ID("sdhi1",			&div6_clks[DIV6_SDHI1]),
-> > > -	CLKDEV_CON_ID("sdhi2",			&div6_clks[DIV6_SDHI2]),
-> > > -	CLKDEV_CON_ID("mmc0",			&div6_clks[DIV6_MMC0]),
-> > > -	CLKDEV_CON_ID("mmc1",			&div6_clks[DIV6_MMC1]),
-> > >  	CLKDEV_CON_ID("vck1",			&div6_clks[DIV6_VCK1]),
-> > >  	CLKDEV_CON_ID("vck2",			&div6_clks[DIV6_VCK2]),
-> > >  	CLKDEV_CON_ID("vck3",			&div6_clks[DIV6_VCK3]),
-> > > @@ -406,6 +408,16 @@ static struct clk_lookup lookups[] = {
-> > >  	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
-> > >  	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
-> > >  	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-> > > +	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
-> > > +	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
-> > > +	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
-> > > +	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP312]),
-> > > +	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
-> > > +	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]),
-> > > +	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
-> > > +	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
-> > > +	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
-> > > +	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
-> > >  
-> > >  	/* for DT */
-> > >  	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
-> > > -- 
-> > > 1.7.2.5
-> > > 
-> > 
+> > Reported-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+> > Reported-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
+> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> 
+> Please, add the following tags, when applying:
+> 
+> Tested-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+> Tested-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
+
+This one too, please :)
+
+Thanks
+Guennadi
+
 > > ---
-> > Guennadi Liakhovetski, Ph.D.
-> > Freelance Open-Source Software Developer
-> > http://www.open-technology.de/
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > v2: this patch supersedes the earlier "mmc: tmio: postpone controller 
+> > reset during resume" in that it extends the number of cases, in which the 
+> > reset is applied. It turned out, it is needed not only after a resume, but 
+> > also for recovery after an interrupted write. It also now applies on top 
+> > of "[PATCH v2] MMC: tmio: fix unbalanced power-on calls with clock-gating 
+> > enabled" http://article.gmane.org/gmane.linux.kernel.mmc/20233. Reporters 
+> > are cordially invited to add their "Tested-by" tags ;-)
+> > 
+> > Chris, both these patches are fixes. Not sure whether it's still a good 
+> > idea to push them for 3.9, maybe better get them into 3.10 and then to 
+> > stable?
+> > 
+> >  drivers/mmc/host/tmio_mmc_pio.c |    3 ++-
+> >  1 files changed, 2 insertions(+), 1 deletions(-)
+> > 
+> > diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+> > index 1d5ef64..fcb9503 100644
+> > --- a/drivers/mmc/host/tmio_mmc_pio.c
+> > +++ b/drivers/mmc/host/tmio_mmc_pio.c
+> > @@ -863,6 +863,8 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+> >  			tmio_mmc_clk_update(mmc);
+> >  			pm_runtime_get_sync(dev);
+> >  		}
+> > +		if (host->power = TMIO_MMC_OFF_STOP)
+> > +			tmio_mmc_reset(host);
+> >  		tmio_mmc_set_clock(host, ios->clock);
+> >  		if (host->power = TMIO_MMC_OFF_STOP)
+> >  			/* power up SD card and the bus */
+> > @@ -1161,7 +1163,6 @@ int tmio_mmc_host_resume(struct device *dev)
+> >  	struct mmc_host *mmc = dev_get_drvdata(dev);
+> >  	struct tmio_mmc_host *host = mmc_priv(mmc);
+> >  
+> > -	tmio_mmc_reset(host);
+> >  	tmio_mmc_enable_dma(host, true);
+> >  
+> >  	/* The MMC core will perform the complete set up */
+> > -- 
+> > 1.7.2.5
+> > 
+> > 
 > 
+> ---
+> Guennadi Liakhovetski, Ph.D.
+> Freelance Open-Source Software Developer
+> http://www.open-technology.de/
+> 
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
