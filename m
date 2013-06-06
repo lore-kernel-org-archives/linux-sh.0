@@ -1,36 +1,116 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 22:22:39 +0000
-Subject: [PATCH v5 10/22] ARM: shmobile: r8a7790: Add pin control device to device tree
-Message-Id: <1370989371-30846-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 06 Jun 2013 19:48:09 +0000
+Subject: [PATCH v5 4/8] sh_eth: remove SH_ETH_HAS_TSU
+Message-Id: <201306062348.09927.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-Add a pfc node to the r8a7790 device tree.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Remove SH_ETH_HAS_TSU #define's and #ifdef's. Set three 'struct net_device_ops'
+methods that depend on the presence of TSU basing on the 'tsu' field of 'struct
+sh_eth_cpu_data'.
+
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+[Sergei: made two method assignments one-liners, added the changelog, reworded
+the subject, changing the prefix.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
+Changes in version 4:
+- made two method assignments one-liners;
+- refreshed the patch;
+- added the changelog;
+- reworded the subject, changing the prefix.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 339d9b1..13caf12 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -54,4 +54,9 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
- 	};
-+
-+	pfc: pfc@e6060000 {
-+		compatible = "renesas,pfc-r8a7790";
-+		reg = <0 0xe6060000 0 0x250>;
-+	};
+ drivers/net/ethernet/renesas/sh_eth.c |   20 ++++++++------------
+ 1 file changed, 8 insertions(+), 12 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -431,7 +431,6 @@ static struct sh_eth_cpu_data sh_eth_my_
  };
--- 
-1.8.1.5
-
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7757)
+ #define SH_ETH_HAS_BOTH_MODULES	1
+-#define SH_ETH_HAS_TSU	1
+ static int sh_eth_check_reset(struct net_device *ndev);
+ 
+ static void sh_eth_set_rate(struct net_device *ndev)
+@@ -592,7 +591,6 @@ static struct sh_eth_cpu_data *sh_eth_ge
+ }
+ 
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7734) || defined(CONFIG_CPU_SUBTYPE_SH7763)
+-#define SH_ETH_HAS_TSU	1
+ static int sh_eth_check_reset(struct net_device *ndev);
+ static void sh_eth_reset_hw_crc(struct net_device *ndev);
+ 
+@@ -693,7 +691,6 @@ static void sh_eth_reset_hw_crc(struct n
+ }
+ 
+ #elif defined(CONFIG_ARCH_R8A7740)
+-#define SH_ETH_HAS_TSU	1
+ static int sh_eth_check_reset(struct net_device *ndev);
+ 
+ static void sh_eth_chip_reset(struct net_device *ndev)
+@@ -791,7 +788,6 @@ static struct sh_eth_cpu_data sh_eth_my_
+ };
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7710) || defined(CONFIG_CPU_SUBTYPE_SH7712)
+ #define SH_ETH_RESET_DEFAULT	1
+-#define SH_ETH_HAS_TSU	1
+ static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
+ 	.tsu		= 1,
+@@ -2105,7 +2101,6 @@ static int sh_eth_do_ioctl(struct net_de
+ 	return phy_mii_ioctl(phydev, rq, cmd);
+ }
+ 
+-#if defined(SH_ETH_HAS_TSU)
+ /* For TSU_POSTn. Please refer to the manual about this (strange) bitfields */
+ static void *sh_eth_tsu_get_post_reg_offset(struct sh_eth_private *mdp,
+ 					    int entry)
+@@ -2448,7 +2443,6 @@ static int sh_eth_vlan_rx_kill_vid(struc
+ 
+ 	return 0;
+ }
+-#endif /* SH_ETH_HAS_TSU */
+ 
+ /* SuperH's TSU register init function */
+ static void sh_eth_tsu_init(struct sh_eth_private *mdp)
+@@ -2587,16 +2581,11 @@ static const u16 *sh_eth_get_register_of
+ 	return reg_offset;
+ }
+ 
+-static const struct net_device_ops sh_eth_netdev_ops = {
++static struct net_device_ops sh_eth_netdev_ops = {
+ 	.ndo_open		= sh_eth_open,
+ 	.ndo_stop		= sh_eth_close,
+ 	.ndo_start_xmit		= sh_eth_start_xmit,
+ 	.ndo_get_stats		= sh_eth_get_stats,
+-#if defined(SH_ETH_HAS_TSU)
+-	.ndo_set_rx_mode	= sh_eth_set_multicast_list,
+-	.ndo_vlan_rx_add_vid	= sh_eth_vlan_rx_add_vid,
+-	.ndo_vlan_rx_kill_vid	= sh_eth_vlan_rx_kill_vid,
+-#endif
+ 	.ndo_tx_timeout		= sh_eth_tx_timeout,
+ 	.ndo_do_ioctl		= sh_eth_do_ioctl,
+ 	.ndo_validate_addr	= eth_validate_addr,
+@@ -2677,6 +2666,13 @@ static int sh_eth_drv_probe(struct platf
+ 	sh_eth_set_default_cpu_data(mdp->cd);
+ 
+ 	/* set function */
++	if (mdp->cd->tsu) {
++		sh_eth_netdev_ops.ndo_set_rx_mode = sh_eth_set_multicast_list;
++		sh_eth_netdev_ops.ndo_vlan_rx_add_vid = sh_eth_vlan_rx_add_vid;
++		sh_eth_netdev_ops.ndo_vlan_rx_kill_vid +			sh_eth_vlan_rx_kill_vid;
++	}
++
+ 	ndev->netdev_ops = &sh_eth_netdev_ops;
+ 	SET_ETHTOOL_OPS(ndev, &sh_eth_ethtool_ops);
+ 	ndev->watchdog_timeo = TX_TIMEOUT;
