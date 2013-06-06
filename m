@@ -1,97 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:26 +0000
-Subject: [PATCH 16/24] drm/rcar-du: Remove register definitions for the second channel
-Message-Id: <1372326574-4315-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:33 +0000
+Subject: [PATCH 20/23] ARM: shmobile: sh73a0: add CPUFreq support
+Message-Id: <1370503716-31155-21-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Channels are accessed through a global channel memory offset, there's no
-need to define register addresses for the second channel.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch enables the use of the generic cpufreq-cpu0 driver on sh73a0.
+Providing a regulator, a list of OPPs in DT, combined with a virtual
+cpufreq-cpu0 platform device and a clock, attached to it is everything,
+the cpufreq-cpu0 driver needs. The first sh73a0 platform, implementing
+such CPUFreq support is kzm9g-reference.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_regs.h | 9 ---------
- 1 file changed, 9 deletions(-)
+ arch/arm/mach-shmobile/Kconfig        | 2 ++
+ arch/arm/mach-shmobile/setup-sh73a0.c | 5 +++++
+ 2 files changed, 7 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-index 3aba27f..195ed7e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-@@ -20,7 +20,6 @@
-  */
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1a517e2..7cfb9d1 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -169,6 +169,8 @@ config MACH_KZM9D
+ config MACH_KZM9G
+ 	bool "KZM-A9-GT board"
+ 	depends on ARCH_SH73A0
++	select ARCH_HAS_CPUFREQ
++	select ARCH_HAS_OPP
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fdf3894..ed93e01 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -1016,6 +1016,8 @@ static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
  
- #define DSYSR			0x00000	/* display 1 */
--#define D2SYSR			0x30000	/* display 2 */
- #define DSYSR_ILTS		(1 << 29)
- #define DSYSR_DSEC		(1 << 20)
- #define DSYSR_IUPD		(1 << 16)
-@@ -35,7 +34,6 @@
- #define DSYSR_SCM_INT_VIDEO	(3 << 4)
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
++	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
++
+ 	/* clocks are setup late during boot in the case of DT */
+ 	sh73a0_clock_init();
  
- #define DSMR			0x00004
--#define D2SMR			0x30004
- #define DSMR_VSPM		(1 << 28)
- #define DSMR_ODPM		(1 << 27)
- #define DSMR_DIPM_DISP		(0 << 25)
-@@ -60,7 +58,6 @@
- #define DSMR_CSY_MASK		(3 << 6)
+@@ -1023,6 +1025,9 @@ void __init sh73a0_add_standard_devices_dt(void)
+ 			     ARRAY_SIZE(sh73a0_devices_dt));
+ 	of_platform_populate(NULL, of_default_bus_match_table,
+ 			     sh73a0_auxdata_lookup, NULL);
++
++	/* Instantiate cpufreq-cpu0 */
++	platform_device_register_full(&devinfo);
+ }
  
- #define DSSR			0x00008
--#define D2SSR			0x30008
- #define DSSR_VC1FB_DSA0		(0 << 30)
- #define DSSR_VC1FB_DSA1		(1 << 30)
- #define DSSR_VC1FB_DSA2		(2 << 30)
-@@ -80,7 +77,6 @@
- #define DSSR_ADC(n)		(1 << ((n)-1))
- 
- #define DSRCR			0x0000c
--#define D2SRCR			0x3000c
- #define DSRCR_TVCL		(1 << 15)
- #define DSRCR_FRCL		(1 << 14)
- #define DSRCR_VBCL		(1 << 11)
-@@ -90,7 +86,6 @@
- #define DSRCR_MASK		0x0000cbff
- 
- #define DIER			0x00010
--#define D2IER			0x30010
- #define DIER_TVE		(1 << 15)
- #define DIER_FRE		(1 << 14)
- #define DIER_VBE		(1 << 11)
-@@ -114,7 +109,6 @@
- #define DPPR_BPP32		(DPPR_BPP32_P1 | DPPR_BPP32_P2)	/* plane1 & 2 */
- 
- #define DEFR			0x00020
--#define D2EFR			0x30020
- #define DEFR_CODE		(0x7773 << 16)
- #define DEFR_EXSL		(1 << 12)
- #define DEFR_EXVL		(1 << 11)
-@@ -137,12 +131,10 @@
- #define DCPCR_DCE		(1 << 0)
- 
- #define DEFR2			0x00034
--#define D2EFR2			0x30034
- #define DEFR2_CODE		(0x7775 << 16)
- #define DEFR2_DEFE2G		(1 << 0)
- 
- #define DEFR3			0x00038
--#define D2EFR3			0x30038
- #define DEFR3_CODE		(0x7776 << 16)
- #define DEFR3_EVDA		(1 << 14)
- #define DEFR3_EVDM_1		(1 << 12)
-@@ -153,7 +145,6 @@
- #define DEFR3_DEFE3		(1 << 0)
- 
- #define DEFR4			0x0003c
--#define D2EFR4			0x3003c
- #define DEFR4_CODE		(0x7777 << 16)
- #define DEFR4_LRUO		(1 << 5)
- #define DEFR4_SPCE		(1 << 4)
+ static const char *sh73a0_boards_compat_dt[] __initdata = {
 -- 
-1.8.1.5
+1.8.2.1
 
