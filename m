@@ -1,63 +1,90 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:34 +0000
-Subject: [PATCH 01/15] ARM: shmobile: uImage load address rework
-Message-Id: <1371456768-1084-2-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 07:30:21 +0000
+Subject: Re: [PATCH] mmc: tmio: postpone controller reset during resume
+Message-Id: <Pine.LNX.4.64.1306060928050.32566@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+References: <Pine.LNX.4.64.1304221025300.23906@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1304221025300.23906@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, hechtb@gmail.com, Horman Simon <simon@horms.net>, Damm Magnus <magnus.damm@gmail.com>, "^[$B0p5H$5$s^[(B" <jinso.inayoshi@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-From: Magnus Damm <damm@opensource.se>
+Hi Chris
 
-This is V2 of the mach-shmobile uImage load address rework patch.
+On Mon, 22 Apr 2013, Guennadi Liakhovetski wrote:
 
-Rework the mach-shmobile uImage load address calculation by storing
-the per-board load addresses in Makefile.boot. This removes the
-CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
-it possible to create safe kernel images that boot on multiple boards.
+> When resuming, the tmio_mmc_host_resume() function is run when the
+> controller might still be powered down. Issuing a reset command to it at
+> that time has no effect. This patch postpones resetting the controller
+> until the first powering-up .set_ios() call.
+> 
+> Reported-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-This is one of several series of code that reworks code not to rely on
-CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
+Any reason why this hasn't been applied yet? Please, push for 3.10.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Thanks
+Guennadi
+
+> ---
+> 
+> There is some risk associated with this patch: it removes unconditional 
+> (attempt of) controller reset from the tmio_mmc_host_resume() function. 
+> AFAICS, this shouldn't have any negative effects. There _should_ always be 
+> a powering-up .set_ios() call after a resume. However, if anyone sees any 
+> (potential) problems with it, please, let me know.
+> 
+>  drivers/mmc/host/tmio_mmc.h     |    1 +
+>  drivers/mmc/host/tmio_mmc_pio.c |    6 +++++-
+>  2 files changed, 6 insertions(+), 1 deletions(-)
+> 
+> diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+> index d857f5c..759d8f4 100644
+> --- a/drivers/mmc/host/tmio_mmc.h
+> +++ b/drivers/mmc/host/tmio_mmc.h
+> @@ -85,6 +85,7 @@ struct tmio_mmc_host {
+>  	unsigned long		last_req_ts;
+>  	struct mutex		ios_lock;	/* protect set_ios() context */
+>  	bool			native_hotplug;
+> +	bool			resuming;
+>  };
+>  
+>  int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+> index f508ecb..435cc4d 100644
+> --- a/drivers/mmc/host/tmio_mmc_pio.c
+> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+> @@ -862,6 +862,10 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+>  		if (!host->power) {
+>  			tmio_mmc_clk_update(mmc);
+>  			pm_runtime_get_sync(dev);
+> +			if (host->resuming) {
+> +				tmio_mmc_reset(host);
+> +				host->resuming = false;
+> +			}
+>  		}
+>  		tmio_mmc_set_clock(host, ios->clock);
+>  		if (!host->power) {
+> @@ -1154,10 +1158,10 @@ int tmio_mmc_host_resume(struct device *dev)
+>  	struct mmc_host *mmc = dev_get_drvdata(dev);
+>  	struct tmio_mmc_host *host = mmc_priv(mmc);
+>  
+> -	tmio_mmc_reset(host);
+>  	tmio_mmc_enable_dma(host, true);
+>  
+>  	/* The MMC core will perform the complete set up */
+> +	host->resuming = true;
+>  	return mmc_resume_host(mmc);
+>  }
+>  EXPORT_SYMBOL(tmio_mmc_host_resume);
+> -- 
+> 1.7.2.5
+> 
+> 
+
 ---
- arch/arm/mach-shmobile/Makefile.boot |   20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 498efd9..6b147ea 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -1,6 +1,22 @@
--__ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
--		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
-+# per-board load address for uImage
-+loadaddr-y	:+loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
-+loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
-+loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
-+loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
-+loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
-+loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
-+loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
-+loadaddr-$(CONFIG_MACH_KOTA2) += 0x41008000
-+loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
-+loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
-+loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
-+loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
-+loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
-+loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
-+loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
- 
-+__ZRELADDR	:= $(sort $(loadaddr-y))
-    zreladdr-y   += $(__ZRELADDR)
- 
- # Unsupported legacy stuff
--- 
-1.7.10.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
