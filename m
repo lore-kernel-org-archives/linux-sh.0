@@ -1,29 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 06 Jun 2013 19:39:20 +0000
-Subject: [PATCH v5 0/8] sh_eth: deal with #ifdef'fery
-Message-Id: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
+From: David Miller <davem@davemloft.net>
+Date: Thu, 06 Jun 2013 23:05:04 +0000
+Subject: Re: [PATCH v5 0/8] sh_eth: deal with #ifdef'fery
+Message-Id: <20130606.160504.85747659460186927.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-Hello.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 6 Jun 2013 23:39:20 +0400
 
-   This series of 8 patches are against Dave's 'net-next.git' repository.
-   The series deals mostly with excess #ifdef'fery in the 'sh_eth' driver.
-It doesn't yet get rid of all the #ifdef'fery but that's a matter of another
-patchset. The last patch (it was almost in the middle of the series before),
-contrariwise, adds one missing #ifdef...
+>    This series of 8 patches are against Dave's 'net-next.git' repository.
+>    The series deals mostly with excess #ifdef'fery in the 'sh_eth' driver.
+> It doesn't yet get rid of all the #ifdef'fery but that's a matter of another
+> patchset. The last patch (it was almost in the middle of the series before),
+> contrariwise, adds one missing #ifdef...
+> 
+> [1/8] sh_eth: remove #ifdef around EDSR and GECMR bit definitions
+> [2/8] sh_eth: use EDSR_ENALL to set EDSR
+> [3/8] sh_eth: remove duplicate sh_eth_set_duplex() definitions
+> [4/8] sh_eth: remove SH_ETH_HAS_TSU
+> [5/8] sh_eth: add IRQ flags to 'struct sh_eth_cpu_data'
+> [6/8] sh_eth: remove #ifdef around sh_eth_select_mii()
+> [7/8] sh_eth: consolidate sh_eth_reset()
+> [8/8] sh_eth: enclose PM code into #ifdef CONFIG_PM
 
-[1/8] sh_eth: remove #ifdef around EDSR and GECMR bit definitions
-[2/8] sh_eth: use EDSR_ENALL to set EDSR
-[3/8] sh_eth: remove duplicate sh_eth_set_duplex() definitions
-[4/8] sh_eth: remove SH_ETH_HAS_TSU
-[5/8] sh_eth: add IRQ flags to 'struct sh_eth_cpu_data'
-[6/8] sh_eth: remove #ifdef around sh_eth_select_mii()
-[7/8] sh_eth: consolidate sh_eth_reset()
-[8/8] sh_eth: enclose PM code into #ifdef CONFIG_PM
+All applied, thanks.
 
-WBR, Sergei
+I think you should have two sets of const netdev_ops to cover the two
+cases, instead of writing to a non-const netdev_ops.  Could you send a
+follow-on patch which does that?
+
+Thanks.
