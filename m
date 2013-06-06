@@ -1,41 +1,104 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:21 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7778: correct model name in Kconfig
-Message-Id: <1370503703-31024-4-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:35 +0000
+Subject: [PATCH 22/23] ARM: shmobile: sh73a0: do not overwrite all div4 clock operations
+Message-Id: <1370503716-31155-23-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503703-31024-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503703-31024-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-The correct model name is R-Car M1A or R8A77781; R8A77780 corresponds to R-Car
-M1S which is a SH based SoC.
+An earlier commit "ARM: shmobile: sh73a0: add support for adjusting CPU
+frequency" intended to replace some clock operations only for the Z-clock,
+instead it replaced them for all div4 clocks, since all div4 clocks share
+the same copy of clock operations. Fix this by using a separate clock
+operations structure for Z-clock.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[horms+renesas@verge.net.au: manually applied]
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-sh73a0.c | 28 +++++++++++++++-------------
+ 1 file changed, 15 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 1a517e2..52e8c6e 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -36,7 +36,7 @@ config ARCH_R8A7740
- 	select RENESAS_INTC_IRQPIN
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index acb9e09..d05cf90 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -257,9 +257,8 @@ static struct clk twd_clk = {
+ 	.ops = &twd_clk_ops,
+ };
  
- config ARCH_R8A7778
--	bool "R-Car M1 (R8A77780)"
-+	bool "R-Car M1A (R8A77781)"
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select ARM_GIC
+-static int (*div4_set_rate)(struct clk *clk, unsigned long rate);
+-static unsigned long (*div4_recalc)(struct clk *clk);
+-static long (*div4_round_rate)(struct clk *clk, unsigned long rate);
++static struct sh_clk_ops zclk_ops;
++static const struct sh_clk_ops *div4_clk_ops;
+ 
+ static int zclk_set_rate(struct clk *clk, unsigned long rate)
+ {
+@@ -275,7 +274,7 @@ static int zclk_set_rate(struct clk *clk, unsigned long rate)
+ 		/* 1:1 - switch off divider */
+ 		__raw_writel(__raw_readl(FRQCRB) & ~(1 << 28), FRQCRB);
+ 		/* nullify the divider to prepare for the next time */
+-		ret = div4_set_rate(clk, rate / 2);
++		ret = div4_clk_ops->set_rate(clk, rate / 2);
+ 		if (!ret)
+ 			ret = frqcr_kick();
+ 		if (ret > 0)
+@@ -290,7 +289,7 @@ static int zclk_set_rate(struct clk *clk, unsigned long rate)
+ 			 * set the divider - call the DIV4 method, it will kick
+ 			 * FRQCRB too
+ 			 */
+-			ret = div4_set_rate(clk, rate);
++			ret = div4_clk_ops->set_rate(clk, rate);
+ 		if (ret < 0)
+ 			goto esetrate;
+ 	}
+@@ -302,7 +301,7 @@ esetrate:
+ 
+ static long zclk_round_rate(struct clk *clk, unsigned long rate)
+ {
+-	unsigned long div_freq = div4_round_rate(clk, rate),
++	unsigned long div_freq = div4_clk_ops->round_rate(clk, rate),
+ 		parent_freq = clk_get_rate(clk->parent);
+ 
+ 	if (rate > div_freq && abs(parent_freq - rate) < rate - div_freq)
+@@ -317,7 +316,7 @@ static unsigned long zclk_recalc(struct clk *clk)
+ 	 * Must recalculate frequencies in case PLL0 has been changed, even if
+ 	 * the divisor is unused ATM!
+ 	 */
+-	unsigned long div_freq = div4_recalc(clk);
++	unsigned long div_freq = div4_clk_ops->recalc(clk);
+ 
+ 	if (__raw_readl(FRQCRB) & (1 << 28))
+ 		return div_freq;
+@@ -327,13 +326,16 @@ static unsigned long zclk_recalc(struct clk *clk)
+ 
+ static void zclk_extend(void)
+ {
++	div4_clk_ops = div4_clks[DIV4_Z].ops;
++
+ 	/* We extend the DIV4 clock with a 1:1 pass-through case */
+-	div4_set_rate = div4_clks[DIV4_Z].ops->set_rate;
+-	div4_round_rate = div4_clks[DIV4_Z].ops->round_rate;
+-	div4_recalc = div4_clks[DIV4_Z].ops->recalc;
+-	div4_clks[DIV4_Z].ops->set_rate = zclk_set_rate;
+-	div4_clks[DIV4_Z].ops->round_rate = zclk_round_rate;
+-	div4_clks[DIV4_Z].ops->recalc = zclk_recalc;
++	zclk_ops = *div4_clk_ops;
++
++	zclk_ops.set_rate = zclk_set_rate;
++	zclk_ops.round_rate = zclk_round_rate;
++	zclk_ops.recalc = zclk_recalc;
++
++	div4_clks[DIV4_Z].ops = &zclk_ops;
+ }
+ 
+ enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
 -- 
 1.8.2.1
 
