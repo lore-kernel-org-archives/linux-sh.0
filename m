@@ -1,26 +1,49 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Jun 2013 08:40:38 +0000
-Subject: [PATCH v2 0/2] ARM: shmobile: r8a7790: add thermal driver support
-Message-Id: <1372236040-16737-1-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:48 +0000
+Subject: [PATCH 2/2] irqchip: Add irqchip_init dummy function
+Message-Id: <1370503728-31373-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370503728-31373-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503728-31373-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This short series enables the thermal driver on the r8a7790 SoC
-and thus the lager board.
+From: Bastian Hecht <hechtb@gmail.com>
 
-It is based on renesas-next-20130620
+We add an empty irqchip_init dummy function for cases in which
+CONFIG_IRQCHIP is not used. In these cases irqchip.c is not compiled,
+but a funtion call may still be present in architecture code, that in
+runtime doesn't get hit.
 
-Simon Horman (2):
-  ARM: shmobile: r8a7790: add thermal driver support
-  ARM: shmobile: r8a73a4: add clocks for thermal
+E.g. this is needed in the arch/arm/mach-shmobile/intc-r8a7740.c
+interrupt setup code where OF use and non OF us is both handled in one
+file.
 
- arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
- arch/arm/mach-shmobile/setup-r8a7790.c | 12 ++++++++++++
- 2 files changed, 16 insertions(+)
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+[horms+renesas@verge.net.au: Make non-CONFIG_IRQCHIP version static inline
+ and remove trailing ';'.]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ include/linux/irqchip.h | 4 ++++
+ 1 file changed, 4 insertions(+)
 
+diff --git a/include/linux/irqchip.h b/include/linux/irqchip.h
+index e0006f1..14d7913 100644
+--- a/include/linux/irqchip.h
++++ b/include/linux/irqchip.h
+@@ -11,6 +11,10 @@
+ #ifndef _LINUX_IRQCHIP_H
+ #define _LINUX_IRQCHIP_H
+ 
++#ifdef CONFIG_IRQCHIP
+ void irqchip_init(void);
++#else
++static inline void irqchip_init(void) {}
++#endif
+ 
+ #endif
 -- 
 1.8.2.1
 
