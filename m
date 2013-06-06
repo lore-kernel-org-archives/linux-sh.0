@@ -1,148 +1,91 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 01 Jun 2013 21:57:18 +0000
-Subject: [PATCH v8 9/9] phy-rcar-usb: handle platform data
-Message-Id: <201306020157.18968.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:29 +0000
+Subject: [PATCH 16/23] ARM: shmobile: r8a7790: add div6 clocks
+Message-Id: <1370503716-31155-17-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Set the USBPCTRL0 register from the passed platform data in rcar_usb_phy_init();
-don't reset it to 0 in  rcar_usb_phy_shutdown()  anymore as that does not make
-sense.  Also, don't allow the driver's probe to succeed when the platform data
-are not supplied with a device.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The patch has been tested on the Marzen and BOCK-W boards.
+DIV6 clocks control SD*/MMC* core clocks.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Felipe Balbi <balbi@ti.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since version 7:
-- renamed the PHY driver and changed the patch subject accordingly;
-- added *static* to ovcn_act[] definition.
+ arch/arm/mach-shmobile/clock-r8a7790.c | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
-Changes since version 6:
-- renamed the R-Car PHY driver header file in #include;
-- added an ACK from Felipe Balbi.
-
-Changes since version 3:
-- moved USBPCTRL0 register bit #define's from patch #7, removing the prefixes;
-- implemented parsing of the platform data to set USBPCTRL0 register.
-
-Changes since version 2:
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
- drivers/usb/phy/phy-rcar-usb.c |   51 ++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 45 insertions(+), 6 deletions(-)
-
-Index: renesas/drivers/usb/phy/phy-rcar-usb.c
-=================================--- renesas.orig/drivers/usb/phy/phy-rcar-usb.c
-+++ renesas/drivers/usb/phy/phy-rcar-usb.c
-@@ -1,8 +1,9 @@
- /*
-  * Renesas R-Car USB phy driver
-  *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2012-2013 Renesas Solutions Corp.
-  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License version 2 as
-@@ -15,6 +16,7 @@
- #include <linux/platform_device.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
-+#include <linux/platform_data/usb-rcar-phy.h>
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index c85e643..a481003 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -52,6 +52,12 @@
  
- /* REGS block */
- #define USBPCTRL0	0x00
-@@ -24,6 +26,25 @@
- #define USBOH0		0x1C
- #define USBCTL0		0x58
+ #define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
++#define SD2CKCR		0xE6150078
++#define SD3CKCR		0xE615007C
++#define MMC0CKCR	0xE6150240
++#define MMC1CKCR	0xE6150244
++#define SSPCKCR		0xE6150248
++#define SSPRSCKCR	0xE615024C
  
-+/* USBPCTRL0 */
-+#define OVC2		(1 << 10) /* Switches the OVC input pin for port 2: */
-+				/* 1: USB_OVC2, 0: OVC2			*/
-+#define OVC1_VBUS1	(1 << 9) /* Switches the OVC input pin for port 1: */
-+				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
-+				/* Function mode: set to 0		*/
-+#define OVC0		(1 << 8) /* Switches the OVC input pin for port 0: */
-+				/* 1: USB_OVC0 pin, 0: OVC0		*/
-+#define OVC2_ACT 	(1 << 6) /* Host mode: OVC2 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+#define PENC		(1 << 4) /* Function mode: output level of PENC1 pin: */
-+				/* 1: high, 0: low			*/
-+#define OVC0_ACT 	(1 << 3) /* Host mode: OVC0 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+#define OVC1_ACT	(1 << 1) /* Host mode: OVC1 polarity:		*/
-+				/* 1: active-high, 0: active-low	*/
-+				/* Function mode: be sure to set to 1	*/
-+#define PORT1		(1 << 0) /* Selects port 1 mode:		*/
-+				/* 1: function, 0: host			*/
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
- #define PLL_ENB		(1 << 1)
-@@ -55,7 +76,9 @@ static int rcar_usb_phy_init(struct usb_
- {
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
-+	struct rcar_phy_platform_data *pdata = dev->platform_data;
- 	void __iomem *reg0 = priv->reg0;
-+	static const u8 ovcn_act[] = { OVC0_ACT, OVC1_ACT, OVC2_ACT };
- 	int i;
- 	u32 val;
- 	unsigned long flags;
-@@ -89,8 +112,21 @@ static int rcar_usb_phy_init(struct usb_
- 		/* (4) USB-PHY reset clear */
- 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+@@ -154,6 +160,23 @@ struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
+ };
  
--		/* set platform specific port settings */
--		iowrite32(0x00000000, (reg0 + USBPCTRL0));
-+		/* Board specific port settings */
-+		val = 0;
-+		if (pdata->port1_func)
-+			val |= PORT1;
-+		if (pdata->penc1)
-+			val |= PENC;
-+		for (i = 0; i < 3; i++) {
-+			/* OVCn bits follow each other in the right order */
-+			if (pdata->ovc_pin[i].select_3_3v)
-+				val |= OVC0 << i;
-+			/* OVCn_ACT bits are spaced by irregular intervals */
-+			if (pdata->ovc_pin[i].active_high)
-+				val |= ovcn_act[i];
-+		}
-+		iowrite32(val, (reg0 + USBPCTRL0));
- 
- 		/*
- 		 * Bus alignment settings
-@@ -117,10 +153,8 @@ static void rcar_usb_phy_shutdown(struct
- 
- 	spin_lock_irqsave(&priv->lock, flags);
- 
--	if (priv->counter-- = 1) { /* last user */
--		iowrite32(0x00000000, (reg0 + USBPCTRL0));
-+	if (priv->counter-- = 1)	/* last user */
- 		iowrite32(0x00000000, (reg0 + USBPCTRL1));
--	}
- 
- 	spin_unlock_irqrestore(&priv->lock, flags);
- }
-@@ -133,6 +167,11 @@ static int rcar_usb_phy_probe(struct pla
- 	void __iomem *reg0;
- 	int ret;
- 
-+	if (!pdev->dev.platform_data) {
-+		dev_err(dev, "No platform data\n");
-+		return -EINVAL;
-+	}
++/* DIV6 clocks */
++enum {
++	DIV6_SD2, DIV6_SD3,
++	DIV6_MMC0, DIV6_MMC1,
++	DIV6_SSP, DIV6_SSPRS,
++	DIV6_NR
++};
 +
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
++static struct clk div6_clks[DIV6_NR] = {
++	[DIV6_SD2]	= SH_CLK_DIV6(&pll1_div2_clk, SD2CKCR, 0),
++	[DIV6_SD3]	= SH_CLK_DIV6(&pll1_div2_clk, SD3CKCR, 0),
++	[DIV6_MMC0]	= SH_CLK_DIV6(&pll1_div2_clk, MMC0CKCR, 0),
++	[DIV6_MMC1]	= SH_CLK_DIV6(&pll1_div2_clk, MMC1CKCR, 0),
++	[DIV6_SSP]	= SH_CLK_DIV6(&pll1_div2_clk, SSPCKCR, 0),
++	[DIV6_SSPRS]	= SH_CLK_DIV6(&pll1_div2_clk, SSPRSCKCR, 0),
++};
++
+ /* MSTP */
+ enum { MSTP721, MSTP720,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
+@@ -202,6 +225,14 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("sd0",		&div4_clks[DIV4_SD0]),
+ 	CLKDEV_CON_ID("sd1",		&div4_clks[DIV4_SD1]),
+ 
++	/* DIV6 */
++	CLKDEV_CON_ID("sd2",		&div6_clks[DIV6_SD2]),
++	CLKDEV_CON_ID("sd3",		&div6_clks[DIV6_SD3]),
++	CLKDEV_CON_ID("mmc0",		&div6_clks[DIV6_MMC0]),
++	CLKDEV_CON_ID("mmc1",		&div6_clks[DIV6_MMC1]),
++	CLKDEV_CON_ID("ssp",		&div6_clks[DIV6_SSP]),
++	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
++
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+@@ -265,6 +296,9 @@ void __init r8a7790_clock_init(void)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ 
+ 	if (!ret)
++		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+-- 
+1.8.2.1
+
