@@ -1,28 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 01 Jun 2013 22:06:46 +0000
-Subject: [PATCH v8 0/3] Add USB support to R8A7778/BOCK-W
-Message-Id: <201306020206.47199.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:15 +0000
+Subject: [PATCH 02/23] ARM: shmobile: r8a7740: Add interim sh-eth device name to clocks list
+Message-Id: <1370503716-31155-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Bastian Hecht <hechtb@gmail.com>
 
-   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130528' tag, and the R8A7779/Marzen USB patchset I've posted.
-It was created to add support of R8A7778/BOCK-W USB to the platform code and
-the USB common PHY driver, and so spans both arch/arm/mach-shmobile/ and
-drivers/usb/phy/ subtrees.
+When we use the ethernet device via DT setup, we need to add it
+to a lookup list until this is properly handled later in a DT-only
+fashion.
 
-[1/3] phy-rcar-usb: add R8A7778 support
-[2/3] ARM: shmobile: r8a7778: add USB support
-[3/3] ARM: shmobile: BOCK-W: add USB support
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-   The patch #4 (ARM: shmobile: BOCK-W: enable USB in defconfig) that has been
-already merged, is not reposted.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index c0d39aa..5bd8da0 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -592,6 +592,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
++	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+ 
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
+ 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
+-- 
+1.8.2.1
 
-   The patchset is completely ready for merging now.
-
-WBR, Sergei
