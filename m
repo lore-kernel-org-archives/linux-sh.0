@@ -1,101 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:46 +0000
-Subject: [PATCH 115/130] sh-pfc: r8a7779: add Ether pin groups
-Message-Id: <1370420821-28420-116-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 06 Jun 2013 19:50:30 +0000
+Subject: [PATCH v5 6/8] sh_eth: remove #ifdef around sh_eth_select_mii()
+Message-Id: <201306062350.31232.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Add Ether RMII/LINK/MAGIC pin groups to R8A7779 PFC driver.
+We can simply remove #ifdef'fery around sh_eth_select_mii(). We have to annotate
+it with '__maybe_unused' then.
 
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+[Sergei: added the changelog, reworded the subject, changing the prefix.]
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Laurent Pinchart<laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 42 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 37ba571..96bdf48 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1640,6 +1640,38 @@ static const unsigned int du1_cde_pins[] = {
- static const unsigned int du1_cde_mux[] = {
- 	DU1_CDE_MARK
- };
-+/* - Ether ------------------------------------------------------------------ */
-+static const unsigned int ether_rmii_pins[] = {
-+	/*
-+	 * ETH_TXD0, ETH_TXD1, ETH_TX_EN,  ETH_REFCLK,
-+	 * ETH_RXD0, ETH_RXD1, ETH_CRS_DV, ETH_RX_ER,
-+	 * ETH_MDIO, ETH_MDC
-+	 */
-+	RCAR_GP_PIN(2, 27), RCAR_GP_PIN(2, 16), RCAR_GP_PIN(2, 18),
-+	RCAR_GP_PIN(2, 26),
-+	RCAR_GP_PIN(2, 20), RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 17),
-+	RCAR_GP_PIN(2, 19),
-+	RCAR_GP_PIN(2, 29), RCAR_GP_PIN(2, 28),
-+};
-+static const unsigned int ether_rmii_mux[] = {
-+	ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK,  ETH_REFCLK_MARK,
-+	ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_CRS_DV_MARK, ETH_RX_ER_MARK,
-+	ETH_MDIO_MARK, ETH_MDC_MARK,
-+};
-+static const unsigned int ether_link_pins[] = {
-+	/* ETH_LINK */
-+	RCAR_GP_PIN(2, 24),
-+};
-+static const unsigned int ether_link_mux[] = {
-+	ETH_LINK_MARK,
-+};
-+static const unsigned int ether_magic_pins[] = {
-+	/* ETH_MAGIC */
-+	RCAR_GP_PIN(2, 25),
-+};
-+static const unsigned int ether_magic_mux[] = {
-+	ETH_MAGIC_MARK,
-+};
- /* - HSPI0 ------------------------------------------------------------------ */
- static const unsigned int hspi0_pins[] = {
- 	/* CLK, CS, RX, TX */
-@@ -2558,6 +2590,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du1_sync_1),
- 	SH_PFC_PIN_GROUP(du1_oddf),
- 	SH_PFC_PIN_GROUP(du1_cde),
-+	SH_PFC_PIN_GROUP(ether_rmii),
-+	SH_PFC_PIN_GROUP(ether_link),
-+	SH_PFC_PIN_GROUP(ether_magic),
- 	SH_PFC_PIN_GROUP(hspi0),
- 	SH_PFC_PIN_GROUP(hspi1),
- 	SH_PFC_PIN_GROUP(hspi1_b),
-@@ -2703,6 +2738,12 @@ static const char * const du1_groups[] = {
- 	"du1_cde",
+---
+Changes in version 4:
+- refreshed the patch;
+- added the changelog;
+- reworded the subject, changing the prefix.
+
+Changes in version 3:
+- annotated sh_eth_select_mii() with '__maybe_unused'.
+
+ drivers/net/ethernet/renesas/sh_eth.c |    6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -313,10 +313,7 @@ static const u16 sh_eth_offset_fast_sh3_
+ 	[TSU_ADRL31]	= 0x01fc,
  };
  
-+static const char * const ether_groups[] = {
-+	"ether_rmii",
-+	"ether_link",
-+	"ether_magic",
-+};
-+
- static const char * const hspi0_groups[] = {
- 	"hspi0",
- };
-@@ -2898,6 +2939,7 @@ static const char * const vin3_groups[] = {
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(du0),
- 	SH_PFC_FUNCTION(du1),
-+	SH_PFC_FUNCTION(ether),
- 	SH_PFC_FUNCTION(hspi0),
- 	SH_PFC_FUNCTION(hspi1),
- 	SH_PFC_FUNCTION(hspi2),
--- 
-1.8.2.1
-
+-#if defined(CONFIG_CPU_SUBTYPE_SH7734) || \
+-	defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+-	defined(CONFIG_ARCH_R8A7740)
+-static void sh_eth_select_mii(struct net_device *ndev)
++static void __maybe_unused sh_eth_select_mii(struct net_device *ndev)
+ {
+ 	u32 value = 0x0;
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -339,7 +336,6 @@ static void sh_eth_select_mii(struct net
+ 
+ 	sh_eth_write(ndev, value, RMII_MII);
+ }
+-#endif
+ 
+ static void __maybe_unused sh_eth_set_duplex(struct net_device *ndev)
+ {
