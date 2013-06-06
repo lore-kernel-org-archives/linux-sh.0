@@ -1,59 +1,58 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 27 Jun 2013 11:45:54 +0000
-Subject: Re: [PATCH v5 2/3] ARM: shmobile: BOCK-W: add VIN and ML86V7667 support
-Message-Id: <51CC25F2.9020605@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 15:48:22 +0000
+Subject: [PATCH v2 4/6] ARM: shmobile: r8a7740: add MMCIF DMA definitions
+Message-Id: <1370533704-23734-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306220326.46176.sergei.shtylyov@cogentembedded.com>
- <201306220330.13845.sergei.shtylyov@cogentembedded.com>
- <8761x02khf.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8761x02khf.wl%kuninori.morimoto.gx@renesas.com>
+References: <1366194847-9879-4-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1366194847-9879-4-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Add DMA channel slave IDs and configuration entries for the r8a7740
+MMCIF controller.
 
-On 27-06-2013 9:25, Kuninori Morimoto wrote:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7740.c        |   10 ++++++++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
 
->> @@ -166,6 +187,16 @@ static const struct pinctrl_map bockw_pi
->>   				  "usb0", "usb0"),
->>   	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
->>   				  "usb1", "usb1"),
->> +	/* VIN0 */
->> +	PIN_MAP_MUX_GROUP_DEFAULT("r8a7778-vin.0", "pfc-r8a7778",
->> +				  "vin0_clk", "vin0"),
->> +	PIN_MAP_MUX_GROUP_DEFAULT("r8a7778-vin.0", "pfc-r8a7778",
->> +				  "vin0_data8", "vin0"),
->> +	/* VIN1 */
->> +	PIN_MAP_MUX_GROUP_DEFAULT("r8a7778-vin.1", "pfc-r8a7778",
->> +				  "vin1_clk", "vin1"),
->> +	PIN_MAP_MUX_GROUP_DEFAULT("r8a7778-vin.1", "pfc-r8a7778",
->> +				  "vin1_data8", "vin1"),
->>   };
-
-> Here, it includes VIN1 pin, but
-
->>   #define FPGA	0x18200000
->> @@ -184,6 +215,16 @@ static void __init bockw_init(void)
->>   	r8a7778_add_hspi_device(0);
->>   	r8a7778_add_mmc_device(&sh_mmcif_plat);
->>   	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
->> +	r8a7778_add_vin_device(0, &vin_platform_data);
->> +	/* VIN1 has a pin conflict with Ether */
->> +	if (!IS_ENABLED(CONFIG_SH_ETH))
->> +		r8a7778_add_vin_device(1, &vin_platform_data);
-
-> what happen if SH_ETH was enabled here ?
-> r8a7778_add_vin_device(1, xxx) is not called,
-> but bockw_pinctrl_map was called with VIN1 setting ?
-
-    Don't worry, it's all tested. If the VIN1 platform device is not 
-registered, VIN1 pinmux settings won't be selected by the driver core.
-
-> Best regards
-> ---
-> Kuninori Morimoto
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index b34d19b..56f3750 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -42,6 +42,8 @@ enum {
+ 	SHDMA_SLAVE_FSIB_TX,
+ 	SHDMA_SLAVE_USBHS_TX,
+ 	SHDMA_SLAVE_USBHS_RX,
++	SHDMA_SLAVE_MMCIF_TX,
++	SHDMA_SLAVE_MMCIF_RX,
+ };
+ 
+ extern void r8a7740_meram_workaround(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 00c5a70..6b3ed42 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -588,6 +588,16 @@ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
+ 		.addr		= 0xfe1f0064,
+ 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb5,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
++		.addr		= 0xe6bd0034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
++		.addr		= 0xe6bd0034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd2,
+ 	},
+ };
+ 
+-- 
+1.7.2.5
 
