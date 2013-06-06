@@ -1,136 +1,94 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 13 Jun 2013 16:54:45 +0000
-Subject: [PATCH v4 2/5] ARM: mach-shmobile: armadillo800eva: Add backlight support
-Message-Id: <1371142488-2514-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 06 Jun 2013 19:49:30 +0000
+Subject: [PATCH v5 5/8] sh_eth: add IRQ flags to 'struct sh_eth_cpu_data'
+Message-Id: <201306062349.31261.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-The flat panel backlight on the Armadillo 800 EVA board is driven by the
-TPU PWM output.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The driver supports some SH and SH-Mobile SOCs. There are SOCs with two or more
+Ethernet devices, for these we need to pass IRQF_SHARED to request_irq().  Add
+the 'irq_flags' field to the 'struct sh_eth_cpu_data' instead of #ifdef'fery.
+
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+[Sergei: properly aligned request_irq() call continuation line, reworded the
+changelog, reworded the subject, changing the prefix.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 54 +++++++++++++++++++++++++-
- arch/arm/mach-shmobile/clock-r8a7740.c         |  2 +-
- 2 files changed, 53 insertions(+), 3 deletions(-)
+Changes in version 4:
+- resolved reject;
+- properly aligned request_irq() call continuation line;
+- reworded the changelog;
+- reworded the subject, changing the prefix.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 44a6215..5377204 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -31,6 +31,8 @@
- #include <linux/gpio_keys.h>
- #include <linux/regulator/driver.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_data/pwm-renesas-tpu.h>
-+#include <linux/pwm_backlight.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/gpio-regulator.h>
- #include <linux/regulator/machine.h>
-@@ -386,7 +388,50 @@ static struct platform_device sh_eth_device = {
- 	.num_resources = ARRAY_SIZE(sh_eth_resources),
+Changes in version 3:
+- remove 'irq_flags' from 'struct sh_eth_private';
+- fix indentation.
+
+ drivers/net/ethernet/renesas/sh_eth.c |   13 +++++--------
+ drivers/net/ethernet/renesas/sh_eth.h |    1 +
+ 2 files changed, 6 insertions(+), 8 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -462,6 +462,7 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
+ 	.tx_error_check	= EESR_TWB | EESR_TABT | EESR_TDE | EESR_TFE,
+ 
++	.irq_flags	= IRQF_SHARED,
+ 	.apr		= 1,
+ 	.mpr		= 1,
+ 	.tpauser	= 1,
+@@ -570,6 +571,7 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.fdr_value	= 0x0000072f,
+ 	.rmcr_value	= 0x00000001,
+ 
++	.irq_flags	= IRQF_SHARED,
+ 	.apr		= 1,
+ 	.mpr		= 1,
+ 	.tpauser	= 1,
+@@ -650,6 +652,8 @@ static struct sh_eth_cpu_data sh_eth_my_
+ #if defined(CONFIG_CPU_SUBTYPE_SH7734)
+ 	.hw_crc     = 1,
+ 	.select_mii = 1,
++#else
++	.irq_flags	= IRQF_SHARED,
+ #endif
  };
  
--/* LCDC */
-+/* PWM */
-+static struct resource pwm_resources[] = {
-+	[0] = {
-+		.start = 0xe6600000,
-+		.end = 0xe66000ff,
-+		.flags = IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct tpu_pwm_platform_data pwm_device_data = {
-+	.channels[2] = {
-+		.polarity = PWM_POLARITY_INVERSED,
-+	}
-+};
-+
-+static struct platform_device pwm_device = {
-+	.name = "renesas-tpu-pwm",
-+	.id = -1,
-+	.dev = {
-+		.platform_data = &pwm_device_data,
-+	},
-+	.num_resources = ARRAY_SIZE(pwm_resources),
-+	.resource = pwm_resources,
-+};
-+
-+static struct pwm_lookup pwm_lookup[] = {
-+	PWM_LOOKUP("renesas-tpu-pwm", 2, "pwm-backlight.0", NULL),
-+};
-+
-+/* LCDC and backlight */
-+static struct platform_pwm_backlight_data pwm_backlight_data = {
-+	.lth_brightness = 50,
-+	.max_brightness = 255,
-+	.dft_brightness = 255,
-+	.pwm_period_ns = 33333, /* 30kHz */
-+};
-+
-+static struct platform_device pwm_backlight_device = {
-+	.name = "pwm-backlight",
-+	.dev = {
-+		.platform_data = &pwm_backlight_data,
-+	},
-+};
-+
- static struct fb_videomode lcdc0_mode = {
- 	.name		= "AMPIER/AM-800480",
- 	.xres		= 800,
-@@ -1029,6 +1074,8 @@ static struct i2c_board_info i2c2_devices[] = {
-  */
- static struct platform_device *eva_devices[] __initdata = {
- 	&lcdc0_device,
-+	&pwm_device,
-+	&pwm_backlight_device,
- 	&gpio_keys_device,
- 	&sh_eth_device,
- 	&vcc_sdhi0,
-@@ -1100,6 +1147,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
- 	/* ST1232 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-r8a7740",
- 				  "intc_irq10", "intc"),
-+	/* TPU0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas-tpu-pwm", "pfc-r8a7740",
-+				  "tpu0_to2_1", "tpu0"),
- 	/* USBHS */
- 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7740",
- 				  "intc_irq7_1", "intc"),
-@@ -1153,13 +1203,13 @@ static void __init eva_init(void)
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+@@ -1908,14 +1912,7 @@ static int sh_eth_open(struct net_device
+ 	pm_runtime_get_sync(&mdp->pdev->dev);
  
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
-+	pwm_add_table(pwm_lookup, ARRAY_SIZE(pwm_lookup));
+ 	ret = request_irq(ndev->irq, sh_eth_interrupt,
+-#if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+-	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
+-	defined(CONFIG_CPU_SUBTYPE_SH7757)
+-				IRQF_SHARED,
+-#else
+-				0,
+-#endif
+-				ndev->name, ndev);
++			  mdp->cd->irq_flags, ndev->name, ndev);
+ 	if (ret) {
+ 		dev_err(&ndev->dev, "Can not assign IRQ number\n");
+ 		return ret;
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -463,6 +463,7 @@ struct sh_eth_cpu_data {
+ 	unsigned long tx_error_check;
  
- 	r8a7740_pinmux_init();
- 	r8a7740_meram_workaround();
- 
- 	/* LCDC0 */
- 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
--	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
- 
- 	/* Touchscreen */
- 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 7fd32d6..f5b7bbe 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -596,7 +596,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
- 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
--	CLKDEV_DEV_ID("renesas_tpu_pwm",	&mstp_clks[MSTP304]),
-+	CLKDEV_DEV_ID("renesas-tpu-pwm",	&mstp_clks[MSTP304]),
- 
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
- 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
--- 
-1.8.1.5
-
+ 	/* hardware features */
++	unsigned long irq_flags;	/* IRQ configuration flags */
+ 	unsigned no_psr:1;		/* EtherC DO NOT have PSR */
+ 	unsigned apr:1;			/* EtherC have APR */
+ 	unsigned mpr:1;			/* EtherC have MPR */
