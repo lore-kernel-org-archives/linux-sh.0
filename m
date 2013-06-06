@@ -1,46 +1,43 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 28 Jun 2013 10:13:27 +0000
-Subject: [PATCH] ARM: shmobile: Sort r8a7790 MSTP entries
-Message-Id: <20130628101327.26876.89435.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 15:38:11 +0000
+Subject: [PATCH 1/2] ARM: shmobile: armadillo800eva: remove left-overs
+Message-Id: <1370533092-23555-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87bok7lm0h.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87bok7lm0h.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+A comment and a #define in board-armadillo800eva.c have been left over
+after recent changes and are no longer relevant or needed, remove them.
 
-The r8a7790 MSTP bits should be kept sorted in the same way
-as on other mach-shmobile SoCs. Move the HSCIF and thermal
-bits to clean up the current state.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    9 ---------
+ 1 files changed, 0 insertions(+), 9 deletions(-)
 
- Written on top of renesas-next-20130628
-
- arch/arm/mach-shmobile/clock-r8a7790.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-06-28 15:15:50.000000000 +0900
-@@ -192,6 +192,9 @@ enum {
- static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
- 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
-+	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
-+	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
-+	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
- 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
- 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
- 	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_SD1], SMSTPCR3, 13, 0), /* SDHI1 */
-@@ -205,9 +208,6 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
--	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
--	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
--	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 44a6215..ce1c37f 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -678,15 +678,6 @@ static struct platform_device vcc_sdhi1 = {
  };
  
- static struct clk_lookup lookups[] = {
+ /* SDHI0 */
+-/*
+- * FIXME
+- *
+- * It use polling mode here, since
+- * CD (= Card Detect) pin is not connected to SDHI0_CD.
+- * We can use IRQ31 as card detect irq,
+- * but it needs chattering removal operation
+- */
+-#define IRQ31	irq_pin(31)
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-- 
+1.7.2.5
+
