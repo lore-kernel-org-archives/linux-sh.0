@@ -1,55 +1,107 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 15 Jun 2013 00:02:48 +0000
-Subject: Re: [PATCH v4 0/8] sh_eth: deal with #ifdef'fery
-Message-Id: <51BBAF28.4040603@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 06 Jun 2013 15:38:12 +0000
+Subject: [PATCH 2/2] ARM: shmobile: sh73a0: remove "0x" prefix from DT node names
+Message-Id: <1370533092-23555-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306060106.51082.sergei.shtylyov@cogentembedded.com> <CANqRtoTM7KUn6Cm9hhQpyVT3qsAFANuD+CufarETSNZwqc5_Sw@mail.gmail.com> <51BBAE97.30009@cogentembedded.com>
-In-Reply-To: <51BBAE97.30009@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: netdev <netdev@vger.kernel.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On 06/15/2013 04:00 AM, Sergei Shtylyov wrote:
+The convention for Device Tree node names is <device>@<hex-address>, where
+the part after '@' shouldn't contain the "0x" prefix. Fix the sh73a0.dtsi
+DT names.
 
->>>     This series deals mostly with excess #ifdef'fery in the 'sh_eth'
->>> driver.
->>> It doesn't yet get rid of all the #ifdef'fery but that's a matter of
->>> another
->>> patchset. The last patch (it was almost in the middle of the series
->>> before),
->>> contrarywise, adds one missing #ifdef...
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/boot/dts/sh73a0.dtsi |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
 
->>> [1/8] sh_eth: remove #ifdef around EDSR and GECMR bit definitions
->>> [2/8] sh_eth: use EDSR_ENALL to set EDSR
->>> [3/8] sh_eth: remove duplicate sh_eth_set_duplex() definitions
->>> [4/8] sh_eth: remove SH_ETH_HAS_TSU
->>> [5/8] sh_eth: add IRQ flags to 'struct sh_eth_cpu_data'
->>> [6/8] sh_eth: remove #ifdef around sh_eth_select_mii()
->>> [7/8] sh_eth: consolidate sh_eth_reset()
->>> [8/8] sh_eth: enclose PM code into #ifdef CONFIG_PM
-
->> Thanks for your work on this. I'm looking forward to a sh-eth driver
->> without #ifdef hell.
-
->> It may be just me misunderstanding, but the other day I noticed that
->> external PHY handling seems broken in the sh-eth driver. I tried to
->> enable a micron PHY driver but could not make the pieces fit together.
-
->     What kernel you were using, net-next? It seems that the PHY support
-> is indeed broken after this series.
-
-    Oh, I mixed it up. It's broken by the next series, which moved most 
-of the SoC specific code out of #ifdef's.
-
-> The phylib simply reports that it didn't find a PHY at the specified address. :-/
->     I'll continue to investigate this on the weekend...
-
->> Cheers,
-
->> / magnus
-
-WBR, Sergei
-
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ec40bf7..b977502 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -119,7 +119,7 @@
+ 			      0 32 0x4>;
+ 	};
+ 
+-	i2c0: i2c@0xe6820000 {
++	i2c0: i2c@e6820000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -131,7 +131,7 @@
+ 			      0 170 0x4>;
+ 	};
+ 
+-	i2c1: i2c@0xe6822000 {
++	i2c1: i2c@e6822000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -143,7 +143,7 @@
+ 			      0 54 0x4>;
+ 	};
+ 
+-	i2c2: i2c@0xe6824000 {
++	i2c2: i2c@e6824000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -155,7 +155,7 @@
+ 			      0 174 0x4>;
+ 	};
+ 
+-	i2c3: i2c@0xe6826000 {
++	i2c3: i2c@e6826000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -167,7 +167,7 @@
+ 			      0 186 0x4>;
+ 	};
+ 
+-	i2c4: i2c@0xe6828000 {
++	i2c4: i2c@e6828000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -179,7 +179,7 @@
+ 			      0 190 0x4>;
+ 	};
+ 
+-	mmcif: mmcif@0x10010000 {
++	mmcif: mmcif@e6bd0000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xe6bd0000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -189,7 +189,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi0: sdhi@0xee100000 {
++	sdhi0: sdhi@ee100000 {
+ 		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee100000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -201,7 +201,7 @@
+ 	};
+ 
+ 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
+-	sdhi1: sdhi@0xee120000 {
++	sdhi1: sdhi@ee120000 {
+ 		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee120000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -212,7 +212,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi2: sdhi@0xee140000 {
++	sdhi2: sdhi@ee140000 {
+ 		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee140000 0x100>;
+ 		interrupt-parent = <&gic>;
+-- 
+1.7.2.5
 
