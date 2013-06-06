@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:40 +0000
-Subject: [PATCH 10/27] ARM: shmobile: r8a73a4: add main clock
-Message-Id: <1370591517-20239-11-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:18 +0000
+Subject: [PATCH 05/23] ARM: shmobile: r8a73a4: add main clock
+Message-Id: <1370503716-31155-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
