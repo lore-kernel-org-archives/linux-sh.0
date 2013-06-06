@@ -1,94 +1,177 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jun 2013 19:08:17 +0000
-Subject: [PATCH v11 07/21] mx2-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1371236911-15131-8-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:22 +0000
+Subject: [PATCH 4/5] ARM: shmobile: sh73a0: Use DEFINE_RES_MEM*() everywhere
+Message-Id: <1370503703-31024-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1370503703-31024-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503703-31024-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-When adding and removing a client, the mx2-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
+Convert code to use DEFINE_RES_MEM*() macros.
+These macros were already used in this file,
+this change makes their usage consistent throughout the file.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/soc_camera/mx2_camera.c |   28 +++++++++++++++--------
- 1 files changed, 18 insertions(+), 10 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 79 ++++++-----------------------------
+ 1 file changed, 13 insertions(+), 66 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/mx2_camera.c b/drivers/media/platform/soc_camera/mx2_camera.c
-index 772e071..45a0276 100644
---- a/drivers/media/platform/soc_camera/mx2_camera.c
-+++ b/drivers/media/platform/soc_camera/mx2_camera.c
-@@ -412,13 +412,26 @@ static void mx2_camera_deactivate(struct mx2_camera_dev *pcdev)
- 	writel(0, pcdev->base_emma + PRP_CNTL);
- }
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fdf3894..3bc33a5 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -288,12 +288,7 @@ static struct sh_timer_config tmu00_platform_data = {
+ };
  
-+static int mx2_camera_add_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "Camera driver attached to camera %d\n",
-+		 icd->devnum);
-+
-+	return 0;
-+}
-+
-+static void mx2_camera_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "Camera driver detached from camera %d\n",
-+		 icd->devnum);
-+}
-+
- /*
-  * The following two functions absolutely depend on the fact, that
-  * there can be only one camera on mx2 camera sensor interface
-  */
--static int mx2_camera_add_device(struct soc_camera_device *icd)
-+static int mx2_camera_clock_start(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct mx2_camera_dev *pcdev = ici->priv;
- 	int ret;
- 	u32 csicr1;
-@@ -439,9 +452,6 @@ static int mx2_camera_add_device(struct soc_camera_device *icd)
+ static struct resource tmu00_resources[] = {
+-	[0] = {
+-		.name	= "TMU00",
+-		.start	= 0xfff60008,
+-		.end	= 0xfff60013,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xfff60008, 0xc, "TMU00"),
+ 	[1] = {
+ 		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
+ 		.flags	= IORESOURCE_IRQ,
+@@ -318,12 +313,7 @@ static struct sh_timer_config tmu01_platform_data = {
+ };
  
- 	pcdev->frame_count = 0;
+ static struct resource tmu01_resources[] = {
+-	[0] = {
+-		.name	= "TMU01",
+-		.start	= 0xfff60014,
+-		.end	= 0xfff6001f,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xfff60014, 0xc, "TMU00"),
+ 	[1] = {
+ 		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
+ 		.flags	= IORESOURCE_IRQ,
+@@ -341,12 +331,7 @@ static struct platform_device tmu01_device = {
+ };
  
--	dev_info(icd->parent, "Camera driver attached to camera %d\n",
--		 icd->devnum);
--
- 	return 0;
+ static struct resource i2c0_resources[] = {
+-	[0] = {
+-		.name	= "IIC0",
+-		.start	= 0xe6820000,
+-		.end	= 0xe6820425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6820000, 0x426, "IIC0"),
+ 	[1] = {
+ 		.start	= gic_spi(167),
+ 		.end	= gic_spi(170),
+@@ -355,12 +340,7 @@ static struct resource i2c0_resources[] = {
+ };
  
- exit_csi_ahb:
-@@ -450,14 +460,10 @@ exit_csi_ahb:
- 	return ret;
- }
+ static struct resource i2c1_resources[] = {
+-	[0] = {
+-		.name	= "IIC1",
+-		.start	= 0xe6822000,
+-		.end	= 0xe6822425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6822000, 0x426, "IIC1"),
+ 	[1] = {
+ 		.start	= gic_spi(51),
+ 		.end	= gic_spi(54),
+@@ -369,12 +349,7 @@ static struct resource i2c1_resources[] = {
+ };
  
--static void mx2_camera_remove_device(struct soc_camera_device *icd)
-+static void mx2_camera_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct mx2_camera_dev *pcdev = ici->priv;
+ static struct resource i2c2_resources[] = {
+-	[0] = {
+-		.name	= "IIC2",
+-		.start	= 0xe6824000,
+-		.end	= 0xe6824425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6824000, 0x426, "IIC2"),
+ 	[1] = {
+ 		.start	= gic_spi(171),
+ 		.end	= gic_spi(174),
+@@ -383,12 +358,7 @@ static struct resource i2c2_resources[] = {
+ };
  
--	dev_info(icd->parent, "Camera driver detached from camera %d\n",
--		 icd->devnum);
--
- 	mx2_camera_deactivate(pcdev);
- }
+ static struct resource i2c3_resources[] = {
+-	[0] = {
+-		.name	= "IIC3",
+-		.start	= 0xe6826000,
+-		.end	= 0xe6826425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6826000, 0x426, "IIC3"),
+ 	[1] = {
+ 		.start	= gic_spi(183),
+ 		.end	= gic_spi(186),
+@@ -397,12 +367,7 @@ static struct resource i2c3_resources[] = {
+ };
  
-@@ -1271,6 +1277,8 @@ static struct soc_camera_host_ops mx2_soc_camera_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= mx2_camera_add_device,
- 	.remove		= mx2_camera_remove_device,
-+	.clock_start	= mx2_camera_clock_start,
-+	.clock_stop	= mx2_camera_clock_stop,
- 	.set_fmt	= mx2_camera_set_fmt,
- 	.set_crop	= mx2_camera_set_crop,
- 	.get_formats	= mx2_camera_get_formats,
+ static struct resource i2c4_resources[] = {
+-	[0] = {
+-		.name	= "IIC4",
+-		.start	= 0xe6828000,
+-		.end	= 0xe6828425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6828000, 0x426, "IIC4"),
+ 	[1] = {
+ 		.start	= gic_spi(187),
+ 		.end	= gic_spi(190),
+@@ -623,12 +588,7 @@ static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
+ };
+ 
+ static struct resource sh73a0_dmae_resources[] = {
+-	{
+-		/* Registers including DMAOR and channels including DMARSx */
+-		.start  = 0xfe000020,
+-		.end    = 0xfe008a00 - 1,
+-		.flags  = IORESOURCE_MEM,
+-	},
++	DEFINE_RES_MEM(0xfe000020, 0x89e0),
+ 	{
+ 		.name	= "error_irq",
+ 		.start  = gic_spi(129),
+@@ -727,18 +687,10 @@ static struct sh_dmae_pdata sh73a0_mpdma_platform_data = {
+ 
+ /* Resource order important! */
+ static struct resource sh73a0_mpdma_resources[] = {
+-	{
+-		/* Channel registers and DMAOR */
+-		.start	= 0xec618020,
+-		.end	= 0xec61828f,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* DMARSx */
+-		.start	= 0xec619000,
+-		.end	= 0xec61900b,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	/* Channel registers and DMAOR */
++	DEFINE_RES_MEM(0xec618020, 0x270),
++	/* DMARSx */
++	DEFINE_RES_MEM(0xec619000, 0xc),
+ 	{
+ 		.name	= "error_irq",
+ 		.start	= gic_spi(181),
+@@ -785,12 +737,7 @@ static struct platform_device pmu_device = {
+ 
+ /* an IPMMU module for ICB */
+ static struct resource ipmmu_resources[] = {
+-	[0] = {
+-		.name	= "IPMMU",
+-		.start	= 0xfe951000,
+-		.end	= 0xfe9510ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	DEFINE_RES_MEM_NAMED(0xfe951000, 0x100, "IPMMU"),
+ };
+ 
+ static const char * const ipmmu_dev_names[] = {
 -- 
-1.7.2.5
+1.8.2.1
 
