@@ -1,223 +1,80 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:19 +0000
-Subject: [PATCH 028/130] sh-pfc: sh7372: Add INTC pin groups and functions
-Message-Id: <1370420821-28420-29-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 06 Jun 2013 07:28:25 +0000
+Subject: [PATCH 12/23] ARM: shmobile: r8a7778: Register SDHI device
+Message-Id: <1370503716-31155-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds SDHI register function which needs id number (= 0/1/2)
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 161 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 161 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |  2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 24 ++++++++++++++++++++++++
+ 2 files changed, 26 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 73b9e25..def6e2c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -34,6 +34,28 @@
- 	PORT_10(fn, pfx##16, sfx),	PORT_10(fn, pfx##17, sfx), \
- 	PORT_10(fn, pfx##18, sfx),	PORT_1(fn, pfx##190, sfx)
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index 951149e..b5173b3 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -18,6 +18,7 @@
+ #ifndef __ASM_R8A7778_H__
+ #define __ASM_R8A7778_H__
  
-+#define IRQC_PIN_MUX(irq, pin)						\
-+static const unsigned int intc_irq##irq##_pins[] = {			\
-+	pin,								\
-+};									\
-+static const unsigned int intc_irq##irq##_mux[] = {			\
-+	IRQ##irq##_MARK,						\
-+}
-+
-+#define IRQC_PINS_MUX(irq, pin0, pin1)					\
-+static const unsigned int intc_irq##irq##_0_pins[] = {			\
-+	pin0,								\
-+};									\
-+static const unsigned int intc_irq##irq##_0_mux[] = {			\
-+	IRQ##irq##_##pin0##_MARK,					\
-+};									\
-+static const unsigned int intc_irq##irq##_1_pins[] = {			\
-+	pin1,								\
-+};									\
-+static const unsigned int intc_irq##irq##_1_mux[] = {			\
-+	IRQ##irq##_##pin1##_MARK,					\
-+}
-+
- enum {
- 	PINMUX_RESERVED = 0,
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
  
-@@ -1186,6 +1208,39 @@ static const unsigned int hdmi_pins[] = {
- static const unsigned int hdmi_mux[] = {
- 	HDMI_HPD_MARK, HDMI_CEC_MARK,
- };
-+/* - INTC ------------------------------------------------------------------- */
-+IRQC_PINS_MUX(0, 6, 162);
-+IRQC_PIN_MUX(1, 12);
-+IRQC_PINS_MUX(2, 4, 5);
-+IRQC_PINS_MUX(3, 8, 16);
-+IRQC_PINS_MUX(4, 17, 163);
-+IRQC_PIN_MUX(5, 18);
-+IRQC_PINS_MUX(6, 39, 164);
-+IRQC_PINS_MUX(7, 40, 167);
-+IRQC_PINS_MUX(8, 41, 168);
-+IRQC_PINS_MUX(9, 42, 169);
-+IRQC_PIN_MUX(10, 65);
-+IRQC_PIN_MUX(11, 67);
-+IRQC_PINS_MUX(12, 80, 137);
-+IRQC_PINS_MUX(13, 81, 145);
-+IRQC_PINS_MUX(14, 82, 146);
-+IRQC_PINS_MUX(15, 83, 147);
-+IRQC_PINS_MUX(16, 84, 170);
-+IRQC_PIN_MUX(17, 85);
-+IRQC_PIN_MUX(18, 86);
-+IRQC_PIN_MUX(19, 87);
-+IRQC_PIN_MUX(20, 92);
-+IRQC_PIN_MUX(21, 93);
-+IRQC_PIN_MUX(22, 94);
-+IRQC_PIN_MUX(23, 95);
-+IRQC_PIN_MUX(24, 112);
-+IRQC_PIN_MUX(25, 119);
-+IRQC_PINS_MUX(26, 121, 172);
-+IRQC_PINS_MUX(27, 122, 180);
-+IRQC_PINS_MUX(28, 123, 181);
-+IRQC_PINS_MUX(29, 129, 182);
-+IRQC_PINS_MUX(30, 130, 183);
-+IRQC_PINS_MUX(31, 138, 184);
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_0_pins[] = {
- 	/* D[0] */
-@@ -1361,6 +1416,57 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(fsia_spdif_1),
- 	SH_PFC_PIN_GROUP(fsib_mclk_in),
- 	SH_PFC_PIN_GROUP(hdmi),
-+	SH_PFC_PIN_GROUP(intc_irq0_0),
-+	SH_PFC_PIN_GROUP(intc_irq0_1),
-+	SH_PFC_PIN_GROUP(intc_irq1),
-+	SH_PFC_PIN_GROUP(intc_irq2_0),
-+	SH_PFC_PIN_GROUP(intc_irq2_1),
-+	SH_PFC_PIN_GROUP(intc_irq3_0),
-+	SH_PFC_PIN_GROUP(intc_irq3_1),
-+	SH_PFC_PIN_GROUP(intc_irq4_0),
-+	SH_PFC_PIN_GROUP(intc_irq4_1),
-+	SH_PFC_PIN_GROUP(intc_irq5),
-+	SH_PFC_PIN_GROUP(intc_irq6_0),
-+	SH_PFC_PIN_GROUP(intc_irq6_1),
-+	SH_PFC_PIN_GROUP(intc_irq7_0),
-+	SH_PFC_PIN_GROUP(intc_irq7_1),
-+	SH_PFC_PIN_GROUP(intc_irq8_0),
-+	SH_PFC_PIN_GROUP(intc_irq8_1),
-+	SH_PFC_PIN_GROUP(intc_irq9_0),
-+	SH_PFC_PIN_GROUP(intc_irq9_1),
-+	SH_PFC_PIN_GROUP(intc_irq10),
-+	SH_PFC_PIN_GROUP(intc_irq11),
-+	SH_PFC_PIN_GROUP(intc_irq12_0),
-+	SH_PFC_PIN_GROUP(intc_irq12_1),
-+	SH_PFC_PIN_GROUP(intc_irq13_0),
-+	SH_PFC_PIN_GROUP(intc_irq13_1),
-+	SH_PFC_PIN_GROUP(intc_irq14_0),
-+	SH_PFC_PIN_GROUP(intc_irq14_1),
-+	SH_PFC_PIN_GROUP(intc_irq15_0),
-+	SH_PFC_PIN_GROUP(intc_irq15_1),
-+	SH_PFC_PIN_GROUP(intc_irq16_0),
-+	SH_PFC_PIN_GROUP(intc_irq16_1),
-+	SH_PFC_PIN_GROUP(intc_irq17),
-+	SH_PFC_PIN_GROUP(intc_irq18),
-+	SH_PFC_PIN_GROUP(intc_irq19),
-+	SH_PFC_PIN_GROUP(intc_irq20),
-+	SH_PFC_PIN_GROUP(intc_irq21),
-+	SH_PFC_PIN_GROUP(intc_irq22),
-+	SH_PFC_PIN_GROUP(intc_irq23),
-+	SH_PFC_PIN_GROUP(intc_irq24),
-+	SH_PFC_PIN_GROUP(intc_irq25),
-+	SH_PFC_PIN_GROUP(intc_irq26_0),
-+	SH_PFC_PIN_GROUP(intc_irq26_1),
-+	SH_PFC_PIN_GROUP(intc_irq27_0),
-+	SH_PFC_PIN_GROUP(intc_irq27_1),
-+	SH_PFC_PIN_GROUP(intc_irq28_0),
-+	SH_PFC_PIN_GROUP(intc_irq28_1),
-+	SH_PFC_PIN_GROUP(intc_irq29_0),
-+	SH_PFC_PIN_GROUP(intc_irq29_1),
-+	SH_PFC_PIN_GROUP(intc_irq30_0),
-+	SH_PFC_PIN_GROUP(intc_irq30_1),
-+	SH_PFC_PIN_GROUP(intc_irq31_0),
-+	SH_PFC_PIN_GROUP(intc_irq31_1),
- 	SH_PFC_PIN_GROUP(mmc0_data1_0),
- 	SH_PFC_PIN_GROUP(mmc0_data4_0),
- 	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1433,6 +1539,60 @@ static const char * const hdmi_groups[] = {
- 	"hdmi",
- };
+ extern void r8a7778_add_standard_devices(void);
+@@ -28,5 +29,6 @@ extern void r8a7778_init_irq(void);
+ extern void r8a7778_init_irq_dt(void);
+ extern void r8a7778_clock_init(void);
+ extern void r8a7778_init_irq_extpin(int irlm);
++extern void r8a7778_sdhi_init(int id, struct sh_mobile_sdhi_info *info);
  
-+static const char * const intc_groups[] = {
-+	"intc_irq0_0",
-+	"intc_irq0_1",
-+	"intc_irq1",
-+	"intc_irq2_0",
-+	"intc_irq2_1",
-+	"intc_irq3_0",
-+	"intc_irq3_1",
-+	"intc_irq4_0",
-+	"intc_irq4_1",
-+	"intc_irq5",
-+	"intc_irq6_0",
-+	"intc_irq6_1",
-+	"intc_irq7_0",
-+	"intc_irq7_1",
-+	"intc_irq8_0",
-+	"intc_irq8_1",
-+	"intc_irq9_0",
-+	"intc_irq9_1",
-+	"intc_irq10",
-+	"intc_irq11",
-+	"intc_irq12_0",
-+	"intc_irq12_1",
-+	"intc_irq13_0",
-+	"intc_irq13_1",
-+	"intc_irq14_0",
-+	"intc_irq14_1",
-+	"intc_irq15_0",
-+	"intc_irq15_1",
-+	"intc_irq16_0",
-+	"intc_irq16_1",
-+	"intc_irq17",
-+	"intc_irq18",
-+	"intc_irq19",
-+	"intc_irq20",
-+	"intc_irq21",
-+	"intc_irq22",
-+	"intc_irq23",
-+	"intc_irq24",
-+	"intc_irq25",
-+	"intc_irq26_0",
-+	"intc_irq26_1",
-+	"intc_irq27_0",
-+	"intc_irq27_1",
-+	"intc_irq28_0",
-+	"intc_irq28_1",
-+	"intc_irq29_0",
-+	"intc_irq29_1",
-+	"intc_irq30_0",
-+	"intc_irq30_1",
-+	"intc_irq31_0",
-+	"intc_irq31_1",
+ #endif /* __ASM_R8A7778_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index d6ee521..f5b2a57 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -102,6 +102,30 @@ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+ 					  pdata, sizeof(*pdata));
+ }
+ 
++/* SDHI */
++static struct resource sdhi_resources[] = {
++	/* SDHI0 */
++	DEFINE_RES_MEM(0xFFE4C000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x77)),
++	/* SDHI1 */
++	DEFINE_RES_MEM(0xFFE4D000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x78)),
++	/* SDHI2 */
++	DEFINE_RES_MEM(0xFFE4F000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x76)),
 +};
 +
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1_0",
- 	"mmc0_data4_0",
-@@ -1471,6 +1631,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(fsia),
- 	SH_PFC_FUNCTION(fsib),
- 	SH_PFC_FUNCTION(hdmi),
-+	SH_PFC_FUNCTION(intc),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
++void __init r8a7778_sdhi_init(int id,
++			      struct sh_mobile_sdhi_info *info)
++{
++	BUG_ON(id < 0 || id > 2);
++
++	platform_device_register_resndata(
++		&platform_bus, "sh_mobile_sdhi", id,
++		sdhi_resources + (2 * id), 2,
++		info, sizeof(*info));
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
 -- 
 1.8.2.1
 
