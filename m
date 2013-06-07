@@ -1,55 +1,45 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 05 Jun 2013 08:29:52 +0000
-Subject: Re: [PATCH 01/05] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)
-Message-Id: <51AEF700.7010003@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:38 +0000
+Subject: [PATCH 08/27] ARM: shmobile: r8a7740: Add I2C DT clock names
+Message-Id: <1370591517-20239-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130530085152.24374.64208.sendpatchset@w520>
- <20130530085201.24374.97084.sendpatchset@w520>
-In-Reply-To: <20130530085201.24374.97084.sendpatchset@w520>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Bastian Hecht <hechtb@gmail.com>
 
-On 5/30/2013 5:52 PM, Magnus Damm wrote:
-> --- 0003/arch/arm/boot/dts/r8a73a4.dtsi
-> +++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-05-22 13:21:21.000000000 +0900
-> @@ -25,6 +25,27 @@
->  			reg = <0>;
->  			clock-frequency = <1500000000>;
->  		};
-> +
-> +		cpu1: cpu@1 {
-> +			device_type = "cpu";
-> +			compatible = "arm,cortex-a15";
-> +			reg = <1>;
-> +			clock-frequency = <1500000000>;
-> +		};
-> +
-> +		cpu2: cpu@2 {
-> +			device_type = "cpu";
-> +			compatible = "arm,cortex-a15";
-> +			reg = <2>;
-> +			clock-frequency = <1500000000>;
-> +		};
-> +
-> +		cpu3: cpu@3 {
-> +			device_type = "cpu";
-> +			compatible = "arm,cortex-a15";
-> +			reg = <3>;
-> +			clock-frequency = <1500000000>;
-> +		};
->  	};
+Add clock association for i2c0 and i2c1 for the new DT names.
 
-The frequency of the EXTAL on APE6EVM machine is 26MHz, and the Generic
-Timers are clocked at EXTAL x1/2 (MHz).  Do not copy-and-paste wrong
-clock-frequency properties currently we have, but fix cpu0 along with
-adding cpu1..3, please.
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Furthermore you don't have (should not) to use clock-frequency property
-if you set up CNTFRQ to an appropriate value one by one in PATCH 05/05.
---
-Shinya Kuribayashi
-Renesas Electronics
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 008b11c..ecdc0a4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -551,6 +551,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_tmu.4",		&mstp_clks[MSTP111]),
+ 	CLKDEV_DEV_ID("sh_tmu.5",		&mstp_clks[MSTP111]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
++	CLKDEV_DEV_ID("fff20000.i2c",		&mstp_clks[MSTP116]),
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
+ 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
+ 	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP125]),
+@@ -584,6 +585,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
++	CLKDEV_DEV_ID("e6c20000.i2c",		&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("e6850000.sdhi",          &mstp_clks[MSTP314]),
+-- 
+1.8.2.1
+
