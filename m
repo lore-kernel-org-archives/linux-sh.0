@@ -1,63 +1,47 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 07 Jun 2013 23:54:02 +0000
-Subject: [PATCH 1/9] sh_eth: create initial ID table
-Message-Id: <201306080354.03424.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 08:22:01 +0000
+Subject: [PATCH 03/11] ARM: shmobile: kzm9d: resigser smsc911x platform device with id -1
+Message-Id: <1370593329-27559-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-We are trying to get away from the current driver's scheme of identifying a SoC
-based on #ifdef's and the platform device ID table matching seems to be a good
-replacement -- we can use the 'driver_data' field of 'struct platform_device_id'
-as a pointer to a 'struct sh_eth_cpu_data'. Start by creating the initial table
-with driver's name as the only entry without the driver data. Check  the driver
-data in the probe() method and if it's not NULL override 'mdp->cd' from it.
+As the kzm9d only has one smsc911x device it
+may be registered as a platform device with id -1.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This allows the kzm9d board to access the smsc911x device
+when CONFIG_REGULATOR (and CONFIG_REGULATOR_FIXED_VOLTAGE)
+are set. The motivation for which is twofold: using regulators
+seems to be generally a good thing; it will move the kzm9d defconfig
+one step closer to being able to be consolidated with other
+shmobile defconfigs.
 
+An alternate but so far untested approach would be to
+update the definition of dummy_supplies in board-kzm9d.c
+to use "smsc911x.0" instead of "smsc911x".
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |   10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/mach-shmobile/board-kzm9d.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2519,6 +2519,7 @@ static int sh_eth_drv_probe(struct platf
- 	struct net_device *ndev = NULL;
- 	struct sh_eth_private *mdp = NULL;
- 	struct sh_eth_plat_data *pd = pdev->dev.platform_data;
-+	const struct platform_device_id *id = platform_get_device_id(pdev);
+diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
+index c016ccd..4368000 100644
+--- a/arch/arm/mach-shmobile/board-kzm9d.c
++++ b/arch/arm/mach-shmobile/board-kzm9d.c
+@@ -56,7 +56,7 @@ static struct smsc911x_platform_config smsc911x_platdata = {
  
- 	/* get base addr */
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -2582,6 +2583,8 @@ static int sh_eth_drv_probe(struct platf
- #else
- 	mdp->cd = &sh_eth_my_cpu_data;
- #endif
-+	if (id->driver_data)
-+		mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
- 	sh_eth_set_default_cpu_data(mdp->cd);
- 
- 	/* set function */
-@@ -2696,9 +2699,16 @@ static const struct dev_pm_ops sh_eth_de
- #define SH_ETH_PM_OPS NULL
- #endif
- 
-+static struct platform_device_id sh_eth_id_table[] = {
-+	{ CARDNAME },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
-+
- static struct platform_driver sh_eth_driver = {
- 	.probe = sh_eth_drv_probe,
- 	.remove = sh_eth_drv_remove,
-+	.id_table = sh_eth_id_table,
- 	.driver = {
- 		   .name = CARDNAME,
- 		   .pm = SH_ETH_PM_OPS,
+ static struct platform_device smsc91x_device = {
+ 	.name	= "smsc911x",
+-	.id	= 0,
++	.id	= -1,
+ 	.dev	= {
+ 		  .platform_data = &smsc911x_platdata,
+ 		},
+-- 
+1.8.2.1
+
