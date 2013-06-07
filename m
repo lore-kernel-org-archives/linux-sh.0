@@ -1,39 +1,95 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 22:22:41 +0000
-Subject: [PATCH v5 12/22] ARM: shmobile: sh7372: Add pin control device to device tree
-Message-Id: <1370989371-30846-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:42 +0000
+Subject: [PATCH 12/27] ARM: shmobile: r8a73a4: add div4 clocks
+Message-Id: <1370591517-20239-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the sh7372 device tree.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+DIV4 clocks control each core clocks.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh7372.dtsi | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a73a4.c | 45 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
-index 677fc60..ce19398 100644
---- a/arch/arm/boot/dts/sh7372.dtsi
-+++ b/arch/arm/boot/dts/sh7372.dtsi
-@@ -18,4 +18,12 @@
- 			compatible = "arm,cortex-a8";
- 		};
- 	};
-+
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-sh7372";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605801c 0x1c>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 2be592f..147314a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -32,6 +32,8 @@
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR5 0xe6150144
+ 
++#define FRQCRA		0xE6150000
++#define FRQCRB		0xE6150004
+ #define CKSCR		0xE61500C0
+ #define PLLECR		0xE61500D0
+ #define PLL1CR		0xE6150028
+@@ -175,6 +177,46 @@ static struct clk *main_clks[] = {
+ 	&pll2h_clk,
  };
+ 
++/* DIV4 */
++static void div4_kick(struct clk *clk)
++{
++	unsigned long value;
++
++	/* set KICK bit in FRQCRB to update hardware setting */
++	value = ioread32(CPG_MAP(FRQCRB));
++	value |= (1 << 31);
++	iowrite32(value, CPG_MAP(FRQCRB));
++}
++
++static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10};
++
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors	= divisors,
++	.nr_divisors	= ARRAY_SIZE(divisors),
++};
++
++static struct clk_div4_table div4_table = {
++	.div_mult_table	= &div4_div_mult_table,
++	.kick		= div4_kick,
++};
++
++enum {
++	DIV4_I, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
++	DIV4_ZX, DIV4_ZS, DIV4_HP,
++	DIV4_NR };
++
++static struct clk div4_clks[DIV4_NR] = {
++	[DIV4_I]	= SH_CLK_DIV4(&pll1_clk, FRQCRA, 20, 0x0dff, CLK_ENABLE_ON_INIT),
++	[DIV4_M3]	= SH_CLK_DIV4(&pll1_clk, FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
++	[DIV4_B]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  8, 0x0dff, CLK_ENABLE_ON_INIT),
++	[DIV4_M1]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  4, 0x1dff, 0),
++	[DIV4_M2]	= SH_CLK_DIV4(&pll1_clk, FRQCRA,  0, 0x1dff, 0),
++	[DIV4_ZX]	= SH_CLK_DIV4(&pll1_clk, FRQCRB, 12, 0x0dff, 0),
++	[DIV4_ZS]	= SH_CLK_DIV4(&pll1_clk, FRQCRB,  8, 0x0dff, 0),
++	[DIV4_HP]	= SH_CLK_DIV4(&pll1_clk, FRQCRB,  4, 0x0dff, 0),
++};
++
++/* MSTP */
+ enum {
+ 	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
+ 	MSTP522,
+@@ -258,6 +300,9 @@ void __init r8a73a4_clock_init(void)
+ 		ret = clk_register(main_clks[k]);
+ 
+ 	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -- 
-1.8.1.5
+1.8.2.1
 
