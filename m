@@ -1,44 +1,41 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:52 +0000
-Subject: [PATCH 02/11] ARM: shmobile: r8a7778: fix Ether device name
-Message-Id: <1371106861-25626-3-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:35 +0000
+Subject: [PATCH 05/27] ARM: shmobile: use do{ }while() on SH_CLK_SET_RATIO()
+Message-Id: <1370591517-20239-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-While recasting commit 524219146a89aee5366326c225ccd71231419d89 (ARM: shmobile:
-R8A7778: add Ether support), I made a typo in the platform device's name: used
-underscore instead of hyphen.
+SH_CLK_SET_RATIO() will be trouble without this patch
 
-However, there's now patch merged to net-next.git renaming the platform device
-from "sh-eth" to "r8a777x-ehter", so it makes the most sense to change the name
-straight to that one.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/include/mach/clock.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index f5b2a57..ce44fbb 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -96,7 +96,7 @@ static struct resource ether_resources[] = {
+diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
+index 8902044..03e5607 100644
+--- a/arch/arm/mach-shmobile/include/mach/clock.h
++++ b/arch/arm/mach-shmobile/include/mach/clock.h
+@@ -31,9 +31,9 @@ static SH_FIXED_RATIO_CLKg(name, p, r)
+ 	SH_FIXED_RATIO_CLK(name, p, name)
  
- void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
- {
--	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
-+	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
- 					  ether_resources,
- 					  ARRAY_SIZE(ether_resources),
- 					  pdata, sizeof(*pdata));
+ #define SH_CLK_SET_RATIO(p, m, d)	\
+-{			\
++do {			\
+ 	(p)->mul = m;	\
+ 	(p)->div = d;	\
+-}
++} while (0)
+ 
+ #endif
 -- 
 1.8.2.1
 
