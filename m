@@ -1,85 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 22:22:37 +0000
-Subject: [PATCH v5 08/22] ARM: shmobile: r8a7779: Add pin control device to device tree
-Message-Id: <1370989371-30846-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 08:22:00 +0000
+Subject: [PATCH 02/11] ARM: shmobile: bockw: define FPGA address and rename iomem variable
+Message-Id: <1370593329-27559-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the r8a7779 device tree and remove manual pinmux
-initialization from the corresponding board files.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Bock-W board will needs more board specific ioremap() method.
+This patch tidyup current FPGA specific settings
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi                  |  5 +++++
- arch/arm/mach-shmobile/board-marzen-reference.c | 17 ++++++++---------
- 2 files changed, 13 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 7f146c6..9dfc438 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -101,6 +101,11 @@
- 		interrupts = <0 81 0x4>;
- 	};
- 
-+	pfc: pfc@fffc0000 {
-+		compatible = "renesas,pfc-r8a7779";
-+		reg = <0xfffc0000 0x23c>;
-+	};
-+
- 	thermal@ffc48000 {
- 		compatible = "renesas,rcar-thermal";
- 		reg = <0xffc48000 0x38>;
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 480d882..94804f3 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -28,24 +28,24 @@
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
- 	/* SCIF2 (CN18: DEBUG0) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
- 				  "scif2_data_c", "scif2"),
- 	/* SCIF4 (CN19: DEBUG1) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
- 				  "scif4_data", "scif4"),
- 	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
- 				  "sdhi0_wp", "sdhi0"),
- 	/* SMSC */
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
- 				  "intc_irq1_b", "intc"),
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
- 				  "lbsc_ex_cs0", "lbsc"),
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index dac4365..badde08 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -46,10 +46,11 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 				  "scif0_ctrl", "scif0"),
  };
  
-@@ -53,7 +53,6 @@ static void __init marzen_init(void)
++#define FPGA	0x18200000
+ #define IRQ0MR	0x30
+ static void __init bockw_init(void)
  {
- 	pinctrl_register_mappings(marzen_pinctrl_map,
- 				  ARRAY_SIZE(marzen_pinctrl_map));
--	r8a7779_pinmux_init();
+-	void __iomem *fpga;
++	void __iomem *base;
  
- 	r8a7779_add_standard_devices_dt();
- }
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin(1);
+@@ -59,8 +60,8 @@ static void __init bockw_init(void)
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
+ 	r8a7778_pinmux_init();
+ 
+-	fpga = ioremap_nocache(0x18200000, SZ_1M);
+-	if (fpga) {
++	base = ioremap_nocache(FPGA, SZ_1M);
++	if (base) {
+ 		/*
+ 		 * CAUTION
+ 		 *
+@@ -68,10 +69,10 @@ static void __init bockw_init(void)
+ 		 * it should be cared in the future
+ 		 * Now, it is assuming IRQ0 was used only from SMSC.
+ 		 */
+-		u16 val = ioread16(fpga + IRQ0MR);
++		u16 val = ioread16(base + IRQ0MR);
+ 		val &= ~(1 << 4); /* enable SMSC911x */
+-		iowrite16(val, fpga + IRQ0MR);
+-		iounmap(fpga);
++		iowrite16(val, base + IRQ0MR);
++		iounmap(base);
+ 
+ 		platform_device_register_resndata(
+ 			&platform_bus, "smsc911x", -1,
 -- 
-1.8.1.5
+1.8.2.1
 
