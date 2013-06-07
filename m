@@ -1,54 +1,105 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:56 +0000
-Subject: [PATCH 06/11] ARM: shmobile: r8a7778: add support MMC clock
-Message-Id: <1371106861-25626-7-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 07 Jun 2013 23:57:12 +0000
+Subject: [PATCH 4/9] sh_eth: get R8A7740 support out of #ifdef
+Message-Id: <201306080357.12704.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Get the R8A7740 code/data in the driver out of #ifdef by adding "r8a7740-gether"
+to the platform driver's ID table.  Change the GEther platform device's name in
+the ARM platform code accordingly.
 
-This patch adds r8a7778 MMC clock support.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 +-
+ arch/arm/mach-shmobile/clock-r8a7740.c         |    2 +-
+ drivers/net/ethernet/renesas/sh_eth.c          |   16 +++++++---------
+ 3 files changed, 9 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index c2c1895..18d44f5 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -103,6 +103,7 @@ static struct clk *main_clks[] = {
+Index: net-next/arch/arm/mach-shmobile/board-armadillo800eva.c
+=================================--- net-next.orig/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ net-next/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -377,7 +377,7 @@ static struct resource sh_eth_resources[
  };
  
- enum {
-+	MSTP331,
- 	MSTP323, MSTP322, MSTP321,
- 	MSTP114,
- 	MSTP030,
-@@ -112,6 +113,7 @@ enum {
- 	MSTP_NR };
+ static struct platform_device sh_eth_device = {
+-	.name = "sh-eth",
++	.name = "r8a7740-gether",
+ 	.id = -1,
+ 	.dev = {
+ 		.platform_data = &sh_eth_platdata,
+Index: net-next/arch/arm/mach-shmobile/clock-r8a7740.c
+=================================--- net-next.orig/arch/arm/mach-shmobile/clock-r8a7740.c
++++ net-next/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -591,7 +591,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6860000.sdhi",          &mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
++	CLKDEV_DEV_ID("r8a7740-gether",		&mstp_clks[MSTP309]),
  
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
- 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
- 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
-@@ -137,6 +139,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
+ 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -619,11 +619,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.irq_flags	= IRQF_SHARED,
+ #endif
+ };
++#endif
  
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sh_mmcif", &mstp_clks[MSTP331]), /* MMC */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
--- 
-1.8.2.1
-
+-
+-#elif defined(CONFIG_ARCH_R8A7740)
+-
+-static void sh_eth_chip_reset(struct net_device *ndev)
++static void sh_eth_chip_reset_r8a7740(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+@@ -634,7 +632,7 @@ static void sh_eth_chip_reset(struct net
+ 	sh_eth_select_mii(ndev);
+ }
+ 
+-static void sh_eth_set_rate(struct net_device *ndev)
++static void sh_eth_set_rate_gether(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+@@ -654,10 +652,10 @@ static void sh_eth_set_rate(struct net_d
+ }
+ 
+ /* R8A7740 */
+-static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
+-	.chip_reset	= sh_eth_chip_reset,
++static struct sh_eth_cpu_data r8a7740_data = {
++	.chip_reset	= sh_eth_chip_reset_r8a7740,
+ 	.set_duplex	= sh_eth_set_duplex,
+-	.set_rate	= sh_eth_set_rate,
++	.set_rate	= sh_eth_set_rate_gether,
+ 
+ 	.ecsr_value	= ECSR_ICD | ECSR_MPD,
+ 	.ecsipr_value	= ECSIPR_LCHNGIP | ECSIPR_ICDIP | ECSIPR_MPDIP,
+@@ -680,7 +678,6 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.tsu		= 1,
+ 	.select_mii	= 1,
+ };
+-#endif
+ 
+ static struct sh_eth_cpu_data sh7619_data = {
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
+@@ -2701,6 +2698,7 @@ static const struct dev_pm_ops sh_eth_de
+ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7619-ether", (kernel_ulong_t)&sh7619_data },
+ 	{ "sh771x-ether", (kernel_ulong_t)&sh771x_data },
++	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ CARDNAME },
+ 	{ }
+ };
