@@ -1,110 +1,63 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 Jun 2013 08:23:35 +0000
-Subject: [PATCH v10 08/21] mx1-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1370939028-8352-9-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 07 Jun 2013 23:54:02 +0000
+Subject: [PATCH 1/9] sh_eth: create initial ID table
+Message-Id: <201306080354.03424.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-When adding and removing a client, the mx1-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
+We are trying to get away from the current driver's scheme of identifying a SoC
+based on #ifdef's and the platform device ID table matching seems to be a good
+replacement -- we can use the 'driver_data' field of 'struct platform_device_id'
+as a pointer to a 'struct sh_eth_cpu_data'. Start by creating the initial table
+with driver's name as the only entry without the driver data. Check  the driver
+data in the probe() method and if it's not NULL override 'mdp->cd' from it.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/media/platform/soc_camera/mx1_camera.c |   32 +++++++++++++++---------
- 1 files changed, 20 insertions(+), 12 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/drivers/media/platform/soc_camera/mx1_camera.c b/drivers/media/platform/soc_camera/mx1_camera.c
-index 5f9ec8e..fea3e61 100644
---- a/drivers/media/platform/soc_camera/mx1_camera.c
-+++ b/drivers/media/platform/soc_camera/mx1_camera.c
-@@ -399,7 +399,7 @@ static void mx1_camera_activate(struct mx1_camera_dev *pcdev)
- {
- 	unsigned int csicr1 = CSICR1_EN;
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2519,6 +2519,7 @@ static int sh_eth_drv_probe(struct platf
+ 	struct net_device *ndev = NULL;
+ 	struct sh_eth_private *mdp = NULL;
+ 	struct sh_eth_plat_data *pd = pdev->dev.platform_data;
++	const struct platform_device_id *id = platform_get_device_id(pdev);
  
--	dev_dbg(pcdev->soc_host.icd->parent, "Activate device\n");
-+	dev_dbg(pcdev->soc_host.v4l2_dev.dev, "Activate device\n");
+ 	/* get base addr */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+@@ -2582,6 +2583,8 @@ static int sh_eth_drv_probe(struct platf
+ #else
+ 	mdp->cd = &sh_eth_my_cpu_data;
+ #endif
++	if (id->driver_data)
++		mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
+ 	sh_eth_set_default_cpu_data(mdp->cd);
  
- 	clk_prepare_enable(pcdev->clk);
+ 	/* set function */
+@@ -2696,9 +2699,16 @@ static const struct dev_pm_ops sh_eth_de
+ #define SH_ETH_PM_OPS NULL
+ #endif
  
-@@ -415,7 +415,7 @@ static void mx1_camera_activate(struct mx1_camera_dev *pcdev)
- 
- static void mx1_camera_deactivate(struct mx1_camera_dev *pcdev)
- {
--	dev_dbg(pcdev->soc_host.icd->parent, "Deactivate device\n");
-+	dev_dbg(pcdev->soc_host.v4l2_dev.dev, "Deactivate device\n");
- 
- 	/* Disable all CSI interface */
- 	__raw_writel(0x00, pcdev->base + CSICR1);
-@@ -423,26 +423,35 @@ static void mx1_camera_deactivate(struct mx1_camera_dev *pcdev)
- 	clk_disable_unprepare(pcdev->clk);
- }
- 
-+static int mx1_camera_add_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "MX1 Camera driver attached to camera %d\n",
-+		 icd->devnum);
++static struct platform_device_id sh_eth_id_table[] = {
++	{ CARDNAME },
++	{ }
++};
++MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
 +
-+	return 0;
-+}
-+
-+static void mx1_camera_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "MX1 Camera driver detached from camera %d\n",
-+		 icd->devnum);
-+}
-+
- /*
-  * The following two functions absolutely depend on the fact, that
-  * there can be only one camera on i.MX1/i.MXL camera sensor interface
-  */
--static int mx1_camera_add_device(struct soc_camera_device *icd)
-+static int mx1_camera_clock_start(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct mx1_camera_dev *pcdev = ici->priv;
- 
--	dev_info(icd->parent, "MX1 Camera driver attached to camera %d\n",
--		 icd->devnum);
--
- 	mx1_camera_activate(pcdev);
- 
- 	return 0;
- }
- 
--static void mx1_camera_remove_device(struct soc_camera_device *icd)
-+static void mx1_camera_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct mx1_camera_dev *pcdev = ici->priv;
- 	unsigned int csicr1;
- 
-@@ -453,9 +462,6 @@ static void mx1_camera_remove_device(struct soc_camera_device *icd)
- 	/* Stop DMA engine */
- 	imx_dma_disable(pcdev->dma_chan);
- 
--	dev_info(icd->parent, "MX1 Camera driver detached from camera %d\n",
--		 icd->devnum);
--
- 	mx1_camera_deactivate(pcdev);
- }
- 
-@@ -669,6 +675,8 @@ static struct soc_camera_host_ops mx1_soc_camera_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= mx1_camera_add_device,
- 	.remove		= mx1_camera_remove_device,
-+	.clock_start	= mx1_camera_clock_start,
-+	.clock_stop	= mx1_camera_clock_stop,
- 	.set_bus_param	= mx1_camera_set_bus_param,
- 	.set_fmt	= mx1_camera_set_fmt,
- 	.try_fmt	= mx1_camera_try_fmt,
--- 
-1.7.2.5
-
+ static struct platform_driver sh_eth_driver = {
+ 	.probe = sh_eth_drv_probe,
+ 	.remove = sh_eth_drv_remove,
++	.id_table = sh_eth_id_table,
+ 	.driver = {
+ 		   .name = CARDNAME,
+ 		   .pm = SH_ETH_PM_OPS,
