@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:01 +0000
-Subject: [PATCH 070/130] ARM: shmobile: armadillo800eva: Register pinctrl mapping for FSI
-Message-Id: <1370420821-28420-71-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:52 +0000
+Subject: [PATCH 22/27] ARM: shmobile: r8a7790: add TPU PWM support
+Message-Id: <1370591517-20239-23-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,58 +12,44 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Replace the GPIO-based FSI pinmux configuration by a pinctrl mapping.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 21 ++++++++++++---------
- 1 file changed, 12 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 4327f7e..4e1f8f3 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1055,6 +1055,18 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
- 				  "ceu0_sync", "ceu0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
- 				  "ceu0_field", "ceu0"),
-+	/* FSIA */
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-r8a7740",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-r8a7740",
-+				  "fsia_mclk_out", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-r8a7740",
-+				  "fsia_data_in_1", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.0", "pfc-r8a7740",
-+				  "fsia_data_out_0", "fsia"),
-+	/* FSIB */
-+	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-r8a7740",
-+				  "fsib_mclk_in", "fsib"),
- 	/* GETHER */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
- 				  "gether_mii", "gether"),
-@@ -1181,20 +1193,11 @@ static void __init eva_init(void)
- 	gpio_request_one(158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index bedd20c..b393592 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -48,6 +48,7 @@
+ #define CPG_LEN 0x1000
  
- 	/* FSI-WM8978 */
--	gpio_request(GPIO_FN_FSIAIBT,		NULL);
--	gpio_request(GPIO_FN_FSIAILR,		NULL);
--	gpio_request(GPIO_FN_FSIAOMC,		NULL);
--	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
--	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
--
- 	gpio_request(7, NULL);
- 	gpio_request(8, NULL);
- 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
+ #define SMSTPCR2 0xe6150138
++#define SMSTPCR3 0xe615013c
+ #define SMSTPCR7 0xe615014c
  
--	/* FSI-HDMI */
--	gpio_request(GPIO_FN_FSIBCK,		NULL);
--
- 	/* HDMI */
- 	gpio_request(GPIO_FN_HDMI_HPD,		NULL);
- 	gpio_request(GPIO_FN_HDMI_CEC,		NULL);
+ #define MODEMR		0xE6160060
+@@ -178,11 +179,17 @@ static struct clk div6_clks[DIV6_NR] = {
+ };
+ 
+ /* MSTP */
+-enum { MSTP721, MSTP720,
+-	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
++enum {
++	MSTP721, MSTP720,
++	MSTP304,
++	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
++	MSTP_NR
++};
++
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
++	[MSTP304] = SH_CLK_MSTP32(&cp_clk, SMSTPCR3, 4, 0), /* TPU0 */
+ 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
 -- 
 1.8.2.1
 
