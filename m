@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:49 +0000
-Subject: [PATCH 19/27] ARM: shmobile: r8a7790: add div4 clocks
-Message-Id: <1370591517-20239-20-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 08:22:09 +0000
+Subject: [PATCH 11/11] ARM: shmobile: marzen: keep local function as static
+Message-Id: <1370593329-27559-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,78 +12,27 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-DIV4 clocks control SD* core clocks.
+marzen_init_late() should be static
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+ arch/arm/mach-shmobile/board-marzen.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 850e47f..c85e643 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -51,6 +51,7 @@
- #define SMSTPCR7 0xe615014c
- 
- #define MODEMR		0xE6160060
-+#define SDCKCR		0xE6150074
- 
- static struct clk_mapping cpg_mapping = {
- 	.phys   = CPG_BASE,
-@@ -131,6 +132,29 @@ static struct clk *main_clks[] = {
- 	&cp_clk,
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 71f174e..9b5ed7e 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -350,7 +350,7 @@ static struct platform_device *marzen_late_devices[] __initdata = {
+ 	&ohci1_device,
  };
  
-+/* SDHI (DIV4) clock */
-+static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
-+
-+static struct clk_div_mult_table div4_div_mult_table = {
-+	.divisors = divisors,
-+	.nr_divisors = ARRAY_SIZE(divisors),
-+};
-+
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
-+
-+enum {
-+	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
-+};
-+
-+struct clk div4_clks[DIV4_NR] = {
-+	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
-+};
-+
-+/* MSTP */
- enum { MSTP721, MSTP720,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
- static struct clk mstp_clks[MSTP_NR] = {
-@@ -173,6 +197,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("qspi",		&qspi_clk),
- 	CLKDEV_CON_ID("cp",		&cp_clk),
- 
-+	/* DIV4 */
-+	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
-+	CLKDEV_CON_ID("sd0",		&div4_clks[DIV4_SD0]),
-+	CLKDEV_CON_ID("sd1",		&div4_clks[DIV4_SD1]),
-+
- 	/* MSTP */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
-@@ -233,6 +262,9 @@ void __init r8a7790_clock_init(void)
- 		ret = clk_register(main_clks[k]);
- 
- 	if (!ret)
-+		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
-+
-+	if (!ret)
- 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
- 
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+-void __init marzen_init_late(void)
++static void __init marzen_init_late(void)
+ {
+ 	/* get usb phy */
+ 	phy = usb_get_phy(USB_PHY_TYPE_USB2);
 -- 
 1.8.2.1
 
