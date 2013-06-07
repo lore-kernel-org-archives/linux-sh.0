@@ -1,13 +1,10 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 05 Jun 2013 08:28:35 +0000
+Date: Fri, 07 Jun 2013 10:25:11 +0000
 Subject: Re: [PATCH 1/2] ARM: shmobile: sdhi: pass DMA filter from platform code
-Message-Id: <Pine.LNX.4.64.1306051020340.19739@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1306071222250.11277@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370008605-3745603-1-git-send-email-arnd@arndb.de>
- <2862988.jnTv0iSQcj@wuerfel>
- <alpine.DEB.2.00.1305311721160.7395@axis700.grange>
- <3675801.kLfsmmiSOq@wuerfel>
-In-Reply-To: <3675801.kLfsmmiSOq@wuerfel>
+In-Reply-To: <1370008605-3745603-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,36 +14,77 @@ Hi Arnd
 
 On Fri, 31 May 2013, Arnd Bergmann wrote:
 
-> On Friday 31 May 2013 17:30:01 Guennadi Liakhovetski wrote:
-> > On Fri, 31 May 2013, Arnd Bergmann wrote:
-> > > On Friday 31 May 2013 16:52:13 Guennadi Liakhovetski wrote:
+> Since eec95ee2261 "mmc: sdhi/tmio: switch to using
+> dmaengine_slave_config()", we are getting a link error with
+> a number of shmobile configurations that turn on the sdhi
+> driver but the not the SH_DMAE_BASE driver.
 > 
-> > > I think it's more a matter of using the API correctly. The dmaengine
-> > > API is an abstraction to separate the slave driver from the master
-> > > through well-defined calls. If you make additional assumptions
-> > > in the slave driver about the master, that is a layering violation.
-> > 
-> > I think it is a common practice, see e.g.
-> > 
-> > drivers/mmc/host/omap_hsmmc.c
-> > drivers/mmc/host/davinci_mmc.c
+> The reason is that the driver now incorrectly refers to
+> a global filter function that should be referenced only
+> by platform code:
 > 
-> Yes, those should be fixed as well.
+> drivers/built-in.o: In function `sh_mobile_sdhi_probe':
+> drivers/mmc/host/sh_mobile_sdhi.c:202: undefined reference to `shdma_chan_filter'
+> drivers/mmc/host/sh_mobile_sdhi.c:202: undefined reference to `shdma_chan_filter'
+> 
+> The fix is to move the pointer to the filter function out
+> of the driver, similar to how we do it for most other
+> platforms. This makes the driver almost independent
+> of the underlying dma engine, besides the fact that
+> it tries to pass the same number both into the filter
+> function and into slave config, which only works on
+> some DMA engine drivers.
+> 
+> Since the bug is only present on the mmc tree, I think
+> the fix should be applied there as well.
+> 
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> Cc: Chris Ball <cjb@laptop.org>
+> Cc: Samuel Ortiz <sameo@linux.intel.com>
+> Cc: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  arch/arm/mach-shmobile/board-ag5evm.c          |  4 ++++
+>  arch/arm/mach-shmobile/board-ap4evb.c          |  7 +++++++
+>  arch/arm/mach-shmobile/board-armadillo800eva.c |  7 +++++++
+>  arch/arm/mach-shmobile/board-kzm9g.c           |  7 +++++++
+>  arch/arm/mach-shmobile/board-mackerel.c        | 10 ++++++++++
+>  drivers/mmc/host/sh_mobile_sdhi.c              |  9 ++++++++-
+>  include/linux/mmc/sh_mobile_sdhi.h             |  1 +
+>  7 files changed, 44 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+> index c754071..ad01651 100644
+> --- a/arch/arm/mach-shmobile/board-ag5evm.c
+> +++ b/arch/arm/mach-shmobile/board-ag5evm.c
+> @@ -42,6 +42,7 @@
+>  #include <linux/mmc/sh_mobile_sdhi.h>
+>  #include <linux/mfd/tmio.h>
+>  #include <linux/sh_clk.h>
+> +#include <linux/sh_dma.h>
+>  #include <linux/irqchip/arm-gic.h>
+>  #include <video/sh_mobile_lcdc.h>
+>  #include <video/sh_mipi_dsi.h>
+> @@ -403,8 +404,11 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[] >  
+>  /* SDHI0 */
+>  static struct sh_mobile_sdhi_info sdhi0_info = {
+> +#ifdef CONFIG_SH_DMAE_BASE
 
-Then we'll have to fix quite a few of those - I only looked under 
-drivers/mmc for now.
+Right, that's the problem, I think. Don't think we want these #ifdefs in 
+all shdma users - under arch/arm and arch/sh. That's why I think we need 
+my fix in the first place to fix the compile breakage. After that we can 
+think about improving DMA slave driver decoupling from specific DMAC 
+drivers - if at all needed.
 
-But isn't that a separate issue? The problem we have to address now is 
-broken compilation, for which, I think, my patch is the simplest solution. 
-DMA slave drivers being DMAC implementation agnostic is good, no doubt 
-about that, even though many of them will ever only use one DMAC type, but 
-isn't that a separate issue? Fixing it would require patching 3 locations: 
-a header to add a callback field, arches to add filters and drivers to 
-actually call them instead of hard-coded functions. In the worst case 
-those changes would go via 3 different git-trees, so, might take 3 kernel 
-releases... Ok, at least two if we puch the header change together with 
-arch updates via the same tree with suitable acks, still, that's too long, 
-IMHO.
+>  	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+>  	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+> +	.dma_filter	= shdma_chan_filter,
+> +#endif
+>  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+>  	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+>  	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+
+[snip]
 
 Thanks
 Guennadi
