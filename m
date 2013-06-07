@@ -1,55 +1,73 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jun 2013 19:08:21 +0000
-Subject: [PATCH v11 11/21] soc-camera: don't attach the client to the host during probing
-Message-Id: <1371236911-15131-12-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 07 Jun 2013 23:56:05 +0000
+Subject: [PATCH 3/9] sh_eth: get SH7619 support out of #ifdef
+Message-Id: <201306080356.05904.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-During client probing we only have to turn on the host's clock, no need to
-actually attach the client to the host.
+Get  the SH7619 data in the driver out of #ifdef by adding "sh7619-ether" to the
+platform driver's ID table. Change the Ether platform device's name  in  the SH
+platform code accordingly.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/media/platform/soc_camera/soc_camera.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+Note that in this case the driver's probe will crash anyway as the platform code
+is hopelessly behind since it passes PHY ID instead of 'struct sh_eth_plat_data'
+pointer as a platform data.
 
-diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
-index e503f03..ac98bcb 100644
---- a/drivers/media/platform/soc_camera/soc_camera.c
-+++ b/drivers/media/platform/soc_camera/soc_camera.c
-@@ -1207,7 +1207,7 @@ static int soc_camera_probe(struct soc_camera_device *icd)
- 		ssdd->reset(icd->pdev);
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c |    4 ++--
+ drivers/net/ethernet/renesas/sh_eth.c |    6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+Index: net-next/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+=================================--- net-next.orig/arch/sh/kernel/cpu/sh2/setup-sh7619.c
++++ net-next/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+@@ -124,8 +124,8 @@ static struct resource eth_resources[]  };
  
- 	mutex_lock(&ici->host_lock);
--	ret = soc_camera_add_device(icd);
-+	ret = ici->ops->clock_start(ici);
- 	mutex_unlock(&ici->host_lock);
- 	if (ret < 0)
- 		goto eadd;
-@@ -1280,7 +1280,7 @@ static int soc_camera_probe(struct soc_camera_device *icd)
- 		icd->field		= mf.field;
- 	}
+ static struct platform_device eth_device = {
+-	.name = "sh-eth",
+-	.id	= -1,
++	.name = "sh7619-ether",
++	.id = -1,
+ 	.dev = {
+ 		.platform_data = (void *)1,
+ 	},
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -680,9 +680,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.tsu		= 1,
+ 	.select_mii	= 1,
+ };
++#endif
  
--	soc_camera_remove_device(icd);
-+	ici->ops->clock_stop(ici);
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7619)
+-static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
++static struct sh_eth_cpu_data sh7619_data = {
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
  
- 	mutex_unlock(&ici->host_lock);
+ 	.apr		= 1,
+@@ -690,7 +690,6 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.tpauser	= 1,
+ 	.hw_swap	= 1,
+ };
+-#endif
  
-@@ -1303,7 +1303,7 @@ eadddev:
- 	icd->vdev = NULL;
- evdc:
- 	mutex_lock(&ici->host_lock);
--	soc_camera_remove_device(icd);
-+	ici->ops->clock_stop(ici);
- 	mutex_unlock(&ici->host_lock);
- eadd:
- 	v4l2_ctrl_handler_free(&icd->ctrl_handler);
--- 
-1.7.2.5
+ static struct sh_eth_cpu_data sh771x_data = {
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
+@@ -2700,6 +2699,7 @@ static const struct dev_pm_ops sh_eth_de
+ #endif
+ 
+ static struct platform_device_id sh_eth_id_table[] = {
++	{ "sh7619-ether", (kernel_ulong_t)&sh7619_data },
+ 	{ "sh771x-ether", (kernel_ulong_t)&sh771x_data },
+ 	{ CARDNAME },
+ 	{ }
 
