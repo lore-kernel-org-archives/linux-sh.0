@@ -1,60 +1,79 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:39 +0000
-Subject: [PATCH 048/130] ARM: shmobile: ap4evb: Register pinctrl mapping for KEYSC
-Message-Id: <1370420821-28420-49-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:36 +0000
+Subject: [PATCH 06/27] ARM: shmobile: r8a7778: fixup Ether setup code position
+Message-Id: <1370591517-20239-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Replace the GPIO-based KEYSC pinmux configuration by a pinctrl mapping.
+Ether setup code position was scattering.
+This patch fixes it up
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 17 +++++------------
- 1 file changed, 5 insertions(+), 12 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 2dfa235..c7a9efc 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1102,6 +1102,11 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
- 	/* HDMI */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-mobile-hdmi", "pfc-sh7372",
- 				  "hdmi", "hdmi"),
-+	/* KEYSC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc", "pfc-sh7372",
-+				  "keysc_in04_0", "keysc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc", "pfc-sh7372",
-+				  "keysc_out5", "keysc"),
- 	/* MMCIF */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
- 				  "mmc0_data8_0", "mmc0"),
-@@ -1219,18 +1224,6 @@ static void __init ap4evb_init(void)
- 	 * IRQ28 for Touch Panel, set dip switches S3, S43 as OFF, ON.
- 	 */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 30b4a33..d6ee521 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -80,12 +80,6 @@ static struct sh_timer_config sh_tmu1_platform_data = {
+ 	.clocksource_rating	= 200,
+ };
  
--	/* enable KEYSC */
--	gpio_request(GPIO_FN_KEYOUT0, NULL);
--	gpio_request(GPIO_FN_KEYOUT1, NULL);
--	gpio_request(GPIO_FN_KEYOUT2, NULL);
--	gpio_request(GPIO_FN_KEYOUT3, NULL);
--	gpio_request(GPIO_FN_KEYOUT4, NULL);
--	gpio_request(GPIO_FN_KEYIN0_136, NULL);
--	gpio_request(GPIO_FN_KEYIN1_135, NULL);
--	gpio_request(GPIO_FN_KEYIN2_134, NULL);
--	gpio_request(GPIO_FN_KEYIN3_133, NULL);
--	gpio_request(GPIO_FN_KEYIN4,     NULL);
+-/* Ether */
+-static struct resource ether_resources[] = {
+-	DEFINE_RES_MEM(0xfde00000, 0x400),
+-	DEFINE_RES_IRQ(gic_iid(0x89)),
+-};
 -
- 	/* enable TouchScreen */
- 	irq_set_irq_type(IRQ28, IRQ_TYPE_LEVEL_LOW);
+ #define r8a7778_register_tmu(idx)			\
+ 	platform_device_register_resndata(		\
+ 		&platform_bus, "sh_tmu", idx,		\
+@@ -94,6 +88,20 @@ static struct resource ether_resources[] = {
+ 		&sh_tmu##idx##_platform_data,		\
+ 		sizeof(sh_tmu##idx##_platform_data))
  
++/* Ether */
++static struct resource ether_resources[] = {
++	DEFINE_RES_MEM(0xfde00000, 0x400),
++	DEFINE_RES_IRQ(gic_iid(0x89)),
++};
++
++void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  pdata, sizeof(*pdata));
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
+@@ -118,14 +126,6 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_tmu(1);
+ }
+ 
+-void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+-{
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  pdata, sizeof(*pdata));
+-}
+-
+ static struct renesas_intc_irqpin_config irqpin_platform_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+ 	.sense_bitfield_width = 2,
 -- 
 1.8.2.1
 
