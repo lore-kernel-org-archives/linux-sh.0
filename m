@@ -1,53 +1,47 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:32 +0000
-Subject: [PATCH 041/130] ARM: shmobile: mackerel: Register pinctrl mapping for SMSC911x
-Message-Id: <1370420821-28420-42-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 08:22:03 +0000
+Subject: [PATCH 05/11] ARM: shmobile: bockw: add CN9 SCIF/RCAN selection dipswitch explanation
+Message-Id: <1370593329-27559-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Replace the GPIO-based SMSC911x pinmux configuration by a pinctrl
-mapping.
+Debug serial (= SCIF0) is connected to CN9 upper side,
+and it is shared by RCAN.
+This patch adds SCIF/RCAN dipswitch explanation on
+comment area for developers.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 4be236d..49b66a8 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1379,6 +1379,11 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 				  "sdhi2_data4", "sdhi2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh7372",
- 				  "sdhi2_ctrl", "sdhi2"),
-+	/* SMSC911X */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
-+				  "bsc_cs5a", "bsc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-sh7372",
-+				  "intc_irq6_0", "intc"),
- };
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index badde08..3ce020a 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -26,6 +26,14 @@
+ #include <mach/r8a7778.h>
+ #include <asm/mach/arch.h>
  
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
-@@ -1422,10 +1427,6 @@ static void __init mackerel_init(void)
- 				  ARRAY_SIZE(mackerel_pinctrl_map));
- 	sh7372_pinmux_init();
- 
--	/* enable SMSC911X */
--	gpio_request(GPIO_FN_CS5A,	NULL);
--	gpio_request(GPIO_FN_IRQ6_39,	NULL);
--
- 	/* backlight, off by default */
- 	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
- 
++/*
++ *	CN9(Upper side) SCIF/RCAN selection
++ *
++ *		1,4	3,6
++ * SW40		SCIF	RCAN
++ * SW41		SCIF	RCAN
++ */
++
+ static struct smsc911x_platform_config smsc911x_data = {
+ 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
+ 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
 -- 
 1.8.2.1
 
