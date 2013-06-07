@@ -1,62 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:34 +0000
-Subject: [PATCH 103/130] ARM: shmobile: r8a7779 pinmux platform device cleanup
-Message-Id: <1370420821-28420-104-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:51 +0000
+Subject: [PATCH 21/27] ARM: shmobile: r8a7790: Make private clock arrays static
+Message-Id: <1370591517-20239-22-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Use DEFINE_RES_MEM() to save a couple of lines of code.
+Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
+non-static. Compiling support for both SoCs thus result in a symbol
+redefinition. Fix it by defining the arrays as static.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-[lp: Don't declare r8a7779_pfc_resources as const]
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 17 +++--------------
- 1 file changed, 3 insertions(+), 14 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index b0b3948..dbb13f2 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -65,11 +65,7 @@ void __init r8a7779_map_io(void)
- }
- 
- static struct resource r8a7779_pfc_resources[] = {
--	[0] = {
--		.start	= 0xfffc0000,
--		.end	= 0xfffc023b,
--		.flags	= IORESOURCE_MEM,
--	},
-+	DEFINE_RES_MEM(0xfffc0000, 0x023c),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a481003..bedd20c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -154,7 +154,7 @@ enum {
+ 	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
  };
  
- static struct platform_device r8a7779_pfc_device = {
-@@ -81,15 +77,8 @@ static struct platform_device r8a7779_pfc_device = {
- 
- #define R8A7779_GPIO(idx, npins) \
- static struct resource r8a7779_gpio##idx##_resources[] = {		\
--	[0] = {								\
--		.start	= 0xffc40000 + 0x1000 * (idx),			\
--		.end	= 0xffc4002b + 0x1000 * (idx),			\
--		.flags	= IORESOURCE_MEM,				\
--	},								\
--	[1] = {								\
--		.start	= gic_iid(0xad + (idx)),			\
--		.flags	= IORESOURCE_IRQ,				\
--	}								\
-+	DEFINE_RES_MEM(0xffc40000 + (0x1000 * (idx)), 0x002c),		\
-+	DEFINE_RES_IRQ(gic_iid(0xad + (idx))),				\
- };									\
- 									\
- static struct gpio_rcar_config r8a7779_gpio##idx##_platform_data = {	\
+-struct clk div4_clks[DIV4_NR] = {
++static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
+ 	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
 -- 
 1.8.2.1
 
