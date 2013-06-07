@@ -1,45 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Jun 2013 14:08:08 +0000
-Subject: Re: [PATCH 3/3 v4] ARM: shmobile: bockw defconfig: add MMCIF support
-Message-Id: <20130612140807.GE32751@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 08:22:04 +0000
+Subject: [PATCH 06/11] ARM: shmobile: bockw: add dummy regulators for SMSC
+Message-Id: <1370593329-27559-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8738so6pk8.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8738so6pk8.wl%kuninori.morimoto.gx@renesas.com>
+References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jun 11, 2013 at 07:16:58PM -0700, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, queued up in the defconfig branch.
+SMSC driver will try to get regulator if .config had CONFIG_REGULATOR,
+and, shmobile_defconfig has it.
+SMSC driver on Bock-W board will be failed if it doens't have
+dummy regulator settings.
 
-> ---
-> v3 -> v4
-> 
->  - based on renesas-next-20130611v2
-> 
->  arch/arm/configs/bockw_defconfig |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-> index 55e00ff..845f5cd 100644
-> --- a/arch/arm/configs/bockw_defconfig
-> +++ b/arch/arm/configs/bockw_defconfig
-> @@ -94,6 +94,7 @@ CONFIG_USB_STORAGE=y
->  CONFIG_USB_RCAR_PHY=y
->  CONFIG_MMC=y
->  CONFIG_MMC_SDHI=y
-> +CONFIG_MMC_SH_MMCIF=y
->  CONFIG_RTC_CLASS=y
->  CONFIG_RTC_DRV_RX8581=y
->  CONFIG_UIO=y
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-bockw.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 3ce020a..4d65715 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -20,6 +20,8 @@
+ 
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -34,6 +36,12 @@
+  * SW41		SCIF	RCAN
+  */
+ 
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
+ static struct smsc911x_platform_config smsc911x_data = {
+ 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
+ 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
+@@ -82,6 +90,9 @@ static void __init bockw_init(void)
+ 		iowrite16(val, base + IRQ0MR);
+ 		iounmap(base);
+ 
++		regulator_register_fixed(0, dummy_supplies,
++					 ARRAY_SIZE(dummy_supplies));
++
+ 		platform_device_register_resndata(
+ 			&platform_bus, "smsc911x", -1,
+ 			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
+-- 
+1.8.2.1
+
