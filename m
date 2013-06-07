@@ -1,113 +1,91 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 08 Jun 2013 00:03:37 +0000
-Subject: [PATCH 7/9] sh_eth: get SH7724 support out of #ifdef
-Message-Id: <201306080403.37551.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:50 +0000
+Subject: [PATCH 20/27] ARM: shmobile: r8a7790: add div6 clocks
+Message-Id: <1370591517-20239-21-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, lethal@linux-sh.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Get the SH7724 code/data in the driver out of #ifdef by adding "r8a7724-ether"
-to the platform driver's ID table. Change the Ether platform device's name in
-the SH platform code accordingly.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+DIV6 clocks control SD*/MMC* core clocks.
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Note that the Ether paltform data in the SolutionEngine7724 board code lacks the
-initializer for the 'register_type' field which means it'll be  incorrectly  set
-to SH_ETH_REG_GIGABIT...
+ arch/arm/mach-shmobile/clock-r8a7790.c | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
- arch/sh/boards/mach-ecovec24/setup.c   |    4 ++--
- arch/sh/boards/mach-se/7724/setup.c    |    4 ++--
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    2 +-
- drivers/net/ethernet/renesas/sh_eth.c  |   10 +++++-----
- 4 files changed, 10 insertions(+), 10 deletions(-)
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index c85e643..a481003 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -52,6 +52,12 @@
+ 
+ #define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
++#define SD2CKCR		0xE6150078
++#define SD3CKCR		0xE615007C
++#define MMC0CKCR	0xE6150240
++#define MMC1CKCR	0xE6150244
++#define SSPCKCR		0xE6150248
++#define SSPRSCKCR	0xE615024C
+ 
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+@@ -154,6 +160,23 @@ struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
+ };
+ 
++/* DIV6 clocks */
++enum {
++	DIV6_SD2, DIV6_SD3,
++	DIV6_MMC0, DIV6_MMC1,
++	DIV6_SSP, DIV6_SSPRS,
++	DIV6_NR
++};
++
++static struct clk div6_clks[DIV6_NR] = {
++	[DIV6_SD2]	= SH_CLK_DIV6(&pll1_div2_clk, SD2CKCR, 0),
++	[DIV6_SD3]	= SH_CLK_DIV6(&pll1_div2_clk, SD3CKCR, 0),
++	[DIV6_MMC0]	= SH_CLK_DIV6(&pll1_div2_clk, MMC0CKCR, 0),
++	[DIV6_MMC1]	= SH_CLK_DIV6(&pll1_div2_clk, MMC1CKCR, 0),
++	[DIV6_SSP]	= SH_CLK_DIV6(&pll1_div2_clk, SSPCKCR, 0),
++	[DIV6_SSPRS]	= SH_CLK_DIV6(&pll1_div2_clk, SSPRSCKCR, 0),
++};
++
+ /* MSTP */
+ enum { MSTP721, MSTP720,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
+@@ -202,6 +225,14 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("sd0",		&div4_clks[DIV4_SD0]),
+ 	CLKDEV_CON_ID("sd1",		&div4_clks[DIV4_SD1]),
+ 
++	/* DIV6 */
++	CLKDEV_CON_ID("sd2",		&div6_clks[DIV6_SD2]),
++	CLKDEV_CON_ID("sd3",		&div6_clks[DIV6_SD3]),
++	CLKDEV_CON_ID("mmc0",		&div6_clks[DIV6_MMC0]),
++	CLKDEV_CON_ID("mmc1",		&div6_clks[DIV6_MMC1]),
++	CLKDEV_CON_ID("ssp",		&div6_clks[DIV6_SSP]),
++	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
++
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+@@ -265,6 +296,9 @@ void __init r8a7790_clock_init(void)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ 
+ 	if (!ret)
++		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+-- 
+1.8.2.1
 
-Index: net-next/arch/sh/boards/mach-ecovec24/setup.c
-=================================--- net-next.orig/arch/sh/boards/mach-ecovec24/setup.c
-+++ net-next/arch/sh/boards/mach-ecovec24/setup.c
-@@ -165,8 +165,8 @@ static struct sh_eth_plat_data sh_eth_pl
- };
- 
- static struct platform_device sh_eth_device = {
--	.name = "sh-eth",
--	.id	= 0,
-+	.name = "sh7724-ether",
-+	.id = 0,
- 	.dev = {
- 		.platform_data = &sh_eth_plat,
- 	},
-Index: net-next/arch/sh/boards/mach-se/7724/setup.c
-=================================--- net-next.orig/arch/sh/boards/mach-se/7724/setup.c
-+++ net-next/arch/sh/boards/mach-se/7724/setup.c
-@@ -380,8 +380,8 @@ static struct sh_eth_plat_data sh_eth_pl
- };
- 
- static struct platform_device sh_eth_device = {
--	.name = "sh-eth",
--	.id	= 0,
-+	.name = "sh7724-ether",
-+	.id = 0,
- 	.dev = {
- 		.platform_data = &sh_eth_plat,
- 	},
-Index: net-next/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-=================================--- net-next.orig/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ net-next/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-@@ -329,7 +329,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[HWBLK_IIC0]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[HWBLK_IIC1]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[HWBLK_MMC]),
--	CLKDEV_DEV_ID("sh-eth.0", &mstp_clks[HWBLK_ETHER]),
-+	CLKDEV_DEV_ID("sh7724-ether.0", &mstp_clks[HWBLK_ETHER]),
- 	CLKDEV_CON_ID("atapi0", &mstp_clks[HWBLK_ATAPI]),
- 	CLKDEV_CON_ID("tpu0", &mstp_clks[HWBLK_TPU]),
- 	CLKDEV_CON_ID("irda0", &mstp_clks[HWBLK_IRDA]),
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -392,9 +392,9 @@ static struct sh_eth_cpu_data sh_eth_my_
- 	.tpauser	= 1,
- 	.hw_swap	= 1,
- };
--#elif defined(CONFIG_CPU_SUBTYPE_SH7724)
-+#endif
- 
--static void sh_eth_set_rate(struct net_device *ndev)
-+static void sh_eth_set_rate_sh7724(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 
-@@ -411,9 +411,9 @@ static void sh_eth_set_rate(struct net_d
- }
- 
- /* SH7724 */
--static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
-+static struct sh_eth_cpu_data sh7724_data = {
- 	.set_duplex	= sh_eth_set_duplex,
--	.set_rate	= sh_eth_set_rate,
-+	.set_rate	= sh_eth_set_rate_sh7724,
- 
- 	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
- 	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
-@@ -431,7 +431,6 @@ static struct sh_eth_cpu_data sh_eth_my_
- 	.rpadir		= 1,
- 	.rpadir_value	= 0x00020000, /* NET_IP_ALIGN assumed to be 2 */
- };
--#endif
- 
- static void sh_eth_set_rate_sh7757(struct net_device *ndev)
- {
-@@ -2687,6 +2686,7 @@ static const struct dev_pm_ops sh_eth_de
- static struct platform_device_id sh_eth_id_table[] = {
- 	{ "sh7619-ether", (kernel_ulong_t)&sh7619_data },
- 	{ "sh771x-ether", (kernel_ulong_t)&sh771x_data },
-+	{ "sh7724-ether", (kernel_ulong_t)&sh7724_data },
- 	{ "sh7734-gether", (kernel_ulong_t)&sh7734_data },
- 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
- 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
