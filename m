@@ -1,85 +1,129 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 08 Jun 2013 20:18:47 +0000
-Subject: [PATCH v9 3/3] ARM: shmobile: BOCK-W: add USB support
-Message-Id: <201306090018.47692.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:40 +0000
+Subject: [PATCH 10/27] ARM: shmobile: r8a73a4: add main clock
+Message-Id: <1370591517-20239-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306090013.00313.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306090013.00313.sergei.shtylyov@cogentembedded.com>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Register the USB PHY device from bockw_init(), passing the platform  data to it.
-Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
-get registered too...
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Don't forget to add USB PENC0/1 pins to bockw_pinctrl_map[].
+Almost all clock needs main clock which is basis clock on r8a73a4.
+This patch adds it, and, set parent clock via CKSCR register.
 
-The patch has been tested on the BOCK-W board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since version 8:
-- resolved reject, refreshed the patch.
+ arch/arm/mach-shmobile/clock-r8a73a4.c | 53 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
-Changes since version 6:
-- added USB PENC0/1 pins to bockw_pinctrl_map[].
-
-Changes since version 4:
-- annotated 'usb_phy_platform_data' as '__initdata' since it's kmemdup()'ed
-  while registering the platform device anyway;
-- refreshed the patch.
-
-Changes since version 3:
-- removed initializer for 'usb_phy_platform_data' letting it be set to all 0s;
-- refreshed the patch.
-
-Changes since version 2:
-- refreshed the patch.
-
-Changes since the original posting:
-- removed initializer for no longer existing field in 'usb_phy_platform_data',
-  modified the comment to the 'ferrite_bead' field initializer.
-
- arch/arm/mach-shmobile/board-bockw.c |    8 ++++++++
- 1 file changed, 8 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -63,6 +63,8 @@ static struct sh_mobile_sdhi_info sdhi0_
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index e710c00..42942b4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -22,6 +22,7 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
  
-+static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
+ #define CPG_BASE 0xe6150000
+@@ -31,6 +32,8 @@
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR5 0xe6150144
+ 
++#define CKSCR		0xE61500C0
 +
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-@@ -78,6 +80,10 @@ static const struct pinctrl_map bockw_pi
- 				  "sdhi0_data4", "sdhi0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
- 				  "sdhi0_wp", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
-+				  "usb0", "usb0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
-+				  "usb1", "usb1"),
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+ 	.len    = CPG_LEN,
+@@ -51,10 +54,32 @@ static struct clk extal2_clk = {
+ 	.mapping	= &cpg_mapping,
  };
  
- #define FPGA	0x18200000
-@@ -91,6 +97,7 @@ static void __init bockw_init(void)
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
++static struct sh_clk_ops followparent_clk_ops = {
++	.recalc	= followparent_recalc,
++};
++
++static struct clk main_clk = {
++	/* .parent will be set r8a73a4_clock_init */
++	.ops	= &followparent_clk_ops,
++};
++
++SH_CLK_RATIO(div2,	1, 2);
++SH_CLK_RATIO(div4,	1, 4);
++
++SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
++SH_FIXED_RATIO_CLK(extal1_div2_clk,	extal1_clk,		div2);
++SH_FIXED_RATIO_CLK(extal2_div2_clk,	extal2_clk,		div2);
++SH_FIXED_RATIO_CLK(extal2_div4_clk,	extal2_clk,		div4);
++
+ static struct clk *main_clks[] = {
+ 	&extalr_clk,
+ 	&extal1_clk,
++	&extal1_div2_clk,
+ 	&extal2_clk,
++	&extal2_div2_clk,
++	&extal2_div4_clk,
++	&main_clk,
++	&main_div2_clk,
+ };
  
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
-@@ -146,4 +153,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_machine	= bockw_init,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
-+	.init_late      = r8a7778_init_late,
- MACHINE_END
+ enum {
+@@ -74,6 +99,13 @@ static struct clk mstp_clks[MSTP_NR] = {
+ };
+ 
+ static struct clk_lookup lookups[] = {
++	/* main clock */
++	CLKDEV_CON_ID("extal1",			&extal1_clk),
++	CLKDEV_CON_ID("extal1_div2",		&extal1_div2_clk),
++	CLKDEV_CON_ID("extal2",			&extal2_clk),
++	CLKDEV_CON_ID("extal2_div2",		&extal2_div2_clk),
++	CLKDEV_CON_ID("extal2_div4",		&extal2_div4_clk),
++
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+@@ -90,6 +122,7 @@ void __init r8a73a4_clock_init(void)
+ {
+ 	void __iomem *cpg_base, *reg;
+ 	int k, ret = 0;
++	u32 ckscr;
+ 
+ 	/* fix MPCLK to EXTAL2 for now.
+ 	 * this is needed until more detailed clock topology is supported
+@@ -100,6 +133,26 @@ void __init r8a73a4_clock_init(void)
+ 	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
+ 	iounmap(cpg_base);
+ 
++	reg = ioremap_nocache(CKSCR, PAGE_SIZE);
++	BUG_ON(!reg);
++	ckscr = ioread32(reg);
++	iounmap(reg);
++
++	switch ((ckscr >> 28) & 0x3) {
++	case 0:
++		main_clk.parent = &extal1_clk;
++		break;
++	case 1:
++		main_clk.parent = &extal1_div2_clk;
++		break;
++	case 2:
++		main_clk.parent = &extal2_clk;
++		break;
++	case 3:
++		main_clk.parent = &extal2_div2_clk;
++		break;
++	}
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
+-- 
+1.8.2.1
+
