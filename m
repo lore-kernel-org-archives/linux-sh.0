@@ -1,105 +1,238 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 01 Jun 2013 21:50:25 +0000
-Subject: [PATCH v8 6/9] phy-rcar-usb: correct base address
-Message-Id: <201306020150.25655.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:48 +0000
+Subject: [PATCH 18/27] ARM: shmobile: r8a7790: add main clock
+Message-Id: <1370591517-20239-19-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The memory region that is used by the driver overlaps EHCI and OHCI  register
-regions for absolutely no reason now  -- fix it  by adding offset of 0x800 to
-the base address, changing the register #define's accordingly. This has extra
-positive effect that we now can use devm_ioremap_resource()...
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Note that the driver and the SoC code have to be in one patch to keep the code
-bisectable...
+Almost all clock needs main clock which is basis clock on r8a7790.
+This patch adds it, and, set its parent/ratio via MD pin.
+It is based on v0.05 datasheet
 
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Felipe Balbi <balbi@ti.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since version 7:
-- renamed the PHY driver and changed the patch subject accordingly.
+ arch/arm/mach-shmobile/clock-r8a7790.c | 161 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 156 insertions(+), 5 deletions(-)
 
-Changes since version 6:
-- added an ACK from Felipe Balbi.
-
-Changes since version 4:
-- refreshed the patch.
-
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- added a note about bisectability to the changelog.
-
- arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
- drivers/usb/phy/phy-rcar-usb.c         |   28 ++++++++++------------------
- 2 files changed, 11 insertions(+), 19 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -391,7 +391,7 @@ static struct platform_device sata_devic
- /* USB PHY */
- static struct resource usb_phy_resources[] = {
- 	[0] = {
--		.start		= 0xffe70000,
-+		.start		= 0xffe70800,
- 		.end		= 0xffe70900 - 1,
- 		.flags		= IORESOURCE_MEM,
- 	},
-Index: renesas/drivers/usb/phy/phy-rcar-usb.c
-=================================--- renesas.orig/drivers/usb/phy/phy-rcar-usb.c
-+++ renesas/drivers/usb/phy/phy-rcar-usb.c
-@@ -16,13 +16,13 @@
- #include <linux/spinlock.h>
- #include <linux/module.h>
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index bad9bf2..850e47f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -22,32 +22,113 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
  
--/* USBH common register */
--#define USBPCTRL0	0x0800
--#define USBPCTRL1	0x0804
--#define USBST		0x0808
--#define USBEH0		0x080C
--#define USBOH0		0x081C
--#define USBCTL0		0x0858
-+/* REGS block */
-+#define USBPCTRL0	0x00
-+#define USBPCTRL1	0x04
-+#define USBST		0x08
-+#define USBEH0		0x0C
-+#define USBOH0		0x1C
-+#define USBCTL0		0x58
++/*
++ *   MD		EXTAL		PLL0	PLL1	PLL3
++ * 14 13 19	(MHz)		*1	*1
++ *---------------------------------------------------
++ * 0  0  0	15 x 1		x172/2	x208/2	x106
++ * 0  0  1	15 x 1		x172/2	x208/2	x88
++ * 0  1  0	20 x 1		x130/2	x156/2	x80
++ * 0  1  1	20 x 1		x130/2	x156/2	x66
++ * 1  0  0	26 / 2		x200/2	x240/2	x122
++ * 1  0  1	26 / 2		x200/2	x240/2	x102
++ * 1  1  0	30 / 2		x172/2	x208/2	x106
++ * 1  1  1	30 / 2		x172/2	x208/2	x88
++ *
++ * *1 :	Table 7.6 indicates VCO ouput (PLLx = VCO/2)
++ *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
++ */
++
++#define MD(nr)	(1 << nr)
++
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x1000
  
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
-@@ -139,17 +139,9 @@ static int rcar_usb_phy_probe(struct pla
- 		return -EINVAL;
- 	}
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR7 0xe615014c
  
--	/*
--	 * CAUTION
--	 *
--	 * Because this phy address is also mapped under OHCI/EHCI address area,
--	 * this driver can't use devm_request_and_ioremap(dev, res) here
--	 */
--	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
--	if (!reg0) {
--		dev_err(dev, "ioremap error\n");
--		return -ENOMEM;
--	}
-+	reg0 = devm_ioremap_resource(dev, res0);
-+	if (IS_ERR(reg0))
-+		return PTR_ERR(reg0);
++#define MODEMR		0xE6160060
++
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+ 	.len    = CPG_LEN,
+ };
  
- 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
- 	if (!priv) {
+-static struct clk p_clk = {
+-	.rate	= 65000000, /* shortcut for now */
++static struct clk extal_clk = {
++	/* .rate will be updated on r8a7790_clock_init() */
+ 	.mapping	= &cpg_mapping,
+ };
+ 
+-static struct clk mp_clk = {
+-	.rate	= 52000000,  /* shortcut for now */
+-	.mapping	= &cpg_mapping,
++static struct sh_clk_ops followparent_clk_ops = {
++	.recalc	= followparent_recalc,
+ };
+ 
++static struct clk main_clk = {
++	/* .parent will be set r8a73a4_clock_init */
++	.ops	= &followparent_clk_ops,
++};
++
++/*
++ * clock ratio of these clock will be updated
++ * on r8a7790_clock_init()
++ */
++SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
++SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
++SH_FIXED_RATIO_CLK_SET(lb_clk,			pll1_clk,	1, 1);
++SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
++
++/* fixed ratio clock */
++SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
++SH_FIXED_RATIO_CLK_SET(cp_clk,			extal_clk,	1, 2);
++
++SH_FIXED_RATIO_CLK_SET(pll1_div2_clk,		pll1_clk,	1, 2);
++SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 3);
++SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
++SH_FIXED_RATIO_CLK_SET(zs_clk,			pll1_clk,	1, 6);
++SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
++SH_FIXED_RATIO_CLK_SET(i_clk,			pll1_clk,	1, 2);
++SH_FIXED_RATIO_CLK_SET(b_clk,			pll1_clk,	1, 12);
++SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
++SH_FIXED_RATIO_CLK_SET(cl_clk,			pll1_clk,	1, 48);
++SH_FIXED_RATIO_CLK_SET(m2_clk,			pll1_clk,	1, 8);
++SH_FIXED_RATIO_CLK_SET(imp_clk,			pll1_clk,	1, 4);
++SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
++SH_FIXED_RATIO_CLK_SET(oscclk_clk,		pll1_clk,	1, (12 * 1024));
++
++SH_FIXED_RATIO_CLK_SET(zb3_clk,			pll3_clk,	1, 4);
++SH_FIXED_RATIO_CLK_SET(zb3d2_clk,		pll3_clk,	1, 8);
++SH_FIXED_RATIO_CLK_SET(ddr_clk,			pll3_clk,	1, 8);
++SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
++
+ static struct clk *main_clks[] = {
++	&extal_clk,
++	&extal_div2_clk,
++	&main_clk,
++	&pll1_clk,
++	&pll1_div2_clk,
++	&pll3_clk,
++	&lb_clk,
++	&qspi_clk,
++	&zg_clk,
++	&zx_clk,
++	&zs_clk,
++	&hp_clk,
++	&i_clk,
++	&b_clk,
+ 	&p_clk,
++	&cl_clk,
++	&m2_clk,
++	&imp_clk,
++	&rclk_clk,
++	&oscclk_clk,
++	&zb3_clk,
++	&zb3d2_clk,
++	&ddr_clk,
+ 	&mp_clk,
++	&cp_clk,
+ };
+ 
+ enum { MSTP721, MSTP720,
+@@ -64,6 +145,35 @@ static struct clk mstp_clks[MSTP_NR] = {
+ };
+ 
+ static struct clk_lookup lookups[] = {
++
++	/* main clocks */
++	CLKDEV_CON_ID("extal",		&extal_clk),
++	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
++	CLKDEV_CON_ID("main",		&main_clk),
++	CLKDEV_CON_ID("pll1",		&pll1_clk),
++	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
++	CLKDEV_CON_ID("pll3",		&pll3_clk),
++	CLKDEV_CON_ID("zg",		&zg_clk),
++	CLKDEV_CON_ID("zx",		&zx_clk),
++	CLKDEV_CON_ID("zs",		&zs_clk),
++	CLKDEV_CON_ID("hp",		&hp_clk),
++	CLKDEV_CON_ID("i",		&i_clk),
++	CLKDEV_CON_ID("b",		&b_clk),
++	CLKDEV_CON_ID("lb",		&lb_clk),
++	CLKDEV_CON_ID("p",		&p_clk),
++	CLKDEV_CON_ID("cl",		&cl_clk),
++	CLKDEV_CON_ID("m2",		&m2_clk),
++	CLKDEV_CON_ID("imp",		&imp_clk),
++	CLKDEV_CON_ID("rclk",		&rclk_clk),
++	CLKDEV_CON_ID("oscclk",		&oscclk_clk),
++	CLKDEV_CON_ID("zb3",		&zb3_clk),
++	CLKDEV_CON_ID("zb3d2",		&zb3d2_clk),
++	CLKDEV_CON_ID("ddr",		&ddr_clk),
++	CLKDEV_CON_ID("mp",		&mp_clk),
++	CLKDEV_CON_ID("qspi",		&qspi_clk),
++	CLKDEV_CON_ID("cp",		&cp_clk),
++
++	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+@@ -74,10 +184,51 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ };
+ 
++#define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
++	extal_clk.rate	= e * 1000 * 1000;			\
++	main_clk.parent	= m;					\
++	SH_CLK_SET_RATIO(&pll1_clk_ratio, p1 / 2, 1);		\
++	if (mode & MD(19))					\
++		SH_CLK_SET_RATIO(&pll3_clk_ratio, p31, 1);	\
++	else							\
++		SH_CLK_SET_RATIO(&pll3_clk_ratio, p30, 1)
++
++
+ void __init r8a7790_clock_init(void)
+ {
++	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++	u32 mode;
+ 	int k, ret = 0;
+ 
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	switch (mode & (MD(14) | MD(13))) {
++	case 0:
++		R8A7790_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
++		break;
++	case MD(13):
++		R8A7790_CLOCK_ROOT(20, &extal_clk, 130, 156, 80, 66);
++		break;
++	case MD(14):
++		R8A7790_CLOCK_ROOT(26, &extal_div2_clk, 200, 240, 122, 102);
++		break;
++	case MD(13) | MD(14):
++		R8A7790_CLOCK_ROOT(30, &extal_div2_clk, 172, 208, 106, 88);
++		break;
++	}
++
++	if (mode & (MD(18)))
++		SH_CLK_SET_RATIO(&lb_clk_ratio, 1, 36);
++	else
++		SH_CLK_SET_RATIO(&lb_clk_ratio, 1, 24);
++
++	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
++		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
++	else
++		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
+-- 
+1.8.2.1
 
