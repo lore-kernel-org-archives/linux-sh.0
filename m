@@ -1,49 +1,305 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 05 Jun 2013 00:17:56 +0000
-Subject: Re: [PATCH v8 2/3] ARM: shmobile: r8a7778: add USB support
-Message-Id: <87ip1t5s2a.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 07 Jun 2013 08:01:48 +0000
+Subject: Re: [PATCH v3 3/5] sh-pfc: r8a7790: add HSCIF pin groups
+Message-Id: <20130607080148.GA22598@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306020206.47199.sergei.shtylyov@cogentembedded.com>
- <201306020210.37520.sergei.shtylyov@cogentembedded.com>
- <87bo7ooxc9.wl%kuninori.morimoto.gx@renesas.com>
- <51AC6C78.7020900@cogentembedded.com>
- <87zjv64eg1.wl%kuninori.morimoto.gx@renesas.com>
- <51ADBFCB.8040206@cogentembedded.com>
-In-Reply-To: <51ADBFCB.8040206@cogentembedded.com>
+References: <1370015825-29383-4-git-send-email-ulrich.hecht@gmail.com>
+In-Reply-To: <1370015825-29383-4-git-send-email-ulrich.hecht@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
+[ CC Laurent Pinchart, Linus Walleij ]
 
-Hi
+Laurent, could I get a review of this from you?
 
-> > Could you please teach me who/how/when free resource memory
-> > which was kmemdup'ed by platform_device_add_xxx()
-> > (and kmalloc'ed dma_mask) on platform_device_register_full() ??
+On Fri, May 31, 2013 at 05:57:03PM +0200, Ulrich Hecht wrote:
+> Adds HSCIF data/clk/ctrl groups to R8A7790 PFC driver.
 > 
->     I don't think there's a need to free them. The EHCI/OHCI devices
-> are always there after all.
-
-Yes, you are correct.
-Many devices are existing in Renesas chip, not only EHCI/OHCI.
-
-But in r8a7778 case, these ehci/ohci doesn't work if usb-phy wasn't enabled,
-and without PFC settings from platform.
-
-
-> >>     I just copied your approach from the R8A7779 code.
+> Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+> ---
+>  drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  211 +++++++++++++++++++++++++++++++---
+>  1 file changed, 196 insertions(+), 15 deletions(-)
 > 
-> > Ahh, yes, indeed
+> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+> index 85d77a4..1e7a5eb 100644
+> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+> @@ -1979,6 +1979,141 @@ static const unsigned int scif1_clk_e_pins[] = {
+>  static const unsigned int scif1_clk_e_mux[] = {
+>  	SCK1_E_MARK,
+>  };
+> +/* - HSCIF0 ----------------------------------------------------------------- */
+> +static const unsigned int hscif0_data_pins[] = {
+> +	/* RX, TX */
+> +	RCAR_GP_PIN(5, 8), RCAR_GP_PIN(5, 9),
+> +};
+> +static const unsigned int hscif0_data_mux[] = {
+> +	HRX0_MARK, HTX0_MARK,
+> +};
+> +static const unsigned int hscif0_clk_pins[] = {
+> +	/* SCK */
+> +	RCAR_GP_PIN(5, 7),
+> +};
+> +static const unsigned int hscif0_clk_mux[] = {
+> +	HSCK0_MARK,
+> +};
+> +static const unsigned int hscif0_ctrl_pins[] = {
+> +	/* RTS, CTS */
+> +	RCAR_GP_PIN(5, 11), RCAR_GP_PIN(5, 10),
+> +};
+> +static const unsigned int hscif0_ctrl_mux[] = {
+> +	HRTS0_N_MARK, HCTS0_N_MARK,
+> +};
+> +static const unsigned int hscif0_data_b_pins[] = {
+> +	/* RX, TX */
+> +	RCAR_GP_PIN(1, 23), RCAR_GP_PIN(1, 12),
+> +};
+> +static const unsigned int hscif0_data_b_mux[] = {
+> +	HRX0_B_MARK, HTX0_B_MARK,
+> +};
+> +static const unsigned int hscif0_ctrl_b_pins[] = {
+> +	/* RTS, CTS */
+> +	RCAR_GP_PIN(1, 29), RCAR_GP_PIN(1, 28),
+> +};
+> +static const unsigned int hscif0_ctrl_b_mux[] = {
+> +	HRTS0_N_B_MARK, HCTS0_N_B_MARK,
+> +};
+> +static const unsigned int hscif0_data_c_pins[] = {
+> +	/* RX, TX */
+> +	RCAR_GP_PIN(5, 13), RCAR_GP_PIN(5, 16),
+> +};
+> +static const unsigned int hscif0_data_c_mux[] = {
+> +	HRX0_C_MARK, HTX0_C_MARK,
+> +};
+> +static const unsigned int hscif0_ctrl_c_pins[] = {
+> +	/* RTS, CTS */
+> +	RCAR_GP_PIN(5, 3), RCAR_GP_PIN(5, 7),
+> +};
+> +static const unsigned int hscif0_ctrl_c_mux[] = {
+> +	HRTS0_N_C_MARK, HCTS0_N_C_MARK,
+> +};
+> +static const unsigned int hscif0_data_d_pins[] = {
+> +	/* RX, TX */
+> +	RCAR_GP_PIN(3, 20), RCAR_GP_PIN(3, 21),
+> +};
+> +static const unsigned int hscif0_data_d_mux[] = {
+> +	HRX0_D_MARK, HTX0_D_MARK,
+> +};
+> +static const unsigned int hscif0_ctrl_d_pins[] = {
+> +	/* RTS, CTS */
+> +	RCAR_GP_PIN(3, 23), RCAR_GP_PIN(3, 22),
+> +};
+> +static const unsigned int hscif0_ctrl_d_mux[] = {
+> +	HRTS0_N_D_MARK, HCTS0_N_D_MARK,
+> +};
+> +static const unsigned int hscif0_data_e_pins[] = {
+> +	/* RX, TX */
+> +	RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 22),
+> +};
+> +static const unsigned int hscif0_data_e_mux[] = {
+> +	HRX0_E_MARK, HTX0_E_MARK,
+> +};
+> +static const unsigned int hscif0_ctrl_e_pins[] = {
+> +	/* RTS, CTS */
+> +	RCAR_GP_PIN(2, 24), RCAR_GP_PIN(2, 23),
+> +};
+> +static const unsigned int hscif0_ctrl_e_mux[] = {
+> +	HRTS0_N_E_MARK, HCTS0_N_E_MARK,
+> +};
+> +static const unsigned int hscif0_data_f_pins[] = {
+> +	/* RX, TX */
+> +	RCAR_GP_PIN(2, 23), RCAR_GP_PIN(2, 25),
+> +};
+> +static const unsigned int hscif0_data_f_mux[] = {
+> +	HRX0_F_MARK, HTX0_F_MARK,
+> +};
+> +static const unsigned int hscif0_ctrl_f_pins[] = {
+> +	/* RTS, CTS */
+> +	RCAR_GP_PIN(2, 26), RCAR_GP_PIN(2, 24),
+> +};
+> +static const unsigned int hscif0_ctrl_f_mux[] = {
+> +	HRTS0_N_F_MARK, HCTS0_N_F_MARK,
+> +};
+> +/* - HSCIF1 ----------------------------------------------------------------- */
+> +static const unsigned int hscif1_data_pins[] = {
+> +	/* RX, TX */
+> +	RCAR_GP_PIN(4, 28), RCAR_GP_PIN(4, 29),
+> +};
+> +static const unsigned int hscif1_data_mux[] = {
+> +	HRX1_MARK, HTX1_MARK,
+> +};
+> +static const unsigned int hscif1_clk_pins[] = {
+> +	/* SCK */
+> +	RCAR_GP_PIN(4, 27),
+> +};
+> +static const unsigned int hscif1_clk_mux[] = {
+> +	HSCK1_MARK,
+> +};
+> +static const unsigned int hscif1_ctrl_pins[] = {
+> +	/* RTS, CTS */
+> +	RCAR_GP_PIN(4, 31), RCAR_GP_PIN(4, 30),
+> +};
+> +static const unsigned int hscif1_ctrl_mux[] = {
+> +	HRTS1_N_MARK, HCTS1_N_MARK,
+> +};
+> +static const unsigned int hscif1_data_b_pins[] = {
+> +	/* RX, TX */
+> +	RCAR_GP_PIN(1, 12), RCAR_GP_PIN(1, 18),
+> +};
+> +static const unsigned int hscif1_data_b_mux[] = {
+> +	HRX1_B_MARK, HTX1_B_MARK,
+> +};
+> +static const unsigned int hscif1_clk_b_pins[] = {
+> +	/* SCK */
+> +	RCAR_GP_PIN(1, 28),
+> +};
+> +static const unsigned int hscif1_clk_b_mux[] = {
+> +	HSCK1_B_MARK,
+> +};
+> +static const unsigned int hscif1_ctrl_b_pins[] = {
+> +	/* RTS, CTS */
+> +	RCAR_GP_PIN(1, 14), RCAR_GP_PIN(1, 13),
+> +};
+> +static const unsigned int hscif1_ctrl_b_mux[] = {
+> +	HRTS1_N_B_MARK, HCTS1_N_B_MARK,
+> +};
+>  /* - SCIFA0 ----------------------------------------------------------------- */
+>  static const unsigned int scifa0_data_pins[] = {
+>  	/* RXD, TXD */
+> @@ -2591,10 +2726,37 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+>  	SH_PFC_PIN_GROUP(eth_magic),
+>  	SH_PFC_PIN_GROUP(eth_mdio),
+>  	SH_PFC_PIN_GROUP(eth_rmii),
+> +	SH_PFC_PIN_GROUP(hscif0_data),
+> +	SH_PFC_PIN_GROUP(hscif0_clk),
+> +	SH_PFC_PIN_GROUP(hscif0_ctrl),
+> +	SH_PFC_PIN_GROUP(hscif0_data_b),
+> +	SH_PFC_PIN_GROUP(hscif0_ctrl_b),
+> +	SH_PFC_PIN_GROUP(hscif0_data_c),
+> +	SH_PFC_PIN_GROUP(hscif0_ctrl_c),
+> +	SH_PFC_PIN_GROUP(hscif0_data_d),
+> +	SH_PFC_PIN_GROUP(hscif0_ctrl_d),
+> +	SH_PFC_PIN_GROUP(hscif0_data_e),
+> +	SH_PFC_PIN_GROUP(hscif0_ctrl_e),
+> +	SH_PFC_PIN_GROUP(hscif0_data_f),
+> +	SH_PFC_PIN_GROUP(hscif0_ctrl_f),
+> +	SH_PFC_PIN_GROUP(hscif1_data),
+> +	SH_PFC_PIN_GROUP(hscif1_clk),
+> +	SH_PFC_PIN_GROUP(hscif1_ctrl),
+> +	SH_PFC_PIN_GROUP(hscif1_data_b),
+> +	SH_PFC_PIN_GROUP(hscif1_clk_b),
+> +	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
+>  	SH_PFC_PIN_GROUP(intc_irq0),
+>  	SH_PFC_PIN_GROUP(intc_irq1),
+>  	SH_PFC_PIN_GROUP(intc_irq2),
+>  	SH_PFC_PIN_GROUP(intc_irq3),
+> +	SH_PFC_PIN_GROUP(mmc0_data1),
+> +	SH_PFC_PIN_GROUP(mmc0_data4),
+> +	SH_PFC_PIN_GROUP(mmc0_data8),
+> +	SH_PFC_PIN_GROUP(mmc0_ctrl),
+> +	SH_PFC_PIN_GROUP(mmc1_data1),
+> +	SH_PFC_PIN_GROUP(mmc1_data4),
+> +	SH_PFC_PIN_GROUP(mmc1_data8),
+> +	SH_PFC_PIN_GROUP(mmc1_ctrl),
+>  	SH_PFC_PIN_GROUP(scif0_data),
+>  	SH_PFC_PIN_GROUP(scif0_clk),
+>  	SH_PFC_PIN_GROUP(scif0_ctrl),
+> @@ -2659,18 +2821,6 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+>  	SH_PFC_PIN_GROUP(scifb2_clk_b),
+>  	SH_PFC_PIN_GROUP(scifb2_ctrl_b),
+>  	SH_PFC_PIN_GROUP(scifb2_data_c),
+> -	SH_PFC_PIN_GROUP(tpu0_to0),
+> -	SH_PFC_PIN_GROUP(tpu0_to1),
+> -	SH_PFC_PIN_GROUP(tpu0_to2),
+> -	SH_PFC_PIN_GROUP(tpu0_to3),
+> -	SH_PFC_PIN_GROUP(mmc0_data1),
+> -	SH_PFC_PIN_GROUP(mmc0_data4),
+> -	SH_PFC_PIN_GROUP(mmc0_data8),
+> -	SH_PFC_PIN_GROUP(mmc0_ctrl),
+> -	SH_PFC_PIN_GROUP(mmc1_data1),
+> -	SH_PFC_PIN_GROUP(mmc1_data4),
+> -	SH_PFC_PIN_GROUP(mmc1_data8),
+> -	SH_PFC_PIN_GROUP(mmc1_ctrl),
+>  	SH_PFC_PIN_GROUP(sdhi0_data1),
+>  	SH_PFC_PIN_GROUP(sdhi0_data4),
+>  	SH_PFC_PIN_GROUP(sdhi0_ctrl),
+> @@ -2691,6 +2841,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+>  	SH_PFC_PIN_GROUP(sdhi3_ctrl),
+>  	SH_PFC_PIN_GROUP(sdhi3_cd),
+>  	SH_PFC_PIN_GROUP(sdhi3_wp),
+> +	SH_PFC_PIN_GROUP(tpu0_to0),
+> +	SH_PFC_PIN_GROUP(tpu0_to1),
+> +	SH_PFC_PIN_GROUP(tpu0_to2),
+> +	SH_PFC_PIN_GROUP(tpu0_to3),
+>  };
+>  
+>  static const char * const eth_groups[] = {
+> @@ -2726,6 +2880,31 @@ static const char * const scif1_groups[] = {
+>  	"scif1_clk_e",
+>  };
+>  
+> +static const char * const hscif0_groups[] = {
+> +	"hscif0_data",
+> +	"hscif0_clk",
+> +	"hscif0_ctrl",
+> +	"hscif0_data_b",
+> +	"hscif0_ctrl_b",
+> +	"hscif0_data_c",
+> +	"hscif0_ctrl_c",
+> +	"hscif0_data_d",
+> +	"hscif0_ctrl_d",
+> +	"hscif0_data_e",
+> +	"hscif0_ctrl_e",
+> +	"hscif0_data_f",
+> +	"hscif0_ctrl_f",
+> +};
+> +
+> +static const char * const hscif1_groups[] = {
+> +	"hscif1_data",
+> +	"hscif1_clk",
+> +	"hscif1_ctrl",
+> +	"hscif1_data_b",
+> +	"hscif1_clk_b",
+> +	"hscif1_ctrl_b",
+> +};
+> +
+>  static const char * const scifa0_groups[] = {
+>  	"scifa0_data",
+>  	"scifa0_clk",
+> @@ -2850,7 +3029,11 @@ static const char * const sdhi3_groups[] = {
+>  
+>  static const struct sh_pfc_function pinmux_functions[] = {
+>  	SH_PFC_FUNCTION(eth),
+> +	SH_PFC_FUNCTION(hscif0),
+> +	SH_PFC_FUNCTION(hscif1),
+>  	SH_PFC_FUNCTION(intc),
+> +	SH_PFC_FUNCTION(mmc0),
+> +	SH_PFC_FUNCTION(mmc1),
+>  	SH_PFC_FUNCTION(scif0),
+>  	SH_PFC_FUNCTION(scif1),
+>  	SH_PFC_FUNCTION(scifa0),
+> @@ -2859,13 +3042,11 @@ static const struct sh_pfc_function pinmux_functions[] = {
+>  	SH_PFC_FUNCTION(scifb0),
+>  	SH_PFC_FUNCTION(scifb1),
+>  	SH_PFC_FUNCTION(scifb2),
+> -	SH_PFC_FUNCTION(tpu0),
+> -	SH_PFC_FUNCTION(mmc0),
+> -	SH_PFC_FUNCTION(mmc1),
+>  	SH_PFC_FUNCTION(sdhi0),
+>  	SH_PFC_FUNCTION(sdhi1),
+>  	SH_PFC_FUNCTION(sdhi2),
+>  	SH_PFC_FUNCTION(sdhi3),
+> +	SH_PFC_FUNCTION(tpu0),
+>  };
+>  
+>  static struct pinmux_cfg_reg pinmux_config_regs[] = {
+> -- 
+> 1.7.10.4
 > 
->      Moreover, from our prior testing, I'm afraid registering USB PHY 
-> and EHCI/OHCI in one function wouldn't work. Unless maybe if it's done 
-> from the init_late() machine's method...
-
-I'm sorry.
-This mention (= phy and ohci/ehci registration in one function) was my fault.
-Your style is correct I think.
-
-Best regards
----
-Kuninori Morimoto
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
