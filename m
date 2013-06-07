@@ -1,117 +1,177 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:28 +0000
-Subject: [PATCH 04/12] phy-rcar-usb: remove EHCI internal buffer setup
-Message-Id: <1371106836-25388-5-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:33 +0000
+Subject: [PATCH 03/27] ARM: shmobile: sh73a0: Use DEFINE_RES_MEM*() everywhere
+Message-Id: <1370591517-20239-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Convert code to use DEFINE_RES_MEM*() macros.
+These macros were already used in this file,
+this change makes their usage consistent throughout the file.
 
-Now that the EHCI internal  buffer setup is done by the platform code,  we  can
-remove  such code from this driver as it  never  really belonged here.  We also
-no longer need the 2nd memory region now (2nd EHCI controller is simply missing
-in e.g. R8A7778 SoC).
-
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Felipe Balbi <balbi@ti.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/phy/phy-rcar-usb.c | 28 ++++------------------------
- 1 file changed, 4 insertions(+), 24 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 79 ++++++-----------------------------
+ 1 file changed, 13 insertions(+), 66 deletions(-)
 
-diff --git a/drivers/usb/phy/phy-rcar-usb.c b/drivers/usb/phy/phy-rcar-usb.c
-index a35681b..4893dbd 100644
---- a/drivers/usb/phy/phy-rcar-usb.c
-+++ b/drivers/usb/phy/phy-rcar-usb.c
-@@ -23,8 +23,6 @@
- #define USBEH0		0x080C
- #define USBOH0		0x081C
- #define USBCTL0		0x0858
--#define EIIBC1		0x0094
--#define EIIBC2		0x009C
- 
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
-@@ -40,7 +38,6 @@ struct rcar_usb_phy_priv {
- 	spinlock_t lock;
- 
- 	void __iomem *reg0;
--	void __iomem *reg1;
- 	int counter;
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fdf3894..3bc33a5 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -288,12 +288,7 @@ static struct sh_timer_config tmu00_platform_data = {
  };
  
-@@ -59,7 +56,6 @@ static int rcar_usb_phy_init(struct usb_phy *phy)
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
- 	void __iomem *reg0 = priv->reg0;
--	void __iomem *reg1 = priv->reg1;
- 	int i;
- 	u32 val;
- 	unsigned long flags;
-@@ -97,19 +93,6 @@ static int rcar_usb_phy_init(struct usb_phy *phy)
- 		iowrite32(0x00000000, (reg0 + USBPCTRL0));
+ static struct resource tmu00_resources[] = {
+-	[0] = {
+-		.name	= "TMU00",
+-		.start	= 0xfff60008,
+-		.end	= 0xfff60013,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xfff60008, 0xc, "TMU00"),
+ 	[1] = {
+ 		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
+ 		.flags	= IORESOURCE_IRQ,
+@@ -318,12 +313,7 @@ static struct sh_timer_config tmu01_platform_data = {
+ };
  
- 		/*
--		 * EHCI IP internal buffer setting
--		 * EHCI IP internal buffer enable
--		 *
--		 * These are recommended value of a datasheet
--		 * see [USB :: EHCI internal buffer setting]
--		 */
--		iowrite32(0x00ff0040, (reg0 + EIIBC1));
--		iowrite32(0x00ff0040, (reg1 + EIIBC1));
--
--		iowrite32(0x00000001, (reg0 + EIIBC2));
--		iowrite32(0x00000001, (reg1 + EIIBC2));
--
--		/*
- 		 * Bus alignment settings
- 		 */
+ static struct resource tmu01_resources[] = {
+-	[0] = {
+-		.name	= "TMU01",
+-		.start	= 0xfff60014,
+-		.end	= 0xfff6001f,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xfff60014, 0xc, "TMU00"),
+ 	[1] = {
+ 		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
+ 		.flags	= IORESOURCE_IRQ,
+@@ -341,12 +331,7 @@ static struct platform_device tmu01_device = {
+ };
  
-@@ -145,14 +128,13 @@ static void rcar_usb_phy_shutdown(struct usb_phy *phy)
- static int rcar_usb_phy_probe(struct platform_device *pdev)
- {
- 	struct rcar_usb_phy_priv *priv;
--	struct resource *res0, *res1;
-+	struct resource *res0;
- 	struct device *dev = &pdev->dev;
--	void __iomem *reg0, *reg1;
-+	void __iomem *reg0;
- 	int ret;
+ static struct resource i2c0_resources[] = {
+-	[0] = {
+-		.name	= "IIC0",
+-		.start	= 0xe6820000,
+-		.end	= 0xe6820425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6820000, 0x426, "IIC0"),
+ 	[1] = {
+ 		.start	= gic_spi(167),
+ 		.end	= gic_spi(170),
+@@ -355,12 +340,7 @@ static struct resource i2c0_resources[] = {
+ };
  
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
--	if (!res0 || !res1) {
-+	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
- 		return -EINVAL;
- 	}
-@@ -164,8 +146,7 @@ static int rcar_usb_phy_probe(struct platform_device *pdev)
- 	 * this driver can't use devm_request_and_ioremap(dev, res) here
- 	 */
- 	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
--	reg1 = devm_ioremap_nocache(dev, res1->start, resource_size(res1));
--	if (!reg0 || !reg1) {
-+	if (!reg0) {
- 		dev_err(dev, "ioremap error\n");
- 		return -ENOMEM;
- 	}
-@@ -177,7 +158,6 @@ static int rcar_usb_phy_probe(struct platform_device *pdev)
- 	}
+ static struct resource i2c1_resources[] = {
+-	[0] = {
+-		.name	= "IIC1",
+-		.start	= 0xe6822000,
+-		.end	= 0xe6822425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6822000, 0x426, "IIC1"),
+ 	[1] = {
+ 		.start	= gic_spi(51),
+ 		.end	= gic_spi(54),
+@@ -369,12 +349,7 @@ static struct resource i2c1_resources[] = {
+ };
  
- 	priv->reg0		= reg0;
--	priv->reg1		= reg1;
- 	priv->counter		= 0;
- 	priv->phy.dev		= dev;
- 	priv->phy.label		= dev_name(dev);
+ static struct resource i2c2_resources[] = {
+-	[0] = {
+-		.name	= "IIC2",
+-		.start	= 0xe6824000,
+-		.end	= 0xe6824425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6824000, 0x426, "IIC2"),
+ 	[1] = {
+ 		.start	= gic_spi(171),
+ 		.end	= gic_spi(174),
+@@ -383,12 +358,7 @@ static struct resource i2c2_resources[] = {
+ };
+ 
+ static struct resource i2c3_resources[] = {
+-	[0] = {
+-		.name	= "IIC3",
+-		.start	= 0xe6826000,
+-		.end	= 0xe6826425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6826000, 0x426, "IIC3"),
+ 	[1] = {
+ 		.start	= gic_spi(183),
+ 		.end	= gic_spi(186),
+@@ -397,12 +367,7 @@ static struct resource i2c3_resources[] = {
+ };
+ 
+ static struct resource i2c4_resources[] = {
+-	[0] = {
+-		.name	= "IIC4",
+-		.start	= 0xe6828000,
+-		.end	= 0xe6828425 - 1,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	[0] = DEFINE_RES_MEM_NAMED(0xe6828000, 0x426, "IIC4"),
+ 	[1] = {
+ 		.start	= gic_spi(187),
+ 		.end	= gic_spi(190),
+@@ -623,12 +588,7 @@ static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
+ };
+ 
+ static struct resource sh73a0_dmae_resources[] = {
+-	{
+-		/* Registers including DMAOR and channels including DMARSx */
+-		.start  = 0xfe000020,
+-		.end    = 0xfe008a00 - 1,
+-		.flags  = IORESOURCE_MEM,
+-	},
++	DEFINE_RES_MEM(0xfe000020, 0x89e0),
+ 	{
+ 		.name	= "error_irq",
+ 		.start  = gic_spi(129),
+@@ -727,18 +687,10 @@ static struct sh_dmae_pdata sh73a0_mpdma_platform_data = {
+ 
+ /* Resource order important! */
+ static struct resource sh73a0_mpdma_resources[] = {
+-	{
+-		/* Channel registers and DMAOR */
+-		.start	= 0xec618020,
+-		.end	= 0xec61828f,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	{
+-		/* DMARSx */
+-		.start	= 0xec619000,
+-		.end	= 0xec61900b,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	/* Channel registers and DMAOR */
++	DEFINE_RES_MEM(0xec618020, 0x270),
++	/* DMARSx */
++	DEFINE_RES_MEM(0xec619000, 0xc),
+ 	{
+ 		.name	= "error_irq",
+ 		.start	= gic_spi(181),
+@@ -785,12 +737,7 @@ static struct platform_device pmu_device = {
+ 
+ /* an IPMMU module for ICB */
+ static struct resource ipmmu_resources[] = {
+-	[0] = {
+-		.name	= "IPMMU",
+-		.start	= 0xfe951000,
+-		.end	= 0xfe9510ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
++	DEFINE_RES_MEM_NAMED(0xfe951000, 0x100, "IPMMU"),
+ };
+ 
+ static const char * const ipmmu_dev_names[] = {
 -- 
 1.8.2.1
 
