@@ -1,88 +1,63 @@
-From: "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
-Date: Tue, 25 Jun 2013 20:45:47 +0000
-Subject: [PATCH v2 43/45] sh: Use get/put_online_cpus_atomic() to prevent CPU offline
-Message-Id: <20130625203346.16593.72263.stgit@srivatsabhat.in.ibm.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 08:21:59 +0000
+Subject: [PATCH 01/11] ARM: shmobile: ape6evm: MP clock parent become EXTAL2
+Message-Id: <1370593329-27559-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130625202452.16593.22810.stgit@srivatsabhat.in.ibm.com>
-In-Reply-To: <20130625202452.16593.22810.stgit@srivatsabhat.in.ibm.com>
+References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: peterz@infradead.org, tj@kernel.org, oleg@redhat.com, paulmck@linux.vnet.ibm.com, rusty@rustcorp.com.au, mingo@kernel.org, akpm@linux-foundation.org, namhyung@kernel.org, walken@google.com, vincent.guittot@linaro.org, laijs@cn.fujitsu.com
-Cc: rostedt@goodmis.org, wangyun@linux.vnet.ibm.com, xiaoguangrong@linux.vnet.ibm.com, sbw@mit.edu, fweisbec@gmail.com, zhong@linux.vnet.ibm.com, nikunj@linux.vnet.ibm.com, srivatsa.bhat@linux.vnet.ibm.com, linux-pm@vger.kernel.org, linux-arch@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>, linux-sh@vger.kernel.org"Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Once stop_machine() is gone from the CPU offline path, we won't be able
-to depend on disabling preemption to prevent CPUs from going offline
-from under us.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Use the get/put_online_cpus_atomic() APIs to prevent CPUs from going
-offline, while invoking from atomic context.
+The orignal commit 3263e09d287fbaa8a9424b5e69396599a3bbd518
+(ARM: shmobile: Initial r8a73a4 SoC support V3)
+put MP clock parent as EXTAL2, but its code was removed
+on DIV6 clock support commit.
+This patch makes it consistent.
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Srivatsa S. Bhat <srivatsa.bhat@linux.vnet.ibm.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-ape6evm.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
- arch/sh/kernel/smp.c |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
-index 4569645..42ec182 100644
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -357,7 +357,7 @@ static void flush_tlb_mm_ipi(void *mm)
-  */
- void flush_tlb_mm(struct mm_struct *mm)
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 55b8c9f..5eb0caa 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -26,6 +26,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
++#include <linux/sh_clk.h>
+ #include <linux/smsc911x.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -65,7 +66,21 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 
+ static void __init ape6evm_add_standard_devices(void)
  {
--	preempt_disable();
-+	get_online_cpus_atomic();
- 
- 	if ((atomic_read(&mm->mm_users) != 1) || (current->mm != mm)) {
- 		smp_call_function(flush_tlb_mm_ipi, (void *)mm, 1);
-@@ -369,7 +369,7 @@ void flush_tlb_mm(struct mm_struct *mm)
- 	}
- 	local_flush_tlb_mm(mm);
- 
--	preempt_enable();
-+	put_online_cpus_atomic();
- }
- 
- struct flush_tlb_data {
-@@ -390,7 +390,7 @@ void flush_tlb_range(struct vm_area_struct *vma,
- {
- 	struct mm_struct *mm = vma->vm_mm;
- 
--	preempt_disable();
-+	get_online_cpus_atomic();
- 	if ((atomic_read(&mm->mm_users) != 1) || (current->mm != mm)) {
- 		struct flush_tlb_data fd;
- 
-@@ -405,7 +405,7 @@ void flush_tlb_range(struct vm_area_struct *vma,
- 				cpu_context(i, mm) = 0;
- 	}
- 	local_flush_tlb_range(vma, start, end);
--	preempt_enable();
-+	put_online_cpus_atomic();
- }
- 
- static void flush_tlb_kernel_range_ipi(void *info)
-@@ -433,7 +433,7 @@ static void flush_tlb_page_ipi(void *info)
- 
- void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
- {
--	preempt_disable();
-+	get_online_cpus_atomic();
- 	if ((atomic_read(&vma->vm_mm->mm_users) != 1) ||
- 	    (current->mm != vma->vm_mm)) {
- 		struct flush_tlb_data fd;
-@@ -448,7 +448,7 @@ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
- 				cpu_context(i, vma->vm_mm) = 0;
- 	}
- 	local_flush_tlb_page(vma, page);
--	preempt_enable();
-+	put_online_cpus_atomic();
- }
- 
- static void flush_tlb_one_ipi(void *info)
++
++	struct clk *parent;
++	struct clk *mp;
++
+ 	r8a73a4_clock_init();
++
++	/* MP clock parent = extal2 */
++	parent      = clk_get(NULL, "extal2");
++	mp          = clk_get(NULL, "mp");
++	BUG_ON(IS_ERR(parent) || IS_ERR(mp));
++
++	clk_set_parent(mp, parent);
++	clk_put(parent);
++	clk_put(mp);
++
+ 	pinctrl_register_mappings(ape6evm_pinctrl_map,
+ 				  ARRAY_SIZE(ape6evm_pinctrl_map));
+ 	r8a73a4_pinmux_init();
+-- 
+1.8.2.1
 
