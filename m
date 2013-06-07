@@ -1,72 +1,48 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:54 +0000
-Subject: [PATCH 04/11] ARM: shmobile: r8a7778: add support I2C clock
-Message-Id: <1371106861-25626-5-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 08:22:07 +0000
+Subject: [PATCH 09/11] ARM: shmobile: marzen: Use INTC External IRQ pin driver for SMSC
+Message-Id: <1370593329-27559-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Update the marzen board to use the INTC External IRQ pin driver for SMSC.
 
-This patch adds r8a7778 I2C clock support.
-It also adds peripheral_clk which is requiested
-from i2c-rcar driver
+This code was originally posted by Magnus Damm as part of
+"ARM: shmobile: INTC External IRQ pin driver on r8a7779"
+but somehow omitted when I applied that patch.
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-marzen.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index b251e4d..1386c59 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -105,7 +105,8 @@ static struct clk *main_clks[] = {
- enum {
- 	MSTP323, MSTP322, MSTP321,
- 	MSTP114,
--	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-+	MSTP030,
-+	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015,
- 	MSTP_NR };
- 
-@@ -114,6 +115,10 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
-+	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
-+	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
-+	[MSTP028] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 28, 0), /* I2C2 */
-+	[MSTP027] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 27, 0), /* I2C3 */
- 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 24, 0), /* SCIF2 */
-@@ -125,11 +130,18 @@ static struct clk mstp_clks[MSTP_NR] = {
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index fac9e0f..71f174e 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -69,7 +69,7 @@ static struct resource smsc911x_resources[] = {
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start		= gic_iid(0x3c), /* IRQ 1 */
++		.start		= irq_pin(1), /* IRQ 1 */
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
  };
+@@ -405,6 +405,7 @@ static void __init marzen_init(void)
+ 	pinctrl_register_mappings(marzen_pinctrl_map,
+ 				  ARRAY_SIZE(marzen_pinctrl_map));
+ 	r8a7779_pinmux_init();
++	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
  
- static struct clk_lookup lookups[] = {
-+	/* main */
-+	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
-+
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-+	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
-+	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
-+	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
 -- 
 1.8.2.1
 
