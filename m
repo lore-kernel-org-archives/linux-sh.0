@@ -1,109 +1,89 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 Jun 2013 08:23:33 +0000
-Subject: [PATCH v10 06/21] mx3-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1370939028-8352-7-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 07:51:49 +0000
+Subject: [PATCH 19/27] ARM: shmobile: r8a7790: add div4 clocks
+Message-Id: <1370591517-20239-20-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-When adding and removing a client, the mx3-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+DIV4 clocks control SD* core clocks.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/soc_camera/mx3_camera.c |   35 ++++++++++++++---------
- 1 files changed, 21 insertions(+), 14 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-diff --git a/drivers/media/platform/soc_camera/mx3_camera.c b/drivers/media/platform/soc_camera/mx3_camera.c
-index 71b9b19..1047e3e 100644
---- a/drivers/media/platform/soc_camera/mx3_camera.c
-+++ b/drivers/media/platform/soc_camera/mx3_camera.c
-@@ -460,8 +460,7 @@ static int mx3_camera_init_videobuf(struct vb2_queue *q,
- }
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 850e47f..c85e643 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -51,6 +51,7 @@
+ #define SMSTPCR7 0xe615014c
  
- /* First part of ipu_csi_init_interface() */
--static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam,
--				struct soc_camera_device *icd)
-+static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam)
- {
- 	u32 conf;
- 	long rate;
-@@ -505,31 +504,40 @@ static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam,
+ #define MODEMR		0xE6160060
++#define SDCKCR		0xE6150074
  
- 	clk_prepare_enable(mx3_cam->clk);
- 	rate = clk_round_rate(mx3_cam->clk, mx3_cam->mclk);
--	dev_dbg(icd->parent, "Set SENS_CONF to %x, rate %ld\n", conf, rate);
-+	dev_dbg(mx3_cam->soc_host.v4l2_dev.dev, "Set SENS_CONF to %x, rate %ld\n", conf, rate);
- 	if (rate)
- 		clk_set_rate(mx3_cam->clk, rate);
- }
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+@@ -131,6 +132,29 @@ static struct clk *main_clks[] = {
+ 	&cp_clk,
+ };
  
--/* Called with .host_lock held */
- static int mx3_camera_add_device(struct soc_camera_device *icd)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
-+	dev_info(icd->parent, "MX3 Camera driver attached to camera %d\n",
-+		 icd->devnum);
++/* SDHI (DIV4) clock */
++static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
 +
-+	return 0;
-+}
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors = divisors,
++	.nr_divisors = ARRAY_SIZE(divisors),
++};
 +
-+static void mx3_camera_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "MX3 Camera driver detached from camera %d\n",
-+		 icd->devnum);
-+}
++static struct clk_div4_table div4_table = {
++	.div_mult_table = &div4_div_mult_table,
++};
 +
-+/* Called with .host_lock held */
-+static int mx3_camera_clock_start(struct soc_camera_host *ici)
-+{
- 	struct mx3_camera_dev *mx3_cam = ici->priv;
++enum {
++	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
++};
++
++struct clk div4_clks[DIV4_NR] = {
++	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
++	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
++	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
++};
++
++/* MSTP */
+ enum { MSTP721, MSTP720,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -173,6 +197,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("qspi",		&qspi_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
  
--	mx3_camera_activate(mx3_cam, icd);
-+	mx3_camera_activate(mx3_cam);
++	/* DIV4 */
++	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
++	CLKDEV_CON_ID("sd0",		&div4_clks[DIV4_SD0]),
++	CLKDEV_CON_ID("sd1",		&div4_clks[DIV4_SD1]),
++
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+@@ -233,6 +262,9 @@ void __init r8a7790_clock_init(void)
+ 		ret = clk_register(main_clks[k]);
  
- 	mx3_cam->buf_total = 0;
+ 	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
  
--	dev_info(icd->parent, "MX3 Camera driver attached to camera %d\n",
--		 icd->devnum);
--
- 	return 0;
- }
- 
- /* Called with .host_lock held */
--static void mx3_camera_remove_device(struct soc_camera_device *icd)
-+static void mx3_camera_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct mx3_camera_dev *mx3_cam = ici->priv;
- 	struct idmac_channel **ichan = &mx3_cam->idmac_channel[0];
- 
-@@ -539,9 +547,6 @@ static void mx3_camera_remove_device(struct soc_camera_device *icd)
- 	}
- 
- 	clk_disable_unprepare(mx3_cam->clk);
--
--	dev_info(icd->parent, "MX3 Camera driver detached from camera %d\n",
--		 icd->devnum);
- }
- 
- static int test_platform_param(struct mx3_camera_dev *mx3_cam,
-@@ -1124,6 +1129,8 @@ static struct soc_camera_host_ops mx3_soc_camera_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= mx3_camera_add_device,
- 	.remove		= mx3_camera_remove_device,
-+	.clock_start	= mx3_camera_clock_start,
-+	.clock_stop	= mx3_camera_clock_stop,
- 	.set_crop	= mx3_camera_set_crop,
- 	.set_fmt	= mx3_camera_set_fmt,
- 	.try_fmt	= mx3_camera_try_fmt,
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -- 
-1.7.2.5
+1.8.2.1
 
