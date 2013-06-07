@@ -1,57 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Jun 2013 23:33:13 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 07 Jun 2013 18:52:33 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: r8A7779: fix Ether device name
-Message-Id: <20130605233311.GA32023@verge.net.au>
+Message-Id: <51B22BF1.8030805@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1369645206-3682-1-git-send-email-horms+renesas@verge.net.au>
  <1369645206-3682-3-git-send-email-horms+renesas@verge.net.au>
- <20130528040043.GL13532@quad.lixom.net>
- <20130604051352.GW23054@verge.net.au>
- <51AFB3F1.40603@cogentembedded.com>
-In-Reply-To: <51AFB3F1.40603@cogentembedded.com>
+ <20130528040043.GL13532@quad.lixom.net> <20130604051352.GW23054@verge.net.au>
+ <51AFB3F1.40603@cogentembedded.com> <20130605233311.GA32023@verge.net.au>
+In-Reply-To: <20130605233311.GA32023@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jun 06, 2013 at 01:56:01AM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 06/04/2013 09:13 AM, Simon Horman wrote:
-> 
-> >>>From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >>>
-> >>>While recasting the commit "ARM: shmobile: R8A7779: add Ether support", I made a
-> >>>typo in the platform device's name: used underscore instead of hyphen.
-> >>Minor nit: if this has been merged, then including the SHA is useful too.
-> >Thanks, I have updated the changelog to:
-> >
-> >ARM: shmobile: r8A7779: fix Ether device name
-> >
-> >While recasting the commit dace48d04dee46a3409d5e13cd98031522e46377
-> >("ARM: shmobile: R8A7779: add Ether support"), I made a
-> >typo in the platform device's name: used underscore instead of hyphen.
-> >
-> >Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >[horms+renesas@verge.net.au Add SHA of referenced commit to changlog]
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >
-> >diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-> >index b0b3948..c14a69b 100644
-> >--- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> >+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> >@@ -443,7 +443,7 @@ void __init r8a7779_add_standard_devices(void)
-> >  void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
-> >  {
-> >-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
-> >+	platform_device_register_resndata(&platform_bus, "sh-eth", -1,
-> >  					  ether_resources,
-> >  					  ARRAY_SIZE(ether_resources),
-> >  					  pdata, sizeof(*pdata));
-> 
->     Actually, if these patches aren't going into 3.10, I think it
-> makes sense to drop them,
-> since I'll be renaming the device and pushing this change thru the
-> net-next tree RSN...
+Hello.
 
-Sure, I will drop them.
+On 06/06/2013 03:33 AM, Simon Horman wrote:
+
+>>>>> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>>>>>
+>>>>> While recasting the commit "ARM: shmobile: R8A7779: add Ether support", I made a
+>>>>> typo in the platform device's name: used underscore instead of hyphen.
+>>>> Minor nit: if this has been merged, then including the SHA is useful too.
+>>> Thanks, I have updated the changelog to:
+>>>
+>>> ARM: shmobile: r8A7779: fix Ether device name
+>>>
+>>> While recasting the commit dace48d04dee46a3409d5e13cd98031522e46377
+>>> ("ARM: shmobile: R8A7779: add Ether support"), I made a
+>>> typo in the platform device's name: used underscore instead of hyphen.
+>>>
+>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>>> [horms+renesas@verge.net.au Add SHA of referenced commit to changlog]
+>>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>>>
+>>> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+>>> index b0b3948..c14a69b 100644
+>>> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
+>>> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+>>> @@ -443,7 +443,7 @@ void __init r8a7779_add_standard_devices(void)
+>>>   void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
+>>>   {
+>>> -	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
+>>> +	platform_device_register_resndata(&platform_bus, "sh-eth", -1,
+>>>   					  ether_resources,
+>>>   					  ARRAY_SIZE(ether_resources),
+>>>   					  pdata, sizeof(*pdata));
+>>      Actually, if these patches aren't going into 3.10, I think it
+>> makes sense to drop them,
+>> since I'll be renaming the device and pushing this change thru the
+>> net-next tree RSN...
+> Sure, I will drop them.
+
+    OTOH, since Ether support currently isn't working anyway, it doesn't 
+make sense
+to push it as a consolidated patch with sh_eth.c change, and fix up the 
+names up separately
+thru the renesas.git anyway. So I'll probably just respin these two 
+patches later, when
+I'm done with getting rid of #ifdef's in the driver and it's merged by 
+Dave...
+
+WBR, Sergei
+
+
