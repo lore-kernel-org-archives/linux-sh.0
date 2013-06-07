@@ -1,257 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 17 Jun 2013 18:50:03 +0000
-Subject: [PATCH v7 3/3] sh-pfc: Add pinconf support to DT bindings
-Message-Id: <1371495003-11185-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Jun 2013 08:21:58 +0000
+Subject: [GIT PULL 00/11] Renesas ARM-based SoC board updates for v3.11
+Message-Id: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |  36 +++++--
- drivers/pinctrl/sh-pfc/pinctrl.c                   | 109 ++++++++++++++++++---
- 2 files changed, 124 insertions(+), 21 deletions(-)
+Hi Olof, Hi Arnd,
 
-diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-index 8264cbc..d5dac7b 100644
---- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-+++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-@@ -30,20 +30,27 @@ The PFC node also acts as a container for pin configuration nodes. Please refer
- to pinctrl-bindings.txt in this directory for the definition of the term "pin
- configuration node" and for the common pinctrl bindings used by client devices.
- 
--Each pin configuration node represents desired functions to select on a pin
--group or a list of pin groups. The functions and pin groups can be specified
--directly in the pin configuration node, or grouped in child subnodes. Several
--functions can thus be referenced as a single pin configuration node by client
--devices.
-+Each pin configuration node represents a desired configuration for a pin, a
-+pin group, or a list of pins or pin groups. The configuration can include the
-+function to select on those pin(s) and pin configuration parameters (such as
-+pull-up and pull-down).
- 
--A configuration node or subnode must contain a function and reference at least
--one pin group.
-+Pin configuration nodes contain pin configuration properties, either directly
-+or grouped in child subnodes. Both pin muxing and configuration parameters can
-+be grouped in that way and referenced as a single pin configuration node by
-+client devices.
-+
-+A configuration node or subnode must reference at least one pin (through the
-+pins or pin groups properties) and contain at least a function or one
-+configuration parameter. When the function is present only pin groups can be
-+used to reference pins.
- 
- All pin configuration nodes and subnodes names are ignored. All of those nodes
- are parsed through phandles and processed purely based on their content.
- 
- Pin Configuration Node Properties:
- 
-+- renesas,pins : An array of strings, each string containing the name of a pin.
- - renesas,groups : An array of strings, each string containing the name of a pin
-   group.
- 
-@@ -54,6 +61,10 @@ Pin Configuration Node Properties:
-   function arrays of the PFC data file corresponding to the SoC
-   (drivers/pinctrl/sh-pfc/pfc-*.c)
- 
-+The pin configuration parameters use the generic pinconf bindings defined in
-+pinctrl-bindings.txt in this directory. The supported parameters are
-+bias-disable, bias-pull-up and bias-pull-down.
-+
- 
- GPIO
- ----
-@@ -113,8 +124,15 @@ Example 3: KZM-A9-GT (SH-Mobile AG5) default pin state hog and pin control maps
- 		pinctrl-names = "default";
- 
- 		mmcif_pins: mmcif {
--			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
--			renesas,function = "mmc0";
-+			mux {
-+				renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
-+				renesas,function = "mmc0";
-+			};
-+			cfg {
-+				renesas,groups = "mmc0_data8_0";
-+				renesas,pins = "PORT279";
-+				bias-pull-up;
-+			};
- 		};
- 
- 		scifa4_pins: scifa4 {
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 7e32bb8..2cf2347 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -74,6 +74,27 @@ static void sh_pfc_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
- 	seq_printf(s, "%s", DRV_NAME);
- }
- 
-+static int sh_pfc_map_add_config(struct pinctrl_map *map,
-+				 const char *group_or_pin,
-+				 enum pinctrl_map_type type,
-+				 unsigned long *configs,
-+				 unsigned int num_configs)
-+{
-+	unsigned long *cfgs;
-+
-+	cfgs = kmemdup(configs, num_configs * sizeof(*cfgs),
-+		       GFP_KERNEL);
-+	if (cfgs = NULL)
-+		return -ENOMEM;
-+
-+	map->type = type;
-+	map->data.configs.group_or_pin = group_or_pin;
-+	map->data.configs.configs = cfgs;
-+	map->data.configs.num_configs = num_configs;
-+
-+	return 0;
-+}
-+
- static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 				    struct pinctrl_map **map,
- 				    unsigned int *num_maps, unsigned int *index)
-@@ -81,9 +102,14 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 	struct pinctrl_map *maps = *map;
- 	unsigned int nmaps = *num_maps;
- 	unsigned int idx = *index;
-+	unsigned int num_configs;
- 	const char *function = NULL;
-+	unsigned long *configs;
- 	struct property *prop;
-+	unsigned int num_groups;
-+	unsigned int num_pins;
- 	const char *group;
-+	const char *pin;
- 	int ret;
- 
- 	/* Parse the function and configuration properties. At least a function
-@@ -95,25 +121,47 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 		return ret;
- 	}
- 
--	if (!function) {
--		dev_err(dev, "DT node must contain at least one function\n");
-+	ret = pinconf_generic_parse_dt_config(np, &configs, &num_configs);
-+	if (ret < 0)
-+		return ret;
-+
-+	if (!function && num_configs = 0) {
-+		dev_err(dev,
-+			"DT node must contain at least a function or config\n");
- 		goto done;
- 	}
- 
--	/* Count the number of groups and reallocate mappings. */
-+	/* Count the number of pins and groups and reallocate mappings. */
-+	ret = of_property_count_strings(np, "renesas,pins");
-+	if (ret = -EINVAL) {
-+		num_pins = 0;
-+	} else if (ret < 0) {
-+		dev_err(dev, "Invalid pins list in DT\n");
-+		goto done;
-+	} else {
-+		num_pins = ret;
-+	}
-+
- 	ret = of_property_count_strings(np, "renesas,groups");
--	if (ret < 0 && ret != -EINVAL) {
-+	if (ret = -EINVAL) {
-+		num_groups = 0;
-+	} else if (ret < 0) {
- 		dev_err(dev, "Invalid pin groups list in DT\n");
- 		goto done;
-+	} else {
-+		num_groups = ret;
- 	}
- 
--	if (!ret) {
--		dev_err(dev, "No group provided in DT node\n");
-+	if (!num_pins && !num_groups) {
-+		dev_err(dev, "No pin or group provided in DT node\n");
- 		ret = -ENODEV;
- 		goto done;
- 	}
- 
--	nmaps += ret;
-+	if (function)
-+		nmaps += num_groups;
-+	if (configs)
-+		nmaps += num_pins + num_groups;
- 
- 	maps = krealloc(maps, sizeof(*maps) * nmaps, GFP_KERNEL);
- 	if (maps = NULL) {
-@@ -126,22 +174,59 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 
- 	/* Iterate over pins and groups and create the mappings. */
- 	of_property_for_each_string(np, "renesas,groups", prop, group) {
--		maps[idx].type = PIN_MAP_TYPE_MUX_GROUP;
--		maps[idx].data.mux.group = group;
--		maps[idx].data.mux.function = function;
--		idx++;
-+		if (function) {
-+			maps[idx].type = PIN_MAP_TYPE_MUX_GROUP;
-+			maps[idx].data.mux.group = group;
-+			maps[idx].data.mux.function = function;
-+			idx++;
-+		}
-+
-+		if (configs) {
-+			ret = sh_pfc_map_add_config(&maps[idx], group,
-+						    PIN_MAP_TYPE_CONFIGS_GROUP,
-+						    configs, num_configs);
-+			if (ret < 0)
-+				goto done;
-+
-+			idx++;
-+		}
- 	}
- 
--	ret = 0;
-+	if (!configs) {
-+		ret = 0;
-+		goto done;
-+	}
-+
-+	of_property_for_each_string(np, "renesas,pins", prop, pin) {
-+		ret = sh_pfc_map_add_config(&maps[idx], pin,
-+					    PIN_MAP_TYPE_CONFIGS_PIN,
-+					    configs, num_configs);
-+		if (ret < 0)
-+			goto done;
-+
-+		idx++;
-+	}
- 
- done:
- 	*index = idx;
-+	kfree(configs);
- 	return ret;
- }
- 
- static void sh_pfc_dt_free_map(struct pinctrl_dev *pctldev,
- 			       struct pinctrl_map *map, unsigned num_maps)
- {
-+	unsigned int i;
-+
-+	if (map = NULL)
-+		return;
-+
-+	for (i = 0; i < num_maps; ++i) {
-+		if (map[i].type = PIN_MAP_TYPE_CONFIGS_GROUP ||
-+		    map[i].type = PIN_MAP_TYPE_CONFIGS_PIN)
-+			kfree(map[i].data.configs.configs);
-+	}
-+
- 	kfree(map);
- }
- 
+Please note that this pull request is based on a merge of the
+renesas-pinmux-for-v3.11 and renesas-soc-for-v3.11 tags
+in the renesas tree in order to provide dependencies.
+
+I have sent pull requests for each of those tags as:
+[GIT PULL 000/130] Renesas ARM based SoC pinmux and GPIO update for
+[GIT PULL v2 00/27] Renesas ARM-based SoC updates for v3.11
+
+
+The following changes since commit a961ee1c95cb7309f619e9e68fe8c4fb73bedf6f:
+
+  Merge branches 'pinmux' and 'soc' into boards-base (2013-06-07 14:26:22 +0900)
+
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.11
+
+for you to fetch changes up to f3031ff3f2e14f0ced4d45150316df2607b70a27:
+
+  ARM: shmobile: marzen: keep local function as static (2013-06-07 14:26:35 +0900)
+
+----------------------------------------------------------------
+Renesas ARM-based SoC board updates for v3.11
+
+Highlights:
+bockw: add SDHI0 support
+bockw: add dummy regulators for SMSC
+bockw: Document CN9 SCIF/RCAN dipswitch selection
+lager: support GPIO switches and LEDs
+kzm9g: add AS3711 PMIC platform data
+marzen: Use INTC External IRQ pin driver for SMSC
+ape6evm: Update MP clock parent become EXTAL2 in line with changes
+         to r8a73a4 SoC code
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      ARM: shmobile: kzm9g: add AS3711 PMIC platform data
+
+Kuninori Morimoto (6):
+      ARM: shmobile: ape6evm: MP clock parent become EXTAL2
+      ARM: shmobile: bockw: define FPGA address and rename iomem variable
+      ARM: shmobile: bockw: add CN9 SCIF/RCAN selection dipswitch explanation
+      ARM: shmobile: bockw: add dummy regulators for SMSC
+      ARM: shmobile: bockw: add SDHI0 support
+      ARM: shmobile: marzen: keep local function as static
+
+Simon Horman (4):
+      ARM: shmobile: kzm9d: resigser smsc911x platform device with id -1
+      ARM: shmobile: lager: Add GPIO LEDs
+      ARM: shmobile: lager: support GPIO switches
+      ARM: shmobile: marzen: Use INTC External IRQ pin driver for SMSC
+
+ arch/arm/mach-shmobile/board-ape6evm.c |  15 +++
+ arch/arm/mach-shmobile/board-bockw.c   |  61 ++++++++++-
+ arch/arm/mach-shmobile/board-kzm9d.c   |   2 +-
+ arch/arm/mach-shmobile/board-kzm9g.c   | 193 ++++++++++++++++++++++++---------
+ arch/arm/mach-shmobile/board-lager.c   |  49 +++++++++
+ arch/arm/mach-shmobile/board-marzen.c  |   5 +-
+ 6 files changed, 263 insertions(+), 62 deletions(-)
+
 -- 
-1.8.1.5
+1.8.2.1
 
