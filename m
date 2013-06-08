@@ -1,75 +1,85 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 06 Jun 2013 19:52:37 +0000
-Subject: [PATCH v5 8/8] sh_eth: enclose PM code into #ifdef CONFIG_PM
-Message-Id: <201306062352.38151.sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Jun 2013 20:18:47 +0000
+Subject: [PATCH v9 3/3] ARM: shmobile: BOCK-W: add USB support
+Message-Id: <201306090018.47692.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
+References: <201306090013.00313.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306090013.00313.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Register the USB PHY device from bockw_init(), passing the platform  data to it.
+Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
+get registered too...
 
-Put '#ifdef CONFIG_PM' around sh_eth_runtime_nop() and 'sh_eth_dev_pm_ops'.
-Add '#define SH_ETH_PM_OPS' to facilitate initialization of driver's 'pm' field
-depending on whether CONFIG_PM is enabled. 
+Don't forget to add USB PENC0/1 pins to bockw_pinctrl_map[].
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-[Sergei: added the changelog, reworded the subject, changing the prefix.]
+The patch has been tested on the BOCK-W board.
+
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Changes in version 5:
--refreshed the patch.
+Changes since version 8:
+- resolved reject, refreshed the patch.
 
-Changes in version 4:
-- refreshed the patch;
-- added the changelog;
-- reworded the subject, changing the prefix.
+Changes since version 6:
+- added USB PENC0/1 pins to bockw_pinctrl_map[].
 
-Changes in version 3:
-- fixed "ERROR: Macros with complex values should be enclosed in parenthesis" by
-  scripts/checkpatch.pl.
+Changes since version 4:
+- annotated 'usb_phy_platform_data' as '__initdata' since it's kmemdup()'ed
+  while registering the platform device anyway;
+- refreshed the patch.
 
- drivers/net/ethernet/renesas/sh_eth.c |    9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+Changes since version 3:
+- removed initializer for 'usb_phy_platform_data' letting it be set to all 0s;
+- refreshed the patch.
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2673,6 +2673,7 @@ static int sh_eth_drv_remove(struct plat
- 	return 0;
- }
- 
-+#ifdef CONFIG_PM
- static int sh_eth_runtime_nop(struct device *dev)
- {
- 	/*
-@@ -2686,17 +2687,21 @@ static int sh_eth_runtime_nop(struct dev
- 	return 0;
- }
- 
--static struct dev_pm_ops sh_eth_dev_pm_ops = {
-+static const struct dev_pm_ops sh_eth_dev_pm_ops = {
- 	.runtime_suspend = sh_eth_runtime_nop,
- 	.runtime_resume = sh_eth_runtime_nop,
- };
-+#define SH_ETH_PM_OPS (&sh_eth_dev_pm_ops)
-+#else
-+#define SH_ETH_PM_OPS NULL
-+#endif
- 
- static struct platform_driver sh_eth_driver = {
- 	.probe = sh_eth_drv_probe,
- 	.remove = sh_eth_drv_remove,
- 	.driver = {
- 		   .name = CARDNAME,
--		   .pm = &sh_eth_dev_pm_ops,
-+		   .pm = SH_ETH_PM_OPS,
- 	},
+Changes since version 2:
+- refreshed the patch.
+
+Changes since the original posting:
+- removed initializer for no longer existing field in 'usb_phy_platform_data',
+  modified the comment to the 'ferrite_bead' field initializer.
+
+ arch/arm/mach-shmobile/board-bockw.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -63,6 +63,8 @@ static struct sh_mobile_sdhi_info sdhi0_
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
  };
  
-
++static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
++
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+@@ -78,6 +80,10 @@ static const struct pinctrl_map bockw_pi
+ 				  "sdhi0_data4", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
+ 				  "sdhi0_wp", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
++				  "usb0", "usb0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
++				  "usb1", "usb1"),
+ };
+ 
+ #define FPGA	0x18200000
+@@ -91,6 +97,7 @@ static void __init bockw_init(void)
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
++	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
+ 
+ 	pinctrl_register_mappings(bockw_pinctrl_map,
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
+@@ -146,4 +153,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
+ 	.init_machine	= bockw_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= bockw_boards_compat_dt,
++	.init_late      = r8a7778_init_late,
+ MACHINE_END
