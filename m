@@ -1,163 +1,202 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jun 2013 15:48:21 +0000
-Subject: [PATCH v2 3/6] ARM: shmobile: add SDHI and MMCIF interfaces to armadillo800eva-reference
-Message-Id: <1370533704-23734-4-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Jun 2013 20:34:36 +0000
+Subject: [PATCH v9 resend 1/3] phy-rcar-usb: add R8A7778 support
+Message-Id: <201306090034.36909.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add SDHI0, SDHI1 and MMCIF interfaces to armadillo800eva-reference. With
-no pinctrl DT support we cannot use GPIO card-detection and regulator
-switching.
+The driver currently only supports R8A7779 SoC. Compared to it, R8A7778 USB-PHY
+has extra register range containing two high-speed signal quality characteristic
+control registers which should be set up  during USB-PHY  startup depending on
+whether a ferrite bead is in use or not.  So, we now handle an optional second
+memory range in the driver's probe method, add the 'ferrite_bead' field to the
+driver's platform data, and add an extra (optional) step to the USB-PHY startup
+routine which sets up the extended registers.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Also mark in the driver's Kconfig section  that R8A7778 is now supported and
+generally clarify that section, uppercasing the word "phy" and also changing
+the module name that got lost in the big driver rename, while at it... 
+
+The patch has been tested on the Marzen and BOCK-W boards.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Felipe Balbi <balbi@ti.com>
+
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   21 +++++++++++-
- arch/arm/boot/dts/r8a7740.dtsi                     |   33 ++++++++++++++++++
- .../board-armadillo800eva-reference.c              |   36 +++++++++++++++++++-
- 3 files changed, 88 insertions(+), 2 deletions(-)
+Changes since version 7:
+- renamed the PHY driver and changed the patch subject accordingly;
+- changed the module name mentioned in the driver's Kconfig entry;
+- resolved rejects.
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 09ea22c..3752637 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -32,7 +32,6 @@
- 		regulator-always-on;
- 		regulator-boot-on;
- 	};
--
+Changes since version 5:
+- renamed the header file into <linux/platform_data/usb-rcar-phy.h>.
+
+Changes since version 3:
+- removed stray debugging printk() call.
+
+Changes since version 2:
+- moved 'ferrite_bead' bitfield to the start of 'struct rcar_phy_platform_data'
+  which allowed to cut the size of the structure from 8 bytes back to 4;
+- added a comment about only 2 USB ports on R8A7778'
+- added an ACK from Felipe Balbi.
+
+Changes since the original posting:
+- made the necessary changes atop of the R8A7779/Marzen pathset version 4.
+
+ drivers/usb/phy/Kconfig                    |   10 +++----
+ drivers/usb/phy/phy-rcar-usb.c             |   37 ++++++++++++++++++++++++-----
+ include/linux/platform_data/usb-rcar-phy.h |    4 ++-
+ 3 files changed, 39 insertions(+), 12 deletions(-)
+
+Index: renesas/drivers/usb/phy/Kconfig
+=================================--- renesas.orig/drivers/usb/phy/Kconfig
++++ renesas/drivers/usb/phy/Kconfig
+@@ -181,15 +181,15 @@ config USB_MXS_PHY
+ 	  MXS Phy is used by some of the i.MX SoCs, for example imx23/28/6x.
+ 
+ config USB_RCAR_PHY
+-	tristate "Renesas R-Car USB phy support"
++	tristate "Renesas R-Car USB PHY support"
+ 	depends on USB || USB_GADGET
+ 	help
+-	  Say Y here to add support for the Renesas R-Car USB phy driver.
+-	  This chip is typically used as USB phy for USB host, gadget.
+-	  This driver supports: R8A7779
++	  Say Y here to add support for the Renesas R-Car USB common PHY driver.
++	  This chip is typically used as USB PHY for USB host, gadget.
++	  This driver supports R8A7778 and R8A7779.
+ 
+ 	  To compile this driver as a module, choose M here: the
+-	  module will be called rcar-phy.
++	  module will be called phy-rcar-usb.
+ 
+ config USB_ULPI
+ 	bool "Generic ULPI Transceiver Driver"
+Index: renesas/drivers/usb/phy/phy-rcar-usb.c
+=================================--- renesas.orig/drivers/usb/phy/phy-rcar-usb.c
++++ renesas/drivers/usb/phy/phy-rcar-usb.c
+@@ -26,15 +26,21 @@
+ #define USBOH0		0x1C
+ #define USBCTL0		0x58
+ 
++/* High-speed signal quality characteristic control registers (R8A7778 only) */
++#define HSQCTL1		0x24
++#define HSQCTL2		0x28
++
+ /* USBPCTRL0 */
+-#define OVC2		(1 << 10) /* Switches the OVC input pin for port 2: */
++#define OVC2		(1 << 10) /* (R8A7779 only)			*/
++				/* Switches the OVC input pin for port 2: */
+ 				/* 1: USB_OVC2, 0: OVC2			*/
+ #define OVC1_VBUS1	(1 << 9) /* Switches the OVC input pin for port 1: */
+ 				/* 1: USB_OVC1, 0: OVC1/VBUS1		*/
+ 				/* Function mode: set to 0		*/
+ #define OVC0		(1 << 8) /* Switches the OVC input pin for port 0: */
+ 				/* 1: USB_OVC0 pin, 0: OVC0		*/
+-#define OVC2_ACT 	(1 << 6) /* Host mode: OVC2 polarity:		*/
++#define OVC2_ACT 	(1 << 6) /* (R8A7779 only)			*/
++				/* Host mode: OVC2 polarity:		*/
+ 				/* 1: active-high, 0: active-low	*/
+ #define PENC		(1 << 4) /* Function mode: output level of PENC1 pin: */
+ 				/* 1: high, 0: low			*/
+@@ -59,6 +65,7 @@ struct rcar_usb_phy_priv {
+ 	spinlock_t lock;
+ 
+ 	void __iomem *reg0;
++	void __iomem *reg1;
+ 	int counter;
  };
  
- &i2c0 {
-@@ -43,3 +42,23 @@
- 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
- 	};
- };
-+
-+&mmcif0 {
-+	vmmc-supply = <&reg_3p3v>;
-+	bus-width = <8>;
-+	non-removable;
-+	status = "okay";
-+};
-+
-+&sdhi0 {
-+	vmmc-supply = <&reg_3p3v>;
-+	bus-width = <4>;
-+	broken-cd;
-+	status = "okay";
-+};
-+
-+&sdhi1 {
-+	vmmc-supply = <&reg_3p3v>;
-+	bus-width = <4>;
-+	status = "okay";
-+};
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 25dc930..e9a90d8 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -135,4 +135,37 @@
- 			      0 72 0x4
- 			      0 73 0x4>;
- 	};
-+
-+	mmcif0: mmcif@e6bd0000 {
-+		compatible = "renesas,sh-mmcif", "renesas,sh7372-mmcif";
-+		reg = <0xe6bd0000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 56 4
-+				0 57 4>;
-+		status = "disabled";
-+	};
-+
-+	sdhi0: sdhi@e6850000 {
-+		compatible = "renesas,r8a7740-sdhi";
-+		reg = <0xe6850000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 117 4
-+				0 118 4
-+				0 119 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
-+
-+	sdhi1: sdhi@e6860000 {
-+		compatible = "renesas,r8a7740-sdhi";
-+		reg = <0xe6860000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 121 4
-+				0 122 4
-+				0 123 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 03b85fe..d26a9da 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -123,6 +123,27 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
- 	/* SCIFA1 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
- 				  "scifa1_data", "scifa1"),
-+	/* MMCIF */
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.sh-mmcif", "pfc-r8a7740",
-+				  "mmc0_data8_1", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.sh-mmcif", "pfc-r8a7740",
-+				  "mmc0_ctrl_1", "mmc0"),
-+	/* SDHI0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6850000.sdhi", "pfc-r8a7740",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6850000.sdhi", "pfc-r8a7740",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6850000.sdhi", "pfc-r8a7740",
-+				  "sdhi0_wp", "sdhi0"),
-+	/* SDHI1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6860000.sdhi", "pfc-r8a7740",
-+				  "sdhi1_data4", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6860000.sdhi", "pfc-r8a7740",
-+				  "sdhi1_ctrl", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6860000.sdhi", "pfc-r8a7740",
-+				  "sdhi1_cd", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6860000.sdhi", "pfc-r8a7740",
-+				  "sdhi1_wp", "sdhi1"),
- };
+@@ -78,6 +85,7 @@ static int rcar_usb_phy_init(struct usb_
+ 	struct device *dev = phy->dev;
+ 	struct rcar_phy_platform_data *pdata = dev->platform_data;
+ 	void __iomem *reg0 = priv->reg0;
++	void __iomem *reg1 = priv->reg1;
+ 	static const u8 ovcn_act[] = { OVC0_ACT, OVC1_ACT, OVC2_ACT };
+ 	int i;
+ 	u32 val;
+@@ -96,7 +104,16 @@ static int rcar_usb_phy_init(struct usb_
+ 		/* (2) start USB-PHY internal PLL */
+ 		iowrite32(PHY_ENB | PLL_ENB, (reg0 + USBPCTRL1));
  
- static void __init eva_clock_init(void)
-@@ -165,7 +186,6 @@ clock_error:
-  */
- static void __init eva_init(void)
+-		/* (3) USB module status check */
++		/* (3) set USB-PHY in accord with the conditions of usage */
++		if (reg1) {
++			u32 hsqctl1 = pdata->ferrite_bead ? 0x41 : 0;
++			u32 hsqctl2 = pdata->ferrite_bead ? 0x0d : 7;
++
++			iowrite32(hsqctl1, reg1 + HSQCTL1);
++			iowrite32(hsqctl2, reg1 + HSQCTL2);
++		}
++
++		/* (4) USB module status check */
+ 		for (i = 0; i < 1024; i++) {
+ 			udelay(10);
+ 			val = ioread32(reg0 + USBST);
+@@ -109,7 +126,7 @@ static int rcar_usb_phy_init(struct usb_
+ 			goto phy_init_end;
+ 		}
+ 
+-		/* (4) USB-PHY reset clear */
++		/* (5) USB-PHY reset clear */
+ 		iowrite32(PHY_ENB | PLL_ENB | PHY_RST, (reg0 + USBPCTRL1));
+ 
+ 		/* Board specific port settings */
+@@ -162,9 +179,9 @@ static void rcar_usb_phy_shutdown(struct
+ static int rcar_usb_phy_probe(struct platform_device *pdev)
  {
--
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	eva_clock_init();
+ 	struct rcar_usb_phy_priv *priv;
+-	struct resource *res0;
++	struct resource *res0, *res1;
+ 	struct device *dev = &pdev->dev;
+-	void __iomem *reg0;
++	void __iomem *reg0, *reg1 = NULL;
+ 	int ret;
  
-@@ -180,6 +200,20 @@ static void __init eva_init(void)
- 	 */
- 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 	if (!pdev->dev.platform_data) {
+@@ -182,6 +199,13 @@ static int rcar_usb_phy_probe(struct pla
+ 	if (IS_ERR(reg0))
+ 		return PTR_ERR(reg0);
  
-+	/* SDHI0 */
-+	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
-+	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
-+	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
-+
-+	/* We can switch CON8/CON14 by SW1.5, but only after DBGMD_SELECT_B */
-+	gpio_request_one(6, GPIOF_IN, NULL);
-+	if (!gpio_get_value(6)) {
-+		/* CON14 disabled, CON8 (SDHI1) enabled */
-+
-+		/* SDSLOT2_PON */
-+		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
++	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (res1) {
++		reg1 = devm_ioremap_resource(dev, res1);
++		if (IS_ERR(reg1))
++			return PTR_ERR(reg1);
 +	}
 +
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
--- 
-1.7.2.5
-
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv) {
+ 		dev_err(dev, "priv data allocation error\n");
+@@ -189,6 +213,7 @@ static int rcar_usb_phy_probe(struct pla
+ 	}
+ 
+ 	priv->reg0		= reg0;
++	priv->reg1		= reg1;
+ 	priv->counter		= 0;
+ 	priv->phy.dev		= dev;
+ 	priv->phy.label		= dev_name(dev);
+Index: renesas/include/linux/platform_data/usb-rcar-phy.h
+=================================--- renesas.orig/include/linux/platform_data/usb-rcar-phy.h
++++ renesas/include/linux/platform_data/usb-rcar-phy.h
+@@ -13,6 +13,8 @@
+ #include <linux/types.h>
+ 
+ struct rcar_phy_platform_data {
++	bool ferrite_bead:1;	/* (R8A7778 only)			*/
++
+ 	bool port1_func:1;	/* true: port 1 used by function, false: host */
+ 	unsigned penc1:1;	/* Output of the PENC1 pin in function mode */
+ 	struct {		/* Overcurrent pin control for ports 0..2 */
+@@ -20,7 +22,7 @@ struct rcar_phy_platform_data {
+ 				/* Set to false on port 1 in function mode */
+ 		bool active_high:1; /* true: active  high, false: active low */
+ 				/* Set to true  on port 1 in function mode */
+-	} ovc_pin[3];
++	} ovc_pin[3];		/* (R8A7778 only has 2 ports)		*/
+ };
+ 
+ #endif /* __USB_RCAR_PHY_H */
