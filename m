@@ -1,348 +1,113 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:32 +0000
-Subject: [PATCH 22/24] drm/rcar-du: Rework output routing support
-Message-Id: <1372326574-4315-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Jun 2013 00:03:37 +0000
+Subject: [PATCH 7/9] sh_eth: get SH7724 support out of #ifdef
+Message-Id: <201306080403.37551.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, lethal@linux-sh.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-Split the output routing specification between SoC-internal data,
-specified in the rcar_du_device_info structure, and board data, passed
-through platform data.
+Get the SH7724 code/data in the driver out of #ifdef by adding "r8a7724-ether"
+to the platform driver's ID table. Change the Ether platform device's name in
+the SH platform code accordingly.
 
-The DU has 5 possible outputs (DPAD0/1, LVDS0/1, TCON). SoC-internal
-output routing data specify which output are valid, which CRTCs can be
-connected to the valid outputs, and the type of in-SoC encoder for the
-output.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Platform data then specifies external encoders and the output they are
-connected to.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c    |  6 ++++--
- drivers/gpu/drm/rcar-du/rcar_du_crtc.h    |  4 +++-
- drivers/gpu/drm/rcar-du/rcar_du_drv.c     | 30 ++++++++++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_drv.h     | 16 ++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 26 +++++++++++++++++++++-----
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h |  5 +++--
- drivers/gpu/drm/rcar-du/rcar_du_group.c   |  8 ++++----
- drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 17 +++++++++++------
- include/linux/platform_data/rcar-du.h     | 17 +++++++++++++++--
- 9 files changed, 107 insertions(+), 22 deletions(-)
+Note that the Ether paltform data in the SolutionEngine7724 board code lacks the
+initializer for the 'register_type' field which means it'll be  incorrectly  set
+to SH_ETH_REG_GIGABIT...
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index a340224..680606e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -129,14 +129,16 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
- 	rcar_du_crtc_write(rcrtc, DEWR,  mode->hdisplay);
+ arch/sh/boards/mach-ecovec24/setup.c   |    4 ++--
+ arch/sh/boards/mach-se/7724/setup.c    |    4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    2 +-
+ drivers/net/ethernet/renesas/sh_eth.c  |   10 +++++-----
+ 4 files changed, 10 insertions(+), 10 deletions(-)
+
+Index: net-next/arch/sh/boards/mach-ecovec24/setup.c
+=================================--- net-next.orig/arch/sh/boards/mach-ecovec24/setup.c
++++ net-next/arch/sh/boards/mach-ecovec24/setup.c
+@@ -165,8 +165,8 @@ static struct sh_eth_plat_data sh_eth_pl
+ };
+ 
+ static struct platform_device sh_eth_device = {
+-	.name = "sh-eth",
+-	.id	= 0,
++	.name = "sh7724-ether",
++	.id = 0,
+ 	.dev = {
+ 		.platform_data = &sh_eth_plat,
+ 	},
+Index: net-next/arch/sh/boards/mach-se/7724/setup.c
+=================================--- net-next.orig/arch/sh/boards/mach-se/7724/setup.c
++++ net-next/arch/sh/boards/mach-se/7724/setup.c
+@@ -380,8 +380,8 @@ static struct sh_eth_plat_data sh_eth_pl
+ };
+ 
+ static struct platform_device sh_eth_device = {
+-	.name = "sh-eth",
+-	.id	= 0,
++	.name = "sh7724-ether",
++	.id = 0,
+ 	.dev = {
+ 		.platform_data = &sh_eth_plat,
+ 	},
+Index: net-next/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+=================================--- net-next.orig/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ net-next/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -329,7 +329,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[HWBLK_IIC0]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[HWBLK_IIC1]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[HWBLK_MMC]),
+-	CLKDEV_DEV_ID("sh-eth.0", &mstp_clks[HWBLK_ETHER]),
++	CLKDEV_DEV_ID("sh7724-ether.0", &mstp_clks[HWBLK_ETHER]),
+ 	CLKDEV_CON_ID("atapi0", &mstp_clks[HWBLK_ATAPI]),
+ 	CLKDEV_CON_ID("tpu0", &mstp_clks[HWBLK_TPU]),
+ 	CLKDEV_CON_ID("irda0", &mstp_clks[HWBLK_IRDA]),
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -392,9 +392,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.tpauser	= 1,
+ 	.hw_swap	= 1,
+ };
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7724)
++#endif
+ 
+-static void sh_eth_set_rate(struct net_device *ndev)
++static void sh_eth_set_rate_sh7724(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+@@ -411,9 +411,9 @@ static void sh_eth_set_rate(struct net_d
  }
  
--void rcar_du_crtc_route_output(struct drm_crtc *crtc, unsigned int output)
-+void rcar_du_crtc_route_output(struct drm_crtc *crtc,
-+			       enum rcar_du_output output)
+ /* SH7724 */
+-static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
++static struct sh_eth_cpu_data sh7724_data = {
+ 	.set_duplex	= sh_eth_set_duplex,
+-	.set_rate	= sh_eth_set_rate,
++	.set_rate	= sh_eth_set_rate_sh7724,
+ 
+ 	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
+ 	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
+@@ -431,7 +431,6 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.rpadir		= 1,
+ 	.rpadir_value	= 0x00020000, /* NET_IP_ALIGN assumed to be 2 */
+ };
+-#endif
+ 
+ static void sh_eth_set_rate_sh7757(struct net_device *ndev)
  {
- 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
-+	struct rcar_du_device *rcdu = rcrtc->group->dev;
- 
- 	/* Store the route from the CRTC output to the DU output. The DU will be
- 	 * configured when starting the CRTC.
- 	 */
--	rcrtc->outputs |= 1 << output;
-+	rcrtc->outputs |= BIT(output);
- }
- 
- void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-index 542a7fe..39a983d 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-@@ -15,6 +15,7 @@
- #define __RCAR_DU_CRTC_H__
- 
- #include <linux/mutex.h>
-+#include <linux/platform_data/rcar-du.h>
- 
- #include <drm/drmP.h>
- #include <drm/drm_crtc.h>
-@@ -45,7 +46,8 @@ void rcar_du_crtc_cancel_page_flip(struct rcar_du_crtc *rcrtc,
- void rcar_du_crtc_suspend(struct rcar_du_crtc *rcrtc);
- void rcar_du_crtc_resume(struct rcar_du_crtc *rcrtc);
- 
--void rcar_du_crtc_route_output(struct drm_crtc *crtc, unsigned int output);
-+void rcar_du_crtc_route_output(struct drm_crtc *crtc,
-+			       enum rcar_du_output output);
- void rcar_du_crtc_update_planes(struct drm_crtc *crtc);
- 
- #endif /* __RCAR_DU_CRTC_H__ */
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index dd1950d..28654e7 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -214,12 +214,42 @@ static int rcar_du_remove(struct platform_device *pdev)
- static const struct rcar_du_device_info rcar_du_r8a7779_info = {
- 	.features = 0,
- 	.num_crtcs = 2,
-+	.routes = {
-+		/* R8A7779 has two RGB outputs and one (currently unsupported)
-+		 * TCON output.
-+		 */
-+		[RCAR_DU_OUTPUT_DPAD0] = {
-+			.possible_crtcs = BIT(0),
-+			.encoder_type = DRM_MODE_ENCODER_NONE,
-+		},
-+		[RCAR_DU_OUTPUT_DPAD1] = {
-+			.possible_crtcs = BIT(1) | BIT(0),
-+			.encoder_type = DRM_MODE_ENCODER_NONE,
-+		},
-+	},
- };
- 
- static const struct rcar_du_device_info rcar_du_r8a7790_info = {
- 	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B
- 		  | RCAR_DU_FEATURE_DEFR8,
- 	.num_crtcs = 3,
-+	.routes = {
-+		/* R8A7790 has one RGB output, two LVDS outputs and one
-+		 * (currently unsupported) TCON output.
-+		 */
-+		[RCAR_DU_OUTPUT_DPAD0] = {
-+			.possible_crtcs = BIT(2) | BIT(1) | BIT(0),
-+			.encoder_type = DRM_MODE_ENCODER_NONE,
-+		},
-+		[RCAR_DU_OUTPUT_LVDS0] = {
-+			.possible_crtcs = BIT(0),
-+			.encoder_type = DRM_MODE_ENCODER_LVDS,
-+		},
-+		[RCAR_DU_OUTPUT_LVDS1] = {
-+			.possible_crtcs = BIT(2) | BIT(1),
-+			.encoder_type = DRM_MODE_ENCODER_LVDS,
-+		},
-+	},
- };
- 
- static const struct platform_device_id rcar_du_id_table[] = {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-index 70c335f..d5243f4 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-@@ -30,13 +30,29 @@ struct rcar_du_device;
- #define RCAR_DU_FEATURE_DEFR8		(1 << 2)	/* Has DEFR8 register */
- 
- /*
-+ * struct rcar_du_output_routing - Output routing specification
-+ * @possible_crtcs: bitmask of possible CRTCs for the output
-+ * @encoder_type: DRM type of the internal encoder associated with the output
-+ *
-+ * The DU has 5 possible outputs (DPAD0/1, LVDS0/1, TCON). Output routing data
-+ * specify the valid SoC outputs, which CRTCs can drive the output, and the type
-+ * of in-SoC encoder for the output.
-+ */
-+struct rcar_du_output_routing {
-+	unsigned int possible_crtcs;
-+	unsigned int encoder_type;
-+};
-+
-+/*
-  * struct rcar_du_device_info - DU model-specific information
-  * @features: device features (RCAR_DU_FEATURE_*)
-  * @num_crtcs: total number of CRTCs
-+ * @routes: array of CRTC to output routes, indexed by output (RCAR_DU_OUTPUT_*)
-  */
- struct rcar_du_device_info {
- 	unsigned int features;
- 	unsigned int num_crtcs;
-+	struct rcar_du_output_routing routes[RCAR_DU_OUTPUT_MAX];
- };
- 
- struct rcar_du_device {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 0d0375c..2aac28d 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -115,10 +115,12 @@ static const struct drm_encoder_funcs encoder_funcs = {
- };
- 
- int rcar_du_encoder_init(struct rcar_du_device *rcdu,
--			 enum rcar_du_encoder_type type, unsigned int output,
-+			 enum rcar_du_encoder_type type,
-+			 enum rcar_du_output output,
- 			 const struct rcar_du_encoder_data *data)
- {
- 	struct rcar_du_encoder *renc;
-+	unsigned int encoder_type;
- 	int ret;
- 
- 	renc = devm_kzalloc(rcdu->dev, sizeof(*renc), GFP_KERNEL);
-@@ -127,19 +129,33 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 
- 	renc->output = output;
- 
-+	switch (type) {
-+	case RCAR_DU_ENCODER_VGA:
-+		encoder_type = DRM_MODE_ENCODER_DAC;
-+		break;
-+	case RCAR_DU_ENCODER_LVDS:
-+		encoder_type = DRM_MODE_ENCODER_LVDS;
-+		break;
-+	case RCAR_DU_ENCODER_NONE:
-+	default:
-+		/* No external encoder, use the internal encoder type. */
-+		encoder_type = rcdu->info->routes[output].encoder_type;
-+		break;
-+	}
-+
- 	ret = drm_encoder_init(rcdu->ddev, &renc->encoder, &encoder_funcs,
--			       type);
-+			       encoder_type);
- 	if (ret < 0)
- 		return ret;
- 
- 	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
- 
--	switch (type) {
--	case RCAR_DU_ENCODER_LVDS:
-+	switch (encoder_type) {
-+	case DRM_MODE_ENCODER_LVDS:
- 		return rcar_du_lvds_connector_init(rcdu, renc,
- 						   &data->connector.lvds.panel);
- 
--	case RCAR_DU_ENCODER_VGA:
-+	case DRM_MODE_ENCODER_DAC:
- 		return rcar_du_vga_connector_init(rcdu, renc);
- 
- 	default:
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index 08cde12..2310416 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -22,7 +22,7 @@ struct rcar_du_device;
- 
- struct rcar_du_encoder {
- 	struct drm_encoder encoder;
--	unsigned int output;
-+	enum rcar_du_output output;
- };
- 
- #define to_rcar_encoder(e) \
-@@ -40,7 +40,8 @@ struct drm_encoder *
- rcar_du_connector_best_encoder(struct drm_connector *connector);
- 
- int rcar_du_encoder_init(struct rcar_du_device *rcdu,
--			 enum rcar_du_encoder_type type, unsigned int output,
-+			 enum rcar_du_encoder_type type,
-+			 enum rcar_du_output output,
- 			 const struct rcar_du_encoder_data *data);
- 
- #endif /* __RCAR_DU_ENCODER_H__ */
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-index f3ba0ca..9df6fb6 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-@@ -135,11 +135,11 @@ void rcar_du_group_set_routing(struct rcar_du_group *rgrp)
- 
- 	dorcr &= ~(DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_MASK);
- 
--	/* Set the DU1 pins sources. Select CRTC 0 if explicitly requested and
--	 * CRTC 1 in all other cases to avoid cloning CRTC 0 to DU0 and DU1 by
--	 * default.
-+	/* Set the DPAD1 pins sources. Select CRTC 0 if explicitly requested and
-+	 * CRTC 1 in all other cases to avoid cloning CRTC 0 to DPAD0 and DPAD1
-+	 * by default.
- 	 */
--	if (crtc0->outputs & (1 << 1))
-+	if (crtc0->outputs & BIT(RCAR_DU_OUTPUT_DPAD1))
- 		dorcr |= DORCR_PG2D_DS1;
- 	else
- 		dorcr |= DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_DS2;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 816963c..2b92e68 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -220,11 +220,14 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 	for (i = 0; i < rcdu->pdata->num_encoders; ++i) {
- 		const struct rcar_du_encoder_data *pdata  			&rcdu->pdata->encoders[i];
-+		const struct rcar_du_output_routing *route +			&rcdu->info->routes[pdata->output];
- 
- 		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
- 			continue;
- 
--		if (pdata->output >= rcdu->num_crtcs) {
-+		if (pdata->output >= RCAR_DU_OUTPUT_MAX ||
-+		    route->possible_crtcs = 0) {
- 			dev_warn(rcdu->dev,
- 				 "encoder %u references unexisting output %u, skipping\n",
- 				 i, pdata->output);
-@@ -234,15 +237,17 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 		rcar_du_encoder_init(rcdu, pdata->type, pdata->output, pdata);
- 	}
- 
--	/* Set the possible CRTCs and possible clones. All encoders can be
--	 * driven by the CRTC associated with the output they're connected to,
--	 * as well as by CRTC 0.
-+	/* Set the possible CRTCs and possible clones. There's always at least
-+	 * one way for all encoders to clone each other, set all bits in the
-+	 * possible clones field.
- 	 */
- 	list_for_each_entry(encoder, &dev->mode_config.encoder_list, head) {
- 		struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
-+		const struct rcar_du_output_routing *route +			&rcdu->info->routes[renc->output];
- 
--		encoder->possible_crtcs = (1 << 0) | (1 << renc->output);
--		encoder->possible_clones = 1 << 0;
-+		encoder->possible_crtcs = route->possible_crtcs;
-+		encoder->possible_clones = (1 << rcdu->pdata->num_encoders) - 1;
- 	}
- 
- 	/* Now that the CRTCs have been initialized register the planes. */
-diff --git a/include/linux/platform_data/rcar-du.h b/include/linux/platform_data/rcar-du.h
-index 64cd863..1a2e990 100644
---- a/include/linux/platform_data/rcar-du.h
-+++ b/include/linux/platform_data/rcar-du.h
-@@ -16,8 +16,18 @@
- 
- #include <drm/drm_mode.h>
- 
-+enum rcar_du_output {
-+	RCAR_DU_OUTPUT_DPAD0,
-+	RCAR_DU_OUTPUT_DPAD1,
-+	RCAR_DU_OUTPUT_LVDS0,
-+	RCAR_DU_OUTPUT_LVDS1,
-+	RCAR_DU_OUTPUT_TCON,
-+	RCAR_DU_OUTPUT_MAX,
-+};
-+
- enum rcar_du_encoder_type {
- 	RCAR_DU_ENCODER_UNUSED = 0,
-+	RCAR_DU_ENCODER_NONE,
- 	RCAR_DU_ENCODER_VGA,
- 	RCAR_DU_ENCODER_LVDS,
- };
-@@ -39,13 +49,16 @@ struct rcar_du_connector_vga_data {
- /*
-  * struct rcar_du_encoder_data - Encoder platform data
-  * @type: the encoder type (RCAR_DU_ENCODER_*)
-- * @output: the DU output the connector is connected to
-+ * @output: the DU output the connector is connected to (RCAR_DU_OUTPUT_*)
-  * @connector.lvds: platform data for LVDS connectors
-  * @connector.vga: platform data for VGA connectors
-+ *
-+ * Encoder platform data describes an on-board encoder, its associated DU SoC
-+ * output, and the connector.
-  */
- struct rcar_du_encoder_data {
- 	enum rcar_du_encoder_type type;
--	unsigned int output;
-+	enum rcar_du_output output;
- 
- 	union {
- 		struct rcar_du_connector_lvds_data lvds;
--- 
-1.8.1.5
-
+@@ -2687,6 +2686,7 @@ static const struct dev_pm_ops sh_eth_de
+ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7619-ether", (kernel_ulong_t)&sh7619_data },
+ 	{ "sh771x-ether", (kernel_ulong_t)&sh771x_data },
++	{ "sh7724-ether", (kernel_ulong_t)&sh7724_data },
+ 	{ "sh7734-gether", (kernel_ulong_t)&sh7734_data },
+ 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
+ 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
