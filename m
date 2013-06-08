@@ -1,29 +1,25 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 28 Jun 2013 05:12:39 +0000
-Subject: Re: [PATCH 2/2 v3] ARM: shmobile: r8a7778: rename device additional function for sdhi
-Message-Id: <20130628051235.GA25461@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Jun 2013 20:32:34 +0000
+Subject: [PATCH v9 resend 0/3] Add USB support to R8A7778/BOCK-W
+Message-Id: <201306090032.35128.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehct8ag0.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehct8ag0.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jun 27, 2013 at 10:03:08PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > Hi Morimoto,
-> > 
-> > this patch no longer applies.
-> > 
-> > Could you rebase it, for example on top of renesas-next-20130627,
-> > and repost if the change is still appropriate?
-> 
-> I forgot detail of this patch,
-> but Maguns pointed that this kind of cosmetic patch
-> makes back-port difficult.
-> You can drop these patch set
+Hello.
 
-Thanks, dropped.
+   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130607' tag, and the R8A7779/Marzen USB patchset I've posted.
+It was created to add support of R8A7778/BOCK-W USB to the platform code and
+the USB common PHY driver, and so spans both arch/arm/mach-shmobile/ and
+drivers/usb/phy/ subtrees.
+
+[1/3] phy-rcar-usb: add R8A7778 support
+[2/3] ARM: shmobile: r8a7778: add USB support
+[3/3] ARM: shmobile: BOCK-W: add USB support
+
+   The patchset is completely ready for merging now.
+
+WBR, Sergei
