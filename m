@@ -1,111 +1,28 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Mon, 17 Jun 2013 11:13:51 +0000
-Subject: Re: [PATCH v11 00/21] V4L2 clock and asynchronous probing
-Message-Id: <201306171313.51196.hverkuil@xs4all.nl>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Jun 2013 20:12:59 +0000
+Subject: [PATCH v9 0/3] Add USB support to R8A7778/BOCK-W
+Message-Id: <201306090013.00313.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-media@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri 14 June 2013 21:08:10 Guennadi Liakhovetski wrote:
-> v11 of the V4L2 clock helper and asynchronous probing patch set. 
-> Functionally identical to v10, only differences are a couple of comment 
-> lines and one renamed struct field - as requested by respectable 
-> reviewers :)
-> 
-> Only patches #15, 16 and 18 changed.
+Hello.
 
-Thanks for posting the patch adding documentation! Much appreciated.
+   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130607' tag, and the R8A7779/Marzen USB patchset I've posted.
+It was created to add support of R8A7778/BOCK-W USB to the platform code and
+the USB common PHY driver, and so spans both arch/arm/mach-shmobile/ and
+drivers/usb/phy/ subtrees.
 
-As a result I give my ack for this patch series:
+[1/3] phy-rcar-usb: add R8A7778 support
+[2/3] ARM: shmobile: r8a7778: add USB support
+[3/3] ARM: shmobile: BOCK-W: add USB support
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+   The patch #4 (ARM: shmobile: BOCK-W: enable USB in defconfig) that has been
+already merged, is not reposted.
 
-Regards,
+   The patchset is completely ready for merging now.
 
-	Hans
-
-> 
-> Guennadi Liakhovetski (21):
->   soc-camera: move common code to soc_camera.c
->   soc-camera: add host clock callbacks to start and stop the master
->     clock
->   pxa-camera: move interface activation and deactivation to clock
->     callbacks
->   omap1-camera: move interface activation and deactivation to clock
->     callbacks
->   atmel-isi: move interface activation and deactivation to clock
->     callbacks
->   mx3-camera: move interface activation and deactivation to clock
->     callbacks
->   mx2-camera: move interface activation and deactivation to clock
->     callbacks
->   mx1-camera: move interface activation and deactivation to clock
->     callbacks
->   sh-mobile-ceu-camera: move interface activation and deactivation to
->     clock callbacks
->   soc-camera: make .clock_{start,stop} compulsory, .add / .remove
->     optional
->   soc-camera: don't attach the client to the host during probing
->   sh-mobile-ceu-camera: add primitive OF support
->   sh-mobile-ceu-driver: support max width and height in DT
->   V4L2: add temporary clock helpers
->   V4L2: add a device pointer to struct v4l2_subdev
->   V4L2: support asynchronous subdevice registration
->   soc-camera: switch I2C subdevice drivers to use v4l2-clk
->   soc-camera: add V4L2-async support
->   sh_mobile_ceu_camera: add asynchronous subdevice probing support
->   imx074: support asynchronous probing
->   ARM: shmobile: convert ap4evb to asynchronously register camera
->     subdevices
-> 
->  .../devicetree/bindings/media/sh_mobile_ceu.txt    |   18 +
->  arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
->  arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
->  drivers/media/i2c/soc_camera/imx074.c              |   32 +-
->  drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
->  drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
->  drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
->  drivers/media/i2c/soc_camera/mt9t112.c             |   25 +-
->  drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
->  drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
->  drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
->  drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
->  drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
->  drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
->  drivers/media/i2c/soc_camera/ov9640.h              |    1 +
->  drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
->  drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
->  drivers/media/i2c/soc_camera/tw9910.c              |   24 +-
->  drivers/media/platform/soc_camera/atmel-isi.c      |   38 +-
->  drivers/media/platform/soc_camera/mx1_camera.c     |   48 +-
->  drivers/media/platform/soc_camera/mx2_camera.c     |   41 +-
->  drivers/media/platform/soc_camera/mx3_camera.c     |   44 +-
->  drivers/media/platform/soc_camera/omap1_camera.c   |   41 +-
->  drivers/media/platform/soc_camera/pxa_camera.c     |   46 +-
->  .../platform/soc_camera/sh_mobile_ceu_camera.c     |  243 +++++--
->  drivers/media/platform/soc_camera/sh_mobile_csi2.c |  153 +++--
->  drivers/media/platform/soc_camera/soc_camera.c     |  707 +++++++++++++++++---
->  .../platform/soc_camera/soc_camera_platform.c      |    2 +-
->  drivers/media/v4l2-core/Makefile                   |    3 +-
->  drivers/media/v4l2-core/v4l2-async.c               |  280 ++++++++
->  drivers/media/v4l2-core/v4l2-clk.c                 |  242 +++++++
->  drivers/media/v4l2-core/v4l2-common.c              |    2 +
->  include/media/sh_mobile_ceu.h                      |    2 +
->  include/media/sh_mobile_csi2.h                     |    2 +-
->  include/media/soc_camera.h                         |   39 +-
->  include/media/v4l2-async.h                         |  105 +++
->  include/media/v4l2-clk.h                           |   54 ++
->  include/media/v4l2-subdev.h                        |   10 +
->  38 files changed, 2035 insertions(+), 467 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/media/sh_mobile_ceu.txt
->  create mode 100644 drivers/media/v4l2-core/v4l2-async.c
->  create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
->  create mode 100644 include/media/v4l2-async.h
->  create mode 100644 include/media/v4l2-clk.h
-> 
-> 
+WBR, Sergei
