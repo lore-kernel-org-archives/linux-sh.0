@@ -1,76 +1,43 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 27 Jun 2013 05:29:20 +0000
-Subject: Re: [PATCH 0/4] Add DVFS support on APE6EVM
-Message-Id: <874nck2kb7.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Jun 2013 21:23:24 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7778: fix Ether device name
+Message-Id: <201306090123.24709.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+While recasting commit 524219146a89aee5366326c225ccd71231419d89 (ARM: shmobile:
+R8A7778: add Ether support), I made a typo in the platform device's name: used
+underscore instead of hyphen.
 
-Hi
+However, there's now patch merged to net-next.git renaming the platform device
+from "sh-eth" to "r8a777x-ehter", so it makes the most sense to change the name
+straight to that one.
 
-I have no objection.
-For all patches
-
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Guennadi wrote:
-> 
-> Having added CPUFreq support to the Cortex A15 cores on APE6 (r8a73a4) and 
-> DT support to the max8973 regulator driver it is now possible to implement 
-> CA15 CPUFreq support on APE6EVM, using a max8972 PMU to adjust SoC's DVFS
-> voltage. This series depends on earlier
-> 
-> "ARM: shmobile: r8a73a4: wait for completion when kicking the clock"
-> https://patchwork.kernel.org/patch/2601071/
-> "ARM: shmobile: r8a73a4: implement CPU clock scaling for CPUFreq"
-> https://patchwork.kernel.org/patch/2601111/
-> 
-> and requires the following max8973 patches:
-> 
-> "regulators: max8973: fix multiple instance support"
-> http://www.mail-archive.com/linux-kernel@vger.kernel.org/msg456101.html
-> "regulators: max8973: initial DT support"
-> http://www.mail-archive.com/linux-kernel@vger.kernel.org/msg456102.html
-> 
-> Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> 
-> Guennadi Liakhovetski (4):
->   ARM: shmobile: r8a73a4: safeguard against wrong clk_set_rate() uses
->   ARM: shmobile: r8a73a4: add I2C DT nodes and required clocks
->   ARM: shmobile: ape6evm: add CPUFreq support
->   ARM: shmobile: r8a73a4: add Z2 clock support
-> 
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   26 ++++++++++
->  arch/arm/boot/dts/r8a73a4.dtsi         |   81 ++++++++++++++++++++++++++++++++
->  arch/arm/mach-shmobile/clock-r8a73a4.c |   56 +++++++++++++++++++++-
->  3 files changed, 160 insertions(+), 3 deletions(-)
-> 
-> -- 
-> 1.7.2.5
-> 
-> Thanks
-> Guennadi
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Kuninori Morimoto
+The patch is atop of the 'renesas-next-20130607' tag of the 'renesas.git' tree
+and the USB patches I have submitted earlier.
 
-人生とは自転車のようなものだ
-倒れないようにするには走らなければならない。
-                  −　アルバート・アインシュタイン
+Changes in version 2:
+- changed the platform device's name as in the patch merged to 'net-next.git';
+- lowercased the SoC name in the subject.
 
-Best regards
----
-Kuninori Morimoto
+ arch/arm/mach-shmobile/setup-r8a7778.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -196,7 +196,7 @@ static struct resource ether_resources[]
+ 
+ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
+ {
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
+ 					  pdata, sizeof(*pdata));
