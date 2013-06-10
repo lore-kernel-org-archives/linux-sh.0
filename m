@@ -1,42 +1,61 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 13 Jun 2013 00:57:40 +0000
-Subject: Re: [PATCH net-next] net: sh_eth: fix incorrect RX length error if R8A7740
-Message-Id: <51B91904.8070001@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 10 Jun 2013 09:28:57 +0000
+Subject: [PATCH v2] ARM: shmobile: uImage load address rework
+Message-Id: <20130610092857.19175.25629.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51B7CFFB.7090801@renesas.com> <51B8CB1B.9020304@cogentembedded.com>
-In-Reply-To: <51B8CB1B.9020304@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Magnus Damm <damm@opensource.se>
 
-(2013/06/13 4:25), Sergei Shtylyov wrote:
-> On 06/12/2013 05:33 AM, Shimoda, Yoshihiro wrote:
-< snip >
->> +#if defined(CONFIG_ARCH_R8A7740)
->> +        /*
->> +         * In case of almost GETHER/ETHERs, the Receive Frame State
-> 
->    Erm, minor nit: it seems you forgot "all" after "almost". Hence it's probably worth resubmitting...
-> 
+This is V2 of the mach-shmobile uImage load address rework patch.
 
-Thank you for the point. I will fix it and resubmit a patch for "net.git".
+Rework the mach-shmobile uImage load address calculation by storing
+the per-board load addresses in Makefile.boot. This removes the
+CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
+it possible to create safe kernel images that boot on multiple boards.
 
-Best regards,
-Yoshihiro Shimoda
+This is one of several series of code that reworks code not to rely on
+CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
 
->> +         * (RFS) bits in the Receive Descriptor 0 are from bit 9 to
->> +         * bit 0. However, in case of the R8A7740's GETHER, the RFS
->> +         * bits are from bit 25 to bit 16. So, the driver needs right
->> +         * shifting by 16.
->> +         */
->> +        desc_status >>= 16;
->> +#endif
->> +
-> 
-> WBR, Sergei
-> 
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+
+ Changes since V1:
+ - On popular request, merged patch 5 and 14 and all other.
+ - Updated the __ZRELADDR calculation, thanks Arnd!
+ - Added Reviewed-by from Laurent and Morimoto-san, thanks!
+
+ arch/arm/mach-shmobile/Makefile.boot |   20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-10 16:15:22.000000000 +0900
+@@ -1,6 +1,22 @@
+-__ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
++# per-board load address for uImage
++loadaddr-y	:+loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
++loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
++loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
++loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
++loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
++loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
++loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
++loadaddr-$(CONFIG_MACH_KOTA2) += 0x41008000
++loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
++loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
++loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
++loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
++loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
++loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
++loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
+ 
++__ZRELADDR	:= $(sort $(loadaddr-y))
+    zreladdr-y   += $(__ZRELADDR)
+ 
+ # Unsupported legacy stuff
