@@ -1,19 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 27 Jun 2013 08:00:15 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: armadillo800eva: remove left-overs
-Message-Id: <20130627080015.GC13927@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 10 Jun 2013 05:55:58 +0000
+Subject: [PATCH] ARM: zImage/virt: remove hyp-stub.S during distclean
+Message-Id: <20130610060325.2335.65815.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bok7lm0h.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bok7lm0h.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jun 06, 2013 at 05:38:11PM +0200, Guennadi Liakhovetski wrote:
-> A comment and a #define in board-armadillo800eva.c have been left over
-> after recent changes and are no longer relevant or needed, remove them.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up for v3.12 in the cleanup branch.
+Make sure hyp-stub.S gets removed during make distclean,
+this left over file was introduced in commit:
+
+424e599 ARM: zImage/virt: hyp mode entry support for the zImage loader
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/compressed/Makefile |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/compressed/Makefile
++++ work/arch/arm/boot/compressed/Makefile	2013-06-05 17:21:20.000000000 +0900
+@@ -116,7 +116,8 @@ targets       := vmlinux vmlinux.lds \
+ 
+ # Make sure files are removed during clean
+ extra-y       += piggy.gzip piggy.lzo piggy.lzma piggy.xzkern \
+-		 lib1funcs.S ashldi3.S $(libfdt) $(libfdt_hdrs)
++		 lib1funcs.S ashldi3.S $(libfdt) $(libfdt_hdrs) \
++		 hyp-stub.S
+ 
+ ifeq ($(CONFIG_FUNCTION_TRACER),y)
+ ORIG_CFLAGS := $(KBUILD_CFLAGS)
