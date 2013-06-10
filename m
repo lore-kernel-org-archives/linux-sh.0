@@ -1,97 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:29 +0000
-Subject: [PATCH 19/24] drm/rcar-du: Fix buffer pitch alignment for R8A7790 DU
-Message-Id: <1372326574-4315-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 10 Jun 2013 09:46:57 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Remove MEMORY_START/SIZE
+Message-Id: <20130610094657.20803.96780.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130610094638.20803.18484.sendpatchset@w520>
+In-Reply-To: <20130610094638.20803.18484.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The R8A7790 DU seems to require a 128 bytes pitch alignment, even though
-the documentation only mentions a 16 pixels alignement as for the
-R8A7779 DU. Make this configurable through a device flag.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Remove CONFIG_MEMORY_START and CONFIG_MEMORY_SIZE from mach-shmobile.
+
+Boards should use DT to specify their memory setup. Boards that still
+not support DT may pass ATAGS with memory information from the boot
+loader. If those ATAGS turn out to be incorrect then appended DTB with
+memory information should be used as a workaround.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_drv.h |  1 +
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 17 ++++++++++++++---
- 3 files changed, 16 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 9c7406c..fe93670 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -216,7 +216,7 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
- };
- 
- static const struct rcar_du_device_info rcar_du_r8a7790_info = {
--	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK,
-+	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B,
- };
- 
- static const struct platform_device_id rcar_du_id_table[] = {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-index 5b57a2f..072e28e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-@@ -26,6 +26,7 @@ struct drm_device;
- struct rcar_du_device;
- 
- #define RCAR_DU_FEATURE_CRTC_IRQ_CLOCK	(1 << 0)	/* Per-CRTC IRQ and clock */
-+#define RCAR_DU_FEATURE_ALIGN_128B	(1 << 1)	/* Align pitches to 128 bytes */
- 
- /*
-  * struct rcar_du_device_info - DU model-specific information
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 845bcb3..418d902 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -111,11 +111,18 @@ const struct rcar_du_format_info *rcar_du_format_info(u32 fourcc)
- int rcar_du_dumb_create(struct drm_file *file, struct drm_device *dev,
- 			struct drm_mode_create_dumb *args)
- {
-+	struct rcar_du_device *rcdu = dev->dev_private;
- 	unsigned int min_pitch = DIV_ROUND_UP(args->width * args->bpp, 8);
- 	unsigned int align;
- 
--	/* The pitch must be aligned to a 16 pixels boundary. */
--	align = 16 * args->bpp / 8;
-+	/* The R8A7779 DU requires a 16 pixels pitch alignment as documented,
-+	 * but the R8A7790 DU seems to require a 128 bytes pitch alignment.
-+	 */
-+	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_ALIGN_128B))
-+		align = 128;
-+	else
-+		align = 16 * args->bpp / 8;
-+
- 	args->pitch = roundup(max(args->pitch, min_pitch), align);
- 
- 	return drm_gem_cma_dumb_create(file, dev, args);
-@@ -125,6 +132,7 @@ static struct drm_framebuffer *
- rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
- 		  struct drm_mode_fb_cmd2 *mode_cmd)
- {
-+	struct rcar_du_device *rcdu = dev->dev_private;
- 	const struct rcar_du_format_info *format;
- 	unsigned int align;
- 
-@@ -135,7 +143,10 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
- 		return ERR_PTR(-EINVAL);
- 	}
- 
--	align = 16 * format->bpp / 8;
-+	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_ALIGN_128B))
-+		align = 128;
-+	else
-+		align = 16 * format->bpp / 8;
- 
- 	if (mode_cmd->pitches[0] & (align - 1) ||
- 	    mode_cmd->pitches[0] >= 8192) {
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/Kconfig |   31 -------------------------------
+ 1 file changed, 31 deletions(-)
 
+--- 0007/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-06-05 12:06:25.000000000 +0900
+@@ -199,37 +199,6 @@ config CPU_HAS_INTEVT
+         bool
+ 	default y
+ 
+-menu "Memory configuration"
+-
+-config MEMORY_START
+-	hex "Physical memory start address"
+-	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
+-				MACH_MACKEREL || MACH_BONITO || \
+-				MACH_ARMADILLO800EVA || MACH_APE6EVM || \
+-				MACH_LAGER
+-	default "0x41000000" if MACH_KOTA2
+-	default "0x00000000"
+-	---help---
+-	  Tweak this only when porting to a new machine which does not
+-	  already have a defconfig. Changing it from the known correct
+-	  value on any of the known systems will only lead to disaster.
+-
+-config MEMORY_SIZE
+-	hex "Physical memory size"
+-	default "0x80000000" if MACH_LAGER
+-	default "0x40000000" if MACH_APE6EVM
+-	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
+-				MACH_ARMADILLO800EVA
+-	default "0x1e000000" if MACH_KOTA2
+-	default "0x10000000" if MACH_AP4EVB || MACH_MACKEREL
+-	default "0x04000000"
+-	help
+-	  This sets the default memory size assumed by your kernel. It can
+-	  be overridden as normal by the 'mem=' argument on the kernel command
+-	  line.
+-
+-endmenu
+-
+ menu "Timer and clock configuration"
+ 
+ config SHMOBILE_TIMER_HZ
