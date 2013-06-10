@@ -1,44 +1,59 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 07:34:10 +0000
-Subject: [PATCH 00/06] ARM: shmobile: Per-board memory size fixups
-Message-Id: <20130605073410.15758.37563.sendpatchset@w520>
+Date: Mon, 10 Jun 2013 09:19:36 +0000
+Subject: [PATCH 01/06] ARM: shmobile: Add SMP boot function and argument
+Message-Id: <20130610091936.18944.66463.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CANqRtoSwAxyDDB2WZLKNTQQrgSz9YVWsd0bcy7OqwLYWeWhhnQ@mail.gmail.com>
-In-Reply-To: <CANqRtoSwAxyDDB2WZLKNTQQrgSz9YVWsd0bcy7OqwLYWeWhhnQ@mail.gmail.com>
+References: <20130610091925.18944.68117.sendpatchset@w520>
+In-Reply-To: <20130610091925.18944.68117.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Per-board memory size fixups
+From: Magnus Damm <damm@opensource.se>
 
-[PATCH 01/06] ARM: shmobile: Introduce SHMOBILE_FIXUP() helper
-[PATCH 02/06] ARM: shmobile: AG5EVM memory config via ATAGS fixup
-[PATCH 03/06] ARM: shmobile: AP4EVB memory config via ATAGS fixup
-[PATCH 04/06] ARM: shmobile: Bonito memory config via ATAGS fixup
-[PATCH 05/06] ARM: shmobile: Kota2 memory config via ATAGS fixup
-[PATCH 06/06] ARM: shmobile: Marzen memory config via ATAGS fixup
-
-This series adds memory size and base address fixups to
-non-DT mach-shmobile boards. This way the ATAGS code in
-arch/arm/kernel/atags_parse.c can be overriden on a per-
-board basis without the need of any global MEM_SIZE or
-PHYS_OFFSET settings.
-
-This is one of several series of code that reworks code
-not to rely on CONFIG_MEMORY_START/SIZE which in turn is
-needed for ARCH_MULTIPLATFORM.
+Add code for mach-shmobile to allow specifying boot function
+and argument. Will initially be used for SMP together with SCU
+but may in the future also be used for deep sleep resume. This
+patch removes one inline virtual to physical address conversion.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Written against renesas.git renesas-next-20130604v2
+ arch/arm/mach-shmobile/headsmp.S             |   13 ++++++++++---
+ arch/arm/mach-shmobile/include/mach/common.h |    4 +++-
+ 2 files changed, 13 insertions(+), 4 deletions(-)
 
- arch/arm/mach-shmobile/Kconfig               |    5 +++++
- arch/arm/mach-shmobile/board-ag5evm.c        |    4 ++++
- arch/arm/mach-shmobile/board-ap4evb.c        |    3 +++
- arch/arm/mach-shmobile/board-bonito.c        |    4 ++++
- arch/arm/mach-shmobile/board-kota2.c         |    4 ++++
- arch/arm/mach-shmobile/board-marzen.c        |    4 ++++
- arch/arm/mach-shmobile/include/mach/common.h |   13 +++++++++++++
- 7 files changed, 37 insertions(+)
+--- 0001/arch/arm/mach-shmobile/headsmp.S
++++ work/arch/arm/mach-shmobile/headsmp.S	2013-06-05 13:21:14.000000000 +0900
+@@ -27,7 +27,14 @@ ENDPROC(shmobile_invalidate_start)
+  * We need _long_ jump to the physical address.
+  */
+ 	.align  12
+-ENTRY(shmobile_secondary_vector)
++ENTRY(shmobile_boot_vector)
++	ldr     r0, 2f
+ 	ldr     pc, 1f
+-1:	.long   shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
+-ENDPROC(shmobile_secondary_vector)
++ENDPROC(shmobile_boot_vector)
++
++	.globl	shmobile_boot_fn
++shmobile_boot_fn:
++1:	.space	4
++	.globl	shmobile_boot_arg
++shmobile_boot_arg:
++2:	.space	4
+--- 0016/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-06-05 13:19:52.000000000 +0900
+@@ -7,7 +7,9 @@ extern void shmobile_setup_delay(unsigne
+ 			 unsigned int mult, unsigned int div);
+ struct twd_local_timer;
+ extern void shmobile_setup_console(void);
+-extern void shmobile_secondary_vector(void);
++extern void shmobile_boot_vector(void);
++extern unsigned long shmobile_boot_fn;
++extern unsigned long shmobile_boot_arg;
+ extern void shmobile_secondary_vector_scu(void);
+ struct clk;
+ extern int shmobile_clk_init(void);
