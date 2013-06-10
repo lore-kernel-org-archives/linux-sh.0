@@ -1,66 +1,64 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 07 Jun 2013 18:52:33 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8A7779: fix Ether device name
-Message-Id: <51B22BF1.8030805@cogentembedded.com>
+Date: Mon, 10 Jun 2013 20:22:50 +0000
+Subject: [PATCH] sh_eth: get R8A7740 Rx descriptor word 0 shift out of #ifdef
+Message-Id: <201306110022.51293.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645206-3682-1-git-send-email-horms+renesas@verge.net.au>
- <1369645206-3682-3-git-send-email-horms+renesas@verge.net.au>
- <20130528040043.GL13532@quad.lixom.net> <20130604051352.GW23054@verge.net.au>
- <51AFB3F1.40603@cogentembedded.com> <20130605233311.GA32023@verge.net.au>
-In-Reply-To: <20130605233311.GA32023@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org, yoshihiro.shimoda.uh@renesas.com
 
-Hello.
+The only R8A7740 specific #ifdef hindering ARM multiplatform  build is left  in
+sh_eth_rx(): it covers a very strange code shifting Rx buffer descriptor word 0
+by 16 (which should cause Rx length error to be logged on every buffer  several
+lines later). Get rid of the #ifdef by adding 'shift_rd0' field to the  'struct
+sh_eth_cpu_data', making the shift dependent on it, and setting it to 1 for the
+R8A7740 case...
 
-On 06/06/2013 03:33 AM, Simon Horman wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->>>>> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>>>
->>>>> While recasting the commit "ARM: shmobile: R8A7779: add Ether support", I made a
->>>>> typo in the platform device's name: used underscore instead of hyphen.
->>>> Minor nit: if this has been merged, then including the SHA is useful too.
->>> Thanks, I have updated the changelog to:
->>>
->>> ARM: shmobile: r8A7779: fix Ether device name
->>>
->>> While recasting the commit dace48d04dee46a3409d5e13cd98031522e46377
->>> ("ARM: shmobile: R8A7779: add Ether support"), I made a
->>> typo in the platform device's name: used underscore instead of hyphen.
->>>
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>> [horms+renesas@verge.net.au Add SHA of referenced commit to changlog]
->>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->>>
->>> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
->>> index b0b3948..c14a69b 100644
->>> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
->>> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
->>> @@ -443,7 +443,7 @@ void __init r8a7779_add_standard_devices(void)
->>>   void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
->>>   {
->>> -	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
->>> +	platform_device_register_resndata(&platform_bus, "sh-eth", -1,
->>>   					  ether_resources,
->>>   					  ARRAY_SIZE(ether_resources),
->>>   					  pdata, sizeof(*pdata));
->>      Actually, if these patches aren't going into 3.10, I think it
->> makes sense to drop them,
->> since I'll be renaming the device and pushing this change thru the
->> net-next tree RSN...
-> Sure, I will drop them.
+---
+The patch is against Dave Miller's 'net-next.git' repo.
+I have no R8A7740 manual,  so have to trust that the code is correct.  It would
+be good to get some comments from the author of the original commit  that added
+R8A7740 support, so CCing him... 
 
-    OTOH, since Ether support currently isn't working anyway, it doesn't 
-make sense
-to push it as a consolidated patch with sh_eth.c change, and fix up the 
-names up separately
-thru the renesas.git anyway. So I'll probably just respin these two 
-patches later, when
-I'm done with getting rid of #ifdef's in the driver and it's merged by 
-Dave...
+ drivers/net/ethernet/renesas/sh_eth.c |    6 +++---
+ drivers/net/ethernet/renesas/sh_eth.h |    1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-WBR, Sergei
-
-
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -667,6 +667,7 @@ static struct sh_eth_cpu_data r8a7740_da
+ 	.no_ade		= 1,
+ 	.tsu		= 1,
+ 	.select_mii	= 1,
++	.shift_rd0	= 1,
+ };
+ 
+ static struct sh_eth_cpu_data sh7619_data = {
+@@ -1260,9 +1261,8 @@ static int sh_eth_rx(struct net_device *
+ 		desc_status = edmac_to_cpu(mdp, rxdesc->status);
+ 		pkt_len = rxdesc->frame_length;
+ 
+-#if defined(CONFIG_ARCH_R8A7740)
+-		desc_status >>= 16;
+-#endif
++		if (mdp->cd->shift_rd0)
++			desc_status >>= 16;
+ 
+ 		if (--boguscnt < 0)
+ 			break;
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -476,6 +476,7 @@ struct sh_eth_cpu_data {
+ 	unsigned no_ade:1;	/* E-DMAC DO NOT have ADE bit in EESR */
+ 	unsigned hw_crc:1;	/* E-DMAC have CSMR */
+ 	unsigned select_mii:1;	/* EtherC have RMII_MII (MII select register) */
++	unsigned shift_rd0:1;	/* shift Rx buffer descriptor word 0 by 16 */
+ };
+ 
+ struct sh_eth_private {
