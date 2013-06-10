@@ -1,43 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 27 Jun 2013 13:04:45 +0000
-Subject: Re: [PATCH 02/24] drm/rcar-du: Use devm_ioremap_resource()
-Message-Id: <51CC386D.30309@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 10 Jun 2013 09:20:15 +0000
+Subject: [PATCH 05/06] ARM: shmobile: EMEV2 SMP with SCU boot fn and args
+Message-Id: <20130610092015.18944.61634.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1372326574-4315-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130610091925.18944.68117.sendpatchset@w520>
+In-Reply-To: <20130610091925.18944.68117.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 27-06-2013 13:49, Laurent Pinchart wrote:
+Let EMEV2 make use of shmobile_boot_fn and shmobile_boot_arg
+together with shmobile_boot_scu and the SCU base address.
 
-> Replace the devm_request_mem_region() and devm_ioremap_nocache() calls
-> with devm_ioremap_resource().
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->   drivers/gpu/drm/rcar-du/rcar_du_drv.c | 20 ++------------------
->   1 file changed, 2 insertions(+), 18 deletions(-)
+ arch/arm/mach-shmobile/smp-emev2.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-> diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-> index 003b34e..24ab0ca 100644
-> --- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-> +++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-[...]
-> @@ -129,24 +128,9 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
->
->   	/* I/O resources and clocks */
->   	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-[...]
-> +	rcdu->mmio = devm_ioremap_resource(&pdev->dev, mem);
-> +	if (IS_ERR(rcdu->mmio))
->   		return -ENOMEM;
-
-    You should return PTR_ERR(rcdu->mmio).
-
-WBR, Sergei
-
+--- 0001/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-06-05 15:00:28.000000000 +0900
+@@ -40,8 +40,10 @@ static void __init emev2_smp_prepare_cpu
+ {
+ 	scu_enable(shmobile_scu_base);
+ 
+-	/* Tell ROM loader about our vector (in headsmp-scu.S) */
+-	emev2_set_boot_vector(__pa(shmobile_secondary_vector_scu));
++	/* Tell ROM loader about our vector (in headsmp-scu.S, headsmp.S) */
++	emev2_set_boot_vector(__pa(shmobile_boot_vector));
++	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
++	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
+ 
+ 	/* enable cache coherency on booting CPU */
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
