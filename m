@@ -1,58 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 07 Jun 2013 11:39:41 +0000
-Subject: Re: [PATCH 07/11] ARM: shmobile: lager: Add GPIO LEDs
-Message-Id: <51B1C67D.7040900@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 10 Jun 2013 09:19:56 +0000
+Subject: [PATCH 03/06] ARM: shmobile: r8a7779 SMP with SCU boot fn and args
+Message-Id: <20130610091956.18944.57224.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
- <1370593329-27559-8-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-8-git-send-email-horms+renesas@verge.net.au>
+References: <20130610091925.18944.68117.sendpatchset@w520>
+In-Reply-To: <20130610091925.18944.68117.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 07-06-2013 12:22, Simon Horman wrote:
+Let r8a7779 make use of shmobile_boot_fn and shmobile_boot_arg
+together with shmobile_boot_scu and the SCU base address.
 
-> The board has 3 LEDs connected to GPIOs. Add a led-gpio device to
-> support them.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> Based on "ARM: shmobile: marzen: Add GPIO LEDs" by Laurent Pinchart.
+ arch/arm/mach-shmobile/smp-r8a7779.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->   arch/arm/mach-shmobile/board-lager.c | 27 +++++++++++++++++++++++++++
->   1 file changed, 27 insertions(+)
-
-> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-> index 6114edd..6a1ba38 100644
-> --- a/arch/arm/mach-shmobile/board-lager.c
-> +++ b/arch/arm/mach-shmobile/board-lager.c
-> @@ -21,13 +21,37 @@
-[...]
-> +static struct gpio_led_platform_data lager_leds_pdata = {
-
-     Misses __initdata. Too late now, need another patch...
-
-> +	.leds		= lager_leds,
-> +	.num_leds	= ARRAY_SIZE(lager_leds),
-> +};
-> +
->   static const struct pinctrl_map lager_pinctrl_map[] = {
->   	/* SCIF0 (CN19: DEBUG SERIAL0) */
->   	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
-> @@ -46,6 +70,9 @@ static void __init lager_add_standard_devices(void)
->   	r8a7790_pinmux_init();
->
->   	r8a7790_add_standard_devices();
-> +	platform_device_register_data(&platform_bus, "leds-gpio", -1,
-> +				      &lager_leds_pdata,
-> +				      sizeof(lager_leds_pdata));
->   }
->
->   static const char *lager_boards_compat_dt[] __initdata = {
-
-WBR, Sergei
-
+--- 0001/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-06-05 14:58:21.000000000 +0900
+@@ -101,8 +101,10 @@ static void __init r8a7779_smp_prepare_c
+ {
+ 	scu_enable(shmobile_scu_base);
+ 
+-	/* Map the reset vector (in headsmp-scu.S) */
+-	__raw_writel(__pa(shmobile_secondary_vector_scu), AVECR);
++	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
++	__raw_writel(__pa(shmobile_boot_vector), AVECR);
++	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
++	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
+ 
+ 	/* enable cache coherency on booting CPU */
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
