@@ -1,51 +1,29 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 26 Jun 2013 08:27:45 +0000
-Subject: Re: [RFC] ARM: shmobile: r8a7790: add thermal driver support
-Message-Id: <20130626082743.GB1229@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 11 Jun 2013 09:37:24 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: irqpin: add a DT property to enable masking on parent
+Message-Id: <CANqRtoTqHiRixV571CrMkc=ijWcrfZFzaSrfjN1SKRNTgTTcZA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372232164-31285-1-git-send-email-horms+renesas@verge.net.au>
- <87haglnv8j.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87haglnv8j.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1305241109530.1090@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1305241109530.1090@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 26, 2013 at 01:15:32AM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > You can get current thermal by
-> > > cat /sys/class/thermal/thermal_zone?/temp
-> > 
-> > Based on similar work for the r8a73a4 by Kuninori Morimoto.
-> > 
-> > Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/mach-shmobile/setup-r8a7790.c | 12 ++++++++++++
-> >  1 file changed, 12 insertions(+)
-> > 
-> > This patch is based on renesas-next-20130620
-> > 
-> > 
-> > Hi Morimoto-san,
-> > 
-> > with this patch applied I see that the thermal driver is initialised,
-> > but there seems to be some problem:
-> > 
-> > # dmesg | grep thermal
-> > rcar_thermal rcar_thermal: thermal sensor was broken
-> > rcar_thermal rcar_thermal: 1 sensor proved
-> > 
-> > Furthermore I see a negative temperature reading.
-> > 
-> > # cat /sys/devices/virtual/thermal/thermal_zone0/temp  
-> > -65000
-> > 
-> > I am wondering if you have any insight into this.
-> 
-> Hmm...
-> Does your clock-r8a7790 has MSTP522 for thermal driver ?
+On Fri, May 24, 2013 at 6:13 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> To disable spurious interrupts, that get triggered on certain hardware, the
+> irqpin driver masks them on the parent interrupt controller. To specify
+> such broken devices a .control_parent parameter can be provided in the
+> platform data. In the DT case we need a property, to do the same.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+>
+> These two patches simply split the earlier "ARM: shmobile: irqpin: fix
+> handling of spurious interrupts in DT case" patch into two parts.
+> Otherwise no change.
 
-No, thanks. I will fix that.
+I'm fine with this portion of the patch series. Thanks for your help!
+
+Acked-by: Magnus Damm <damm@opensource.se>
