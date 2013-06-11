@@ -1,58 +1,141 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:45 +0000
-Subject: [PATCH 054/130] ARM: shmobile: ap4evb: Register pinctrl mapping for USBHS
-Message-Id: <1370420821-28420-55-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 08:23:39 +0000
+Subject: [PATCH v10 12/21] sh-mobile-ceu-camera: add primitive OF support
+Message-Id: <1370939028-8352-13-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add an OF hook to sh_mobile_ceu_camera.c, no properties so far. Booting
+with DT also requires platform data to be optional.
 
-Replace the GPIO-based USBHS pinmux configuration by a pinctrl mapping.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 15 +++++++--------
- 1 file changed, 7 insertions(+), 8 deletions(-)
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |   33 ++++++++++++++------
+ 1 files changed, 23 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 152a5f7..297bf5e 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1137,6 +1137,13 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
- 	PIN_MAP_MUX_GROUP_DEFAULT("1-0048", "pfc-sh7372",
- 				  "intc_irq7_0", "intc"),
- #endif
-+	/* USBHS1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
-+				  "usb1_vbus", "usb1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
-+				  "usb1_otg_id_0", "usb1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a66597_hcd.1", "pfc-sh7372",
-+				  "usb1_otg_ctrl_0", "usb1"),
+diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+index 9037472..fcc13d8 100644
+--- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
++++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+@@ -27,6 +27,7 @@
+ #include <linux/kernel.h>
+ #include <linux/mm.h>
+ #include <linux/moduleparam.h>
++#include <linux/of.h>
+ #include <linux/time.h>
+ #include <linux/slab.h>
+ #include <linux/device.h>
+@@ -118,6 +119,7 @@ struct sh_mobile_ceu_dev {
+ 
+ 	enum v4l2_field field;
+ 	int sequence;
++	unsigned long flags;
+ 
+ 	unsigned int image_mode:1;
+ 	unsigned int is_16bit:1;
+@@ -706,7 +708,7 @@ static void sh_mobile_ceu_set_rect(struct soc_camera_device *icd)
+ 	}
+ 
+ 	/* CSI2 special configuration */
+-	if (pcdev->pdata->csi2) {
++	if (pcdev->csi2_pdev) {
+ 		in_width = ((in_width - 2) * 2);
+ 		left_offset *= 2;
+ 	}
+@@ -810,7 +812,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
+ 	/* Make choises, based on platform preferences */
+ 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
+ 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
+-		if (pcdev->pdata->flags & SH_CEU_FLAG_HSYNC_LOW)
++		if (pcdev->flags & SH_CEU_FLAG_HSYNC_LOW)
+ 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
+ 		else
+ 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
+@@ -818,7 +820,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
+ 
+ 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
+ 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
+-		if (pcdev->pdata->flags & SH_CEU_FLAG_VSYNC_LOW)
++		if (pcdev->flags & SH_CEU_FLAG_VSYNC_LOW)
+ 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
+ 		else
+ 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
+@@ -873,11 +875,11 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
+ 	value |= common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW ? 1 << 1 : 0;
+ 	value |= common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW ? 1 << 0 : 0;
+ 
+-	if (pcdev->pdata->csi2) /* CSI2 mode */
++	if (pcdev->csi2_pdev) /* CSI2 mode */
+ 		value |= 3 << 12;
+ 	else if (pcdev->is_16bit)
+ 		value |= 1 << 12;
+-	else if (pcdev->pdata->flags & SH_CEU_FLAG_LOWER_8BIT)
++	else if (pcdev->flags & SH_CEU_FLAG_LOWER_8BIT)
+ 		value |= 2 << 12;
+ 
+ 	ceu_write(pcdev, CAMCR, value);
+@@ -1052,7 +1054,7 @@ static int sh_mobile_ceu_get_formats(struct soc_camera_device *icd, unsigned int
+ 		return 0;
+ 	}
+ 
+-	if (!pcdev->pdata->csi2) {
++	if (!pcdev->pdata || !pcdev->pdata->csi2) {
+ 		/* Are there any restrictions in the CSI-2 case? */
+ 		ret = sh_mobile_ceu_try_bus_param(icd, fmt->bits_per_sample);
+ 		if (ret < 0)
+@@ -2107,13 +2109,17 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
+ 	init_completion(&pcdev->complete);
+ 
+ 	pcdev->pdata = pdev->dev.platform_data;
+-	if (!pcdev->pdata) {
++	if (!pcdev->pdata && !pdev->dev.of_node) {
+ 		dev_err(&pdev->dev, "CEU platform data not set.\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	pcdev->max_width = pcdev->pdata->max_width ? : 2560;
+-	pcdev->max_height = pcdev->pdata->max_height ? : 1920;
++	/* TODO: implement per-device bus flags */
++	if (pcdev->pdata) {
++		pcdev->max_width = pcdev->pdata->max_width ? : 2560;
++		pcdev->max_height = pcdev->pdata->max_height ? : 1920;
++		pcdev->flags = pcdev->pdata->flags;
++	}
+ 
+ 	base = devm_ioremap_resource(&pdev->dev, res);
+ 	if (IS_ERR(base))
+@@ -2168,7 +2174,7 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
+ 		goto exit_free_ctx;
+ 
+ 	/* CSI2 interfacing */
+-	csi2 = pcdev->pdata->csi2;
++	csi2 = pcdev->pdata ? pcdev->pdata->csi2 : NULL;
+ 	if (csi2) {
+ 		struct platform_device *csi2_pdev  			platform_device_alloc("sh-mobile-csi2", csi2->id);
+@@ -2290,10 +2296,17 @@ static const struct dev_pm_ops sh_mobile_ceu_dev_pm_ops = {
+ 	.runtime_resume = sh_mobile_ceu_runtime_nop,
  };
  
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
-@@ -1175,14 +1182,6 @@ static void __init ap4evb_init(void)
- 	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
- 	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
- 
--	/* USB enable */
--	gpio_request(GPIO_FN_VBUS0_1,    NULL);
--	gpio_request(GPIO_FN_IDIN_1_18,  NULL);
--	gpio_request(GPIO_FN_PWEN_1_115, NULL);
--	gpio_request(GPIO_FN_OVCN_1_114, NULL);
--	gpio_request(GPIO_FN_EXTLP_1,    NULL);
--	gpio_request(GPIO_FN_OVCN2_1,    NULL);
--
- 	/* setup USB phy */
- 	__raw_writew(0x8a0a, IOMEM(0xE6058130));	/* USBCR4 */
- 
++static const struct of_device_id sh_mobile_ceu_of_match[] = {
++	{ .compatible = "renesas,sh-mobile-ceu" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, sh_mobile_ceu_of_match);
++
+ static struct platform_driver sh_mobile_ceu_driver = {
+ 	.driver		= {
+ 		.name	= "sh_mobile_ceu",
+ 		.pm	= &sh_mobile_ceu_dev_pm_ops,
++		.of_match_table = sh_mobile_ceu_of_match,
+ 	},
+ 	.probe		= sh_mobile_ceu_probe,
+ 	.remove		= sh_mobile_ceu_remove,
 -- 
-1.8.2.1
+1.7.2.5
 
