@@ -1,445 +1,111 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:43 +0000
-Subject: [PATCH 112/130] sh-pfc: sh73a0: Remove function GPIOs
-Message-Id: <1370420821-28420-113-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:38 +0000
+Subject: [PATCH v5 09/22] ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
+Message-Id: <1370989371-30846-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-No sh73a0 platform use the function GPIOs API. Remove it.
+Add GPIO controller nodes to the r8a7779 core device tree.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 395 ------------------------------------
- 1 file changed, 395 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi | 71 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 71 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 78f7ae8..7956df5 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -26,7 +26,6 @@
- #include <linux/regulator/machine.h>
- #include <linux/slab.h>
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 9dfc438..2bbb4cb 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -48,6 +48,76 @@
+                       <0xf0000100 0x100>;
+         };
  
--#include <mach/sh73a0.h>
- #include <mach/irqs.h>
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc40000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 141 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++	};
++
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc41000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 142 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++	};
++
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc42000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 143 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc43000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc44000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 145 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++	};
++
++	gpio5: gpio@ffc45000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc45000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 146 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 32>;
++	};
++
++	gpio6: gpio@ffc46000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc46000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 147 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 9>;
++	};
++
+ 	irqpin0: irqpin@fe780010 {
+ 		compatible = "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+@@ -104,6 +174,7 @@
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7779";
+ 		reg = <0xfffc0000 0x23c>;
++		#gpio-range-cells = <3>;
+ 	};
  
- #include "core.h"
-@@ -3153,397 +3152,6 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(usb),
- };
- 
--#define PINMUX_FN_BASE	GPIO_FN_GPI0
--
--static const struct pinmux_func pinmux_func_gpios[] = {
--	/* Table 25-1 (Functions 0-7) */
--	GPIO_FN(GPI0),
--	GPIO_FN(GPI1),
--	GPIO_FN(GPI2),
--	GPIO_FN(GPI3),
--	GPIO_FN(GPI4),
--	GPIO_FN(GPI5),
--	GPIO_FN(GPI6),
--	GPIO_FN(GPI7),
--	GPIO_FN(GPO7), \
--	GPIO_FN(MFG0_OUT2),
--	GPIO_FN(GPO6), \
--	GPIO_FN(MFG1_OUT2),
--	GPIO_FN(GPO5), \
--	GPIO_FN(PORT16_VIO_CKOR),
--	GPIO_FN(PORT19_VIO_CKO2),
--	GPIO_FN(GPO0),
--	GPIO_FN(GPO1),
--	GPIO_FN(GPO2), \
--	GPIO_FN(STATUS0),
--	GPIO_FN(GPO3), \
--	GPIO_FN(STATUS1),
--	GPIO_FN(GPO4), \
--	GPIO_FN(STATUS2),
--	GPIO_FN(VINT),
--	GPIO_FN(TCKON),
--	GPIO_FN(XDVFS1), \
--	GPIO_FN(MFG0_OUT1), \
--	GPIO_FN(PORT27_IROUT),
--	GPIO_FN(XDVFS2), \
--	GPIO_FN(PORT28_TPU1TO1),
--	GPIO_FN(SIM_RST), \
--	GPIO_FN(PORT29_TPU1TO1),
--	GPIO_FN(SIM_CLK), \
--	GPIO_FN(PORT30_VIO_CKOR),
--	GPIO_FN(SIM_D), \
--	GPIO_FN(PORT31_IROUT),
--	GPIO_FN(XWUP),
--	GPIO_FN(VACK),
--	GPIO_FN(XTAL1L),
--	GPIO_FN(PORT49_IROUT), \
--	GPIO_FN(BBIF2_TSYNC2), \
--	GPIO_FN(TPU2TO2), \
--
--	GPIO_FN(BBIF2_TSCK2), \
--	GPIO_FN(TPU2TO3), \
--	GPIO_FN(BBIF2_TXD2),
--	GPIO_FN(TPU3TO3), \
--	GPIO_FN(TPU3TO2), \
--	GPIO_FN(TPU0TO0),
--	GPIO_FN(A0), \
--	GPIO_FN(BS_),
--	GPIO_FN(A12), \
--	GPIO_FN(TPU4TO2),
--	GPIO_FN(A13), \
--	GPIO_FN(TPU0TO1),
--	GPIO_FN(A14), \
--	GPIO_FN(A15), \
--	GPIO_FN(A16), \
--	GPIO_FN(MSIOF0_SS1),
--	GPIO_FN(A17), \
--	GPIO_FN(MSIOF0_TSYNC),
--	GPIO_FN(A18), \
--	GPIO_FN(MSIOF0_TSCK),
--	GPIO_FN(A19), \
--	GPIO_FN(MSIOF0_TXD),
--	GPIO_FN(A20), \
--	GPIO_FN(MSIOF0_RSCK),
--	GPIO_FN(A21), \
--	GPIO_FN(MSIOF0_RSYNC),
--	GPIO_FN(A22), \
--	GPIO_FN(MSIOF0_MCK0),
--	GPIO_FN(A23), \
--	GPIO_FN(MSIOF0_MCK1),
--	GPIO_FN(A24), \
--	GPIO_FN(MSIOF0_RXD),
--	GPIO_FN(A25), \
--	GPIO_FN(MSIOF0_SS2),
--	GPIO_FN(A26), \
--	GPIO_FN(FCE1_),
--	GPIO_FN(DACK0),
--	GPIO_FN(FCE0_), \
--	GPIO_FN(WAIT_), \
--	GPIO_FN(DREQ0),
--	GPIO_FN(FRB),
--	GPIO_FN(CKO),
--	GPIO_FN(NBRSTOUT_),
--	GPIO_FN(NBRST_),
--	GPIO_FN(BBIF2_TXD),
--	GPIO_FN(BBIF2_RXD),
--	GPIO_FN(BBIF2_SYNC),
--	GPIO_FN(BBIF2_SCK),
--	GPIO_FN(MFG3_IN2),
--	GPIO_FN(MFG3_IN1),
--	GPIO_FN(BBIF1_SS2), \
--	GPIO_FN(MFG3_OUT1),
--	GPIO_FN(HSI_RX_DATA), \
--	GPIO_FN(BBIF1_RXD),
--	GPIO_FN(HSI_TX_WAKE), \
--	GPIO_FN(BBIF1_TSCK),
--	GPIO_FN(HSI_TX_DATA), \
--	GPIO_FN(BBIF1_TSYNC),
--	GPIO_FN(HSI_TX_READY), \
--	GPIO_FN(BBIF1_TXD),
--	GPIO_FN(HSI_RX_READY), \
--	GPIO_FN(BBIF1_RSCK), \
--	GPIO_FN(HSI_RX_WAKE), \
--	GPIO_FN(BBIF1_RSYNC), \
--	GPIO_FN(HSI_RX_FLAG), \
--	GPIO_FN(BBIF1_SS1), \
--	GPIO_FN(BBIF1_FLOW),
--	GPIO_FN(HSI_TX_FLAG),
--	GPIO_FN(VIO_VD), \
--	GPIO_FN(VIO2_VD), \
--
--	GPIO_FN(VIO_HD), \
--	GPIO_FN(VIO2_HD), \
--	GPIO_FN(VIO_D0), \
--	GPIO_FN(PORT130_MSIOF2_RXD), \
--	GPIO_FN(VIO_D1), \
--	GPIO_FN(PORT131_MSIOF2_SS1), \
--	GPIO_FN(VIO_D2), \
--	GPIO_FN(PORT132_MSIOF2_SS2), \
--	GPIO_FN(VIO_D3), \
--	GPIO_FN(MSIOF2_TSYNC), \
--	GPIO_FN(VIO_D4), \
--	GPIO_FN(MSIOF2_TXD), \
--	GPIO_FN(VIO_D5), \
--	GPIO_FN(MSIOF2_TSCK), \
--	GPIO_FN(VIO_D6), \
--	GPIO_FN(VIO_D7), \
--	GPIO_FN(VIO_D8), \
--	GPIO_FN(VIO2_D0), \
--	GPIO_FN(VIO_D9), \
--	GPIO_FN(VIO2_D1), \
--	GPIO_FN(VIO_D10), \
--	GPIO_FN(TPU0TO2), \
--	GPIO_FN(VIO2_D2), \
--	GPIO_FN(VIO_D11), \
--	GPIO_FN(TPU0TO3), \
--	GPIO_FN(VIO2_D3), \
--	GPIO_FN(VIO_D12), \
--	GPIO_FN(VIO2_D4), \
--	GPIO_FN(VIO_D13), \
--	GPIO_FN(VIO2_D5), \
--	GPIO_FN(VIO_D14), \
--	GPIO_FN(VIO2_D6), \
--	GPIO_FN(VIO_D15), \
--	GPIO_FN(TPU1TO3), \
--	GPIO_FN(VIO2_D7), \
--	GPIO_FN(VIO_CLK), \
--	GPIO_FN(VIO2_CLK), \
--	GPIO_FN(VIO_FIELD), \
--	GPIO_FN(VIO2_FIELD), \
--	GPIO_FN(VIO_CKO),
--	GPIO_FN(A27), \
--	GPIO_FN(MFG0_IN1), \
--	GPIO_FN(MFG0_IN2),
--	GPIO_FN(TS_SPSYNC3), \
--	GPIO_FN(MSIOF2_RSCK),
--	GPIO_FN(TS_SDAT3), \
--	GPIO_FN(MSIOF2_RSYNC),
--	GPIO_FN(TPU1TO2), \
--	GPIO_FN(TS_SDEN3), \
--	GPIO_FN(PORT153_MSIOF2_SS1),
--	GPIO_FN(MSIOF2_MCK0),
--	GPIO_FN(MSIOF2_MCK1),
--	GPIO_FN(PORT156_MSIOF2_SS2),
--	GPIO_FN(PORT157_MSIOF2_RXD),
--	GPIO_FN(DINT_), \
--	GPIO_FN(TS_SCK3),
--	GPIO_FN(NMI),
--	GPIO_FN(TPU3TO0),
--	GPIO_FN(BBIF2_TSYNC1),
--	GPIO_FN(BBIF2_TSCK1),
--	GPIO_FN(BBIF2_TXD1),
--	GPIO_FN(MFG2_OUT2), \
--	GPIO_FN(TPU2TO1),
--	GPIO_FN(TPU4TO1), \
--	GPIO_FN(MFG4_OUT2),
--	GPIO_FN(D16),
--	GPIO_FN(D17),
--	GPIO_FN(D18),
--	GPIO_FN(D19),
--	GPIO_FN(D20),
--	GPIO_FN(D21),
--	GPIO_FN(D22),
--	GPIO_FN(PORT207_MSIOF0L_SS1), \
--	GPIO_FN(D23),
--	GPIO_FN(PORT208_MSIOF0L_SS2), \
--	GPIO_FN(D24),
--	GPIO_FN(D25),
--	GPIO_FN(DREQ2), \
--	GPIO_FN(PORT210_MSIOF0L_SS1), \
--	GPIO_FN(D26),
--	GPIO_FN(PORT211_MSIOF0L_SS2), \
--	GPIO_FN(D27),
--	GPIO_FN(TS_SPSYNC1), \
--	GPIO_FN(MSIOF0L_MCK0), \
--	GPIO_FN(D28),
--	GPIO_FN(TS_SDAT1), \
--	GPIO_FN(MSIOF0L_MCK1), \
--	GPIO_FN(D29),
--	GPIO_FN(TS_SDEN1), \
--	GPIO_FN(MSIOF0L_RSCK), \
--	GPIO_FN(D30),
--	GPIO_FN(TS_SCK1), \
--	GPIO_FN(MSIOF0L_RSYNC), \
--	GPIO_FN(D31),
--	GPIO_FN(DACK2), \
--	GPIO_FN(MSIOF0L_TSYNC), \
--	GPIO_FN(VIO2_FIELD3), \
--	GPIO_FN(DACK3), \
--	GPIO_FN(PORT218_VIO_CKOR),
--	GPIO_FN(DREQ3), \
--	GPIO_FN(MSIOF0L_TSCK), \
--	GPIO_FN(VIO2_CLK3), \
--	GPIO_FN(DREQ1), \
--	GPIO_FN(PWEN), \
--	GPIO_FN(MSIOF0L_RXD), \
--	GPIO_FN(VIO2_HD3), \
--	GPIO_FN(DACK1), \
--	GPIO_FN(OVCN), \
--	GPIO_FN(MSIOF0L_TXD), \
--	GPIO_FN(VIO2_VD3), \
--
--	GPIO_FN(OVCN2),
--	GPIO_FN(EXTLP), \
--	GPIO_FN(PORT226_VIO_CKO2),
--	GPIO_FN(IDIN),
--	GPIO_FN(MFG1_IN1),
--	GPIO_FN(MSIOF1_TXD), \
--	GPIO_FN(MSIOF1_TSYNC), \
--	GPIO_FN(MSIOF1_TSCK), \
--	GPIO_FN(MSIOF1_RXD), \
--	GPIO_FN(MSIOF1_RSCK), \
--	GPIO_FN(VIO2_CLK2), \
--	GPIO_FN(MSIOF1_RSYNC), \
--	GPIO_FN(MFG1_IN2), \
--	GPIO_FN(VIO2_VD2), \
--	GPIO_FN(MSIOF1_MCK0), \
--	GPIO_FN(MSIOF1_MCK1), \
--	GPIO_FN(MSIOF1_SS1), \
--	GPIO_FN(VIO2_FIELD2), \
--	GPIO_FN(MSIOF1_SS2), \
--	GPIO_FN(VIO2_HD2), \
--	GPIO_FN(PORT241_IROUT), \
--	GPIO_FN(MFG4_OUT1), \
--	GPIO_FN(TPU4TO0),
--	GPIO_FN(MFG4_IN2),
--	GPIO_FN(PORT243_VIO_CKO2),
--	GPIO_FN(MFG2_IN1), \
--	GPIO_FN(MSIOF2R_RXD),
--	GPIO_FN(MFG2_IN2), \
--	GPIO_FN(MSIOF2R_TXD),
--	GPIO_FN(MFG1_OUT1), \
--	GPIO_FN(TPU1TO0),
--	GPIO_FN(MFG3_OUT2), \
--	GPIO_FN(TPU3TO1),
--	GPIO_FN(MFG2_OUT1), \
--	GPIO_FN(TPU2TO0), \
--	GPIO_FN(MSIOF2R_TSCK),
--	GPIO_FN(PORT249_IROUT), \
--	GPIO_FN(MFG4_IN1), \
--	GPIO_FN(MSIOF2R_TSYNC),
--	GPIO_FN(SDHICLK0),
--	GPIO_FN(SDHICD0),
--	GPIO_FN(SDHID0_0),
--	GPIO_FN(SDHID0_1),
--	GPIO_FN(SDHID0_2),
--	GPIO_FN(SDHID0_3),
--	GPIO_FN(SDHICMD0),
--	GPIO_FN(SDHIWP0),
--	GPIO_FN(SDHICLK1),
--	GPIO_FN(SDHID1_0), \
--	GPIO_FN(TS_SPSYNC2),
--	GPIO_FN(SDHID1_1), \
--	GPIO_FN(TS_SDAT2),
--	GPIO_FN(SDHID1_2), \
--	GPIO_FN(TS_SDEN2),
--	GPIO_FN(SDHID1_3), \
--	GPIO_FN(TS_SCK2),
--	GPIO_FN(SDHICMD1),
--	GPIO_FN(SDHICLK2),
--	GPIO_FN(SDHID2_0), \
--	GPIO_FN(TS_SPSYNC4),
--	GPIO_FN(SDHID2_1), \
--	GPIO_FN(TS_SDAT4),
--	GPIO_FN(SDHID2_2), \
--	GPIO_FN(TS_SDEN4),
--	GPIO_FN(SDHID2_3), \
--	GPIO_FN(TS_SCK4),
--	GPIO_FN(SDHICMD2),
--	GPIO_FN(MMCCLK0),
--	GPIO_FN(MMCD0_0),
--	GPIO_FN(MMCD0_1),
--	GPIO_FN(MMCD0_2),
--	GPIO_FN(MMCD0_3),
--	GPIO_FN(MMCD0_4), \
--	GPIO_FN(TS_SPSYNC5),
--	GPIO_FN(MMCD0_5), \
--	GPIO_FN(TS_SDAT5),
--	GPIO_FN(MMCD0_6), \
--	GPIO_FN(TS_SDEN5),
--	GPIO_FN(MMCD0_7), \
--	GPIO_FN(TS_SCK5),
--	GPIO_FN(MMCCMD0),
--	GPIO_FN(RESETOUTS_), \
--	GPIO_FN(EXTAL2OUT),
--	GPIO_FN(MCP_WAIT__MCP_FRB),
--	GPIO_FN(MCP_CKO), \
--	GPIO_FN(MMCCLK1),
--	GPIO_FN(MCP_D15_MCP_NAF15),
--	GPIO_FN(MCP_D14_MCP_NAF14),
--	GPIO_FN(MCP_D13_MCP_NAF13),
--	GPIO_FN(MCP_D12_MCP_NAF12),
--	GPIO_FN(MCP_D11_MCP_NAF11),
--	GPIO_FN(MCP_D10_MCP_NAF10),
--	GPIO_FN(MCP_D9_MCP_NAF9),
--	GPIO_FN(MCP_D8_MCP_NAF8), \
--	GPIO_FN(MMCCMD1),
--	GPIO_FN(MCP_D7_MCP_NAF7), \
--	GPIO_FN(MMCD1_7),
--
--	GPIO_FN(MCP_D6_MCP_NAF6), \
--	GPIO_FN(MMCD1_6),
--	GPIO_FN(MCP_D5_MCP_NAF5), \
--	GPIO_FN(MMCD1_5),
--	GPIO_FN(MCP_D4_MCP_NAF4), \
--	GPIO_FN(MMCD1_4),
--	GPIO_FN(MCP_D3_MCP_NAF3), \
--	GPIO_FN(MMCD1_3),
--	GPIO_FN(MCP_D2_MCP_NAF2), \
--	GPIO_FN(MMCD1_2),
--	GPIO_FN(MCP_D1_MCP_NAF1), \
--	GPIO_FN(MMCD1_1),
--	GPIO_FN(MCP_D0_MCP_NAF0), \
--	GPIO_FN(MMCD1_0),
--	GPIO_FN(MCP_NBRSTOUT_),
--	GPIO_FN(MCP_WE0__MCP_FWE), \
--	GPIO_FN(MCP_RDWR_MCP_FWE),
--
--	/* MSEL2 special cases */
--	GPIO_FN(TSIF2_TS_XX1),
--	GPIO_FN(TSIF2_TS_XX2),
--	GPIO_FN(TSIF2_TS_XX3),
--	GPIO_FN(TSIF2_TS_XX4),
--	GPIO_FN(TSIF2_TS_XX5),
--	GPIO_FN(TSIF1_TS_XX1),
--	GPIO_FN(TSIF1_TS_XX2),
--	GPIO_FN(TSIF1_TS_XX3),
--	GPIO_FN(TSIF1_TS_XX4),
--	GPIO_FN(TSIF1_TS_XX5),
--	GPIO_FN(TSIF0_TS_XX1),
--	GPIO_FN(TSIF0_TS_XX2),
--	GPIO_FN(TSIF0_TS_XX3),
--	GPIO_FN(TSIF0_TS_XX4),
--	GPIO_FN(TSIF0_TS_XX5),
--	GPIO_FN(MST1_TS_XX1),
--	GPIO_FN(MST1_TS_XX2),
--	GPIO_FN(MST1_TS_XX3),
--	GPIO_FN(MST1_TS_XX4),
--	GPIO_FN(MST1_TS_XX5),
--	GPIO_FN(MST0_TS_XX1),
--	GPIO_FN(MST0_TS_XX2),
--	GPIO_FN(MST0_TS_XX3),
--	GPIO_FN(MST0_TS_XX4),
--	GPIO_FN(MST0_TS_XX5),
--
--	/* MSEL3 special cases */
--	GPIO_FN(SDHI0_VCCQ_MC0_ON),
--	GPIO_FN(SDHI0_VCCQ_MC0_OFF),
--	GPIO_FN(DEBUG_MON_VIO),
--	GPIO_FN(DEBUG_MON_LCDD),
--	GPIO_FN(LCDC_LCDC0),
--	GPIO_FN(LCDC_LCDC1),
--
--	/* MSEL4 special cases */
--	GPIO_FN(IRQ9_MEM_INT),
--	GPIO_FN(IRQ9_MCP_INT),
--	GPIO_FN(A11),
--	GPIO_FN(TPU4TO3),
--	GPIO_FN(RESETA_N_PU_ON),
--	GPIO_FN(RESETA_N_PU_OFF),
--	GPIO_FN(EDBGREQ_PD),
--	GPIO_FN(EDBGREQ_PU),
--};
--
- #undef PORTCR
- #define PORTCR(nr, reg)							\
- 	{								\
-@@ -4303,9 +3911,6 @@ const struct sh_pfc_soc_info sh73a0_pinmux_info = {
- 	.functions = pinmux_functions,
- 	.nr_functions = ARRAY_SIZE(pinmux_functions),
- 
--	.func_gpios = pinmux_func_gpios,
--	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
--
- 	.cfg_regs = pinmux_config_regs,
- 	.data_regs = pinmux_data_regs,
- 
+ 	thermal@ffc48000 {
 -- 
-1.8.2.1
+1.8.1.5
 
