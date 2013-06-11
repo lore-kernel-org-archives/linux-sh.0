@@ -1,33 +1,47 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Thu, 06 Jun 2013 11:43:00 +0000
-Subject: Re: [PATCH v2] mmc: tmio: reset the controller after power-up
-Message-Id: <8761xr8ny3.fsf@octavius.laptop.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 11 Jun 2013 07:51:37 +0000
+Subject: Re: [PATCH v3 4/5] ARM: shmobile: r8a7790: don't use external clock for SCIFs
+Message-Id: <20130611075137.GJ10440@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304241143460.11670@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304241143460.11670@axis700.grange> (Guennadi
-	Liakhovetski's message of "Wed, 24 Apr 2013 11:59:19 +0200 (CEST)")
+References: <1370015825-29383-5-git-send-email-ulrich.hecht@gmail.com>
+In-Reply-To: <1370015825-29383-5-git-send-email-ulrich.hecht@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, hechtb@gmail.com, Horman Simon <simon@horms.net>, Damm Magnus <magnus.damm@gmail.com>, "^[$B0p5H$5$s^[(B" <jinso.inayoshi@gmail.com>, linux-mmc@vger.kernel.org, Nguyen Hong Ky <nh-ky@jinso.co.jp>
+To: linux-sh@vger.kernel.org
 
-Hi,
+On Fri, May 31, 2013 at 05:57:04PM +0200, Ulrich Hecht wrote:
+> This is an external component and may or may not be there, while the
+> internal clock always works.
 
-On Wed, Apr 24 2013, Guennadi Liakhovetski wrote:
-> This fixes two reported problems:
-> 1. after a system resume the controller isn't functioning until a command
->    runs on a timeout and a controller reset is performed.
-> 2. if a card is ejected during a running write operation, its re-insertion
->    isn't detected.
->
-> Reported-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-> Reported-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Thanks, I have queued this up in the soc2 branch.
+My current plan is to let that branch sit in next for a few
+days and then send a pull-request for it to be included in v3.11.
 
-This doesn't apply to mmc-next -- please could you rebase/resend?
-
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+> ---
+>  arch/arm/mach-shmobile/setup-r8a7790.c |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+> index 5b7a770..a380bdc 100644
+> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+> @@ -96,7 +96,7 @@ void __init r8a7790_pinmux_init(void)
+>  [index] = {						\
+>  	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
+>  	.scbrr_algo_id	= SCBRR_ALGO_2,			\
+> -	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+> +	.scscr = SCSCR_RE | SCSCR_TE,	\
+>  }
+>  
+>  #define HSCIF_DATA(index, baseaddr, irq)		\
+> -- 
+> 1.7.10.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
