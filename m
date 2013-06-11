@@ -1,71 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:19 +0000
-Subject: [PATCH 088/130] ARM: shmobile: r8a7740: Remove INTC function GPIOs
-Message-Id: <1370420821-28420-89-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 08:23:31 +0000
+Subject: [PATCH v10 04/21] omap1-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1370939028-8352-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+When adding and removing a client, the omap1-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 34 ---------------------------
- 1 file changed, 34 deletions(-)
+ drivers/media/platform/soc_camera/omap1_camera.c |   27 ++++++++++++++-------
+ 1 files changed, 18 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index bb207d8..dea430e 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -100,40 +100,6 @@ enum {
+diff --git a/drivers/media/platform/soc_camera/omap1_camera.c b/drivers/media/platform/soc_camera/omap1_camera.c
+index c42c23e..6769193 100644
+--- a/drivers/media/platform/soc_camera/omap1_camera.c
++++ b/drivers/media/platform/soc_camera/omap1_camera.c
+@@ -893,13 +893,26 @@ static void sensor_reset(struct omap1_cam_dev *pcdev, bool reset)
+ 		CAM_WRITE(pcdev, GPIO, !reset);
+ }
  
- 	GPIO_PORT210, GPIO_PORT211,
++static int omap1_cam_add_device(struct soc_camera_device *icd)
++{
++	dev_dbg(icd->parent, "OMAP1 Camera driver attached to camera %d\n",
++			icd->devnum);
++
++	return 0;
++}
++
++static void omap1_cam_remove_device(struct soc_camera_device *icd)
++{
++	dev_dbg(icd->parent,
++		"OMAP1 Camera driver detached from camera %d\n", icd->devnum);
++}
++
+ /*
+  * The following two functions absolutely depend on the fact, that
+  * there can be only one camera on OMAP1 camera sensor interface
+  */
+-static int omap1_cam_add_device(struct soc_camera_device *icd)
++static int omap1_cam_clock_start(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct omap1_cam_dev *pcdev = ici->priv;
+ 	u32 ctrlclock;
  
--	/* IRQ */
--	GPIO_FN_IRQ0_PORT2,	GPIO_FN_IRQ0_PORT13,
--	GPIO_FN_IRQ1,
--	GPIO_FN_IRQ2_PORT11,	GPIO_FN_IRQ2_PORT12,
--	GPIO_FN_IRQ3_PORT10,	GPIO_FN_IRQ3_PORT14,
--	GPIO_FN_IRQ4_PORT15,	GPIO_FN_IRQ4_PORT172,
--	GPIO_FN_IRQ5_PORT0,	GPIO_FN_IRQ5_PORT1,
--	GPIO_FN_IRQ6_PORT121,	GPIO_FN_IRQ6_PORT173,
--	GPIO_FN_IRQ7_PORT120,	GPIO_FN_IRQ7_PORT209,
--	GPIO_FN_IRQ8,
--	GPIO_FN_IRQ9_PORT118,	GPIO_FN_IRQ9_PORT210,
--	GPIO_FN_IRQ10,
--	GPIO_FN_IRQ11,
--	GPIO_FN_IRQ12_PORT42,	GPIO_FN_IRQ12_PORT97,
--	GPIO_FN_IRQ13_PORT64,	GPIO_FN_IRQ13_PORT98,
--	GPIO_FN_IRQ14_PORT63,	GPIO_FN_IRQ14_PORT99,
--	GPIO_FN_IRQ15_PORT62,	GPIO_FN_IRQ15_PORT100,
--	GPIO_FN_IRQ16_PORT68,	GPIO_FN_IRQ16_PORT211,
--	GPIO_FN_IRQ17,
--	GPIO_FN_IRQ18,
--	GPIO_FN_IRQ19,
--	GPIO_FN_IRQ20,
--	GPIO_FN_IRQ21,
--	GPIO_FN_IRQ22,
--	GPIO_FN_IRQ23,
--	GPIO_FN_IRQ24,
--	GPIO_FN_IRQ25,
--	GPIO_FN_IRQ26_PORT58,	GPIO_FN_IRQ26_PORT81,
--	GPIO_FN_IRQ27_PORT57,	GPIO_FN_IRQ27_PORT168,
--	GPIO_FN_IRQ28_PORT56,	GPIO_FN_IRQ28_PORT169,
--	GPIO_FN_IRQ29_PORT50,	GPIO_FN_IRQ29_PORT170,
--	GPIO_FN_IRQ30_PORT49,	GPIO_FN_IRQ30_PORT171,
--	GPIO_FN_IRQ31_PORT41,	GPIO_FN_IRQ31_PORT167,
+@@ -937,14 +950,11 @@ static int omap1_cam_add_device(struct soc_camera_device *icd)
+ 
+ 	sensor_reset(pcdev, false);
+ 
+-	dev_dbg(icd->parent, "OMAP1 Camera driver attached to camera %d\n",
+-			icd->devnum);
+ 	return 0;
+ }
+ 
+-static void omap1_cam_remove_device(struct soc_camera_device *icd)
++static void omap1_cam_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct omap1_cam_dev *pcdev = ici->priv;
+ 	u32 ctrlclock;
+ 
+@@ -965,9 +975,6 @@ static void omap1_cam_remove_device(struct soc_camera_device *icd)
+ 	CAM_WRITE(pcdev, CTRLCLOCK, ctrlclock & ~MCLK_EN);
+ 
+ 	clk_disable(pcdev->clk);
 -
- 	/* Function */
+-	dev_dbg(icd->parent,
+-		"OMAP1 Camera driver detached from camera %d\n", icd->devnum);
+ }
  
- 	/* DBGT */
+ /* Duplicate standard formats based on host capability of byte swapping */
+@@ -1525,6 +1532,8 @@ static struct soc_camera_host_ops omap1_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= omap1_cam_add_device,
+ 	.remove		= omap1_cam_remove_device,
++	.clock_start	= omap1_cam_clock_start,
++	.clock_stop	= omap1_cam_clock_stop,
+ 	.get_formats	= omap1_cam_get_formats,
+ 	.set_crop	= omap1_cam_set_crop,
+ 	.set_fmt	= omap1_cam_set_fmt,
 -- 
-1.8.2.1
+1.7.2.5
 
