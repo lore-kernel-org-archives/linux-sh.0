@@ -1,130 +1,116 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:28 +0000
-Subject: [PATCH 18/24] drm/rcar-du: Add support for the R8A7790 DU
-Message-Id: <1372326574-4315-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 08:23:27 +0000
+Subject: [PATCH v10 00/21] V4L2 clock and asynchronous probing
+Message-Id: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-The DU revision in the R8A7790 SoC uses one IRQ and clock per CRTC. Add
-a corresponding entry in the module platform ID table.
+3.11 is approaching... Here comes v10 of the V4L2 clock helper and 
+asynchronous probing patch set. In this series I included 3 groups of 
+patches, that actually aren't that strongly related.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_drv.c  |  5 +++
- drivers/gpu/drm/rcar-du/rcar_du_regs.h | 66 ++++++++++++++++++++++++++++++++--
- 2 files changed, 68 insertions(+), 3 deletions(-)
+1. patches 1-11 split soc-camera subdevice linking procedure into two 
+steps: (a) turning on the master clock and (b) actually linking a (client) 
+subdevice to a host. This is necessary to keep the V4L2 clock API free 
+from any device context.
+2. patches 12-13 are adding device tree support to the 
+sh_mobile_ceu_camera soc-camera host driver. They aren't really related, 
+but following V4L2 async support for this driver has been developed on top 
+of this code, so, I would prefer to keep the order.
+3. patches 14-21 are the actual clock and async probing code. They contain 
+core support and an example conversion of the soc-camera framework and one 
+its platform (an AP4EVB board) to the new APIs.
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index fe61962..9c7406c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -215,8 +215,13 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
- 	.features = 0,
- };
- 
-+static const struct rcar_du_device_info rcar_du_r8a7790_info = {
-+	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK,
-+};
-+
- static const struct platform_device_id rcar_du_id_table[] = {
- 	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
-+	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
- 	{ }
- };
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-index 195ed7e..f62a9f3 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-@@ -196,6 +196,68 @@
- #define DEFR6_DEFAULT		(DEFR6_CODE | DEFR6_TCNE2)
- 
- /* -----------------------------------------------------------------------------
-+ * R8A7790-only Control Registers
-+ */
-+
-+#define DD1SSR			0x20008
-+#define DD1SSR_TVR		(1 << 15)
-+#define DD1SSR_FRM		(1 << 14)
-+#define DD1SSR_BUF		(1 << 12)
-+#define DD1SSR_VBK		(1 << 11)
-+#define DD1SSR_RINT		(1 << 9)
-+#define DD1SSR_HBK		(1 << 8)
-+#define DD1SSR_ADC(n)		(1 << ((n)-1))
-+
-+#define DD1SRCR			0x2000c
-+#define DD1SRCR_TVR		(1 << 15)
-+#define DD1SRCR_FRM		(1 << 14)
-+#define DD1SRCR_BUF		(1 << 12)
-+#define DD1SRCR_VBK		(1 << 11)
-+#define DD1SRCR_RINT		(1 << 9)
-+#define DD1SRCR_HBK		(1 << 8)
-+#define DD1SRCR_ADC(n)		(1 << ((n)-1))
-+
-+#define DD1IER			0x20010
-+#define DD1IER_TVR		(1 << 15)
-+#define DD1IER_FRM		(1 << 14)
-+#define DD1IER_BUF		(1 << 12)
-+#define DD1IER_VBK		(1 << 11)
-+#define DD1IER_RINT		(1 << 9)
-+#define DD1IER_HBK		(1 << 8)
-+#define DD1IER_ADC(n)		(1 << ((n)-1))
-+
-+#define DEFR8			0x20020
-+#define DEFR8_CODE		(0x7790 << 16)
-+#define DEFR8_VSCS		(1 << 6)
-+#define DEFR8_DRGBS_DU(n)	((n) << 4)
-+#define DEFR8_DRGBS_MASK	(3 << 4)
-+#define DEFR8_DEFE8		(1 << 0)
-+
-+#define DOFLR			0x20024
-+#define DOFLR_CODE		(0x7790 << 16)
-+#define DOFLR_HSYCFL1		(1 << 13)
-+#define DOFLR_VSYCFL1		(1 << 12)
-+#define DOFLR_ODDFL1		(1 << 11)
-+#define DOFLR_DISPFL1		(1 << 10)
-+#define DOFLR_CDEFL1		(1 << 9)
-+#define DOFLR_RGBFL1		(1 << 8)
-+#define DOFLR_HSYCFL0		(1 << 5)
-+#define DOFLR_VSYCFL0		(1 << 4)
-+#define DOFLR_ODDFL0		(1 << 3)
-+#define DOFLR_DISPFL0		(1 << 2)
-+#define DOFLR_CDEFL0		(1 << 1)
-+#define DOFLR_RGBFL0		(1 << 0)
-+
-+#define DIDSR			0x20028
-+#define DIDSR_CODE		(0x7790 << 16)
-+#define DIDSR_LCDS_DCLKIN(n)	(0 << (8 + (n) * 2))
-+#define DIDSR_LCDS_LVDS0(n)	(2 << (8 + (n) * 2))
-+#define DIDSR_LCDS_LVDS1(n)	(3 << (8 + (n) * 2))
-+#define DIDSR_LCDS_MASK(n)	(3 << (8 + (n) * 2))
-+#define DIDSR_PCDS_CLK(n, clk)	(clk << ((n) * 2))
-+#define DIDSR_PCDS_MASK(n)	(3 << ((n) * 2))
-+
-+/* -----------------------------------------------------------------------------
-  * Display Timing Generation Registers
-  */
- 
-@@ -364,12 +426,10 @@
-  * Display Capture Registers
-  */
- 
-+#define DCMR			0x0c100
- #define DCMWR			0x0c104
--#define DC2MWR			0x0c204
- #define DCSAR			0x0c120
--#define DC2SAR			0x0c220
- #define DCMLR			0x0c150
--#define DC2MLR			0x0c250
- 
- /* -----------------------------------------------------------------------------
-  * Color Palette Registers
+Thanks for all the reviews and suggestions.
+
+Guennadi Liakhovetski (21):
+  soc-camera: move common code to soc_camera.c
+  soc-camera: add host clock callbacks to start and stop the master
+    clock
+  pxa-camera: move interface activation and deactivation to clock
+    callbacks
+  omap1-camera: move interface activation and deactivation to clock
+    callbacks
+  atmel-isi: move interface activation and deactivation to clock
+    callbacks
+  mx3-camera: move interface activation and deactivation to clock
+    callbacks
+  mx2-camera: move interface activation and deactivation to clock
+    callbacks
+  mx1-camera: move interface activation and deactivation to clock
+    callbacks
+  sh-mobile-ceu-camera: move interface activation and deactivation to
+    clock callbacks
+  soc-camera: make .clock_{start,stop} compulsory, .add / .remove
+    optional
+  soc-camera: don't attach the client to the host during probing
+  sh-mobile-ceu-camera: add primitive OF support
+  sh-mobile-ceu-driver: support max width and height in DT
+  V4L2: add temporary clock helpers
+  V4L2: add a device pointer to struct v4l2_subdev
+  V4L2: support asynchronous subdevice registration
+  soc-camera: switch I2C subdevice drivers to use v4l2-clk
+  soc-camera: add V4L2-async support
+  sh_mobile_ceu_camera: add asynchronous subdevice probing support
+  imx074: support asynchronous probing
+  ARM: shmobile: convert ap4evb to asynchronously register camera
+    subdevices
+
+ .../devicetree/bindings/media/sh_mobile_ceu.txt    |   18 +
+ arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
+ arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
+ drivers/media/i2c/soc_camera/imx074.c              |   32 +-
+ drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
+ drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
+ drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
+ drivers/media/i2c/soc_camera/mt9t112.c             |   25 +-
+ drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
+ drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
+ drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
+ drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
+ drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
+ drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
+ drivers/media/i2c/soc_camera/ov9640.h              |    1 +
+ drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
+ drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
+ drivers/media/i2c/soc_camera/tw9910.c              |   24 +-
+ drivers/media/platform/soc_camera/atmel-isi.c      |   38 +-
+ drivers/media/platform/soc_camera/mx1_camera.c     |   48 +-
+ drivers/media/platform/soc_camera/mx2_camera.c     |   41 +-
+ drivers/media/platform/soc_camera/mx3_camera.c     |   44 +-
+ drivers/media/platform/soc_camera/omap1_camera.c   |   41 +-
+ drivers/media/platform/soc_camera/pxa_camera.c     |   46 +-
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |  243 +++++--
+ drivers/media/platform/soc_camera/sh_mobile_csi2.c |  153 +++--
+ drivers/media/platform/soc_camera/soc_camera.c     |  707 +++++++++++++++++---
+ .../platform/soc_camera/soc_camera_platform.c      |    2 +-
+ drivers/media/v4l2-core/Makefile                   |    3 +-
+ drivers/media/v4l2-core/v4l2-async.c               |  280 ++++++++
+ drivers/media/v4l2-core/v4l2-clk.c                 |  242 +++++++
+ drivers/media/v4l2-core/v4l2-common.c              |    2 +
+ include/media/sh_mobile_ceu.h                      |    2 +
+ include/media/sh_mobile_csi2.h                     |    2 +-
+ include/media/soc_camera.h                         |   39 +-
+ include/media/v4l2-async.h                         |  105 +++
+ include/media/v4l2-clk.h                           |   54 ++
+ include/media/v4l2-subdev.h                        |   10 +
+ 38 files changed, 2035 insertions(+), 467 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/media/sh_mobile_ceu.txt
+ create mode 100644 drivers/media/v4l2-core/v4l2-async.c
+ create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+ create mode 100644 include/media/v4l2-async.h
+ create mode 100644 include/media/v4l2-clk.h
+
 -- 
-1.8.1.5
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
