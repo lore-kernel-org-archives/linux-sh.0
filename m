@@ -1,70 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Jun 2013 07:47:14 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 11 Jun 2013 09:33:15 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: uImage load address rework
-Message-Id: <20130611074713.GB10440@verge.net.au>
+Message-Id: <CANqRtoQGrOor4n9p4u=SR=RTLTM2LfJ_jxxviy3yh=LTrsQLYA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130610092857.19175.25629.sendpatchset@w520>
-In-Reply-To: <20130610092857.19175.25629.sendpatchset@w520>
+ <20130611074713.GB10440@verge.net.au>
+In-Reply-To: <20130611074713.GB10440@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jun 10, 2013 at 06:28:57PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> This is V2 of the mach-shmobile uImage load address rework patch.
-> 
-> Rework the mach-shmobile uImage load address calculation by storing
-> the per-board load addresses in Makefile.boot. This removes the
-> CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
-> it possible to create safe kernel images that boot on multiple boards.
-> 
-> This is one of several series of code that reworks code not to rely on
-> CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Jun 11, 2013 at 4:47 PM, Simon Horman <horms@verge.net.au> wrote:
+> On Mon, Jun 10, 2013 at 06:28:57PM +0900, Magnus Damm wrote:
+>> From: Magnus Damm <damm@opensource.se>
+>>
+>> This is V2 of the mach-shmobile uImage load address rework patch.
+>>
+>> Rework the mach-shmobile uImage load address calculation by storing
+>> the per-board load addresses in Makefile.boot. This removes the
+>> CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
+>> it possible to create safe kernel images that boot on multiple boards.
+>>
+>> This is one of several series of code that reworks code not to rely on
+>> CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
+>>
+>> Signed-off-by: Magnus Damm <damm@opensource.se>
+>> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+>> Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Thanks, I have queued this up in the soc2 branch.
+> My current plan is to let that branch sit in next for a few
+> days and then send a pull-request for it to be included in v3.11.
 
-Thanks, I have queued this up in the soc2 branch.
-My current plan is to let that branch sit in next for a few
-days and then send a pull-request for it to be included in v3.11.
+Sounds good, thanks! I will try to sort out the remaining bits and see
+where that takes us.
 
-> ---
-> 
->  Changes since V1:
->  - On popular request, merged patch 5 and 14 and all other.
->  - Updated the __ZRELADDR calculation, thanks Arnd!
->  - Added Reviewed-by from Laurent and Morimoto-san, thanks!
-> 
->  arch/arm/mach-shmobile/Makefile.boot |   20 ++++++++++++++++++--
->  1 file changed, 18 insertions(+), 2 deletions(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/Makefile.boot
-> +++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-10 16:15:22.000000000 +0900
-> @@ -1,6 +1,22 @@
-> -__ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
-> -		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
-> +# per-board load address for uImage
-> +loadaddr-y	:> +loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
-> +loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_KOTA2) += 0x41008000
-> +loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
-> +loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
-> +loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
-> +loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
-> +loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
->  
-> +__ZRELADDR	:= $(sort $(loadaddr-y))
->     zreladdr-y   += $(__ZRELADDR)
->  
->  # Unsupported legacy stuff
-> 
+Cheers,
+
+/ magnus
