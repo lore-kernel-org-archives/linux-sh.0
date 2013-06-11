@@ -1,42 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 28 Jun 2013 10:29:39 +0000
-Subject: [PATCH 01/06] ARM: shmobile: Remove unused EMEV2 auxdata table
-Message-Id: <20130628102939.31451.91670.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:51 +0000
+Subject: [PATCH v5 22/22] ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
+Message-Id: <1370989371-30846-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130628102930.31451.85334.sendpatchset@w520>
-In-Reply-To: <20130628102930.31451.85334.sendpatchset@w520>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+LED2 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
-Pass NULL to of_platform_populate instead of passing
-an empty list. This cleans up the code and reduces the
-number of lines.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
- arch/arm/mach-shmobile/setup-emev2.c |    6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 6d20247..b64705b 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -11,6 +11,7 @@
+ 
+ /dts-v1/;
+ /include/ "r8a7779.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "marzen";
+@@ -47,6 +48,19 @@
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led2 {
++			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
++		};
++		led3 {
++			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
++		};
++		led4 {
++			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
+ 
+ &pfc {
+-- 
+1.8.1.5
 
---- 0001/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-06-28 15:46:19.000000000 +0900
-@@ -435,14 +435,10 @@ void __init emev2_init_irq(void)
- }
- 
- #ifdef CONFIG_USE_OF
--static const struct of_dev_auxdata emev2_auxdata_lookup[] __initconst = {
--	{ }
--};
- 
- static void __init emev2_add_standard_devices_dt(void)
- {
--	of_platform_populate(NULL, of_default_bus_match_table,
--			     emev2_auxdata_lookup, NULL);
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
- static const char *emev2_boards_compat_dt[] __initdata = {
