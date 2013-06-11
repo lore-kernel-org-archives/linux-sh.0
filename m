@@ -1,94 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 06 Jun 2013 19:49:30 +0000
-Subject: [PATCH v5 5/8] sh_eth: add IRQ flags to 'struct sh_eth_cpu_data'
-Message-Id: <201306062349.31261.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:35 +0000
+Subject: [PATCH v5 06/22] ARM: shmobile: r8a7778: Add pin control device to device tree
+Message-Id: <1370989371-30846-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306062339.21353.sergei.shtylyov@cogentembedded.com>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Add a pfc node to the r8a7778 device tree.
 
-The driver supports some SH and SH-Mobile SOCs. There are SOCs with two or more
-Ethernet devices, for these we need to pass IRQF_SHARED to request_irq().  Add
-the 'irq_flags' field to the 'struct sh_eth_cpu_data' instead of #ifdef'fery.
-
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-[Sergei: properly aligned request_irq() call continuation line, reworded the
-changelog, reworded the subject, changing the prefix.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes in version 4:
-- resolved reject;
-- properly aligned request_irq() call continuation line;
-- reworded the changelog;
-- reworded the subject, changing the prefix.
+ arch/arm/boot/dts/r8a7778.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-Changes in version 3:
-- remove 'irq_flags' from 'struct sh_eth_private';
-- fix indentation.
-
- drivers/net/ethernet/renesas/sh_eth.c |   13 +++++--------
- drivers/net/ethernet/renesas/sh_eth.h |    1 +
- 2 files changed, 6 insertions(+), 8 deletions(-)
-
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -462,6 +462,7 @@ static struct sh_eth_cpu_data sh_eth_my_
- 			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
- 	.tx_error_check	= EESR_TWB | EESR_TABT | EESR_TDE | EESR_TFE,
- 
-+	.irq_flags	= IRQF_SHARED,
- 	.apr		= 1,
- 	.mpr		= 1,
- 	.tpauser	= 1,
-@@ -570,6 +571,7 @@ static struct sh_eth_cpu_data sh_eth_my_
- 	.fdr_value	= 0x0000072f,
- 	.rmcr_value	= 0x00000001,
- 
-+	.irq_flags	= IRQF_SHARED,
- 	.apr		= 1,
- 	.mpr		= 1,
- 	.tpauser	= 1,
-@@ -650,6 +652,8 @@ static struct sh_eth_cpu_data sh_eth_my_
- #if defined(CONFIG_CPU_SUBTYPE_SH7734)
- 	.hw_crc     = 1,
- 	.select_mii = 1,
-+#else
-+	.irq_flags	= IRQF_SHARED,
- #endif
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4743735..c8dbf14 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -32,4 +32,9 @@
+ 		reg = <0xfe438000 0x1000>,
+ 		      <0xfe430000 0x100>;
+ 	};
++
++	pfc: pfc@fffc0000 {
++		compatible = "renesas,pfc-r8a7778";
++		reg = <0xfffc000 0x118>;
++	};
  };
- 
-@@ -1908,14 +1912,7 @@ static int sh_eth_open(struct net_device
- 	pm_runtime_get_sync(&mdp->pdev->dev);
- 
- 	ret = request_irq(ndev->irq, sh_eth_interrupt,
--#if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
--	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
--	defined(CONFIG_CPU_SUBTYPE_SH7757)
--				IRQF_SHARED,
--#else
--				0,
--#endif
--				ndev->name, ndev);
-+			  mdp->cd->irq_flags, ndev->name, ndev);
- 	if (ret) {
- 		dev_err(&ndev->dev, "Can not assign IRQ number\n");
- 		return ret;
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.h
-@@ -463,6 +463,7 @@ struct sh_eth_cpu_data {
- 	unsigned long tx_error_check;
- 
- 	/* hardware features */
-+	unsigned long irq_flags;	/* IRQ configuration flags */
- 	unsigned no_psr:1;		/* EtherC DO NOT have PSR */
- 	unsigned apr:1;			/* EtherC have APR */
- 	unsigned mpr:1;			/* EtherC have MPR */
+-- 
+1.8.1.5
+
