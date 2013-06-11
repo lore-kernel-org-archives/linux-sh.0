@@ -1,140 +1,100 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 07 Jun 2013 23:59:21 +0000
-Subject: [PATCH 6/9] sh_eth: get SH7757 support out of #ifdef
-Message-Id: <201306080359.21534.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:40 +0000
+Subject: [PATCH v5 11/22] ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
+Message-Id: <1370989371-30846-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Get the SH7757 code/data in the driver out of #ifdef by adding "sh7757-ether"
-and "sh7757-gether" to the platform driver's ID table.  Note that we can remove
-SH_ETH_HAS_BOTH_MODULES and sh_eth_get_cpu_data().
-Change the Ether/GEther platform devices' names in the SH platform code
-accordingly.
+Add GPIO controller nodes to the r8a7790 core device tree.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/boards/board-sh7757lcr.c      |    8 ++++----
- drivers/net/ethernet/renesas/sh_eth.c |   28 ++++++++--------------------
- 2 files changed, 12 insertions(+), 24 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 61 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
-Index: net-next/arch/sh/boards/board-sh7757lcr.c
-=================================--- net-next.orig/arch/sh/boards/board-sh7757lcr.c
-+++ net-next/arch/sh/boards/board-sh7757lcr.c
-@@ -82,7 +82,7 @@ static struct sh_eth_plat_data sh7757_et
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 13caf12..1b75c1d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -38,6 +38,66 @@
+ 		interrupts = <1 9 0xf04>;
+ 	};
+ 
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc40000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 4 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++	};
++
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc41000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 5 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++	};
++
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc42000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 6 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc43000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 7 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc44000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 8 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++	};
++
++	gpio5: gpio@ffc45000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc45000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 9 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 32>;
++	};
++
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+ 		interrupts = <1 13 0xf08>,
+@@ -58,5 +118,6 @@
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7790";
+ 		reg = <0 0xe6060000 0 0x250>;
++		#gpio-range-cells = <3>;
+ 	};
  };
- 
- static struct platform_device sh7757_eth0_device = {
--	.name		= "sh-eth",
-+	.name		= "sh7757-ether",
- 	.resource	= sh_eth0_resources,
- 	.id		= 0,
- 	.num_resources	= ARRAY_SIZE(sh_eth0_resources),
-@@ -111,7 +111,7 @@ static struct sh_eth_plat_data sh7757_et
- };
- 
- static struct platform_device sh7757_eth1_device = {
--	.name		= "sh-eth",
-+	.name		= "sh7757-ether",
- 	.resource	= sh_eth1_resources,
- 	.id		= 1,
- 	.num_resources	= ARRAY_SIZE(sh_eth1_resources),
-@@ -157,7 +157,7 @@ static struct sh_eth_plat_data sh7757_et
- };
- 
- static struct platform_device sh7757_eth_giga0_device = {
--	.name		= "sh-eth",
-+	.name		= "sh7757-gether",
- 	.resource	= sh_eth_giga0_resources,
- 	.id		= 2,
- 	.num_resources	= ARRAY_SIZE(sh_eth_giga0_resources),
-@@ -192,7 +192,7 @@ static struct sh_eth_plat_data sh7757_et
- };
- 
- static struct platform_device sh7757_eth_giga1_device = {
--	.name		= "sh-eth",
-+	.name		= "sh7757-gether",
- 	.resource	= sh_eth_giga1_resources,
- 	.id		= 3,
- 	.num_resources	= ARRAY_SIZE(sh_eth_giga1_resources),
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -431,10 +431,9 @@ static struct sh_eth_cpu_data sh_eth_my_
- 	.rpadir		= 1,
- 	.rpadir_value	= 0x00020000, /* NET_IP_ALIGN assumed to be 2 */
- };
--#elif defined(CONFIG_CPU_SUBTYPE_SH7757)
--#define SH_ETH_HAS_BOTH_MODULES	1
-+#endif
- 
--static void sh_eth_set_rate(struct net_device *ndev)
-+static void sh_eth_set_rate_sh7757(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 
-@@ -451,9 +450,9 @@ static void sh_eth_set_rate(struct net_d
- }
- 
- /* SH7757 */
--static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
--	.set_duplex		= sh_eth_set_duplex,
--	.set_rate		= sh_eth_set_rate,
-+static struct sh_eth_cpu_data sh7757_data = {
-+	.set_duplex	= sh_eth_set_duplex,
-+	.set_rate	= sh_eth_set_rate_sh7757,
- 
- 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
- 	.rmcr_value	= 0x00000001,
-@@ -518,7 +517,7 @@ static void sh_eth_set_rate_giga(struct 
- }
- 
- /* SH7757(GETHERC) */
--static struct sh_eth_cpu_data sh_eth_my_cpu_data_giga = {
-+static struct sh_eth_cpu_data sh7757_data_giga = {
- 	.chip_reset	= sh_eth_chip_reset_giga,
- 	.set_duplex	= sh_eth_set_duplex,
- 	.set_rate	= sh_eth_set_rate_giga,
-@@ -549,15 +548,6 @@ static struct sh_eth_cpu_data sh_eth_my_
- 	.tsu		= 1,
- };
- 
--static struct sh_eth_cpu_data *sh_eth_get_cpu_data(struct sh_eth_private *mdp)
--{
--	if (sh_eth_is_gether(mdp))
--		return &sh_eth_my_cpu_data_giga;
--	else
--		return &sh_eth_my_cpu_data;
--}
--#endif
--
- static void sh_eth_chip_reset(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
-@@ -2577,11 +2567,7 @@ static int sh_eth_drv_probe(struct platf
- 	mdp->reg_offset = sh_eth_get_register_offset(pd->register_type);
- 
- 	/* set cpu data */
--#if defined(SH_ETH_HAS_BOTH_MODULES)
--	mdp->cd = sh_eth_get_cpu_data(mdp);
--#else
- 	mdp->cd = &sh_eth_my_cpu_data;
--#endif
- 	if (id->driver_data)
- 		mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
- 	sh_eth_set_default_cpu_data(mdp->cd);
-@@ -2702,6 +2688,8 @@ static struct platform_device_id sh_eth_
- 	{ "sh7619-ether", (kernel_ulong_t)&sh7619_data },
- 	{ "sh771x-ether", (kernel_ulong_t)&sh771x_data },
- 	{ "sh7734-gether", (kernel_ulong_t)&sh7734_data },
-+	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
-+	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
- 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
- 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
- 	{ CARDNAME },
+-- 
+1.8.1.5
+
