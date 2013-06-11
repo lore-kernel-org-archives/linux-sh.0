@@ -1,68 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:59 +0000
-Subject: [PATCH 068/130] ARM: shmobile: armadillo800eva: Register pinctrl mapping for GETHER
-Message-Id: <1370420821-28420-69-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 08:23:37 +0000
+Subject: [PATCH v10 10/21] soc-camera: make .clock_{start,stop} compulsory, .add / .remove optional
+Message-Id: <1370939028-8352-11-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+All existing soc-camera host drivers use .clock_start() and .clock_stop()
+callbacks to activate and deactivate their camera interfaces, whereas
+.add() and .remove() callbacks are usually dummy. Make the former two
+compulsory and the latter two optional.
 
-Replace the GPIO-based GETHER pinmux configuration by a pinctrl mapping.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 25 +++++--------------------
- 1 file changed, 5 insertions(+), 20 deletions(-)
+ drivers/media/platform/soc_camera/soc_camera.c |   27 +++++++++++------------
+ 1 files changed, 13 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 8d8b362..328f650 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1046,6 +1046,11 @@ static struct platform_device *eva_devices[] __initdata = {
- };
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index df90565..e503f03 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -513,23 +513,22 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
+ 	if (ici->icd)
+ 		return -EBUSY;
  
- static const struct pinctrl_map eva_pinctrl_map[] = {
-+	/* GETHER */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
-+				  "gether_mii", "gether"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
-+				  "gether_int", "gether"),
- 	/* LCD0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
- 				  "lcd0_data24_0", "lcd0"),
-@@ -1139,26 +1144,6 @@ static void __init eva_init(void)
- 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+-	if (ici->ops->clock_start) {
+-		ret = ici->ops->clock_start(ici);
++	ret = ici->ops->clock_start(ici);
++	if (ret < 0)
++		return ret;
++
++	if (ici->ops->add) {
++		ret = ici->ops->add(icd);
+ 		if (ret < 0)
+-			return ret;
++			goto eadd;
+ 	}
  
- 	/* GETHER */
--	gpio_request(GPIO_FN_ET_CRS,		NULL);
--	gpio_request(GPIO_FN_ET_MDC,		NULL);
--	gpio_request(GPIO_FN_ET_MDIO,		NULL);
--	gpio_request(GPIO_FN_ET_TX_ER,		NULL);
--	gpio_request(GPIO_FN_ET_RX_ER,		NULL);
--	gpio_request(GPIO_FN_ET_ERXD0,		NULL);
--	gpio_request(GPIO_FN_ET_ERXD1,		NULL);
--	gpio_request(GPIO_FN_ET_ERXD2,		NULL);
--	gpio_request(GPIO_FN_ET_ERXD3,		NULL);
--	gpio_request(GPIO_FN_ET_TX_CLK,		NULL);
--	gpio_request(GPIO_FN_ET_TX_EN,		NULL);
--	gpio_request(GPIO_FN_ET_ETXD0,		NULL);
--	gpio_request(GPIO_FN_ET_ETXD1,		NULL);
--	gpio_request(GPIO_FN_ET_ETXD2,		NULL);
--	gpio_request(GPIO_FN_ET_ETXD3,		NULL);
--	gpio_request(GPIO_FN_ET_PHY_INT,	NULL);
--	gpio_request(GPIO_FN_ET_COL,		NULL);
--	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
--	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
+-	ret = ici->ops->add(icd);
+-	if (ret < 0)
+-		goto eadd;
 -
- 	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
+ 	ici->icd = icd;
  
- 	/* USB */
+ 	return 0;
+ 
+ eadd:
+-	if (ici->ops->clock_stop)
+-		ici->ops->clock_stop(ici);
++	ici->ops->clock_stop(ici);
+ 	return ret;
+ }
+ 
+@@ -540,9 +539,9 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
+ 	if (WARN_ON(icd != ici->icd))
+ 		return;
+ 
+-	ici->ops->remove(icd);
+-	if (ici->ops->clock_stop)
+-		ici->ops->clock_stop(ici);
++	if (ici->ops->remove)
++		ici->ops->remove(icd);
++	ici->ops->clock_stop(ici);
+ 	ici->icd = NULL;
+ }
+ 
+@@ -1413,8 +1412,8 @@ int soc_camera_host_register(struct soc_camera_host *ici)
+ 	    ((!ici->ops->init_videobuf ||
+ 	      !ici->ops->reqbufs) &&
+ 	     !ici->ops->init_videobuf2) ||
+-	    !ici->ops->add ||
+-	    !ici->ops->remove ||
++	    !ici->ops->clock_start ||
++	    !ici->ops->clock_stop ||
+ 	    !ici->ops->poll ||
+ 	    !ici->v4l2_dev.dev)
+ 		return -EINVAL;
 -- 
-1.8.2.1
+1.7.2.5
 
