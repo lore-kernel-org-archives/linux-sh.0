@@ -1,132 +1,110 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 04:32:15 +0000
-Subject: [PATCH 6/7] ARM: shmobile: kzm9g-reference: add AS3711 and CPUFreq DT bindings
-Message-Id: <1370406736-32272-7-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 08:23:35 +0000
+Subject: [PATCH v10 08/21] mx1-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1370939028-8352-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+When adding and removing a client, the mx1-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-This adds DT bindings for an AS3711 PMIC, used for supplying power to the
-CPU, some peripherals and the backlight, as well as extends the cpu0 DT
-node with OPPs and a reference to the PMIC to support the CPUFreq and
-CPU DVFS functions.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 86 ++++++++++++++++++++++++++++
- 1 file changed, 86 insertions(+)
+ drivers/media/platform/soc_camera/mx1_camera.c |   32 +++++++++++++++---------
+ 1 files changed, 20 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 5972abb..b6f759e 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -18,6 +18,19 @@
- 	model = "KZM-A9-GT";
- 	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
+diff --git a/drivers/media/platform/soc_camera/mx1_camera.c b/drivers/media/platform/soc_camera/mx1_camera.c
+index 5f9ec8e..fea3e61 100644
+--- a/drivers/media/platform/soc_camera/mx1_camera.c
++++ b/drivers/media/platform/soc_camera/mx1_camera.c
+@@ -399,7 +399,7 @@ static void mx1_camera_activate(struct mx1_camera_dev *pcdev)
+ {
+ 	unsigned int csicr1 = CSICR1_EN;
  
-+	cpus {
-+		cpu@0 {
-+			cpu0-supply = <&vdd_dvfs>;
-+			operating-points = <
-+				/* kHz  uV */
-+				1196000 1315000
-+				 598000 1175000
-+				 398667 1065000
-+			>;
-+			voltage-tolerance = <1>; /* 1% */
-+		};
-+	};
-+
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
- 	};
-@@ -59,6 +72,79 @@
- 	};
- };
+-	dev_dbg(pcdev->soc_host.icd->parent, "Activate device\n");
++	dev_dbg(pcdev->soc_host.v4l2_dev.dev, "Activate device\n");
  
-+&i2c0 {
-+	as3711@40 {
-+		compatible = "ams,as3711";
-+		reg = <0x40>;
+ 	clk_prepare_enable(pcdev->clk);
+ 
+@@ -415,7 +415,7 @@ static void mx1_camera_activate(struct mx1_camera_dev *pcdev)
+ 
+ static void mx1_camera_deactivate(struct mx1_camera_dev *pcdev)
+ {
+-	dev_dbg(pcdev->soc_host.icd->parent, "Deactivate device\n");
++	dev_dbg(pcdev->soc_host.v4l2_dev.dev, "Deactivate device\n");
+ 
+ 	/* Disable all CSI interface */
+ 	__raw_writel(0x00, pcdev->base + CSICR1);
+@@ -423,26 +423,35 @@ static void mx1_camera_deactivate(struct mx1_camera_dev *pcdev)
+ 	clk_disable_unprepare(pcdev->clk);
+ }
+ 
++static int mx1_camera_add_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "MX1 Camera driver attached to camera %d\n",
++		 icd->devnum);
 +
-+		regulators {
-+			vdd_dvfs: sd1 {
-+				regulator-name = "1.315V CPU";
-+				regulator-min-microvolt = <1050000>;
-+				regulator-max-microvolt = <1350000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			sd2 {
-+				regulator-name = "1.8V";
-+				regulator-min-microvolt = <1800000>;
-+				regulator-max-microvolt = <1800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			sd4 {
-+				regulator-name = "1.215V";
-+				regulator-min-microvolt = <1215000>;
-+				regulator-max-microvolt = <1235000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo2 {
-+				regulator-name = "2.8V CPU";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo3 {
-+				regulator-name = "3.0V CPU";
-+				regulator-min-microvolt = <3000000>;
-+				regulator-max-microvolt = <3000000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo4 {
-+				regulator-name = "2.8V";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo5 {
-+				regulator-name = "2.8V #2";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo7 {
-+				regulator-name = "1.15V CPU";
-+				regulator-min-microvolt = <1150000>;
-+				regulator-max-microvolt = <1150000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo8 {
-+				regulator-name = "1.15V CPU #2";
-+				regulator-min-microvolt = <1150000>;
-+				regulator-max-microvolt = <1150000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+		};
-+	};
-+};
++	return 0;
++}
 +
- &mmcif {
- 	bus-width = <8>;
- 	vmmc-supply = <&reg_1p8v>;
++static void mx1_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "MX1 Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
+ /*
+  * The following two functions absolutely depend on the fact, that
+  * there can be only one camera on i.MX1/i.MXL camera sensor interface
+  */
+-static int mx1_camera_add_device(struct soc_camera_device *icd)
++static int mx1_camera_clock_start(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx1_camera_dev *pcdev = ici->priv;
+ 
+-	dev_info(icd->parent, "MX1 Camera driver attached to camera %d\n",
+-		 icd->devnum);
+-
+ 	mx1_camera_activate(pcdev);
+ 
+ 	return 0;
+ }
+ 
+-static void mx1_camera_remove_device(struct soc_camera_device *icd)
++static void mx1_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx1_camera_dev *pcdev = ici->priv;
+ 	unsigned int csicr1;
+ 
+@@ -453,9 +462,6 @@ static void mx1_camera_remove_device(struct soc_camera_device *icd)
+ 	/* Stop DMA engine */
+ 	imx_dma_disable(pcdev->dma_chan);
+ 
+-	dev_info(icd->parent, "MX1 Camera driver detached from camera %d\n",
+-		 icd->devnum);
+-
+ 	mx1_camera_deactivate(pcdev);
+ }
+ 
+@@ -669,6 +675,8 @@ static struct soc_camera_host_ops mx1_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= mx1_camera_add_device,
+ 	.remove		= mx1_camera_remove_device,
++	.clock_start	= mx1_camera_clock_start,
++	.clock_stop	= mx1_camera_clock_stop,
+ 	.set_bus_param	= mx1_camera_set_bus_param,
+ 	.set_fmt	= mx1_camera_set_fmt,
+ 	.try_fmt	= mx1_camera_try_fmt,
 -- 
-1.8.2.1
+1.7.2.5
 
