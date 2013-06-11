@@ -1,69 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:56 +0000
-Subject: [PATCH 065/130] sh-pfc: r8a7740: Add HDMI pin groups and functions
-Message-Id: <1370420821-28420-66-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:41 +0000
+Subject: [PATCH v5 12/22] ARM: shmobile: sh7372: Add pin control device to device tree
+Message-Id: <1370989371-30846-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add a pfc node to the sh7372 device tree.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ arch/arm/boot/dts/sh7372.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 49da76a..5a77d39 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -2039,6 +2039,14 @@ static const unsigned int gether_wol_pins[] = {
- static const unsigned int gether_wol_mux[] = {
- 	ET_WOL_MARK,
- };
-+/* - HDMI ------------------------------------------------------------------- */
-+static const unsigned int hdmi_pins[] = {
-+	/* HPD, CEC */
-+	210, 211,
-+};
-+static const unsigned int hdmi_mux[] = {
-+	HDMI_HPD_MARK, HDMI_CEC_MARK,
-+};
- /* - INTC ------------------------------------------------------------------- */
- IRQC_PINS_MUX(0, 0, 2);
- IRQC_PINS_MUX(0, 1, 13);
-@@ -2787,6 +2795,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(gether_int),
- 	SH_PFC_PIN_GROUP(gether_link),
- 	SH_PFC_PIN_GROUP(gether_wol),
-+	SH_PFC_PIN_GROUP(hdmi),
- 	SH_PFC_PIN_GROUP(intc_irq0_0),
- 	SH_PFC_PIN_GROUP(intc_irq0_1),
- 	SH_PFC_PIN_GROUP(intc_irq1),
-@@ -2985,6 +2994,10 @@ static const char * const gether_groups[] = {
- 	"gether_wol",
- };
- 
-+static const char * const hdmi_groups[] = {
-+	"hdmi",
-+};
+diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
+index 677fc60..ce19398 100644
+--- a/arch/arm/boot/dts/sh7372.dtsi
++++ b/arch/arm/boot/dts/sh7372.dtsi
+@@ -18,4 +18,12 @@
+ 			compatible = "arm,cortex-a8";
+ 		};
+ 	};
 +
- static const char * const intc_groups[] = {
- 	"intc_irq0_0",
- 	"intc_irq0_1",
-@@ -3173,6 +3186,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(fsia),
- 	SH_PFC_FUNCTION(fsib),
- 	SH_PFC_FUNCTION(gether),
-+	SH_PFC_FUNCTION(hdmi),
- 	SH_PFC_FUNCTION(intc),
- 	SH_PFC_FUNCTION(lcd0),
- 	SH_PFC_FUNCTION(lcd1),
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-sh7372";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
 -- 
-1.8.2.1
+1.8.1.5
 
