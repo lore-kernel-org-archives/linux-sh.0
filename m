@@ -1,72 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Jun 2013 02:20:16 +0000
-Subject: Re: [PATCH v3 5/5] ARM: shmobile: lager: map HSCIF0/1 to unused pins
-Message-Id: <20130617022015.GK15043@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:14:49 +0000
+Subject: Re: [RFC/PATCH v2 0/2] R-Car GPIO DT bindings
+Message-Id: <3619797.0aKKBP4JP5@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370015825-29383-6-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1370015825-29383-6-git-send-email-ulrich.hecht@gmail.com>
+References: <1369136406-23800-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20130525012434.GA24005@verge.net.au>
+In-Reply-To: <20130525012434.GA24005@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jun 14, 2013 at 06:51:38PM +0200, Laurent Pinchart wrote:
-> Hi Ulrich ans Simon,
-> 
-> On Wednesday 12 June 2013 23:08:47 Simon Horman wrote:
-> > On Fri, May 31, 2013 at 05:57:05PM +0200, Ulrich Hecht wrote:
-> > > These pins are not actually connected on the board, but at least they
-> > > don't conflict with anything else.
-> 
-> That's actually not true, the hscif0_data pins are used by the DU RGB output.
-> 
-> If the HSCIF0 and HSCIF1 are not wired on the board I don't think they should 
-> be added to the pinctrl maps.
-> 
-> Simon, should we revert this patch now or later when I'll submit DU patches 
-> for Lager ?
+Hi Simon,
 
-I will simply drop this patch for now.
-
-I can pick it up again if you and Ulrich decide that is the best course of
-action.
-
-> > > Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+On Saturday 25 May 2013 10:24:34 Simon Horman wrote:
+> On Tue, May 21, 2013 at 01:40:04PM +0200, Laurent Pinchart wrote:
+> > Hello,
 > > 
-> > Thanks, I have queued this up in the pinmux branch.
+> > Here's the second version of the gpio-rcar driver DT bindings. I've tested
+> > the patches on the Marzen board (r8a7779).
 > > 
-> > > ---
-> > > 
-> > >  arch/arm/mach-shmobile/board-lager.c |    4 ++++
-> > >  1 file changed, 4 insertions(+)
-> > > 
-> > > diff --git a/arch/arm/mach-shmobile/board-lager.c
-> > > b/arch/arm/mach-shmobile/board-lager.c index 1e99b17..d8bd237 100644
-> > > --- a/arch/arm/mach-shmobile/board-lager.c
-> > > +++ b/arch/arm/mach-shmobile/board-lager.c
-> > > @@ -77,6 +77,10 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
-> > > 
-> > >  	/* SCIF1 (CN20: DEBUG SERIAL1) */
-> > >  	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
-> > >  	
-> > >  				  "scif1_data", "scif1"),
-> > > 
-> > > +	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-r8a7790",
-> > > +				  "hscif0_data", "hscif0"),
-> > > +	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.9", "pfc-r8a7790",
-> > > +				  "hscif1_data_b", "hscif1"),
-> > > 
-> > >  };
-> > >  
-> > >  static void __init lager_add_standard_devices(void)
+> > Once again I'd appreciate feedback on the DT bindings. I'm particularly
+> > wondering whether getting the number of lines through the gpio-ranges
+> > property instead of using a dedicated #gpio-lines property as in v1 is a
+> > good idea.
+> > 
+> > Changes since v1:
+> > 
+> > - Initialize the gpiochip dev field at probe time.
+> > - Add the gpio-ranges property.
+> > - Remove the #gpio-lines property. The number of lines is now passed
+> > through> 
+> >   the gpio-ranges property.
+> > 
+> > Laurent Pinchart (2):
+> >   gpio-rcar: Make the platform data gpio_base field signed
+> >   gpio-rcar: Add DT support
+> >  
+> >  .../devicetree/bindings/gpio/renesas,gpio-rcar.txt | 52 +++++++++++++++++
+> >  drivers/gpio/gpio-rcar.c                           | 66 +++++++++++++----
+> >  include/linux/platform_data/gpio-rcar.h            |  2 +-
+> >  3 files changed, 109 insertions(+), 11 deletions(-)
+> >  create mode 100644
+> >  Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+>
+> Hi Magnus,
 > 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> could you please review these changes?
+
+I've received Magnus' ack face-to-face last week. I'm not sure whether that's 
+a proper procedure, but I'm sure he will confirm that if needed.
+
+Could you please take the patch in your tree for v3.11 ?
+
+-- 
+Regards,
+
+Laurent Pinchart
+
