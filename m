@@ -1,67 +1,102 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:00 +0000
-Subject: [PATCH 069/130] ARM: shmobile: armadillo800eva: Register pinctrl mapping for CEU0
-Message-Id: <1370420821-28420-70-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:42 +0000
+Subject: [PATCH v5 13/22] ARM: shmobile: sh73a0: Add pin control device to device tree
+Message-Id: <1370989371-30846-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Replace the GPIO-based CEU0 pinmux configuration by a pinctrl mapping.
+Add a pfc node to the sh73a0 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 24 +++++++++---------------
- 1 file changed, 9 insertions(+), 15 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi                  |  8 ++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 27 +++++++++++++-------------
+ 2 files changed, 21 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 328f650..4327f7e 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1046,6 +1046,15 @@ static struct platform_device *eva_devices[] __initdata = {
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ec40bf7..abe02d6 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -222,4 +222,12 @@
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-sh73a0";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 44055fe..6ff6ca2 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -40,35 +40,35 @@ static unsigned long pin_pullup_conf[] = {
  };
  
- static const struct pinctrl_map eva_pinctrl_map[] = {
-+	/* CEU0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
-+				  "ceu0_data_0_7", "ceu0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
-+				  "ceu0_clk_0", "ceu0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
-+				  "ceu0_sync", "ceu0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-r8a7740",
-+				  "ceu0_field", "ceu0"),
- 	/* GETHER */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
- 				  "gether_mii", "gether"),
-@@ -1165,21 +1174,6 @@ static void __init eva_init(void)
- 		usb = &usbhsf_device;
- 	}
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
+ 				  "i2c3_1", "i2c3"),
+ 	/* MMCIF */
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				  "mmc0_data8_0", "mmc0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				  "mmc0_ctrl_0", "mmc0"),
+-	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				    "PORT279", pin_pullup_conf),
+-	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				      "mmc0_data8_0", pin_pullup_conf),
+ 	/* SCIFA4 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+ 				  "scifa4_data", "scifa4"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+ 				  "scifa4_ctrl", "scifa4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SDHI2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+ 				  "sdhi2_data4", "sdhi2"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+ 				  "sdhi2_ctrl", "sdhi2"),
+ };
  
--	/* CEU0 */
--	gpio_request(GPIO_FN_VIO0_D7,		NULL);
--	gpio_request(GPIO_FN_VIO0_D6,		NULL);
--	gpio_request(GPIO_FN_VIO0_D5,		NULL);
--	gpio_request(GPIO_FN_VIO0_D4,		NULL);
--	gpio_request(GPIO_FN_VIO0_D3,		NULL);
--	gpio_request(GPIO_FN_VIO0_D2,		NULL);
--	gpio_request(GPIO_FN_VIO0_D1,		NULL);
--	gpio_request(GPIO_FN_VIO0_D0,		NULL);
--	gpio_request(GPIO_FN_VIO0_CLK,		NULL);
--	gpio_request(GPIO_FN_VIO0_HD,		NULL);
--	gpio_request(GPIO_FN_VIO0_VD,		NULL);
--	gpio_request(GPIO_FN_VIO0_FIELD,	NULL);
--	gpio_request(GPIO_FN_VIO_CKO,		NULL);
--
- 	/* CON1/CON15 Camera */
- 	gpio_request_one(173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
- 	gpio_request_one(172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
+@@ -76,7 +76,6 @@ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+-	sh73a0_pinmux_init();
+ 
+ 	/* enable SD */
+ 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
 -- 
-1.8.2.1
+1.8.1.5
 
