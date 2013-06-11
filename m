@@ -1,42 +1,104 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 13 Jun 2013 13:10:50 +0000
-Subject: [PATCH 1/3] h8300/boot: Use POSIX "$((..))" instead of bashism "$[...]"
-Message-Id: <1371129052-31506-2-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:48 +0000
+Subject: [PATCH v5 19/22] ARM: shmobile: kzm9g-reference: Move SDHI regulators to DT
+Message-Id: <1370989371-30846-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Ubuntu, where /bin/sh -> dash, "make ARCH=h8300 clean" gives:
+Create two GPIO-controlled fixed-voltage regulators in the
+kzm9g-reference DT and remove manual configuration of the corresponding
+GPIOs from board code.
 
-printf: 1: $[0x00400000+0x00140000]: expected numeric value
-
-Replace the bash-specific "$[...]" by POSIX "$((..))" for arithmetic
-expansion to fix this.
-Note that according to the bash 4.1 manpage, "$[...]" is deprecated, and
-will be removed in upcoming versions of bash.
-
-Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/h8300/boot/compressed/Makefile |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   | 23 +++++++++++++++++++++--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |  6 ------
+ 2 files changed, 21 insertions(+), 8 deletions(-)
 
-diff --git a/arch/h8300/boot/compressed/Makefile b/arch/h8300/boot/compressed/Makefile
-index 94faad1..787fd04 100644
---- a/arch/h8300/boot/compressed/Makefile
-+++ b/arch/h8300/boot/compressed/Makefile
-@@ -16,7 +16,7 @@ OBJECTS = $(obj)/head.o $(obj)/misc.o
- #
- CONFIG_MEMORY_START     ?= 0x00400000
- CONFIG_BOOT_LINK_OFFSET ?= 0x00140000
--IMAGE_OFFSET := $(shell printf "0x%08x" $$[$(CONFIG_MEMORY_START)+$(CONFIG_BOOT_LINK_OFFSET)])
-+IMAGE_OFFSET := $(shell printf "0x%08x" $$(($(CONFIG_MEMORY_START)+$(CONFIG_BOOT_LINK_OFFSET))))
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 24f7b04..6374965 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -13,6 +13,7 @@
  
- LDFLAGS_vmlinux := -Ttext $(IMAGE_OFFSET) -estartup $(obj)/vmlinux.lds
+ /dts-v1/;
+ /include/ "sh73a0.dtsi"
++#include <dt-bindings/gpio/gpio.h>
  
+ / {
+ 	model = "KZM-A9-GT";
+@@ -58,6 +59,24 @@
+ 		regulator-boot-on;
+ 	};
+ 
++	vmmc_sdhi0: regulator@2 {
++	        compatible = "regulator-fixed";
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 15 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vmmc_sdhi2: regulator@3 {
++	        compatible = "regulator-fixed";
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 14 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
+ 	lan9220@10000000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x10000000 0x100>;
+@@ -200,7 +219,7 @@
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	vmmc-supply = <&reg_3p3v>;
++	vmmc-supply = <&vmmc_sdhi0>;
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
+@@ -209,7 +228,7 @@
+ 	pinctrl-0 = <&sdhi2_pins>;
+ 	pinctrl-names = "default";
+ 
+-	vmmc-supply = <&reg_3p3v>;
++	vmmc-supply = <&vmmc_sdhi2>;
+ 	bus-width = <4>;
+ 	broken-cd;
+ 	status = "okay";
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index fc2bb37..1847b4d 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -21,7 +21,6 @@
+  */
+ 
+ #include <linux/delay.h>
+-#include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+ #include <linux/irqchip.h>
+@@ -37,11 +36,6 @@ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+ 
+-	/* enable SD */
+-	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+-	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 -- 
-1.7.0.4
+1.8.1.5
 
