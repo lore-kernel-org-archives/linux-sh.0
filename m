@@ -1,72 +1,100 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:45 +0000
-Subject: [PATCH 12/15] ARM: shmobile: Remove MEMORY_START/SIZE
-Message-Id: <1371456768-1084-13-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 11:42:17 +0000
+Subject: [PATCH] pinctrl: r8a7790: fix two pin numbers
+Message-Id: <Pine.LNX.4.64.1306111328440.9621@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Fix two erroneous MMCIF1 pin numbers on r8a7790.
 
-Remove CONFIG_MEMORY_START and CONFIG_MEMORY_SIZE from mach-shmobile.
-
-Boards should use DT to specify their memory setup. Boards that still
-not support DT may pass ATAGS with memory information from the boot
-loader. If those ATAGS turn out to be incorrect then appended DTB with
-memory information should be used as a workaround.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/Kconfig |   31 -------------------------------
- 1 file changed, 31 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 06da4d3..747f68a 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -195,37 +195,6 @@ config CPU_HAS_INTEVT
-         bool
- 	default y
- 
--menu "Memory configuration"
+Hi Simon
+
+You merged my earlier patch "pinctrl: r8a7790: add pinmux data for MMCIF 
+and SDHI interfaces" whereas Laurent pointed out 2 wrong pin numbers in 
+that version and I was supposed to fix them... Would it be possible to 
+merge this fix with that original patch or could you apply it on top?
+
+Thanks
+Guennadi
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   16 +++++++---------
+ 1 files changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 85d77a4..1d4a5f7 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2371,8 +2371,7 @@ static const unsigned int tpu0_to3_pins[] = {
+ static const unsigned int tpu0_to3_mux[] = {
+ 	TPU0TO3_MARK,
+ };
 -
--config MEMORY_START
--	hex "Physical memory start address"
--	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
--				MACH_MACKEREL || MACH_BONITO || \
--				MACH_ARMADILLO800EVA || MACH_APE6EVM || \
--				MACH_LAGER
--	default "0x41000000" if MACH_KOTA2
--	default "0x00000000"
--	---help---
--	  Tweak this only when porting to a new machine which does not
--	  already have a defconfig. Changing it from the known correct
--	  value on any of the known systems will only lead to disaster.
+-/* - MMCIF ------------------------------------------------------------------ */
++/* - MMCIF0 ----------------------------------------------------------------- */
+ static const unsigned int mmc0_data1_pins[] = {
+ 	/* D[0] */
+ 	RCAR_GP_PIN(3, 18),
+@@ -2406,7 +2405,7 @@ static const unsigned int mmc0_ctrl_pins[] = {
+ static const unsigned int mmc0_ctrl_mux[] = {
+ 	MMC0_CLK_MARK, MMC0_CMD_MARK,
+ };
 -
--config MEMORY_SIZE
--	hex "Physical memory size"
--	default "0x80000000" if MACH_LAGER
--	default "0x40000000" if MACH_APE6EVM
--	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
--				MACH_ARMADILLO800EVA
--	default "0x1e000000" if MACH_KOTA2
--	default "0x10000000" if MACH_AP4EVB || MACH_MACKEREL
--	default "0x04000000"
--	help
--	  This sets the default memory size assumed by your kernel. It can
--	  be overridden as normal by the 'mem=' argument on the kernel command
--	  line.
++/* - MMCIF1 ----------------------------------------------------------------- */
+ static const unsigned int mmc1_data1_pins[] = {
+ 	/* D[0] */
+ 	RCAR_GP_PIN(3, 26),
+@@ -2427,7 +2426,7 @@ static const unsigned int mmc1_data8_pins[] = {
+ 	RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 27),
+ 	RCAR_GP_PIN(3, 28), RCAR_GP_PIN(3, 29),
+ 	RCAR_GP_PIN(3, 30), RCAR_GP_PIN(3, 31),
+-	RCAR_GP_PIN(3, 13), RCAR_GP_PIN(3, 14),
++	RCAR_GP_PIN(3, 14), RCAR_GP_PIN(3, 15),
+ };
+ static const unsigned int mmc1_data8_mux[] = {
+ 	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
+@@ -2440,8 +2439,7 @@ static const unsigned int mmc1_ctrl_pins[] = {
+ static const unsigned int mmc1_ctrl_mux[] = {
+ 	MMC1_CLK_MARK, MMC1_CMD_MARK,
+ };
 -
--endmenu
+-/* - SDHI ------------------------------------------------------------------- */
++/* - SDHI0 ------------------------------------------------------------------ */
+ static const unsigned int sdhi0_data1_pins[] = {
+ 	/* D0 */
+ 	RCAR_GP_PIN(3, 2),
+@@ -2477,7 +2475,7 @@ static const unsigned int sdhi0_wp_pins[] = {
+ static const unsigned int sdhi0_wp_mux[] = {
+ 	SD0_WP_MARK,
+ };
 -
- menu "Timer and clock configuration"
- 
- config SHMOBILE_TIMER_HZ
++/* - SDHI1 ------------------------------------------------------------------ */
+ static const unsigned int sdhi1_data1_pins[] = {
+ 	/* D0 */
+ 	RCAR_GP_PIN(3, 10),
+@@ -2513,7 +2511,7 @@ static const unsigned int sdhi1_wp_pins[] = {
+ static const unsigned int sdhi1_wp_mux[] = {
+ 	SD1_WP_MARK,
+ };
+-
++/* - SDHI2 ------------------------------------------------------------------ */
+ static const unsigned int sdhi2_data1_pins[] = {
+ 	/* D0 */
+ 	RCAR_GP_PIN(3, 18),
+@@ -2549,7 +2547,7 @@ static const unsigned int sdhi2_wp_pins[] = {
+ static const unsigned int sdhi2_wp_mux[] = {
+ 	SD2_WP_MARK,
+ };
+-
++/* - SDHI3 ------------------------------------------------------------------ */
+ static const unsigned int sdhi3_data1_pins[] = {
+ 	/* D0 */
+ 	RCAR_GP_PIN(3, 26),
 -- 
-1.7.10.4
+1.7.2.5
 
