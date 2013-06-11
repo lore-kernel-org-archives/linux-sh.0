@@ -1,91 +1,210 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Jun 2013 13:29:57 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: Use POSIX "$((..))" instead of bashism "$[...]"
-Message-Id: <20130613132957.GA22787@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:03:57 +0000
+Subject: [RFC] pinctrl: generic: Add DT bindings
+Message-Id: <1370988237-30593-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
- <1371129052-31506-3-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1371129052-31506-3-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Linus Walleij <linus.walleij@linaro.org>, James Hogan <james.hogan@imgtec.com>, linux-sh@vger.kernel.org
 
-On Thu, Jun 13, 2013 at 03:10:51PM +0200, Geert Uytterhoeven wrote:
-> According to the bash 4.1 manpage, "$[...]" is deprecated, and will be
-> removed in upcoming versions of bash.
-> Hence replace the bash-specific "$[...]" by POSIX "$((..))" for arithmetic
-> expansion, which also allows to drop the forced use of bash.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> ---
->  arch/arm/mach-shmobile/Makefile.boot |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-> index 95ebc7c..75a55e1 100644
-> --- a/arch/arm/mach-shmobile/Makefile.boot
-> +++ b/arch/arm/mach-shmobile/Makefile.boot
-> @@ -1,5 +1,5 @@
-> -__ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
-> -		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
-> +__ZRELADDR	:= $(shell printf "0x%08x" \
-> +		     $$(($(CONFIG_MEMORY_START) + 0x8000)))
->  
->     zreladdr-y   += $(__ZRELADDR)
+Document DT properties for the generic pinctrl parameters and add a
+parser function.
 
-This code was (very) recently changed by a patch that I
-have queued up for v3.11 in the cleanup-boot branch of my renesas tree
-on kernel.org. I believe that patch removes the instance of $[..]].
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../bindings/pinctrl/pinctrl-bindings.txt          | 29 +++++++
+ drivers/pinctrl/pinconf-generic.c                  | 94 ++++++++++++++++++++++
+ drivers/pinctrl/pinconf.h                          | 17 ++++
+ 3 files changed, 140 insertions(+)
 
+I've successfully tested this patch (or more accurately only the pull-up and
+pull-down properties) with the Renesas sh-pfc pinctrl device driver. I will
+resent the sh-pfc DT bindings patch series rebased on the generic pinconf
+bindings.
 
-commit 12dca809ef785e451263351325d4806198040b40
-Author: Magnus Damm <damm@opensource.se>
-Date:   Mon Jun 10 18:28:57 2013 +0900
+Not all generic pinconf properties are currently implemented, but I don't
+think that should be a showstopper. We can add them later as needed.
 
-    ARM: shmobile: uImage load address rework
-    
-    This is V2 of the mach-shmobile uImage load address rework patch.
-    
-    Rework the mach-shmobile uImage load address calculation by storing
-    the per-board load addresses in Makefile.boot. This removes the
-    CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
-    it possible to create safe kernel images that boot on multiple boards.
-    
-    This is one of several series of code that reworks code not to rely on
-    CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
-    
-    Signed-off-by: Magnus Damm <damm@opensource.se>
-    Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-    Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-    Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The code is based on both the sh-pfc pinconf DT parser and James Hogan's
+tz1090 DT parser ("[PATCH v2 6/9] pinctrl-tz1090: add TZ1090 pinctrl driver").
 
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 498efd9..6b147ea 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -1,6 +1,22 @@
--__ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
--		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
-+# per-board load address for uImage
-+loadaddr-y	:+loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
-+loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
-+loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
-+loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
-+loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
-+loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
-+loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
-+loadaddr-$(CONFIG_MACH_KOTA2) += 0x41008000
-+loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
-+loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
-+loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
-+loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
-+loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
-+loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
-+loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
+diff --git a/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt b/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt
+index c95ea82..e499ff0 100644
+--- a/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt
++++ b/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt
+@@ -126,3 +126,32 @@ device; they may be grandchildren, for example. Whether this is legal, and
+ whether there is any interaction between the child and intermediate parent
+ nodes, is again defined entirely by the binding for the individual pin
+ controller device.
++
++= Generic pinconf parameters =
++
++Pin configuration parameters are expressed by DT properties in the pin
++controller device state nodes and child nodes. For devices that use the generic
++pinconf parameters the following properties are defined.
++
++- tristate: A boolean, put the pin into high impedance state when set.
++
++- pull-up: An integer representing the pull-up strength. 0 disables the pull-up,
++  non-zero values enable it.
++
++- pull-down: An integer representing the pull-down strength. 0 disables the
++  pull-down, non-zero values enables it.
++
++- schmitt: An integer, enable or disable Schmitt trigger mode for the pins.
++  Valid values are
++    0: Schmitt trigger disabled (no hysteresis)
++    1: Schmitt trigger enabled
++
++- slew-rate: An integer controlling the pin slew rate. Values are device-
++  dependent.
++
++- drive-strength: An integer representing the drive strength of pins in mA.
++  Valid values are device-dependent.
++
++The pinctrl device DT bindings documentation must list the properties that
++apply to the device, and define the valid range for all device-dependent
++values.
+diff --git a/drivers/pinctrl/pinconf-generic.c b/drivers/pinctrl/pinconf-generic.c
+index 2ad5a8d..bd0e41d 100644
+--- a/drivers/pinctrl/pinconf-generic.c
++++ b/drivers/pinctrl/pinconf-generic.c
+@@ -15,6 +15,7 @@
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/device.h>
++#include <linux/of.h>
+ #include <linux/slab.h>
+ #include <linux/debugfs.h>
+ #include <linux/seq_file.h>
+@@ -135,3 +136,96 @@ void pinconf_generic_dump_config(struct pinctrl_dev *pctldev,
+ }
+ EXPORT_SYMBOL_GPL(pinconf_generic_dump_config);
+ #endif
++
++struct pinconf_generic_param {
++	const char *property;
++	enum pin_config_param param;
++	bool flag;
++};
++
++static const struct pinconf_generic_param pinconf_generic_params[] = {
++	{ "tristate",		PIN_CONFIG_BIAS_HIGH_IMPEDANCE,		true },
++	{ "pull-up",		PIN_CONFIG_BIAS_PULL_UP,		false },
++	{ "pull-down",		PIN_CONFIG_BIAS_PULL_DOWN,		false },
++	{ "schmitt",		PIN_CONFIG_INPUT_SCHMITT_ENABLE,	true },
++	{ "slew-rate",		PIN_CONFIG_SLEW_RATE,			false },
++	{ "drive-strength",	PIN_CONFIG_DRIVE_STRENGTH,		false },
++};
++
++static int pinconf_generic_add_config(unsigned long **configs,
++				      unsigned int *num_configs,
++				      unsigned long config)
++{
++	unsigned int count = *num_configs + 1;
++	unsigned long *cfgs;
++
++	cfgs = krealloc(*configs, sizeof(*cfgs) * count, GFP_KERNEL);
++	if (cfgs = NULL)
++		return -ENOMEM;
++
++	cfgs[count - 1] = config;
++
++	*configs = cfgs;
++	*num_configs = count;
++
++	return 0;
++}
++
++/**
++ * pinconf_generic_parse_params - Parse generic pinconf parameters from DT
++ * @dev: the device, used to print error messages
++ * @np: the DT node that contains generic pinconf parameters
++ * @cfgs: the returned array of pinconf parameters
++ *
++ * The parameters array is allocated dynamically and returned through the cfgs
++ * argument. The caller is responsible for freeing the array with kfree(). If no
++ * configuration parameter is found, or if an error occurs, no parameters array
++ * will be allocated and the cfgs argument will be set to NULL.
++ *
++ * Return the number of configuration parameters successfully parsed, or a
++ * negative value if an error occurred. Used error codes are
++ *
++ * -ENOMEM if memory can't be allocated for the parameters array
++ */
++int pinconf_generic_parse_params(struct device *dev, struct device_node *np,
++				 unsigned long **cfgs)
++{
++	unsigned long *configs = NULL;
++	unsigned int num_configs = 0;
++	unsigned int i;
++	int ret;
++
++	for (i = 0; i < ARRAY_SIZE(pinconf_generic_params); ++i) {
++		const struct pinconf_generic_param *param +			&pinconf_generic_params[i];
++		unsigned long config;
++		u32 val;
++
++		if (param->flag) {
++			ret = of_property_read_bool(np, param->property)
++			    ? 0 : -EINVAL;
++			val = 1;
++		} else {
++			ret = of_property_read_u32(np, param->property, &val);
++		}
++
++		if (ret) {
++			if (ret != -EINVAL)
++				dev_err(dev, "failed to parse property %s\n",
++					param->property);
++			continue;
++		}
++
++		config = pinconf_to_config_packed(param->param, val);
++		ret = pinconf_generic_add_config(&configs, &num_configs, config);
++		if (ret < 0) {
++			kfree(configs);
++			*cfgs = NULL;
++			return ret;
++		}
++	}
++
++	*cfgs = configs;
++	return num_configs;
++}
++EXPORT_SYMBOL_GPL(pinconf_generic_parse_params);
+diff --git a/drivers/pinctrl/pinconf.h b/drivers/pinctrl/pinconf.h
+index 92c7267..eb8550b 100644
+--- a/drivers/pinctrl/pinconf.h
++++ b/drivers/pinctrl/pinconf.h
+@@ -90,6 +90,23 @@ static inline void pinconf_init_device_debugfs(struct dentry *devroot,
+  * pin config.
+  */
  
-+__ZRELADDR	:= $(sort $(loadaddr-y))
-    zreladdr-y   += $(__ZRELADDR)
++#if defined(CONFIG_GENERIC_PINCONF)
++
++int pinconf_generic_parse_params(struct device *dev, struct device_node *np,
++				 unsigned long **cfgs);
++
++#else
++
++static inline int pinconf_generic_parse_params(struct device *dev,
++					       struct device_node *np,
++					       unsigned long **cfgs)
++{
++	*cfgs = NULL;
++	return 0;
++}
++
++#endif
++
+ #if defined(CONFIG_GENERIC_PINCONF) && defined(CONFIG_DEBUG_FS)
  
- # Unsupported legacy stuff
+ void pinconf_generic_dump_pin(struct pinctrl_dev *pctldev,
+-- 
+Regards,
+
+Laurent Pinchart
 
