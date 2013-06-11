@@ -1,245 +1,276 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 25 Jun 2013 14:00:49 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: uImage load address rework
-Message-Id: <CANqRtoTmhrdB+U_kTdwStXY2xrrGxjMWOEY7NWMgFGXDYQNVNQ@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="089e0158c57ae0bf8404dffaf43b"
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 11:37:48 +0000
+Subject: [PATCH v2] pinctrl: r8a73a4: add pinmux data for MMCIF and SDHI interfaces
+Message-Id: <Pine.LNX.4.64.1306111336590.9621@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130610092857.19175.25629.sendpatchset@w520>
- <CANqRtoSoWesMgBmbfUKxeyfwWcKZ77MyckCdPpKwK4WxYynWbA@mail.gmail.com>
- <3243557.sP7VV5jPVm@avalon> <76205076.EsFJngGrIh@avalon>
-In-Reply-To: <76205076.EsFJngGrIh@avalon>
-To: linux-arm-kernel@lists.infradead.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
---089e0158c57ae0bf8404dffaf43b
-Content-Type: text/plain; charset=ISO-8859-1
+This patch adds pinmux groups and functions for the two MMCIF and three
+SDHI interfaces on r8a73a4 (APE6).
 
-Hi Laurent,
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-On Wed, Jun 19, 2013 at 10:16 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Wednesday 12 June 2013 04:31:26 Laurent Pinchart wrote:
->> On Wednesday 12 June 2013 11:21:34 Magnus Damm wrote:
->> > On Wed, Jun 12, 2013 at 6:50 AM, Laurent Pinchart wrote:
->> > > I've noticed today that KZM9G doesn't boot v3.10-rc2 with
->> > > CONFIG_AUTO_ZRELADDR=y. While not caused by this patch, that's something
->> > > that will need to be fixed to support multi-arch kernels. I'm not too
->> > > familiar with early boot code, would you be able to have a look at this
->> > > ?
->> >
->> > I will have a look. I suspect that issue is not related to this patch, is
->> > it?
->>
->> No, it isn't, the issue is present in v3.10-rc2. I don't know if it has ever
->> worked.
->
-> The following patch fixes the issue, caused by physical RAM being present at
-> 0x41000000 on KZM9G. I'm not sure if it would be acceptable as a generic
-> solution though.
->
-> diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
-> index fe4d9c3..ea2f112 100644
-> --- a/arch/arm/boot/compressed/head.S
-> +++ b/arch/arm/boot/compressed/head.S
-> @@ -176,7 +176,7 @@ not_angel:
->  #ifdef CONFIG_AUTO_ZRELADDR
->                 @ determine final kernel image address
->                 mov     r4, pc
-> -               and     r4, r4, #0xf8000000
-> +               and     r4, r4, #0xff000000
->                 add     r4, r4, #TEXT_OFFSET
->  #else
->                 ldr     r4, =zreladdr
+v2: sort alphabetically
 
-Thanks for tracking this down. I've now been looking into this a bit,
-and I think we should try to get KZM9G working without modifying the
-generic code. I am afraid that I have not been able to find the proper
-fix for this though, see below for a dump of the current state.
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  198 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 198 insertions(+), 0 deletions(-)
 
-To be able to get some more details from the kernel I've cooked up
-some debug patches. It turns out that it's not really the code in
-boot/compressed/ that is problematic - more the kernel itself. Also,
-before trying to enable relocatable support via AUTO_ZRELADDR=y I
-think we should try to get the regular AUTO_ZRELADDR=n case going with
-an address that is compatible with the generic code that you pointed
-out above. Then when that is fine it should be relatively easy to
-support the relocatable case as well.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+index bbff559..82bf6ab 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+@@ -1488,6 +1488,66 @@ IRQC_PINS_MUX(326, 54);
+ IRQC_PINS_MUX(327, 55);
+ IRQC_PINS_MUX(328, 56);
+ IRQC_PINS_MUX(329, 57);
++/* - MMCIF0 ----------------------------------------------------------------- */
++static const unsigned int mmc0_data1_pins[] = {
++	/* D[0] */
++	164,
++};
++static const unsigned int mmc0_data1_mux[] = {
++	MMCD0_0_MARK,
++};
++static const unsigned int mmc0_data4_pins[] = {
++	/* D[0:3] */
++	164, 165, 166, 167,
++};
++static const unsigned int mmc0_data4_mux[] = {
++	MMCD0_0_MARK, MMCD0_1_MARK, MMCD0_2_MARK, MMCD0_3_MARK,
++};
++static const unsigned int mmc0_data8_pins[] = {
++	/* D[0:7] */
++	164, 165, 166, 167, 168, 169, 170, 171,
++};
++static const unsigned int mmc0_data8_mux[] = {
++	MMCD0_0_MARK, MMCD0_1_MARK, MMCD0_2_MARK, MMCD0_3_MARK,
++	MMCD0_4_MARK, MMCD0_5_MARK, MMCD0_6_MARK, MMCD0_7_MARK,
++};
++static const unsigned int mmc0_ctrl_pins[] = {
++	/* CMD, CLK */
++	172, 173,
++};
++static const unsigned int mmc0_ctrl_mux[] = {
++	MMCCMD0_MARK, MMCCLK0_MARK,
++};
++/* - MMCIF1 ----------------------------------------------------------------- */
++static const unsigned int mmc1_data1_pins[] = {
++	/* D[0] */
++	199,
++};
++static const unsigned int mmc1_data1_mux[] = {
++	MMCD1_0_MARK,
++};
++static const unsigned int mmc1_data4_pins[] = {
++	/* D[0:3] */
++	199, 198, 197, 196,
++};
++static const unsigned int mmc1_data4_mux[] = {
++	MMCD1_0_MARK, MMCD1_1_MARK, MMCD1_2_MARK, MMCD1_3_MARK,
++};
++static const unsigned int mmc1_data8_pins[] = {
++	/* D[0:7] */
++	199, 198, 197, 196, 195, 194, 193, 192,
++};
++static const unsigned int mmc1_data8_mux[] = {
++	MMCD1_0_MARK, MMCD1_1_MARK, MMCD1_2_MARK, MMCD1_3_MARK,
++	MMCD1_4_MARK, MMCD1_5_MARK, MMCD1_6_MARK, MMCD1_7_MARK,
++};
++static const unsigned int mmc1_ctrl_pins[] = {
++	/* CMD, CLK */
++	200, 203,
++};
++static const unsigned int mmc1_ctrl_mux[] = {
++	MMCCMD1_MARK, MMCCLK1_MARK,
++};
+ /* - SCIFA0 ----------------------------------------------------------------- */
+ static const unsigned int scifa0_data_pins[] = {
+ 	/* SCIFA0_RXD, SCIFA0_TXD */
+@@ -1683,6 +1743,86 @@ static const unsigned int scifb3_ctrl_b_pins[] = {
+ static const unsigned int scifb3_ctrl_b_mux[] = {
+ 	SCIFB3_RTS_38_MARK, SCIFB3_CTS_39_MARK,
+ };
++/* - SDHI0 ------------------------------------------------------------------ */
++static const unsigned int sdhi0_data1_pins[] = {
++	/* D0 */
++	302,
++};
++static const unsigned int sdhi0_data1_mux[] = {
++	SDHID0_0_MARK,
++};
++static const unsigned int sdhi0_data4_pins[] = {
++	/* D[0:3] */
++	302, 303, 304, 305,
++};
++static const unsigned int sdhi0_data4_mux[] = {
++	SDHID0_0_MARK, SDHID0_1_MARK, SDHID0_2_MARK, SDHID0_3_MARK,
++};
++static const unsigned int sdhi0_ctrl_pins[] = {
++	/* CLK, CMD */
++	308, 306,
++};
++static const unsigned int sdhi0_ctrl_mux[] = {
++	SDHICLK0_MARK, SDHICMD0_MARK,
++};
++static const unsigned int sdhi0_cd_pins[] = {
++	/* CD */
++	301,
++};
++static const unsigned int sdhi0_cd_mux[] = {
++	SDHICD0_MARK,
++};
++static const unsigned int sdhi0_wp_pins[] = {
++	/* WP */
++	307,
++};
++static const unsigned int sdhi0_wp_mux[] = {
++	SDHIWP0_MARK,
++};
++/* - SDHI1 ------------------------------------------------------------------ */
++static const unsigned int sdhi1_data1_pins[] = {
++	/* D0 */
++	289,
++};
++static const unsigned int sdhi1_data1_mux[] = {
++	SDHID1_0_MARK,
++};
++static const unsigned int sdhi1_data4_pins[] = {
++	/* D[0:3] */
++	289, 290, 291, 292,
++};
++static const unsigned int sdhi1_data4_mux[] = {
++	SDHID1_0_MARK, SDHID1_1_MARK, SDHID1_2_MARK, SDHID1_3_MARK,
++};
++static const unsigned int sdhi1_ctrl_pins[] = {
++	/* CLK, CMD */
++	293, 294,
++};
++static const unsigned int sdhi1_ctrl_mux[] = {
++	SDHICLK1_MARK, SDHICMD1_MARK,
++};
++/* - SDHI2 ------------------------------------------------------------------ */
++static const unsigned int sdhi2_data1_pins[] = {
++	/* D0 */
++	295,
++};
++static const unsigned int sdhi2_data1_mux[] = {
++	SDHID2_0_MARK,
++};
++static const unsigned int sdhi2_data4_pins[] = {
++	/* D[0:3] */
++	295, 296, 297, 298,
++};
++static const unsigned int sdhi2_data4_mux[] = {
++	SDHID2_0_MARK, SDHID2_1_MARK, SDHID2_2_MARK, SDHID2_3_MARK,
++};
++static const unsigned int sdhi2_ctrl_pins[] = {
++	/* CLK, CMD */
++	299, 300,
++};
++static const unsigned int sdhi2_ctrl_mux[] = {
++	SDHICLK2_MARK, SDHICMD2_MARK,
++};
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(irqc_irq0),
+@@ -1743,6 +1883,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(irqc_irq55),
+ 	SH_PFC_PIN_GROUP(irqc_irq56),
+ 	SH_PFC_PIN_GROUP(irqc_irq57),
++	SH_PFC_PIN_GROUP(mmc0_data1),
++	SH_PFC_PIN_GROUP(mmc0_data4),
++	SH_PFC_PIN_GROUP(mmc0_data8),
++	SH_PFC_PIN_GROUP(mmc0_ctrl),
++	SH_PFC_PIN_GROUP(mmc1_data1),
++	SH_PFC_PIN_GROUP(mmc1_data4),
++	SH_PFC_PIN_GROUP(mmc1_data8),
++	SH_PFC_PIN_GROUP(mmc1_ctrl),
+ 	SH_PFC_PIN_GROUP(scifa0_data),
+ 	SH_PFC_PIN_GROUP(scifa0_clk),
+ 	SH_PFC_PIN_GROUP(scifa0_ctrl),
+@@ -1770,6 +1918,17 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scifb3_data_b),
+ 	SH_PFC_PIN_GROUP(scifb3_clk_b),
+ 	SH_PFC_PIN_GROUP(scifb3_ctrl_b),
++	SH_PFC_PIN_GROUP(sdhi0_data1),
++	SH_PFC_PIN_GROUP(sdhi0_data4),
++	SH_PFC_PIN_GROUP(sdhi0_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_cd),
++	SH_PFC_PIN_GROUP(sdhi0_wp),
++	SH_PFC_PIN_GROUP(sdhi1_data1),
++	SH_PFC_PIN_GROUP(sdhi1_data4),
++	SH_PFC_PIN_GROUP(sdhi1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi2_data1),
++	SH_PFC_PIN_GROUP(sdhi2_data4),
++	SH_PFC_PIN_GROUP(sdhi2_ctrl),
+ };
+ 
+ static const char * const irqc_groups[] = {
+@@ -1833,6 +1992,20 @@ static const char * const irqc_groups[] = {
+ 	"irqc_irq57",
+ };
+ 
++static const char * const mmc0_groups[] = {
++	"mmc0_data1",
++	"mmc0_data4",
++	"mmc0_data8",
++	"mmc0_ctrl",
++};
++
++static const char * const mmc1_groups[] = {
++	"mmc1_data1",
++	"mmc1_data4",
++	"mmc1_data8",
++	"mmc1_ctrl",
++};
++
+ static const char * const scifa0_groups[] = {
+ 	"scifa0_data",
+ 	"scifa0_clk",
+@@ -1878,14 +2051,39 @@ static const char * const scifb3_groups[] = {
+ 	"scifb3_ctrl_b",
+ };
+ 
++static const char * const sdhi0_groups[] = {
++	"sdhi0_data1",
++	"sdhi0_data4",
++	"sdhi0_ctrl",
++	"sdhi0_cd",
++	"sdhi0_wp",
++};
++
++static const char * const sdhi1_groups[] = {
++	"sdhi1_data1",
++	"sdhi1_data4",
++	"sdhi1_ctrl",
++};
++
++static const char * const sdhi2_groups[] = {
++	"sdhi2_data1",
++	"sdhi2_data4",
++	"sdhi2_ctrl",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(irqc),
++	SH_PFC_FUNCTION(mmc0),
++	SH_PFC_FUNCTION(mmc1),
+ 	SH_PFC_FUNCTION(scifa0),
+ 	SH_PFC_FUNCTION(scifa1),
+ 	SH_PFC_FUNCTION(scifb0),
+ 	SH_PFC_FUNCTION(scifb1),
+ 	SH_PFC_FUNCTION(scifb2),
+ 	SH_PFC_FUNCTION(scifb3),
++	SH_PFC_FUNCTION(sdhi0),
++	SH_PFC_FUNCTION(sdhi1),
++	SH_PFC_FUNCTION(sdhi2),
+ };
+ 
+ #undef PORTCR
+-- 
+1.7.2.5
 
-The attached patch
-"linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch"
-makes sure the uImage gets loaded at 0x48008000 which from the
-boot/compressed code is compatible with either AUTO_ZRELADDR=n or =y.
-
-I've used the following patches on top of renesas git
-renesas-next-20130620 to enable output together with DEBUG_LL=y and
-EARLY_PRINTK=y:
-
-linux-3.11-pre-arm-shmobile-kzm9g-putc-20130625b.patch
-linux-3.11-pre-arm-shmobile-kzm9g-debug-macro-20130625.patch
-linux-3.11-pre-arm-mem-add-printout-20130625.patch
-linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch
-
-With the patches applied I get this serial output:
-
-- - -
-
-Filename 'kzm9g/uImage'.
-Load address: 0x43000000
-Loading: #################################################################
-         ##########################
-done
-Bytes transferred = 1335151 (145f6f hex)
-## Booting kernel from Legacy Image at 43000000 ...
-   Image Name:   'Linux-3.10.0-rc2'
-   Image Type:   ARM Linux Kernel Image (uncompressed)
-   Data Size:    1335087 Bytes = 1.3 MiB
-   Load Address: 48008000
-   Entry Point:  48008000
-   Verifying Checksum ... OK
-   Loading Kernel Image ... OK
-OK
-
-Starting kernel ...
-
-Uncompressing Linux... done, booting the kernel.
-Booting Linux on physical CPU 0x0
-Linux version 3.10.0-rc2 (damm@w520) (gcc version 4.5.1 (Sourcery G++
-Lite 2010.09-50) ) #1 SMP Tue Jun 25 22:25:10 JST 2013
-CPU: ARMv7 Processor [412fc098] revision 8 (ARMv7), cr=10c5347d
-CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
-Machine: kzm9g, model: KZM-A9-GT
-Adding RAM at 41000000-5f7fffff.
-bootconsole [earlycon0] enabled
-debug: ignoring loglevel setting.
-Ignoring RAM at 41000000-5f7fffff (vmalloc region overlap).
-cma: CMA: failed to reserve 16 MiB
-Memory policy: ECC disabled, Data cache writealloc
-Kernel panic - not syncing: ERROR: Failed to allocate 0x1000 bytes below 0x0.
-
-- - -
-
-The fatal memory allocation most likely fails because all system
-memory is ignored, see "(vmalloc region overlap)" above. This seems to
-be the case regardless of HIGHMEM=y or =n.
-
-It is possible to work around this issue by changing the memory bank
-start address in the DTS:
-
---- 0001/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ work/arch/arm/boot/dts/sh73a0-kzm9g.dts     2013-06-25
-22:17:19.000000000 +0900
-@@ -19,8 +19,14 @@
-                bootargs = "console=tty0 console=ttySC4,115200
-root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
-        };
-
--       memory {
-+       memory@48000000 {
-                device_type = "memory";
--               reg = <0x41000000 0x1e800000>;
-+               reg = <0x48000000 0x10000000>;
-        };
-
-With the above hunk the kernel boots just fine. Unfortunately we
-cannot enable all memory which is kind of limiting. =)
-
-So my current conclusion is that it looks like the kernel doesn't like
-to have the memory start address not aligned to 128 MByte somehow..
-
-Cheers,
-
-/ magnus
-
---089e0158c57ae0bf8404dffaf43b
-Content-Type: application/octet-stream; 
-	name="linux-3.11-pre-arm-shmobile-kzm9g-putc-20130625b.patch"
-Content-Disposition: attachment; 
-	filename="linux-3.11-pre-arm-shmobile-kzm9g-putc-20130625b.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hid5rp480
-
-RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
-Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvYXJtL21hY2gtc2htb2Jp
-bGUvaW5jbHVkZS9tYWNoL3VuY29tcHJlc3MuaCB8ICAgIDIgKysKIDEgZmlsZSBjaGFuZ2VkLCAy
-IGluc2VydGlvbnMoKykKCi0tLSAwMDAxL2FyY2gvYXJtL21hY2gtc2htb2JpbGUvaW5jbHVkZS9t
-YWNoL3VuY29tcHJlc3MuaAorKysgd29yay9hcmNoL2FybS9tYWNoLXNobW9iaWxlL2luY2x1ZGUv
-bWFjaC91bmNvbXByZXNzLmgJMjAxMy0wNi0yNSAxODozMDowNC4wMDAwMDAwMDAgKzA5MDAKQEAg
-LTEsMTEgKzEsMTMgQEAKICNpZm5kZWYgX19BU01fTUFDSF9VTkNPTVBSRVNTX0gKICNkZWZpbmUg
-X19BU01fTUFDSF9VTkNPTVBSRVNTX0gKIAorI2RlZmluZSBTQ0lGX1REUiAgICAgICAoKih2b2xh
-dGlsZSB1bnNpZ25lZCBjaGFyICopMHhlNmM4MDAyMCkKIC8qCiAgKiBUaGlzIGRvZXMgbm90IGFw
-cGVuZCBhIG5ld2xpbmUKICAqLwogc3RhdGljIHZvaWQgcHV0YyhpbnQgYykKIHsKKyAgICAgICBT
-Q0lGX1REUiA9IGM7CiB9CiAKIHN0YXRpYyBpbmxpbmUgdm9pZCBmbHVzaCh2b2lkKQo=
---089e0158c57ae0bf8404dffaf43b
-Content-Type: application/octet-stream; 
-	name="linux-3.11-pre-arm-shmobile-kzm9g-debug-macro-20130625.patch"
-Content-Disposition: attachment; 
-	filename="linux-3.11-pre-arm-shmobile-kzm9g-debug-macro-20130625.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hid5sizf1
-
-RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
-Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvYXJtL21hY2gtc2htb2Jp
-bGUvaW5jbHVkZS9tYWNoL2RlYnVnLW1hY3JvLlMgfCAgIDQ1ICsrKysrKysrKysrKysrKysrKysr
-KwogMSBmaWxlIGNoYW5nZWQsIDQ1IGluc2VydGlvbnMoKykKCi0tLSAvZGV2L251bGwKKysrIHdv
-cmsvYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9pbmNsdWRlL21hY2gvZGVidWctbWFjcm8uUwkyMDEz
-LTA2LTI1IDIyOjExOjQwLjAwMDAwMDAwMCArMDkwMApAQCAtMCwwICsxLDQ1IEBACisvKgorICog
-YXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9pbmNsdWRlL21hY2gvZGVidWctbWFjcm8uUworICoKKyAq
-IERlYnVnZ2luZyBtYWNybyBpbmNsdWRlIGhlYWRlcgorICoKKyAqIENvcHlyaWdodCAoQykgMjAx
-Mi0yMDEzIFJlbmVzYXMgRWxlY3Ryb25pY3MgQ29ycG9yYXRpb24KKyAqIENvcHlyaWdodCAoQykg
-MTk5NC0xOTk5IFJ1c3NlbGwgS2luZworICoKKyAqIFRoaXMgcHJvZ3JhbSBpcyBmcmVlIHNvZnR3
-YXJlOyB5b3UgY2FuIHJlZGlzdHJpYnV0ZSBpdCBhbmQvb3IgbW9kaWZ5CisgKiBpdCB1bmRlciB0
-aGUgdGVybXMgb2YgdGhlIEdOVSBHZW5lcmFsIFB1YmxpYyBMaWNlbnNlIHZlcnNpb24gMiBhcwor
-ICogcHVibGlzaGVkIGJ5IHRoZSBGcmVlIFNvZnR3YXJlIEZvdW5kYXRpb24uCisgKi8KKworI2Rl
-ZmluZSBTU1IJMHgxNAorI2RlZmluZSBGVERSCTB4MjAKKworI2RlZmluZSBUREZFCSgxIDw8IDUp
-CisjZGVmaW5lIFRFTkQJKDEgPDwgNikKKworI2RlZmluZSBTQ0lGX1BIWVMJMHhlNmM4MDAwMAor
-I2RlZmluZSBTQ0lGX1ZJUlQJMHhlNmM4MDAwMAorCisJLm1hY3JvCWFkZHJ1YXJ0LCBycCwgcnYs
-IHRtcAorCWxkcglccnAsID1TQ0lGX1BIWVMKKwlsZHIJXHJ2LCA9U0NJRl9WSVJUCisJLmVuZG0K
-KworCS5tYWNybwl3YWl0dWFydCwgcmQsIHJ4CisxMDAxOglsZHJoCVxyZCwgW1xyeCwgI1NTUl0K
-Kwl0c3QJXHJkLCAjVERGRQorCWJlcQkxMDAxYgorCS5lbmRtCisKKwkubWFjcm8Jc2VuZHVhcnQs
-IHJkLCByeAorCXN0cmIJXHJkLCBbXHJ4LCAjRlREUl0KKwlsZHJoCVxyZCwgW1xyeCwgI1NTUl0K
-KwliaWMJXHJkLCBccmQsICNURU5ECisJc3RyaAlccmQsIFtccngsICNTU1JdCisJLmVuZG0KKwor
-CS5tYWNybwlidXN5dWFydCwgcmQsIHJ4CisxMDAxOglsZHJoCVxyZCwgW1xyeCwgI1NTUl0KKwl0
-c3QJXHJkLCAjVEVORAorCWJlcQkxMDAxYgorCS5lbmRtCg==
---089e0158c57ae0bf8404dffaf43b
-Content-Type: application/octet-stream; 
-	name="linux-3.11-pre-arm-mem-add-printout-20130625.patch"
-Content-Disposition: attachment; 
-	filename="linux-3.11-pre-arm-mem-add-printout-20130625.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hid5tcr02
-
-RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
-Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvYXJtL2tlcm5lbC9zZXR1
-cC5jIHwgICAgNCArKysrCiAxIGZpbGUgY2hhbmdlZCwgNCBpbnNlcnRpb25zKCspCgotLS0gMDAw
-MS9hcmNoL2FybS9rZXJuZWwvc2V0dXAuYworKysgd29yay9hcmNoL2FybS9rZXJuZWwvc2V0dXAu
-YwkyMDEzLTA2LTI1IDIyOjIwOjQ2LjAwMDAwMDAwMCArMDkwMApAQCAtNTMxLDYgKzUzMSwxMCBA
-QCBpbnQgX19pbml0IGFybV9hZGRfbWVtb3J5KHBoeXNfYWRkcl90IHN0CiB7CiAJc3RydWN0IG1l
-bWJhbmsgKmJhbmsgPSAmbWVtaW5mby5iYW5rW21lbWluZm8ubnJfYmFua3NdOwogCisJcHJpbnRr
-KEtFUk5fTk9USUNFICJBZGRpbmcgUkFNIGF0ICUuOGxseC0lLjhsbHguXG4iLAorCQkgICAgICAg
-KHVuc2lnbmVkIGxvbmcgbG9uZylzdGFydCwKKwkJICAgICAgICh1bnNpZ25lZCBsb25nIGxvbmcp
-c3RhcnQgKyBzaXplIC0gMSk7CisKIAlpZiAobWVtaW5mby5ucl9iYW5rcyA+PSBOUl9CQU5LUykg
-ewogCQlwcmludGsoS0VSTl9DUklUICJOUl9CQU5LUyB0b28gbG93LCAiCiAJCQkiaWdub3Jpbmcg
-bWVtb3J5IGF0IDB4JTA4bGx4XG4iLCAobG9uZyBsb25nKXN0YXJ0KTsK
---089e0158c57ae0bf8404dffaf43b
-Content-Type: application/octet-stream; 
-	name="linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch"
-Content-Disposition: attachment; 
-	filename="linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hid5tmc33
-
-RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
-Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvYXJtL21hY2gtc2htb2Jp
-bGUvTWFrZWZpbGUuYm9vdCB8ICAgIDIgKy0KIDEgZmlsZSBjaGFuZ2VkLCAxIGluc2VydGlvbigr
-KSwgMSBkZWxldGlvbigtKQoKLS0tIDAwMDEvYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9NYWtlZmls
-ZS5ib290CisrKyB3b3JrL2FyY2gvYXJtL21hY2gtc2htb2JpbGUvTWFrZWZpbGUuYm9vdAkyMDEz
-LTA2LTI1IDIyOjMwOjM0LjAwMDAwMDAwMCArMDkwMApAQCAtNyw3ICs3LDcgQEAgbG9hZGFkZHIt
-JChDT05GSUdfTUFDSF9BUk1BRElMTE84MDBFVkFfUgogbG9hZGFkZHItJChDT05GSUdfTUFDSF9C
-T0NLVykgKz0gMHg2MDAwODAwMAogbG9hZGFkZHItJChDT05GSUdfTUFDSF9LT1RBMikgKz0gMHg0
-MTAwODAwMAogbG9hZGFkZHItJChDT05GSUdfTUFDSF9LWk05RCkgKz0gMHg0MDAwODAwMAotbG9h
-ZGFkZHItJChDT05GSUdfTUFDSF9LWk05RykgKz0gMHg0MTAwODAwMAorbG9hZGFkZHItJChDT05G
-SUdfTUFDSF9LWk05RykgKz0gMHg0ODAwODAwMAogbG9hZGFkZHItJChDT05GSUdfTUFDSF9LWk05
-R19SRUZFUkVOQ0UpICs9IDB4NDEwMDgwMDAKIGxvYWRhZGRyLSQoQ09ORklHX01BQ0hfTEFHRVIp
-ICs9IDB4NDAwMDgwMDAKIGxvYWRhZGRyLSQoQ09ORklHX01BQ0hfTUFDS0VSRUwpICs9IDB4NDAw
-MDgwMDAK
---089e0158c57ae0bf8404dffaf43b--
