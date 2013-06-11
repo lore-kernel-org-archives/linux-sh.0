@@ -1,39 +1,74 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:15 +0000
-Subject: [PATCH 02/23] ARM: shmobile: r8a7740: Add interim sh-eth device name to clocks list
-Message-Id: <1370503716-31155-3-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 08:23:47 +0000
+Subject: [PATCH v10 20/21] imx074: support asynchronous probing
+Message-Id: <1370939028-8352-21-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Bastian Hecht <hechtb@gmail.com>
+Both synchronous and asynchronous imx074 subdevice probing is supported by
+this patch.
 
-When we use the ethernet device via DT setup, we need to add it
-to a lookup list until this is properly handled later in a DT-only
-fashion.
-
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/media/i2c/soc_camera/imx074.c |   20 +++++++++++++++++---
+ 1 files changed, 17 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index c0d39aa..5bd8da0 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -592,6 +592,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
-+	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+diff --git a/drivers/media/i2c/soc_camera/imx074.c b/drivers/media/i2c/soc_camera/imx074.c
+index a6a5060..84245e1 100644
+--- a/drivers/media/i2c/soc_camera/imx074.c
++++ b/drivers/media/i2c/soc_camera/imx074.c
+@@ -18,6 +18,7 @@
+ #include <linux/module.h>
  
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
- 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
+ #include <media/soc_camera.h>
++#include <media/v4l2-async.h>
+ #include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-chip-ident.h>
+@@ -456,13 +457,24 @@ static int imx074_probe(struct i2c_client *client,
+ 	priv->fmt	= &imx074_colour_fmts[0];
+ 
+ 	priv->clk = v4l2_clk_get(&client->dev, "mclk");
+-	if (IS_ERR(priv->clk))
+-		return PTR_ERR(priv->clk);
++	if (IS_ERR(priv->clk)) {
++		dev_info(&client->dev, "Error %ld getting clock\n", PTR_ERR(priv->clk));
++		return -EPROBE_DEFER;
++	}
++
++	ret = soc_camera_power_init(&client->dev, ssdd);
++	if (ret < 0)
++		goto epwrinit;
+ 
+ 	ret = imx074_video_probe(client);
+ 	if (ret < 0)
+-		v4l2_clk_put(priv->clk);
++		goto eprobe;
+ 
++	return v4l2_async_register_subdev(&priv->subdev);
++
++epwrinit:
++eprobe:
++	v4l2_clk_put(priv->clk);
+ 	return ret;
+ }
+ 
+@@ -471,7 +483,9 @@ static int imx074_remove(struct i2c_client *client)
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 	struct imx074 *priv = to_imx074(client);
+ 
++	v4l2_async_unregister_subdev(&priv->subdev);
+ 	v4l2_clk_put(priv->clk);
++
+ 	if (ssdd->free_bus)
+ 		ssdd->free_bus(ssdd);
+ 
 -- 
-1.8.2.1
+1.7.2.5
 
