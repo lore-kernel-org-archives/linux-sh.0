@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 Jun 2013 13:54:33 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 11 Jun 2013 21:50:28 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: uImage load address rework
-Message-Id: <Pine.LNX.4.64.1306111552480.9621@axis700.grange>
+Message-Id: <2051721.a0060yLKKU@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130610092857.19175.25629.sendpatchset@w520>
 In-Reply-To: <20130610092857.19175.25629.sendpatchset@w520>
@@ -10,10 +10,11 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus
+Hi Magnus,
 
-On Mon, 10 Jun 2013, Magnus Damm wrote:
+Thanks for the patch.
 
+On Monday 10 June 2013 18:28:57 Magnus Damm wrote:
 > From: Magnus Damm <damm@opensource.se>
 > 
 > This is V2 of the mach-shmobile uImage load address rework patch.
@@ -29,15 +30,13 @@ On Mon, 10 Jun 2013, Magnus Damm wrote:
 > Signed-off-by: Magnus Damm <damm@opensource.se>
 > Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 > Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+I've noticed today that KZM9G doesn't boot v3.10-rc2 with 
+CONFIG_AUTO_ZRELADDR=y. While not caused by this patch, that's something that 
+will need to be fixed to support multi-arch kernels. I'm not too familiar with 
+early boot code, would you be able to have a look at this ?
+
 > ---
-
-This patch seems to break compilation when none of CONFIG_MACH_* is set, 
-e.g. when trying to build a generic SoC kernel with only DT-based board 
-support, or am I missing something?
-
-Thanks
-Guennadi
-
 > 
 >  Changes since V1:
 >  - On popular request, merged patch 5 and 14 and all other.
@@ -48,8 +47,9 @@ Guennadi
 >  1 file changed, 18 insertions(+), 2 deletions(-)
 > 
 > --- 0001/arch/arm/mach-shmobile/Makefile.boot
-> +++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-10 16:15:22.000000000 +0900
-> @@ -1,6 +1,22 @@
+> +++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-10 
+16:15:22.000000000
+> +0900 @@ -1,6 +1,22 @@
 > -__ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
 > -		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
 > +# per-board load address for uImage
@@ -68,18 +68,14 @@ Guennadi
 > +loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
 > +loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
 > +loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
->  
+> 
 > +__ZRELADDR	:= $(sort $(loadaddr-y))
 >     zreladdr-y   += $(__ZRELADDR)
->  
->  # Unsupported legacy stuff
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
+>  # Unsupported legacy stuff
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+-- 
+Regards,
+
+Laurent Pinchart
+
