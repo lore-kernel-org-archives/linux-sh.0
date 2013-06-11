@@ -1,40 +1,24 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Jun 2013 19:54:01 +0000
-Subject: [PATCH] sh_eth: fix result of sh_eth_check_reset() on timeout
-Message-Id: <201306052354.02265.sergei.shtylyov@cogentembedded.com>
+From: David Miller <davem@davemloft.net>
+Date: Tue, 11 Jun 2013 09:29:03 +0000
+Subject: Re: [PATCH] sh_eth: fix result of sh_eth_check_reset() on timeout
+Message-Id: <20130611.022903.247033946592424291.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201306052354.02265.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306052354.02265.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-When  the first loop in sh_eth_check_reset() runs to its end, 'cnt' is 0, so the
-following check for 'cnt < 0' fails to catch the timeout.  Fix the  condition in
-this check, so that the timeout  is actually reported.
-While at it, fix the grammar in the failure message...
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 5 Jun 2013 23:54:01 +0400
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> When  the first loop in sh_eth_check_reset() runs to its end, 'cnt' is 0, so the
+> following check for 'cnt < 0' fails to catch the timeout.  Fix the  condition in
+> this check, so that the timeout  is actually reported.
+> While at it, fix the grammar in the failure message...
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
----
-The patch is against the David Miller's 'net.git' repo.
-Dave, since this is fixing the failure case, I don't think it's needed in
--stable...
-
- drivers/net/ethernet/renesas/sh_eth.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-Index: net/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net/drivers/net/ethernet/renesas/sh_eth.c
-@@ -897,8 +897,8 @@ static int sh_eth_check_reset(struct net
- 		mdelay(1);
- 		cnt--;
- 	}
--	if (cnt < 0) {
--		pr_err("Device reset fail\n");
-+	if (cnt <= 0) {
-+		pr_err("Device reset failed\n");
- 		ret = -ETIMEDOUT;
- 	}
- 	return ret;
+Applied.
