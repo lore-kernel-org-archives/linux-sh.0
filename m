@@ -1,33 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 07:08:12 +0000
-Subject: [PATCH 14/15] ARM: shmobile: Armadillo800EVA reference uImage rework
-Message-Id: <20130605070812.13311.58716.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:44 +0000
+Subject: [PATCH v5 15/22] ARM: shmobile: armadillo-reference: Add st1232 pin mappings
+Message-Id: <1370989371-30846-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605070616.13311.69049.sendpatchset@w520>
-In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Add pin mappings for the st1232 device to the device tree and reference
+them as the default state for the device.
 
-Add uImage load address to Makefile.boot for the recently
-added Armadillo800EVA DT Reference code
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
- arch/arm/mach-shmobile/Makefile.boot |    1 +
- 1 file changed, 1 insertion(+)
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 4a7ae32..a6c6606 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -41,6 +41,8 @@
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
++		pinctrl-0 = <&st1232_pins>;
++		pinctrl-names = "default";
+ 	};
+ };
+ 
+@@ -52,4 +54,9 @@
+ 		renesas,groups = "scifa1_data";
+ 		renesas,function = "scifa1";
+ 	};
++
++	st1232_pins: st1232 {
++		renesas,groups = "intc_irq10";
++		renesas,function = "intc";
++	};
+ };
+-- 
+1.8.1.5
 
---- 0015/arch/arm/mach-shmobile/Makefile.boot
-+++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-05 15:59:33.000000000 +0900
-@@ -4,6 +4,7 @@ loadaddr-$(CONFIG_MACH_AG5EVM) += 0x4000
- loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
- loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
-+loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
- loadaddr-$(CONFIG_MACH_KOTA2) += 0x41008000
