@@ -1,41 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 04:32:30 +0000
-Subject: [PATCH 3/4] irqchip: renesas-irqc: Fix irqc_probe error handling
-Message-Id: <1370406751-3852-4-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Jun 2013 22:22:45 +0000
+Subject: [PATCH v5 16/22] ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
+Message-Id: <1370989371-30846-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Axel Lin <axel.lin@ingics.com>
+Reference the st1232 reset GPIO from the device tree and remove it from
+board code.
 
-The code in goto err3 path is wrong because it will call fee_irq() with k = 0,
-which means it does free_irq(p->irq[-1].requested_irq, &p->irq[-1]);
-
-Signed-off-by: Axel Lin <axel.lin@ingics.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/irqchip/irq-renesas-irqc.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 7 -------
+ 2 files changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-index 649cd69..3651f77 100644
---- a/drivers/irqchip/irq-renesas-irqc.c
-+++ b/drivers/irqchip/irq-renesas-irqc.c
-@@ -252,8 +252,8 @@ static int irqc_probe(struct platform_device *pdev)
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index a6c6606..8ec4cd1 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -10,6 +10,7 @@
  
- 	return 0;
- err3:
--	for (; k >= 0; k--)
--		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
-+	while (--k >= 0)
-+		free_irq(p->irq[k].requested_irq, &p->irq[k]);
+ /dts-v1/;
+ /include/ "r8a7740.dtsi"
++#include <dt-bindings/gpio/gpio.h>
  
- 	irq_domain_remove(p->irq_domain);
- err2:
+ / {
+ 	model = "armadillo 800 eva reference";
+@@ -43,6 +44,7 @@
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
+ 		pinctrl-0 = <&st1232_pins>;
+ 		pinctrl-names = "default";
++		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+ 	};
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 4ddd299..002d8d3 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -158,7 +158,6 @@ clock_error:
+  */
+ static void __init eva_init(void)
+ {
+-
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
+ 
+@@ -171,12 +170,6 @@ static void __init eva_init(void)
+ 
+ 	r8a7740_add_standard_devices_dt();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+-
+ 	r8a7740_pm_init();
+ }
+ 
 -- 
-1.8.2.1
+1.8.1.5
 
