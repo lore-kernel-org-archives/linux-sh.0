@@ -1,94 +1,89 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Jun 2013 21:15:27 +0000
-Subject: [PATCH v4 5/8] sh_eth: add IRQ flags to 'struct sh_eth_cpu_data'
-Message-Id: <201306060115.27643.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 11 Jun 2013 08:23:32 +0000
+Subject: [PATCH v10 05/21] atmel-isi: move interface activation and deactivation to clock callbacks
+Message-Id: <1370939028-8352-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
+References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+When adding and removing a client, the atmel-isi camera host driver only
+activates and deactivates its camera interface respectively, which doesn't
+include any client-specific actions. Move this functionality into
+.clock_start() and .clock_stop() callbacks.
 
-The driver supports some SH and SH-Mobile SOCs. There are SOCs with two or more
-Ethernet devices, for these we need to pass IRQF_SHARED to request_irq().  Add
-the 'irq_flags' field to the 'struct sh_eth_cpu_data' instead of #ifdef'fery.
-
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-[Sergei: properly aligned request_irq() call continuation line, reworded the
-changelog, reworded the subject, changing the prefix.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Changes in version 4:
-- resolved reject;
-- properly aligned request_irq() call continuation line;
-- reworded the changelog;
-- reworded the subject, changing the prefix.
+ drivers/media/platform/soc_camera/atmel-isi.c |   28 +++++++++++++++++--------
+ 1 files changed, 19 insertions(+), 9 deletions(-)
 
-Changes in version 3:
-- remove 'irq_flags' from 'struct sh_eth_private';
-- fix indentation.
-
- drivers/net/ethernet/renesas/sh_eth.c |   13 +++++--------
- drivers/net/ethernet/renesas/sh_eth.h |    1 +
- 2 files changed, 6 insertions(+), 8 deletions(-)
-
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -462,6 +462,7 @@ static struct sh_eth_cpu_data sh_eth_my_
- 			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
- 	.tx_error_check	= EESR_TWB | EESR_TABT | EESR_TDE | EESR_TFE,
+diff --git a/drivers/media/platform/soc_camera/atmel-isi.c b/drivers/media/platform/soc_camera/atmel-isi.c
+index c9e080a..1044856 100644
+--- a/drivers/media/platform/soc_camera/atmel-isi.c
++++ b/drivers/media/platform/soc_camera/atmel-isi.c
+@@ -745,10 +745,23 @@ static int isi_camera_get_formats(struct soc_camera_device *icd,
+ 	return formats;
+ }
  
-+	.irq_flags	= IRQF_SHARED,
- 	.apr		= 1,
- 	.mpr		= 1,
- 	.tpauser	= 1,
-@@ -570,6 +571,7 @@ static struct sh_eth_cpu_data sh_eth_my_
- 	.fdr_value	= 0x0000072f,
- 	.rmcr_value	= 0x00000001,
+-/* Called with .host_lock held */
+ static int isi_camera_add_device(struct soc_camera_device *icd)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
++	dev_dbg(icd->parent, "Atmel ISI Camera driver attached to camera %d\n",
++		 icd->devnum);
++
++	return 0;
++}
++
++static void isi_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_dbg(icd->parent, "Atmel ISI Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
++/* Called with .host_lock held */
++static int isi_camera_clock_start(struct soc_camera_host *ici)
++{
+ 	struct atmel_isi *isi = ici->priv;
+ 	int ret;
  
-+	.irq_flags	= IRQF_SHARED,
- 	.apr		= 1,
- 	.mpr		= 1,
- 	.tpauser	= 1,
-@@ -650,6 +652,8 @@ static struct sh_eth_cpu_data sh_eth_my_
- #if defined(CONFIG_CPU_SUBTYPE_SH7734)
- 	.hw_crc     = 1,
- 	.select_mii = 1,
-+#else
-+	.irq_flags	= IRQF_SHARED,
- #endif
- };
- 
-@@ -1908,14 +1912,7 @@ static int sh_eth_open(struct net_device
- 	pm_runtime_get_sync(&mdp->pdev->dev);
- 
- 	ret = request_irq(ndev->irq, sh_eth_interrupt,
--#if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
--	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
--	defined(CONFIG_CPU_SUBTYPE_SH7757)
--				IRQF_SHARED,
--#else
--				0,
--#endif
--				ndev->name, ndev);
-+			  mdp->cd->irq_flags, ndev->name, ndev);
- 	if (ret) {
- 		dev_err(&ndev->dev, "Can not assign IRQ number\n");
+@@ -762,21 +775,16 @@ static int isi_camera_add_device(struct soc_camera_device *icd)
  		return ret;
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.h
-@@ -463,6 +463,7 @@ struct sh_eth_cpu_data {
- 	unsigned long tx_error_check;
+ 	}
  
- 	/* hardware features */
-+	unsigned long irq_flags;	/* IRQ configuration flags */
- 	unsigned no_psr:1;		/* EtherC DO NOT have PSR */
- 	unsigned apr:1;			/* EtherC have APR */
- 	unsigned mpr:1;			/* EtherC have MPR */
+-	dev_dbg(icd->parent, "Atmel ISI Camera driver attached to camera %d\n",
+-		 icd->devnum);
+ 	return 0;
+ }
++
+ /* Called with .host_lock held */
+-static void isi_camera_remove_device(struct soc_camera_device *icd)
++static void isi_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct atmel_isi *isi = ici->priv;
+ 
+ 	clk_disable(isi->mck);
+ 	clk_disable(isi->pclk);
+-
+-	dev_dbg(icd->parent, "Atmel ISI Camera driver detached from camera %d\n",
+-		 icd->devnum);
+ }
+ 
+ static unsigned int isi_camera_poll(struct file *file, poll_table *pt)
+@@ -880,6 +888,8 @@ static struct soc_camera_host_ops isi_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= isi_camera_add_device,
+ 	.remove		= isi_camera_remove_device,
++	.clock_start	= isi_camera_clock_start,
++	.clock_stop	= isi_camera_clock_stop,
+ 	.set_fmt	= isi_camera_set_fmt,
+ 	.try_fmt	= isi_camera_try_fmt,
+ 	.get_formats	= isi_camera_get_formats,
+-- 
+1.7.2.5
+
