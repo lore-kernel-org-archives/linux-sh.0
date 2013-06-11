@@ -1,7 +1,7 @@
-From: Dave Martin <dave.martin@linaro.org>
-Date: Mon, 10 Jun 2013 11:26:58 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 11 Jun 2013 07:48:11 +0000
 Subject: Re: [PATCH] ARM: zImage/virt: remove hyp-stub.S during distclean
-Message-Id: <20130610112658.GA2653@linaro.org>
+Message-Id: <20130611074810.GC10440@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130610060325.2335.65815.sendpatchset@w520>
 In-Reply-To: <20130610060325.2335.65815.sendpatchset@w520>
@@ -20,9 +20,7 @@ On Mon, Jun 10, 2013 at 03:03:25PM +0900, Magnus Damm wrote:
 > 
 > Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Thanks for spotting this.  Your fix looks sensible to me.
-
-Acked-by: Dave Martin <dave.martin@linaro.org>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 
 > ---
 > 
@@ -41,3 +39,8 @@ Acked-by: Dave Martin <dave.martin@linaro.org>
 >  
 >  ifeq ($(CONFIG_FUNCTION_TRACER),y)
 >  ORIG_CFLAGS := $(KBUILD_CFLAGS)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
