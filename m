@@ -1,69 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 27 Jun 2013 07:16:52 +0000
-Subject: Re: [PATCH 1/4] ARM: shmobile: r8a73a4: safeguard against wrong clk_set_rate() uses
-Message-Id: <20130627071652.GC25014@verge.net.au>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 12 Jun 2013 01:33:47 +0000
+Subject: [PATCH net-next] net: sh_eth: fix incorrect RX length error if R8A7740
+Message-Id: <51B7CFFB.7090801@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
- <1371798638-10530-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371798638-10530-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Fri, Jun 21, 2013 at 09:10:35AM +0200, Guennadi Liakhovetski wrote:
-> clk_set_rate() should only be called with exact rates, returned by
-> clk_round_rate(). However, it is still good to verify, that the value,
-> passed to clock's .set_rate() method is at least valid. This patch adds
-> such a check for the Z-clock on r8a73a4.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+This patch fixes an issue that the driver increments the "RX length error"
+on every buffer in sh_eth_rx() if the R8A7740.
+This patch also adds a description about the Receive Frame Status bits.
 
-Thanks, I have queued this up for v3.12 in the soc branch.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ This patch is based on the latest net-next.git.
 
-> ---
->  arch/arm/mach-shmobile/clock-r8a73a4.c |   14 +++++++++++++-
->  1 files changed, 13 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-> index eb42740..cbf9852 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-> @@ -225,16 +225,28 @@ static int zclk_set_rate(struct clk *clk, unsigned long rate)
->  		goto done;
->  	}
->  
-> -	frqcrc = clk->mapped_reg + (FRQCRC - (u32)clk->enable_reg);
-> +	/*
-> +	 * Users are supposed to first call clk_set_rate() only with
-> +	 * clk_round_rate() results. So, we don't fix wrong rates here, but
-> +	 * guard against them anyway
-> +	 */
->  
->  	p_rate = clk_get_rate(clk->parent);
->  	if (rate = p_rate) {
->  		val = 0;
->  	} else {
->  		step = DIV_ROUND_CLOSEST(p_rate, 32);
-> +
-> +		if (rate > p_rate || rate < step) {
-> +			ret = -EINVAL;
-> +			goto done;
-> +		}
-> +
->  		val = 32 - rate / step;
->  	}
->  
-> +	frqcrc = clk->mapped_reg + (FRQCRC - (u32)clk->enable_reg);
-> +
->  	iowrite32((ioread32(frqcrc) & ~(clk->div_mask << clk->enable_bit)) |
->  		  (val << clk->enable_bit), frqcrc);
->  
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ drivers/net/ethernet/renesas/sh_eth.c |   15 +++++++++++----
+ 1 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 43d8490..ab2f9c2 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1260,16 +1260,23 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status)
+ 		desc_status = edmac_to_cpu(mdp, rxdesc->status);
+ 		pkt_len = rxdesc->frame_length;
+
+-#if defined(CONFIG_ARCH_R8A7740)
+-		desc_status >>= 16;
+-#endif
+-
+ 		if (--boguscnt < 0)
+ 			break;
+
+ 		if (!(desc_status & RDFEND))
+ 			ndev->stats.rx_length_errors++;
+
++#if defined(CONFIG_ARCH_R8A7740)
++		/*
++		 * In case of almost GETHER/ETHERs, the Receive Frame State
++		 * (RFS) bits in the Receive Descriptor 0 are from bit 9 to
++		 * bit 0. However, in case of the R8A7740's GETHER, the RFS
++		 * bits are from bit 25 to bit 16. So, the driver needs right
++		 * shifting by 16.
++		 */
++		desc_status >>= 16;
++#endif
++
+ 		if (desc_status & (RD_RFS1 | RD_RFS2 | RD_RFS3 | RD_RFS4 |
+ 				   RD_RFS5 | RD_RFS6 | RD_RFS10)) {
+ 			ndev->stats.rx_errors++;
+-- 
+1.7.1
