@@ -1,45 +1,48 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 11 Jun 2013 19:49:40 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Jun 2013 01:49:20 +0000
 Subject: Re: [PATCH v2 1/2] ARM: shmobile: r8a7778: fix Ether device name
-Message-Id: <51B77F54.8030001@cogentembedded.com>
+Message-Id: <20130612014920.GC32725@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201306090123.24709.sergei.shtylyov@cogentembedded.com>
  <20130611074850.GE10440@verge.net.au>
-In-Reply-To: <20130611074850.GE10440@verge.net.au>
+ <51B77F54.8030001@cogentembedded.com>
+In-Reply-To: <51B77F54.8030001@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Tue, Jun 11, 2013 at 11:49:40PM +0400, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 06/11/2013 11:48 AM, Simon Horman wrote:
+> 
+> >>While recasting commit 524219146a89aee5366326c225ccd71231419d89 (ARM: shmobile:
+> >>R8A7778: add Ether support), I made a typo in the platform device's name: used
+> >>underscore instead of hyphen.
+> 
+> >>However, there's now patch merged to net-next.git renaming the platform device
+> >>from "sh-eth" to "r8a777x-ehter", so it makes the most sense to change the name
+> >>straight to that one.
+> 
+> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> >>---
+> >>The patch is atop of the 'renesas-next-20130607' tag of the 'renesas.git' tree
+> >>and the USB patches I have submitted earlier.
+> 
+> >>Changes in version 2:
+> >>- changed the platform device's name as in the patch merged to 'net-next.git';
+> >>- lowercased the SoC name in the subject.
+> 
+> >Thanks, I have queued this up in the soc2 branch.
+> >My current plan is to let that branch sit in next for a few
+> >days and then send a pull-request for it to be included in v3.11.
+> 
+>     Could you then merge the BOCK-W Ether support too? The patch
+> currently has some offsets applying to 'renesas-next-20130611v2',
+> should I respin it?
 
-On 06/11/2013 11:48 AM, Simon Horman wrote:
-
->> While recasting commit 524219146a89aee5366326c225ccd71231419d89 (ARM: shmobile:
->> R8A7778: add Ether support), I made a typo in the platform device's name: used
->> underscore instead of hyphen.
-
->> However, there's now patch merged to net-next.git renaming the platform device
->> from "sh-eth" to "r8a777x-ehter", so it makes the most sense to change the name
->> straight to that one.
-
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> ---
->> The patch is atop of the 'renesas-next-20130607' tag of the 'renesas.git' tree
->> and the USB patches I have submitted earlier.
-
->> Changes in version 2:
->> - changed the platform device's name as in the patch merged to 'net-next.git';
->> - lowercased the SoC name in the subject.
-
-> Thanks, I have queued this up in the soc2 branch.
-> My current plan is to let that branch sit in next for a few
-> days and then send a pull-request for it to be included in v3.11.
-
-     Could you then merge the BOCK-W Ether support too? The patch 
-currently has some offsets applying to 'renesas-next-20130611v2', should 
-I respin it?
-
-WBR, Sergei
-
+I think I should be able to take it as-is.
+And I should be able to do so today or tomorrow.
+I'll let you know if I need a re-spin after all.
