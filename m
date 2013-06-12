@@ -1,77 +1,139 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:22:06 +0000
-Subject: [PATCH 08/11] ARM: shmobile: lager: support GPIO switches
-Message-Id: <1370593329-27559-9-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 12 Jun 2013 03:57:25 +0000
+Subject: Re: [PATCH/RFC, 1/2] ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
+Message-Id: <1952639.MK97zDYUni@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The lager board has pins 1 - 4 of SW2 wired up to GPIO pins.
-This patch allows access to those pins as KEYS 1 - 4 using
-gpio-keys.
+Hi Guennadi,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-lager.c | 24 +++++++++++++++++++++++-
- 1 file changed, 23 insertions(+), 1 deletion(-)
+On Friday 22 March 2013 13:24:25 Guennadi Liakhovetski wrote:
+> On r-/sh-mobile SoCs MSTP clocks are used by the runtime PM to dynamically
+> enable and disable peripheral clocks. To make sure the clock has really
+> started we have to read back its status register until it confirms success.
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 6a1ba38..d73e21d 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -18,6 +18,9 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/gpio.h>
-+#include <linux/gpio_keys.h>
-+#include <linux/input.h>
- #include <linux/interrupt.h>
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
-@@ -47,11 +50,27 @@ static struct gpio_led lager_leds[] = {
- 	},
- };
- 
--static struct gpio_led_platform_data lager_leds_pdata = {
-+static __initdata struct gpio_led_platform_data lager_leds_pdata = {
- 	.leds		= lager_leds,
- 	.num_leds	= ARRAY_SIZE(lager_leds),
- };
- 
-+/* GPIO KEY */
-+#define GPIO_KEY(c, g, d, ...) \
-+	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
-+
-+static __initdata struct gpio_keys_button gpio_buttons[] = {
-+	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
-+	GPIO_KEY(KEY_3,		RCAR_GP_PIN(1, 26),	"SW2-pin3"),
-+	GPIO_KEY(KEY_2,		RCAR_GP_PIN(1, 24),	"SW2-pin2"),
-+	GPIO_KEY(KEY_1,		RCAR_GP_PIN(1, 14),	"SW2-pin1"),
-+};
-+
-+static __initdata struct gpio_keys_platform_data lager_keys_pdata = {
-+	.buttons	= gpio_buttons,
-+	.nbuttons	= ARRAY_SIZE(gpio_buttons),
-+};
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
-@@ -73,6 +92,9 @@ static void __init lager_add_standard_devices(void)
- 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
- 				      &lager_leds_pdata,
- 				      sizeof(lager_leds_pdata));
-+	platform_device_register_data(&platform_bus, "gpio-keys", -1,
-+				      &lager_keys_pdata,
-+				      sizeof(lager_keys_pdata));
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
+For the record, this patch (along with corresponding changes in the SoC clock 
+code) fixed crashes with the VSP1 device on R8A7790.
+
+Please see below for a small comment.
+
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> 
+> ---
+> drivers/sh/clk/cpg.c   |   38 ++++++++++++++++++++++++++++++++++++++
+>  include/linux/sh_clk.h |   29 +++++++++++++++++------------
+>  2 files changed, 55 insertions(+), 12 deletions(-)
+> 
+> diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+> index 1ebe67c..7442bc1 100644
+> --- a/drivers/sh/clk/cpg.c
+> +++ b/drivers/sh/clk/cpg.c
+> @@ -36,9 +36,47 @@ static void sh_clk_write(int value, struct clk *clk)
+>  		iowrite32(value, clk->mapped_reg);
+>  }
+> 
+> +static unsigned int r8(const void __iomem *addr)
+> +{
+> +	return ioread8(addr);
+> +}
+> +
+> +static unsigned int r16(const void __iomem *addr)
+> +{
+> +	return ioread16(addr);
+> +}
+> +
+> +static unsigned int r32(const void __iomem *addr)
+> +{
+> +	return ioread32(addr);
+> +}
+> +
+>  static int sh_clk_mstp_enable(struct clk *clk)
+>  {
+>  	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
+> +	if (clk->status_reg) {
+> +		unsigned int (*read)(const void __iomem *addr);
+> +		int i;
+> +		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
+> +			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
+> +
+> +		if (clk->flags & CLK_ENABLE_REG_8BIT)
+> +			read = r8;
+> +		else if (clk->flags & CLK_ENABLE_REG_16BIT)
+> +			read = r16;
+> +		else
+> +			read = r32;
+> +
+> +		for (i = 1000;
+> +		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
+> +		     i--)
+> +			cpu_relax();
+> +		if (!i) {
+> +			pr_err("cpg: failed to enable %p[%d]\n",
+> +			       clk->enable_reg, clk->enable_bit);
+> +			return -ETIMEDOUT;
+> +		}
+> +	}
+>  	return 0;
+>  }
+> 
+> diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+> index 60c7239..e85bf79 100644
+> --- a/include/linux/sh_clk.h
+> +++ b/include/linux/sh_clk.h
+> @@ -52,6 +52,7 @@ struct clk {
+>  	unsigned long		flags;
+> 
+>  	void __iomem		*enable_reg;
+> +	void __iomem		*status_reg;
+>  	unsigned int		enable_bit;
+>  	void __iomem		*mapped_reg;
+> 
+> @@ -116,22 +117,26 @@ long clk_round_parent(struct clk *clk, unsigned long
+> target, unsigned long *best_freq, unsigned long *parent_freq,
+>  		      unsigned int div_min, unsigned int div_max);
+> 
+> -#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _flags)		\
+> -{									\
+> -	.parent		= _parent,					\
+> -	.enable_reg	= (void __iomem *)_enable_reg,			\
+> -	.enable_bit	= _enable_bit,					\
+> -	.flags		= _flags,					\
+> +#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _status_reg,
+> _flags)	\ +{										\
+> +	.parent		= _parent,						\
+> +	.enable_reg	= (void __iomem *)_enable_reg,				\
+> +	.enable_bit	= _enable_bit,						\
+> +	.status_reg	= _status_reg,						\
+
+Should you add (void __iomem *) here, as for the enable_reg field ?
+
+> +	.flags		= _flags,						\
+>  }
+> 
+> -#define SH_CLK_MSTP32(_p, _r, _b, _f)					\
+> -	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_32BIT)
+> +#define SH_CLK_MSTP32(_p, _r, _b, _f)				\
+> +	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_32BIT)
+> 
+> -#define SH_CLK_MSTP16(_p, _r, _b, _f)					\
+> -	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_16BIT)
+> +#define SH_CLK_MSTP32_STS(_p, _r, _b, _s, _f)			\
+> +	SH_CLK_MSTP(_p, _r, _b, _s, _f | CLK_ENABLE_REG_32BIT)
+> 
+> -#define SH_CLK_MSTP8(_p, _r, _b, _f)					\
+> -	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_8BIT)
+> +#define SH_CLK_MSTP16(_p, _r, _b, _f)				\
+> +	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_16BIT)
+> +
+> +#define SH_CLK_MSTP8(_p, _r, _b, _f)				\
+> +	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_8BIT)
+> 
+>  int sh_clk_mstp_register(struct clk *clks, int nr);
 -- 
-1.8.2.1
+Regards,
+
+Laurent Pinchart
 
