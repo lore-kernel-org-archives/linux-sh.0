@@ -1,39 +1,26 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 Jun 2013 09:20:06 +0000
-Subject: [PATCH 04/06] ARM: shmobile: sh73a0 SMP with SCU boot fn and args
-Message-Id: <20130610092006.18944.71343.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Jun 2013 14:09:52 +0000
+Subject: Re: [PATCH 04/06] ARM: shmobile: sh73a0 SMP with SCU boot fn and args
+Message-Id: <20130612140951.GU32751@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130610091925.18944.68117.sendpatchset@w520>
-In-Reply-To: <20130610091925.18944.68117.sendpatchset@w520>
+ <20130610092006.18944.71343.sendpatchset@w520>
+In-Reply-To: <20130610092006.18944.71343.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Mon, Jun 10, 2013 at 06:20:06PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Let sh73a0 make use of shmobile_boot_fn and shmobile_boot_arg
+> together with shmobile_boot_scu and the SCU base address.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/mach-shmobile/smp-sh73a0.c |    6 ++++--
+>  1 file changed, 4 insertions(+), 2 deletions(-)
 
-Let sh73a0 make use of shmobile_boot_fn and shmobile_boot_arg
-together with shmobile_boot_scu and the SCU base address.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/smp-sh73a0.c |    6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-06-05 14:59:24.000000000 +0900
-@@ -64,9 +64,11 @@ static void __init sh73a0_smp_prepare_cp
- {
- 	scu_enable(shmobile_scu_base);
- 
--	/* Map the reset vector (in headsmp-scu.S) */
-+	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
- 	__raw_writel(0, APARMBAREA);      /* 4k */
--	__raw_writel(__pa(shmobile_secondary_vector_scu), SBAR);
-+	__raw_writel(__pa(shmobile_boot_vector), SBAR);
-+	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
-+	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
- 
- 	/* enable cache coherency on booting CPU */
- 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+Thanks, I have queued this up for v3.11 in the (new) cleanup-boot branch.
