@@ -1,17 +1,17 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Wed, 12 Jun 2013 12:48:33 +0000
+From: James Hogan <james.hogan@imgtec.com>
+Date: Wed, 12 Jun 2013 14:36:59 +0000
 Subject: Re: [RFC] pinctrl: generic: Add DT bindings
-Message-Id: <20130612124833.A3ADB3E0A56@localhost>
+Message-Id: <51B8878B.5090705@imgtec.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370988237-30593-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1370988237-30593-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-kernel@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Linus Walleij <linus.walleij@linaro.org>, James Hogan <james.hogan@imgtec.com>, linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-kernel@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org
 
-On Wed, 12 Jun 2013 00:03:57 +0200, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com> wrote:
+On 11/06/13 23:03, Laurent Pinchart wrote:
 > Document DT properties for the generic pinctrl parameters and add a
 > parser function.
 > 
@@ -32,6 +32,10 @@ On Wed, 12 Jun 2013 00:03:57 +0200, Laurent Pinchart <laurent.pinchart+renesas@i
 > 
 > The code is based on both the sh-pfc pinconf DT parser and James Hogan's
 > tz1090 DT parser ("[PATCH v2 6/9] pinctrl-tz1090: add TZ1090 pinctrl driver").
+
+Thanks for this patch. I haven't tested it (yet), but have a few
+comments below.
+
 > 
 > diff --git a/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt b/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt
 > index c95ea82..e499ff0 100644
@@ -60,77 +64,54 @@ On Wed, 12 Jun 2013 00:03:57 +0200, Laurent Pinchart <laurent.pinchart+renesas@i
 > +  Valid values are
 > +    0: Schmitt trigger disabled (no hysteresis)
 > +    1: Schmitt trigger enabled
-> +
-> +- slew-rate: An integer controlling the pin slew rate. Values are device-
-> +  dependent.
-> +
-> +- drive-strength: An integer representing the drive strength of pins in mA.
-> +  Valid values are device-dependent.
-> +
-> +The pinctrl device DT bindings documentation must list the properties that
-> +apply to the device, and define the valid range for all device-dependent
-> +values.
 
-I don't see any problem with the above properties, but I would like to
-see an example. How verbose will a pinctrl node using the generic
-properties tend to be?
+this is set as a flag, so I think it should be described like tristate,
+"A boolean, ... when set."? Same for pull-up and pull-down (see comment
+below).
 
-> diff --git a/drivers/pinctrl/pinconf-generic.c b/drivers/pinctrl/pinconf-generic.c
-> index 2ad5a8d..bd0e41d 100644
-> --- a/drivers/pinctrl/pinconf-generic.c
-> +++ b/drivers/pinctrl/pinconf-generic.c
-> @@ -15,6 +15,7 @@
->  #include <linux/module.h>
->  #include <linux/init.h>
->  #include <linux/device.h>
-> +#include <linux/of.h>
->  #include <linux/slab.h>
->  #include <linux/debugfs.h>
->  #include <linux/seq_file.h>
-> @@ -135,3 +136,96 @@ void pinconf_generic_dump_config(struct pinctrl_dev *pctldev,
->  }
->  EXPORT_SYMBOL_GPL(pinconf_generic_dump_config);
->  #endif
-> +
-> +struct pinconf_generic_param {
-> +	const char *property;
-> +	enum pin_config_param param;
-> +	bool flag;
-> +};
-> +
-> +static const struct pinconf_generic_param pinconf_generic_params[] = {
-> +	{ "tristate",		PIN_CONFIG_BIAS_HIGH_IMPEDANCE,		true },
+<snip>
+
 > +	{ "pull-up",		PIN_CONFIG_BIAS_PULL_UP,		false },
 > +	{ "pull-down",		PIN_CONFIG_BIAS_PULL_DOWN,		false },
-> +	{ "schmitt",		PIN_CONFIG_INPUT_SCHMITT_ENABLE,	true },
-> +	{ "slew-rate",		PIN_CONFIG_SLEW_RATE,			false },
-> +	{ "drive-strength",	PIN_CONFIG_DRIVE_STRENGTH,		false },
-> +};
+
+pinconf-generic.h says "If the argument is != 0 pull-up is enabled, if
+it is 0, pull-up is disabled", so I think these should be flags unless
+it's changed there first.
+
+Any chance of adding the new "bus-hold" entry too
+(PIN_CONFIG_BIAS_BUS_HOLD, and flag=true I suppose)? see
+aa69352252a7a952e6e77734cb87135143a377d2 in LinuxW's pinctrl for-next
+branch.
+
+<snip>
+
+> +EXPORT_SYMBOL_GPL(pinconf_generic_parse_params);
+> diff --git a/drivers/pinctrl/pinconf.h b/drivers/pinctrl/pinconf.h
+> index 92c7267..eb8550b 100644
+> --- a/drivers/pinctrl/pinconf.h
+> +++ b/drivers/pinctrl/pinconf.h
+> @@ -90,6 +90,23 @@ static inline void pinconf_init_device_debugfs(struct dentry *devroot,
+>   * pin config.
+>   */
+>  
+> +#if defined(CONFIG_GENERIC_PINCONF)
 > +
-> +static int pinconf_generic_add_config(unsigned long **configs,
-> +				      unsigned int *num_configs,
-> +				      unsigned long config)
+> +int pinconf_generic_parse_params(struct device *dev, struct device_node *np,
+> +				 unsigned long **cfgs);
+> +
+> +#else
+> +
+> +static inline int pinconf_generic_parse_params(struct device *dev,
+> +					       struct device_node *np,
+> +					       unsigned long **cfgs)
 > +{
-> +	unsigned int count = *num_configs + 1;
-> +	unsigned long *cfgs;
-> +
-> +	cfgs = krealloc(*configs, sizeof(*cfgs) * count, GFP_KERNEL);
-> +	if (cfgs = NULL)
-> +		return -ENOMEM;
-> +
-> +	cfgs[count - 1] = config;
-> +
-> +	*configs = cfgs;
-> +	*num_configs = count;
-> +
+> +	*cfgs = NULL;
 > +	return 0;
 > +}
 
-Hmmm. We really need a better method of parsing multiple properties.
-I've been toying around with a few ideas, but haven't been able to draft
-something I'm happy with yeat.
+Should this ever be necessary? Sounds like if the driver wanted to use
+this it should already have selected GENERIC_PINCONF anyway.
 
-Regardless, the code in this patch looks fine to me.
-
-g.
+Cheers
+James
 
