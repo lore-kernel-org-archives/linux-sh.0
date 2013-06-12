@@ -1,43 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 26 Jun 2013 12:33:54 +0000
-Subject: Re: [PATCH 3/4] ARM: shmobile: r8a7790: don't use external clock for SCIFs
-Message-Id: <51CADFB2.8040800@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 12 Jun 2013 02:14:53 +0000
+Subject: [PATCH 1/3 v4] ARM: shmobile: bockw defconfig: add RTC RX8581 support
+Message-Id: <8761xk6pnq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372236787-23342-1-git-send-email-horms+renesas@verge.net.au>
- <1372236787-23342-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372236787-23342-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
 
-On 26-06-2013 12:53, Simon Horman wrote:
+ - based on renesas-next-20130611v2
 
-> From: Ulrich Hecht <ulrich.hecht@gmail.com>
+ arch/arm/configs/bockw_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
-> This is an external component and may or may not be there, while the
-> internal clock always works.
-
-> Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->   arch/arm/mach-shmobile/setup-r8a7790.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-> index 896d374..6531f3d 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-> @@ -64,7 +64,7 @@ void __init r8a7790_pinmux_init(void)
->   [index] = {						\
->   	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
->   	.scbrr_algo_id	= SCBRR_ALGO_2,			\
-> -	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-> +	.scscr = SCSCR_RE | SCSCR_TE,	\
-
-    Backslash should have been aligned with the others above...
-
-WBR, Sergei
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index d662608..cb7638d 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -86,6 +86,8 @@ CONFIG_USB_STORAGE=y
+ CONFIG_USB_RCAR_PHY=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_RX8581=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+-- 
+1.7.9.5
 
