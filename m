@@ -1,82 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 13:45:39 +0000
-Subject: [PATCH v3 0/5] Renesas TPU PWM support
-Message-Id: <1370958344-19470-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Thierry Reding <thierry.reding@gmail.com>
+Date: Wed, 12 Jun 2013 10:12:51 +0000
+Subject: Re: [PATCH v3 0/5] Renesas TPU PWM support
+Message-Id: <20130612101250.GB30841@mithrandir>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="UHN/qo2QbUvPLonB"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, linux-leds@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+References: <1370958344-19470-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1370958344-19470-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-leds@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-This is the third version of the Renesas TPU PWM unit support patches. The
-patch series deprecates and removes the leds-renesas-tpu driver in favor of a
-combination of leds-pwm and pwm-renesas-tpu. As an added bonus patch 4/5
-removes function GPIOs support from the sh73a0 platform. mach-shmobile is now
-free of function GPIOs. We still need volunteer(s) to migrate arch/sh.
 
-I believe I've addressed most comments received in response to v2, with the
-exception of channel allocation at .request() time for which I haven't received
-any answer to my questions. That will hopefully not be a showstopper.
+--UHN/qo2QbUvPLonB
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I've tested the code on Armadillo only as I don't have access to a kota2
-board. This is why I've added backlight support to Armadillo as part of this
-set.
+On Tue, Jun 11, 2013 at 03:45:39PM +0200, Laurent Pinchart wrote:
+[...]
+> I believe I've addressed most comments received in response to v2, with the
+> exception of channel allocation at .request() time for which I haven't received
+> any answer to my questions. That will hopefully not be a showstopper.
 
-The patches are based on Simon's renesas-next-20130611v2 tag. I've pushed them
-to
+I totally forgot to reply to that mail. Done now. Irrespective of my
+comments, I think that cleanup could also be done as a follow-up patch
+after 3.11.
 
-        git://linuxtv.org/pinchartl/fbdev.git pinmux/3.10/tpu
+Thierry
 
-Given the risk of conflicts on arch/arm/mach-shmobile it would probably be
-easier to merge the set through Simon's tree. Thierry, would you be fine with
-that ?
+P.S.: please not that I've switched email addresses and there's also a
+linux-pwm mailing list that you should Cc on PWM subsystem related
+patches. The info should have propagated to linux-next's MAINTAINERS.
 
-Changes since v2:
+--UHN/qo2QbUvPLonB
+Content-Type: application/pgp-signature
 
-- Dropped SH Mobile arch patches that have already been merged
-- Replaced active_low pdata field with pwm_polarity
-- Replaced TPU_PWM_ID with pwm_lookup's
-- Set the platform_driver .owner field
-- Replaced devm_ioremap_nocache() with devm_ioremap_resource()
-- Added a .set_polarity() implementation
-- Use kernel block comment style
-- Don't enable/disable the clock around clk_get_rate()
-- Removed duplicate sanity checks in the .config() operation
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.20 (GNU/Linux)
 
-Changes since v1:
+iQIcBAEBAgAGBQJRuEmhAAoJEN0jrNd/PrOhnykP/3VAaUoaKCEQ2XYcz0YYCCv6
+jLqz7U6DH4ooif/stJXrkyebRENz+or7zTRaLN7xPTcSCF9AjRCOJM/yITmTQPN0
+ArKYPB7U7IicXaUn8DZskpnpDOz4z69CFywbqQ2genpclZj0JZ8RKA0gJoI+3PsL
+XWP6AJ0sBR2qq4G1vsfG1/JGXVX0wNJB3xjrUKKTEa4mHlAeV8FO4C/Mx3m7l9L1
+oxqHVYXToTANDv6pBd9by4IGTZa08NfPRl7VKWeFmU6QrGI0F51EtKg8bVNXgYUH
+IyF3jBBO5t4DG5+dD1YUutAqGMPu5CD68hqpFE6ktowJeIiwddV6ismqUbt0Hxb4
+7exSOCm3LKwbU4zRNF1khemv4Xy/IUqqQPvDVLEx/iAss7DFmqvaeZyyl6puqU4R
+pfJUIe8LY3D3QhuXGXQp8X5rJmkaZFyN7uHup5DWBGXNfIf1ECnJXCHm8YAfdFiS
+BEFieoVmNyLlc1vkKP7T8HWBYTiW3d838z0nZ9hmR+XkMnqN2cXmVi+WnbGe2qa4
+KZjweJdMV3OraAMIUadONN4d8DPRYI63Kc1B2DvGkxEYF0CTo/E+jWlF3NpOL13S
+HmhwU5IhXkAjUmpR+pvKvcXgR9OjPagpLS9PGU1dtvC62chOUGbJ7MxPWf+hakxp
+9ZflTnigBwq9vh9VVZdj
+=MGUc
+-----END PGP SIGNATURE-----
 
-- Renamed the pwm-rmob driver to pwm-renesas-tpu, as TPU units are found in
-  Renesas SH-Mobile, R-Mobile and R-Car SoCs.
-- Added TPU clock and pin groups for r8a7790.
-
-Laurent Pinchart (5):
-  pwm: Add Renesas TPU PWM driver
-  ARM: mach-shmobile: armadillo800eva: Add backlight support
-  ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
-  ARM: shmobile: sh73a0: Remove all GPIOs
-  leds: Remove leds-renesas-tpu driver
-
- arch/arm/mach-shmobile/board-armadillo800eva.c |  55 ++-
- arch/arm/mach-shmobile/board-kota2.c           | 183 ++++++----
- arch/arm/mach-shmobile/clock-sh73a0.c          |   8 +-
- arch/arm/mach-shmobile/include/mach/sh73a0.h   | 373 +------------------
- drivers/leds/Kconfig                           |  12 -
- drivers/leds/Makefile                          |   1 -
- drivers/leds/leds-renesas-tpu.c                | 337 -----------------
- drivers/pwm/Kconfig                            |  10 +
- drivers/pwm/Makefile                           |   1 +
- drivers/pwm/pwm-renesas-tpu.c                  | 485 +++++++++++++++++++++++++
- include/linux/platform_data/leds-renesas-tpu.h |  14 -
- include/linux/platform_data/pwm-renesas-tpu.h  |  17 +
- 12 files changed, 681 insertions(+), 815 deletions(-)
- delete mode 100644 drivers/leds/leds-renesas-tpu.c
- create mode 100644 drivers/pwm/pwm-renesas-tpu.c
- delete mode 100644 include/linux/platform_data/leds-renesas-tpu.h
- create mode 100644 include/linux/platform_data/pwm-renesas-tpu.h
-
--- 
-Regards,
-
-Laurent Pinchart
-
+--UHN/qo2QbUvPLonB--
