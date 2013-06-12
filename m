@@ -1,71 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 Jun 2013 09:20:25 +0000
-Subject: [PATCH 06/06] ARM: shmobile: Remove old SCU boot code
-Message-Id: <20130610092025.18944.77279.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Jun 2013 14:10:01 +0000
+Subject: Re: [PATCH 06/06] ARM: shmobile: Remove old SCU boot code
+Message-Id: <20130612141000.GW32751@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130610091925.18944.68117.sendpatchset@w520>
-In-Reply-To: <20130610091925.18944.68117.sendpatchset@w520>
+ <20130610092025.18944.77279.sendpatchset@w520>
+In-Reply-To: <20130610092025.18944.77279.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Mon, Jun 10, 2013 at 06:20:25PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Remove shmobile_secondary_vector_scu now when all SCU enabled
+> SMP platforms instead make use of shmobile_boot_scu. This
+> removes two inline virtual to physical address conversions.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/mach-shmobile/headsmp-scu.S         |   22 +---------------------
+>  arch/arm/mach-shmobile/include/mach/common.h |    1 -
+>  2 files changed, 1 insertion(+), 22 deletions(-)
 
-Remove shmobile_secondary_vector_scu now when all SCU enabled
-SMP platforms instead make use of shmobile_boot_scu. This
-removes two inline virtual to physical address conversions.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/headsmp-scu.S         |   22 +---------------------
- arch/arm/mach-shmobile/include/mach/common.h |    1 -
- 2 files changed, 1 insertion(+), 22 deletions(-)
-
---- 0028/arch/arm/mach-shmobile/headsmp-scu.S
-+++ work/arch/arm/mach-shmobile/headsmp-scu.S	2013-06-05 14:36:41.000000000 +0900
-@@ -25,32 +25,12 @@
- 
- 	__CPUINIT
- /*
-- * Reset vector for secondary CPUs.
-+ * Boot code for secondary CPUs.
-  *
-  * First we turn on L1 cache coherency for our CPU. Then we jump to
-  * shmobile_invalidate_start that invalidates the cache and hands over control
-  * to the common ARM startup code.
-- * This function will be mapped to address 0 by the SBAR register.
-- * A normal branch is out of range here so we need a long jump. We jump to
-- * the physical address as the MMU is still turned off.
-  */
--	.align	12
--ENTRY(shmobile_secondary_vector_scu)
--	mrc     p15, 0, r0, c0, c0, 5	@ read MIPDR
--	and	r0, r0, #3		@ mask out cpu ID
--	lsl	r0, r0, #3		@ we will shift by cpu_id * 8 bits
--	ldr	r1, 2f
--	ldr	r1, [r1]		@ SCU base address
--	ldr	r2, [r1, #8]		@ SCU Power Status Register
--	mov	r3, #3
--	bic	r2, r2, r3, lsl r0	@ Clear bits of our CPU (Run Mode)
--	str	r2, [r1, #8]		@ write back
--
--	ldr	pc, 1f
--1:	.long shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
--2:	.long shmobile_scu_base - PAGE_OFFSET + PLAT_PHYS_OFFSET
--ENDPROC(shmobile_secondary_vector_scu)
--
- ENTRY(shmobile_boot_scu)
- 					@ r0 = SCU base address
- 	mrc     p15, 0, r1, c0, c0, 5	@ read MIPDR
---- 0028/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-06-05 14:35:54.000000000 +0900
-@@ -10,7 +10,6 @@ extern void shmobile_setup_console(void)
- extern void shmobile_boot_vector(void);
- extern unsigned long shmobile_boot_fn;
- extern unsigned long shmobile_boot_arg;
--extern void shmobile_secondary_vector_scu(void);
- extern void shmobile_boot_scu(void);
- struct clk;
- extern int shmobile_clk_init(void);
+Thanks, I have queued this up for v3.11 in the (new) cleanup-boot branch.
