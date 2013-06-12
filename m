@@ -1,53 +1,26 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 07:55:31 +0000
-Subject: [PATCH 02/02] ARM: shmobile: Remove romImage CONFIG_MEMORY_START
-Message-Id: <20130605075531.17653.38073.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Jun 2013 14:10:10 +0000
+Subject: Re: [PATCH 02/02] ARM: shmobile: Remove romImage CONFIG_MEMORY_START
+Message-Id: <20130612141009.GY32751@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130605075514.17653.77135.sendpatchset@w520>
-In-Reply-To: <20130605075514.17653.77135.sendpatchset@w520>
+ <20130605075531.17653.38073.sendpatchset@w520>
+In-Reply-To: <20130605075531.17653.38073.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Jun 05, 2013 at 04:55:31PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Instead of relying on CONFIG_MEMORY_START for memory
+> base address, let each romImage board header file
+> specify this information.
+> 
+> This is reworks code not to rely on CONFIG_MEMORY_START
+> which in turn is needed for ARCH_MULTIPLATFORM.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Instead of relying on CONFIG_MEMORY_START for memory
-base address, let each romImage board header file
-specify this information.
-
-This is reworks code not to rely on CONFIG_MEMORY_START
-which in turn is needed for ARCH_MULTIPLATFORM.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/boot/compressed/head-shmobile.S    |    2 +-
- arch/arm/mach-shmobile/include/mach/zboot.h |    2 ++
- 2 files changed, 3 insertions(+), 1 deletion(-)
-
---- 0025/arch/arm/boot/compressed/head-shmobile.S
-+++ work/arch/arm/boot/compressed/head-shmobile.S	2013-06-05 11:56:07.000000000 +0900
-@@ -46,7 +46,7 @@ __image_start:
- __image_end:
- 	.long	_got_end
- __load_base:
--	.long	CONFIG_MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
-+	.long	MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
- __loaded:
- 	.long	__continue
- 	.align
---- 0001/arch/arm/mach-shmobile/include/mach/zboot.h
-+++ work/arch/arm/mach-shmobile/include/mach/zboot.h	2013-06-05 11:55:55.000000000 +0900
-@@ -12,9 +12,11 @@
- 
- #ifdef CONFIG_MACH_AP4EVB
- #define MACH_TYPE	MACH_TYPE_AP4EVB
-+#define MEMORY_START	0x40000000
- #include "mach/head-ap4evb.txt"
- #elif defined(CONFIG_MACH_MACKEREL)
- #define MACH_TYPE	MACH_TYPE_MACKEREL
-+#define MEMORY_START	0x40000000
- #include "mach/head-mackerel.txt"
- #else
- #error "unsupported board."
+Thanks, I have queued this up for v3.11 in the (new) cleanup-boot branch.
