@@ -1,67 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:12 +0000
-Subject: [PATCH 021/130] sh-pfc: r8a7778: add common PFC macro helper
-Message-Id: <1370420821-28420-22-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:27 +0000
+Subject: [PATCH 03/12] ARM: shmobile: r8a7779: setup EHCI internal buffer
+Message-Id: <1371106836-25388-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-pfc-r8a7778 will have many devices pfc support in the future,
-and current pfc-r8a7778 is using pin/mux definition macro for SCIF.
-The device definition style using macro is readable code IMO,
-but creating new macro for each devices is not good sense.
-This patch adds common SH_PFC_xx() macro for each new feature devices
+Setup the EHCI internal buffer (before EHCI driver has a chance to touch the
+registers) using the pre_setup() method in 'struct usb_ehci_pdata'.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The patch has been tested on the Marzen board.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 26 ++++++++++++++++++--------
- 1 file changed, 18 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index ddbd27b..139f9dd 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -1303,15 +1303,25 @@ static struct sh_pfc_pin pinmux_pins[] = {
-  */
- #define PIN_NUMBER(row, col)		(1000+((row)-1)*25+(col)-1)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 533d7fd..a3d0e55 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -33,6 +33,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/usb/otg.h>
++#include <linux/usb/hcd.h>
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+@@ -435,10 +436,25 @@ static void usb_power_off(struct platform_device *pdev)
+ 	pm_runtime_disable(&pdev->dev);
+ }
  
--/* - SCIF macro ------------------------------------------------------------- */
--#define SCIF_PFC_PIN(name, args...)					\
-+/* - macro */
-+#define SH_PFC_PINS(name, args...) \
- 	static const unsigned int name ##_pins[] = { args }
--#define SCIF_PFC_DAT(name, tx, rx)					\
--	static const unsigned int name ##_mux[]  = { tx##_MARK, rx##_MARK, }
--#define SCIF_PFC_CTR(name, cts, rts)					\
--	static const unsigned int name ##_mux[]  = { cts##_MARK, rts##_MARK, }
--#define SCIF_PFC_CLK(name, sck)					\
--	static const unsigned int name ##_mux[]  = { sck##_MARK, }
-+#define SH_PFC_MUX1(name, arg1)					\
-+	static const unsigned int name ##_mux[]  = { arg1##_MARK }
-+#define SH_PFC_MUX2(name, arg1, arg2)					\
-+	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, }
-+#define SH_PFC_MUX3(name, arg1, arg2, arg3)					\
-+	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK,	\
-+						     arg3##_MARK }
-+#define SH_PFC_MUX4(name, arg1, arg2, arg3, arg4)			\
-+	static const unsigned int name ##_mux[]  = { arg1##_MARK, arg2##_MARK, \
-+						     arg3##_MARK, arg4##_MARK }
++static int ehci_init_internal_buffer(struct usb_hcd *hcd)
++{
++	/*
++	 * Below are recommended values from the datasheet;
++	 * see [USB :: Setting of EHCI Internal Buffer].
++	 */
++	/* EHCI IP internal buffer setting */
++	iowrite32(0x00ff0040, hcd->regs + 0x0094);
++	/* EHCI IP internal buffer enable */
++	iowrite32(0x00000001, hcd->regs + 0x009C);
 +
-+/* - SCIF macro ------------------------------------------------------------- */
-+#define SCIF_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
-+#define SCIF_PFC_DAT(name, tx, rx)	SH_PFC_MUX2(name, tx, rx)
-+#define SCIF_PFC_CTR(name, cts, rts)	SH_PFC_MUX2(name, cts, rts)
-+#define SCIF_PFC_CLK(name, sck)		SH_PFC_MUX1(name, sck)
++	return 0;
++}
++
+ static struct usb_ehci_pdata ehcix_pdata = {
+ 	.power_on	= usb_power_on,
+ 	.power_off	= usb_power_off,
+ 	.power_suspend	= usb_power_off,
++	.pre_setup	= ehci_init_internal_buffer,
+ };
  
- /* - HSCIF0 ----------------------------------------------------------------- */
- SCIF_PFC_PIN(hscif0_data_a,	RCAR_GP_PIN(1, 17),	RCAR_GP_PIN(1, 18));
+ static struct resource ehci0_resources[] = {
 -- 
 1.8.2.1
 
