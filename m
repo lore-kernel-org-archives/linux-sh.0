@@ -1,32 +1,87 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 06:59:54 +0000
-Subject: [PATCH 08/15] ARM: shmobile: KZM9D uImage rework
-Message-Id: <20130605070720.13311.92943.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 13 Jun 2013 13:10:52 +0000
+Subject: [PATCH 3/3] sh/boot: Use POSIX "$((..))" instead of bashism "$[...]"
+Message-Id: <1371129052-31506-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605070616.13311.69049.sendpatchset@w520>
-In-Reply-To: <20130605070616.13311.69049.sendpatchset@w520>
+References: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+According to the bash 4.1 manpage, "$[...]" is deprecated, and will be
+removed in upcoming versions of bash.
+Hence replace the bash-specific "$[...]" by POSIX "$((..))" for arithmetic
+expansion, which also allows to drop the forced use of bash.
 
-Add KZM9D specific load address to Makefile.boot
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
+ arch/sh/boot/Makefile            |   24 ++++++++++++------------
+ arch/sh/boot/compressed/Makefile |   14 +++++++-------
+ 2 files changed, 19 insertions(+), 19 deletions(-)
 
- arch/arm/mach-shmobile/Makefile.boot |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0015/arch/arm/mach-shmobile/Makefile.boot
-+++ work/arch/arm/mach-shmobile/Makefile.boot	2013-06-04 16:18:59.000000000 +0900
-@@ -7,6 +7,7 @@ loadaddr-$(CONFIG_MACH_APE6EVM) += 0x400
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
-+loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
+diff --git a/arch/sh/boot/Makefile b/arch/sh/boot/Makefile
+index 4ab2ba5..e10fb9b 100644
+--- a/arch/sh/boot/Makefile
++++ b/arch/sh/boot/Makefile
+@@ -46,18 +46,18 @@ $(obj)/romImage: $(obj)/romimage/vmlinux FORCE
+ $(obj)/romimage/vmlinux: $(obj)/zImage FORCE
+ 	$(Q)$(MAKE) $(build)=$(obj)/romimage $@
  
- __ZRELADDR	:= $(shell /bin/bash -c \
- 		     'echo $(loadaddr-y) | tr " " "\n" | sort | uniq')
+-KERNEL_MEMORY	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_PHYSICAL_START) & 0x1fffffff]')
+-
+-KERNEL_LOAD	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_PAGE_OFFSET)  + \
+-			$(KERNEL_MEMORY) + \
+-			$(CONFIG_ZERO_PAGE_OFFSET)]')
+-
+-KERNEL_ENTRY	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_PAGE_OFFSET)  + \
+-			$(KERNEL_MEMORY) + \
+-			$(CONFIG_ZERO_PAGE_OFFSET) + $(CONFIG_ENTRY_OFFSET)]')
++KERNEL_MEMORY	:= $(shell printf "0x%08x" \
++		     $$(($(CONFIG_PHYSICAL_START) & 0x1fffffff)))
++
++KERNEL_LOAD	:= $(shell printf "0x%08x" \
++		     $$(($(CONFIG_PAGE_OFFSET) + \
++			 $(KERNEL_MEMORY) + \
++			 $(CONFIG_ZERO_PAGE_OFFSET))))
++
++KERNEL_ENTRY	:= $(shell printf "0x%08x" \
++		     $$(($(CONFIG_PAGE_OFFSET) + \
++			 $(KERNEL_MEMORY) + \
++			 $(CONFIG_ZERO_PAGE_OFFSET) + $(CONFIG_ENTRY_OFFSET))))
+ 
+ UIMAGE_LOADADDR = $(KERNEL_LOAD)
+ UIMAGE_ENTRYADDR = $(KERNEL_ENTRY)
+diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/Makefile
+index 43d1b9a..0330ba7 100644
+--- a/arch/sh/boot/compressed/Makefile
++++ b/arch/sh/boot/compressed/Makefile
+@@ -17,14 +17,14 @@ GCOV_PROFILE := n
+ # IMAGE_OFFSET is the load offset of the compression loader
+ #
+ ifeq ($(CONFIG_32BIT),y)
+-IMAGE_OFFSET	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_MEMORY_START)  + \
+-			$(CONFIG_BOOT_LINK_OFFSET)]')
++IMAGE_OFFSET	:= $(shell printf "0x%08x" \
++		     $$(($(CONFIG_MEMORY_START) + \
++			 $(CONFIG_BOOT_LINK_OFFSET))))
+ else
+-IMAGE_OFFSET	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_PAGE_OFFSET)  + \
+-			$(KERNEL_MEMORY) + \
+-			$(CONFIG_BOOT_LINK_OFFSET)]')
++IMAGE_OFFSET	:= $(shell printf "0x%08x" \
++		     $$(($(CONFIG_PAGE_OFFSET) + \
++		         $(KERNEL_MEMORY) + \
++			 $(CONFIG_BOOT_LINK_OFFSET))))
+ endif
+ 
+ ifeq ($(CONFIG_MCOUNT),y)
+-- 
+1.7.0.4
+
