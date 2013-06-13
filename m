@@ -1,36 +1,46 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 27 Jun 2013 11:22:57 +0000
-Subject: Re: [PATCH v4 0/3] R8A7779/Marzen R-Car VIN driver support
-Message-Id: <51CC2091.1040408@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:49 +0000
+Subject: [PATCH 11/15] ARM: shmobile: Enable ARM_PATCH_PHYS_VIRT
+Message-Id: <1371106793-25071-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305160153.29827.sergei.shtylyov@cogentembedded.com>
- <20130627074129.GB13927@verge.net.au>
-In-Reply-To: <20130627074129.GB13927@verge.net.au>
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 27-06-2013 11:41, Simon Horman wrote:
+Adjust mach-shmobile to add a select for CONFIG_ARM_PATCH_PHYS_VIRT
+and at the same time remove NEED_MACH_MEMORY_H.
 
->>     Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
->> 'renesas-next-20130515v2' tag and my recent yet unapplied USB/I2C patches.
->> Here we add the VIN driver platform code for the R8A7779/Marzen with ADV7180
->> I2C video decoder.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->> [1/3] ARM: shmobile: r8a7779: add VIN support
->> [2/3] ARM: shmobile: Marzen: add VIN and ADV7180 support
->> [3/3] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
-
->>     The VIN driver itself has been excluded from the series as it will be developed
->> against Mauro's 'media_tree.git' plus some yet unapplied patches in the future...
-
-> Sergei, is this patch-set still needing review?
-
-    Probably. Note that it depends on the VIN driver too.
-
-WBR, Sergei
-
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index dfb4fee..f06e65b 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -634,6 +634,7 @@ config ARCH_MSM
+ 
+ config ARCH_SHMOBILE
+ 	bool "Renesas SH-Mobile / R-Mobile"
++	select ARM_PATCH_PHYS_VIRT
+ 	select CLKDEV_LOOKUP
+ 	select GENERIC_CLOCKEVENTS
+ 	select HAVE_ARM_SCU if SMP
+@@ -643,7 +644,6 @@ config ARCH_SHMOBILE
+ 	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select MULTI_IRQ_HANDLER
+-	select NEED_MACH_MEMORY_H
+ 	select NO_IOPORT
+ 	select PINCTRL
+ 	select PM_GENERIC_DOMAINS if PM
+-- 
+1.8.2.1
 
