@@ -1,36 +1,43 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 27 Jun 2013 11:21:31 +0000
-Subject: Re: [PATCH v5 0/3] R8A7778/BOCK-W R-Car VIN driver support
-Message-Id: <51CC203B.7040800@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:45 +0000
+Subject: [PATCH 07/15] ARM: shmobile: r8a7779 SMP with SCU boot fn and args
+Message-Id: <1371106793-25071-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306220326.46176.sergei.shtylyov@cogentembedded.com>
- <20130627044838.GB28229@verge.net.au>
-In-Reply-To: <20130627044838.GB28229@verge.net.au>
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 27-06-2013 8:48, Simon Horman wrote:
+Let r8a7779 make use of shmobile_boot_fn and shmobile_boot_arg
+together with shmobile_boot_scu and the SCU base address.
 
->>     Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
->> 'renesas-next-20130620' tag. Here we add the VIN platform code working on
->> the R8A7778/BOCK-W with ML86V7667 video decoder.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-r8a7779.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
->> [1/3] ARM: shmobile: r8a7778: add VIN support
->> [2/3] ARM: shmobile: BOCK-W: add VIN and ML86V7667 support
->> [3/3] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
-
->>     The patch containing OKI ML86V7667 video decoder driver has been removed
->> from the series as it should be applied to the 'media_tree.git' repo. The patch
->> containing the VIN PFC support has been also removed from the series and has
->> now been merged.
-
-> is this series dependent on that patch or can it be applied independently?
-
-    No, it's dependent on the VIN driver patch for the platform data.
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index a853bf1..526cfaa 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -101,8 +101,10 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	scu_enable(shmobile_scu_base);
+ 
+-	/* Map the reset vector (in headsmp-scu.S) */
+-	__raw_writel(__pa(shmobile_secondary_vector_scu), AVECR);
++	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
++	__raw_writel(__pa(shmobile_boot_vector), AVECR);
++	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
++	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
+ 
+ 	/* enable cache coherency on booting CPU */
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+-- 
+1.8.2.1
 
