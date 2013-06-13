@@ -1,50 +1,55 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:41 +0000
-Subject: [PATCH 050/130] ARM: shmobile: ap4evb: Register pinctrl mapping for SCIF
-Message-Id: <1370420821-28420-51-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:53 +0000
+Subject: [PATCH 03/11] ARM: shmobile: r8a7790: HSCIF support
+Message-Id: <1371106861-25626-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-Replace the GPIO-based SCIF pinmux configuration by a pinctrl mapping.
+Adds support for HSCIF0 and HSCIF1 on the r8a7790.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index c6e1e44..3163983 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1119,6 +1119,9 @@ static const struct pinctrl_map ap4evb_pinctrl_map[] = {
- 				  "mmc0_data8_0", "mmc0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
- 				  "mmc0_ctrl_0", "mmc0"),
-+	/* SCIFA0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-sh7372",
-+				  "scifa0_data", "scifa0"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -1165,10 +1168,6 @@ static void __init ap4evb_init(void)
- 				  ARRAY_SIZE(ap4evb_pinctrl_map));
- 	sh7372_pinmux_init();
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index b393592..379bce6 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -181,6 +181,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ /* MSTP */
+ enum {
+ 	MSTP721, MSTP720,
++	MSTP717, MSTP716,
+ 	MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+ 	MSTP_NR
+@@ -196,6 +197,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
+ 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
++	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
++	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+ };
  
--	/* enable SCIFA0 */
--	gpio_request(GPIO_FN_SCIFA0_TXD, NULL);
--	gpio_request(GPIO_FN_SCIFA0_RXD, NULL);
--
- 	/* enable SMSC911X */
- 	gpio_request(GPIO_FN_CS5A,	NULL);
- 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+ static struct clk_lookup lookups[] = {
+@@ -249,6 +252,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP202]),
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP721]),
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
++	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
++	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+ };
+ 
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
 1.8.2.1
 
