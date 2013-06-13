@@ -1,44 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:41 +0000
-Subject: [PATCH 08/15] ARM: shmobile: sh73a0 SMP with SCU boot fn and args
-Message-Id: <1371456768-1084-9-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:25 +0000
+Subject: [GIT PULL 0/1] Renesas ARM based SoC GPIO R-Car updates for v3.11
+Message-Id: <1371106826-25313-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Olof, Hi Arnd,
 
-Let sh73a0 make use of shmobile_boot_fn and shmobile_boot_arg
-together with shmobile_boot_scu and the SCU base address.
+This pull request is based on renesas-pinmux-for-v3.11 which you have
+previously pulled. It provides the GPIO R-Car driver. I have broken this
+pull-request out from a separate pull request I plan to send with further
+pinmux updates as it relates specifically to DT. And I wanted to give you
+the option of merging it separately.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/smp-sh73a0.c |    6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+The following changes since commit 5fcf4a3c3a5bc08bf72a50ef1332501a3c1b96bb:
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 496592b..d613113 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -64,9 +64,11 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- {
- 	scu_enable(shmobile_scu_base);
- 
--	/* Map the reset vector (in headsmp-scu.S) */
-+	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
- 	__raw_writel(0, APARMBAREA);      /* 4k */
--	__raw_writel(__pa(shmobile_secondary_vector_scu), SBAR);
-+	__raw_writel(__pa(shmobile_boot_vector), SBAR);
-+	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
-+	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
- 
- 	/* enable cache coherency on booting CPU */
- 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
--- 
-1.7.10.4
+  ARM: shmobile: marzen: Use RCAR_GP_PIN macro (2013-06-05 17:18:24 +0900)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-gpio-rcar-for-v3.11
+
+for you to fetch changes up to 159f8a0209aff155af7f6fcdedd4a4484dd19c23:
+
+  gpio-rcar: Add DT support (2013-06-12 21:48:09 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC GPIO R-Car updates for v3.11
+
+DT support to GPIO R-Car driver by Laurent Pinchart.
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      gpio-rcar: Add DT support
+
+ .../devicetree/bindings/gpio/renesas,gpio-rcar.txt | 52 +++++++++++++++++
+ drivers/gpio/gpio-rcar.c                           | 66 ++++++++++++++++++----
+ 2 files changed, 108 insertions(+), 10 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
