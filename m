@@ -1,114 +1,117 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 26 Jun 2013 14:40:50 +0000
-Subject: [PATCH/RFC 1/7] DMA: shdma: also support single top-level DMAC DT nodes
-Message-Id: <1372257656-9944-2-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:45:45 +0000
+Subject: [PATCH v6 00/18] SH pinctrl DT support
+Message-Id: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>, Vinod Koul <vinod.koul@intel.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Currently we support DMAC DT nodes, located under a multiplexer. This also
-supports systems with a single DMAC instance by placing it alone under such
-a multiplexer node, but this is rather unnatural. This patch adds an
-ability to shdma support such single DT nodes with no dummy multiplexer.
+Hello,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Vinod Koul <vinod.koul@intel.com>
----
- drivers/dma/sh/shdma-of.c |    5 +++--
- drivers/dma/sh/shdma.c    |   16 ++++++++++++++++
- include/linux/sh_dma.h    |    5 +++++
- 3 files changed, 24 insertions(+), 2 deletions(-)
+Here's the sixth version of the SuperH and SH Mobile pin controllers (PFC) DT
+support patch set.
 
-diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
-index 9ab869d..fd2fa10 100644
---- a/drivers/dma/sh/shdma-of.c
-+++ b/drivers/dma/sh/shdma-of.c
-@@ -19,8 +19,8 @@
- 
- #define to_shdma_chan(c) container_of(c, struct shdma_chan, dma_chan)
- 
--static struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
--				       struct of_dma *ofdma)
-+struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
-+				struct of_dma *ofdma)
- {
- 	u32 id = dma_spec->args[0];
- 	dma_cap_mask_t mask;
-@@ -39,6 +39,7 @@ static struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
- 
- 	return chan;
- }
-+EXPORT_SYMBOL(shdma_of_xlate);
- 
- static int shdma_of_probe(struct platform_device *pdev)
- {
-diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
-index 70bc99a..98b2693 100644
---- a/drivers/dma/sh/shdma.c
-+++ b/drivers/dma/sh/shdma.c
-@@ -20,6 +20,8 @@
- 
- #include <linux/init.h>
- #include <linux/module.h>
-+#include <linux/of.h>
-+#include <linux/of_dma.h>
- #include <linux/slab.h>
- #include <linux/interrupt.h>
- #include <linux/dmaengine.h>
-@@ -849,6 +851,15 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 
- 	pm_runtime_put(&pdev->dev);
- 
-+	if (pdev->dev.of_node &&
-+	    !of_device_is_compatible(pdev->dev.of_node->parent,
-+				     "renesas,shdma-mux")) {
-+		err = of_dma_controller_register(pdev->dev.of_node,
-+						 shdma_of_xlate, pdev);
-+		if (err < 0)
-+			goto eofdma;
-+	}
-+
- 	err = dma_async_device_register(&shdev->shdma_dev.dma_dev);
- 	if (err < 0)
- 		goto edmadevreg;
-@@ -856,6 +867,8 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 	return err;
- 
- edmadevreg:
-+	of_dma_controller_free(pdev->dev.of_node);
-+eofdma:
- 	pm_runtime_get(&pdev->dev);
- 
- chan_probe_err:
-@@ -901,6 +914,9 @@ static int sh_dmae_remove(struct platform_device *pdev)
- 
- 	dma_async_device_unregister(dma_dev);
- 
-+	/* Is a NOP if this controller isn't registered with of-dma */
-+	of_dma_controller_free(pdev->dev.of_node);
-+
- 	if (errirq > 0)
- 		free_irq(errirq, shdev);
- 
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index 4e83f3e..887977d 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -99,4 +99,9 @@ struct sh_dmae_pdata {
- #define CHCR_TE	0x00000002
- #define CHCR_IE	0x00000004
- 
-+struct of_phandle_args;
-+struct of_dma;
-+struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
-+				struct of_dma *ofdma);
-+
- #endif
+The patches are based on tags/renesas-next-20130613 from Simon's tree
+(git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git). The result
+is available in my tree at
+
+        git://linuxtv.org/pinchartl/fbdev.git pinmux/3.10/dt
+
+The series is pretty self-explanatory. DT bindings are added in patch 02/18,
+and the following patches gradually move SoC code and board code over to the
+device tree for the armadilla800eva-reference and marzen-reference boards. The
+code has been tested on the two boards, but armadillo800eva has received less
+testing as it can't be booted all the way to userspace with network support due
+to missing DT bindings.
+
+Comments will be very appreciated on the DT bindings (02/18). Points I'm a bit
+unsure about include:
+
+- Should the driver support pin configuration subnodes as currently
+  implemented, or should the subnodes be promoted to regular pin configuration
+  nodes, with clients referencing multiple nodes ?
+
+I've dropped pinconf support from the DT bindings as the generic pinconf DT
+bindings are work in progress and might not make it to v3.11, which this patch
+set targets. Pinconf support will be added back later as follow-up patches.
+Linus, if you're fine with the result, could you please ack 02/18 ? I will then
+ask Simon to take the patches in his tree.
+
+Changes since v5:
+
+- Dropped generic pinconf support
+- Dropped kzm9g-reference patches, as those require pinconf support
+
+Changes since v4:
+
+- Added generic pinconf bindings
+- Use symbolic names for GPIO flags
+
+Changes since v3:
+
+- Fixed the GPIO flags description in the DT bindings documentation
+- Mention the gpio-rcar driver in the DT bindings documentation for platforms
+  that use it
+- Removed unneeded #ifdef CONFIG_OF...#endif
+- Removed unused support for platform data
+- Simplified error path in sh_pfc_dt_node_to_map()
+- Added gpio-ranges for r8a7778, r8a7779 and r8a7790
+
+Changes since v2:
+
+- Added pin configuration properties
+- Rewrote all arch changes
+
+Changes since v1:
+
+- Fixed gpio cell number 2 documentation
+- Added missing gpio-controller and #gpio-cells properties to r8a7740 DT
+- Split kzm9g DT patch into SoC and board patches
+- Dropped pinctrl mappings move to DT
+
+Laurent Pinchart (18):
+  sh-pfc: Remove support for platform data
+  sh-pfc: Add DT support
+  ARM: shmobile: r8a73a4: Add pin control device to device tree
+  ARM: shmobile: r8a7740: Add pin control device to device tree
+  ARM: shmobile: r8a7778: Add pin control device to device tree
+  ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
+  ARM: shmobile: r8a7779: Add pin control device to device tree
+  ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
+  ARM: shmobile: r8a7790: Add pin control device to device tree
+  ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
+  ARM: shmobile: sh7372: Add pin control device to device tree
+  ARM: shmobile: sh73a0: Add pin control device to device tree
+  ARM: shmobile: armadillo-reference: Move pinctrl mappings to device
+    tree
+  ARM: shmobile: armadillo-reference: Add st1232 pin mappings
+  ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
+  ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
+  ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
+  ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
+
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       | 135 +++++++++++++++++++++
+ arch/arm/boot/dts/r8a73a4.dtsi                     |   7 ++
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |  34 ++++++
+ arch/arm/boot/dts/r8a7740.dtsi                     |   8 ++
+ arch/arm/boot/dts/r8a7778.dtsi                     |  56 +++++++++
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts     |  49 ++++++++
+ arch/arm/boot/dts/r8a7779.dtsi                     |  76 ++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                     |  66 ++++++++++
+ arch/arm/boot/dts/sh7372.dtsi                      |   8 ++
+ arch/arm/boot/dts/sh73a0.dtsi                      |   8 ++
+ .../board-armadillo800eva-reference.c              |  18 +--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c     |  27 ++---
+ arch/arm/mach-shmobile/board-marzen-reference.c    |  28 -----
+ drivers/pinctrl/sh-pfc/core.c                      |  65 +++++++++-
+ drivers/pinctrl/sh-pfc/pinctrl.c                   | 116 ++++++++++++++++++
+ 15 files changed, 640 insertions(+), 61 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+
 -- 
-1.7.2.5
+Regards,
+
+Laurent Pinchart
 
