@@ -1,137 +1,305 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:23 +0000
-Subject: [PATCH 032/130] sh-pfc: sh7372: Add USB pin groups and functions
-Message-Id: <1370420821-28420-33-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 16:54:46 +0000
+Subject: [PATCH v4 3/5] ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
+Message-Id: <1371142488-2514-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Instead of using the LED-specific TPU PWM driver, switch to the generic
+TPU PWM driver with leds-pwm.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 82 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ arch/arm/mach-shmobile/board-kota2.c  | 169 +++++++++++++++++-----------------
+ arch/arm/mach-shmobile/clock-sh73a0.c |  12 ++-
+ 2 files changed, 90 insertions(+), 91 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 46466bb..4dc2ccb 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1680,6 +1680,64 @@ static const unsigned int sdhi2_ctrl_pins[] = {
- static const unsigned int sdhi2_ctrl_mux[] = {
- 	SDHICMD2_MARK, SDHICLK2_MARK,
- };
-+/* - USB0 ------------------------------------------------------------------- */
-+static const unsigned int usb0_vbus_pins[] = {
-+	/* VBUS */
-+	167,
-+};
-+static const unsigned int usb0_vbus_mux[] = {
-+	VBUS0_0_MARK,
-+};
-+static const unsigned int usb0_otg_id_pins[] = {
-+	/* IDIN */
-+	113,
-+};
-+static const unsigned int usb0_otg_id_mux[] = {
-+	IDIN_0_MARK,
-+};
-+static const unsigned int usb0_otg_ctrl_pins[] = {
-+	/* PWEN, EXTLP, OVCN, OVCN2 */
-+	116, 114, 117, 115,
-+};
-+static const unsigned int usb0_otg_ctrl_mux[] = {
-+	PWEN_0_MARK, EXTLP_0_MARK, OVCN_0_MARK, OVCN2_0_MARK,
-+};
-+/* - USB1 ------------------------------------------------------------------- */
-+static const unsigned int usb1_vbus_pins[] = {
-+	/* VBUS */
-+	168,
-+};
-+static const unsigned int usb1_vbus_mux[] = {
-+	VBUS0_1_MARK,
-+};
-+static const unsigned int usb1_otg_id_0_pins[] = {
-+	/* IDIN */
-+	113,
-+};
-+static const unsigned int usb1_otg_id_0_mux[] = {
-+	IDIN_1_113_MARK,
-+};
-+static const unsigned int usb1_otg_id_1_pins[] = {
-+	/* IDIN */
-+	18,
-+};
-+static const unsigned int usb1_otg_id_1_mux[] = {
-+	IDIN_1_18_MARK,
-+};
-+static const unsigned int usb1_otg_ctrl_0_pins[] = {
-+	/* PWEN, EXTLP, OVCN, OVCN2 */
-+	115, 116, 114, 117, 113,
-+};
-+static const unsigned int usb1_otg_ctrl_0_mux[] = {
-+	PWEN_1_115_MARK, EXTLP_1_MARK, OVCN_1_114_MARK, OVCN2_1_MARK,
-+};
-+static const unsigned int usb1_otg_ctrl_1_pins[] = {
-+	/* PWEN, EXTLP, OVCN, OVCN2 */
-+	138, 116, 162, 117, 18,
-+};
-+static const unsigned int usb1_otg_ctrl_1_mux[] = {
-+	PWEN_1_138_MARK, EXTLP_1_MARK, OVCN_1_162_MARK, OVCN2_1_MARK,
-+};
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(bsc_data8),
-@@ -1822,6 +1880,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_data1),
- 	SH_PFC_PIN_GROUP(sdhi2_data4),
- 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
-+	SH_PFC_PIN_GROUP(usb0_vbus),
-+	SH_PFC_PIN_GROUP(usb0_otg_id),
-+	SH_PFC_PIN_GROUP(usb0_otg_ctrl),
-+	SH_PFC_PIN_GROUP(usb1_vbus),
-+	SH_PFC_PIN_GROUP(usb1_otg_id_0),
-+	SH_PFC_PIN_GROUP(usb1_otg_id_1),
-+	SH_PFC_PIN_GROUP(usb1_otg_ctrl_0),
-+	SH_PFC_PIN_GROUP(usb1_otg_ctrl_1),
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index ef5ca0e..6af20d9 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -26,6 +26,7 @@
+ #include <linux/irq.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/pinctrl/pinconf-generic.h>
++#include <linux/platform_data/pwm-renesas-tpu.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+@@ -37,8 +38,8 @@
+ #include <linux/input/sh_keysc.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/leds.h>
++#include <linux/leds_pwm.h>
+ #include <linux/irqchip/arm-gic.h>
+-#include <linux/platform_data/leds-renesas-tpu.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mfd/tmio.h>
+@@ -186,116 +187,100 @@ static struct platform_device gpio_leds_device = {
  };
  
- static const char * const bsc_groups[] = {
-@@ -2024,6 +2090,20 @@ static const char * const sdhi2_groups[] = {
- 	"sdhi2_ctrl",
+ /* TPU LED */
+-static struct led_renesas_tpu_config led_renesas_tpu12_pdata = {
+-	.name		= "V2513",
+-	.pin_gpio_fn	= GPIO_FN_TPU1TO2,
+-	.pin_gpio	= 153,
+-	.channel_offset = 0x90,
+-	.timer_bit = 2,
+-	.max_brightness = 1000,
+-};
+-
+-static struct resource tpu12_resources[] = {
++static struct resource tpu1_pwm_resources[] = {
+ 	[0] = {
+-		.name	= "TPU12",
+-		.start	= 0xe6610090,
+-		.end	= 0xe66100b5,
++		.start	= 0xe6610000,
++		.end	= 0xe66100ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
  };
  
-+static const char * const usb0_groups[] = {
-+	"usb0_vbus",
-+	"usb0_otg_id",
-+	"usb0_otg_ctrl",
+-static struct platform_device leds_tpu12_device = {
+-	.name = "leds-renesas-tpu",
+-	.id = 12,
+-	.dev = {
+-		.platform_data  = &led_renesas_tpu12_pdata,
+-	},
+-	.num_resources	= ARRAY_SIZE(tpu12_resources),
+-	.resource	= tpu12_resources,
++static struct platform_device tpu1_pwm_device = {
++	.name = "renesas-tpu-pwm",
++	.id = 1,
++	.num_resources	= ARRAY_SIZE(tpu1_pwm_resources),
++	.resource	= tpu1_pwm_resources,
+ };
+ 
+-static struct led_renesas_tpu_config led_renesas_tpu41_pdata = {
+-	.name		= "V2514",
+-	.pin_gpio_fn	= GPIO_FN_TPU4TO1,
+-	.pin_gpio	= 199,
+-	.channel_offset = 0x50,
+-	.timer_bit = 1,
+-	.max_brightness = 1000,
+-};
+-
+-static struct resource tpu41_resources[] = {
++static struct resource tpu2_pwm_resources[] = {
+ 	[0] = {
+-		.name	= "TPU41",
+-		.start	= 0xe6640050,
+-		.end	= 0xe6640075,
++		.start	= 0xe6620000,
++		.end	= 0xe66200ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ };
+ 
+-static struct platform_device leds_tpu41_device = {
+-	.name = "leds-renesas-tpu",
+-	.id = 41,
+-	.dev = {
+-		.platform_data  = &led_renesas_tpu41_pdata,
++static struct platform_device tpu2_pwm_device = {
++	.name = "renesas-tpu-pwm",
++	.id = 2,
++	.num_resources	= ARRAY_SIZE(tpu2_pwm_resources),
++	.resource	= tpu2_pwm_resources,
 +};
 +
-+static const char * const usb1_groups[] = {
-+	"usb1_vbus",
-+	"usb1_otg_id_0",
-+	"usb1_otg_id_1",
-+	"usb1_otg_ctrl_0",
-+	"usb1_otg_ctrl_1",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(ceu),
-@@ -2045,6 +2125,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(usb0),
-+	SH_PFC_FUNCTION(usb1),
++static struct resource tpu3_pwm_resources[] = {
++	[0] = {
++		.start	= 0xe6630000,
++		.end	= 0xe66300ff,
++		.flags	= IORESOURCE_MEM,
+ 	},
+-	.num_resources	= ARRAY_SIZE(tpu41_resources),
+-	.resource	= tpu41_resources,
  };
  
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+-static struct led_renesas_tpu_config led_renesas_tpu21_pdata = {
+-	.name		= "V2515",
+-	.pin_gpio_fn	= GPIO_FN_TPU2TO1,
+-	.pin_gpio	= 197,
+-	.channel_offset = 0x50,
+-	.timer_bit = 1,
+-	.max_brightness = 1000,
++static struct platform_device tpu3_pwm_device = {
++	.name = "renesas-tpu-pwm",
++	.id = 3,
++	.num_resources	= ARRAY_SIZE(tpu3_pwm_resources),
++	.resource	= tpu3_pwm_resources,
+ };
+ 
+-static struct resource tpu21_resources[] = {
++static struct resource tpu4_pwm_resources[] = {
+ 	[0] = {
+-		.name	= "TPU21",
+-		.start	= 0xe6620050,
+-		.end	= 0xe6620075,
++		.start	= 0xe6640000,
++		.end	= 0xe66400ff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ };
+ 
+-static struct platform_device leds_tpu21_device = {
+-	.name = "leds-renesas-tpu",
+-	.id = 21,
+-	.dev = {
+-		.platform_data  = &led_renesas_tpu21_pdata,
++static struct platform_device tpu4_pwm_device = {
++	.name = "renesas-tpu-pwm",
++	.id = 4,
++	.num_resources	= ARRAY_SIZE(tpu4_pwm_resources),
++	.resource	= tpu4_pwm_resources,
++};
++
++static struct pwm_lookup pwm_lookup[] = {
++	PWM_LOOKUP("renesas-tpu-pwm.1", 2, "leds-pwm.0", "V2513"),
++	PWM_LOOKUP("renesas-tpu-pwm.2", 1, "leds-pwm.0", "V2515"),
++	PWM_LOOKUP("renesas-tpu-pwm.3", 0, "leds-pwm.0", "KEYLED"),
++	PWM_LOOKUP("renesas-tpu-pwm.4", 1, "leds-pwm.0", "V2514"),
++};
++
++static struct led_pwm tpu_pwm_leds[] = {
++	{
++		.name		= "V2513",
++		.max_brightness	= 1000,
++	}, {
++		.name		= "V2515",
++		.max_brightness	= 1000,
++	}, {
++		.name		= "KEYLED",
++		.max_brightness	= 1000,
++	}, {
++		.name		= "V2514",
++		.max_brightness	= 1000,
+ 	},
+-	.num_resources	= ARRAY_SIZE(tpu21_resources),
+-	.resource	= tpu21_resources,
+ };
+ 
+-static struct led_renesas_tpu_config led_renesas_tpu30_pdata = {
+-	.name		= "KEYLED",
+-	.pin_gpio_fn	= GPIO_FN_TPU3TO0,
+-	.pin_gpio	= 163,
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.max_brightness = 1000,
++static struct led_pwm_platform_data leds_pwm_pdata = {
++	.num_leds = ARRAY_SIZE(tpu_pwm_leds),
++	.leds = tpu_pwm_leds,
+ };
+ 
+-static struct resource tpu30_resources[] = {
+-	[0] = {
+-		.name	= "TPU30",
+-		.start	= 0xe6630010,
+-		.end	= 0xe6630035,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device leds_tpu30_device = {
+-	.name = "leds-renesas-tpu",
+-	.id = 30,
++static struct platform_device leds_pwm_device = {
++	.name = "leds-pwm",
++	.id = 0,
+ 	.dev = {
+-		.platform_data  = &led_renesas_tpu30_pdata,
++		.platform_data = &leds_pwm_pdata,
+ 	},
+-	.num_resources	= ARRAY_SIZE(tpu30_resources),
+-	.resource	= tpu30_resources,
+ };
+ 
+ /* Fixed 1.8V regulator to be used by MMCIF */
+@@ -426,10 +411,11 @@ static struct platform_device *kota2_devices[] __initdata = {
+ 	&keysc_device,
+ 	&gpio_keys_device,
+ 	&gpio_leds_device,
+-	&leds_tpu12_device,
+-	&leds_tpu41_device,
+-	&leds_tpu21_device,
+-	&leds_tpu30_device,
++	&tpu1_pwm_device,
++	&tpu2_pwm_device,
++	&tpu3_pwm_device,
++	&tpu4_pwm_device,
++	&leds_pwm_device,
+ 	&mmcif_device,
+ 	&sdhi0_device,
+ 	&sdhi1_device,
+@@ -512,6 +498,15 @@ static const struct pinctrl_map kota2_pinctrl_map[] = {
+ 				  "bsc_cs5_a", "bsc"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
+ 				  "bsc_we0", "bsc"),
++	/* TPU */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas-tpu-pwm.1", "pfc-sh73a0",
++				  "tpu1_to2", "tpu1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas-tpu-pwm.2", "pfc-sh73a0",
++				  "tpu2_to1", "tpu2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas-tpu-pwm.3", "pfc-sh73a0",
++				  "tpu3_to0", "tpu3"),
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas-tpu-pwm.4", "pfc-sh73a0",
++				  "tpu4_to1", "tpu4"),
+ };
+ 
+ static void __init kota2_init(void)
+@@ -524,6 +519,8 @@ static void __init kota2_init(void)
+ 
+ 	pinctrl_register_mappings(kota2_pinctrl_map,
+ 				  ARRAY_SIZE(kota2_pinctrl_map));
++	pwm_add_table(pwm_lookup, ARRAY_SIZE(pwm_lookup));
++
+ 	sh73a0_pinmux_init();
+ 
+ 	/* SMSC911X */
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index d9fd033..1942eae 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -555,7 +555,7 @@ enum { MSTP001,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+ 	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323, MSTP322,
+ 	MSTP314, MSTP313, MSTP312, MSTP311,
+-	MSTP303, MSTP302, MSTP301, MSTP300,
++	MSTP304, MSTP303, MSTP302, MSTP301, MSTP300,
+ 	MSTP411, MSTP410, MSTP403,
+ 	MSTP_NR };
+ 
+@@ -593,6 +593,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP313] = MSTP(&div6_clks[DIV6_SDHI1], SMSTPCR3, 13, 0), /* SDHI1 */
+ 	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMCIF0 */
+ 	[MSTP311] = MSTP(&div6_clks[DIV6_SDHI2], SMSTPCR3, 11, 0), /* SDHI2 */
++	[MSTP304] = MSTP(&main_div2_clk, SMSTPCR3, 4, 0), /* TPU0 */
+ 	[MSTP303] = MSTP(&main_div2_clk, SMSTPCR3, 3, 0), /* TPU1 */
+ 	[MSTP302] = MSTP(&main_div2_clk, SMSTPCR3, 2, 0), /* TPU2 */
+ 	[MSTP301] = MSTP(&main_div2_clk, SMSTPCR3, 1, 0), /* TPU3 */
+@@ -669,10 +670,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
+-	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
+-	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
+-	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
+-	CLKDEV_DEV_ID("leds-renesas-tpu.41", &mstp_clks[MSTP300]), /* TPU4 */
++	CLKDEV_DEV_ID("renesas-tpu-pwm.0", &mstp_clks[MSTP304]), /* TPU0 */
++	CLKDEV_DEV_ID("renesas-tpu-pwm.1", &mstp_clks[MSTP303]), /* TPU1 */
++	CLKDEV_DEV_ID("renesas-tpu-pwm.2", &mstp_clks[MSTP302]), /* TPU2 */
++	CLKDEV_DEV_ID("renesas-tpu-pwm.3", &mstp_clks[MSTP301]), /* TPU3 */
++	CLKDEV_DEV_ID("renesas-tpu-pwm.4", &mstp_clks[MSTP300]), /* TPU4 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
+ 	CLKDEV_DEV_ID("e6826000.i2c", &mstp_clks[MSTP411]), /* I2C3 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
 -- 
-1.8.2.1
+1.8.1.5
 
