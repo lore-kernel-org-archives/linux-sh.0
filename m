@@ -1,70 +1,72 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 13 Jun 2013 15:38:51 +0000
-Subject: Re: [PATCH v3 0/5] Renesas TPU PWM support
-Message-Id: <4097084.Y91d0ZYkWB@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart7071856.evoBBcrJJv"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:50 +0000
+Subject: [PATCH 12/15] ARM: shmobile: Remove MEMORY_START/SIZE
+Message-Id: <1371106793-25071-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370958344-19470-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20130612101250.GB30841@mithrandir>
-In-Reply-To: <20130612101250.GB30841@mithrandir>
-To: Thierry Reding <thierry.reding@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-leds@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>
-
-
---nextPart7071856.evoBBcrJJv
-Content-Transfer-Encoding: 7Bit
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Thierry,
+From: Magnus Damm <damm@opensource.se>
 
-On Wednesday 12 June 2013 12:12:51 Thierry Reding wrote:
-> On Tue, Jun 11, 2013 at 03:45:39PM +0200, Laurent Pinchart wrote:
-> [...]
-> 
-> > I believe I've addressed most comments received in response to v2, with
-> > the exception of channel allocation at .request() time for which I haven't
-> > received any answer to my questions. That will hopefully not be a
-> > showstopper.
->
-> I totally forgot to reply to that mail. Done now. Irrespective of my
-> comments, I think that cleanup could also be done as a follow-up patch after
-> 3.11.
+Remove CONFIG_MEMORY_START and CONFIG_MEMORY_SIZE from mach-shmobile.
 
-I'll address your comments and sent a v4. Hopefully it will be the last one.
+Boards should use DT to specify their memory setup. Boards that still
+not support DT may pass ATAGS with memory information from the boot
+loader. If those ATAGS turn out to be incorrect then appended DTB with
+memory information should be used as a workaround.
 
-Given the dependencies between the PWM TPU driver and board code, should I ask 
-Simon to take the series in the SH Mobile tree (after receiving your ack of 
-course) ?
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig | 31 -------------------------------
+ 1 file changed, 31 deletions(-)
 
-> Thierry
-> 
-> P.S.: please not that I've switched email addresses and there's also a
-> linux-pwm mailing list that you should Cc on PWM subsystem related
-> patches. The info should have propagated to linux-next's MAINTAINERS.
-
-OK, I'll make sure to CC the right addresses.
-
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 06da4d3..747f68a 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -195,37 +195,6 @@ config CPU_HAS_INTEVT
+         bool
+ 	default y
+ 
+-menu "Memory configuration"
+-
+-config MEMORY_START
+-	hex "Physical memory start address"
+-	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
+-				MACH_MACKEREL || MACH_BONITO || \
+-				MACH_ARMADILLO800EVA || MACH_APE6EVM || \
+-				MACH_LAGER
+-	default "0x41000000" if MACH_KOTA2
+-	default "0x00000000"
+-	---help---
+-	  Tweak this only when porting to a new machine which does not
+-	  already have a defconfig. Changing it from the known correct
+-	  value on any of the known systems will only lead to disaster.
+-
+-config MEMORY_SIZE
+-	hex "Physical memory size"
+-	default "0x80000000" if MACH_LAGER
+-	default "0x40000000" if MACH_APE6EVM
+-	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
+-				MACH_ARMADILLO800EVA
+-	default "0x1e000000" if MACH_KOTA2
+-	default "0x10000000" if MACH_AP4EVB || MACH_MACKEREL
+-	default "0x04000000"
+-	help
+-	  This sets the default memory size assumed by your kernel. It can
+-	  be overridden as normal by the 'mem=' argument on the kernel command
+-	  line.
+-
+-endmenu
+-
+ menu "Timer and clock configuration"
+ 
+ config SHMOBILE_TIMER_HZ
 -- 
-Regards,
-
-Laurent Pinchart
-
---nextPart7071856.evoBBcrJJv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.20 (GNU/Linux)
-
-iQEcBAABAgAGBQJRueeLAAoJEIkPb2GL7hl1qTMH/1JoAGPOpSsH4Aox50hKTNqK
-coa8r5Xyz5S12B1JDbOVv78/mkMD967Rmw9Eq50lzSCD+9wAYiXfJYnpI62+hlzC
-g/48MtoQtGQp5c9gIAVQ2EUbl5yX+WSfWHB4ZRjvGbPo/dhp4YEokYJmGVD5K+3d
-1AzTwsMy/EVwSIaoGRebEoP1pudZ5zxNNc8xT1AfVQMOPv9QuWQ+qr+kgdB5goRd
-5k6nRoLn8AYtV7jtSQprqnmGrI/KfAR+QXPvUCA5ZEnleT8UXzv5EGQTVZKAv0bQ
-vCTsnMKcyv1NKYgyvnR4LXyMRgi/WA8uhHlu4YOc9gF5NNNG+OeNZhIyyEIpN2c=
-=u6Ng
------END PGP SIGNATURE-----
-
---nextPart7071856.evoBBcrJJv--
+1.8.2.1
 
