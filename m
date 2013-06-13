@@ -1,63 +1,58 @@
 From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 13 Jun 2013 09:01:26 +0000
-Subject: Re: [PATCH] mmc: sh_mmcif: add SET_BLOCK_COUNT support
-Message-Id: <51B98A66.8060902@renesas.com>
+Date: Thu, 13 Jun 2013 01:15:45 +0000
+Subject: [PATCH v2] net: sh_eth: fix incorrect RX length error if R8A7740
+Message-Id: <51B91D41.1000908@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51B97CDB.7010207@renesas.com>
- <Pine.LNX.4.64.1306131024260.31976@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306131024260.31976@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: cjb@laptop.org, linux-mmc@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
+To: netdev@vger.kernel.org
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Hello Guennadi-san,
+This patch fixes an issue that the driver increments the "RX length error"
+on every buffer in sh_eth_rx() if the R8A7740.
+This patch also adds a description about the Receive Frame Status bits.
 
-(2013/06/13 17:33), Guennadi Liakhovetski wrote:
-< snip >
->> +static bool sh_mmcif_send_sbc(struct sh_mmcif_host *host,
->> +			      struct mmc_request *mrq)
->> +{
->> +	struct mmc_request req_orig = *mrq;
->> +	long time;
->> +
->> +	/* Switch the commands around */
->> +	mrq->cmd = mrq->sbc;
->> +	mrq->sbc = NULL;
->> +	mrq->data = NULL;
->> +	mrq->stop = NULL;
->> +
->> +	/* Send SBC Cmd */
->> +	sh_mmcif_start_cmd(host, mrq);
->> +
->> +	/* Normal completion time is less than 1us */
->> +	time = wait_for_completion_interruptible_timeout(&host->sbc_complete,
->> +							 host->timeout);
-> 
-> I'm afraid this doesn't look like a correct approach to me. In commit 
-> f985da1 "mmc: sh_mmcif: process requests asynchronously" I converted the 
-> driver to not wait inside its .request() method. This your patch makes a 
-> part of the .request() processing synchronous again by adding a wait to 
-> it. Besides you're very much special casing the processing of the SBC 
-> command. I think, it would be better to process it asynchronously too, 
-> implementing it as a sequence of two requests, similar to how sdhci.c does 
-> it (see sdhci_request() nearer the end the "if (mrq->sbc...) handling and 
-> sdhci_finish_command() below the "Finished CMD23, now send actual 
-> command" comment). Would that be possible to convert this patch to execute 
-> similarly and to avoid special-casing as much as possible? Just check for 
-> an SBC in .request(), if there is one send it instead of the proper 
-> request. Then in completion check, whether it's the SBC that has just 
-> completed, and if so, now send the actual request.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ About v2:
+  - This patch is based on the latest net.git.
+  - Fix the description.
 
-Thank you for your comment. I should have checked your patch...
+ drivers/net/ethernet/renesas/sh_eth.c |   15 +++++++++++----
+ 1 files changed, 11 insertions(+), 4 deletions(-)
 
-I will modify this SBC patch to remove the wait_for_completion...() in
-the .request().
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index b4479b5..5e3982f 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1401,16 +1401,23 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status)
+ 		desc_status = edmac_to_cpu(mdp, rxdesc->status);
+ 		pkt_len = rxdesc->frame_length;
 
-Best regards,
-Yoshihiro Shimoda
+-#if defined(CONFIG_ARCH_R8A7740)
+-		desc_status >>= 16;
+-#endif
+-
+ 		if (--boguscnt < 0)
+ 			break;
 
-> Thanks
-> Guennadi
-> 
+ 		if (!(desc_status & RDFEND))
+ 			ndev->stats.rx_length_errors++;
+
++#if defined(CONFIG_ARCH_R8A7740)
++		/*
++		 * In case of almost all GETHER/ETHERs, the Receive Frame State
++		 * (RFS) bits in the Receive Descriptor 0 are from bit 9 to
++		 * bit 0. However, in case of the R8A7740's GETHER, the RFS
++		 * bits are from bit 25 to bit 16. So, the driver needs right
++		 * shifting by 16.
++		 */
++		desc_status >>= 16;
++#endif
++
+ 		if (desc_status & (RD_RFS1 | RD_RFS2 | RD_RFS3 | RD_RFS4 |
+ 				   RD_RFS5 | RD_RFS6 | RD_RFS10)) {
+ 			ndev->stats.rx_errors++;
+-- 
+1.7.1
