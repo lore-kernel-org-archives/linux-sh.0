@@ -1,36 +1,117 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 22:22:35 +0000
-Subject: [PATCH v5 06/22] ARM: shmobile: r8a7778: Add pin control device to device tree
-Message-Id: <1370989371-30846-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:28 +0000
+Subject: [PATCH 04/12] phy-rcar-usb: remove EHCI internal buffer setup
+Message-Id: <1371106836-25388-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the r8a7778 device tree.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Now that the EHCI internal  buffer setup is done by the platform code,  we  can
+remove  such code from this driver as it  never  really belonged here.  We also
+no longer need the 2nd memory region now (2nd EHCI controller is simply missing
+in e.g. R8A7778 SoC).
+
+The patch has been tested on the Marzen and BOCK-W boards.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Felipe Balbi <balbi@ti.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
+ drivers/usb/phy/phy-rcar-usb.c | 28 ++++------------------------
+ 1 file changed, 4 insertions(+), 24 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 4743735..c8dbf14 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -32,4 +32,9 @@
- 		reg = <0xfe438000 0x1000>,
- 		      <0xfe430000 0x100>;
- 	};
-+
-+	pfc: pfc@fffc0000 {
-+		compatible = "renesas,pfc-r8a7778";
-+		reg = <0xfffc000 0x118>;
-+	};
+diff --git a/drivers/usb/phy/phy-rcar-usb.c b/drivers/usb/phy/phy-rcar-usb.c
+index a35681b..4893dbd 100644
+--- a/drivers/usb/phy/phy-rcar-usb.c
++++ b/drivers/usb/phy/phy-rcar-usb.c
+@@ -23,8 +23,6 @@
+ #define USBEH0		0x080C
+ #define USBOH0		0x081C
+ #define USBCTL0		0x0858
+-#define EIIBC1		0x0094
+-#define EIIBC2		0x009C
+ 
+ /* USBPCTRL1 */
+ #define PHY_RST		(1 << 2)
+@@ -40,7 +38,6 @@ struct rcar_usb_phy_priv {
+ 	spinlock_t lock;
+ 
+ 	void __iomem *reg0;
+-	void __iomem *reg1;
+ 	int counter;
  };
+ 
+@@ -59,7 +56,6 @@ static int rcar_usb_phy_init(struct usb_phy *phy)
+ 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
+ 	struct device *dev = phy->dev;
+ 	void __iomem *reg0 = priv->reg0;
+-	void __iomem *reg1 = priv->reg1;
+ 	int i;
+ 	u32 val;
+ 	unsigned long flags;
+@@ -97,19 +93,6 @@ static int rcar_usb_phy_init(struct usb_phy *phy)
+ 		iowrite32(0x00000000, (reg0 + USBPCTRL0));
+ 
+ 		/*
+-		 * EHCI IP internal buffer setting
+-		 * EHCI IP internal buffer enable
+-		 *
+-		 * These are recommended value of a datasheet
+-		 * see [USB :: EHCI internal buffer setting]
+-		 */
+-		iowrite32(0x00ff0040, (reg0 + EIIBC1));
+-		iowrite32(0x00ff0040, (reg1 + EIIBC1));
+-
+-		iowrite32(0x00000001, (reg0 + EIIBC2));
+-		iowrite32(0x00000001, (reg1 + EIIBC2));
+-
+-		/*
+ 		 * Bus alignment settings
+ 		 */
+ 
+@@ -145,14 +128,13 @@ static void rcar_usb_phy_shutdown(struct usb_phy *phy)
+ static int rcar_usb_phy_probe(struct platform_device *pdev)
+ {
+ 	struct rcar_usb_phy_priv *priv;
+-	struct resource *res0, *res1;
++	struct resource *res0;
+ 	struct device *dev = &pdev->dev;
+-	void __iomem *reg0, *reg1;
++	void __iomem *reg0;
+ 	int ret;
+ 
+ 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+-	if (!res0 || !res1) {
++	if (!res0) {
+ 		dev_err(dev, "Not enough platform resources\n");
+ 		return -EINVAL;
+ 	}
+@@ -164,8 +146,7 @@ static int rcar_usb_phy_probe(struct platform_device *pdev)
+ 	 * this driver can't use devm_request_and_ioremap(dev, res) here
+ 	 */
+ 	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
+-	reg1 = devm_ioremap_nocache(dev, res1->start, resource_size(res1));
+-	if (!reg0 || !reg1) {
++	if (!reg0) {
+ 		dev_err(dev, "ioremap error\n");
+ 		return -ENOMEM;
+ 	}
+@@ -177,7 +158,6 @@ static int rcar_usb_phy_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	priv->reg0		= reg0;
+-	priv->reg1		= reg1;
+ 	priv->counter		= 0;
+ 	priv->phy.dev		= dev;
+ 	priv->phy.label		= dev_name(dev);
 -- 
-1.8.1.5
+1.8.2.1
 
