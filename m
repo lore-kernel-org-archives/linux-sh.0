@@ -1,143 +1,71 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jun 2013 15:47:23 +0000
-Subject: [PATCH 1/3] OF: add a new phandle parsing function for grouped nodes
-Message-Id: <1370533645-23690-2-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:59 +0000
+Subject: [PATCH 09/11] ARM: shmobile: r8a7778: add support MMC driver
+Message-Id: <1371106861-25626-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370533645-23690-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1370533645-23690-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Vinod Koul <vinod.koul@intel.com>, devicetree-discuss@lists.ozlabs.org, Rob Herring <rob.herring@calxeda.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Sometimes it is useful to group similar DT nodes under a common parent,
-when a different node can reference the group, meaning, that any subnode
-will do the job. An example of such a group is a DMA multiplexer, when a
-DMA slave can be served by any DMA controller from the group. This patch
-slightly extends an internal __of_parse_phandle_with_args() function to
-accept one more optional parameter and exports a new API function
-of_parse_phandle_with_child_args(), which allows the caller to provide a
-compatibility string for a group. In this case the function returns the
-first matching node. Once a matching node is found, standard DT iterators
-can be used to look for further matches.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Rob Herring <rob.herring@calxeda.com>
-Cc: Grant Likely <grant.likely@secretlab.ca>
+Add a platform device for the r8a7778 MMC.
+
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/of/base.c  |   28 +++++++++++++++++++++++++---
- include/linux/of.h |   16 ++++++++++++++++
- 2 files changed, 41 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |  2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 13 +++++++++++++
+ 2 files changed, 15 insertions(+)
 
-diff --git a/drivers/of/base.c b/drivers/of/base.c
-index f53b992..33d4f3a 100644
---- a/drivers/of/base.c
-+++ b/drivers/of/base.c
-@@ -1108,11 +1108,16 @@ EXPORT_SYMBOL(of_parse_phandle);
-  * @cells_name:	property name that specifies phandles' arguments count
-  * @index:	index of a phandle to parse out
-  * @out_args:	optional pointer to output arguments structure (will be filled)
-+ * @parent:	optional parent-compatibility string
-  *
-  * This function is useful to parse lists of phandles and their arguments.
-  * Returns 0 on success and fills out_args, on error returns appropriate
-  * errno value.
-  *
-+ * If @parent is specified and the DT node, pointed by the currently iterated
-+ * phandle is compatible with it, it is assumed, that the phandle is a parent of
-+ * DT nodes with equal cell counts. In that case the first child is taken.
-+ *
-  * Caller is responsible to call of_node_put() on the returned out_args->node
-  * pointer.
-  *
-@@ -1136,7 +1141,8 @@ EXPORT_SYMBOL(of_parse_phandle);
- static int __of_parse_phandle_with_args(const struct device_node *np,
- 					const char *list_name,
- 					const char *cells_name, int index,
--					struct of_phandle_args *out_args)
-+					struct of_phandle_args *out_args,
-+					const char *parent)
- {
- 	const __be32 *list, *list_end;
- 	int rc = 0, size, cur_index = 0;
-@@ -1171,6 +1177,12 @@ static int __of_parse_phandle_with_args(const struct device_node *np,
- 					 np->full_name);
- 				goto err;
- 			}
-+			if (parent && of_device_is_compatible(node, parent)) {
-+				struct device_node *child +					of_get_next_available_child(node, NULL);
-+				of_node_put(node);
-+				node = child;
-+			}
- 			if (of_property_read_u32(node, cells_name, &count)) {
- 				pr_err("%s: could not get %s for %s\n",
- 					 np->full_name, cells_name,
-@@ -1241,10 +1253,20 @@ int of_parse_phandle_with_args(const struct device_node *np, const char *list_na
- {
- 	if (index < 0)
- 		return -EINVAL;
--	return __of_parse_phandle_with_args(np, list_name, cells_name, index, out_args);
-+	return __of_parse_phandle_with_args(np, list_name, cells_name, index, out_args, NULL);
- }
- EXPORT_SYMBOL(of_parse_phandle_with_args);
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index af668c4..97ba66b 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -18,6 +18,7 @@
+ #ifndef __ASM_R8A7778_H__
+ #define __ASM_R8A7778_H__
  
-+int of_parse_phandle_with_child_args(const struct device_node *np, const char *list_name,
-+				     const char *cells_name, int index,
-+				     struct of_phandle_args *out_args, const char *parent)
-+{
-+	if (index < 0)
-+		return -EINVAL;
-+	return __of_parse_phandle_with_args(np, list_name, cells_name, index, out_args, parent);
-+}
-+EXPORT_SYMBOL(of_parse_phandle_with_child_args);
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
+ 
+@@ -26,6 +27,7 @@ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
++extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
+ 
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index a1e6930..c8e481f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -173,6 +173,19 @@ void __init r8a7778_add_hspi_device(int id)
+ 		hspi_resources + (2 * id), 2);
+ }
+ 
++/* MMC */
++static struct resource mmc_resources[] __initdata = {
++	DEFINE_RES_MEM(0xffe4e000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x5d)),
++};
 +
- /**
-  * of_count_phandle_with_args() - Find the number of phandles references in a property
-  * @np:		pointer to a device tree node containing a list
-@@ -1263,7 +1285,7 @@ EXPORT_SYMBOL(of_parse_phandle_with_args);
- int of_count_phandle_with_args(const struct device_node *np, const char *list_name,
- 				const char *cells_name)
- {
--	return __of_parse_phandle_with_args(np, list_name, cells_name, -1, NULL);
-+	return __of_parse_phandle_with_args(np, list_name, cells_name, -1, NULL, NULL);
- }
- EXPORT_SYMBOL(of_count_phandle_with_args);
- 
-diff --git a/include/linux/of.h b/include/linux/of.h
-index 6e10f8f..d3fdce2 100644
---- a/include/linux/of.h
-+++ b/include/linux/of.h
-@@ -280,6 +280,12 @@ extern struct device_node *of_parse_phandle(const struct device_node *np,
- extern int of_parse_phandle_with_args(const struct device_node *np,
- 	const char *list_name, const char *cells_name, int index,
- 	struct of_phandle_args *out_args);
-+extern int of_parse_phandle_with_child_args(const struct device_node *np,
-+					    const char *list_name,
-+					    const char *cells_name,
-+					    int index,
-+					    struct of_phandle_args *out_args,
-+					    const char *parent);
- extern int of_count_phandle_with_args(const struct device_node *np,
- 	const char *list_name, const char *cells_name);
- 
-@@ -488,6 +494,16 @@ static inline int of_parse_phandle_with_args(const struct device_node *np,
- 	return -ENOSYS;
- }
- 
-+static inline int of_parse_phandle_with_child_args(const struct device_node *np,
-+						   const char *list_name,
-+						   const char *cells_name,
-+						   int index,
-+						   struct of_phandle_args *out_args,
-+						   const char *parent)
++void __init r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info)
 +{
-+	return -ENOSYS;
++	platform_device_register_resndata(
++		&platform_bus, "sh_mmcif", -1,
++		mmc_resources, ARRAY_SIZE(mmc_resources),
++		info, sizeof(*info));
 +}
-+
- static inline int of_count_phandle_with_args(const struct device_node *np,
- 					     const char *list_name,
- 					     const char *cells_name)
+ 
+ void __init r8a7778_add_standard_devices(void)
+ {
 -- 
-1.7.2.5
+1.8.2.1
 
