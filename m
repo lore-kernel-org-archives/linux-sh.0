@@ -1,52 +1,69 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:25 +0000
-Subject: [PATCH 15/24] drm/rcar-du: Use dynamic number of CRTCs instead of CRTCs array size
-Message-Id: <1372326574-4315-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:46:00 +0000
+Subject: [PATCH v6 15/18] ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
+Message-Id: <1371167163-10507-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The rcar_du_device structure contains a field that stores the number of
-CRTCs, use it instead of the CRTCs array size. This prepares the driver
-to support a variable number of CRTCs.
+Reference the st1232 reset GPIO from the device tree and remove it from
+board code.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c | 2 +-
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 7 -------
+ 2 files changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 5e4168d..fe61962 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -105,7 +105,7 @@ static void rcar_du_preclose(struct drm_device *dev, struct drm_file *file)
- 	struct rcar_du_device *rcdu = dev->dev_private;
- 	unsigned int i;
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index a6c6606..8ec4cd1 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -10,6 +10,7 @@
  
--	for (i = 0; i < ARRAY_SIZE(rcdu->crtcs); ++i)
-+	for (i = 0; i < rcdu->num_crtcs; ++i)
- 		rcar_du_crtc_cancel_page_flip(&rcdu->crtcs[i], file);
+ /dts-v1/;
+ /include/ "r8a7740.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "armadillo 800 eva reference";
+@@ -43,6 +44,7 @@
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
+ 		pinctrl-0 = <&st1232_pins>;
+ 		pinctrl-names = "default";
++		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+ 	};
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 4ddd299..002d8d3 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -158,7 +158,6 @@ clock_error:
+  */
+ static void __init eva_init(void)
+ {
+-
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
+ 
+@@ -171,12 +170,6 @@ static void __init eva_init(void)
+ 
+ 	r8a7740_add_standard_devices_dt();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+-
+ 	r8a7740_pm_init();
  }
  
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index c32e0f9..845bcb3 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -197,7 +197,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
- 			continue;
- 
--		if (pdata->output >= ARRAY_SIZE(rcdu->crtcs)) {
-+		if (pdata->output >= rcdu->num_crtcs) {
- 			dev_warn(rcdu->dev,
- 				 "encoder %u references unexisting output %u, skipping\n",
- 				 i, pdata->output);
 -- 
 1.8.1.5
 
