@@ -1,38 +1,46 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 17 Jun 2013 18:50:01 +0000
-Subject: [PATCH v7 1/3] sh-pfc: Remove support for platform data
-Message-Id: <1371495003-11185-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:45:59 +0000
+Subject: [PATCH v6 14/18] ARM: shmobile: armadillo-reference: Add st1232 pin mappings
+Message-Id: <1371167163-10507-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Platform data isn't used, support can thus be removed.
+Add pin mappings for the st1232 device to the device tree and reference
+them as the default state for the device.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/core.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index b551336..13f40c5 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -354,8 +354,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
- 	struct sh_pfc *pfc;
- 	int ret;
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 4a7ae32..a6c6606 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -41,6 +41,8 @@
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
++		pinctrl-0 = <&st1232_pins>;
++		pinctrl-names = "default";
+ 	};
+ };
  
--	info = pdev->id_entry->driver_data
--	      ? (void *)pdev->id_entry->driver_data : pdev->dev.platform_data;
-+	info = (void *)pdev->id_entry->driver_data;
- 	if (info = NULL)
- 		return -ENODEV;
- 
+@@ -52,4 +54,9 @@
+ 		renesas,groups = "scifa1_data";
+ 		renesas,function = "scifa1";
+ 	};
++
++	st1232_pins: st1232 {
++		renesas,groups = "intc_irq10";
++		renesas,function = "intc";
++	};
+ };
 -- 
 1.8.1.5
 
