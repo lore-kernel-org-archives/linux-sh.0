@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:28 +0000
-Subject: [PATCH 15/23] ARM: shmobile: r8a7790: add div4 clocks
-Message-Id: <1370503716-31155-16-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:54 +0000
+Subject: [PATCH 04/11] ARM: shmobile: r8a7778: add support I2C clock
+Message-Id: <1371106861-25626-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,78 +12,61 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-DIV4 clocks control SD* core clocks.
+This patch adds r8a7778 I2C clock support.
+It also adds peripheral_clk which is requiested
+from i2c-rcar driver
 
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7778.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 850e47f..c85e643 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -51,6 +51,7 @@
- #define SMSTPCR7 0xe615014c
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index b251e4d..1386c59 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -105,7 +105,8 @@ static struct clk *main_clks[] = {
+ enum {
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+-	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++	MSTP030,
++	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
+ 	MSTP_NR };
  
- #define MODEMR		0xE6160060
-+#define SDCKCR		0xE6150074
- 
- static struct clk_mapping cpg_mapping = {
- 	.phys   = CPG_BASE,
-@@ -131,6 +132,29 @@ static struct clk *main_clks[] = {
- 	&cp_clk,
+@@ -114,6 +115,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
++	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
++	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
++	[MSTP028] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 28, 0), /* I2C2 */
++	[MSTP027] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 27, 0), /* I2C3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 24, 0), /* SCIF2 */
+@@ -125,11 +130,18 @@ static struct clk mstp_clks[MSTP_NR] = {
  };
  
-+/* SDHI (DIV4) clock */
-+static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
+ static struct clk_lookup lookups[] = {
++	/* main */
++	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
 +
-+static struct clk_div_mult_table div4_div_mult_table = {
-+	.divisors = divisors,
-+	.nr_divisors = ARRAY_SIZE(divisors),
-+};
-+
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
-+
-+enum {
-+	DIV4_SDH, DIV4_SD0, DIV4_SD1, DIV4_NR
-+};
-+
-+struct clk div4_clks[DIV4_NR] = {
-+	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD1] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 0, 0x1de0, CLK_ENABLE_ON_INIT),
-+};
-+
-+/* MSTP */
- enum { MSTP721, MSTP720,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
- static struct clk mstp_clks[MSTP_NR] = {
-@@ -173,6 +197,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("qspi",		&qspi_clk),
- 	CLKDEV_CON_ID("cp",		&cp_clk),
- 
-+	/* DIV4 */
-+	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
-+	CLKDEV_CON_ID("sd0",		&div4_clks[DIV4_SD0]),
-+	CLKDEV_CON_ID("sd1",		&div4_clks[DIV4_SD1]),
-+
- 	/* MSTP */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
-@@ -233,6 +262,9 @@ void __init r8a7790_clock_init(void)
- 		ret = clk_register(main_clks[k]);
- 
- 	if (!ret)
-+		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
-+
-+	if (!ret)
- 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
- 
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
 -- 
 1.8.2.1
 
