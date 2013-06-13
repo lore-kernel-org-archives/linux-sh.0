@@ -1,55 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 01 Jun 2013 21:48:42 +0000
-Subject: [PATCH v8 5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
-Message-Id: <201306020148.43282.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:45:50 +0000
+Subject: [PATCH v6 05/18] ARM: shmobile: r8a7778: Add pin control device to device tree
+Message-Id: <1371167163-10507-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
+References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that 'drivers/usb/phy/phy-rcar-usb.c' doesn't require the second memory
-resource anymore, we can remove it from the R8A7779's USB PHY platform device.
+Add a pfc node to the r8a7778 device tree.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 7:
-- updated the driver file name in the changelog.
+ arch/arm/boot/dts/r8a7778.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-Changes since version 4:
-- refreshed the patch.
-
-Changes since version 3:
-- lowercased the SoC name in the subject.
-
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- new patch in this version, split from the previous one.
-
- arch/arm/mach-shmobile/setup-r8a7779.c |    5 -----
- 1 file changed, 5 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -395,11 +395,6 @@ static struct resource usb_phy_resources
- 		.end		= 0xffe70900 - 1,
- 		.flags		= IORESOURCE_MEM,
- 	},
--	[1] = {
--		.start		= 0xfff70000,
--		.end		= 0xfff70900 - 1,
--		.flags		= IORESOURCE_MEM,
--	},
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4743735..c8dbf14 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -32,4 +32,9 @@
+ 		reg = <0xfe438000 0x1000>,
+ 		      <0xfe430000 0x100>;
+ 	};
++
++	pfc: pfc@fffc0000 {
++		compatible = "renesas,pfc-r8a7778";
++		reg = <0xfffc000 0x118>;
++	};
  };
- 
- static struct platform_device usb_phy_device = {
+-- 
+1.8.1.5
+
