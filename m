@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:35 +0000
-Subject: [PATCH 02/15] ARM: shmobile: Let romImage rely on default ATAGS
-Message-Id: <1371456768-1084-3-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:47 +0000
+Subject: [PATCH 09/15] ARM: shmobile: EMEV2 SMP with SCU boot fn and args
+Message-Id: <1371106793-25071-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,50 +12,32 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Remove the ATAGS data structure from head-shmobile.S
-since a default ATAGS is already provided by the code
-in arch/arm/kernel/atags_parser.c. Passing a NULL as
-ATAGS is valid. For actual hardware specific setup
-the fixup callback in the board code may be used.
+Let EMEV2 make use of shmobile_boot_fn and shmobile_boot_arg
+together with shmobile_boot_scu and the SCU base address.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/compressed/head-shmobile.S |   19 +------------------
- 1 file changed, 1 insertion(+), 18 deletions(-)
+ arch/arm/mach-shmobile/smp-emev2.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
-index fe3719b..19b2304 100644
---- a/arch/arm/boot/compressed/head-shmobile.S
-+++ b/arch/arm/boot/compressed/head-shmobile.S
-@@ -55,26 +55,9 @@ __tmp_stack:
- __continue:
- #endif /* CONFIG_ZBOOT_ROM_MMC || CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI */
+diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
+index e38691b..80991b3 100644
+--- a/arch/arm/mach-shmobile/smp-emev2.c
++++ b/arch/arm/mach-shmobile/smp-emev2.c
+@@ -40,8 +40,10 @@ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	scu_enable(shmobile_scu_base);
  
--	b	1f
--__atags:@ tag #1
--	.long	12			@ tag->hdr.size = tag_size(tag_core);
--	.long	0x54410001		@ tag->hdr.tag = ATAG_CORE;
--	.long   0			@ tag->u.core.flags = 0;
--	.long	0			@ tag->u.core.pagesize = 0;
--	.long	0			@ tag->u.core.rootdev = 0;
--	@ tag #2
--	.long	8			@ tag->hdr.size = tag_size(tag_mem32);
--	.long	0x54410002		@ tag->hdr.tag = ATAG_MEM;
--	.long	CONFIG_MEMORY_SIZE	@ tag->u.mem.size = CONFIG_MEMORY_SIZE;
--	.long	CONFIG_MEMORY_START	@ @ tag->u.mem.start = CONFIG_MEMORY_START;
--	@ tag #3
--	.long	0			@ tag->hdr.size = 0
--	.long	0			@ tag->hdr.tag = ATAG_NONE;
--1:
--
- 	/* Set board ID necessary for boot */
- 	ldr	r7, 1f				@ Set machine type register
--	adr	r8, __atags			@ Set atag register
-+	mov	r8, #0				@ pass null pointer as atag
- 	b	2f
+-	/* Tell ROM loader about our vector (in headsmp-scu.S) */
+-	emev2_set_boot_vector(__pa(shmobile_secondary_vector_scu));
++	/* Tell ROM loader about our vector (in headsmp-scu.S, headsmp.S) */
++	emev2_set_boot_vector(__pa(shmobile_boot_vector));
++	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
++	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
  
- 1 :	.long MACH_TYPE
+ 	/* enable cache coherency on booting CPU */
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
 -- 
-1.7.10.4
+1.8.2.1
 
