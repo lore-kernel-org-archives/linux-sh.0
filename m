@@ -1,83 +1,63 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 27 Jun 2013 11:49:30 +0000
-Subject: Re: [PATCH v5 1/3] ARM: shmobile: r8a7778: add VIN support
-Message-Id: <51CC26CA.1080207@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:55 +0000
+Subject: [PATCH 05/11] ARM: shmobile: r8a7778: add support HSPI clock
+Message-Id: <1371106861-25626-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306220326.46176.sergei.shtylyov@cogentembedded.com>
- <201306220328.47110.sergei.shtylyov@cogentembedded.com>
- <877ghg2krp.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <877ghg2krp.wl%kuninori.morimoto.gx@renesas.com>
+References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 27-06-2013 9:19, Kuninori Morimoto wrote:
+This patch adds r8a7778 HSPI clock support.
+It also adds shyway_clk which is requiested
+from sh-hspi driver
 
-> I have 2 small comments
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-> But, basically, I have no objection to this patch.
-
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
->> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-
->> Add VIN clocks and platform devices on R8A7778 SoC; add function to register
->> the VIN platform devices.
-
->> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->> [Sergei: added 'id' parameter check to r8a7779_add_vin_device(), used '*pdata'
->> in *sizeof* operator there, renamed some variables, annotated 'vin[01]_info' and
->> vin[01]_resources[] as '__initdata'.]
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> ---
->> Changes since version 4:
->> - resolved reject, refreshed the patch.
-
->> Changes since version 3:
->> - changed the VIN platform device names to be R8A7778 specific;
->> - resolved reject in <mach/r8a7778.h>  due to USB patch rework.
-
->> Changes from version 2:
->> - annotated 'vin[01]_info' and vin[01]_resources[] as '__initdata' since they're
->>    kmemdup()'ed while registering the platform devices anyway;
->> - refreshed the patch.
-
->>   arch/arm/mach-shmobile/clock-r8a7778.c        |    5 +++
->>   arch/arm/mach-shmobile/include/mach/r8a7778.h |    3 ++
->>   arch/arm/mach-shmobile/setup-r8a7778.c        |   33 ++++++++++++++++++++++++++
->>   3 files changed, 41 insertions(+)
-
-> Simon (or ARM Maintainer ?) will be happy if clock was separated ?
-
-    Neither I guess. Simon wrote to you "scratch that" after his request 
-to separate device and clock changes.
-
->> Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
->> =================================>> --- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
->> +++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
->> @@ -106,6 +106,7 @@ enum {
->>   	MSTP331,
->>   	MSTP323, MSTP322, MSTP321,
->>   	MSTP114,
->> +	MSTP110, MSTP109,
->>   	MSTP100,
->>   	MSTP030,
-
-> MSTP114, MSTP110
-> MSTP109, MSTP100
-
-> is better
-
-    Somewhat doubt it.
-
-> Best regards
-> ---
-> Kuninori Morimoto
-
-WBR, Sergei
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 1386c59..c2c1895 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -108,6 +108,7 @@ enum {
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015,
++	MSTP007,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -127,10 +128,12 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
+ 	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
+ 	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP007] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  7, 0), /* HSPI */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* main */
++	CLKDEV_CON_ID("shyway_clk",	&s_clk),
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
+@@ -150,6 +153,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
++	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ };
+ 
+ void __init r8a7778_clock_init(void)
+-- 
+1.8.2.1
 
