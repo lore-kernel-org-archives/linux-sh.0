@@ -1,45 +1,209 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 19 Jun 2013 18:27:50 +0000
-Subject: Re: [PATCH 1/2] sh_eth: define/use EESR_RX_CHECK macro
-Message-Id: <51C1F826.6040805@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:26 +0000
+Subject: [PATCH 0/1] gpio-rcar: Add DT support
+Message-Id: <1371106826-25313-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306190207.46832.sergei.shtylyov@cogentembedded.com> <CANqRtoRNnNuG_r+MW3Yb79jVK_iKm1bRTSvMhw1j4qsWZtphpw@mail.gmail.com> <20130619.005005.2262835197239818334.davem@davemloft.net>
-In-Reply-To: <20130619.005005.2262835197239818334.davem@davemloft.net>
+References: <1371106826-25313-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106826-25313-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: magnus.damm@gmail.com
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On 06/19/2013 11:50 AM, David Miller wrote:
+Add DT bindings for the gpio-rcar driver and read the device
+configuration from the DT node at probe time if available.
 
->> On Wed, Jun 19, 2013 at 7:07 AM, Sergei Shtylyov
->> <sergei.shtylyov@cogentembedded.com> wrote:
->>> sh_eth_interrupt() uses the same Rx interrupt mask twice to check the interrupt
->>> status register -- #define EESR_RX_CHECK  and use it instead.
+Cc: devicetree-discuss@lists.ozlabs.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ .../devicetree/bindings/gpio/renesas,gpio-rcar.txt | 52 +++++++++++++++++
+ drivers/gpio/gpio-rcar.c                           | 66 ++++++++++++++++++----
+ 2 files changed, 108 insertions(+), 10 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
 
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> Thanks for the patch, nice to see that this driver is moving forward.
-
-    Magnus, BTW, are you content with the amount of cleanup that is 
-currently queued in the Dave Miller's 'net-next.git' repo, or should I 
-move further: e.g., move the SoC specific fields like 'register_type' 
-from the platform data to the driver's internal data structure?
-
->> Can you please include information about which SoC / board this code
->> has been tested on? As you know, the actual hardware that this driver
->> is operating on is not very well documented, so at least having
->> information about the SoC together with the commit message or patch
->> may help in the future.
-
-> Sergei, please make this suggested change and resubmit this series, thank you.
-
-    Hm, I guess Magnus didn't really mean patch #1 which doesn't change 
-anything in the driver's behavior but only the actual NAPI support. OK, 
-it was tested on R8A7778 BOCK-W board and I'll add that to the changelog.
-
-WBR, Sergei
+diff --git a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+new file mode 100644
+index 0000000..46d76a0
+--- /dev/null
++++ b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+@@ -0,0 +1,52 @@
++* Renesas R-Car GPIO Controller
++
++Required Properties:
++
++  - compatible: should be one of the following.
++    - "renesas,gpio-r8a7778": for R8A7778 (R-Mobile M1) compatible GPIO controller.
++    - "renesas,gpio-r8a7779": for R8A7779 (R-Car H1) compatible GPIO controller.
++    - "renesas,gpio-r8a7790": for R8A7790 (R-Car H2) compatible GPIO controller.
++    - "renesas,gpio-rcar": for generic R-Car GPIO controller.
++
++  - reg: Base address and length of each memory resource used by the GPIO
++    controller hardware module.
++
++  - interrupt-parent: phandle of the parent interrupt controller.
++  - interrupts: Interrupt specifier for the controllers interrupt.
++
++  - gpio-controller: Marks the device node as a gpio controller.
++  - #gpio-cells: Should be 2. The first cell is the GPIO number and the second
++    cell is used to specify optional parameters as bit flags. Only the GPIO
++    active low flag (bit 0) is currently supported.
++  - gpio-ranges: Range of pins managed by the GPIO controller as a 4-cells
++    tuple using the following syntax.
++
++    <[phandle of the pin controller node]
++     0
++     [index of the first pin]
++     [number of pins]>
++
++Please refer to gpio.txt in this directory for details of the common GPIO
++bindings used by client devices.
++
++Example: R8A7779 (R-Car H1) GPIO controller nodes
++
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc40000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 141 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++	};
++	...
++	gpio6: gpio@ffc46000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc46000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 147 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 9>;
++	};
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index d173d56..5a693dd 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -51,6 +51,8 @@ struct gpio_rcar_priv {
+ #define FILONOFF 0x28
+ #define BOTHEDGE 0x4c
+ 
++#define RCAR_MAX_GPIO_PER_BANK		32
++
+ static inline u32 gpio_rcar_read(struct gpio_rcar_priv *p, int offs)
+ {
+ 	return ioread32(p->base + offs);
+@@ -274,9 +276,39 @@ static struct irq_domain_ops gpio_rcar_irq_domain_ops = {
+ 	.map	= gpio_rcar_irq_domain_map,
+ };
+ 
++static void gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
++{
++	struct gpio_rcar_config *pdata = p->pdev->dev.platform_data;
++#ifdef CONFIG_OF
++	struct device_node *np = p->pdev->dev.of_node;
++	struct of_phandle_args args;
++	int ret;
++#endif
++
++	if (pdata)
++		p->config = *pdata;
++#ifdef CONFIG_OF
++	else if (np) {
++		ret = of_parse_phandle_with_args(np, "gpio-ranges",
++				"#gpio-range-cells", 0, &args);
++		p->config.number_of_pins = ret = 0 && args.args_count = 3
++					 ? args.args[2]
++					 : RCAR_MAX_GPIO_PER_BANK;
++		p->config.gpio_base = -1;
++	}
++#endif
++
++	if (p->config.number_of_pins = 0 ||
++	    p->config.number_of_pins > RCAR_MAX_GPIO_PER_BANK) {
++		dev_warn(&p->pdev->dev,
++			 "Invalid number of gpio lines %u, using %u\n",
++			 p->config.number_of_pins, RCAR_MAX_GPIO_PER_BANK);
++		p->config.number_of_pins = RCAR_MAX_GPIO_PER_BANK;
++	}
++}
++
+ static int gpio_rcar_probe(struct platform_device *pdev)
+ {
+-	struct gpio_rcar_config *pdata = pdev->dev.platform_data;
+ 	struct gpio_rcar_priv *p;
+ 	struct resource *io, *irq;
+ 	struct gpio_chip *gpio_chip;
+@@ -291,14 +323,14 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
+-	/* deal with driver instance configuration */
+-	if (pdata)
+-		p->config = *pdata;
+-
+ 	p->pdev = pdev;
+-	platform_set_drvdata(pdev, p);
+ 	spin_lock_init(&p->lock);
+ 
++	/* Get device configuration from DT node or platform data. */
++	gpio_rcar_parse_pdata(p);
++
++	platform_set_drvdata(pdev, p);
++
+ 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+ 
+@@ -325,6 +357,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 	gpio_chip->set = gpio_rcar_set;
+ 	gpio_chip->to_irq = gpio_rcar_to_irq;
+ 	gpio_chip->label = name;
++	gpio_chip->dev = &pdev->dev;
+ 	gpio_chip->owner = THIS_MODULE;
+ 	gpio_chip->base = p->config.gpio_base;
+ 	gpio_chip->ngpio = p->config.number_of_pins;
+@@ -371,10 +404,12 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 				 p->config.irq_base, ret);
+ 	}
+ 
+-	ret = gpiochip_add_pin_range(gpio_chip, p->config.pctl_name, 0,
+-				     gpio_chip->base, gpio_chip->ngpio);
+-	if (ret < 0)
+-		dev_warn(&pdev->dev, "failed to add pin range\n");
++	if (p->config.pctl_name) {
++		ret = gpiochip_add_pin_range(gpio_chip, p->config.pctl_name, 0,
++					     gpio_chip->base, gpio_chip->ngpio);
++		if (ret < 0)
++			dev_warn(&pdev->dev, "failed to add pin range\n");
++	}
+ 
+ 	return 0;
+ 
+@@ -397,11 +432,22 @@ static int gpio_rcar_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_OF
++static const struct of_device_id gpio_rcar_of_table[] = {
++	{
++		.compatible = "renesas,gpio-rcar",
++	},
++};
++
++MODULE_DEVICE_TABLE(of, gpio_rcar_of_table);
++#endif
++
+ static struct platform_driver gpio_rcar_device_driver = {
+ 	.probe		= gpio_rcar_probe,
+ 	.remove		= gpio_rcar_remove,
+ 	.driver		= {
+ 		.name	= "gpio_rcar",
++		.of_match_table = of_match_ptr(gpio_rcar_of_table),
+ 	}
+ };
+ 
+-- 
+1.8.2.1
 
