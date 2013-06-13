@@ -1,124 +1,102 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 01 Jun 2013 21:42:26 +0000
-Subject: [PATCH v8 4/9] phy-rcar-usb: remove EHCI internal buffer setup
-Message-Id: <201306020142.26579.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:45:57 +0000
+Subject: [PATCH v6 12/18] ARM: shmobile: sh73a0: Add pin control device to device tree
+Message-Id: <1371167163-10507-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now that the EHCI internal  buffer setup is done by the platform code,  we  can
-remove  such code from this driver as it  never  really belonged here.  We also
-no longer need the 2nd memory region now (2nd EHCI controller is simply missing
-in e.g. R8A7778 SoC).
+Add a pfc node to the sh73a0 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
-The patch has been tested on the Marzen and BOCK-W boards.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Felipe Balbi <balbi@ti.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 7:
-- renamed the PHY driver and changed the patch subject accordingly.
+ arch/arm/boot/dts/sh73a0.dtsi                  |  8 ++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 27 +++++++++++++-------------
+ 2 files changed, 21 insertions(+), 14 deletions(-)
 
-Changes since version 6:
-- added an ACK from Felipe Balbi.
-
-Changes since version 2:
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- split R8A7779 SoC file change to a separate patch.
-
- drivers/usb/phy/phy-rcar-usb.c |   28 ++++------------------------
- 1 file changed, 4 insertions(+), 24 deletions(-)
-
-Index: renesas/drivers/usb/phy/phy-rcar-usb.c
-=================================--- renesas.orig/drivers/usb/phy/phy-rcar-usb.c
-+++ renesas/drivers/usb/phy/phy-rcar-usb.c
-@@ -23,8 +23,6 @@
- #define USBEH0		0x080C
- #define USBOH0		0x081C
- #define USBCTL0		0x0858
--#define EIIBC1		0x0094
--#define EIIBC2		0x009C
- 
- /* USBPCTRL1 */
- #define PHY_RST		(1 << 2)
-@@ -40,7 +38,6 @@ struct rcar_usb_phy_priv {
- 	spinlock_t lock;
- 
- 	void __iomem *reg0;
--	void __iomem *reg1;
- 	int counter;
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ec40bf7..abe02d6 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -222,4 +222,12 @@
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-sh73a0";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 44055fe..6ff6ca2 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -40,35 +40,35 @@ static unsigned long pin_pullup_conf[] = {
  };
  
-@@ -59,7 +56,6 @@ static int rcar_usb_phy_init(struct usb_
- 	struct rcar_usb_phy_priv *priv = usb_phy_to_priv(phy);
- 	struct device *dev = phy->dev;
- 	void __iomem *reg0 = priv->reg0;
--	void __iomem *reg1 = priv->reg1;
- 	int i;
- 	u32 val;
- 	unsigned long flags;
-@@ -97,19 +93,6 @@ static int rcar_usb_phy_init(struct usb_
- 		iowrite32(0x00000000, (reg0 + USBPCTRL0));
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
+ 				  "i2c3_1", "i2c3"),
+ 	/* MMCIF */
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				  "mmc0_data8_0", "mmc0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				  "mmc0_ctrl_0", "mmc0"),
+-	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				    "PORT279", pin_pullup_conf),
+-	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				      "mmc0_data8_0", pin_pullup_conf),
+ 	/* SCIFA4 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+ 				  "scifa4_data", "scifa4"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+ 				  "scifa4_ctrl", "scifa4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SDHI2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+ 				  "sdhi2_data4", "sdhi2"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+ 				  "sdhi2_ctrl", "sdhi2"),
+ };
  
- 		/*
--		 * EHCI IP internal buffer setting
--		 * EHCI IP internal buffer enable
--		 *
--		 * These are recommended value of a datasheet
--		 * see [USB :: EHCI internal buffer setting]
--		 */
--		iowrite32(0x00ff0040, (reg0 + EIIBC1));
--		iowrite32(0x00ff0040, (reg1 + EIIBC1));
--
--		iowrite32(0x00000001, (reg0 + EIIBC2));
--		iowrite32(0x00000001, (reg1 + EIIBC2));
--
--		/*
- 		 * Bus alignment settings
- 		 */
- 
-@@ -145,14 +128,13 @@ static void rcar_usb_phy_shutdown(struct
- static int rcar_usb_phy_probe(struct platform_device *pdev)
+@@ -76,7 +76,6 @@ static void __init kzm_init(void)
  {
- 	struct rcar_usb_phy_priv *priv;
--	struct resource *res0, *res1;
-+	struct resource *res0;
- 	struct device *dev = &pdev->dev;
--	void __iomem *reg0, *reg1;
-+	void __iomem *reg0;
- 	int ret;
+ 	sh73a0_add_standard_devices_dt();
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+-	sh73a0_pinmux_init();
  
- 	res0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	res1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
--	if (!res0 || !res1) {
-+	if (!res0) {
- 		dev_err(dev, "Not enough platform resources\n");
- 		return -EINVAL;
- 	}
-@@ -164,8 +146,7 @@ static int rcar_usb_phy_probe(struct pla
- 	 * this driver can't use devm_request_and_ioremap(dev, res) here
- 	 */
- 	reg0 = devm_ioremap_nocache(dev, res0->start, resource_size(res0));
--	reg1 = devm_ioremap_nocache(dev, res1->start, resource_size(res1));
--	if (!reg0 || !reg1) {
-+	if (!reg0) {
- 		dev_err(dev, "ioremap error\n");
- 		return -ENOMEM;
- 	}
-@@ -177,7 +158,6 @@ static int rcar_usb_phy_probe(struct pla
- 	}
- 
- 	priv->reg0		= reg0;
--	priv->reg1		= reg1;
- 	priv->counter		= 0;
- 	priv->phy.dev		= dev;
- 	priv->phy.label		= dev_name(dev);
+ 	/* enable SD */
+ 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-- 
+1.8.1.5
 
