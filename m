@@ -1,39 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 12 Jun 2013 20:03:50 +0000
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 13 Jun 2013 00:57:40 +0000
 Subject: Re: [PATCH net-next] net: sh_eth: fix incorrect RX length error if R8A7740
-Message-Id: <51B8D426.3060006@cogentembedded.com>
+Message-Id: <51B91904.8070001@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51B7CFFB.7090801@renesas.com> <51B88271.1030101@cogentembedded.com> <51B8C84A.7000708@cogentembedded.com> <20130612.125552.1263337397196293337.davem@davemloft.net>
-In-Reply-To: <20130612.125552.1263337397196293337.davem@davemloft.net>
+References: <51B7CFFB.7090801@renesas.com> <51B8CB1B.9020304@cogentembedded.com>
+In-Reply-To: <51B8CB1B.9020304@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: yoshihiro.shimoda.uh@renesas.com, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
 
-On 06/12/2013 11:55 PM, David Miller wrote:
+Hi,
 
->>>> This patch fixes an issue that the driver increments the "RX length
->>>> error"
->>>> on every buffer in sh_eth_rx() if the R8A7740.
->>>> This patch also adds a description about the Receive Frame Status
->>>> bits.
+(2013/06/13 4:25), Sergei Shtylyov wrote:
+> On 06/12/2013 05:33 AM, Shimoda, Yoshihiro wrote:
+< snip >
+>> +#if defined(CONFIG_ARCH_R8A7740)
+>> +        /*
+>> +         * In case of almost GETHER/ETHERs, the Receive Frame State
+> 
+>    Erm, minor nit: it seems you forgot "all" after "almost". Hence it's probably worth resubmitting...
+> 
 
->>>       Thank you.
+Thank you for the point. I will fix it and resubmit a patch for "net.git".
 
->>>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>>> ---
->>>>    This patch is based on the latest net-next.git.
+Best regards,
+Yoshihiro Shimoda
 
->>>      Since this is a fix, it should have been done against 'net.git'.
-
->>     David, this patch applies to the recent net.git repo with offset.
->> Could you merge it there and also queue for stable?
-
-> Repost it so that I can apply it cleanly.
-
-    OK, I'll first wait for Shimoda-san's repost as it needs a little 
-comment fix anyway.
-
-WBR, Sergei
-
+>> +         * (RFS) bits in the Receive Descriptor 0 are from bit 9 to
+>> +         * bit 0. However, in case of the R8A7740's GETHER, the RFS
+>> +         * bits are from bit 25 to bit 16. So, the driver needs right
+>> +         * shifting by 16.
+>> +         */
+>> +        desc_status >>= 16;
+>> +#endif
+>> +
+> 
+> WBR, Sergei
+> 
+> 
