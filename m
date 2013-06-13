@@ -1,136 +1,272 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:32 +0000
-Subject: [PATCH 08/12] ARM: shmobile: Marzen: pass platform data to USB PHY device
-Message-Id: <1371106836-25388-9-git-send-email-horms+renesas@verge.net.au>
+From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Date: Thu, 13 Jun 2013 21:39:42 +0000
+Subject: [PATCH] V4L2: Merge struct v4l2_async_subdev_list with struct v4l2_subdev
+Message-Id: <1371159582-19163-1-git-send-email-sylvester.nawrocki@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+References: <1370939028-8352-17-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1370939028-8352-17-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: g.liakhovetski@gmx.de
+Cc: linux-media@vger.kernel.org, laurent.pinchart@ideasonboard.com, sakari.ailus@iki.fi, magnus.damm@gmail.com, prabhakar.csengg@gmail.com, s.hauer@pengutronix.de, linux-sh@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
 
-Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
-platform data, we now need a way to pass those platform data from the board file
-to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
-r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
-passed platform data using platform_device_register_resndata() call; creating
-this function involves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
-so that it will no longer be registered for the generic R8A7779 machine (where
-we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
-to load as well.
-
-For the Marzen board, this new function will be called from marzen_init() to
-register the USB PHY device early enough.
-
-Note that the board and the SoC code have to be in one patch to keep the code
-bisectable...
-
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[horms+renesas@verge.net.au: manually applied]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c         |  3 +++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        | 18 +++++++++---------
- 3 files changed, 14 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index fff353f..b1b41b1 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -57,6 +57,8 @@ static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
+Please consider squashing such change or similar into patch
+[PATCH v10 16/21] V4L2: support asynchronous subdevice registration
+
+This patch has not been tested yet.
+---
+ drivers/media/v4l2-core/v4l2-async.c |   67 +++++++++++++++-------------------
+ include/media/v4l2-async.h           |   15 +-------
+ include/media/v4l2-subdev.h          |   13 +++----
+ 3 files changed, 36 insertions(+), 59 deletions(-)
+
+diff --git a/drivers/media/v4l2-core/v4l2-async.c b/drivers/media/v4l2-core/v4l2-async.c
+index 3590ccc..53f741d 100644
+--- a/drivers/media/v4l2-core/v4l2-async.c
++++ b/drivers/media/v4l2-core/v4l2-async.c
+@@ -42,12 +42,10 @@ static LIST_HEAD(notifier_list);
+ static DEFINE_MUTEX(list_lock);
  
-+static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
-+
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
- 	[0] = {
-@@ -231,6 +233,7 @@ static void __init marzen_init(void)
- 	r8a7779_pinmux_init();
+ static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
+-						    struct v4l2_async_subdev_list *asdl)
++						    struct v4l2_subdev *sd)
+ {
+-	struct v4l2_subdev *sd = v4l2_async_to_subdev(asdl);
+ 	struct v4l2_async_subdev *asd;
+-	bool (*match)(struct device *,
+-		      struct v4l2_async_subdev *);
++	bool (*match)(struct device *, struct v4l2_async_subdev *);
  
- 	r8a7779_add_standard_devices();
-+	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ 	list_for_each_entry(asd, &notifier->waiting, list) {
+ 		/* bus_type has been verified valid before */
+@@ -79,16 +77,15 @@ static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *
  }
  
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index f10727f7..fc47073 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -4,6 +4,7 @@
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
-+#include <linux/platform_data/usb-rcar-phy.h>
+ static int v4l2_async_test_notify(struct v4l2_async_notifier *notifier,
+-				  struct v4l2_async_subdev_list *asdl,
++				  struct v4l2_subdev *sd,
+ 				  struct v4l2_async_subdev *asd)
+ {
+-	struct v4l2_subdev *sd = v4l2_async_to_subdev(asdl);
+ 	int ret;
  
- struct platform_device;
+ 	/* Remove from the waiting list */
+ 	list_del(&asd->list);
+-	asdl->asd = asd;
+-	asdl->notifier = notifier;
++	sd->asd = asd;
++	sd->notifier = notifier;
  
-@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
-+extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index a00283f..06804a1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -389,7 +389,7 @@ static struct platform_device sata_device = {
+ 	if (notifier->bound) {
+ 		ret = notifier->bound(notifier, sd, asd);
+@@ -96,7 +93,7 @@ static int v4l2_async_test_notify(struct v4l2_async_notifier *notifier,
+ 			return ret;
+ 	}
+ 	/* Move from the global subdevice list to notifier's done */
+-	list_move(&asdl->list, &notifier->done);
++	list_move(&sd->async_list, &notifier->done);
+ 
+ 	ret = v4l2_device_register_subdev(notifier->v4l2_dev, sd);
+ 	if (ret < 0) {
+@@ -111,21 +108,19 @@ static int v4l2_async_test_notify(struct v4l2_async_notifier *notifier,
+ 	return 0;
+ }
+ 
+-static void v4l2_async_cleanup(struct v4l2_async_subdev_list *asdl)
++static void v4l2_async_cleanup(struct v4l2_subdev *sd)
+ {
+-	struct v4l2_subdev *sd = v4l2_async_to_subdev(asdl);
+-
+ 	v4l2_device_unregister_subdev(sd);
+-	/* Subdevice driver will reprobe and put asdl back onto the list */
+-	list_del_init(&asdl->list);
+-	asdl->asd = NULL;
++	/* Subdevice driver will reprobe and put the subdev back onto the list */
++	list_del_init(&sd->async_list);
++	sd->asd = NULL;
+ 	sd->dev = NULL;
+ }
+ 
+ int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
+ 				 struct v4l2_async_notifier *notifier)
+ {
+-	struct v4l2_async_subdev_list *asdl, *tmp;
++	struct v4l2_subdev *sd, *tmp;
+ 	struct v4l2_async_subdev *asd;
+ 	int i;
+ 
+@@ -158,14 +153,14 @@ int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
+ 	/* Keep also completed notifiers on the list */
+ 	list_add(&notifier->list, &notifier_list);
+ 
+-	list_for_each_entry_safe(asdl, tmp, &subdev_list, list) {
++	list_for_each_entry_safe(sd, tmp, &subdev_list, list) {
+ 		int ret;
+ 
+-		asd = v4l2_async_belongs(notifier, asdl);
++		asd = v4l2_async_belongs(notifier, sd);
+ 		if (!asd)
+ 			continue;
+ 
+-		ret = v4l2_async_test_notify(notifier, asdl, asd);
++		ret = v4l2_async_test_notify(notifier, sd, asd);
+ 		if (ret < 0) {
+ 			mutex_unlock(&list_lock);
+ 			return ret;
+@@ -180,7 +175,7 @@ EXPORT_SYMBOL(v4l2_async_notifier_register);
+ 
+ void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier)
+ {
+-	struct v4l2_async_subdev_list *asdl, *tmp;
++	struct v4l2_subdev *sd, *tmp;
+ 	unsigned int notif_n_subdev = notifier->subdev_num;
+ 	unsigned int n_subdev = min(notif_n_subdev, V4L2_MAX_SUBDEVS);
+ 	struct device *dev[n_subdev];
+@@ -190,18 +185,16 @@ void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier)
+ 
+ 	list_del(&notifier->list);
+ 
+-	list_for_each_entry_safe(asdl, tmp, &notifier->done, list) {
+-		struct v4l2_subdev *sd = v4l2_async_to_subdev(asdl);
+-
++	list_for_each_entry_safe(sd, tmp, &notifier->done, list) {
+ 		dev[i] = get_device(sd->dev);
+ 
+-		v4l2_async_cleanup(asdl);
++		v4l2_async_cleanup(sd);
+ 
+ 		/* If we handled USB devices, we'd have to lock the parent too */
+ 		device_release_driver(dev[i++]);
+ 
+ 		if (notifier->unbind)
+-			notifier->unbind(notifier, sd, sd->asdl.asd);
++			notifier->unbind(notifier, sd, sd->asd);
+ 	}
+ 
+ 	mutex_unlock(&list_lock);
+@@ -230,24 +223,23 @@ EXPORT_SYMBOL(v4l2_async_notifier_unregister);
+ 
+ int v4l2_async_register_subdev(struct v4l2_subdev *sd)
+ {
+-	struct v4l2_async_subdev_list *asdl = &sd->asdl;
+ 	struct v4l2_async_notifier *notifier;
+ 
+ 	mutex_lock(&list_lock);
+ 
+-	INIT_LIST_HEAD(&asdl->list);
++	INIT_LIST_HEAD(&sd->async_list);
+ 
+ 	list_for_each_entry(notifier, &notifier_list, list) {
+-		struct v4l2_async_subdev *asd = v4l2_async_belongs(notifier, asdl);
++		struct v4l2_async_subdev *asd = v4l2_async_belongs(notifier, sd);
+ 		if (asd) {
+-			int ret = v4l2_async_test_notify(notifier, asdl, asd);
++			int ret = v4l2_async_test_notify(notifier, sd, asd);
+ 			mutex_unlock(&list_lock);
+ 			return ret;
+ 		}
+ 	}
+ 
+ 	/* None matched, wait for hot-plugging */
+-	list_add(&asdl->list, &subdev_list);
++	list_add(&sd->async_list, &subdev_list);
+ 
+ 	mutex_unlock(&list_lock);
+ 
+@@ -257,23 +249,22 @@ EXPORT_SYMBOL(v4l2_async_register_subdev);
+ 
+ void v4l2_async_unregister_subdev(struct v4l2_subdev *sd)
+ {
+-	struct v4l2_async_subdev_list *asdl = &sd->asdl;
+-	struct v4l2_async_notifier *notifier = asdl->notifier;
++	struct v4l2_async_notifier *notifier = sd->notifier;
+ 
+-	if (!asdl->asd) {
+-		if (!list_empty(&asdl->list))
+-			v4l2_async_cleanup(asdl);
++	if (!sd->asd) {
++		if (!list_empty(&sd->async_list))
++			v4l2_async_cleanup(sd);
+ 		return;
+ 	}
+ 
+ 	mutex_lock(&list_lock);
+ 
+-	list_add(&asdl->asd->list, &notifier->waiting);
++	list_add(&sd->asd->list, &notifier->waiting);
+ 
+-	v4l2_async_cleanup(asdl);
++	v4l2_async_cleanup(sd);
+ 
+ 	if (notifier->unbind)
+-		notifier->unbind(notifier, sd, sd->asdl.asd);
++		notifier->unbind(notifier, sd, sd->asd);
+ 
+ 	mutex_unlock(&list_lock);
+ }
+diff --git a/include/media/v4l2-async.h b/include/media/v4l2-async.h
+index 12bd39c..ba91c3b 100644
+--- a/include/media/v4l2-async.h
++++ b/include/media/v4l2-async.h
+@@ -57,25 +57,12 @@ struct v4l2_async_subdev {
  };
  
- /* USB PHY */
--static struct resource usb_phy_resources[] = {
-+static struct resource usb_phy_resources[] __initdata = {
- 	[0] = {
- 		.start		= 0xffe70800,
- 		.end		= 0xffe70900 - 1,
-@@ -397,13 +397,6 @@ static struct resource usb_phy_resources[] = {
- 	},
- };
- 
--static struct platform_device usb_phy_device = {
--	.name		= "rcar_usb_phy",
--	.id		= -1,
--	.resource	= usb_phy_resources,
--	.num_resources	= ARRAY_SIZE(usb_phy_resources),
+ /**
+- * v4l2_async_subdev_list - provided by subdevices
+- * @list:	links struct v4l2_async_subdev_list objects to a global list
+- *		before probing, and onto notifier->done after probing
+- * @asd:	pointer to respective struct v4l2_async_subdev
+- * @notifier:	pointer to managing notifier
+- */
+-struct v4l2_async_subdev_list {
+-	struct list_head list;
+-	struct v4l2_async_subdev *asd;
+-	struct v4l2_async_notifier *notifier;
 -};
 -
- /* USB */
- static struct usb_phy *phy;
- 
-@@ -575,7 +568,6 @@ static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
--	&usb_phy_device,
+-/**
+  * v4l2_async_notifier - v4l2_device notifier data
+  * @subdev_num:	number of subdevices
+  * @subdev:	array of pointers to subdevices
+  * @v4l2_dev:	pointer to struct v4l2_device
+  * @waiting:	list of struct v4l2_async_subdev, waiting for their drivers
+- * @done:	list of struct v4l2_async_subdev_list, already probed
++ * @done:	list of struct v4l2_subdev, already probed
+  * @list:	member in a global list of notifiers
+  * @bound:	a subdevice driver has successfully probed one of subdevices
+  * @complete:	all subdevices have been probed successfully
+diff --git a/include/media/v4l2-subdev.h b/include/media/v4l2-subdev.h
+index 21174af..45aa155 100644
+--- a/include/media/v4l2-subdev.h
++++ b/include/media/v4l2-subdev.h
+@@ -588,15 +588,14 @@ struct v4l2_subdev {
+ 	struct video_device *devnode;
+ 	/* pointer to the physical device */
+ 	struct device *dev;
+-	struct v4l2_async_subdev_list asdl;
++	/* Links this subdev to a global subdev_list or @notifier->done list. */
++	struct list_head async_list;
++	/* Pointer to respective struct v4l2_async_subdev. */
++	struct v4l2_async_subdev *asd;
++	/* Pointer to the managing notifier. */
++	struct v4l2_async_notifier *notifier;
  };
  
- static struct platform_device *r8a7779_standard_devices[] __initdata = {
-@@ -610,6 +602,14 @@ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
- 					  pdata, sizeof(*pdata));
- }
- 
-+void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
-+{
-+	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
-+					  usb_phy_resources,
-+					  ARRAY_SIZE(usb_phy_resources),
-+					  pdata, sizeof(*pdata));
-+}
-+
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
- 
+-static inline struct v4l2_subdev *v4l2_async_to_subdev(
+-			struct v4l2_async_subdev_list *asdl)
+-{
+-	return container_of(asdl, struct v4l2_subdev, asdl);
+-}
+-
+ #define media_entity_to_v4l2_subdev(ent) \
+ 	container_of(ent, struct v4l2_subdev, entity)
+ #define vdev_to_v4l2_subdev(vdev) \
 -- 
-1.8.2.1
+1.7.4.1
 
