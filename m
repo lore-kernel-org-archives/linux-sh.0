@@ -1,43 +1,37 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 21 Jun 2013 12:57:24 +0000
-Subject: Re: [GIT PULL 00/15 v2] Renesas ARM based SoC boot cleanup for v3.11
-Message-Id: <201306211457.24492.arnd@arndb.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 13 Jun 2013 13:10:51 +0000
+Subject: [PATCH 2/3] ARM: shmobile: Use POSIX "$((..))" instead of bashism "$[...]"
+Message-Id: <1371129052-31506-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Monday 17 June 2013, Simon Horman wrote:
-> Hi Arnd, Olof,
-> 
-> This pull request is based on renesas-pinmux-for-v3.11, which you have
-> already pulled, in order to provide pre-requisites.
-> 
-> The following changes since commit 5fcf4a3c3a5bc08bf72a50ef1332501a3c1b96bb:
-> 
->   ARM: shmobile: marzen: Use RCAR_GP_PIN macro (2013-06-05 17:18:24 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-boot-for-v3.11
-> 
-> for you to fetch changes up to 53332005bfde9d2e3c9a66030c0e8c2598eaa1d5:
-> 
->   ARM: shmobile: Remove Bonito board support (2013-06-17 16:07:31 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM based SoC boot cleanup for v3.11
-> 
-> Work by Magnus Damm and others to clean up the boot of and move
-> things closer to supporting multi-arch.
-> 
-> As a side effect of this work it was decided to remove support for
-> two boards, Bonito and AP4EVB. Those patches are included in this
-> series as they depend on earlier patches in the series.
+According to the bash 4.1 manpage, "$[...]" is deprecated, and will be
+removed in upcoming versions of bash.
+Hence replace the bash-specific "$[...]" by POSIX "$((..))" for arithmetic
+expansion, which also allows to drop the forced use of bash.
 
-Pulled into next/soc, thanks!
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ arch/arm/mach-shmobile/Makefile.boot |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-	Arnd
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 95ebc7c..75a55e1 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -1,5 +1,5 @@
+-__ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
++__ZRELADDR	:= $(shell printf "0x%08x" \
++		     $$(($(CONFIG_MEMORY_START) + 0x8000)))
+ 
+    zreladdr-y   += $(__ZRELADDR)
+ 
+-- 
+1.7.0.4
+
