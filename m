@@ -1,85 +1,85 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:04 +0000
-Subject: [PATCH 073/130] ARM: shmobile: armadillo800eva: Replace GPIO_PORTx with GPIO port numbers
-Message-Id: <1370420821-28420-74-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:45:52 +0000
+Subject: [PATCH v6 07/18] ARM: shmobile: r8a7779: Add pin control device to device tree
+Message-Id: <1371167163-10507-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The PFC GPIO API implementation moved to using port numbers. Replace all
-GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
-enum values are identical to the port number on this platform.
+Add a pfc node to the r8a7779 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi                  |  5 +++++
+ arch/arm/mach-shmobile/board-marzen-reference.c | 17 ++++++++---------
+ 2 files changed, 13 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 8ec6961..aafa99b 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -584,7 +584,7 @@ static struct regulator_init_data vcc_sdhi0_init_data = {
- static struct fixed_voltage_config vcc_sdhi0_info = {
- 	.supply_name = "SDHI0 Vcc",
- 	.microvolts = 3300000,
--	.gpio = GPIO_PORT75,
-+	.gpio = 75,
- 	.enable_high = 1,
- 	.init_data = &vcc_sdhi0_init_data,
- };
-@@ -615,7 +615,7 @@ static struct regulator_init_data vccq_sdhi0_init_data = {
- };
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 7f146c6..9dfc438 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -101,6 +101,11 @@
+ 		interrupts = <0 81 0x4>;
+ 	};
  
- static struct gpio vccq_sdhi0_gpios[] = {
--	{GPIO_PORT17, GPIOF_OUT_INIT_LOW, "vccq-sdhi0" },
-+	{17, GPIOF_OUT_INIT_LOW, "vccq-sdhi0" },
- };
++	pfc: pfc@fffc0000 {
++		compatible = "renesas,pfc-r8a7779";
++		reg = <0xfffc0000 0x23c>;
++	};
++
+ 	thermal@ffc48000 {
+ 		compatible = "renesas,rcar-thermal";
+ 		reg = <0xffc48000 0x38>;
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 480d882..94804f3 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -28,24 +28,24 @@
  
- static struct gpio_regulator_state vccq_sdhi0_states[] = {
-@@ -626,7 +626,7 @@ static struct gpio_regulator_state vccq_sdhi0_states[] = {
- static struct gpio_regulator_config vccq_sdhi0_info = {
- 	.supply_name = "vqmmc",
- 
--	.enable_gpio = GPIO_PORT74,
-+	.enable_gpio = 74,
- 	.enable_high = 1,
- 	.enabled_at_boot = 0,
- 
-@@ -664,7 +664,7 @@ static struct regulator_init_data vcc_sdhi1_init_data = {
- static struct fixed_voltage_config vcc_sdhi1_info = {
- 	.supply_name = "SDHI1 Vcc",
- 	.microvolts = 3300000,
--	.gpio = GPIO_PORT16,
-+	.gpio = 16,
- 	.enable_high = 1,
- 	.init_data = &vcc_sdhi1_init_data,
- };
-@@ -693,7 +693,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_POWER_OFF_CARD,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
--	.cd_gpio	= GPIO_PORT167,
-+	.cd_gpio	= 167,
- };
- 
- static struct resource sdhi0_resources[] = {
-@@ -736,7 +736,7 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 			  MMC_CAP_POWER_OFF_CARD,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	/* Port72 cannot generate IRQs, will be used in polling mode. */
--	.cd_gpio	= GPIO_PORT72,
-+	.cd_gpio	= 72,
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 	/* SCIF2 (CN18: DEBUG0) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
+ 				  "scif2_data_c", "scif2"),
+ 	/* SCIF4 (CN19: DEBUG1) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
+ 				  "scif4_data", "scif4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+ 				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+ 				  "lbsc_ex_cs0", "lbsc"),
  };
  
- static struct resource sdhi1_resources[] = {
+@@ -53,7 +53,6 @@ static void __init marzen_init(void)
+ {
+ 	pinctrl_register_mappings(marzen_pinctrl_map,
+ 				  ARRAY_SIZE(marzen_pinctrl_map));
+-	r8a7779_pinmux_init();
+ 
+ 	r8a7779_add_standard_devices_dt();
+ }
 -- 
-1.8.2.1
+1.8.1.5
 
