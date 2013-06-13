@@ -1,68 +1,77 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 17 Jun 2013 12:44:00 +0000
-Subject: Re: [PATCH 00/03] ARM: 64-bit memory fixes, APE6EVM second memory bank
-Message-Id: <Pine.LNX.4.64.1306171442380.22409@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:24 +0000
+Subject: [GIT PULL 00/12] Renesas USB updates for v3.11
+Message-Id: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605104427.1720.68752.sendpatchset@w520>
-In-Reply-To: <20130605104427.1720.68752.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 5 Jun 2013, Magnus Damm wrote:
+Hi Olof, Hi Arnd,
 
-> ARM: 64-bit memory fixes, APE6EVM second memory bank
-> 
-> [PATCH 01/03] ARM: Let arm_add_memory() always use 64-bit arguments
-> [PATCH 02/03] ARM: Handle 64-bit memory in case of 32-bit phys_addr_t
-> [PATCH 03/03] ARM: shmobile: Add second memory bank to DTS for APE6EVM
-> 
-> This patch set contains two fixes and one mach-shmobile specific patch
-> to add a second memory bank. The fixes attempt to improve the memory bank
-> handling in the ARM kernel in case of 64-bit addresses.
-> 
-> Without patch 1/3 and 2/3 but with patch 3/3 by itself:
-> 
-> HIGHMEM=n, LPAE=n - OK (busted, second bank ignored with message [1])
-> HIGHMEM=y, LPAE=n - NG (busted, board hangs on boot)
-> HIGHMEM=n, LPAE=y - OK
-> HIGHMEM=y, LPAE=y - OK
-> 
-> [1] Ignoring RAM at 00000000-3fffffff (vmalloc region overlap).
-> 
-> With all patches applied:
-> 
-> HIGHMEM=n, LPAE=n - OK
-> HIGHMEM=y, LPAE=n - OK
+This pull request is based on a merge of renesas-soc-for-v3.11
+and renesas-pinmux-for-v3.11 in order to provide pre-requisites.
+You have previously pulled both of those tags.
 
-Confirmed: these patches fix the LPAE=n case
+I have put all of these patches into a single pull-request as
+R8A7779/Marzen clean-up portion are tightly related and don't seem
+to be easily broken out into e.g. board and soc components without
+introducing bisection breakage.
 
-Tested-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+This pull request will cause various conflicts though I believe all
+of them are not difficult to resolve. The renesas-next-20130613 tag in
+my tree illustrates how I have handled the conflicts with
+both changes already in arm-soc and changes I intend to send
+pull requests for in the near future.
 
-Thanks
-Guennadi
+The following changes since commit ae8b378faea7f04d4517b22f5d70d824adcbc4dc:
 
-> HIGHMEM=n, LPAE=y - OK
-> HIGHMEM=y, LPAE=y - OK
-> 
-> My opinion is that LPAE should be handled in a similar way to x86 PAE.
-> This means the kernel should boot regardless of kernel config but 64-bit
-> memory banks may be truncated if needed like when LPAE=n or HIGHMEN=n.
-> 
-> Comments on how to implement this in a nicer way are very welcome!
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Written against renesas.git renesas-next-20130604v2
-> 
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts |    5 +++++
->  arch/arm/include/asm/setup.h          |    2 +-
->  arch/arm/kernel/setup.c               |   22 +++++++++++++++-------
->  3 files changed, 21 insertions(+), 8 deletions(-)
+  Merge branches 'heads/pinmux' and 'heads/soc' into phy-rcar-usb-base (2013-06-11 14:58:57 +0900)
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-phy-rcar-usb-for-v3.11
+
+for you to fetch changes up to 1a87b01d3b18709ae240ec90ae612354dd44d9a9:
+
+  ARM: shmobile: BOCK-W: add USB support (2013-06-11 16:12:53 +0900)
+
+----------------------------------------------------------------
+Renesas USB updates for v3.11
+
+These updates are by Sergei Shtylyov to clean-up USB support
+present for R8A7779/Marzen and then extend USB support coverage to
+R8A7778/BOCK-W.
+
+----------------------------------------------------------------
+Sergei Shtylyov (12):
+      ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
+      ehci-platform: add pre_setup() method to platform data
+      ARM: shmobile: r8a7779: setup EHCI internal buffer
+      phy-rcar-usb: remove EHCI internal buffer setup
+      ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
+      phy-rcar-usb: correct base address
+      phy-rcar-usb: add platform data
+      ARM: shmobile: Marzen: pass platform data to USB PHY device
+      phy-rcar-usb: handle platform data
+      phy-rcar-usb: add R8A7778 support
+      ARM: shmobile: r8a7778: add USB support
+      ARM: shmobile: BOCK-W: add USB support
+
+ arch/arm/mach-shmobile/Kconfig                |   2 +
+ arch/arm/mach-shmobile/board-bockw.c          |   8 ++
+ arch/arm/mach-shmobile/board-marzen.c         | 181 +-----------------------
+ arch/arm/mach-shmobile/clock-r8a7778.c        |   4 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |   3 +
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |   3 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 108 ++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7779.c        | 196 +++++++++++++++++++++++++-
+ drivers/usb/host/ehci-platform.c              |   6 +
+ drivers/usb/phy/Kconfig                       |  10 +-
+ drivers/usb/phy/phy-rcar-usb.c                | 128 +++++++++++------
+ include/linux/platform_data/usb-rcar-phy.h    |  28 ++++
+ include/linux/usb/ehci_pdriver.h              |   4 +
+ 13 files changed, 450 insertions(+), 231 deletions(-)
+ create mode 100644 include/linux/platform_data/usb-rcar-phy.h
