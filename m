@@ -1,49 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:52 +0000
-Subject: [GIT PULL 0/2] Renesas sh-sci updates for v3.11
-Message-Id: <1371106854-25560-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 13 Jun 2013 13:10:50 +0000
+Subject: [PATCH 1/3] h8300/boot: Use POSIX "$((..))" instead of bashism "$[...]"
+Message-Id: <1371129052-31506-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1371129052-31506-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+On Ubuntu, where /bin/sh -> dash, "make ARCH=h8300 clean" gives:
 
-I have included the r8a7790 change in this patch as it
-depends on the first change in the pull-request but nothing else.
+printf: 1: $[0x00400000+0x00140000]: expected numeric value
 
-This pull request will cause some conflicts though I believe all
-of them are not difficult to resolve. The renesas-next-20130613 tag in
-my tree illustrates how I have handled the conflicts with
-both changes already in arm-soc and changes I intend to send
-pull requests for in the near future.
+Replace the bash-specific "$[...]" by POSIX "$((..))" for arithmetic
+expansion to fix this.
+Note that according to the bash 4.1 manpage, "$[...]" is deprecated, and
+will be removed in upcoming versions of bash.
 
-The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ arch/h8300/boot/compressed/Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git sh-sci
-
-for you to fetch changes up to d1b6515e2eeaac48eff47bf4987f106a982e14f3:
-
-  ARM: shmobile: r8a7790: don't use external clock for SCIFs (2013-06-11 17:24:08 +0900)
-
-----------------------------------------------------------------
-Renesas sh-sci updates for v3.11
-
-HSCIF support by Ulrich Hecht.
-
-----------------------------------------------------------------
-Ulrich Hecht (2):
-      serial: sh-sci: HSCIF support
-      ARM: shmobile: r8a7790: don't use external clock for SCIFs
-
- arch/arm/mach-shmobile/setup-r8a7790.c |  16 +++++-
- drivers/tty/serial/sh-sci.c            | 102 ++++++++++++++++++++++++++++++---
- include/linux/serial_sci.h             |  12 +++-
- include/uapi/linux/serial_core.h       |   3 +
- 4 files changed, 120 insertions(+), 13 deletions(-)
+diff --git a/arch/h8300/boot/compressed/Makefile b/arch/h8300/boot/compressed/Makefile
+index 94faad1..787fd04 100644
+--- a/arch/h8300/boot/compressed/Makefile
++++ b/arch/h8300/boot/compressed/Makefile
+@@ -16,7 +16,7 @@ OBJECTS = $(obj)/head.o $(obj)/misc.o
+ #
+ CONFIG_MEMORY_START     ?= 0x00400000
+ CONFIG_BOOT_LINK_OFFSET ?= 0x00140000
+-IMAGE_OFFSET := $(shell printf "0x%08x" $$[$(CONFIG_MEMORY_START)+$(CONFIG_BOOT_LINK_OFFSET)])
++IMAGE_OFFSET := $(shell printf "0x%08x" $$(($(CONFIG_MEMORY_START)+$(CONFIG_BOOT_LINK_OFFSET))))
+ 
+ LDFLAGS_vmlinux := -Ttext $(IMAGE_OFFSET) -estartup $(obj)/vmlinux.lds
+ 
+-- 
+1.7.0.4
 
