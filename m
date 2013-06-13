@@ -1,89 +1,136 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jun 2013 19:08:15 +0000
-Subject: [PATCH v11 05/21] atmel-isi: move interface activation and deactivation to clock callbacks
-Message-Id: <1371236911-15131-6-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:32 +0000
+Subject: [PATCH 08/12] ARM: shmobile: Marzen: pass platform data to USB PHY device
+Message-Id: <1371106836-25388-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-When adding and removing a client, the atmel-isi camera host driver only
-activates and deactivates its camera interface respectively, which doesn't
-include any client-specific actions. Move this functionality into
-.clock_start() and .clock_stop() callbacks.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
+platform data, we now need a way to pass those platform data from the board file
+to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
+r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
+passed platform data using platform_device_register_resndata() call; creating
+this function involves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
+so that it will no longer be registered for the generic R8A7779 machine (where
+we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
+to load as well.
+
+For the Marzen board, this new function will be called from marzen_init() to
+register the USB PHY device early enough.
+
+Note that the board and the SoC code have to be in one patch to keep the code
+bisectable...
+
+The patch has been tested on the Marzen board.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[horms+renesas@verge.net.au: manually applied]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/soc_camera/atmel-isi.c |   28 +++++++++++++++++--------
- 1 files changed, 19 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c         |  3 +++
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 ++
+ arch/arm/mach-shmobile/setup-r8a7779.c        | 18 +++++++++---------
+ 3 files changed, 14 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/atmel-isi.c b/drivers/media/platform/soc_camera/atmel-isi.c
-index c9e080a..1044856 100644
---- a/drivers/media/platform/soc_camera/atmel-isi.c
-+++ b/drivers/media/platform/soc_camera/atmel-isi.c
-@@ -745,10 +745,23 @@ static int isi_camera_get_formats(struct soc_camera_device *icd,
- 	return formats;
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index fff353f..b1b41b1 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -57,6 +57,8 @@ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+ };
+ 
++static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
++
+ /* SMSC LAN89218 */
+ static struct resource smsc911x_resources[] = {
+ 	[0] = {
+@@ -231,6 +233,7 @@ static void __init marzen_init(void)
+ 	r8a7779_pinmux_init();
+ 
+ 	r8a7779_add_standard_devices();
++	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
  }
  
--/* Called with .host_lock held */
- static int isi_camera_add_device(struct soc_camera_device *icd)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
-+	dev_dbg(icd->parent, "Atmel ISI Camera driver attached to camera %d\n",
-+		 icd->devnum);
-+
-+	return 0;
-+}
-+
-+static void isi_camera_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_dbg(icd->parent, "Atmel ISI Camera driver detached from camera %d\n",
-+		 icd->devnum);
-+}
-+
-+/* Called with .host_lock held */
-+static int isi_camera_clock_start(struct soc_camera_host *ici)
-+{
- 	struct atmel_isi *isi = ici->priv;
- 	int ret;
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index f10727f7..fc47073 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -4,6 +4,7 @@
+ #include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
+ #include <linux/sh_eth.h>
++#include <linux/platform_data/usb-rcar-phy.h>
  
-@@ -762,21 +775,16 @@ static int isi_camera_add_device(struct soc_camera_device *icd)
- 		return ret;
- 	}
+ struct platform_device;
  
--	dev_dbg(icd->parent, "Atmel ISI Camera driver attached to camera %d\n",
--		 icd->devnum);
- 	return 0;
- }
-+
- /* Called with .host_lock held */
--static void isi_camera_remove_device(struct soc_camera_device *icd)
-+static void isi_camera_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct atmel_isi *isi = ici->priv;
+@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
++extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
+ extern void r8a7779_init_late(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index a00283f..06804a1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -389,7 +389,7 @@ static struct platform_device sata_device = {
+ };
  
- 	clk_disable(isi->mck);
- 	clk_disable(isi->pclk);
+ /* USB PHY */
+-static struct resource usb_phy_resources[] = {
++static struct resource usb_phy_resources[] __initdata = {
+ 	[0] = {
+ 		.start		= 0xffe70800,
+ 		.end		= 0xffe70900 - 1,
+@@ -397,13 +397,6 @@ static struct resource usb_phy_resources[] = {
+ 	},
+ };
+ 
+-static struct platform_device usb_phy_device = {
+-	.name		= "rcar_usb_phy",
+-	.id		= -1,
+-	.resource	= usb_phy_resources,
+-	.num_resources	= ARRAY_SIZE(usb_phy_resources),
+-};
 -
--	dev_dbg(icd->parent, "Atmel ISI Camera driver detached from camera %d\n",
--		 icd->devnum);
+ /* USB */
+ static struct usb_phy *phy;
+ 
+@@ -575,7 +568,6 @@ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&scif5_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
+-	&usb_phy_device,
+ };
+ 
+ static struct platform_device *r8a7779_standard_devices[] __initdata = {
+@@ -610,6 +602,14 @@ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
+ 					  pdata, sizeof(*pdata));
  }
  
- static unsigned int isi_camera_poll(struct file *file, poll_table *pt)
-@@ -880,6 +888,8 @@ static struct soc_camera_host_ops isi_soc_camera_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= isi_camera_add_device,
- 	.remove		= isi_camera_remove_device,
-+	.clock_start	= isi_camera_clock_start,
-+	.clock_stop	= isi_camera_clock_stop,
- 	.set_fmt	= isi_camera_set_fmt,
- 	.try_fmt	= isi_camera_try_fmt,
- 	.get_formats	= isi_camera_get_formats,
++void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
++					  usb_phy_resources,
++					  ARRAY_SIZE(usb_phy_resources),
++					  pdata, sizeof(*pdata));
++}
++
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
 -- 
-1.7.2.5
+1.8.2.1
 
