@@ -1,74 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:26 +0000
-Subject: [PATCH 035/130] ARM: shmobile: mackerel: Register pinctrl mapping for FLCTL
-Message-Id: <1370420821-28420-36-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:46:01 +0000
+Subject: [PATCH v6 16/18] ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
+Message-Id: <1371167163-10507-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Replace the GPIO-based FLCTL pinmux configuration by a pinctrl mapping.
+LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 31 +++++++------------------------
- 1 file changed, 7 insertions(+), 24 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index fdd7e3f..955fefd 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1321,6 +1321,13 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 				  "ceu_sync", "ceu"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_ceu.0", "pfc-sh7372",
- 				  "ceu_field", "ceu"),
-+	/* FLCTL */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
-+				  "flctl_data", "flctl"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
-+				  "flctl_ce0", "flctl"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_flctl.0", "pfc-sh7372",
-+				  "flctl_ctrl", "flctl"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -1478,30 +1485,6 @@ static void __init mackerel_init(void)
- 	/* SDHI0 PORT172 card-detect IRQ26 */
- 	gpio_request(GPIO_FN_IRQ26_172, NULL);
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 8ec4cd1..366f729 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -34,6 +34,21 @@
+ 		regulator-boot-on;
+ 	};
  
--	/* FLCTL */
--	gpio_request(GPIO_FN_D0_NAF0, NULL);
--	gpio_request(GPIO_FN_D1_NAF1, NULL);
--	gpio_request(GPIO_FN_D2_NAF2, NULL);
--	gpio_request(GPIO_FN_D3_NAF3, NULL);
--	gpio_request(GPIO_FN_D4_NAF4, NULL);
--	gpio_request(GPIO_FN_D5_NAF5, NULL);
--	gpio_request(GPIO_FN_D6_NAF6, NULL);
--	gpio_request(GPIO_FN_D7_NAF7, NULL);
--	gpio_request(GPIO_FN_D8_NAF8, NULL);
--	gpio_request(GPIO_FN_D9_NAF9, NULL);
--	gpio_request(GPIO_FN_D10_NAF10, NULL);
--	gpio_request(GPIO_FN_D11_NAF11, NULL);
--	gpio_request(GPIO_FN_D12_NAF12, NULL);
--	gpio_request(GPIO_FN_D13_NAF13, NULL);
--	gpio_request(GPIO_FN_D14_NAF14, NULL);
--	gpio_request(GPIO_FN_D15_NAF15, NULL);
--	gpio_request(GPIO_FN_FCE0, NULL);
--	gpio_request(GPIO_FN_WE0_FWE, NULL);
--	gpio_request(GPIO_FN_FRB, NULL);
--	gpio_request(GPIO_FN_A4_FOE, NULL);
--	gpio_request(GPIO_FN_A5_FCDE, NULL);
--	gpio_request(GPIO_FN_RD_FSC, NULL);
--
- 	/* enable GPS module (GT-720F) */
- 	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
- 	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 102 GPIO_ACTIVE_HIGH>;
++		};
++		led2 {
++			gpios = <&pfc 111 GPIO_ACTIVE_HIGH>;
++		};
++		led3 {
++			gpios = <&pfc 110 GPIO_ACTIVE_HIGH>;
++		};
++		led4 {
++			gpios = <&pfc 177 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
+ 
+ &i2c0 {
 -- 
-1.8.2.1
+1.8.1.5
 
