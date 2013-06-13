@@ -1,57 +1,63 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jun 2013 15:48:24 +0000
-Subject: [PATCH v2 6/6] ARM: shmobile: armadillo800eva-reference: add DMA support for MMCIF and SDHI
-Message-Id: <1370533704-23734-7-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:39 +0000
+Subject: [PATCH 01/15] ARM: shmobile: uImage load address rework
+Message-Id: <1371106793-25071-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366194847-9879-6-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1366194847-9879-6-git-send-email-hechtb+renesas@gmail.com>
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add DMA bindings to SDHI and MMCIF DT nodes on armadillo800eva-reference.
-Since SDHI and MMCIF devices can use any of the 3 DMAC instances on
-r8a7740, we point to the DMA multiplexer node instead of a specific DMAC
-DT node.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+This is V2 of the mach-shmobile uImage load address rework patch.
+
+Rework the mach-shmobile uImage load address calculation by storing
+the per-board load addresses in Makefile.boot. This removes the
+CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
+it possible to create safe kernel images that boot on multiple boards.
+
+This is one of several series of code that reworks code not to rely on
+CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/Makefile.boot | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 3752637..1983d49 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -47,6 +47,9 @@
- 	vmmc-supply = <&reg_3p3v>;
- 	bus-width = <8>;
- 	non-removable;
-+	dmas = <&dmac 0xd1
-+		&dmac 0xd2>;
-+	dma-names = "tx", "rx";
- 	status = "okay";
- };
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 498efd9..6b147ea 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -1,6 +1,22 @@
+-__ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
+-		     $$[$(CONFIG_MEMORY_START) + 0x8000]')
++# per-board load address for uImage
++loadaddr-y	:+loadaddr-$(CONFIG_MACH_AG5EVM) += 0x40008000
++loadaddr-$(CONFIG_MACH_AP4EVB) += 0x40008000
++loadaddr-$(CONFIG_MACH_APE6EVM) += 0x40008000
++loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
++loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
++loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
++loadaddr-$(CONFIG_MACH_BONITO) += 0x40008000
++loadaddr-$(CONFIG_MACH_KOTA2) += 0x41008000
++loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
++loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
++loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
++loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
++loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
++loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
++loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
  
-@@ -54,11 +57,17 @@
- 	vmmc-supply = <&reg_3p3v>;
- 	bus-width = <4>;
- 	broken-cd;
-+	dmas = <&dmac 0xc1
-+		&dmac 0xc2>;
-+	dma-names = "tx", "rx";
- 	status = "okay";
- };
++__ZRELADDR	:= $(sort $(loadaddr-y))
+    zreladdr-y   += $(__ZRELADDR)
  
- &sdhi1 {
- 	vmmc-supply = <&reg_3p3v>;
- 	bus-width = <4>;
-+	dmas = <&dmac 0xc9
-+		&dmac 0xca>;
-+	dma-names = "tx", "rx";
- 	status = "okay";
- };
+ # Unsupported legacy stuff
 -- 
-1.7.2.5
+1.8.2.1
 
