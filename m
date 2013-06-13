@@ -1,78 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 28 Jun 2013 05:20:44 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790:  Initialise clocks and SCIF in r8a7790_add_dt_devices()
-Message-Id: <1372396845-28767-2-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:51 +0000
+Subject: [PATCH 01/11] ARM: shmobile: r8a7779: fix Ether device name
+Message-Id: <1371106861-25626-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372396845-28767-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372396845-28767-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is sufficient to allow boot of the Lager board with
-a console without boards-lager.c compiled into the kernel.
-This is an example of a minimal but still useful initialisation
-of the board using DT as much as possible.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Also provide r8a7790_add_dt_device() in
-r8a7790.h to allow it be used from a boards-lager-reference.c
-file which will be added by a subsequent patch.
+While recasting commit dace48d04dee46a3409d5e13cd98031522e46377 (ARM: shmobile:
+R8A7779: add Ether support), I made a typo in the platform device's name: used
+underscore instead of hyphen.
 
+However, there's now patch merged to net-next.git renaming the platform device
+from "sh-eth" to "r8a777x-ehter", so it makes the most sense to change the name
+straight to that one.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7790.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7790.c        | 11 ++++++++++-
- 2 files changed, 11 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 2e919e6..d50403e 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -2,6 +2,7 @@
- #define __ASM_R8A7790_H__
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index b0b3948..d8a70dc 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -443,7 +443,7 @@ void __init r8a7779_add_standard_devices(void)
  
- void r8a7790_add_standard_devices(void);
-+void r8a7790_add_standard_devices_dt(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
- void r8a7790_timer_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 06c720f..a6344a1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -160,7 +160,7 @@ static struct resource thermal_resources[] __initdata = {
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
- 
--void __init r8a7790_add_standard_devices(void)
-+void __init r8a7790_add_dt_devices(void)
+ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
  {
- 	r8a7790_register_scif(SCIFA0);
- 	r8a7790_register_scif(SCIFA1);
-@@ -172,6 +172,11 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(SCIF1);
- 	r8a7790_register_scif(HSCIF0);
- 	r8a7790_register_scif(HSCIF1);
-+}
-+
-+void __init r8a7790_add_standard_devices(void)
-+{
-+	r8a7790_add_dt_devices();
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
- }
-@@ -191,6 +196,10 @@ void __init r8a7790_timer_init(void)
- #ifdef CONFIG_USE_OF
- void __init r8a7790_add_standard_devices_dt(void)
- {
-+	/* clocks are setup late during boot in the case of DT */
-+	r8a7790_clock_init();
-+
-+	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
+-	platform_device_register_resndata(&platform_bus, "sh_eth", -1,
++	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
+ 					  pdata, sizeof(*pdata));
 -- 
 1.8.2.1
 
