@@ -1,64 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:22:04 +0000
-Subject: [PATCH 06/11] ARM: shmobile: bockw: add dummy regulators for SMSC
-Message-Id: <1370593329-27559-7-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 13 Jun 2013 18:12:45 +0000
+Subject: [PATCH v2] sh_eth: get R8A7740 Rx descriptor word 0 shift out of #ifdef
+Message-Id: <201306132212.46361.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The only R8A7740 specific #ifdef hindering  ARM multiplatform build is  left in
+sh_eth_rx(): it covers the code shifting Rx buffer descriptor word 0 by 16. Get
+rid of the #ifdef by adding 'shift_rd0' field to the  'struct sh_eth_cpu_data',
+making the shift dependent on it, and setting it to 1 for the R8A7740 case...
 
-SMSC driver will try to get regulator if .config had CONFIG_REGULATOR,
-and, shmobile_defconfig has it.
-SMSC driver on Bock-W board will be failed if it doens't have
-dummy regulator settings.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+The patch is against Dave Miller's 'net-next.git' repository plus commit
+dd019897358b815f7828dab90b51d51df4d3658d (net: sh_eth: fix incorrect RX length
+error if R8A7740) from the 'net.git' reposirory, so please merge it into
+'net-next.git' before applying this patch.
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 3ce020a..4d65715 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -20,6 +20,8 @@
- 
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -34,6 +36,12 @@
-  * SW41		SCIF	RCAN
-  */
- 
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+};
-+
- static struct smsc911x_platform_config smsc911x_data = {
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
- 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
-@@ -82,6 +90,9 @@ static void __init bockw_init(void)
- 		iowrite16(val, base + IRQ0MR);
- 		iounmap(base);
- 
-+		regulator_register_fixed(0, dummy_supplies,
-+					 ARRAY_SIZE(dummy_supplies));
-+
- 		platform_device_register_resndata(
- 			&platform_bus, "smsc911x", -1,
- 			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
--- 
-1.8.2.1
+Changes in version 2:
+- made a patch apply atop of Yoshihiro Shimoda's commit, updated the changelog;
+- clarified the comment to the 'shift_rd0' field of 'struct sh_eth_cpu_data'.
 
+ drivers/net/ethernet/renesas/sh_eth.c |    6 +++---
+ drivers/net/ethernet/renesas/sh_eth.h |    1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -667,6 +667,7 @@ static struct sh_eth_cpu_data r8a7740_da
+ 	.no_ade		= 1,
+ 	.tsu		= 1,
+ 	.select_mii	= 1,
++	.shift_rd0	= 1,
+ };
+ 
+ static struct sh_eth_cpu_data sh7619_data = {
+@@ -1266,7 +1267,6 @@ static int sh_eth_rx(struct net_device *
+ 		if (!(desc_status & RDFEND))
+ 			ndev->stats.rx_length_errors++;
+ 
+-#if defined(CONFIG_ARCH_R8A7740)
+ 		/*
+ 		 * In case of almost all GETHER/ETHERs, the Receive Frame State
+ 		 * (RFS) bits in the Receive Descriptor 0 are from bit 9 to
+@@ -1274,8 +1274,8 @@ static int sh_eth_rx(struct net_device *
+ 		 * bits are from bit 25 to bit 16. So, the driver needs right
+ 		 * shifting by 16.
+ 		 */
+-		desc_status >>= 16;
+-#endif
++		if (mdp->cd->shift_rd0)
++			desc_status >>= 16;
+ 
+ 		if (desc_status & (RD_RFS1 | RD_RFS2 | RD_RFS3 | RD_RFS4 |
+ 				   RD_RFS5 | RD_RFS6 | RD_RFS10)) {
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -476,6 +476,7 @@ struct sh_eth_cpu_data {
+ 	unsigned no_ade:1;	/* E-DMAC DO NOT have ADE bit in EESR */
+ 	unsigned hw_crc:1;	/* E-DMAC have CSMR */
+ 	unsigned select_mii:1;	/* EtherC have RMII_MII (MII select register) */
++	unsigned shift_rd0:1;	/* shift Rx descriptor word 0 right by 16 */
+ };
+ 
+ struct sh_eth_private {
