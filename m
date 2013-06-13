@@ -1,155 +1,76 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Jun 2013 21:12:44 +0000
-Subject: [PATCH v4 3/8] sh_eth: remove duplicate sh_eth_set_duplex() definitions
-Message-Id: <201306060112.44714.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:26 +0000
+Subject: [PATCH 02/12] ehci-platform: add pre_setup() method to platform data
+Message-Id: <1371106836-25388-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
+References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Remove all the duplicate definitions of sh_eth_set_duplex() under  different
-#ifdef's, leaving only one outside the #ifdef's. We have to annotate it with
-'__maybe_unused' since it's called not from all SoC #ifdef blocks.
+Sometimes there is a need  to initialize some non-standard registers mapped to
+the EHCI region before accessing the standard EHCI registers.  Add pre_setup()
+method with 'struct usb_hcd *' parameter to be called just before ehci_setup()
+to the 'ehci-platform'  driver's platform data for this purpose...
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-[Sergei: annotated sh_eth_set_duplex() as '__maybe_unused', added the changelog,
-reworded the subject, changing the prefix.]
+While at it, add the missing incomplete declaration of 'struct platform_device'
+to <linux/usb/ehci_pdriver.h>...
+
+The patch has been tested on the Marzen and BOCK-W boards.
+
+Suggested-by: Alan Stern <stern@rowland.harvard.edu>
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 4:
-- annotated sh_eth_set_duplex() as '__maybe_unused';
-- refreshed the patch;
-- added the changelog;
-- reworded the subject, changing the prefix.
+ drivers/usb/host/ehci-platform.c | 6 ++++++
+ include/linux/usb/ehci_pdriver.h | 4 ++++
+ 2 files changed, 10 insertions(+)
 
-Changes in version 3:
-- remove empty sh_eth_set_duplex() for SH7619, SH7710 and SH7712 cases.
-
- drivers/net/ethernet/renesas/sh_eth.c |   59 ++--------------------------------
- 1 file changed, 5 insertions(+), 54 deletions(-)
-
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -341,10 +341,7 @@ static void sh_eth_select_mii(struct net
- }
- #endif
+diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
+index f47f259..d1f5cea 100644
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
+@@ -48,6 +48,12 @@ static int ehci_platform_reset(struct usb_hcd *hcd)
+ 	ehci->big_endian_desc = pdata->big_endian_desc;
+ 	ehci->big_endian_mmio = pdata->big_endian_mmio;
  
--/* There is CPU dependent code */
--#if defined(CONFIG_ARCH_R8A7778) || defined(CONFIG_ARCH_R8A7779)
--#define SH_ETH_RESET_DEFAULT	1
--static void sh_eth_set_duplex(struct net_device *ndev)
-+static void __maybe_unused sh_eth_set_duplex(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
++	if (pdata->pre_setup) {
++		retval = pdata->pre_setup(hcd);
++		if (retval < 0)
++			return retval;
++	}
++
+ 	ehci->caps = hcd->regs + pdata->caps_offset;
+ 	retval = ehci_setup(hcd);
+ 	if (retval)
+diff --git a/include/linux/usb/ehci_pdriver.h b/include/linux/usb/ehci_pdriver.h
+index 99238b0..7eb4dcd 100644
+--- a/include/linux/usb/ehci_pdriver.h
++++ b/include/linux/usb/ehci_pdriver.h
+@@ -19,6 +19,9 @@
+ #ifndef __USB_CORE_EHCI_PDRIVER_H
+ #define __USB_CORE_EHCI_PDRIVER_H
  
-@@ -354,6 +351,9 @@ static void sh_eth_set_duplex(struct net
- 		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
- }
- 
-+/* There is CPU dependent code */
-+#if defined(CONFIG_ARCH_R8A7778) || defined(CONFIG_ARCH_R8A7779)
-+#define SH_ETH_RESET_DEFAULT	1
- static void sh_eth_set_rate(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
-@@ -391,15 +391,6 @@ static struct sh_eth_cpu_data sh_eth_my_
++struct platform_device;
++struct usb_hcd;
++
+ /**
+  * struct usb_ehci_pdata - platform_data for generic ehci driver
+  *
+@@ -50,6 +53,7 @@ struct usb_ehci_pdata {
+ 	/* Turn on only VBUS suspend power and hotplug detection,
+ 	 * turn off everything else */
+ 	void (*power_suspend)(struct platform_device *pdev);
++	int (*pre_setup)(struct usb_hcd *hcd);
  };
- #elif defined(CONFIG_CPU_SUBTYPE_SH7724)
- #define SH_ETH_RESET_DEFAULT	1
--static void sh_eth_set_duplex(struct net_device *ndev)
--{
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	if (mdp->duplex) /* Full */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
--	else		/* Half */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
--}
  
- static void sh_eth_set_rate(struct net_device *ndev)
- {
-@@ -443,16 +434,6 @@ static struct sh_eth_cpu_data sh_eth_my_
- #define SH_ETH_HAS_TSU	1
- static int sh_eth_check_reset(struct net_device *ndev);
- 
--static void sh_eth_set_duplex(struct net_device *ndev)
--{
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	if (mdp->duplex) /* Full */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
--	else		/* Half */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
--}
--
- static void sh_eth_set_rate(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
-@@ -552,16 +533,6 @@ out:
- 	return ret;
- }
- 
--static void sh_eth_set_duplex_giga(struct net_device *ndev)
--{
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	if (mdp->duplex) /* Full */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
--	else		/* Half */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
--}
--
- static void sh_eth_set_rate_giga(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
-@@ -584,7 +555,7 @@ static void sh_eth_set_rate_giga(struct 
- /* SH7757(GETHERC) */
- static struct sh_eth_cpu_data sh_eth_my_cpu_data_giga = {
- 	.chip_reset	= sh_eth_chip_reset_giga,
--	.set_duplex	= sh_eth_set_duplex_giga,
-+	.set_duplex	= sh_eth_set_duplex,
- 	.set_rate	= sh_eth_set_rate_giga,
- 
- 	.ecsr_value	= ECSR_ICD | ECSR_MPD,
-@@ -634,16 +605,6 @@ static void sh_eth_chip_reset(struct net
- 	mdelay(1);
- }
- 
--static void sh_eth_set_duplex(struct net_device *ndev)
--{
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	if (mdp->duplex) /* Full */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
--	else		/* Half */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
--}
--
- static void sh_eth_set_rate(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
-@@ -771,16 +732,6 @@ out:
- 	return ret;
- }
- 
--static void sh_eth_set_duplex(struct net_device *ndev)
--{
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	if (mdp->duplex) /* Full */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_DM, ECMR);
--	else		/* Half */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
--}
--
- static void sh_eth_set_rate(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ #endif /* __USB_CORE_EHCI_PDRIVER_H */
+-- 
+1.8.2.1
+
