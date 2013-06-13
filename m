@@ -1,76 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:21:58 +0000
-Subject: [GIT PULL 00/11] Renesas ARM-based SoC board updates for v3.11
-Message-Id: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:45:51 +0000
+Subject: [PATCH v6 06/18] ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
+Message-Id: <1371167163-10507-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+Add GPIO controller nodes to the r8a7778 core device tree.
 
-Please note that this pull request is based on a merge of the
-renesas-pinmux-for-v3.11 and renesas-soc-for-v3.11 tags
-in the renesas tree in order to provide dependencies.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 51 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
 
-I have sent pull requests for each of those tags as:
-[GIT PULL 000/130] Renesas ARM based SoC pinmux and GPIO update for
-[GIT PULL v2 00/27] Renesas ARM-based SoC updates for v3.11
-
-
-The following changes since commit a961ee1c95cb7309f619e9e68fe8c4fb73bedf6f:
-
-  Merge branches 'pinmux' and 'soc' into boards-base (2013-06-07 14:26:22 +0900)
-
-are available in the git repository at:
-
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.11
-
-for you to fetch changes up to f3031ff3f2e14f0ced4d45150316df2607b70a27:
-
-  ARM: shmobile: marzen: keep local function as static (2013-06-07 14:26:35 +0900)
-
-----------------------------------------------------------------
-Renesas ARM-based SoC board updates for v3.11
-
-Highlights:
-bockw: add SDHI0 support
-bockw: add dummy regulators for SMSC
-bockw: Document CN9 SCIF/RCAN dipswitch selection
-lager: support GPIO switches and LEDs
-kzm9g: add AS3711 PMIC platform data
-marzen: Use INTC External IRQ pin driver for SMSC
-ape6evm: Update MP clock parent become EXTAL2 in line with changes
-         to r8a73a4 SoC code
-
-----------------------------------------------------------------
-Guennadi Liakhovetski (1):
-      ARM: shmobile: kzm9g: add AS3711 PMIC platform data
-
-Kuninori Morimoto (6):
-      ARM: shmobile: ape6evm: MP clock parent become EXTAL2
-      ARM: shmobile: bockw: define FPGA address and rename iomem variable
-      ARM: shmobile: bockw: add CN9 SCIF/RCAN selection dipswitch explanation
-      ARM: shmobile: bockw: add dummy regulators for SMSC
-      ARM: shmobile: bockw: add SDHI0 support
-      ARM: shmobile: marzen: keep local function as static
-
-Simon Horman (4):
-      ARM: shmobile: kzm9d: resigser smsc911x platform device with id -1
-      ARM: shmobile: lager: Add GPIO LEDs
-      ARM: shmobile: lager: support GPIO switches
-      ARM: shmobile: marzen: Use INTC External IRQ pin driver for SMSC
-
- arch/arm/mach-shmobile/board-ape6evm.c |  15 +++
- arch/arm/mach-shmobile/board-bockw.c   |  61 ++++++++++-
- arch/arm/mach-shmobile/board-kzm9d.c   |   2 +-
- arch/arm/mach-shmobile/board-kzm9g.c   | 193 ++++++++++++++++++++++++---------
- arch/arm/mach-shmobile/board-lager.c   |  49 +++++++++
- arch/arm/mach-shmobile/board-marzen.c  |   5 +-
- 6 files changed, 263 insertions(+), 62 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index c8dbf14..0639e8b 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -33,8 +33,59 @@
+ 		      <0xfe430000 0x100>;
+ 	};
+ 
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc40000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++	};
++
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc41000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++	};
++
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc42000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc43000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc44000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 27>;
++	};
++
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7778";
+ 		reg = <0xfffc000 0x118>;
++		#gpio-range-cells = <3>;
+ 	};
+ };
 -- 
-1.8.2.1
+1.8.1.5
 
