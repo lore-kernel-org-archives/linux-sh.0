@@ -1,21 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 28 Jun 2013 08:26:49 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: ape6evm: add CPUFreq support
-Message-Id: <20130628082649.GD29517@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:41 +0000
+Subject: [PATCH 03/15] ARM: shmobile: Remove romImage CONFIG_MEMORY_START
+Message-Id: <1371106793-25071-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326479-15028-1-git-send-email-g.liakhovetski@gmx.de>
- <1372326479-15028-4-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1372326479-15028-4-git-send-email-g.liakhovetski@gmx.de>
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jun 27, 2013 at 11:47:58AM +0200, Guennadi Liakhovetski wrote:
-> This patch adds OPPs to the CA15 DT node and a max8973 DT node to support
-> clock and voltage scaling, using the cpufreq-cpu0 CPUFreq driver.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, queued up for v3.12 in the dt branch.
+Instead of relying on CONFIG_MEMORY_START for memory
+base address, let each romImage board header file
+specify this information.
+
+This is reworks code not to rely on CONFIG_MEMORY_START
+which in turn is needed for ARCH_MULTIPLATFORM.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/compressed/head-shmobile.S    | 2 +-
+ arch/arm/mach-shmobile/include/mach/zboot.h | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
+index 19b2304..e2d6363 100644
+--- a/arch/arm/boot/compressed/head-shmobile.S
++++ b/arch/arm/boot/compressed/head-shmobile.S
+@@ -46,7 +46,7 @@ __image_start:
+ __image_end:
+ 	.long	_got_end
+ __load_base:
+-	.long	CONFIG_MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
++	.long	MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
+ __loaded:
+ 	.long	__continue
+ 	.align
+diff --git a/arch/arm/mach-shmobile/include/mach/zboot.h b/arch/arm/mach-shmobile/include/mach/zboot.h
+index 9320aff..308b5cf 100644
+--- a/arch/arm/mach-shmobile/include/mach/zboot.h
++++ b/arch/arm/mach-shmobile/include/mach/zboot.h
+@@ -12,9 +12,11 @@
+ 
+ #ifdef CONFIG_MACH_AP4EVB
+ #define MACH_TYPE	MACH_TYPE_AP4EVB
++#define MEMORY_START	0x40000000
+ #include "mach/head-ap4evb.txt"
+ #elif defined(CONFIG_MACH_MACKEREL)
+ #define MACH_TYPE	MACH_TYPE_MACKEREL
++#define MEMORY_START	0x40000000
+ #include "mach/head-mackerel.txt"
+ #else
+ #error "unsupported board."
+-- 
+1.8.2.1
+
