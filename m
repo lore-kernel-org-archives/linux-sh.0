@@ -1,32 +1,131 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Jun 2013 08:05:14 +0000
-Subject: Re: [GIT PULL] Renesas ARM based SoC fixes for v3.10
-Message-Id: <20130607080514.GB22598@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 13 Jun 2013 08:58:41 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
+Message-Id: <Pine.LNX.4.64.1306131056490.31976@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369866529-6372-1-git-send-email-horms+renesas@verge.net.au>
- <20130601044103.GB4267@quad.lixom.net>
-In-Reply-To: <20130601044103.GB4267@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, May 31, 2013 at 09:41:03PM -0700, Olof Johansson wrote:
-> On Thu, May 30, 2013 at 07:28:47AM +0900, Simon Horman wrote:
-> > The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
-> > 
-> >   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git 
-> 
-> Hi, no tag or branch? Looks like you forgot to push.
-> 
-> I don't see any branch or tag at c7f413548dce3d25609c12efe963b3e6c8e678f3 in
-> that tree, so it's not a case of pushing branch but forgetting tag.
+On r-/sh-mobile SoCs MSTP clocks are used by the runtime PM to dynamically
+enable and disable peripheral clocks. To make sure the clock has really
+started we have to read back its status register until it confirms success.
 
-Sorry about that. I have re-pushed and sent a fresh pull request.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-For reference it is revision f5dbcc6e917f12e306acfc9575d437b5d5e24134
-tagged as renesas-fixes-for-v3.10.
+v2:
+1. removed "const" reom read accessors to fix compiler warnings
+2. added a "(void __iomem *)" cast, as suggested by Laurent
+
+ drivers/sh/clk/cpg.c   |   38 ++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h |   29 +++++++++++++++++------------
+ 2 files changed, 55 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 1ebe67c..87de622 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -36,9 +36,47 @@ static void sh_clk_write(int value, struct clk *clk)
+ 		iowrite32(value, clk->mapped_reg);
+ }
+ 
++static unsigned int r8(void __iomem *addr)
++{
++	return ioread8(addr);
++}
++
++static unsigned int r16(void __iomem *addr)
++{
++	return ioread16(addr);
++}
++
++static unsigned int r32(void __iomem *addr)
++{
++	return ioread32(addr);
++}
++
+ static int sh_clk_mstp_enable(struct clk *clk)
+ {
+ 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
++	if (clk->status_reg) {
++		unsigned int (*read)(void __iomem *addr);
++		int i;
++		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
++			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
++
++		if (clk->flags & CLK_ENABLE_REG_8BIT)
++			read = r8;
++		else if (clk->flags & CLK_ENABLE_REG_16BIT)
++			read = r16;
++		else
++			read = r32;
++
++		for (i = 1000;
++		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
++		     i--)
++			cpu_relax();
++		if (!i) {
++			pr_err("cpg: failed to enable %p[%d]\n",
++			       clk->enable_reg, clk->enable_bit);
++			return -ETIMEDOUT;
++		}
++	}
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 60c7239..affc8d8 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -52,6 +52,7 @@ struct clk {
+ 	unsigned long		flags;
+ 
+ 	void __iomem		*enable_reg;
++	void __iomem		*status_reg;
+ 	unsigned int		enable_bit;
+ 	void __iomem		*mapped_reg;
+ 
+@@ -116,22 +117,26 @@ long clk_round_parent(struct clk *clk, unsigned long target,
+ 		      unsigned long *best_freq, unsigned long *parent_freq,
+ 		      unsigned int div_min, unsigned int div_max);
+ 
+-#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _flags)		\
+-{									\
+-	.parent		= _parent,					\
+-	.enable_reg	= (void __iomem *)_enable_reg,			\
+-	.enable_bit	= _enable_bit,					\
+-	.flags		= _flags,					\
++#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _status_reg, _flags)	\
++{										\
++	.parent		= _parent,						\
++	.enable_reg	= (void __iomem *)_enable_reg,				\
++	.enable_bit	= _enable_bit,						\
++	.status_reg	= (void __iomem *)_status_reg,				\
++	.flags		= _flags,						\
+ }
+ 
+-#define SH_CLK_MSTP32(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_32BIT)
++#define SH_CLK_MSTP32(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_32BIT)
+ 
+-#define SH_CLK_MSTP16(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_16BIT)
++#define SH_CLK_MSTP32_STS(_p, _r, _b, _s, _f)			\
++	SH_CLK_MSTP(_p, _r, _b, _s, _f | CLK_ENABLE_REG_32BIT)
+ 
+-#define SH_CLK_MSTP8(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_8BIT)
++#define SH_CLK_MSTP16(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_16BIT)
++
++#define SH_CLK_MSTP8(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_8BIT)
+ 
+ int sh_clk_mstp_register(struct clk *clks, int nr);
+ 
+-- 
+1.7.2.5
+
