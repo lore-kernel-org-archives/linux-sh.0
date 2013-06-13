@@ -1,151 +1,84 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 01 Jun 2013 21:55:04 +0000
-Subject: [PATCH v8 8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-Message-Id: <201306020155.04976.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 23:45:49 +0000
+Subject: [PATCH v6 04/18] ARM: shmobile: r8a7740: Add pin control device to device tree
+Message-Id: <1371167163-10507-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
+References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Since we're now going to setup the USBPCTRL0 register using the USB PHY device's
-platform data, we now need a way to pass those platform data from the board file
-to the device which is situated in setup-r8a7779.c -- and what I'm suggesting is
-r8a7779_add_usb_phy_device() that will register USB PHY platform device with the
-passed platform data using platform_device_register_resndata() call; creating
-this function involves deletion of 'usb_phy_device' from r8a7779_devices_dt[],
-so that it will no longer be registered for the generic R8A7779 machine (where
-we can't provide the platform data anyway), hence EHCI/OHCI drivers will fail
-to load as well.
+Add a pfc node to the r8a7740 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
-For the Marzen board, this new function will be called from marzen_init() to
-register the USB PHY device early enough.
-
-Note that the board and the SoC code have to be in one patch to keep the code
-bisectable...
-
-The patch has been tested on the Marzen board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 6:
-- renamed the R-Car PHY driver header file in #include.
+ arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
+ 2 files changed, 16 insertions(+), 8 deletions(-)
 
-Changes since version 5:
-- annotated USB PHY resources and platform data as '__initdata' since they're
-  kmemdup()'ed while registering the platform device anyway;
-- fixed typo in the changelog.
-
-Changes since version 4:
-- refreshed the patch.
-
-Changes since version 3:
-- removed the initializer for 'usb_phy_platform_data';
-- refreshed the 'board-marzen.c' file.
-
-Changes since version 2:
-- refreshed atop of the prior patches;
-- added a note about testing to the changelog;
-- added ACKs from Simon Horman and Kuninori Morimoto.
-
-Changes since the original posting:
-- added a note about bisectability to the changelog.
-
- arch/arm/mach-shmobile/board-marzen.c         |    3 +++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        |   18 +++++++++---------
- 3 files changed, 14 insertions(+), 9 deletions(-)
-
-Index: renesas/arch/arm/mach-shmobile/board-marzen.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
-+++ renesas/arch/arm/mach-shmobile/board-marzen.c
-@@ -57,6 +57,8 @@ static struct regulator_consumer_supply 
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
- 
-+static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 25dc930..2fa3708 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -135,4 +135,12 @@
+ 			      0 72 0x4
+ 			      0 73 0x4>;
+ 	};
 +
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
- 	[0] = {
-@@ -232,6 +234,7 @@ static void __init marzen_init(void)
- 	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a7740";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605800c 0x20>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 03b85fe..f25b6aa 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -121,7 +121,7 @@
  
- 	r8a7779_add_standard_devices();
-+	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -4,6 +4,7 @@
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
-+#include <linux/platform_data/usb-rcar-phy.h>
- 
- struct platform_device;
- 
-@@ -33,6 +34,7 @@ extern void r8a7779_add_early_devices(vo
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
-+extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -389,7 +389,7 @@ static struct platform_device sata_devic
+ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* SCIFA1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
+ 				  "scifa1_data", "scifa1"),
  };
  
- /* USB PHY */
--static struct resource usb_phy_resources[] = {
-+static struct resource usb_phy_resources[] __initdata = {
- 	[0] = {
- 		.start		= 0xffe70800,
- 		.end		= 0xffe70900 - 1,
-@@ -397,13 +397,6 @@ static struct resource usb_phy_resources
- 	},
- };
+@@ -170,22 +170,22 @@ static void __init eva_init(void)
+ 	eva_clock_init();
  
--static struct platform_device usb_phy_device = {
--	.name		= "rcar_usb_phy",
--	.id		= -1,
--	.resource	= usb_phy_resources,
--	.num_resources	= ARRAY_SIZE(usb_phy_resources),
--};
+ 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+-	r8a7740_pinmux_init();
+ 
+ 	r8a7740_meram_workaround();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
 -
- /* USB */
- static struct usb_phy *phy;
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+ #endif
  
-@@ -575,7 +568,6 @@ static struct platform_device *r8a7779_d
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
--	&usb_phy_device,
- };
- 
- static struct platform_device *r8a7779_standard_devices[] __initdata = {
-@@ -610,6 +602,14 @@ void __init r8a7779_add_ether_device(str
- 					  pdata, sizeof(*pdata));
+ 	r8a7740_add_standard_devices_dt();
++
++	/*
++	 * Touchscreen
++	 * TODO: Move reset GPIO over to .dts when we can reference it
++	 */
++	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
++
+ 	r8a7740_pm_init();
  }
  
-+void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
-+{
-+	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
-+					  usb_phy_resources,
-+					  ARRAY_SIZE(usb_phy_resources),
-+					  pdata, sizeof(*pdata));
-+}
-+
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
- 
+-- 
+1.8.1.5
+
