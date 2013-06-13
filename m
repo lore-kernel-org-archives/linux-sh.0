@@ -1,41 +1,39 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Thu, 06 Jun 2013 15:48:55 +0000
-Subject: Re: [PATCH v3 2/2] mmc: tmio: reset the controller after power-up
-Message-Id: <871u8f6xzs.fsf@octavius.laptop.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:51 +0000
+Subject: [PATCH 13/15] ARM: shmobile: Remove mach/memory.h
+Message-Id: <1371106793-25071-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304230916270.1422@axis700.grange>
-	<871u8f8nxb.fsf@octavius.laptop.org>
-	<Pine.LNX.4.64.1306061625290.32566@axis700.grange>
-	<Pine.LNX.4.64.1306061626200.32566@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306061626200.32566@axis700.grange> (Guennadi
-	Liakhovetski's message of "Thu, 6 Jun 2013 16:35:48 +0200 (CEST)")
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Magnus Damm <damm@opensource.se>
 
-On Thu, Jun 06 2013, Guennadi Liakhovetski wrote:
-> This fixes two reported problems:
-> 1. after a system resume the controller isn't functioning until a command
->    runs on a timeout and a controller reset is performed.
-> 2. if a card is ejected during a running write operation, its re-insertion
->    isn't detected.
->
-> Reported-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-> Reported-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> Tested-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-> Tested-by: Nguyen Hong Ky <nh-ky@jinso.co.jp>
-> ---
->
-> v3: rebased on top of current mmc-next / 3.10-rc
+Remove mach-shmobile memory.h since it is no longer needed.
 
-Thanks, pushed to mmc-next for 3.10.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/memory.h | 7 -------
+ 1 file changed, 7 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/memory.h
 
-- Chris.
+diff --git a/arch/arm/mach-shmobile/include/mach/memory.h b/arch/arm/mach-shmobile/include/mach/memory.h
+deleted file mode 100644
+index 0ffbe81..0000000
+--- a/arch/arm/mach-shmobile/include/mach/memory.h
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#ifndef __ASM_MACH_MEMORY_H
+-#define __ASM_MACH_MEMORY_H
+-
+-#define PLAT_PHYS_OFFSET	UL(CONFIG_MEMORY_START)
+-#define MEM_SIZE	UL(CONFIG_MEMORY_SIZE)
+-
+-#endif /* __ASM_MACH_MEMORY_H */
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.8.2.1
+
