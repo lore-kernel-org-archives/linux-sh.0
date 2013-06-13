@@ -1,85 +1,76 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:45 +0000
-Subject: [PATCH 114/130] sh-pfc: r8a7778: add Ether pin groups
-Message-Id: <1370420821-28420-115-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:57 +0000
+Subject: [PATCH 07/11] ARM: shmobile: r8a7778: add support I2C driver
+Message-Id: <1371106861-25626-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add Ether RMII/LINK/MAGIC pin groups to R8A7778 PFC driver.
+Add a platform device for the r8a7778 I2C.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Laurent Pinchart<laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |  2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 25 +++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index e518c33..bc20083 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -1323,6 +1323,22 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 						     arg5##_MARK, arg6##_MARK, \
- 						     arg7##_MARK, arg8##_MARK, }
- 
-+/* - Ether ------------------------------------------------------------------ */
-+SH_PFC_PINS(ether_rmii,		RCAR_GP_PIN(4, 10),	RCAR_GP_PIN(4, 11),
-+				RCAR_GP_PIN(4, 13),	RCAR_GP_PIN(4, 9),
-+				RCAR_GP_PIN(4, 15),	RCAR_GP_PIN(4, 16),
-+				RCAR_GP_PIN(4, 12),	RCAR_GP_PIN(4, 14),
-+				RCAR_GP_PIN(4, 18),	RCAR_GP_PIN(4, 17));
-+static const unsigned int ether_rmii_mux[] = {
-+	ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK,  ETH_REF_CLK_MARK,
-+	ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_CRS_DV_MARK, ETH_RX_ER_MARK,
-+	ETH_MDIO_MARK, ETH_MDC_MARK,
-+};
-+SH_PFC_PINS(ether_link,		RCAR_GP_PIN(4, 19));
-+SH_PFC_MUX1(ether_link,		ETH_LINK);
-+SH_PFC_PINS(ether_magic,	RCAR_GP_PIN(4, 20));
-+SH_PFC_MUX1(ether_magic,	ETH_MAGIC);
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index b5173b3..9e5835b 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -24,6 +24,8 @@
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
++extern void r8a7778_add_i2c_device(int id);
 +
- /* - SCIF macro ------------------------------------------------------------- */
- #define SCIF_PFC_PIN(name, args...)	SH_PFC_PINS(name, args)
- #define SCIF_PFC_DAT(name, tx, rx)	SH_PFC_MUX2(name, tx, rx)
-@@ -1554,6 +1570,9 @@ VIN_PFC_PINS(vin1_sync,		RCAR_GP_PIN(3, 21),	RCAR_GP_PIN(3, 22));
- VIN_PFC_SYNC(vin1_sync,		VI1_HSYNC,		VI1_VSYNC);
+ extern void r8a7778_init_delay(void);
+ extern void r8a7778_init_irq(void);
+ extern void r8a7778_init_irq_dt(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index ce44fbb..6625a38 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -126,6 +126,31 @@ void __init r8a7778_sdhi_init(int id,
+ 		info, sizeof(*info));
+ }
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(ether_rmii),
-+	SH_PFC_PIN_GROUP(ether_link),
-+	SH_PFC_PIN_GROUP(ether_magic),
- 	SH_PFC_PIN_GROUP(hscif0_data_a),
- 	SH_PFC_PIN_GROUP(hscif0_data_b),
- 	SH_PFC_PIN_GROUP(hscif0_ctrl_a),
-@@ -1634,6 +1653,12 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(vin1_sync),
- };
- 
-+static const char * const ether_groups[] = {
-+	"ether_rmii",
-+	"ether_link",
-+	"ether_magic",
++/* I2C */
++static struct resource i2c_resources[] __initdata = {
++	/* I2C0 */
++	DEFINE_RES_MEM(0xffc70000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x63)),
++	/* I2C1 */
++	DEFINE_RES_MEM(0xffc71000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6e)),
++	/* I2C2 */
++	DEFINE_RES_MEM(0xffc72000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6c)),
++	/* I2C3 */
++	DEFINE_RES_MEM(0xffc73000, 0x1000),
++	DEFINE_RES_IRQ(gic_iid(0x6d)),
 +};
 +
- static const char * const hscif0_groups[] = {
- 	"hscif0_data_a",
- 	"hscif0_data_b",
-@@ -1762,6 +1787,7 @@ static const char * const vin1_groups[] = {
- };
- 
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(ether),
- 	SH_PFC_FUNCTION(hscif0),
- 	SH_PFC_FUNCTION(hscif1),
- 	SH_PFC_FUNCTION(scif_clk),
++void __init r8a7778_add_i2c_device(int id)
++{
++	BUG_ON(id < 0 || id > 3);
++
++	platform_device_register_simple(
++		"i2c-rcar", id,
++		i2c_resources + (2 * id), 2);
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
 -- 
 1.8.2.1
 
