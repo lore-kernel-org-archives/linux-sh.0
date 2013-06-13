@@ -1,48 +1,78 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Jun 2013 02:10:47 +0000
-Subject: Re: [PATCH v3] ARM: shmobile: BOCK-W: add Ether support
-Message-Id: <20130617021046.GI15043@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:48 +0000
+Subject: [PATCH 10/15] ARM: shmobile: Remove old SCU boot code
+Message-Id: <1371106793-25071-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306020240.55702.sergei.shtylyov@cogentembedded.com>
- <20130612140905.GM32751@verge.net.au>
- <51BDE454.5000006@cogentembedded.com>
-In-Reply-To: <51BDE454.5000006@cogentembedded.com>
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Jun 16, 2013 at 08:14:12PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 12.06.2013 18:09, Simon Horman wrote:
-> 
-> >>Register Ether device from bockw_init(), passing the platform data to it, adding
-> >>only the RMII pin group to bockw_pinctrl_map[].  Although the LINK signal exists
-> >>on the board, it's connected to the link/activity LED  output of the PHY, thus
-> >>the link disappears and reappears after each packet. We'd be better off ignoring
-> >>such signal and getting the link state from the PHY indirectly.
-> 
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>---
-> >>The patch is atop of Simon's 'renesas.git' repo, 'renesas-next-20130528' tag
-> >>and the USB patches just reposted. I decided to move it ahead of the VIN patches
-> >>as it can be merged right now since all dependecies have been already met.
-> 
-> >Thanks, queued up in the boards branch.
-> 
->    Has this been pulled by Olof/Arnd? If not, is it possible to
-> amend this patch or should I send an incremental one? I forgot to
-> update the platform device name from "sh-eth" to "r8a777x-ether" in
-> the PinMux table, in accordance to the R8A7778 Ether device name
-> fix. It would be
-> good if this got into 3.11 as otherwise Ether support on BOCK-W
-> wouldn't work. I have discovered the mistake only yesterday.
+From: Magnus Damm <damm@opensource.se>
 
-This patch is not present in arm-soc nor have I sent a pull request for it,
-though I was planing to do so today.
+Remove shmobile_secondary_vector_scu now when all SCU enabled
+SMP platforms instead make use of shmobile_boot_scu. This
+removes two inline virtual to physical address conversions.
 
-I think that the best thing would be if you sent an incremental patch
-which I can add to the boards branch and then send a pull-request for
-that branch to Olof and Arnd.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/headsmp-scu.S         | 22 +---------------------
+ arch/arm/mach-shmobile/include/mach/common.h |  1 -
+ 2 files changed, 1 insertion(+), 22 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
+index c5c9106..6f98654 100644
+--- a/arch/arm/mach-shmobile/headsmp-scu.S
++++ b/arch/arm/mach-shmobile/headsmp-scu.S
+@@ -25,32 +25,12 @@
+ 
+ 	__CPUINIT
+ /*
+- * Reset vector for secondary CPUs.
++ * Boot code for secondary CPUs.
+  *
+  * First we turn on L1 cache coherency for our CPU. Then we jump to
+  * shmobile_invalidate_start that invalidates the cache and hands over control
+  * to the common ARM startup code.
+- * This function will be mapped to address 0 by the SBAR register.
+- * A normal branch is out of range here so we need a long jump. We jump to
+- * the physical address as the MMU is still turned off.
+  */
+-	.align	12
+-ENTRY(shmobile_secondary_vector_scu)
+-	mrc     p15, 0, r0, c0, c0, 5	@ read MIPDR
+-	and	r0, r0, #3		@ mask out cpu ID
+-	lsl	r0, r0, #3		@ we will shift by cpu_id * 8 bits
+-	ldr	r1, 2f
+-	ldr	r1, [r1]		@ SCU base address
+-	ldr	r2, [r1, #8]		@ SCU Power Status Register
+-	mov	r3, #3
+-	bic	r2, r2, r3, lsl r0	@ Clear bits of our CPU (Run Mode)
+-	str	r2, [r1, #8]		@ write back
+-
+-	ldr	pc, 1f
+-1:	.long shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
+-2:	.long shmobile_scu_base - PAGE_OFFSET + PLAT_PHYS_OFFSET
+-ENDPROC(shmobile_secondary_vector_scu)
+-
+ ENTRY(shmobile_boot_scu)
+ 					@ r0 = SCU base address
+ 	mrc     p15, 0, r1, c0, c0, 5	@ read MIPDR
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 8ef1c3c..e818f02 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -10,7 +10,6 @@ extern void shmobile_setup_console(void);
+ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
+-extern void shmobile_secondary_vector_scu(void);
+ extern void shmobile_boot_scu(void);
+ struct clk;
+ extern int shmobile_clk_init(void);
+-- 
+1.8.2.1
+
