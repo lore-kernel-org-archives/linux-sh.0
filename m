@@ -1,40 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Jun 2013 07:56:27 +0000
-Subject: Re: [PATCH v9 resend 0/3] Add USB support to R8A7778/BOCK-W
-Message-Id: <20130611075627.GB5300@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 06:59:43 +0000
+Subject: [PATCH 05/15] ARM: shmobile: Add SMP boot function and argument
+Message-Id: <1371106793-25071-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306090032.35128.sergei.shtylyov@cogentembedded.com>
- <20130611074959.GG10440@verge.net.au>
-In-Reply-To: <20130611074959.GG10440@verge.net.au>
+References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jun 11, 2013 at 04:49:59PM +0900, Simon Horman wrote:
-> On Sun, Jun 09, 2013 at 12:32:34AM +0400, Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> >    Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
-> > 'renesas-next-20130607' tag, and the R8A7779/Marzen USB patchset I've posted.
-> > It was created to add support of R8A7778/BOCK-W USB to the platform code and
-> > the USB common PHY driver, and so spans both arch/arm/mach-shmobile/ and
-> > drivers/usb/phy/ subtrees.
-> > 
-> > [1/3] phy-rcar-usb: add R8A7778 support
-> > [2/3] ARM: shmobile: r8a7778: add USB support
-> > [3/3] ARM: shmobile: BOCK-W: add USB support
-> > 
-> >    The patchset is completely ready for merging now.
-> 
-> Thanks, I have queued this up in the soc2 phy-rcar-usb.
+From: Magnus Damm <damm@opensource.se>
 
-s/soc2 phy-rcar-usb/phy-rcar-usb branch/
+Add code for mach-shmobile to allow specifying boot function
+and argument. Will initially be used for SMP together with SCU
+but may in the future also be used for deep sleep resume. This
+patch removes one inline virtual to physical address conversion.
 
-> My current plan is to let that branch sit in next for a few
-> days and then send a pull-request for it to be included in v3.11.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/headsmp.S             | 13 ++++++++++---
+ arch/arm/mach-shmobile/include/mach/common.h |  4 +++-
+ 2 files changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/headsmp.S b/arch/arm/mach-shmobile/headsmp.S
+index 96001fd..559d1ce 100644
+--- a/arch/arm/mach-shmobile/headsmp.S
++++ b/arch/arm/mach-shmobile/headsmp.S
+@@ -27,7 +27,14 @@ ENDPROC(shmobile_invalidate_start)
+  * We need _long_ jump to the physical address.
+  */
+ 	.align  12
+-ENTRY(shmobile_secondary_vector)
++ENTRY(shmobile_boot_vector)
++	ldr     r0, 2f
+ 	ldr     pc, 1f
+-1:	.long   shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
+-ENDPROC(shmobile_secondary_vector)
++ENDPROC(shmobile_boot_vector)
++
++	.globl	shmobile_boot_fn
++shmobile_boot_fn:
++1:	.space	4
++	.globl	shmobile_boot_arg
++shmobile_boot_arg:
++2:	.space	4
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 4634a5d..54472ef 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -7,7 +7,9 @@ extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+ 			 unsigned int mult, unsigned int div);
+ struct twd_local_timer;
+ extern void shmobile_setup_console(void);
+-extern void shmobile_secondary_vector(void);
++extern void shmobile_boot_vector(void);
++extern unsigned long shmobile_boot_fn;
++extern unsigned long shmobile_boot_arg;
+ extern void shmobile_secondary_vector_scu(void);
+ struct clk;
+ extern int shmobile_clk_init(void);
+-- 
+1.8.2.1
+
