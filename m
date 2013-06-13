@@ -1,51 +1,54 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:31 +0000
-Subject: [PATCH 01/27] ARM: shmobile: r8a7740: Make private clock arrays static
-Message-Id: <1370591517-20239-2-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Jun 2013 07:00:56 +0000
+Subject: [PATCH 06/11] ARM: shmobile: r8a7778: add support MMC clock
+Message-Id: <1371106861-25626-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Both clock-r8a7740.c and clock-r8a7790.c define a div4_clks array as
-non-static. Compiling support for both SoCs thus result in a symbol
-redefinition. Fix it by defining the arrays as static.
+This patch adds r8a7778 MMC clock support.
 
-To avoid further similar issues, also define the main_clks as static.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index c0d39aa..54afa04 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -266,7 +266,7 @@ static struct clk fsiack_clk = {
- static struct clk fsibck_clk = {
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index c2c1895..18d44f5 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -103,6 +103,7 @@ static struct clk *main_clks[] = {
  };
  
--struct clk *main_clks[] = {
-+static struct clk *main_clks[] = {
- 	&extalr_clk,
- 	&extal1_clk,
- 	&extal2_clk,
-@@ -317,7 +317,7 @@ enum {
- 	DIV4_NR
- };
+ enum {
++	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
+ 	MSTP030,
+@@ -112,6 +113,7 @@ enum {
+ 	MSTP_NR };
  
--struct clk div4_clks[DIV4_NR] = {
-+static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_I]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT),
- 	[DIV4_ZG]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT),
- 	[DIV4_B]	= SH_CLK_DIV4(&pllc1_clk, FRQCRA,  8, 0x6fff, CLK_ENABLE_ON_INIT),
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
+ 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+@@ -137,6 +139,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_mmcif", &mstp_clks[MSTP331]), /* MMC */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
 -- 
 1.8.2.1
 
