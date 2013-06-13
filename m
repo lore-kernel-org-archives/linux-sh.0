@@ -1,55 +1,136 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 Jun 2013 08:23:38 +0000
-Subject: [PATCH v10 11/21] soc-camera: don't attach the client to the host during probing
-Message-Id: <1370939028-8352-12-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 13 Jun 2013 16:54:45 +0000
+Subject: [PATCH v4 2/5] ARM: mach-shmobile: armadillo800eva: Add backlight support
+Message-Id: <1371142488-2514-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-During client probing we only have to turn on the host's clock, no need to
-actually attach the client to the host.
+The flat panel backlight on the Armadillo 800 EVA board is driven by the
+TPU PWM output.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/soc_camera/soc_camera.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 54 +++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/clock-r8a7740.c         |  2 +-
+ 2 files changed, 53 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
-index e503f03..ac98bcb 100644
---- a/drivers/media/platform/soc_camera/soc_camera.c
-+++ b/drivers/media/platform/soc_camera/soc_camera.c
-@@ -1207,7 +1207,7 @@ static int soc_camera_probe(struct soc_camera_device *icd)
- 		ssdd->reset(icd->pdev);
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 44a6215..5377204 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -31,6 +31,8 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/regulator/driver.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/pwm-renesas-tpu.h>
++#include <linux/pwm_backlight.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+@@ -386,7 +388,50 @@ static struct platform_device sh_eth_device = {
+ 	.num_resources = ARRAY_SIZE(sh_eth_resources),
+ };
  
- 	mutex_lock(&ici->host_lock);
--	ret = soc_camera_add_device(icd);
-+	ret = ici->ops->clock_start(ici);
- 	mutex_unlock(&ici->host_lock);
- 	if (ret < 0)
- 		goto eadd;
-@@ -1280,7 +1280,7 @@ static int soc_camera_probe(struct soc_camera_device *icd)
- 		icd->field		= mf.field;
- 	}
+-/* LCDC */
++/* PWM */
++static struct resource pwm_resources[] = {
++	[0] = {
++		.start = 0xe6600000,
++		.end = 0xe66000ff,
++		.flags = IORESOURCE_MEM,
++	},
++};
++
++static struct tpu_pwm_platform_data pwm_device_data = {
++	.channels[2] = {
++		.polarity = PWM_POLARITY_INVERSED,
++	}
++};
++
++static struct platform_device pwm_device = {
++	.name = "renesas-tpu-pwm",
++	.id = -1,
++	.dev = {
++		.platform_data = &pwm_device_data,
++	},
++	.num_resources = ARRAY_SIZE(pwm_resources),
++	.resource = pwm_resources,
++};
++
++static struct pwm_lookup pwm_lookup[] = {
++	PWM_LOOKUP("renesas-tpu-pwm", 2, "pwm-backlight.0", NULL),
++};
++
++/* LCDC and backlight */
++static struct platform_pwm_backlight_data pwm_backlight_data = {
++	.lth_brightness = 50,
++	.max_brightness = 255,
++	.dft_brightness = 255,
++	.pwm_period_ns = 33333, /* 30kHz */
++};
++
++static struct platform_device pwm_backlight_device = {
++	.name = "pwm-backlight",
++	.dev = {
++		.platform_data = &pwm_backlight_data,
++	},
++};
++
+ static struct fb_videomode lcdc0_mode = {
+ 	.name		= "AMPIER/AM-800480",
+ 	.xres		= 800,
+@@ -1029,6 +1074,8 @@ static struct i2c_board_info i2c2_devices[] = {
+  */
+ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
++	&pwm_device,
++	&pwm_backlight_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
+ 	&vcc_sdhi0,
+@@ -1100,6 +1147,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* ST1232 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-r8a7740",
+ 				  "intc_irq10", "intc"),
++	/* TPU0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas-tpu-pwm", "pfc-r8a7740",
++				  "tpu0_to2_1", "tpu0"),
+ 	/* USBHS */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7740",
+ 				  "intc_irq7_1", "intc"),
+@@ -1153,13 +1203,13 @@ static void __init eva_init(void)
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
  
--	soc_camera_remove_device(icd);
-+	ici->ops->clock_stop(ici);
+ 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
++	pwm_add_table(pwm_lookup, ARRAY_SIZE(pwm_lookup));
  
- 	mutex_unlock(&ici->host_lock);
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
  
-@@ -1303,7 +1303,7 @@ eadddev:
- 	icd->vdev = NULL;
- evdc:
- 	mutex_lock(&ici->host_lock);
--	soc_camera_remove_device(icd);
-+	ici->ops->clock_stop(ici);
- 	mutex_unlock(&ici->host_lock);
- eadd:
- 	v4l2_ctrl_handler_free(&icd->ctrl_handler);
+ 	/* LCDC0 */
+ 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+-	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
+ 
+ 	/* Touchscreen */
+ 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 7fd32d6..f5b7bbe 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -596,7 +596,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+-	CLKDEV_DEV_ID("renesas_tpu_pwm",	&mstp_clks[MSTP304]),
++	CLKDEV_DEV_ID("renesas-tpu-pwm",	&mstp_clks[MSTP304]),
+ 
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
+ 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
 -- 
-1.7.2.5
+1.8.1.5
 
