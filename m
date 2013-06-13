@@ -1,38 +1,69 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Thu, 06 Jun 2013 15:48:38 +0000
-Subject: Re: [PATCH v3 1/2] mmc: tmio: fix unbalanced power-on calls with clock-gating enabled
-Message-Id: <8761xr6y09.fsf@octavius.laptop.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 13 Jun 2013 09:23:38 +0000
+Subject: [PATCH v4] irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
+Message-Id: <Pine.LNX.4.64.1306131121230.31976@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304230916270.1422@axis700.grange>
-	<871u8f8nxb.fsf@octavius.laptop.org>
-	<Pine.LNX.4.64.1306061625290.32566@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306061625290.32566@axis700.grange> (Guennadi
-	Liakhovetski's message of "Thu, 6 Jun 2013 16:35:44 +0200 (CEST)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Most Renesas irqpin controllers have 4-bit sense fields, however, some
+have different widths. This patch adds a DT binding to optionally
+specify such non-standard values.
 
-On Thu, Jun 06 2013, Guennadi Liakhovetski wrote:
-> With MMC clock gating enabled the MMC core currently calls MMC host driver's
-> .set_ios() method with .power_mode = MMC_POWER_ON and the clock value set
-> either to 0 or to the target rate. The tmio MMC driver then wrongly
-> translates the latter calls to card slot power-on requests, even when the
-> slot already was on. This patch fixes the driver to avoid needlessly
-> incrementing power-supplying regulator's use count.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
->
-> v3: rebased on top of current mmc-next / 3.10-rc
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-Thanks, pushed to mmc-next for 3.10.
+v4: as suggested by Arnd, add a description for #interrupt-cells
 
-- Chris.
+ .../interrupt-controller/renesas,intc-irqpin.txt   |   14 ++++++++++++++
+ drivers/irqchip/irq-renesas-intc-irqpin.c          |    4 ++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+new file mode 100644
+index 0000000..66fcaf5
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -0,0 +1,14 @@
++DT bindings for the R-/SH-Mobile irqpin controller
++
++Required properties:
++
++- compatible: has to be "renesas,intc-irqpin"
++- #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
++  interrupts.txt in this directory
++
++Optional properties:
++
++- any properties, listed in interrupts.txt, and any standard resource allocation
++  properties
++- sense-bitfield-width: width of a single sense bitfield in the SENSE register,
++  if different from the default 4 bits
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 5a68e5a..4aca1b2 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include <linux/init.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+@@ -349,6 +350,9 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	/* deal with driver instance configuration */
+ 	if (pdata)
+ 		memcpy(&p->config, pdata, sizeof(*pdata));
++	else
++		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
++				     &p->config.sense_bitfield_width);
+ 	if (!p->config.sense_bitfield_width)
+ 		p->config.sense_bitfield_width = 4; /* default to 4 bits */
+ 
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.2.5
+
