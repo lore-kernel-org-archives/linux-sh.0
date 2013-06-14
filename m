@@ -1,196 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:13 +0000
-Subject: [PATCH 022/130] sh-pfc: r8a7778: add SDHI support
-Message-Id: <1370420821-28420-23-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:17 +0000
+Subject: [PATCH v11 07/21] mx2-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1371236911-15131-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+When adding and removing a client, the mx2-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 141 +++++++++++++++++++++++++++++++++++
- 1 file changed, 141 insertions(+)
+ drivers/media/platform/soc_camera/mx2_camera.c |   28 +++++++++++++++--------
+ 1 files changed, 18 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index 139f9dd..b1925cc 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -1427,6 +1427,84 @@ SCIF_PFC_DAT(scif5_data_a,	TX5_A,			RX5_A);
- SCIF_PFC_PIN(scif5_data_b,	RCAR_GP_PIN(1, 15),	RCAR_GP_PIN(1, 14));
- SCIF_PFC_DAT(scif5_data_b,	TX5_B,			RX5_B);
+diff --git a/drivers/media/platform/soc_camera/mx2_camera.c b/drivers/media/platform/soc_camera/mx2_camera.c
+index 772e071..45a0276 100644
+--- a/drivers/media/platform/soc_camera/mx2_camera.c
++++ b/drivers/media/platform/soc_camera/mx2_camera.c
+@@ -412,13 +412,26 @@ static void mx2_camera_deactivate(struct mx2_camera_dev *pcdev)
+ 	writel(0, pcdev->base_emma + PRP_CNTL);
+ }
  
-+/* - SDHI macro ------------------------------------------------------------- */
-+#define SDHI_PFC_PINS(name, args...)		SH_PFC_PINS(name, args)
-+#define SDHI_PFC_DAT1(name, d0)			SH_PFC_MUX1(name, d0)
-+#define SDHI_PFC_DAT4(name, d0, d1, d2, d3)	SH_PFC_MUX4(name, d0, d1, d2, d3)
-+#define SDHI_PFC_CTRL(name, clk, cmd)		SH_PFC_MUX2(name, clk, cmd)
-+#define SDHI_PFC_CDPN(name, cd)			SH_PFC_MUX1(name, cd)
-+#define SDHI_PFC_WPPN(name, wp)			SH_PFC_MUX1(name, wp)
++static int mx2_camera_add_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "Camera driver attached to camera %d\n",
++		 icd->devnum);
 +
-+/* - SDHI0 ------------------------------------------------------------------ */
-+SDHI_PFC_PINS(sdhi0_cd,		RCAR_GP_PIN(3, 17));
-+SDHI_PFC_CDPN(sdhi0_cd,		SD0_CD);
-+SDHI_PFC_PINS(sdhi0_ctrl,	RCAR_GP_PIN(3, 11),	RCAR_GP_PIN(3, 12));
-+SDHI_PFC_CTRL(sdhi0_ctrl,	SD0_CLK,		SD0_CMD);
-+SDHI_PFC_PINS(sdhi0_data1,	RCAR_GP_PIN(3, 13));
-+SDHI_PFC_DAT1(sdhi0_data1,	SD0_DAT0);
-+SDHI_PFC_PINS(sdhi0_data4,	RCAR_GP_PIN(3, 13),	RCAR_GP_PIN(3, 14),
-+				RCAR_GP_PIN(3, 15),	RCAR_GP_PIN(3, 16));
-+SDHI_PFC_DAT4(sdhi0_data4,	SD0_DAT0,		SD0_DAT1,
-+				SD0_DAT2,		SD0_DAT3);
-+SDHI_PFC_PINS(sdhi0_wp,		RCAR_GP_PIN(3, 18));
-+SDHI_PFC_WPPN(sdhi0_wp,		SD0_WP);
++	return 0;
++}
 +
-+/* - SDHI1 ------------------------------------------------------------------ */
-+SDHI_PFC_PINS(sdhi1_a_cd,	RCAR_GP_PIN(0, 30));
-+SDHI_PFC_CDPN(sdhi1_a_cd,	SD1_CD_A);
-+SDHI_PFC_PINS(sdhi1_a_ctrl,	RCAR_GP_PIN(1, 5),	RCAR_GP_PIN(1, 6));
-+SDHI_PFC_CTRL(sdhi1_a_ctrl,	SD1_CLK_A,		SD1_CMD_A);
-+SDHI_PFC_PINS(sdhi1_a_data1,	RCAR_GP_PIN(1, 7));
-+SDHI_PFC_DAT1(sdhi1_a_data1,	SD1_DAT0_A);
-+SDHI_PFC_PINS(sdhi1_a_data4,	RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(1, 8),
-+				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6));
-+SDHI_PFC_DAT4(sdhi1_a_data4,	SD1_DAT0_A,		SD1_DAT1_A,
-+				SD1_DAT2_A,		SD1_DAT3_A);
-+SDHI_PFC_PINS(sdhi1_a_wp,	RCAR_GP_PIN(0, 31));
-+SDHI_PFC_WPPN(sdhi1_a_wp,	SD1_WP_A);
++static void mx2_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
 +
-+SDHI_PFC_PINS(sdhi1_b_cd,	RCAR_GP_PIN(2, 24));
-+SDHI_PFC_CDPN(sdhi1_b_cd,	SD1_CD_B);
-+SDHI_PFC_PINS(sdhi1_b_ctrl,	RCAR_GP_PIN(1, 17),	RCAR_GP_PIN(1, 16));
-+SDHI_PFC_CTRL(sdhi1_b_ctrl,	SD1_CLK_B,		SD1_CMD_B);
-+SDHI_PFC_PINS(sdhi1_b_data1,	RCAR_GP_PIN(1, 18));
-+SDHI_PFC_DAT1(sdhi1_b_data1,	SD1_DAT0_B);
-+SDHI_PFC_PINS(sdhi1_b_data4,	RCAR_GP_PIN(1, 18),	RCAR_GP_PIN(1, 19),
-+				RCAR_GP_PIN(1, 20),	RCAR_GP_PIN(1, 21));
-+SDHI_PFC_DAT4(sdhi1_b_data4,	SD1_DAT0_B,		SD1_DAT1_B,
-+				SD1_DAT2_B,		SD1_DAT3_B);
-+SDHI_PFC_PINS(sdhi1_b_wp,	RCAR_GP_PIN(2, 25));
-+SDHI_PFC_WPPN(sdhi1_b_wp,	SD1_WP_B);
-+
-+
-+/* - SDH2 ------------------------------------------------------------------- */
-+SDHI_PFC_PINS(sdhi2_a_cd,	RCAR_GP_PIN(4, 23));
-+SDHI_PFC_CDPN(sdhi2_a_cd,	SD2_CD_A);
-+SDHI_PFC_PINS(sdhi2_a_ctrl,	RCAR_GP_PIN(4, 17),	RCAR_GP_PIN(4, 18));
-+SDHI_PFC_CTRL(sdhi2_a_ctrl,	SD2_CLK_A,		SD2_CMD_A);
-+SDHI_PFC_PINS(sdhi2_a_data1,	RCAR_GP_PIN(4, 19));
-+SDHI_PFC_DAT1(sdhi2_a_data1,	SD2_DAT0_A);
-+SDHI_PFC_PINS(sdhi2_a_data4,	RCAR_GP_PIN(4, 19),	RCAR_GP_PIN(4, 20),
-+				RCAR_GP_PIN(4, 21),	RCAR_GP_PIN(4, 22));
-+SDHI_PFC_DAT4(sdhi2_a_data4,	SD2_DAT0_A,		SD2_DAT1_A,
-+				SD2_DAT2_A,		SD2_DAT3_A);
-+SDHI_PFC_PINS(sdhi2_a_wp,	RCAR_GP_PIN(4, 24));
-+SDHI_PFC_WPPN(sdhi2_a_wp,	SD2_WP_A);
-+
-+SDHI_PFC_PINS(sdhi2_b_cd,	RCAR_GP_PIN(3, 27));
-+SDHI_PFC_CDPN(sdhi2_b_cd,	SD2_CD_B);
-+SDHI_PFC_PINS(sdhi2_b_ctrl,	RCAR_GP_PIN(4, 5),	RCAR_GP_PIN(4, 6));
-+SDHI_PFC_CTRL(sdhi2_b_ctrl,	SD2_CLK_B,		SD2_CMD_B);
-+SDHI_PFC_PINS(sdhi2_b_data1,	RCAR_GP_PIN(4, 7));
-+SDHI_PFC_DAT1(sdhi2_b_data1,	SD2_DAT0_B);
-+SDHI_PFC_PINS(sdhi2_b_data4,	RCAR_GP_PIN(4, 7),	RCAR_GP_PIN(4, 8),
-+				RCAR_GP_PIN(3, 25),	RCAR_GP_PIN(3, 26));
-+SDHI_PFC_DAT4(sdhi2_b_data4,	SD2_DAT0_B,		SD2_DAT1_B,
-+				SD2_DAT2_B,		SD2_DAT3_B);
-+SDHI_PFC_PINS(sdhi2_b_wp,	RCAR_GP_PIN(3, 28));
-+SDHI_PFC_WPPN(sdhi2_b_wp,	SD2_WP_B);
-+
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(hscif0_data_a),
- 	SH_PFC_PIN_GROUP(hscif0_data_b),
-@@ -1471,6 +1549,31 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scif4_data_c),
- 	SH_PFC_PIN_GROUP(scif5_data_a),
- 	SH_PFC_PIN_GROUP(scif5_data_b),
-+	SH_PFC_PIN_GROUP(sdhi0_cd),
-+	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi0_data1),
-+	SH_PFC_PIN_GROUP(sdhi0_data4),
-+	SH_PFC_PIN_GROUP(sdhi0_wp),
-+	SH_PFC_PIN_GROUP(sdhi1_a_cd),
-+	SH_PFC_PIN_GROUP(sdhi1_a_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi1_a_data1),
-+	SH_PFC_PIN_GROUP(sdhi1_a_data4),
-+	SH_PFC_PIN_GROUP(sdhi1_a_wp),
-+	SH_PFC_PIN_GROUP(sdhi1_b_cd),
-+	SH_PFC_PIN_GROUP(sdhi1_b_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi1_b_data1),
-+	SH_PFC_PIN_GROUP(sdhi1_b_data4),
-+	SH_PFC_PIN_GROUP(sdhi1_b_wp),
-+	SH_PFC_PIN_GROUP(sdhi2_a_cd),
-+	SH_PFC_PIN_GROUP(sdhi2_a_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi2_a_data1),
-+	SH_PFC_PIN_GROUP(sdhi2_a_data4),
-+	SH_PFC_PIN_GROUP(sdhi2_a_wp),
-+	SH_PFC_PIN_GROUP(sdhi2_b_cd),
-+	SH_PFC_PIN_GROUP(sdhi2_b_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi2_b_data1),
-+	SH_PFC_PIN_GROUP(sdhi2_b_data4),
-+	SH_PFC_PIN_GROUP(sdhi2_b_wp),
- };
+ /*
+  * The following two functions absolutely depend on the fact, that
+  * there can be only one camera on mx2 camera sensor interface
+  */
+-static int mx2_camera_add_device(struct soc_camera_device *icd)
++static int mx2_camera_clock_start(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx2_camera_dev *pcdev = ici->priv;
+ 	int ret;
+ 	u32 csicr1;
+@@ -439,9 +452,6 @@ static int mx2_camera_add_device(struct soc_camera_device *icd)
  
- static const char * const hscif0_groups[] = {
-@@ -1543,6 +1646,41 @@ static const char * const scif5_groups[] = {
- 	"scif5_data_b",
- };
+ 	pcdev->frame_count = 0;
  
-+
-+static const char * const sdhi0_groups[] = {
-+	"sdhi0_cd",
-+	"sdhi0_ctrl",
-+	"sdhi0_data1",
-+	"sdhi0_data4",
-+	"sdhi0_wp",
-+};
-+
-+static const char * const sdhi1_groups[] = {
-+	"sdhi1_a_cd",
-+	"sdhi1_a_ctrl",
-+	"sdhi1_a_data1",
-+	"sdhi1_a_data4",
-+	"sdhi1_a_wp",
-+	"sdhi1_b_cd",
-+	"sdhi1_b_ctrl",
-+	"sdhi1_b_data1",
-+	"sdhi1_b_data4",
-+	"sdhi1_b_wp",
-+};
-+
-+static const char * const sdhi2_groups[] = {
-+	"sdhi2_a_cd",
-+	"sdhi2_a_ctrl",
-+	"sdhi2_a_data1",
-+	"sdhi2_a_data4",
-+	"sdhi2_a_wp",
-+	"sdhi2_b_cd",
-+	"sdhi2_b_ctrl",
-+	"sdhi2_b_data1",
-+	"sdhi2_b_data4",
-+	"sdhi2_b_wp",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(hscif0),
- 	SH_PFC_FUNCTION(hscif1),
-@@ -1553,6 +1691,9 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(scif3),
- 	SH_PFC_FUNCTION(scif4),
- 	SH_PFC_FUNCTION(scif5),
-+	SH_PFC_FUNCTION(sdhi0),
-+	SH_PFC_FUNCTION(sdhi1),
-+	SH_PFC_FUNCTION(sdhi2),
- };
+-	dev_info(icd->parent, "Camera driver attached to camera %d\n",
+-		 icd->devnum);
+-
+ 	return 0;
  
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ exit_csi_ahb:
+@@ -450,14 +460,10 @@ exit_csi_ahb:
+ 	return ret;
+ }
+ 
+-static void mx2_camera_remove_device(struct soc_camera_device *icd)
++static void mx2_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx2_camera_dev *pcdev = ici->priv;
+ 
+-	dev_info(icd->parent, "Camera driver detached from camera %d\n",
+-		 icd->devnum);
+-
+ 	mx2_camera_deactivate(pcdev);
+ }
+ 
+@@ -1271,6 +1277,8 @@ static struct soc_camera_host_ops mx2_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= mx2_camera_add_device,
+ 	.remove		= mx2_camera_remove_device,
++	.clock_start	= mx2_camera_clock_start,
++	.clock_stop	= mx2_camera_clock_stop,
+ 	.set_fmt	= mx2_camera_set_fmt,
+ 	.set_crop	= mx2_camera_set_crop,
+ 	.get_formats	= mx2_camera_get_formats,
 -- 
-1.8.2.1
+1.7.2.5
 
