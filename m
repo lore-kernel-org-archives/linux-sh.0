@@ -1,54 +1,109 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:24 +0000
-Subject: [PATCH 11/23] ARM: shmobile: r8a7778: add SDHI clock support
-Message-Id: <1370503716-31155-12-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:16 +0000
+Subject: [PATCH v11 06/21] mx3-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1371236911-15131-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+When adding and removing a client, the mx3-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/media/platform/soc_camera/mx3_camera.c |   35 ++++++++++++++---------
+ 1 files changed, 21 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 5cc271e..b251e4d 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -103,12 +103,16 @@ static struct clk *main_clks[] = {
- };
+diff --git a/drivers/media/platform/soc_camera/mx3_camera.c b/drivers/media/platform/soc_camera/mx3_camera.c
+index 71b9b19..1047e3e 100644
+--- a/drivers/media/platform/soc_camera/mx3_camera.c
++++ b/drivers/media/platform/soc_camera/mx3_camera.c
+@@ -460,8 +460,7 @@ static int mx3_camera_init_videobuf(struct vb2_queue *q,
+ }
  
- enum {
-+	MSTP323, MSTP322, MSTP321,
- 	MSTP114,
- 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015,
- 	MSTP_NR };
+ /* First part of ipu_csi_init_interface() */
+-static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam,
+-				struct soc_camera_device *icd)
++static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam)
+ {
+ 	u32 conf;
+ 	long rate;
+@@ -505,31 +504,40 @@ static void mx3_camera_activate(struct mx3_camera_dev *mx3_cam,
  
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
-+	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
-+	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
- 	[MSTP026] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 25, 0), /* SCIF1 */
-@@ -122,6 +126,9 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	clk_prepare_enable(mx3_cam->clk);
+ 	rate = clk_round_rate(mx3_cam->clk, mx3_cam->mclk);
+-	dev_dbg(icd->parent, "Set SENS_CONF to %x, rate %ld\n", conf, rate);
++	dev_dbg(mx3_cam->soc_host.v4l2_dev.dev, "Set SENS_CONF to %x, rate %ld\n", conf, rate);
+ 	if (rate)
+ 		clk_set_rate(mx3_cam->clk, rate);
+ }
  
- static struct clk_lookup lookups[] = {
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+-/* Called with .host_lock held */
+ static int mx3_camera_add_device(struct soc_camera_device *icd)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
++	dev_info(icd->parent, "MX3 Camera driver attached to camera %d\n",
++		 icd->devnum);
++
++	return 0;
++}
++
++static void mx3_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "MX3 Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
++/* Called with .host_lock held */
++static int mx3_camera_clock_start(struct soc_camera_host *ici)
++{
+ 	struct mx3_camera_dev *mx3_cam = ici->priv;
+ 
+-	mx3_camera_activate(mx3_cam, icd);
++	mx3_camera_activate(mx3_cam);
+ 
+ 	mx3_cam->buf_total = 0;
+ 
+-	dev_info(icd->parent, "MX3 Camera driver attached to camera %d\n",
+-		 icd->devnum);
+-
+ 	return 0;
+ }
+ 
+ /* Called with .host_lock held */
+-static void mx3_camera_remove_device(struct soc_camera_device *icd)
++static void mx3_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct mx3_camera_dev *mx3_cam = ici->priv;
+ 	struct idmac_channel **ichan = &mx3_cam->idmac_channel[0];
+ 
+@@ -539,9 +547,6 @@ static void mx3_camera_remove_device(struct soc_camera_device *icd)
+ 	}
+ 
+ 	clk_disable_unprepare(mx3_cam->clk);
+-
+-	dev_info(icd->parent, "MX3 Camera driver detached from camera %d\n",
+-		 icd->devnum);
+ }
+ 
+ static int test_platform_param(struct mx3_camera_dev *mx3_cam,
+@@ -1124,6 +1129,8 @@ static struct soc_camera_host_ops mx3_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= mx3_camera_add_device,
+ 	.remove		= mx3_camera_remove_device,
++	.clock_start	= mx3_camera_clock_start,
++	.clock_stop	= mx3_camera_clock_stop,
+ 	.set_crop	= mx3_camera_set_crop,
+ 	.set_fmt	= mx3_camera_set_fmt,
+ 	.try_fmt	= mx3_camera_try_fmt,
 -- 
-1.8.2.1
+1.7.2.5
 
