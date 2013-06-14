@@ -1,84 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 22:22:34 +0000
-Subject: [PATCH v5 05/22] ARM: shmobile: r8a7740: Add pin control device to device tree
-Message-Id: <1370989371-30846-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:21 +0000
+Subject: [PATCH v11 11/21] soc-camera: don't attach the client to the host during probing
+Message-Id: <1371236911-15131-12-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Add a pfc node to the r8a7740 device tree and remove manual pinmux
-initialization from the corresponding board files.
+During client probing we only have to turn on the host's clock, no need to
+actually attach the client to the host.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
- 2 files changed, 16 insertions(+), 8 deletions(-)
+ drivers/media/platform/soc_camera/soc_camera.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 25dc930..2fa3708 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -135,4 +135,12 @@
- 			      0 72 0x4
- 			      0 73 0x4>;
- 	};
-+
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a7740";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605800c 0x20>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 03b85fe..f25b6aa 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -121,7 +121,7 @@
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index e503f03..ac98bcb 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -1207,7 +1207,7 @@ static int soc_camera_probe(struct soc_camera_device *icd)
+ 		ssdd->reset(icd->pdev);
  
- static const struct pinctrl_map eva_pinctrl_map[] = {
- 	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
- 				  "scifa1_data", "scifa1"),
- };
+ 	mutex_lock(&ici->host_lock);
+-	ret = soc_camera_add_device(icd);
++	ret = ici->ops->clock_start(ici);
+ 	mutex_unlock(&ici->host_lock);
+ 	if (ret < 0)
+ 		goto eadd;
+@@ -1280,7 +1280,7 @@ static int soc_camera_probe(struct soc_camera_device *icd)
+ 		icd->field		= mf.field;
+ 	}
  
-@@ -170,22 +170,22 @@ static void __init eva_init(void)
- 	eva_clock_init();
+-	soc_camera_remove_device(icd);
++	ici->ops->clock_stop(ici);
  
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--	r8a7740_pinmux_init();
+ 	mutex_unlock(&ici->host_lock);
  
- 	r8a7740_meram_workaround();
- 
--	/*
--	 * Touchscreen
--	 * TODO: Move reset GPIO over to .dts when we can reference it
--	 */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
--
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
- #endif
- 
- 	r8a7740_add_standard_devices_dt();
-+
-+	/*
-+	 * Touchscreen
-+	 * TODO: Move reset GPIO over to .dts when we can reference it
-+	 */
-+	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-+
- 	r8a7740_pm_init();
- }
- 
+@@ -1303,7 +1303,7 @@ eadddev:
+ 	icd->vdev = NULL;
+ evdc:
+ 	mutex_lock(&ici->host_lock);
+-	soc_camera_remove_device(icd);
++	ici->ops->clock_stop(ici);
+ 	mutex_unlock(&ici->host_lock);
+ eadd:
+ 	v4l2_ctrl_handler_free(&icd->ctrl_handler);
 -- 
-1.8.1.5
+1.7.2.5
 
