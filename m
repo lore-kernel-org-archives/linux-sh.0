@@ -1,92 +1,87 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jun 2013 15:48:19 +0000
-Subject: [PATCH v2 1/6] ARM: shmobile: sh73a0: add support for the DMA0 controller in DT
-Message-Id: <1370533704-23734-2-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:23 +0000
+Subject: [PATCH v11 13/21] sh-mobile-ceu-driver: support max width and height in DT
+Message-Id: <1371236911-15131-14-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Add a Device Tree node for the DMA0 controller on sh73a0 and
-auxdata to supply platform data to the driver. To enable the
-DMA0 controller it also has to be taken out of reset.
+Some CEU implementations have non-standard (larger) maximum supported
+width and height values. Add two OF properties to specify them.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/boot/dts/sh73a0.dtsi         |   36 +++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c |    4 +++
- 2 files changed, 40 insertions(+), 0 deletions(-)
+ .../devicetree/bindings/media/sh_mobile_ceu.txt    |   18 +++++++++++++++
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |   23 ++++++++++++++++++-
+ 2 files changed, 39 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/media/sh_mobile_ceu.txt
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index b977502..e730246 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -119,6 +119,42 @@
- 			      0 32 0x4>;
- 	};
- 
-+	dma0: shdma@fe000020 {
-+		compatible = "renesas,shdma";
-+		reg = <0xfe000020 0x89e0>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 129 4
-+				0 109 4
-+				0 110 4
-+				0 111 4
-+				0 112 4
-+				0 113 4
-+				0 114 4
-+				0 115 4
-+				0 116 4
-+				0 117 4
-+				0 118 4
-+				0 119 4
-+				0 120 4
-+				0 121 4
-+				0 122 4
-+				0 123 4
-+				0 124 4
-+				0 125 4
-+				0 126 4
-+				0 127 4
-+				0 128 4>;
-+		interrupt-names = "error",
-+				"ch0", "ch1", "ch2", "ch3",
-+				"ch4", "ch5", "ch6", "ch7",
-+				"ch8", "ch9", "ch10", "ch11",
-+				"ch12", "ch13", "ch14", "ch15",
-+				"ch16", "ch17", "ch18", "ch19";
-+		#dma-cells = <1>;
-+		dma-channels = <20>;
-+		dma-requests = <256>;
-+	};
+diff --git a/Documentation/devicetree/bindings/media/sh_mobile_ceu.txt b/Documentation/devicetree/bindings/media/sh_mobile_ceu.txt
+new file mode 100644
+index 0000000..1ce4e46
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/sh_mobile_ceu.txt
+@@ -0,0 +1,18 @@
++Bindings, specific for the sh_mobile_ceu_camera.c driver:
++ - compatible: Should be "renesas,sh-mobile-ceu"
++ - reg: register base and size
++ - interrupts: the interrupt number
++ - interrupt-parent: the interrupt controller
++ - renesas,max-width: maximum image width, supported on this SoC
++ - renesas,max-height: maximum image height, supported on this SoC
 +
- 	i2c0: i2c@e6820000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 96e7ca1e..f95ecc7 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -959,6 +959,7 @@ void __init sh73a0_add_early_devices(void)
- #ifdef CONFIG_USE_OF
- 
- static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
-+	OF_DEV_AUXDATA("renesas,shdma", 0xfe000020, "sh-dma-engine.0", &sh73a0_dmae_platform_data),
- 	{},
- };
- 
-@@ -969,6 +970,9 @@ void __init sh73a0_add_standard_devices_dt(void)
- 	/* clocks are setup late during boot in the case of DT */
- 	sh73a0_clock_init();
- 
-+	/* Clear software reset bit on SY-DMAC module */
-+	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
++Example:
 +
- 	platform_add_devices(sh73a0_devices_dt,
- 			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table,
++ceu0: ceu@0xfe910000 {
++	compatible = "renesas,sh-mobile-ceu";
++	reg = <0xfe910000 0xa0>;
++	interrupt-parent = <&intcs>;
++	interrupts = <0x880>;
++	renesas,max-width = <8188>;
++	renesas,max-height = <8188>;
++};
+diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+index fcc13d8..b0f0995 100644
+--- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
++++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+@@ -2116,11 +2116,30 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
+ 
+ 	/* TODO: implement per-device bus flags */
+ 	if (pcdev->pdata) {
+-		pcdev->max_width = pcdev->pdata->max_width ? : 2560;
+-		pcdev->max_height = pcdev->pdata->max_height ? : 1920;
++		pcdev->max_width = pcdev->pdata->max_width;
++		pcdev->max_height = pcdev->pdata->max_height;
+ 		pcdev->flags = pcdev->pdata->flags;
+ 	}
+ 
++	if (!pcdev->max_width) {
++		unsigned int v;
++		err = of_property_read_u32(pdev->dev.of_node, "renesas,max-width", &v);
++		if (!err)
++			pcdev->max_width = v;
++
++		if (!pcdev->max_width)
++			pcdev->max_width = 2560;
++	}
++	if (!pcdev->max_height) {
++		unsigned int v;
++		err = of_property_read_u32(pdev->dev.of_node, "renesas,max-height", &v);
++		if (!err)
++			pcdev->max_height = v;
++
++		if (!pcdev->max_height)
++			pcdev->max_height = 1920;
++	}
++
+ 	base = devm_ioremap_resource(&pdev->dev, res);
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
 -- 
 1.7.2.5
 
