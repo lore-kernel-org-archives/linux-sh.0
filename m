@@ -1,116 +1,141 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 Jun 2013 08:23:27 +0000
-Subject: [PATCH v10 00/21] V4L2 clock and asynchronous probing
-Message-Id: <1370939028-8352-1-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:22 +0000
+Subject: [PATCH v11 12/21] sh-mobile-ceu-camera: add primitive OF support
+Message-Id: <1371236911-15131-13-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
 Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-3.11 is approaching... Here comes v10 of the V4L2 clock helper and 
-asynchronous probing patch set. In this series I included 3 groups of 
-patches, that actually aren't that strongly related.
+Add an OF hook to sh_mobile_ceu_camera.c, no properties so far. Booting
+with DT also requires platform data to be optional.
 
-1. patches 1-11 split soc-camera subdevice linking procedure into two 
-steps: (a) turning on the master clock and (b) actually linking a (client) 
-subdevice to a host. This is necessary to keep the V4L2 clock API free 
-from any device context.
-2. patches 12-13 are adding device tree support to the 
-sh_mobile_ceu_camera soc-camera host driver. They aren't really related, 
-but following V4L2 async support for this driver has been developed on top 
-of this code, so, I would prefer to keep the order.
-3. patches 14-21 are the actual clock and async probing code. They contain 
-core support and an example conversion of the soc-camera framework and one 
-its platform (an AP4EVB board) to the new APIs.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |   33 ++++++++++++++------
+ 1 files changed, 23 insertions(+), 10 deletions(-)
 
-Thanks for all the reviews and suggestions.
-
-Guennadi Liakhovetski (21):
-  soc-camera: move common code to soc_camera.c
-  soc-camera: add host clock callbacks to start and stop the master
-    clock
-  pxa-camera: move interface activation and deactivation to clock
-    callbacks
-  omap1-camera: move interface activation and deactivation to clock
-    callbacks
-  atmel-isi: move interface activation and deactivation to clock
-    callbacks
-  mx3-camera: move interface activation and deactivation to clock
-    callbacks
-  mx2-camera: move interface activation and deactivation to clock
-    callbacks
-  mx1-camera: move interface activation and deactivation to clock
-    callbacks
-  sh-mobile-ceu-camera: move interface activation and deactivation to
-    clock callbacks
-  soc-camera: make .clock_{start,stop} compulsory, .add / .remove
-    optional
-  soc-camera: don't attach the client to the host during probing
-  sh-mobile-ceu-camera: add primitive OF support
-  sh-mobile-ceu-driver: support max width and height in DT
-  V4L2: add temporary clock helpers
-  V4L2: add a device pointer to struct v4l2_subdev
-  V4L2: support asynchronous subdevice registration
-  soc-camera: switch I2C subdevice drivers to use v4l2-clk
-  soc-camera: add V4L2-async support
-  sh_mobile_ceu_camera: add asynchronous subdevice probing support
-  imx074: support asynchronous probing
-  ARM: shmobile: convert ap4evb to asynchronously register camera
-    subdevices
-
- .../devicetree/bindings/media/sh_mobile_ceu.txt    |   18 +
- arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
- arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
- drivers/media/i2c/soc_camera/imx074.c              |   32 +-
- drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
- drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
- drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
- drivers/media/i2c/soc_camera/mt9t112.c             |   25 +-
- drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
- drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
- drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
- drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
- drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
- drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
- drivers/media/i2c/soc_camera/ov9640.h              |    1 +
- drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
- drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
- drivers/media/i2c/soc_camera/tw9910.c              |   24 +-
- drivers/media/platform/soc_camera/atmel-isi.c      |   38 +-
- drivers/media/platform/soc_camera/mx1_camera.c     |   48 +-
- drivers/media/platform/soc_camera/mx2_camera.c     |   41 +-
- drivers/media/platform/soc_camera/mx3_camera.c     |   44 +-
- drivers/media/platform/soc_camera/omap1_camera.c   |   41 +-
- drivers/media/platform/soc_camera/pxa_camera.c     |   46 +-
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |  243 +++++--
- drivers/media/platform/soc_camera/sh_mobile_csi2.c |  153 +++--
- drivers/media/platform/soc_camera/soc_camera.c     |  707 +++++++++++++++++---
- .../platform/soc_camera/soc_camera_platform.c      |    2 +-
- drivers/media/v4l2-core/Makefile                   |    3 +-
- drivers/media/v4l2-core/v4l2-async.c               |  280 ++++++++
- drivers/media/v4l2-core/v4l2-clk.c                 |  242 +++++++
- drivers/media/v4l2-core/v4l2-common.c              |    2 +
- include/media/sh_mobile_ceu.h                      |    2 +
- include/media/sh_mobile_csi2.h                     |    2 +-
- include/media/soc_camera.h                         |   39 +-
- include/media/v4l2-async.h                         |  105 +++
- include/media/v4l2-clk.h                           |   54 ++
- include/media/v4l2-subdev.h                        |   10 +
- 38 files changed, 2035 insertions(+), 467 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/media/sh_mobile_ceu.txt
- create mode 100644 drivers/media/v4l2-core/v4l2-async.c
- create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
- create mode 100644 include/media/v4l2-async.h
- create mode 100644 include/media/v4l2-clk.h
-
+diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+index 9037472..fcc13d8 100644
+--- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
++++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+@@ -27,6 +27,7 @@
+ #include <linux/kernel.h>
+ #include <linux/mm.h>
+ #include <linux/moduleparam.h>
++#include <linux/of.h>
+ #include <linux/time.h>
+ #include <linux/slab.h>
+ #include <linux/device.h>
+@@ -118,6 +119,7 @@ struct sh_mobile_ceu_dev {
+ 
+ 	enum v4l2_field field;
+ 	int sequence;
++	unsigned long flags;
+ 
+ 	unsigned int image_mode:1;
+ 	unsigned int is_16bit:1;
+@@ -706,7 +708,7 @@ static void sh_mobile_ceu_set_rect(struct soc_camera_device *icd)
+ 	}
+ 
+ 	/* CSI2 special configuration */
+-	if (pcdev->pdata->csi2) {
++	if (pcdev->csi2_pdev) {
+ 		in_width = ((in_width - 2) * 2);
+ 		left_offset *= 2;
+ 	}
+@@ -810,7 +812,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
+ 	/* Make choises, based on platform preferences */
+ 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
+ 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
+-		if (pcdev->pdata->flags & SH_CEU_FLAG_HSYNC_LOW)
++		if (pcdev->flags & SH_CEU_FLAG_HSYNC_LOW)
+ 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
+ 		else
+ 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
+@@ -818,7 +820,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
+ 
+ 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
+ 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
+-		if (pcdev->pdata->flags & SH_CEU_FLAG_VSYNC_LOW)
++		if (pcdev->flags & SH_CEU_FLAG_VSYNC_LOW)
+ 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
+ 		else
+ 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
+@@ -873,11 +875,11 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
+ 	value |= common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW ? 1 << 1 : 0;
+ 	value |= common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW ? 1 << 0 : 0;
+ 
+-	if (pcdev->pdata->csi2) /* CSI2 mode */
++	if (pcdev->csi2_pdev) /* CSI2 mode */
+ 		value |= 3 << 12;
+ 	else if (pcdev->is_16bit)
+ 		value |= 1 << 12;
+-	else if (pcdev->pdata->flags & SH_CEU_FLAG_LOWER_8BIT)
++	else if (pcdev->flags & SH_CEU_FLAG_LOWER_8BIT)
+ 		value |= 2 << 12;
+ 
+ 	ceu_write(pcdev, CAMCR, value);
+@@ -1052,7 +1054,7 @@ static int sh_mobile_ceu_get_formats(struct soc_camera_device *icd, unsigned int
+ 		return 0;
+ 	}
+ 
+-	if (!pcdev->pdata->csi2) {
++	if (!pcdev->pdata || !pcdev->pdata->csi2) {
+ 		/* Are there any restrictions in the CSI-2 case? */
+ 		ret = sh_mobile_ceu_try_bus_param(icd, fmt->bits_per_sample);
+ 		if (ret < 0)
+@@ -2107,13 +2109,17 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
+ 	init_completion(&pcdev->complete);
+ 
+ 	pcdev->pdata = pdev->dev.platform_data;
+-	if (!pcdev->pdata) {
++	if (!pcdev->pdata && !pdev->dev.of_node) {
+ 		dev_err(&pdev->dev, "CEU platform data not set.\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	pcdev->max_width = pcdev->pdata->max_width ? : 2560;
+-	pcdev->max_height = pcdev->pdata->max_height ? : 1920;
++	/* TODO: implement per-device bus flags */
++	if (pcdev->pdata) {
++		pcdev->max_width = pcdev->pdata->max_width ? : 2560;
++		pcdev->max_height = pcdev->pdata->max_height ? : 1920;
++		pcdev->flags = pcdev->pdata->flags;
++	}
+ 
+ 	base = devm_ioremap_resource(&pdev->dev, res);
+ 	if (IS_ERR(base))
+@@ -2168,7 +2174,7 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
+ 		goto exit_free_ctx;
+ 
+ 	/* CSI2 interfacing */
+-	csi2 = pcdev->pdata->csi2;
++	csi2 = pcdev->pdata ? pcdev->pdata->csi2 : NULL;
+ 	if (csi2) {
+ 		struct platform_device *csi2_pdev  			platform_device_alloc("sh-mobile-csi2", csi2->id);
+@@ -2290,10 +2296,17 @@ static const struct dev_pm_ops sh_mobile_ceu_dev_pm_ops = {
+ 	.runtime_resume = sh_mobile_ceu_runtime_nop,
+ };
+ 
++static const struct of_device_id sh_mobile_ceu_of_match[] = {
++	{ .compatible = "renesas,sh-mobile-ceu" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, sh_mobile_ceu_of_match);
++
+ static struct platform_driver sh_mobile_ceu_driver = {
+ 	.driver		= {
+ 		.name	= "sh_mobile_ceu",
+ 		.pm	= &sh_mobile_ceu_dev_pm_ops,
++		.of_match_table = sh_mobile_ceu_of_match,
+ 	},
+ 	.probe		= sh_mobile_ceu_probe,
+ 	.remove		= sh_mobile_ceu_remove,
 -- 
 1.7.2.5
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
