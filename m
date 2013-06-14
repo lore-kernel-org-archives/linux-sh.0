@@ -1,72 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 20 Jun 2013 13:08:12 +0000
-Subject: [PATCH 1/3] irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
-Message-Id: <1371733694-27368-2-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:12 +0000
+Subject: [PATCH v11 02/21] soc-camera: add host clock callbacks to start and stop the master clock
+Message-Id: <1371236911-15131-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Currently soc-camera uses a single camera host callback to activate the
+interface master clock and to configure the interface for a specific
+client. However, during probing we might not have the information about
+a client, we just need to activate the clock. Add new camera host driver
+callbacks to only start and stop the clock without and client-specific
+configuration.
 
-Most Renesas irqpin controllers have 4-bit sense fields, however, some
-have different widths. This patch adds a DT binding to optionally
-specify such non-standard values.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- .../bindings/interrupt-controller/renesas,intc-irqpin.txt  | 14 ++++++++++++++
- drivers/irqchip/irq-renesas-intc-irqpin.c                  |  4 ++++
- 2 files changed, 18 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+ drivers/media/platform/soc_camera/soc_camera.c |   19 +++++++++++++++++--
+ include/media/soc_camera.h                     |    2 ++
+ 2 files changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-new file mode 100644
-index 0000000..66fcaf5
---- /dev/null
-+++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-@@ -0,0 +1,14 @@
-+DT bindings for the R-/SH-Mobile irqpin controller
-+
-+Required properties:
-+
-+- compatible: has to be "renesas,intc-irqpin"
-+- #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
-+  interrupts.txt in this directory
-+
-+Optional properties:
-+
-+- any properties, listed in interrupts.txt, and any standard resource allocation
-+  properties
-+- sense-bitfield-width: width of a single sense bitfield in the SENSE register,
-+  if different from the default 4 bits
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index 5a68e5a..4aca1b2 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -18,6 +18,7 @@
-  */
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index 832f059..df90565 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -513,10 +513,23 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
+ 	if (ici->icd)
+ 		return -EBUSY;
  
- #include <linux/init.h>
-+#include <linux/of.h>
- #include <linux/platform_device.h>
- #include <linux/spinlock.h>
- #include <linux/interrupt.h>
-@@ -349,6 +350,9 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	/* deal with driver instance configuration */
- 	if (pdata)
- 		memcpy(&p->config, pdata, sizeof(*pdata));
-+	else
-+		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
-+				     &p->config.sense_bitfield_width);
- 	if (!p->config.sense_bitfield_width)
- 		p->config.sense_bitfield_width = 4; /* default to 4 bits */
++	if (ici->ops->clock_start) {
++		ret = ici->ops->clock_start(ici);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	ret = ici->ops->add(icd);
+-	if (!ret)
+-		ici->icd = icd;
++	if (ret < 0)
++		goto eadd;
++
++	ici->icd = icd;
  
++	return 0;
++
++eadd:
++	if (ici->ops->clock_stop)
++		ici->ops->clock_stop(ici);
+ 	return ret;
+ }
+ 
+@@ -528,6 +541,8 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
+ 		return;
+ 
+ 	ici->ops->remove(icd);
++	if (ici->ops->clock_stop)
++		ici->ops->clock_stop(ici);
+ 	ici->icd = NULL;
+ }
+ 
+diff --git a/include/media/soc_camera.h b/include/media/soc_camera.h
+index 5a46ce2..64415ee 100644
+--- a/include/media/soc_camera.h
++++ b/include/media/soc_camera.h
+@@ -74,6 +74,8 @@ struct soc_camera_host_ops {
+ 	struct module *owner;
+ 	int (*add)(struct soc_camera_device *);
+ 	void (*remove)(struct soc_camera_device *);
++	int (*clock_start)(struct soc_camera_host *);
++	void (*clock_stop)(struct soc_camera_host *);
+ 	/*
+ 	 * .get_formats() is called for each client device format, but
+ 	 * .put_formats() is only called once. Further, if any of the calls to
 -- 
-1.8.2.1
+1.7.2.5
 
