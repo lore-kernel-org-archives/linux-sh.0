@@ -1,96 +1,89 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 28 Jun 2013 11:27:23 +0000
-Subject: [PATCH 03/04] ARM: shmobile: Add r8a73a4 CMT10 clock event
-Message-Id: <20130628112723.23809.15876.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:15 +0000
+Subject: [PATCH v11 05/21] atmel-isi: move interface activation and deactivation to clock callbacks
+Message-Id: <1371236911-15131-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130628112655.23809.39115.sendpatchset@w520>
-In-Reply-To: <20130628112655.23809.39115.sendpatchset@w520>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Magnus Damm <damm@opensource.se>
+When adding and removing a client, the atmel-isi camera host driver only
+activates and deactivates its camera interface respectively, which doesn't
+include any client-specific actions. Move this functionality into
+.clock_start() and .clock_stop() callbacks.
 
-Add clock event support for CMT1 timer channel 0
-to the r8a73a4 SoC code. The CMT is used together
-with a 32KHz clock in this case.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/media/platform/soc_camera/atmel-isi.c |   28 +++++++++++++++++--------
+ 1 files changed, 19 insertions(+), 9 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a73a4.c |    4 +++-
- arch/arm/mach-shmobile/setup-r8a73a4.c |   21 +++++++++++++++++++++
- 2 files changed, 24 insertions(+), 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-06-28 19:52:50.000000000 +0900
-@@ -505,7 +505,7 @@ static struct clk div6_clks[DIV6_NR] = {
- /* MSTP */
- enum {
- 	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
--	MSTP323, MSTP318, MSTP317, MSTP316,
-+	MSTP329, MSTP323, MSTP318, MSTP317, MSTP316,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
- 	MSTP411, MSTP410, MSTP409,
- 	MSTP522, MSTP515,
-@@ -529,6 +529,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP317] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 17, 0), /* IIC7 */
- 	[MSTP318] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 18, 0), /* IIC0 */
- 	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 23, 0), /* IIC1 */
-+	[MSTP329] = SH_CLK_MSTP32(&extalr_clk, SMSTPCR3, 29, 0), /* CMT10 */
- 	[MSTP409] = SH_CLK_MSTP32(&main_div2_clk,	SMSTPCR4, 9, 0), /* IIC5 */
- 	[MSTP410] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 10, 0), /* IIC4 */
- 	[MSTP411] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 11, 0), /* IIC3 */
-@@ -593,6 +594,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
- 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
- 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
-+	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
---- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-06-28 19:50:40.000000000 +0900
-@@ -23,6 +23,7 @@
- #include <linux/of_platform.h>
- #include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_timer.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a73a4.h>
-@@ -169,6 +170,25 @@ static const struct resource thermal0_re
- 					thermal0_resources,		\
- 					ARRAY_SIZE(thermal0_resources))
- 
-+static struct sh_timer_config cmt10_platform_data = {
-+	.name = "CMT10",
-+	.timer_bit = 0,
-+	.clockevent_rating = 80,
-+};
-+
-+static struct resource cmt10_resources[] = {
-+	DEFINE_RES_MEM(0xe6130010, 0x0c),
-+	DEFINE_RES_MEM(0xe6130000, 0x04),
-+	DEFINE_RES_IRQ(gic_spi(120)), /* CMT1_0 */
-+};
-+
-+#define r8a7790_register_cmt(idx)					\
-+	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+					  idx, cmt##idx##_resources,	\
-+					  ARRAY_SIZE(cmt##idx##_resources), \
-+					  &cmt##idx##_platform_data,	\
-+					  sizeof(struct sh_timer_config))
-+
- void __init r8a73a4_add_standard_devices(void)
- {
- 	r8a73a4_register_scif(SCIFA0);
-@@ -180,6 +200,7 @@ void __init r8a73a4_add_standard_devices
- 	r8a73a4_register_irqc(0);
- 	r8a73a4_register_irqc(1);
- 	r8a73a4_register_thermal();
-+	r8a7790_register_cmt(10);
+diff --git a/drivers/media/platform/soc_camera/atmel-isi.c b/drivers/media/platform/soc_camera/atmel-isi.c
+index c9e080a..1044856 100644
+--- a/drivers/media/platform/soc_camera/atmel-isi.c
++++ b/drivers/media/platform/soc_camera/atmel-isi.c
+@@ -745,10 +745,23 @@ static int isi_camera_get_formats(struct soc_camera_device *icd,
+ 	return formats;
  }
  
- #ifdef CONFIG_USE_OF
+-/* Called with .host_lock held */
+ static int isi_camera_add_device(struct soc_camera_device *icd)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
++	dev_dbg(icd->parent, "Atmel ISI Camera driver attached to camera %d\n",
++		 icd->devnum);
++
++	return 0;
++}
++
++static void isi_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_dbg(icd->parent, "Atmel ISI Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
++/* Called with .host_lock held */
++static int isi_camera_clock_start(struct soc_camera_host *ici)
++{
+ 	struct atmel_isi *isi = ici->priv;
+ 	int ret;
+ 
+@@ -762,21 +775,16 @@ static int isi_camera_add_device(struct soc_camera_device *icd)
+ 		return ret;
+ 	}
+ 
+-	dev_dbg(icd->parent, "Atmel ISI Camera driver attached to camera %d\n",
+-		 icd->devnum);
+ 	return 0;
+ }
++
+ /* Called with .host_lock held */
+-static void isi_camera_remove_device(struct soc_camera_device *icd)
++static void isi_camera_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct atmel_isi *isi = ici->priv;
+ 
+ 	clk_disable(isi->mck);
+ 	clk_disable(isi->pclk);
+-
+-	dev_dbg(icd->parent, "Atmel ISI Camera driver detached from camera %d\n",
+-		 icd->devnum);
+ }
+ 
+ static unsigned int isi_camera_poll(struct file *file, poll_table *pt)
+@@ -880,6 +888,8 @@ static struct soc_camera_host_ops isi_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= isi_camera_add_device,
+ 	.remove		= isi_camera_remove_device,
++	.clock_start	= isi_camera_clock_start,
++	.clock_stop	= isi_camera_clock_stop,
+ 	.set_fmt	= isi_camera_set_fmt,
+ 	.try_fmt	= isi_camera_try_fmt,
+ 	.get_formats	= isi_camera_get_formats,
+-- 
+1.7.2.5
+
