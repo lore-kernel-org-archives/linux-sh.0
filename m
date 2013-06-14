@@ -1,109 +1,74 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:10 +0000
-Subject: [PATCH 079/130] sh-pfc: r8a7740: Remove SCIF function GPIOS
-Message-Id: <1370420821-28420-80-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:30 +0000
+Subject: [PATCH v11 20/21] imx074: support asynchronous probing
+Message-Id: <1371236911-15131-21-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Both synchronous and asynchronous imx074 subdevice probing is supported by
+this patch.
 
-All r8a7740 platforms now use the pinctrl API to control the SCIF pins,
-the corresponding function GPIOS are unused. Remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 72 ------------------------------------
- 1 file changed, 72 deletions(-)
+ drivers/media/i2c/soc_camera/imx074.c |   20 +++++++++++++++++---
+ 1 files changed, 17 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 9afc7b0..3b53193 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -3261,78 +3261,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(FMSOIBT),	GPIO_FN(FMSOOLR),	GPIO_FN(FMSOOBT),
- 	GPIO_FN(FMSOSLD),	GPIO_FN(FMSOCK),
+diff --git a/drivers/media/i2c/soc_camera/imx074.c b/drivers/media/i2c/soc_camera/imx074.c
+index a6a5060..84245e1 100644
+--- a/drivers/media/i2c/soc_camera/imx074.c
++++ b/drivers/media/i2c/soc_camera/imx074.c
+@@ -18,6 +18,7 @@
+ #include <linux/module.h>
  
--	/* SCIFA0 */
--	GPIO_FN(SCIFA0_SCK),	GPIO_FN(SCIFA0_CTS),	GPIO_FN(SCIFA0_RTS),
--	GPIO_FN(SCIFA0_RXD),	GPIO_FN(SCIFA0_TXD),
--
--	/* SCIFA1 */
--	GPIO_FN(SCIFA1_CTS),	GPIO_FN(SCIFA1_SCK),
--	GPIO_FN(SCIFA1_RXD),	GPIO_FN(SCIFA1_TXD),	GPIO_FN(SCIFA1_RTS),
--
--	/* SCIFA2 */
--	GPIO_FN(SCIFA2_SCK_PORT22), /* SCIFA2_SCK Port 22/199 */
--	GPIO_FN(SCIFA2_SCK_PORT199),
--	GPIO_FN(SCIFA2_RXD),	GPIO_FN(SCIFA2_TXD),
--	GPIO_FN(SCIFA2_CTS),	GPIO_FN(SCIFA2_RTS),
--
--	/* SCIFA3 */
--	GPIO_FN(SCIFA3_RTS_PORT105), /* MSEL5CR_8_0 */
--	GPIO_FN(SCIFA3_SCK_PORT116),
--	GPIO_FN(SCIFA3_CTS_PORT117),
--	GPIO_FN(SCIFA3_RXD_PORT174),
--	GPIO_FN(SCIFA3_TXD_PORT175),
--
--	GPIO_FN(SCIFA3_RTS_PORT161), /* MSEL5CR_8_1 */
--	GPIO_FN(SCIFA3_SCK_PORT158),
--	GPIO_FN(SCIFA3_CTS_PORT162),
--	GPIO_FN(SCIFA3_RXD_PORT159),
--	GPIO_FN(SCIFA3_TXD_PORT160),
--
--	/* SCIFA4 */
--	GPIO_FN(SCIFA4_RXD_PORT12), /* MSEL5CR[12:11] = 00 */
--	GPIO_FN(SCIFA4_TXD_PORT13),
--
--	GPIO_FN(SCIFA4_RXD_PORT204), /* MSEL5CR[12:11] = 01 */
--	GPIO_FN(SCIFA4_TXD_PORT203),
--
--	GPIO_FN(SCIFA4_RXD_PORT94), /* MSEL5CR[12:11] = 10 */
--	GPIO_FN(SCIFA4_TXD_PORT93),
--
--	GPIO_FN(SCIFA4_SCK_PORT21), /* SCIFA4_SCK Port 21/205 */
--	GPIO_FN(SCIFA4_SCK_PORT205),
--
--	/* SCIFA5 */
--	GPIO_FN(SCIFA5_TXD_PORT20), /* MSEL5CR[15:14] = 00 */
--	GPIO_FN(SCIFA5_RXD_PORT10),
--
--	GPIO_FN(SCIFA5_RXD_PORT207), /* MSEL5CR[15:14] = 01 */
--	GPIO_FN(SCIFA5_TXD_PORT208),
--
--	GPIO_FN(SCIFA5_TXD_PORT91), /* MSEL5CR[15:14] = 10 */
--	GPIO_FN(SCIFA5_RXD_PORT92),
--
--	GPIO_FN(SCIFA5_SCK_PORT23), /* SCIFA5_SCK Port 23/206 */
--	GPIO_FN(SCIFA5_SCK_PORT206),
--
--	/* SCIFA6 */
--	GPIO_FN(SCIFA6_SCK),	GPIO_FN(SCIFA6_RXD),	GPIO_FN(SCIFA6_TXD),
--
--	/* SCIFA7 */
--	GPIO_FN(SCIFA7_TXD),	GPIO_FN(SCIFA7_RXD),
--
--	/* SCIFAB */
--	GPIO_FN(SCIFB_SCK_PORT190), /* MSEL5CR_17_0 */
--	GPIO_FN(SCIFB_RXD_PORT191),
--	GPIO_FN(SCIFB_TXD_PORT192),
--	GPIO_FN(SCIFB_RTS_PORT186),
--	GPIO_FN(SCIFB_CTS_PORT187),
--
--	GPIO_FN(SCIFB_SCK_PORT2), /* MSEL5CR_17_1 */
--	GPIO_FN(SCIFB_RXD_PORT3),
--	GPIO_FN(SCIFB_TXD_PORT4),
--	GPIO_FN(SCIFB_RTS_PORT172),
--	GPIO_FN(SCIFB_CTS_PORT173),
--
- 	/* RSPI */
- 	GPIO_FN(RSPI_SSL0_A),	GPIO_FN(RSPI_SSL1_A),	GPIO_FN(RSPI_SSL2_A),
- 	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
+ #include <media/soc_camera.h>
++#include <media/v4l2-async.h>
+ #include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-chip-ident.h>
+@@ -456,13 +457,24 @@ static int imx074_probe(struct i2c_client *client,
+ 	priv->fmt	= &imx074_colour_fmts[0];
+ 
+ 	priv->clk = v4l2_clk_get(&client->dev, "mclk");
+-	if (IS_ERR(priv->clk))
+-		return PTR_ERR(priv->clk);
++	if (IS_ERR(priv->clk)) {
++		dev_info(&client->dev, "Error %ld getting clock\n", PTR_ERR(priv->clk));
++		return -EPROBE_DEFER;
++	}
++
++	ret = soc_camera_power_init(&client->dev, ssdd);
++	if (ret < 0)
++		goto epwrinit;
+ 
+ 	ret = imx074_video_probe(client);
+ 	if (ret < 0)
+-		v4l2_clk_put(priv->clk);
++		goto eprobe;
+ 
++	return v4l2_async_register_subdev(&priv->subdev);
++
++epwrinit:
++eprobe:
++	v4l2_clk_put(priv->clk);
+ 	return ret;
+ }
+ 
+@@ -471,7 +483,9 @@ static int imx074_remove(struct i2c_client *client)
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 	struct imx074 *priv = to_imx074(client);
+ 
++	v4l2_async_unregister_subdev(&priv->subdev);
+ 	v4l2_clk_put(priv->clk);
++
+ 	if (ssdd->free_bus)
+ 		ssdd->free_bus(ssdd);
+ 
 -- 
-1.8.2.1
+1.7.2.5
 
