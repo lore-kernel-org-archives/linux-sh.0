@@ -1,96 +1,94 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:10 +0000
-Subject: [PATCH 00/24] R-Car DU DRM support for R8A7790
-Message-Id: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:14 +0000
+Subject: [PATCH v11 04/21] omap1-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1371236911-15131-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Hello,
+When adding and removing a client, the omap1-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-Here's a set of patches that adds support for the DU found in the R8A7790 SoC.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/media/platform/soc_camera/omap1_camera.c |   27 ++++++++++++++-------
+ 1 files changed, 18 insertions(+), 9 deletions(-)
 
-Compared to the R8A7779 DU, the R8A7790 has a third CRTC, internal LVDS
-encoders and different output routing options.
-
-These patches are targetted at v3.12 so there's no rush (but please don't take
-that as an excuse to skip reviewing them :-)).
-
-Laurent Pinchart (24):
-  drm/rcar-du: Add missing alpha plane register definitions
-  drm/rcar-du: Use devm_ioremap_resource()
-  drm/rcar-du: Add platform module device table
-  drm/rcar-du: Don't ignore rcar_du_crtc_create() return value
-  drm/rcar-du: Support per-CRTC clock and IRQ
-  drm/rcar-du: Fix buffer pitch alignment
-  drm/rcar-du: Clarify comment regarding plane Y source coordinate
-  drm/rcar-du: Split LVDS encoder and connector
-  drm/rcar-du: Split VGA encoder and connector
-  drm/rcar-du: Merge LVDS and VGA encoder code
-  drm/rcar-du: Rename platform data fields to match what they describe
-  drm/rcar-du: Create rcar_du_planes structure
-  drm/rcar-du: Rename rcar_du_plane_(init|register) to rcar_du_planes_*
-  drm/rcar-du: Introduce CRTCs groups
-  drm/rcar-du: Use dynamic number of CRTCs instead of CRTCs array size
-  drm/rcar-du: Remove register definitions for the second channel
-  drm/rcar-du: Move output routing configuration to group
-  drm/rcar-du: Add support for the R8A7790 DU
-  drm/rcar-du: Fix buffer pitch alignment for R8A7790 DU
-  drm/rcar-du: Add support for multiple groups
-  drm/rcar-du: Add support for DEFR8 register
-  drm/rcar-du: Rework output routing support
-  drm/rcar-du: Configure RGB output routing to DPAD0
-  drm/rcar-du: Add internal LVDS encoder support
-
- drivers/gpu/drm/rcar-du/Kconfig           |   7 +
- drivers/gpu/drm/rcar-du/Makefile          |  10 +-
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c    | 255 ++++++++++++++++--------------
- drivers/gpu/drm/rcar-du/rcar_du_crtc.h    |  13 +-
- drivers/gpu/drm/rcar-du/rcar_du_drv.c     | 169 ++++++++------------
- drivers/gpu/drm/rcar-du/rcar_du_drv.h     |  61 +++++--
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 202 +++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h |  49 ++++++
- drivers/gpu/drm/rcar-du/rcar_du_group.c   | 187 ++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_group.h   |  50 ++++++
- drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 135 +++++++++-------
- drivers/gpu/drm/rcar-du/rcar_du_kms.h     |  32 +---
- drivers/gpu/drm/rcar-du/rcar_du_lvds.c    | 216 -------------------------
- drivers/gpu/drm/rcar-du/rcar_du_lvds.h    |  24 ---
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 130 +++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h |  25 +++
- drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 194 +++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h |  46 ++++++
- drivers/gpu/drm/rcar-du/rcar_du_plane.c   | 170 ++++++++++----------
- drivers/gpu/drm/rcar-du/rcar_du_plane.h   |  26 ++-
- drivers/gpu/drm/rcar-du/rcar_du_regs.h    |  94 +++++++++--
- drivers/gpu/drm/rcar-du/rcar_du_vga.c     | 149 -----------------
- drivers/gpu/drm/rcar-du/rcar_du_vga.h     |  24 ---
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  |  96 +++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.h  |  23 +++
- drivers/gpu/drm/rcar-du/rcar_lvds_regs.h  |  69 ++++++++
- include/linux/platform_data/rcar-du.h     |  34 +++-
- 27 files changed, 1639 insertions(+), 851 deletions(-)
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_encoder.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_encoder.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_group.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_group.h
- delete mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.c
- delete mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
- delete mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.c
- delete mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vgacon.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
-
+diff --git a/drivers/media/platform/soc_camera/omap1_camera.c b/drivers/media/platform/soc_camera/omap1_camera.c
+index c42c23e..6769193 100644
+--- a/drivers/media/platform/soc_camera/omap1_camera.c
++++ b/drivers/media/platform/soc_camera/omap1_camera.c
+@@ -893,13 +893,26 @@ static void sensor_reset(struct omap1_cam_dev *pcdev, bool reset)
+ 		CAM_WRITE(pcdev, GPIO, !reset);
+ }
+ 
++static int omap1_cam_add_device(struct soc_camera_device *icd)
++{
++	dev_dbg(icd->parent, "OMAP1 Camera driver attached to camera %d\n",
++			icd->devnum);
++
++	return 0;
++}
++
++static void omap1_cam_remove_device(struct soc_camera_device *icd)
++{
++	dev_dbg(icd->parent,
++		"OMAP1 Camera driver detached from camera %d\n", icd->devnum);
++}
++
+ /*
+  * The following two functions absolutely depend on the fact, that
+  * there can be only one camera on OMAP1 camera sensor interface
+  */
+-static int omap1_cam_add_device(struct soc_camera_device *icd)
++static int omap1_cam_clock_start(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct omap1_cam_dev *pcdev = ici->priv;
+ 	u32 ctrlclock;
+ 
+@@ -937,14 +950,11 @@ static int omap1_cam_add_device(struct soc_camera_device *icd)
+ 
+ 	sensor_reset(pcdev, false);
+ 
+-	dev_dbg(icd->parent, "OMAP1 Camera driver attached to camera %d\n",
+-			icd->devnum);
+ 	return 0;
+ }
+ 
+-static void omap1_cam_remove_device(struct soc_camera_device *icd)
++static void omap1_cam_clock_stop(struct soc_camera_host *ici)
+ {
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct omap1_cam_dev *pcdev = ici->priv;
+ 	u32 ctrlclock;
+ 
+@@ -965,9 +975,6 @@ static void omap1_cam_remove_device(struct soc_camera_device *icd)
+ 	CAM_WRITE(pcdev, CTRLCLOCK, ctrlclock & ~MCLK_EN);
+ 
+ 	clk_disable(pcdev->clk);
+-
+-	dev_dbg(icd->parent,
+-		"OMAP1 Camera driver detached from camera %d\n", icd->devnum);
+ }
+ 
+ /* Duplicate standard formats based on host capability of byte swapping */
+@@ -1525,6 +1532,8 @@ static struct soc_camera_host_ops omap1_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= omap1_cam_add_device,
+ 	.remove		= omap1_cam_remove_device,
++	.clock_start	= omap1_cam_clock_start,
++	.clock_stop	= omap1_cam_clock_stop,
+ 	.get_formats	= omap1_cam_get_formats,
+ 	.set_crop	= omap1_cam_set_crop,
+ 	.set_fmt	= omap1_cam_set_fmt,
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.2.5
 
