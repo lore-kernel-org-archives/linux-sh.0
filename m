@@ -1,65 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:14 +0000
-Subject: [PATCH 083/130] sh-pfc: r8a7740: Remove CEU function GPIOS
-Message-Id: <1370420821-28420-84-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:20 +0000
+Subject: [PATCH v11 10/21] soc-camera: make .clock_{start,stop} compulsory, .add / .remove optional
+Message-Id: <1371236911-15131-11-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+All existing soc-camera host drivers use .clock_start() and .clock_stop()
+callbacks to activate and deactivate their camera interfaces, whereas
+.add() and .remove() callbacks are usually dummy. Make the former two
+compulsory and the latter two optional.
 
-All r8a7740 platforms now use the pinctrl API to control the CEU pins,
-the corresponding function GPIOS are unused. Remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 28 ----------------------------
- 1 file changed, 28 deletions(-)
+ drivers/media/platform/soc_camera/soc_camera.c |   27 +++++++++++------------
+ 1 files changed, 13 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 58fbe6b..7ab4ff2 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -3232,34 +3232,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
- 	GPIO_FN(RSPI_MISO_A),
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index df90565..e503f03 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -513,23 +513,22 @@ static int soc_camera_add_device(struct soc_camera_device *icd)
+ 	if (ici->icd)
+ 		return -EBUSY;
  
--	/* VIO CKO */
--	GPIO_FN(VIO_CKO1),
--	GPIO_FN(VIO_CKO2),
--	GPIO_FN(VIO_CKO_1),
--	GPIO_FN(VIO_CKO),
+-	if (ici->ops->clock_start) {
+-		ret = ici->ops->clock_start(ici);
++	ret = ici->ops->clock_start(ici);
++	if (ret < 0)
++		return ret;
++
++	if (ici->ops->add) {
++		ret = ici->ops->add(icd);
+ 		if (ret < 0)
+-			return ret;
++			goto eadd;
+ 	}
+ 
+-	ret = ici->ops->add(icd);
+-	if (ret < 0)
+-		goto eadd;
 -
--	/* VIO0 */
--	GPIO_FN(VIO0_D0),	GPIO_FN(VIO0_D1),	GPIO_FN(VIO0_D2),
--	GPIO_FN(VIO0_D3),	GPIO_FN(VIO0_D4),	GPIO_FN(VIO0_D5),
--	GPIO_FN(VIO0_D6),	GPIO_FN(VIO0_D7),	GPIO_FN(VIO0_D8),
--	GPIO_FN(VIO0_D9),	GPIO_FN(VIO0_D10),	GPIO_FN(VIO0_D11),
--	GPIO_FN(VIO0_D12),	GPIO_FN(VIO0_VD),	GPIO_FN(VIO0_HD),
--	GPIO_FN(VIO0_CLK),	GPIO_FN(VIO0_FIELD),
--
--	GPIO_FN(VIO0_D13_PORT26), /* MSEL5CR_27_0 */
--	GPIO_FN(VIO0_D14_PORT25),
--	GPIO_FN(VIO0_D15_PORT24),
--
--	GPIO_FN(VIO0_D13_PORT22), /* MSEL5CR_27_1 */
--	GPIO_FN(VIO0_D14_PORT95),
--	GPIO_FN(VIO0_D15_PORT96),
--
--	/* VIO1 */
--	GPIO_FN(VIO1_D0),	GPIO_FN(VIO1_D1),	GPIO_FN(VIO1_D2),
--	GPIO_FN(VIO1_D3),	GPIO_FN(VIO1_D4),	GPIO_FN(VIO1_D5),
--	GPIO_FN(VIO1_D6),	GPIO_FN(VIO1_D7),	GPIO_FN(VIO1_VD),
--	GPIO_FN(VIO1_HD),	GPIO_FN(VIO1_CLK),	GPIO_FN(VIO1_FIELD),
--
- 	/* TPU0 */
- 	GPIO_FN(TPU0TO0),	GPIO_FN(TPU0TO1),	GPIO_FN(TPU0TO3),
- 	GPIO_FN(TPU0TO2_PORT66), /* TPU0TO2 Port 66/202 */
+ 	ici->icd = icd;
+ 
+ 	return 0;
+ 
+ eadd:
+-	if (ici->ops->clock_stop)
+-		ici->ops->clock_stop(ici);
++	ici->ops->clock_stop(ici);
+ 	return ret;
+ }
+ 
+@@ -540,9 +539,9 @@ static void soc_camera_remove_device(struct soc_camera_device *icd)
+ 	if (WARN_ON(icd != ici->icd))
+ 		return;
+ 
+-	ici->ops->remove(icd);
+-	if (ici->ops->clock_stop)
+-		ici->ops->clock_stop(ici);
++	if (ici->ops->remove)
++		ici->ops->remove(icd);
++	ici->ops->clock_stop(ici);
+ 	ici->icd = NULL;
+ }
+ 
+@@ -1413,8 +1412,8 @@ int soc_camera_host_register(struct soc_camera_host *ici)
+ 	    ((!ici->ops->init_videobuf ||
+ 	      !ici->ops->reqbufs) &&
+ 	     !ici->ops->init_videobuf2) ||
+-	    !ici->ops->add ||
+-	    !ici->ops->remove ||
++	    !ici->ops->clock_start ||
++	    !ici->ops->clock_stop ||
+ 	    !ici->ops->poll ||
+ 	    !ici->v4l2_dev.dev)
+ 		return -EINVAL;
 -- 
-1.8.2.1
+1.7.2.5
 
