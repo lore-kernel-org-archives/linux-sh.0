@@ -1,88 +1,89 @@
-From: "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
-Date: Thu, 27 Jun 2013 20:12:38 +0000
-Subject: [PATCH v3 43/45] sh: Use get/put_online_cpus_atomic() to prevent CPU offline
-Message-Id: <20130627200038.29830.83910.stgit@srivatsabhat.in.ibm.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Jun 2013 19:08:13 +0000
+Subject: [PATCH v11 03/21] pxa-camera: move interface activation and deactivation to clock callbacks
+Message-Id: <1371236911-15131-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130627195136.29830.10445.stgit@srivatsabhat.in.ibm.com>
-In-Reply-To: <20130627195136.29830.10445.stgit@srivatsabhat.in.ibm.com>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: peterz@infradead.org, tj@kernel.org, oleg@redhat.com, paulmck@linux.vnet.ibm.com, rusty@rustcorp.com.au, mingo@kernel.org, akpm@linux-foundation.org, namhyung@kernel.org, walken@google.com, vincent.guittot@linaro.org, laijs@cn.fujitsu.com, David.Laight@aculab.com
-Cc: rostedt@goodmis.org, wangyun@linux.vnet.ibm.com, xiaoguangrong@linux.vnet.ibm.com, sbw@mit.edu, fweisbec@gmail.com, zhong@linux.vnet.ibm.com, nikunj@linux.vnet.ibm.com, srivatsa.bhat@linux.vnet.ibm.com, linux-pm@vger.kernel.org, linux-arch@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>, linux-sh@vger.kernel.org"Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Once stop_machine() is gone from the CPU offline path, we won't be able
-to depend on disabling preemption to prevent CPUs from going offline
-from under us.
+When adding and removing a client, the pxa-camera driver only activates
+and deactivates its camera interface respectively, which doesn't include
+any client-specific actions. Move this functionality into .clock_start()
+and .clock_stop() callbacks.
 
-Use the get/put_online_cpus_atomic() APIs to prevent CPUs from going
-offline, while invoking from atomic context.
-
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Srivatsa S. Bhat <srivatsa.bhat@linux.vnet.ibm.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/media/platform/soc_camera/pxa_camera.c |   28 +++++++++++++++--------
+ 1 files changed, 18 insertions(+), 10 deletions(-)
 
- arch/sh/kernel/smp.c |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
-index 4569645..42ec182 100644
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -357,7 +357,7 @@ static void flush_tlb_mm_ipi(void *mm)
+diff --git a/drivers/media/platform/soc_camera/pxa_camera.c b/drivers/media/platform/soc_camera/pxa_camera.c
+index 686edf7..d4df305 100644
+--- a/drivers/media/platform/soc_camera/pxa_camera.c
++++ b/drivers/media/platform/soc_camera/pxa_camera.c
+@@ -955,33 +955,39 @@ static irqreturn_t pxa_camera_irq(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
+ 
++static int pxa_camera_add_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "PXA Camera driver attached to camera %d\n",
++		 icd->devnum);
++
++	return 0;
++}
++
++static void pxa_camera_remove_device(struct soc_camera_device *icd)
++{
++	dev_info(icd->parent, "PXA Camera driver detached from camera %d\n",
++		 icd->devnum);
++}
++
+ /*
+  * The following two functions absolutely depend on the fact, that
+  * there can be only one camera on PXA quick capture interface
+  * Called with .host_lock held
   */
- void flush_tlb_mm(struct mm_struct *mm)
+-static int pxa_camera_add_device(struct soc_camera_device *icd)
++static int pxa_camera_clock_start(struct soc_camera_host *ici)
  {
--	preempt_disable();
-+	get_online_cpus_atomic();
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct pxa_camera_dev *pcdev = ici->priv;
  
- 	if ((atomic_read(&mm->mm_users) != 1) || (current->mm != mm)) {
- 		smp_call_function(flush_tlb_mm_ipi, (void *)mm, 1);
-@@ -369,7 +369,7 @@ void flush_tlb_mm(struct mm_struct *mm)
- 	}
- 	local_flush_tlb_mm(mm);
+ 	pxa_camera_activate(pcdev);
  
--	preempt_enable();
-+	put_online_cpus_atomic();
+-	dev_info(icd->parent, "PXA Camera driver attached to camera %d\n",
+-		 icd->devnum);
+-
+ 	return 0;
  }
  
- struct flush_tlb_data {
-@@ -390,7 +390,7 @@ void flush_tlb_range(struct vm_area_struct *vma,
+ /* Called with .host_lock held */
+-static void pxa_camera_remove_device(struct soc_camera_device *icd)
++static void pxa_camera_clock_stop(struct soc_camera_host *ici)
  {
- 	struct mm_struct *mm = vma->vm_mm;
+-	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct pxa_camera_dev *pcdev = ici->priv;
  
--	preempt_disable();
-+	get_online_cpus_atomic();
- 	if ((atomic_read(&mm->mm_users) != 1) || (current->mm != mm)) {
- 		struct flush_tlb_data fd;
+-	dev_info(icd->parent, "PXA Camera driver detached from camera %d\n",
+-		 icd->devnum);
+-
+ 	/* disable capture, disable interrupts */
+ 	__raw_writel(0x3ff, pcdev->base + CICR0);
  
-@@ -405,7 +405,7 @@ void flush_tlb_range(struct vm_area_struct *vma,
- 				cpu_context(i, mm) = 0;
- 	}
- 	local_flush_tlb_range(vma, start, end);
--	preempt_enable();
-+	put_online_cpus_atomic();
- }
- 
- static void flush_tlb_kernel_range_ipi(void *info)
-@@ -433,7 +433,7 @@ static void flush_tlb_page_ipi(void *info)
- 
- void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
- {
--	preempt_disable();
-+	get_online_cpus_atomic();
- 	if ((atomic_read(&vma->vm_mm->mm_users) != 1) ||
- 	    (current->mm != vma->vm_mm)) {
- 		struct flush_tlb_data fd;
-@@ -448,7 +448,7 @@ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
- 				cpu_context(i, vma->vm_mm) = 0;
- 	}
- 	local_flush_tlb_page(vma, page);
--	preempt_enable();
-+	put_online_cpus_atomic();
- }
- 
- static void flush_tlb_one_ipi(void *info)
+@@ -1630,6 +1636,8 @@ static struct soc_camera_host_ops pxa_soc_camera_host_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.add		= pxa_camera_add_device,
+ 	.remove		= pxa_camera_remove_device,
++	.clock_start	= pxa_camera_clock_start,
++	.clock_stop	= pxa_camera_clock_stop,
+ 	.set_crop	= pxa_camera_set_crop,
+ 	.get_formats	= pxa_camera_get_formats,
+ 	.put_formats	= pxa_camera_put_formats,
+-- 
+1.7.2.5
 
