@@ -1,67 +1,150 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 09:28:48 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7790: HSCIF support
-Message-Id: <1371461329-26467-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 14 Jun 2013 10:08:51 +0000
+Subject: Re: [PATCH] drm: shmobile: Use devm_* managed functions
+Message-Id: <1398761.oKr9Nj5ZkX@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371461329-26467-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371461329-26467-1-git-send-email-horms+renesas@verge.net.au>
+References: <1366884894-18231-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1366884894-18231-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: David Airlie <airlied@linux.ie>
+Cc: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Hi Dave,
 
-Adds support for HSCIF0 and HSCIF1 on the r8a7790.
+Could you please take this patch in your tree for v3.11 ?
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-[ horms+renesas@verge.net.au this is the setup-r8a7790.c
-  which I somehow miss-applied as part of another patch.
-  The clock-r8a7790.c portion of this patch has already been merged. ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7790.c |   14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 49de2d5..896d374 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -67,7 +67,15 @@ void __init r8a7790_pinmux_init(void)
- 	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
- }
- 
--enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
-+#define HSCIF_DATA(index, baseaddr, irq)		\
-+[index] = {						\
-+	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
-+	.scbrr_algo_id	= SCBRR_ALGO_6,			\
-+	.scscr = SCSCR_RE | SCSCR_TE,	\
-+}
-+
-+enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
-+       HSCIF0, HSCIF1 };
- 
- static const struct plat_sci_port scif[] = {
- 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
-@@ -78,6 +86,8 @@ static const struct plat_sci_port scif[] = {
- 	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
- 	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
- 	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
-+	HSCIF_DATA(HSCIF0, 0xe62c0000, gic_spi(154)), /* HSCIF0 */
-+	HSCIF_DATA(HSCIF1, 0xe62c8000, gic_spi(155)), /* HSCIF1 */
- };
- 
- static inline void r8a7790_register_scif(int idx)
-@@ -115,6 +125,8 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(SCIFA2);
- 	r8a7790_register_scif(SCIF0);
- 	r8a7790_register_scif(SCIF1);
-+	r8a7790_register_scif(HSCIF0);
-+	r8a7790_register_scif(HSCIF1);
- 	r8a7790_register_irqc(0);
- }
- 
+On Thursday 25 April 2013 12:14:54 Laurent Pinchart wrote:
+> This simplifies cleanup paths and fixes a probe time crash in the error
+> path when trying to cleanup mode setting before it was initialized.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  drivers/gpu/drm/shmobile/shmob_drm_drv.c   | 28 +++++++++------------------
+>  drivers/gpu/drm/shmobile/shmob_drm_plane.c |  7 +------
+>  2 files changed, 10 insertions(+), 25 deletions(-)
+> 
+> diff --git a/drivers/gpu/drm/shmobile/shmob_drm_drv.c
+> b/drivers/gpu/drm/shmobile/shmob_drm_drv.c index f6e0b53..29d15e3 100644
+> --- a/drivers/gpu/drm/shmobile/shmob_drm_drv.c
+> +++ b/drivers/gpu/drm/shmobile/shmob_drm_drv.c
+> @@ -90,7 +90,7 @@ static int shmob_drm_setup_clocks(struct shmob_drm_device
+> *sdev, return -EINVAL;
+>  	}
+> 
+> -	clk = clk_get(sdev->dev, clkname);
+> +	clk = devm_clk_get(sdev->dev, clkname);
+>  	if (IS_ERR(clk)) {
+>  		dev_err(sdev->dev, "cannot get dot clock %s\n", clkname);
+>  		return PTR_ERR(clk);
+> @@ -106,21 +106,12 @@ static int shmob_drm_setup_clocks(struct
+> shmob_drm_device *sdev,
+> 
+>  static int shmob_drm_unload(struct drm_device *dev)
+>  {
+> -	struct shmob_drm_device *sdev = dev->dev_private;
+> -
+>  	drm_kms_helper_poll_fini(dev);
+>  	drm_mode_config_cleanup(dev);
+>  	drm_vblank_cleanup(dev);
+>  	drm_irq_uninstall(dev);
+> 
+> -	if (sdev->clock)
+> -		clk_put(sdev->clock);
+> -
+> -	if (sdev->mmio)
+> -		iounmap(sdev->mmio);
+> -
+>  	dev->dev_private = NULL;
+> -	kfree(sdev);
+> 
+>  	return 0;
+>  }
+> @@ -139,7 +130,7 @@ static int shmob_drm_load(struct drm_device *dev,
+> unsigned long flags) return -EINVAL;
+>  	}
+> 
+> -	sdev = kzalloc(sizeof(*sdev), GFP_KERNEL);
+> +	sdev = devm_kzalloc(&pdev->dev, sizeof(*sdev), GFP_KERNEL);
+>  	if (sdev = NULL) {
+>  		dev_err(dev->dev, "failed to allocate private data\n");
+>  		return -ENOMEM;
+> @@ -156,29 +147,28 @@ static int shmob_drm_load(struct drm_device *dev,
+> unsigned long flags) res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+>  	if (res = NULL) {
+>  		dev_err(&pdev->dev, "failed to get memory resource\n");
+> -		ret = -EINVAL;
+> -		goto done;
+> +		return -EINVAL;
+>  	}
+> 
+> -	sdev->mmio = ioremap_nocache(res->start, resource_size(res));
+> +	sdev->mmio = devm_ioremap_nocache(&pdev->dev, res->start,
+> +					  resource_size(res));
+>  	if (sdev->mmio = NULL) {
+>  		dev_err(&pdev->dev, "failed to remap memory resource\n");
+> -		ret = -ENOMEM;
+> -		goto done;
+> +		return -ENOMEM;
+>  	}
+> 
+>  	ret = shmob_drm_setup_clocks(sdev, pdata->clk_source);
+>  	if (ret < 0)
+> -		goto done;
+> +		return ret;
+> 
+>  	ret = shmob_drm_init_interface(sdev);
+>  	if (ret < 0)
+> -		goto done;
+> +		return ret;
+> 
+>  	ret = shmob_drm_modeset_init(sdev);
+>  	if (ret < 0) {
+>  		dev_err(&pdev->dev, "failed to initialize mode setting\n");
+> -		goto done;
+> +		return ret;
+>  	}
+> 
+>  	for (i = 0; i < 4; ++i) {
+> diff --git a/drivers/gpu/drm/shmobile/shmob_drm_plane.c
+> b/drivers/gpu/drm/shmobile/shmob_drm_plane.c index e1eb899..6898f6f 100644
+> --- a/drivers/gpu/drm/shmobile/shmob_drm_plane.c
+> +++ b/drivers/gpu/drm/shmobile/shmob_drm_plane.c
+> @@ -221,11 +221,8 @@ static int shmob_drm_plane_disable(struct drm_plane
+> *plane)
+> 
+>  static void shmob_drm_plane_destroy(struct drm_plane *plane)
+>  {
+> -	struct shmob_drm_plane *splane = to_shmob_plane(plane);
+> -
+>  	shmob_drm_plane_disable(plane);
+>  	drm_plane_cleanup(plane);
+> -	kfree(splane);
+>  }
+> 
+>  static const struct drm_plane_funcs shmob_drm_plane_funcs = {
+> @@ -251,7 +248,7 @@ int shmob_drm_plane_create(struct shmob_drm_device
+> *sdev, unsigned int index) struct shmob_drm_plane *splane;
+>  	int ret;
+> 
+> -	splane = kzalloc(sizeof(*splane), GFP_KERNEL);
+> +	splane = devm_kzalloc(sdev->dev, sizeof(*splane), GFP_KERNEL);
+>  	if (splane = NULL)
+>  		return -ENOMEM;
+> 
+> @@ -261,8 +258,6 @@ int shmob_drm_plane_create(struct shmob_drm_device
+> *sdev, unsigned int index) ret = drm_plane_init(sdev->ddev, &splane->plane,
+> 1,
+>  			     &shmob_drm_plane_funcs, formats,
+>  			     ARRAY_SIZE(formats), false);
+> -	if (ret < 0)
+> -		kfree(splane);
+> 
+>  	return ret;
+>  }
 -- 
-1.7.10.4
+Regards,
+
+Laurent Pinchart
 
