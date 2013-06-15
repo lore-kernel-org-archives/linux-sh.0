@@ -1,30 +1,45 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 15 Jun 2013 00:47:51 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 15 Jun 2013 11:31:08 +0000
 Subject: Re: [PATCH 0/1] gpio-rcar: Add DT support
-Message-Id: <20130615004751.GM18124@quad.lixom.net>
+Message-Id: <2295525.muus9MNBiz@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1371106826-25313-1-git-send-email-horms+renesas@verge.net.au>
  <1371106826-25313-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106826-25313-2-git-send-email-horms+renesas@verge.net.au>
+ <20130615004751.GM18124@quad.lixom.net>
+In-Reply-To: <20130615004751.GM18124@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jun 13, 2013 at 04:00:26PM +0900, Simon Horman wrote:
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi Olof,
+
+On Friday 14 June 2013 17:47:51 Olof Johansson wrote:
+> On Thu, Jun 13, 2013 at 04:00:26PM +0900, Simon Horman wrote:
+> > From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> > 
+> > Add DT bindings for the gpio-rcar driver and read the device
+> > configuration from the DT node at probe time if available.
+> > 
+> > Cc: devicetree-discuss@lists.ozlabs.org
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 > 
-> Add DT bindings for the gpio-rcar driver and read the device
-> configuration from the DT node at probe time if available.
+> Hi,
 > 
-> Cc: devicetree-discuss@lists.ozlabs.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> I don't see this cc/acked by Linus or Grant/Rob.
 
-Hi,
+The patch has been acked by Linus, but it seems the ack got lost somewhere.
 
-I don't see this cc/acked by Linus or Grant/Rob. However, the binding
-looks very vanilla to me, so I'll merge it anyway.
+https://patchwork.kernel.org/patch/2596901/
 
+> However, the binding looks very vanilla to me, so I'll merge it anyway.
 
--Olof
+Thank you.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
