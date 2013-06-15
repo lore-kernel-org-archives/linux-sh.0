@@ -1,77 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:24 +0000
-Subject: [GIT PULL 00/12] Renesas USB updates for v3.11
-Message-Id: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Sat, 15 Jun 2013 00:41:38 +0000
+Subject: Re: [GIT PULL 00/12] Renesas USB updates for v3.11
+Message-Id: <20130615004138.GK18124@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371106836-25388-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+On Thu, Jun 13, 2013 at 04:00:24PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Arnd,
+> 
+> This pull request is based on a merge of renesas-soc-for-v3.11
+> and renesas-pinmux-for-v3.11 in order to provide pre-requisites.
+> You have previously pulled both of those tags.
+> 
+> I have put all of these patches into a single pull-request as
+> R8A7779/Marzen clean-up portion are tightly related and don't seem
+> to be easily broken out into e.g. board and soc components without
+> introducing bisection breakage.
+> 
+> This pull request will cause various conflicts though I believe all
+> of them are not difficult to resolve. The renesas-next-20130613 tag in
+> my tree illustrates how I have handled the conflicts with
+> both changes already in arm-soc and changes I intend to send
+> pull requests for in the near future.
+> 
+> The following changes since commit ae8b378faea7f04d4517b22f5d70d824adcbc4dc:
+> 
+>   Merge branches 'heads/pinmux' and 'heads/soc' into phy-rcar-usb-base (2013-06-11 14:58:57 +0900)
+> 
+> are available in the git repository at:
+> 
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-phy-rcar-usb-for-v3.11
+> 
+> for you to fetch changes up to 1a87b01d3b18709ae240ec90ae612354dd44d9a9:
+> 
+>   ARM: shmobile: BOCK-W: add USB support (2013-06-11 16:12:53 +0900)
 
-This pull request is based on a merge of renesas-soc-for-v3.11
-and renesas-pinmux-for-v3.11 in order to provide pre-requisites.
-You have previously pulled both of those tags.
+Thanks, pulled. Quite annoying conflicts since I hit them twice, likely because
+we had resolved the merge conflicts independenty.
 
-I have put all of these patches into a single pull-request as
-R8A7779/Marzen clean-up portion are tightly related and don't seem
-to be easily broken out into e.g. board and soc components without
-introducing bisection breakage.
-
-This pull request will cause various conflicts though I believe all
-of them are not difficult to resolve. The renesas-next-20130613 tag in
-my tree illustrates how I have handled the conflicts with
-both changes already in arm-soc and changes I intend to send
-pull requests for in the near future.
-
-The following changes since commit ae8b378faea7f04d4517b22f5d70d824adcbc4dc:
-
-  Merge branches 'heads/pinmux' and 'heads/soc' into phy-rcar-usb-base (2013-06-11 14:58:57 +0900)
-
-are available in the git repository at:
+Anyway, not a huge deal. It'd have been nice if the branch had been based on
+the fix to the USB code that caused the whole move of code to be considered
+a conflict, something to maybe consider next time.
 
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-phy-rcar-usb-for-v3.11
-
-for you to fetch changes up to 1a87b01d3b18709ae240ec90ae612354dd44d9a9:
-
-  ARM: shmobile: BOCK-W: add USB support (2013-06-11 16:12:53 +0900)
-
-----------------------------------------------------------------
-Renesas USB updates for v3.11
-
-These updates are by Sergei Shtylyov to clean-up USB support
-present for R8A7779/Marzen and then extend USB support coverage to
-R8A7778/BOCK-W.
-
-----------------------------------------------------------------
-Sergei Shtylyov (12):
-      ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
-      ehci-platform: add pre_setup() method to platform data
-      ARM: shmobile: r8a7779: setup EHCI internal buffer
-      phy-rcar-usb: remove EHCI internal buffer setup
-      ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
-      phy-rcar-usb: correct base address
-      phy-rcar-usb: add platform data
-      ARM: shmobile: Marzen: pass platform data to USB PHY device
-      phy-rcar-usb: handle platform data
-      phy-rcar-usb: add R8A7778 support
-      ARM: shmobile: r8a7778: add USB support
-      ARM: shmobile: BOCK-W: add USB support
-
- arch/arm/mach-shmobile/Kconfig                |   2 +
- arch/arm/mach-shmobile/board-bockw.c          |   8 ++
- arch/arm/mach-shmobile/board-marzen.c         | 181 +-----------------------
- arch/arm/mach-shmobile/clock-r8a7778.c        |   4 +
- arch/arm/mach-shmobile/include/mach/r8a7778.h |   3 +
- arch/arm/mach-shmobile/include/mach/r8a7779.h |   3 +
- arch/arm/mach-shmobile/setup-r8a7778.c        | 108 ++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c        | 196 +++++++++++++++++++++++++-
- drivers/usb/host/ehci-platform.c              |   6 +
- drivers/usb/phy/Kconfig                       |  10 +-
- drivers/usb/phy/phy-rcar-usb.c                | 128 +++++++++++------
- include/linux/platform_data/usb-rcar-phy.h    |  28 ++++
- include/linux/usb/ehci_pdriver.h              |   4 +
- 13 files changed, 450 insertions(+), 231 deletions(-)
- create mode 100644 include/linux/platform_data/usb-rcar-phy.h
+-Olof
