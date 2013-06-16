@@ -1,62 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 20 Jun 2013 08:04:07 +0000
-Subject: Re: [PATCH v2 2/2] gpio-rcar: Remove #ifdef CONFIG_OF around OF-specific sections
-Message-Id: <1653091.GeQyMLF6L8@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 16 Jun 2013 23:41:52 +0000
+Subject: [PATCH] gpio-rcar: Use OUTDT when reading GPIOs configured as output
+Message-Id: <20130616234152.23721.85467.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371551389-5493-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1667096.lqpXoD2UlE@avalon>
- <CACRpkdZJ1Hg=4w1fySiMgy0-Qdph1pD0OZGLFecxHhTsMEKQog@mail.gmail.com>
-In-Reply-To: <CACRpkdZJ1Hg=4w1fySiMgy0-Qdph1pD0OZGLFecxHhTsMEKQog@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Hi Linus,
+From: Magnus Damm <damm@opensource.se>
 
-On Thursday 20 June 2013 08:42:23 Linus Walleij wrote:
-> On Wed, Jun 19, 2013 at 9:51 PM, Laurent Pinchart wrote:
-> > On Wednesday 19 June 2013 21:17:35 Linus Walleij wrote:
-> >> On Tue, Jun 18, 2013 at 12:29 PM, Laurent Pinchart wrote:
-> >> > All functions and data types used by OF-specific code paths are
-> >> > declared
-> >> > in <linux/of.h> regardless of CONFIG_OF. Replace the #ifdef CONFIG_OF
-> >> > guard with a if(IS_ENABLED(CONFIG_OF)) and let the compiler optimize
-> >> > the unused code away.
-> >> >=20
-> >> > Signed-off-by: Laurent Pinchart
-> >> > <laurent.pinchart+renesas@ideasonboard.com>
-> >>=20
-> >> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> >=20
-> > Thank you. Can you please take the patch in your tree ?
->=20
-> No. It does not apply:
->=20
-> ]$ git am --signoff rcar-fix.patch
-> Till=E4mpar: gpio-rcar: Remove #ifdef CONFIG_OF around OF-specific sectio=
-ns
-> error: patch misslyckades: drivers/gpio/gpio-rcar.c:279
-> error: drivers/gpio/gpio-rcar.c: patchen kan inte till=E4mpas
-> Patchen misslyckades vid 0001 gpio-rcar: Remove #ifdef CONFIG_OF
-> around OF-specific sections
-> En kopia av patchen som misslyckades finns i:
->    /home/linus/src/linux-trees/linux-gpio/.git/rebase-apply/patch
-> N=E4r du har l=F6st problemet k=F6r du "git am --resolved".
-> Om du vill hoppa =F6ver patchen k=F6r du ist=E4llet "git am --skip".
-> F=F6r att =E5terst=E4lla originalgrenen och avbryta k=F6r du "git am --ab=
-ort".
->=20
->=20
-> Isn't this RCAR stuff funneled through ARM SoC this merge window?
-> Then you have to send it to the ARM SoC folks corresponding branch.
+Testing on r8a7790 shows that INDT does not indicate the correct
+pin state when reading a GPIO configured as output, so update
+the gpio_rcar_get() function to handle this case.
 
-Oops, my bad. I had mistaken it for one of the pinctrl patches.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-/me needs to sleep more :-)
+ drivers/gpio/gpio-rcar.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
---=20
-Regards,
-
-Laurent Pinchart
-
+--- 0001/drivers/gpio/gpio-rcar.c
++++ work/drivers/gpio/gpio-rcar.c	2013-06-12 09:23:53.000000000 +0900
+@@ -230,7 +230,14 @@ static int gpio_rcar_direction_input(str
+ 
+ static int gpio_rcar_get(struct gpio_chip *chip, unsigned offset)
+ {
+-	return (int)(gpio_rcar_read(gpio_to_priv(chip), INDT) & BIT(offset));
++	u32 bit = BIT(offset);
++
++	/* testing on r8a7790 shows that INDT does not show correct pin state
++	 * when configured as output, so use OUTDT in case of output pins */
++	if (gpio_rcar_read(gpio_to_priv(chip), INOUTSEL) & bit)
++		return (int)(gpio_rcar_read(gpio_to_priv(chip), OUTDT) & bit);
++	else
++		return (int)(gpio_rcar_read(gpio_to_priv(chip), INDT) & bit);
+ }
+ 
+ static void gpio_rcar_set(struct gpio_chip *chip, unsigned offset, int value)
