@@ -1,118 +1,157 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Wed, 26 Jun 2013 16:00:55 +0000
-Subject: Re: DMA channels (was Re: [PATCH 2/2] ARM: shmobile: sdhi: remove DMA hardware dependencies)
-Message-Id: <20130626154855.GT23141@intel.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Jun 2013 06:40:52 +0000
+Subject: [PATCH] clocksource: sh_cmt: 32-bit control register support
+Message-Id: <20130617064052.3573.68839.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370008605-3745603-1-git-send-email-arnd@arndb.de>
- <201306192351.50804.arnd@arndb.de>
- <Pine.LNX.4.64.1306261024280.8856@axis700.grange>
- <201306261635.45579.arnd@arndb.de>
-In-Reply-To: <201306261635.45579.arnd@arndb.de>
+References: <20121214060026.10668.35031.sendpatchset@w520>
+In-Reply-To: <20121214060026.10668.35031.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, johnstul@us.ibm.com, horms@verge.net.au, shinya.kuribayashi.px@renesas.com, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On Wed, Jun 26, 2013 at 04:35:45PM +0200, Arnd Bergmann wrote:
-> On Wednesday 26 June 2013, Guennadi Liakhovetski wrote:
-> > > The problem with this is that on a lot of dma engines you have one channel
-> > > per slave (in particular with virt-dma.c), so the slave-id has to be
-> > > part of the filter data. Since the slave driver cannot know what kind
-> > > of DMA engine it is connected to, it has to assume that the slave-id
-> > > is inherent to the channel an cannot change.
-> > > Also, the DT binding is built around the idea that you identify the
-> > > channel or request line with the specifier in whichever form the
-> > > dma engine requires, and there is no general way for the slave driver
-> > > to find out a slave id. Setting it with dma_slave_config is inherently
-> > > nonportable, and we should stop doing that.
-> > 
-> > Don't you think, that this situation, where without DT a filter function 
-> > has to be used, which has to be provided by the platform and is just a 
-> > kind of a platform callback; and with DT channels are selected and 
-> > configured by a reference to suitable DMAC instances and a hardware- 
-> > specific data set is suboptimal? Wouldn't it be better to unify it?
-> > 
-> > If yes, the unification would go in the direction of DT compatibility, 
-> > i.e. dropping filter functions and just directly referencing required 
-> > DMACs and using DMAC-specific configuration?
-> 
-> With the introduction of dma_request_slave_channel() we tried to
-> only change the cases going forward with DT, SFI and ACPI but
-> without changing the interface for the existing drivers, which
-> are highly inconsistent at the moment (filter function being defined
-> in the slave driver /or/ the platform /or/ the dmaengine driver).
-> 
-> > Wouldn't a channel requesting 
-> > API, similar to that for requesting clocks, pinmux settings be a better 
-> > option, than the current filtering procedure? Something like
-> > 
-> >         dma_request_slave_channel(dev, "tx", "dmac0", config);
-> > 
-> > in a simple case of just one suitable DMAC, or a NULL if DMACs should be 
-> > able to figure out themselves, whether they can serve this slave, or 
-> > something like "dmamux0" if there is a multiplexer, for which a driver has 
-> > to be available, and in which case "config" would be that multiplexer 
-> > driver's configuration?
-> 
-> I think what you suggest here is very similar to the existing
-> dma_request_slave_channel_compat() function, except that you
-> pass a string ("dmac0") instead of the filter function pointer,
-> and that string presumably also has to come from the platform,
-> since there is no other way for the driver to know it, right?
-> 
-> One idea that Vinod suggested was that the platform could register
-> a table of DMA configurations with the dmaengine core to do the
-> lookup by device and string. That would actually help unify the
-> API to the current dma_request_slave_channel(dev, name) form
-> for all the possible cases (DT, ACPI, SFI, platform_data).
-> 
-> In essence, the platform would have a table like clk_lookup
-> but also containing the config:
-> 
-> struct dma_lookup {
-> 	struct list_head node;
-> 	const char *dev_id;	/* the slave device */
-> 	const char *con_id;	/* request line of the slave, e.g. "rx" */
-> 	const char *dmadev_id;	/* master device name */
-> 	void *slave_id;		/* data passed to the master */
-> };
-Let me describes the scenarios we want to solve:
-1. dma controllers with SW mux:
-	In this case the dma controller has SW mux to connect to periphrals.
-The mux is programmed to talk to a slave controller. SO we can grab any channel
-from that controller, we just need to pass the mux value.
-Ideally, in this scenario virtual channels should be described by driver (not
-one per physical channel though) and driver uses mux values to transfer to
-periphrals
+From: Magnus Damm <damm@opensource.se>
 
-2. dma controllers with hardwired channels:
-	In this case you need a channel from a controller A and also channel X,
-as it is hard wired to periphral. This is quite common in bunch of drivers.
-In this case we just have to look for this channel.
+Add support for CMT hardware with 32-bit control and counter
+registers, as found on r8a73a4 and r8a7790. To use the CMT
+with 32-bit hardware a second I/O memory resource needs to
+point out the CMSTR register and it needs to be 32 bit wide.
 
-3. MIX
-	Yes, I believe we have controllers where they have SW mux as well as
-hard wired.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-In case of 1 and 3a(sw), we just need controller info
-In 2 and3b we need both info
+ Tested on r8a73a4 used on APE6EVM.
 
-SO the idea was that DT, ACPI pdata etc just tells me that how the assignments
-should be done and at runtime dmanegine just does that.
+ drivers/clocksource/sh_cmt.c |   50 ++++++++++++++++++++++++++++++------------
+ 1 file changed, 36 insertions(+), 14 deletions(-)
 
-This is what I had in mind (more on same lines as above)
-struct dmaengine_slave_map {
-	char *dma;	/* dma controller */
-	char *client;	/* client */
-	int ch;		/* specfic channel id, NULL for SW muxes */
-	int slave_id;	/* request line */
-	struct dmaengine_slave_map_entries *entry;
-};
-https://lkml.org/lkml/2012/9/14/139
-
-This way we just ask for a channel and dmaengine know what to do.
-
-No filter functions, no multiple request methods etc.
-
---
-~Vinod
+--- 0001/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2013-06-17 13:47:34.000000000 +0900
+@@ -37,6 +37,7 @@
+ 
+ struct sh_cmt_priv {
+ 	void __iomem *mapbase;
++	void __iomem *mapbase_str;
+ 	struct clk *clk;
+ 	unsigned long width; /* 16 or 32 bit version of hardware block */
+ 	unsigned long overflow_bit;
+@@ -79,6 +80,12 @@ struct sh_cmt_priv {
+  * CMCSR 0xffca0060 16-bit
+  * CMCNT 0xffca0064 32-bit
+  * CMCOR 0xffca0068 32-bit
++ *
++ * "32-bit counter and 32-bit control" as found on r8a73a4 and r8a7790:
++ * CMSTR 0xffca0500 32-bit
++ * CMCSR 0xffca0510 32-bit
++ * CMCNT 0xffca0514 32-bit
++ * CMCOR 0xffca0518 32-bit
+  */
+ 
+ static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
+@@ -109,9 +116,7 @@ static void sh_cmt_write32(void __iomem
+ 
+ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+-
+-	return p->read_control(p->mapbase - cfg->channel_offset, 0);
++	return p->read_control(p->mapbase_str, 0);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
+@@ -127,9 +132,7 @@ static inline unsigned long sh_cmt_read_
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+-
+-	p->write_control(p->mapbase - cfg->channel_offset, 0, value);
++	p->write_control(p->mapbase_str, 0, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
+@@ -676,7 +679,7 @@ static int sh_cmt_register(struct sh_cmt
+ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ {
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+-	struct resource *res;
++	struct resource *res, *res2;
+ 	int irq, ret;
+ 	ret = -ENXIO;
+ 
+@@ -694,6 +697,9 @@ static int sh_cmt_setup(struct sh_cmt_pr
+ 		goto err0;
+ 	}
+ 
++	/* optional resource for the shared timer start/stop register */
++	res2 = platform_get_resource(p->pdev, IORESOURCE_MEM, 1);
++
+ 	irq = platform_get_irq(p->pdev, 0);
+ 	if (irq < 0) {
+ 		dev_err(&p->pdev->dev, "failed to get irq\n");
+@@ -707,6 +713,15 @@ static int sh_cmt_setup(struct sh_cmt_pr
+ 		goto err0;
+ 	}
+ 
++	/* map second resource for CMSTR */
++	p->mapbase_str = ioremap_nocache(res2 ? res2->start :
++					 res->start - cfg->channel_offset,
++					 res2 ? resource_size(res2) : 2);
++	if (p->mapbase_str = NULL) {
++		dev_err(&p->pdev->dev, "failed to remap I/O second memory\n");
++		goto err1;
++	}
++
+ 	/* request irq using setup_irq() (too early for request_irq()) */
+ 	p->irqaction.name = dev_name(&p->pdev->dev);
+ 	p->irqaction.handler = sh_cmt_interrupt;
+@@ -719,11 +734,17 @@ static int sh_cmt_setup(struct sh_cmt_pr
+ 	if (IS_ERR(p->clk)) {
+ 		dev_err(&p->pdev->dev, "cannot get clock\n");
+ 		ret = PTR_ERR(p->clk);
+-		goto err1;
++		goto err2;
+ 	}
+ 
+-	p->read_control = sh_cmt_read16;
+-	p->write_control = sh_cmt_write16;
++	if (res2 && (resource_size(res2) = 4)) {
++		/* assume both CMSTR and CMCSR to be 32-bit */
++		p->read_control = sh_cmt_read32;
++		p->write_control = sh_cmt_write32;
++	} else {
++		p->read_control = sh_cmt_read16;
++		p->write_control = sh_cmt_write16;
++	}
+ 
+ 	if (resource_size(res) = 6) {
+ 		p->width = 16;
+@@ -752,22 +773,23 @@ static int sh_cmt_setup(struct sh_cmt_pr
+ 			      cfg->clocksource_rating);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "registration failed\n");
+-		goto err2;
++		goto err3;
+ 	}
+ 	p->cs_enabled = false;
+ 
+ 	ret = setup_irq(irq, &p->irqaction);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
+-		goto err2;
++		goto err3;
+ 	}
+ 
+ 	platform_set_drvdata(pdev, p);
+ 
+ 	return 0;
+-err2:
++err3:
+ 	clk_put(p->clk);
+-
++err2:
++	iounmap(p->mapbase_str);
+ err1:
+ 	iounmap(p->mapbase);
+ err0:
