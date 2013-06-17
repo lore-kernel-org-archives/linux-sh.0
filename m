@@ -1,156 +1,47 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jun 2013 19:08:19 +0000
-Subject: [PATCH v11 09/21] sh-mobile-ceu-camera: move interface activation and deactivation to clock callback
-Message-Id: <1371236911-15131-10-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Jun 2013 03:28:48 +0000
+Subject: [PATCH] ARM: shmobile: sh7372 build fix for SUSPEND=n && CPU_IDLE=n
+Message-Id: <20130617032848.21337.29264.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-When adding and removing a client, the sh-mobile-ceu-camera driver activates
-and, respectively, deactivates its camera interface and, if necessary, the
-CSI2 controller. Only handling of the CSI2 interface is client-specific and
-is only needed, when a data-exchange with the client is taking place. Move
-the rest to .clock_start() and .clock_stop() callbacks.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Move the code using cpu_resume() into a function being
+wrappend in #ifdef CONFIG_SUSPEND || CONFIG_CPU_IDLE.
+
+This fixes a build error triggered by ap4evb_defconfig.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |   58 ++++++++++++--------
- 1 files changed, 35 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-index 5b7d8e1..9037472 100644
---- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-+++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-@@ -162,7 +162,6 @@ static u32 ceu_read(struct sh_mobile_ceu_dev *priv, unsigned long reg_offs)
- static int sh_mobile_ceu_soft_reset(struct sh_mobile_ceu_dev *pcdev)
- {
- 	int i, success = 0;
--	struct soc_camera_device *icd = pcdev->ici.icd;
- 
- 	ceu_write(pcdev, CAPSR, 1 << 16); /* reset */
- 
-@@ -186,7 +185,7 @@ static int sh_mobile_ceu_soft_reset(struct sh_mobile_ceu_dev *pcdev)
- 
- 
- 	if (2 != success) {
--		dev_warn(icd->pdev, "soft reset time out\n");
-+		dev_warn(pcdev->ici.v4l2_dev.dev, "soft reset time out\n");
- 		return -EIO;
- 	}
- 
-@@ -543,35 +542,21 @@ static struct v4l2_subdev *find_csi2(struct sh_mobile_ceu_dev *pcdev)
- 	return NULL;
- }
- 
--/* Called with .host_lock held */
- static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
- {
- 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct sh_mobile_ceu_dev *pcdev = ici->priv;
--	struct v4l2_subdev *csi2_sd;
-+	struct v4l2_subdev *csi2_sd = find_csi2(pcdev);
- 	int ret;
- 
--	dev_info(icd->parent,
--		 "SuperH Mobile CEU driver attached to camera %d\n",
--		 icd->devnum);
--
--	pm_runtime_get_sync(ici->v4l2_dev.dev);
--
--	pcdev->buf_total = 0;
--
--	ret = sh_mobile_ceu_soft_reset(pcdev);
--
--	csi2_sd = find_csi2(pcdev);
- 	if (csi2_sd) {
- 		csi2_sd->grp_id = soc_camera_grp_id(icd);
- 		v4l2_set_subdev_hostdata(csi2_sd, icd);
- 	}
- 
- 	ret = v4l2_subdev_call(csi2_sd, core, s_power, 1);
--	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV) {
--		pm_runtime_put(ici->v4l2_dev.dev);
-+	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV)
- 		return ret;
--	}
- 
- 	/*
- 	 * -ENODEV is special: either csi2_sd = NULL or the CSI-2 driver
-@@ -580,19 +565,48 @@ static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
- 	if (ret = -ENODEV && csi2_sd)
- 		csi2_sd->grp_id = 0;
- 
-+	dev_info(icd->parent,
-+		 "SuperH Mobile CEU driver attached to camera %d\n",
-+		 icd->devnum);
-+
- 	return 0;
- }
- 
--/* Called with .host_lock held */
- static void sh_mobile_ceu_remove_device(struct soc_camera_device *icd)
- {
- 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct sh_mobile_ceu_dev *pcdev = ici->priv;
- 	struct v4l2_subdev *csi2_sd = find_csi2(pcdev);
- 
-+	dev_info(icd->parent,
-+		 "SuperH Mobile CEU driver detached from camera %d\n",
-+		 icd->devnum);
-+
- 	v4l2_subdev_call(csi2_sd, core, s_power, 0);
- 	if (csi2_sd)
- 		csi2_sd->grp_id = 0;
-+}
-+
-+/* Called with .host_lock held */
-+static int sh_mobile_ceu_clock_start(struct soc_camera_host *ici)
-+{
-+	struct sh_mobile_ceu_dev *pcdev = ici->priv;
-+	int ret;
-+
-+	pm_runtime_get_sync(ici->v4l2_dev.dev);
-+
-+	pcdev->buf_total = 0;
-+
-+	ret = sh_mobile_ceu_soft_reset(pcdev);
-+
-+	return 0;
-+}
-+
-+/* Called with .host_lock held */
-+static void sh_mobile_ceu_clock_stop(struct soc_camera_host *ici)
-+{
-+	struct sh_mobile_ceu_dev *pcdev = ici->priv;
-+
- 	/* disable capture, disable interrupts */
- 	ceu_write(pcdev, CEIER, 0);
- 	sh_mobile_ceu_soft_reset(pcdev);
-@@ -607,10 +621,6 @@ static void sh_mobile_ceu_remove_device(struct soc_camera_device *icd)
- 	spin_unlock_irq(&pcdev->lock);
- 
- 	pm_runtime_put(ici->v4l2_dev.dev);
--
--	dev_info(icd->parent,
--		 "SuperH Mobile CEU driver detached from camera %d\n",
--		 icd->devnum);
- }
- 
- /*
-@@ -2027,6 +2037,8 @@ static struct soc_camera_host_ops sh_mobile_ceu_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= sh_mobile_ceu_add_device,
- 	.remove		= sh_mobile_ceu_remove_device,
-+	.clock_start	= sh_mobile_ceu_clock_start,
-+	.clock_stop	= sh_mobile_ceu_clock_stop,
- 	.get_formats	= sh_mobile_ceu_get_formats,
- 	.put_formats	= sh_mobile_ceu_put_formats,
- 	.get_crop	= sh_mobile_ceu_get_crop,
--- 
-1.7.2.5
+ Applies to renesas-next-20130613
 
+ arch/arm/mach-shmobile/pm-sh7372.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/pm-sh7372.c
++++ work/arch/arm/mach-shmobile/pm-sh7372.c	2013-06-17 12:03:18.000000000 +0900
+@@ -351,6 +351,9 @@ static void sh7372_enter_a4s_common(int
+ 
+ static void sh7372_pm_setup_smfram(void)
+ {
++	/* pass physical address of cpu_resume() to assembly resume code */
++	sh7372_cpu_resume = virt_to_phys(cpu_resume);
++
+ 	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
+ }
+ #else
+@@ -524,9 +527,6 @@ void __init sh7372_pm_init(void)
+ 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
+ 	__raw_writel(0, PDNSEL);
+ 
+-	/* pass physical address of cpu_resume() to assembly resume code */
+-	sh7372_cpu_resume = virt_to_phys(cpu_resume);
+-
+ 	sh7372_pm_setup_smfram();
+ 
+ 	sh7372_suspend_init();
