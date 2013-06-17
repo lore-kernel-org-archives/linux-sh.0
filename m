@@ -1,55 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:52 +0000
-Subject: [PATCH 22/27] ARM: shmobile: r8a7790: add TPU PWM support
-Message-Id: <1370591517-20239-23-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 17 Jun 2013 09:28:48 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7790: HSCIF support
+Message-Id: <1371461329-26467-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371461329-26467-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371461329-26467-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Adds support for HSCIF0 and HSCIF1 on the r8a7790.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+[ horms+renesas@verge.net.au this is the setup-r8a7790.c
+  which I somehow miss-applied as part of another patch.
+  The clock-r8a7790.c portion of this patch has already been merged. ]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c |   14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index bedd20c..b393592 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -48,6 +48,7 @@
- #define CPG_LEN 0x1000
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 49de2d5..896d374 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -67,7 +67,15 @@ void __init r8a7790_pinmux_init(void)
+ 	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+ }
  
- #define SMSTPCR2 0xe6150138
-+#define SMSTPCR3 0xe615013c
- #define SMSTPCR7 0xe615014c
+-enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
++#define HSCIF_DATA(index, baseaddr, irq)		\
++[index] = {						\
++	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
++	.scbrr_algo_id	= SCBRR_ALGO_6,			\
++	.scscr = SCSCR_RE | SCSCR_TE,	\
++}
++
++enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
++       HSCIF0, HSCIF1 };
  
- #define MODEMR		0xE6160060
-@@ -178,11 +179,17 @@ static struct clk div6_clks[DIV6_NR] = {
+ static const struct plat_sci_port scif[] = {
+ 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+@@ -78,6 +86,8 @@ static const struct plat_sci_port scif[] = {
+ 	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
+ 	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
+ 	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
++	HSCIF_DATA(HSCIF0, 0xe62c0000, gic_spi(154)), /* HSCIF0 */
++	HSCIF_DATA(HSCIF1, 0xe62c8000, gic_spi(155)), /* HSCIF1 */
  };
  
- /* MSTP */
--enum { MSTP721, MSTP720,
--	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP_NR };
-+enum {
-+	MSTP721, MSTP720,
-+	MSTP304,
-+	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
-+	MSTP_NR
-+};
-+
- static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
- 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
-+	[MSTP304] = SH_CLK_MSTP32(&cp_clk, SMSTPCR3, 4, 0), /* TPU0 */
- 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
- 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
- 	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
+ static inline void r8a7790_register_scif(int idx)
+@@ -115,6 +125,8 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_scif(SCIFA2);
+ 	r8a7790_register_scif(SCIF0);
+ 	r8a7790_register_scif(SCIF1);
++	r8a7790_register_scif(HSCIF0);
++	r8a7790_register_scif(HSCIF1);
+ 	r8a7790_register_irqc(0);
+ }
+ 
 -- 
-1.8.2.1
+1.7.10.4
 
