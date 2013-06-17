@@ -1,40 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:56 +0000
-Subject: [PATCH 125/130] ARM: shmobile: r8a7790: Configure R-Car GPIO for IRQ_TYPE_EDGE_BOTH
-Message-Id: <1370420821-28420-126-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 17 Jun 2013 18:50:01 +0000
+Subject: [PATCH v7 1/3] sh-pfc: Remove support for platform data
+Message-Id: <1371495003-11185-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
 
-"gpio-rcar: Support IRQ_TYPE_EDGE_BOTH" adds support to the R-Car GPIO
-driver for IRQ_TYPE_EDGE_BOTH. As hardware support for this feature is
-not universal for all SoCs a flag, has_both_edge_trigger, has been
-added to the platform data of the driver to allow this feature to be
-enabled.
+Platform data isn't used, support can thus be removed.
 
-As the r8a7790 SoC hardware supports this feature enable it.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/pinctrl/sh-pfc/core.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index eeef5f6..b461d93 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -45,6 +45,7 @@ static struct gpio_rcar_config r8a7790_gpio##idx##_platform_data = {	\
- 	.irq_base	= 0,						\
- 	.number_of_pins	= 32,						\
- 	.pctl_name	= "pfc-r8a7790",				\
-+	.has_both_edge_trigger = 1,					\
- };									\
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index b551336..13f40c5 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -354,8 +354,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	struct sh_pfc *pfc;
+ 	int ret;
  
- R8A7790_GPIO(0);
+-	info = pdev->id_entry->driver_data
+-	      ? (void *)pdev->id_entry->driver_data : pdev->dev.platform_data;
++	info = (void *)pdev->id_entry->driver_data;
+ 	if (info = NULL)
+ 		return -ENODEV;
+ 
 -- 
-1.8.2.1
+1.8.1.5
 
