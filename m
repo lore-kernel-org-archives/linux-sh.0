@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:42 +0000
+Date: Mon, 17 Jun 2013 08:12:37 +0000
 Subject: [PATCH 04/15] ARM: shmobile: Rework sh7372 sleep code to use virt_to_phys()
-Message-Id: <1371106793-25071-5-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,11 +20,13 @@ This removes the need for PLAT_PHYS_OFFSET which
 in turn is needed for ARCH_MULTIPLATFORM.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
+[horms+renesas@verge.net.au: squashed in build fix posted as
+ "ARM: shmobile: sh7372 build fix for SUSPEND=n && CPU_IDLE=n"]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/sh7372.h | 2 ++
- arch/arm/mach-shmobile/pm-sh7372.c           | 3 +++
- arch/arm/mach-shmobile/sleep-sh7372.S        | 5 ++++-
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 ++
+ arch/arm/mach-shmobile/pm-sh7372.c           |    3 +++
+ arch/arm/mach-shmobile/sleep-sh7372.S        |    5 ++++-
  3 files changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
@@ -41,19 +43,19 @@ index e882717..854a9f0 100644
  extern void __init sh7372_init_pm_domains(void);
  #else
 diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
-index dec9293..4f15ed5 100644
+index dec9293..0de75fd 100644
 --- a/arch/arm/mach-shmobile/pm-sh7372.c
 +++ b/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -524,6 +524,9 @@ void __init sh7372_pm_init(void)
- 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
- 	__raw_writel(0, PDNSEL);
+@@ -351,6 +351,9 @@ static void sh7372_enter_a4s_common(int pllc0_on)
  
+ static void sh7372_pm_setup_smfram(void)
+ {
 +	/* pass physical address of cpu_resume() to assembly resume code */
 +	sh7372_cpu_resume = virt_to_phys(cpu_resume);
 +
- 	sh7372_pm_setup_smfram();
- 
- 	sh7372_suspend_init();
+ 	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
+ }
+ #else
 diff --git a/arch/arm/mach-shmobile/sleep-sh7372.S b/arch/arm/mach-shmobile/sleep-sh7372.S
 index a9df53b..53f4840 100644
 --- a/arch/arm/mach-shmobile/sleep-sh7372.S
@@ -71,5 +73,5 @@ index a9df53b..53f4840 100644
  #define SPDCR 0xe6180008
  
 -- 
-1.8.2.1
+1.7.10.4
 
