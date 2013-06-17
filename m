@@ -1,45 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 04 Jun 2013 05:10:06 +0000
-Subject: Re: [PATCH 10/12] ARM: shmobile: r8a7740: Add CPUIdle
-Message-Id: <20130604051006.GV23054@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 17 Jun 2013 06:54:04 +0000
+Subject: [GIT PULL v2 0/1] Renesas ARM based SoC cleanups for v3.11
+Message-Id: <1371452045-21959-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
- <1369645193-3595-11-git-send-email-horms+renesas@verge.net.au>
- <51A33D83.905@linaro.org> <20130528035446.GJ13532@quad.lixom.net>
-In-Reply-To: <20130528035446.GJ13532@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 27, 2013 at 08:54:46PM -0700, Olof Johansson wrote:
-> On Mon, May 27, 2013 at 01:03:31PM +0200, Daniel Lezcano wrote:
-> > On 05/27/2013 10:59 AM, Simon Horman wrote:
-> > > From: Bastian Hecht <hechtb@gmail.com>
-> > > 
-> > > We make use of the r8a7740 Suspend To Ram code to plug together a
-> > > CPUIdle driver.
-> > > 
-> > > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> > > Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-> > > ---
-> > 
-> > Shouldn't it go through Rafael's tree ? Or does the patch contains some
-> > dependencies on a code only visible in the ARM tree ?
-> 
-> Missing S-o-b from Simon. But this patch clearly builds on the preceding
-> one in the series, so merging them independently might not make much
-> sense. Getting an ack from Rafael would be nice though.
-> 
-> I was going to say that it should probably go under drivers/cpuidle as
-> well, but that just seems silly -- there is practically no code to share
-> with any other platform in this small driver, AND there's not really
-> any subsystem-internal data exposed. So it might just make more sense
-> to keep it under arch/arm instead.
-> 
-> Likewise, looking at the kirkwood and calxeda drivers under drivers/cpuidle,
-> I'm wondering why we thought it was a good idea to merge them there, besides
-> getting caught up in the "nothing can live under arch/arm any more" frenzy.
+Hi Olof, Hi Arnd,
 
-After discussion with Magnus I have decided to drop these changes.
-We can revisit them for a future release.
+This small pull request is based on a merge of
+renesas-soc-for-v3.11 and renesas-pinmux-for-v3.11 both
+of which you have previously pulled. The reason for this base is to provide
+all the code that the one patch in this request adds annotations to.
+
+The following changes since commit 12dd9752512449f0336b7d64df3871145a28a2fe:
+
+  Merge tags 'renesas-pinmux-for-v3.11' and 'renesas-soc-for-v3.11' into cleanup (2013-06-13 14:45:20 +0900)
+
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.11
+
+for you to fetch changes up to f9094c526bca3cc50ef7d409c22976fa0f47bbba:
+
+  ARM: shmobile: r8a7790: add __initdata on resource and device data (2013-06-13 14:47:34 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC cleanups for v3.11
+
+__initdata annotations for the r8a7790 SoC by Morimoto-san.
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      ARM: shmobile: r8a7790: add __initdata on resource and device data
+
+ arch/arm/mach-shmobile/setup-r8a7790.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
