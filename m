@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:41 +0000
+Date: Mon, 17 Jun 2013 08:12:36 +0000
 Subject: [PATCH 03/15] ARM: shmobile: Remove romImage CONFIG_MEMORY_START
-Message-Id: <1371106793-25071-4-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,8 +22,8 @@ which in turn is needed for ARCH_MULTIPLATFORM.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/compressed/head-shmobile.S    | 2 +-
- arch/arm/mach-shmobile/include/mach/zboot.h | 2 ++
+ arch/arm/boot/compressed/head-shmobile.S    |    2 +-
+ arch/arm/mach-shmobile/include/mach/zboot.h |    2 ++
  2 files changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
@@ -56,5 +56,5 @@ index 9320aff..308b5cf 100644
  #else
  #error "unsupported board."
 -- 
-1.8.2.1
+1.7.10.4
 
