@@ -1,75 +1,78 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 01 Jun 2013 04:20:50 +0000
-Subject: Re: [PATCH 04/12] ARM: shmobile: r8a7740: Add DT name to clock list for CMT10
-Message-Id: <20130601042050.GC3868@quad.lixom.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 17 Jun 2013 18:50:00 +0000
+Subject: [PATCH v7 0/3] SH pinctrl DT support
+Message-Id: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645193-3595-1-git-send-email-horms+renesas@verge.net.au>
- <20130528062246.GB20031@quad.lixom.net>
- <CANqRtoRwBHY1+Tgekg1CocZa4zWCAUWuZnW=5MXTA9SPcWYD0A@mail.gmail.com>
- <201305312339.05762.arnd@arndb.de>
-In-Reply-To: <201305312339.05762.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
 
-On Fri, May 31, 2013 at 11:39:05PM +0200, Arnd Bergmann wrote:
-> On Friday 31 May 2013, Magnus Damm wrote:
-> > With mach-shmobile we have deliberately chosen to avoid AUXDATA. The
-> > reason for that is that we keep the DT version of a device clean from
-> > the beginning so it is kept totally free of platform data while in
-> > parallel we also have a regular platform device with platform data for
-> > the old legacy C version of board support. Other ARM subarchitectures
-> > seem to use DT together with platform data which is a step that we
-> > prefer to skip by using a C version and a DT version of board support
-> > in parallel. The idea is that we should be able to existing level of
-> > support in the C version while incrementally doing development on the
-> > DT -reference code. Then drop the C version when the DT version has
-> > become good enough. Current blockers are GPIO/PFC DT and common clock
-> > framework.
-> 
-> I think this makes sense and you we shouldn't force you as the platform
-> maintainer to do it the other way. Incrementally removing the auxdata
-> and platform_data structures as most platforms do is nice in the sense
-> that it allows you to have a fully working system booting with DT
-> from the start and to reduce the amount of code as early as possible,
-> and for instance this has worked rather well on kirkwood/orion/dove/mvebu.
-> 
-> The price for that method is that you end up having to coordinate patches
-> carefully between subsystems so you first add DT support to a driver,
-> and then atomically change the dts file and the board file to the
-> method. With your way, you can avoid a lot of the trouble we've seen
-> on other platforms with complex dependency graphs or broken
-> bisection.
+Hello,
 
-Well, or at least you have to add the auxdata table entries as you enable
-drivers, it doesn't have to be strictly coordinated.
+Here's the seventh (and hopefully final) version of the SuperH and SH Mobile
+pin controllers (PFC) DT support patch set.
 
-Anyway, that isn't really worth arguing here since it's not relevant to
-the shmobile case. If doing clocks this way makes more sense for you
-for now, you should continue with it. Sounds like people are aware of
-the trade-offs, etc.
+The patches have been rebased on the for-next branch of the pinctrl
+repository. All ARM-specific patches have been dropped and will be pushed
+through to ARM SoC tree in v3.12. This series thus only contains DT support
+for the sh-pfc driver.
 
-> > > Where are you guys at on your plans for getting DT_based clock going? That will
-> > > sort of indicate just how temporary these clock alaises will be. I'm guessing
-> > > we'll be living with them for a while though?
-> > 
-> > I have to deal with LPAE soon according to my todo list. After that I
-> > will make sure common clock conversion starts moving. There are many
-> > SoCs to convert, so it will have to happen gradually. I doubt we will
-> > get any code ready for merge in v3.11, getting some bits into v3.12 is
-> > probably possible.
-> > 
-> > Apart from moving to common clocks and after that adding support for a
-> > single multi-subarch kernel binary, is there anything you want us to
-> > implement? Anything for v3.11? I'd like to get the memory bits sorted
-> > out if possible.
-> 
-> My preference would be if you can get CONFIG_MULTIPLATFORM to work on
-> as many of your SoCs as possible, but that depends on having at least
-> some support for COMMON_CLK.
+I've tried merging Simon's latest tag (renesas-next-20130617v3) with these
+patches and no conflict occurred. Linus, would it finally be possible to get
+this applied for v3.11 ?
 
-Yep, agreed. Thanks for the update on your plans as well, Magnus.
+Changes since v6:
 
+- Added generic pinconf support back
+- Dropped all ARM-specific patches
 
--Olof
+Changes since v5:
+
+- Dropped generic pinconf support
+- Dropped kzm9g-reference patches, as those require pinconf support
+
+Changes since v4:
+
+- Added generic pinconf bindings
+- Use symbolic names for GPIO flags
+
+Changes since v3:
+
+- Fixed the GPIO flags description in the DT bindings documentation
+- Mention the gpio-rcar driver in the DT bindings documentation for platforms
+  that use it
+- Removed unneeded #ifdef CONFIG_OF...#endif
+- Removed unused support for platform data
+- Simplified error path in sh_pfc_dt_node_to_map()
+- Added gpio-ranges for r8a7778, r8a7779 and r8a7790
+
+Changes since v2:
+
+- Added pin configuration properties
+- Rewrote all arch changes
+
+Changes since v1:
+
+- Fixed gpio cell number 2 documentation
+- Added missing gpio-controller and #gpio-cells properties to r8a7740 DT
+- Split kzm9g DT patch into SoC and board patches
+- Dropped pinctrl mappings move to DT
+
+Laurent Pinchart (3):
+  sh-pfc: Remove support for platform data
+  sh-pfc: Add DT support
+  sh-pfc: Add pinconf support to DT bindings
+
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       | 153 ++++++++++++++++
+ drivers/pinctrl/sh-pfc/core.c                      |  65 ++++++-
+ drivers/pinctrl/sh-pfc/pinctrl.c                   | 201 +++++++++++++++++++++
+ 3 files changed, 417 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+
+-- 
+Regards,
+
+Laurent Pinchart
+
