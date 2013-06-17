@@ -1,75 +1,32 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 04 Jun 2013 05:11:58 +0000
-Subject: [PATCH 4/6 v4] ARM: shmobile: r8a7778: add support I2C driver
-Message-Id: <874nde5uju.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 17 Jun 2013 19:15:25 +0000
+Subject: [PATCH 0/2] R-Car GPIO fixes
+Message-Id: <1371496527-13149-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a platform device for the r8a7778 I2C.
+Hello,
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v3 -> v4
+Here are two small fixes for the gpio-rcar driver. I would push them through
+the GPIO tree if it wasn't for the fact that they're based on gpio-rcar DT
+support, scheduled for merge through the ARM SoC tree.
 
- - separated into "driver" support
+Simon, as these patches are fixes, would it be possible to get them in v3.11
+through your tree ?
 
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7778.c        |   25 +++++++++++++++++++++++++
- 2 files changed, 27 insertions(+)
+Laurent Pinchart (2):
+  gpio-rcar: Reference core gpio documentation in the DT bindings
+  gpio-rcar: Remove #ifdef CONFIG_OF around OF-specific sections
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index ae65b45..a428bc6 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -24,6 +24,8 @@
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
-+extern void r8a7778_add_i2c_device(int id);
-+
- extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
- extern void r8a7778_init_irq_dt(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 9191acc..eaa6b06 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -173,6 +173,31 @@ void __init r8a7778_sdhi_init(int id,
- 		info, sizeof(*info));
- }
- 
-+/* I2C */
-+static struct resource i2c_resources[] __initdata = {
-+	/* I2C0 */
-+	DEFINE_RES_MEM(0xffc70000, 0x1000),
-+	DEFINE_RES_IRQ(gic_iid(0x63)),
-+	/* I2C1 */
-+	DEFINE_RES_MEM(0xffc71000, 0x1000),
-+	DEFINE_RES_IRQ(gic_iid(0x6e)),
-+	/* I2C2 */
-+	DEFINE_RES_MEM(0xffc72000, 0x1000),
-+	DEFINE_RES_IRQ(gic_iid(0x6c)),
-+	/* I2C3 */
-+	DEFINE_RES_MEM(0xffc73000, 0x1000),
-+	DEFINE_RES_IRQ(gic_iid(0x6d)),
-+};
-+
-+void __init r8a7778_add_i2c_device(int id)
-+{
-+	BUG_ON(id < 0 || id > 3);
-+
-+	platform_device_register_simple(
-+		"i2c-rcar", id,
-+		i2c_resources + (2 * id), 2);
-+}
-+
- void __init r8a7778_add_standard_devices(void)
- {
- 	int i;
+ .../devicetree/bindings/gpio/renesas,gpio-rcar.txt     | 18 ++++++------------
+ drivers/gpio/gpio-rcar.c                               |  8 ++------
+ 2 files changed, 8 insertions(+), 18 deletions(-)
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
