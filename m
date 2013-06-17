@@ -1,64 +1,77 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Jun 2013 02:57:05 +0000
+From: Mark Rutland <mark.rutland@arm.com>
+Date: Mon, 17 Jun 2013 14:53:52 +0000
 Subject: Re: [PATCH/RFC] arm: arch_timer: Do not set C3STOP in case CPU_IDLE=n
-Message-Id: <20130617025704.GA27933@verge.net.au>
+Message-Id: <20130617145352.GG6809@e106331-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130617002056.7646.54131.sendpatchset@w520>
- <20130617021342.GJ15043@verge.net.au>
- <CANqRtoTfiWFv0JWwJysi47gsSjJx9g3-FFMMzCYROWDPbndnYQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTfiWFv0JWwJysi47gsSjJx9g3-FFMMzCYROWDPbndnYQ@mail.gmail.com>
+In-Reply-To: <20130617002056.7646.54131.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, Mark Rutland <mark.rutland@arm.com>, SH-Linux <linux-sh@vger.kernel.org>, Marc Zyngier <marc.zyngier@arm.com>, Catalin Marinas <catalin.marinas@arm.com>, John Stultz <john.stultz@linaro.org>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>, Thomas Gleixner <tglx@linutronix.de>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Marc Zyngier <Marc.Zyngier@arm.com>, Catalin Marinas <Catalin.Marinas@arm.com>, "horms@verge.net.au" <horms@verge.net.au>, "john.stultz@linaro.org" <john.stultz@linaro.org>, "shinya.kuribayashi.px@renesas.com" <shinya.kuribayashi.px@renesas.com>, "tglx@linutronix.de" <tglx@linutronix.de>
 
-On Mon, Jun 17, 2013 at 11:47:11AM +0900, Magnus Damm wrote:
-> Hi Simon,
+On Mon, Jun 17, 2013 at 01:20:56AM +0100, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
 > 
-> On Mon, Jun 17, 2013 at 11:13 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Jun 17, 2013 at 09:20:56AM +0900, Magnus Damm wrote:
-> >> From: Magnus Damm <damm@opensource.se>
-> >>
-> >> Modify the ARM architected timer driver to not set C3STOP
-> >> in case CPU_IDLE is disabled. This is a short term fix that
-> >> allows use of high resolution timers even though no additional
-> >> clock event is registered.
-> >>
-> >> Not-really-Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> ---
-> >>
-> >>  If someone cares about this case then perhaps it should be
-> >>  moved up to the clock event main code. The same issue should
-> >>  in theory trigger on all architectures, perhaps x86 people
-> >>  hunting for low latency may try to disable CPU_IDLE?
-> >>
-> >>  I propose carrying this patch locally to enable high resolution
-> >>  timers until CPU_IDLE and an additional clock event is supported.
-> >>
-> >>  Observed on r8a73a4 and APE6EVM.
-> >
-> > Hi Magnus,
-> >
-> > Is this patch intended to be picked up by me for the LTSI-3.4.25 based
-> > backports that live in my renesas-backports tree?
+> Modify the ARM architected timer driver to not set C3STOP
+> in case CPU_IDLE is disabled. This is a short term fix that
+> allows use of high resolution timers even though no additional
+> clock event is registered.
 > 
-> Yes, correct.
+> Not-really-Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
 > 
-> The patch was mainly written to satisfy a feature request for your
-> backports, but I noticed that the same issue exists in upstream as
-> well.
-> 
-> Ideally I'd like to use the same code for the backport and upstream,
-> but I am not sure if anyone in upstream really cares. The more long
-> term solution is obviously to install a second clock event, perhaps
-> that's good enough.
-> 
-> > If so, could you  clearly state this (below the '---' is fine) and
-> > include a proper Sob line to indicate that it is fit to be merged
-> > even if that merge is not into mainline.
-> 
-> Sure, but  I'd like to hear opinions from other people before
-> resending. I will follow your recommendation in next version.
+>  If someone cares about this case then perhaps it should be
+>  moved up to the clock event main code. The same issue should
+>  in theory trigger on all architectures, perhaps x86 people
+>  hunting for low latency may try to disable CPU_IDLE?
 
-Thanks, I understand. I'll wait for discussion and a new version.
+I think that changing tick_is_oneshot_capable and friends to only worry about
+C3STOP when CPU_IDLE is enabled would be a nicer solution. That way you enable
+all clock_event_devices with C3STOP to function as high resolution timers when
+CPU_IDLE's selected. Presenting the hardware differently depending on CPU_IDLE
+feels wrong.
+
+Having some other clock_event_device would be a nicer solution still.
+
+Thanks,
+Mark.
+
+> 
+>  I propose carrying this patch locally to enable high resolution
+>  timers until CPU_IDLE and an additional clock event is supported.
+> 
+>  Observed on r8a73a4 and APE6EVM.
+> 
+>  drivers/clocksource/arm_arch_timer.c |   18 +++++++++++++++++-
+>  1 file changed, 17 insertions(+), 1 deletion(-)
+> 
+> --- 0001/drivers/clocksource/arm_arch_timer.c
+> +++ work/drivers/clocksource/arm_arch_timer.c	2013-06-17 09:03:44.000000000 +0900
+> @@ -125,7 +125,23 @@ static int arch_timer_set_next_event_phy
+>  
+>  static int __cpuinit arch_timer_setup(struct clock_event_device *clk)
+>  {
+> -	clk->features = CLOCK_EVT_FEAT_ONESHOT | CLOCK_EVT_FEAT_C3STOP;
+> +	clk->features = CLOCK_EVT_FEAT_ONESHOT;
+> +#ifdef CONFIG_CPU_IDLE
+> +	/* By not setting the C3STOP flag it is possible to let the
+> +	 * ARM architected timer to be the only clock event installed
+> +	 * on the system and have working high resolution timers.
+> +	 *
+> +	 * If the C3STOP flag is set unconditionally then the kernel
+> +	 * will always prevent using the high resoultion timer feature
+> +	 * unless an additional clock event is registered.
+> +	 *
+> +	 * In the case where CPU_IDLE is enabled then there is a chance
+> +	 * that deeper sleep states will be handled by software, but
+> +	 * if CPU_IDLE is disabled then deep sleep states cannot be
+> +	 * entered and the feature flagged by C3STOP is not needed.
+> +	 */
+> +	clk->features |= CLOCK_EVT_FEAT_C3STOP;
+> +#endif
+>  	clk->name = "arch_sys_timer";
+>  	clk->rating = 450;
+>  	if (arch_timer_use_virtual) {
+> 
