@@ -1,33 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 17 Jun 2013 04:05:47 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 17 Jun 2013 06:12:22 +0000
 Subject: Re: [PATCH 14/15] ARM: shmobile: Remove AP4EVB board support
-Message-Id: <CANqRtoQVqfZaGbuVLiY8PiMTjVpt8VDs7KZyqnqjud+1yZtvQQ@mail.gmail.com>
+Message-Id: <Pine.LNX.4.64.1306170805390.22409@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+ <1371106793-25071-15-git-send-email-horms+renesas@verge.net.au>
  <Pine.LNX.4.64.1306132128370.3777@axis700.grange>
  <CANqRtoSx4Jf_EfG3LvkpoOED4-SuOdWjRedz-RbwGCOcOeP-Xg@mail.gmail.com>
- <201306141629.26580.arnd@arndb.de>
-In-Reply-To: <201306141629.26580.arnd@arndb.de>
+ <Pine.LNX.4.64.1306141123380.6920@axis700.grange>
+ <CANqRtoRXBupbbU_cq257p5usu8F5975NFDenkOx1qTvYZaxF2w@mail.gmail.com>
+In-Reply-To: <CANqRtoRXBupbbU_cq257p5usu8F5975NFDenkOx1qTvYZaxF2w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+On Mon, 17 Jun 2013, Magnus Damm wrote:
 
-On Fri, Jun 14, 2013 at 11:29 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Friday 14 June 2013, Magnus Damm wrote:
->> > If still possible, would be good to delay removing this board until we
->> > complete our discussion.
->>
->> If fine with keeping the board if someone can show me progress in the
->> area of INTC DT support. Recently I have not seen anything.
->
-> As mentioned the last time we discussed this, I'm fine with using the
-> existing code and "legacy" irqdomain for the older INTC implementations,
-> as long as all the new ones can use your new generic code.
+[snip]
 
-Thanks for explaining once again. Do you have any issues with us
-reducing the number of supported boards and/or SoCs?
+> So Guennadi, if you want to keep this board then you have to step up
+> and fix things. If not then there is no point in keeping it.
 
-/ magnus
+Ok, after a private discussion we agreed to remove the board, which will 
+also make the drivers for the Renesas sh-/r-mobile CSI2 interface and for 
+the Sony IMX074 sensor untestable and susceptible to removal. Also 
+multi-subdevice support in soc-camera now will lose its only use and can 
+become broken. I will also drop CSI2 and AP4EVB patches from my V4L2 clock 
+/ async probing series.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
