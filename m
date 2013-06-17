@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:43 +0000
+Date: Mon, 17 Jun 2013 08:12:38 +0000
 Subject: [PATCH 05/15] ARM: shmobile: Add SMP boot function and argument
-Message-Id: <1371106793-25071-6-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,8 +20,8 @@ patch removes one inline virtual to physical address conversion.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/headsmp.S             | 13 ++++++++++---
- arch/arm/mach-shmobile/include/mach/common.h |  4 +++-
+ arch/arm/mach-shmobile/headsmp.S             |   13 ++++++++++---
+ arch/arm/mach-shmobile/include/mach/common.h |    4 +++-
  2 files changed, 13 insertions(+), 4 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/headsmp.S b/arch/arm/mach-shmobile/headsmp.S
@@ -62,5 +62,5 @@ index 4634a5d..54472ef 100644
  struct clk;
  extern int shmobile_clk_init(void);
 -- 
-1.8.2.1
+1.7.10.4
 
