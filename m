@@ -1,44 +1,37 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 07 Jun 2013 11:30:04 +0000
-Subject: Re: [PATCH 07/27] ARM: shmobile: r8a7740: Add interim sh-eth device name to clocks list
-Message-Id: <51B1C43C.9010805@cogentembedded.com>
+Date: Mon, 17 Jun 2013 19:39:44 +0000
+Subject: [PATCH] ARM: shmobile: BOCK-W: change Ether device name
+Message-Id: <201306172339.45357.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
- <1370591517-20239-8-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-8-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+When changing the name of Ether platform device in the commit c02f846938fe (ARM:
+shmobile: r8a7778: fix Ether device name), I completely forgot that there's also
+platform  device name used in bockw_pinctrl_map[], so the commit "ARM: shmobile:
+BOCK-W: add Ether support" went in with the old "sh-eth" device name. Now change
+it to "r8a777x-ether" in accordance with the commits that are now in  the  'net-
+next.git' repository,  otherwise BOCK-W Ether support won't work in 3.11.
 
-On 07-06-2013 11:51, Simon Horman wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> From: Bastian Hecht <hechtb@gmail.com>
+---
+This patch is atop of Simon's 'renesas.git' repo, 'renesas-next-20130617v3' tag.
 
-> When we use the ethernet device via DT setup, we need to add it
-> to a lookup list until this is properly handled later in a DT-only
-> fashion.
+ arch/arm/mach-shmobile/board-bockw.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->   arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
->   1 file changed, 1 insertion(+)
-
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-> index 54afa04..008b11c 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-> @@ -592,6 +592,7 @@ static struct clk_lookup lookups[] = {
->   	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
->   	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
->   	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
-> +	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
-
-     I don't quite understand why this is needed. There's no device tree 
-support for the 'sh_eth' driver yet. Oh well...
-
-WBR, Sergei
-
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -144,7 +144,7 @@ static struct rcar_phy_platform_data usb
+ 
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* Ether */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a777x-ether", "pfc-r8a7778",
+ 				  "ether_rmii", "ether"),
+ 	/* HSPI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7778",
