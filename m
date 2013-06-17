@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:44 +0000
+Date: Mon, 17 Jun 2013 08:12:39 +0000
 Subject: [PATCH 06/15] ARM: shmobile: Add SCU boot function using argument
-Message-Id: <1371106793-25071-7-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,8 +19,8 @@ to physical address conversion.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/headsmp-scu.S         | 13 +++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |  1 +
+ arch/arm/mach-shmobile/headsmp-scu.S         |   13 +++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
  2 files changed, 14 insertions(+)
 
 diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
@@ -60,5 +60,5 @@ index 54472ef..8ef1c3c 100644
  extern int shmobile_clk_init(void);
  extern void shmobile_handle_irq_intc(struct pt_regs *);
 -- 
-1.8.2.1
+1.7.10.4
 
