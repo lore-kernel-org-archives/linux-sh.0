@@ -1,418 +1,407 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:49 +0000
-Subject: [PATCH 058/130] sh-pfc: sh7372: Add bias (pull-up/down) pinconf support
-Message-Id: <1370420821-28420-59-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 17 Jun 2013 18:50:02 +0000
+Subject: [PATCH v7 2/3] sh-pfc: Add DT support
+Message-Id: <1371495003-11185-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Support device instantiation through the device tree. The compatible
+property is used to select the SoC pinmux information.
 
+Set the gpio_chip device field to the PFC device to enable automatic
+GPIO OF support.
+
+Cc: devicetree-discuss@lists.ozlabs.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 341 ++++++++++++++++++++++--------------
- 1 file changed, 211 insertions(+), 130 deletions(-)
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       | 135 +++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/core.c                      |  64 +++++++++-
+ drivers/pinctrl/sh-pfc/pinctrl.c                   | 116 ++++++++++++++++++
+ 3 files changed, 314 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 9496067..6dfb187 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -20,10 +20,14 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#include <linux/io.h>
+diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+new file mode 100644
+index 0000000..8264cbc
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+@@ -0,0 +1,135 @@
++* Renesas Pin Function Controller (GPIO and Pin Mux/Config)
++
++The Pin Function Controller (PFC) is a Pin Mux/Config controller. On SH7372,
++SH73A0, R8A73A4 and R8A7740 it also acts as a GPIO controller.
++
++
++Pin Control
++-----------
++
++Required Properties:
++
++  - compatible: should be one of the following.
++    - "renesas,pfc-r8a73a4": for R8A73A4 (R-Mobile APE6) compatible pin-controller.
++    - "renesas,pfc-r8a7740": for R8A7740 (R-Mobile A1) compatible pin-controller.
++    - "renesas,pfc-r8a7778": for R8A7778 (R-Mobile M1) compatible pin-controller.
++    - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
++    - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
++    - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
++    - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
++
++  - reg: Base address and length of each memory resource used by the pin
++    controller hardware module.
++
++Optional properties:
++
++  - #gpio-range-cells: Mandatory when the PFC doesn't handle GPIO, forbidden
++    otherwise. Should be 3.
++
++The PFC node also acts as a container for pin configuration nodes. Please refer
++to pinctrl-bindings.txt in this directory for the definition of the term "pin
++configuration node" and for the common pinctrl bindings used by client devices.
++
++Each pin configuration node represents desired functions to select on a pin
++group or a list of pin groups. The functions and pin groups can be specified
++directly in the pin configuration node, or grouped in child subnodes. Several
++functions can thus be referenced as a single pin configuration node by client
++devices.
++
++A configuration node or subnode must contain a function and reference at least
++one pin group.
++
++All pin configuration nodes and subnodes names are ignored. All of those nodes
++are parsed through phandles and processed purely based on their content.
++
++Pin Configuration Node Properties:
++
++- renesas,groups : An array of strings, each string containing the name of a pin
++  group.
++
++- renesas,function: A string containing the name of the function to mux to the
++  pin group(s) specified by the renesas,groups property
++
++  Valid values for pin, group and function names can be found in the group and
++  function arrays of the PFC data file corresponding to the SoC
++  (drivers/pinctrl/sh-pfc/pfc-*.c)
++
++
++GPIO
++----
++
++On SH7372, SH73A0, R8A73A4 and R8A7740 the PFC node is also a GPIO controller
++node.
++
++Required Properties:
++
++  - gpio-controller: Marks the device node as a gpio controller.
++
++  - #gpio-cells: Should be 2. The first cell is the GPIO number and the second
++    cell specifies GPIO flags, as defined in <dt-bindings/gpio/gpio.h>. Only the
++    GPIO_ACTIVE_HIGH and GPIO_ACTIVE_LOW flags are supported.
++
++The syntax of the gpio specifier used by client nodes should be the following
++with values derived from the SoC user manual.
++
++  <[phandle of the gpio controller node]
++   [pin number within the gpio controller]
++   [flags]>
++
++On other mach-shmobile platforms GPIO is handled by the gpio-rcar driver.
++Please refer to Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
++for documentation of the GPIO device tree bindings on those platforms.
++
++
++Examples
++--------
++
++Example 1: SH73A0 (SH-Mobile AG5) pin controller node
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-sh73a0";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
++
++Example 2: A GPIO LED node that references a GPIO
++
++	#include <dt-bindings/gpio/gpio.h>
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 20 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++Example 3: KZM-A9-GT (SH-Mobile AG5) default pin state hog and pin control maps
++           for the MMCIF and SCIFA4 devices
++
++	&pfc {
++		pinctrl-0 = <&scifa4_pins>;
++		pinctrl-names = "default";
++
++		mmcif_pins: mmcif {
++			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
++			renesas,function = "mmc0";
++		};
++
++		scifa4_pins: scifa4 {
++			renesas,groups = "scifa4_data", "scifa4_ctrl";
++			renesas,function = "scifa4";
++		};
++	};
++
++Example 4: KZM-A9-GT (SH-Mobile AG5) default pin state for the MMCIF device
++
++	&mmcif {
++		pinctrl-0 = <&mmcif_pins>;
++		pinctrl-names = "default";
++
++		bus-width = <8>;
++		vmmc-supply = <&reg_1p8v>;
++		status = "okay";
++	};
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 13f40c5..4eea849 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -18,6 +18,8 @@
+ #include <linux/ioport.h>
  #include <linux/kernel.h>
-+#include <linux/pinctrl/pinconf-generic.h>
-+
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
+ #include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+@@ -348,13 +350,72 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
+ 	return 0;
+ }
  
-+#include "core.h"
- #include "sh_pfc.h"
- 
- #define CPU_ALL_PORT(fn, pfx, sfx) \
-@@ -76,16 +80,6 @@ enum {
- 	PORT_ALL(IN),
- 	PINMUX_INPUT_END,
- 
--	/* PORT0_IN_PU -> PORT190_IN_PU */
--	PINMUX_INPUT_PULLUP_BEGIN,
--	PORT_ALL(IN_PU),
--	PINMUX_INPUT_PULLUP_END,
--
--	/* PORT0_IN_PD -> PORT190_IN_PD */
--	PINMUX_INPUT_PULLDOWN_BEGIN,
--	PORT_ALL(IN_PD),
--	PINMUX_INPUT_PULLDOWN_END,
--
- 	/* PORT0_OUT -> PORT190_OUT */
- 	PINMUX_OUTPUT_BEGIN,
- 	PORT_ALL(OUT),
-@@ -397,124 +391,11 @@ enum {
- 	PINMUX_MARK_END,
- };
- 
--static const pinmux_enum_t pinmux_data[] = {
-+#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
-+#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_PORT_DATA, , unused)
- 
--	/* specify valid pin states for each pin in GPIO mode */
--	PORT_DATA_IO_PD(0),		PORT_DATA_IO_PD(1),
--	PORT_DATA_O(2),			PORT_DATA_I_PD(3),
--	PORT_DATA_I_PD(4),		PORT_DATA_I_PD(5),
--	PORT_DATA_IO_PU_PD(6),		PORT_DATA_I_PD(7),
--	PORT_DATA_IO_PD(8),		PORT_DATA_O(9),
--
--	PORT_DATA_O(10),		PORT_DATA_O(11),
--	PORT_DATA_IO_PU_PD(12),		PORT_DATA_IO_PD(13),
--	PORT_DATA_IO_PD(14),		PORT_DATA_O(15),
--	PORT_DATA_IO_PD(16),		PORT_DATA_IO_PD(17),
--	PORT_DATA_I_PD(18),		PORT_DATA_IO(19),
--
--	PORT_DATA_IO(20),		PORT_DATA_IO(21),
--	PORT_DATA_IO(22),		PORT_DATA_IO(23),
--	PORT_DATA_IO(24),		PORT_DATA_IO(25),
--	PORT_DATA_IO(26),		PORT_DATA_IO(27),
--	PORT_DATA_IO(28),		PORT_DATA_IO(29),
--
--	PORT_DATA_IO(30),		PORT_DATA_IO(31),
--	PORT_DATA_IO(32),		PORT_DATA_IO(33),
--	PORT_DATA_IO(34),		PORT_DATA_IO(35),
--	PORT_DATA_IO(36),		PORT_DATA_IO(37),
--	PORT_DATA_IO(38),		PORT_DATA_IO(39),
--
--	PORT_DATA_IO(40),		PORT_DATA_IO(41),
--	PORT_DATA_IO(42),		PORT_DATA_IO(43),
--	PORT_DATA_IO(44),		PORT_DATA_IO(45),
--	PORT_DATA_IO_PU(46),		PORT_DATA_IO_PU(47),
--	PORT_DATA_IO_PU(48),		PORT_DATA_IO_PU(49),
--
--	PORT_DATA_IO_PU(50),		PORT_DATA_IO_PU(51),
--	PORT_DATA_IO_PU(52),		PORT_DATA_IO_PU(53),
--	PORT_DATA_IO_PU(54),		PORT_DATA_IO_PU(55),
--	PORT_DATA_IO_PU(56),		PORT_DATA_IO_PU(57),
--	PORT_DATA_IO_PU(58),		PORT_DATA_IO_PU(59),
--
--	PORT_DATA_IO_PU(60),		PORT_DATA_IO_PU(61),
--	PORT_DATA_IO(62),		PORT_DATA_O(63),
--	PORT_DATA_O(64),		PORT_DATA_IO_PU(65),
--	PORT_DATA_O(66),		PORT_DATA_IO_PU(67),  /*66?*/
--	PORT_DATA_O(68),		PORT_DATA_IO(69),
--
--	PORT_DATA_IO(70),		PORT_DATA_IO(71),
--	PORT_DATA_O(72),		PORT_DATA_I_PU(73),
--	PORT_DATA_I_PU_PD(74),		PORT_DATA_IO_PU_PD(75),
--	PORT_DATA_IO_PU_PD(76),		PORT_DATA_IO_PU_PD(77),
--	PORT_DATA_IO_PU_PD(78),		PORT_DATA_IO_PU_PD(79),
--
--	PORT_DATA_IO_PU_PD(80),		PORT_DATA_IO_PU_PD(81),
--	PORT_DATA_IO_PU_PD(82),		PORT_DATA_IO_PU_PD(83),
--	PORT_DATA_IO_PU_PD(84),		PORT_DATA_IO_PU_PD(85),
--	PORT_DATA_IO_PU_PD(86),		PORT_DATA_IO_PU_PD(87),
--	PORT_DATA_IO_PU_PD(88),		PORT_DATA_IO_PU_PD(89),
--
--	PORT_DATA_IO_PU_PD(90),		PORT_DATA_IO_PU_PD(91),
--	PORT_DATA_IO_PU_PD(92),		PORT_DATA_IO_PU_PD(93),
--	PORT_DATA_IO_PU_PD(94),		PORT_DATA_IO_PU_PD(95),
--	PORT_DATA_IO_PU(96),		PORT_DATA_IO_PU_PD(97),
--	PORT_DATA_IO_PU_PD(98),		PORT_DATA_O(99), /*99?*/
--
--	PORT_DATA_IO_PD(100),		PORT_DATA_IO_PD(101),
--	PORT_DATA_IO_PD(102),		PORT_DATA_IO_PD(103),
--	PORT_DATA_IO_PD(104),		PORT_DATA_IO_PD(105),
--	PORT_DATA_IO_PU(106),		PORT_DATA_IO_PU(107),
--	PORT_DATA_IO_PU(108),		PORT_DATA_IO_PU(109),
--
--	PORT_DATA_IO_PU(110),		PORT_DATA_IO_PU(111),
--	PORT_DATA_IO_PD(112),		PORT_DATA_IO_PD(113),
--	PORT_DATA_IO_PU(114),		PORT_DATA_IO_PU(115),
--	PORT_DATA_IO_PU(116),		PORT_DATA_IO_PU(117),
--	PORT_DATA_IO_PU(118),		PORT_DATA_IO_PU(119),
--
--	PORT_DATA_IO_PU(120),		PORT_DATA_IO_PD(121),
--	PORT_DATA_IO_PD(122),		PORT_DATA_IO_PD(123),
--	PORT_DATA_IO_PD(124),		PORT_DATA_IO_PD(125),
--	PORT_DATA_IO_PD(126),		PORT_DATA_IO_PD(127),
--	PORT_DATA_IO_PD(128),		PORT_DATA_IO_PU_PD(129),
--
--	PORT_DATA_IO_PU_PD(130),	PORT_DATA_IO_PU_PD(131),
--	PORT_DATA_IO_PU_PD(132),	PORT_DATA_IO_PU_PD(133),
--	PORT_DATA_IO_PU_PD(134),	PORT_DATA_IO_PU_PD(135),
--	PORT_DATA_IO_PD(136),		PORT_DATA_IO_PD(137),
--	PORT_DATA_IO_PD(138),		PORT_DATA_IO_PD(139),
--
--	PORT_DATA_IO_PD(140),		PORT_DATA_IO_PD(141),
--	PORT_DATA_IO_PD(142),		PORT_DATA_IO_PU_PD(143),
--	PORT_DATA_IO_PD(144),		PORT_DATA_IO_PD(145),
--	PORT_DATA_IO_PD(146),		PORT_DATA_IO_PD(147),
--	PORT_DATA_IO_PD(148),		PORT_DATA_IO_PD(149),
--
--	PORT_DATA_IO_PD(150),		PORT_DATA_IO_PD(151),
--	PORT_DATA_IO_PU_PD(152),	PORT_DATA_I_PD(153),
--	PORT_DATA_IO_PU_PD(154),	PORT_DATA_I_PD(155),
--	PORT_DATA_IO_PD(156),		PORT_DATA_IO_PD(157),
--	PORT_DATA_I_PD(158),		PORT_DATA_IO_PD(159),
--
--	PORT_DATA_O(160),		PORT_DATA_IO_PD(161),
--	PORT_DATA_IO_PD(162),		PORT_DATA_IO_PD(163),
--	PORT_DATA_I_PD(164),		PORT_DATA_IO_PD(165),
--	PORT_DATA_I_PD(166),		PORT_DATA_I_PD(167),
--	PORT_DATA_I_PD(168),		PORT_DATA_I_PD(169),
--
--	PORT_DATA_I_PD(170),		PORT_DATA_O(171),
--	PORT_DATA_IO_PU_PD(172),	PORT_DATA_IO_PU_PD(173),
--	PORT_DATA_IO_PU_PD(174),	PORT_DATA_IO_PU_PD(175),
--	PORT_DATA_IO_PU_PD(176),	PORT_DATA_IO_PU_PD(177),
--	PORT_DATA_IO_PU_PD(178),	PORT_DATA_O(179),
--
--	PORT_DATA_IO_PU_PD(180),	PORT_DATA_IO_PU_PD(181),
--	PORT_DATA_IO_PU_PD(182),	PORT_DATA_IO_PU_PD(183),
--	PORT_DATA_IO_PU_PD(184),	PORT_DATA_O(185),
--	PORT_DATA_IO_PU_PD(186),	PORT_DATA_IO_PU_PD(187),
--	PORT_DATA_IO_PU_PD(188),	PORT_DATA_IO_PU_PD(189),
--
--	PORT_DATA_IO_PU_PD(190),
-+static const pinmux_enum_t pinmux_data[] = {
-+	PINMUX_DATA_GP_ALL(),
- 
- 	/* IRQ */
- 	PINMUX_DATA(IRQ0_6_MARK,	PORT6_FN0, 	MSEL1CR_0_0),
-@@ -958,8 +839,128 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(MFIv4_MARK,		MSEL4CR_6_1),
- };
- 
-+#define SH7372_PIN(pin, cfgs)						\
-+	{								\
-+		.name = __stringify(PORT##pin),				\
-+		.enum_id = PORT##pin##_DATA,				\
-+		.configs = cfgs,					\
-+	}
-+
-+#define __I		(SH_PFC_PIN_CFG_INPUT)
-+#define __O		(SH_PFC_PIN_CFG_OUTPUT)
-+#define __IO		(SH_PFC_PIN_CFG_INPUT | SH_PFC_PIN_CFG_OUTPUT)
-+#define __PD		(SH_PFC_PIN_CFG_PULL_DOWN)
-+#define __PU		(SH_PFC_PIN_CFG_PULL_UP)
-+#define __PUD		(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
-+
-+#define SH7372_PIN_I_PD(pin)		SH7372_PIN(pin, __I | __PD)
-+#define SH7372_PIN_I_PU(pin)		SH7372_PIN(pin, __I | __PU)
-+#define SH7372_PIN_I_PU_PD(pin)		SH7372_PIN(pin, __I | __PUD)
-+#define SH7372_PIN_IO(pin)		SH7372_PIN(pin, __IO)
-+#define SH7372_PIN_IO_PD(pin)		SH7372_PIN(pin, __IO | __PD)
-+#define SH7372_PIN_IO_PU(pin)		SH7372_PIN(pin, __IO | __PU)
-+#define SH7372_PIN_IO_PU_PD(pin)	SH7372_PIN(pin, __IO | __PUD)
-+#define SH7372_PIN_O(pin)		SH7372_PIN(pin, __O)
-+#define SH7372_PIN_O_PU_PD(pin)		SH7372_PIN(pin, __O | __PUD)
-+
- static struct sh_pfc_pin pinmux_pins[] = {
--	GPIO_PORT_ALL(),
-+	/* Table 57-1 (I/O and Pull U/D) */
-+	SH7372_PIN_IO_PD(0),		SH7372_PIN_IO_PD(1),
-+	SH7372_PIN_O(2),		SH7372_PIN_I_PD(3),
-+	SH7372_PIN_I_PD(4),		SH7372_PIN_I_PD(5),
-+	SH7372_PIN_IO_PU_PD(6),		SH7372_PIN_I_PD(7),
-+	SH7372_PIN_IO_PD(8),		SH7372_PIN_O(9),
-+	SH7372_PIN_O(10),		SH7372_PIN_O(11),
-+	SH7372_PIN_IO_PU_PD(12),	SH7372_PIN_IO_PD(13),
-+	SH7372_PIN_IO_PD(14),		SH7372_PIN_O(15),
-+	SH7372_PIN_IO_PD(16),		SH7372_PIN_IO_PD(17),
-+	SH7372_PIN_I_PD(18),		SH7372_PIN_IO(19),
-+	SH7372_PIN_IO(20),		SH7372_PIN_IO(21),
-+	SH7372_PIN_IO(22),		SH7372_PIN_IO(23),
-+	SH7372_PIN_IO(24),		SH7372_PIN_IO(25),
-+	SH7372_PIN_IO(26),		SH7372_PIN_IO(27),
-+	SH7372_PIN_IO(28),		SH7372_PIN_IO(29),
-+	SH7372_PIN_IO(30),		SH7372_PIN_IO(31),
-+	SH7372_PIN_IO(32),		SH7372_PIN_IO(33),
-+	SH7372_PIN_IO(34),		SH7372_PIN_IO(35),
-+	SH7372_PIN_IO(36),		SH7372_PIN_IO(37),
-+	SH7372_PIN_IO(38),		SH7372_PIN_IO(39),
-+	SH7372_PIN_IO(40),		SH7372_PIN_IO(41),
-+	SH7372_PIN_IO(42),		SH7372_PIN_IO(43),
-+	SH7372_PIN_IO(44),		SH7372_PIN_IO(45),
-+	SH7372_PIN_IO_PU(46),		SH7372_PIN_IO_PU(47),
-+	SH7372_PIN_IO_PU(48),		SH7372_PIN_IO_PU(49),
-+	SH7372_PIN_IO_PU(50),		SH7372_PIN_IO_PU(51),
-+	SH7372_PIN_IO_PU(52),		SH7372_PIN_IO_PU(53),
-+	SH7372_PIN_IO_PU(54),		SH7372_PIN_IO_PU(55),
-+	SH7372_PIN_IO_PU(56),		SH7372_PIN_IO_PU(57),
-+	SH7372_PIN_IO_PU(58),		SH7372_PIN_IO_PU(59),
-+	SH7372_PIN_IO_PU(60),		SH7372_PIN_IO_PU(61),
-+	SH7372_PIN_IO(62),		SH7372_PIN_O(63),
-+	SH7372_PIN_O(64),		SH7372_PIN_IO_PU(65),
-+	SH7372_PIN_O_PU_PD(66),		SH7372_PIN_IO_PU(67),
-+	SH7372_PIN_O(68),		SH7372_PIN_IO(69),
-+	SH7372_PIN_IO(70),		SH7372_PIN_IO(71),
-+	SH7372_PIN_O(72),		SH7372_PIN_I_PU(73),
-+	SH7372_PIN_I_PU_PD(74),		SH7372_PIN_IO_PU_PD(75),
-+	SH7372_PIN_IO_PU_PD(76),	SH7372_PIN_IO_PU_PD(77),
-+	SH7372_PIN_IO_PU_PD(78),	SH7372_PIN_IO_PU_PD(79),
-+	SH7372_PIN_IO_PU_PD(80),	SH7372_PIN_IO_PU_PD(81),
-+	SH7372_PIN_IO_PU_PD(82),	SH7372_PIN_IO_PU_PD(83),
-+	SH7372_PIN_IO_PU_PD(84),	SH7372_PIN_IO_PU_PD(85),
-+	SH7372_PIN_IO_PU_PD(86),	SH7372_PIN_IO_PU_PD(87),
-+	SH7372_PIN_IO_PU_PD(88),	SH7372_PIN_IO_PU_PD(89),
-+	SH7372_PIN_IO_PU_PD(90),	SH7372_PIN_IO_PU_PD(91),
-+	SH7372_PIN_IO_PU_PD(92),	SH7372_PIN_IO_PU_PD(93),
-+	SH7372_PIN_IO_PU_PD(94),	SH7372_PIN_IO_PU_PD(95),
-+	SH7372_PIN_IO_PU(96),		SH7372_PIN_IO_PU_PD(97),
-+	SH7372_PIN_IO_PU_PD(98),	SH7372_PIN_O_PU_PD(99),
-+	SH7372_PIN_IO_PD(100),		SH7372_PIN_IO_PD(101),
-+	SH7372_PIN_IO_PD(102),		SH7372_PIN_IO_PD(103),
-+	SH7372_PIN_IO_PD(104),		SH7372_PIN_IO_PD(105),
-+	SH7372_PIN_IO_PU(106),		SH7372_PIN_IO_PU(107),
-+	SH7372_PIN_IO_PU(108),		SH7372_PIN_IO_PU(109),
-+	SH7372_PIN_IO_PU(110),		SH7372_PIN_IO_PU(111),
-+	SH7372_PIN_IO_PD(112),		SH7372_PIN_IO_PD(113),
-+	SH7372_PIN_IO_PU(114),		SH7372_PIN_IO_PU(115),
-+	SH7372_PIN_IO_PU(116),		SH7372_PIN_IO_PU(117),
-+	SH7372_PIN_IO_PU(118),		SH7372_PIN_IO_PU(119),
-+	SH7372_PIN_IO_PU(120),		SH7372_PIN_IO_PD(121),
-+	SH7372_PIN_IO_PD(122),		SH7372_PIN_IO_PD(123),
-+	SH7372_PIN_IO_PD(124),		SH7372_PIN_IO_PD(125),
-+	SH7372_PIN_IO_PD(126),		SH7372_PIN_IO_PD(127),
-+	SH7372_PIN_IO_PD(128),		SH7372_PIN_IO_PU_PD(129),
-+	SH7372_PIN_IO_PU_PD(130),	SH7372_PIN_IO_PU_PD(131),
-+	SH7372_PIN_IO_PU_PD(132),	SH7372_PIN_IO_PU_PD(133),
-+	SH7372_PIN_IO_PU_PD(134),	SH7372_PIN_IO_PU_PD(135),
-+	SH7372_PIN_IO_PD(136),		SH7372_PIN_IO_PD(137),
-+	SH7372_PIN_IO_PD(138),		SH7372_PIN_IO_PD(139),
-+	SH7372_PIN_IO_PD(140),		SH7372_PIN_IO_PD(141),
-+	SH7372_PIN_IO_PD(142),		SH7372_PIN_IO_PU_PD(143),
-+	SH7372_PIN_IO_PD(144),		SH7372_PIN_IO_PD(145),
-+	SH7372_PIN_IO_PD(146),		SH7372_PIN_IO_PD(147),
-+	SH7372_PIN_IO_PD(148),		SH7372_PIN_IO_PD(149),
-+	SH7372_PIN_IO_PD(150),		SH7372_PIN_IO_PD(151),
-+	SH7372_PIN_IO_PU_PD(152),	SH7372_PIN_I_PD(153),
-+	SH7372_PIN_IO_PU_PD(154),	SH7372_PIN_I_PD(155),
-+	SH7372_PIN_IO_PD(156),		SH7372_PIN_IO_PD(157),
-+	SH7372_PIN_I_PD(158),		SH7372_PIN_IO_PD(159),
-+	SH7372_PIN_O(160),		SH7372_PIN_IO_PD(161),
-+	SH7372_PIN_IO_PD(162),		SH7372_PIN_IO_PD(163),
-+	SH7372_PIN_I_PD(164),		SH7372_PIN_IO_PD(165),
-+	SH7372_PIN_I_PD(166),		SH7372_PIN_I_PD(167),
-+	SH7372_PIN_I_PD(168),		SH7372_PIN_I_PD(169),
-+	SH7372_PIN_I_PD(170),		SH7372_PIN_O(171),
-+	SH7372_PIN_IO_PU_PD(172),	SH7372_PIN_IO_PU_PD(173),
-+	SH7372_PIN_IO_PU_PD(174),	SH7372_PIN_IO_PU_PD(175),
-+	SH7372_PIN_IO_PU_PD(176),	SH7372_PIN_IO_PU_PD(177),
-+	SH7372_PIN_IO_PU_PD(178),	SH7372_PIN_O(179),
-+	SH7372_PIN_IO_PU_PD(180),	SH7372_PIN_IO_PU_PD(181),
-+	SH7372_PIN_IO_PU_PD(182),	SH7372_PIN_IO_PU_PD(183),
-+	SH7372_PIN_IO_PU_PD(184),	SH7372_PIN_O(185),
-+	SH7372_PIN_IO_PU_PD(186),	SH7372_PIN_IO_PU_PD(187),
-+	SH7372_PIN_IO_PU_PD(188),	SH7372_PIN_IO_PU_PD(189),
-+	SH7372_PIN_IO_PU_PD(190),
- };
- 
- /* - BSC -------------------------------------------------------------------- */
-@@ -2136,6 +2137,17 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(usb1),
- };
- 
-+#undef PORTCR
-+#define PORTCR(nr, reg)							\
-+	{								\
-+		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
-+			_PCRH(PORT##nr##_IN, 0, 0, PORT##nr##_OUT),     \
-+				PORT##nr##_FN0, PORT##nr##_FN1,		\
-+				PORT##nr##_FN2, PORT##nr##_FN3,		\
-+				PORT##nr##_FN4, PORT##nr##_FN5,		\
-+				PORT##nr##_FN6, PORT##nr##_FN7 }	\
-+	}
-+
- static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	PORTCR(0,	0xE6051000), /* PORT0CR */
- 	PORTCR(1,	0xE6051001), /* PORT1CR */
-@@ -2568,11 +2580,80 @@ static const struct pinmux_irq pinmux_irqs[] = {
- 	PINMUX_IRQ(EXT_IRQ16H(31), 138, 184),
- };
- 
-+#define PORTnCR_PULMD_OFF	(0 << 6)
-+#define PORTnCR_PULMD_DOWN	(2 << 6)
-+#define PORTnCR_PULMD_UP	(3 << 6)
-+#define PORTnCR_PULMD_MASK	(3 << 6)
-+
-+struct sh7372_portcr_group {
-+	unsigned int end_pin;
-+	unsigned int offset;
++#ifdef CONFIG_OF
++static const struct of_device_id sh_pfc_of_table[] = {
++#ifdef CONFIG_PINCTRL_PFC_R8A73A4
++	{
++		.compatible = "renesas,pfc-r8a73a4",
++		.data = &r8a73a4_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_R8A7740
++	{
++		.compatible = "renesas,pfc-r8a7740",
++		.data = &r8a7740_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_R8A7778
++	{
++		.compatible = "renesas,pfc-r8a7778",
++		.data = &r8a7778_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_R8A7779
++	{
++		.compatible = "renesas,pfc-r8a7779",
++		.data = &r8a7779_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_R8A7790
++	{
++		.compatible = "renesas,pfc-r8a7790",
++		.data = &r8a7790_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_SH7372
++	{
++		.compatible = "renesas,pfc-sh7372",
++		.data = &sh7372_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_SH73A0
++	{
++		.compatible = "renesas,pfc-sh73a0",
++		.data = &sh73a0_pinmux_info,
++	},
++#endif
++	{ },
 +};
++MODULE_DEVICE_TABLE(of, sh_pfc_of_table);
++#endif
 +
-+static const struct sh7372_portcr_group sh7372_portcr_offsets[] = {
-+	{ 45,  0x1000 }, { 75,  0x2000 }, { 99,  0x0000 }, { 120, 0x3000 },
-+	{ 151, 0x0000 }, { 155, 0x3000 }, { 166, 0x0000 }, { 190, 0x2000 },
-+};
+ static int sh_pfc_probe(struct platform_device *pdev)
+ {
++	const struct platform_device_id *platid = platform_get_device_id(pdev);
++#ifdef CONFIG_OF
++	struct device_node *np = pdev->dev.of_node;
++#endif
+ 	const struct sh_pfc_soc_info *info;
+ 	struct sh_pfc *pfc;
+ 	int ret;
+ 
+-	info = (void *)pdev->id_entry->driver_data;
++#ifdef CONFIG_OF
++	if (np)
++		info = of_match_device(sh_pfc_of_table, &pdev->dev)->data;
++	else
++#endif
++		info = platid ? (const void *)platid->driver_data : NULL;
 +
-+static void __iomem *sh7372_pinmux_portcr(struct sh_pfc *pfc, unsigned int pin)
+ 	if (info = NULL)
+ 		return -ENODEV;
+ 
+@@ -480,6 +541,7 @@ static struct platform_driver sh_pfc_driver = {
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 		.owner	= THIS_MODULE,
++		.of_match_table = of_match_ptr(sh_pfc_of_table),
+ 	},
+ };
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 3492ec9..7e32bb8 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -14,7 +14,9 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/pinctrl/consumer.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/pinctrl/pinconf.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+ #include <linux/pinctrl/pinctrl.h>
+@@ -72,11 +74,125 @@ static void sh_pfc_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
+ 	seq_printf(s, "%s", DRV_NAME);
+ }
+ 
++static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
++				    struct pinctrl_map **map,
++				    unsigned int *num_maps, unsigned int *index)
 +{
-+	unsigned int i;
++	struct pinctrl_map *maps = *map;
++	unsigned int nmaps = *num_maps;
++	unsigned int idx = *index;
++	const char *function = NULL;
++	struct property *prop;
++	const char *group;
++	int ret;
 +
-+	for (i = 0; i < ARRAY_SIZE(sh7372_portcr_offsets); ++i) {
-+		const struct sh7372_portcr_group *group +			&sh7372_portcr_offsets[i];
-+
-+		if (i <= group->end_pin)
-+			return pfc->window->virt + group->offset + pin;
++	/* Parse the function and configuration properties. At least a function
++	 * or one configuration must be specified.
++	 */
++	ret = of_property_read_string(np, "renesas,function", &function);
++	if (ret < 0 && ret != -EINVAL) {
++		dev_err(dev, "Invalid function in DT\n");
++		return ret;
 +	}
 +
-+	return NULL;
++	if (!function) {
++		dev_err(dev, "DT node must contain at least one function\n");
++		goto done;
++	}
++
++	/* Count the number of groups and reallocate mappings. */
++	ret = of_property_count_strings(np, "renesas,groups");
++	if (ret < 0 && ret != -EINVAL) {
++		dev_err(dev, "Invalid pin groups list in DT\n");
++		goto done;
++	}
++
++	if (!ret) {
++		dev_err(dev, "No group provided in DT node\n");
++		ret = -ENODEV;
++		goto done;
++	}
++
++	nmaps += ret;
++
++	maps = krealloc(maps, sizeof(*maps) * nmaps, GFP_KERNEL);
++	if (maps = NULL) {
++		ret = -ENOMEM;
++		goto done;
++	}
++
++	*map = maps;
++	*num_maps = nmaps;
++
++	/* Iterate over pins and groups and create the mappings. */
++	of_property_for_each_string(np, "renesas,groups", prop, group) {
++		maps[idx].type = PIN_MAP_TYPE_MUX_GROUP;
++		maps[idx].data.mux.group = group;
++		maps[idx].data.mux.function = function;
++		idx++;
++	}
++
++	ret = 0;
++
++done:
++	*index = idx;
++	return ret;
 +}
 +
-+static unsigned int sh7372_pinmux_get_bias(struct sh_pfc *pfc, unsigned int pin)
++static void sh_pfc_dt_free_map(struct pinctrl_dev *pctldev,
++			       struct pinctrl_map *map, unsigned num_maps)
 +{
-+	void __iomem *addr = sh7372_pinmux_portcr(pfc, pin);
-+	u32 value = ioread8(addr) & PORTnCR_PULMD_MASK;
-+
-+	switch (value) {
-+	case PORTnCR_PULMD_UP:
-+		return PIN_CONFIG_BIAS_PULL_UP;
-+	case PORTnCR_PULMD_DOWN:
-+		return PIN_CONFIG_BIAS_PULL_DOWN;
-+	case PORTnCR_PULMD_OFF:
-+	default:
-+		return PIN_CONFIG_BIAS_DISABLE;
-+	}
++	kfree(map);
 +}
 +
-+static void sh7372_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
-+				   unsigned int bias)
++static int sh_pfc_dt_node_to_map(struct pinctrl_dev *pctldev,
++				 struct device_node *np,
++				 struct pinctrl_map **map, unsigned *num_maps)
 +{
-+	void __iomem *addr = sh7372_pinmux_portcr(pfc, pin);
-+	u32 value = ioread8(addr) & ~PORTnCR_PULMD_MASK;
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct device *dev = pmx->pfc->dev;
++	struct device_node *child;
++	unsigned int index;
++	int ret;
 +
-+	switch (bias) {
-+	case PIN_CONFIG_BIAS_PULL_UP:
-+		value |= PORTnCR_PULMD_UP;
-+		break;
-+	case PIN_CONFIG_BIAS_PULL_DOWN:
-+		value |= PORTnCR_PULMD_DOWN;
-+		break;
++	*map = NULL;
++	*num_maps = 0;
++	index = 0;
++
++	for_each_child_of_node(np, child) {
++		ret = sh_pfc_dt_subnode_to_map(dev, child, map, num_maps,
++					       &index);
++		if (ret < 0)
++			goto done;
 +	}
 +
-+	iowrite8(value, addr);
++	/* If no mapping has been found in child nodes try the config node. */
++	if (*num_maps = 0) {
++		ret = sh_pfc_dt_subnode_to_map(dev, np, map, num_maps, &index);
++		if (ret < 0)
++			goto done;
++	}
++
++	if (*num_maps)
++		return 0;
++
++	dev_err(dev, "no mapping found in node %s\n", np->full_name);
++	ret = -EINVAL;
++
++done:
++	if (ret < 0)
++		sh_pfc_dt_free_map(pctldev, *map, *num_maps);
++
++	return ret;
 +}
 +
-+static const struct sh_pfc_soc_operations sh7372_pinmux_ops = {
-+	.get_bias = sh7372_pinmux_get_bias,
-+	.set_bias = sh7372_pinmux_set_bias,
-+};
-+
- const struct sh_pfc_soc_info sh7372_pinmux_info = {
- 	.name = "sh7372_pfc",
-+	.ops = &sh7372_pinmux_ops,
-+
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
--	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
--	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ static const struct pinctrl_ops sh_pfc_pinctrl_ops = {
+ 	.get_groups_count	= sh_pfc_get_groups_count,
+ 	.get_group_name		= sh_pfc_get_group_name,
+ 	.get_group_pins		= sh_pfc_get_group_pins,
+ 	.pin_dbg_show		= sh_pfc_pin_dbg_show,
++	.dt_node_to_map		= sh_pfc_dt_node_to_map,
++	.dt_free_map		= sh_pfc_dt_free_map,
+ };
  
+ static int sh_pfc_get_functions_count(struct pinctrl_dev *pctldev)
 -- 
-1.8.2.1
+1.8.1.5
 
