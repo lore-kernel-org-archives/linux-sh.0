@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:40 +0000
+Date: Mon, 17 Jun 2013 08:12:35 +0000
 Subject: [PATCH 02/15] ARM: shmobile: Let romImage rely on default ATAGS
-Message-Id: <1371106793-25071-3-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,7 +21,7 @@ the fixup callback in the board code may be used.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/compressed/head-shmobile.S | 19 +------------------
+ arch/arm/boot/compressed/head-shmobile.S |   19 +------------------
  1 file changed, 1 insertion(+), 18 deletions(-)
 
 diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
@@ -57,5 +57,5 @@ index fe3719b..19b2304 100644
  
  1 :	.long MACH_TYPE
 -- 
-1.8.2.1
+1.7.10.4
 
