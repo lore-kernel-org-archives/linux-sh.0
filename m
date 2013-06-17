@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:45 +0000
+Date: Mon, 17 Jun 2013 08:12:40 +0000
 Subject: [PATCH 07/15] ARM: shmobile: r8a7779 SMP with SCU boot fn and args
-Message-Id: <1371106793-25071-8-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,7 +18,7 @@ together with shmobile_boot_scu and the SCU base address.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-r8a7779.c | 6 ++++--
+ arch/arm/mach-shmobile/smp-r8a7779.c |    6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
@@ -39,5 +39,5 @@ index a853bf1..526cfaa 100644
  	/* enable cache coherency on booting CPU */
  	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
 -- 
-1.8.2.1
+1.7.10.4
 
