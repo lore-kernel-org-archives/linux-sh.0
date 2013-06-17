@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:53 +0000
+Date: Mon, 17 Jun 2013 08:12:48 +0000
 Subject: [PATCH 15/15] ARM: shmobile: Remove Bonito board support
-Message-Id: <1371106793-25071-16-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-16-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,11 +21,11 @@ recent board where the design is based on Bonito.
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/bonito_defconfig     |  72 -----
- arch/arm/mach-shmobile/Kconfig        |   6 -
- arch/arm/mach-shmobile/Makefile       |   1 -
- arch/arm/mach-shmobile/Makefile.boot  |   1 -
- arch/arm/mach-shmobile/board-bonito.c | 502 ----------------------------------
+ arch/arm/configs/bonito_defconfig     |   72 -----
+ arch/arm/mach-shmobile/Kconfig        |    6 -
+ arch/arm/mach-shmobile/Makefile       |    1 -
+ arch/arm/mach-shmobile/Makefile.boot  |    1 -
+ arch/arm/mach-shmobile/board-bonito.c |  502 ---------------------------------
  5 files changed, 582 deletions(-)
  delete mode 100644 arch/arm/configs/bonito_defconfig
  delete mode 100644 arch/arm/mach-shmobile/board-bonito.c
@@ -658,5 +658,5 @@ index b373e9c..0000000
 -	.init_time	= bonito_earlytimer_init,
 -MACHINE_END
 -- 
-1.8.2.1
+1.7.10.4
 
