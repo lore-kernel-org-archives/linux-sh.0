@@ -1,169 +1,257 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:32 +0000
-Subject: [PATCH 19/23] ARM: shmobile: sh73a0: add support for adjusting CPU frequency
-Message-Id: <1370503716-31155-20-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 17 Jun 2013 18:50:03 +0000
+Subject: [PATCH v7 3/3] sh-pfc: Add pinconf support to DT bindings
+Message-Id: <1371495003-11185-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-
-On SH73A0 the output of PLL0 is supplied to two dividers, feeding clock to
-the CPU core and SGX. Lower CPU frequencies allow the use of lower supply
-voltages and thus reduce power consumption.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c | 95 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 93 insertions(+), 2 deletions(-)
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |  36 +++++--
+ drivers/pinctrl/sh-pfc/pinctrl.c                   | 109 ++++++++++++++++++---
+ 2 files changed, 124 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 784fbaa..acb9e09 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -228,6 +228,11 @@ enum { DIV4_I, DIV4_ZG, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
+diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+index 8264cbc..d5dac7b 100644
+--- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+@@ -30,20 +30,27 @@ The PFC node also acts as a container for pin configuration nodes. Please refer
+ to pinctrl-bindings.txt in this directory for the definition of the term "pin
+ configuration node" and for the common pinctrl bindings used by client devices.
  
- static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_I] = DIV4(FRQCRA, 20, 0xdff, CLK_ENABLE_ON_INIT),
-+	/*
-+	 * ZG clock is dividing PLL0 frequency to supply SGX. Make sure not to
-+	 * exceed maximum frequencies of 201.5MHz for VDD_DVFS=1.175 and
-+	 * 239.2MHz for VDD_DVFS=1.315V.
-+	 */
- 	[DIV4_ZG] = SH_CLK_DIV4(&pll0_clk, FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
- 	[DIV4_M3] = DIV4(FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
- 	[DIV4_B] = DIV4(FRQCRA, 8, 0xdff, CLK_ENABLE_ON_INIT),
-@@ -252,6 +257,85 @@ static struct clk twd_clk = {
- 	.ops = &twd_clk_ops,
- };
+-Each pin configuration node represents desired functions to select on a pin
+-group or a list of pin groups. The functions and pin groups can be specified
+-directly in the pin configuration node, or grouped in child subnodes. Several
+-functions can thus be referenced as a single pin configuration node by client
+-devices.
++Each pin configuration node represents a desired configuration for a pin, a
++pin group, or a list of pins or pin groups. The configuration can include the
++function to select on those pin(s) and pin configuration parameters (such as
++pull-up and pull-down).
  
-+static int (*div4_set_rate)(struct clk *clk, unsigned long rate);
-+static unsigned long (*div4_recalc)(struct clk *clk);
-+static long (*div4_round_rate)(struct clk *clk, unsigned long rate);
+-A configuration node or subnode must contain a function and reference at least
+-one pin group.
++Pin configuration nodes contain pin configuration properties, either directly
++or grouped in child subnodes. Both pin muxing and configuration parameters can
++be grouped in that way and referenced as a single pin configuration node by
++client devices.
 +
-+static int zclk_set_rate(struct clk *clk, unsigned long rate)
++A configuration node or subnode must reference at least one pin (through the
++pins or pin groups properties) and contain at least a function or one
++configuration parameter. When the function is present only pin groups can be
++used to reference pins.
+ 
+ All pin configuration nodes and subnodes names are ignored. All of those nodes
+ are parsed through phandles and processed purely based on their content.
+ 
+ Pin Configuration Node Properties:
+ 
++- renesas,pins : An array of strings, each string containing the name of a pin.
+ - renesas,groups : An array of strings, each string containing the name of a pin
+   group.
+ 
+@@ -54,6 +61,10 @@ Pin Configuration Node Properties:
+   function arrays of the PFC data file corresponding to the SoC
+   (drivers/pinctrl/sh-pfc/pfc-*.c)
+ 
++The pin configuration parameters use the generic pinconf bindings defined in
++pinctrl-bindings.txt in this directory. The supported parameters are
++bias-disable, bias-pull-up and bias-pull-down.
++
+ 
+ GPIO
+ ----
+@@ -113,8 +124,15 @@ Example 3: KZM-A9-GT (SH-Mobile AG5) default pin state hog and pin control maps
+ 		pinctrl-names = "default";
+ 
+ 		mmcif_pins: mmcif {
+-			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
+-			renesas,function = "mmc0";
++			mux {
++				renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
++				renesas,function = "mmc0";
++			};
++			cfg {
++				renesas,groups = "mmc0_data8_0";
++				renesas,pins = "PORT279";
++				bias-pull-up;
++			};
+ 		};
+ 
+ 		scifa4_pins: scifa4 {
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 7e32bb8..2cf2347 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -74,6 +74,27 @@ static void sh_pfc_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
+ 	seq_printf(s, "%s", DRV_NAME);
+ }
+ 
++static int sh_pfc_map_add_config(struct pinctrl_map *map,
++				 const char *group_or_pin,
++				 enum pinctrl_map_type type,
++				 unsigned long *configs,
++				 unsigned int num_configs)
 +{
-+	int ret;
++	unsigned long *cfgs;
 +
-+	if (!clk->parent || !__clk_get(clk->parent))
-+		return -ENODEV;
++	cfgs = kmemdup(configs, num_configs * sizeof(*cfgs),
++		       GFP_KERNEL);
++	if (cfgs = NULL)
++		return -ENOMEM;
 +
-+	if (readl(FRQCRB) & (1 << 31))
-+		return -EBUSY;
++	map->type = type;
++	map->data.configs.group_or_pin = group_or_pin;
++	map->data.configs.configs = cfgs;
++	map->data.configs.num_configs = num_configs;
 +
-+	if (rate = clk_get_rate(clk->parent)) {
-+		/* 1:1 - switch off divider */
-+		__raw_writel(__raw_readl(FRQCRB) & ~(1 << 28), FRQCRB);
-+		/* nullify the divider to prepare for the next time */
-+		ret = div4_set_rate(clk, rate / 2);
-+		if (!ret)
-+			ret = frqcr_kick();
-+		if (ret > 0)
-+			ret = 0;
++	return 0;
++}
++
+ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
+ 				    struct pinctrl_map **map,
+ 				    unsigned int *num_maps, unsigned int *index)
+@@ -81,9 +102,14 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
+ 	struct pinctrl_map *maps = *map;
+ 	unsigned int nmaps = *num_maps;
+ 	unsigned int idx = *index;
++	unsigned int num_configs;
+ 	const char *function = NULL;
++	unsigned long *configs;
+ 	struct property *prop;
++	unsigned int num_groups;
++	unsigned int num_pins;
+ 	const char *group;
++	const char *pin;
+ 	int ret;
+ 
+ 	/* Parse the function and configuration properties. At least a function
+@@ -95,25 +121,47 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
+ 		return ret;
+ 	}
+ 
+-	if (!function) {
+-		dev_err(dev, "DT node must contain at least one function\n");
++	ret = pinconf_generic_parse_dt_config(np, &configs, &num_configs);
++	if (ret < 0)
++		return ret;
++
++	if (!function && num_configs = 0) {
++		dev_err(dev,
++			"DT node must contain at least a function or config\n");
+ 		goto done;
+ 	}
+ 
+-	/* Count the number of groups and reallocate mappings. */
++	/* Count the number of pins and groups and reallocate mappings. */
++	ret = of_property_count_strings(np, "renesas,pins");
++	if (ret = -EINVAL) {
++		num_pins = 0;
++	} else if (ret < 0) {
++		dev_err(dev, "Invalid pins list in DT\n");
++		goto done;
 +	} else {
-+		/* Enable the divider */
-+		__raw_writel(__raw_readl(FRQCRB) | (1 << 28), FRQCRB);
++		num_pins = ret;
++	}
 +
-+		ret = frqcr_kick();
-+		if (ret >= 0)
-+			/*
-+			 * set the divider - call the DIV4 method, it will kick
-+			 * FRQCRB too
-+			 */
-+			ret = div4_set_rate(clk, rate);
+ 	ret = of_property_count_strings(np, "renesas,groups");
+-	if (ret < 0 && ret != -EINVAL) {
++	if (ret = -EINVAL) {
++		num_groups = 0;
++	} else if (ret < 0) {
+ 		dev_err(dev, "Invalid pin groups list in DT\n");
+ 		goto done;
++	} else {
++		num_groups = ret;
+ 	}
+ 
+-	if (!ret) {
+-		dev_err(dev, "No group provided in DT node\n");
++	if (!num_pins && !num_groups) {
++		dev_err(dev, "No pin or group provided in DT node\n");
+ 		ret = -ENODEV;
+ 		goto done;
+ 	}
+ 
+-	nmaps += ret;
++	if (function)
++		nmaps += num_groups;
++	if (configs)
++		nmaps += num_pins + num_groups;
+ 
+ 	maps = krealloc(maps, sizeof(*maps) * nmaps, GFP_KERNEL);
+ 	if (maps = NULL) {
+@@ -126,22 +174,59 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
+ 
+ 	/* Iterate over pins and groups and create the mappings. */
+ 	of_property_for_each_string(np, "renesas,groups", prop, group) {
+-		maps[idx].type = PIN_MAP_TYPE_MUX_GROUP;
+-		maps[idx].data.mux.group = group;
+-		maps[idx].data.mux.function = function;
+-		idx++;
++		if (function) {
++			maps[idx].type = PIN_MAP_TYPE_MUX_GROUP;
++			maps[idx].data.mux.group = group;
++			maps[idx].data.mux.function = function;
++			idx++;
++		}
++
++		if (configs) {
++			ret = sh_pfc_map_add_config(&maps[idx], group,
++						    PIN_MAP_TYPE_CONFIGS_GROUP,
++						    configs, num_configs);
++			if (ret < 0)
++				goto done;
++
++			idx++;
++		}
+ 	}
+ 
+-	ret = 0;
++	if (!configs) {
++		ret = 0;
++		goto done;
++	}
++
++	of_property_for_each_string(np, "renesas,pins", prop, pin) {
++		ret = sh_pfc_map_add_config(&maps[idx], pin,
++					    PIN_MAP_TYPE_CONFIGS_PIN,
++					    configs, num_configs);
 +		if (ret < 0)
-+			goto esetrate;
-+	}
++			goto done;
 +
-+esetrate:
-+	__clk_put(clk->parent);
-+	return ret;
-+}
-+
-+static long zclk_round_rate(struct clk *clk, unsigned long rate)
-+{
-+	unsigned long div_freq = div4_round_rate(clk, rate),
-+		parent_freq = clk_get_rate(clk->parent);
-+
-+	if (rate > div_freq && abs(parent_freq - rate) < rate - div_freq)
-+		return parent_freq;
-+
-+	return div_freq;
-+}
-+
-+static unsigned long zclk_recalc(struct clk *clk)
-+{
-+	/*
-+	 * Must recalculate frequencies in case PLL0 has been changed, even if
-+	 * the divisor is unused ATM!
-+	 */
-+	unsigned long div_freq = div4_recalc(clk);
-+
-+	if (__raw_readl(FRQCRB) & (1 << 28))
-+		return div_freq;
-+
-+	return clk_get_rate(clk->parent);
-+}
-+
-+static void zclk_extend(void)
-+{
-+	/* We extend the DIV4 clock with a 1:1 pass-through case */
-+	div4_set_rate = div4_clks[DIV4_Z].ops->set_rate;
-+	div4_round_rate = div4_clks[DIV4_Z].ops->round_rate;
-+	div4_recalc = div4_clks[DIV4_Z].ops->recalc;
-+	div4_clks[DIV4_Z].ops->set_rate = zclk_set_rate;
-+	div4_clks[DIV4_Z].ops->round_rate = zclk_round_rate;
-+	div4_clks[DIV4_Z].ops->recalc = zclk_recalc;
-+}
-+
- enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
- 	DIV6_FLCTL, DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
- 	DIV6_FSIA, DIV6_FSIB, DIV6_SUB,
-@@ -450,7 +534,7 @@ static struct clk *late_main_clks[] = {
- };
- 
- enum { MSTP001,
--	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
-+	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP112, MSTP100,
- 	MSTP219, MSTP218, MSTP217,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
- 	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323, MSTP322,
-@@ -471,6 +555,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP125] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 25, 0), /* TMU0 */
- 	[MSTP118] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 18, 0), /* DSITX0 */
- 	[MSTP116] = MSTP(&div4_clks[DIV4_HP], SMSTPCR1, 16, 0), /* IIC0 */
-+	[MSTP112] = MSTP(&div4_clks[DIV4_ZG], SMSTPCR1, 12, 0), /* SGX */
- 	[MSTP100] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 0, 0), /* LCDC0 */
- 	[MSTP219] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 19, 0), /* SCIFA7 */
- 	[MSTP218] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 18, 0), /* SY-DMAC */
-@@ -513,6 +598,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("r_clk", &r_clk),
- 	CLKDEV_DEV_ID("smp_twd", &twd_clk), /* smp_twd */
- 
-+	/* DIV4 clocks */
-+	CLKDEV_DEV_ID("cpufreq-cpu0", &div4_clks[DIV4_Z]),
-+
- 	/* DIV6 clocks */
- 	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
- 	CLKDEV_CON_ID("vck2_clk", &div6_clks[DIV6_VCK2]),
-@@ -604,8 +692,11 @@ void __init sh73a0_clock_init(void)
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
- 
--	if (!ret)
-+	if (!ret) {
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
-+		if (!ret)
-+			zclk_extend();
++		idx++;
 +	}
  
- 	if (!ret)
- 		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
+ done:
+ 	*index = idx;
++	kfree(configs);
+ 	return ret;
+ }
+ 
+ static void sh_pfc_dt_free_map(struct pinctrl_dev *pctldev,
+ 			       struct pinctrl_map *map, unsigned num_maps)
+ {
++	unsigned int i;
++
++	if (map = NULL)
++		return;
++
++	for (i = 0; i < num_maps; ++i) {
++		if (map[i].type = PIN_MAP_TYPE_CONFIGS_GROUP ||
++		    map[i].type = PIN_MAP_TYPE_CONFIGS_PIN)
++			kfree(map[i].data.configs.configs);
++	}
++
+ 	kfree(map);
+ }
+ 
 -- 
-1.8.2.1
+1.8.1.5
 
