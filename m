@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:48 +0000
+Date: Mon, 17 Jun 2013 08:12:43 +0000
 Subject: [PATCH 10/15] ARM: shmobile: Remove old SCU boot code
-Message-Id: <1371106793-25071-11-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,8 +19,8 @@ removes two inline virtual to physical address conversions.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/headsmp-scu.S         | 22 +---------------------
- arch/arm/mach-shmobile/include/mach/common.h |  1 -
+ arch/arm/mach-shmobile/headsmp-scu.S         |   22 +---------------------
+ arch/arm/mach-shmobile/include/mach/common.h |    1 -
  2 files changed, 1 insertion(+), 22 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
@@ -74,5 +74,5 @@ index 8ef1c3c..e818f02 100644
  struct clk;
  extern int shmobile_clk_init(void);
 -- 
-1.8.2.1
+1.7.10.4
 
