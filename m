@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 17 Jun 2013 06:12:22 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Jun 2013 06:22:10 +0000
 Subject: Re: [PATCH 14/15] ARM: shmobile: Remove AP4EVB board support
-Message-Id: <Pine.LNX.4.64.1306170805390.22409@axis700.grange>
+Message-Id: <CANqRtoSd5CdU9YjFjih_kFuoby2dWVapt3RJBmgRR_WizbtxGg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
  <1371106793-25071-15-git-send-email-horms+renesas@verge.net.au>
@@ -9,29 +9,39 @@ References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
  <CANqRtoSx4Jf_EfG3LvkpoOED4-SuOdWjRedz-RbwGCOcOeP-Xg@mail.gmail.com>
  <Pine.LNX.4.64.1306141123380.6920@axis700.grange>
  <CANqRtoRXBupbbU_cq257p5usu8F5975NFDenkOx1qTvYZaxF2w@mail.gmail.com>
-In-Reply-To: <CANqRtoRXBupbbU_cq257p5usu8F5975NFDenkOx1qTvYZaxF2w@mail.gmail.com>
+ <Pine.LNX.4.64.1306170805390.22409@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1306170805390.22409@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 17 Jun 2013, Magnus Damm wrote:
+On Mon, Jun 17, 2013 at 3:12 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> On Mon, 17 Jun 2013, Magnus Damm wrote:
+>
+> [snip]
+>
+>> So Guennadi, if you want to keep this board then you have to step up
+>> and fix things. If not then there is no point in keeping it.
+>
+> Ok, after a private discussion we agreed to remove the board, which will
+> also make the drivers for the Renesas sh-/r-mobile CSI2 interface and for
+> the Sony IMX074 sensor untestable and susceptible to removal. Also
+> multi-subdevice support in soc-camera now will lose its only use and can
+> become broken. I will also drop CSI2 and AP4EVB patches from my V4L2 clock
+> / async probing series.
 
-[snip]
+Thanks for writing this summary. It matches my understanding.
 
-> So Guennadi, if you want to keep this board then you have to step up
-> and fix things. If not then there is no point in keeping it.
+It is unfortunate, but it seems to me that the camera sensor has to be
+tested on another platform. Regarding the CSI2 interface, as we
+discussed, this IP still exists in newer SoCs so because of that I
+recommend you to try to request newer hardware for future testing.
 
-Ok, after a private discussion we agreed to remove the board, which will 
-also make the drivers for the Renesas sh-/r-mobile CSI2 interface and for 
-the Sony IMX074 sensor untestable and susceptible to removal. Also 
-multi-subdevice support in soc-camera now will lose its only use and can 
-become broken. I will also drop CSI2 and AP4EVB patches from my V4L2 clock 
-/ async probing series.
+About multi-subdevice and your ongoing work with V4L2 clock / async
+probing, please select a more recent hardware platform.
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Thanks,
+
+/ magnus
