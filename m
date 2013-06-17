@@ -1,46 +1,111 @@
 From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Sat, 15 Jun 2013 08:51:33 +0000
+Date: Mon, 17 Jun 2013 11:13:51 +0000
 Subject: Re: [PATCH v11 00/21] V4L2 clock and asynchronous probing
-Message-Id: <201306151051.33440.hverkuil@xs4all.nl>
+Message-Id: <201306171313.51196.hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de> <2342425.VllfyDroN8@avalon> <Pine.LNX.4.64.1306142244310.11221@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306142244310.11221@axis700.grange>
+References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-media@vger.kernel.org, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>
+Cc: linux-media@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>
 
-On Fri June 14 2013 22:45:15 Guennadi Liakhovetski wrote:
-> Hi Laurent
+On Fri 14 June 2013 21:08:10 Guennadi Liakhovetski wrote:
+> v11 of the V4L2 clock helper and asynchronous probing patch set. 
+> Functionally identical to v10, only differences are a couple of comment 
+> lines and one renamed struct field - as requested by respectable 
+> reviewers :)
 > 
-> On Fri, 14 Jun 2013, Laurent Pinchart wrote:
-> 
-> > Hi Guennadi,
-> > 
-> > Thank you for the patches.
-> > 
-> > On Friday 14 June 2013 21:08:10 Guennadi Liakhovetski wrote:
-> > > v11 of the V4L2 clock helper and asynchronous probing patch set.
-> > > Functionally identical to v10, only differences are a couple of comment
-> > > lines and one renamed struct field - as requested by respectable
-> > > reviewers :)
-> > > 
-> > > Only patches #15, 16 and 18 changed.
-> > 
-> > [snip]
-> > 
-> > >  .../devicetree/bindings/media/sh_mobile_ceu.txt    |   18 +
-> > 
-> >    Documentation/video4linux/v4l2-framework.txt is missing :-)
-> 
-> I know. I will add it as soon as these patches are in.
+> Only patches #15, 16 and 18 changed.
 
-Can you please post a first version earlier? I am hesitant to Ack the series
-without knowing that there is at least a first version of the documentation
-posted. We have had bad experiences in the past with code being committed and
-no documentation.
+Thanks for posting the patch adding documentation! Much appreciated.
+
+As a result I give my ack for this patch series:
+
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 
 Regards,
 
 	Hans
+
+> 
+> Guennadi Liakhovetski (21):
+>   soc-camera: move common code to soc_camera.c
+>   soc-camera: add host clock callbacks to start and stop the master
+>     clock
+>   pxa-camera: move interface activation and deactivation to clock
+>     callbacks
+>   omap1-camera: move interface activation and deactivation to clock
+>     callbacks
+>   atmel-isi: move interface activation and deactivation to clock
+>     callbacks
+>   mx3-camera: move interface activation and deactivation to clock
+>     callbacks
+>   mx2-camera: move interface activation and deactivation to clock
+>     callbacks
+>   mx1-camera: move interface activation and deactivation to clock
+>     callbacks
+>   sh-mobile-ceu-camera: move interface activation and deactivation to
+>     clock callbacks
+>   soc-camera: make .clock_{start,stop} compulsory, .add / .remove
+>     optional
+>   soc-camera: don't attach the client to the host during probing
+>   sh-mobile-ceu-camera: add primitive OF support
+>   sh-mobile-ceu-driver: support max width and height in DT
+>   V4L2: add temporary clock helpers
+>   V4L2: add a device pointer to struct v4l2_subdev
+>   V4L2: support asynchronous subdevice registration
+>   soc-camera: switch I2C subdevice drivers to use v4l2-clk
+>   soc-camera: add V4L2-async support
+>   sh_mobile_ceu_camera: add asynchronous subdevice probing support
+>   imx074: support asynchronous probing
+>   ARM: shmobile: convert ap4evb to asynchronously register camera
+>     subdevices
+> 
+>  .../devicetree/bindings/media/sh_mobile_ceu.txt    |   18 +
+>  arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
+>  arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
+>  drivers/media/i2c/soc_camera/imx074.c              |   32 +-
+>  drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
+>  drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
+>  drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
+>  drivers/media/i2c/soc_camera/mt9t112.c             |   25 +-
+>  drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
+>  drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
+>  drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
+>  drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
+>  drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
+>  drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
+>  drivers/media/i2c/soc_camera/ov9640.h              |    1 +
+>  drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
+>  drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
+>  drivers/media/i2c/soc_camera/tw9910.c              |   24 +-
+>  drivers/media/platform/soc_camera/atmel-isi.c      |   38 +-
+>  drivers/media/platform/soc_camera/mx1_camera.c     |   48 +-
+>  drivers/media/platform/soc_camera/mx2_camera.c     |   41 +-
+>  drivers/media/platform/soc_camera/mx3_camera.c     |   44 +-
+>  drivers/media/platform/soc_camera/omap1_camera.c   |   41 +-
+>  drivers/media/platform/soc_camera/pxa_camera.c     |   46 +-
+>  .../platform/soc_camera/sh_mobile_ceu_camera.c     |  243 +++++--
+>  drivers/media/platform/soc_camera/sh_mobile_csi2.c |  153 +++--
+>  drivers/media/platform/soc_camera/soc_camera.c     |  707 +++++++++++++++++---
+>  .../platform/soc_camera/soc_camera_platform.c      |    2 +-
+>  drivers/media/v4l2-core/Makefile                   |    3 +-
+>  drivers/media/v4l2-core/v4l2-async.c               |  280 ++++++++
+>  drivers/media/v4l2-core/v4l2-clk.c                 |  242 +++++++
+>  drivers/media/v4l2-core/v4l2-common.c              |    2 +
+>  include/media/sh_mobile_ceu.h                      |    2 +
+>  include/media/sh_mobile_csi2.h                     |    2 +-
+>  include/media/soc_camera.h                         |   39 +-
+>  include/media/v4l2-async.h                         |  105 +++
+>  include/media/v4l2-clk.h                           |   54 ++
+>  include/media/v4l2-subdev.h                        |   10 +
+>  38 files changed, 2035 insertions(+), 467 deletions(-)
+>  create mode 100644 Documentation/devicetree/bindings/media/sh_mobile_ceu.txt
+>  create mode 100644 drivers/media/v4l2-core/v4l2-async.c
+>  create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+>  create mode 100644 include/media/v4l2-async.h
+>  create mode 100644 include/media/v4l2-clk.h
+> 
+> 
