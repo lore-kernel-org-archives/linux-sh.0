@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 02:42:14 +0000
+Date: Mon, 17 Jun 2013 03:38:47 +0000
 Subject: [PATCH 2/2] ARM: shmobile: r8a7790: don't use external clock for SCIFs
-Message-Id: <1371436934-27744-3-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371440327-30512-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371436934-27744-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371436934-27744-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371440327-30512-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371440327-30512-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,7 +16,7 @@ This is an external component and may or may not be there, while the
 internal clock always works.
 
 Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/mach-shmobile/setup-r8a7790.c |   16 ++++++++++++++--
  1 file changed, 14 insertions(+), 2 deletions(-)
