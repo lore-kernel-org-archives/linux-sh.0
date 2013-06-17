@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 06:59:50 +0000
+Date: Mon, 17 Jun 2013 08:12:45 +0000
 Subject: [PATCH 12/15] ARM: shmobile: Remove MEMORY_START/SIZE
-Message-Id: <1371106793-25071-13-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1371456768-1084-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106793-25071-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,7 +22,7 @@ memory information should be used as a workaround.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 31 -------------------------------
+ arch/arm/mach-shmobile/Kconfig |   31 -------------------------------
  1 file changed, 31 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
@@ -68,5 +68,5 @@ index 06da4d3..747f68a 100644
  
  config SHMOBILE_TIMER_HZ
 -- 
-1.8.2.1
+1.7.10.4
 
