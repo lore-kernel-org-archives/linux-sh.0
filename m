@@ -1,112 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 20 Jun 2013 13:08:13 +0000
-Subject: [PATCH 2/3] ARM: shmobile: sh73a0: remove "0x" prefix from DT node names
-Message-Id: <1371733694-27368-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Jun 2013 10:29:48 +0000
+Subject: [PATCH v2 1/2] gpio-rcar: Reference core gpio documentation in the DT bindings
+Message-Id: <1371551389-5493-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371551389-5493-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371551389-5493-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Replaced the detailed gpio-ranges documentation with a reference to the
+code gpio DT bindings, and mention the gpio flags symbolic names.
 
-The convention for Device Tree node names is <device>@<hex-address>, where
-the part after '@' shouldn't contain the "0x" prefix. Fix the sh73a0.dtsi
-DT names.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+ .../devicetree/bindings/gpio/renesas,gpio-rcar.txt     | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index ec40bf7..b977502 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -119,7 +119,7 @@
- 			      0 32 0x4>;
- 	};
+diff --git a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+index 46d76a0..cb3dc7b 100644
+--- a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
++++ b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+@@ -16,18 +16,12 @@ Required Properties:
  
--	i2c0: i2c@0xe6820000 {
-+	i2c0: i2c@e6820000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -131,7 +131,7 @@
- 			      0 170 0x4>;
- 	};
+   - gpio-controller: Marks the device node as a gpio controller.
+   - #gpio-cells: Should be 2. The first cell is the GPIO number and the second
+-    cell is used to specify optional parameters as bit flags. Only the GPIO
+-    active low flag (bit 0) is currently supported.
+-  - gpio-ranges: Range of pins managed by the GPIO controller as a 4-cells
+-    tuple using the following syntax.
+-
+-    <[phandle of the pin controller node]
+-     0
+-     [index of the first pin]
+-     [number of pins]>
+-
+-Please refer to gpio.txt in this directory for details of the common GPIO
+-bindings used by client devices.
++    cell specifies GPIO flags, as defined in <dt-bindings/gpio/gpio.h>. Only the
++    GPIO_ACTIVE_HIGH and GPIO_ACTIVE_LOW flags are supported.
++  - gpio-ranges: Range of pins managed by the GPIO controller.
++
++Please refer to gpio.txt in this directory for details of gpio-ranges property
++and the common GPIO bindings used by client devices.
  
--	i2c1: i2c@0xe6822000 {
-+	i2c1: i2c@e6822000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -143,7 +143,7 @@
- 			      0 54 0x4>;
- 	};
+ Example: R8A7779 (R-Car H1) GPIO controller nodes
  
--	i2c2: i2c@0xe6824000 {
-+	i2c2: i2c@e6824000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -155,7 +155,7 @@
- 			      0 174 0x4>;
- 	};
- 
--	i2c3: i2c@0xe6826000 {
-+	i2c3: i2c@e6826000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -167,7 +167,7 @@
- 			      0 186 0x4>;
- 	};
- 
--	i2c4: i2c@0xe6828000 {
-+	i2c4: i2c@e6828000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,rmobile-iic";
-@@ -179,7 +179,7 @@
- 			      0 190 0x4>;
- 	};
- 
--	mmcif: mmcif@0x10010000 {
-+	mmcif: mmcif@e6bd0000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0xe6bd0000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -189,7 +189,7 @@
- 		status = "disabled";
- 	};
- 
--	sdhi0: sdhi@0xee100000 {
-+	sdhi0: sdhi@ee100000 {
- 		compatible = "renesas,r8a7740-sdhi";
- 		reg = <0xee100000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -201,7 +201,7 @@
- 	};
- 
- 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
--	sdhi1: sdhi@0xee120000 {
-+	sdhi1: sdhi@ee120000 {
- 		compatible = "renesas,r8a7740-sdhi";
- 		reg = <0xee120000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -212,7 +212,7 @@
- 		status = "disabled";
- 	};
- 
--	sdhi2: sdhi@0xee140000 {
-+	sdhi2: sdhi@ee140000 {
- 		compatible = "renesas,r8a7740-sdhi";
- 		reg = <0xee140000 0x100>;
- 		interrupt-parent = <&gic>;
 -- 
-1.8.2.1
+1.8.1.5
 
