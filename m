@@ -1,34 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 06 Jun 2013 07:26:03 +0000
-Subject: Re: [PATCH 01/15] ARM: shmobile: Per-board uImage load addresses
-Message-Id: <CANqRtoTHLvZ8mTGRFb88y8G3DS=d9Sw9Um6gg_66UiwSvmorZw@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Jun 2013 10:29:47 +0000
+Subject: [PATCH v2 0/2] R-Car GPIO fixes
+Message-Id: <1371551389-5493-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605070616.13311.69049.sendpatchset@w520>
- <20130605070625.13311.17016.sendpatchset@w520>
- <9933530.s16G7h846I@wuerfel>
-In-Reply-To: <9933530.s16G7h846I@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+Hello,
 
-On Wed, Jun 5, 2013 at 5:29 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Wednesday 05 June 2013 16:06:25 Magnus Damm wrote:
->>
->> +__ZRELADDR     := $(shell /bin/bash -c \
->> +                    'echo $(loadaddr-y) | tr " " "\n" | sort | uniq')
->> +
->
-> It's not important, but I think this can be written much simpler using
-> makefile syntax as
->
-> __ZRELADDR      := $(sort $(loadaddr-y))
+Here are two small fixes for the gpio-rcar driver. I would push them through
+the GPIO tree if it wasn't for the fact that they're based on gpio-rcar DT
+support, scheduled for merge through the ARM SoC tree.
 
-Yes, correct. Just double checked by comparing the output. Your
-proposal is much cleaner, will follow that if/when I send a V2.
+Simon, as these patches are fixes, would it be possible to get them in v3.11
+through your tree ?
 
-Thanks,
+Changes since v1:
 
-/ magnus
+- Fixed 2/2 commit message to mention IS_ENABLED, not IS_CONFIG
+
+Laurent Pinchart (2):
+  gpio-rcar: Reference core gpio documentation in the DT bindings
+  gpio-rcar: Remove #ifdef CONFIG_OF around OF-specific sections
+
+ .../devicetree/bindings/gpio/renesas,gpio-rcar.txt     | 18 ++++++------------
+ drivers/gpio/gpio-rcar.c                               |  8 ++------
+ 2 files changed, 8 insertions(+), 18 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
