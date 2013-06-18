@@ -1,57 +1,145 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Jun 2013 07:56:19 +0000
-Subject: Re: [PATCH v8 0/9] Reorganize R8A7779/Marzen USB code
-Message-Id: <20130611075619.GA5300@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Jun 2013 10:59:31 +0000
+Subject: [PATCH] clocksource: sh_cmt: Use devm_* managed helpers
+Message-Id: <1371553171-23530-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306020128.05914.sergei.shtylyov@cogentembedded.com>
- <20130607080637.GC22598@verge.net.au>
- <51B1B9D9.5040906@cogentembedded.com>
- <20130611074943.GF10440@verge.net.au>
-In-Reply-To: <20130611074943.GF10440@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, John Stultz <john.stultz@linaro.org>
 
-On Tue, Jun 11, 2013 at 04:49:43PM +0900, Simon Horman wrote:
-> On Fri, Jun 07, 2013 at 02:45:45PM +0400, Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> > On 07-06-2013 12:06, Simon Horman wrote:
-> > 
-> > >>    Here's the set of 9 patches against the Simon Horman's 'renesas.git' repo,
-> > >>'renesas-next-20130528' tag.  It was created to fix the shortcomings in the
-> > >>R8A7779/Marzen USB platform code and R8A7779 USB common PHY driver, and so
-> > >>spans both arch/arm/mach-shmobile/ and drivers/usb/ subtrees (some patches have
-> > >>to touch both subtrees). The patches were conceived with the complete
-> > >>bisectability goal in mind.
-> > 
-> > >>[1/9] ARM: shmobile: Marzen: move USB EHCI, OHCI, and PHY devices to R8A7779 code
-> > >>[2/9] ehci-platform: add pre_setup() method to platform data
-> > >>[3/9] ARM: shmobile: r8a7779: setup EHCI internal buffer
-> > >>[4/9] phy-rcar-usb: remove EHCI internal buffer setup
-> > >>[5/9] ARM: shmobile: r8a7779: remove USB PHY 2nd memory resource
-> > >>[6/9] phy-rcar-usb: correct base address
-> > >>[7/9] phy-rcar-usb: add platform data
-> > >>[8/9] ARM: shmobile: Marzen: pass platform data to USB PHY device
-> > >>[9/9] phy-rcar-usb: handle platform data
-> > 
-> > >>    The patchset is completely ready to be merged now.
-> > 
-> > >Can I confirm that the plan is for me to merge this code?
-> > 
-> >    Yes, that was the plan.
-> > 
-> > >If so, I should be able to do so next week.
-> 
-> Thanks, I have queued this up in the soc2 phy-rcar-usb.
+This simplifies the main error path by getting rid of it.
 
-s/soc2 phy-rcar-usb/phy-rcar-usb branch/
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/clocksource/sh_cmt.c | 40 ++++++++++++++--------------------------
+ 1 file changed, 14 insertions(+), 26 deletions(-)
 
-> My current plan is to let that branch sit in next for a few
-> days and then send a pull-request for it to be included in v3.11.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+The patch is based on top of renesas-next-20130618 plus Magnus'
+"clocksource: sh_cmt: 32-bit control register support" patch.
+
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 0965e98..7001e4d 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -681,20 +681,18 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res, *res2;
+ 	int irq, ret;
+-	ret = -ENXIO;
+ 
+-	memset(p, 0, sizeof(*p));
+ 	p->pdev = pdev;
+ 
+ 	if (!cfg) {
+ 		dev_err(&p->pdev->dev, "missing platform data\n");
+-		goto err0;
++		return -ENXIO;
+ 	}
+ 
+ 	res = platform_get_resource(p->pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+ 		dev_err(&p->pdev->dev, "failed to get I/O memory\n");
+-		goto err0;
++		return -ENXIO;
+ 	}
+ 
+ 	/* optional resource for the shared timer start/stop register */
+@@ -703,23 +701,23 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 	irq = platform_get_irq(p->pdev, 0);
+ 	if (irq < 0) {
+ 		dev_err(&p->pdev->dev, "failed to get irq\n");
+-		goto err0;
++		return -ENXIO;
+ 	}
+ 
+ 	/* map memory, let mapbase point to our channel */
+-	p->mapbase = ioremap_nocache(res->start, resource_size(res));
++	p->mapbase = devm_ioremap_resource(&pdev->dev, res);
+ 	if (p->mapbase = NULL) {
+ 		dev_err(&p->pdev->dev, "failed to remap I/O memory\n");
+-		goto err0;
++		return -ENXIO;
+ 	}
+ 
+ 	/* map second resource for CMSTR */
+-	p->mapbase_str = ioremap_nocache(res2 ? res2->start :
+-					 res->start - cfg->channel_offset,
+-					 res2 ? resource_size(res2) : 2);
++	p->mapbase_str = devm_ioremap_nocache(&pdev->dev, res2 ? res2->start :
++					      res->start - cfg->channel_offset,
++					      res2 ? resource_size(res2) : 2);
+ 	if (p->mapbase_str = NULL) {
+ 		dev_err(&p->pdev->dev, "failed to remap I/O second memory\n");
+-		goto err1;
++		return -ENXIO;
+ 	}
+ 
+ 	/* request irq using setup_irq() (too early for request_irq()) */
+@@ -730,11 +728,10 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 			     IRQF_IRQPOLL  | IRQF_NOBALANCING;
+ 
+ 	/* get hold of clock */
+-	p->clk = clk_get(&p->pdev->dev, "cmt_fck");
++	p->clk = devm_clk_get(&p->pdev->dev, "cmt_fck");
+ 	if (IS_ERR(p->clk)) {
+ 		dev_err(&p->pdev->dev, "cannot get clock\n");
+-		ret = PTR_ERR(p->clk);
+-		goto err2;
++		return PTR_ERR(p->clk);
+ 	}
+ 
+ 	if (res2 && (resource_size(res2) = 4)) {
+@@ -773,27 +770,19 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 			      cfg->clocksource_rating);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "registration failed\n");
+-		goto err3;
++		return ret;
+ 	}
+ 	p->cs_enabled = false;
+ 
+ 	ret = setup_irq(irq, &p->irqaction);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
+-		goto err3;
++		return ret;
+ 	}
+ 
+ 	platform_set_drvdata(pdev, p);
+ 
+ 	return 0;
+-err3:
+-	clk_put(p->clk);
+-err2:
+-	iounmap(p->mapbase_str);
+-err1:
+-	iounmap(p->mapbase);
+-err0:
+-	return ret;
+ }
+ 
+ static int sh_cmt_probe(struct platform_device *pdev)
+@@ -812,7 +801,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 		goto out;
+ 	}
+ 
+-	p = kmalloc(sizeof(*p), GFP_KERNEL);
++	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
+ 	if (p = NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		return -ENOMEM;
+@@ -820,7 +809,6 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 
+ 	ret = sh_cmt_setup(p, pdev);
+ 	if (ret) {
+-		kfree(p);
+ 		pm_runtime_idle(&pdev->dev);
+ 		return ret;
+ 	}
+-- 
+Regards,
+
+Laurent Pinchart
+
