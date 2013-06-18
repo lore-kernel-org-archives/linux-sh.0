@@ -1,78 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 17 Jun 2013 18:50:00 +0000
-Subject: [PATCH v7 0/3] SH pinctrl DT support
-Message-Id: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 18 Jun 2013 08:05:30 +0000
+Subject: Re: [PATCH v7 0/3] SH pinctrl DT support
+Message-Id: <CACRpkdZh709J3pFsfbReQ20LU5W0Q1HacE0ZpssWXofKTJJ6pQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
+To: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, =?ISO-8859-1?Q?Heiko_St=FCbner?= <heiko-4mtYJXux2i+zQB+pC5nmwQ@public.gmane.org>, James Hogan <james.hogan-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org>
+Cc: "devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org" <devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <damm-yzvPICuk2ACczHhG9Qg4qA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hello,
+On Mon, Jun 17, 2013 at 8:50 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
 
-Here's the seventh (and hopefully final) version of the SuperH and SH Mobile
-pin controllers (PFC) DT support patch set.
+> Hello,
+>
+> Here's the seventh (and hopefully final) version of the SuperH and SH Mobile
+> pin controllers (PFC) DT support patch set.
+>
+> The patches have been rebased on the for-next branch of the pinctrl
+> repository. All ARM-specific patches have been dropped and will be pushed
+> through to ARM SoC tree in v3.12. This series thus only contains DT support
+> for the sh-pfc driver.
+>
+> I've tried merging Simon's latest tag (renesas-next-20130617v3) with these
+> patches and no conflict occurred. Linus, would it finally be possible to get
+> this applied for v3.11 ?
+>
+> Changes since v6:
+>
+> - Added generic pinconf support back
+> - Dropped all ARM-specific patches
 
-The patches have been rebased on the for-next branch of the pinctrl
-repository. All ARM-specific patches have been dropped and will be pushed
-through to ARM SoC tree in v3.12. This series thus only contains DT support
-for the sh-pfc driver.
+Thanks, this looks really nice and I've applied all three.
 
-I've tried merging Simon's latest tag (renesas-next-20130617v3) with these
-patches and no conflict occurred. Linus, would it finally be possible to get
-this applied for v3.11 ?
+Heiko, James can you have a look from a generic pinconf
+point of view so we are sure we get this right? (Looks right
+to me atleast.)
 
-Changes since v6:
-
-- Added generic pinconf support back
-- Dropped all ARM-specific patches
-
-Changes since v5:
-
-- Dropped generic pinconf support
-- Dropped kzm9g-reference patches, as those require pinconf support
-
-Changes since v4:
-
-- Added generic pinconf bindings
-- Use symbolic names for GPIO flags
-
-Changes since v3:
-
-- Fixed the GPIO flags description in the DT bindings documentation
-- Mention the gpio-rcar driver in the DT bindings documentation for platforms
-  that use it
-- Removed unneeded #ifdef CONFIG_OF...#endif
-- Removed unused support for platform data
-- Simplified error path in sh_pfc_dt_node_to_map()
-- Added gpio-ranges for r8a7778, r8a7779 and r8a7790
-
-Changes since v2:
-
-- Added pin configuration properties
-- Rewrote all arch changes
-
-Changes since v1:
-
-- Fixed gpio cell number 2 documentation
-- Added missing gpio-controller and #gpio-cells properties to r8a7740 DT
-- Split kzm9g DT patch into SoC and board patches
-- Dropped pinctrl mappings move to DT
-
-Laurent Pinchart (3):
-  sh-pfc: Remove support for platform data
-  sh-pfc: Add DT support
-  sh-pfc: Add pinconf support to DT bindings
-
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       | 153 ++++++++++++++++
- drivers/pinctrl/sh-pfc/core.c                      |  65 ++++++-
- drivers/pinctrl/sh-pfc/pinctrl.c                   | 201 +++++++++++++++++++++
- 3 files changed, 417 insertions(+), 2 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Yours,
+Linus Walleij
