@@ -1,45 +1,37 @@
-From: Heiko =?iso-8859-1?q?St=FCbner?= <heiko@sntech.de>
-Date: Tue, 18 Jun 2013 08:53:35 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 18 Jun 2013 09:05:43 +0000
 Subject: Re: [PATCH v7 0/3] SH pinctrl DT support
-Message-Id: <201306181053.36823.heiko@sntech.de>
+Message-Id: <CACRpkdbFEKJxQfvT4xR4z1iymHPmbbCYJriVPD95P_L0oCC6Jg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CACRpkdZh709J3pFsfbReQ20LU5W0Q1HacE0ZpssWXofKTJJ6pQ@mail.gmail.com>
-In-Reply-To: <CACRpkdZh709J3pFsfbReQ20LU5W0Q1HacE0ZpssWXofKTJJ6pQ@mail.gmail.com>
+References: <1371495003-11185-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<CACRpkdZh709J3pFsfbReQ20LU5W0Q1HacE0ZpssWXofKTJJ6pQ@mail.gmail.com>
+	<51C01FAF.8050006@imgtec.com>
+In-Reply-To: <51C01FAF.8050006@imgtec.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, James Hogan <james.hogan@imgtec.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree-discuss@lists.ozlabs.org" <devicetree-discuss@lists.ozlabs.org>, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
+To: James Hogan <james.hogan@imgtec.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, =?ISO-8859-1?Q?Heiko_St=FCbner?= <heiko@sntech.de>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree-discuss@lists.ozlabs.org" <devicetree-discuss@lists.ozlabs.org>, Magnus Damm <damm@opensource.se>, Simon Horman <horms@verge.net.au>
 
-Am Dienstag, 18. Juni 2013, 10:05:30 schrieb Linus Walleij:
-> On Mon, Jun 17, 2013 at 8:50 PM, Laurent Pinchart
-> 
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > Hello,
-> > 
-> > Here's the seventh (and hopefully final) version of the SuperH and SH
-> > Mobile pin controllers (PFC) DT support patch set.
-> > 
-> > The patches have been rebased on the for-next branch of the pinctrl
-> > repository. All ARM-specific patches have been dropped and will be pushed
-> > through to ARM SoC tree in v3.12. This series thus only contains DT
-> > support for the sh-pfc driver.
-> > 
-> > I've tried merging Simon's latest tag (renesas-next-20130617v3) with
-> > these patches and no conflict occurred. Linus, would it finally be
-> > possible to get this applied for v3.11 ?
-> > 
-> > Changes since v6:
-> > 
-> > - Added generic pinconf support back
-> > - Dropped all ARM-specific patches
-> 
-> Thanks, this looks really nice and I've applied all three.
-> 
-> Heiko, James can you have a look from a generic pinconf
-> point of view so we are sure we get this right? (Looks right
-> to me atleast.)
+On Tue, Jun 18, 2013 at 10:51 AM, James Hogan <james.hogan@imgtec.com> wrote:
 
-the pinconfig handling looks nice to me.
+> Should we be standardizing the pins/groups/function properties too,
+> since the strings are pretty much passed straight through? The usage
+> seems pretty similar between the drivers I've seen (except ugly vendor
+> prefixes), so we could presumably get away with a single implementation
+> of dt_node_to_map?
 
-Acked-by: Heiko Stuebner <heiko@sntech.de>
+This is an orthogonal issue I'd say.
+
+Basically this goes back to the quite prolonged discussion about
+device tree bindings and the fact that we added the
+.dt_node_to_map() and .dt_free_map() functions in the
+first place.
+
+I'd be happy to consolidate these mapping functions where
+possible, by moving to the core, basically.
+
+But that would be a separate patch series.... interested? ;-)
+
+Yours,
+Linus Walleij
