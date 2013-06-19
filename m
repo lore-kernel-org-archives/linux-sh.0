@@ -1,33 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Jun 2013 14:09:33 +0000
-Subject: Re: [PATCH] ARM: shmobile: Rework sh7372 sleep code to use virt_to_phys()
-Message-Id: <20130612140932.GQ32751@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 19 Jun 2013 13:22:18 +0000
+Subject: [GIT PULL 0/5] Renesas ARM-based SoC board updates for v3.11 #2
+Message-Id: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605074553.16962.7736.sendpatchset@w520>
-In-Reply-To: <20130605074553.16962.7736.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 05, 2013 at 04:45:53PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Instead of having a hard coded virt-to-phys address
-> conversion code in sleep-sh7372.S, rework the code
-> to do the conversion in C using virt_to_phys().
-> 
-> This removes the need for PLAT_PHYS_OFFSET which
-> in turn is needed for ARCH_MULTIPLATFORM.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Tested with A3SM Suspend-to-RAM on Mackerel.
-> 
->  arch/arm/mach-shmobile/include/mach/sh7372.h |    2 ++
->  arch/arm/mach-shmobile/pm-sh7372.c           |    3 +++
->  arch/arm/mach-shmobile/sleep-sh7372.S        |    5 ++++-
->  3 files changed, 9 insertions(+), 1 deletion(-)
+Hi Olof, Hi Arnd,
 
-Thanks, I have queued this up for v3.11 in the (new) cleanup-boot branch.
+please consider the following updates to the Bock-W board for v3.11.
+
+This pull request is based on a merge of renesas-boards2-for-v3.11 and
+renesas-soc2-for-v3.11, both of which you have previously pulled, in order
+to satisfy dependencies.
+
+
+The following changes since commit 2e9a222e271b7fd16e62a0861ad5e42996d17815:
+
+  Merge branch 'soc2' into boards-base (2013-06-13 14:41:53 +0900)
+
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.11
+
+for you to fetch changes up to 2c83322ce820bcf2d5e8265de831489076ee211e:
+
+  ARM: shmobile: BOCK-W: change Ether device name (2013-06-18 16:22:45 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM-based SoC board updates for v3.11
+
+* Extended hardware coverage for the Bock-W board
+  by Goda-san and Morimoto-san
+* Correction to Ether device name for the Bock-W board
+  from Sergei Shtylyov
+
+----------------------------------------------------------------
+Kuninori Morimoto (3):
+      ARM: shmobile: bockw: add I2C device support
+      ARM: shmobile: bockw: add SPI FLASH support
+      ARM: shmobile: bockw: add MMCIF support
+
+Sergei Shtylyov (2):
+      ARM: shmobile: BOCK-W: add Ether support
+      ARM: shmobile: BOCK-W: change Ether device name
+
+ arch/arm/mach-shmobile/board-bockw.c | 98 +++++++++++++++++++++++++++++++++++-
+ 1 file changed, 97 insertions(+), 1 deletion(-)
