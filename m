@@ -1,48 +1,62 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Sun, 16 Jun 2013 00:04:45 +0000
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Wed, 19 Jun 2013 21:52:54 +0000
 Subject: Re: [RFC] pinctrl: generic: Add DT bindings
-Message-Id: <CACRpkdZePYMHFMOc0WEy73vqix9uRFyedS66sKcyP_D_Kq+nQg@mail.gmail.com>
+Message-Id: <51C22836.9090909@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1370988237-30593-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1795038.rqcr6GWLdP@avalon>
- <CACRpkdYi=ekV8okmz68HZ8Ydv9hTrHnHvQh0HYMs5SfURd9mdA@mail.gmail.com>
- <1422045.RvRkWGR9K7@avalon>
-In-Reply-To: <1422045.RvRkWGR9K7@avalon>
+ <2555796.PtkImJGaK8@avalon>
+ <CACRpkdaF7V3FGhNNj+N+Dc-NWhsfQ=bqh+ETx0wGBFbLmxfGTw@mail.gmail.com>
+ <201306152216.14252.heiko@sntech.de>
+In-Reply-To: <201306152216.14252.heiko-4mtYJXux2i+zQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: James Hogan <james.hogan-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org" <devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: =?ISO-8859-1?Q?Heiko_St=FCbner?= <heiko-4mtYJXux2i+zQB+pC5nmwQ@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org" <devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Hogan <james.hogan-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 
-On Sun, Jun 16, 2013 at 1:52 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Linus,
-> On Sunday 16 June 2013 01:51:32 Linus Walleij wrote:
-
->> As dicussed earlier this was designed for systems where
->> you could set the pull-up resistance, like
+On 06/15/2013 02:16 PM, Heiko St=FCbner wrote:
+> Am Samstag, 15. Juni 2013, 21:56:05 schrieb Linus Walleij:
+>> On Fri, Jun 14, 2013 at 12:39 AM, Laurent Pinchart
 >>
->> bias-pull-up = <600000>;
+>> <laurent.pinchart@ideasonboard.com> wrote:
+>>>         mmcif_pins: mmcif {
+>>>        =20
+>>>                 mux {
+>>>                =20
+>>>                         renesas,groups =3D "mmc0_data8_0", "mmc0_ctrl_0=
+";
+>>>                         renesas,function =3D "mmc0";
+>>>                =20
+>>>                 };
+>>>                 cfg {
+>>>                =20
+>>>                         renesas,groups =3D "mmc0_data8_0";
+>>>                         renesas,pins =3D "PORT279";
+>>>                         bias-pull-up =3D <1>;
 >>
->> would give 600kOhm pull up.
+>> If I understood your code correctly that last statement can *optionally*
+>> be written like just:
 >>
->> In most existing systems that is silly, as they can't specify it, so they
->> should be able to do just:
+>>  bias-pull-up;
 >>
->> bias-pull-up;
+>> Without the parameter?
 >>
->> as that is all they can do. If we have to cut one way, we should cut the
->> former until such a system appears.
->
-> I'm fine with bias-pull-up = <1>; vs bias-pull-up;. What bothers me a bit is
-> bias-pull-up = <0>; vs bias-disable;.
+>> I think that Heiko's implementation does this anyway.
+>=20
+> Yep, with the fixes-series from yesterday the bias-pull-* now have a bett=
+er=20
+> default value of <1>.
+>=20
+> so you can do
+> 	bias-pull-up;
+> which is then identical to the
+> 	bias-pull-up =3D <1>;
+> above (both are valid of course).
 
-Oh yeah OK you got a point there for sure.
+A property with a value is an integer. One without is a Boolean. The
+same property shouldn't be both.
 
-Setting bias-pull-up = <0>; would be equal to short-circuit
-so it does not make any kind of sense.
+Regarding the value representing resistance: That feels pretty odd.
+Enabling a pullup and selecting the pullup resistance feel like
+orthogonal options which shouldn't be bound to each-other.
 
-Let's keep an eye on this.
-
-Yours,
-Linus Walleij
