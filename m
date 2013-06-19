@@ -1,46 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Jun 2013 22:22:44 +0000
-Subject: [PATCH v5 15/22] ARM: shmobile: armadillo-reference: Add st1232 pin mappings
-Message-Id: <1370989371-30846-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Masami Hiramatsu <masami.hiramatsu.pt@hitachi.com>
+Date: Wed, 19 Jun 2013 11:42:44 +0000
+Subject: [PATCH] sh/kprobes: Fix illslot handler not to unregister but disarm kprobe
+Message-Id: <20130619114244.19843.90351.stgit@mhiramat-M0-7522>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1370989371-30846-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Sasha Levin <sasha.levin@oracle.com>, Andrew Morton <akpm@linux-foundation.org>, Paul Mundt <lethal@linux-sh.org>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, yrl.pp-manager.tt@hitachi.com
 
-Add pin mappings for the st1232 device to the device tree and reference
-them as the default state for the device.
+Fix illegal slot exception handler not to unregister the kprobe
+but just to disarm it. Since the unregister_kprobe must sleep (by
+synchronize_sched), it must not be called from any exception/
+interrupt handlers. Disarming is safe because it just recovers
+original instruction code.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Masami Hiramatsu <masami.hiramatsu.pt@hitachi.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Sasha Levin <sasha.levin@oracle.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/sh/kernel/kprobes.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 4a7ae32..a6c6606 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -41,6 +41,8 @@
- 		reg = <0x55>;
- 		interrupt-parent = <&irqpin1>;
- 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
-+		pinctrl-0 = <&st1232_pins>;
-+		pinctrl-names = "default";
- 	};
- };
+diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
+index 42b46e6..5ec8182 100644
+--- a/arch/sh/kernel/kprobes.c
++++ b/arch/sh/kernel/kprobes.c
+@@ -82,7 +82,7 @@ int __kprobes arch_trampoline_kprobe(struct kprobe *p)
  
-@@ -52,4 +54,9 @@
- 		renesas,groups = "scifa1_data";
- 		renesas,function = "scifa1";
- 	};
-+
-+	st1232_pins: st1232 {
-+		renesas,groups = "intc_irq10";
-+		renesas,function = "intc";
-+	};
- };
--- 
-1.8.1.5
+ /**
+  * If an illegal slot instruction exception occurs for an address
+- * containing a kprobe, remove the probe.
++ * containing a kprobe, disarm the probe.
+  *
+  * Returns 0 if the exception was handled successfully, 1 otherwise.
+  */
+@@ -93,7 +93,7 @@ int __kprobes kprobe_handle_illslot(unsigned long pc)
+ 	if (p != NULL) {
+ 		printk("Warning: removing kprobe from delay slot: 0x%.8x\n",
+ 		       (unsigned int)pc + 2);
+-		unregister_kprobe(p);
++		arch_disarm_kprobe(p);
+ 		return 0;
+ 	}
+ 
+
 
