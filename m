@@ -1,67 +1,99 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:00 +0000
-Subject: [PATCH 009/130] sh-pfc: Remove dependency on GPIOLIB
-Message-Id: <1370420821-28420-10-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 19 Jun 2013 13:22:21 +0000
+Subject: [PATCH 3/5] ARM: shmobile: bockw: add SPI FLASH support
+Message-Id: <1371648143-18376-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Make GPIO support optional for platforms that don't support GPIOLIB.
+This patch enables Spansion S25FL008K chip on HSPI0
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/Kconfig  | 2 --
- drivers/pinctrl/sh-pfc/core.h   | 1 +
- drivers/pinctrl/sh-pfc/sh_pfc.h | 2 +-
- 3 files changed, 2 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-index 9f0217b..a0b6bd0 100644
---- a/drivers/pinctrl/sh-pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -5,8 +5,6 @@
- if ARCH_SHMOBILE || SUPERH
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index a4251cc..7d42f12 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -20,11 +20,14 @@
  
- config PINCTRL_SH_PFC
--	# XXX move off the gpio dependency
--	depends on GPIOLIB
- 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
- 	select PINMUX
- 	select PINCONF
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index ee4a4d6..6ec746f 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -11,6 +11,7 @@
- #define __SH_PFC_CORE_H__
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mtd/partitions.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/flash.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+@@ -84,10 +87,40 @@ static struct i2c_board_info i2c0_devices[] = {
+ 	},
+ };
  
- #include <linux/compiler.h>
-+#include <linux/spinlock.h>
- #include <linux/types.h>
++/* HSPI*/
++static struct mtd_partition m25p80_spi_flash_partitions[] = {
++	{
++		.name	= "data(spi)",
++		.size	= 0x0100000,
++		.offset	= 0,
++	},
++};
++
++static struct flash_platform_data spi_flash_data = {
++	.name		= "m25p80",
++	.type		= "s25fl008k",
++	.parts		= m25p80_spi_flash_partitions,
++	.nr_parts	= ARRAY_SIZE(m25p80_spi_flash_partitions),
++};
++
++static struct spi_board_info spi_board_info[] __initdata = {
++	{
++		.modalias	= "m25p80",
++		.max_speed_hz	= 104000000,
++		.chip_select	= 0,
++		.bus_num	= 0,
++		.mode		= SPI_MODE_0,
++		.platform_data	= &spi_flash_data,
++	},
++};
++
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* Ether */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
+ 				  "ether_rmii", "ether"),
++	/* HSPI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7778",
++				  "hspi0_a", "hspi0"),
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+ 				  "scif0_data_a", "scif0"),
+@@ -111,9 +144,12 @@ static void __init bockw_init(void)
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_ether_device(&ether_platform_data);
+ 	r8a7778_add_i2c_device(0);
++	r8a7778_add_hspi_device(0);
  
- #include "sh_pfc.h"
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 3b785fc..b170761 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -11,8 +11,8 @@
- #ifndef __SH_PFC_H
- #define __SH_PFC_H
- 
-+#include <linux/bug.h>
- #include <linux/stringify.h>
--#include <asm-generic/gpio.h>
- 
- typedef unsigned short pinmux_enum_t;
- 
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
++	spi_register_board_info(spi_board_info,
++				ARRAY_SIZE(spi_board_info));
+ 	pinctrl_register_mappings(bockw_pinctrl_map,
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
+ 	r8a7778_pinmux_init();
 -- 
 1.8.2.1
 
