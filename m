@@ -1,70 +1,33 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 18 Jun 2013 22:07:46 +0000
-Subject: [PATCH 1/2] sh_eth: define/use EESR_RX_CHECK macro
-Message-Id: <201306190207.46832.sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 19 Jun 2013 06:47:47 +0000
+Subject: Re: [PATCH 1/2] sh_eth: define/use EESR_RX_CHECK macro
+Message-Id: <CANqRtoRNnNuG_r+MW3Yb79jVK_iKm1bRTSvMhw1j4qsWZtphpw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201306190207.46832.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306190207.46832.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev <netdev@vger.kernel.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, SH-Linux <linux-sh@vger.kernel.org>
 
-sh_eth_interrupt() uses the same Rx interrupt mask twice to check the interrupt
-status register -- #define EESR_RX_CHECK  and use it instead. 
+Hi Sergei,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On Wed, Jun 19, 2013 at 7:07 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> sh_eth_interrupt() uses the same Rx interrupt mask twice to check the interrupt
+> status register -- #define EESR_RX_CHECK  and use it instead.
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
----
-The patch is against the Dave Miller's 'net-next.git' repo.
+Thanks for the patch, nice to see that this driver is moving forward.
 
- drivers/net/ethernet/renesas/sh_eth.c |   13 ++-----------
- drivers/net/ethernet/renesas/sh_eth.h |    8 ++++++++
- 2 files changed, 10 insertions(+), 11 deletions(-)
+Can you please include information about which SoC / board this code
+has been tested on? As you know, the actual hardware that this driver
+is operating on is not very well documented, so at least having
+information about the SoC together with the commit message or patch
+may help in the future.
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1497,23 +1497,14 @@ static irqreturn_t sh_eth_interrupt(int 
- 	 */
- 	intr_status &= sh_eth_read(ndev, EESIPR) | DMAC_M_ECI;
- 	/* Clear interrupt */
--	if (intr_status & (EESR_FRC | EESR_RMAF | EESR_RRF |
--			EESR_RTLF | EESR_RTSF | EESR_PRE | EESR_CERF |
--			cd->tx_check | cd->eesr_err_check)) {
-+	if (intr_status & (EESR_RX_CHECK | cd->tx_check | cd->eesr_err_check)) {
- 		sh_eth_write(ndev, intr_status, EESR);
- 		ret = IRQ_HANDLED;
- 	} else
- 		goto other_irq;
- 
--	if (intr_status & (EESR_FRC | /* Frame recv*/
--			EESR_RMAF | /* Multi cast address recv*/
--			EESR_RRF  | /* Bit frame recv */
--			EESR_RTLF | /* Long frame recv*/
--			EESR_RTSF | /* short frame recv */
--			EESR_PRE  | /* PHY-LSI recv error */
--			EESR_CERF)){ /* recv frame CRC error */
-+	if (intr_status & EESR_RX_CHECK)
- 		sh_eth_rx(ndev, intr_status);
--	}
- 
- 	/* Tx Check */
- 	if (intr_status & cd->tx_check) {
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.h
-@@ -248,6 +248,14 @@ enum EESR_BIT {
- 	EESR_CERF	= 0x00000001,
- };
- 
-+#define EESR_RX_CHECK		(EESR_FRC  | /* Frame recv */		\
-+				 EESR_RMAF | /* Multicast address recv */ \
-+				 EESR_RRF  | /* Bit frame recv */	\
-+				 EESR_RTLF | /* Long frame recv */	\
-+				 EESR_RTSF | /* Short frame recv */	\
-+				 EESR_PRE  | /* PHY-LSI recv error */	\
-+				 EESR_CERF)  /* Recv frame CRC error */
-+
- #define DEFAULT_TX_CHECK	(EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | \
- 				 EESR_RTO)
- #define DEFAULT_EESR_ERR_CHECK	(EESR_TWB | EESR_TABT | EESR_RABT | \
+Cheers,
+
+/ magnus
