@@ -1,252 +1,299 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:22 +0000
-Subject: [PATCH 031/130] sh-pfc: sh7372: Add SCIF pin groups and functions
-Message-Id: <1370420821-28420-32-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 19 Jun 2013 13:22:33 +0000
+Subject: [PATCH 2/4] sh-pfc: r8a7790: add HSCIF pin groups
+Message-Id: <1371648155-18479-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Adds HSCIF data/clk/ctrl groups to R8A7790 PFC driver.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 197 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 197 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 211 ++++++++++++++++++++++++++++++++---
+ 1 file changed, 196 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 8503747..46466bb 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1467,6 +1467,139 @@ static const unsigned int mmc0_ctrl_1_pins[] = {
- static const unsigned int mmc0_ctrl_1_mux[] = {
- 	MMCCMD1_MARK, MMCCLK1_MARK,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 85d77a4..1e7a5eb 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -1979,6 +1979,141 @@ static const unsigned int scif1_clk_e_pins[] = {
+ static const unsigned int scif1_clk_e_mux[] = {
+ 	SCK1_E_MARK,
  };
-+/* - SCIFA0 ----------------------------------------------------------------- */
-+static const unsigned int scifa0_data_pins[] = {
-+	/* RXD, TXD */
-+	153, 152,
++/* - HSCIF0 ----------------------------------------------------------------- */
++static const unsigned int hscif0_data_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(5, 8), RCAR_GP_PIN(5, 9),
 +};
-+static const unsigned int scifa0_data_mux[] = {
-+	SCIFA0_RXD_MARK, SCIFA0_TXD_MARK,
++static const unsigned int hscif0_data_mux[] = {
++	HRX0_MARK, HTX0_MARK,
 +};
-+static const unsigned int scifa0_clk_pins[] = {
++static const unsigned int hscif0_clk_pins[] = {
 +	/* SCK */
-+	156,
++	RCAR_GP_PIN(5, 7),
 +};
-+static const unsigned int scifa0_clk_mux[] = {
-+	SCIFA0_SCK_MARK,
++static const unsigned int hscif0_clk_mux[] = {
++	HSCK0_MARK,
 +};
-+static const unsigned int scifa0_ctrl_pins[] = {
++static const unsigned int hscif0_ctrl_pins[] = {
 +	/* RTS, CTS */
-+	157, 158,
++	RCAR_GP_PIN(5, 11), RCAR_GP_PIN(5, 10),
 +};
-+static const unsigned int scifa0_ctrl_mux[] = {
-+	SCIFA0_RTS_MARK, SCIFA0_CTS_MARK,
++static const unsigned int hscif0_ctrl_mux[] = {
++	HRTS0_N_MARK, HCTS0_N_MARK,
 +};
-+/* - SCIFA1 ----------------------------------------------------------------- */
-+static const unsigned int scifa1_data_pins[] = {
-+	/* RXD, TXD */
-+	155, 154,
++static const unsigned int hscif0_data_b_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(1, 23), RCAR_GP_PIN(1, 12),
 +};
-+static const unsigned int scifa1_data_mux[] = {
-+	SCIFA1_RXD_MARK, SCIFA1_TXD_MARK,
++static const unsigned int hscif0_data_b_mux[] = {
++	HRX0_B_MARK, HTX0_B_MARK,
 +};
-+static const unsigned int scifa1_clk_pins[] = {
++static const unsigned int hscif0_ctrl_b_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(1, 29), RCAR_GP_PIN(1, 28),
++};
++static const unsigned int hscif0_ctrl_b_mux[] = {
++	HRTS0_N_B_MARK, HCTS0_N_B_MARK,
++};
++static const unsigned int hscif0_data_c_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(5, 13), RCAR_GP_PIN(5, 16),
++};
++static const unsigned int hscif0_data_c_mux[] = {
++	HRX0_C_MARK, HTX0_C_MARK,
++};
++static const unsigned int hscif0_ctrl_c_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(5, 3), RCAR_GP_PIN(5, 7),
++};
++static const unsigned int hscif0_ctrl_c_mux[] = {
++	HRTS0_N_C_MARK, HCTS0_N_C_MARK,
++};
++static const unsigned int hscif0_data_d_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(3, 20), RCAR_GP_PIN(3, 21),
++};
++static const unsigned int hscif0_data_d_mux[] = {
++	HRX0_D_MARK, HTX0_D_MARK,
++};
++static const unsigned int hscif0_ctrl_d_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(3, 23), RCAR_GP_PIN(3, 22),
++};
++static const unsigned int hscif0_ctrl_d_mux[] = {
++	HRTS0_N_D_MARK, HCTS0_N_D_MARK,
++};
++static const unsigned int hscif0_data_e_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 22),
++};
++static const unsigned int hscif0_data_e_mux[] = {
++	HRX0_E_MARK, HTX0_E_MARK,
++};
++static const unsigned int hscif0_ctrl_e_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(2, 24), RCAR_GP_PIN(2, 23),
++};
++static const unsigned int hscif0_ctrl_e_mux[] = {
++	HRTS0_N_E_MARK, HCTS0_N_E_MARK,
++};
++static const unsigned int hscif0_data_f_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(2, 23), RCAR_GP_PIN(2, 25),
++};
++static const unsigned int hscif0_data_f_mux[] = {
++	HRX0_F_MARK, HTX0_F_MARK,
++};
++static const unsigned int hscif0_ctrl_f_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(2, 26), RCAR_GP_PIN(2, 24),
++};
++static const unsigned int hscif0_ctrl_f_mux[] = {
++	HRTS0_N_F_MARK, HCTS0_N_F_MARK,
++};
++/* - HSCIF1 ----------------------------------------------------------------- */
++static const unsigned int hscif1_data_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(4, 28), RCAR_GP_PIN(4, 29),
++};
++static const unsigned int hscif1_data_mux[] = {
++	HRX1_MARK, HTX1_MARK,
++};
++static const unsigned int hscif1_clk_pins[] = {
 +	/* SCK */
-+	159,
++	RCAR_GP_PIN(4, 27),
 +};
-+static const unsigned int scifa1_clk_mux[] = {
-+	SCIFA1_SCK_MARK,
++static const unsigned int hscif1_clk_mux[] = {
++	HSCK1_MARK,
 +};
-+static const unsigned int scifa1_ctrl_pins[] = {
++static const unsigned int hscif1_ctrl_pins[] = {
 +	/* RTS, CTS */
-+	160, 161,
++	RCAR_GP_PIN(4, 31), RCAR_GP_PIN(4, 30),
 +};
-+static const unsigned int scifa1_ctrl_mux[] = {
-+	SCIFA1_RTS_MARK, SCIFA1_CTS_MARK,
++static const unsigned int hscif1_ctrl_mux[] = {
++	HRTS1_N_MARK, HCTS1_N_MARK,
 +};
-+/* - SCIFA2 ----------------------------------------------------------------- */
-+static const unsigned int scifa2_data_pins[] = {
-+	/* RXD, TXD */
-+	97, 96,
++static const unsigned int hscif1_data_b_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(1, 12), RCAR_GP_PIN(1, 18),
 +};
-+static const unsigned int scifa2_data_mux[] = {
-+	SCIFA2_RXD1_MARK, SCIFA2_TXD1_MARK,
++static const unsigned int hscif1_data_b_mux[] = {
++	HRX1_B_MARK, HTX1_B_MARK,
 +};
-+static const unsigned int scifa2_clk_pins[] = {
++static const unsigned int hscif1_clk_b_pins[] = {
 +	/* SCK */
-+	98,
++	RCAR_GP_PIN(1, 28),
 +};
-+static const unsigned int scifa2_clk_mux[] = {
-+	SCIFA2_SCK1_MARK,
++static const unsigned int hscif1_clk_b_mux[] = {
++	HSCK1_B_MARK,
 +};
-+static const unsigned int scifa2_ctrl_pins[] = {
++static const unsigned int hscif1_ctrl_b_pins[] = {
 +	/* RTS, CTS */
-+	95, 94,
++	RCAR_GP_PIN(1, 14), RCAR_GP_PIN(1, 13),
 +};
-+static const unsigned int scifa2_ctrl_mux[] = {
-+	SCIFA2_RTS1_MARK, SCIFA2_CTS1_MARK,
++static const unsigned int hscif1_ctrl_b_mux[] = {
++	HRTS1_N_B_MARK, HCTS1_N_B_MARK,
 +};
-+/* - SCIFA3 ----------------------------------------------------------------- */
-+static const unsigned int scifa3_data_pins[] = {
-+	/* RXD, TXD */
-+	144, 143,
-+};
-+static const unsigned int scifa3_data_mux[] = {
-+	SCIFA3_RXD_MARK, SCIFA3_TXD_MARK,
-+};
-+static const unsigned int scifa3_clk_pins[] = {
-+	/* SCK */
-+	142,
-+};
-+static const unsigned int scifa3_clk_mux[] = {
-+	SCIFA3_SCK_MARK,
-+};
-+static const unsigned int scifa3_ctrl_0_pins[] = {
-+	/* RTS, CTS */
-+	44, 43,
-+};
-+static const unsigned int scifa3_ctrl_0_mux[] = {
-+	SCIFA3_RTS_44_MARK, SCIFA3_CTS_43_MARK,
-+};
-+static const unsigned int scifa3_ctrl_1_pins[] = {
-+	/* RTS, CTS */
-+	141, 140,
-+};
-+static const unsigned int scifa3_ctrl_1_mux[] = {
-+	SCIFA3_RTS_141_MARK, SCIFA3_CTS_140_MARK,
-+};
-+/* - SCIFA4 ----------------------------------------------------------------- */
-+static const unsigned int scifa4_data_pins[] = {
-+	/* RXD, TXD */
-+	5, 6,
-+};
-+static const unsigned int scifa4_data_mux[] = {
-+	SCIFA4_RXD_MARK, SCIFA4_TXD_MARK,
-+};
-+/* - SCIFA5 ----------------------------------------------------------------- */
-+static const unsigned int scifa5_data_pins[] = {
-+	/* RXD, TXD */
-+	8, 12,
-+};
-+static const unsigned int scifa5_data_mux[] = {
-+	SCIFA5_RXD_MARK, SCIFA5_TXD_MARK,
-+};
-+/* - SCIFB ------------------------------------------------------------------ */
-+static const unsigned int scifb_data_pins[] = {
-+	/* RXD, TXD */
-+	166, 165,
-+};
-+static const unsigned int scifb_data_mux[] = {
-+	SCIFB_RXD_MARK, SCIFB_TXD_MARK,
-+};
-+static const unsigned int scifb_clk_pins[] = {
-+	/* SCK */
-+	162,
-+};
-+static const unsigned int scifb_clk_mux[] = {
-+	SCIFB_SCK_MARK,
-+};
-+static const unsigned int scifb_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	163, 164,
-+};
-+static const unsigned int scifb_ctrl_mux[] = {
-+	SCIFB_RTS_MARK, SCIFB_CTS_MARK,
-+};
- /* - SDHI0 ------------------------------------------------------------------ */
- static const unsigned int sdhi0_data1_pins[] = {
- 	/* D0 */
-@@ -1660,6 +1793,24 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(mmc0_data4_1),
- 	SH_PFC_PIN_GROUP(mmc0_data8_1),
- 	SH_PFC_PIN_GROUP(mmc0_ctrl_1),
-+	SH_PFC_PIN_GROUP(scifa0_data),
-+	SH_PFC_PIN_GROUP(scifa0_clk),
-+	SH_PFC_PIN_GROUP(scifa0_ctrl),
-+	SH_PFC_PIN_GROUP(scifa1_data),
-+	SH_PFC_PIN_GROUP(scifa1_clk),
-+	SH_PFC_PIN_GROUP(scifa1_ctrl),
-+	SH_PFC_PIN_GROUP(scifa2_data),
-+	SH_PFC_PIN_GROUP(scifa2_clk),
-+	SH_PFC_PIN_GROUP(scifa2_ctrl),
-+	SH_PFC_PIN_GROUP(scifa3_data),
-+	SH_PFC_PIN_GROUP(scifa3_clk),
-+	SH_PFC_PIN_GROUP(scifa3_ctrl_0),
-+	SH_PFC_PIN_GROUP(scifa3_ctrl_1),
-+	SH_PFC_PIN_GROUP(scifa4_data),
-+	SH_PFC_PIN_GROUP(scifa5_data),
-+	SH_PFC_PIN_GROUP(scifb_data),
-+	SH_PFC_PIN_GROUP(scifb_clk),
-+	SH_PFC_PIN_GROUP(scifb_ctrl),
+ /* - SCIFA0 ----------------------------------------------------------------- */
+ static const unsigned int scifa0_data_pins[] = {
+ 	/* RXD, TXD */
+@@ -2591,10 +2726,37 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(eth_magic),
+ 	SH_PFC_PIN_GROUP(eth_mdio),
+ 	SH_PFC_PIN_GROUP(eth_rmii),
++	SH_PFC_PIN_GROUP(hscif0_data),
++	SH_PFC_PIN_GROUP(hscif0_clk),
++	SH_PFC_PIN_GROUP(hscif0_ctrl),
++	SH_PFC_PIN_GROUP(hscif0_data_b),
++	SH_PFC_PIN_GROUP(hscif0_ctrl_b),
++	SH_PFC_PIN_GROUP(hscif0_data_c),
++	SH_PFC_PIN_GROUP(hscif0_ctrl_c),
++	SH_PFC_PIN_GROUP(hscif0_data_d),
++	SH_PFC_PIN_GROUP(hscif0_ctrl_d),
++	SH_PFC_PIN_GROUP(hscif0_data_e),
++	SH_PFC_PIN_GROUP(hscif0_ctrl_e),
++	SH_PFC_PIN_GROUP(hscif0_data_f),
++	SH_PFC_PIN_GROUP(hscif0_ctrl_f),
++	SH_PFC_PIN_GROUP(hscif1_data),
++	SH_PFC_PIN_GROUP(hscif1_clk),
++	SH_PFC_PIN_GROUP(hscif1_ctrl),
++	SH_PFC_PIN_GROUP(hscif1_data_b),
++	SH_PFC_PIN_GROUP(hscif1_clk_b),
++	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
+ 	SH_PFC_PIN_GROUP(intc_irq0),
+ 	SH_PFC_PIN_GROUP(intc_irq1),
+ 	SH_PFC_PIN_GROUP(intc_irq2),
+ 	SH_PFC_PIN_GROUP(intc_irq3),
++	SH_PFC_PIN_GROUP(mmc0_data1),
++	SH_PFC_PIN_GROUP(mmc0_data4),
++	SH_PFC_PIN_GROUP(mmc0_data8),
++	SH_PFC_PIN_GROUP(mmc0_ctrl),
++	SH_PFC_PIN_GROUP(mmc1_data1),
++	SH_PFC_PIN_GROUP(mmc1_data4),
++	SH_PFC_PIN_GROUP(mmc1_data8),
++	SH_PFC_PIN_GROUP(mmc1_ctrl),
+ 	SH_PFC_PIN_GROUP(scif0_data),
+ 	SH_PFC_PIN_GROUP(scif0_clk),
+ 	SH_PFC_PIN_GROUP(scif0_ctrl),
+@@ -2659,18 +2821,6 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scifb2_clk_b),
+ 	SH_PFC_PIN_GROUP(scifb2_ctrl_b),
+ 	SH_PFC_PIN_GROUP(scifb2_data_c),
+-	SH_PFC_PIN_GROUP(tpu0_to0),
+-	SH_PFC_PIN_GROUP(tpu0_to1),
+-	SH_PFC_PIN_GROUP(tpu0_to2),
+-	SH_PFC_PIN_GROUP(tpu0_to3),
+-	SH_PFC_PIN_GROUP(mmc0_data1),
+-	SH_PFC_PIN_GROUP(mmc0_data4),
+-	SH_PFC_PIN_GROUP(mmc0_data8),
+-	SH_PFC_PIN_GROUP(mmc0_ctrl),
+-	SH_PFC_PIN_GROUP(mmc1_data1),
+-	SH_PFC_PIN_GROUP(mmc1_data4),
+-	SH_PFC_PIN_GROUP(mmc1_data8),
+-	SH_PFC_PIN_GROUP(mmc1_ctrl),
  	SH_PFC_PIN_GROUP(sdhi0_data1),
  	SH_PFC_PIN_GROUP(sdhi0_data4),
  	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-@@ -1814,6 +1965,45 @@ static const char * const mmc0_groups[] = {
- 	"mmc0_ctrl_1",
+@@ -2691,6 +2841,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi3_ctrl),
+ 	SH_PFC_PIN_GROUP(sdhi3_cd),
+ 	SH_PFC_PIN_GROUP(sdhi3_wp),
++	SH_PFC_PIN_GROUP(tpu0_to0),
++	SH_PFC_PIN_GROUP(tpu0_to1),
++	SH_PFC_PIN_GROUP(tpu0_to2),
++	SH_PFC_PIN_GROUP(tpu0_to3),
  };
  
-+static const char * const scifa0_groups[] = {
-+	"scifa0_data",
-+	"scifa0_clk",
-+	"scifa0_ctrl",
+ static const char * const eth_groups[] = {
+@@ -2726,6 +2880,31 @@ static const char * const scif1_groups[] = {
+ 	"scif1_clk_e",
+ };
+ 
++static const char * const hscif0_groups[] = {
++	"hscif0_data",
++	"hscif0_clk",
++	"hscif0_ctrl",
++	"hscif0_data_b",
++	"hscif0_ctrl_b",
++	"hscif0_data_c",
++	"hscif0_ctrl_c",
++	"hscif0_data_d",
++	"hscif0_ctrl_d",
++	"hscif0_data_e",
++	"hscif0_ctrl_e",
++	"hscif0_data_f",
++	"hscif0_ctrl_f",
 +};
 +
-+static const char * const scifa1_groups[] = {
-+	"scifa1_data",
-+	"scifa1_clk",
-+	"scifa1_ctrl",
++static const char * const hscif1_groups[] = {
++	"hscif1_data",
++	"hscif1_clk",
++	"hscif1_ctrl",
++	"hscif1_data_b",
++	"hscif1_clk_b",
++	"hscif1_ctrl_b",
 +};
 +
-+static const char * const scifa2_groups[] = {
-+	"scifa2_data",
-+	"scifa2_clk",
-+	"scifa2_ctrl",
-+};
-+
-+static const char * const scifa3_groups[] = {
-+	"scifa3_data",
-+	"scifa3_clk",
-+	"scifa3_ctrl_0",
-+	"scifa3_ctrl_1",
-+};
-+
-+static const char * const scifa4_groups[] = {
-+	"scifa4_data",
-+};
-+
-+static const char * const scifa5_groups[] = {
-+	"scifa5_data",
-+};
-+
-+static const char * const scifb_groups[] = {
-+	"scifb_data",
-+	"scifb_clk",
-+	"scifb_ctrl",
-+};
-+
- static const char * const sdhi0_groups[] = {
- 	"sdhi0_data1",
- 	"sdhi0_data4",
-@@ -1845,6 +2035,13 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(keysc),
- 	SH_PFC_FUNCTION(lcd),
- 	SH_PFC_FUNCTION(mmc0),
-+	SH_PFC_FUNCTION(scifa0),
-+	SH_PFC_FUNCTION(scifa1),
-+	SH_PFC_FUNCTION(scifa2),
-+	SH_PFC_FUNCTION(scifa3),
-+	SH_PFC_FUNCTION(scifa4),
-+	SH_PFC_FUNCTION(scifa5),
-+	SH_PFC_FUNCTION(scifb),
+ static const char * const scifa0_groups[] = {
+ 	"scifa0_data",
+ 	"scifa0_clk",
+@@ -2850,7 +3029,11 @@ static const char * const sdhi3_groups[] = {
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(eth),
++	SH_PFC_FUNCTION(hscif0),
++	SH_PFC_FUNCTION(hscif1),
+ 	SH_PFC_FUNCTION(intc),
++	SH_PFC_FUNCTION(mmc0),
++	SH_PFC_FUNCTION(mmc1),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
+ 	SH_PFC_FUNCTION(scifa0),
+@@ -2859,13 +3042,11 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scifb0),
+ 	SH_PFC_FUNCTION(scifb1),
+ 	SH_PFC_FUNCTION(scifb2),
+-	SH_PFC_FUNCTION(tpu0),
+-	SH_PFC_FUNCTION(mmc0),
+-	SH_PFC_FUNCTION(mmc1),
  	SH_PFC_FUNCTION(sdhi0),
  	SH_PFC_FUNCTION(sdhi1),
  	SH_PFC_FUNCTION(sdhi2),
+ 	SH_PFC_FUNCTION(sdhi3),
++	SH_PFC_FUNCTION(tpu0),
+ };
+ 
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
 -- 
 1.8.2.1
 
