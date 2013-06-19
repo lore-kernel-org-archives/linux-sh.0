@@ -1,68 +1,72 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Jun 2013 06:22:18 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 19 Jun 2013 13:16:01 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: uImage load address rework
-Message-Id: <Pine.LNX.4.64.1306120820280.23454@axis700.grange>
+Message-Id: <76205076.EsFJngGrIh@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130610092857.19175.25629.sendpatchset@w520>
- <Pine.LNX.4.64.1306111552480.9621@axis700.grange>
- <CANqRtoQJMtRsJp43cEYF7GvS_DiJUwu3nDppKCqObYPsQHY-EA@mail.gmail.com>
-In-Reply-To: <CANqRtoQJMtRsJp43cEYF7GvS_DiJUwu3nDppKCqObYPsQHY-EA@mail.gmail.com>
+ <CANqRtoSoWesMgBmbfUKxeyfwWcKZ77MyckCdPpKwK4WxYynWbA@mail.gmail.com>
+ <3243557.sP7VV5jPVm@avalon>
+In-Reply-To: <3243557.sP7VV5jPVm@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 12 Jun 2013, Magnus Damm wrote:
+Hi Magnus,
 
-> Hi Guennadi,
+On Wednesday 12 June 2013 04:31:26 Laurent Pinchart wrote:
+> On Wednesday 12 June 2013 11:21:34 Magnus Damm wrote:
+> > On Wed, Jun 12, 2013 at 6:50 AM, Laurent Pinchart wrote:
+> > > On Monday 10 June 2013 18:28:57 Magnus Damm wrote:
+> > >> From: Magnus Damm <damm@opensource.se>
+> > >> 
+> > >> This is V2 of the mach-shmobile uImage load address rework patch.
+> > >> 
+> > >> Rework the mach-shmobile uImage load address calculation by storing
+> > >> the per-board load addresses in Makefile.boot. This removes the
+> > >> CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
+> > >> it possible to create safe kernel images that boot on multiple boards.
+> > >> 
+> > >> This is one of several series of code that reworks code not to rely on
+> > >> CONFIG_MEMORY_START/SIZE which in turn is needed for
+> > >> ARCH_MULTIPLATFORM.
+> > >> 
+> > >> Signed-off-by: Magnus Damm <damm@opensource.se>
+> > >> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > >> Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > > 
+> > > I've noticed today that KZM9G doesn't boot v3.10-rc2 with
+> > > CONFIG_AUTO_ZRELADDR=y. While not caused by this patch, that's something
+> > > that will need to be fixed to support multi-arch kernels. I'm not too
+> > > familiar with early boot code, would you be able to have a look at this
+> > > ?
+> > 
+> > I will have a look. I suspect that issue is not related to this patch, is
+> > it?
 > 
-> On Tue, Jun 11, 2013 at 10:54 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > Hi Magnus
-> >
-> > On Mon, 10 Jun 2013, Magnus Damm wrote:
-> >
-> >> From: Magnus Damm <damm@opensource.se>
-> >>
-> >> This is V2 of the mach-shmobile uImage load address rework patch.
-> >>
-> >> Rework the mach-shmobile uImage load address calculation by storing
-> >> the per-board load addresses in Makefile.boot. This removes the
-> >> CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
-> >> it possible to create safe kernel images that boot on multiple boards.
-> >>
-> >> This is one of several series of code that reworks code not to rely on
-> >> CONFIG_MEMORY_START/SIZE which in turn is needed for ARCH_MULTIPLATFORM.
-> >>
-> >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> >> Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >> ---
-> >
-> > This patch seems to break compilation when none of CONFIG_MACH_* is set,
-> > e.g. when trying to build a generic SoC kernel with only DT-based board
-> > support, or am I missing something?
-> 
-> Thanks for your feedback. I believe the current code already covers
-> the in-tree REFERENCE DT boards. Perhaps there is some board missing?
-> 
-> If you want to build an uImage for a certain DT board then perhaps you
-> can add it to the list with an incremental patch?
-> 
-> Or even better, use zImage instead of uImage, then we can have a
-> single binary for all boards.
-> 
-> So if you build the kernel for no board at all, either set the
-> LOADADDR variable as the help text says, or simply do not build for
-> uImage.
-> 
-> Makes sense?
+> No, it isn't, the issue is present in v3.10-rc2. I don't know if it has ever
+> worked.
 
-Ok, understand, thanks.
+The following patch fixes the issue, caused by physical RAM being present at 
+0x41000000 on KZM9G. I'm not sure if it would be acceptable as a generic 
+solution though.
 
-Regards
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+index fe4d9c3..ea2f112 100644
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -176,7 +176,7 @@ not_angel:
+ #ifdef CONFIG_AUTO_ZRELADDR
+ 		@ determine final kernel image address
+ 		mov	r4, pc
+-		and	r4, r4, #0xf8000000
++		and	r4, r4, #0xff000000
+ 		add	r4, r4, #TEXT_OFFSET
+ #else
+ 		ldr	r4, =zreladdr
+
+-- 
+Regards,
+
+Laurent Pinchart
+
