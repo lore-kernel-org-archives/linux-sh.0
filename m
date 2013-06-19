@@ -1,87 +1,45 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:39 +0000
-Subject: [PATCH 108/130] sh-pfc: r8a7778: add USB pin groups
-Message-Id: <1370420821-28420-109-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 19 Jun 2013 13:22:35 +0000
+Subject: [PATCH 4/4] sh-pfc: r8a7778: tidyup MMC_D1 pin
+Message-Id: <1371648155-18479-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add USB0/1 PENC/USB_OVC pin groups to R8A7778 PFC driver.
+MMC_D1 is RCAR_GP_PIN(1, 8), not RCAR_GP_PIN(2, 8)
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Reported-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 28 ++++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index 15295a5..1f692e5 100644
+index 1dcbabc..f903910 100644
 --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
 +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -1501,6 +1501,18 @@ SDHI_PFC_WPPN(sdhi2_wp_a,	SD2_WP_A);
- SDHI_PFC_PINS(sdhi2_wp_b,	RCAR_GP_PIN(3, 28));
- SDHI_PFC_WPPN(sdhi2_wp_b,	SD2_WP_B);
- 
-+/* - USB0 ------------------------------------------------------------------- */
-+SH_PFC_PINS(usb0,		RCAR_GP_PIN(0, 1));
-+SH_PFC_MUX1(usb0,		PENC0);
-+SH_PFC_PINS(usb0_ovc,		RCAR_GP_PIN(0, 3));
-+SH_PFC_MUX1(usb0_ovc,		USB_OVC0);
-+
-+/* - USB1 ------------------------------------------------------------------- */
-+SH_PFC_PINS(usb1,		RCAR_GP_PIN(0, 2));
-+SH_PFC_MUX1(usb1,		PENC1);
-+SH_PFC_PINS(usb1_ovc,		RCAR_GP_PIN(0, 4));
-+SH_PFC_MUX1(usb1_ovc,		USB_OVC1);
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(hscif0_data_a),
- 	SH_PFC_PIN_GROUP(hscif0_data_b),
-@@ -1570,6 +1582,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_data4_b),
- 	SH_PFC_PIN_GROUP(sdhi2_wp_a),
- 	SH_PFC_PIN_GROUP(sdhi2_wp_b),
-+	SH_PFC_PIN_GROUP(usb0),
-+	SH_PFC_PIN_GROUP(usb0_ovc),
-+	SH_PFC_PIN_GROUP(usb1),
-+	SH_PFC_PIN_GROUP(usb1_ovc),
- };
- 
- static const char * const hscif0_groups[] = {
-@@ -1677,6 +1693,16 @@ static const char * const sdhi2_groups[] = {
- 	"sdhi2_wp_b",
- };
- 
-+static const char * const usb0_groups[] = {
-+	"usb0",
-+	"usb0_ovc",
-+};
-+
-+static const char * const usb1_groups[] = {
-+	"usb1",
-+	"usb1_ovc",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(hscif0),
- 	SH_PFC_FUNCTION(hscif1),
-@@ -1690,6 +1716,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(usb0),
-+	SH_PFC_FUNCTION(usb1),
- };
- 
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
+@@ -1447,11 +1447,11 @@ MMC_PFC_PINS(mmc_ctrl,		RCAR_GP_PIN(1, 5),	RCAR_GP_PIN(1, 6));
+ MMC_PFC_CTRL(mmc_ctrl,		MMC_CLK,		MMC_CMD);
+ MMC_PFC_PINS(mmc_data1,		RCAR_GP_PIN(1, 7));
+ MMC_PFC_DAT1(mmc_data1,		MMC_D0);
+-MMC_PFC_PINS(mmc_data4,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
++MMC_PFC_PINS(mmc_data4,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(1, 8),
+ 				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6));
+ MMC_PFC_DAT4(mmc_data4,		MMC_D0,			MMC_D1,
+ 				MMC_D2,			MMC_D3);
+-MMC_PFC_PINS(mmc_data8,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(2, 8),
++MMC_PFC_PINS(mmc_data8,		RCAR_GP_PIN(1, 7),	RCAR_GP_PIN(1, 8),
+ 				RCAR_GP_PIN(0, 5),	RCAR_GP_PIN(0, 6),
+ 				RCAR_GP_PIN(1, 4),	RCAR_GP_PIN(1, 0),
+ 				RCAR_GP_PIN(0, 30),	RCAR_GP_PIN(0, 31));
 -- 
 1.8.2.1
 
