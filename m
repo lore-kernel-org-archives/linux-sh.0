@@ -1,46 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:44 +0000
-Subject: [PATCH 11/15] ARM: shmobile: Enable ARM_PATCH_PHYS_VIRT
-Message-Id: <1371456768-1084-12-git-send-email-horms+renesas@verge.net.au>
+From: Kevin Hilman <khilman@linaro.org>
+Date: Wed, 19 Jun 2013 19:00:09 +0000
+Subject: Re: [PATCH] dmaengine: shdma: fix a build failure on platforms with no DMA support
+Message-Id: <CAGa+x8413povhYWx+BSj=TdzQDAuYFXmjF4A2kXvQt+=n+380w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+References: <Pine.LNX.4.64.1305301650290.29171@axis700.grange>
+ <51A77CF1.7040105@ti.com> <20130531024438.GB32564@verge.net.au>
+In-Reply-To: <20130531024438.GB32564@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thu, May 30, 2013 at 7:44 PM, Simon Horman <horms@verge.net.au> wrote:
 
-Adjust mach-shmobile to add a select for CONFIG_ARM_PATCH_PHYS_VIRT
-and at the same time remove NEED_MACH_MEMORY_H.
+[...]
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/Kconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> thanks for this. I will wait for a refresh (as we discussed earlier today).
+> Can I confirm that this is a fix for v3.10? If so, could ou note
+> that when you post your revised patch?
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index dfb4fee..f06e65b 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -634,6 +634,7 @@ config ARCH_MSM
- 
- config ARCH_SHMOBILE
- 	bool "Renesas SH-Mobile / R-Mobile"
-+	select ARM_PATCH_PHYS_VIRT
- 	select CLKDEV_LOOKUP
- 	select GENERIC_CLOCKEVENTS
- 	select HAVE_ARM_SCU if SMP
-@@ -643,7 +644,6 @@ config ARCH_SHMOBILE
- 	select HAVE_SMP
- 	select MIGHT_HAVE_CACHE_L2X0
- 	select MULTI_IRQ_HANDLER
--	select NEED_MACH_MEMORY_H
- 	select NO_IOPORT
- 	select PINCTRL
- 	select PM_GENERIC_DOMAINS if PM
--- 
-1.7.10.4
+Any progress on this patch?
 
+The SH-mobile defconfigs are still all failing in linux-next.
+
+Kevin
