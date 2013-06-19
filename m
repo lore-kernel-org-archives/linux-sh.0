@@ -1,53 +1,26 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 17 Jun 2013 19:15:26 +0000
-Subject: [PATCH 1/2] gpio-rcar: Reference core gpio documentation in the DT bindings
-Message-Id: <1371496527-13149-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 19 Jun 2013 19:16:06 +0000
+Subject: Re: [PATCH 1/2] gpio-rcar: Reference core gpio documentation in the DT bindings
+Message-Id: <CACRpkdYFm+STnycVvAkrVeqk3fgbkBuGDrv83Xn57sEMSB6FTg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1371496527-13149-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1371496527-13149-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1371496527-13149-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1371496527-13149-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Replaced the detailed gpio-ranges documentation with a reference to the
-code gpio DT bindings, and mention the gpio flags symbolic names.
+On Mon, Jun 17, 2013 at 9:15 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
 
-Cc: devicetree-discuss@lists.ozlabs.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- .../devicetree/bindings/gpio/renesas,gpio-rcar.txt     | 18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
+> Replaced the detailed gpio-ranges documentation with a reference to the
+> code gpio DT bindings, and mention the gpio flags symbolic names.
+>
+> Cc: devicetree-discuss@lists.ozlabs.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-diff --git a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
-index 46d76a0..cb3dc7b 100644
---- a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
-+++ b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
-@@ -16,18 +16,12 @@ Required Properties:
- 
-   - gpio-controller: Marks the device node as a gpio controller.
-   - #gpio-cells: Should be 2. The first cell is the GPIO number and the second
--    cell is used to specify optional parameters as bit flags. Only the GPIO
--    active low flag (bit 0) is currently supported.
--  - gpio-ranges: Range of pins managed by the GPIO controller as a 4-cells
--    tuple using the following syntax.
--
--    <[phandle of the pin controller node]
--     0
--     [index of the first pin]
--     [number of pins]>
--
--Please refer to gpio.txt in this directory for details of the common GPIO
--bindings used by client devices.
-+    cell specifies GPIO flags, as defined in <dt-bindings/gpio/gpio.h>. Only the
-+    GPIO_ACTIVE_HIGH and GPIO_ACTIVE_LOW flags are supported.
-+  - gpio-ranges: Range of pins managed by the GPIO controller.
-+
-+Please refer to gpio.txt in this directory for details of gpio-ranges property
-+and the common GPIO bindings used by client devices.
- 
- Example: R8A7779 (R-Car H1) GPIO controller nodes
- 
--- 
-1.8.1.5
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
+Yours,
+Linus Walleij
