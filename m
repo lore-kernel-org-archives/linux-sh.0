@@ -1,63 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:55 +0000
-Subject: [PATCH 05/11] ARM: shmobile: r8a7778: add support HSPI clock
-Message-Id: <1371106861-25626-6-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 19 Jun 2013 19:29:23 +0000
+Subject: [PATCH v2 1/2] sh_eth: define/use EESR_RX_CHECK macro
+Message-Id: <201306192329.24022.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106861-25626-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+sh_eth_interrupt() uses the same Rx interrupt mask twice to check the interrupt
+status register -- #define EESR_RX_CHECK  and use it instead. 
 
-This patch adds r8a7778 HSPI clock support.
-It also adds shyway_clk which is requiested
-from sh-hspi driver
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+The patch is against the Dave Miller's 'net-next.git' repo.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 1386c59..c2c1895 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -108,6 +108,7 @@ enum {
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015,
-+	MSTP007,
- 	MSTP_NR };
+ drivers/net/ethernet/renesas/sh_eth.c |   13 ++-----------
+ drivers/net/ethernet/renesas/sh_eth.h |    8 ++++++++
+ 2 files changed, 10 insertions(+), 11 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1497,23 +1497,14 @@ static irqreturn_t sh_eth_interrupt(int 
+ 	 */
+ 	intr_status &= sh_eth_read(ndev, EESIPR) | DMAC_M_ECI;
+ 	/* Clear interrupt */
+-	if (intr_status & (EESR_FRC | EESR_RMAF | EESR_RRF |
+-			EESR_RTLF | EESR_RTSF | EESR_PRE | EESR_CERF |
+-			cd->tx_check | cd->eesr_err_check)) {
++	if (intr_status & (EESR_RX_CHECK | cd->tx_check | cd->eesr_err_check)) {
+ 		sh_eth_write(ndev, intr_status, EESR);
+ 		ret = IRQ_HANDLED;
+ 	} else
+ 		goto other_irq;
  
- static struct clk mstp_clks[MSTP_NR] = {
-@@ -127,10 +128,12 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP021] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 21, 0), /* SCIF5 */
- 	[MSTP016] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 16, 0), /* TMU0 */
- 	[MSTP015] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 15, 0), /* TMU1 */
-+	[MSTP007] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  7, 0), /* HSPI */
+-	if (intr_status & (EESR_FRC | /* Frame recv*/
+-			EESR_RMAF | /* Multi cast address recv*/
+-			EESR_RRF  | /* Bit frame recv */
+-			EESR_RTLF | /* Long frame recv*/
+-			EESR_RTSF | /* short frame recv */
+-			EESR_PRE  | /* PHY-LSI recv error */
+-			EESR_CERF)){ /* recv frame CRC error */
++	if (intr_status & EESR_RX_CHECK)
+ 		sh_eth_rx(ndev, intr_status);
+-	}
+ 
+ 	/* Tx Check */
+ 	if (intr_status & cd->tx_check) {
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -248,6 +248,14 @@ enum EESR_BIT {
+ 	EESR_CERF	= 0x00000001,
  };
  
- static struct clk_lookup lookups[] = {
- 	/* main */
-+	CLKDEV_CON_ID("shyway_clk",	&s_clk),
- 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
- 
- 	/* MSTP32 clocks */
-@@ -150,6 +153,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
-+	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
-+	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
-+	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
- };
- 
- void __init r8a7778_clock_init(void)
--- 
-1.8.2.1
-
++#define EESR_RX_CHECK		(EESR_FRC  | /* Frame recv */		\
++				 EESR_RMAF | /* Multicast address recv */ \
++				 EESR_RRF  | /* Bit frame recv */	\
++				 EESR_RTLF | /* Long frame recv */	\
++				 EESR_RTSF | /* Short frame recv */	\
++				 EESR_PRE  | /* PHY-LSI recv error */	\
++				 EESR_CERF)  /* Recv frame CRC error */
++
+ #define DEFAULT_TX_CHECK	(EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | \
+ 				 EESR_RTO)
+ #define DEFAULT_EESR_ERR_CHECK	(EESR_TWB | EESR_TABT | EESR_RABT | \
