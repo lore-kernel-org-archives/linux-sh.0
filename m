@@ -1,37 +1,52 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 17 Jun 2013 15:51:19 +0000
-Subject: Re: [PATCH 0/3] dma: add support for DMA multiplexer DT nodes
-Message-Id: <201306171751.19984.arnd@arndb.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 19 Jun 2013 13:22:31 +0000
+Subject: [GIT PULL 0/4] Renesas ARM based SoC pinmux and GPIO update for v3.11 #2
+Message-Id: <1371648155-18479-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370533645-23690-1-git-send-email-g.liakhovetski@gmx.de>
- <20130612092349.GR4107@intel.com>
-In-Reply-To: <20130612092349.GR4107-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vinod Koul <vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Rob Herring <rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 12 June 2013, Vinod Koul wrote:
-> On Thu, Jun 06, 2013 at 05:47:22PM +0200, Guennadi Liakhovetski wrote:
-> > Next re-send of an earlier work. This series adds support for multiple 
-> > compatible DMAC instances, capable of serving the same DMA slaves. 
-> > Currently to specify such a configuration in DT, slaves would have to add 
-> > DMA tuples for each requested channel for each suitable DMAC. This 
-> > needlessly clutters the Device Tree. Instead we group such DMAC DT nodes 
-> > together under a common parent. Then slaves can just reference that parent 
-> > in their DMA bindings.
-> > 
-> > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> wasnt this series Acked by Anrd previosuly.
-> 
-> Neverthless, Anrd do you mind reviwing this
+Hi Olof, Hi Arnd,
 
-Sorry about the delay. The binding in patch 3 looks fine, but I have
-a few comments about the implementation. Feel free to ignore those
-if you think the code is good enough.
+please consider these pinmux updates for v3.11.
 
-Trying to wrap my head around the mux binding now, to see if there
-is a better way to do that.
+This pull-request is based on renesas-pinmux-for-v3.11 which you
+have already pulled.
 
-	Arnd
+The following changes since commit 5fcf4a3c3a5bc08bf72a50ef1332501a3c1b96bb:
+
+  ARM: shmobile: marzen: Use RCAR_GP_PIN macro (2013-06-05 17:18:24 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux2-for-v3.11
+
+for you to fetch changes up to cd622017eb3e0ab841502df88fb7fda3c3a58eb9:
+
+  sh-pfc: r8a7778: tidyup MMC_D1 pin (2013-06-18 16:13:28 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM based SoC pinmux and GPIO update for v3.11
+
+tidyup MMC_D1 pin for r8a7778 SoC
+fix two pin numbers and add HSCIF pin groups to r8a7790 SoC
+add pinmux data for MMCIF and SDHI interfaces for r8a73a4 SoC
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (2):
+      pinctrl: r8a73a4: add pinmux data for MMCIF and SDHI interfaces
+      pinctrl: r8a7790: fix two pin numbers
+
+Kuninori Morimoto (1):
+      sh-pfc: r8a7778: tidyup MMC_D1 pin
+
+Ulrich Hecht (1):
+      sh-pfc: r8a7790: add HSCIF pin groups
+
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 198 ++++++++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   4 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 227 +++++++++++++++++++++++++++++++----
+ 3 files changed, 403 insertions(+), 26 deletions(-)
+
