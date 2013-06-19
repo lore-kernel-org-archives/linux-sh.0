@@ -1,65 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 27 Jun 2013 01:53:03 +0000
-Subject: [PATCH v3 1/2] ARM: shmobile: r8a7790: add clocks for thermal
-Message-Id: <1372297984-9315-2-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 19 Jun 2013 08:25:01 +0000
+Subject: Re: [PATCH 7/9] ARM: shmobile: APE6EVM: add MMCIF and SDHI DT nodes
+Message-Id: <CANqRtoRWofxKWcNNXE3Y7bi_E_bcMaPRgedc+O1Gpp60-tn6Lg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372297984-9315-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372297984-9315-1-git-send-email-horms+renesas@verge.net.au>
+References: <1368802520-16378-8-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1368802520-16378-8-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Hi Guennadi,
 
----
+On Fri, May 17, 2013 at 11:55 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> This patch adds all MMCIF and SDHI devices to r8a73a4.dtsi in the "disabled"
+> state, those of them, available on APE6EVM, are then added to the board DT.
+> This version assignes fixed regulators to all the interfaces, in future
+> versions support for regulators should be added.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-v3
-* Correct title to refer to r8a7790
+Thanks for your work on this. In general I'm happy to see your
+progress but I wonder about the following:
 
-v2
-* First post
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
- 1 file changed, 4 insertions(+)
+> --- a/arch/arm/boot/dts/r8a73a4.dtsi
+> +++ b/arch/arm/boot/dts/r8a73a4.dtsi
+> @@ -98,4 +98,49 @@
+>                 gpio-controller;
+>                 #gpio-cells = <2>;
+>         };
+> +
+> +       mmcif0: mmcif@ee200000 {
+> +               compatible = "renesas,sh-mmcif";
+> +               reg = <0 0xee200000 0 0x100>;
+> +               interrupt-parent = <&gic>;
+> +               interrupts = <0 169 0x4>;
+> +               reg-io-width = <4>;
+> +               status = "disabled";
+> +       };
+> +
+> +       mmcif1: mmcif@ee220000 {
+> +               compatible = "renesas,sh-mmcif";
+> +               reg = <0 0xee220000 0 0x100>;
+> +               interrupt-parent = <&gic>;
+> +               interrupts = <0 170 0x4>;
+> +               reg-io-width = <4>;
+> +               status = "disabled";
+> +       };
+> +
+> +       sdhi0: sdhi@ee100000 {
+> +               compatible = "renesas,r8a7740-sdhi";
+> +               reg = <0 0xee100000 0 0x100>;
+> +               interrupt-parent = <&gic>;
+> +               interrupts = <0 165 4>;
+> +               cap-sd-highspeed;
+> +               status = "disabled";
+> +       };
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 5d71313..28eccd1 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -49,6 +49,7 @@
- 
- #define SMSTPCR2 0xe6150138
- #define SMSTPCR3 0xe615013c
-+#define SMSTPCR5 0xe6150144
- #define SMSTPCR7 0xe615014c
- 
- #define MODEMR		0xE6160060
-@@ -182,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
- enum {
- 	MSTP721, MSTP720,
- 	MSTP717, MSTP716,
-+	MSTP522,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
- 	MSTP_NR
-@@ -203,6 +205,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
-+	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
- 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
- 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
- };
-@@ -254,6 +257,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
-+	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
--- 
-1.8.2.1
+Here you use the "r8a7740-sdhi" compatible string on the r8a73a4 SoC.
+Sorry to say this but to me this seems like the first steps toward a
+future binary compatibility mess.
 
+Others seem to handle this differently. For instance, in
+drivers/mmc/host/omap_hsmmc.c there are separate compatible strings
+for omap2 and omap3.
+
+As I stated before, I prefer to see using a compatible string based on
+the version of the IP block, or if we have to use the SoC name then
+use the name of the actual SoC used.
+
+What is the common way to deal with the compatible strings? Just use
+an existing one if it happens to match? Seems a lot like copy-paste
+integration to me with the added benefit of forever binary
+compatibility.
+
+Perhaps we have agreed on something already? Care to remind me? =)
+
+Cheers,
+
+/ magnus
