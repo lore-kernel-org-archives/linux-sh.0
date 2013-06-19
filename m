@@ -1,137 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:53 +0000
-Subject: [PATCH 062/130] sh-pfc: r8a7740: Add GETHER pin groups and functions
-Message-Id: <1370420821-28420-63-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 19 Jun 2013 13:22:19 +0000
+Subject: [PATCH 1/5] ARM: shmobile: BOCK-W: add Ether support
+Message-Id: <1371648143-18376-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Register Ether device from bockw_init(), passing the platform data to it, adding
+only the RMII pin group to bockw_pinctrl_map[].  Although the LINK signal exists
+on the board, it's connected to the link/activity LED  output of the PHY, thus
+the link disappears and reappears after each packet. We'd be better off ignoring
+such signal and getting the link state from the PHY indirectly.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+[horms+renesas@verge.net.au: manually applied]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 82 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ arch/arm/mach-shmobile/board-bockw.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index f17a39a..1b98990 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -1795,6 +1795,72 @@ static const unsigned int bsc_rdwr_pins[] = {
- static const unsigned int bsc_rdwr_mux[] = {
- 	RDWR_MARK,
- };
-+/* - GETHER ----------------------------------------------------------------- */
-+static const unsigned int gether_rmii_pins[] = {
-+	/* RXD[0:1], RX_ER, CRS_DV, TXD[0:1], TX_EN, REF_CLK, MDC, MDIO */
-+	195, 196, 194, 193, 200, 201, 199, 159, 202, 208,
-+};
-+static const unsigned int gether_rmii_mux[] = {
-+	RMII_RXD0_MARK, RMII_RXD1_MARK, RMII_RX_ER_MARK, RMII_CRS_DV_MARK,
-+	RMII_TXD0_MARK, RMII_TXD1_MARK, RMII_TX_EN_MARK, RMII_REF50CK_MARK,
-+	RMII_MDC_MARK, RMII_MDIO_MARK,
-+};
-+static const unsigned int gether_mii_pins[] = {
-+	/* RXD[0:3], RX_CLK, RX_DV, RX_ER
-+	 * TXD[0:3], TX_CLK, TX_EN, TX_ER
-+	 * CRS, COL, MDC, MDIO,
-+	 */
-+	185, 186, 187, 188, 174, 161, 204,
-+	171, 170, 169, 168, 184, 183, 203,
-+	205, 163, 206, 207,
-+};
-+static const unsigned int gether_mii_mux[] = {
-+	ET_ERXD0_MARK, ET_ERXD1_MARK, ET_ERXD2_MARK, ET_ERXD3_MARK,
-+	ET_RX_CLK_MARK, ET_RX_DV_MARK, ET_RX_ER_MARK,
-+	ET_ETXD0_MARK, ET_ETXD1_MARK, ET_ETXD2_MARK, ET_ETXD3_MARK,
-+	ET_TX_CLK_MARK, ET_TX_EN_MARK, ET_TX_ER_MARK,
-+	ET_CRS_MARK, ET_COL_MARK, ET_MDC_MARK, ET_MDIO_MARK,
-+};
-+static const unsigned int gether_gmii_pins[] = {
-+	/* RXD[0:7], RX_CLK, RX_DV, RX_ER
-+	 * TXD[0:7], GTX_CLK, TX_CLK, TX_EN, TX_ER
-+	 * CRS, COL, MDC, MDIO, REF125CK_MARK,
-+	 */
-+	185, 186, 187, 188, 189, 190, 191, 192, 174, 161, 204,
-+	171, 170, 169, 168, 167, 166, 173, 172, 176, 184, 183, 203,
-+	205, 163, 206, 207,
-+};
-+static const unsigned int gether_gmii_mux[] = {
-+	ET_ERXD0_MARK, ET_ERXD1_MARK, ET_ERXD2_MARK, ET_ERXD3_MARK,
-+	ET_ERXD4_MARK, ET_ERXD5_MARK, ET_ERXD6_MARK, ET_ERXD7_MARK,
-+	ET_RX_CLK_MARK, ET_RX_DV_MARK, ET_RX_ER_MARK,
-+	ET_ETXD0_MARK, ET_ETXD1_MARK, ET_ETXD2_MARK, ET_ETXD3_MARK,
-+	ET_ETXD4_MARK, ET_ETXD5_MARK, ET_ETXD6_MARK, ET_ETXD7_MARK,
-+	ET_GTX_CLK_MARK, ET_TX_CLK_MARK, ET_TX_EN_MARK, ET_TX_ER_MARK,
-+	ET_CRS_MARK, ET_COL_MARK, ET_MDC_MARK, ET_MDIO_MARK,
-+	RMII_REF125CK_MARK,
-+};
-+static const unsigned int gether_int_pins[] = {
-+	/* PHY_INT */
-+	164,
-+};
-+static const unsigned int gether_int_mux[] = {
-+	ET_PHY_INT_MARK,
-+};
-+static const unsigned int gether_link_pins[] = {
-+	/* LINK */
-+	177,
-+};
-+static const unsigned int gether_link_mux[] = {
-+	ET_LINK_MARK,
-+};
-+static const unsigned int gether_wol_pins[] = {
-+	/* WOL */
-+	175,
-+};
-+static const unsigned int gether_wol_mux[] = {
-+	ET_WOL_MARK,
-+};
- /* - INTC ------------------------------------------------------------------- */
- IRQC_PINS_MUX(0, 0, 2);
- IRQC_PINS_MUX(0, 1, 13);
-@@ -2513,6 +2579,12 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(bsc_rd_we32),
- 	SH_PFC_PIN_GROUP(bsc_bs),
- 	SH_PFC_PIN_GROUP(bsc_rdwr),
-+	SH_PFC_PIN_GROUP(gether_rmii),
-+	SH_PFC_PIN_GROUP(gether_mii),
-+	SH_PFC_PIN_GROUP(gether_gmii),
-+	SH_PFC_PIN_GROUP(gether_int),
-+	SH_PFC_PIN_GROUP(gether_link),
-+	SH_PFC_PIN_GROUP(gether_wol),
- 	SH_PFC_PIN_GROUP(intc_irq0_0),
- 	SH_PFC_PIN_GROUP(intc_irq0_1),
- 	SH_PFC_PIN_GROUP(intc_irq1),
-@@ -2666,6 +2738,15 @@ static const char * const bsc_groups[] = {
- 	"bsc_rdwr",
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 2b6103e..bfe8f67 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -63,7 +63,24 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
  };
  
-+static const char * const gether_groups[] = {
-+	"gether_rmii",
-+	"gether_mii",
-+	"gether_gmii",
-+	"gether_int",
-+	"gether_link",
-+	"gether_wol",
++static struct sh_eth_plat_data ether_platform_data __initdata = {
++	.phy		= 0x01,
++	.edmac_endian	= EDMAC_LITTLE_ENDIAN,
++	.register_type	= SH_ETH_REG_FAST_RCAR,
++	.phy_interface	= PHY_INTERFACE_MODE_RMII,
++	/*
++	 * Although the LINK signal is available on the board, it's connected to
++	 * the link/activity LED output of the PHY, thus the link disappears and
++	 * reappears after each packet.  We'd be better off ignoring such signal
++	 * and getting the link state from the PHY indirectly.
++	 */
++	.no_ether_link	= 1,
 +};
 +
- static const char * const intc_groups[] = {
- 	"intc_irq0_0",
- 	"intc_irq0_1",
-@@ -2849,6 +2930,7 @@ static const char * const sdhi2_groups[] = {
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
++	/* Ether */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
++				  "ether_rmii", "ether"),
+ 	/* SCIF0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+ 				  "scif0_data_a", "scif0"),
+@@ -85,6 +102,7 @@ static void __init bockw_init(void)
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
++	r8a7778_add_ether_device(&ether_platform_data);
  
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(bsc),
-+	SH_PFC_FUNCTION(gether),
- 	SH_PFC_FUNCTION(intc),
- 	SH_PFC_FUNCTION(lcd0),
- 	SH_PFC_FUNCTION(lcd1),
+ 	pinctrl_register_mappings(bockw_pinctrl_map,
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
 -- 
 1.8.2.1
 
