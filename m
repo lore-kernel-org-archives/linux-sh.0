@@ -1,46 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 20 Jun 2013 08:05:36 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 20 Jun 2013 10:19:25 +0000
 Subject: Re: [PATCH] gpio: rcar: fix gpio_rcar_of_table
-Message-Id: <31902772.So7m1K4hye@avalon>
+Message-Id: <201306201219.25744.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201306191750.43755.arnd@arndb.de>
-In-Reply-To: <201306191750.43755.arnd@arndb.de>
+ <20130620005017.GA20643@verge.net.au>
+In-Reply-To: <20130620005017.GA20643@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
-
-On Wednesday 19 June 2013 17:50:43 Arnd Bergmann wrote:
-> The device table needs to be terminated with an empty element.
-
-Oops, thanks for the patch.
-
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Cc: Simon Horman <horms+renesas@verge.net.au>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> I've just added this patch on top of the arm-soc next/drivers branch
-> that introduced the build warning.
+On Thursday 20 June 2013, Simon Horman wrote:
 > 
-> diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-> index 5a693dd..f332753 100644
-> --- a/drivers/gpio/gpio-rcar.c
-> +++ b/drivers/gpio/gpio-rcar.c
-> @@ -437,6 +437,7 @@ static const struct of_device_id gpio_rcar_of_table[] > { {
->  		.compatible = "renesas,gpio-rcar",
->  	},
-> +	{ },
->  };
+> On Wed, Jun 19, 2013 at 05:50:43PM +0200, Arnd Bergmann wrote:
+> > The device table needs to be terminated with an empty element.
+> > 
+> > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> > Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> > Cc: Simon Horman <horms+renesas@verge.net.au>
+> > ---
+> > I've just added this patch on top of the arm-soc next/drivers branch
+> > that introduced the build warning.
 > 
->  MODULE_DEVICE_TABLE(of, gpio_rcar_of_table);
+> Thanks, have you pushed it there or do I need to add it and
+> send a pull-request?
 
--- 
-Regards,
+I've applied this directly.
 
-Laurent Pinchart
-
+	Arnd
