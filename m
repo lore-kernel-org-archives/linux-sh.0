@@ -1,54 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 13 Jun 2013 23:46:03 +0000
-Subject: [PATCH v6 18/18] ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
-Message-Id: <1371167163-10507-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 20 Jun 2013 13:08:14 +0000
+Subject: [PATCH 3/3] ARM: shmobile: irqpin: add a DT property to enable masking on parent
+Message-Id: <1371733694-27368-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-LED2 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+To disable spurious interrupts, that get triggered on certain hardware, the
+irqpin driver masks them on the parent interrupt controller. To specify
+such broken devices a .control_parent parameter can be provided in the
+platform data. In the DT case we need a property, to do the same.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ .../bindings/interrupt-controller/renesas,intc-irqpin.txt          | 2 ++
+ drivers/irqchip/irq-renesas-intc-irqpin.c                          | 7 +++++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 6d20247..b64705b 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -11,6 +11,7 @@
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+index 66fcaf5..1f8b0c5 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -12,3 +12,5 @@ Optional properties:
+   properties
+ - sense-bitfield-width: width of a single sense bitfield in the SENSE register,
+   if different from the default 4 bits
++- control-parent: disable and enable interrupts on the parent interrupt
++  controller, needed for some broken implementations
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 4aca1b2..82cec63 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -348,11 +348,14 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	}
  
- /dts-v1/;
- /include/ "r8a7779.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
+ 	/* deal with driver instance configuration */
+-	if (pdata)
++	if (pdata) {
+ 		memcpy(&p->config, pdata, sizeof(*pdata));
+-	else
++	} else {
+ 		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
+ 				     &p->config.sense_bitfield_width);
++		p->config.control_parent = of_property_read_bool(pdev->dev.of_node,
++								 "control-parent");
++	}
+ 	if (!p->config.sense_bitfield_width)
+ 		p->config.sense_bitfield_width = 4; /* default to 4 bits */
  
- / {
- 	model = "marzen";
-@@ -47,6 +48,19 @@
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led2 {
-+			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-+		};
-+		led3 {
-+			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-+		};
-+		led4 {
-+			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
- };
- 
- &pfc {
 -- 
-1.8.1.5
+1.8.2.1
 
