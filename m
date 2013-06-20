@@ -1,60 +1,122 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 27 Jun 2013 13:49:20 +0000
-Subject: Re: [PATCH v2] dmaengine: shdma: fix a build failure on platforms with no DMA support
-Message-Id: <20130627134920.GD28902@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 20 Jun 2013 21:12:21 +0000
+Subject: [PATCH 1/2] sh_eth: fix unhandled RFE interrupt
+Message-Id: <201306210112.22352.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305310423360.1470@axis700.grange>
- <3410825.gK3KBC8v80@wuerfel>
-In-Reply-To: <3410825.gK3KBC8v80@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-On Fri, May 31, 2013 at 04:51:52PM +0200, Arnd Bergmann wrote:
-> On Friday 31 May 2013 05:01:31 Guennadi Liakhovetski wrote:
-> > On platforms with no support for the shdma dmaengine driver build is
-> > currently failing with
-> > 
-> > drivers/built-in.o: In function `sh_mobile_sdhi_probe':
-> > drivers/mmc/host/sh_mobile_sdhi.c:170: undefined reference to`shdma_chan_filter'
-> > 
-> > Fix the breakage by defining shdma_chan_filter to NULL in such
-> > configurations.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> 
-> Sorry, I saw your patch too late and already spent some time doing a different one.
-> 
-> > diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-> > index b64d6be..1fd8a20 100644
-> > --- a/include/linux/sh_dma.h
-> > +++ b/include/linux/sh_dma.h
-> > @@ -99,6 +99,10 @@ struct sh_dmae_pdata {
-> >  #define CHCR_TE        0x00000002
-> >  #define CHCR_IE        0x00000004
-> >  
-> > +#if IS_ENABLED(CONFIG_SH_DMAE_BASE)
-> >  bool shdma_chan_filter(struct dma_chan *chan, void *arg);
-> > +#else
-> > +#define shdma_chan_filter NULL
-> > +#endif
-> 
-> I still think that this is not the right solution, or at least not
-> complete: No slave driver should care about which dma-engine it is
-> connected to. You have already done most of the necessary conversion,
-> so it would be straightforward to also pass the filter function
-> pointer to the sdhi driver along with the data that gets passed into
-> it.
+EESR.RFE (receive FIFO overflow) interrupt is enabled by the driver on all SoCs
+and sh_eth_error() handles it but it's not present in any initializer/assignment
+of the 'eesr_err_check' field of 'struct sh_eth_cpu_data'. This leads to that
+interrupt not being handled and cleared, and finally to disabling IRQ and the
+driver being non-functional.
 
-Hi Arnd, Hi Guennadi,
+Modify DEFAULT_EESR_ERR_CHECK macro and all explicit initializers of the above
+mentioned field to contain the EESR.RFE bit. Remove useless backslashes from the
+initializers, while at it.
 
-It seems to me that the solution above, though not particularly generic,
-is sufficient as according to Guennadi SHDMA users cannot use other DMA
-drivers[1]. The change above also has the merit of being rather small.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-[1] https://patchwork.kernel.org/patch/2644101/
+---
+The patch is against Dave Miller's 'net.git' repo.
+The bug is 100% reproducible (with added NAPI support) while running certain
+'netperf' test.
 
-With that reasoning I would like to provide:
+ drivers/net/ethernet/renesas/sh_eth.c |   33 ++++++++++++++++++---------------
+ drivers/net/ethernet/renesas/sh_eth.h |    2 +-
+ 2 files changed, 19 insertions(+), 16 deletions(-)
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -380,8 +380,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.eesipr_value	= 0x01ff009f,
+ 
+ 	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
+-	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
+-			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RFE |
++			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE |
++			  EESR_ECI,
+ 	.tx_error_check	= EESR_TWB | EESR_TABT | EESR_TDE | EESR_TFE,
+ 
+ 	.apr		= 1,
+@@ -427,8 +428,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x01ff009f,
+ 
+ 	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
+-	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
+-			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RFE |
++			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE |
++			  EESR_ECI,
+ 	.tx_error_check	= EESR_TWB | EESR_TABT | EESR_TDE | EESR_TFE,
+ 
+ 	.apr		= 1,
+@@ -478,8 +480,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.rmcr_value	= 0x00000001,
+ 
+ 	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
+-	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
+-			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RFE |
++			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE |
++			  EESR_ECI,
+ 	.tx_error_check	= EESR_TWB | EESR_TABT | EESR_TDE | EESR_TFE,
+ 
+ 	.apr		= 1,
+@@ -592,9 +595,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
+ 
+ 	.tx_check	= EESR_TC1 | EESR_FTC,
+-	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT | \
+-			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE | \
+-			  EESR_ECI,
++	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
++			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
++			  EESR_TDE | EESR_ECI,
+ 	.tx_error_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_TDE | \
+ 			  EESR_TFE,
+ 	.fdr_value	= 0x0000072f,
+@@ -674,9 +677,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
+ 
+ 	.tx_check	= EESR_TC1 | EESR_FTC,
+-	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT | \
+-			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE | \
+-			  EESR_ECI,
++	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
++			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
++			  EESR_TDE | EESR_ECI,
+ 	.tx_error_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_TDE | \
+ 			  EESR_TFE,
+ 
+@@ -811,9 +814,9 @@ static struct sh_eth_cpu_data sh_eth_my_
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
+ 
+ 	.tx_check	= EESR_TC1 | EESR_FTC,
+-	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT | \
+-			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE | \
+-			  EESR_ECI,
++	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
++			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
++			  EESR_TDE | EESR_ECI,
+ 	.tx_error_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_TDE | \
+ 			  EESR_TFE,
+ 
+Index: net/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net/drivers/net/ethernet/renesas/sh_eth.h
+@@ -253,7 +253,7 @@ enum EESR_BIT {
+ 
+ #define DEFAULT_TX_CHECK	(EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | \
+ 				 EESR_RTO)
+-#define DEFAULT_EESR_ERR_CHECK	(EESR_TWB | EESR_TABT | EESR_RABT | \
++#define DEFAULT_EESR_ERR_CHECK	(EESR_TWB | EESR_TABT | EESR_RABT | EESR_RFE | \
+ 				 EESR_RDE | EESR_RFRMER | EESR_ADE | \
+ 				 EESR_TFE | EESR_TDE | EESR_ECI)
+ #define DEFAULT_TX_ERROR_CHECK	(EESR_TWB | EESR_TABT | EESR_ADE | EESR_TDE | \
