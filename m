@@ -1,53 +1,47 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 29 Jun 2013 22:45:58 +0000
-Subject: [PATCH 1/3] ARM: shmobile: use common platform header for HPB-DMAC
-Message-Id: <201306300245.58486.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 20 Jun 2013 12:25:02 +0000
+Subject: [PATCH] serial: sh-sci: Initialise variables before access in sci_set_termios()
+Message-Id: <1371731102-5125-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Max Filippov <max.filippov@cogentembedded.com>
+This change addresses two warnings that are flagged by gcc relating to
+potential access to the ssr and cks variables while they are uninitialised.
 
-Use previously empty <mach/dma.h> to declare HPB-DMA slave IDs.
+I have addressed this by initialising the values to
+the defaults present in sci_baud_calc_hscif().
 
-Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-[Sergei: changed the guard macro name, fixed comment, extended copyright.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+It is my analysis that cks is always initialised if used
+but that without this change ssr may be accessed while uninitialised.
 
+The code altered by this patch was introduced by commit
+f303b364b41d3fc5bf879799128958400b7859aa ("serial: sh-sci: HSCIF support").
+
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/dma.h |   25 ++++++++++++++++++++++++-
- 1 file changed, 24 insertions(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Index: renesas/arch/arm/mach-shmobile/include/mach/dma.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/dma.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/dma.h
-@@ -1 +1,24 @@
--/* empty */
-+/*
-+ * Copyright (C) 2011-2013 Renesas Electronics Corporation
-+ * Copyright (C) 2013 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2
-+ * as published by the Free Software Foundation.
-+ */
-+
-+#ifndef __MACH_DMA_H
-+#define __MACH_DMA_H
-+
-+/* HPB-DMA slave IDs */
-+enum {
-+	HPBDMA_SLAVE_DUMMY,
-+	HPBDMA_SLAVE_SDHI0_TX,
-+	HPBDMA_SLAVE_SDHI0_RX,
-+	HPBDMA_SLAVE_SSI0_TX_ST,
-+	HPBDMA_SLAVE_SSI0_TX_MN,
-+	HPBDMA_SLAVE_SSI1_RX_ST,
-+	HPBDMA_SLAVE_SSI1_RX_MN,
-+};
-+
-+#endif /* __MACH_DMA_H */
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 931d6c3..7477e0e 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1887,9 +1887,9 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ {
+ 	struct sci_port *s = to_sci_port(port);
+ 	struct plat_sci_reg *reg;
+-	unsigned int baud, smr_val, max_baud, cks;
++	unsigned int baud, smr_val, max_baud, cks = 0;
+ 	int t = -1;
+-	unsigned int srr;
++	unsigned int srr = 15;
+ 
+ 	/*
+ 	 * earlyprintk comes here early on with port->uartclk set to zero.
+-- 
+1.8.2.1
+
