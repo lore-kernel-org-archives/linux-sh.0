@@ -1,26 +1,41 @@
-From: David Miller <davem@davemloft.net>
-Date: Wed, 12 Jun 2013 21:16:06 +0000
-Subject: Re: [PATCH] sh_eth: split 'sh_eth_netdev_ops'
-Message-Id: <20130612.141606.1300633926770455407.davem@davemloft.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 20 Jun 2013 13:09:09 +0000
+Subject: [GIT PULL 0/2] Renesas ARM based SoC GPIO R-Car updates for v3.11 #2
+Message-Id: <1371733751-27730-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306130055.34780.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306130055.34780.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 13 Jun 2013 00:55:34 +0400
+Hi Olof, Hi Arnd,
 
-> Commit 9f86134155047720a3685cda21467f68695152d2 (sh_eth: remove SH_ETH_HAS_TSU)
-> removes 'const' from 'sh_eth_netdev_ops'  and modifies it in case TSU registers
-> are present. I've originally suggested to Iwamatsu-san to split  this structure
-> in two instead and afterwards Dave M. suggested doing the same.
-> Split 'sh_eth_netdev_ops_tsu' from 'sh_eth_netdev_ops', making both 'const', and
-> assigning 'ndev->detdev_ops'  depending on the presence of TSU registers.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+this pull request is based on renesas-gpio-rcar-for-v3.11,
+which you have already pulled. That tag adds the code and
+documentation which is updated by the patches in this pull-request.
 
-Applied, thanks.
+The following changes since commit 159f8a0209aff155af7f6fcdedd4a4484dd19c23:
+
+  gpio-rcar: Add DT support (2013-06-12 21:48:09 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-gpio-rcar2-for-v3.11
+
+for you to fetch changes up to e305062e94719ef543ae936dd56501b5a36406c6:
+
+  gpio-rcar: Remove #ifdef CONFIG_OF around OF-specific sections (2013-06-19 21:38:38 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM based SoC GPIO R-Car updates for v3.11
+
+Documentation enhancement and code cleanup by Laurent Pinchart.
+
+----------------------------------------------------------------
+Laurent Pinchart (2):
+      gpio-rcar: Reference core gpio documentation in the DT bindings
+      gpio-rcar: Remove #ifdef CONFIG_OF around OF-specific sections
+
+ .../devicetree/bindings/gpio/renesas,gpio-rcar.txt     | 18 ++++++------------
+ drivers/gpio/gpio-rcar.c                               |  8 ++------
+ 2 files changed, 8 insertions(+), 18 deletions(-)
