@@ -1,42 +1,112 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Jun 2013 07:28:26 +0000
-Subject: [PATCH 13/23] ARM: shmobile: remove ";" from SH_FIXED_RATIO_CLK*() macro
-Message-Id: <1370503716-31155-14-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 20 Jun 2013 13:08:13 +0000
+Subject: [PATCH 2/3] ARM: shmobile: sh73a0: remove "0x" prefix from DT node names
+Message-Id: <1371733694-27368-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370503716-31155-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The convention for Device Tree node names is <device>@<hex-address>, where
+the part after '@' shouldn't contain the "0x" prefix. Fix the sh73a0.dtsi
+DT names.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/clock.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
-index 76ac612..8902044 100644
---- a/arch/arm/mach-shmobile/include/mach/clock.h
-+++ b/arch/arm/mach-shmobile/include/mach/clock.h
-@@ -24,11 +24,11 @@ struct clk name = {			\
- }
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ec40bf7..b977502 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -119,7 +119,7 @@
+ 			      0 32 0x4>;
+ 	};
  
- #define SH_FIXED_RATIO_CLK(name, p, r)		\
--static SH_FIXED_RATIO_CLKg(name, p, r);
-+static SH_FIXED_RATIO_CLKg(name, p, r)
+-	i2c0: i2c@0xe6820000 {
++	i2c0: i2c@e6820000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -131,7 +131,7 @@
+ 			      0 170 0x4>;
+ 	};
  
- #define SH_FIXED_RATIO_CLK_SET(name, p, m, d)	\
- 	SH_CLK_RATIO(name, m, d);		\
--	SH_FIXED_RATIO_CLK(name, p, name);
-+	SH_FIXED_RATIO_CLK(name, p, name)
+-	i2c1: i2c@0xe6822000 {
++	i2c1: i2c@e6822000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -143,7 +143,7 @@
+ 			      0 54 0x4>;
+ 	};
  
- #define SH_CLK_SET_RATIO(p, m, d)	\
- {			\
+-	i2c2: i2c@0xe6824000 {
++	i2c2: i2c@e6824000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -155,7 +155,7 @@
+ 			      0 174 0x4>;
+ 	};
+ 
+-	i2c3: i2c@0xe6826000 {
++	i2c3: i2c@e6826000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -167,7 +167,7 @@
+ 			      0 186 0x4>;
+ 	};
+ 
+-	i2c4: i2c@0xe6828000 {
++	i2c4: i2c@e6828000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,rmobile-iic";
+@@ -179,7 +179,7 @@
+ 			      0 190 0x4>;
+ 	};
+ 
+-	mmcif: mmcif@0x10010000 {
++	mmcif: mmcif@e6bd0000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xe6bd0000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -189,7 +189,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi0: sdhi@0xee100000 {
++	sdhi0: sdhi@ee100000 {
+ 		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee100000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -201,7 +201,7 @@
+ 	};
+ 
+ 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
+-	sdhi1: sdhi@0xee120000 {
++	sdhi1: sdhi@ee120000 {
+ 		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee120000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -212,7 +212,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi2: sdhi@0xee140000 {
++	sdhi2: sdhi@ee140000 {
+ 		compatible = "renesas,r8a7740-sdhi";
+ 		reg = <0xee140000 0x100>;
+ 		interrupt-parent = <&gic>;
 -- 
 1.8.2.1
 
