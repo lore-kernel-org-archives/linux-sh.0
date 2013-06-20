@@ -1,31 +1,39 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 19 Jun 2013 15:50:43 +0000
-Subject: [PATCH] gpio: rcar: fix gpio_rcar_of_table
-Message-Id: <201306191750.43755.arnd@arndb.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 20 Jun 2013 00:50:17 +0000
+Subject: Re: [PATCH] gpio: rcar: fix gpio_rcar_of_table
+Message-Id: <20130620005017.GA20643@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201306191750.43755.arnd@arndb.de>
+In-Reply-To: <201306191750.43755.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The device table needs to be terminated with an empty element.
+On Wed, Jun 19, 2013 at 05:50:43PM +0200, Arnd Bergmann wrote:
+> The device table needs to be terminated with an empty element.
+> 
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Cc: Simon Horman <horms+renesas@verge.net.au>
+> ---
+> I've just added this patch on top of the arm-soc next/drivers branch
+> that introduced the build warning.
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Simon Horman <horms+renesas@verge.net.au>
----
-I've just added this patch on top of the arm-soc next/drivers branch
-that introduced the build warning.
+Thanks, have you pushed it there or do I need to add it and
+send a pull-request?
 
-diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-index 5a693dd..f332753 100644
---- a/drivers/gpio/gpio-rcar.c
-+++ b/drivers/gpio/gpio-rcar.c
-@@ -437,6 +437,7 @@ static const struct of_device_id gpio_rcar_of_table[] = {
- 	{
- 		.compatible = "renesas,gpio-rcar",
- 	},
-+	{ },
- };
- 
- MODULE_DEVICE_TABLE(of, gpio_rcar_of_table);
+> 
+> diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+> index 5a693dd..f332753 100644
+> --- a/drivers/gpio/gpio-rcar.c
+> +++ b/drivers/gpio/gpio-rcar.c
+> @@ -437,6 +437,7 @@ static const struct of_device_id gpio_rcar_of_table[] = {
+>  	{
+>  		.compatible = "renesas,gpio-rcar",
+>  	},
+> +	{ },
+>  };
+>  
+>  MODULE_DEVICE_TABLE(of, gpio_rcar_of_table);
+> 
