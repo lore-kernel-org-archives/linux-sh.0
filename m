@@ -1,82 +1,72 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 07 Jun 2013 23:55:08 +0000
-Subject: [PATCH 2/9] sh_eth: get SH771x support out of #ifdef
-Message-Id: <201306080355.09328.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 20 Jun 2013 13:08:12 +0000
+Subject: [PATCH 1/3] irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
+Message-Id: <1371733694-27368-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306080351.39018.sergei.shtylyov@cogentembedded.com>
+References: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Get the SH771[02] data in the driver out of #ifdef by adding "sh771x-ether" to
-the platform driver's ID table. Change the Ether platform device's name in the
-SH platform code accordingly.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Most Renesas irqpin controllers have 4-bit sense fields, however, some
+have different widths. This patch adds a DT binding to optionally
+specify such non-standard values.
 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Note that in this case the driver's probe will crash anyway as the platform code
-is hopelessly behind since it passes PHY ID instead of 'struct sh_eth_plat_data'
-pointer as a platform data. Even if it's fixed, the driver probe will fail as
-the 'struct sh_eth_cpu_data' indicates presence of TSU but the device resource
-for it is absent... :-/
+ .../bindings/interrupt-controller/renesas,intc-irqpin.txt  | 14 ++++++++++++++
+ drivers/irqchip/irq-renesas-intc-irqpin.c                  |  4 ++++
+ 2 files changed, 18 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
 
- arch/sh/boards/mach-se/770x/setup.c   |    8 ++++----
- drivers/net/ethernet/renesas/sh_eth.c |    7 ++++---
- 2 files changed, 8 insertions(+), 7 deletions(-)
-
-Index: net-next/arch/sh/boards/mach-se/770x/setup.c
-=================================--- net-next.orig/arch/sh/boards/mach-se/770x/setup.c
-+++ net-next/arch/sh/boards/mach-se/770x/setup.c
-@@ -128,8 +128,8 @@ static struct resource sh_eth0_resources
- };
- 
- static struct platform_device sh_eth0_device = {
--	.name = "sh-eth",
--	.id	= 0,
-+	.name = "sh771x-ether",
-+	.id = 0,
- 	.dev = {
- 		.platform_data = PHY_ID,
- 	},
-@@ -151,8 +151,8 @@ static struct resource sh_eth1_resources
- };
- 
- static struct platform_device sh_eth1_device = {
--	.name = "sh-eth",
--	.id	= 1,
-+	.name = "sh771x-ether",
-+	.id = 1,
- 	.dev = {
- 		.platform_data = PHY_ID,
- 	},
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -690,12 +690,12 @@ static struct sh_eth_cpu_data sh_eth_my_
- 	.tpauser	= 1,
- 	.hw_swap	= 1,
- };
--#elif defined(CONFIG_CPU_SUBTYPE_SH7710) || defined(CONFIG_CPU_SUBTYPE_SH7712)
--static struct sh_eth_cpu_data sh_eth_my_cpu_data = {
-+#endif
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+new file mode 100644
+index 0000000..66fcaf5
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -0,0 +1,14 @@
++DT bindings for the R-/SH-Mobile irqpin controller
 +
-+static struct sh_eth_cpu_data sh771x_data = {
- 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
- 	.tsu		= 1,
- };
--#endif
++Required properties:
++
++- compatible: has to be "renesas,intc-irqpin"
++- #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
++  interrupts.txt in this directory
++
++Optional properties:
++
++- any properties, listed in interrupts.txt, and any standard resource allocation
++  properties
++- sense-bitfield-width: width of a single sense bitfield in the SENSE register,
++  if different from the default 4 bits
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 5a68e5a..4aca1b2 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -18,6 +18,7 @@
+  */
  
- static void sh_eth_set_default_cpu_data(struct sh_eth_cpu_data *cd)
- {
-@@ -2700,6 +2700,7 @@ static const struct dev_pm_ops sh_eth_de
- #endif
+ #include <linux/init.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+@@ -349,6 +350,9 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	/* deal with driver instance configuration */
+ 	if (pdata)
+ 		memcpy(&p->config, pdata, sizeof(*pdata));
++	else
++		of_property_read_u32(pdev->dev.of_node, "sense-bitfield-width",
++				     &p->config.sense_bitfield_width);
+ 	if (!p->config.sense_bitfield_width)
+ 		p->config.sense_bitfield_width = 4; /* default to 4 bits */
  
- static struct platform_device_id sh_eth_id_table[] = {
-+	{ "sh771x-ether", (kernel_ulong_t)&sh771x_data },
- 	{ CARDNAME },
- 	{ }
- };
+-- 
+1.8.2.1
+
