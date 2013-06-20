@@ -1,25 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 27 Jun 2013 08:18:57 +0000
-Subject: Re: [PATCH 1/2 v3] ARM: shmobile: r8a7778: add __initdata on resource and device data
-Message-Id: <20130627081856.GE13927@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 20 Jun 2013 13:08:11 +0000
+Subject: [GIT PULL 0/3] Renesas ARM-based SoC DT updates for v3.11 #2
+Message-Id: <1371733694-27368-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwrh8cqa.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mwrh8cqa.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 27, 2013 at 06:54:52PM +0900, Simon Horman wrote:
-> On Sun, May 26, 2013 at 05:53:37PM -0700, Kuninori Morimoto wrote:
-> > These data will be kmemdup()'ed on
-> > platform_device_add_resources() and platform_device_add_data()
-> 
-> Thanks, queued up for v3.11 in the pinmux branch.
-> 
-> I added it there as that is the branch which includes
-> all the code that this patch modifies.
+Hi Olof, Hi Arnd,
 
-I ended up dropping this patch for v3.11 as part of some patch resuffling.
+This pull request is based on renesas-dt-for-v3.11 which you have
+previously pulled.
 
-I have queued if up for v3.12 in the cleanup branch.
+The following changes since commit 24603f3caf07f5f65aa17ed7851ad4741595cf6a:
+
+  ARM: shmobile: marzen-reference: add irqpin support in DT (2013-06-04 18:05:59 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v3.11
+
+for you to fetch changes up to c4fa4946f177ae214523586cd794ac18d34b1430:
+
+  ARM: shmobile: irqpin: add a DT property to enable masking on parent (2013-06-19 21:27:31 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM-based SoC DT updates for v3.11
+
+* Increased DT coverage for renesas-intc-irqpin
+  by Guennadi Liakhovetski
+* Clean up of address format used in sh73a0 dtsi file
+  by Guennadi Liakhovetski
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (3):
+      irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
+      ARM: shmobile: sh73a0: remove "0x" prefix from DT node names
+      ARM: shmobile: irqpin: add a DT property to enable masking on parent
+
+ .../interrupt-controller/renesas,intc-irqpin.txt       | 16 ++++++++++++++++
+ arch/arm/boot/dts/sh73a0.dtsi                          | 18 +++++++++---------
+ drivers/irqchip/irq-renesas-intc-irqpin.c              |  9 ++++++++-
+ 3 files changed, 33 insertions(+), 10 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
