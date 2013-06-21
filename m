@@ -1,16 +1,16 @@
 From: Thierry Reding <thierry.reding@gmail.com>
-Date: Thu, 13 Jun 2013 18:31:31 +0000
+Date: Fri, 21 Jun 2013 09:31:20 +0000
 Subject: Re: [PATCH v4 1/5] pwm: Add Renesas TPU PWM driver
-Message-Id: <20130613183130.GC32574@mithrandir>
+Message-Id: <20130621093119.GB31464@manwe>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Izn7cH1Com+I3R9J"
+Content-Type: multipart/mixed; boundary="l76fUT7nc3MelDdI"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1371142488-2514-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1371142488-2514-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-sh@vger.kernel.org
 
 
---Izn7cH1Com+I3R9J
+--l76fUT7nc3MelDdI
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
@@ -28,27 +28,29 @@ m>
 > Signed-off-by: Axel Lin <axel.lin@ingics.com>
 > Tested-by: Simon Horman <horms@verge.net.au>
 
-Acked-by: Thierry Reding <thierry.reding@gmail.com>
+Applied, thanks.
 
---Izn7cH1Com+I3R9J
+Thierry
+
+--l76fUT7nc3MelDdI
 Content-Type: application/pgp-signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.20 (GNU/Linux)
 
-iQIcBAEBAgAGBQJRuhACAAoJEN0jrNd/PrOhAsAP/0tT6hMmkQKQxnAlHbITC5FP
-2JuKw0CDQY5h2JxgHzLjCBz3w+Jo6HsQjtmvL1KFApV7KHDru/+z2u9p4CEL4461
-YQgBgx1NcrwOi+3Vw9YljPMhocX1cTp9RXSdRVRwNWI3Ohs3254Qj+J1ANHjtdSh
-d1BNMO06aqUjWT73NR+94qfWOLaP8olp+hJWHBNzhFATVxglqjZTPKmBKfpuHiS/
-y856aaYrx1Jx/dZYWsvGFAlETq4kAh+zle4VN7YvHZSwnUIhBFKhMF7X60CjoroB
-6e9KvGRrlnM59QwP7hL4kHqc+jr4eEZ38AmNfN9ujb+AkiIJA27YPhkFLD2RhH7a
-L2n9m0VHKNBjRTNPqHdF+qf1pZjuk4XedrxF2S5kY5/nrlOi+RXKvSVPmbfdijhK
-r90JFSGLxjSoeCQLyS7VTwvEh0nqORkCspSdMnebThBKliQBANETJaHNYpsgoZQT
-FQ0bMvyucqYVh5tahojoeSC4vlYoj+FtRAin7TTWmcyiTtucBOt/HBjQbvh9PUuZ
-dBoN6Gxep0PnR35A7T6leZSWoWv8BErF0zxxjCmMEX15ohm8A8GJIa+B+3NyusPX
-GZ8Dalj1Q0FZcLFH7kofVCZVZfJkTxE+TsCGeSUsfF2e0TOYq1Vt+Ra02jLSF+KG
-B3O63cl8Rov6SXY1u2gA
-=DRM4
+iQIcBAEBAgAGBQJRxB1nAAoJEN0jrNd/PrOhuPAP/0Tqu132HiKS10UJOChzeC/k
+IeVzOheCVJsejhoN7Uu2kQAM+fynpp6kKmCP413Ay9tRvu5cDjeuy2OVPU7uyc2n
+OMdz9+kzYtGfJ5Y6ruf9jEq7KP0X1Px1lLB9frjnkyN7bfn8/3VW2ODPjAUlR5uh
+4HTctNO9EWnUMaUDWKIuSSXSdYgbiL1jC3zZDuBXmXn6mjoVzjxD4wyPEVp0CeoW
+iDLscCwMDEwgE+WejkOuSzp8m6gaOGQuwm/ZX4wWuoMvhU+1/XRhl8xPEDxabANI
+BPo7jy1Yx9cjRxBGyoskseiGP0mGnfg9mTs/bxnFg9Rreo3RnYYk83zo1FysLCjj
+e5fITKJ1hZ4fC8u3vqjVi0cb8C2MxogonPqm6GPDidO2uEAYvRd2XWcS5BXBRpIU
+84TxJxU3b48QlyMmpJGZC1TnVk94bYSNqfoARjNmJz4KM0Hn46bYGBhZjt08MfNY
+MDVu6Fl8dkF9EsbSRPm6LJElD4v5GTkQnrBdp5EGSBMPXW247kzQomyde45RWol3
+YSGcUJCjtjFeMVbVIsnfQKPXbWXuKnRXb6L94s1rqxA++GB6u9ABcOJbx3GCuHWP
+ztcJsgdNxir10cw+nnASVUQp5w93lk9Cdp8ZLftNbQMTFok+inXlY9eW1Hkk/uTB
+eGnfHWQr/rwK1rJzGg/m
+=eI0X
 -----END PGP SIGNATURE-----
 
---Izn7cH1Com+I3R9J--
+--l76fUT7nc3MelDdI--
