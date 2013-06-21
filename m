@@ -1,176 +1,26 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 27 Jun 2013 09:53:10 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: APE6EVM: add MMCIF and SDHI support
-Message-Id: <Pine.LNX.4.64.1306271149540.19503@axis700.grange>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 21 Jun 2013 23:26:45 +0000
+Subject: [PATCH v5 0/3] R8A7778/BOCK-W R-Car VIN driver support
+Message-Id: <201306220326.46176.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1306261546570.8856@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306261546570.8856@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon
+Hello.
 
-On Thu, 27 Jun 2013, Simon Horman wrote:
+   Here's the set of 3 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-next-20130620' tag. Here we add the VIN platform code working on
+the R8A7778/BOCK-W with ML86V7667 video decoder.
 
-> On Wed, Jun 26, 2013 at 03:50:34PM +0200, Guennadi Liakhovetski wrote:
-> > This patch adds all SDHI and MMCIF DT nodes to r8a73a4. On APE6EVM only
-> > SDHI0, SDHI1 and MMCIF0 are available. For these interfaces DT nodes are
-> > enabled and pinmux settings are activated.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> 
-> Hi Guennadi,
-> 
-> I am wondering if you could split this patch in two.
-> 
-> A patch DT patch that modifies r8a73a4-ape6evm.dts
-> and r8a73a4.dtsi. And a board patch that modifies board-ape6evm.c.
+[1/3] ARM: shmobile: r8a7778: add VIN support
+[2/3] ARM: shmobile: BOCK-W: add VIN and ML86V7667 support
+[3/3] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
 
-I certainly could, but I don't think it would make sense. At least not as 
-you're suggesting. Adding both .dts(i) files would create DT nodes on 
-APE6EVM, but they won't be functional because of missing pinmux 
-configuration. We could do that in the reverse order - first pinmux, which 
-has no effect with no nodes, then DT. Or we could split differently - 
-first only r8a73a4.dtsi, which only adds disabled DT node templates, then 
-the rest to activate selected devices on APE6EVM. Same holds for Lager, of 
-course.
+   The patch containing OKI ML86V7667 video decoder driver has been removed
+from the series as it should be applied to the 'media_tree.git' repo. The patch
+containing the VIN PFC support has been also removed from the series and has
+now been merged.
 
-Thanks
-Guennadi
-
-> > ---
-> > 
-> > Pinmux configuration is still done via .c, dummy regulator support, no 
-> > GPIO card detection. All this should be fixed as soon as pinctrl DT is 
-> > available on r8a73a4.
-> > 
-> > v2: now uses DT.
-> > 
-> >  arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   22 +++++++++++++++
-> >  arch/arm/boot/dts/r8a73a4.dtsi         |   45 ++++++++++++++++++++++++++++++++
-> >  arch/arm/mach-shmobile/board-ape6evm.c |   17 ++++++++++++
-> >  3 files changed, 84 insertions(+), 0 deletions(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> > index 27c5e06..a4553b2 100644
-> > --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> > +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> > @@ -74,3 +74,25 @@
-> >  	>;
-> >  	voltage-tolerance = <1>; /* 1% */
-> >  };
-> > +
-> > +&mmcif0 {
-> > +	vmmc-supply = <&ape6evm_fixed_3v3>;
-> > +	bus-width = <8>;
-> > +	non-removable;
-> > +	status = "okay";
-> > +};
-> > +
-> > +&sdhi0 {
-> > +	vmmc-supply = <&ape6evm_fixed_3v3>;
-> > +	bus-width = <4>;
-> > +	toshiba,mmc-wrprotect-disable;
-> > +	status = "okay";
-> > +};
-> > +
-> > +&sdhi1 {
-> > +	vmmc-supply = <&ape6evm_fixed_3v3>;
-> > +	bus-width = <4>;
-> > +	broken-cd;
-> > +	toshiba,mmc-wrprotect-disable;
-> > +	status = "okay";
-> > +};
-> > diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-> > index 4e1ddf0..064f045 100644
-> > --- a/arch/arm/boot/dts/r8a73a4.dtsi
-> > +++ b/arch/arm/boot/dts/r8a73a4.dtsi
-> > @@ -166,4 +166,49 @@
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 173 0x4>;
-> >  	};
-> > +
-> > +	mmcif0: mmcif@ee200000 {
-> > +		compatible = "renesas,sh-mmcif";
-> > +		reg = <0 0xee200000 0 0x100>;
-> > +		interrupt-parent = <&gic>;
-> > +		interrupts = <0 169 0x4>;
-> > +		reg-io-width = <4>;
-> > +		status = "disabled";
-> > +	};
-> > +
-> > +	mmcif1: mmcif@ee220000 {
-> > +		compatible = "renesas,sh-mmcif";
-> > +		reg = <0 0xee220000 0 0x100>;
-> > +		interrupt-parent = <&gic>;
-> > +		interrupts = <0 170 0x4>;
-> > +		reg-io-width = <4>;
-> > +		status = "disabled";
-> > +	};
-> > +
-> > +	sdhi0: sdhi@ee100000 {
-> > +		compatible = "renesas,r8a7740-sdhi";
-> > +		reg = <0 0xee100000 0 0x100>;
-> > +		interrupt-parent = <&gic>;
-> > +		interrupts = <0 165 4>;
-> > +		cap-sd-highspeed;
-> > +		status = "disabled";
-> > +	};
-> > +
-> > +	sdhi1: sdhi@ee120000 {
-> > +		compatible = "renesas,r8a7740-sdhi";
-> > +		reg = <0 0xee120000 0 0x100>;
-> > +		interrupt-parent = <&gic>;
-> > +		interrupts = <0 166 4>;
-> > +		cap-sd-highspeed;
-> > +		status = "disabled";
-> > +	};
-> > +
-> > +	sdhi2: sdhi@ee140000 {
-> > +		compatible = "renesas,r8a7740-sdhi";
-> > +		reg = <0 0xee140000 0 0x100>;
-> > +		interrupt-parent = <&gic>;
-> > +		interrupts = <0 167 4>;
-> > +		cap-sd-highspeed;
-> > +		status = "disabled";
-> > +	};
-> >  };
-> > diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-> > index 5eb0caa..716f2f7 100644
-> > --- a/arch/arm/mach-shmobile/board-ape6evm.c
-> > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> > @@ -62,6 +62,23 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
-> >  	/* SMSC */
-> >  	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a73a4",
-> >  				  "irqc_irq40", "irqc"),
-> > +	/* SDHI0: uSD: no WP */
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-r8a73a4",
-> > +				  "sdhi0_data4", "sdhi0"),
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-r8a73a4",
-> > +				  "sdhi0_ctrl", "sdhi0"),
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-r8a73a4",
-> > +				  "sdhi0_cd", "sdhi0"),
-> > +	/* SDHI1 */
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee120000.sdhi", "pfc-r8a73a4",
-> > +				  "sdhi1_data4", "sdhi1"),
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee120000.sdhi", "pfc-r8a73a4",
-> > +				  "sdhi1_ctrl", "sdhi1"),
-> > +	/* MMCIF0 */
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee200000.mmcif", "pfc-r8a73a4",
-> > +				  "mmc0_data8", "mmc0"),
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee200000.mmcif", "pfc-r8a73a4",
-> > +				  "mmc0_ctrl", "mmc0"),
-> >  };
-> >  
-> >  static void __init ape6evm_add_standard_devices(void)
-> > -- 
-> > 1.7.2.5
-> > 
-> 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+WBR, Sergei
