@@ -1,164 +1,88 @@
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Date: Fri, 21 Jun 2013 00:50:43 +0000
+From: Katsuya MATSUBARA <matsu@igel.co.jp>
+Date: Fri, 21 Jun 2013 04:46:59 +0000
 Subject: Re: [PATCH v6] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <51C3A363.5090206@cogentembedded.com>
+Message-Id: <20130621.134659.460987965.matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305240211.29665.sergei.shtylyov@cogentembedded.com> <Pine.LNX.4.64.1306131245420.31976@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306131245420.31976@axis700.grange>
+References: <201305240211.29665.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201305240211.29665.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp
+To: sergei.shtylyov@cogentembedded.com
+Cc: g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, vladimir.barinov@cogentembedded.com
 
-Hi Guennadi,
 
-Sorry for the response delay and thank you for new review.
+Hi Sergei and Valadmir,
 
-Guennadi Liakhovetski wrote:
->> +	/* output format */
->> +	switch (icd->current_fmt->host_fmt->fourcc) {
->> +	case V4L2_PIX_FMT_NV16:
->> +		iowrite32(ALIGN(cam->width * cam->height, 0x80),
->> +			  priv->base + VNUVAOF_REG);
->> +		dmr = VNDMR_DTMD_YCSEP;
->> +		output_is_yuv = true;
->> +		break;
->> +	case V4L2_PIX_FMT_YUYV:
->> +		dmr = VNDMR_BPSM;
->> +		output_is_yuv = true;
->> +		break;
->> +	case V4L2_PIX_FMT_UYVY:
->> +		dmr = 0;
->> +		output_is_yuv = true;
->> +		break;
->> +	case V4L2_PIX_FMT_RGB555X:
->> +		dmr = VNDMR_DTMD_ARGB1555;
->> +		break;
->> +	case V4L2_PIX_FMT_RGB565:
->> +		dmr = 0;
->> +		break;
->> +	case V4L2_PIX_FMT_RGB32:
->> +		if (priv->chip = RCAR_H1 || priv->chip = RCAR_E1) {
->> +			dmr = VNDMR_EXRGB;
->> +			break;
->> +		}
->> +	default:
->> +		dev_warn(icd->parent, "Invalid fourcc format (0x%x)\n",
->> +			 icd->current_fmt->host_fmt->fourcc);
->>     
->
-> I'll put a marker here for now: I don't understand the logic - either you 
-> don't support this case, then you should either fail somehow or switch to 
-> a supported case, or you do support it, then you don't need a warning
->   
-Yes, the default case is not supported.
-Don't you think the current logic should be replaced with BUG() callback?
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 24 May 2013 02:11:28 +0400
 
-> [snip]
->
->   
->> +static void rcar_vin_videobuf_queue(struct vb2_buffer *vb)
->> +{
->> +	struct soc_camera_device *icd = soc_camera_from_vb2q(vb->vb2_queue);
->> +	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
->> +	struct rcar_vin_priv *priv = ici->priv;
->> +	unsigned long size;
->> +	int bytes_per_line;
->> +
->> +	bytes_per_line = soc_mbus_bytes_per_line(icd->user_width,
->> +						 icd->current_fmt->host_fmt);
->> +	if (bytes_per_line < 0)
->> +		goto error;
->> +
->> +	size = icd->user_height * bytes_per_line;
->>     
->
-> You haven't fixed this
->   
-Sorry for the miss. Will replace with icd->sizeimage.
+(snip)
+> +/* Similar to set_crop multistage iterative algorithm */
+> +static int rcar_vin_set_fmt(struct soc_camera_device *icd,
+> +			    struct v4l2_format *f)
+> +{
+> +	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+> +	struct rcar_vin_priv *priv = ici->priv;
+> +	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
+> +	struct rcar_vin_cam *cam = icd->host_priv;
+> +	struct v4l2_pix_format *pix = &f->fmt.pix;
+> +	struct v4l2_mbus_framefmt mf;
+> +	struct device *dev = icd->parent;
+> +	__u32 pixfmt = pix->pixelformat;
+> +	const struct soc_camera_format_xlate *xlate;
+> +	unsigned int vin_sub_width = 0, vin_sub_height = 0;
+> +	int ret;
+> +	bool can_scale;
+> +	enum v4l2_field field;
+> +	v4l2_std_id std;
+> +
+> +	dev_dbg(dev, "S_FMT(pix=0x%x, %ux%u)\n",
+> +		pixfmt, pix->width, pix->height);
+> +
+> +	switch (pix->field) {
+> +	default:
+> +		pix->field = V4L2_FIELD_NONE;
+> +		/* fall-through */
+> +	case V4L2_FIELD_NONE:
+> +	case V4L2_FIELD_TOP:
+> +	case V4L2_FIELD_BOTTOM:
+> +	case V4L2_FIELD_INTERLACED_TB:
+> +	case V4L2_FIELD_INTERLACED_BT:
+> +		field = pix->field;
+> +		break;
+> +	case V4L2_FIELD_INTERLACED:
+> +		/* Query for standard if not explicitly mentioned _TB/_BT */
+> +		ret = v4l2_subdev_call(sd, video, querystd, &std);
+> +		if (ret < 0)
+> +			std = V4L2_STD_625_50;
+> +
+> +		field = std & V4L2_STD_625_50 ? V4L2_FIELD_INTERLACED_TB :
+> +						V4L2_FIELD_INTERLACED_BT;
+> +		break;
+> +	}
 
->> +static const struct soc_mbus_pixelfmt rcar_vin_formats[] = {
->> +	{
->> +		.fourcc			= V4L2_PIX_FMT_NV16,
->> +		.name			= "NV16",
->> +		.bits_per_sample	= 16,
->> +		.packing		= SOC_MBUS_PACKING_NONE,
->> +		.order			= SOC_MBUS_ORDER_LE,
->> +		.layout			= SOC_MBUS_LAYOUT_PACKED,
->>     
->
-> This should be SOC_MBUS_LAYOUT_PLANAR_Y_C
->   
-Shouldn't the ".packing"  be changed here to SOC_MBUS_PACKING_2X8_PADHI ?
+I have tested your VIN driver with NTSC video input
+with the following two boards;
 
->> +	if (!icd->host_priv) {
->> +		struct v4l2_mbus_framefmt mf;
->> +		struct v4l2_rect rect;
->> +		struct device *dev = icd->parent;
->> +		int shift;
->> +
->> +		ret = v4l2_subdev_call(sd, video, g_mbus_fmt, &mf);
->> +		if (ret < 0)
->> +			return ret;
->> +
->> +		/* Cache current client geometry */
->> +		ret = soc_camera_client_g_rect(sd, &rect);
->> +		if (ret < 0) {
->> +			/* Sensor driver doesn't support cropping */
->>     
->
-> I don't think it's right. soc_camera_client_g_rect() should only return an 
-> error, if the subdevice driver implements g_crop or cropcap and returns an 
-> error from them. If those methods are just unimplemented, you get a 0 
-> back. Do you see anything different?
->   
-No.
-In case the subdevice drivers does not implement cropping (i.e there is 
-no both methods g_crop and cropcap) then the return value is -ENOIOCTLCMD.
-Don't you suggest to continue for (ret = -ENOIOCTLCMD) and return for 
-other (ret < 0) ?
+1. Marzen (R-CarH1 SoC and ADV7180 video decoder)
+2. BOCK-W (R-CarM1A SoC and ML86V7667 video decoder)
 
->> +	switch (pixfmt) {
->> +	case V4L2_PIX_FMT_NV16:
->> +		can_scale = false;
->> +		break;
->> +	case V4L2_PIX_FMT_RGB32:
->> +		can_scale = priv->chip != RCAR_E1;
->> +		break;
->> +	default:
->> +		can_scale = true;
->>     
->
-> You also get here in the pass-through mode, right? I don't think you can 
-> scale then.
->   
-Yes, thank you for pointing to this. I will add only supported formats 
-for scaling capability.
+As a result, I have got strange captured images in the BOCK-W
+environment. The image looks that the top and bottom fields
+have been combined in wrong order.
+However, in case of Marzen, it works fine with correct images
+captured. I made sure that the driver chose the
+V4L2_FIELD_INTERLACED_BT flag for the NTSC standard video
+in the both environments.
 
->   
->> +		break;
->> +	}
->> +
->> +	dev_dbg(dev, "request camera output %ux%u\n", mf.width, mf.height);
->> +
->> +	ret = soc_camera_client_scale(icd, &cam->rect, &cam->subrect,
->> +				      &mf, &vin_sub_width, &vin_sub_height,
->> +				      can_scale, 12);
->> +
->> +	/* Done with the camera. Now see if we can improve the result */
->> +	dev_dbg(dev, "Camera %d fmt %ux%u, requested %ux%u\n",
->> +		ret, mf.width, mf.height, pix->width, pix->height);
->> +
->> +	if (ret < 0)
->> +		dev_dbg(dev, "Sensor doesn't support cropping\n");
->>     
->
-> Are you sure this print is correct?
->   
-Probably it should be the same like above for the case if subdevice 
-driver does not support cropping (see soc_scale_crop.c -> client_s_fmt() ).
+Have you seen such an iusse with the ML86V7667 driver?
+I think there may be some mismatch between the VIN
+and the ML86V7667 settings.
 
-Regards,
-Vladimir
+Thanks,
+---
+Katsuya Matsubara / IGEL Co., Ltd
+matsu@igel.co.jp
+
 
