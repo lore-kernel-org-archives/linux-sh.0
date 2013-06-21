@@ -1,60 +1,59 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 21 Jun 2013 13:05:01 +0000
-Subject: Re: [GIT PULL 0/5] Renesas ARM-based SoC board updates for v3.11 #2
-Message-Id: <201306211505.01567.arnd@arndb.de>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 21 Jun 2013 07:10:35 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a73a4: safeguard against wrong clk_set_rate() uses
+Message-Id: <1371798638-10530-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
+References: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 19 June 2013, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following updates to the Bock-W board for v3.11.
-> 
-> This pull request is based on a merge of renesas-boards2-for-v3.11 and
-> renesas-soc2-for-v3.11, both of which you have previously pulled, in order
-> to satisfy dependencies.
-> 
-> 
-> The following changes since commit 2e9a222e271b7fd16e62a0861ad5e42996d17815:
-> 
->   Merge branch 'soc2' into boards-base (2013-06-13 14:41:53 +0900)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.11
-> 
-> for you to fetch changes up to 2c83322ce820bcf2d5e8265de831489076ee211e:
-> 
->   ARM: shmobile: BOCK-W: change Ether device name (2013-06-18 16:22:45 +0900)
-> 
-> ----------------------------------------------------------------
-> Second Round of Renesas ARM-based SoC board updates for v3.11
-> 
-> * Extended hardware coverage for the Bock-W board
->   by Goda-san and Morimoto-san
-> * Correction to Ether device name for the Bock-W board
->   from Sergei Shtylyov
-> 
-> ----------------------------------------------------------------
-> Kuninori Morimoto (3):
->       ARM: shmobile: bockw: add I2C device support
->       ARM: shmobile: bockw: add SPI FLASH support
->       ARM: shmobile: bockw: add MMCIF support
-> 
-> Sergei Shtylyov (2):
->       ARM: shmobile: BOCK-W: add Ether support
->       ARM: shmobile: BOCK-W: change Ether device name
-> 
->  arch/arm/mach-shmobile/board-bockw.c | 98 +++++++++++++++++++++++++++++++++++-
->  1 file changed, 97 insertions(+), 1 deletion(-)
-> 
+clk_set_rate() should only be called with exact rates, returned by
+clk_round_rate(). However, it is still good to verify, that the value,
+passed to clock's .set_rate() method is at least valid. This patch adds
+such a check for the Z-clock on r8a73a4.
 
-Pulled into next/boards, thanks!
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   14 +++++++++++++-
+ 1 files changed, 13 insertions(+), 1 deletions(-)
 
-	Arnd
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index eb42740..cbf9852 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -225,16 +225,28 @@ static int zclk_set_rate(struct clk *clk, unsigned long rate)
+ 		goto done;
+ 	}
+ 
+-	frqcrc = clk->mapped_reg + (FRQCRC - (u32)clk->enable_reg);
++	/*
++	 * Users are supposed to first call clk_set_rate() only with
++	 * clk_round_rate() results. So, we don't fix wrong rates here, but
++	 * guard against them anyway
++	 */
+ 
+ 	p_rate = clk_get_rate(clk->parent);
+ 	if (rate = p_rate) {
+ 		val = 0;
+ 	} else {
+ 		step = DIV_ROUND_CLOSEST(p_rate, 32);
++
++		if (rate > p_rate || rate < step) {
++			ret = -EINVAL;
++			goto done;
++		}
++
+ 		val = 32 - rate / step;
+ 	}
+ 
++	frqcrc = clk->mapped_reg + (FRQCRC - (u32)clk->enable_reg);
++
+ 	iowrite32((ioread32(frqcrc) & ~(clk->div_mask << clk->enable_bit)) |
+ 		  (val << clk->enable_bit), frqcrc);
+ 
+-- 
+1.7.2.5
+
