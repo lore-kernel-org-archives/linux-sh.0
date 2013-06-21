@@ -1,60 +1,76 @@
-From: Katsuya MATSUBARA <matsu@igel.co.jp>
-Date: Fri, 21 Jun 2013 13:04:44 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 21 Jun 2013 20:08:45 +0000
 Subject: Re: [PATCH v6] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <20130621.220444.280357674.matsu@igel.co.jp>
+Message-Id: <51C4B2CD.2030302@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51C41F66.1060300@cogentembedded.com>
-	<20130621.190157.27985389.matsu@igel.co.jp>
-	<51C42BA5.9050105@cogentembedded.com>
-In-Reply-To: <51C42BA5.9050105@cogentembedded.com>
+References: <201305240211.29665.sergei.shtylyov@cogentembedded.com> <Pine.LNX.4.64.1306131245420.31976@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1306131245420.31976@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: vladimir.barinov@cogentembedded.com
-Cc: sergei.shtylyov@cogentembedded.com, g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp, vladimir.barinov@cogentembedded.com
 
+Hello.
 
-Hi Vladimir,
+On 06/13/2013 05:12 PM, Guennadi Liakhovetski wrote:
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Date: Fri, 21 Jun 2013 14:32:05 +0400
+> Hi Sergei
 
-> Katsuya MATSUBARA wrote:
->> Hi Vladimir,
->>
+> Patches, that this commit is based upon are hopefully moving towards the
+> mainline, but it's still possible, that some more changes will be
+> required. In any case, I wanted to comment to this version to let you
+> prepare for a new version in advance.
+
+> In general - looks better!
+
 >> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->> Date: Fri, 21 Jun 2013 13:39:50 +0400
->>
->> (snip)
->>   
->>>> I have not seen such i2c errors during capturing and booting.
->>>> But I have seen that querystd() in the ml86v7667 driver often
->>>> returns V4L2_STD_UNKNOWN, although the corresponding function
->>>>         
->>> could you try Hans's fix:
->>> https://patchwork.kernel.org/patch/2640701/
->>>     
->>
->> The fix has been already applied in my environment.
->>   
-> I've found that after some iteration of submission we disabled the
-> input signal in autodetection in ml86v7667_init(). per
-> recommendations.
-> That could be the case why the input signal is not locked.
-> 
-> On adv7180 it still has optional autodetection but Hans recommended to
-> get rid from runtime autodetection.
-> So I've added input signal detection only during boot time.
-> 
-> Could you please try the attached patch?
 
-With the patch, V4L2_STD_UNKNOWN often returned by querystd()
-in the ml86v7667 driver has been gone.
-But, captured images are still incorrect that means wrong
-order of fields desite '_BT' chosen for V4L2_STD_525_60.
+>> Add Renesas R-Car VIN (Video In) V4L2 driver.
 
-Thanks,
----
-Katsuya Matsubara / IGEL Co., Ltd
-matsu@igel.co.jp
+>> Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
+
+>> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+>> [Sergei: removed deprecated IRQF_DISABLED flag, reordered/renamed 'enum chip_id'
+>> values, reordered rcar_vin_id_table[] entries,  removed senseless parens from
+>> to_buf_list() macro, used ALIGN() macro in rcar_vin_setup(), added {} to the
+>> *if* statement  and  used 'bool' values instead of 0/1 where necessary, removed
+>> unused macros, done some reformatting and clarified some comments.]
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>> ---
+
+> [snip]
+
+>> Index: media_tree/drivers/media/platform/soc_camera/rcar_vin.c
+>> =================================>> --- /dev/null
+>> +++ media_tree/drivers/media/platform/soc_camera/rcar_vin.c
+[...]
+>> +static irqreturn_t rcar_vin_irq(int irq, void *data)
+>> +{
+[...]
+>> +		if (hw_stopped || !can_run) {
+>> +			priv->state = STOPPED;
+>> +		} else if (is_continuous_transfer(priv) &&
+>> +			   list_empty(&priv->capture) &&
+>> +			   priv->state = RUNNING) {
+>> +			/*
+>> +			 * The continuous capturing requires an explicit stop
+>> +			 * operation when there is no buffer to be set into
+>> +			 * the VnMBm registers.
+>> +			 */
+>> +			rcar_vin_request_capture_stop(priv);
+>> +		} else {
+>> +			rcar_vin_capture(priv);
+>> +		}
+
+> You don't need braces here
+
+    Did you mean only *else* branch or the whole *if statement? In both 
+cases, I disagree. Removing {} only from *else* contradicts do 
+Documenation/CodingStyle, removing them from the *if* branch too also 
+don't appeal to me as due to the comment inside the *if* branch. Sorry, 
+I'm leaving this as is.
+
+WBR, Sergei
 
