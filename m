@@ -1,25 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Jun 2013 14:10:19 +0000
-Subject: Re: [PATCH] ARM: shmobile: Remove AP4EVB board support
-Message-Id: <20130612141018.GZ32751@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 21 Jun 2013 07:10:38 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a73a4: add Z2 clock support
+Message-Id: <1371798638-10530-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130612091819.6024.76059.sendpatchset@w520>
-In-Reply-To: <20130612091819.6024.76059.sendpatchset@w520>
+References: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 12, 2013 at 06:18:19PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Remove board support for the sh7372 based AP4EVB board
-> 
-> The sh7372 SoC support code is still kept around since it
-> is in use by the Mackerel board which is basically a more
-> recent board where the design is based on AP4EVB.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+The Z2 clock on r8a73a4 is used to clock the 4 Cortex A7 cores on the SoC.
+Add a definition for this clock to later use it from the arm_big_little
+CPUFreq driver.
 
-Thanks, I have queued this up in the (new) cleanup-boot branch
-along with all its dependencies.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 508cb1e..b717e98 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -324,6 +324,21 @@ static struct clk z_clk = {
+ 	.ops = &zclk_ops,
+ };
+ 
++/*
++ * It seems only 1/2 divider is usable in manual mode. 1/2 / 2/3
++ * switching is only available in auto-DVFS mode
++ */
++SH_FIXED_RATIO_CLK(pll0_div2_clk,	pll0_clk,		div2);
++
++static struct clk z2_clk = {
++	.parent = &pll0_div2_clk,
++	.div_mask = 0x1f,
++	.enable_bit = 0,
++	/* We'll need to access FRQCRB and FRQCRC */
++	.enable_reg = (void __iomem *)FRQCRB,
++	.ops = &zclk_ops,
++};
++
+ static struct clk *main_clks[] = {
+ 	&extalr_clk,
+ 	&extal1_clk,
+@@ -342,6 +357,8 @@ static struct clk *main_clks[] = {
+ 	&pll2s_clk,
+ 	&pll2h_clk,
+ 	&z_clk,
++	&pll0_div2_clk,
++	&z2_clk,
+ };
+ 
+ /* DIV4 */
+-- 
+1.7.2.5
+
