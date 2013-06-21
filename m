@@ -1,56 +1,60 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Fri, 21 Jun 2013 09:31:20 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 21 Jun 2013 12:20:00 +0000
 Subject: Re: [PATCH v4 1/5] pwm: Add Renesas TPU PWM driver
-Message-Id: <20130621093119.GB31464@manwe>
+Message-Id: <2751549.f626ATFeLa@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="l76fUT7nc3MelDdI"
+Content-Type: multipart/mixed; boundary="nextPart2505733.ELPyzLg66y"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1371142488-2514-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1371142488-2514-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-sh@vger.kernel.org
 
 
---l76fUT7nc3MelDdI
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+--nextPart2505733.ELPyzLg66y
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-On Thu, Jun 13, 2013 at 06:54:44PM +0200, Laurent Pinchart wrote:
-> The Timer Pulse Unit (TPU) is a 4-channels 16-bit timer used to generate
-> waveforms. This driver exposes PWM functions through the PWM API for
-> other drivers to use.
->=20
-> The code is loosely based on the leds-renesas-tpu driver by Magnus Damm
-> and the TPU PWM driver shipped in the Armadillo EVA 800 kernel sources.
->=20
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
-m>
-> Signed-off-by: Axel Lin <axel.lin@ingics.com>
-> Tested-by: Simon Horman <horms@verge.net.au>
+Hi Thierry,
 
-Applied, thanks.
+On Friday 21 June 2013 11:31:20 Thierry Reding wrote:
+> On Thu, Jun 13, 2013 at 06:54:44PM +0200, Laurent Pinchart wrote:
+> > The Timer Pulse Unit (TPU) is a 4-channels 16-bit timer used to generate
+> > waveforms. This driver exposes PWM functions through the PWM API for
+> > other drivers to use.
+> > 
+> > The code is loosely based on the leds-renesas-tpu driver by Magnus Damm
+> > and the TPU PWM driver shipped in the Armadillo EVA 800 kernel sources.
+> > 
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > Signed-off-by: Axel Lin <axel.lin@ingics.com>
+> > Tested-by: Simon Horman <horms@verge.net.au>
+> 
+> Applied, thanks.
 
-Thierry
+Thank you.
 
---l76fUT7nc3MelDdI
-Content-Type: application/pgp-signature
+-- 
+Regards,
+
+Laurent Pinchart
+
+--nextPart2505733.ELPyzLg66y
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.20 (GNU/Linux)
 
-iQIcBAEBAgAGBQJRxB1nAAoJEN0jrNd/PrOhuPAP/0Tqu132HiKS10UJOChzeC/k
-IeVzOheCVJsejhoN7Uu2kQAM+fynpp6kKmCP413Ay9tRvu5cDjeuy2OVPU7uyc2n
-OMdz9+kzYtGfJ5Y6ruf9jEq7KP0X1Px1lLB9frjnkyN7bfn8/3VW2ODPjAUlR5uh
-4HTctNO9EWnUMaUDWKIuSSXSdYgbiL1jC3zZDuBXmXn6mjoVzjxD4wyPEVp0CeoW
-iDLscCwMDEwgE+WejkOuSzp8m6gaOGQuwm/ZX4wWuoMvhU+1/XRhl8xPEDxabANI
-BPo7jy1Yx9cjRxBGyoskseiGP0mGnfg9mTs/bxnFg9Rreo3RnYYk83zo1FysLCjj
-e5fITKJ1hZ4fC8u3vqjVi0cb8C2MxogonPqm6GPDidO2uEAYvRd2XWcS5BXBRpIU
-84TxJxU3b48QlyMmpJGZC1TnVk94bYSNqfoARjNmJz4KM0Hn46bYGBhZjt08MfNY
-MDVu6Fl8dkF9EsbSRPm6LJElD4v5GTkQnrBdp5EGSBMPXW247kzQomyde45RWol3
-YSGcUJCjtjFeMVbVIsnfQKPXbWXuKnRXb6L94s1rqxA++GB6u9ABcOJbx3GCuHWP
-ztcJsgdNxir10cw+nnASVUQp5w93lk9Cdp8ZLftNbQMTFok+inXlY9eW1Hkk/uTB
-eGnfHWQr/rwK1rJzGg/m
-=eI0X
+iQEcBAABAgAGBQJRxET2AAoJEIkPb2GL7hl1q/4H/2ZoKIRip3n+/JiLXPo4jKU9
++yLFiJRUSrDRIuzvQfDsWtgUeATMPYkWNa+b27epBLQZ3uV3atgnXuDtmFuphhTg
+SJ2CGqg26edzZhcPYd/kZDqFTxFOT7VbQDzFxQAsJ/hRaS2z12i0Getp3MnanfMV
+70jBoxYb4DM1vz/khdglhX3LZjP7v5wUaXzgSq8Cp3hoFxGaE9mqqpQGcnW3cuZO
+2/EGhj7fFsRv+CmvaW0IGj99f6i2p6p0S3vaFBIknV+Cc16J/2UR4oABI4utYU1E
+ki8VRHZPtYCbNQyCN5niYgjBPV/wHOW/Lk5WU5xfnhzJs+YXsPDPSot0Xi6p5tM=
+=3TPR
 -----END PGP SIGNATURE-----
 
---l76fUT7nc3MelDdI--
+--nextPart2505733.ELPyzLg66y--
+
