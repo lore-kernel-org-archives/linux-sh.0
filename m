@@ -1,46 +1,84 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 24 Jun 2013 14:30:17 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 24 Jun 2013 18:23:18 +0000
 Subject: Re: [PATCH v2 2/2] regulators: max8973: initial DT support
-Message-Id: <20130624143017.GN27646@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Fl9V9vFrQUs+59QW"
+Message-Id: <51C88E96.2010408@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1306241246580.19735@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1306241246580.19735@axis700.grange>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
+Hello.
 
---Fl9V9vFrQUs+59QW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On 06/24/2013 02:50 PM, Guennadi Liakhovetski wrote:
 
-On Mon, Jun 24, 2013 at 12:50:16PM +0200, Guennadi Liakhovetski wrote:
 > This patch adds primitive DT support to the max8973 regulator driver. None
 > of the configuration parameters, supported in the platform data are yet
+> available in DT, therefore no configuration is performed if booting with
+> no platform data. This means, that DT instantiation can only be used on
+> boards, where no run-time configuration of the chip is required. In such
+> cases the driver can be used to scale its output voltage. In the future
+> support for configuration parameters should be added.
 
-Applied, thanks.  "regulator" not "regulators".
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> ---
 
---Fl9V9vFrQUs+59QW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+> v2: as suggested by Mark, regulator bindings are now directly under the
+> main max8973 I2C device node.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.20 (GNU/Linux)
+>   .../bindings/regulator/max8973-regulator.txt       |   21 +++++++++++
+>   drivers/regulator/max8973-regulator.c              |   37 +++++++++++++------
+>   2 files changed, 46 insertions(+), 12 deletions(-)
+>   create mode 100644 Documentation/devicetree/bindings/regulator/max8973-regulator.txt
 
-iQIcBAEBAgAGBQJRyFf2AAoJELSic+t+oim9EVAP/RUrPNGbWW5UVNeotkX7ZILE
-P1S78uuClgIHAC6yKKCi9tlUaUgkeDyPXFrSxOtGzYv7SecP2d8IBXgH8RpcbmMq
-70ksMG7LELFmbRyJuRj9qq/H2P4osNXeGqoZQGR6qvibNT/ew4kNZwbt6D9hxiCF
-H+CBQbQCtFTQPAZ4DpTl6PHFdIJPP02oTYNLUm/OBdlWlswnwLlvC4vmU7pRwIIw
-6aK/K0X0gLHEdYbjg3olCia7xGoU8X+xIEQ9vlHF1v2LXQEtMaJbU5VFYp51PTLF
-ga4oKGdXoyzW0w4h/Vwx858PsxO3lPf5ecVNWsuYG8aaQasnMkmpScuQJvmRPIvD
-15rPouECxmH/knwkjYHyth5OtRt0gDbC7q10ZiitRqynVG4erKQvusKTG0WGveut
-tWlCtr5M1ZfI3GxltZF2rwW/srv7oKFovqrKqt/vragnOMRROJ35XZSx5BjUMhBd
-ryE3GZVJExr0ED645Gu87Yri9anIQEs9ffBt1tHW0Pg4BwaUqTVQgoaoTNxJydsL
-MUvQigGocxH4n6UYd6PpyT1RYHRtXYmIMp9jNlapU5zLZJDcuKR9bV6LvJAYu0Fq
-SgevCDC5O+BI+mMovBjykAwi2ohlNyuoMaOXi+piLGv9W7x2Qhak9G/crLx2U5YO
-N97LCpmlgjahq+qfCCDs
-=5Db0
------END PGP SIGNATURE-----
+> diff --git a/Documentation/devicetree/bindings/regulator/max8973-regulator.txt b/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
+> new file mode 100644
+> index 0000000..8d38ab2
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
+> @@ -0,0 +1,21 @@
+> +* Maxim MAX8973 Voltage Regulator
+> +
+> +Required properties:
+> +
+> +- compatible:	must be "maxium,max8973"
 
---Fl9V9vFrQUs+59QW--
+    I see only "maxim" and "dallas" for Maxim Integrated Products in 
+Documentation/devicetree/bindings/vendor-prefixes.txt. Is "maxium" some 
+new, unknown vendor?
+
+> +- reg:		the i2c slave address of the regulator. It should be 0x1b.
+> +
+> +Any standard regulator properties can be used to configure the single max8973
+> +DCDC.
+> +
+> +Example:
+> +
+> +	max8973@1b {
+> +		compatible = "maxium,max8973";
+> +		reg = <0x1b>;
+> +
+> +		regulator-min-microvolt = <935000>;
+> +		regulator-max-microvolt = <1200000>;
+> +		regulator-boot-on;
+> +		regulator-always-on;
+> +	};
+> diff --git a/drivers/regulator/max8973-regulator.c b/drivers/regulator/max8973-regulator.c
+> index b2dbdd7..0c5195a 100644
+> --- a/drivers/regulator/max8973-regulator.c
+> +++ b/drivers/regulator/max8973-regulator.c
+[...]
+> @@ -439,16 +447,21 @@ static int max8973_probe(struct i2c_client *client,
+[...]
+> +	if (pdata) {
+> +		ret = max8973_init_dcdc(max, pdata);
+> +		if (ret < 0) {
+> +			dev_err(max->dev, "Max8973 Init failed, err = %d\n", ret);
+
+    Not "MAX8973"?
+
+WBR, Sergei
+
