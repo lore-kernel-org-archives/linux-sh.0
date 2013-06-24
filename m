@@ -1,61 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:27:00 +0000
-Subject: [PATCH 129/130] ARM: shmobile: lager: Initialize pinmux
-Message-Id: <1370420821-28420-130-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 24 Jun 2013 21:14:47 +0000
+Subject: [PATCH v3 3/4] ARM: shmobile: ape6evm: add CPUFreq support
+Message-Id: <Pine.LNX.4.64.1306242311120.26438@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds OPPs to the CA15 DT node and a max8973 DT node to support
+clock and voltage scaling, using the cpufreq-cpu0 CPUFreq driver.
 
-Initialize r8a7790 pinmuxing and register mappings for the two debug
-serial ports.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index f587187..6114edd 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -21,15 +21,30 @@
- #include <linux/interrupt.h>
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <mach/common.h>
- #include <mach/r8a7790.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+static const struct pinctrl_map lager_pinctrl_map[] = {
-+	/* SCIF0 (CN19: DEBUG SERIAL0) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
-+				  "scif0_data", "scif0"),
-+	/* SCIF1 (CN20: DEBUG SERIAL1) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
-+				  "scif1_data", "scif1"),
+v3: fix a typo s/maxium/maxim/
+
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts |   22 ++++++++++++++++++++++
+ 1 files changed, 22 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 4fb0102..27c5e06 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -52,3 +52,25 @@
+ 		};
+ 	};
+ };
++
++&i2c5 {
++	vdd_dvfs: max8973@1b {
++		compatible = "maxim,max8973";
++		reg = <0x1b>;
++
++		regulator-min-microvolt = <935000>;
++		regulator-max-microvolt = <1200000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
 +};
 +
- static void __init lager_add_standard_devices(void)
- {
- 	r8a7790_clock_init();
-+
-+	pinctrl_register_mappings(lager_pinctrl_map,
-+				  ARRAY_SIZE(lager_pinctrl_map));
-+	r8a7790_pinmux_init();
-+
- 	r8a7790_add_standard_devices();
- }
- 
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++	operating-points = <
++		/* kHz  uV */
++		1950000 1115000
++		1462500  995000
++	>;
++	voltage-tolerance = <1>; /* 1% */
++};
 -- 
-1.8.2.1
+1.7.2.5
 
