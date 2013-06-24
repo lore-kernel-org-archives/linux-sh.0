@@ -1,80 +1,146 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 29 Jun 2013 15:04:47 +0000
-Subject: Re: [PATCH v7] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <51CEF78F.1040500@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 24 Jun 2013 10:50:16 +0000
+Subject: [PATCH v2 2/2] regulators: max8973: initial DT support
+Message-Id: <Pine.LNX.4.64.1306241246580.19735@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306220052.30572.sergei.shtylyov@cogentembedded.com> <Pine.LNX.4.64.1306260925210.8856@axis700.grange> <51CCD1B7.3040009@cogentembedded.com> <51CDC3BE.1040603@cogentembedded.com> <Pine.LNX.4.64.1306291247440.8358@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1306291247440.8358@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp
+To: linux-kernel@vger.kernel.org
+Cc: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hello.
+This patch adds primitive DT support to the max8973 regulator driver. None
+of the configuration parameters, supported in the platform data are yet
+available in DT, therefore no configuration is performed if booting with
+no platform data. This means, that DT instantiation can only be used on
+boards, where no run-time configuration of the chip is required. In such
+cases the driver can be used to scale its output voltage. In the future
+support for configuration parameters should be added.
 
-On 29-06-2013 14:57, Guennadi Liakhovetski wrote:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
->>>>> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+v2: as suggested by Mark, regulator bindings are now directly under the 
+main max8973 I2C device node.
 
->>>>> Add Renesas R-Car VIN (Video In) V4L2 driver.
+ .../bindings/regulator/max8973-regulator.txt       |   21 +++++++++++
+ drivers/regulator/max8973-regulator.c              |   37 +++++++++++++------
+ 2 files changed, 46 insertions(+), 12 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/regulator/max8973-regulator.txt
 
->>>>> Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
-
->>>>> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
->>>>> [Sergei: removed deprecated IRQF_DISABLED flag, reordered/renamed
->>>>> 'enum chip_id'
->>>>> values, reordered rcar_vin_id_table[] entries,  removed senseless
->>>>> parens from
->>>>> to_buf_list() macro, used ALIGN() macro in rcar_vin_setup(), added {}
->>>>> to the
->>>>> *if* statement  and used 'bool' values instead of 0/1 where
->>>>> necessary, removed
->>>>> unused macros, done some reformatting and clarified some comments.]
->>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->>>> Reviewing this iteration of the patch is still on my todo, in the
->>>> meantime you might verify whether it works on top of the for-3.11-3
->>>> branch of my
-
->>>> http://git.linuxtv.org/gliakhovetski/v4l-dvb.git
-
->>>> git-tree, or "next" after it's been pulled by Mauro and pushed
->>>> upstream. With that branch you shouldn't need any additional patches
->>>> andy more.
-
->>> Actually we need to apply/merge more patches here that enables VIN
->>> support on separate platform (like pinctrl/clock/setup/) :)
-
->>> Despite of above the rcar_vin driver works fine on Marzen board in
->>> v4l-dvb.git after adding soc_camera_host_ops clock_start/clock_stop.
-
->>     Guennadi, does that mean that we should rebase the driver to the branch
->> that you've named now?
-
-> IIUC, your last couple of versions were already developed on top of
-> v4l2-clk + v4l2-asybc + soc_scale_crop patches, right?
-
-    No, I think only atop of the latter one.
-
-> But those patches
-> were out of tree, and thus unstable. Whereas now they've hit Mauro's tree
-> at git.linuxtv.org and are about to be pulled into "next." So, you don't
-> need anymore to apply any external patches, you will be able to just
-> develop on top of "next." I presume, this should make your work easier,
-> not harder. Just please make sure to double-check your stack on top of
-> "next" to make sure it still works.
-
-    OK.
-
-> And let's try to get your driver ready for 3.12.
-
-    Sigh, another couple months probably mean nothing for the media 
-tree, but it may be disastrous for Renesas' customers which use the LTSI 
-tree...
-
-> Thanks
-> Guennadi
-
-WBR, Sergei
+diff --git a/Documentation/devicetree/bindings/regulator/max8973-regulator.txt b/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
+new file mode 100644
+index 0000000..8d38ab2
+--- /dev/null
++++ b/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
+@@ -0,0 +1,21 @@
++* Maxim MAX8973 Voltage Regulator
++
++Required properties:
++
++- compatible:	must be "maxium,max8973"
++- reg:		the i2c slave address of the regulator. It should be 0x1b.
++
++Any standard regulator properties can be used to configure the single max8973
++DCDC.
++
++Example:
++
++	max8973@1b {
++		compatible = "maxium,max8973";
++		reg = <0x1b>;
++
++		regulator-min-microvolt = <935000>;
++		regulator-max-microvolt = <1200000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
+diff --git a/drivers/regulator/max8973-regulator.c b/drivers/regulator/max8973-regulator.c
+index b2dbdd7..0c5195a 100644
+--- a/drivers/regulator/max8973-regulator.c
++++ b/drivers/regulator/max8973-regulator.c
+@@ -26,10 +26,12 @@
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/err.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/driver.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/regulator/max8973-regulator.h>
++#include <linux/regulator/of_regulator.h>
+ #include <linux/gpio.h>
+ #include <linux/i2c.h>
+ #include <linux/slab.h>
+@@ -370,7 +372,8 @@ static int max8973_probe(struct i2c_client *client,
+ 	int ret;
+ 
+ 	pdata = client->dev.platform_data;
+-	if (!pdata) {
++
++	if (!pdata && !client->dev.of_node) {
+ 		dev_err(&client->dev, "No Platform data");
+ 		return -EIO;
+ 	}
+@@ -400,7 +403,7 @@ static int max8973_probe(struct i2c_client *client,
+ 	max->desc.uV_step = MAX8973_VOLATGE_STEP;
+ 	max->desc.n_voltages = MAX8973_BUCK_N_VOLTAGE;
+ 
+-	if (!pdata->enable_ext_control) {
++	if (!pdata || !pdata->enable_ext_control) {
+ 		max->desc.enable_reg = MAX8973_VOUT;
+ 		max->desc.enable_mask = MAX8973_VOUT_ENABLE;
+ 		max->ops.enable = regulator_enable_regmap;
+@@ -408,12 +411,17 @@ static int max8973_probe(struct i2c_client *client,
+ 		max->ops.is_enabled = regulator_is_enabled_regmap;
+ 	}
+ 
+-	max->enable_external_control = pdata->enable_ext_control;
+-	max->dvs_gpio = pdata->dvs_gpio;
+-	max->curr_gpio_val = pdata->dvs_def_state;
+-	max->curr_vout_reg = MAX8973_VOUT + pdata->dvs_def_state;
++	if (pdata) {
++		max->dvs_gpio = pdata->dvs_gpio;
++		max->enable_external_control = pdata->enable_ext_control;
++		max->curr_gpio_val = pdata->dvs_def_state;
++		max->curr_vout_reg = MAX8973_VOUT + pdata->dvs_def_state;
++	} else {
++		max->dvs_gpio = -EINVAL;
++		max->curr_vout_reg = MAX8973_VOUT;
++	}
++
+ 	max->lru_index[0] = max->curr_vout_reg;
+-	max->valid_dvs_gpio = false;
+ 
+ 	if (gpio_is_valid(max->dvs_gpio)) {
+ 		int gpio_flags;
+@@ -439,16 +447,21 @@ static int max8973_probe(struct i2c_client *client,
+ 			max->lru_index[i] = i;
+ 		max->lru_index[0] = max->curr_vout_reg;
+ 		max->lru_index[max->curr_vout_reg] = 0;
++	} else {
++		max->valid_dvs_gpio = false;
+ 	}
+ 
+-	ret = max8973_init_dcdc(max, pdata);
+-	if (ret < 0) {
+-		dev_err(max->dev, "Max8973 Init failed, err = %d\n", ret);
+-		return ret;
++	if (pdata) {
++		ret = max8973_init_dcdc(max, pdata);
++		if (ret < 0) {
++			dev_err(max->dev, "Max8973 Init failed, err = %d\n", ret);
++			return ret;
++		}
+ 	}
+ 
+ 	config.dev = &client->dev;
+-	config.init_data = pdata->reg_init_data;
++	config.init_data = pdata ? pdata->reg_init_data :
++		of_get_regulator_init_data(&client->dev, client->dev.of_node);
+ 	config.driver_data = max;
+ 	config.of_node = client->dev.of_node;
+ 	config.regmap = max->regmap;
+-- 
+1.7.2.5
 
