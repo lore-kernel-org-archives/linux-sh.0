@@ -1,64 +1,49 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 11 Jun 2013 08:12:34 +0000
-Subject: Re: [GIT PULL v2 00/27] Renesas ARM-based SoC updates for v3.11
-Message-Id: <CAOesGMjypvtgEcXNv-9oTfa8WG55rjy8HKXsqR_BE=7-hyqviw@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 25 Jun 2013 07:07:06 +0000
+Subject: [PATCH] regulator: max8973: fix a typo in documentation
+Message-Id: <Pine.LNX.4.64.1306250905050.30321@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
- <20130611071925.GI6688@quad.lixom.net>
- <CAOesGMjDGkWO9YEqocv1ZFtDaaUPfoRMJNPEty6E3UDcGTeKew@mail.gmail.com>
- <20130611080119.GC5300@verge.net.au>
-In-Reply-To: <20130611080119.GC5300@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-kernel@vger.kernel.org, Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>
 
-On Tue, Jun 11, 2013 at 1:01 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Tue, Jun 11, 2013 at 12:23:40AM -0700, Olof Johansson wrote:
->> On Tue, Jun 11, 2013 at 12:19 AM, Olof Johansson <olof@lixom.net> wrote:
->> > Hi Simon,
->> >
->> > On Fri, Jun 07, 2013 at 04:51:30PM +0900, Simon Horman wrote:
->> >> Hi Olof, Hi Arnd,
->> >>
->> >> The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
->> >>
->> >>   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
->> >>
->> >> are available in the git repository at:
->> >>
->> >>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.11
->> >
->> > Thanks a lot for reshuffling the patches into the categories we use!
->> >
->> > For future cases, if you want to split off the cleanups you can do that as
->> > a separate branch, and use that branch as a base for feature branches. Either
->> > way works, sometimes it's nice to see cleanups separated out but it all depends
->> > on volumes, etc.
->> >
->> >
->> > Pulled into next/soc.
->>
->> Actually, I just noticed that this caused a few conflicts with the
->> pinmux-gpio branch you sent earlier. So I've moved said pinmux/gpio
->> branch into next/soc instead of next/drivers where it was earlier.
->> Please also check my conflict resolution once the branch has been
->> pushed out.
->
-> Thanks. I have checked and your conflict resolution is the same as mine.
->
-> This is an issue that I'm not entirely clear on the best practice for.
-> Is it sufficient for me to note any conflicts in the pull-request,
-> or in future should I re-arrange things somehow?
+Fix a s/maxium/maxim/ typo in DT binding documentation.
 
-It's always good to get a heads up that there will be conflicts.
-Simple conflicts like these are perfectly fine to expose though.
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-It's sometimes good to get a reference resolution of them from you --
-for example in this case I had originally resolved the conflict
-differently from you in your version of the merge (that was part of
-the boards branch), so I had to go back and redo it to not cause extra
-conflicts there.
+Mark, if still possible, feel free to merge this with the original patch.
+Thanks
+Guennadi
 
+ .../bindings/regulator/max8973-regulator.txt       |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
--Olof
+diff --git a/Documentation/devicetree/bindings/regulator/max8973-regulator.txt b/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
+index 8d38ab2..4f15d8a 100644
+--- a/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
++++ b/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
+@@ -2,7 +2,7 @@
+ 
+ Required properties:
+ 
+-- compatible:	must be "maxium,max8973"
++- compatible:	must be "maxim,max8973"
+ - reg:		the i2c slave address of the regulator. It should be 0x1b.
+ 
+ Any standard regulator properties can be used to configure the single max8973
+@@ -11,7 +11,7 @@ DCDC.
+ Example:
+ 
+ 	max8973@1b {
+-		compatible = "maxium,max8973";
++		compatible = "maxim,max8973";
+ 		reg = <0x1b>;
+ 
+ 		regulator-min-microvolt = <935000>;
+-- 
+1.7.2.5
+
