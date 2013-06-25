@@ -1,72 +1,245 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 19 Jun 2013 13:16:01 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 25 Jun 2013 14:00:49 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: uImage load address rework
-Message-Id: <76205076.EsFJngGrIh@avalon>
+Message-Id: <CANqRtoTmhrdB+U_kTdwStXY2xrrGxjMWOEY7NWMgFGXDYQNVNQ@mail.gmail.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="089e0158c57ae0bf8404dffaf43b"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130610092857.19175.25629.sendpatchset@w520>
  <CANqRtoSoWesMgBmbfUKxeyfwWcKZ77MyckCdPpKwK4WxYynWbA@mail.gmail.com>
- <3243557.sP7VV5jPVm@avalon>
-In-Reply-To: <3243557.sP7VV5jPVm@avalon>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <3243557.sP7VV5jPVm@avalon> <76205076.EsFJngGrIh@avalon>
+In-Reply-To: <76205076.EsFJngGrIh@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+--089e0158c57ae0bf8404dffaf43b
+Content-Type: text/plain; charset=ISO-8859-1
 
-On Wednesday 12 June 2013 04:31:26 Laurent Pinchart wrote:
-> On Wednesday 12 June 2013 11:21:34 Magnus Damm wrote:
-> > On Wed, Jun 12, 2013 at 6:50 AM, Laurent Pinchart wrote:
-> > > On Monday 10 June 2013 18:28:57 Magnus Damm wrote:
-> > >> From: Magnus Damm <damm@opensource.se>
-> > >> 
-> > >> This is V2 of the mach-shmobile uImage load address rework patch.
-> > >> 
-> > >> Rework the mach-shmobile uImage load address calculation by storing
-> > >> the per-board load addresses in Makefile.boot. This removes the
-> > >> CONFIG_MEMORY_START dependency from Makefile.boot, and it also makes
-> > >> it possible to create safe kernel images that boot on multiple boards.
-> > >> 
-> > >> This is one of several series of code that reworks code not to rely on
-> > >> CONFIG_MEMORY_START/SIZE which in turn is needed for
-> > >> ARCH_MULTIPLATFORM.
-> > >> 
-> > >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> > >> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > >> Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > 
-> > > I've noticed today that KZM9G doesn't boot v3.10-rc2 with
-> > > CONFIG_AUTO_ZRELADDR=y. While not caused by this patch, that's something
-> > > that will need to be fixed to support multi-arch kernels. I'm not too
-> > > familiar with early boot code, would you be able to have a look at this
-> > > ?
-> > 
-> > I will have a look. I suspect that issue is not related to this patch, is
-> > it?
-> 
-> No, it isn't, the issue is present in v3.10-rc2. I don't know if it has ever
-> worked.
+Hi Laurent,
 
-The following patch fixes the issue, caused by physical RAM being present at 
-0x41000000 on KZM9G. I'm not sure if it would be acceptable as a generic 
-solution though.
+On Wed, Jun 19, 2013 at 10:16 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Wednesday 12 June 2013 04:31:26 Laurent Pinchart wrote:
+>> On Wednesday 12 June 2013 11:21:34 Magnus Damm wrote:
+>> > On Wed, Jun 12, 2013 at 6:50 AM, Laurent Pinchart wrote:
+>> > > I've noticed today that KZM9G doesn't boot v3.10-rc2 with
+>> > > CONFIG_AUTO_ZRELADDR=y. While not caused by this patch, that's something
+>> > > that will need to be fixed to support multi-arch kernels. I'm not too
+>> > > familiar with early boot code, would you be able to have a look at this
+>> > > ?
+>> >
+>> > I will have a look. I suspect that issue is not related to this patch, is
+>> > it?
+>>
+>> No, it isn't, the issue is present in v3.10-rc2. I don't know if it has ever
+>> worked.
+>
+> The following patch fixes the issue, caused by physical RAM being present at
+> 0x41000000 on KZM9G. I'm not sure if it would be acceptable as a generic
+> solution though.
+>
+> diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+> index fe4d9c3..ea2f112 100644
+> --- a/arch/arm/boot/compressed/head.S
+> +++ b/arch/arm/boot/compressed/head.S
+> @@ -176,7 +176,7 @@ not_angel:
+>  #ifdef CONFIG_AUTO_ZRELADDR
+>                 @ determine final kernel image address
+>                 mov     r4, pc
+> -               and     r4, r4, #0xf8000000
+> +               and     r4, r4, #0xff000000
+>                 add     r4, r4, #TEXT_OFFSET
+>  #else
+>                 ldr     r4, =zreladdr
 
-diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
-index fe4d9c3..ea2f112 100644
---- a/arch/arm/boot/compressed/head.S
-+++ b/arch/arm/boot/compressed/head.S
-@@ -176,7 +176,7 @@ not_angel:
- #ifdef CONFIG_AUTO_ZRELADDR
- 		@ determine final kernel image address
- 		mov	r4, pc
--		and	r4, r4, #0xf8000000
-+		and	r4, r4, #0xff000000
- 		add	r4, r4, #TEXT_OFFSET
- #else
- 		ldr	r4, =zreladdr
+Thanks for tracking this down. I've now been looking into this a bit,
+and I think we should try to get KZM9G working without modifying the
+generic code. I am afraid that I have not been able to find the proper
+fix for this though, see below for a dump of the current state.
 
--- 
-Regards,
+To be able to get some more details from the kernel I've cooked up
+some debug patches. It turns out that it's not really the code in
+boot/compressed/ that is problematic - more the kernel itself. Also,
+before trying to enable relocatable support via AUTO_ZRELADDR=y I
+think we should try to get the regular AUTO_ZRELADDR=n case going with
+an address that is compatible with the generic code that you pointed
+out above. Then when that is fine it should be relatively easy to
+support the relocatable case as well.
 
-Laurent Pinchart
+The attached patch
+"linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch"
+makes sure the uImage gets loaded at 0x48008000 which from the
+boot/compressed code is compatible with either AUTO_ZRELADDR=n or =y.
 
+I've used the following patches on top of renesas git
+renesas-next-20130620 to enable output together with DEBUG_LL=y and
+EARLY_PRINTK=y:
+
+linux-3.11-pre-arm-shmobile-kzm9g-putc-20130625b.patch
+linux-3.11-pre-arm-shmobile-kzm9g-debug-macro-20130625.patch
+linux-3.11-pre-arm-mem-add-printout-20130625.patch
+linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch
+
+With the patches applied I get this serial output:
+
+- - -
+
+Filename 'kzm9g/uImage'.
+Load address: 0x43000000
+Loading: #################################################################
+         ##########################
+done
+Bytes transferred = 1335151 (145f6f hex)
+## Booting kernel from Legacy Image at 43000000 ...
+   Image Name:   'Linux-3.10.0-rc2'
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    1335087 Bytes = 1.3 MiB
+   Load Address: 48008000
+   Entry Point:  48008000
+   Verifying Checksum ... OK
+   Loading Kernel Image ... OK
+OK
+
+Starting kernel ...
+
+Uncompressing Linux... done, booting the kernel.
+Booting Linux on physical CPU 0x0
+Linux version 3.10.0-rc2 (damm@w520) (gcc version 4.5.1 (Sourcery G++
+Lite 2010.09-50) ) #1 SMP Tue Jun 25 22:25:10 JST 2013
+CPU: ARMv7 Processor [412fc098] revision 8 (ARMv7), cr=10c5347d
+CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
+Machine: kzm9g, model: KZM-A9-GT
+Adding RAM at 41000000-5f7fffff.
+bootconsole [earlycon0] enabled
+debug: ignoring loglevel setting.
+Ignoring RAM at 41000000-5f7fffff (vmalloc region overlap).
+cma: CMA: failed to reserve 16 MiB
+Memory policy: ECC disabled, Data cache writealloc
+Kernel panic - not syncing: ERROR: Failed to allocate 0x1000 bytes below 0x0.
+
+- - -
+
+The fatal memory allocation most likely fails because all system
+memory is ignored, see "(vmalloc region overlap)" above. This seems to
+be the case regardless of HIGHMEM=y or =n.
+
+It is possible to work around this issue by changing the memory bank
+start address in the DTS:
+
+--- 0001/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ work/arch/arm/boot/dts/sh73a0-kzm9g.dts     2013-06-25
+22:17:19.000000000 +0900
+@@ -19,8 +19,14 @@
+                bootargs = "console=tty0 console=ttySC4,115200
+root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
+        };
+
+-       memory {
++       memory@48000000 {
+                device_type = "memory";
+-               reg = <0x41000000 0x1e800000>;
++               reg = <0x48000000 0x10000000>;
+        };
+
+With the above hunk the kernel boots just fine. Unfortunately we
+cannot enable all memory which is kind of limiting. =)
+
+So my current conclusion is that it looks like the kernel doesn't like
+to have the memory start address not aligned to 128 MByte somehow..
+
+Cheers,
+
+/ magnus
+
+--089e0158c57ae0bf8404dffaf43b
+Content-Type: application/octet-stream; 
+	name="linux-3.11-pre-arm-shmobile-kzm9g-putc-20130625b.patch"
+Content-Disposition: attachment; 
+	filename="linux-3.11-pre-arm-shmobile-kzm9g-putc-20130625b.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hid5rp480
+
+RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
+Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvYXJtL21hY2gtc2htb2Jp
+bGUvaW5jbHVkZS9tYWNoL3VuY29tcHJlc3MuaCB8ICAgIDIgKysKIDEgZmlsZSBjaGFuZ2VkLCAy
+IGluc2VydGlvbnMoKykKCi0tLSAwMDAxL2FyY2gvYXJtL21hY2gtc2htb2JpbGUvaW5jbHVkZS9t
+YWNoL3VuY29tcHJlc3MuaAorKysgd29yay9hcmNoL2FybS9tYWNoLXNobW9iaWxlL2luY2x1ZGUv
+bWFjaC91bmNvbXByZXNzLmgJMjAxMy0wNi0yNSAxODozMDowNC4wMDAwMDAwMDAgKzA5MDAKQEAg
+LTEsMTEgKzEsMTMgQEAKICNpZm5kZWYgX19BU01fTUFDSF9VTkNPTVBSRVNTX0gKICNkZWZpbmUg
+X19BU01fTUFDSF9VTkNPTVBSRVNTX0gKIAorI2RlZmluZSBTQ0lGX1REUiAgICAgICAoKih2b2xh
+dGlsZSB1bnNpZ25lZCBjaGFyICopMHhlNmM4MDAyMCkKIC8qCiAgKiBUaGlzIGRvZXMgbm90IGFw
+cGVuZCBhIG5ld2xpbmUKICAqLwogc3RhdGljIHZvaWQgcHV0YyhpbnQgYykKIHsKKyAgICAgICBT
+Q0lGX1REUiA9IGM7CiB9CiAKIHN0YXRpYyBpbmxpbmUgdm9pZCBmbHVzaCh2b2lkKQo=
+--089e0158c57ae0bf8404dffaf43b
+Content-Type: application/octet-stream; 
+	name="linux-3.11-pre-arm-shmobile-kzm9g-debug-macro-20130625.patch"
+Content-Disposition: attachment; 
+	filename="linux-3.11-pre-arm-shmobile-kzm9g-debug-macro-20130625.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hid5sizf1
+
+RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
+Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvYXJtL21hY2gtc2htb2Jp
+bGUvaW5jbHVkZS9tYWNoL2RlYnVnLW1hY3JvLlMgfCAgIDQ1ICsrKysrKysrKysrKysrKysrKysr
+KwogMSBmaWxlIGNoYW5nZWQsIDQ1IGluc2VydGlvbnMoKykKCi0tLSAvZGV2L251bGwKKysrIHdv
+cmsvYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9pbmNsdWRlL21hY2gvZGVidWctbWFjcm8uUwkyMDEz
+LTA2LTI1IDIyOjExOjQwLjAwMDAwMDAwMCArMDkwMApAQCAtMCwwICsxLDQ1IEBACisvKgorICog
+YXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9pbmNsdWRlL21hY2gvZGVidWctbWFjcm8uUworICoKKyAq
+IERlYnVnZ2luZyBtYWNybyBpbmNsdWRlIGhlYWRlcgorICoKKyAqIENvcHlyaWdodCAoQykgMjAx
+Mi0yMDEzIFJlbmVzYXMgRWxlY3Ryb25pY3MgQ29ycG9yYXRpb24KKyAqIENvcHlyaWdodCAoQykg
+MTk5NC0xOTk5IFJ1c3NlbGwgS2luZworICoKKyAqIFRoaXMgcHJvZ3JhbSBpcyBmcmVlIHNvZnR3
+YXJlOyB5b3UgY2FuIHJlZGlzdHJpYnV0ZSBpdCBhbmQvb3IgbW9kaWZ5CisgKiBpdCB1bmRlciB0
+aGUgdGVybXMgb2YgdGhlIEdOVSBHZW5lcmFsIFB1YmxpYyBMaWNlbnNlIHZlcnNpb24gMiBhcwor
+ICogcHVibGlzaGVkIGJ5IHRoZSBGcmVlIFNvZnR3YXJlIEZvdW5kYXRpb24uCisgKi8KKworI2Rl
+ZmluZSBTU1IJMHgxNAorI2RlZmluZSBGVERSCTB4MjAKKworI2RlZmluZSBUREZFCSgxIDw8IDUp
+CisjZGVmaW5lIFRFTkQJKDEgPDwgNikKKworI2RlZmluZSBTQ0lGX1BIWVMJMHhlNmM4MDAwMAor
+I2RlZmluZSBTQ0lGX1ZJUlQJMHhlNmM4MDAwMAorCisJLm1hY3JvCWFkZHJ1YXJ0LCBycCwgcnYs
+IHRtcAorCWxkcglccnAsID1TQ0lGX1BIWVMKKwlsZHIJXHJ2LCA9U0NJRl9WSVJUCisJLmVuZG0K
+KworCS5tYWNybwl3YWl0dWFydCwgcmQsIHJ4CisxMDAxOglsZHJoCVxyZCwgW1xyeCwgI1NTUl0K
+Kwl0c3QJXHJkLCAjVERGRQorCWJlcQkxMDAxYgorCS5lbmRtCisKKwkubWFjcm8Jc2VuZHVhcnQs
+IHJkLCByeAorCXN0cmIJXHJkLCBbXHJ4LCAjRlREUl0KKwlsZHJoCVxyZCwgW1xyeCwgI1NTUl0K
+KwliaWMJXHJkLCBccmQsICNURU5ECisJc3RyaAlccmQsIFtccngsICNTU1JdCisJLmVuZG0KKwor
+CS5tYWNybwlidXN5dWFydCwgcmQsIHJ4CisxMDAxOglsZHJoCVxyZCwgW1xyeCwgI1NTUl0KKwl0
+c3QJXHJkLCAjVEVORAorCWJlcQkxMDAxYgorCS5lbmRtCg==
+--089e0158c57ae0bf8404dffaf43b
+Content-Type: application/octet-stream; 
+	name="linux-3.11-pre-arm-mem-add-printout-20130625.patch"
+Content-Disposition: attachment; 
+	filename="linux-3.11-pre-arm-mem-add-printout-20130625.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hid5tcr02
+
+RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
+Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvYXJtL2tlcm5lbC9zZXR1
+cC5jIHwgICAgNCArKysrCiAxIGZpbGUgY2hhbmdlZCwgNCBpbnNlcnRpb25zKCspCgotLS0gMDAw
+MS9hcmNoL2FybS9rZXJuZWwvc2V0dXAuYworKysgd29yay9hcmNoL2FybS9rZXJuZWwvc2V0dXAu
+YwkyMDEzLTA2LTI1IDIyOjIwOjQ2LjAwMDAwMDAwMCArMDkwMApAQCAtNTMxLDYgKzUzMSwxMCBA
+QCBpbnQgX19pbml0IGFybV9hZGRfbWVtb3J5KHBoeXNfYWRkcl90IHN0CiB7CiAJc3RydWN0IG1l
+bWJhbmsgKmJhbmsgPSAmbWVtaW5mby5iYW5rW21lbWluZm8ubnJfYmFua3NdOwogCisJcHJpbnRr
+KEtFUk5fTk9USUNFICJBZGRpbmcgUkFNIGF0ICUuOGxseC0lLjhsbHguXG4iLAorCQkgICAgICAg
+KHVuc2lnbmVkIGxvbmcgbG9uZylzdGFydCwKKwkJICAgICAgICh1bnNpZ25lZCBsb25nIGxvbmcp
+c3RhcnQgKyBzaXplIC0gMSk7CisKIAlpZiAobWVtaW5mby5ucl9iYW5rcyA+PSBOUl9CQU5LUykg
+ewogCQlwcmludGsoS0VSTl9DUklUICJOUl9CQU5LUyB0b28gbG93LCAiCiAJCQkiaWdub3Jpbmcg
+bWVtb3J5IGF0IDB4JTA4bGx4XG4iLCAobG9uZyBsb25nKXN0YXJ0KTsK
+--089e0158c57ae0bf8404dffaf43b
+Content-Type: application/octet-stream; 
+	name="linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch"
+Content-Disposition: attachment; 
+	filename="linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hid5tmc33
+
+RnJvbTogTWFnbnVzIERhbW0gPGRhbW1Ab3BlbnNvdXJjZS5zZT4KClNpZ25lZC1vZmYtYnk6IE1h
+Z251cyBEYW1tIDxkYW1tQG9wZW5zb3VyY2Uuc2U+Ci0tLQoKIGFyY2gvYXJtL21hY2gtc2htb2Jp
+bGUvTWFrZWZpbGUuYm9vdCB8ICAgIDIgKy0KIDEgZmlsZSBjaGFuZ2VkLCAxIGluc2VydGlvbigr
+KSwgMSBkZWxldGlvbigtKQoKLS0tIDAwMDEvYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9NYWtlZmls
+ZS5ib290CisrKyB3b3JrL2FyY2gvYXJtL21hY2gtc2htb2JpbGUvTWFrZWZpbGUuYm9vdAkyMDEz
+LTA2LTI1IDIyOjMwOjM0LjAwMDAwMDAwMCArMDkwMApAQCAtNyw3ICs3LDcgQEAgbG9hZGFkZHIt
+JChDT05GSUdfTUFDSF9BUk1BRElMTE84MDBFVkFfUgogbG9hZGFkZHItJChDT05GSUdfTUFDSF9C
+T0NLVykgKz0gMHg2MDAwODAwMAogbG9hZGFkZHItJChDT05GSUdfTUFDSF9LT1RBMikgKz0gMHg0
+MTAwODAwMAogbG9hZGFkZHItJChDT05GSUdfTUFDSF9LWk05RCkgKz0gMHg0MDAwODAwMAotbG9h
+ZGFkZHItJChDT05GSUdfTUFDSF9LWk05RykgKz0gMHg0MTAwODAwMAorbG9hZGFkZHItJChDT05G
+SUdfTUFDSF9LWk05RykgKz0gMHg0ODAwODAwMAogbG9hZGFkZHItJChDT05GSUdfTUFDSF9LWk05
+R19SRUZFUkVOQ0UpICs9IDB4NDEwMDgwMDAKIGxvYWRhZGRyLSQoQ09ORklHX01BQ0hfTEFHRVIp
+ICs9IDB4NDAwMDgwMDAKIGxvYWRhZGRyLSQoQ09ORklHX01BQ0hfTUFDS0VSRUwpICs9IDB4NDAw
+MDgwMDAK
+--089e0158c57ae0bf8404dffaf43b--
