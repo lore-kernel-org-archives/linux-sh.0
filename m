@@ -1,80 +1,59 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 21 Jun 2013 14:52:28 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 25 Jun 2013 10:35:43 +0000
 Subject: Re: [PATCH 2/2] regulators: max8973: initial DT support
-Message-Id: <Pine.LNX.4.64.1306211651120.27277@axis700.grange>
+Message-Id: <20130625103543.GC27646@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ddcd+dsiJrvLd0CP"
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1306210825040.27277@axis700.grange>
- <Pine.LNX.4.64.1306210827090.27277@axis700.grange> <20130621144423.GX27646@sirena.org.uk>
-In-Reply-To: <20130621144423.GX27646@sirena.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <Pine.LNX.4.64.1306210827090.27277@axis700.grange>
+ <20130621144423.GX27646@sirena.org.uk>
+ <Pine.LNX.4.64.1306211651120.27277@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1306211651120.27277@axis700.grange>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: linux-kernel@vger.kernel.org, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Mark
 
-Thanks for the review
+--ddcd+dsiJrvLd0CP
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, 21 Jun 2013, Mark Brown wrote:
+On Fri, Jun 21, 2013 at 04:52:28PM +0200, Guennadi Liakhovetski wrote:
+> On Fri, 21 Jun 2013, Mark Brown wrote:
 
-> On Fri, Jun 21, 2013 at 08:30:26AM +0200, Guennadi Liakhovetski wrote:
-> 
-> > +Required properties:
-> > +
-> > +- compatible:	must be "maxium,max8973"
-> > +- reg:		the i2c slave address of the regulator. It should be 0x1b.
-> > +- regulators:	a subnode with a single regulator descriptor in it called "dcdc"
-> 
-> Why make this a subnode - if there's only one regulator on the device
-> then it may as well just put all the regulator properties there?
+> > A common approach here is just to embed the platform data in the
+> > driver data then copy actual platform data in there or parse the device
+> > tree bindings (when added) into the structure.  This means that most of
+> > the driver can just assume there's platform data which makes life a bit
+> > simpler.
 
-Right, I wasn't sure about this, I thought it was kind of a common 
-practice even for just one regulator. Will embed, sure.
+> But we can do this later, when we add DT support for those parameters,=20
+> right?
 
-> 
-> > +	if (!regulators) {
-> > +		dev_err(dev, "regulator node not found\n");
-> > +		return -ENODEV;
-> > +	}
-> > +
-> > +	ret = of_regulator_match(dev, regulators,
-> > +				 &max8973_regulator_match, 1);
-> > +	of_node_put(regulators);
-> > +	if (ret < 0) {
-> > +		dev_err(dev, "Error parsing regulator init data: %d\n", ret);
-> > +		return ret;
-> > +	}
-> > +	if (!ret) {
-> > +		dev_err(dev, "No regulator configuration found\n");
-> > +		return -ENODEV;
-> > +	}
-> > +
-> > +	return 0;
-> 
-> This would simplify the code here, the driver can just call
-> of_get_regulator_init_data() directly with the node.
+Sure, but it does make sense to structure the code that way from the
+start since it provides simplification.
 
-Ok, I'll look at it.
+--ddcd+dsiJrvLd0CP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-> > -	if (!pdata->enable_ext_control) {
-> > +	if (!pdata || !pdata->enable_ext_control) {
-> >  		max->desc.enable_reg = MAX8973_VOUT;
-> >  		max->desc.enable_mask = MAX8973_VOUT_ENABLE;
-> >  		max->ops.enable = regulator_enable_regmap;
-> 
-> A common approach here is just to embed the platform data in the
-> driver data then copy actual platform data in there or parse the device
-> tree bindings (when added) into the structure.  This means that most of
-> the driver can just assume there's platform data which makes life a bit
-> simpler.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.20 (GNU/Linux)
 
-But we can do this later, when we add DT support for those parameters, 
-right?
+iQIcBAEBAgAGBQJRyXJ8AAoJELSic+t+oim9RUAP/2GjlMq75wMmvlCJnA7z4rt3
+HRkeGxxcG2mSQs/YnHlrEHVk7ApriF+VE+89zCAFF/jGgJusFNHZt5XLH6at7QUU
+r5KZpkP+LHYJip8SKd7XlbeGeVJ5k1y3IithYquW5+xFIYN73jPKeVBcH5JVCqUi
+nlxAOr5T6XQleRcHUzKKPRtteGet+l8+b4IlORkHp/cm1dw4LYbdc+LOqbnQW82y
+QzQZF6TYYh1IiW9DK1dIXzA+qCkQiBb2VljdgFuuVLJQT/nroC2OThAr/ISS0JpQ
+NjCJC3lz1SfNBCw7w9YNvDLECwb070LputeCfYc2rjSRaB+xfi1mMV62u1HROZsH
+9X9Mzg/uT+IIldLoM2gAqikWr8AFQfuRYFnnMy/cimKzN2vwZaTDcRVlqCB+yhth
+fqO82ZqHi08z+Vdn8L4VPRgQes1M2bbaK9pz2oYqX4AoN0BvTiXw7AGuzKHLu2xM
++1xd5DMAnxBDCbpACT3jmhiymx9Ot2hETcgjL/rv9tYu8LxzsQa11Uq7abRkf3/i
+WpiW+TOdJc967Za8KUxJxlnGf2oo4bMc8mlk6Bu//xu7pabPyJ1aa5JfILj+XAHg
+oSA3Z/FU+/k2+fbck6NgM7YYBwVX7NoU1ueypkP2WDD0Zuuxsxsyx5N2v1Gg9TAt
+P4FjPL9blGHEaBPOrhK0
+=RCRD
+-----END PGP SIGNATURE-----
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+--ddcd+dsiJrvLd0CP--
