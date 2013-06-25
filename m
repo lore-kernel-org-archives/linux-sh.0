@@ -1,49 +1,45 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 25 Jun 2013 07:07:06 +0000
-Subject: [PATCH] regulator: max8973: fix a typo in documentation
-Message-Id: <Pine.LNX.4.64.1306250905050.30321@axis700.grange>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 25 Jun 2013 09:01:11 +0000
+Subject: Re: [PATCH] regulator: max8973: fix a typo in documentation
+Message-Id: <20130625090111.GV27646@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="+61ZvX8xaeyevaKt"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-kernel@vger.kernel.org, Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>
+References: <Pine.LNX.4.64.1306250905050.30321@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1306250905050.30321@axis700.grange>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-kernel@vger.kernel.org, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>
 
-Fix a s/maxium/maxim/ typo in DT binding documentation.
 
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
+--+61ZvX8xaeyevaKt
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Mark, if still possible, feel free to merge this with the original patch.
-Thanks
-Guennadi
+On Tue, Jun 25, 2013 at 09:07:06AM +0200, Guennadi Liakhovetski wrote:
+> Fix a s/maxium/maxim/ typo in DT binding documentation.
 
- .../bindings/regulator/max8973-regulator.txt       |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+Applied, thanks.
 
-diff --git a/Documentation/devicetree/bindings/regulator/max8973-regulator.txt b/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
-index 8d38ab2..4f15d8a 100644
---- a/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
-+++ b/Documentation/devicetree/bindings/regulator/max8973-regulator.txt
-@@ -2,7 +2,7 @@
- 
- Required properties:
- 
--- compatible:	must be "maxium,max8973"
-+- compatible:	must be "maxim,max8973"
- - reg:		the i2c slave address of the regulator. It should be 0x1b.
- 
- Any standard regulator properties can be used to configure the single max8973
-@@ -11,7 +11,7 @@ DCDC.
- Example:
- 
- 	max8973@1b {
--		compatible = "maxium,max8973";
-+		compatible = "maxim,max8973";
- 		reg = <0x1b>;
- 
- 		regulator-min-microvolt = <935000>;
--- 
-1.7.2.5
+--+61ZvX8xaeyevaKt
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.20 (GNU/Linux)
+
+iQIcBAEBAgAGBQJRyVxUAAoJELSic+t+oim95gUP/iw+tntutBsJWwzMGulGFWP0
+bOVvEgBcK7PiTYljgxUQz5bfHeZ5JvtUNttXm8Per2YP4TjzrJ5JxCkcbDc5IF3q
+VwQX2eYU8NFCTxQGvNHZhmUSGiuZZzQ7K49Nmx8HVnwgnTIUBm6Qe0kQP+P/Mvs3
+zyCvyBcfahtGNhdVlX61nH+Yfa3lgaIxdNK8BHFuZ4/WlUe3kHBzIm9NoheBN+QM
+oQ7hprUiIe9cJW/7RukMzK6K74M/wKNtIhyVYuekNonyitbyuad5GL8ahI526msy
+bVEcijCGCkZCgLvsJKyOHSuUqIDADUyeKRCrDhnhH1mBSJjAOQEQXt2e0HFoVdbw
+f96ITLrTl5gNgAP4JYNda94Ycbf7AjNN0i8bSvVizHOZtfh9nubF5ORNJmANPA4G
+clOS6TZPVmckC6kOKkVSZsSjgIv8n27xMezxK4Sxhnv7/W87JcMgn1YvxdQ4DbhR
+65WZkou/MwbyCPuLJ3JRyVd7PRnZg/5c9cwSDSyy2w5hyIdwEWqvX2SX7Qbq4R2+
+bptLgvZVRa19PlDNz035Ba9AoETufrdwo5+ZEwR2a3nn9A3QsIoxNTOoeMsbZg1x
+H014L4/hoRl6Qlyq3YkbvBS3by753rC361FjDL/eyd8S2VFVUYy3zUVJFqab4rBV
+Q5qudbivBJIETgSR0cDV
+=k6d+
+-----END PGP SIGNATURE-----
+
+--+61ZvX8xaeyevaKt--
