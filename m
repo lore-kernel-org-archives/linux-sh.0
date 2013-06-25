@@ -1,64 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:39 +0000
-Subject: [PATCH 06/15] ARM: shmobile: Add SCU boot function using argument
-Message-Id: <1371456768-1084-7-git-send-email-horms+renesas@verge.net.au>
+From: Axel Lin <axel.lin@ingics.com>
+Date: Tue, 25 Jun 2013 16:25:02 +0000
+Subject: [PATCH] pwm: renesas-tpu: Add MODULE_ALIAS to make module auto loading work
+Message-Id: <1372177502.26044.1.camel@phoenix>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+This driver can be built as module, add MODULE_ALIAS to make module auto loading
+work.
 
-Add a shmoible_boot_scu function that assumes that the base address
-of the SCU is passed in r0. This code is free from inline virtual
-to physical address conversion.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
 ---
- arch/arm/mach-shmobile/headsmp-scu.S         |   13 +++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- 2 files changed, 14 insertions(+)
+ drivers/pwm/pwm-renesas-tpu.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
-index 7d113f8..c5c9106 100644
---- a/arch/arm/mach-shmobile/headsmp-scu.S
-+++ b/arch/arm/mach-shmobile/headsmp-scu.S
-@@ -51,6 +51,19 @@ ENTRY(shmobile_secondary_vector_scu)
- 2:	.long shmobile_scu_base - PAGE_OFFSET + PLAT_PHYS_OFFSET
- ENDPROC(shmobile_secondary_vector_scu)
- 
-+ENTRY(shmobile_boot_scu)
-+					@ r0 = SCU base address
-+	mrc     p15, 0, r1, c0, c0, 5	@ read MIPDR
-+	and	r1, r1, #3		@ mask out cpu ID
-+	lsl	r1, r1, #3		@ we will shift by cpu_id * 8 bits
-+	ldr	r2, [r0, #8]		@ SCU Power Status Register
-+	mov	r3, #3
-+	bic	r2, r2, r3, lsl r1	@ Clear bits of our CPU (Run Mode)
-+	str	r2, [r0, #8]		@ write back
-+
-+	b	shmobile_invalidate_start
-+ENDPROC(shmobile_boot_scu)
-+
- 	.text
- 	.globl	shmobile_scu_base
- shmobile_scu_base:
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 54472ef..8ef1c3c 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -11,6 +11,7 @@ extern void shmobile_boot_vector(void);
- extern unsigned long shmobile_boot_fn;
- extern unsigned long shmobile_boot_arg;
- extern void shmobile_secondary_vector_scu(void);
-+extern void shmobile_boot_scu(void);
- struct clk;
- extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
+diff --git a/drivers/pwm/pwm-renesas-tpu.c b/drivers/pwm/pwm-renesas-tpu.c
+index 96e0cc4..ee53ca2 100644
+--- a/drivers/pwm/pwm-renesas-tpu.c
++++ b/drivers/pwm/pwm-renesas-tpu.c
+@@ -473,3 +473,4 @@ module_platform_driver(tpu_driver);
+ MODULE_AUTHOR("Laurent Pinchart <laurent.pinchart@ideasonboard.com>");
+ MODULE_DESCRIPTION("Renesas TPU PWM Driver");
+ MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:renesas-tpu-pwm");
 -- 
-1.7.10.4
+1.8.1.2
+
+
 
