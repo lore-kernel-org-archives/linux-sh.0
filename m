@@ -1,77 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:37 +0000
-Subject: [PATCH 04/15] ARM: shmobile: Rework sh7372 sleep code to use virt_to_phys()
-Message-Id: <1371456768-1084-5-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 26 Jun 2013 14:52:52 +0000
+Subject: Re: [linux-next PATCH] ARM: shmobile: marzen: defconfig: enable DMA engine support
+Message-Id: <20130626145252.GA4748@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
+References: <1642514.quKgForQrD@amdc1032>
+In-Reply-To: <1642514.quKgForQrD@amdc1032>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+[ Cc linux-sh and Guennadi ]
 
-Instead of having a hard coded virt-to-phys address
-conversion code in sleep-sh7372.S, rework the code
-to do the conversion in C using virt_to_phys().
+I have not looked into this closely but it seems to me that
+it would be more robust to resolve this problem using Kconfig.
 
-This removes the need for PLAT_PHYS_OFFSET which
-in turn is needed for ARCH_MULTIPLATFORM.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-[horms+renesas@verge.net.au: squashed in build fix posted as
- "ARM: shmobile: sh7372 build fix for SUSPEND=n && CPU_IDLE=n"]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/sh7372.h |    2 ++
- arch/arm/mach-shmobile/pm-sh7372.c           |    3 +++
- arch/arm/mach-shmobile/sleep-sh7372.S        |    5 ++++-
- 3 files changed, 9 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index e882717..854a9f0 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -75,6 +75,8 @@ extern void sh7372_intcs_resume(void);
- extern void sh7372_intca_suspend(void);
- extern void sh7372_intca_resume(void);
- 
-+extern unsigned long sh7372_cpu_resume;
-+
- #ifdef CONFIG_PM
- extern void __init sh7372_init_pm_domains(void);
- #else
-diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
-index dec9293..0de75fd 100644
---- a/arch/arm/mach-shmobile/pm-sh7372.c
-+++ b/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -351,6 +351,9 @@ static void sh7372_enter_a4s_common(int pllc0_on)
- 
- static void sh7372_pm_setup_smfram(void)
- {
-+	/* pass physical address of cpu_resume() to assembly resume code */
-+	sh7372_cpu_resume = virt_to_phys(cpu_resume);
-+
- 	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
- }
- #else
-diff --git a/arch/arm/mach-shmobile/sleep-sh7372.S b/arch/arm/mach-shmobile/sleep-sh7372.S
-index a9df53b..53f4840 100644
---- a/arch/arm/mach-shmobile/sleep-sh7372.S
-+++ b/arch/arm/mach-shmobile/sleep-sh7372.S
-@@ -40,7 +40,10 @@
- 	.global sh7372_resume_core_standby_sysc
- sh7372_resume_core_standby_sysc:
- 	ldr     pc, 1f
--1:	.long   cpu_resume - PAGE_OFFSET + PLAT_PHYS_OFFSET
-+
-+	.globl	sh7372_cpu_resume
-+sh7372_cpu_resume:
-+1:	.space	4
- 
- #define SPDCR 0xe6180008
- 
--- 
-1.7.10.4
-
+On Wed, Jun 26, 2013 at 12:02:55PM +0200, Bartlomiej Zolnierkiewicz wrote:
+> From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+> Subject: [linux-next PATCH] ARM: shmobile: marzen: defconfig: enable DMA engine support
+> 
+> Building marzen_defconfig for next-20130626 results in the following
+> build error:
+> 
+> drivers/built-in.o: In function `sh_mobile_sdhi_probe':
+> /home/bzolnier/sam/linux-sprc/drivers/mmc/host/sh_mobile_sdhi.c:170: undefined reference to `shdma_chan_filter'
+> 
+> Fix it by adding CONFIG_DMADEVICES=y line to marzen_defconfig. This
+> will result in CONFIG_SH_DMAE_BASE being enabled by default and the
+> needed code being build.
+> 
+> Cc: Stephen Rothwell <sfr@canb.auug.org.au>
+> Cc: Simon Horman <horms@verge.net.au>
+> Cc: Magnus Damm <magnus.damm@gmail.com>
+> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+> Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+> ---
+>  arch/arm/configs/marzen_defconfig |    1 +
+>  1 file changed, 1 insertion(+)
+> 
+> Index: b/arch/arm/configs/marzen_defconfig
+> =================================> --- a/arch/arm/configs/marzen_defconfig	2013-06-21 12:04:24.813681807 +0200
+> +++ b/arch/arm/configs/marzen_defconfig	2013-06-25 16:43:40.730367398 +0200
+> @@ -96,6 +96,7 @@ CONFIG_USB_STORAGE=y
+>  CONFIG_NEW_LEDS=y
+>  CONFIG_LEDS_CLASS=y
+>  CONFIG_LEDS_GPIO=y
+> +CONFIG_DMADEVICES=y
+>  CONFIG_UIO=y
+>  CONFIG_UIO_PDRV_GENIRQ=y
+>  # CONFIG_IOMMU_SUPPORT is not set
+> 
