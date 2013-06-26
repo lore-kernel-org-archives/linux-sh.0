@@ -1,57 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:27:01 +0000
-Subject: [PATCH 130/130] ARM: shmobile: marzen: Use RCAR_GP_PIN macro
-Message-Id: <1370420821-28420-131-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 26 Jun 2013 14:40:52 +0000
+Subject: [PATCH/RFC v3 3/7] ARM: shmobile: kzm9g-reference: add DMA channels to the MMCIF DT
+Message-Id: <1372257656-9944-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The MMCIF driver can use DMA for data transfer, add suitable
+Device Tree bindings.
 
-Replace hardcoded pin numbers with the RCAR_GP_PIN macro to make the
-code match the documentation.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 9105285..fac9e0f 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -28,6 +28,7 @@
- #include <linux/leds.h>
- #include <linux/dma-mapping.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_data/gpio-rcar.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-@@ -173,15 +174,15 @@ static struct platform_device usb_phy_device = {
- static struct gpio_led marzen_leds[] = {
- 	{
- 		.name		= "led2",
--		.gpio		= 157,
-+		.gpio		= RCAR_GP_PIN(4, 29),
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	}, {
- 		.name		= "led3",
--		.gpio		= 158,
-+		.gpio		= RCAR_GP_PIN(4, 30),
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	}, {
- 		.name		= "led4",
--		.gpio		= 159,
-+		.gpio		= RCAR_GP_PIN(4, 31),
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index b6f759e..348e973 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -149,6 +149,9 @@
+ 	bus-width = <8>;
+ 	vmmc-supply = <&reg_1p8v>;
+ 	status = "okay";
++	dmas = <&dma0 0xd1
++		&dma0 0xd2>;
++	dma-names = "tx", "rx";
  };
+ 
+ &sdhi0 {
 -- 
-1.8.2.1
+1.7.2.5
 
