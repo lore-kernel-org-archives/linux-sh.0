@@ -1,39 +1,44 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 Jun 2013 09:59:35 +0000
-Subject: [PATCH] ARM: shmobile: r8a7790 SMP prototype v1 (CA15 x 4)
-Message-Id: <20130612100702.6320.35059.sendpatchset@w520>
+Date: Wed, 26 Jun 2013 23:58:37 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790 SMP prototype v2
+Message-Id: <20130626235837.11576.86389.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130612100702.6320.35059.sendpatchset@w520>
+In-Reply-To: <20130612100702.6320.35059.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
 Add SMP prototype support for r8a7790 by enabling
-4 x Cortex-A15. This patch only adds support for
-booting, at this point no CPU Hotplug is included.
+one cluster of either 4 x Cortex-A7 or 4 x Cortex-A15.
 
-Needs a rewrite to support more generic handling of
-CPU core power domains. Not ready for merge.
+This patch only adds support for booting, at this point
+no CPU Hotplug is included. The big cluster is known
+to work well, support for LITTLE needs more work.
 
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+On r8a7790 the MD6 pin control boot processor, and on the
+Lager board SW8.7 can be used to select big or LITTLE.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Developed and tested on top of v3.10-rc5 and
- [PATCH 01/05] ARM: shmobile: r8a73a4 SMP prototype v1 (CA15 x 4)
+ Written on top of renesas-next-20130620
 
- arch/arm/boot/dts/r8a7790.dtsi                |   21 +++++
+ arch/arm/boot/dts/r8a7790.dtsi                |   49 ++++++
  arch/arm/mach-shmobile/Makefile               |    1 
  arch/arm/mach-shmobile/board-lager.c          |    1 
+ arch/arm/mach-shmobile/include/mach/common.h  |    1 
  arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 
  arch/arm/mach-shmobile/setup-r8a7790.c        |    1 
- arch/arm/mach-shmobile/smp-r8a7790.c          |  100 +++++++++++++++++++++++++
- 6 files changed, 125 insertions(+)
+ arch/arm/mach-shmobile/smp-r8a7790.c          |  187 +++++++++++++++++++++++++
+ 7 files changed, 241 insertions(+)
 
 --- 0001/arch/arm/boot/dts/r8a7790.dtsi
-+++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-06-12 12:36:17.000000000 +0900
-@@ -24,6 +24,27 @@
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-06-27 08:34:41.000000000 +0900
+@@ -24,6 +24,55 @@
  			reg = <0>;
  			clock-frequency = <1300000000>;
  		};
@@ -58,22 +63,50 @@ Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 +			reg = <3>;
 +			clock-frequency = <1300000000>;
 +		};
++
++		cpu4: cpu@4 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0x100>;
++			clock-frequency = <780000000>;
++		};
++
++		cpu5: cpu@5 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0x101>;
++			clock-frequency = <780000000>;
++		};
++
++		cpu6: cpu@6 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0x102>;
++			clock-frequency = <780000000>;
++		};
++
++		cpu7: cpu@7 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0x103>;
++			clock-frequency = <780000000>;
++		};
  	};
  
  	gic: interrupt-controller@f1001000 {
---- 0002/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-06-12 12:36:17.000000000 +0900
-@@ -20,6 +20,7 @@ smp-y				:= platsmp.o headsmp.o
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-06-26 22:40:38.000000000 +0900
+@@ -19,6 +19,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.
+ smp-y				:= platsmp.o headsmp.o
  smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o
- smp-$(CONFIG_ARCH_R8A73A4)	+= smp-r8a73a4.o
  smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
 +smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
  smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
  
  # IRQ objects
 --- 0001/arch/arm/mach-shmobile/board-lager.c
-+++ work/arch/arm/mach-shmobile/board-lager.c	2013-06-12 12:36:17.000000000 +0900
-@@ -39,6 +39,7 @@ static const char *lager_boards_compat_d
++++ work/arch/arm/mach-shmobile/board-lager.c	2013-06-26 22:40:38.000000000 +0900
+@@ -103,6 +103,7 @@ static const char *lager_boards_compat_d
  };
  
  DT_MACHINE_START(LAGER_DT, "lager")
@@ -81,8 +114,18 @@ Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
  	.init_irq	= irqchip_init,
  	.init_time	= r8a7790_timer_init,
  	.init_machine	= lager_add_standard_devices,
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-06-26 22:40:38.000000000 +0900
+@@ -11,6 +11,7 @@ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
+ extern void shmobile_boot_scu(void);
++extern void shmobile_invalidate_start(void);
+ struct clk;
+ extern int shmobile_clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
 --- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2013-06-12 12:36:17.000000000 +0900
++++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2013-06-26 22:40:38.000000000 +0900
 @@ -5,5 +5,6 @@ void r8a7790_add_standard_devices(void);
  void r8a7790_clock_init(void);
  void r8a7790_pinmux_init(void);
@@ -91,8 +134,8 @@ Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
  
  #endif /* __ASM_R8A7790_H__ */
 --- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-06-12 12:36:17.000000000 +0900
-@@ -142,6 +142,7 @@ static const char *r8a7790_boards_compat
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-06-26 22:40:38.000000000 +0900
+@@ -188,6 +188,7 @@ static const char *r8a7790_boards_compat
  };
  
  DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
@@ -101,12 +144,12 @@ Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
  	.init_machine	= r8a7790_add_standard_devices_dt,
  	.init_time	= r8a7790_timer_init,
 --- /dev/null
-+++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2013-06-12 13:10:08.000000000 +0900
-@@ -0,0 +1,100 @@
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2013-06-26 22:40:40.000000000 +0900
+@@ -0,0 +1,187 @@
 +/*
 + * SMP support for r8a7790
 + *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
++ * Copyright (C) 2012-2013 Renesas Solutions Corp.
 + * Copyright (C) 2012 Takashi Yoshii <takashi.yoshii.ze@renesas.com>
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -141,42 +184,103 @@ Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 +#define RST	0xe6160000
 +#define CA15BAR	0x6020
 +#define CA15RESCNT 0x0040
++#define CA7BAR	0x4030
++#define CA7RESCNT 0x0044
 +#define RESCNT	0x0050
 +
 +#define APMU	0xe6150000
 +#define CA15WUPCR 0x2010
++#define CA7WUPCR 0x1010
 +
 +#define MERAM	0xe8080000
 +
-+static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
++enum { R8A7790_CLST_CA15, R8A7790_CLST_CA7, R8A7790_CLST_NR };
++
++static struct {
++	unsigned int cabar;
++	unsigned int carescnt;
++	unsigned int carescnt_magic;
++	unsigned int rescnt_bit;
++	unsigned int use_count;
++} r8a7790_clst[R8A7790_CLST_NR] = {
++	[R8A7790_CLST_CA15] = {
++		.cabar = CA15BAR,
++		.carescnt = CA15RESCNT,
++		.carescnt_magic = 0xa5a50000,
++		.rescnt_bit = 1,
++	},
++	[R8A7790_CLST_CA7] = {
++		.cabar = CA7BAR,
++		.carescnt = CA7RESCNT,
++		.carescnt_magic = 0x5a5a0000,
++		.rescnt_bit = 0,
++	},
++};
++
++#define r8a7790_clst_id(cpu) (cpu_logical_map((cpu)) >> 8)
++#define r8a7790_cpu_id(cpu) (cpu_logical_map((cpu)) & 0xff)
++
++static void r8a7790_deassert_reset(unsigned int cpu)
 +{
-+	u32 bar;
-+	void __iomem *p;
++	void __iomem *p, *carescnt;
++	u32 bar, mask, magic;
++	unsigned int clst_id = r8a7790_clst_id(cpu);
 +
-+	/* MERAM for jump stub, because BAR requires 256KB aligned address */
-+	p = ioremap_nocache(MERAM, 16);
-+	memcpy(p, shmobile_secondary_vector, 16);
-+	iounmap(p);
-+
-+	flush_cache_louis();
-+
-+	/* setup reset vector and disable reset */
++	/* setup reset vectors */
 +	p = ioremap_nocache(RST, 0x7000);
 +	bar = (MERAM >> 8) & 0xfffffc00;
-+	__raw_writel(bar, p + CA15BAR);
-+	__raw_writel(bar | 0x10, p + CA15BAR);
-+	__raw_writel(__raw_readl(p + RESCNT) & ~(1 << 1), p + RESCNT);
++	__raw_writel(bar, p + r8a7790_clst[clst_id].cabar);
++	__raw_writel(bar | 0x10, p + r8a7790_clst[clst_id].cabar);
++
++	/* enable clocks for cluster */
++	if (r8a7790_clst[clst_id].use_count++ = 0) {
++		mask = 1 << r8a7790_clst[clst_id].rescnt_bit;
++		__raw_writel(__raw_readl(p + RESCNT) & ~mask, p + RESCNT);
++	}
++
++	/* enable per-core clocks */
++	mask = BIT(3 - r8a7790_cpu_id(cpu));
++	magic = r8a7790_clst[clst_id].carescnt_magic;
++	carescnt = p + r8a7790_clst[clst_id].carescnt;
++	__raw_writel((__raw_readl(carescnt) & ~mask) | magic, carescnt);
++
 +	iounmap(p);
 +}
 +
-+static int __cpuinit r8a7790_boot_secondary(unsigned int cpu, struct task_struct *idle)
++static void r8a7790_assert_reset(unsigned int cpu)
 +{
-+	void __iomem *p, *p2, *p3;
-+	int bit;
++	void __iomem *p, *carescnt;
++	u32 mask, magic;
++	unsigned int clst_id = r8a7790_clst_id(cpu);
++
++	p = ioremap_nocache(RST, 0x7000);
++
++	/* disable per-core clocks */
++	mask = BIT(3 - r8a7790_cpu_id(cpu));
++	magic = r8a7790_clst[clst_id].carescnt_magic;
++	carescnt = p + r8a7790_clst[clst_id].carescnt;
++	__raw_writel((__raw_readl(carescnt) | mask) | magic, carescnt);
++
++	/* disable clocks for cluster */
++	if (r8a7790_clst[clst_id].use_count = 1) {
++		mask = 1 << r8a7790_clst[clst_id].rescnt_bit;
++		__raw_writel(__raw_readl(p + RESCNT) | mask, p + RESCNT);
++	}
++
++	if (r8a7790_clst[clst_id].use_count > 0)
++		r8a7790_clst[clst_id].use_count--;
++
++	iounmap(p);
++}
++
++static void r8a7790_power_on(unsigned int cpu)
++{
++	void __iomem *p, *p2, *cawupcr;
 +
 +	/* wake up CPU core via APMU */
 +	p = ioremap_nocache(APMU, 0x3000);
-+	__raw_writel(1 << (cpu_logical_map(cpu) & 3), p + CA15WUPCR);
++	cawupcr = p + (r8a7790_clst_id(cpu) ? CA7WUPCR : CA15WUPCR);
++	__raw_writel(BIT(r8a7790_cpu_id(cpu)), cawupcr);
 +
 +	/* wait for SYSC to finish wake up sequence */
 +	p2 = ioremap_nocache(SYSC, 0x1000);
@@ -184,18 +288,44 @@ Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 +		;
 +
 +	/* wait for APMU to finish */
-+	while (__raw_readl(p + CA15WUPCR) != 0)
++	while (__raw_readl(cawupcr) != 0)
 +		;
 +
-+	/* deassert reset for CPU core via RST */
-+	p3 = ioremap_nocache(RST, 0x7000);
-+	bit = 3 - (cpu_logical_map(cpu) & 3);
-+	__raw_writel((__raw_readl(p3 + CA15RESCNT) & ~BIT(bit)) | 0xa5a50000,
-+		     p3 + CA15RESCNT);
-+
-+	iounmap(p3);
 +	iounmap(p2);
 +	iounmap(p);
++}
++
++static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
++{
++	void __iomem *p;
++	unsigned int k;
++
++	shmobile_boot_fn = virt_to_phys(shmobile_invalidate_start);
++
++	/* MERAM for jump stub, because BAR requires 256KB aligned address */
++	p = ioremap_nocache(MERAM, 16);
++	memcpy(p, shmobile_boot_vector, 16);
++	iounmap(p);
++
++	flush_cache_louis();
++
++	/* keep secondary CPU cores in reset, but powered on */
++	for (k = 1; k < 8; k++) {
++		r8a7790_assert_reset(k);
++		r8a7790_power_on(k);
++	}
++
++	r8a7790_deassert_reset(0);
++}
++
++static int __cpuinit r8a7790_boot_secondary(unsigned int cpu,
++					    struct task_struct *idle)
++{
++	/* only allow a single cluster for now */
++	if (r8a7790_clst_id(cpu) != r8a7790_clst_id(0))
++		return -ENOTSUPP;
++
++	r8a7790_deassert_reset(cpu);
 +	return 0;
 +}
 +
