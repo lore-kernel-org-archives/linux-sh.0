@@ -1,104 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 27 Jun 2013 09:49:27 +0000
-Subject: [PATCH 17/24] drm/rcar-du: Move output routing configuration to group
-Message-Id: <1372326574-4315-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Jun 2013 08:53:05 +0000
+Subject: [PATCH 2/4] ARM: shmobile: r8a7790: HSCIF support
+Message-Id: <1372236787-23342-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1372236787-23342-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372236787-23342-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Output routing is configured in group registers, move the corresponding
-code from rcar_du_crtc.c to rcar_du_group.c.
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Adds support for HSCIF0 and HSCIF1 on the r8a7790.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+[ horms+renesas@verge.net.au this is the setup-r8a7790.c
+  which I somehow miss-applied as part of another patch.
+  The clock-r8a7790.c portion of this patch has already been merged. ]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 21 +--------------------
- drivers/gpu/drm/rcar-du/rcar_du_group.c | 19 +++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 +-
- 3 files changed, 21 insertions(+), 21 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 7784a3b..6a2b959 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -130,25 +130,6 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
- 	rcar_du_crtc_write(rcrtc, DEWR,  mode->hdisplay);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 49de2d5..896d374 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -67,7 +67,15 @@ void __init r8a7790_pinmux_init(void)
+ 	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
  }
  
--static void rcar_du_crtc_set_routing(struct rcar_du_crtc *rcrtc)
--{
--	struct rcar_du_device *rcdu = rcrtc->group->dev;
--	u32 dorcr = rcar_du_read(rcdu, DORCR);
--
--	dorcr &= ~(DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_MASK);
--
--	/* Set the DU1 pins sources. Select CRTC 0 if explicitly requested and
--	 * CRTC 1 in all other cases to avoid cloning CRTC 0 to DU0 and DU1 by
--	 * default.
--	 */
--	if (rcrtc->outputs & (1 << 1) && rcrtc->index = 0)
--		dorcr |= DORCR_PG2D_DS1;
--	else
--		dorcr |= DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_DS2;
--
--	rcar_du_write(rcdu, DORCR, dorcr);
--}
--
- void rcar_du_crtc_route_output(struct drm_crtc *crtc, unsigned int output)
- {
- 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
-@@ -245,7 +226,7 @@ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
- 
- 	/* Configure display timings and output routing */
- 	rcar_du_crtc_set_display_timing(rcrtc);
--	rcar_du_crtc_set_routing(rcrtc);
-+	rcar_du_group_set_routing(rcrtc->group);
- 
- 	mutex_lock(&rcrtc->group->planes.lock);
- 	rcrtc->plane->enabled = true;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-index 625b9f4..7e75451 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-@@ -125,3 +125,22 @@ void rcar_du_group_restart(struct rcar_du_group *rgrp)
- 	__rcar_du_group_start_stop(rgrp, false);
- 	__rcar_du_group_start_stop(rgrp, true);
- }
-+
-+void rcar_du_group_set_routing(struct rcar_du_group *rgrp)
-+{
-+	struct rcar_du_crtc *crtc0 = &rgrp->dev->crtcs[rgrp->index * 2];
-+	u32 dorcr = rcar_du_group_read(rgrp, DORCR);
-+
-+	dorcr &= ~(DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_MASK);
-+
-+	/* Set the DU1 pins sources. Select CRTC 0 if explicitly requested and
-+	 * CRTC 1 in all other cases to avoid cloning CRTC 0 to DU0 and DU1 by
-+	 * default.
-+	 */
-+	if (crtc0->outputs & (1 << 1))
-+		dorcr |= DORCR_PG2D_DS1;
-+	else
-+		dorcr |= DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_DS2;
-+
-+	rcar_du_group_write(rgrp, DORCR, dorcr);
+-enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1 };
++#define HSCIF_DATA(index, baseaddr, irq)		\
++[index] = {						\
++	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
++	.scbrr_algo_id	= SCBRR_ALGO_6,			\
++	.scscr = SCSCR_RE | SCSCR_TE,	\
 +}
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-index 748331b..180c739 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-@@ -42,6 +42,6 @@ int rcar_du_group_get(struct rcar_du_group *rgrp);
- void rcar_du_group_put(struct rcar_du_group *rgrp);
- void rcar_du_group_start_stop(struct rcar_du_group *rgrp, bool start);
- void rcar_du_group_restart(struct rcar_du_group *rgrp);
--
-+void rcar_du_group_set_routing(struct rcar_du_group *rgrp);
++
++enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
++       HSCIF0, HSCIF1 };
  
- #endif /* __RCAR_DU_GROUP_H__ */
+ static const struct plat_sci_port scif[] = {
+ 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+@@ -78,6 +86,8 @@ static const struct plat_sci_port scif[] = {
+ 	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
+ 	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
+ 	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
++	HSCIF_DATA(HSCIF0, 0xe62c0000, gic_spi(154)), /* HSCIF0 */
++	HSCIF_DATA(HSCIF1, 0xe62c8000, gic_spi(155)), /* HSCIF1 */
+ };
+ 
+ static inline void r8a7790_register_scif(int idx)
+@@ -115,6 +125,8 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_scif(SCIFA2);
+ 	r8a7790_register_scif(SCIF0);
+ 	r8a7790_register_scif(SCIF1);
++	r8a7790_register_scif(HSCIF0);
++	r8a7790_register_scif(HSCIF1);
+ 	r8a7790_register_irqc(0);
+ }
+ 
 -- 
-1.8.1.5
+1.8.2.1
 
