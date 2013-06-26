@@ -1,63 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:21:59 +0000
-Subject: [PATCH 01/11] ARM: shmobile: ape6evm: MP clock parent become EXTAL2
-Message-Id: <1370593329-27559-2-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 26 Jun 2013 14:40:56 +0000
+Subject: [PATCH v3 7/7] ARM: shmobile: armadillo800eva-reference: add DMA support for MMCIF and SDHI
+Message-Id: <1372257656-9944-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1372257656-9944-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add DMA bindings to SDHI and MMCIF DT nodes on armadillo800eva-reference.
+Since SDHI and MMCIF devices can use any of the 3 DMAC instances on
+r8a7740, we point to the DMA multiplexer node instead of a specific DMAC
+DT node.
 
-The orignal commit 3263e09d287fbaa8a9424b5e69396599a3bbd518
-(ARM: shmobile: Initial r8a73a4 SoC support V3)
-put MP clock parent as EXTAL2, but its code was removed
-on DIV6 clock support commit.
-This patch makes it consistent.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 55b8c9f..5eb0caa 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -26,6 +26,7 @@
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-+#include <linux/sh_clk.h>
- #include <linux/smsc911x.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -65,7 +66,21 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 3752637..1983d49 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -47,6 +47,9 @@
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <8>;
+ 	non-removable;
++	dmas = <&dmac 0xd1
++		&dmac 0xd2>;
++	dma-names = "tx", "rx";
+ 	status = "okay";
+ };
  
- static void __init ape6evm_add_standard_devices(void)
- {
-+
-+	struct clk *parent;
-+	struct clk *mp;
-+
- 	r8a73a4_clock_init();
-+
-+	/* MP clock parent = extal2 */
-+	parent      = clk_get(NULL, "extal2");
-+	mp          = clk_get(NULL, "mp");
-+	BUG_ON(IS_ERR(parent) || IS_ERR(mp));
-+
-+	clk_set_parent(mp, parent);
-+	clk_put(parent);
-+	clk_put(mp);
-+
- 	pinctrl_register_mappings(ape6evm_pinctrl_map,
- 				  ARRAY_SIZE(ape6evm_pinctrl_map));
- 	r8a73a4_pinmux_init();
+@@ -54,11 +57,17 @@
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <4>;
+ 	broken-cd;
++	dmas = <&dmac 0xc1
++		&dmac 0xc2>;
++	dma-names = "tx", "rx";
+ 	status = "okay";
+ };
+ 
+ &sdhi1 {
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <4>;
++	dmas = <&dmac 0xc9
++		&dmac 0xca>;
++	dma-names = "tx", "rx";
+ 	status = "okay";
+ };
 -- 
-1.8.2.1
+1.7.2.5
 
