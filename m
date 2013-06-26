@@ -1,39 +1,56 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 11 Jun 2013 13:01:34 +0000
-Subject: Re: [PATCH] sh_eth: get R8A7740 Rx descriptor word 0 shift out of #ifdef
-Message-Id: <51B71FAE.6050005@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Jun 2013 08:53:03 +0000
+Subject: [PATCH v4 0/4] Renesas sh-sci updates for v3.11
+Message-Id: <1372236787-23342-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306110022.51293.sergei.shtylyov@cogentembedded.com> <51B6B702.6070005@renesas.com>
-In-Reply-To: <51B6B702.6070005@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Olof, Hi Arnd,
 
-On 11-06-2013 9:34, Shimoda, Yoshihiro wrote:
+This revised pull-request includes a build-warning fix by myself.
+The build-warning was reported by Arnd and has been acked by Greg
+Kroah-Hartman.
 
->> The only R8A7740 specific #ifdef hindering ARM multiplatform  build is left  in
->> sh_eth_rx(): it covers a very strange code shifting Rx buffer descriptor word 0
->> by 16 (which should cause Rx length error to be logged on every buffer  several
->> lines later). Get rid of the #ifdef by adding 'shift_rd0' field to the  'struct
->> sh_eth_cpu_data', making the shift dependent on it, and setting it to 1 for the
->> R8A7740 case...
+I apologise that this is now coming very late in the cycle, this is
+mostly due to the time it took to address the build-warning.
 
-> This very strange code was from the first R8A7740 supporting patch I sent.
-> I should have shifted the RD_RFS values (from RD_RFS1 to RD_RFS10) if R8A7740.
-> In other words, since the desc_status also has RDFEND, I should have not shifted
-> the desc_status before the driver checked the RDFEND.
+I also apologise that I have not yet addressed your request to
+drop your addresses from the CC list of the patch emails
+that follow this one. I will do so before I start sending patches
+for v3.12.
 
-> So, I think we have to modify this "desc_status >>= 16" timing.
-> Should I submit such a patch first?
 
-    Yes, that would be preferable. Just give it a good description.
+The following changes since commit 018222f5d32bc5ca9fd830aebfeed10f1be96c93:
 
-> Best regards,
-> Yoshihiro Shimoda
+  ARM: shmobile: r8a7790: add clock definitions and aliases for MMCIF and SDHI (2013-06-12 21:07:38 +0900)
 
-WBR, Sergei
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-sci-for-v3.11
+
+for you to fetch changes up to d4759ded3bdf3eb004d583011707fdc21aeda94e:
+
+  serial: sh-sci: Initialise variables before access in sci_set_termios() (2013-06-26 17:41:16 +0900)
+
+----------------------------------------------------------------
+Renesas sh-sci updates for v3.11
+
+HSCIF support by Ulrich Hecht.
+
+----------------------------------------------------------------
+Simon Horman (1):
+      serial: sh-sci: Initialise variables before access in sci_set_termios()
+
+Ulrich Hecht (3):
+      serial: sh-sci: HSCIF support
+      ARM: shmobile: r8a7790: HSCIF support
+      ARM: shmobile: r8a7790: don't use external clock for SCIFs
+
+ arch/arm/mach-shmobile/setup-r8a7790.c |  16 ++++-
+ drivers/tty/serial/sh-sci.c            | 104 ++++++++++++++++++++++++++++++---
+ include/linux/serial_sci.h             |  12 +++-
+ include/uapi/linux/serial_core.h       |   3 +
+ 4 files changed, 121 insertions(+), 14 deletions(-)
