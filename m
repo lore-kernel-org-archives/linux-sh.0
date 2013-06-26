@@ -1,206 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 27 Jun 2013 07:19:40 +0000
-Subject: Re: [PATCH 2/4] ARM: shmobile: r8a73a4: add I2C DT nodes and required clocks
-Message-Id: <20130627071940.GD25014@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 26 Jun 2013 10:10:29 +0000
+Subject: DMA channels (was Re: [PATCH 2/2] ARM: shmobile: sdhi: remove DMA hardware dependencies)
+Message-Id: <Pine.LNX.4.64.1306261024280.8856@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
- <1371798638-10530-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371798638-10530-3-git-send-email-g.liakhovetski@gmx.de>
+References: <1370008605-3745603-1-git-send-email-arnd@arndb.de>
+ <201306071806.16031.arnd@arndb.de>
+ <Pine.LNX.4.64.1306192132290.12502@axis700.grange>
+ <201306192351.50804.arnd@arndb.de>
+In-Reply-To: <201306192351.50804.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jun 21, 2013 at 09:10:36AM +0200, Guennadi Liakhovetski wrote:
-> r8a73a4 SoCs have numerous I2C controllers, of which 9 are compatible
-> with the i2c-sh_mobile.c driver. This patch adds Device Tree nodes and
-> clock definitions for them.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Hi Arnd
 
-Hi Guennadi,
+I think it would be good to come to a certain conclusion regarding the 
+current dmaengine channel selection and configuration API and its possibly 
+desired amendments.
 
-please split this patch up into two patches.
-One patch that touches r8a73a4.dtsi and another patch that
-touches clock-r8a73a4.c.
+On Wed, 19 Jun 2013, Arnd Bergmann wrote:
 
-When you submit this patch split in two pleas also include the 3rd patch of
-this series - I have queued up the 1st and 4th patches of the series.
+[snip]
 
-Please include the following when you submit the new series:
+> The problem with this is that on a lot of dma engines you have one channel
+> per slave (in particular with virt-dma.c), so the slave-id has to be
+> part of the filter data. Since the slave driver cannot know what kind
+> of DMA engine it is connected to, it has to assume that the slave-id
+> is inherent to the channel an cannot change.
+> Also, the DT binding is built around the idea that you identify the
+> channel or request line with the specifier in whichever form the
+> dma engine requires, and there is no general way for the slave driver
+> to find out a slave id. Setting it with dma_slave_config is inherently
+> nonportable, and we should stop doing that.
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Don't you think, that this situation, where without DT a filter function 
+has to be used, which has to be provided by the platform and is just a 
+kind of a platform callback; and with DT channels are selected and 
+configured by a reference to suitable DMAC instances and a hardware- 
+specific data set is suboptimal? Wouldn't it be better to unify it?
 
-> ---
->  arch/arm/boot/dts/r8a73a4.dtsi         |   81 ++++++++++++++++++++++++++++++++
->  arch/arm/mach-shmobile/clock-r8a73a4.c |   25 +++++++++-
->  2 files changed, 104 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-> index 4ff2019..4e1ddf0 100644
-> --- a/arch/arm/boot/dts/r8a73a4.dtsi
-> +++ b/arch/arm/boot/dts/r8a73a4.dtsi
-> @@ -85,4 +85,85 @@
->  		interrupt-parent = <&gic>;
->  		interrupts = <0 69 4>;
->  	};
-> +
-> +	i2c0: i2c@e6500000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe6500000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 174 0x4>;
-> +	};
-> +
-> +	i2c1: i2c@e6510000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe6510000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 175 0x4>;
-> +	};
-> +
-> +	i2c2: i2c@e6520000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe6520000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 176 0x4>;
-> +	};
-> +
-> +	i2c3: i2c@e6530000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe6530000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 177 0x4>;
-> +	};
-> +
-> +	i2c4: i2c@e6540000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe6540000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 178 0x4>;
-> +	};
-> +
-> +	i2c5: i2c@e60b0000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe60b0000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 179 0x4>;
-> +	};
-> +
-> +	i2c6: i2c@e6550000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe6550000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 184 0x4>;
-> +	};
-> +
-> +	i2c7: i2c@e6560000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe6560000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 185 0x4>;
-> +	};
-> +
-> +	i2c8: i2c@e6570000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,rmobile-iic";
-> +		reg = <0 0xe6570000 0 0x428>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 173 0x4>;
-> +	};
->  };
-> diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-> index cbf9852..508cb1e 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-> @@ -30,6 +30,7 @@
->  
->  #define SMSTPCR2 0xe6150138
->  #define SMSTPCR3 0xe615013c
-> +#define SMSTPCR4 0xe6150140
->  #define SMSTPCR5 0xe6150144
->  
->  #define FRQCRA		0xE6150000
-> @@ -487,8 +488,10 @@ static struct clk div6_clks[DIV6_NR] = {
->  /* MSTP */
->  enum {
->  	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
-> -	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305,
-> -	MSTP522,
-> +	MSTP323, MSTP318, MSTP317, MSTP316,
-> +	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
-> +	MSTP411, MSTP410, MSTP409,
-> +	MSTP522, MSTP515,
->  	MSTP_NR
->  };
->  
-> @@ -499,12 +502,21 @@ static struct clk mstp_clks[MSTP_NR] = {
->  	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
->  	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
->  	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
-> +	[MSTP300] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 0, 0), /* IIC2 */
->  	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1],SMSTPCR3, 5, 0), /* MMCIF1 */
->  	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI2],SMSTPCR3, 12, 0), /* SDHI2 */
->  	[MSTP313] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI1],SMSTPCR3, 13, 0), /* SDHI1 */
->  	[MSTP314] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI0],SMSTPCR3, 14, 0), /* SDHI0 */
->  	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0],SMSTPCR3, 15, 0), /* MMCIF0 */
-> +	[MSTP316] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 16, 0), /* IIC6 */
-> +	[MSTP317] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 17, 0), /* IIC7 */
-> +	[MSTP318] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 18, 0), /* IIC0 */
-> +	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 23, 0), /* IIC1 */
-> +	[MSTP409] = SH_CLK_MSTP32(&main_div2_clk,	SMSTPCR4, 9, 0), /* IIC5 */
-> +	[MSTP410] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 10, 0), /* IIC4 */
-> +	[MSTP411] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 11, 0), /* IIC3 */
->  	[MSTP522] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR5, 22, 0), /* Thermal */
-> +	[MSTP515] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR5, 15, 0), /* IIC8 */
->  };
->  
->  static struct clk_lookup lookups[] = {
-> @@ -549,6 +561,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
->  	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
->  	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-> +	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
->  	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
->  	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
->  	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
-> @@ -559,6 +572,14 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
->  	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
->  	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
-> +	CLKDEV_DEV_ID("e6550000.i2c", &mstp_clks[MSTP316]),
-> +	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
-> +	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
-> +	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
-> +	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
-> +	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
-> +	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
-> +	CLKDEV_DEV_ID("e6570000.i2c", &mstp_clks[MSTP515]),
->  
->  	/* for DT */
->  	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+If yes, the unification would go in the direction of DT compatibility, 
+i.e. dropping filter functions and just directly referencing required 
+DMACs and using DMAC-specific configuration? Wouldn't a channel requesting 
+API, similar to that for requesting clocks, pinmux settings be a better 
+option, than the current filtering procedure? Something like
+
+	dma_request_slave_channel(dev, "tx", "dmac0", config);
+
+in a simple case of just one suitable DMAC, or a NULL if DMACs should be 
+able to figure out themselves, whether they can serve this slave, or 
+something like "dmamux0" if there is a multiplexer, for which a driver has 
+to be available, and in which case "config" would be that multiplexer 
+driver's configuration?
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
