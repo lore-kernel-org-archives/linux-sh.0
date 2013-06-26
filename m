@@ -1,38 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:22:09 +0000
-Subject: [PATCH 11/11] ARM: shmobile: marzen: keep local function as static
-Message-Id: <1370593329-27559-12-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 26 Jun 2013 08:53:07 +0000
+Subject: [PATCH 4/4] serial: sh-sci: Initialise variables before access in sci_set_termios()
+Message-Id: <1372236787-23342-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372236787-23342-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372236787-23342-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This change addresses two warnings that are flagged by gcc relating to
+potential access to the ssr and cks variables while they are uninitialised.
 
-marzen_init_late() should be static
+I have addressed this by initialising the values to
+the defaults present in sci_baud_calc_hscif().
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+It is my analysis that cks is always initialised if used
+but that without this change ssr may be accessed while uninitialised.
+
+The code altered by this patch was introduced by commit
+f303b364b41d3fc5bf879799128958400b7859aa ("serial: sh-sci: HSCIF support").
+
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 71f174e..9b5ed7e 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -350,7 +350,7 @@ static struct platform_device *marzen_late_devices[] __initdata = {
- 	&ohci1_device,
- };
- 
--void __init marzen_init_late(void)
-+static void __init marzen_init_late(void)
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 931d6c3..7477e0e 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1887,9 +1887,9 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
  {
- 	/* get usb phy */
- 	phy = usb_get_phy(USB_PHY_TYPE_USB2);
+ 	struct sci_port *s = to_sci_port(port);
+ 	struct plat_sci_reg *reg;
+-	unsigned int baud, smr_val, max_baud, cks;
++	unsigned int baud, smr_val, max_baud, cks = 0;
+ 	int t = -1;
+-	unsigned int srr;
++	unsigned int srr = 15;
+ 
+ 	/*
+ 	 * earlyprintk comes here early on with port->uartclk set to zero.
 -- 
 1.8.2.1
 
