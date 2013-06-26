@@ -1,80 +1,56 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 27 Jun 2013 12:01:13 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790 SMP prototype v2
-Message-Id: <201306271401.13198.arnd@arndb.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Jun 2013 08:40:39 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add thermal driver support
+Message-Id: <1372236040-16737-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130626235837.11576.86389.sendpatchset@w520>
-In-Reply-To: <20130626235837.11576.86389.sendpatchset@w520>
+References: <1372236040-16737-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372236040-16737-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 27 June 2013, Magnus Damm wrote:
+You can get current thermal by
+> cat /sys/class/thermal/thermal_zone?/temp
 
-> +#include <asm/cacheflush.h>
-> +#include <asm/cp15.h>
-> +#include <asm/smp_plat.h>
-> +
-> +#define SYSC	0xe6180000
-> +#define SYSCSR  0x0000
-> +
-> +#define RST	0xe6160000
-> +#define CA15BAR	0x6020
-> +#define CA15RESCNT 0x0040
-> +#define CA7BAR	0x4030
-> +#define CA7RESCNT 0x0044
-> +#define RESCNT	0x0050
-> +
-> +#define APMU	0xe6150000
-> +#define CA15WUPCR 0x2010
-> +#define CA7WUPCR 0x1010
-> +
-> +#define MERAM	0xe8080000
+Based on similar work for the r8a73a4 by Kuninori Morimoto.
 
-Please get the base addresses from device tree if you can,
-using of_iomap().
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7790.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-> +#define r8a7790_clst_id(cpu) (cpu_logical_map((cpu)) >> 8)
-> +#define r8a7790_cpu_id(cpu) (cpu_logical_map((cpu)) & 0xff)
-> +
-> +static void r8a7790_deassert_reset(unsigned int cpu)
-> +{
-> +	void __iomem *p, *carescnt;
-> +	u32 bar, mask, magic;
-> +	unsigned int clst_id = r8a7790_clst_id(cpu);
-> +
-> +	/* setup reset vectors */
-> +	p = ioremap_nocache(RST, 0x7000);
-> +	bar = (MERAM >> 8) & 0xfffffc00;
-> +	__raw_writel(bar, p + r8a7790_clst[clst_id].cabar);
-> +	__raw_writel(bar | 0x10, p + r8a7790_clst[clst_id].cabar);
-> +
-> +	/* enable clocks for cluster */
-> +	if (r8a7790_clst[clst_id].use_count++ = 0) {
-> +		mask = 1 << r8a7790_clst[clst_id].rescnt_bit;
-> +		__raw_writel(__raw_readl(p + RESCNT) & ~mask, p + RESCNT);
-> +	}
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 28f9475..06c720f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -149,6 +149,17 @@ static struct resource irqc0_resources[] __initdata = {
+ 					  &irqc##idx##_data,		\
+ 					  sizeof(struct renesas_irqc_config))
+ 
++static struct resource thermal_resources[] __initdata = {
++	DEFINE_RES_MEM(0xe61f0000, 0x14),
++	DEFINE_RES_MEM(0xe61f0100, 0x38),
++	DEFINE_RES_IRQ(gic_spi(69)),
++};
++
++#define r8a7790_register_thermal()					\
++	platform_device_register_simple("rcar_thermal", -1,		\
++					thermal_resources,		\
++					ARRAY_SIZE(thermal_resources))
++
+ void __init r8a7790_add_standard_devices(void)
+ {
+ 	r8a7790_register_scif(SCIFA0);
+@@ -162,6 +173,7 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_scif(HSCIF0);
+ 	r8a7790_register_scif(HSCIF1);
+ 	r8a7790_register_irqc(0);
++	r8a7790_register_thermal();
+ }
+ 
+ void __init r8a7790_timer_init(void)
+-- 
+1.8.2.1
 
-If you cannot use writel_relaxed() here, add a comment. Otherwise
-change it to writel or writel_relaxed.
-
-> +static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
-> +{
-> +	void __iomem *p;
-> +	unsigned int k;
-> +
-> +	shmobile_boot_fn = virt_to_phys(shmobile_invalidate_start);
-> +
-> +	/* MERAM for jump stub, because BAR requires 256KB aligned address */
-> +	p = ioremap_nocache(MERAM, 16);
-> +	memcpy(p, shmobile_boot_vector, 16);
-> +	iounmap(p);
-
-On the other hand here you have to use __raw_writel() or
-memcpy_toio() because memcpy cannot operate on __iomem tokens.
-
-Also, if this is actually memory, you probably want to use ioremap_cached
-or ioremap_writecombine.
-
-	Arnd
