@@ -1,77 +1,44 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 13 Jun 2013 23:45:58 +0000
-Subject: [PATCH v6 13/18] ARM: shmobile: armadillo-reference: Move pinctrl mappings to device tree
-Message-Id: <1371167163-10507-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:17 +0000
+Subject: [PATCH 07/24] drm/rcar-du: Clarify comment regarding plane Y source coordinate
+Message-Id: <1372326574-4315-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+The R8A7790 DU documentation contains further information regarding the
+plane Y source coordinate. Update the comment accordingly.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 10 ++++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  9 ---------
- 2 files changed, 10 insertions(+), 9 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 09ea22c..4a7ae32 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -43,3 +43,13 @@
- 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
- 	};
- };
-+
-+&pfc {
-+	pinctrl-0 = <&scifa1_pins>;
-+	pinctrl-names = "default";
-+
-+	scifa1_pins: scifa1 {
-+		renesas,groups = "scifa1_data";
-+		renesas,function = "scifa1";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index f25b6aa..4ddd299 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,7 +24,6 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <linux/io.h>
--#include <linux/pinctrl/machine.h>
- #include <mach/common.h>
- #include <mach/r8a7740.h>
- #include <asm/mach/arch.h>
-@@ -119,12 +118,6 @@
-  *	usbhsf_power_ctrl()
-  */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index a65f81d..38ebd20 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -103,9 +103,12 @@ void rcar_du_plane_update_base(struct rcar_du_plane *plane)
+ 	struct rcar_du_device *rcdu = plane->dev;
+ 	unsigned int index = plane->hwindex;
  
--static const struct pinctrl_map eva_pinctrl_map[] = {
--	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
--				  "scifa1_data", "scifa1"),
--};
--
- static void __init eva_clock_init(void)
- {
- 	struct clk *system	= clk_get(NULL, "system_clk");
-@@ -169,8 +162,6 @@ static void __init eva_init(void)
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	eva_clock_init();
- 
--	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--
- 	r8a7740_meram_workaround();
- 
- #ifdef CONFIG_CACHE_L2X0
+-	/* According to the datasheet the Y position is expressed in raster line
+-	 * units. However, 32bpp formats seem to require a doubled Y position
+-	 * value. Similarly, for the second plane, NV12 and NV21 formats seem to
++	/* The Y position is expressed in raster line units and must be doubled
++	 * for 32bpp formats, according to the R8A7790 datasheet. No mention of
++	 * doubling the Y position is found in the R8A7779 datasheet, but the
++	 * rule seems to apply there as well.
++	 *
++	 * Similarly, for the second plane, NV12 and NV21 formats seem to
+ 	 * require a halved Y position value.
+ 	 */
+ 	rcar_du_plane_write(rcdu, index, PnSPXR, plane->src_x);
 -- 
 1.8.1.5
 
