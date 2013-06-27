@@ -1,79 +1,89 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 28 Jun 2013 11:27:32 +0000
-Subject: [PATCH 04/04] ARM: shmobile: Make r8a73a4 Arch timer optional
-Message-Id: <20130628112732.23809.81527.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:22 +0000
+Subject: [PATCH 12/24] drm/rcar-du: Create rcar_du_planes structure
+Message-Id: <1372326574-4315-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130628112655.23809.39115.sendpatchset@w520>
-In-Reply-To: <20130628112655.23809.39115.sendpatchset@w520>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Move the plane-related fields of struct rcar_du_device to their own
+structure.
 
-Update the r8a73a4 code to allow using other
-timers than Arch timer for clock event
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h   | 11 +----------
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h | 17 +++++++++++++++--
+ 2 files changed, 16 insertions(+), 12 deletions(-)
 
- arch/arm/mach-shmobile/Kconfig                |    1 -
- arch/arm/mach-shmobile/board-ape6evm.c        |    1 +
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 +
- arch/arm/mach-shmobile/setup-r8a73a4.c        |    8 ++++++++
- 4 files changed, 10 insertions(+), 1 deletion(-)
-
---- 0010/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-06-28 19:53:49.000000000 +0900
-@@ -23,7 +23,6 @@ config ARCH_R8A73A4
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
--	select ARM_ARCH_TIMER
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
- 	select ARCH_HAS_CPUFREQ
---- 0001/arch/arm/mach-shmobile/board-ape6evm.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-06-28 19:55:52.000000000 +0900
-@@ -102,6 +102,7 @@ static const char *ape6evm_boards_compat
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 7d2320f..0305c21 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -15,7 +15,6 @@
+ #define __RCAR_DU_DRV_H__
+ 
+ #include <linux/kernel.h>
+-#include <linux/mutex.h>
+ #include <linux/platform_data/rcar-du.h>
+ 
+ #include "rcar_du_crtc.h"
+@@ -49,15 +48,7 @@ struct rcar_du_device {
+ 	unsigned int used_crtcs;
+ 	unsigned int num_crtcs;
+ 
+-	struct {
+-		struct rcar_du_plane planes[RCAR_DU_NUM_SW_PLANES];
+-		unsigned int free;
+-		struct mutex lock;
+-
+-		struct drm_property *alpha;
+-		struct drm_property *colorkey;
+-		struct drm_property *zpos;
+-	} planes;
++	struct rcar_du_planes planes;
  };
  
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
-+	.init_early	= r8a73a4_init_delay,
- 	.init_irq	= irqchip_init,
- 	.init_time	= shmobile_timer_init,
- 	.init_machine	= ape6evm_add_standard_devices,
---- 0001/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-06-28 19:55:15.000000000 +0900
-@@ -4,5 +4,6 @@
- void r8a73a4_add_standard_devices(void);
- void r8a73a4_clock_init(void);
- void r8a73a4_pinmux_init(void);
-+void r8a73a4_init_delay(void);
+ static inline bool rcar_du_has(struct rcar_du_device *rcdu,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index 5397dba..5c8488c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -14,8 +14,11 @@
+ #ifndef __RCAR_DU_PLANE_H__
+ #define __RCAR_DU_PLANE_H__
  
- #endif /* __ASM_R8A73A4_H__ */
---- 0011/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-06-28 19:57:29.000000000 +0900
-@@ -203,6 +203,13 @@ void __init r8a73a4_add_standard_devices
- 	r8a7790_register_cmt(10);
- }
- 
-+void __init r8a73a4_init_delay(void)
-+{
-+#ifndef CONFIG_ARM_ARCH_TIMER
-+	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
-+#endif
-+}
+-struct drm_crtc;
+-struct drm_framebuffer;
++#include <linux/mutex.h>
 +
- #ifdef CONFIG_USE_OF
- void __init r8a73a4_add_standard_devices_dt(void)
- {
-@@ -216,6 +223,7 @@ static const char *r8a73a4_boards_compat
++#include <drm/drmP.h>
++#include <drm/drm_crtc.h>
++
+ struct rcar_du_device;
+ struct rcar_du_format_info;
+ 
+@@ -54,6 +57,16 @@ struct rcar_du_plane {
+ 	unsigned int dst_y;
  };
  
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
-+	.init_early	= r8a73a4_init_delay,
- 	.init_irq	= irqchip_init,
- 	.init_machine	= r8a73a4_add_standard_devices_dt,
- 	.init_time	= shmobile_timer_init,
++struct rcar_du_planes {
++	struct rcar_du_plane planes[RCAR_DU_NUM_SW_PLANES];
++	unsigned int free;
++	struct mutex lock;
++
++	struct drm_property *alpha;
++	struct drm_property *colorkey;
++	struct drm_property *zpos;
++};
++
+ int rcar_du_plane_init(struct rcar_du_device *rcdu);
+ int rcar_du_plane_register(struct rcar_du_device *rcdu);
+ void rcar_du_plane_setup(struct rcar_du_plane *plane);
+-- 
+1.8.1.5
+
