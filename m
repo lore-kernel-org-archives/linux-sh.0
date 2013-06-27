@@ -1,26 +1,94 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 27 Jun 2013 07:31:57 +0000
-Subject: Re: [PATCH v2] clocksource: sh_cmt: Use devm_* managed helpers
-Message-Id: <20130627073156.GA13927@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 27 Jun 2013 09:47:56 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a73a4: add clocks for I2C controllers
+Message-Id: <1372326479-15028-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371558978-10870-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CANqRtoQUadXd+RGbW3S1S4vxvz+iQJVoAVXY-JL-2G-DJTT6WQ@mail.gmail.com>
-In-Reply-To: <CANqRtoQUadXd+RGbW3S1S4vxvz+iQJVoAVXY-JL-2G-DJTT6WQ@mail.gmail.com>
+References: <1372326479-15028-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1372326479-15028-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Thomas Gleixner <tglx@linutronix.de>, John Stultz <john.stultz@linaro.org>, Sachin Kamat <sachin.kamat@linaro.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jun 18, 2013 at 10:29:38PM +0900, Magnus Damm wrote:
-> On Tue, Jun 18, 2013 at 9:36 PM, Laurent Pinchart
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > This simplifies the main error path by getting rid of it.
-> >
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Looking good, thanks!
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+r8a73a4 SoCs have numerous I2C controllers, of which 9 are compatible with
+the i2c-sh_mobile.c driver. This patch adds clock definitions for them.
 
-Thanks, queued up for v3.12 in the clocksource branch.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   25 +++++++++++++++++++++++--
+ 1 files changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index cbf9852..508cb1e 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -30,6 +30,7 @@
+ 
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR3 0xe615013c
++#define SMSTPCR4 0xe6150140
+ #define SMSTPCR5 0xe6150144
+ 
+ #define FRQCRA		0xE6150000
+@@ -487,8 +488,10 @@ static struct clk div6_clks[DIV6_NR] = {
+ /* MSTP */
+ enum {
+ 	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
+-	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305,
+-	MSTP522,
++	MSTP323, MSTP318, MSTP317, MSTP316,
++	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
++	MSTP411, MSTP410, MSTP409,
++	MSTP522, MSTP515,
+ 	MSTP_NR
+ };
+ 
+@@ -499,12 +502,21 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
++	[MSTP300] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 0, 0), /* IIC2 */
+ 	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1],SMSTPCR3, 5, 0), /* MMCIF1 */
+ 	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI2],SMSTPCR3, 12, 0), /* SDHI2 */
+ 	[MSTP313] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI1],SMSTPCR3, 13, 0), /* SDHI1 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI0],SMSTPCR3, 14, 0), /* SDHI0 */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0],SMSTPCR3, 15, 0), /* MMCIF0 */
++	[MSTP316] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 16, 0), /* IIC6 */
++	[MSTP317] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 17, 0), /* IIC7 */
++	[MSTP318] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 18, 0), /* IIC0 */
++	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 23, 0), /* IIC1 */
++	[MSTP409] = SH_CLK_MSTP32(&main_div2_clk,	SMSTPCR4, 9, 0), /* IIC5 */
++	[MSTP410] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 10, 0), /* IIC4 */
++	[MSTP411] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 11, 0), /* IIC3 */
+ 	[MSTP522] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR5, 22, 0), /* Thermal */
++	[MSTP515] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR5, 15, 0), /* IIC8 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+@@ -549,6 +561,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
++	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+@@ -559,6 +572,14 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
++	CLKDEV_DEV_ID("e6550000.i2c", &mstp_clks[MSTP316]),
++	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
++	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
++	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
++	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
++	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
++	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
++	CLKDEV_DEV_ID("e6570000.i2c", &mstp_clks[MSTP515]),
+ 
+ 	/* for DT */
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+-- 
+1.7.2.5
+
