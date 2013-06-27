@@ -1,56 +1,88 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 27 Jun 2013 01:53:04 +0000
-Subject: [PATCH v3 2/2] ARM: shmobile: r8a7790: add thermal driver support
-Message-Id: <1372297984-9315-3-git-send-email-horms+renesas@verge.net.au>
+From: "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
+Date: Thu, 27 Jun 2013 20:12:38 +0000
+Subject: [PATCH v3 43/45] sh: Use get/put_online_cpus_atomic() to prevent CPU offline
+Message-Id: <20130627200038.29830.83910.stgit@srivatsabhat.in.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372297984-9315-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372297984-9315-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130627195136.29830.10445.stgit@srivatsabhat.in.ibm.com>
+In-Reply-To: <20130627195136.29830.10445.stgit@srivatsabhat.in.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: peterz@infradead.org, tj@kernel.org, oleg@redhat.com, paulmck@linux.vnet.ibm.com, rusty@rustcorp.com.au, mingo@kernel.org, akpm@linux-foundation.org, namhyung@kernel.org, walken@google.com, vincent.guittot@linaro.org, laijs@cn.fujitsu.com, David.Laight@aculab.com
+Cc: rostedt@goodmis.org, wangyun@linux.vnet.ibm.com, xiaoguangrong@linux.vnet.ibm.com, sbw@mit.edu, fweisbec@gmail.com, zhong@linux.vnet.ibm.com, nikunj@linux.vnet.ibm.com, srivatsa.bhat@linux.vnet.ibm.com, linux-pm@vger.kernel.org, linux-arch@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>, linux-sh@vger.kernel.org"Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
 
-The current temperature may be read using:
-cat /sys/class/thermal/thermal_zone0/temp
+Once stop_machine() is gone from the CPU offline path, we won't be able
+to depend on disabling preemption to prevent CPUs from going offline
+from under us.
 
-Based on similar work for the r8a73a4 by Kuninori Morimoto.
+Use the get/put_online_cpus_atomic() APIs to prevent CPUs from going
+offline, while invoking from atomic context.
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Srivatsa S. Bhat <srivatsa.bhat@linux.vnet.ibm.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 28f9475..06c720f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -149,6 +149,17 @@ static struct resource irqc0_resources[] __initdata = {
- 					  &irqc##idx##_data,		\
- 					  sizeof(struct renesas_irqc_config))
- 
-+static struct resource thermal_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xe61f0000, 0x14),
-+	DEFINE_RES_MEM(0xe61f0100, 0x38),
-+	DEFINE_RES_IRQ(gic_spi(69)),
-+};
-+
-+#define r8a7790_register_thermal()					\
-+	platform_device_register_simple("rcar_thermal", -1,		\
-+					thermal_resources,		\
-+					ARRAY_SIZE(thermal_resources))
-+
- void __init r8a7790_add_standard_devices(void)
+ arch/sh/kernel/smp.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+index 4569645..42ec182 100644
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -357,7 +357,7 @@ static void flush_tlb_mm_ipi(void *mm)
+  */
+ void flush_tlb_mm(struct mm_struct *mm)
  {
- 	r8a7790_register_scif(SCIFA0);
-@@ -162,6 +173,7 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(HSCIF0);
- 	r8a7790_register_scif(HSCIF1);
- 	r8a7790_register_irqc(0);
-+	r8a7790_register_thermal();
+-	preempt_disable();
++	get_online_cpus_atomic();
+ 
+ 	if ((atomic_read(&mm->mm_users) != 1) || (current->mm != mm)) {
+ 		smp_call_function(flush_tlb_mm_ipi, (void *)mm, 1);
+@@ -369,7 +369,7 @@ void flush_tlb_mm(struct mm_struct *mm)
+ 	}
+ 	local_flush_tlb_mm(mm);
+ 
+-	preempt_enable();
++	put_online_cpus_atomic();
  }
  
- void __init r8a7790_timer_init(void)
--- 
-1.8.2.1
+ struct flush_tlb_data {
+@@ -390,7 +390,7 @@ void flush_tlb_range(struct vm_area_struct *vma,
+ {
+ 	struct mm_struct *mm = vma->vm_mm;
+ 
+-	preempt_disable();
++	get_online_cpus_atomic();
+ 	if ((atomic_read(&mm->mm_users) != 1) || (current->mm != mm)) {
+ 		struct flush_tlb_data fd;
+ 
+@@ -405,7 +405,7 @@ void flush_tlb_range(struct vm_area_struct *vma,
+ 				cpu_context(i, mm) = 0;
+ 	}
+ 	local_flush_tlb_range(vma, start, end);
+-	preempt_enable();
++	put_online_cpus_atomic();
+ }
+ 
+ static void flush_tlb_kernel_range_ipi(void *info)
+@@ -433,7 +433,7 @@ static void flush_tlb_page_ipi(void *info)
+ 
+ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
+ {
+-	preempt_disable();
++	get_online_cpus_atomic();
+ 	if ((atomic_read(&vma->vm_mm->mm_users) != 1) ||
+ 	    (current->mm != vma->vm_mm)) {
+ 		struct flush_tlb_data fd;
+@@ -448,7 +448,7 @@ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
+ 				cpu_context(i, vma->vm_mm) = 0;
+ 	}
+ 	local_flush_tlb_page(vma, page);
+-	preempt_enable();
++	put_online_cpus_atomic();
+ }
+ 
+ static void flush_tlb_one_ipi(void *info)
 
