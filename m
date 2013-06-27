@@ -1,55 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 04:32:27 +0000
-Subject: [PATCH 0/4] Update for Renesas INTC External IRQ pin driver for v3.11
-Message-Id: <1370406751-3852-1-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 27 Jun 2013 09:47:55 +0000
+Subject: [PATCH v2 0/3] ARM: shmobile: r8a73a4: add I2C devices and CPUFreq support
+Message-Id: <1372326479-15028-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+CPUFreq voltage scaling support for APE6EVM uses an I2C PMIC. This patch 
+series adds support for I2C on r8a73a4 and adds required hooks to APE6EVM. 
+This patch series is identical to v1 with the only difference, that a 
+patch from it has been split into two upon maintainer's request.
 
-The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-  Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
+Guennadi Liakhovetski (3):
+  ARM: shmobile: r8a73a4: add clocks for I2C controllers
+  ARM: shmobile: r8a73a4: add I2C controller DT nodes
+  ARM: shmobile: ape6evm: add CPUFreq support
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-intc-external-irq-for-v3.11
-
-for you to fetch changes up to 14d064ad3881f47ae0a6f247c992652053c7f4d5:
-
-  irqchip: Add irqchip_init dummy function (2013-05-22 21:55:41 +0900)
-
-----------------------------------------------------------------
-Update for Renesas INTC External IRQ pin driver for v3.11
-
-Add runtime PM support
-Add DT binding for sense bitfield width
-Correct error handing in irqc_probe
-Add irqchip_init dummy function
-
-----------------------------------------------------------------
-Axel Lin (1):
-      irqchip: renesas-irqc: Fix irqc_probe error handling
-
-Bastian Hecht (1):
-      irqchip: Add irqchip_init dummy function
-
-Guennadi Liakhovetski (1):
-      irqchip: renesas-intc-irqpin: DT binding for sense bitfield width
-
-Simon Horman (1):
-      irqchip: irqc: Add runtime PM support
-
- .../bindings/interrupt-controller/renesas,intc-irqpin.txt   | 13 +++++++++++++
- drivers/irqchip/irq-renesas-intc-irqpin.c                   |  4 ++++
- drivers/irqchip/irq-renesas-irqc.c                          | 12 ++++++++++--
- include/linux/irqchip.h                                     |  4 ++++
- 4 files changed, 31 insertions(+), 2 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   22 +++++++++
+ arch/arm/boot/dts/r8a73a4.dtsi         |   81 ++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   25 +++++++++-
+ 3 files changed, 126 insertions(+), 2 deletions(-)
 
 -- 
-1.8.2.1
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
