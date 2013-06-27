@@ -1,111 +1,86 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 13 Jun 2013 23:45:53 +0000
-Subject: [PATCH v6 08/18] ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
-Message-Id: <1371167163-10507-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:23 +0000
+Subject: [PATCH 13/24] drm/rcar-du: Rename rcar_du_plane_(init|register) to rcar_du_planes_*
+Message-Id: <1372326574-4315-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1371167163-10507-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Add GPIO controller nodes to the r8a7779 core device tree.
+The functions initialize or register all planes, rename them
+accordingly.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 71 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 71 insertions(+)
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 4 ++--
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 4 ++--
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h | 5 +++--
+ 3 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 9dfc438..2bbb4cb 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -48,6 +48,76 @@
-                       <0xf0000100 0x100>;
-         };
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index a8eef16..a1343fb 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -174,7 +174,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 	rcdu->ddev->mode_config.max_height = 2047;
+ 	rcdu->ddev->mode_config.funcs = &rcar_du_mode_config_funcs;
  
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc40000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 141 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc41000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc42000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 143 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc43000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc44000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 145 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+	};
-+
-+	gpio5: gpio@ffc45000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc45000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 146 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 32>;
-+	};
-+
-+	gpio6: gpio@ffc46000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc46000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 147 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 192 9>;
-+	};
-+
- 	irqpin0: irqpin@fe780010 {
- 		compatible = "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
-@@ -104,6 +174,7 @@
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7779";
- 		reg = <0xfffc0000 0x23c>;
-+		#gpio-range-cells = <3>;
- 	};
+-	ret = rcar_du_plane_init(rcdu);
++	ret = rcar_du_planes_init(rcdu);
+ 	if (ret < 0)
+ 		return ret;
  
- 	thermal@ffc48000 {
+@@ -215,7 +215,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 		encoder->possible_clones = 1 << 0;
+ 	}
+ 
+-	ret = rcar_du_plane_register(rcdu);
++	ret = rcar_du_planes_register(rcdu);
+ 	if (ret < 0)
+ 		return ret;
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 38ebd20..29f2147 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -435,7 +435,7 @@ static const uint32_t formats[] = {
+ 	DRM_FORMAT_NV16,
+ };
+ 
+-int rcar_du_plane_init(struct rcar_du_device *rcdu)
++int rcar_du_planes_init(struct rcar_du_device *rcdu)
+ {
+ 	unsigned int i;
+ 
+@@ -475,7 +475,7 @@ int rcar_du_plane_init(struct rcar_du_device *rcdu)
+ 	return 0;
+ }
+ 
+-int rcar_du_plane_register(struct rcar_du_device *rcdu)
++int rcar_du_planes_register(struct rcar_du_device *rcdu)
+ {
+ 	unsigned int i;
+ 	int ret;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index 5c8488c..bcf6f76 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -67,8 +67,9 @@ struct rcar_du_planes {
+ 	struct drm_property *zpos;
+ };
+ 
+-int rcar_du_plane_init(struct rcar_du_device *rcdu);
+-int rcar_du_plane_register(struct rcar_du_device *rcdu);
++int rcar_du_planes_init(struct rcar_du_device *rcdu);
++int rcar_du_planes_register(struct rcar_du_device *rcdu);
++
+ void rcar_du_plane_setup(struct rcar_du_plane *plane);
+ void rcar_du_plane_update_base(struct rcar_du_plane *plane);
+ void rcar_du_plane_compute_base(struct rcar_du_plane *plane,
 -- 
 1.8.1.5
 
