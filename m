@@ -1,131 +1,97 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:06 +0000
-Subject: [PATCH 015/130] sh-pfc: r8a7790: Don't use GPIO enum entries
-Message-Id: <1370420821-28420-16-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:26 +0000
+Subject: [PATCH 16/24] drm/rcar-du: Remove register definitions for the second channel
+Message-Id: <1372326574-4315-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Refactor the GPIO macro magic to use GPIO numbers directly instead of
-the GPIO_GP_x_y enum entries. This will allow removing the GPIO enum
-entries from the mach/r8a7790.h header.
+Channels are accessed through a global channel memory offset, there's no
+need to define register addresses for the second channel.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 90 ++++++++++++++++++++++++------------
- 1 file changed, 60 insertions(+), 30 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_regs.h | 9 ---------
+ 1 file changed, 9 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 51219e1..1656915 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -24,39 +24,69 @@
- #include <linux/kernel.h>
- #include <linux/platform_data/gpio-rcar.h>
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+index 3aba27f..195ed7e 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+@@ -20,7 +20,6 @@
+  */
  
--#include <mach/r8a7790.h>
--
- #include "core.h"
- #include "sh_pfc.h"
+ #define DSYSR			0x00000	/* display 1 */
+-#define D2SYSR			0x30000	/* display 2 */
+ #define DSYSR_ILTS		(1 << 29)
+ #define DSYSR_DSEC		(1 << 20)
+ #define DSYSR_IUPD		(1 << 16)
+@@ -35,7 +34,6 @@
+ #define DSYSR_SCM_INT_VIDEO	(3 << 4)
  
--#define CPU_32_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
--	PORT_1(fn, pfx##31, sfx)
--
--#define CPU_32_PORT1(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx)
--
--#define CPU_32_PORT2(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx)
--
--/* GP_0_0_DATA -> GP_5_31_DATA (except for GP1[30],GP1[31],GP2[30],GP2[31]) */
--#define CPU_ALL_PORT(fn, pfx, sfx)				\
--	CPU_32_PORT(fn, pfx##_0_, sfx),				\
--	CPU_32_PORT1(fn, pfx##_1_, sfx),			\
--	CPU_32_PORT2(fn, pfx##_2_, sfx),			\
--	CPU_32_PORT(fn, pfx##_3_, sfx),				\
--	CPU_32_PORT(fn, pfx##_4_, sfx),				\
--	CPU_32_PORT(fn, pfx##_5_, sfx)				\
--
--#define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
--#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN)
--
--#define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
--#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
-+#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
-+
-+#define PORT_GP_32(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
-+	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
-+	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
-+	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
-+	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
-+	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
-+	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
-+	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
-+	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
-+	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
-+	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
-+	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
-+	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
-+	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
-+	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
-+	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
-+
-+#define PORT_GP_32_REV(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
-+	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
-+	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
-+	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
-+	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
-+	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
-+	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
-+	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
-+	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
-+	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
-+	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
-+	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
-+	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
-+	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
-+	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
-+	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
-+
-+#define CPU_ALL_PORT(fn, sfx)						\
-+	PORT_GP_32(0, fn, sfx),						\
-+	PORT_GP_32(1, fn, sfx),						\
-+	PORT_GP_32(2, fn, sfx),						\
-+	PORT_GP_32(3, fn, sfx),						\
-+	PORT_GP_32(4, fn, sfx),						\
-+	PORT_GP_32(5, fn, sfx)
-+
-+#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
-+
-+#define _GP_GPIO(bank, pin, _name, sfx)					\
-+	[(bank * 32) + pin] = {						\
-+		.name = __stringify(_name),				\
-+		.enum_id = _name##_DATA,				\
-+	}
-+
-+#define _GP_DATA(bank, pin, name, sfx)					\
-+	PINMUX_DATA(name##_DATA, name##_FN)
-+
-+#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
-+#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
-+#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
+ #define DSMR			0x00004
+-#define D2SMR			0x30004
+ #define DSMR_VSPM		(1 << 28)
+ #define DSMR_ODPM		(1 << 27)
+ #define DSMR_DIPM_DISP		(0 << 25)
+@@ -60,7 +58,6 @@
+ #define DSMR_CSY_MASK		(3 << 6)
  
- #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
- #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+ #define DSSR			0x00008
+-#define D2SSR			0x30008
+ #define DSSR_VC1FB_DSA0		(0 << 30)
+ #define DSSR_VC1FB_DSA1		(1 << 30)
+ #define DSSR_VC1FB_DSA2		(2 << 30)
+@@ -80,7 +77,6 @@
+ #define DSSR_ADC(n)		(1 << ((n)-1))
+ 
+ #define DSRCR			0x0000c
+-#define D2SRCR			0x3000c
+ #define DSRCR_TVCL		(1 << 15)
+ #define DSRCR_FRCL		(1 << 14)
+ #define DSRCR_VBCL		(1 << 11)
+@@ -90,7 +86,6 @@
+ #define DSRCR_MASK		0x0000cbff
+ 
+ #define DIER			0x00010
+-#define D2IER			0x30010
+ #define DIER_TVE		(1 << 15)
+ #define DIER_FRE		(1 << 14)
+ #define DIER_VBE		(1 << 11)
+@@ -114,7 +109,6 @@
+ #define DPPR_BPP32		(DPPR_BPP32_P1 | DPPR_BPP32_P2)	/* plane1 & 2 */
+ 
+ #define DEFR			0x00020
+-#define D2EFR			0x30020
+ #define DEFR_CODE		(0x7773 << 16)
+ #define DEFR_EXSL		(1 << 12)
+ #define DEFR_EXVL		(1 << 11)
+@@ -137,12 +131,10 @@
+ #define DCPCR_DCE		(1 << 0)
+ 
+ #define DEFR2			0x00034
+-#define D2EFR2			0x30034
+ #define DEFR2_CODE		(0x7775 << 16)
+ #define DEFR2_DEFE2G		(1 << 0)
+ 
+ #define DEFR3			0x00038
+-#define D2EFR3			0x30038
+ #define DEFR3_CODE		(0x7776 << 16)
+ #define DEFR3_EVDA		(1 << 14)
+ #define DEFR3_EVDM_1		(1 << 12)
+@@ -153,7 +145,6 @@
+ #define DEFR3_DEFE3		(1 << 0)
+ 
+ #define DEFR4			0x0003c
+-#define D2EFR4			0x3003c
+ #define DEFR4_CODE		(0x7777 << 16)
+ #define DEFR4_LRUO		(1 << 5)
+ #define DEFR4_SPCE		(1 << 4)
 -- 
-1.8.2.1
+1.8.1.5
 
