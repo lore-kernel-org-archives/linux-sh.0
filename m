@@ -1,179 +1,130 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:25:14 +0000
-Subject: [PATCH 023/130] sh-pfc: sh7372: Add BSC pin groups and functions
-Message-Id: <1370420821-28420-24-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:28 +0000
+Subject: [PATCH 18/24] drm/rcar-du: Add support for the R8A7790 DU
+Message-Id: <1372326574-4315-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The DU revision in the R8A7790 SoC uses one IRQ and clock per CRTC. Add
+a corresponding entry in the module platform ID table.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 124 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 124 insertions(+)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c  |  5 +++
+ drivers/gpu/drm/rcar-du/rcar_du_regs.h | 66 ++++++++++++++++++++++++++++++++--
+ 2 files changed, 68 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index df0ae21..9545b3c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -933,6 +933,102 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 	GPIO_PORT_ALL(),
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index fe61962..9c7406c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -215,8 +215,13 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
+ 	.features = 0,
  };
  
-+/* - BSC -------------------------------------------------------------------- */
-+static const unsigned int bsc_data8_pins[] = {
-+	/* D[0:7] */
-+	46, 47, 48, 49, 50, 51, 52, 53,
-+};
-+static const unsigned int bsc_data8_mux[] = {
-+	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
-+	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
-+};
-+static const unsigned int bsc_data16_pins[] = {
-+	/* D[0:15] */
-+	46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
-+};
-+static const unsigned int bsc_data16_mux[] = {
-+	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
-+	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
-+	D8_NAF8_MARK, D9_NAF9_MARK, D10_NAF10_MARK, D11_NAF11_MARK,
-+	D12_NAF12_MARK, D13_NAF13_MARK, D14_NAF14_MARK, D15_NAF15_MARK,
-+};
-+static const unsigned int bsc_cs0_pins[] = {
-+	/* CS */
-+	62,
-+};
-+static const unsigned int bsc_cs0_mux[] = {
-+	CS0_MARK,
-+};
-+static const unsigned int bsc_cs2_pins[] = {
-+	/* CS */
-+	63,
-+};
-+static const unsigned int bsc_cs2_mux[] = {
-+	CS2_MARK,
-+};
-+static const unsigned int bsc_cs4_pins[] = {
-+	/* CS */
-+	64,
-+};
-+static const unsigned int bsc_cs4_mux[] = {
-+	CS4_MARK,
-+};
-+static const unsigned int bsc_cs5a_pins[] = {
-+	/* CS */
-+	65,
-+};
-+static const unsigned int bsc_cs5a_mux[] = {
-+	CS5A_MARK,
-+};
-+static const unsigned int bsc_cs5b_pins[] = {
-+	/* CS */
-+	66,
-+};
-+static const unsigned int bsc_cs5b_mux[] = {
-+	CS5B_MARK,
-+};
-+static const unsigned int bsc_cs6a_pins[] = {
-+	/* CS */
-+	67,
-+};
-+static const unsigned int bsc_cs6a_mux[] = {
-+	CS6A_MARK,
-+};
-+static const unsigned int bsc_rd_we8_pins[] = {
-+	/* RD, WE[0] */
-+	69, 70,
-+};
-+static const unsigned int bsc_rd_we8_mux[] = {
-+	RD_FSC_MARK, WE0_FWE_MARK,
-+};
-+static const unsigned int bsc_rd_we16_pins[] = {
-+	/* RD, WE[0:1] */
-+	69, 70, 71,
-+};
-+static const unsigned int bsc_rd_we16_mux[] = {
-+	RD_FSC_MARK, WE0_FWE_MARK, WE1_MARK,
-+};
-+static const unsigned int bsc_bs_pins[] = {
-+	/* BS */
-+	19,
-+};
-+static const unsigned int bsc_bs_mux[] = {
-+	BS_MARK,
-+};
-+static const unsigned int bsc_rdwr_pins[] = {
-+	/* RDWR */
-+	75,
-+};
-+static const unsigned int bsc_rdwr_mux[] = {
-+	RDWR_MARK,
-+};
-+static const unsigned int bsc_wait_pins[] = {
-+	/* WAIT */
-+	74,
-+};
-+static const unsigned int bsc_wait_mux[] = {
-+	WAIT_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_0_pins[] = {
- 	/* D[0] */
-@@ -1075,6 +1171,18 @@ static const unsigned int sdhi2_ctrl_mux[] = {
- };
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(bsc_data8),
-+	SH_PFC_PIN_GROUP(bsc_data16),
-+	SH_PFC_PIN_GROUP(bsc_cs0),
-+	SH_PFC_PIN_GROUP(bsc_cs2),
-+	SH_PFC_PIN_GROUP(bsc_cs4),
-+	SH_PFC_PIN_GROUP(bsc_cs5a),
-+	SH_PFC_PIN_GROUP(bsc_cs5b),
-+	SH_PFC_PIN_GROUP(bsc_cs6a),
-+	SH_PFC_PIN_GROUP(bsc_rd_we8),
-+	SH_PFC_PIN_GROUP(bsc_rd_we16),
-+	SH_PFC_PIN_GROUP(bsc_bs),
-+	SH_PFC_PIN_GROUP(bsc_rdwr),
- 	SH_PFC_PIN_GROUP(mmc0_data1_0),
- 	SH_PFC_PIN_GROUP(mmc0_data4_0),
- 	SH_PFC_PIN_GROUP(mmc0_data8_0),
-@@ -1096,6 +1204,21 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
- };
- 
-+static const char * const bsc_groups[] = {
-+	"bsc_data8",
-+	"bsc_data16",
-+	"bsc_cs0",
-+	"bsc_cs2",
-+	"bsc_cs4",
-+	"bsc_cs5a",
-+	"bsc_cs5b",
-+	"bsc_cs6a",
-+	"bsc_rd_we8",
-+	"bsc_rd_we16",
-+	"bsc_bs",
-+	"bsc_rdwr",
++static const struct rcar_du_device_info rcar_du_r8a7790_info = {
++	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK,
 +};
 +
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1_0",
- 	"mmc0_data4_0",
-@@ -1128,6 +1251,7 @@ static const char * const sdhi2_groups[] = {
+ static const struct platform_device_id rcar_du_id_table[] = {
+ 	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
++	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
+ 	{ }
  };
  
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+index 195ed7e..f62a9f3 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+@@ -196,6 +196,68 @@
+ #define DEFR6_DEFAULT		(DEFR6_CODE | DEFR6_TCNE2)
+ 
+ /* -----------------------------------------------------------------------------
++ * R8A7790-only Control Registers
++ */
++
++#define DD1SSR			0x20008
++#define DD1SSR_TVR		(1 << 15)
++#define DD1SSR_FRM		(1 << 14)
++#define DD1SSR_BUF		(1 << 12)
++#define DD1SSR_VBK		(1 << 11)
++#define DD1SSR_RINT		(1 << 9)
++#define DD1SSR_HBK		(1 << 8)
++#define DD1SSR_ADC(n)		(1 << ((n)-1))
++
++#define DD1SRCR			0x2000c
++#define DD1SRCR_TVR		(1 << 15)
++#define DD1SRCR_FRM		(1 << 14)
++#define DD1SRCR_BUF		(1 << 12)
++#define DD1SRCR_VBK		(1 << 11)
++#define DD1SRCR_RINT		(1 << 9)
++#define DD1SRCR_HBK		(1 << 8)
++#define DD1SRCR_ADC(n)		(1 << ((n)-1))
++
++#define DD1IER			0x20010
++#define DD1IER_TVR		(1 << 15)
++#define DD1IER_FRM		(1 << 14)
++#define DD1IER_BUF		(1 << 12)
++#define DD1IER_VBK		(1 << 11)
++#define DD1IER_RINT		(1 << 9)
++#define DD1IER_HBK		(1 << 8)
++#define DD1IER_ADC(n)		(1 << ((n)-1))
++
++#define DEFR8			0x20020
++#define DEFR8_CODE		(0x7790 << 16)
++#define DEFR8_VSCS		(1 << 6)
++#define DEFR8_DRGBS_DU(n)	((n) << 4)
++#define DEFR8_DRGBS_MASK	(3 << 4)
++#define DEFR8_DEFE8		(1 << 0)
++
++#define DOFLR			0x20024
++#define DOFLR_CODE		(0x7790 << 16)
++#define DOFLR_HSYCFL1		(1 << 13)
++#define DOFLR_VSYCFL1		(1 << 12)
++#define DOFLR_ODDFL1		(1 << 11)
++#define DOFLR_DISPFL1		(1 << 10)
++#define DOFLR_CDEFL1		(1 << 9)
++#define DOFLR_RGBFL1		(1 << 8)
++#define DOFLR_HSYCFL0		(1 << 5)
++#define DOFLR_VSYCFL0		(1 << 4)
++#define DOFLR_ODDFL0		(1 << 3)
++#define DOFLR_DISPFL0		(1 << 2)
++#define DOFLR_CDEFL0		(1 << 1)
++#define DOFLR_RGBFL0		(1 << 0)
++
++#define DIDSR			0x20028
++#define DIDSR_CODE		(0x7790 << 16)
++#define DIDSR_LCDS_DCLKIN(n)	(0 << (8 + (n) * 2))
++#define DIDSR_LCDS_LVDS0(n)	(2 << (8 + (n) * 2))
++#define DIDSR_LCDS_LVDS1(n)	(3 << (8 + (n) * 2))
++#define DIDSR_LCDS_MASK(n)	(3 << (8 + (n) * 2))
++#define DIDSR_PCDS_CLK(n, clk)	(clk << ((n) * 2))
++#define DIDSR_PCDS_MASK(n)	(3 << ((n) * 2))
++
++/* -----------------------------------------------------------------------------
+  * Display Timing Generation Registers
+  */
+ 
+@@ -364,12 +426,10 @@
+  * Display Capture Registers
+  */
+ 
++#define DCMR			0x0c100
+ #define DCMWR			0x0c104
+-#define DC2MWR			0x0c204
+ #define DCSAR			0x0c120
+-#define DC2SAR			0x0c220
+ #define DCMLR			0x0c150
+-#define DC2MLR			0x0c250
+ 
+ /* -----------------------------------------------------------------------------
+  * Color Palette Registers
 -- 
-1.8.2.1
+1.8.1.5
 
