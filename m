@@ -1,99 +1,78 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 19 Jun 2013 13:22:21 +0000
-Subject: [PATCH 3/5] ARM: shmobile: bockw: add SPI FLASH support
-Message-Id: <1371648143-18376-4-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 27 Jun 2013 07:07:31 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: r8a73a4: wait for completion when kicking the clock
+Message-Id: <20130627070731.GA25014@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371648143-18376-1-git-send-email-horms+renesas@verge.net.au>
+References: <Pine.LNX.4.64.1305221108500.12715@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1305221108500.12715@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, May 22, 2013 at 11:12:33AM +0200, Guennadi Liakhovetski wrote:
+> To reconfigure clocks, controlled by FRQCRA and FRQCRB, a kick bit has to
+> be set and to make sure the setting has taken effect, it has to be read
+> back repeatedly until it is cleared by the hardware. This patch adds the
+> waiting part, that was missing until now.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-This patch enables Spansion S25FL008K chip on HSPI0
+I have queued this up for v3.12 in the soc branch of the renesas tree.
+I have included an Ack from Morimoto-san which he provided here:
 
-Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-bockw.c | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+"Re: [PATCH 0/4] Add DVFS support on APE6EVM"
+http://www.spinics.net/lists/arm-kernel/msg255480.html
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index a4251cc..7d42f12 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -20,11 +20,14 @@
- 
- #include <linux/mfd/tmio.h>
- #include <linux/mmc/host.h>
-+#include <linux/mtd/partitions.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-+#include <linux/spi/spi.h>
-+#include <linux/spi/flash.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7778.h>
-@@ -84,10 +87,40 @@ static struct i2c_board_info i2c0_devices[] = {
- 	},
- };
- 
-+/* HSPI*/
-+static struct mtd_partition m25p80_spi_flash_partitions[] = {
-+	{
-+		.name	= "data(spi)",
-+		.size	= 0x0100000,
-+		.offset	= 0,
-+	},
-+};
-+
-+static struct flash_platform_data spi_flash_data = {
-+	.name		= "m25p80",
-+	.type		= "s25fl008k",
-+	.parts		= m25p80_spi_flash_partitions,
-+	.nr_parts	= ARRAY_SIZE(m25p80_spi_flash_partitions),
-+};
-+
-+static struct spi_board_info spi_board_info[] __initdata = {
-+	{
-+		.modalias	= "m25p80",
-+		.max_speed_hz	= 104000000,
-+		.chip_select	= 0,
-+		.bus_num	= 0,
-+		.mode		= SPI_MODE_0,
-+		.platform_data	= &spi_flash_data,
-+	},
-+};
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* Ether */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7778",
- 				  "ether_rmii", "ether"),
-+	/* HSPI0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7778",
-+				  "hspi0_a", "hspi0"),
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_data_a", "scif0"),
-@@ -111,9 +144,12 @@ static void __init bockw_init(void)
- 	r8a7778_add_standard_devices();
- 	r8a7778_add_ether_device(&ether_platform_data);
- 	r8a7778_add_i2c_device(0);
-+	r8a7778_add_hspi_device(0);
- 
- 	i2c_register_board_info(0, i2c0_devices,
- 				ARRAY_SIZE(i2c0_devices));
-+	spi_register_board_info(spi_board_info,
-+				ARRAY_SIZE(spi_board_info));
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
- 	r8a7778_pinmux_init();
--- 
-1.8.2.1
-
+> ---
+>  arch/arm/mach-shmobile/clock-r8a73a4.c |   22 ++++++++++++++++------
+>  1 files changed, 16 insertions(+), 6 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+> index 5f7fe62..d5176d0 100644
+> --- a/arch/arm/mach-shmobile/clock-r8a73a4.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+> @@ -184,6 +184,21 @@ PLL_CLOCK(pll2h_clk, &main_div2_clk, pll_parent_main_extal, 3, 5, PLL2HCR, 5);
+>  
+>  SH_FIXED_RATIO_CLK(pll1_div2_clk,	pll1_clk,	div2);
+>  
+> +static int frqcr_kick_do(struct clk *clk)
+> +{
+> +	int i;
+> +
+> +	/* set KICK bit in FRQCRB to update hardware setting, check success */
+> +	iowrite32(ioread32(CPG_MAP(FRQCRB)) | BIT(31), CPG_MAP(FRQCRB));
+> +	for (i = 1000; i; i--)
+> +		if (ioread32(CPG_MAP(FRQCRB)) & BIT(31))
+> +			cpu_relax();
+> +		else
+> +			return 0;
+> +
+> +	return -ETIMEDOUT;
+> +}
+> +
+>  static struct clk *main_clks[] = {
+>  	&extalr_clk,
+>  	&extal1_clk,
+> @@ -205,12 +220,7 @@ static struct clk *main_clks[] = {
+>  /* DIV4 */
+>  static void div4_kick(struct clk *clk)
+>  {
+> -	unsigned long value;
+> -
+> -	/* set KICK bit in FRQCRB to update hardware setting */
+> -	value = ioread32(CPG_MAP(FRQCRB));
+> -	value |= (1 << 31);
+> -	iowrite32(value, CPG_MAP(FRQCRB));
+> +	frqcr_kick_do(clk);
+>  }
+>  
+>  static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10};
+> -- 
+> 1.7.2.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
