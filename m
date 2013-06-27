@@ -1,41 +1,97 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Jun 2013 07:00:08 +0000
-Subject: [GIT PULL 0/3] Renesas ARM based SoC defconfig updates for v3.11 #2
-Message-Id: <1371106811-25223-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:29 +0000
+Subject: [PATCH 19/24] drm/rcar-du: Fix buffer pitch alignment for R8A7790 DU
+Message-Id: <1372326574-4315-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Arnd,
+The R8A7790 DU seems to require a 128 bytes pitch alignment, even though
+the documentation only mentions a 16 pixels alignement as for the
+R8A7779 DU. Make this configurable through a device flag.
 
-This series is based on renesas-defconfig-for-v3.11 which you
-have previously pulled.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c |  2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h |  1 +
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 17 ++++++++++++++---
+ 3 files changed, 16 insertions(+), 4 deletions(-)
 
-The following changes since commit 76d415dfa7d53a2f92550484d766ae475a427daf:
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 9c7406c..fe93670 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -216,7 +216,7 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
+ };
+ 
+ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+-	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK,
++	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B,
+ };
+ 
+ static const struct platform_device_id rcar_du_id_table[] = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 5b57a2f..072e28e 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -26,6 +26,7 @@ struct drm_device;
+ struct rcar_du_device;
+ 
+ #define RCAR_DU_FEATURE_CRTC_IRQ_CLOCK	(1 << 0)	/* Per-CRTC IRQ and clock */
++#define RCAR_DU_FEATURE_ALIGN_128B	(1 << 1)	/* Align pitches to 128 bytes */
+ 
+ /*
+  * struct rcar_du_device_info - DU model-specific information
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 845bcb3..418d902 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -111,11 +111,18 @@ const struct rcar_du_format_info *rcar_du_format_info(u32 fourcc)
+ int rcar_du_dumb_create(struct drm_file *file, struct drm_device *dev,
+ 			struct drm_mode_create_dumb *args)
+ {
++	struct rcar_du_device *rcdu = dev->dev_private;
+ 	unsigned int min_pitch = DIV_ROUND_UP(args->width * args->bpp, 8);
+ 	unsigned int align;
+ 
+-	/* The pitch must be aligned to a 16 pixels boundary. */
+-	align = 16 * args->bpp / 8;
++	/* The R8A7779 DU requires a 16 pixels pitch alignment as documented,
++	 * but the R8A7790 DU seems to require a 128 bytes pitch alignment.
++	 */
++	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_ALIGN_128B))
++		align = 128;
++	else
++		align = 16 * args->bpp / 8;
++
+ 	args->pitch = roundup(max(args->pitch, min_pitch), align);
+ 
+ 	return drm_gem_cma_dumb_create(file, dev, args);
+@@ -125,6 +132,7 @@ static struct drm_framebuffer *
+ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
+ 		  struct drm_mode_fb_cmd2 *mode_cmd)
+ {
++	struct rcar_du_device *rcdu = dev->dev_private;
+ 	const struct rcar_du_format_info *format;
+ 	unsigned int align;
+ 
+@@ -135,7 +143,10 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	align = 16 * format->bpp / 8;
++	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_ALIGN_128B))
++		align = 128;
++	else
++		align = 16 * format->bpp / 8;
+ 
+ 	if (mode_cmd->pitches[0] & (align - 1) ||
+ 	    mode_cmd->pitches[0] >= 8192) {
+-- 
+1.8.1.5
 
-  ARM: shmobile: kzm9g: enable AS3711 PMIC in defconfig (2013-06-04 21:47:10 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.11
-
-for you to fetch changes up to d69626d8913ceeacaa2cd369a2487c85f818fef1:
-
-  ARM: shmobile: bockw defconfig: add MMCIF support (2013-06-12 17:25:57 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM based SoC defconfig updates for v3.11
-
-* Changes by Morimoto-san to enable MMCIF, M25P80 and RTC RX8581 for the
-  bockw board
-
-----------------------------------------------------------------
-Kuninori Morimoto (3):
-      ARM: shmobile: bockw defconfig: add RTC RX8581 support
-      ARM: shmobile: bockw defconfig: add M25P80 support
-      ARM: shmobile: bockw defconfig: add MMCIF support
-
- arch/arm/configs/bockw_defconfig | 11 +++++++++++
- 1 file changed, 11 insertions(+)
