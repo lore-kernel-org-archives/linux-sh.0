@@ -1,72 +1,348 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Jun 2013 06:45:30 +0000
-Subject: Re: [GIT PULL 0/7] Renesas ARM-based SoC DT updates for v3.11
-Message-Id: <20130605064530.GB14490@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:32 +0000
+Subject: [PATCH 22/24] drm/rcar-du: Rework output routing support
+Message-Id: <1372326574-4315-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370406736-32272-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-[ fix up subject to say GIT PULL ]
+Split the output routing specification between SoC-internal data,
+specified in the rcar_du_device_info structure, and board data, passed
+through platform data.
 
-On Wed, Jun 05, 2013 at 01:32:09PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> The following changes since commit c7788792a5e7b0d5d7f96d0766b4cb6112d47d75:
-> 
->   Linux 3.10-rc2 (2013-05-20 14:37:38 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.11
-> 
-> for you to fetch changes up to 24603f3caf07f5f65aa17ed7851ad4741595cf6a:
-> 
->   ARM: shmobile: marzen-reference: add irqpin support in DT (2013-06-04 18:05:59 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM-based SoC DT updates for v3.11
-> 
-> * Armadillo800eva reference DT - bring up armadillo800eva baord
->   using DT as much as possible
-> * Remove unused GIC dtsi entries for r8a7790 and r8a73a4
-> * Add AS3711 and CPUFreq DT bindings for kzm9g-reference
-> * Add irqpin DT support for marzen-reference
-> 
-> ----------------------------------------------------------------
-> Bastian Hecht (3):
->       ARM: shmobile: r8a7740: Add OF support to initialze the GIC
->       ARM: shmobile: r8a7740: Prepare for reference DT setup
->       ARM: shmobile: armadillo800eva: Reference DT implementation
-> 
-> Guennadi Liakhovetski (2):
->       ARM: shmobile: kzm9g-reference: add AS3711 and CPUFreq DT bindings
->       ARM: shmobile: marzen-reference: add irqpin support in DT
-> 
-> Magnus Damm (2):
->       ARM: shmobile: Remove unused r8a73a4 GIC CPU interface DT bits
->       ARM: shmobile: Remove unused r8a7790 GIC CPU interface DT bits
-> 
->  arch/arm/boot/dts/Makefile                         |   1 +
->  arch/arm/boot/dts/r8a73a4.dtsi                     |   6 -
->  .../boot/dts/r8a7740-armadillo800eva-reference.dts |  45 +++++
->  arch/arm/boot/dts/r8a7740.dtsi                     | 117 +++++++++++
->  arch/arm/boot/dts/r8a7779.dtsi                     |  17 ++
->  arch/arm/boot/dts/r8a7790.dtsi                     |   6 -
->  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |  86 +++++++++
->  arch/arm/mach-shmobile/Kconfig                     |  14 ++
->  arch/arm/mach-shmobile/Makefile                    |   1 +
->  .../board-armadillo800eva-reference.c              | 213 +++++++++++++++++++++
->  arch/arm/mach-shmobile/include/mach/r8a7740.h      |   3 +
->  arch/arm/mach-shmobile/intc-r8a7740.c              |  24 ++-
->  arch/arm/mach-shmobile/setup-r8a7740.c             |  54 +++---
->  13 files changed, 544 insertions(+), 43 deletions(-)
->  create mode 100644 arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
->  create mode 100644 arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-> 
-> -- 
-> 1.8.2.1
-> 
+The DU has 5 possible outputs (DPAD0/1, LVDS0/1, TCON). SoC-internal
+output routing data specify which output are valid, which CRTCs can be
+connected to the valid outputs, and the type of in-SoC encoder for the
+output.
+
+Platform data then specifies external encoders and the output they are
+connected to.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c    |  6 ++++--
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.h    |  4 +++-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c     | 30 ++++++++++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h     | 16 ++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 26 +++++++++++++++++++++-----
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h |  5 +++--
+ drivers/gpu/drm/rcar-du/rcar_du_group.c   |  8 ++++----
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 17 +++++++++++------
+ include/linux/platform_data/rcar-du.h     | 17 +++++++++++++++--
+ 9 files changed, 107 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index a340224..680606e 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -129,14 +129,16 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
+ 	rcar_du_crtc_write(rcrtc, DEWR,  mode->hdisplay);
+ }
+ 
+-void rcar_du_crtc_route_output(struct drm_crtc *crtc, unsigned int output)
++void rcar_du_crtc_route_output(struct drm_crtc *crtc,
++			       enum rcar_du_output output)
+ {
+ 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
++	struct rcar_du_device *rcdu = rcrtc->group->dev;
+ 
+ 	/* Store the route from the CRTC output to the DU output. The DU will be
+ 	 * configured when starting the CRTC.
+ 	 */
+-	rcrtc->outputs |= 1 << output;
++	rcrtc->outputs |= BIT(output);
+ }
+ 
+ void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+index 542a7fe..39a983d 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+@@ -15,6 +15,7 @@
+ #define __RCAR_DU_CRTC_H__
+ 
+ #include <linux/mutex.h>
++#include <linux/platform_data/rcar-du.h>
+ 
+ #include <drm/drmP.h>
+ #include <drm/drm_crtc.h>
+@@ -45,7 +46,8 @@ void rcar_du_crtc_cancel_page_flip(struct rcar_du_crtc *rcrtc,
+ void rcar_du_crtc_suspend(struct rcar_du_crtc *rcrtc);
+ void rcar_du_crtc_resume(struct rcar_du_crtc *rcrtc);
+ 
+-void rcar_du_crtc_route_output(struct drm_crtc *crtc, unsigned int output);
++void rcar_du_crtc_route_output(struct drm_crtc *crtc,
++			       enum rcar_du_output output);
+ void rcar_du_crtc_update_planes(struct drm_crtc *crtc);
+ 
+ #endif /* __RCAR_DU_CRTC_H__ */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index dd1950d..28654e7 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -214,12 +214,42 @@ static int rcar_du_remove(struct platform_device *pdev)
+ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
+ 	.features = 0,
+ 	.num_crtcs = 2,
++	.routes = {
++		/* R8A7779 has two RGB outputs and one (currently unsupported)
++		 * TCON output.
++		 */
++		[RCAR_DU_OUTPUT_DPAD0] = {
++			.possible_crtcs = BIT(0),
++			.encoder_type = DRM_MODE_ENCODER_NONE,
++		},
++		[RCAR_DU_OUTPUT_DPAD1] = {
++			.possible_crtcs = BIT(1) | BIT(0),
++			.encoder_type = DRM_MODE_ENCODER_NONE,
++		},
++	},
+ };
+ 
+ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+ 	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B
+ 		  | RCAR_DU_FEATURE_DEFR8,
+ 	.num_crtcs = 3,
++	.routes = {
++		/* R8A7790 has one RGB output, two LVDS outputs and one
++		 * (currently unsupported) TCON output.
++		 */
++		[RCAR_DU_OUTPUT_DPAD0] = {
++			.possible_crtcs = BIT(2) | BIT(1) | BIT(0),
++			.encoder_type = DRM_MODE_ENCODER_NONE,
++		},
++		[RCAR_DU_OUTPUT_LVDS0] = {
++			.possible_crtcs = BIT(0),
++			.encoder_type = DRM_MODE_ENCODER_LVDS,
++		},
++		[RCAR_DU_OUTPUT_LVDS1] = {
++			.possible_crtcs = BIT(2) | BIT(1),
++			.encoder_type = DRM_MODE_ENCODER_LVDS,
++		},
++	},
+ };
+ 
+ static const struct platform_device_id rcar_du_id_table[] = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 70c335f..d5243f4 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -30,13 +30,29 @@ struct rcar_du_device;
+ #define RCAR_DU_FEATURE_DEFR8		(1 << 2)	/* Has DEFR8 register */
+ 
+ /*
++ * struct rcar_du_output_routing - Output routing specification
++ * @possible_crtcs: bitmask of possible CRTCs for the output
++ * @encoder_type: DRM type of the internal encoder associated with the output
++ *
++ * The DU has 5 possible outputs (DPAD0/1, LVDS0/1, TCON). Output routing data
++ * specify the valid SoC outputs, which CRTCs can drive the output, and the type
++ * of in-SoC encoder for the output.
++ */
++struct rcar_du_output_routing {
++	unsigned int possible_crtcs;
++	unsigned int encoder_type;
++};
++
++/*
+  * struct rcar_du_device_info - DU model-specific information
+  * @features: device features (RCAR_DU_FEATURE_*)
+  * @num_crtcs: total number of CRTCs
++ * @routes: array of CRTC to output routes, indexed by output (RCAR_DU_OUTPUT_*)
+  */
+ struct rcar_du_device_info {
+ 	unsigned int features;
+ 	unsigned int num_crtcs;
++	struct rcar_du_output_routing routes[RCAR_DU_OUTPUT_MAX];
+ };
+ 
+ struct rcar_du_device {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+index 0d0375c..2aac28d 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+@@ -115,10 +115,12 @@ static const struct drm_encoder_funcs encoder_funcs = {
+ };
+ 
+ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+-			 enum rcar_du_encoder_type type, unsigned int output,
++			 enum rcar_du_encoder_type type,
++			 enum rcar_du_output output,
+ 			 const struct rcar_du_encoder_data *data)
+ {
+ 	struct rcar_du_encoder *renc;
++	unsigned int encoder_type;
+ 	int ret;
+ 
+ 	renc = devm_kzalloc(rcdu->dev, sizeof(*renc), GFP_KERNEL);
+@@ -127,19 +129,33 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 
+ 	renc->output = output;
+ 
++	switch (type) {
++	case RCAR_DU_ENCODER_VGA:
++		encoder_type = DRM_MODE_ENCODER_DAC;
++		break;
++	case RCAR_DU_ENCODER_LVDS:
++		encoder_type = DRM_MODE_ENCODER_LVDS;
++		break;
++	case RCAR_DU_ENCODER_NONE:
++	default:
++		/* No external encoder, use the internal encoder type. */
++		encoder_type = rcdu->info->routes[output].encoder_type;
++		break;
++	}
++
+ 	ret = drm_encoder_init(rcdu->ddev, &renc->encoder, &encoder_funcs,
+-			       type);
++			       encoder_type);
+ 	if (ret < 0)
+ 		return ret;
+ 
+ 	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
+ 
+-	switch (type) {
+-	case RCAR_DU_ENCODER_LVDS:
++	switch (encoder_type) {
++	case DRM_MODE_ENCODER_LVDS:
+ 		return rcar_du_lvds_connector_init(rcdu, renc,
+ 						   &data->connector.lvds.panel);
+ 
+-	case RCAR_DU_ENCODER_VGA:
++	case DRM_MODE_ENCODER_DAC:
+ 		return rcar_du_vga_connector_init(rcdu, renc);
+ 
+ 	default:
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+index 08cde12..2310416 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+@@ -22,7 +22,7 @@ struct rcar_du_device;
+ 
+ struct rcar_du_encoder {
+ 	struct drm_encoder encoder;
+-	unsigned int output;
++	enum rcar_du_output output;
+ };
+ 
+ #define to_rcar_encoder(e) \
+@@ -40,7 +40,8 @@ struct drm_encoder *
+ rcar_du_connector_best_encoder(struct drm_connector *connector);
+ 
+ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+-			 enum rcar_du_encoder_type type, unsigned int output,
++			 enum rcar_du_encoder_type type,
++			 enum rcar_du_output output,
+ 			 const struct rcar_du_encoder_data *data);
+ 
+ #endif /* __RCAR_DU_ENCODER_H__ */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index f3ba0ca..9df6fb6 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -135,11 +135,11 @@ void rcar_du_group_set_routing(struct rcar_du_group *rgrp)
+ 
+ 	dorcr &= ~(DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_MASK);
+ 
+-	/* Set the DU1 pins sources. Select CRTC 0 if explicitly requested and
+-	 * CRTC 1 in all other cases to avoid cloning CRTC 0 to DU0 and DU1 by
+-	 * default.
++	/* Set the DPAD1 pins sources. Select CRTC 0 if explicitly requested and
++	 * CRTC 1 in all other cases to avoid cloning CRTC 0 to DPAD0 and DPAD1
++	 * by default.
+ 	 */
+-	if (crtc0->outputs & (1 << 1))
++	if (crtc0->outputs & BIT(RCAR_DU_OUTPUT_DPAD1))
+ 		dorcr |= DORCR_PG2D_DS1;
+ 	else
+ 		dorcr |= DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_DS2;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 816963c..2b92e68 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -220,11 +220,14 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 	for (i = 0; i < rcdu->pdata->num_encoders; ++i) {
+ 		const struct rcar_du_encoder_data *pdata  			&rcdu->pdata->encoders[i];
++		const struct rcar_du_output_routing *route +			&rcdu->info->routes[pdata->output];
+ 
+ 		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
+ 			continue;
+ 
+-		if (pdata->output >= rcdu->num_crtcs) {
++		if (pdata->output >= RCAR_DU_OUTPUT_MAX ||
++		    route->possible_crtcs = 0) {
+ 			dev_warn(rcdu->dev,
+ 				 "encoder %u references unexisting output %u, skipping\n",
+ 				 i, pdata->output);
+@@ -234,15 +237,17 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 		rcar_du_encoder_init(rcdu, pdata->type, pdata->output, pdata);
+ 	}
+ 
+-	/* Set the possible CRTCs and possible clones. All encoders can be
+-	 * driven by the CRTC associated with the output they're connected to,
+-	 * as well as by CRTC 0.
++	/* Set the possible CRTCs and possible clones. There's always at least
++	 * one way for all encoders to clone each other, set all bits in the
++	 * possible clones field.
+ 	 */
+ 	list_for_each_entry(encoder, &dev->mode_config.encoder_list, head) {
+ 		struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
++		const struct rcar_du_output_routing *route +			&rcdu->info->routes[renc->output];
+ 
+-		encoder->possible_crtcs = (1 << 0) | (1 << renc->output);
+-		encoder->possible_clones = 1 << 0;
++		encoder->possible_crtcs = route->possible_crtcs;
++		encoder->possible_clones = (1 << rcdu->pdata->num_encoders) - 1;
+ 	}
+ 
+ 	/* Now that the CRTCs have been initialized register the planes. */
+diff --git a/include/linux/platform_data/rcar-du.h b/include/linux/platform_data/rcar-du.h
+index 64cd863..1a2e990 100644
+--- a/include/linux/platform_data/rcar-du.h
++++ b/include/linux/platform_data/rcar-du.h
+@@ -16,8 +16,18 @@
+ 
+ #include <drm/drm_mode.h>
+ 
++enum rcar_du_output {
++	RCAR_DU_OUTPUT_DPAD0,
++	RCAR_DU_OUTPUT_DPAD1,
++	RCAR_DU_OUTPUT_LVDS0,
++	RCAR_DU_OUTPUT_LVDS1,
++	RCAR_DU_OUTPUT_TCON,
++	RCAR_DU_OUTPUT_MAX,
++};
++
+ enum rcar_du_encoder_type {
+ 	RCAR_DU_ENCODER_UNUSED = 0,
++	RCAR_DU_ENCODER_NONE,
+ 	RCAR_DU_ENCODER_VGA,
+ 	RCAR_DU_ENCODER_LVDS,
+ };
+@@ -39,13 +49,16 @@ struct rcar_du_connector_vga_data {
+ /*
+  * struct rcar_du_encoder_data - Encoder platform data
+  * @type: the encoder type (RCAR_DU_ENCODER_*)
+- * @output: the DU output the connector is connected to
++ * @output: the DU output the connector is connected to (RCAR_DU_OUTPUT_*)
+  * @connector.lvds: platform data for LVDS connectors
+  * @connector.vga: platform data for VGA connectors
++ *
++ * Encoder platform data describes an on-board encoder, its associated DU SoC
++ * output, and the connector.
+  */
+ struct rcar_du_encoder_data {
+ 	enum rcar_du_encoder_type type;
+-	unsigned int output;
++	enum rcar_du_output output;
+ 
+ 	union {
+ 		struct rcar_du_connector_lvds_data lvds;
+-- 
+1.8.1.5
+
