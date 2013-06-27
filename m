@@ -1,64 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:59 +0000
-Subject: [PATCH 128/130] ARM: shmobile: bockw: add pinctrl support
-Message-Id: <1370420821-28420-129-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:16 +0000
+Subject: [PATCH 06/24] drm/rcar-du: Fix buffer pitch alignment
+Message-Id: <1372326574-4315-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The DU requires a 16 pixels pitch alignement. Make sure dumb buffers are
+allocated with the correct pitch, and validate the pitch when creating
+frame buffers.
 
-SCIF0 support as 1st step
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c |  2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 19 ++++++++++++++++++-
+ drivers/gpu/drm/rcar-du/rcar_du_kms.h |  3 +++
+ 3 files changed, 22 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 38e5e50..dac4365 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 2a85056..bcda2e0 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -200,7 +200,7 @@ static struct drm_driver rcar_du_driver = {
+ 	.prime_fd_to_handle	= drm_gem_prime_fd_to_handle,
+ 	.gem_prime_import	= drm_gem_cma_dmabuf_import,
+ 	.gem_prime_export	= drm_gem_cma_dmabuf_export,
+-	.dumb_create		= drm_gem_cma_dumb_create,
++	.dumb_create		= rcar_du_dumb_create,
+ 	.dumb_map_offset	= drm_gem_cma_dumb_map_offset,
+ 	.dumb_destroy		= drm_gem_cma_dumb_destroy,
+ 	.fops			= &rcar_du_fops,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 06cacf6..d30c2e2 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -138,11 +138,25 @@ void rcar_du_encoder_mode_commit(struct drm_encoder *encoder)
+  * Frame buffer
   */
  
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/smsc911x.h>
- #include <mach/common.h>
-@@ -37,6 +38,14 @@ static struct resource smsc911x_resources[] = {
- 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
- };
- 
-+static const struct pinctrl_map bockw_pinctrl_map[] = {
-+	/* SCIF0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-+				  "scif0_data_a", "scif0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-+				  "scif0_ctrl", "scif0"),
-+};
++int rcar_du_dumb_create(struct drm_file *file, struct drm_device *dev,
++			struct drm_mode_create_dumb *args)
++{
++	unsigned int min_pitch = DIV_ROUND_UP(args->width * args->bpp, 8);
++	unsigned int align;
 +
- #define IRQ0MR	0x30
- static void __init bockw_init(void)
++	/* The pitch must be aligned to a 16 pixels boundary. */
++	align = 16 * args->bpp / 8;
++	args->pitch = roundup(max(args->pitch, min_pitch), align);
++
++	return drm_gem_cma_dumb_create(file, dev, args);
++}
++
+ static struct drm_framebuffer *
+ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
+ 		  struct drm_mode_fb_cmd2 *mode_cmd)
  {
-@@ -46,6 +55,10 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
+ 	const struct rcar_du_format_info *format;
++	unsigned int align;
  
-+	pinctrl_register_mappings(bockw_pinctrl_map,
-+				  ARRAY_SIZE(bockw_pinctrl_map));
-+	r8a7778_pinmux_init();
+ 	format = rcar_du_format_info(mode_cmd->pixel_format);
+ 	if (format = NULL) {
+@@ -151,7 +165,10 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	if (mode_cmd->pitches[0] & 15 || mode_cmd->pitches[0] >= 8192) {
++	align = 16 * format->bpp / 8;
 +
- 	fpga = ioremap_nocache(0x18200000, SZ_1M);
- 	if (fpga) {
- 		/*
++	if (mode_cmd->pitches[0] & (align - 1) ||
++	    mode_cmd->pitches[0] >= 8192) {
+ 		dev_dbg(dev->dev, "invalid pitch value %u\n",
+ 			mode_cmd->pitches[0]);
+ 		return ERR_PTR(-EINVAL);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.h b/drivers/gpu/drm/rcar-du/rcar_du_kms.h
+index e4d8db0..dba4722 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.h
+@@ -56,4 +56,7 @@ void rcar_du_encoder_mode_commit(struct drm_encoder *encoder);
+ 
+ int rcar_du_modeset_init(struct rcar_du_device *rcdu);
+ 
++int rcar_du_dumb_create(struct drm_file *file, struct drm_device *dev,
++			struct drm_mode_create_dumb *args);
++
+ #endif /* __RCAR_DU_KMS_H__ */
 -- 
-1.8.2.1
+1.8.1.5
 
