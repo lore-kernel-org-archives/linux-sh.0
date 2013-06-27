@@ -1,86 +1,52 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 08 Jun 2013 20:38:41 +0000
-Subject: [PATCH v9 resend 3/3] ARM: shmobile: BOCK-W: add USB support
-Message-Id: <201306090038.42018.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:25 +0000
+Subject: [PATCH 15/24] drm/rcar-du: Use dynamic number of CRTCs instead of CRTCs array size
+Message-Id: <1372326574-4315-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306090032.35128.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306090032.35128.sergei.shtylyov@cogentembedded.com>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Register the USB PHY device from bockw_init(), passing the platform  data to it.
-Set machine's init_late() method to r8a7778_init_late() in order for [EO]HCI to
-get registered too...
+The rcar_du_device structure contains a field that stores the number of
+CRTCs, use it instead of the CRTCs array size. This prepares the driver
+to support a variable number of CRTCs.
 
-Don't forget to add USB PENC0/1 pins to bockw_pinctrl_map[].
-
-The patch has been tested on the BOCK-W board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes since version 8:
-- resolved reject, refreshed the patch.
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c | 2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-Changes since version 6:
-- added USB PENC0/1 pins to bockw_pinctrl_map[].
-
-Changes since version 4:
-- annotated 'usb_phy_platform_data' as '__initdata' since it's kmemdup()'ed
-  while registering the platform device anyway;
-- refreshed the patch.
-
-Changes since version 3:
-- removed initializer for 'usb_phy_platform_data' letting it be set to all 0s;
-- refreshed the patch.
-
-Changes since version 2:
-- refreshed the patch.
-
-Changes since the original posting:
-- removed initializer for no longer existing field in 'usb_phy_platform_data',
-  modified the comment to the 'ferrite_bead' field initializer.
-
- arch/arm/mach-shmobile/board-bockw.c |    8 ++++++++
- 1 file changed, 8 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -63,6 +63,8 @@ static struct sh_mobile_sdhi_info sdhi0_
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- };
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 5e4168d..fe61962 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -105,7 +105,7 @@ static void rcar_du_preclose(struct drm_device *dev, struct drm_file *file)
+ 	struct rcar_du_device *rcdu = dev->dev_private;
+ 	unsigned int i;
  
-+static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-@@ -72,6 +74,10 @@ static const struct pinctrl_map bockw_pi
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
- 				  "sdhi0", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
-+				  "usb0", "usb0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
-+				  "usb1", "usb1"),
- };
+-	for (i = 0; i < ARRAY_SIZE(rcdu->crtcs); ++i)
++	for (i = 0; i < rcdu->num_crtcs; ++i)
+ 		rcar_du_crtc_cancel_page_flip(&rcdu->crtcs[i], file);
+ }
  
- #define FPGA	0x18200000
-@@ -85,6 +91,7 @@ static void __init bockw_init(void)
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+	r8a7778_add_usb_phy_device(&usb_phy_platform_data);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index c32e0f9..845bcb3 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -197,7 +197,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
+ 			continue;
  
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
-@@ -140,4 +147,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_machine	= bockw_init,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
-+	.init_late      = r8a7778_init_late,
- MACHINE_END
+-		if (pdata->output >= ARRAY_SIZE(rcdu->crtcs)) {
++		if (pdata->output >= rcdu->num_crtcs) {
+ 			dev_warn(rcdu->dev,
+ 				 "encoder %u references unexisting output %u, skipping\n",
+ 				 i, pdata->output);
+-- 
+1.8.1.5
 
