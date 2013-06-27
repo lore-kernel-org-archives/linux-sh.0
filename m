@@ -1,72 +1,114 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Jun 2013 05:47:44 +0000
-Subject: Re: [PATCH v3 3/5] ARM: mach-shmobile: kota2: Use leds-pwm + pwm-rmob
-Message-Id: <20130612054741.GB20803@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 27 Jun 2013 09:47:57 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a73a4: add I2C controller DT nodes
+Message-Id: <1372326479-15028-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370958344-19470-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1370958344-19470-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CANqRtoR=anJ+2RWWxSw-YwiczfTD1jwz=odX8n1U1FrJtYT_zA@mail.gmail.com>
-In-Reply-To: <CANqRtoR=anJ+2RWWxSw-YwiczfTD1jwz=odX8n1U1FrJtYT_zA@mail.gmail.com>
+References: <1372326479-15028-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1372326479-15028-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, linux-leds@vger.kernel.org, Thierry Reding <thierry.reding@avionic-design.de>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 12, 2013 at 02:33:16PM +0900, Magnus Damm wrote:
-> Hi Laurent,
-> 
-> [Added Simon to CC]
-> 
-> Thanks for your work on converting the TPU driver. I found one issue, see below:
-> 
-> On Tue, Jun 11, 2013 at 10:45 PM, Laurent Pinchart
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > Instead of using the LED-specific TPU PWM driver, switch to the generic
-> > TPU PWM driver with leds-pwm.
-> >
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/mach-shmobile/board-kota2.c  | 183 ++++++++++++++++++++--------------
-> >  arch/arm/mach-shmobile/clock-sh73a0.c |   8 +-
-> >  2 files changed, 114 insertions(+), 77 deletions(-)
-> >
-> 
-> [snip]
-> 
-> > diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-> > index d9fd033..6c04348 100644
-> > --- a/arch/arm/mach-shmobile/clock-sh73a0.c
-> > +++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-> > @@ -669,10 +669,10 @@ static struct clk_lookup lookups[] = {
-> >         CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
-> >         CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
-> >         CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
-> > -       CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
-> > -       CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
-> > -       CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
-> > -       CLKDEV_DEV_ID("leds-renesas-tpu.41", &mstp_clks[MSTP300]), /* TPU4 */
-> > +       CLKDEV_DEV_ID("rmob_tpu_pwm.1", &mstp_clks[MSTP303]), /* TPU1 */
-> > +       CLKDEV_DEV_ID("rmob_tpu_pwm.2", &mstp_clks[MSTP302]), /* TPU2 */
-> > +       CLKDEV_DEV_ID("rmob_tpu_pwm.3", &mstp_clks[MSTP301]), /* TPU3 */
-> > +       CLKDEV_DEV_ID("rmob_tpu_pwm.4", &mstp_clks[MSTP300]), /* TPU4 */
-> >         CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
-> >         CLKDEV_DEV_ID("e6826000.i2c", &mstp_clks[MSTP411]), /* I2C3 */
-> >         CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
-> > --
-> > 1.8.1.5
-> >
-> 
-> I believe you are using the old "rmob" device name in the hunk above.
-> Apart from that it looks fine.
-> 
-> I left my Kota2 board at Simon's place some time ago so I'm afraind
-> that I can't test. Given the complexity with multiple subsystems and
-> also recent name changes, perhaps testing this would make sense?
-> 
-> Simon, can you please test this series on Kota2?
+Add Device Tree nodes for the 9 I2C controllers on r8a73a4, compatible with
+the i2c-sh_mobile.c driver.
 
-Sure.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi |   81 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 81 insertions(+), 0 deletions(-)
 
-Laurent could you re-post the series with the "rmob" problem resolved?
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 4ff2019..4e1ddf0 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -85,4 +85,85 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 69 4>;
+ 	};
++
++	i2c0: i2c@e6500000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6500000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 174 0x4>;
++	};
++
++	i2c1: i2c@e6510000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6510000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 175 0x4>;
++	};
++
++	i2c2: i2c@e6520000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6520000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 176 0x4>;
++	};
++
++	i2c3: i2c@e6530000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6530000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 177 0x4>;
++	};
++
++	i2c4: i2c@e6540000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6540000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 178 0x4>;
++	};
++
++	i2c5: i2c@e60b0000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe60b0000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 179 0x4>;
++	};
++
++	i2c6: i2c@e6550000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6550000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 184 0x4>;
++	};
++
++	i2c7: i2c@e6560000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6560000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 185 0x4>;
++	};
++
++	i2c8: i2c@e6570000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6570000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 173 0x4>;
++	};
+ };
+-- 
+1.7.2.5
+
