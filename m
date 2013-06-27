@@ -1,57 +1,67 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Jun 2013 21:16:47 +0000
-Subject: [PATCH v4 6/8] sh_eth: remove #ifdef around sh_eth_select_mii()
-Message-Id: <201306060116.48096.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 27 Jun 2013 08:09:01 +0000
+Subject: [PATCH v2] ARM: shmobile: sh73a0 pinmux platform device cleanup
+Message-Id: <1372320541-32698-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306060106.51082.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-We can simply remove #ifdef'fery around sh_eth_select_mii(). We have to annotate
-it with '__maybe_unused' then.
+Use DEFINE_RES_MEM() and platform_device_register_simple()
+to save a couple of lines of code.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-[Sergei: added the changelog, reworded the subject, changing the prefix.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+[ remove const from resource pfc_resources to avoid section miss-match
+  reported by 4.4.5 ]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 4:
-- refreshed the patch;
-- added the changelog;
-- reworded the subject, changing the prefix.
+ arch/arm/mach-shmobile/setup-sh73a0.c | 25 ++++++-------------------
+ 1 file changed, 6 insertions(+), 19 deletions(-)
 
-Changes in version 3:
-- annotated sh_eth_select_mii() with '__maybe_unused'.
-
- drivers/net/ethernet/renesas/sh_eth.c |    6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
-
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -313,10 +313,7 @@ static const u16 sh_eth_offset_fast_sh3_
- 	[TSU_ADRL31]	= 0x01fc,
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 96e7ca1..79a6040 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -61,29 +61,16 @@ void __init sh73a0_map_io(void)
+ 	iotable_init(sh73a0_io_desc, ARRAY_SIZE(sh73a0_io_desc));
+ }
+ 
+-static struct resource sh73a0_pfc_resources[] = {
+-	[0] = {
+-		.start	= 0xe6050000,
+-		.end	= 0xe6057fff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 0xe605801c,
+-		.end	= 0xe6058027,
+-		.flags	= IORESOURCE_MEM,
+-	}
+-};
+-
+-static struct platform_device sh73a0_pfc_device = {
+-	.name		= "pfc-sh73a0",
+-	.id		= -1,
+-	.resource	= sh73a0_pfc_resources,
+-	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
++/* PFC */
++static struct resource pfc_resources[] __initdata = {
++	DEFINE_RES_MEM(0xe6050000, 0x8000),
++	DEFINE_RES_MEM(0xe605801c, 0x000c),
  };
  
--#if defined(CONFIG_CPU_SUBTYPE_SH7734) || \
--	defined(CONFIG_CPU_SUBTYPE_SH7763) || \
--	defined(CONFIG_ARCH_R8A7740)
--static void sh_eth_select_mii(struct net_device *ndev)
-+static void __maybe_unused sh_eth_select_mii(struct net_device *ndev)
+ void __init sh73a0_pinmux_init(void)
  {
- 	u32 value = 0x0;
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
-@@ -339,7 +336,6 @@ static void sh_eth_select_mii(struct net
- 
- 	sh_eth_write(ndev, value, RMII_MII);
+-	platform_device_register(&sh73a0_pfc_device);
++	platform_device_register_simple("pfc-sh73a0", -1, pfc_resources,
++					ARRAY_SIZE(pfc_resources));
  }
--#endif
  
- static void __maybe_unused sh_eth_set_duplex(struct net_device *ndev)
- {
+ static struct plat_sci_port scif0_platform_data = {
+-- 
+1.8.2.1
+
