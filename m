@@ -1,16 +1,25 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 27 Jun 2013 04:45:16 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 27 Jun 2013 05:29:20 +0000
 Subject: Re: [PATCH 0/4] Add DVFS support on APE6EVM
-Message-Id: <20130627044516.GA28229@verge.net.au>
+Message-Id: <874nck2kb7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1371798638-10530-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-2022-jp"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jun 21, 2013 at 09:10:34AM +0200, Guennadi Liakhovetski wrote:
+
+Hi
+
+I have no objection.
+For all patches
+
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Guennadi wrote:
+> 
 > Having added CPUFreq support to the Cortex A15 cores on APE6 (r8a73a4) and 
 > DT support to the max8973 regulator driver it is now possible to implement 
 > CA15 CPUFreq support on APE6EVM, using a max8972 PMU to adjust SoC's DVFS
@@ -29,7 +38,39 @@ On Fri, Jun 21, 2013 at 09:10:34AM +0200, Guennadi Liakhovetski wrote:
 > http://www.mail-archive.com/linux-kernel@vger.kernel.org/msg456102.html
 > 
 > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> 
+> Guennadi Liakhovetski (4):
+>   ARM: shmobile: r8a73a4: safeguard against wrong clk_set_rate() uses
+>   ARM: shmobile: r8a73a4: add I2C DT nodes and required clocks
+>   ARM: shmobile: ape6evm: add CPUFreq support
+>   ARM: shmobile: r8a73a4: add Z2 clock support
+> 
+>  arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   26 ++++++++++
+>  arch/arm/boot/dts/r8a73a4.dtsi         |   81 ++++++++++++++++++++++++++++++++
+>  arch/arm/mach-shmobile/clock-r8a73a4.c |   56 +++++++++++++++++++++-
+>  3 files changed, 160 insertions(+), 3 deletions(-)
+> 
+> -- 
+> 1.7.2.5
+> 
+> Thanks
+> Guennadi
+> ---
+> Guennadi Liakhovetski, Ph.D.
+> Freelance Open-Source Software Developer
+> http://www.open-technology.de/
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Magnus, Morimoto-san,
+---
+Kuninori Morimoto
 
-could you take some time to review this?
+人生とは自転車のようなものだ
+倒れないようにするには走らなければならない。
+                  −　アルバート・アインシュタイン
+
+Best regards
+---
+Kuninori Morimoto
