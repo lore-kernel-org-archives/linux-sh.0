@@ -1,111 +1,312 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:26:18 +0000
-Subject: [PATCH 087/130] ARM: shmobile: r8a7740: Remove SCIF function GPIOs
-Message-Id: <1370420821-28420-88-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:30 +0000
+Subject: [PATCH 20/24] drm/rcar-du: Add support for multiple groups
+Message-Id: <1372326574-4315-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+The R8A7790 DU has 3 CRTCs, split in two groups. Support them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 74 ---------------------------
- 1 file changed, 74 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 25 ++++++++++---------
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c   |  2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h   |  6 +++--
+ drivers/gpu/drm/rcar-du/rcar_du_group.c |  4 +--
+ drivers/gpu/drm/rcar-du/rcar_du_group.h |  3 +++
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 43 ++++++++++++++++++++++++---------
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c |  6 +++--
+ drivers/gpu/drm/rcar-du/rcar_du_regs.h  |  4 ++-
+ 8 files changed, 63 insertions(+), 30 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index abdc4d4..bb207d8 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -165,80 +165,6 @@ enum {
- 	GPIO_FN_FMSOOBT,	GPIO_FN_FMSOSLD,
- 	GPIO_FN_FMSOCK,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 6a2b959..a340224 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -91,7 +91,6 @@ static void rcar_du_crtc_put(struct rcar_du_crtc *rcrtc)
+ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
+ {
+ 	const struct drm_display_mode *mode = &rcrtc->crtc.mode;
+-	struct rcar_du_device *rcdu = rcrtc->group->dev;
+ 	unsigned long clk;
+ 	u32 value;
+ 	u32 div;
+@@ -101,9 +100,9 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
+ 	div = DIV_ROUND_CLOSEST(clk, mode->clock * 1000);
+ 	div = clamp(div, 1U, 64U) - 1;
  
--	/* SCIFA0 */
--	GPIO_FN_SCIFA0_SCK,	GPIO_FN_SCIFA0_CTS,
--	GPIO_FN_SCIFA0_RTS,	GPIO_FN_SCIFA0_RXD,
--	GPIO_FN_SCIFA0_TXD,
--
--	/* SCIFA1 */
--	GPIO_FN_SCIFA1_CTS,	GPIO_FN_SCIFA1_SCK,
--	GPIO_FN_SCIFA1_RXD,	GPIO_FN_SCIFA1_TXD,
--	GPIO_FN_SCIFA1_RTS,
--
--	/* SCIFA2 */
--	GPIO_FN_SCIFA2_SCK_PORT22, /* SCIFA2_SCK Port 22/199 */
--	GPIO_FN_SCIFA2_SCK_PORT199,
--	GPIO_FN_SCIFA2_RXD,	GPIO_FN_SCIFA2_TXD,
--	GPIO_FN_SCIFA2_CTS,	GPIO_FN_SCIFA2_RTS,
--
--	/* SCIFA3 */
--	GPIO_FN_SCIFA3_RTS_PORT105, /* MSEL5CR_8_0 */
--	GPIO_FN_SCIFA3_SCK_PORT116,
--	GPIO_FN_SCIFA3_CTS_PORT117,
--	GPIO_FN_SCIFA3_RXD_PORT174,
--	GPIO_FN_SCIFA3_TXD_PORT175,
--
--	GPIO_FN_SCIFA3_RTS_PORT161, /* MSEL5CR_8_1 */
--	GPIO_FN_SCIFA3_SCK_PORT158,
--	GPIO_FN_SCIFA3_CTS_PORT162,
--	GPIO_FN_SCIFA3_RXD_PORT159,
--	GPIO_FN_SCIFA3_TXD_PORT160,
--
--	/* SCIFA4 */
--	GPIO_FN_SCIFA4_RXD_PORT12, /* MSEL5CR[12:11] = 00 */
--	GPIO_FN_SCIFA4_TXD_PORT13,
--
--	GPIO_FN_SCIFA4_RXD_PORT204, /* MSEL5CR[12:11] = 01 */
--	GPIO_FN_SCIFA4_TXD_PORT203,
--
--	GPIO_FN_SCIFA4_RXD_PORT94, /* MSEL5CR[12:11] = 10 */
--	GPIO_FN_SCIFA4_TXD_PORT93,
--
--	GPIO_FN_SCIFA4_SCK_PORT21, /* SCIFA4_SCK Port 21/205 */
--	GPIO_FN_SCIFA4_SCK_PORT205,
--
--	/* SCIFA5 */
--	GPIO_FN_SCIFA5_TXD_PORT20, /* MSEL5CR[15:14] = 00 */
--	GPIO_FN_SCIFA5_RXD_PORT10,
--
--	GPIO_FN_SCIFA5_RXD_PORT207, /* MSEL5CR[15:14] = 01 */
--	GPIO_FN_SCIFA5_TXD_PORT208,
--
--	GPIO_FN_SCIFA5_TXD_PORT91, /* MSEL5CR[15:14] = 10 */
--	GPIO_FN_SCIFA5_RXD_PORT92,
--
--	GPIO_FN_SCIFA5_SCK_PORT23, /* SCIFA5_SCK Port 23/206 */
--	GPIO_FN_SCIFA5_SCK_PORT206,
--
--	/* SCIFA6 */
--	GPIO_FN_SCIFA6_SCK,	GPIO_FN_SCIFA6_RXD,	GPIO_FN_SCIFA6_TXD,
--
--	/* SCIFA7 */
--	GPIO_FN_SCIFA7_TXD,	GPIO_FN_SCIFA7_RXD,
--
--	/* SCIFAB */
--	GPIO_FN_SCIFB_SCK_PORT190, /* MSEL5CR_17_0 */
--	GPIO_FN_SCIFB_RXD_PORT191,
--	GPIO_FN_SCIFB_TXD_PORT192,
--	GPIO_FN_SCIFB_RTS_PORT186,
--	GPIO_FN_SCIFB_CTS_PORT187,
--
--	GPIO_FN_SCIFB_SCK_PORT2, /* MSEL5CR_17_1 */
--	GPIO_FN_SCIFB_RXD_PORT3,
--	GPIO_FN_SCIFB_TXD_PORT4,
--	GPIO_FN_SCIFB_RTS_PORT172,
--	GPIO_FN_SCIFB_CTS_PORT173,
--
- 	/* LCD0 */
- 	GPIO_FN_LCDC0_SELECT,
+-	rcar_du_write(rcdu, rcrtc->index ? ESCR2 : ESCR,
+-		      ESCR_DCLKSEL_CLKS | div);
+-	rcar_du_write(rcdu, rcrtc->index ? OTAR2 : OTAR, 0);
++	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? ESCR2 : ESCR,
++			    ESCR_DCLKSEL_CLKS | div);
++	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? OTAR2 : OTAR, 0);
  
+ 	/* Signal polarities */
+ 	value = ((mode->flags & DRM_MODE_FLAG_PVSYNC) ? 0 : DSMR_VSL)
+@@ -143,7 +142,6 @@ void rcar_du_crtc_route_output(struct drm_crtc *crtc, unsigned int output)
+ void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
+ {
+ 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
+-	struct rcar_du_device *rcdu = rcrtc->group->dev;
+ 	struct rcar_du_plane *planes[RCAR_DU_NUM_HW_PLANES];
+ 	unsigned int num_planes = 0;
+ 	unsigned int prio = 0;
+@@ -189,8 +187,8 @@ void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
+ 	/* Select display timing and dot clock generator 2 for planes associated
+ 	 * with superposition controller 2.
+ 	 */
+-	if (rcrtc->index) {
+-		u32 value = rcar_du_read(rcdu, DPTSR);
++	if (rcrtc->index % 2) {
++		u32 value = rcar_du_group_read(rcrtc->group, DPTSR);
+ 
+ 		/* The DPTSR register is updated when the display controller is
+ 		 * stopped. We thus need to restart the DU. Once again, sorry
+@@ -200,13 +198,14 @@ void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
+ 		 * occur only if we need to break the pre-association.
+ 		 */
+ 		if (value != dptsr) {
+-			rcar_du_write(rcdu, DPTSR, dptsr);
++			rcar_du_group_write(rcrtc->group, DPTSR, dptsr);
+ 			if (rcrtc->group->used_crtcs)
+ 				rcar_du_group_restart(rcrtc->group);
+ 		}
+ 	}
+ 
+-	rcar_du_write(rcdu, rcrtc->index ? DS2PR : DS1PR, dspr);
++	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? DS2PR : DS1PR,
++			    dspr);
+ }
+ 
+ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
+@@ -528,6 +527,10 @@ static const struct drm_crtc_funcs crtc_funcs = {
+ 
+ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+ {
++	static const unsigned int mmio_offsets[] = {
++		DU0_REG_OFFSET, DU1_REG_OFFSET, DU2_REG_OFFSET
++	};
++
+ 	struct rcar_du_device *rcdu = rgrp->dev;
+ 	struct platform_device *pdev = to_platform_device(rcdu->dev);
+ 	struct rcar_du_crtc *rcrtc = &rcdu->crtcs[index];
+@@ -553,10 +556,10 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+ 	}
+ 
+ 	rcrtc->group = rgrp;
+-	rcrtc->mmio_offset = index ? DISP2_REG_OFFSET : 0;
++	rcrtc->mmio_offset = mmio_offsets[index];
+ 	rcrtc->index = index;
+ 	rcrtc->dpms = DRM_MODE_DPMS_OFF;
+-	rcrtc->plane = &rgrp->planes.planes[index];
++	rcrtc->plane = &rgrp->planes.planes[index % 2];
+ 
+ 	rcrtc->plane->crtc = crtc;
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index fe93670..98e35aa 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -213,10 +213,12 @@ static int rcar_du_remove(struct platform_device *pdev)
+ 
+ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
+ 	.features = 0,
++	.num_crtcs = 2,
+ };
+ 
+ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+ 	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B,
++	.num_crtcs = 3,
+ };
+ 
+ static const struct platform_device_id rcar_du_id_table[] = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 072e28e..160e5eb 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -31,9 +31,11 @@ struct rcar_du_device;
+ /*
+  * struct rcar_du_device_info - DU model-specific information
+  * @features: device features (RCAR_DU_FEATURE_*)
++ * @num_crtcs: total number of CRTCs
+  */
+ struct rcar_du_device_info {
+ 	unsigned int features;
++	unsigned int num_crtcs;
+ };
+ 
+ struct rcar_du_device {
+@@ -45,10 +47,10 @@ struct rcar_du_device {
+ 
+ 	struct drm_device *ddev;
+ 
+-	struct rcar_du_crtc crtcs[2];
++	struct rcar_du_crtc crtcs[3];
+ 	unsigned int num_crtcs;
+ 
+-	struct rcar_du_group group;
++	struct rcar_du_group groups[2];
+ };
+ 
+ static inline bool rcar_du_has(struct rcar_du_device *rcdu,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 7e75451..0eb106e 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -33,12 +33,12 @@
+ #include "rcar_du_group.h"
+ #include "rcar_du_regs.h"
+ 
+-static u32 rcar_du_group_read(struct rcar_du_group *rgrp, u32 reg)
++u32 rcar_du_group_read(struct rcar_du_group *rgrp, u32 reg)
+ {
+ 	return rcar_du_read(rgrp->dev, rgrp->mmio_offset + reg);
+ }
+ 
+-static void rcar_du_group_write(struct rcar_du_group *rgrp, u32 reg, u32 data)
++void rcar_du_group_write(struct rcar_du_group *rgrp, u32 reg, u32 data)
+ {
+ 	rcar_du_write(rgrp->dev, rgrp->mmio_offset + reg, data);
+ }
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+index 180c739..4487e83 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+@@ -38,6 +38,9 @@ struct rcar_du_group {
+ 	struct rcar_du_planes planes;
+ };
+ 
++u32 rcar_du_group_read(struct rcar_du_group *rgrp, u32 reg);
++void rcar_du_group_write(struct rcar_du_group *rgrp, u32 reg, u32 data);
++
+ int rcar_du_group_get(struct rcar_du_group *rgrp);
+ void rcar_du_group_put(struct rcar_du_group *rgrp);
+ void rcar_du_group_start_stop(struct rcar_du_group *rgrp, bool start);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 418d902..816963c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -172,8 +172,13 @@ static const struct drm_mode_config_funcs rcar_du_mode_config_funcs = {
+ 
+ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ {
++	static const unsigned int mmio_offsets[] = {
++		DU0_REG_OFFSET, DU2_REG_OFFSET
++	};
++
+ 	struct drm_device *dev = rcdu->ddev;
+ 	struct drm_encoder *encoder;
++	unsigned int num_groups;
+ 	unsigned int i;
+ 	int ret;
+ 
+@@ -185,22 +190,33 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 	rcdu->ddev->mode_config.max_height = 2047;
+ 	rcdu->ddev->mode_config.funcs = &rcar_du_mode_config_funcs;
+ 
+-	rcdu->group.dev = rcdu;
+-	rcdu->group.index = 0;
+-	rcdu->group.used_crtcs = 0;
++	rcdu->num_crtcs = rcdu->info->num_crtcs;
++
++	/* Initialize the groups. */
++	num_groups = DIV_ROUND_UP(rcdu->num_crtcs, 2);
++
++	for (i = 0; i < num_groups; ++i) {
++		struct rcar_du_group *rgrp = &rcdu->groups[i];
+ 
+-	ret = rcar_du_planes_init(&rcdu->group);
+-	if (ret < 0)
+-		return ret;
++		rgrp->dev = rcdu;
++		rgrp->mmio_offset = mmio_offsets[i];
++		rgrp->index = i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(rcdu->crtcs); ++i) {
+-		ret = rcar_du_crtc_create(&rcdu->group, i);
++		ret = rcar_du_planes_init(rgrp);
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+ 
+-	rcdu->num_crtcs = i;
++	/* Create the CRTCs. */
++	for (i = 0; i < rcdu->num_crtcs; ++i) {
++		struct rcar_du_group *rgrp = &rcdu->groups[i / 2];
++
++		ret = rcar_du_crtc_create(rgrp, i);
++		if (ret < 0)
++			return ret;
++	}
+ 
++	/* Initialize the encoders. */
+ 	for (i = 0; i < rcdu->pdata->num_encoders; ++i) {
+ 		const struct rcar_du_encoder_data *pdata  			&rcdu->pdata->encoders[i];
+@@ -229,9 +245,12 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 		encoder->possible_clones = 1 << 0;
+ 	}
+ 
+-	ret = rcar_du_planes_register(&rcdu->group);
+-	if (ret < 0)
+-		return ret;
++	/* Now that the CRTCs have been initialized register the planes. */
++	for (i = 0; i < num_groups; ++i) {
++		ret = rcar_du_planes_register(&rcdu->groups[i]);
++		if (ret < 0)
++			return ret;
++	}
+ 
+ 	drm_kms_helper_poll_init(rcdu->ddev);
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 1e9cf7c..5300064 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -480,9 +480,12 @@ int rcar_du_planes_register(struct rcar_du_group *rgrp)
+ {
+ 	struct rcar_du_planes *planes = &rgrp->planes;
+ 	struct rcar_du_device *rcdu = rgrp->dev;
++	unsigned int crtcs;
+ 	unsigned int i;
+ 	int ret;
+ 
++	crtcs = ((1 << rcdu->num_crtcs) - 1) & (3 << (2 * rgrp->index));
++
+ 	for (i = 0; i < RCAR_DU_NUM_KMS_PLANES; ++i) {
+ 		struct rcar_du_kms_plane *plane;
+ 
+@@ -493,8 +496,7 @@ int rcar_du_planes_register(struct rcar_du_group *rgrp)
+ 		plane->hwplane = &planes->planes[i + 2];
+ 		plane->hwplane->zpos = 1;
+ 
+-		ret = drm_plane_init(rcdu->ddev, &plane->plane,
+-				     (1 << rcdu->num_crtcs) - 1,
++		ret = drm_plane_init(rcdu->ddev, &plane->plane, crtcs,
+ 				     &rcar_du_plane_funcs, formats,
+ 				     ARRAY_SIZE(formats), false);
+ 		if (ret < 0)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+index f62a9f3..73f7347 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+@@ -13,7 +13,9 @@
+ #ifndef __RCAR_DU_REGS_H__
+ #define __RCAR_DU_REGS_H__
+ 
+-#define DISP2_REG_OFFSET	 0x30000
++#define DU0_REG_OFFSET		0x00000
++#define DU1_REG_OFFSET		0x30000
++#define DU2_REG_OFFSET		0x40000
+ 
+ /* -----------------------------------------------------------------------------
+  * Display Control Registers
 -- 
-1.8.2.1
+1.8.1.5
 
