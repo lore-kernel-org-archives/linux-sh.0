@@ -1,80 +1,285 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:47 +0000
-Subject: [PATCH 17/27] ARM: shmobile: r8a7778: Register SDHI device
-Message-Id: <1370591517-20239-18-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:19 +0000
+Subject: [PATCH 09/24] drm/rcar-du: Split VGA encoder and connector
+Message-Id: <1372326574-4315-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This prepares for the encoders rework.
 
-This patch adds SDHI register function which needs id number (= 0/1/2)
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7778.h |  2 ++
- arch/arm/mach-shmobile/setup-r8a7778.c        | 24 ++++++++++++++++++++++++
- 2 files changed, 26 insertions(+)
+ drivers/gpu/drm/rcar-du/Makefile         |  3 +-
+ drivers/gpu/drm/rcar-du/rcar_du_vga.c    | 86 +----------------------------
+ drivers/gpu/drm/rcar-du/rcar_du_vga.h    |  2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.c | 95 ++++++++++++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.h | 23 ++++++++
+ 5 files changed, 123 insertions(+), 86 deletions(-)
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vgacon.h
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index 951149e..b5173b3 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -18,6 +18,7 @@
- #ifndef __ASM_R8A7778_H__
- #define __ASM_R8A7778_H__
+diff --git a/drivers/gpu/drm/rcar-du/Makefile b/drivers/gpu/drm/rcar-du/Makefile
+index 5def510..45a8479 100644
+--- a/drivers/gpu/drm/rcar-du/Makefile
++++ b/drivers/gpu/drm/rcar-du/Makefile
+@@ -4,6 +4,7 @@ rcar-du-drm-y := rcar_du_crtc.o \
+ 		 rcar_du_lvds.o \
+ 		 rcar_du_lvdscon.o \
+ 		 rcar_du_plane.o \
+-		 rcar_du_vga.o
++		 rcar_du_vga.o \
++		 rcar_du_vgacon.o
  
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/sh_eth.h>
+ obj-$(CONFIG_DRM_RCAR_DU)	+= rcar-du-drm.o
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vga.c b/drivers/gpu/drm/rcar-du/rcar_du_vga.c
+index 327289e..369ab32 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vga.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vga.c
+@@ -1,5 +1,5 @@
+ /*
+- * rcar_du_vga.c  --  R-Car Display Unit VGA DAC and Connector
++ * rcar_du_vga.c  --  R-Car Display Unit VGA DAC
+  *
+  * Copyright (C) 2013 Renesas Corporation
+  *
+@@ -18,89 +18,7 @@
+ #include "rcar_du_drv.h"
+ #include "rcar_du_kms.h"
+ #include "rcar_du_vga.h"
+-
+-/* -----------------------------------------------------------------------------
+- * Connector
+- */
+-
+-static int rcar_du_vga_connector_get_modes(struct drm_connector *connector)
+-{
+-	return 0;
+-}
+-
+-static int rcar_du_vga_connector_mode_valid(struct drm_connector *connector,
+-					    struct drm_display_mode *mode)
+-{
+-	return MODE_OK;
+-}
+-
+-static const struct drm_connector_helper_funcs connector_helper_funcs = {
+-	.get_modes = rcar_du_vga_connector_get_modes,
+-	.mode_valid = rcar_du_vga_connector_mode_valid,
+-	.best_encoder = rcar_du_connector_best_encoder,
+-};
+-
+-static void rcar_du_vga_connector_destroy(struct drm_connector *connector)
+-{
+-	drm_sysfs_connector_remove(connector);
+-	drm_connector_cleanup(connector);
+-}
+-
+-static enum drm_connector_status
+-rcar_du_vga_connector_detect(struct drm_connector *connector, bool force)
+-{
+-	return connector_status_unknown;
+-}
+-
+-static const struct drm_connector_funcs connector_funcs = {
+-	.dpms = drm_helper_connector_dpms,
+-	.detect = rcar_du_vga_connector_detect,
+-	.fill_modes = drm_helper_probe_single_connector_modes,
+-	.destroy = rcar_du_vga_connector_destroy,
+-};
+-
+-static int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+-				      struct rcar_du_encoder *renc)
+-{
+-	struct rcar_du_connector *rcon;
+-	struct drm_connector *connector;
+-	int ret;
+-
+-	rcon = devm_kzalloc(rcdu->dev, sizeof(*rcon), GFP_KERNEL);
+-	if (rcon = NULL)
+-		return -ENOMEM;
+-
+-	connector = &rcon->connector;
+-	connector->display_info.width_mm = 0;
+-	connector->display_info.height_mm = 0;
+-
+-	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
+-				 DRM_MODE_CONNECTOR_VGA);
+-	if (ret < 0)
+-		return ret;
+-
+-	drm_connector_helper_add(connector, &connector_helper_funcs);
+-	ret = drm_sysfs_connector_add(connector);
+-	if (ret < 0)
+-		return ret;
+-
+-	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
+-	drm_object_property_set_value(&connector->base,
+-		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+-
+-	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
+-	if (ret < 0)
+-		return ret;
+-
+-	connector->encoder = &renc->encoder;
+-	rcon->encoder = renc;
+-
+-	return 0;
+-}
+-
+-/* -----------------------------------------------------------------------------
+- * Encoder
+- */
++#include "rcar_du_vgacon.h"
  
- extern void r8a7778_add_standard_devices(void);
-@@ -28,5 +29,6 @@ extern void r8a7778_init_irq(void);
- extern void r8a7778_init_irq_dt(void);
- extern void r8a7778_clock_init(void);
- extern void r8a7778_init_irq_extpin(int irlm);
-+extern void r8a7778_sdhi_init(int id, struct sh_mobile_sdhi_info *info);
- 
- #endif /* __ASM_R8A7778_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index d6ee521..f5b2a57 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -102,6 +102,30 @@ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
- 					  pdata, sizeof(*pdata));
- }
- 
-+/* SDHI */
-+static struct resource sdhi_resources[] = {
-+	/* SDHI0 */
-+	DEFINE_RES_MEM(0xFFE4C000, 0x100),
-+	DEFINE_RES_IRQ(gic_iid(0x77)),
-+	/* SDHI1 */
-+	DEFINE_RES_MEM(0xFFE4D000, 0x100),
-+	DEFINE_RES_IRQ(gic_iid(0x78)),
-+	/* SDHI2 */
-+	DEFINE_RES_MEM(0xFFE4F000, 0x100),
-+	DEFINE_RES_IRQ(gic_iid(0x76)),
-+};
+ static void rcar_du_vga_encoder_dpms(struct drm_encoder *encoder, int mode)
+ {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vga.h b/drivers/gpu/drm/rcar-du/rcar_du_vga.h
+index 66b4d2d..b969b20 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vga.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vga.h
+@@ -1,5 +1,5 @@
+ /*
+- * rcar_du_vga.h  --  R-Car Display Unit VGA DAC and Connector
++ * rcar_du_vga.h  --  R-Car Display Unit VGA DAC
+  *
+  * Copyright (C) 2013 Renesas Corporation
+  *
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+new file mode 100644
+index 0000000..2ee3203
+--- /dev/null
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+@@ -0,0 +1,95 @@
++/*
++ * rcar_du_vgacon.c  --  R-Car Display Unit VGA Connector
++ *
++ * Copyright (C) 2013 Renesas Corporation
++ *
++ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
 +
-+void __init r8a7778_sdhi_init(int id,
-+			      struct sh_mobile_sdhi_info *info)
++#include <drm/drmP.h>
++#include <drm/drm_crtc.h>
++#include <drm/drm_crtc_helper.h>
++
++#include "rcar_du_drv.h"
++#include "rcar_du_kms.h"
++#include "rcar_du_vgacon.h"
++
++static int rcar_du_vga_connector_get_modes(struct drm_connector *connector)
 +{
-+	BUG_ON(id < 0 || id > 2);
-+
-+	platform_device_register_resndata(
-+		&platform_bus, "sh_mobile_sdhi", id,
-+		sdhi_resources + (2 * id), 2,
-+		info, sizeof(*info));
++	return 0;
 +}
 +
- void __init r8a7778_add_standard_devices(void)
- {
- 	int i;
++static int rcar_du_vga_connector_mode_valid(struct drm_connector *connector,
++					    struct drm_display_mode *mode)
++{
++	return MODE_OK;
++}
++
++static const struct drm_connector_helper_funcs connector_helper_funcs = {
++	.get_modes = rcar_du_vga_connector_get_modes,
++	.mode_valid = rcar_du_vga_connector_mode_valid,
++	.best_encoder = rcar_du_connector_best_encoder,
++};
++
++static void rcar_du_vga_connector_destroy(struct drm_connector *connector)
++{
++	drm_sysfs_connector_remove(connector);
++	drm_connector_cleanup(connector);
++}
++
++static enum drm_connector_status
++rcar_du_vga_connector_detect(struct drm_connector *connector, bool force)
++{
++	return connector_status_unknown;
++}
++
++static const struct drm_connector_funcs connector_funcs = {
++	.dpms = drm_helper_connector_dpms,
++	.detect = rcar_du_vga_connector_detect,
++	.fill_modes = drm_helper_probe_single_connector_modes,
++	.destroy = rcar_du_vga_connector_destroy,
++};
++
++int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
++			       struct rcar_du_encoder *renc)
++{
++	struct rcar_du_connector *rcon;
++	struct drm_connector *connector;
++	int ret;
++
++	rcon = devm_kzalloc(rcdu->dev, sizeof(*rcon), GFP_KERNEL);
++	if (rcon = NULL)
++		return -ENOMEM;
++
++	connector = &rcon->connector;
++	connector->display_info.width_mm = 0;
++	connector->display_info.height_mm = 0;
++
++	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
++				 DRM_MODE_CONNECTOR_VGA);
++	if (ret < 0)
++		return ret;
++
++	drm_connector_helper_add(connector, &connector_helper_funcs);
++	ret = drm_sysfs_connector_add(connector);
++	if (ret < 0)
++		return ret;
++
++	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
++	drm_object_property_set_value(&connector->base,
++		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
++
++	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
++	if (ret < 0)
++		return ret;
++
++	connector->encoder = &renc->encoder;
++	rcon->encoder = renc;
++
++	return 0;
++}
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.h b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.h
+new file mode 100644
+index 0000000..b12b0cf
+--- /dev/null
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.h
+@@ -0,0 +1,23 @@
++/*
++ * rcar_du_vgacon.h  --  R-Car Display Unit VGA Connector
++ *
++ * Copyright (C) 2013 Renesas Corporation
++ *
++ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __RCAR_DU_VGACON_H__
++#define __RCAR_DU_VGACON_H__
++
++struct rcar_du_device;
++struct rcar_du_encoder;
++
++int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
++			       struct rcar_du_encoder *renc);
++
++#endif /* __RCAR_DU_VGACON_H__ */
 -- 
-1.8.2.1
+1.8.1.5
 
