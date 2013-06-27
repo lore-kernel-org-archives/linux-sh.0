@@ -1,68 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:22:00 +0000
-Subject: [PATCH 02/11] ARM: shmobile: bockw: define FPGA address and rename iomem variable
-Message-Id: <1370593329-27559-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:31 +0000
+Subject: [PATCH 21/24] drm/rcar-du: Add support for DEFR8 register
+Message-Id: <1372326574-4315-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The R8A7790 DU has a new extended function control register. Support it.
 
-Bock-W board will needs more board specific ioremap() method.
-This patch tidyup current FPGA specific settings
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c   | 3 ++-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h   | 1 +
+ drivers/gpu/drm/rcar-du/rcar_du_group.c | 2 ++
+ 3 files changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index dac4365..badde08 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -46,10 +46,11 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
- 				  "scif0_ctrl", "scif0"),
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 98e35aa..dd1950d 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -217,7 +217,8 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
  };
  
-+#define FPGA	0x18200000
- #define IRQ0MR	0x30
- static void __init bockw_init(void)
- {
--	void __iomem *fpga;
-+	void __iomem *base;
+ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+-	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B,
++	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B
++		  | RCAR_DU_FEATURE_DEFR8,
+ 	.num_crtcs = 3,
+ };
  
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
-@@ -59,8 +60,8 @@ static void __init bockw_init(void)
- 				  ARRAY_SIZE(bockw_pinctrl_map));
- 	r8a7778_pinmux_init();
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 160e5eb..70c335f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -27,6 +27,7 @@ struct rcar_du_device;
  
--	fpga = ioremap_nocache(0x18200000, SZ_1M);
--	if (fpga) {
-+	base = ioremap_nocache(FPGA, SZ_1M);
-+	if (base) {
- 		/*
- 		 * CAUTION
- 		 *
-@@ -68,10 +69,10 @@ static void __init bockw_init(void)
- 		 * it should be cared in the future
- 		 * Now, it is assuming IRQ0 was used only from SMSC.
- 		 */
--		u16 val = ioread16(fpga + IRQ0MR);
-+		u16 val = ioread16(base + IRQ0MR);
- 		val &= ~(1 << 4); /* enable SMSC911x */
--		iowrite16(val, fpga + IRQ0MR);
--		iounmap(fpga);
-+		iowrite16(val, base + IRQ0MR);
-+		iounmap(base);
+ #define RCAR_DU_FEATURE_CRTC_IRQ_CLOCK	(1 << 0)	/* Per-CRTC IRQ and clock */
+ #define RCAR_DU_FEATURE_ALIGN_128B	(1 << 1)	/* Align pitches to 128 bytes */
++#define RCAR_DU_FEATURE_DEFR8		(1 << 2)	/* Has DEFR8 register */
  
- 		platform_device_register_resndata(
- 			&platform_bus, "smsc911x", -1,
+ /*
+  * struct rcar_du_device_info - DU model-specific information
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 0eb106e..f3ba0ca 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -51,6 +51,8 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
+ 	rcar_du_group_write(rgrp, DEFR3, DEFR3_CODE | DEFR3_DEFE3);
+ 	rcar_du_group_write(rgrp, DEFR4, DEFR4_CODE);
+ 	rcar_du_group_write(rgrp, DEFR5, DEFR5_CODE | DEFR5_DEFE5);
++	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_DEFR8))
++		rcar_du_group_write(rgrp, DEFR8, DEFR8_CODE | DEFR8_DEFE8);
+ 
+ 	/* Use DS1PR and DS2PR to configure planes priorities and connects the
+ 	 * superposition 0 to DU0 pins. DU1 pins will be configured dynamically.
 -- 
-1.8.2.1
+1.8.1.5
 
