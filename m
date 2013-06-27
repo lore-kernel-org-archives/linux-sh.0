@@ -1,41 +1,60 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 27 Jun 2013 07:02:34 +0000
-Subject: Re: [PATCH v3 0/2] ARM: shmobile: r8a7790: add thermal driver support
-Message-Id: <20130627070232.GA22054@verge.net.au>
+Date: Thu, 27 Jun 2013 13:49:20 +0000
+Subject: Re: [PATCH v2] dmaengine: shdma: fix a build failure on platforms with no DMA support
+Message-Id: <20130627134920.GD28902@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372297984-9315-1-git-send-email-horms+renesas@verge.net.au>
- <871u7o2jqk.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871u7o2jqk.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1305310423360.1470@axis700.grange>
+ <3410825.gK3KBC8v80@wuerfel>
+In-Reply-To: <3410825.gK3KBC8v80@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 26, 2013 at 10:41:43PM -0700, Kuninori Morimoto wrote:
+On Fri, May 31, 2013 at 04:51:52PM +0200, Arnd Bergmann wrote:
+> On Friday 31 May 2013 05:01:31 Guennadi Liakhovetski wrote:
+> > On platforms with no support for the shdma dmaengine driver build is
+> > currently failing with
+> > 
+> > drivers/built-in.o: In function `sh_mobile_sdhi_probe':
+> > drivers/mmc/host/sh_mobile_sdhi.c:170: undefined reference to`shdma_chan_filter'
+> > 
+> > Fix the breakage by defining shdma_chan_filter to NULL in such
+> > configurations.
+> > 
+> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 > 
-> Hi Simon
+> Sorry, I saw your patch too late and already spent some time doing a different one.
 > 
-> > This short series enables the thermal driver on the r8a7790 SoC
-> > and thus the lager board.
-> > 
-> > It is based on renesas-next-20130620
-> > 
-> > v3
-> > * Correct title of clocks patch to refer to r8a7790
-> > 
-> > v2
-> > * Add clocks patch
-> > 
-> > Simon Horman (2):
-> >   ARM: shmobile: r8a7790: add clocks for thermal
-> >   ARM: shmobile: r8a7790: add thermal driver support
-> > 
-> >  arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
-> >  arch/arm/mach-shmobile/setup-r8a7790.c | 12 ++++++++++++
-> >  2 files changed, 16 insertions(+)
+> > diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+> > index b64d6be..1fd8a20 100644
+> > --- a/include/linux/sh_dma.h
+> > +++ b/include/linux/sh_dma.h
+> > @@ -99,6 +99,10 @@ struct sh_dmae_pdata {
+> >  #define CHCR_TE        0x00000002
+> >  #define CHCR_IE        0x00000004
+> >  
+> > +#if IS_ENABLED(CONFIG_SH_DMAE_BASE)
+> >  bool shdma_chan_filter(struct dma_chan *chan, void *arg);
+> > +#else
+> > +#define shdma_chan_filter NULL
+> > +#endif
 > 
-> For all patches
-> 
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> I still think that this is not the right solution, or at least not
+> complete: No slave driver should care about which dma-engine it is
+> connected to. You have already done most of the necessary conversion,
+> so it would be straightforward to also pass the filter function
+> pointer to the sdhi driver along with the data that gets passed into
+> it.
 
-Thanks, I have queued these up for v3.12 in the soc branch.
+Hi Arnd, Hi Guennadi,
+
+It seems to me that the solution above, though not particularly generic,
+is sufficient as according to Guennadi SHDMA users cannot use other DMA
+drivers[1]. The change above also has the merit of being rather small.
+
+[1] https://patchwork.kernel.org/patch/2644101/
+
+With that reasoning I would like to provide:
+
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
