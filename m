@@ -1,89 +1,150 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Jun 2013 19:08:13 +0000
-Subject: [PATCH v11 03/21] pxa-camera: move interface activation and deactivation to clock callbacks
-Message-Id: <1371236911-15131-4-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 27 Jun 2013 09:49:33 +0000
+Subject: [PATCH 23/24] drm/rcar-du: Configure RGB output routing to DPAD0
+Message-Id: <1372326574-4315-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1371236911-15131-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1372326574-4315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Sascha Hauer <s.hauer@pengutronix.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-When adding and removing a client, the pxa-camera driver only activates
-and deactivates its camera interface respectively, which doesn't include
-any client-specific actions. Move this functionality into .clock_start()
-and .clock_stop() callbacks.
+The R8A7790 DU variant has a single RGB output called DPAD0 that can be
+fed with the output of DU0, DU1 or DU2. Making the routing configurable.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/soc_camera/pxa_camera.c |   28 +++++++++++++++--------
- 1 files changed, 18 insertions(+), 10 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  |  5 ++++
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h   |  2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_group.c | 45 ++++++++++++++++++++++++++++++---
+ drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 +-
+ 4 files changed, 50 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/pxa_camera.c b/drivers/media/platform/soc_camera/pxa_camera.c
-index 686edf7..d4df305 100644
---- a/drivers/media/platform/soc_camera/pxa_camera.c
-+++ b/drivers/media/platform/soc_camera/pxa_camera.c
-@@ -955,33 +955,39 @@ static irqreturn_t pxa_camera_irq(int irq, void *data)
- 	return IRQ_HANDLED;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 680606e..245800d 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -139,6 +139,11 @@ void rcar_du_crtc_route_output(struct drm_crtc *crtc,
+ 	 * configured when starting the CRTC.
+ 	 */
+ 	rcrtc->outputs |= BIT(output);
++
++	/* Store RGB routing to DPAD0 for R8A7790. */
++	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_DEFR8) &&
++	    output = RCAR_DU_OUTPUT_DPAD0)
++		rcdu->dpad0_source = rcrtc->index;
  }
  
-+static int pxa_camera_add_device(struct soc_camera_device *icd)
+ void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index d5243f4..924f5e0 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -68,6 +68,8 @@ struct rcar_du_device {
+ 	unsigned int num_crtcs;
+ 
+ 	struct rcar_du_group groups[2];
++
++	unsigned int dpad0_source;
+ };
+ 
+ static inline bool rcar_du_has(struct rcar_du_device *rcdu,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 9df6fb6..eb53cd9 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -27,6 +27,7 @@
+  * counterpart in the DU documentation, that models those semi-global resources.
+  */
+ 
++#include <linux/clk.h>
+ #include <linux/io.h>
+ 
+ #include "rcar_du_drv.h"
+@@ -43,6 +44,22 @@ void rcar_du_group_write(struct rcar_du_group *rgrp, u32 reg, u32 data)
+ 	rcar_du_write(rgrp->dev, rgrp->mmio_offset + reg, data);
+ }
+ 
++static void rcar_du_group_setup_defr8(struct rcar_du_group *rgrp)
 +{
-+	dev_info(icd->parent, "PXA Camera driver attached to camera %d\n",
-+		 icd->devnum);
++	u32 defr8 = DEFR8_CODE | DEFR8_DEFE8;
++
++	if (!rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_DEFR8))
++		return;
++
++	/* The DEFR8 register for the first group also controls RGB output
++	 * routing to DPAD0
++	 */
++	if (rgrp->index = 0)
++		defr8 |= DEFR8_DRGBS_DU(rgrp->dev->dpad0_source);
++
++	rcar_du_group_write(rgrp, DEFR8, defr8);
++}
++
+ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
+ {
+ 	/* Enable extended features */
+@@ -51,8 +68,8 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
+ 	rcar_du_group_write(rgrp, DEFR3, DEFR3_CODE | DEFR3_DEFE3);
+ 	rcar_du_group_write(rgrp, DEFR4, DEFR4_CODE);
+ 	rcar_du_group_write(rgrp, DEFR5, DEFR5_CODE | DEFR5_DEFE5);
+-	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_DEFR8))
+-		rcar_du_group_write(rgrp, DEFR8, DEFR8_CODE | DEFR8_DEFE8);
++
++	rcar_du_group_setup_defr8(rgrp);
+ 
+ 	/* Use DS1PR and DS2PR to configure planes priorities and connects the
+ 	 * superposition 0 to DU0 pins. DU1 pins will be configured dynamically.
+@@ -128,7 +145,27 @@ void rcar_du_group_restart(struct rcar_du_group *rgrp)
+ 	__rcar_du_group_start_stop(rgrp, true);
+ }
+ 
+-void rcar_du_group_set_routing(struct rcar_du_group *rgrp)
++static int rcar_du_set_dpad0_routing(struct rcar_du_device *rcdu)
++{
++	int ret;
++
++	/* RGB output routing to DPAD0 is configured in the DEFR8 register of
++	 * the first group. As this function can be called with the DU0 and DU1
++	 * CRTCs disabled, we need to enable the first group clock before
++	 * accessing the register.
++	 */
++	ret = clk_prepare_enable(rcdu->crtcs[0].clock);
++	if (ret < 0)
++		return ret;
++
++	rcar_du_group_setup_defr8(&rcdu->groups[0]);
++
++	clk_disable_unprepare(rcdu->crtcs[0].clock);
 +
 +	return 0;
 +}
 +
-+static void pxa_camera_remove_device(struct soc_camera_device *icd)
-+{
-+	dev_info(icd->parent, "PXA Camera driver detached from camera %d\n",
-+		 icd->devnum);
-+}
++int rcar_du_group_set_routing(struct rcar_du_group *rgrp)
+ {
+ 	struct rcar_du_crtc *crtc0 = &rgrp->dev->crtcs[rgrp->index * 2];
+ 	u32 dorcr = rcar_du_group_read(rgrp, DORCR);
+@@ -145,4 +182,6 @@ void rcar_du_group_set_routing(struct rcar_du_group *rgrp)
+ 		dorcr |= DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_DS2;
+ 
+ 	rcar_du_group_write(rgrp, DORCR, dorcr);
 +
- /*
-  * The following two functions absolutely depend on the fact, that
-  * there can be only one camera on PXA quick capture interface
-  * Called with .host_lock held
-  */
--static int pxa_camera_add_device(struct soc_camera_device *icd)
-+static int pxa_camera_clock_start(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct pxa_camera_dev *pcdev = ici->priv;
- 
- 	pxa_camera_activate(pcdev);
- 
--	dev_info(icd->parent, "PXA Camera driver attached to camera %d\n",
--		 icd->devnum);
--
- 	return 0;
++	return rcar_du_set_dpad0_routing(rgrp->dev);
  }
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+index 4487e83..5025930 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+@@ -45,6 +45,6 @@ int rcar_du_group_get(struct rcar_du_group *rgrp);
+ void rcar_du_group_put(struct rcar_du_group *rgrp);
+ void rcar_du_group_start_stop(struct rcar_du_group *rgrp, bool start);
+ void rcar_du_group_restart(struct rcar_du_group *rgrp);
+-void rcar_du_group_set_routing(struct rcar_du_group *rgrp);
++int rcar_du_group_set_routing(struct rcar_du_group *rgrp);
  
- /* Called with .host_lock held */
--static void pxa_camera_remove_device(struct soc_camera_device *icd)
-+static void pxa_camera_clock_stop(struct soc_camera_host *ici)
- {
--	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
- 	struct pxa_camera_dev *pcdev = ici->priv;
- 
--	dev_info(icd->parent, "PXA Camera driver detached from camera %d\n",
--		 icd->devnum);
--
- 	/* disable capture, disable interrupts */
- 	__raw_writel(0x3ff, pcdev->base + CICR0);
- 
-@@ -1630,6 +1636,8 @@ static struct soc_camera_host_ops pxa_soc_camera_host_ops = {
- 	.owner		= THIS_MODULE,
- 	.add		= pxa_camera_add_device,
- 	.remove		= pxa_camera_remove_device,
-+	.clock_start	= pxa_camera_clock_start,
-+	.clock_stop	= pxa_camera_clock_stop,
- 	.set_crop	= pxa_camera_set_crop,
- 	.get_formats	= pxa_camera_get_formats,
- 	.put_formats	= pxa_camera_put_formats,
+ #endif /* __RCAR_DU_GROUP_H__ */
 -- 
-1.7.2.5
+1.8.1.5
 
