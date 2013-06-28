@@ -1,60 +1,42 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Jun 2013 08:51:27 +0000
-Subject: Re: [PATCH 00/15] ARM: shmobile: uImage load address rework
-Message-Id: <CANqRtoThDhpe17R5tq+RuSgt_72tuWUoK+5fGLK508tCxKj2jw@mail.gmail.com>
+Date: Fri, 28 Jun 2013 10:29:58 +0000
+Subject: [PATCH 03/06] ARM: shmobile: Remove unused r8a7778 auxdata table
+Message-Id: <20130628102958.31451.56355.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605070616.13311.69049.sendpatchset@w520>
- <87a9n5582w.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a9n5582w.wl%kuninori.morimoto.gx@renesas.com>
+References: <20130628102930.31451.85334.sendpatchset@w520>
+In-Reply-To: <20130628102930.31451.85334.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+From: Magnus Damm <damm@opensource.se>
 
-On Wed, Jun 5, 2013 at 4:29 PM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
->
-> Hi
->
->> ARM: shmobile: uImage load address rework
->>
->> [PATCH 01/15] ARM: shmobile: Per-board uImage load addresses
->> [PATCH 02/15] ARM: shmobile: AG5EVM uImage rework
->> [PATCH 03/15] ARM: shmobile: AP4EVB uImage rework
->> [PATCH 04/15] ARM: shmobile: APE6EVM uImage rework
->> [PATCH 05/15] ARM: shmobile: Armadillo800EVA uImage rework
->> [PATCH 06/15] ARM: shmobile: Bock-W uImage rework
->> [PATCH 07/15] ARM: shmobile: Bonito uImage rework
->> [PATCH 08/15] ARM: shmobile: KZM9D uImage rework
->> [PATCH 09/15] ARM: shmobile: KZM9G uImage rework
->> [PATCH 10/15] ARM: shmobile: Kota2 uImage rework
->> [PATCH 11/15] ARM: shmobile: Lager uImage rework
->> [PATCH 12/15] ARM: shmobile: Mackerel uImage rework
->> [PATCH 13/15] ARM: shmobile: Marzen uImage rework
->> [PATCH 14/15] ARM: shmobile: Armadillo800EVA reference uImage rework
->> [PATCH 15/15] ARM: shmobile: Remove MEMORY_START uImage load address
->
-> I tested these patches on Bock-W board (as 0x60008000 binary),
-> and on Mackerel board (as 0x40008000 binary)
-> These work well for me :)
+Pass NULL to of_platform_populate instead of passing
+an empty list. This cleans up the code and reduces the
+number of lines.
 
-Thanks for testing.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> I have same opinion with Laurent.
-> 5) and 14) can be 1 patch if you need to sent v2 patches :P
+ arch/arm/mach-shmobile/setup-r8a7778.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-Gotcha!
-
-> for 6), 12) patch
->
-> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> for all patches
->
-> Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Thanks,
-
-/ magnus
+--- 0001/arch/arm/mach-shmobile/setup-r8a7778.c
++++ work/arch/arm/mach-shmobile/setup-r8a7778.c	2013-06-28 15:48:43.000000000 +0900
+@@ -457,14 +457,9 @@ void __init r8a7778_init_irq_dt(void)
+ 	r8a7778_init_irq_common();
+ }
+ 
+-static const struct of_dev_auxdata r8a7778_auxdata_lookup[] __initconst = {
+-	{},
+-};
+-
+ void __init r8a7778_add_standard_devices_dt(void)
+ {
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     r8a7778_auxdata_lookup, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ static const char *r8a7778_compat_dt[] __initdata = {
