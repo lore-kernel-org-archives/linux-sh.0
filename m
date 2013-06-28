@@ -1,78 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 17 Jun 2013 08:12:43 +0000
-Subject: [PATCH 10/15] ARM: shmobile: Remove old SCU boot code
-Message-Id: <1371456768-1084-11-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 28 Jun 2013 10:29:30 +0000
+Subject: [PATCH 00/06] ARM: shmobile: Remove unused auxdata tables
+Message-Id: <20130628102930.31451.85334.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371456768-1084-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+ARM: shmobile: Remove unused auxdata tables
 
-Remove shmobile_secondary_vector_scu now when all SCU enabled
-SMP platforms instead make use of shmobile_boot_scu. This
-removes two inline virtual to physical address conversions.
+[PATCH 01/06] ARM: shmobile: Remove unused EMEV2 auxdata table
+[PATCH 02/06] ARM: shmobile: Remove unused r8a7740 auxdata table
+[PATCH 03/06] ARM: shmobile: Remove unused r8a7778 auxdata table
+[PATCH 04/06] ARM: shmobile: Remove unused r8a7779 auxdata table
+[PATCH 05/06] ARM: shmobile: Remove unused sh7372 auxdata table
+[PATCH 06/06] ARM: shmobile: Remove unused sh73a0 auxdata table
+
+Rework the mach-shmobile code to pass NULL to of_platform_populate()
+instead of empty lists. This cleans up the code and reduces the
+number of lines. The recently added SoCs r8a7790 and r8a73a4 are
+already following this style, so no need to touch them.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/headsmp-scu.S         |   22 +---------------------
- arch/arm/mach-shmobile/include/mach/common.h |    1 -
- 2 files changed, 1 insertion(+), 22 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
-index c5c9106..6f98654 100644
---- a/arch/arm/mach-shmobile/headsmp-scu.S
-+++ b/arch/arm/mach-shmobile/headsmp-scu.S
-@@ -25,32 +25,12 @@
- 
- 	__CPUINIT
- /*
-- * Reset vector for secondary CPUs.
-+ * Boot code for secondary CPUs.
-  *
-  * First we turn on L1 cache coherency for our CPU. Then we jump to
-  * shmobile_invalidate_start that invalidates the cache and hands over control
-  * to the common ARM startup code.
-- * This function will be mapped to address 0 by the SBAR register.
-- * A normal branch is out of range here so we need a long jump. We jump to
-- * the physical address as the MMU is still turned off.
-  */
--	.align	12
--ENTRY(shmobile_secondary_vector_scu)
--	mrc     p15, 0, r0, c0, c0, 5	@ read MIPDR
--	and	r0, r0, #3		@ mask out cpu ID
--	lsl	r0, r0, #3		@ we will shift by cpu_id * 8 bits
--	ldr	r1, 2f
--	ldr	r1, [r1]		@ SCU base address
--	ldr	r2, [r1, #8]		@ SCU Power Status Register
--	mov	r3, #3
--	bic	r2, r2, r3, lsl r0	@ Clear bits of our CPU (Run Mode)
--	str	r2, [r1, #8]		@ write back
--
--	ldr	pc, 1f
--1:	.long shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
--2:	.long shmobile_scu_base - PAGE_OFFSET + PLAT_PHYS_OFFSET
--ENDPROC(shmobile_secondary_vector_scu)
--
- ENTRY(shmobile_boot_scu)
- 					@ r0 = SCU base address
- 	mrc     p15, 0, r1, c0, c0, 5	@ read MIPDR
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 8ef1c3c..e818f02 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -10,7 +10,6 @@ extern void shmobile_setup_console(void);
- extern void shmobile_boot_vector(void);
- extern unsigned long shmobile_boot_fn;
- extern unsigned long shmobile_boot_arg;
--extern void shmobile_secondary_vector_scu(void);
- extern void shmobile_boot_scu(void);
- struct clk;
- extern int shmobile_clk_init(void);
--- 
-1.7.10.4
+ Written against renesas.git renesas-next-20130628
 
+ arch/arm/mach-shmobile/setup-emev2.c   |    6 +-----
+ arch/arm/mach-shmobile/setup-r8a7740.c |    7 +------
+ arch/arm/mach-shmobile/setup-r8a7778.c |    7 +------
+ arch/arm/mach-shmobile/setup-r8a7779.c |    7 +------
+ arch/arm/mach-shmobile/setup-sh7372.c  |    7 +------
+ arch/arm/mach-shmobile/setup-sh73a0.c  |    7 +------
+ 6 files changed, 6 insertions(+), 35 deletions(-)
