@@ -1,120 +1,79 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 06 Jun 2013 15:46:26 +0000
-Subject: [PATCH 2/4] mmc: sdhi/tmio: make DMA filter implementation specific
-Message-Id: <1370533588-23642-3-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 28 Jun 2013 11:27:32 +0000
+Subject: [PATCH 04/04] ARM: shmobile: Make r8a73a4 Arch timer optional
+Message-Id: <20130628112732.23809.81527.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370533588-23642-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1370533588-23642-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130628112655.23809.39115.sendpatchset@w520>
+In-Reply-To: <20130628112655.23809.39115.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Vinod Koul <vinod.koul@intel.com>, Chris Ball <cjb@laptop.org>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Rob Herring <rob.herring@calxeda.com>, Grant Likely <grant.likely@secretlab.ca>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Samuel Ortiz <sameo@linux.intel.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-So far only the SDHI implementation uses TMIO MMC with DMA. That way a DMA
-channel filter function, defined in the TMIO driver wasn't a problem.
-However, such a filter function is DMA controller specific. Since the SDHI
-glue is only running on systems with the SHDMA DMA controller, the filter
-function can safely be provided by it. Move it into SDHI.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Samuel Ortiz <sameo@linux.intel.com>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Samuel Ortiz <sameo@linux.intel.com>
+Update the r8a73a4 code to allow using other
+timers than Arch timer for clock event
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    9 +++++++++
- drivers/mmc/host/tmio_mmc_dma.c   |   12 ++----------
- include/linux/mfd/tmio.h          |    3 +++
- 3 files changed, 14 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index fe90853..e0088d7 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -20,6 +20,7 @@
+ arch/arm/mach-shmobile/Kconfig                |    1 -
+ arch/arm/mach-shmobile/board-ape6evm.c        |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |    8 ++++++++
+ 4 files changed, 10 insertions(+), 1 deletion(-)
+
+--- 0010/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-06-28 19:53:49.000000000 +0900
+@@ -23,7 +23,6 @@ config ARCH_R8A73A4
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+-	select ARM_ARCH_TIMER
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 	select ARCH_HAS_CPUFREQ
+--- 0001/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-06-28 19:55:52.000000000 +0900
+@@ -102,6 +102,7 @@ static const char *ape6evm_boards_compat
+ };
  
- #include <linux/kernel.h>
- #include <linux/clk.h>
-+#include <linux/dmaengine.h>
- #include <linux/slab.h>
- #include <linux/mod_devicetable.h>
- #include <linux/module.h>
-@@ -124,6 +125,13 @@ static void sh_mobile_sdhi_cd_wakeup(const struct platform_device *pdev)
- 	mmc_detect_change(dev_get_drvdata(&pdev->dev), msecs_to_jiffies(100));
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
++	.init_early	= r8a73a4_init_delay,
+ 	.init_irq	= irqchip_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.init_machine	= ape6evm_add_standard_devices,
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-06-28 19:55:15.000000000 +0900
+@@ -4,5 +4,6 @@
+ void r8a73a4_add_standard_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
++void r8a73a4_init_delay(void);
+ 
+ #endif /* __ASM_R8A73A4_H__ */
+--- 0011/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-06-28 19:57:29.000000000 +0900
+@@ -203,6 +203,13 @@ void __init r8a73a4_add_standard_devices
+ 	r8a7790_register_cmt(10);
  }
  
-+static bool sh_mobile_sdhi_filter(struct dma_chan *chan, void *arg)
++void __init r8a73a4_init_delay(void)
 +{
-+	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
-+	chan->private = arg;
-+	return true;
++#ifndef CONFIG_ARM_ARCH_TIMER
++	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
++#endif
 +}
 +
- static const struct sh_mobile_sdhi_ops sdhi_ops = {
- 	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
- };
-@@ -191,6 +199,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 			priv->dma_priv.chan_priv_tx = &priv->param_tx.shdma_slave;
- 			priv->dma_priv.chan_priv_rx = &priv->param_rx.shdma_slave;
- 			priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
-+			priv->dma_priv.filter = sh_mobile_sdhi_filter;
- 			mmc_data->dma = &priv->dma_priv;
- 		}
- 	}
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index fff9286..dc4b10b 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -261,14 +261,6 @@ out:
- 	spin_unlock_irq(&host->lock);
- }
- 
--/* It might be necessary to make filter MFD specific */
--static bool tmio_mmc_filter(struct dma_chan *chan, void *arg)
--{
--	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
--	chan->private = arg;
--	return true;
--}
--
- void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdata)
+ #ifdef CONFIG_USE_OF
+ void __init r8a73a4_add_standard_devices_dt(void)
  {
- 	/* We can only either use DMA for both Tx and Rx or not use it at all */
-@@ -281,7 +273,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 		dma_cap_zero(mask);
- 		dma_cap_set(DMA_SLAVE, mask);
- 
--		host->chan_tx = dma_request_channel(mask, tmio_mmc_filter,
-+		host->chan_tx = dma_request_channel(mask, pdata->dma->filter,
- 						    pdata->dma->chan_priv_tx);
- 		dev_dbg(&host->pdev->dev, "%s: TX: got channel %p\n", __func__,
- 			host->chan_tx);
-@@ -289,7 +281,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 		if (!host->chan_tx)
- 			return;
- 
--		host->chan_rx = dma_request_channel(mask, tmio_mmc_filter,
-+		host->chan_rx = dma_request_channel(mask, pdata->dma->filter,
- 						    pdata->dma->chan_priv_rx);
- 		dev_dbg(&host->pdev->dev, "%s: RX: got channel %p\n", __func__,
- 			host->chan_rx);
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 99bf3e66..0990d8a 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -81,10 +81,13 @@ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
- void tmio_core_mmc_clk_div(void __iomem *cnf, int shift, int state);
- 
-+struct dma_chan;
-+
- struct tmio_mmc_dma {
- 	void *chan_priv_tx;
- 	void *chan_priv_rx;
- 	int alignment_shift;
-+	bool (*filter)(struct dma_chan *chan, void *arg);
+@@ -216,6 +223,7 @@ static const char *r8a73a4_boards_compat
  };
  
- struct tmio_mmc_host;
--- 
-1.7.2.5
-
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
++	.init_early	= r8a73a4_init_delay,
+ 	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a73a4_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
