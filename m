@@ -1,106 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 05 Jun 2013 08:24:54 +0000
-Subject: [PATCH 003/130] gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH
-Message-Id: <1370420821-28420-4-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 28 Jun 2013 11:27:13 +0000
+Subject: [PATCH 02/04] ARM: shmobile: Make r8a7790 Arch timer optional
+Message-Id: <20130628112713.23809.67187.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370420821-28420-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130628112655.23809.39115.sendpatchset@w520>
+In-Reply-To: <20130628112655.23809.39115.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As hardware support for this feature is not universal for all SoCs a flag,
-has_both_edge_trigger, has been added to the platform data of the driver to
-allow this feature to be enabled.
+From: Magnus Damm <damm@opensource.se>
 
-The motivation for this is to allow use of the gpio-keys driver on the
-lager board which is based on the r8a7790 SoC. The V2 of this patch has been
-fully exercised using that driver on that board.
+Update the r8a7790 code to allow using other
+timers than Arch timer for clock events.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpio/gpio-rcar.c                | 26 +++++++++++++++++++++-----
- include/linux/platform_data/gpio-rcar.h |  1 +
- 2 files changed, 22 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-index 0f3d647..d173d56 100644
---- a/drivers/gpio/gpio-rcar.c
-+++ b/drivers/gpio/gpio-rcar.c
-@@ -49,6 +49,7 @@ struct gpio_rcar_priv {
- #define POSNEG 0x20
- #define EDGLEVEL 0x24
- #define FILONOFF 0x28
-+#define BOTHEDGE 0x4c
+ arch/arm/mach-shmobile/Kconfig                |    1 -
+ arch/arm/mach-shmobile/board-lager.c          |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        |    8 ++++++++
+ 4 files changed, 10 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-06-28 15:30:59.000000000 +0900
+@@ -61,7 +61,6 @@ config ARCH_R8A7790
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+-	select ARM_ARCH_TIMER
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
  
- static inline u32 gpio_rcar_read(struct gpio_rcar_priv *p, int offs)
- {
-@@ -91,7 +92,8 @@ static void gpio_rcar_irq_enable(struct irq_data *d)
- static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
- 						  unsigned int hwirq,
- 						  bool active_high_rising_edge,
--						  bool level_trigger)
-+						  bool level_trigger,
-+						  bool both)
- {
- 	unsigned long flags;
- 
-@@ -108,6 +110,10 @@ static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
- 	/* Configure edge or level trigger in EDGLEVEL */
- 	gpio_rcar_modify_bit(p, EDGLEVEL, hwirq, !level_trigger);
- 
-+	/* Select one edge or both edges in BOTHEDGE */
-+	if (p->config.has_both_edge_trigger)
-+		gpio_rcar_modify_bit(p, BOTHEDGE, hwirq, both);
-+
- 	/* Select "Interrupt Input Mode" in IOINTSEL */
- 	gpio_rcar_modify_bit(p, IOINTSEL, hwirq, true);
- 
-@@ -127,16 +133,26 @@ static int gpio_rcar_irq_set_type(struct irq_data *d, unsigned int type)
- 
- 	switch (type & IRQ_TYPE_SENSE_MASK) {
- 	case IRQ_TYPE_LEVEL_HIGH:
--		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, true);
-+		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, true,
-+						      false);
- 		break;
- 	case IRQ_TYPE_LEVEL_LOW:
--		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, true);
-+		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, true,
-+						      false);
- 		break;
- 	case IRQ_TYPE_EDGE_RISING:
--		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false);
-+		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false,
-+						      false);
- 		break;
- 	case IRQ_TYPE_EDGE_FALLING:
--		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, false);
-+		gpio_rcar_config_interrupt_input_mode(p, hwirq, false, false,
-+						      false);
-+		break;
-+	case IRQ_TYPE_EDGE_BOTH:
-+		if (!p->config.has_both_edge_trigger)
-+			return -EINVAL;
-+		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false,
-+						      true);
- 		break;
- 	default:
- 		return -EINVAL;
-diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
-index aba7079..6c0027a 100644
---- a/include/linux/platform_data/gpio-rcar.h
-+++ b/include/linux/platform_data/gpio-rcar.h
-@@ -21,6 +21,7 @@ struct gpio_rcar_config {
- 	unsigned int irq_base;
- 	unsigned int number_of_pins;
- 	const char *pctl_name;
-+	unsigned has_both_edge_trigger:1;
+--- 0001/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2013-06-28 15:31:47.000000000 +0900
+@@ -103,6 +103,7 @@ static const char *lager_boards_compat_d
  };
  
- #endif /* __GPIO_RCAR_H__ */
--- 
-1.8.2.1
-
+ DT_MACHINE_START(LAGER_DT, "lager")
++	.init_early	= r8a7790_init_delay,
+ 	.init_irq	= irqchip_init,
+ 	.init_time	= r8a7790_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2013-06-28 15:31:21.000000000 +0900
+@@ -4,6 +4,7 @@
+ void r8a7790_add_standard_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
++void r8a7790_init_delay(void);
+ void r8a7790_timer_init(void);
+ 
+ #endif /* __ASM_R8A7790_H__ */
+--- 0003/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-06-28 15:34:37.000000000 +0900
+@@ -209,6 +209,13 @@ void __init r8a7790_timer_init(void)
+ 	shmobile_timer_init();
+ }
+ 
++void __init r8a7790_init_delay(void)
++{
++#ifndef CONFIG_ARM_ARCH_TIMER
++	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
++#endif
++}
++
+ #ifdef CONFIG_USE_OF
+ void __init r8a7790_add_standard_devices_dt(void)
+ {
+@@ -221,6 +228,7 @@ static const char *r8a7790_boards_compat
+ };
+ 
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
++	.init_early	= r8a7790_init_delay,
+ 	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a7790_add_standard_devices_dt,
+ 	.init_time	= r8a7790_timer_init,
