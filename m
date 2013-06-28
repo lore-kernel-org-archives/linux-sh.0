@@ -1,66 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 07:51:55 +0000
-Subject: [PATCH 25/27] ARM: shmobile: sh73a0: Always use shmobile_setup_delay()
-Message-Id: <1370591517-20239-26-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 28 Jun 2013 11:26:55 +0000
+Subject: [PATCH 00/04] ARM: shmobile: r8a73a4/r8a7790 CMT and Arch timer update
+Message-Id: <20130628112655.23809.39115.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370591517-20239-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+ARM: shmobile: r8a73a4/r8a7790 CMT and Arch timer update
 
-Break out the function sh73a0_init_delay() that now
-gets called both for the C version of the code and
-the DT -reference boards. This way we handle both
-cases in the same way.
+[PATCH 01/04] ARM: shmobile: Add r8a7790 CMT00 clock event
+[PATCH 02/04] ARM: shmobile: Make r8a7790 Arch timer optional
+[PATCH 03/04] ARM: shmobile: Add r8a73a4 CMT10 clock event
+[PATCH 04/04] ARM: shmobile: Make r8a73a4 Arch timer optional
 
-Allows us to boot with TWD only in the kernel configuration
-for C board code. TWD is not yet enabled in the case of
-DT -reference - this due to a dependency on CCF.
+Add clock event support through a CMT timer channel for the
+SoCs r8a7790 and r8a73a4 as well as APE6EVM and Lager boards.
+
+Also, to be able to test the CMT timers, make it possible to
+deselect Arch timer and instead rely on predefined values for
+udelay() and instead of local timer for SMP use broadcast.
+
+A nice side effect of this is that high resolution timers
+now become available. The reason for the is that the Arch
+timer sets the C3STOP flag which in turn will tell the
+time keeping code to not allow high resolution timer without
+an additional clock event. So here they are.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 3acb45a..c5028f1f 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -929,11 +929,17 @@ void __init sh73a0_add_standard_devices(void)
- 			    ARRAY_SIZE(sh73a0_late_devices));
- }
- 
-+void __init sh73a0_init_delay(void)
-+{
-+	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
-+}
-+
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak sh73a0_register_twd(void) { }
- 
- void __init sh73a0_earlytimer_init(void)
- {
-+	sh73a0_init_delay();
- 	sh73a0_clock_init();
- 	shmobile_earlytimer_init();
- 	sh73a0_register_twd();
-@@ -952,11 +958,6 @@ void __init sh73a0_add_early_devices(void)
- 
- #ifdef CONFIG_USE_OF
- 
--void __init sh73a0_init_delay(void)
--{
--	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
--}
--
- static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
- 	{},
- };
--- 
-1.8.2.1
+ Written against renesas.git renesas-next-20130628 plus
+ [PATCH] ARM: shmobile: Sort r8a7790 MSTP entries
+ [PATCH 00/06] ARM: shmobile: Remove unused auxdata tables
+
+ For proper run time operation the following patch
+ included in renesas-next-20130628 must be included
+ in the CMT driver:
+
+ clocksource: sh_cmt: 32-bit control register support
+
+ arch/arm/mach-shmobile/Kconfig                |    2 -
+ arch/arm/mach-shmobile/board-ape6evm.c        |    1 
+ arch/arm/mach-shmobile/board-lager.c          |    1 
+ arch/arm/mach-shmobile/clock-r8a73a4.c        |    4 ++-
+ arch/arm/mach-shmobile/clock-r8a7790.c        |    4 +++
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |   29 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   29 +++++++++++++++++++++++++
+ 9 files changed, 69 insertions(+), 3 deletions(-)
 
