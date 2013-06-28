@@ -1,45 +1,46 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 27 Jun 2013 09:05:06 +0000
-Subject: Re: [linux-next PATCH] ARM: shmobile: marzen: defconfig: enable DMA engine support
-Message-Id: <Pine.LNX.4.64.1306271103470.19503@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 28 Jun 2013 10:13:27 +0000
+Subject: [PATCH] ARM: shmobile: Sort r8a7790 MSTP entries
+Message-Id: <20130628101327.26876.89435.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1642514.quKgForQrD@amdc1032> <20130626145252.GA4748@verge.net.au>
- <Pine.LNX.4.64.1306261700130.8856@axis700.grange>
- <20130627050007.GF28229@verge.net.au>
-In-Reply-To: <20130627050007.GF28229@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, 27 Jun 2013, Simon Horman wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> On Wed, Jun 26, 2013 at 05:01:36PM +0200, Guennadi Liakhovetski wrote:
-> > Hi
-> > 
-> > On Wed, 26 Jun 2013, Simon Horman wrote:
-> > 
-> > > [ Cc linux-sh and Guennadi ]
-> > > 
-> > > I have not looked into this closely but it seems to me that
-> > > it would be more robust to resolve this problem using Kconfig.
-> > 
-> > I still think this
-> > 
-> > https://patchwork.kernel.org/patch/2640051/
-> > 
-> > is a proper fix. We cannot and do not want to force building shdma on all
-> > platforms, where SDHI or any other potential shdma client is built. It is
-> > perfectly valid to build SDHI with no DMA support, which is exactly what
-> > that patch makes possible.
-> 
-> That is fine by me. Is there anything I can do to help move it forward?
+The r8a7790 MSTP bits should be kept sorted in the same way
+as on other mach-shmobile SoCs. Move the HSCIF and thermal
+bits to clean up the current state.
 
-Well, you could reply to that thread with your ack or something...
-
-Thanks
-Guennadi
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+ Written on top of renesas-next-20130628
+
+ arch/arm/mach-shmobile/clock-r8a7790.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-06-28 15:15:50.000000000 +0900
+@@ -192,6 +192,9 @@ enum {
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
++	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
++	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
++	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
+ 	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_SD1], SMSTPCR3, 13, 0), /* SDHI1 */
+@@ -205,9 +208,6 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
+ 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
+-	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+-	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+-	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
