@@ -1,37 +1,53 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 15 Jun 2013 00:46:44 +0000
-Subject: Re: [GIT PULL 0/1] Renesas ARM based SoC GPIO R-Car updates for v3.11
-Message-Id: <20130615004644.GL18124@quad.lixom.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 29 Jun 2013 22:45:58 +0000
+Subject: [PATCH 1/3] ARM: shmobile: use common platform header for HPB-DMAC
+Message-Id: <201306300245.58486.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1371106826-25313-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1371106826-25313-1-git-send-email-horms+renesas@verge.net.au>
+References: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jun 13, 2013 at 04:00:25PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> This pull request is based on renesas-pinmux-for-v3.11 which you have
-> previously pulled. It provides the GPIO R-Car driver. I have broken this
-> pull-request out from a separate pull request I plan to send with further
-> pinmux updates as it relates specifically to DT. And I wanted to give you
-> the option of merging it separately.
-> 
-> The following changes since commit 5fcf4a3c3a5bc08bf72a50ef1332501a3c1b96bb:
-> 
->   ARM: shmobile: marzen: Use RCAR_GP_PIN macro (2013-06-05 17:18:24 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-gpio-rcar-for-v3.11
-> 
-> for you to fetch changes up to 159f8a0209aff155af7f6fcdedd4a4484dd19c23:
-> 
->   gpio-rcar: Add DT support (2013-06-12 21:48:09 +0900)
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-Pulled. See comment on patch though.
+Use previously empty <mach/dma.h> to declare HPB-DMA slave IDs.
 
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: changed the guard macro name, fixed comment, extended copyright.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
--Olof
+---
+ arch/arm/mach-shmobile/include/mach/dma.h |   25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+Index: renesas/arch/arm/mach-shmobile/include/mach/dma.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/dma.h
++++ renesas/arch/arm/mach-shmobile/include/mach/dma.h
+@@ -1 +1,24 @@
+-/* empty */
++/*
++ * Copyright (C) 2011-2013 Renesas Electronics Corporation
++ * Copyright (C) 2013 Cogent Embedded, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ */
++
++#ifndef __MACH_DMA_H
++#define __MACH_DMA_H
++
++/* HPB-DMA slave IDs */
++enum {
++	HPBDMA_SLAVE_DUMMY,
++	HPBDMA_SLAVE_SDHI0_TX,
++	HPBDMA_SLAVE_SDHI0_RX,
++	HPBDMA_SLAVE_SSI0_TX_ST,
++	HPBDMA_SLAVE_SSI0_TX_MN,
++	HPBDMA_SLAVE_SSI1_RX_ST,
++	HPBDMA_SLAVE_SSI1_RX_MN,
++};
++
++#endif /* __MACH_DMA_H */
