@@ -1,103 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:04 +0000
-Subject: [PATCH 11/16] ARM: shmobile: Add r8a73a4 CMT10 clock event
-Message-Id: <a7b99f27a260a25f856ea37090cea997d50fe112.1374624383.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 01 Jul 2013 01:36:28 +0000
+Subject: Re: [PATCH] ARM: shmobile: Update romImage to relocate appended DTB
+Message-Id: <20130701013627.GD14567@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
+References: <20130626234807.11425.24645.sendpatchset@w520>
+In-Reply-To: <20130626234807.11425.24645.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thu, Jun 27, 2013 at 08:48:07AM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Instead of relying of MACH_TYPE for board identification,
+> update the romImage code to relocate an appended DTB to
+> the beginning of RAM. This implementation is independent
+> of ARM_APPENDED_DTB, this because it is necessary to copy
+> the DTB to memory so the kernel can access it.
+> 
+> Without this patch Mackerel does not boot via the Mask ROM
+> over USB (r_usb_boot) - this since non-DT boot was broken
+> ages ago in commit:
+> 
+> 0ce53cd ARM: mach-shmobile: Use DT_MACHINE for mackerel
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Written against renesas-next-20130620
+> 
+>  arch/arm/boot/compressed/head-shmobile.S    |   43 ++++++++++++++++++++++++---
+>  arch/arm/mach-shmobile/include/mach/zboot.h |    2 -
+>  2 files changed, 39 insertions(+), 6 deletions(-)
 
-Add clock event support for CMT1 timer channel 0
-to the r8a73a4 SoC code. The CMT is used together
-with a 32KHz clock in this case.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a73a4.c |  4 +++-
- arch/arm/mach-shmobile/setup-r8a73a4.c | 21 +++++++++++++++++++++
- 2 files changed, 24 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index f831b3b..8ea5ef6 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -505,7 +505,7 @@ static struct clk div6_clks[DIV6_NR] = {
- /* MSTP */
- enum {
- 	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
--	MSTP323, MSTP318, MSTP317, MSTP316,
-+	MSTP329, MSTP323, MSTP318, MSTP317, MSTP316,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
- 	MSTP411, MSTP410, MSTP409,
- 	MSTP522, MSTP515,
-@@ -529,6 +529,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP317] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 17, 0), /* IIC7 */
- 	[MSTP318] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 18, 0), /* IIC0 */
- 	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 23, 0), /* IIC1 */
-+	[MSTP329] = SH_CLK_MSTP32(&extalr_clk, SMSTPCR3, 29, 0), /* CMT10 */
- 	[MSTP409] = SH_CLK_MSTP32(&main_div2_clk,	SMSTPCR4, 9, 0), /* IIC5 */
- 	[MSTP410] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 10, 0), /* IIC4 */
- 	[MSTP411] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 11, 0), /* IIC3 */
-@@ -593,6 +594,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
- 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
- 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
-+	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 9c52096..b8dddf4 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -22,6 +22,7 @@
- #include <linux/of_platform.h>
- #include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_timer.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a73a4.h>
-@@ -168,6 +169,25 @@ static const struct resource thermal0_resources[] = {
- 					thermal0_resources,		\
- 					ARRAY_SIZE(thermal0_resources))
- 
-+static struct sh_timer_config cmt10_platform_data = {
-+	.name = "CMT10",
-+	.timer_bit = 0,
-+	.clockevent_rating = 80,
-+};
-+
-+static struct resource cmt10_resources[] = {
-+	DEFINE_RES_MEM(0xe6130010, 0x0c),
-+	DEFINE_RES_MEM(0xe6130000, 0x04),
-+	DEFINE_RES_IRQ(gic_spi(120)), /* CMT1_0 */
-+};
-+
-+#define r8a7790_register_cmt(idx)					\
-+	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+					  idx, cmt##idx##_resources,	\
-+					  ARRAY_SIZE(cmt##idx##_resources), \
-+					  &cmt##idx##_platform_data,	\
-+					  sizeof(struct sh_timer_config))
-+
- void __init r8a73a4_add_standard_devices(void)
- {
- 	r8a73a4_register_scif(SCIFA0);
-@@ -179,6 +199,7 @@ void __init r8a73a4_add_standard_devices(void)
- 	r8a73a4_register_irqc(0);
- 	r8a73a4_register_irqc(1);
- 	r8a73a4_register_thermal();
-+	r8a7790_register_cmt(10);
- }
- 
- #ifdef CONFIG_USE_OF
--- 
-1.8.2.1
-
+Thanks, I have queued this up in the boot-cleanup branch.
