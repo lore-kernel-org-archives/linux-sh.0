@@ -1,91 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:30:15 +0000
-Subject: [GIT 00/22] Renesas ARM based SoC cleanups for v3.12
-Message-Id: <cover.1374103272.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 01 Jul 2013 05:42:04 +0000
+Subject: [PATCH 06/07] ARM: shmobile: Remove unused sh73a0 auxdata table
+Message-Id: <20130701054204.19319.68354.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130701054106.19319.46845.sendpatchset@w520>
+In-Reply-To: <20130701054106.19319.46845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+From: Magnus Damm <damm@opensource.se>
 
-please consider the following cleanups for v3.12.
+Pass NULL to of_platform_populate instead of passing
+an empty list. This cleans up the code and reduces the
+number of lines.
 
-The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
+ arch/arm/mach-shmobile/setup-sh73a0.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.12
-
-for you to fetch changes up to ebd9616f439a8a46b9dca9a272b342f34c5f3614:
-
-  ARM: shmobile: Remove unused mach/dma.h (2013-07-17 10:02:30 +0900)
-
-----------------------------------------------------------------
-renesas-cleanup-for-v3.12 Renesas ARM based SoC cleanups for v3.12
-
-* remove mach/dma.h, it is not used
-* r8a7778 SoC: Removed unused r8a7778_init_irq
-* emev2 SoC: Use less verbose resource declarations
-* emev2 SoC: Correct typo in comment
-* r8a7790 SoC: Remove redundant init_machine callback
-* emev2, r8a7740, r8a7778, r8a7779, sh7372 and sh73a0 SoCs: Remove auxdata
-* emev2, r8a73a4, ape6evm, r8a7790 and sh73a0 SoCs, and
-  lager and kzm9g boards: remove init_irq declaration in machine description
-* sh73a0 SoC: pinmux platform device cleanup
-* r8a7778 SoC: add __initdata on resource and device data
-* armadillo800eva board: Remove unused commend and define
-
-----------------------------------------------------------------
-Guennadi Liakhovetski (1):
-      ARM: shmobile: armadillo800eva: remove left-overs
-
-Kuninori Morimoto (2):
-      ARM: shmobile: r8a7778: add __initdata on resource and device data
-      ARM: shmobile: r8a7778: remove r8a7778_init_irq()
-
-Magnus Damm (15):
-      ARM: shmobile: sh73a0 pinmux platform device cleanup
-      ARM: shmobile: ape6evm: Remove init_irq declaration in machine description
-      ARM: shmobile: lager: Remove init_irq declaration in machine description
-      ARM: shmobile: kzm9g: Remove init_irq declaration in machine description
-      ARM: shmobile: Remove unused EMEV2 auxdata and callback
-      ARM: shmobile: Remove unused r8a7740 auxdata table
-      ARM: shmobile: Remove unused r8a7778 auxdata and callback
-      ARM: shmobile: Remove unused r8a7779 auxdata table
-      ARM: shmobile: Remove unused sh7372 auxdata table
-      ARM: shmobile: Remove unused sh73a0 auxdata table
-      ARM: shmobile: Remove redundant r8a7790 callback
-      ARM: shmobile: Remove unused EMEV2/KZM9D early console
-      ARM: shmobile: Make EMEV2 platform devices more compact
-      ARM: shmobile: Fix EMEV2 clock comment typo
-      ARM: shmobile: Remove unused mach/dma.h
-
-Maxime Ripard (4):
-      ARM: shmobile: emev2: Remove init_irq declaration in machine description
-      ARM: shmobile: r8a73a4: Remove init_irq declaration in machine description
-      ARM: shmobile: r8a7790: Remove init_irq declaration in machine description
-      ARM: shmobile: sh73a0: Remove init_irq declaration in machine description
-
- arch/arm/mach-shmobile/board-ape6evm.c         |    2 -
- arch/arm/mach-shmobile/board-armadillo800eva.c |    9 -
- arch/arm/mach-shmobile/board-kzm9d.c           |    2 +-
- arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 -
- arch/arm/mach-shmobile/board-lager.c           |    2 -
- arch/arm/mach-shmobile/clock-emev2.c           |    2 +-
- arch/arm/mach-shmobile/include/mach/dma.h      |    1 -
- arch/arm/mach-shmobile/include/mach/emev2.h    |    2 +-
- arch/arm/mach-shmobile/include/mach/r8a7778.h  |    1 -
- arch/arm/mach-shmobile/setup-emev2.c           |  353 +++++-------------------
- arch/arm/mach-shmobile/setup-r8a73a4.c         |    2 -
- arch/arm/mach-shmobile/setup-r8a7740.c         |   16 +-
- arch/arm/mach-shmobile/setup-r8a7778.c         |   72 ++---
- arch/arm/mach-shmobile/setup-r8a7779.c         |    7 +-
- arch/arm/mach-shmobile/setup-r8a7790.c         |    7 -
- arch/arm/mach-shmobile/setup-sh7372.c          |    7 +-
- arch/arm/mach-shmobile/setup-sh73a0.c          |   34 +--
- 17 files changed, 106 insertions(+), 415 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/dma.h
+--- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-06-28 19:16:07.000000000 +0900
+@@ -958,10 +958,6 @@ void __init sh73a0_add_early_devices(voi
+ 
+ #ifdef CONFIG_USE_OF
+ 
+-static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
+-	{},
+-};
+-
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
+ 	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
+@@ -971,8 +967,7 @@ void __init sh73a0_add_standard_devices_
+ 
+ 	platform_add_devices(sh73a0_devices_dt,
+ 			     ARRAY_SIZE(sh73a0_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     sh73a0_auxdata_lookup, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	/* Instantiate cpufreq-cpu0 */
+ 	platform_device_register_full(&devinfo);
