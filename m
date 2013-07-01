@@ -1,34 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:15:46 +0000
-Subject: [PATCH 0/2] sh_eth: Add support for r8a7790 SoC
-Message-Id: <1374477348-1349-1-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 01 Jul 2013 06:01:03 +0000
+Subject: [PATCH 00/04] ARM: shmobile: Use default ->init_irq()
+Message-Id: <20130701060103.21728.83833.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+ARM: shmobile: Use default ->init_irq()
 
-this short series enhances the sh_eth driver for use with the r8a7790 SoC.
+[PATCH 01/04] ARM: shmobile: Use default ->init_irq() on EMEV2
+[PATCH 02/04] ARM: shmobile: Use default ->init_irq() on r8a73a4
+[PATCH 03/04] ARM: shmobile: Use default ->init_irq() on r8a7790
+[PATCH 04/04] ARM: shmobile: Use default ->init_irq() on sh73a0
 
-Changes since v2:
+Rework the mach-shmobile code to provide NULL as ->init_irq() callback
+instead of irqchip_init(). This cleans up the code and reduces the
+number of lines.
 
-* Removed "sh_eth: add support for gpio reset" as it appears unnecessary
-  and I am not entirely confident is is correct.
-* Updated "sh_eth: Add support for r8a7790 SoC" to
-  refer to R8A777x intead of R8A7779.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Simon Horman (2):
-  sh_eth: add support for RMIIMODE register
-  sh_eth: Add support for r8a7790 SoC
+ Written against renesas.git renesas-next-20130701 and
+ [PATCH v2 00/07] ARM: shmobile: Remove unused auxdata and callbacks
 
- drivers/net/ethernet/renesas/Kconfig  |  2 +-
- drivers/net/ethernet/renesas/sh_eth.c | 25 +++++++++++++++++++++++++
- drivers/net/ethernet/renesas/sh_eth.h |  2 ++
- 3 files changed, 28 insertions(+), 1 deletion(-)
-
--- 
-1.8.2.1
-
+ arch/arm/mach-shmobile/board-ape6evm.c         |    2 --
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 --
+ arch/arm/mach-shmobile/board-lager.c           |    2 --
+ arch/arm/mach-shmobile/setup-emev2.c           |    2 --
+ arch/arm/mach-shmobile/setup-r8a73a4.c         |    2 --
+ arch/arm/mach-shmobile/setup-r8a7790.c         |    2 --
+ arch/arm/mach-shmobile/setup-sh73a0.c          |    2 --
+ 7 files changed, 14 deletions(-)
