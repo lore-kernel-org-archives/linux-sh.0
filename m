@@ -1,42 +1,45 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 22 Jul 2013 16:21:45 +0000
-Subject: [PATCH v2 3/3] ARM: shmobile: kzm9g-reference: use GPIO for card detection on SDHI2
-Message-Id: <1374510105-21896-4-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 07:20:34 +0000
+Subject: [PATCH v4 3/3] ARM: shmobile: lager: enable nfsroot in DTS
+Message-Id: <1372663234-13486-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On kzm9g GPIO 13 is connected to card detection on the SDHI2 slot. Add it
-to the device tree node.
+Now that Ether support has been added to the lager board
+it is possible to use nfsroot. This configuration is
+in line with that of other shmobile boards.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
 
-So far this only enables polling of the GPIO, because irqpin GPIO-to-IRQ
-is currently not functioning on shmobile in the DT case. The reason for the
-problem is, that shmobile currently uses a static GPIO-to-IRQ mapping with
-a fixed offset, whereas with DT the mapping is dynamic. As soon as this
-problem is fixed, this binding will enable the use of a card-detection IRQ
-instead of polling.
+This patch has a run-time dependency on "ARM: shmobile: lager: enable Ether"
 
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+v2
+* Split out as a new patch from "ARM: shmobile: lager: enable Ether"
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index e5b84d1c..c9976af 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -252,7 +252,7 @@
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 09a84fc..b2f61f0 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,lager", "renesas,r8a7790";
  
- 	vmmc-supply = <&vmmc_sdhi2>;
- 	bus-width = <4>;
--	broken-cd;
-+	cd-gpios = <&pfc 13 GPIO_ACTIVE_LOW>;
- 	dmas = <&dmac 0xcd
- 		&dmac 0xce>;
- 	dma-names = "tx", "rx";
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel";
++		bootargs = "console=ttySC6,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
+ 	};
+ 
+ 	memory@40000000 {
 -- 
-1.7.2.5
+1.8.2.1
 
