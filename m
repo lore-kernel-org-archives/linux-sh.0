@@ -1,86 +1,90 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 10 Jul 2013 11:54:06 +0000
-Subject: Re: [PATCH 1/4 v2] ARM: shmobile: r8a7778: add usb phy power control function
-Message-Id: <51DD4B5E.5030007@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 07:20:33 +0000
+Subject: [PATCH v4 2/3] ARM: shmobile: lager: enable Ether
+Message-Id: <1372663234-13486-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vc4jup1i.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vc4jup1i.wl%kuninori.morimoto.gx@renesas.com>
+References: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-On 10-07-2013 6:28, Kuninori Morimoto wrote:
+---
 
-> USB phy initialisation function is needed from not only
-> USB Host but also USB Function too.
-> This patch adds usb phy common control function.
+This patch has a build-time dependency on "sh_eth: add support for gpio reset".
+This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
 
-> Tested-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-[...]
+v4
+* Annotate ether_platdata as __initdata
 
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-> index 08e9fb3..99dd715 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7778.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-> @@ -109,29 +109,46 @@ void __init r8a7778_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
->   					  pdata, sizeof(*pdata));
->   }
->
-> -/* USB */
-> -static struct usb_phy *phy;
-> +static int r8a7778_usb_phy_power(bool enable)
-> +{
-> +	static struct usb_phy *phy = NULL;
-> +	int ret = 0;
-> +
-> +	if (!phy)
-> +		phy = usb_get_phy(USB_PHY_TYPE_USB2);
-> +
-> +	if (IS_ERR(phy)) {
-> +		pr_err("it doesn't have usb phy driver\n");
-> +		return PTR_ERR(phy);
-> +	}
-> +
-> +	if (enable)
-> +		ret = usb_phy_init(phy);
-> +	else
-> +		usb_phy_shutdown(phy);
->
-> +	return ret;
-> +}
-> +
-> +/* USB */
->   static int usb_power_on(struct platform_device *pdev)
->   {
-> -	if (IS_ERR(phy))
-> -		return PTR_ERR(phy);
-> +	int ret = r8a7778_usb_phy_power(1);
+v3
+* Rebase
 
-    s/1/true/.
+v2
+* As suggested by Laurent Pinchart
+  - Do not manipilate sh_eth reset GPIO directly,
+    rather, do so through newly proposed support for this in
+    the sh_eth driver.
+* A suggested by Sergei Shtylyov
+  - Move DTS portion into a separate patch
+---
+ arch/arm/mach-shmobile/board-lager.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-> +
-> +	if (ret)
-> +		return ret;
->
->   	pm_runtime_enable(&pdev->dev);
->   	pm_runtime_get_sync(&pdev->dev);
->
-> -	usb_phy_init(phy);
-> -
->   	return 0;
->   }
->
->   static void usb_power_off(struct platform_device *pdev)
->   {
-> -	if (IS_ERR(phy))
-> +	if (r8a7778_usb_phy_power(0))
-
-    s/0/false/.
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 0b4a1f9..7d5db20 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -71,6 +71,17 @@ static __initdata struct gpio_keys_platform_data lager_keys_pdata = {
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+ };
+ 
++/* Ether */
++static struct sh_eth_plat_data ether_platdata __initdata = {
++	.phy			= 0x1,
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.register_type		= SH_ETH_REG_FAST_RCAR,
++	.phy_interface		= PHY_INTERFACE_MODE_RMII,
++	.ether_link_active_low	= 1,
++	.needs_gpio_reset	= 1,
++	.reset_gpio		= RCAR_GP_PIN(5, 31),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+@@ -78,6 +89,17 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
+ 				  "scif1_data", "scif1"),
++	/* Ether */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "eth_link", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "eth_magic", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "eth_mdio", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "eth_rmii", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
++				  "intc_irq0", "intc"),
+ };
+ 
+ static void __init lager_add_standard_devices(void)
+@@ -89,6 +111,8 @@ static void __init lager_add_standard_devices(void)
+ 	r8a7790_pinmux_init();
+ 
+ 	r8a7790_add_standard_devices();
++	r8a7790_add_ether_device(&ether_platdata);
++
+ 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
+ 				      &lager_leds_pdata,
+ 				      sizeof(lager_leds_pdata));
+-- 
+1.8.2.1
 
