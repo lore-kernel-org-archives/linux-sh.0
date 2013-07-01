@@ -1,32 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 26 Jul 2013 02:38:33 +0000
-Subject: Re: [PATCH] ARM: shmobile: bockw: add DT reference
-Message-Id: <20130726023831.GB32490@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 01 Jul 2013 06:01:12 +0000
+Subject: [PATCH 01/04] ARM: shmobile: Use default ->init_irq() on EMEV2
+Message-Id: <20130701060112.21728.37189.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2q8xvck.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d2q8xvck.wl%kuninori.morimoto.gx@renesas.com>
+References: <20130701060103.21728.83833.sendpatchset@w520>
+In-Reply-To: <20130701060103.21728.83833.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 24, 2013 at 12:36:51AM -0700, Kuninori Morimoto wrote:
-> This patch adds a sample DT-based Bock-W "reference" implementation.
-> The use of platform-specific C-code should be avoided
-> with this configuration as much as possible.
-> 
-> This patch adds new r8a7778_add_dt_devices() which was same stance
-> of r8a7790_add_dt_devices()
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> >> Simon
-> 
-> This is remake version of BockW DT support.
-> Prev patch depended on clean-up patch,
-> but it is possible to separate cleanup <--> DT.
-> I will re-work for cleanup patchset later.
-> This patch is based on renesas-devel-20130724 tag
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I will queue this up for v3.12 in the dt2 branch.
+Remove redundant irqchip_init() callback. The default case
+of NULL will result in invoking irqchip_init() anyway.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/setup-emev2.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+--- 0005/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-01 13:33:39.000000000 +0900
+@@ -20,7 +20,6 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/platform_device.h>
+ #include <linux/platform_data/gpio-em.h>
+ #include <linux/of_platform.h>
+@@ -445,7 +444,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.init_early	= emev2_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= irqchip_init,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
+ 
