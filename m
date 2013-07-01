@@ -1,93 +1,119 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Jul 2013 00:29:44 +0000
-Subject: Re: [PATCH 5/5] ARM: shmobile: ape6evm: add SDHI interfaces
-Message-Id: <20130731002944.GD17209@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 07:20:32 +0000
+Subject: [PATCH v4 1/3] ARM: shmobile: r8a7790: add Ether support
+Message-Id: <1372663234-13486-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375174556.git.horms+renesas@verge.net.au>
- <f79d68da510bf1b95beff4d556b78d06801f11dc.1375174556.git.horms+renesas@verge.net.au>
- <51F7B822.7020404@cogentembedded.com>
-In-Reply-To: <51F7B822.7020404@cogentembedded.com>
+References: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 30, 2013 at 04:57:06PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 30-07-2013 13:00, Simon Horman wrote:
-> 
-> >From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> >Add support for SDHI0 and SDHI1 on APE6EVM in PIO mode only.
-> 
-> >Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/mach-shmobile/board-ape6evm.c | 50 +++++++++++++++++++++++++++++++++-
-> >  1 file changed, 49 insertions(+), 1 deletion(-)
-> 
-> >diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-> >index 8c7529c..ccf8b04 100644
-> >--- a/arch/arm/mach-shmobile/board-ape6evm.c
-> >+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> [...]
-> >@@ -75,6 +82,29 @@ static struct resource mmcif0_resources[] = {
-> >  	DEFINE_RES_IRQ(gic_spi(169)),
-> >  };
-> >
-> >+/* SDHI0 */
-> >+static struct sh_mobile_sdhi_info sdhi0_pdata = {
-> >+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-> >+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-> >+};
-> >+
-> >+static struct resource sdhi0_resources[] = {
-> >+	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
-> >+	DEFINE_RES_IRQ(gic_spi(165)),
-> >+};
-> >+
-> >+/* SDHI1 */
-> >+static struct sh_mobile_sdhi_info sdhi1_pdata = {
-> >+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-> >+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-> >+			  MMC_CAP_NEEDS_POLL,
-> >+};
-> >+
-> >+static struct resource sdhi1_resources[] = {
-> >+	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
-> >+	DEFINE_RES_IRQ(gic_spi(166)),
-> >+};
-> >+
-> 
->    All of the above are lacking '__initdata' annothation (the
-> resources and platform data will be kmemdup()'ed when registering
-> the platform devices). Too bad I've noticed this too late...
+Add Ether clock and platform device for R8A7779 SoC; add a function to
+register this device with board-specific platform data.
 
-Thanks Sergei.
+Based on a similar change for the r8a7779 by Sergei Shtylyov.
 
-Guennadi,
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-as I have already queued-up this patch could you please
-make an incremental patch that adds __initdata to the above structures?
+---
 
-> 
-> >@@ -124,6 +166,12 @@ static void __init ape6evm_add_standard_devices(void)
-> >  	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
-> >  					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
-> >  					  &mmcif0_pdata, sizeof(mmcif0_pdata));
-> >+	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
-> >+					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
-> >+					  &sdhi0_pdata, sizeof(sdhi0_pdata));
-> >+	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
-> >+					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
-> >+					  &sdhi1_pdata, sizeof(sdhi1_pdata));
-> >  }
-> 
-> WBR, Sergei
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
+
+v3
+* Use newly added "r8a7790-ether" instead of "sh-eth"
+
+v2
+* Do not add MSTP812, EtherAVB. It is not used.
+* As suggested by Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+  - Move Ethernet element of MSTP enum to a separate line
+  - Move declaration of r8a7790_add_ether_device() to immediately
+    after that of r8a7790_add_standard_devices()
+  - Add __initdata annotation to ether_resource.
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c        |  4 ++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        | 14 ++++++++++++++
+ 3 files changed, 21 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 62d8162..2f52c0f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -52,6 +52,7 @@
+ #define SMSTPCR3 0xe615013c
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
++#define SMSTPCR8 0xe6150990
+ 
+ #define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+@@ -182,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ 
+ /* MSTP */
+ enum {
++	MSTP813,
+ 	MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+ 	MSTP522,
+@@ -192,6 +194,7 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+@@ -260,6 +263,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
++	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 7851cc1..b827b49 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -1,7 +1,10 @@
+ #ifndef __ASM_R8A7790_H__
+ #define __ASM_R8A7790_H__
+ 
++#include <linux/sh_eth.h>
++
+ void r8a7790_add_standard_devices(void);
++void r8a7790_add_ether_device(struct sh_eth_plat_data *pdata);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+ void r8a7790_init_delay(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index d89cd83..fad4251 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -31,6 +31,20 @@
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
++/* Ether */
++static struct resource ether_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee700000, 0x400),
++	DEFINE_RES_IRQ(gic_spi(162)), /* IRQ0 */
++};
++
++void __init r8a7790_add_ether_device(struct sh_eth_plat_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "r8a7790-ether", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  pdata, sizeof(*pdata));
++}
++
+ static struct resource pfc_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
+ };
+-- 
+1.8.2.1
+
