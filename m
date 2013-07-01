@@ -1,88 +1,60 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 11 Jul 2013 16:56:57 +0000
-Subject: Re: emev2: clock driver dt proposal
-Message-Id: <51DEE3D9.4030209@codethink.co.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 01 Jul 2013 06:01:31 +0000
+Subject: [PATCH 03/04] ARM: shmobile: Use default ->init_irq() on r8a7790
+Message-Id: <20130701060131.21728.85765.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51DC4737.8020803@codethink.co.uk>
-In-Reply-To: <51DC4737.8020803@codethink.co.uk>
+References: <20130701060103.21728.83833.sendpatchset@w520>
+In-Reply-To: <20130701060103.21728.83833.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 11/07/13 17:44, Magnus Damm wrote:
-> Hi Ben,
->
-> On Thu, Jul 11, 2013 at 1:07 AM, Ben Dooks<ben.dooks@codethink.co.uk>  wrote:
->> On 09/07/13 18:24, Ben Dooks wrote:
->>>
->>> To deal with peripheral clocks, I was working on the following idea
->>> for a clock binding to deal with the gclk and sclks to each peripheral.
->>>
->>> The parent control devices:
->>>
->>> sclk: clock-controller@e011600 {
->>> compatible = "renesas,em-sclk";
->>> reg =<0xe011600 0x100>;
->>>
->>>
->>> #clock-cells =<2>;
->>> };
->>>
->>> This registers a clock-divider for the clock and a clock-mux to control
->>> the
->>> divder's parents.
->>>
->>> gclk: clock-controller@e011400 {
->>> compatible = "renesas,em-gclk";
->>> reg =<0xe011400 0x200>;
->>> #clock-cells =<3>;
->>> }
->>>
->>> This driver provides the clock gates for both the bus clock and the sclk.
->>>
->>>
->>> For each peripheral:
->>>
->>> shdci0 {
->>> clocks =<&gclk 0xc8 0x5 0x2>,<&sclk 0x48&pll3&pll4&osc0&osc1>;
->>> clock-names = "bus", "sclk";
->>> }
->>>
->>> In this case, the gclk is in the form of:
->>>
->>> <  &gclk register-offset-from-base bus-control-bitmask
->>> sclk-control-bitmask>
->>>
->>> And the sclk is in the form of:
->>>
->>> <  &sclk register-offset-from-base
->>> parent-clock-0 parent-clock-1 parent-clock-2 parent-clock-3>
->>
->>
->> Is anyone else working on EMEV2 clock-dt conversion, or should I go
->> ahead and start?
->
-> Thanks for your proposal. It looks quite nice I must say.
->
-> Kuribayashi-san [CC:ed] is currently working on EMEV2 CCF, so I'm
-> afraid we have a collision.
->
-> We had a face-to-face meeting earlier today and I was told that his
-> current implementation is sort of half-done, so he has started but
-> needs more time before having something to share. I think we can
-> expect some output in a couple of weeks. At that time, can you please
-> help out reviewing his code?
->
-> If you want to help out with some other EMEV2 related activity then
-> may I propose PINCTRL? Laurent [CC:ed] knows a lot about
-> drivers/pinctl/sh-pfc/ which I suspect is a good place to hook in some
-> EMEV2-specific tables. The gpio-em.c driver also needs to coexist with
-> the PFC somehow, you may want to see how gpio-rcar.c does it.
+From: Magnus Damm <damm@opensource.se>
 
-Ok, I was hoping for something faster than that. Hacking stuff in to
-the current clock-emev2.c is causing collisions when adding drivers.
+Remove redundant irqchip_init() callback. The default case
+of NULL will result in invoking irqchip_init() anyway.
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-lager.c   |    2 --
+ arch/arm/mach-shmobile/setup-r8a7790.c |    2 --
+ 2 files changed, 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2013-07-01 13:27:30.000000000 +0900
+@@ -22,7 +22,6 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/pinctrl/machine.h>
+@@ -104,7 +103,6 @@ static const char *lager_boards_compat_d
+ 
+ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_early	= r8a7790_init_delay,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= r8a7790_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.dt_compat	= lager_boards_compat_dt,
+--- 0008/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-07-01 13:27:52.000000000 +0900
+@@ -19,7 +19,6 @@
+  */
+ 
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/gpio-rcar.h>
+@@ -225,7 +224,6 @@ static const char *r8a7790_boards_compat
+ 
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+ 	.init_early	= r8a7790_init_delay,
+-	.init_irq	= irqchip_init,
+ 	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+ MACHINE_END
