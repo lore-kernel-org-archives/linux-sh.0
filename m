@@ -1,38 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 10 Jul 2013 10:19:29 +0000
-Subject: [PATCH 2/5] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
-Message-Id: <1373451572-3892-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 01 Jul 2013 05:41:15 +0000
+Subject: [PATCH 01/07] ARM: shmobile: Remove unused EMEV2 auxdata and callback
+Message-Id: <20130701054115.19319.64158.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130701054106.19319.46845.sendpatchset@w520>
+In-Reply-To: <20130701054106.19319.46845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The V4L2_MBUS_FMT_YUV10_1X30 code is documented as being equal to
-0x2014, while the v4l2-mediabus.h header defines it as 0x2016. Fix the
-documentation.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Replace the SoC-specific callback init_machine() with 
+a NULL to use the default code. This cleans up the code
+and reduces the number of lines.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- Documentation/DocBook/media/v4l/subdev-formats.xml | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/DocBook/media/v4l/subdev-formats.xml b/Documentation/DocBook/media/v4l/subdev-formats.xml
-index adc6198..0c2b1f2 100644
---- a/Documentation/DocBook/media/v4l/subdev-formats.xml
-+++ b/Documentation/DocBook/media/v4l/subdev-formats.xml
-@@ -2574,7 +2574,7 @@
- 	    </row>
- 	    <row id="V4L2-MBUS-FMT-YUV10-1X30">
- 	      <entry>V4L2_MBUS_FMT_YUV10_1X30</entry>
--	      <entry>0x2014</entry>
-+	      <entry>0x2016</entry>
- 	      <entry></entry>
- 	      <entry>y<subscript>9</subscript></entry>
- 	      <entry>y<subscript>8</subscript></entry>
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/setup-emev2.c |   10 ----------
+ 1 file changed, 10 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-01 13:19:32.000000000 +0900
+@@ -435,15 +435,6 @@ void __init emev2_init_irq(void)
+ }
+ 
+ #ifdef CONFIG_USE_OF
+-static const struct of_dev_auxdata emev2_auxdata_lookup[] __initconst = {
+-	{ }
+-};
+-
+-static void __init emev2_add_standard_devices_dt(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     emev2_auxdata_lookup, NULL);
+-}
+ 
+ static const char *emev2_boards_compat_dt[] __initdata = {
+ 	"renesas,emev2",
+@@ -455,7 +446,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma
+ 	.init_early	= emev2_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= irqchip_init,
+-	.init_machine	= emev2_add_standard_devices_dt,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
+ 
