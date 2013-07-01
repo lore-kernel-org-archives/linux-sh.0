@@ -1,345 +1,119 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 31 Jul 2013 22:03:27 +0000
-Subject: Re: [PATCH v4 5/7] v4l: Renesas R-Car VSP1 driver
-Message-Id: <2229675.vM0yYbEmYz@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 04:25:53 +0000
+Subject: [PATCH v3 1/3] ARM: shmobile: r8a7790: add Ether support
+Message-Id: <1372652755-16948-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375285954-32153-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1375285954-32153-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <51F97B4D.70305@gmail.com>
-In-Reply-To: <51F97B4D.70305@gmail.com>
+References: <1372652755-16948-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372652755-16948-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sylwester,
+Add Ether clock and platform device for R8A7779 SoC; add a function to
+register this device with board-specific platform data.
 
-Thank you for the review.
+Based on a similar change for the r8a7779 by Sergei Shtylyov.
 
-On Wednesday 31 July 2013 23:02:05 Sylwester Nawrocki wrote:
-> Hi Laurent,
-> 
-> just a few small remarks...
-> 
-> On 07/31/2013 05:52 PM, Laurent Pinchart wrote:
-> > The VSP1 is a video processing engine that includes a blender, scalers,
-> > filters and statistics computation. Configurable data path routing logic
-> > allows ordering the internal blocks in a flexible way.
-> > 
-> > Due to the configurable nature of the pipeline the driver implements the
-> > media controller API and doesn't use the V4L2 mem-to-mem framework, even
-> > though the device usually operates in memory to memory mode.
-> > 
-> > Only the read pixel formatters, up/down scalers, write pixel formatters
-> > and LCDC interface are supported at this stage.
-> > 
-> > Signed-off-by: Laurent Pinchart<laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > Changes since v1:
-> > 
-> > - Updated to the v3.11 media controller API changes
-> > - Only add the LIF entity to the entities list when the LIF is present
-> > - Added a MODULE_ALIAS()
-> > - Fixed file descriptions in comment blocks
-> > - Removed function prototypes for the unimplemented destroy functions
-> > - Fixed a typo in the HST register name
-> > - Fixed format propagation for the UDS entities
-> > - Added v4l2_capability::device_caps support
-> > - Prefix the device name with "platform:" in bus_info
-> > - Zero the v4l2_pix_format priv field in the internal try format handler
-> > - Use vb2_is_busy() instead of vb2_is_streaming() when setting the
-> >    format
-> > - Use the vb2_ioctl_* handlers where possible
-> > - Fix register macros that were missing a n argument
-> > - Mask unused bits when clearing the interrupt status register
-> > - Explain why stride alignment to 128 bytes is needed
-> > - Use the aligned stride value when computing the image size
-> > - Assorted cosmetic changes
-> > ---
-> > 
-> >   drivers/media/platform/Kconfig            |   10 +
-> >   drivers/media/platform/Makefile           |    2 +
-> >   drivers/media/platform/vsp1/Makefile      |    5 +
-> >   drivers/media/platform/vsp1/vsp1.h        |   73 ++
-> >   drivers/media/platform/vsp1/vsp1_drv.c    |  497 +++++++++++++
-> >   drivers/media/platform/vsp1/vsp1_entity.c |  181 +++++
-> >   drivers/media/platform/vsp1/vsp1_entity.h |   68 ++
-> >   drivers/media/platform/vsp1/vsp1_lif.c    |  238 ++++++
-> >   drivers/media/platform/vsp1/vsp1_lif.h    |   37 +
-> >   drivers/media/platform/vsp1/vsp1_regs.h   |  581 +++++++++++++++
-> >   drivers/media/platform/vsp1/vsp1_rpf.c    |  209 ++++++
-> >   drivers/media/platform/vsp1/vsp1_rwpf.c   |  124 ++++
-> >   drivers/media/platform/vsp1/vsp1_rwpf.h   |   53 ++
-> >   drivers/media/platform/vsp1/vsp1_uds.c    |  346 +++++++++
-> >   drivers/media/platform/vsp1/vsp1_uds.h    |   40 +
-> >   drivers/media/platform/vsp1/vsp1_video.c  | 1135 +++++++++++++++++++++++
-> >   drivers/media/platform/vsp1/vsp1_video.h  |  144 ++++
-> >   drivers/media/platform/vsp1/vsp1_wpf.c    |  233 ++++++
-> >   include/linux/platform_data/vsp1.h        |   25 +
-> >   19 files changed, 4001 insertions(+)
-> >   create mode 100644 drivers/media/platform/vsp1/Makefile
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1.h
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_drv.c
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_entity.c
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_entity.h
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_lif.c
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_lif.h
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_regs.h
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_rpf.c
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_rwpf.c
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_rwpf.h
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_uds.c
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_uds.h
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_video.c
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_video.h
-> >   create mode 100644 drivers/media/platform/vsp1/vsp1_wpf.c
-> >   create mode 100644 include/linux/platform_data/vsp1.h
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-[snip]
+---
 
-> > +/* ----------------------------------------------------------------------
-> > + * Initialization and Cleanup
-> > + */
-> > +
-> > +struct vsp1_lif *vsp1_lif_create(struct vsp1_device *vsp1)
-> > +{
-> > +	struct v4l2_subdev *subdev;
-> > +	struct vsp1_lif *lif;
-> > +	int ret;
-> > +
-> > +	lif = devm_kzalloc(vsp1->dev, sizeof(*lif), GFP_KERNEL);
-> > +	if (lif = NULL)
-> > +		return ERR_PTR(-ENOMEM);
-> > +
-> > +	lif->entity.type = VSP1_ENTITY_LIF;
-> > +	lif->entity.id = VI6_DPR_NODE_LIF;
-> > +
-> > +	ret = vsp1_entity_init(vsp1,&lif->entity, 2);
-> > +	if (ret<  0)
-> > +		return ERR_PTR(ret);
-> > +
-> > +	/* Initialize the V4L2 subdev. */
-> > +	subdev =&lif->entity.subdev;
-> > +	v4l2_subdev_init(subdev,&lif_ops);
-> > +
-> > +	subdev->entity.ops =&vsp1_media_ops;
-> > +	subdev->internal_ops =&vsp1_subdev_internal_ops;
-> > +	snprintf(subdev->name, sizeof(subdev->name), "%s lif",
-> > +		 dev_name(vsp1->dev));
-> 
-> Using dev_name() looks reasonable since it guarantees the subdev names
-> are unique. But for dt and non-dt boot you will get different device
-> names. Not sure if it would have been really an issue though.
-> 
-> > +	v4l2_set_subdevdata(subdev, lif);
-> > +	subdev->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
-> > +
-> > +	vsp1_entity_init_formats(subdev, NULL);
-> > +
-> > +	return lif;
-> > +}
-> 
-> [...]
-> 
-> > +static int vsp1_pipeline_stop(struct vsp1_pipeline *pipe)
-> > +{
-> > +	struct vsp1_entity *entity;
-> > +	unsigned long flags;
-> > +	int ret;
-> > +
-> > +	spin_lock_irqsave(&pipe->irqlock, flags);
-> > +	pipe->state = VSP1_PIPELINE_STOPPING;
-> > +	spin_unlock_irqrestore(&pipe->irqlock, flags);
-> > +
-> > +	ret = wait_event_timeout(pipe->wq, pipe->state = 
-> > VSP1_PIPELINE_STOPPED,
-> > +				 msecs_to_jiffies(500));
-> > +	ret = ret = 0 ? -ETIMEDOUT : 0;
-> 
-> Wouldn't be -ETIME more appropriate ?
-> 
-> #define	ETIME		62	/* Timer expired */
-> ...
-> #define	ETIMEDOUT	110	/* Connection timed out */
+This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
 
-$ find Documentation/ -type f -exec egrep -- ETIME[^DO] {} \; | wc
-      7      45     347
-$ find Documentation/ -type f -exec egrep -- ETIMED?OUT {} \; | wc
-     22     135    1162
+v3
+* Use newly added "r8a7790-ether" instead of "sh-eth"
 
-The only two places where ETIME is used in the Documentation are USB and the 
-RxRPC network protocol.
+v2
+* Do not add MSTP812, EtherAVB. It is not used.
+* As suggested by Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+  - Move Ethernet element of MSTP enum to a separate line
+  - Move declaration of r8a7790_add_ether_device() to immediately
+    after that of r8a7790_add_standard_devices()
+  - Add __initdata annotation to ether_resource.
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c        |  4 ++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        | 14 ++++++++++++++
+ 3 files changed, 21 insertions(+)
 
-$ find drivers/ -type f -name \*.[ch] -exec grep -- -ETIME[^DO] {} \; | wc
-    295    1037    7339
-$ find drivers/ -type f -name \*.[ch] -exec grep -- -ETIMEDOUT {} \; | wc
-   1156    3769   30590
-
-According to man errno, ETIME seems to be related to XSI STREAMS. I'm fine 
-with both, but it seems the kernel is goind towards -ETIMEDOUT.
-
-> > +	list_for_each_entry(entity,&pipe->entities, list_pipe) {
-> > +		if (entity->route)
-> > +			vsp1_write(entity->vsp1, entity->route,
-> > +				   VI6_DPR_NODE_UNUSED);
-> > +
-> > +		v4l2_subdev_call(&entity->subdev, video, s_stream, 0);
-> > +	}
-> > +
-> > +	return ret;
-> > +}
-> 
-> [...]
-> 
-> > +/* ----------------------------------------------------------------------
-> > + * videobuf2 Queue Operations
-> > + */
-> > +
-> > +static int
-> > +vsp1_video_queue_setup(struct vb2_queue *vq, const struct v4l2_format
-> > *fmt,
-> > +		     unsigned int *nbuffers, unsigned int *nplanes,
-> > +		     unsigned int sizes[], void *alloc_ctxs[])
-> > +{
-> > +	struct vsp1_video *video = vb2_get_drv_priv(vq);
-> > +	struct v4l2_pix_format_mplane *format =&video->format;
-> > +	unsigned int i;
-> 
-> If you don't support VIDIOC_CREATE_BUFS ioctl then there should probably
-> be at least something like:
-> 
-> 	if (fmt)
-> 		return -EINVAL;
-> 
-> But it's likely better to add proper handling of 'fmt' right away.
-
-OK, I will do so. What is the driver supposed to do when *fmt isn't supported 
-? Use the closest format as would be returned by try_format() ?
-
-I suppose this also implies that buffer_prepare() should check whether the 
-buffer matches the current format.
-
-> > +	*nplanes = format->num_planes;
-> > +
-> > +	for (i = 0; i<  format->num_planes; ++i) {
-> > +		sizes[i] = format->plane_fmt[i].sizeimage;
-> > +		alloc_ctxs[i] = video->alloc_ctx;
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-
-[snip]
-
-> > +static int __vsp1_video_try_format(struct vsp1_video *video,
-> > +				   struct v4l2_pix_format_mplane *pix,
-> > +				   const struct vsp1_format_info **fmtinfo)
-> > +{
-> > +	const struct vsp1_format_info *info;
-> > +	unsigned int width = pix->width;
-> > +	unsigned int height = pix->height;
-> > +	unsigned int i;
-> > +
-> > +	/* Retrieve format information and select the default format if the
-> > +	 * requested format isn't supported.
-> > +	 */
-> 
-> Nitpicking: Isn't proper multi-line comment style
-> 
-> 	/*
-> 	 * Retrieve format information and select the default format if the
-> 	 * requested format isn't supported.
-> 	 */
-> 
-> ?
-
-Yes it is. I got used to the
-
-/* foo
- * bar
- */
-
-style as it's more compact.
-
-> In fact the media subsystem code is pretty messy WRT that detail.
-
-Documentation/CodingStyle mentions
-
-The preferred style for long (multi-line) comments is:
-
-        /*
-         * This is the preferred style for multi-line
-         * comments in the Linux kernel source code.
-         * Please use it consistently.
-         *
-         * Description:  A column of asterisks on the left side,
-         * with beginning and ending almost-blank lines.
-         */
-
-For files in net/ and drivers/net/ the preferred style for long (multi-line)
-comments is a little different.
-
-        /* The preferred comment style for files in net/ and drivers/net
-         * looks like this.
-         *
-         * It is nearly the same as the generally preferred comment style,
-         * but there is no initial almost-blank line.
-         */
-
-I'd love to add drivers/media/ to that list ;-)
-
-> > +	info = vsp1_get_format_info(pix->pixelformat);
-> > +	if (info = NULL)
-> > +		info = vsp1_get_format_info(VSP1_VIDEO_DEF_FORMAT);
-> > +
-> > +	pix->pixelformat = info->fourcc;
-> > +	pix->colorspace = V4L2_COLORSPACE_SRGB;
-> > +	pix->field = V4L2_FIELD_NONE;
-> > +	memset(pix->reserved, 0, sizeof(pix->reserved));
-> > +
-> > +	/* Align the width and height for YUV 4:2:2 and 4:2:0 formats. */
-> > +	width = round_down(width, info->hsub);
-> > +	height = round_down(height, info->vsub);
-> > +
-> > +	/* Clamp the width and height. */
-> > +	pix->width = clamp(width, VSP1_VIDEO_MIN_WIDTH, 
-> > VSP1_VIDEO_MAX_WIDTH);
-> > +	pix->height = clamp(height, VSP1_VIDEO_MIN_HEIGHT,
-> > +			    VSP1_VIDEO_MAX_HEIGHT);
-> > +
-> > +	/* Compute and clamp the stride and image size. While not documented 
-> > +	 * in the datasheet, strides not aligned to a multiple of 128 bytes 
-> > +	 * result in image corruption.
-> > +	 */
-> > +	for (i = 0; i<  max(info->planes, 2U); ++i) {
-> > +		unsigned int hsub = i>  0 ? info->hsub : 1;
-> > +		unsigned int vsub = i>  0 ? info->vsub : 1;
-> > +		unsigned int align = 128;
-> > +		unsigned int bpl;
-> > +
-> > +		bpl = clamp_t(unsigned int, pix->plane_fmt[i].bytesperline,
-> > +			      pix->width / hsub * info->bpp[i] / 8,
-> > +			      round_down(65535U, align));
-> > +
-> > +		pix->plane_fmt[i].bytesperline = round_up(bpl, align);
-> > +		pix->plane_fmt[i].sizeimage = pix->plane_fmt[i].bytesperline
-> > +					    * pix->height / vsub;
-> > +	}
-> > +
-> > +	if (info->planes = 3) {
-> > +		/* The second and third planes must have the same stride. */
-> > +		pix->plane_fmt[2].bytesperline = pix->plane_fmt[1].bytesperline;
-> > +		pix->plane_fmt[2].sizeimage = pix->plane_fmt[1].sizeimage;
-> > +	}
-> > +
-> > +	pix->num_planes = info->planes;
-> > +
-> > +	if (fmtinfo)
-> > +		*fmtinfo = info;
-> > +
-> > +	return 0;
-> > +}
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 62d8162..2f52c0f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -52,6 +52,7 @@
+ #define SMSTPCR3 0xe615013c
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
++#define SMSTPCR8 0xe6150990
+ 
+ #define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+@@ -182,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ 
+ /* MSTP */
+ enum {
++	MSTP813,
+ 	MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+ 	MSTP522,
+@@ -192,6 +194,7 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+@@ -260,6 +263,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
++	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 7851cc1..b827b49 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -1,7 +1,10 @@
+ #ifndef __ASM_R8A7790_H__
+ #define __ASM_R8A7790_H__
+ 
++#include <linux/sh_eth.h>
++
+ void r8a7790_add_standard_devices(void);
++void r8a7790_add_ether_device(struct sh_eth_plat_data *pdata);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+ void r8a7790_init_delay(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index d89cd83..fad4251 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -31,6 +31,20 @@
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
++/* Ether */
++static struct resource ether_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee700000, 0x400),
++	DEFINE_RES_IRQ(gic_spi(162)), /* IRQ0 */
++};
++
++void __init r8a7790_add_ether_device(struct sh_eth_plat_data *pdata)
++{
++	platform_device_register_resndata(&platform_bus, "r8a7790-ether", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  pdata, sizeof(*pdata));
++}
++
+ static struct resource pfc_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
+ };
 -- 
-Regards,
+1.8.2.1
 
-Laurent Pinchart
