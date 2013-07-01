@@ -1,117 +1,83 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Fri, 12 Jul 2013 10:30:51 +0000
-Subject: Re: [PATCH 02/02] ARM: shmobile: Setup r8a7790 arch timer based on MD pins
-Message-Id: <20130712103051.GA4144@kartoffel>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 04:24:55 +0000
+Subject: [PATCH net-next v3 3/3] sh_eth: Add support for r8a7790 SoC
+Message-Id: <1372652695-16606-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130711162209.933.47610.sendpatchset@w520>
- <20130711162229.933.53924.sendpatchset@w520>
-In-Reply-To: <20130711162229.933.53924.sendpatchset@w520>
+References: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-On Thu, Jul 11, 2013 at 05:22:29PM +0100, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Update the r8a7790 arch timer setup code to configure the
-> frequency dynamically at boot time. This means that the arch
-> timer driver will be able to detect a timer frequency that
-> has been calculated based on the MD pins instead of a fixed
-> and potentially incorrect 13 MHz.
-> 
-> With this patch applied the Linux kernel will correctly
-> support the r8a7790 Lager board that uses a 20 Mhz EXTAL.
-> The arch timer will operate on 10 MHz and the Linux arch
-> timer driver will be correctly configured to use 10 MHz.
-> 
-> Without this patch the 20 MHz EXTAL will be used to drive
-> the arch timer at 10 MHz, but the Linux arch timer driver
-> will believe it is counting at 13 Mhz.
+This is a copy of support for r8a7778/9 with the .rmiimode mode bit
+of struct sh_eth_cpu_data set.
 
-This seems scary to me. The bootloader should be doing this before jumping to
-Linux. As CNTCR is only writeable from the secure side, you won't be able to
-use KVM unless the bootloader has done this.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Additionally, if you didn't do this in Linux, as far as I can see you wouldn't
-need an init_time callback at all...
+---
 
-Thanks,
-Mark.
+v3
+* Add r8a7790_data rather than updating r8a777x_data.
+  As requested by Sergei Shtylyov.
 
-> 
-> Reported-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> Tested-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-> ---
-> 
->  arch/arm/mach-shmobile/setup-r8a7790.c |   49 ++++++++++++++++++++++++++++----
->  1 file changed, 44 insertions(+), 5 deletions(-)
-> 
-> --- 0006/arch/arm/mach-shmobile/setup-r8a7790.c
-> +++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-07-09 21:29:18.000000000 +0900
-> @@ -215,14 +215,53 @@ u32 __init r8a7790_read_mode_pins(void)
->  	return mode;
->  }
->  
-> +#define CNTCR 0
-> +#define CNTFID0 0x20
-> +
->  void __init r8a7790_timer_init(void)
->  {
-> -	void __iomem *cntcr;
-> +#ifdef CONFIG_ARM_ARCH_TIMER
-> +	u32 mode = r8a7790_read_mode_pins();
-> +	void __iomem *base;
-> +	int extal_mhz = 0;
-> +	u32 freq;
-> +
-> +	/* At Linux boot time the r8a7790 arch timer comes up
-> +	 * with the counter disabled. Moreover, it may also report
-> +	 * a potentially incorrect fixed 13 MHz frequency. To be
-> +	 * correct these registers need to be updated to use the
-> +	 * frequency EXTAL / 2 which can be determined by the MD pins.
-> +	 */
-> +
-> +	switch (mode & (MD(14) | MD(13))) {
-> +	case 0:
-> +		extal_mhz = 15;
-> +		break;
-> +	case MD(13):
-> +		extal_mhz = 20;
-> +		break;
-> +	case MD(14):
-> +		extal_mhz = 26;
-> +		break;
-> +	case MD(13) | MD(14):
-> +		extal_mhz = 30;
-> +		break;
-> +	}
-> +
-> +	/* The arch timer frequency equals EXTAL / 2 */
-> +	freq = extal_mhz * (1000000 / 2);
-> +
-> +	/* Remap "armgcnt address map" space */
-> +	base = ioremap(0xe6080000, PAGE_SIZE);
-> +
-> +	/* Update registers with correct frequency */
-> +	iowrite32(freq, base + CNTFID0);
-> +	asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
->  
-> -	/* make sure arch timer is started by setting bit 0 of CNTCT */
-> -	cntcr = ioremap(0xe6080000, PAGE_SIZE);
-> -	iowrite32(1, cntcr);
-> -	iounmap(cntcr);
-> +	/* make sure arch timer is started by setting bit 0 of CNTCR */
-> +	iowrite32(1, base + CNTCR);
-> +	iounmap(base);
-> +#endif /* CONFIG_ARM_ARCH_TIMER */
->  
->  	shmobile_timer_init();
->  }
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> 
+v2
+* Split from "sh_eth: add support RMIIMODE register"
+---
+ drivers/net/ethernet/renesas/Kconfig  |  2 +-
+ drivers/net/ethernet/renesas/sh_eth.c | 21 +++++++++++++++++++++
+ 2 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/Kconfig b/drivers/net/ethernet/renesas/Kconfig
+index 544514e..0d8a124a 100644
+--- a/drivers/net/ethernet/renesas/Kconfig
++++ b/drivers/net/ethernet/renesas/Kconfig
+@@ -12,4 +12,4 @@ config SH_ETH
+ 	  Renesas SuperH Ethernet device driver.
+ 	  This driver supporting CPUs are:
+ 		- SH7619, SH7710, SH7712, SH7724, SH7734, SH7763, SH7757,
+-		  R8A7740 and R8A7779.
++		  R8A7740, R8A7779 and R8A7790.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index f97700f..3504878 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -393,6 +393,26 @@ static struct sh_eth_cpu_data r8a777x_data = {
+ 	.hw_swap	= 1,
+ };
+ 
++/* R8A7790 */
++static struct sh_eth_cpu_data r8a7790_data = {
++	.set_duplex	= sh_eth_set_duplex,
++	.set_rate	= sh_eth_set_rate_r8a777x,
++
++	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
++	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
++	.eesipr_value	= 0x01ff009f,
++
++	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
++			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++
++	.apr		= 1,
++	.mpr		= 1,
++	.tpauser	= 1,
++	.hw_swap	= 1,
++	.rmiimode	= 1,
++};
++
+ static void sh_eth_set_rate_sh7724(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -2753,6 +2773,7 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
++	{ "r8a7790-ether", (kernel_ulong_t)&r8a7790_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
+-- 
+1.8.2.1
+
