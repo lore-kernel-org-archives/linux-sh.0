@@ -1,184 +1,84 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:31 +0000
-Subject: [PATCH 10/11] ARM: shmobile: KZM9D DT reference implementation
-Message-Id: <03393e8fe651aaf8824c519effbb51bf460ca57f.1374478037.git.horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 02:18:39 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790:  Initialise clocks and SCIF in r8a7790_add_dt_devices()
+Message-Id: <1372645120-27256-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478037.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
+References: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This is sufficient to allow boot of the Lager board with
+a console without boards-lager.c compiled into the kernel.
+This is an example of a minimal but still useful initialisation
+of the board using DT as much as possible.
 
-Add a DT reference implementation for the KZM9D board.
+Also provide r8a7790_add_dt_device() in
+r8a7790.h to allow it be used from a boards-lager-reference.c
+file which will be added by a subsequent patch.
 
-Only DT devices are used in this case. UART, STI, GPIO
-and SMP / GIC are all provided by emev2.dtsi.
-
-There is still a board specific C file used for enabling
-legacy SH clocks. This file will be removed after we have
-moved over to common clocks.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-[horms+renesas@verge.net.au: Do not include trailing blank line in
- board-kzm9d-reference.c ]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/Makefile                     |  1 +
- arch/arm/boot/dts/emev2-kzm9d-reference.dts    | 26 +++++++++++++++
- arch/arm/mach-shmobile/Kconfig                 | 12 +++++++
- arch/arm/mach-shmobile/Makefile                |  1 +
- arch/arm/mach-shmobile/Makefile.boot           |  1 +
- arch/arm/mach-shmobile/board-kzm9d-reference.c | 46 ++++++++++++++++++++++++++
- 6 files changed, 87 insertions(+)
- create mode 100644 arch/arm/boot/dts/emev2-kzm9d-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-kzm9d-reference.c
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 641b3c9..af19e38 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -183,6 +183,7 @@ dtb-$(CONFIG_ARCH_U8500) += snowball.dtb \
- 	ccu9540.dtb
- dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
-+	emev2-kzm9d-reference.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7740-armadillo800eva-reference.dtb \
-diff --git a/arch/arm/boot/dts/emev2-kzm9d-reference.dts b/arch/arm/boot/dts/emev2-kzm9d-reference.dts
-new file mode 100644
-index 0000000..5ec065e
---- /dev/null
-+++ b/arch/arm/boot/dts/emev2-kzm9d-reference.dts
-@@ -0,0 +1,26 @@
-+/*
-+ * Device Tree Source for the KZM9D board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+/dts-v1/;
-+
-+/include/ "emev2.dtsi"
-+
-+/ {
-+	model = "EMEV2 KZM9D Board";
-+	compatible = "renesas,kzm9d-reference", "renesas,emev2";
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x40000000 0x8000000>;
-+	};
-+
-+	chosen {
-+		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 3912ce9..7c5034a 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -156,6 +156,18 @@ config MACH_KZM9D
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select USE_OF
+---
+
+v2
+
+* Rebase
+---
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        | 11 ++++++++++-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 7851cc1..7a25138 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -2,6 +2,7 @@
+ #define __ASM_R8A7790_H__
  
-+config MACH_KZM9D_REFERENCE
-+	bool "KZM9D board - Reference Device Tree Implementation"
-+	depends on ARCH_EMEV2
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select USE_OF
-+	---help---
-+	   Use reference implementation of KZM9D board support
-+	   which makes a greater use of device tree at the expense
-+	   of not supporting a number of devices.
-+
-+	   This is intended to aid developers
-+
- config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 6165a51..e8d0a2c 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
-+obj-$(CONFIG_MACH_KZM9D_REFERENCE)	+= board-kzm9d-reference.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
+ void r8a7790_add_standard_devices(void);
++void r8a7790_add_standard_devices_dt(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+ void r8a7790_init_delay(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index d89cd83..770109b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -180,7 +180,7 @@ static struct resource cmt00_resources[] = {
+ 					  &cmt##idx##_platform_data,	\
+ 					  sizeof(struct sh_timer_config))
  
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 84c6868..7785c52 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -7,6 +7,7 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_KOTA2) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
-+loadaddr-$(CONFIG_MACH_KZM9D_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
-diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-new file mode 100644
-index 0000000..a7b28b2
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-@@ -0,0 +1,46 @@
-+/*
-+ * kzm9d board support - Reference DT implementation
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/of_platform.h>
-+#include <mach/emev2.h>
-+#include <mach/common.h>
-+#include <asm/mach/arch.h>
-+
-+static void __init kzm9d_add_standard_devices(void)
-+{
-+	emev2_clock_init();
-+
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-void __init r8a7790_add_standard_devices(void)
++void __init r8a7790_add_dt_devices(void)
+ {
+ 	r8a7790_register_scif(SCIFA0);
+ 	r8a7790_register_scif(SCIFA1);
+@@ -192,6 +192,11 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_scif(SCIF1);
+ 	r8a7790_register_scif(HSCIF0);
+ 	r8a7790_register_scif(HSCIF1);
 +}
 +
-+static const char *kzm9d_boards_compat_dt[] __initdata = {
-+	"renesas,kzm9d-reference",
-+	NULL,
-+};
++void __init r8a7790_add_standard_devices(void)
++{
++	r8a7790_add_dt_devices();
+ 	r8a7790_register_irqc(0);
+ 	r8a7790_register_thermal();
+ 	r8a7790_register_cmt(00);
+@@ -219,6 +224,10 @@ void __init r8a7790_init_delay(void)
+ #ifdef CONFIG_USE_OF
+ void __init r8a7790_add_standard_devices_dt(void)
+ {
++	/* clocks are setup late during boot in the case of DT */
++	r8a7790_clock_init();
 +
-+DT_MACHINE_START(KZM9D_DT, "kzm9d")
-+	.smp		= smp_ops(emev2_smp_ops),
-+	.map_io		= emev2_map_io,
-+	.init_early	= emev2_init_delay,
-+	.init_machine	= kzm9d_add_standard_devices,
-+	.init_late	= shmobile_init_late,
-+	.dt_compat	= kzm9d_boards_compat_dt,
-+MACHINE_END
++	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
 -- 
 1.8.2.1
 
