@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:32:09 +0000
-Subject: [PATCH 08/22] ARM: shmobile: lager: Remove init_irq declaration in machine description
-Message-Id: <5f85052c606e38c98de28170a2df72f78931aa30.1374103272.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 01 Jul 2013 05:41:24 +0000
+Subject: [PATCH 02/07] ARM: shmobile: Remove unused r8a7740 auxdata table
+Message-Id: <20130701054124.19319.75931.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
+References: <20130701054106.19319.46845.sendpatchset@w520>
+In-Reply-To: <20130701054106.19319.46845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,38 +12,33 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Remove redundant irqchip_init() callback. The default case
-of NULL will result in invoking irqchip_init() anyway.
+Pass NULL to of_platform_populate instead of passing
+an empty list. This cleans up the code and reduces the
+number of lines.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-[ horms+renesas@verge.net.au: Trimmed patch to remove portion
-  that updates the r8a7790 SoC and altered the subject to
-  use the same format as the patch that updates the r8a7790. ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c |    2 --
- 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index d73e21d..1e99b17 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -22,7 +22,6 @@
- #include <linux/gpio_keys.h>
- #include <linux/input.h>
- #include <linux/interrupt.h>
--#include <linux/irqchip.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
- #include <linux/pinctrl/machine.h>
-@@ -103,7 +102,6 @@ static const char *lager_boards_compat_dt[] __initdata = {
- };
+ arch/arm/mach-shmobile/setup-r8a7740.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2013-06-28 15:43:04.000000000 +0900
+@@ -986,16 +986,11 @@ void __init r8a7740_add_early_devices(vo
  
- DT_MACHINE_START(LAGER_DT, "lager")
--	.init_irq	= irqchip_init,
- 	.init_time	= r8a7790_timer_init,
- 	.init_machine	= lager_add_standard_devices,
- 	.dt_compat	= lager_boards_compat_dt,
--- 
-1.7.10.4
-
+ #ifdef CONFIG_USE_OF
+ 
+-static const struct of_dev_auxdata r8a7740_auxdata_lookup[] __initconst = {
+-	{ }
+-};
+-
+ void __init r8a7740_add_standard_devices_dt(void)
+ {
+ 	platform_add_devices(r8a7740_devices_dt,
+ 			    ARRAY_SIZE(r8a7740_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     r8a7740_auxdata_lookup, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ void __init r8a7740_init_delay(void)
