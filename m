@@ -1,93 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 26 Jul 2013 09:51:51 +0000
-Subject: Re: [PATCH 01/12] mmc: mmc_spi: Support CD/RO GPIOs
-Message-Id: <1734001.ZxAa9p5J8y@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 01 Jul 2013 06:01:40 +0000
+Subject: [PATCH 04/04] ARM: shmobile: Use default ->init_irq() on sh73a0
+Message-Id: <20130701060140.21728.27213.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <3057612.zXvbbdByqU@avalon> <51F1C165.6040600@gmail.com>
-In-Reply-To: <51F1C165.6040600@gmail.com>
+References: <20130701060103.21728.83833.sendpatchset@w520>
+In-Reply-To: <20130701060103.21728.83833.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Ryan,
+From: Magnus Damm <damm@opensource.se>
 
-On Friday 26 July 2013 10:23:01 Ryan Mallon wrote:
-> On 26/07/13 10:04, Laurent Pinchart wrote:
-> > On Friday 26 July 2013 09:45:26 Ryan Mallon wrote:
-> >> On 26/07/13 09:26, Laurent Pinchart wrote:
-> >>> Add support for passing CD/RO GPIO numbers directly to the mmc_spi
-> >>> driver instead of relying solely on board code callbacks to retrieve the
-> >>> CD/RO signals values.
-> >>> 
-> >>> Signed-off-by: Laurent Pinchart
-> >>> <laurent.pinchart+renesas@ideasonboard.com>
-> >>> ---
-> >>> 
-> >>>  drivers/mmc/host/mmc_spi.c    | 32 +++++++++++++++++++++---------
-> >>>  drivers/mmc/host/of_mmc_spi.c | 46 ++++++++++--------------------------
-> >>>  include/linux/spi/mmc_spi.h   | 11 +++++++++++
-> >>>  3 files changed, 46 insertions(+), 43 deletions(-)
-> >>> 
-> >>> diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
-> >>> index 74145d1..4e83908 100644
-> >>> --- a/drivers/mmc/host/mmc_spi.c
-> >>> +++ b/drivers/mmc/host/mmc_spi.c
-> >>> @@ -36,6 +36,7 @@
-> >>> 
-> >>>  #include <linux/mmc/host.h>
-> >>>  #include <linux/mmc/mmc.h>		/* for R1_SPI_* bit values */
-> >>> +#include <linux/mmc/slot-gpio.h>
-> >>>  #include <linux/spi/spi.h>
-> >>>  #include <linux/spi/mmc_spi.h>
-> >>> 
-> >>> @@ -1278,11 +1279,8 @@ static int mmc_spi_get_ro(struct mmc_host *mmc)
-> >>>  	if (host->pdata && host->pdata->get_ro)
-> >>>  		return !!host->pdata->get_ro(mmc->parent);
-> >>> 
-> >>> -	/*
-> >>> -	 * Board doesn't support read only detection; let the mmc core
-> >>> -	 * decide what to do.
-> >>> -	 */
-> >>> -	return -ENOSYS;
-> >>> +	else
-> >>> +		return mmc_gpio_get_ro(mmc);
-> >> 
-> >> Why not just have the board file assign mmc_gpio_get_ro as
-> >> host->pdata->get_ro? This would eliminate the need for the
-> >> MMC_SPI_USE_RO_GPIO flag.
-> > 
-> > Because the idea is to get rid of board callbacks and rely on proper
-> > kernel abstraction layers such as the GPIO subsystem. This will be
-> > especially important when adding device tree support to the mmc_spi
-> > driver.
-> > 
-> >> Also, if host->pdata->get_ro is not set then this will assume
-> >> mmc_gpio_get_ro is valid, even if MMC_SPI_USE_RO_GPIO is not set. I'm
-> >> guessing it will end up returning -ENOSYS, but they way the code reads is
-> >> that if the host doesn't have get_ro function set, then it is must be a
-> >> gpio.
-> > 
-> > mmc_gpio_get_ro() will indeed return -ENOSYS when the MMC_SPI_USE_RO_GPIO
-> > flag isn't set, as the mmc_spi driver will not call mmc_gpio_request_ro()
-> > in that case.
-> > 
-> > This patch hides the -ENOSYS value from the mmc_spi_get_ro() and
-> > mmc_spi_get_cd() functions, perhaps making them slightly confusing, but
-> > patch 06/12 then gets rid of those functions, so I don't think it's a bit
-> > issue.
->
-> Ah, I didn't read far enough along in the patch series :-). So all mmc spi
-> ro/cd controls are now assumed to be gpios?
+Remove redundant irqchip_init() callback. The default case
+of NULL will result in invoking irqchip_init() anyway.
 
-That's correct. It's the case in practice for all the boards we support in 
-mainline. If the situation changes in the future for a new board (hardware 
-engineers tend to have strange design ideas sometimes) a custom GPIO driver 
-might be needed (for FPGA/CPLD-controlled GPIOs for instance).
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
--- 
-Regards,
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 --
+ arch/arm/mach-shmobile/setup-sh73a0.c          |    2 --
+ 2 files changed, 4 deletions(-)
 
-Laurent Pinchart
-
+--- 0001/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ work/arch/arm/mach-shmobile/board-kzm9g-reference.c	2013-06-28 16:04:39.000000000 +0900
+@@ -24,7 +24,6 @@
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+ #include <linux/pinctrl/machine.h>
+@@ -99,7 +98,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-refere
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= kzm_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+--- 0007/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-06-28 16:04:47.000000000 +0900
+@@ -22,7 +22,6 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+@@ -983,7 +982,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH7
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
