@@ -1,134 +1,84 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 22 Jul 2013 23:35:10 +0000
-Subject: Re: [PATCH v2 09/15] DMA: shdma: support referencing specific DMACs within a multiplexer in DT
-Message-Id: <1458504.WlA0Z5lFQc@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 04:24:54 +0000
+Subject: [PATCH net-next v3 2/3] sh_eth: add support RMIIMODE register
+Message-Id: <1372652695-16606-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de> <1722625.6c1mAhWBWU@avalon> <Pine.LNX.4.64.1307220823570.7852@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1307220823570.7852@axis700.grange>
+References: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-Hi Guennadi,
+This change is motivated by the lager board which uses the r8a7790 SoC,
+an R-Car SoC. For this board setting the RMIIMODE register is necessary.
 
-On Monday 22 July 2013 08:34:19 Guennadi Liakhovetski wrote:
-> On Mon, 22 Jul 2013, Laurent Pinchart wrote:
-> > On Friday 19 July 2013 18:29:34 Guennadi Liakhovetski wrote:
-> > > Currently shdma DT nodes have to be placed under a multiplexer node. DMA
-> > > slave DT nodes then use that multiplexer's phandle in their "dmas"
-> > > properties. However, sometimes it can be necessary to let DMA slaves
-> > > only use a specific DMAC instance. In this case it would be logical to
-> > > just use the respective phandle in that slave's "dmas" property. For
-> > > this to work the referenced DMAC has to register a struct of_dma
-> > > instance, which isn't presently done. Instead the driver currently only
-> > > registers one struct of_dma for the multiplexer. This patch adds support
-> > > for such configurations. To enable this option a "#dma-cells" property
-> > > also must be added to the respective DMAC DT node.
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > > ---
-> > > 
-> > >  Documentation/devicetree/bindings/dma/shdma.txt |   16 ++++++
-> > 
-> > Patches that touch DT bindings must be CC'ed to devicetree@vger.kernel.org
-> > (http://www.gossamer-threads.com/lists/linux/kernel/1750512).
-> 
-> Yes, I saw that announcements, but if my calculations are correct, these
-> patches went out before the MAINTAINERS patch above hit the mailing list,
-> and as of this writing it's still not in next.
+This patch assumes this is valid for all R-Car SoCs.
 
-My point was merely to inform you of the change in case you had missed it :-)
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-> > >  drivers/dma/sh/shdma.h                          |    7 +++
-> > >  drivers/dma/sh/shdmac.c                         |   66 ++++++++++++++++
-> > >  3 files changed, 89 insertions(+), 0 deletions(-)
-> 
-> [snip]
-> 
-> > > diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-> > > index ae89261..0ddcddf 100644
-> > > --- a/drivers/dma/sh/shdmac.c
-> > > +++ b/drivers/dma/sh/shdmac.c
-> > > @@ -22,6 +22,7 @@
-> > >  #include <linux/module.h>
-> > >  #include <linux/of.h>
-> > >  #include <linux/of_device.h>
-> > > +#include <linux/of_dma.h>
-> > >  #include <linux/slab.h>
-> > >  #include <linux/interrupt.h>
-> > >  #include <linux/dmaengine.h>
-> > > @@ -665,6 +666,63 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
-> > >  	.get_partial = sh_dmae_get_partial,
-> > >  };
-> > > 
-> > > +static bool sh_dmae_chan_filter(struct dma_chan *chan, void *arg)
-> > > +{
-> > > +	struct sh_dmae_filter_info *info = arg;
-> > > +	struct shdma_chan *schan = to_shdma_chan(chan);
-> > > +	int match = info->hw_req;
-> > > +
-> > > +	if (match < 0)
-> > > +		/* No slave requested - arbitrary channel */
-> > > +		return true;
-> > > +
-> > > +	dev_dbg(schan->dev, "%s(): trying %s for 0x%x\n", __func__,
-> > > +		info->of_node->full_name, match);
-> > > +
-> > > +	if (schan->dev->of_node != info->of_node)
-> > > +		return false;
-> > > +
-> > > +	return !sh_dmae_set_slave(schan, match, true);
-> > > +}
-> > > +
-> > > +static struct dma_chan *sh_dmae_of_xlate(struct of_phandle_args
-> > > *dma_spec,
-> > > +					 struct of_dma *ofdma)
-> > > +{
-> > > +	struct sh_dmae_filter_info *info = ofdma->of_dma_data;
-> > > +	u32 id = dma_spec->args[0];
-> > > +	dma_cap_mask_t mask;
-> > > +	struct dma_chan *chan;
-> > > +
-> > > +	if (dma_spec->args_count != 1)
-> > > +		return NULL;
-> > > +
-> > > +	dma_cap_zero(mask);
-> > > +	/* Only slave DMA channels can be allocated via DT */
-> > > +	dma_cap_set(DMA_SLAVE, mask);
-> > > +
-> > > +	info->hw_req = id;
-> > > +	info->of_node = dma_spec->np;
-> > > +
-> > > +	chan = dma_request_channel(mask, sh_dmae_chan_filter, info);
-> > > +	if (chan)
-> > > +		to_shdma_chan(chan)->hw_req = id;
-> > > +
-> > > +	return chan;
-> > > +}
-> > 
-> > Would https://lkml.org/lkml/2013/3/25/250 help ?
-> 
-> Don't think so. In my .xlate() method I also assign the .hw_req field,
+--
 
-If I'm not mistaken your hw_req field is equivalent to the chan_id field in 
-the above patch.
+v3
+* The subsequent patch to add r8a7790 support has been reworked.
+  To reflect this do not add set the rmmimode bit of any
+  currently available struct sh_eth_cpu_data. A new one
+  will be added for r8a7790 and the bit will be set when
+  it is added.
 
-> and the filter is pretty different.
+v2
+* Split from patch to add r8a7790 support to driver (ifdef nastiness)
+* As suggested by Sergei Shtylyov
+  - Add a field to struct sh_eth_cpu_data to indicate if the
+    rmiimode register is present. This replaces an extremely ugly ifdef.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 4 ++++
+ drivers/net/ethernet/renesas/sh_eth.h | 2 ++
+ 2 files changed, 6 insertions(+)
 
-There's indeed an additional sh_dmae_set_slave() call in your filter, which 
-feels a bit out of place. I was just wondering whether it wouldn't be possible 
-to consolidate the code with the above patch.
-
-> And in any case that patch is from March... And I don't see it in the
-> mainline or in next, are there plans to re-push it?
-
-I don't know, but I will need something similar soon, so I'll revive the 
-discussion.
-
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 0253f61..f97700f 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -190,6 +190,7 @@ static const u16 sh_eth_offset_fast_rcar[SH_ETH_MAX_REGISTER_OFFSET] = {
+ 	[RMCR]		= 0x0258,
+ 	[TFUCR]		= 0x0264,
+ 	[RFOCR]		= 0x0268,
++	[RMIIMODE]      = 0x026c,
+ 	[FCFTR]		= 0x0270,
+ 	[TRIMD]		= 0x027c,
+ };
+@@ -1122,6 +1123,9 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
+ 	if (ret)
+ 		goto out;
+ 
++	if (mdp->cd->rmiimode)
++		sh_eth_write(ndev, 0x1, RMIIMODE);
++
+ 	/* Descriptor format */
+ 	sh_eth_ring_format(ndev);
+ 	if (mdp->cd->rpadir)
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index a78fb0c..6f76088 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -60,6 +60,7 @@ enum {
+ 	EDOCR,
+ 	TFUCR,
+ 	RFOCR,
++	RMIIMODE,
+ 	FCFTR,
+ 	RPADIR,
+ 	TRIMD,
+@@ -482,6 +483,7 @@ struct sh_eth_cpu_data {
+ 	unsigned hw_crc:1;	/* E-DMAC have CSMR */
+ 	unsigned select_mii:1;	/* EtherC have RMII_MII (MII select register) */
+ 	unsigned shift_rd0:1;	/* shift Rx descriptor word 0 right by 16 */
++	unsigned rmiimode:1;	/* EtherC has RMIIMODE register */
+ };
+ 
+ struct sh_eth_private {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.2.1
 
