@@ -1,81 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Jul 2013 00:30:32 +0000
-Subject: Re: [PATCH 4/5] ARM: shmobile: ape6evm: add MMCIF support
-Message-Id: <20130731003032.GE17209@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 07:20:31 +0000
+Subject: [PATCH v4 0/3]  ARM: shmobile: lager: enable Ether
+Message-Id: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375174556.git.horms+renesas@verge.net.au>
- <8711613252ed931037f9e9f8646935519dd8f362.1375174556.git.horms+renesas@verge.net.au>
- <51F7B8B0.3080201@cogentembedded.com>
-In-Reply-To: <51F7B8B0.3080201@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 30, 2013 at 04:59:28PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 30-07-2013 13:00, Simon Horman wrote:
-> 
-> >From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> >Add MMCIF support to the APE6EVM board in PIO mode only. Power supply is
-> >fixed for now, eventually support for the tps80032 regulator, also
-> >supplying both VDD and VccQ to the MMCIF slot should be added to APE6EVM.
-> 
-> >Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> >Acked-by: Magnus Damm <damm@opensource.se>
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/mach-shmobile/board-ape6evm.c | 31 +++++++++++++++++++++++++++++++
-> >  1 file changed, 31 insertions(+)
-> 
-> >diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-> >index af6dd39..8c7529c 100644
-> >--- a/arch/arm/mach-shmobile/board-ape6evm.c
-> >+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> [...]
-> >@@ -54,6 +56,25 @@ static const struct smsc911x_platform_config lan9220_data = {
-> [...]
-> >+/* MMCIF */
-> >+static struct sh_mmcif_plat_data mmcif0_pdata = {
-> >+	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
-> >+};
-> >+
-> >+static struct resource mmcif0_resources[] = {
-> >+	DEFINE_RES_MEM_NAMED(0xee200000, 0x100, "MMCIF0"),
-> >+	DEFINE_RES_IRQ(gic_spi(169)),
-> >+};
-> >+
-> 
->    The above needed '__initdata' too. And I have only noticed...
+Hi,
 
-Thanks again Sergei.
+this short series enables the on-board ethernet
+of the r8a7790 SoC for on lager board.
 
-Guennadi,
+It has a run-time dependency on
+"sh_eth: add support for r8a7790 SoC"
 
-as I have already queued-up this patch could you please
-make an incremental patch that adds __initdata to the above structures?
+It has been built on top of renesas-next-20130701.
 
-> >  static const struct pinctrl_map ape6evm_pinctrl_map[] = {
-> >  	/* SCIFA0 console */
-> >  	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
-> [...]
-> >@@ -93,6 +119,11 @@ static void __init ape6evm_add_standard_devices(void)
-> >  	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
-> >  					  lan9220_res, ARRAY_SIZE(lan9220_res),
-> >  					  &lan9220_data, sizeof(lan9220_data));
-> >+	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
-> >+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-> >+	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
-> >+					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
-> >+					  &mmcif0_pdata, sizeof(mmcif0_pdata));
-> >  }
-> 
-> WBR, Sergei
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Simon Horman (3):
+  ARM: shmobile: r8a7790: add Ether support
+  ARM: shmobile: lager: enable Ether
+  ARM: shmobile: lager: enable nfsroot in DTS
+
+ arch/arm/boot/dts/r8a7790-lager.dts           |  2 +-
+ arch/arm/mach-shmobile/board-lager.c          | 24 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c        |  4 ++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        | 14 ++++++++++++++
+ 5 files changed, 46 insertions(+), 1 deletion(-)
+
+-- 
+1.8.2.1
+
