@@ -1,35 +1,51 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 31 Jul 2013 12:40:13 +0000
-Subject: [PATCH 0/3] ARM: shmobile: ape6evm: MMCIF, SDHI and their regulators
-Message-Id: <1375274416-23455-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 01 Jul 2013 02:02:06 +0000
+Subject: Re: [PATCH 00/04] ARM: shmobile: r8a73a4/r8a7790 CMT and Arch timer update
+Message-Id: <20130701020206.GE14567@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130628112655.23809.39115.sendpatchset@w520>
+In-Reply-To: <20130628112655.23809.39115.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The first patch moves several data blocks to a read-only .init section on 
-ape6evm. The other two add MMCIF and SDHI DT nodes on ape6evm-reference 
-and update existing regulators on ape6evm.
+On Fri, Jun 28, 2013 at 08:26:55PM +0900, Magnus Damm wrote:
+> ARM: shmobile: r8a73a4/r8a7790 CMT and Arch timer update
+> 
+> [PATCH 01/04] ARM: shmobile: Add r8a7790 CMT00 clock event
+> [PATCH 02/04] ARM: shmobile: Make r8a7790 Arch timer optional
+> [PATCH 03/04] ARM: shmobile: Add r8a73a4 CMT10 clock event
+> [PATCH 04/04] ARM: shmobile: Make r8a73a4 Arch timer optional
+> 
+> Add clock event support through a CMT timer channel for the
+> SoCs r8a7790 and r8a73a4 as well as APE6EVM and Lager boards.
+> 
+> Also, to be able to test the CMT timers, make it possible to
+> deselect Arch timer and instead rely on predefined values for
+> udelay() and instead of local timer for SMP use broadcast.
+> 
+> A nice side effect of this is that high resolution timers
+> now become available. The reason for the is that the Arch
+> timer sets the C3STOP flag which in turn will tell the
+> time keeping code to not allow high resolution timer without
+> an additional clock event. So here they are.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Written against renesas.git renesas-next-20130628 plus
+>  [PATCH] ARM: shmobile: Sort r8a7790 MSTP entries
+>  [PATCH 00/06] ARM: shmobile: Remove unused auxdata tables
+> 
+>  For proper run time operation the following patch
+>  included in renesas-next-20130628 must be included
+>  in the CMT driver:
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Thanks, Magnus.
 
-Guennadi Liakhovetski (3):
-  ARM: shmobile: ape6evm: add "__initconst" annotations where needed
-  ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct
-    regulators
-  ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
+I have queued these up in the soc branch.
 
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |   72 +++++++++++++++++++++++
- arch/arm/mach-shmobile/board-ape6evm.c          |   72 +++++++++++++++++-----
- 2 files changed, 127 insertions(+), 17 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+I applied the first patch of the series manually as there was
+some conflicts for one reason or another. Please check that I applied
+it correctly.
