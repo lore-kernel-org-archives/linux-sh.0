@@ -1,84 +1,28 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 01 Jul 2013 04:24:54 +0000
-Subject: [PATCH net-next v3 2/3] sh_eth: add support RMIIMODE register
-Message-Id: <1372652695-16606-3-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 01 Jul 2013 14:26:23 +0000
+Subject: Re: [PATCH net-next v3 2/3] sh_eth: add support RMIIMODE register
+Message-Id: <51D1918F.8090707@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au>
+References: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au> <1372652695-16606-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372652695-16606-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
+To: Simon Horman <horms+renesas@verge.net.au>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-This change is motivated by the lager board which uses the r8a7790 SoC,
-an R-Car SoC. For this board setting the RMIIMODE register is necessary.
+Hello.
 
-This patch assumes this is valid for all R-Car SoCs.
+On 01-07-2013 8:24, Simon Horman wrote:
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> This change is motivated by the lager board which uses the r8a7790 SoC,
+> an R-Car SoC. For this board setting the RMIIMODE register is necessary.
 
---
+     I've told you this is not board specific.
 
-v3
-* The subsequent patch to add r8a7790 support has been reworked.
-  To reflect this do not add set the rmmimode bit of any
-  currently available struct sh_eth_cpu_data. A new one
-  will be added for r8a7790 and the bit will be set when
-  it is added.
+> This patch assumes this is valid for all R-Car SoCs.
 
-v2
-* Split from patch to add r8a7790 support to driver (ifdef nastiness)
-* As suggested by Sergei Shtylyov
-  - Add a field to struct sh_eth_cpu_data to indicate if the
-    rmiimode register is present. This replaces an extremely ugly ifdef.
----
- drivers/net/ethernet/renesas/sh_eth.c | 4 ++++
- drivers/net/ethernet/renesas/sh_eth.h | 2 ++
- 2 files changed, 6 insertions(+)
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 0253f61..f97700f 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -190,6 +190,7 @@ static const u16 sh_eth_offset_fast_rcar[SH_ETH_MAX_REGISTER_OFFSET] = {
- 	[RMCR]		= 0x0258,
- 	[TFUCR]		= 0x0264,
- 	[RFOCR]		= 0x0268,
-+	[RMIIMODE]      = 0x026c,
- 	[FCFTR]		= 0x0270,
- 	[TRIMD]		= 0x027c,
- };
-@@ -1122,6 +1123,9 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
- 	if (ret)
- 		goto out;
- 
-+	if (mdp->cd->rmiimode)
-+		sh_eth_write(ndev, 0x1, RMIIMODE);
-+
- 	/* Descriptor format */
- 	sh_eth_ring_format(ndev);
- 	if (mdp->cd->rpadir)
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index a78fb0c..6f76088 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -60,6 +60,7 @@ enum {
- 	EDOCR,
- 	TFUCR,
- 	RFOCR,
-+	RMIIMODE,
- 	FCFTR,
- 	RPADIR,
- 	TRIMD,
-@@ -482,6 +483,7 @@ struct sh_eth_cpu_data {
- 	unsigned hw_crc:1;	/* E-DMAC have CSMR */
- 	unsigned select_mii:1;	/* EtherC have RMII_MII (MII select register) */
- 	unsigned shift_rd0:1;	/* shift Rx descriptor word 0 right by 16 */
-+	unsigned rmiimode:1;	/* EtherC has RMIIMODE register */
- };
- 
- struct sh_eth_private {
--- 
-1.8.2.1
+WBR, Sergei
 
