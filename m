@@ -1,29 +1,44 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 11 Jul 2013 11:37:54 +0000
-Subject: Re: [PATCH 06/11] ARM: shmobile: r8a7778: cleanup registration of hspi
-Message-Id: <51DE9912.3080707@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 01 Jul 2013 02:18:38 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: lager: Add DT reference
+Message-Id: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehb5fqed.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehb5fqed.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi,
 
-On 11-07-2013 12:32, Kuninori Morimoto wrote:
+this short series adds DT reference to Lager.
 
-> sh-hspi driver which doesn't need platform data at the time of
-> registration can be registerd on SoC.
-> And, registering these drivers in the SoC code can avoid
-> unwanted device numbering issue.
-> (ex. the hspi2 device number will be spi.0 if hspi2 only registered)
-> This patch registers it on SoC code as cleanup C code
+The intention of this is to allow the board to be
+brought up as much as possible using DT. And for
+this to act as a basis for further DT coverage
+of devices present on the Lager and its r8a7790 SoC.
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-     How about PinMux again?
+This series differs from v2 in that it has been
+rebased on top of reneas-next-20130701 and now makes use
+of r8a7790_init_delay().
 
-WBR, Sergei
+
+Simon Horman (2):
+  ARM: shmobile: r8a7790:  Initialise clocks and SCIF in
+    r8a7790_add_dt_devices()
+  ARM: shmobile: lager: Add DT reference
+
+ arch/arm/boot/dts/Makefile                     |  1 +
+ arch/arm/boot/dts/r8a7790-lager-reference.dts  | 31 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                 | 11 ++++++++
+ arch/arm/mach-shmobile/Makefile                |  1 +
+ arch/arm/mach-shmobile/board-lager-reference.c | 37 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h  |  1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 11 +++++++-
+ 7 files changed, 92 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-lager-reference.c
+
+-- 
+1.8.2.1
 
