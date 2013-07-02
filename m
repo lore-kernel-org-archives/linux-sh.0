@@ -1,44 +1,26 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 01 Jul 2013 11:48:07 +0000
-Subject: [PATCH] ARM: shmobile: emev2 GIO3 resource fix
-Message-Id: <20130701114807.29137.43972.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 02 Jul 2013 03:30:47 +0000
+Subject: Re: [PATCH] ARM: shmobile: emev2 GIO3 resource fix
+Message-Id: <20130702033046.GC14567@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130701114807.29137.43972.sendpatchset@w520>
+In-Reply-To: <20130701114807.29137.43972.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Mon, Jul 01, 2013 at 08:48:07PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Fix GIO3 base addresses for EMEV2.
+> 
+> This bug was introduced by 088efd9273b5076a0aead479aa31f1066d182b3e
+> ("mach-shmobile: Emma Mobile EV2 GPIO support V3") which was included in v3.5.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Fix GIO3 base addresses for EMEV2.
+Thanks, I will try and get this included in v3.11 as a fix
+and then added to v3.9 and v3.10 stable.
 
-This bug was introduced by 088efd9273b5076a0aead479aa31f1066d182b3e
-("mach-shmobile: Emma Mobile EV2 GPIO support V3") which was included in v3.5.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/setup-emev2.c |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
---- 0015/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-01 20:21:29.000000000 +0900
-@@ -286,14 +286,14 @@ static struct gpio_em_config gio3_config
- static struct resource gio3_resources[] = {
- 	[0] = {
- 		.name	= "GIO_096",
--		.start	= 0xe0050100,
--		.end	= 0xe005012b,
-+		.start	= 0xe0050180,
-+		.end	= 0xe00501ab,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
- 		.name	= "GIO_096",
--		.start	= 0xe0050140,
--		.end	= 0xe005015f,
-+		.start	= 0xe00501c0,
-+		.end	= 0xe00501df,
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[2] = {
