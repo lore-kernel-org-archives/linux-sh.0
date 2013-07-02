@@ -1,52 +1,77 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:29 +0000
-Subject: [PATCH v7 16/19] ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
-Message-Id: <1372961852-28490-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 02 Jul 2013 09:28:06 +0000
+Subject: [PATCH 05/08] ARM: shmobile: Use DT for GIC on EMEV2 and KZM9D
+Message-Id: <20130702092806.32066.58281.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130702092725.32066.54861.sendpatchset@w520>
+In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-LED2 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Remove the C version of the EMEV2 GIC setup code,
+instead rely on GIC information provided by DT.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 6d20247..b64705b 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -11,6 +11,7 @@
- 
- /dts-v1/;
- /include/ "r8a7779.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "marzen";
-@@ -47,6 +48,19 @@
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led2 {
-+			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-+		};
-+		led3 {
-+			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-+		};
-+		led4 {
-+			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
- };
- 
- &pfc {
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/board-kzm9d.c        |    2 --
+ arch/arm/mach-shmobile/include/mach/emev2.h |    1 -
+ arch/arm/mach-shmobile/setup-emev2.c        |   15 ---------------
+ 3 files changed, 18 deletions(-)
 
+--- 0002/arch/arm/mach-shmobile/board-kzm9d.c
++++ work/arch/arm/mach-shmobile/board-kzm9d.c	2013-07-02 15:01:32.000000000 +0900
+@@ -86,8 +86,6 @@ DT_MACHINE_START(KZM9D_DT, "kzm9d")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+ 	.init_early	= emev2_init_delay,
+-	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= emev2_init_irq,
+ 	.init_machine	= kzm9d_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= kzm9d_boards_compat_dt,
+--- 0002/arch/arm/mach-shmobile/include/mach/emev2.h
++++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2013-07-02 15:01:48.000000000 +0900
+@@ -2,7 +2,6 @@
+ #define __ASM_EMEV2_H__
+ 
+ extern void emev2_map_io(void);
+-extern void emev2_init_irq(void);
+ extern void emev2_init_delay(void);
+ extern void emev2_add_standard_devices(void);
+ extern void emev2_clock_init(void);
+--- 0003/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-02 15:01:17.000000000 +0900
+@@ -202,20 +202,6 @@ void __init emev2_init_delay(void)
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+ }
+ 
+-void __init emev2_init_irq(void)
+-{
+-	void __iomem *gic_dist_base;
+-	void __iomem *gic_cpu_base;
+-
+-	/* Static mappings, never released */
+-	gic_dist_base = ioremap(0xe0028000, PAGE_SIZE);
+-	gic_cpu_base = ioremap(0xe0020000, PAGE_SIZE);
+-	BUG_ON(!gic_dist_base || !gic_cpu_base);
+-
+-	/* Use GIC to handle interrupts */
+-	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+-}
+-
+ #ifdef CONFIG_USE_OF
+ static const struct of_dev_auxdata emev2_auxdata_lookup[] __initconst = {
+ 	{ }
+@@ -235,7 +221,6 @@ static const char *emev2_boards_compat_d
+ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.init_early	= emev2_init_delay,
+-	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_machine	= emev2_add_standard_devices_dt,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
