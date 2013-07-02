@@ -1,57 +1,52 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:14 +0000
-Subject: [PATCH 02/11] ARM: shmobile: ape6evm: add CPUFreq support
-Message-Id: <463a2432a435ea3eda4714626f231b7b22f0ac3d.1374478037.git.horms+renesas@verge.net.au>
+Date: Tue, 02 Jul 2013 04:35:54 +0000
+Subject: [PATCH 2/2] ARM: shmobile: emev2 GIO3 resource fix
+Message-Id: <1eb14ea1e6bcd11d6d0ba937fc39808bb4d3453e.1372739438.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478037.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
+References: <cover.1372739438.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1372739438.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-This patch adds OPPs to the CA15 DT node and a max8973 DT node to support
-clock and voltage scaling, using the cpufreq-cpu0 CPUFreq driver.
+Fix GIO3 base addresses for EMEV2.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This bug was introduced by 088efd9273b5076a0aead479aa31f1066d182b3e
+("mach-shmobile: Emma Mobile EV2 GPIO support V3") which was included in v3.5.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: stable@vger.kernel.org
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ arch/arm/mach-shmobile/setup-emev2.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index f603c69..e657a9d 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -50,3 +50,25 @@
- 		};
- 	};
- };
-+
-+&i2c5 {
-+	vdd_dvfs: max8973@1b {
-+		compatible = "maxim,max8973";
-+		reg = <0x1b>;
-+
-+		regulator-min-microvolt = <935000>;
-+		regulator-max-microvolt = <1200000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+};
-+
-+&cpu0 {
-+	cpu0-supply = <&vdd_dvfs>;
-+	operating-points = <
-+		/* kHz  uV */
-+		1950000 1115000
-+		1462500  995000
-+	>;
-+	voltage-tolerance = <1>; /* 1% */
-+};
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index 899a86c..1ccddd2 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -287,14 +287,14 @@ static struct gpio_em_config gio3_config = {
+ static struct resource gio3_resources[] = {
+ 	[0] = {
+ 		.name	= "GIO_096",
+-		.start	= 0xe0050100,
+-		.end	= 0xe005012b,
++		.start	= 0xe0050180,
++		.end	= 0xe00501ab,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+ 		.name	= "GIO_096",
+-		.start	= 0xe0050140,
+-		.end	= 0xe005015f,
++		.start	= 0xe00501c0,
++		.end	= 0xe00501df,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[2] = {
 -- 
 1.8.2.1
 
