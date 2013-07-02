@@ -1,75 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 04 Jul 2013 15:20:23 +0000
-Subject: Re: [PATCH net-next v3 1/3] sh_eth: add support for gpio reset
-Message-Id: <4213921.CCv1lD9ftn@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 02 Jul 2013 05:52:23 +0000
+Subject: Re: [PATCH 00/03] ARM: 64-bit memory fixes, APE6EVM second memory bank
+Message-Id: <CANqRtoR=oDnJc48CpvF2GZjL1bBByoaWno58fVAyP9GeqpFSfQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au> <51D19122.6030409@cogentembedded.com> <20130702052458.GA23507@verge.net.au>
-In-Reply-To: <20130702052458.GA23507@verge.net.au>
+References: <20130605104427.1720.68752.sendpatchset@w520>
+ <201306051317.02284.arnd@arndb.de>
+ <CANqRtoSZXz5-z4pMTM_gpTf11qQCc870Vf35qLQ4jpoCPnq4KQ@mail.gmail.com>
+ <201306121441.35924.arnd@arndb.de>
+In-Reply-To: <201306121441.35924.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+Hi Russel, Arnd, Stepan,
 
-On Tuesday 02 July 2013 14:25:00 Simon Horman wrote:
-> On Mon, Jul 01, 2013 at 06:24:34PM +0400, Sergei Shtylyov wrote:
-> > On 01-07-2013 8:24, Simon Horman wrote:
-> > >Allow reset using a GPIO. In order to use this set the following
-> > >
-> > >in the device's platform data:
-> > >	needs_gpio_reset = 1
-> > >	reset_gpio = GPIO pin to use
-> > >
-> > >This patch is motivated by the lager board which uses the r8a7790 SoC
-> > >which has a GPIO pin to reset its sh_eth device.
-> > >
-> > >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > >
-> > >--
-> > >
-> > >v2
-> > >* First post
-> > >---
-> > >
-> > >  drivers/net/ethernet/renesas/sh_eth.c | 4 ++++
-> > >  include/linux/sh_eth.h                | 3 +++
-> > >  2 files changed, 7 insertions(+)
-> > >
-> > >diff --git a/drivers/net/ethernet/renesas/sh_eth.c
-> > >b/drivers/net/ethernet/renesas/sh_eth.c index 7732f11..0253f61 100644
-> > >--- a/drivers/net/ethernet/renesas/sh_eth.c
-> > >+++ b/drivers/net/ethernet/renesas/sh_eth.c
-> > 
-> > [...]
-> > 
-> > >@@ -2652,6 +2653,9 @@ static int sh_eth_drv_probe(struct platform_device
-> > >*pdev)> >
-> > >  		ndev->features = NETIF_F_HW_VLAN_CTAG_FILTER;
-> > >  	
-> > >  	}
-> > >
-> > >+	if (pd->needs_gpio_reset)
-> > >+		gpio_request_one(pd->reset_gpio, GPIOF_OUT_INIT_HIGH, NULL);
-> > >
-> >    Is reset signal active low or active high? Are you asserting or
-> > 
-> > releasing it?
-> 
-> Good point.
-> 
-> I'm not sure that the documentation that I have is sufficient to answer
-> that. Empirically it seems that this change isn't strictly necessary, so
-> perhaps it would be best to drop it for now.
+On Wed, Jun 12, 2013 at 9:41 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+> On Wednesday 12 June 2013, Magnus Damm wrote:
+>> On Wed, Jun 5, 2013 at 8:17 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+>> > On Wednesday 05 June 2013, Magnus Damm wrote:
+>> >> ARM: 64-bit memory fixes, APE6EVM second memory bank
+>> >>
+>> >> [PATCH 01/03] ARM: Let arm_add_memory() always use 64-bit arguments
+>> >> [PATCH 02/03] ARM: Handle 64-bit memory in case of 32-bit phys_addr_t
+>> >> [PATCH 03/03] ARM: shmobile: Add second memory bank to DTS for APE6EVM
+>> >>
+>> >> This patch set contains two fixes and one mach-shmobile specific patch
+>> >> to add a second memory bank. The fixes attempt to improve the memory bank
+>> >> handling in the ARM kernel in case of 64-bit addresses.
+>> >
+>> > Please have a look at this patch that Stepan Moskovchenko posted:
+>> >
+>> > https://patchwork.kernel.org/patch/2639171/
+>> >
+>> > I think we are going to need only one of the two approaches.
+>>
+>> Thanks for pointing out this implementation. Is there anything I can
+>> do to move this forward?
+>
+> I'm fine with either solution. If Russell doesn't have a preference
+> one way or the other, I'd suggest you agree with Stepan on one of the
+> two and put that into the patch tracker.
 
-GPIO 5-31 is connected to the active-low reset input of the KSZ8041 PHY. 
-Wouldn't it make more sense to handle it in the PHY framework ? More work is 
-then be needed. If the Lager boot loader configures the GPIO correctly I would 
-thus drop this patch.
+Thanks for your guidance, Arnd. After pinging Stepan I assume that he
+doesn't have any preference either.
 
--- 
-Regards,
+Russel, what is your opinion?
 
-Laurent Pinchart
+Thanks,
 
+/ magnus
