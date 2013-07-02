@@ -1,90 +1,45 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:21 +0000
-Subject: [PATCH 09/11] ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
-Message-Id: <8c9b1aa41853272adf505cc22be541f1eac2f94c.1374478037.git.horms+renesas@verge.net.au>
+Date: Tue, 02 Jul 2013 04:35:53 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a73a4: Fix resources for SCIFB0
+Message-Id: <f820b60582f75e73e83b8505d7e48fe59770f558.1372739438.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478037.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
+References: <cover.1372739438.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1372739438.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Takanari Hayama <taki@igel.co.jp>
 
-This adds DT templates for all MMCIF and SDHI controllers on r8a7790.
-They are added with status="disabled". To use them platform-specific
-DTs have to enable the required ones.
+Fix base address and IRQ resources associated with SCIFB0.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+This bug was introduced by e481a528901d0cd18b5b5fcbdc55207ea3b6ef68
+("ARM: shmobile: r8a73a4 SCIF support V3") which was included in v3.10.
+
+Signed-off-by: Takanari Hayama <taki@igel.co.jp>
+Acked-by: Magnus Damm <damm@opensource.se>
+[ horms+renesas@verge.net.au: Add information about commit and version
+  this bug was added in ]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: stable@vger.kernel.org
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 54 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 339d9b1..9cd8820 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -54,4 +54,58 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
- 	};
-+
-+	mmcif0: mmcif@ee200000 {
-+		compatible = "renesas,sh-mmcif";
-+		reg = <0 0xee200000 0 0x80>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 169 0x4>;
-+		reg-io-width = <4>;
-+		status = "disabled";
-+	};
-+
-+	mmcif1: mmcif@ee220000 {
-+		compatible = "renesas,sh-mmcif";
-+		reg = <0 0xee220000 0 0x80>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 170 0x4>;
-+		reg-io-width = <4>;
-+		status = "disabled";
-+	};
-+
-+	sdhi0: sdhi@ee100000 {
-+		compatible = "renesas,r8a7790-sdhi";
-+		reg = <0 0xee100000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 165 4>;
-+		cap-sd-highspeed;
-+		status = "disabled";
-+	};
-+
-+	sdhi1: sdhi@ee120000 {
-+		compatible = "renesas,r8a7790-sdhi";
-+		reg = <0 0xee120000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 166 4>;
-+		cap-sd-highspeed;
-+		status = "disabled";
-+	};
-+
-+	sdhi2: sdhi@ee140000 {
-+		compatible = "renesas,r8a7790-sdhi";
-+		reg = <0 0xee140000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 167 4>;
-+		cap-sd-highspeed;
-+		status = "disabled";
-+	};
-+
-+	sdhi3: sdhi@ee160000 {
-+		compatible = "renesas,r8a7790-sdhi";
-+		reg = <0 0xee160000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 168 4>;
-+		cap-sd-highspeed;
-+		status = "disabled";
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index c5a75a7..7f45c2e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -62,7 +62,7 @@ enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFB3 };
+ static const struct plat_sci_port scif[] = {
+ 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+ 	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
+-	SCIFB_DATA(SCIFB0, 0xe6c50000, gic_spi(145)), /* SCIFB0 */
++	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
+ 	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
+ 	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
+ 	SCIFB_DATA(SCIFB3, 0xe6cf0000, gic_spi(151)), /* SCIFB3 */
 -- 
 1.8.2.1
 
