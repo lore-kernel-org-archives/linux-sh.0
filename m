@@ -1,64 +1,110 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 30 Jul 2013 10:37:34 +0000
-Subject: [PATCH v2 10/13] mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
-Message-Id: <1375180657-23641-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 02 Jul 2013 09:28:30 +0000
+Subject: [PATCH 08/08] ARM: shmobile: Disconnect EMEV2 SMP code from clocks
+Message-Id: <20130702092830.32066.8431.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130702092725.32066.54861.sendpatchset@w520>
+In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-All platforms pass the CD GPIO number to the driver in the .cd_gpio
-field. The .get_cd() callback isn't used anymore, remove it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Update the EMEV2 SMP code to access the SMU directly
+instead of relying on help from the legacy clock code.
+
+This change moves us one step closer to common clocks.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c  | 9 ---------
- include/linux/mmc/sh_mobile_sdhi.h | 1 -
- 2 files changed, 10 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index ebea749..663a672 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -77,13 +77,6 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
- 	p->set_pwr(pdev, state);
+ arch/arm/mach-shmobile/clock-emev2.c        |   18 ------------------
+ arch/arm/mach-shmobile/include/mach/emev2.h |    1 -
+ arch/arm/mach-shmobile/smp-emev2.c          |   11 +++++++++--
+ 3 files changed, 9 insertions(+), 21 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-emev2.c
++++ work/arch/arm/mach-shmobile/clock-emev2.c	2013-07-02 15:31:52.000000000 +0900
+@@ -40,7 +40,6 @@
+ #define USIB2SCLKDIV 0x65c
+ #define USIB3SCLKDIV 0x660
+ #define STI_CLKSEL 0x688
+-#define SMU_GENERAL_REG0 0x7c0
+ 
+ /* not pretty, but hey */
+ static void __iomem *smu_base;
+@@ -51,11 +50,6 @@ static void emev2_smu_write(unsigned lon
+ 	iowrite32(value, smu_base + offs);
  }
  
--static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
+-void emev2_set_boot_vector(unsigned long value)
 -{
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--
--	return p->get_cd(pdev);
+-	emev2_smu_write(value, SMU_GENERAL_REG0);
 -}
 -
- static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+ static struct clk_mapping smu_mapping = {
+ 	.phys	= EMEV2_SMU_BASE,
+ 	.len	= PAGE_SIZE,
+@@ -205,18 +199,6 @@ static struct clk_lookup lookups[] = {
+ void __init emev2_clock_init(void)
  {
- 	int timeout = 1000;
-@@ -182,8 +175,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->cd_gpio = p->cd_gpio;
- 		if (p->set_pwr)
- 			mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
--		if (p->get_cd)
--			mmc_data->get_cd = sh_mobile_sdhi_get_cd;
+ 	int k, ret = 0;
+-	static int is_setup;
+-
+-	/* yuck, this is ugly as hell, but the non-smp case of clocks
+-	 * code is now designed to rely on ioremap() instead of static
+-	 * entity maps. in the case of smp we need access to the SMU
+-	 * register earlier than ioremap() is actually working without
+-	 * any static maps. to enable SMP in ugly but with dynamic
+-	 * mappings we have to call emev2_clock_init() from different
+-	 * places depending on UP and SMP...
+-	 */
+-	if (is_setup++)
+-		return;
  
- 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
- 			/*
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index b76bcf0..f31c692 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -26,7 +26,6 @@ struct sh_mobile_sdhi_info {
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
- 	void (*set_pwr)(struct platform_device *pdev, int state);
--	int (*get_cd)(struct platform_device *pdev);
+ 	smu_base = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
+ 	BUG_ON(!smu_base);
+--- 0004/arch/arm/mach-shmobile/include/mach/emev2.h
++++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2013-07-02 15:32:05.000000000 +0900
+@@ -5,7 +5,6 @@ extern void emev2_map_io(void);
+ extern void emev2_init_delay(void);
+ extern void emev2_add_standard_devices(void);
+ extern void emev2_clock_init(void);
+-extern void emev2_set_boot_vector(unsigned long value);
  
- 	/* callbacks for board specific setup code */
- 	int (*init)(struct platform_device *pdev,
--- 
-1.8.1.5
-
+ #define EMEV2_GPIO_BASE 200
+ #define EMEV2_GPIO_IRQ(n) (EMEV2_GPIO_BASE + (n))
+--- 0005/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-07-02 15:31:01.000000000 +0900
+@@ -29,6 +29,8 @@
+ #include <asm/smp_scu.h>
+ 
+ #define EMEV2_SCU_BASE 0x1e000000
++#define EMEV2_SMU_BASE 0xe0110000
++#define SMU_GENERAL_REG0 0x7c0
+ 
+ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+@@ -38,13 +40,18 @@ static int __cpuinit emev2_boot_secondar
+ 
+ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+ {
++	void __iomem *smu;
++
+ 	/* setup EMEV2 specific SCU base, enable */
+ 	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+ 	scu_enable(shmobile_scu_base);
+ 
+ 	/* Tell ROM loader about our vector (in headsmp-scu.S, headsmp.S) */
+-	emev2_clock_init(); /* need ioremapped SMU */
+-	emev2_set_boot_vector(__pa(shmobile_boot_vector));
++	smu = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
++	if (smu) {
++		iowrite32(__pa(shmobile_boot_vector), smu + SMU_GENERAL_REG0);
++		iounmap(smu);
++	}
+ 	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
+ 	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
+ 
