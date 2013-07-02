@@ -1,120 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:06 +0000
-Subject: [PATCH 13/16] ARM: shmobile: Disconnect EMEV2 SMP code from clocks
-Message-Id: <8d7217e5d74966e1016dad1f48fdaebb85deb685.1374624383.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 02 Jul 2013 15:46:06 +0000
+Subject: [PATCH 3/3] DMA: shdma: support the new CHCLR register layout
+Message-Id: <Pine.LNX.4.64.1307021745140.1965@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
+References: <Pine.LNX.4.64.1307021738500.1965@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1307021738500.1965@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: "Koul, Vinod" <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Magnus Damm <damm@opensource.se>
+On newer r-car SoCs the CHCLR register only contains one bit per channel,
+to which a 1 has to be written to reset the channel. Older SoC versions had
+one CHCLR register per channel, to which a 0 must be written to reset the
+channel and clear its buffers. This patch adds support for the newer
+layout.
 
-Update the EMEV2 SMP code to access the SMU directly
-instead of relying on help from the legacy clock code.
-
-This change moves us one step closer to common clocks.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/clock-emev2.c        | 18 ------------------
- arch/arm/mach-shmobile/include/mach/emev2.h |  1 -
- arch/arm/mach-shmobile/smp-emev2.c          | 11 +++++++++--
- 3 files changed, 9 insertions(+), 21 deletions(-)
+ drivers/dma/sh/shdma.c |    6 ++++--
+ include/linux/sh_dma.h |   12 +++++++++++-
+ 2 files changed, 15 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-emev2.c b/arch/arm/mach-shmobile/clock-emev2.c
-index 56dd0cf..5ac13ba 100644
---- a/arch/arm/mach-shmobile/clock-emev2.c
-+++ b/arch/arm/mach-shmobile/clock-emev2.c
-@@ -40,7 +40,6 @@
- #define USIB2SCLKDIV 0x65c
- #define USIB3SCLKDIV 0x660
- #define STI_CLKSEL 0x688
--#define SMU_GENERAL_REG0 0x7c0
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 64eb7fb..883a4de 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -54,9 +54,11 @@ static LIST_HEAD(sh_dmae_devices);
+ static void channel_clear(struct sh_dmae_chan *sh_dc)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
++	const struct sh_dmae_channel *chan_pdata = shdev->pdata->channel +
++		sh_dc->shdma_chan.id;
++	u32 val = chan_pdata->chclr_bit < 0 ? 0 : 1 << chan_pdata->chclr_bit;
  
- /* not pretty, but hey */
- static void __iomem *smu_base;
-@@ -51,11 +50,6 @@ static void emev2_smu_write(unsigned long value, int offs)
- 	iowrite32(value, smu_base + offs);
+-	__raw_writel(0, shdev->chan_reg +
+-		shdev->pdata->channel[sh_dc->shdma_chan.id].chclr_offset);
++	__raw_writel(val, shdev->chan_reg + chan_pdata->chclr_offset);
  }
  
--void emev2_set_boot_vector(unsigned long value)
--{
--	emev2_smu_write(value, SMU_GENERAL_REG0);
--}
--
- static struct clk_mapping smu_mapping = {
- 	.phys	= EMEV2_SMU_BASE,
- 	.len	= PAGE_SIZE,
-@@ -205,18 +199,6 @@ static struct clk_lookup lookups[] = {
- void __init emev2_clock_init(void)
- {
- 	int k, ret = 0;
--	static int is_setup;
--
--	/* yuck, this is ugly as hell, but the non-smp case of clocks
--	 * code is now designed to rely on ioremap() instead of static
--	 * entity maps. in the case of smp we need access to the SMU
--	 * register earlier than ioremap() is actually working without
--	 * any static maps. to enable SMP in ugly but with dynamic
--	 * mappings we have to call emev2_clock_init() from different
--	 * places depending on UP and SMP...
--	 */
--	if (is_setup++)
--		return;
+ static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index 4e83f3e..9316a1d 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -33,11 +33,21 @@ struct sh_dmae_slave_config {
+ 	char		mid_rid;
+ };
  
- 	smu_base = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
- 	BUG_ON(!smu_base);
-diff --git a/arch/arm/mach-shmobile/include/mach/emev2.h b/arch/arm/mach-shmobile/include/mach/emev2.h
-index b0ab4b7..c2eb756 100644
---- a/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ b/arch/arm/mach-shmobile/include/mach/emev2.h
-@@ -5,7 +5,6 @@ extern void emev2_map_io(void);
- extern void emev2_init_delay(void);
- extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
--extern void emev2_set_boot_vector(unsigned long value);
++/**
++ * struct sh_dmae_channel - DMAC channel platform data
++ * @offset:		register offset within the main IOMEM resource
++ * @dmars:		channel DMARS register offset
++ * @chclr_offset:	channel CHCLR register offset
++ * @dmars_bit:		channel DMARS field offset within the register
++ * @chclr_bit:		> 0: bit position, to be set to reset the channel
++ *			< 0: CHCLR has to be cleared to clear channel's buffers
++ */
+ struct sh_dmae_channel {
+ 	unsigned int	offset;
+ 	unsigned int	dmars;
+-	unsigned int	dmars_bit;
+ 	unsigned int	chclr_offset;
++	unsigned char	dmars_bit;
++	signed char	chclr_bit;
+ };
  
- #define EMEV2_GPIO_BASE 200
- #define EMEV2_GPIO_IRQ(n) (EMEV2_GPIO_BASE + (n))
-diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
-index 9787165..1bf8bc7 100644
---- a/arch/arm/mach-shmobile/smp-emev2.c
-+++ b/arch/arm/mach-shmobile/smp-emev2.c
-@@ -29,6 +29,8 @@
- #include <asm/smp_scu.h>
- 
- #define EMEV2_SCU_BASE 0x1e000000
-+#define EMEV2_SMU_BASE 0xe0110000
-+#define SMU_GENERAL_REG0 0x7c0
- 
- static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
-@@ -38,13 +40,18 @@ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *
- 
- static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
- {
-+	void __iomem *smu;
-+
- 	/* setup EMEV2 specific SCU base, enable */
- 	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
- 	scu_enable(shmobile_scu_base);
- 
- 	/* Tell ROM loader about our vector (in headsmp-scu.S, headsmp.S) */
--	emev2_clock_init(); /* need ioremapped SMU */
--	emev2_set_boot_vector(__pa(shmobile_boot_vector));
-+	smu = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
-+	if (smu) {
-+		iowrite32(__pa(shmobile_boot_vector), smu + SMU_GENERAL_REG0);
-+		iounmap(smu);
-+	}
- 	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
- 	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
- 
+ struct sh_dmae_pdata {
 -- 
-1.8.2.1
+1.7.2.5
 
