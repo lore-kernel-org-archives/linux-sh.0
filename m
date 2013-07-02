@@ -1,51 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:02 +0000
-Subject: [PATCH 08/16] ARM: shmobile: Sort r8a7790 MSTP entries
-Message-Id: <29eb2ba89c63c6f57dc3a8b1a89241c7a877a3c8.1374624383.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 02 Jul 2013 15:37:58 +0000
+Subject: [PATCH] DMA: shdma: fix CHCLR register address calculation
+Message-Id: <Pine.LNX.4.64.1307021733280.1965@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: "Koul, Vinod" <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Magnus Damm <damm@opensource.se>
+struct sh_dmae_device::chan_reg is a pointer to u32, therefore when adding
+offsets to it care should be taken to add offsets in sizeof(u32) units, not
+in bytes. This patch corrects such a bug. While at it we also remove the
+redundant parameter of the affected function.
 
-The r8a7790 MSTP bits should be kept sorted in the same way
-as on other mach-shmobile SoCs. Move the HSCIF and thermal
-bits to clean up the current state.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 28eccd1..10d99b3 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -192,6 +192,9 @@ enum {
- static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
- 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
-+	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
-+	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
-+	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
- 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
- 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
- 	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_SD1], SMSTPCR3, 13, 0), /* SDHI1 */
-@@ -205,9 +208,6 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
--	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
--	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
--	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
- };
+This is a theoretical fix, I don't have a test-case for it, but the 
+original calculation does seem to be buggy to me. Reviews and tests are 
+welcome.
+
+ drivers/dma/sh/shdma.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 98b2693..c7950be 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -51,12 +51,12 @@
+ static DEFINE_SPINLOCK(sh_dmae_lock);
+ static LIST_HEAD(sh_dmae_devices);
  
- static struct clk_lookup lookups[] = {
+-static void chclr_write(struct sh_dmae_chan *sh_dc, u32 data)
++static void channel_clear(struct sh_dmae_chan *sh_dc)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+ 
+-	__raw_writel(data, shdev->chan_reg +
+-		     shdev->pdata->channel[sh_dc->shdma_chan.id].chclr_offset);
++	__raw_writel(0, shdev->chan_reg +
++		shdev->pdata->channel[sh_dc->shdma_chan.id].chclr_offset / sizeof(u32));
+ }
+ 
+ static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
+@@ -135,7 +135,7 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
+ 		for (i = 0; i < shdev->pdata->channel_num; i++) {
+ 			struct sh_dmae_chan *sh_chan = shdev->chan[i];
+ 			if (sh_chan)
+-				chclr_write(sh_chan, 0);
++				channel_clear(sh_chan);
+ 		}
+ 	}
+ 
 -- 
-1.8.2.1
+1.7.2.5
 
