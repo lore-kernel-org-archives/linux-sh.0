@@ -1,98 +1,99 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Jul 2013 13:15:19 +0000
-Subject: [PATCH 13/14] sh-pfc: r8a7790: Add USB pin groups and functions
-Message-Id: <1374671720-8794-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 02 Jul 2013 09:27:33 +0000
+Subject: [PATCH 01/08] ARM: shmobile: Remove unused EMEV2/KZM9D early console
+Message-Id: <20130702092733.32066.50335.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130702092725.32066.54861.sendpatchset@w520>
+In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Remove EMEV2 early console code from KZM9D and instead
+rely on console setup during regular platform device
+probe time. This makes the DT code and the KZM9D board
+support behave the same.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 42 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 2fd904f..fa501ef 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -2869,6 +2869,30 @@ static const unsigned int tpu0_to3_pins[] = {
- static const unsigned int tpu0_to3_mux[] = {
- 	TPU0TO3_MARK,
- };
-+/* - USB0 ------------------------------------------------------------------- */
-+static const unsigned int usb0_pins[] = {
-+	/* PWEN, OVC/VBUS */
-+	RCAR_GP_PIN(5, 18), RCAR_GP_PIN(5, 19),
-+};
-+static const unsigned int usb0_mux[] = {
-+	USB0_PWEN_MARK, USB0_OVC_VBUS_MARK,
-+};
-+/* - USB1 ------------------------------------------------------------------- */
-+static const unsigned int usb1_pins[] = {
-+	/* PWEN, OVC */
-+	RCAR_GP_PIN(5, 20), RCAR_GP_PIN(5, 21),
-+};
-+static const unsigned int usb1_mux[] = {
-+	USB1_PWEN_MARK, USB1_OVC_MARK,
-+};
-+/* - USB2 ------------------------------------------------------------------- */
-+static const unsigned int usb2_pins[] = {
-+	/* PWEN, OVC */
-+	RCAR_GP_PIN(5, 22), RCAR_GP_PIN(5, 23),
-+};
-+static const unsigned int usb2_mux[] = {
-+	USB2_PWEN_MARK, USB2_OVC_MARK,
-+};
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(eth_link),
-@@ -3021,6 +3045,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(tpu0_to1),
- 	SH_PFC_PIN_GROUP(tpu0_to2),
- 	SH_PFC_PIN_GROUP(tpu0_to3),
-+	SH_PFC_PIN_GROUP(usb0),
-+	SH_PFC_PIN_GROUP(usb1),
-+	SH_PFC_PIN_GROUP(usb2),
- };
- 
- static const char * const eth_groups[] = {
-@@ -3245,6 +3272,18 @@ static const char * const tpu0_groups[] = {
- 	"tpu0_to3",
- };
- 
-+static const char * const usb0_groups[] = {
-+	"usb0",
-+};
-+
-+static const char * const usb1_groups[] = {
-+	"usb1",
-+};
-+
-+static const char * const usb2_groups[] = {
-+	"usb2",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(eth),
- 	SH_PFC_FUNCTION(hscif0),
-@@ -3270,6 +3309,9 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi2),
- 	SH_PFC_FUNCTION(sdhi3),
- 	SH_PFC_FUNCTION(tpu0),
-+	SH_PFC_FUNCTION(usb0),
-+	SH_PFC_FUNCTION(usb1),
-+	SH_PFC_FUNCTION(usb2),
- };
- 
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/board-kzm9d.c        |    2 +-
+ arch/arm/mach-shmobile/include/mach/emev2.h |    2 +-
+ arch/arm/mach-shmobile/setup-emev2.c        |   24 +++---------------------
+ 3 files changed, 5 insertions(+), 23 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/board-kzm9d.c
++++ work/arch/arm/mach-shmobile/board-kzm9d.c	2013-07-01 20:07:13.000000000 +0900
+@@ -85,7 +85,7 @@ static const char *kzm9d_boards_compat_d
+ DT_MACHINE_START(KZM9D_DT, "kzm9d")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+-	.init_early	= emev2_add_early_devices,
++	.init_early	= emev2_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= emev2_init_irq,
+ 	.init_machine	= kzm9d_add_standard_devices,
+--- 0001/arch/arm/mach-shmobile/include/mach/emev2.h
++++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2013-07-01 20:06:35.000000000 +0900
+@@ -3,7 +3,7 @@
+ 
+ extern void emev2_map_io(void);
+ extern void emev2_init_irq(void);
+-extern void emev2_add_early_devices(void);
++extern void emev2_init_delay(void);
+ extern void emev2_add_standard_devices(void);
+ extern void emev2_clock_init(void);
+ extern void emev2_set_boot_vector(unsigned long value);
+--- 0012/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-01 20:08:10.000000000 +0900
+@@ -375,14 +375,11 @@ static struct platform_device pmu_device
+ 	.resource	= pmu_resources,
+ };
+ 
+-static struct platform_device *emev2_early_devices[] __initdata = {
++static struct platform_device *emev2_devices[] __initdata = {
+ 	&uart0_device,
+ 	&uart1_device,
+ 	&uart2_device,
+ 	&uart3_device,
+-};
+-
+-static struct platform_device *emev2_late_devices[] __initdata = {
+ 	&sti_device,
+ 	&gio0_device,
+ 	&gio1_device,
+@@ -396,29 +393,14 @@ void __init emev2_add_standard_devices(v
+ {
+ 	emev2_clock_init();
+ 
+-	platform_add_devices(emev2_early_devices,
+-			     ARRAY_SIZE(emev2_early_devices));
+-
+-	platform_add_devices(emev2_late_devices,
+-			     ARRAY_SIZE(emev2_late_devices));
++	platform_add_devices(emev2_devices, ARRAY_SIZE(emev2_devices));
+ }
+ 
+-static void __init emev2_init_delay(void)
++void __init emev2_init_delay(void)
+ {
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+ }
+ 
+-void __init emev2_add_early_devices(void)
+-{
+-	emev2_init_delay();
+-
+-	early_platform_add_devices(emev2_early_devices,
+-				   ARRAY_SIZE(emev2_early_devices));
+-
+-	/* setup early console here as well */
+-	shmobile_setup_console();
+-}
+-
+ void __init emev2_init_irq(void)
+ {
+ 	void __iomem *gic_dist_base;
