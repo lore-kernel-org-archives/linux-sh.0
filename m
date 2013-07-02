@@ -1,158 +1,105 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:30 +0000
-Subject: [PATCH v7 17/19] ARM: shmobile: kzm9g-reference: Move pinctrl mappings to device tree
-Message-Id: <1372961852-28490-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 02 Jul 2013 13:52:28 +0000
+Subject: Re: [PATCH v2] mmc: sh_mmcif: add support for Device Tree DMA bindings
+Message-Id: <Pine.LNX.4.64.1307021548100.1965@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1306241434200.19735@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1306241434200.19735@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+Hi Chris
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+What's the plan about this patch? Do you think you'd be able to push it 
+for 3.11 or rather 3.12?
+
+Thanks
+Guennadi
+
+On Mon, 24 Jun 2013, Guennadi Liakhovetski wrote:
+
+> To use DMA in the Device Tree case the driver has to be modified
+> to use suitable API to obtain DMA channels.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> ---
+> 
+> v2: use an "else if"
+> 
+>  drivers/mmc/host/sh_mmcif.c |   26 ++++++++++++++++----------
+>  1 files changed, 16 insertions(+), 10 deletions(-)
+> 
+> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+> index ba76a53..4fff404 100644
+> --- a/drivers/mmc/host/sh_mmcif.c
+> +++ b/drivers/mmc/host/sh_mmcif.c
+> @@ -386,25 +386,29 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+>  
+>  	host->dma_active = false;
+>  
+> -	if (!pdata)
+> -		return;
+> -
+> -	if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
+> +	if (pdata) {
+> +		if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
+> +			return;
+> +	} else if (!host->pd->dev.of_node) {
+>  		return;
+> +	}
+>  
+>  	/* We can only either use DMA for both Tx and Rx or not use it at all */
+>  	dma_cap_zero(mask);
+>  	dma_cap_set(DMA_SLAVE, mask);
+>  
+> -	host->chan_tx = dma_request_channel(mask, shdma_chan_filter,
+> -					    (void *)pdata->slave_id_tx);
+> +	host->chan_tx = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+> +				pdata ? (void *)pdata->slave_id_tx : NULL,
+> +				&host->pd->dev, "tx");
+>  	dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
+>  		host->chan_tx);
+>  
+>  	if (!host->chan_tx)
+>  		return;
+>  
+> -	cfg.slave_id = pdata->slave_id_tx;
+> +	/* In the OF case the driver will get the slave ID from the DT */
+> +	if (pdata)
+> +		cfg.slave_id = pdata->slave_id_tx;
+>  	cfg.direction = DMA_MEM_TO_DEV;
+>  	cfg.dst_addr = res->start + MMCIF_CE_DATA;
+>  	cfg.src_addr = 0;
+> @@ -412,15 +416,17 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+>  	if (ret < 0)
+>  		goto ecfgtx;
+>  
+> -	host->chan_rx = dma_request_channel(mask, shdma_chan_filter,
+> -					    (void *)pdata->slave_id_rx);
+> +	host->chan_rx = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+> +				pdata ? (void *)pdata->slave_id_rx : NULL,
+> +				&host->pd->dev, "rx");
+>  	dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
+>  		host->chan_rx);
+>  
+>  	if (!host->chan_rx)
+>  		goto erqrx;
+>  
+> -	cfg.slave_id = pdata->slave_id_rx;
+> +	if (pdata)
+> +		cfg.slave_id = pdata->slave_id_rx;
+>  	cfg.direction = DMA_DEV_TO_MEM;
+>  	cfg.dst_addr = 0;
+>  	cfg.src_addr = res->start + MMCIF_CE_DATA;
+> -- 
+> 1.7.2.5
+> 
+> 
+
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   | 51 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 40 --------------------
- 2 files changed, 51 insertions(+), 40 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index b6f759e..11ae9ad 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -145,19 +145,70 @@
- 	};
- };
- 
-+&i2c3 {
-+	pinctrl-0 = <&i2c3_pins>;
-+	pinctrl-names = "default";
-+};
-+
- &mmcif {
-+	pinctrl-0 = <&mmcif_pins>;
-+	pinctrl-names = "default";
-+
- 	bus-width = <8>;
- 	vmmc-supply = <&reg_1p8v>;
- 	status = "okay";
- };
- 
-+&pfc {
-+	pinctrl-0 = <&scifa4_pins>;
-+	pinctrl-names = "default";
-+
-+	i2c3_pins: i2c3 {
-+		renesas,groups = "i2c3_1";
-+		renesas,function = "i2c3";
-+	};
-+
-+	mmcif_pins: mmcif {
-+		mux {
-+			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
-+			renesas,function = "mmc0";
-+		};
-+		cfg {
-+			renesas,groups = "mmc0_data8_0";
-+			renesas,pins = "PORT279";
-+			bias-pull-up;
-+		};
-+	};
-+
-+	scifa4_pins: scifa4 {
-+		renesas,groups = "scifa4_data", "scifa4_ctrl";
-+		renesas,function = "scifa4";
-+	};
-+
-+	sdhi0_pins: sdhi0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi2_pins: sdhi2 {
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+	};
-+};
-+
- &sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
- 	vmmc-supply = <&reg_3p3v>;
- 	bus-width = <4>;
- 	status = "okay";
- };
- 
- &sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
- 	vmmc-supply = <&reg_3p3v>;
- 	bus-width = <4>;
- 	broken-cd;
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index d7bbd29..6a9f6a3 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -26,55 +26,15 @@
- #include <linux/irq.h>
- #include <linux/input.h>
- #include <linux/of_platform.h>
--#include <linux/pinctrl/machine.h>
--#include <linux/pinctrl/pinconf-generic.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
- #include <asm/hardware/cache-l2x0.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
--static unsigned long pin_pullup_conf[] = {
--	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 0),
--};
--
--static const struct pinctrl_map kzm_pinctrl_map[] = {
--	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
--				  "i2c3_1", "i2c3"),
--	/* MMCIF */
--	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
--				  "mmc0_data8_0", "mmc0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
--				  "mmc0_ctrl_0", "mmc0"),
--	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
--				    "PORT279", pin_pullup_conf),
--	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
--				      "mmc0_data8_0", pin_pullup_conf),
--	/* SCIFA4 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
--				  "scifa4_data", "scifa4"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
--				  "scifa4_ctrl", "scifa4"),
--	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
--				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
--				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
--				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
--				  "sdhi0_wp", "sdhi0"),
--	/* SDHI2 */
--	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
--				  "sdhi2_data4", "sdhi2"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
--				  "sdhi2_ctrl", "sdhi2"),
--};
--
- static void __init kzm_init(void)
- {
- 	sh73a0_add_standard_devices_dt();
--	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
- 
- 	/* enable SD */
- 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
--- 
-1.8.1.5
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
