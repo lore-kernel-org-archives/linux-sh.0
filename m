@@ -1,422 +1,238 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 09:27:49 +0000
-Subject: [PATCH 03/08] ARM: shmobile: Make EMEV2 platform devices more compact
-Message-Id: <20130702092749.32066.62026.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 02 Jul 2013 15:45:55 +0000
+Subject: [PATCH 1/3] DMA: shdma: switch to managed resource allocation
+Message-Id: <Pine.LNX.4.64.1307021744110.1965@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130702092725.32066.54861.sendpatchset@w520>
-In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
+References: <Pine.LNX.4.64.1307021738500.1965@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1307021738500.1965@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: "Koul, Vinod" <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Magnus Damm <damm@opensource.se>
+Switch shdma to using devm_* managed functions for allocation of memory,
+requesting IRQs, mapping IO resources etc.
 
-Convert the EMEV2 SoC device setup code from using very
-verbose resources and static platform devices to the
-same style as more recent boards. This reduces the size
-of the code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
+ drivers/dma/sh/shdma-base.c |   11 +-----
+ drivers/dma/sh/shdma.c      |   71 ++++++++-----------------------------------
+ drivers/dma/sh/sudmac.c     |    1 -
+ include/linux/shdma-base.h  |    1 -
+ 4 files changed, 15 insertions(+), 69 deletions(-)
 
- Depends on "[PATCH] ARM: shmobile: emev2 GIO3 resource fix"
-
- arch/arm/mach-shmobile/setup-emev2.c |  327 ++++++----------------------------
- 1 file changed, 64 insertions(+), 263 deletions(-)
-
---- 0016/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-01 20:31:49.000000000 +0900
-@@ -62,102 +62,40 @@ void __init emev2_map_io(void)
- 
- /* UART */
- static struct resource uart0_resources[] = {
--	[0]	= {
--		.start	= 0xe1020000,
--		.end	= 0xe1020037,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1]	= {
--		.start	= 40,
--		.flags	= IORESOURCE_IRQ,
--	}
--};
--
--static struct platform_device uart0_device = {
--	.name		= "serial8250-em",
--	.id		= 0,
--	.num_resources	= ARRAY_SIZE(uart0_resources),
--	.resource	= uart0_resources,
-+	DEFINE_RES_MEM(0xe1020000, 0x38),
-+	DEFINE_RES_IRQ(40),
- };
- 
- static struct resource uart1_resources[] = {
--	[0]	= {
--		.start	= 0xe1030000,
--		.end	= 0xe1030037,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1]	= {
--		.start	= 41,
--		.flags	= IORESOURCE_IRQ,
--	}
--};
--
--static struct platform_device uart1_device = {
--	.name		= "serial8250-em",
--	.id		= 1,
--	.num_resources	= ARRAY_SIZE(uart1_resources),
--	.resource	= uart1_resources,
-+	DEFINE_RES_MEM(0xe1030000, 0x38),
-+	DEFINE_RES_IRQ(41),
- };
- 
- static struct resource uart2_resources[] = {
--	[0]	= {
--		.start	= 0xe1040000,
--		.end	= 0xe1040037,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1]	= {
--		.start	= 42,
--		.flags	= IORESOURCE_IRQ,
--	}
--};
--
--static struct platform_device uart2_device = {
--	.name		= "serial8250-em",
--	.id		= 2,
--	.num_resources	= ARRAY_SIZE(uart2_resources),
--	.resource	= uart2_resources,
-+	DEFINE_RES_MEM(0xe1040000, 0x38),
-+	DEFINE_RES_IRQ(42),
- };
- 
- static struct resource uart3_resources[] = {
--	[0]	= {
--		.start	= 0xe1050000,
--		.end	= 0xe1050037,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1]	= {
--		.start	= 43,
--		.flags	= IORESOURCE_IRQ,
--	}
--};
--
--static struct platform_device uart3_device = {
--	.name		= "serial8250-em",
--	.id		= 3,
--	.num_resources	= ARRAY_SIZE(uart3_resources),
--	.resource	= uart3_resources,
-+	DEFINE_RES_MEM(0xe1050000, 0x38),
-+	DEFINE_RES_IRQ(43),
- };
- 
-+#define emev2_register_uart(idx)					\
-+	platform_device_register_simple("serial8250-em", idx,		\
-+					uart##idx##_resources,		\
-+					ARRAY_SIZE(uart##idx##_resources))
-+
- /* STI */
- static struct resource sti_resources[] = {
--	[0] = {
--		.name	= "STI",
--		.start	= 0xe0180000,
--		.end	= 0xe0180053,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= 157,
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device sti_device = {
--	.name		= "em_sti",
--	.id		= 0,
--	.resource	= sti_resources,
--	.num_resources	= ARRAY_SIZE(sti_resources),
-+	DEFINE_RES_MEM(0xe0180000, 0x54),
-+	DEFINE_RES_IRQ(157),
- };
- 
-+#define emev2_register_sti()					\
-+	platform_device_register_simple("em_sti", 0,		\
-+					sti_resources,		\
-+					ARRAY_SIZE(sti_resources))
- 
- /* GIO */
- static struct gpio_em_config gio0_config = {
-@@ -167,36 +105,10 @@ static struct gpio_em_config gio0_config
- };
- 
- static struct resource gio0_resources[] = {
--	[0] = {
--		.name	= "GIO_000",
--		.start	= 0xe0050000,
--		.end	= 0xe005002b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.name	= "GIO_000",
--		.start	= 0xe0050040,
--		.end	= 0xe005005f,
--		.flags	= IORESOURCE_MEM,
--	},
--	[2] = {
--		.start	= 99,
--		.flags	= IORESOURCE_IRQ,
--	},
--	[3] = {
--		.start	= 100,
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device gio0_device = {
--	.name		= "em_gio",
--	.id		= 0,
--	.resource	= gio0_resources,
--	.num_resources	= ARRAY_SIZE(gio0_resources),
--	.dev		= {
--		.platform_data	= &gio0_config,
--	},
-+	DEFINE_RES_MEM(0xe0050000, 0x2c),
-+	DEFINE_RES_MEM(0xe0050040, 0x20),
-+	DEFINE_RES_IRQ(99),
-+	DEFINE_RES_IRQ(100),
- };
- 
- static struct gpio_em_config gio1_config = {
-@@ -206,36 +118,10 @@ static struct gpio_em_config gio1_config
- };
- 
- static struct resource gio1_resources[] = {
--	[0] = {
--		.name	= "GIO_032",
--		.start	= 0xe0050080,
--		.end	= 0xe00500ab,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.name	= "GIO_032",
--		.start	= 0xe00500c0,
--		.end	= 0xe00500df,
--		.flags	= IORESOURCE_MEM,
--	},
--	[2] = {
--		.start	= 101,
--		.flags	= IORESOURCE_IRQ,
--	},
--	[3] = {
--		.start	= 102,
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device gio1_device = {
--	.name		= "em_gio",
--	.id		= 1,
--	.resource	= gio1_resources,
--	.num_resources	= ARRAY_SIZE(gio1_resources),
--	.dev		= {
--		.platform_data	= &gio1_config,
--	},
-+	DEFINE_RES_MEM(0xe0050080, 0x2c),
-+	DEFINE_RES_MEM(0xe00500c0, 0x20),
-+	DEFINE_RES_IRQ(101),
-+	DEFINE_RES_IRQ(102),
- };
- 
- static struct gpio_em_config gio2_config = {
-@@ -245,36 +131,10 @@ static struct gpio_em_config gio2_config
- };
- 
- static struct resource gio2_resources[] = {
--	[0] = {
--		.name	= "GIO_064",
--		.start	= 0xe0050100,
--		.end	= 0xe005012b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.name	= "GIO_064",
--		.start	= 0xe0050140,
--		.end	= 0xe005015f,
--		.flags	= IORESOURCE_MEM,
--	},
--	[2] = {
--		.start	= 103,
--		.flags	= IORESOURCE_IRQ,
--	},
--	[3] = {
--		.start	= 104,
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device gio2_device = {
--	.name		= "em_gio",
--	.id		= 2,
--	.resource	= gio2_resources,
--	.num_resources	= ARRAY_SIZE(gio2_resources),
--	.dev		= {
--		.platform_data	= &gio2_config,
--	},
-+	DEFINE_RES_MEM(0xe0050100, 0x2c),
-+	DEFINE_RES_MEM(0xe0050140, 0x20),
-+	DEFINE_RES_IRQ(103),
-+	DEFINE_RES_IRQ(104),
- };
- 
- static struct gpio_em_config gio3_config = {
-@@ -284,36 +144,10 @@ static struct gpio_em_config gio3_config
- };
- 
- static struct resource gio3_resources[] = {
--	[0] = {
--		.name	= "GIO_096",
--		.start	= 0xe0050180,
--		.end	= 0xe00501ab,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.name	= "GIO_096",
--		.start	= 0xe00501c0,
--		.end	= 0xe00501df,
--		.flags	= IORESOURCE_MEM,
--	},
--	[2] = {
--		.start	= 105,
--		.flags	= IORESOURCE_IRQ,
--	},
--	[3] = {
--		.start	= 106,
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device gio3_device = {
--	.name		= "em_gio",
--	.id		= 3,
--	.resource	= gio3_resources,
--	.num_resources	= ARRAY_SIZE(gio3_resources),
--	.dev		= {
--		.platform_data	= &gio3_config,
--	},
-+	DEFINE_RES_MEM(0xe0050180, 0x2c),
-+	DEFINE_RES_MEM(0xe00501c0, 0x20),
-+	DEFINE_RES_IRQ(105),
-+	DEFINE_RES_IRQ(106),
- };
- 
- static struct gpio_em_config gio4_config = {
-@@ -323,77 +157,44 @@ static struct gpio_em_config gio4_config
- };
- 
- static struct resource gio4_resources[] = {
--	[0] = {
--		.name	= "GIO_128",
--		.start	= 0xe0050200,
--		.end	= 0xe005022b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.name	= "GIO_128",
--		.start	= 0xe0050240,
--		.end	= 0xe005025f,
--		.flags	= IORESOURCE_MEM,
--	},
--	[2] = {
--		.start	= 107,
--		.flags	= IORESOURCE_IRQ,
--	},
--	[3] = {
--		.start	= 108,
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device gio4_device = {
--	.name		= "em_gio",
--	.id		= 4,
--	.resource	= gio4_resources,
--	.num_resources	= ARRAY_SIZE(gio4_resources),
--	.dev		= {
--		.platform_data	= &gio4_config,
--	},
-+	DEFINE_RES_MEM(0xe0050200, 0x2c),
-+	DEFINE_RES_MEM(0xe0050240, 0x20),
-+	DEFINE_RES_IRQ(107),
-+	DEFINE_RES_IRQ(108),
- };
- 
-+#define emev2_register_gio(idx)						\
-+	platform_device_register_resndata(&platform_bus, "em_gio",	\
-+					  idx, gio##idx##_resources,	\
-+					  ARRAY_SIZE(gio##idx##_resources), \
-+					  &gio##idx##_config,		\
-+					  sizeof(struct gpio_em_config))
-+
- static struct resource pmu_resources[] = {
--	[0] = {
--		.start	= 152,
--		.end	= 152,
--		.flags	= IORESOURCE_IRQ,
--	},
--	[1] = {
--		.start	= 153,
--		.end	= 153,
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device pmu_device = {
--	.name		= "arm-pmu",
--	.id		= -1,
--	.num_resources	= ARRAY_SIZE(pmu_resources),
--	.resource	= pmu_resources,
--};
--
--static struct platform_device *emev2_devices[] __initdata = {
--	&uart0_device,
--	&uart1_device,
--	&uart2_device,
--	&uart3_device,
--	&sti_device,
--	&gio0_device,
--	&gio1_device,
--	&gio2_device,
--	&gio3_device,
--	&gio4_device,
--	&pmu_device,
-+	DEFINE_RES_IRQ(152),
-+	DEFINE_RES_IRQ(153),
- };
- 
-+#define emev2_register_pmu()					\
-+	platform_device_register_simple("arm-pmu", -1,		\
-+					pmu_resources,		\
-+					ARRAY_SIZE(pmu_resources))
-+
- void __init emev2_add_standard_devices(void)
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 28ca361..c5ea256 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -831,8 +831,8 @@ static irqreturn_t chan_irqt(int irq, void *dev)
+ int shdma_request_irq(struct shdma_chan *schan, int irq,
+ 			   unsigned long flags, const char *name)
  {
- 	emev2_clock_init();
+-	int ret = request_threaded_irq(irq, chan_irq, chan_irqt,
+-				       flags, name, schan);
++	int ret = devm_request_threaded_irq(schan->dev, irq, chan_irq,
++					    chan_irqt, flags, name, schan);
  
--	platform_add_devices(emev2_devices, ARRAY_SIZE(emev2_devices));
-+	emev2_register_uart(0);
-+	emev2_register_uart(1);
-+	emev2_register_uart(2);
-+	emev2_register_uart(3);
-+	emev2_register_sti();
-+	emev2_register_gio(0);
-+	emev2_register_gio(1);
-+	emev2_register_gio(2);
-+	emev2_register_gio(3);
-+	emev2_register_gio(4);
-+	emev2_register_pmu();
+ 	schan->irq = ret < 0 ? ret : irq;
+ 
+@@ -840,13 +840,6 @@ int shdma_request_irq(struct shdma_chan *schan, int irq,
+ }
+ EXPORT_SYMBOL(shdma_request_irq);
+ 
+-void shdma_free_irq(struct shdma_chan *schan)
+-{
+-	if (schan->irq >= 0)
+-		free_irq(schan->irq, schan);
+-}
+-EXPORT_SYMBOL(shdma_free_irq);
+-
+ void shdma_chan_probe(struct shdma_dev *sdev,
+ 			   struct shdma_chan *schan, int id)
+ {
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index c7950be..3083d62 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -507,7 +507,8 @@ static int sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
+ 	struct shdma_chan *schan;
+ 	int err;
+ 
+-	sh_chan = kzalloc(sizeof(struct sh_dmae_chan), GFP_KERNEL);
++	sh_chan = devm_kzalloc(sdev->dma_dev.dev, sizeof(struct sh_dmae_chan),
++			       GFP_KERNEL);
+ 	if (!sh_chan) {
+ 		dev_err(sdev->dma_dev.dev,
+ 			"No free memory for allocating dma channels!\n");
+@@ -543,7 +544,6 @@ static int sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
+ err_no_irq:
+ 	/* remove from dmaengine device node */
+ 	shdma_chan_remove(schan);
+-	kfree(sh_chan);
+ 	return err;
  }
  
- void __init emev2_init_delay(void)
+@@ -554,14 +554,9 @@ static void sh_dmae_chan_remove(struct sh_dmae_device *shdev)
+ 	int i;
+ 
+ 	shdma_for_each_chan(schan, &shdev->shdma_dev, i) {
+-		struct sh_dmae_chan *sh_chan = container_of(schan,
+-					struct sh_dmae_chan, shdma_chan);
+ 		BUG_ON(!schan);
+ 
+-		shdma_free_irq(&sh_chan->shdma_chan);
+-
+ 		shdma_chan_remove(schan);
+-		kfree(sh_chan);
+ 	}
+ 	dma_dev->chancnt = 0;
+ }
+@@ -698,33 +693,22 @@ static int sh_dmae_probe(struct platform_device *pdev)
+ 	if (!chan || !errirq_res)
+ 		return -ENODEV;
+ 
+-	if (!request_mem_region(chan->start, resource_size(chan), pdev->name)) {
+-		dev_err(&pdev->dev, "DMAC register region already claimed\n");
+-		return -EBUSY;
+-	}
+-
+-	if (dmars && !request_mem_region(dmars->start, resource_size(dmars), pdev->name)) {
+-		dev_err(&pdev->dev, "DMAC DMARS region already claimed\n");
+-		err = -EBUSY;
+-		goto ermrdmars;
+-	}
+-
+-	err = -ENOMEM;
+-	shdev = kzalloc(sizeof(struct sh_dmae_device), GFP_KERNEL);
++	shdev = devm_kzalloc(&pdev->dev, sizeof(struct sh_dmae_device),
++			     GFP_KERNEL);
+ 	if (!shdev) {
+ 		dev_err(&pdev->dev, "Not enough memory\n");
+-		goto ealloc;
++		return -ENOMEM;
+ 	}
+ 
+ 	dma_dev = &shdev->shdma_dev.dma_dev;
+ 
+-	shdev->chan_reg = ioremap(chan->start, resource_size(chan));
+-	if (!shdev->chan_reg)
+-		goto emapchan;
++	shdev->chan_reg = devm_ioremap_resource(&pdev->dev, chan);
++	if (IS_ERR(shdev->chan_reg))
++		return PTR_ERR(shdev->chan_reg);
+ 	if (dmars) {
+-		shdev->dmars = ioremap(dmars->start, resource_size(dmars));
+-		if (!shdev->dmars)
+-			goto emapdmars;
++		shdev->dmars = devm_ioremap_resource(&pdev->dev, dmars);
++		if (IS_ERR(shdev->dmars))
++			return PTR_ERR(shdev->dmars);
+ 	}
+ 
+ 	if (!pdata->slave_only)
+@@ -785,8 +769,8 @@ static int sh_dmae_probe(struct platform_device *pdev)
+ 
+ 	errirq = errirq_res->start;
+ 
+-	err = request_irq(errirq, sh_dmae_err, irqflags,
+-			  "DMAC Address Error", shdev);
++	err = devm_request_irq(&pdev->dev, errirq, sh_dmae_err, irqflags,
++			       "DMAC Address Error", shdev);
+ 	if (err) {
+ 		dev_err(&pdev->dev,
+ 			"DMA failed requesting irq #%d, error %d\n",
+@@ -875,7 +859,6 @@ chan_probe_err:
+ 	sh_dmae_chan_remove(shdev);
+ 
+ #if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
+-	free_irq(errirq, shdev);
+ eirq_err:
+ #endif
+ rst_err:
+@@ -889,18 +872,7 @@ rst_err:
+ 	platform_set_drvdata(pdev, NULL);
+ 	shdma_cleanup(&shdev->shdma_dev);
+ eshdma:
+-	if (dmars)
+-		iounmap(shdev->dmars);
+-emapdmars:
+-	iounmap(shdev->chan_reg);
+ 	synchronize_rcu();
+-emapchan:
+-	kfree(shdev);
+-ealloc:
+-	if (dmars)
+-		release_mem_region(dmars->start, resource_size(dmars));
+-ermrdmars:
+-	release_mem_region(chan->start, resource_size(chan));
+ 
+ 	return err;
+ }
+@@ -909,17 +881,12 @@ static int sh_dmae_remove(struct platform_device *pdev)
+ {
+ 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
+ 	struct dma_device *dma_dev = &shdev->shdma_dev.dma_dev;
+-	struct resource *res;
+-	int errirq = platform_get_irq(pdev, 0);
+ 
+ 	dma_async_device_unregister(dma_dev);
+ 
+ 	/* Is a NOP if this controller isn't registered with of-dma */
+ 	of_dma_controller_free(pdev->dev.of_node);
+ 
+-	if (errirq > 0)
+-		free_irq(errirq, shdev);
+-
+ 	spin_lock_irq(&sh_dmae_lock);
+ 	list_del_rcu(&shdev->node);
+ 	spin_unlock_irq(&sh_dmae_lock);
+@@ -929,21 +896,9 @@ static int sh_dmae_remove(struct platform_device *pdev)
+ 	sh_dmae_chan_remove(shdev);
+ 	shdma_cleanup(&shdev->shdma_dev);
+ 
+-	if (shdev->dmars)
+-		iounmap(shdev->dmars);
+-	iounmap(shdev->chan_reg);
+-
+ 	platform_set_drvdata(pdev, NULL);
+ 
+ 	synchronize_rcu();
+-	kfree(shdev);
+-
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (res)
+-		release_mem_region(res->start, resource_size(res));
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+-	if (res)
+-		release_mem_region(res->start, resource_size(res));
+ 
+ 	return 0;
+ }
+diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
+index e7c94bb..3477901 100644
+--- a/drivers/dma/sh/sudmac.c
++++ b/drivers/dma/sh/sudmac.c
+@@ -302,7 +302,6 @@ static void sudmac_chan_remove(struct sudmac_device *su_dev)
+ 
+ 		BUG_ON(!schan);
+ 
+-		shdma_free_irq(&sc->shdma_chan);
+ 		shdma_chan_remove(schan);
+ 	}
+ 	dma_dev->chancnt = 0;
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index 9d67bb1..1aa1f19 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -116,7 +116,6 @@ struct shdma_dev {
+ 
+ int shdma_request_irq(struct shdma_chan *, int,
+ 			   unsigned long, const char *);
+-void shdma_free_irq(struct shdma_chan *);
+ bool shdma_reset(struct shdma_dev *sdev);
+ void shdma_chan_probe(struct shdma_dev *sdev,
+ 			   struct shdma_chan *schan, int id);
+-- 
+1.7.2.5
+
