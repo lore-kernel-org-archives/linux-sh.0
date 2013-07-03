@@ -1,32 +1,92 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 11 Jul 2013 11:35:28 +0000
-Subject: Re: [PATCH 05/11] ARM: shmobile: r8a7778: cleanup registration of i2c
-Message-Id: <51DE9880.5020302@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 03 Jul 2013 04:14:32 +0000
+Subject: [PATCH] gpio: em: Add pinctrl support
+Message-Id: <20130703041432.7351.45970.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fvvlfqen.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fvvlfqen.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linus.walleij@linaro.org, linux-kernel@vger.kernel.org, horms@verge.net.au, laurent.pinchart@ideasonboard.com, grant.likely@linaro.org, Magnus Damm <magnus.damm@gmail.com>
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 11-07-2013 12:32, Kuninori Morimoto wrote:
+Register the GPIO pin range, and request and free GPIO pins using the
+pinctrl API. The pctl_name platform data member should be used by
+platform devices to point out which pinctrl device to use.
 
-> i2c-rcar driver which doesn't need platform data at the time of
-> registration can be registerd on SoC.
-> And, registering these drivers in the SoC code can avoid
-> unwanted device numbering issue.
-> (ex. the i2c3 device number will be i2c.0 if i2c3 only registered)
-> This patch registers it on SoC code as cleanup C code
+Follows same style as "dc3465a gpio-rcar: Add pinctrl support",
+by Laurent Pinchart, thanks to him.
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-    How about pinmux? If you register all 4 I2C controllers at the SoC 
-level (that's what our patch was doing), you'll need to register all the 
-I2C pin groups in the board file, no?
+ drivers/gpio/gpio-em.c                |   25 +++++++++++++++++++++++++
+ include/linux/platform_data/gpio-em.h |    1 +
+ 2 files changed, 26 insertions(+)
 
-WBR, Sergei
-
-
+--- 0001/drivers/gpio/gpio-em.c
++++ work/drivers/gpio/gpio-em.c	2013-07-03 12:49:55.000000000 +0900
+@@ -30,6 +30,7 @@
+ #include <linux/gpio.h>
+ #include <linux/slab.h>
+ #include <linux/module.h>
++#include <linux/pinctrl/consumer.h>
+ #include <linux/platform_data/gpio-em.h>
+ 
+ struct em_gio_priv {
+@@ -216,6 +217,21 @@ static int em_gio_to_irq(struct gpio_chi
+ 	return irq_create_mapping(gpio_to_priv(chip)->irq_domain, offset);
+ }
+ 
++static int em_gio_request(struct gpio_chip *chip, unsigned offset)
++{
++	return pinctrl_request_gpio(chip->base + offset);
++}
++
++static void em_gio_free(struct gpio_chip *chip, unsigned offset)
++{
++	pinctrl_free_gpio(chip->base + offset);
++
++	/* Set the GPIO as an input to ensure that the next GPIO request won't
++	* drive the GPIO pin as an output.
++	*/
++	em_gio_direction_input(chip, offset);
++}
++
+ static int em_gio_irq_domain_map(struct irq_domain *h, unsigned int virq,
+ 				 irq_hw_number_t hw)
+ {
+@@ -308,6 +324,8 @@ static int em_gio_probe(struct platform_
+ 	gpio_chip->direction_output = em_gio_direction_output;
+ 	gpio_chip->set = em_gio_set;
+ 	gpio_chip->to_irq = em_gio_to_irq;
++	gpio_chip->request = em_gio_request;
++	gpio_chip->free = em_gio_free;
+ 	gpio_chip->label = name;
+ 	gpio_chip->owner = THIS_MODULE;
+ 	gpio_chip->base = pdata->gpio_base;
+@@ -351,6 +369,13 @@ static int em_gio_probe(struct platform_
+ 		dev_err(&pdev->dev, "failed to add GPIO controller\n");
+ 		goto err1;
+ 	}
++
++	if (pdata->pctl_name) {
++		ret = gpiochip_add_pin_range(gpio_chip, pdata->pctl_name, 0,
++					     gpio_chip->base, gpio_chip->ngpio);
++		if (ret < 0)
++			dev_warn(&pdev->dev, "failed to add pin range\n");
++	}
+ 	return 0;
+ 
+ err1:
+--- 0001/include/linux/platform_data/gpio-em.h
++++ work/include/linux/platform_data/gpio-em.h	2013-07-03 12:45:27.000000000 +0900
+@@ -5,6 +5,7 @@ struct gpio_em_config {
+ 	unsigned int gpio_base;
+ 	unsigned int irq_base;
+ 	unsigned int number_of_pins;
++	const char *pctl_name;
+ };
+ 
+ #endif /* __GPIO_EM_H__ */
