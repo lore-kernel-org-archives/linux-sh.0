@@ -1,128 +1,110 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:33 +0000
-Subject: [PATCH 06/19] ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
-Message-Id: <f5c771b5610b4c0d4daf9729aa03539ef1779a92.1374625203.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 03 Jul 2013 04:02:52 +0000
+Subject: Re: [PATCH v2 1/2] ARM: shmobile: r8a7790: Initialise clocks and SCIF in r8a7790_add_dt_devices()
+Message-Id: <CANqRtoRKzbgBNt=Ztise5eeqnbiFWCZZZkhAq0zCnjjoetGFkg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
+References: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
+ <1372645120-27256-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372645120-27256-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi Simon,
 
-Add GPIO controller nodes to the r8a7779 core device tree.
+On Mon, Jul 1, 2013 at 11:18 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> This is sufficient to allow boot of the Lager board with
+> a console without boards-lager.c compiled into the kernel.
+> This is an example of a minimal but still useful initialisation
+> of the board using DT as much as possible.
+>
+> Also provide r8a7790_add_dt_device() in
+> r8a7790.h to allow it be used from a boards-lager-reference.c
+> file which will be added by a subsequent patch.
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>
+> ---
+>
+> v2
+>
+> * Rebase
+> ---
+>  arch/arm/mach-shmobile/include/mach/r8a7790.h |  1 +
+>  arch/arm/mach-shmobile/setup-r8a7790.c        | 11 ++++++++++-
+>  2 files changed, 11 insertions(+), 1 deletion(-)
+>
+> diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+> index 7851cc1..7a25138 100644
+> --- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
+> +++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+> @@ -2,6 +2,7 @@
+>  #define __ASM_R8A7790_H__
+>
+>  void r8a7790_add_standard_devices(void);
+> +void r8a7790_add_standard_devices_dt(void);
+>  void r8a7790_clock_init(void);
+>  void r8a7790_pinmux_init(void);
+>  void r8a7790_init_delay(void);
+> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+> index d89cd83..770109b 100644
+> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+> @@ -180,7 +180,7 @@ static struct resource cmt00_resources[] = {
+>                                           &cmt##idx##_platform_data,    \
+>                                           sizeof(struct sh_timer_config))
+>
+> -void __init r8a7790_add_standard_devices(void)
+> +void __init r8a7790_add_dt_devices(void)
+>  {
+>         r8a7790_register_scif(SCIFA0);
+>         r8a7790_register_scif(SCIFA1);
+> @@ -192,6 +192,11 @@ void __init r8a7790_add_standard_devices(void)
+>         r8a7790_register_scif(SCIF1);
+>         r8a7790_register_scif(HSCIF0);
+>         r8a7790_register_scif(HSCIF1);
+> +}
+> +
+> +void __init r8a7790_add_standard_devices(void)
+> +{
+> +       r8a7790_add_dt_devices();
+>         r8a7790_register_irqc(0);
+>         r8a7790_register_thermal();
+>         r8a7790_register_cmt(00);
+> @@ -219,6 +224,10 @@ void __init r8a7790_init_delay(void)
+>  #ifdef CONFIG_USE_OF
+>  void __init r8a7790_add_standard_devices_dt(void)
+>  {
+> +       /* clocks are setup late during boot in the case of DT */
+> +       r8a7790_clock_init();
+> +
+> +       r8a7790_add_dt_devices();
+>         of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+>  }
+>
+> --
+> 1.8.2.1
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779.dtsi | 85 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 85 insertions(+)
+In this patch you modify r8a7790_add_standard_devices_dt() to include
+clocks. I prefer not to make this kind of modification to the generic
+r8a7790 DT code since it clashes with upcoming common clock framework
+changes. I would like to keep the generic per-SoC DT_MACHINE bits so
+they don't enable legacy clocks.
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 9dfc438..e9fbe3d 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -48,6 +48,90 @@
-                       <0xf0000100 0x100>;
-         };
- 
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc40000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 141 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc41000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc42000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 143 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc43000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc44000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 145 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio5: gpio@ffc45000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc45000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 146 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio6: gpio@ffc46000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc46000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 147 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 192 9>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
- 	irqpin0: irqpin@fe780010 {
- 		compatible = "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
-@@ -104,6 +188,7 @@
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7779";
- 		reg = <0xfffc0000 0x23c>;
-+		#gpio-range-cells = <3>;
- 	};
- 
- 	thermal@ffc48000 {
--- 
-1.8.2.1
+Also, as you probably noticed, this patch conflicts with the idea to
+keep ->init_machine() set to NULL for modern platforms.
 
+Despite what I said yesterday, I think it would be very useful to have
+Lager DT reference board code around even though SCIF can't do DT yet.
+
+How about keeping the DT_MACHINE stuff for r8a7790 in setup-r8a7790.c
+as-is, but in your board-lager-reference.c you have a temporary
+version of ->init_machine() that enables clocks, adds SCIF (and CMT?)
+as platform devices, but does the rest via DT? Then when SCIF is ready
+we can drop the C code for the DT reference board support.
+
+Cheers,
+
+/ magnus
