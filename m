@@ -1,99 +1,82 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 09:27:33 +0000
-Subject: [PATCH 01/08] ARM: shmobile: Remove unused EMEV2/KZM9D early console
-Message-Id: <20130702092733.32066.50335.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:15 +0000
+Subject: [PATCH v7 02/19] ARM: shmobile: r8a7740: Add pin control device to device tree
+Message-Id: <1372961852-28490-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130702092725.32066.54861.sendpatchset@w520>
-In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add a pfc node to the r8a7740 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
-Remove EMEV2 early console code from KZM9D and instead
-rely on console setup during regular platform device
-probe time. This makes the DT code and the KZM9D board
-support behave the same.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
+ 2 files changed, 16 insertions(+), 8 deletions(-)
 
- arch/arm/mach-shmobile/board-kzm9d.c        |    2 +-
- arch/arm/mach-shmobile/include/mach/emev2.h |    2 +-
- arch/arm/mach-shmobile/setup-emev2.c        |   24 +++---------------------
- 3 files changed, 5 insertions(+), 23 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/board-kzm9d.c
-+++ work/arch/arm/mach-shmobile/board-kzm9d.c	2013-07-01 20:07:13.000000000 +0900
-@@ -85,7 +85,7 @@ static const char *kzm9d_boards_compat_d
- DT_MACHINE_START(KZM9D_DT, "kzm9d")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.map_io		= emev2_map_io,
--	.init_early	= emev2_add_early_devices,
-+	.init_early	= emev2_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= emev2_init_irq,
- 	.init_machine	= kzm9d_add_standard_devices,
---- 0001/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2013-07-01 20:06:35.000000000 +0900
-@@ -3,7 +3,7 @@
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 24e9306..e18a195 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -139,4 +139,12 @@
+ 			      0 72 0x4
+ 			      0 73 0x4>;
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a7740";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605800c 0x20>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 03b85fe..f25b6aa 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -121,7 +121,7 @@
  
- extern void emev2_map_io(void);
- extern void emev2_init_irq(void);
--extern void emev2_add_early_devices(void);
-+extern void emev2_init_delay(void);
- extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
- extern void emev2_set_boot_vector(unsigned long value);
---- 0012/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-01 20:08:10.000000000 +0900
-@@ -375,14 +375,11 @@ static struct platform_device pmu_device
- 	.resource	= pmu_resources,
+ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* SCIFA1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
+ 				  "scifa1_data", "scifa1"),
  };
  
--static struct platform_device *emev2_early_devices[] __initdata = {
-+static struct platform_device *emev2_devices[] __initdata = {
- 	&uart0_device,
- 	&uart1_device,
- 	&uart2_device,
- 	&uart3_device,
--};
--
--static struct platform_device *emev2_late_devices[] __initdata = {
- 	&sti_device,
- 	&gio0_device,
- 	&gio1_device,
-@@ -396,29 +393,14 @@ void __init emev2_add_standard_devices(v
- {
- 	emev2_clock_init();
+@@ -170,22 +170,22 @@ static void __init eva_init(void)
+ 	eva_clock_init();
  
--	platform_add_devices(emev2_early_devices,
--			     ARRAY_SIZE(emev2_early_devices));
+ 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+-	r8a7740_pinmux_init();
+ 
+ 	r8a7740_meram_workaround();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
 -
--	platform_add_devices(emev2_late_devices,
--			     ARRAY_SIZE(emev2_late_devices));
-+	platform_add_devices(emev2_devices, ARRAY_SIZE(emev2_devices));
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+ #endif
+ 
+ 	r8a7740_add_standard_devices_dt();
++
++	/*
++	 * Touchscreen
++	 * TODO: Move reset GPIO over to .dts when we can reference it
++	 */
++	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
++
+ 	r8a7740_pm_init();
  }
  
--static void __init emev2_init_delay(void)
-+void __init emev2_init_delay(void)
- {
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
- }
- 
--void __init emev2_add_early_devices(void)
--{
--	emev2_init_delay();
--
--	early_platform_add_devices(emev2_early_devices,
--				   ARRAY_SIZE(emev2_early_devices));
--
--	/* setup early console here as well */
--	shmobile_setup_console();
--}
--
- void __init emev2_init_irq(void)
- {
- 	void __iomem *gic_dist_base;
+-- 
+1.8.1.5
+
