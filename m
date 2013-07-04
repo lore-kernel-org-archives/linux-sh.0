@@ -1,48 +1,78 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 19 Jul 2013 02:28:22 +0000
-Subject: Re: [PATCH v2 00/04] ARM: shmobile: ARCH_MULTIPLATFORM for EMEV2 and KZM9D
-Message-Id: <20130719022821.GF4403@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 04 Jul 2013 20:38:53 +0000
+Subject: [PATCH 5/6] ARM: shmobile: r8a73a4: add MMCIF and SDHI DT templates
+Message-Id: <1372970334-21485-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130717203049.27542.78385.sendpatchset@w520>
-In-Reply-To: <20130717203049.27542.78385.sendpatchset@w520>
+References: <874nfp5gz3.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <874nfp5gz3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Jul 18, 2013 at 05:30:49AM +0900, Magnus Damm wrote:
-> ARM: shmobile: ARCH_MULTIPLATFORM for EMEV2 and KZM9D (v2)
-> 
-> [PATCH v2 01/04] ARM: shmobile: Only build clocks when COMMON_CLK=n
-> [PATCH 02/04] ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
-> [PATCH v2 03/04] ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
-> [PATCH 04/04] ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration
-> 
-> This patch set extends mach-shmobile to allow a subset of SoCs and
-> boards to be built for ARCH_MULTIPLATFORM. With this v2 series applied
-> the EMEV2 SoC and the KZM9D board can be built in two ways - either
-> as good old ARCH_SHMOBILE or new ARCH_SHMOBILE_MULTI. The latter
-> requires common clock framework for proper run time operation.
-> 
-> The goal is to over time move all DT reference implementations from
-> ARCH_SHMOBILE to ARCH_SHMOBILE_MULTI. Until CCF is available for a
-> certain SoC it is to me acceptable for a DT reference board to allow
-> build in both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI. The reason for
-> this is to allow incremental development and easy testing during
-> development of CCF for a certain SoC. The KZM9D board is now in this
-> state while it is waiting for common clocks to become ready.
-> 
-> Until CCF is supported for EMEV2 the KZM9D board can be tested with
-> ARCH_SMOBILE_MULTI without clocks using the following prototype:
-> [PATCH] ARM: shmobile: MULTIPLATFORM KZM9D with no clocks prototype hack
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Built on top of renesas-devel-20130717
+This adds DT templates for all MMCIF and SDHI controllers on r8a73a4.
+They are added with status="disabled". To use them platform-specific
+DTs have to enable the required ones.
 
-Hi Magnus,
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi |   45 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 45 insertions(+), 0 deletions(-)
 
-could you let me know if/when these are ready for me to queue-up?
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 4e1ddf0..064f045 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -166,4 +166,49 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 173 0x4>;
+ 	};
++
++	mmcif0: mmcif@ee200000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee200000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 169 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	mmcif1: mmcif@ee220000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee220000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 170 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	sdhi0: sdhi@ee100000 {
++		compatible = "renesas,r8a7740-sdhi";
++		reg = <0 0xee100000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 165 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi1: sdhi@ee120000 {
++		compatible = "renesas,r8a7740-sdhi";
++		reg = <0 0xee120000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 166 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi2: sdhi@ee140000 {
++		compatible = "renesas,r8a7740-sdhi";
++		reg = <0 0xee140000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
+ };
+-- 
+1.7.2.5
 
-Thanks
