@@ -1,138 +1,119 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 02 Jul 2013 15:46:01 +0000
-Subject: [PATCH 2/3] DMA: shdma: switch all __iomem pointers to void
-Message-Id: <Pine.LNX.4.64.1307021744480.1965@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:28 +0000
+Subject: [PATCH v7 15/19] ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
+Message-Id: <1372961852-28490-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1307021738500.1965@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1307021738500.1965@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: "Koul, Vinod" <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-In the shdma driver __iomem pointers are used to point to hardware
-registers.  Using typed pointers like "u32 __iomem *" in this case is
-inconvenient, because then offsets, added to such pointers, have to be
-devided by sizeof(u32) or similar. Switch the driver to use void
-pointers, which avoids this clumsiness.
+Replace the pinctrl mappings in board code by device tree mappings.
+For devices that are still instantiated from board code reference the
+mappings as the default pin controller state to apply them at boot time.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/dma/sh/shdma.c |   22 +++++++++++-----------
- drivers/dma/sh/shdma.h |    6 +++---
- 2 files changed, 14 insertions(+), 14 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 35 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-marzen-reference.c | 27 -------------------
+ 2 files changed, 35 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
-index 3083d62..64eb7fb 100644
---- a/drivers/dma/sh/shdma.c
-+++ b/drivers/dma/sh/shdma.c
-@@ -56,22 +56,22 @@ static void channel_clear(struct sh_dmae_chan *sh_dc)
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
- 
- 	__raw_writel(0, shdev->chan_reg +
--		shdev->pdata->channel[sh_dc->shdma_chan.id].chclr_offset / sizeof(u32));
-+		shdev->pdata->channel[sh_dc->shdma_chan.id].chclr_offset);
- }
- 
- static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
- {
--	__raw_writel(data, sh_dc->base + reg / sizeof(u32));
-+	__raw_writel(data, sh_dc->base + reg);
- }
- 
- static u32 sh_dmae_readl(struct sh_dmae_chan *sh_dc, u32 reg)
- {
--	return __raw_readl(sh_dc->base + reg / sizeof(u32));
-+	return __raw_readl(sh_dc->base + reg);
- }
- 
- static u16 dmaor_read(struct sh_dmae_device *shdev)
- {
--	u32 __iomem *addr = shdev->chan_reg + DMAOR / sizeof(u32);
-+	void __iomem *addr = shdev->chan_reg + DMAOR;
- 
- 	if (shdev->pdata->dmaor_is_32bit)
- 		return __raw_readl(addr);
-@@ -81,7 +81,7 @@ static u16 dmaor_read(struct sh_dmae_device *shdev)
- 
- static void dmaor_write(struct sh_dmae_device *shdev, u16 data)
- {
--	u32 __iomem *addr = shdev->chan_reg + DMAOR / sizeof(u32);
-+	void __iomem *addr = shdev->chan_reg + DMAOR;
- 
- 	if (shdev->pdata->dmaor_is_32bit)
- 		__raw_writel(data, addr);
-@@ -93,14 +93,14 @@ static void chcr_write(struct sh_dmae_chan *sh_dc, u32 data)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
- 
--	__raw_writel(data, sh_dc->base + shdev->chcr_offset / sizeof(u32));
-+	__raw_writel(data, sh_dc->base + shdev->chcr_offset);
- }
- 
- static u32 chcr_read(struct sh_dmae_chan *sh_dc)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
- 
--	return __raw_readl(sh_dc->base + shdev->chcr_offset / sizeof(u32));
-+	return __raw_readl(sh_dc->base + shdev->chcr_offset);
- }
- 
- /*
-@@ -244,7 +244,7 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
- 	struct sh_dmae_pdata *pdata = shdev->pdata;
- 	const struct sh_dmae_channel *chan_pdata = &pdata->channel[sh_chan->shdma_chan.id];
--	u16 __iomem *addr = shdev->dmars;
-+	void __iomem *addr = shdev->dmars;
- 	unsigned int shift = chan_pdata->dmars_bit;
- 
- 	if (dmae_is_busy(sh_chan))
-@@ -255,8 +255,8 @@ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
- 
- 	/* in the case of a missing DMARS resource use first memory window */
- 	if (!addr)
--		addr = (u16 __iomem *)shdev->chan_reg;
--	addr += chan_pdata->dmars / sizeof(u16);
-+		addr = shdev->chan_reg;
-+	addr += chan_pdata->dmars;
- 
- 	__raw_writew((__raw_readw(addr) & (0xff00 >> shift)) | (val << shift),
- 		     addr);
-@@ -520,7 +520,7 @@ static int sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
- 
- 	shdma_chan_probe(sdev, schan, id);
- 
--	sh_chan->base = shdev->chan_reg + chan_pdata->offset / sizeof(u32);
-+	sh_chan->base = shdev->chan_reg + chan_pdata->offset;
- 
- 	/* set up channel irq */
- 	if (pdev->id >= 0)
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index 9314e93..06aae6e 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -28,7 +28,7 @@ struct sh_dmae_chan {
- 	struct shdma_chan shdma_chan;
- 	const struct sh_dmae_slave_config *config; /* Slave DMA configuration */
- 	int xmit_shift;			/* log_2(bytes_per_xfer) */
--	u32 __iomem *base;
-+	void __iomem *base;
- 	char dev_id[16];		/* unique name per DMAC of channel */
- 	int pm_error;
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 72be4c8..6d20247 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -37,6 +37,9 @@
+ 	lan0@18000000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x18000000 0x100>;
++		pinctrl-0 = <&lan0_pins>;
++		pinctrl-names = "default";
++
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 28 0x4>;
+@@ -45,3 +48,35 @@
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
  };
-@@ -38,8 +38,8 @@ struct sh_dmae_device {
- 	struct sh_dmae_chan *chan[SH_DMAE_MAX_CHANNELS];
- 	struct sh_dmae_pdata *pdata;
- 	struct list_head node;
--	u32 __iomem *chan_reg;
--	u16 __iomem *dmars;
-+	void __iomem *chan_reg;
-+	void __iomem *dmars;
- 	unsigned int chcr_offset;
- 	u32 chcr_ie_bit;
- };
++
++&pfc {
++	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
++	pinctrl-names = "default";
++
++	lan0_pins: lan0 {
++		intc {
++			renesas,groups = "intc_irq1_b";
++			renesas,function = "intc";
++		};
++		lbsc {
++			renesas,groups = "lbsc_ex_cs0";
++			renesas,function = "lbsc";
++		};
++	};
++
++	scif2_pins: scif2 {
++		renesas,groups = "scif2_data_c";
++		renesas,function = "scif2";
++	};
++
++	scif4_pins: scif4 {
++		renesas,groups = "scif4_data";
++		renesas,function = "scif4";
++	};
++
++	sdhi0_pins: sdhi0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
++				 "sdhi0_wp";
++		renesas,function = "sdhi0";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 94804f3..3d1c439 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,41 +19,14 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/pinctrl/machine.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
+ 
+-static const struct pinctrl_map marzen_pinctrl_map[] = {
+-	/* SCIF2 (CN18: DEBUG0) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
+-				  "scif2_data_c", "scif2"),
+-	/* SCIF4 (CN19: DEBUG1) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
+-				  "scif4_data", "scif4"),
+-	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+-				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+-				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+-				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+-				  "sdhi0_wp", "sdhi0"),
+-	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+-				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+-				  "lbsc_ex_cs0", "lbsc"),
+-};
+-
+ static void __init marzen_init(void)
+ {
+-	pinctrl_register_mappings(marzen_pinctrl_map,
+-				  ARRAY_SIZE(marzen_pinctrl_map));
+-
+ 	r8a7779_add_standard_devices_dt();
+ }
+ 
 -- 
-1.7.2.5
+1.8.1.5
 
