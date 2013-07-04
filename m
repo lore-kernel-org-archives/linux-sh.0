@@ -1,93 +1,71 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 18 Jul 2013 22:04:20 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7778: add HPB-DMAC support
-Message-Id: <51E86664.1060509@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 19:13:23 +0000
+Subject: [PATCH v2 0/7] Backlight drivers for SH and ARM SH-Mobile boards
+Message-Id: <1372965210-10024-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
- <201306300248.57898.sergei.shtylyov@cogentembedded.com>
- <87d2r2j4uy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d2r2j4uy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Hello,
 
-On 07/01/2013 08:12 AM, Kuninori Morimoto wrote:
+Here are three backlight drivers used by SH and ARM SH-Mobile boards.
 
->> From: Max Filippov <max.filippov@cogentembedded.com>
+The first driver supports simple GPIO-controlled backlights that are turned on
+or off by a single GPIO (either active high or active low).
 
->> Add HPB-DMAC platform device on R8A7778 SoC along with its slave and channel
->> configurations.
+The second driver supports the Sanyo LV5207LP LED driver
+(http://www.onsemi.com/pub_link/Collateral/ENA0943-D.PDF) and exposes the main
+LED only as a backlight device, as that's all the board I need to driver for
+uses.
 
->> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The third driver supports the ROHM Semiconductor BD6107 LED driver (no
+datasheet publicly available I'm afraid). Similarly to the LV5207LP driver, it
+exposes the main LED only as a backlight device.
 
->> ---
-> (snip)
->> +static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
->> +	{
->> +		.id	= HPBDMA_SLAVE_SDHI0_TX,
->> +		.addr	= 0xffe4c000 + 0x30,
->> +		.dcr	= DCR_SPDS_16BIT | DCR_DMDL | DCR_DPDS_16BIT,
->> +		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
->> +			  ASYNCRSTR_ASRST23,
->> +		.mdr	= ASYNCMDR_ASMD21_SINGLE,
->> +		.mdm	= ASYNCMDR_ASMD21_MASK,
->> +		.port	= 0x0D0C,
->> +		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
->> +		.dma_ch	= 21,
->> +	}, {
->> +		.id	= HPBDMA_SLAVE_SDHI0_RX,
->> +		.addr	= 0xffe4c000 + 0x30,
->> +		.dcr	= DCR_SMDL | DCR_SPDS_16BIT | DCR_DPDS_16BIT,
->> +		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
->> +			  ASYNCRSTR_ASRST23,
->> +		.mdr	= ASYNCMDR_ASMD22_SINGLE,
->> +		.mdm	= ASYNCMDR_ASMD22_MASK,
->> +		.port	= 0x0D0C,
->> +		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
->> +		.dma_ch	= 22,
->> +	}, {
->> +		.id	= HPBDMA_SLAVE_SSI0_TX_ST,
->> +		.addr	= 0xffd90000 + 0x1008,
->> +		.dcr	= DCR_CT | DCR_DIP | DCR_SPDS_32BIT | DCR_DMDL |
->> +			  DCR_DPDS_32BIT,
->> +		.port	= 0x0000,
->> +		.dma_ch	= 28,
->> +	}, {
->> +		.id	= HPBDMA_SLAVE_SSI0_TX_MN,
->> +		.addr	= 0xffd90000 + 0x1008,
->> +		.dcr	= DCR_CT | DCR_DIP | DCR_SPDS_16BIT | DCR_DMDL |
->> +			  DCR_DPDS_16BIT,
->> +		.port	= 0x0000,
->> +		.dma_ch	= 28,
->> +	}, {
->> +		.id	= HPBDMA_SLAVE_SSI1_RX_ST,
->> +		.addr	= 0xffd90000 + 0x104c,
->> +		.dcr	= DCR_CT | DCR_DIP | DCR_SMDL | DCR_SPDS_32BIT |
->> +			  DCR_DPDAM | DCR_DPDS_32BIT,
->> +		.port	= 0x0101,
->> +		.dma_ch	= 29,
->> +	}, {
->> +		.id	= HPBDMA_SLAVE_SSI1_RX_MN,
->> +		.addr	= 0xffd90000 + 0x104c,
->> +		.dcr	= DCR_CT | DCR_DIP | DCR_SMDL | DCR_SPDS_16BIT |
->> +			  DCR_DPDAM | DCR_DPDS_16BIT,
->> +		.port	= 0x0101,
->> +		.dma_ch	= 29,
->> +	},
->> +};
+The last four patches port the ARM SH-Mobile Mackerel and AG5EVM and the SH
+Ecovec24 and KFR2R09 boards to use the new backlight drivers. The code has been
+compile tested on all four platforms and runtime tested on Mackerel only as I
+don't have access to the other boards.
 
-> How did you test SSI ?
-> remove these
+As the board code patches depend on the backlight drivers, the drivers should
+get merged first. Richard, Jingoo, would you like to take them through your
+tree, or would it be easier to merge them with the ARM and SH patches ?
 
-    OK. The SSI stuff came from the original patch.
+Laurent Pinchart (7):
+  backlight: Add GPIO-based backlight driver
+  backlight: Add Sanyo LV5207LP backlight driver
+  backlight: Add ROHM BD6107 backlight driver
+  ARM: mach-shmobile: mackerel: Use gpio-backlight
+  sh: ecovec24: Use gpio-backlight
+  sh: kfr2r09: Use lv5207lp backlight
+  ARM: mach-shmobile: ag5evm: Use bd6107 backlight driver
 
-> Best regards
-> ---
-> Kuninori Morimoto
+ arch/arm/mach-shmobile/board-ag5evm.c        |  65 ++------
+ arch/arm/mach-shmobile/board-mackerel.c      |  34 ++---
+ arch/sh/boards/mach-ecovec24/setup.c         |  37 ++---
+ arch/sh/boards/mach-kfr2r09/lcd_wqvga.c      |  48 ------
+ arch/sh/boards/mach-kfr2r09/setup.c          |  19 ++-
+ arch/sh/include/mach-kfr2r09/mach/kfr2r09.h  |   2 -
+ drivers/video/backlight/Kconfig              |  19 +++
+ drivers/video/backlight/Makefile             |   3 +
+ drivers/video/backlight/bd6107.c             | 213 +++++++++++++++++++++++++++
+ drivers/video/backlight/gpio_backlight.c     | 133 +++++++++++++++++
+ drivers/video/backlight/lv5207lp.c           | 171 +++++++++++++++++++++
+ include/linux/platform_data/bd6107.h         |  19 +++
+ include/linux/platform_data/gpio_backlight.h |  21 +++
+ include/linux/platform_data/lv5207lp.h       |  19 +++
+ 14 files changed, 665 insertions(+), 138 deletions(-)
+ create mode 100644 drivers/video/backlight/bd6107.c
+ create mode 100644 drivers/video/backlight/gpio_backlight.c
+ create mode 100644 drivers/video/backlight/lv5207lp.c
+ create mode 100644 include/linux/platform_data/bd6107.h
+ create mode 100644 include/linux/platform_data/gpio_backlight.h
+ create mode 100644 include/linux/platform_data/lv5207lp.h
 
-WBR, Sergei
+-- 
+Regards,
+
+Laurent Pinchart
 
