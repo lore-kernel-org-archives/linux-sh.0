@@ -1,33 +1,36 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Jul 2013 11:17:41 +0000
-Subject: Re: [PATCH/RFC v2 4/4] ARM: shmobile: APE6EVM-reference: add ethernet support
-Message-Id: <Pine.LNX.4.64.1307081312560.19819@axis700.grange>
+Date: Thu, 04 Jul 2013 20:40:36 +0000
+Subject: [PATCH 0/2] ARM: shmobile: APE6EVM: add a reference DT implementation
+Message-Id: <1372970438-21549-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373038006-19973-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373038006-19973-5-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, 8 Jul 2013, Magnus Damm wrote:
+This patch series adds a DT-based APE6EVM platform implementation. The 
+first of them prepares auxiliary device handling functions for the r8a73a4 
+SoC, and the second one adds a the actual platform support.
 
-> On Mon, Jul 8, 2013 at 7:46 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-[snip]
+Guennadi Liakhovetski (2):
+  ARM: shmobile: r8a73a4: reorganise device instantiation in DT case
+  ARM: shmobile: APE6EVM: add DT reference
 
-> > been there, done that (for sh_eth):
-> >
-> > http://thread.gmane.org/gmane.linux.ports.sh.devel/18859
-> >
-> > It didn't go anywhere. My current status is - I have no idea what
-> > networking people assume is the right way to reset ethernet phys.
-> 
-> But the SMSC911X chip is not an ethernet PHY. It's an external
-> Ethernet controller.
+ arch/arm/boot/dts/Makefile                       |    1 +
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   76 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                   |   11 +++
+ arch/arm/mach-shmobile/Makefile                  |    1 +
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |   77 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h    |    1 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |   17 ++++-
+ 7 files changed, 181 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
 
-Sure, sorry, so, if both have to be solved, solutions might be different.
+-- 
+1.7.2.5
 
 Thanks
 Guennadi
