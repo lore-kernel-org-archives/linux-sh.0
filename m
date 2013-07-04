@@ -1,127 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 19:13:28 +0000
-Subject: [PATCH v2 5/7] sh: ecovec24: Use gpio-backlight
-Message-Id: <1372965210-10024-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 04 Jul 2013 20:38:48 +0000
+Subject: [PATCH 0/6] ARM: shmobile: DMAC, MMCIF and SDHI for H2 and APE6
+Message-Id: <1372970334-21485-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the backlight callback with a gpio-backlight platform device.
+These patches add support for DMA, MMCIF and SDHI controllers to non-DT 
+APE6EVM and Lager board implementations, and MMCIF and SDHI DT templates 
+for APE6 and H2 SoCs.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/sh/boards/mach-ecovec24/setup.c | 37 +++++++++++++++++++-----------------
- 1 file changed, 20 insertions(+), 17 deletions(-)
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 764530c..db76f8f 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -30,6 +30,7 @@
- #include <linux/spi/mmc_spi.h>
- #include <linux/input.h>
- #include <linux/input/sh_keysc.h>
-+#include <linux/platform_data/gpio_backlight.h>
- #include <linux/sh_eth.h>
- #include <linux/sh_intc.h>
- #include <linux/videodev2.h>
-@@ -303,7 +304,7 @@ static struct platform_device usbhs_device = {
- 	.resource	= usbhs_resources,
- };
- 
--/* LCDC */
-+/* LCDC and backlight */
- static const struct fb_videomode ecovec_lcd_modes[] = {
- 	{
- 		.name		= "Panel",
-@@ -334,13 +335,6 @@ static const struct fb_videomode ecovec_dvi_modes[] = {
- 	},
- };
- 
--static int ecovec24_set_brightness(int brightness)
--{
--	gpio_set_value(GPIO_PTR1, brightness);
--
--	return 0;
--}
--
- static struct sh_mobile_lcdc_info lcdc_info = {
- 	.ch[0] = {
- 		.interface_type = RGB18,
-@@ -350,11 +344,6 @@ static struct sh_mobile_lcdc_info lcdc_info = {
- 			.width = 152,
- 			.height = 91,
- 		},
--		.bl_info = {
--			.name = "sh_mobile_lcdc_bl",
--			.max_brightness = 1,
--			.set_brightness = ecovec24_set_brightness,
--		},
- 	}
- };
- 
-@@ -380,6 +369,20 @@ static struct platform_device lcdc_device = {
- 	},
- };
- 
-+static struct gpio_backlight_platform_data gpio_backlight_data = {
-+	.fbdev = &lcdc_device.dev,
-+	.gpio = GPIO_PTR1,
-+	.def_value = 1,
-+	.name = "backlight",
-+};
-+
-+static struct platform_device gpio_backlight_device = {
-+	.name = "gpio-backlight",
-+	.dev = {
-+		.platform_data = &gpio_backlight_data,
-+	},
-+};
-+
- /* CEU0 */
- static struct sh_mobile_ceu_info sh_mobile_ceu0_info = {
- 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
-@@ -1049,6 +1052,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&usb1_common_device,
- 	&usbhs_device,
- 	&lcdc_device,
-+	&gpio_backlight_device,
- 	&ceu0_device,
- 	&ceu1_device,
- 	&keysc_device,
-@@ -1239,11 +1243,9 @@ static int __init arch_setup(void)
- 
- 	gpio_request(GPIO_PTE6, NULL);
- 	gpio_request(GPIO_PTU1, NULL);
--	gpio_request(GPIO_PTR1, NULL);
- 	gpio_request(GPIO_PTA2, NULL);
- 	gpio_direction_input(GPIO_PTE6);
- 	gpio_direction_output(GPIO_PTU1, 0);
--	gpio_direction_output(GPIO_PTR1, 0);
- 	gpio_direction_output(GPIO_PTA2, 0);
- 
- 	/* I/O buffer drive ability is high */
-@@ -1256,6 +1258,9 @@ static int __init arch_setup(void)
- 		lcdc_info.ch[0].lcd_modes		= ecovec_dvi_modes;
- 		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_dvi_modes);
- 
-+		/* No backlight */
-+		gpio_backlight_data.fbdev = NULL;
-+
- 		gpio_set_value(GPIO_PTA2, 1);
- 		gpio_set_value(GPIO_PTU1, 1);
- 	} else {
-@@ -1265,8 +1270,6 @@ static int __init arch_setup(void)
- 		lcdc_info.ch[0].lcd_modes		= ecovec_lcd_modes;
- 		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_lcd_modes);
- 
--		gpio_set_value(GPIO_PTR1, 1);
--
- 		/* FIXME
- 		 *
- 		 * LCDDON control is needed for Panel,
+Guennadi Liakhovetski (6):
+  ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
+  ARM: shmobile: APE6EVM: add MMCIF support
+  ARM: shmobile: APE6EVM: add SDHI interfaces
+  ARM: shmobile: Lager: add MMCIF support
+  ARM: shmobile: r8a73a4: add MMCIF and SDHI DT templates
+  ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
+
+ arch/arm/boot/dts/r8a73a4.dtsi                |   45 ++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                |   56 ++++++++++++
+ arch/arm/mach-shmobile/board-ape6evm.c        |   75 ++++++++++++++++
+ arch/arm/mach-shmobile/board-lager.c          |   31 +++++++
+ arch/arm/mach-shmobile/clock-r8a73a4.c        |    4 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |   15 +++
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |  117 +++++++++++++++++++++++++
+ 7 files changed, 342 insertions(+), 1 deletions(-)
+
 -- 
-1.8.1.5
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
