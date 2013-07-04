@@ -1,100 +1,94 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 07:07:49 +0000
-Subject: [PATCH 05/07] ARM: shmobile: Add shared SCU CPU Hotplug code
-Message-Id: <20130731070749.14444.18254.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:17 +0000
+Subject: [PATCH v7 04/19] ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
+Message-Id: <1372961852-28490-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731070702.14444.64961.sendpatchset@w520>
-In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add GPIO controller nodes to the r8a7778 core device tree.
 
-Add CPU Hotplug functions for SCU equipped mach-shmobile SoCs.
-
-The functions shmobile_smp_scu_cpu_die() together with
-shmobile_smp_scu_cpu_kill() perform basic shutdown and
-allows checking of shutdown status. These are written
-to work together with SMP boot code in  headsmp-scu.S.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7778.dtsi | 61 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
- arch/arm/mach-shmobile/include/mach/common.h |    2 +
- arch/arm/mach-shmobile/platsmp-scu.c         |   45 ++++++++++++++++++++++++++
- 2 files changed, 47 insertions(+)
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index c8dbf14..45ac404 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -33,8 +33,69 @@
+ 		      <0xfe430000 0x100>;
+ 	};
+ 
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc40000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc41000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc42000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc43000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc44000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 27>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7778";
+ 		reg = <0xfffc000 0x118>;
++		#gpio-range-cells = <3>;
+ 	};
+ };
+-- 
+1.8.1.5
 
---- 0004/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-07-29 16:59:06.000000000 +0900
-@@ -14,6 +14,8 @@ extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
- extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
- 					   struct task_struct *idle);
-+extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
-+extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
- struct clk;
- extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
---- 0004/arch/arm/mach-shmobile/platsmp-scu.c
-+++ work/arch/arm/mach-shmobile/platsmp-scu.c	2013-07-29 16:58:43.000000000 +0900
-@@ -7,9 +7,11 @@
-  * it under the terms of the GNU General Public License version 2 as
-  * published by the Free Software Foundation.
-  */
-+#include <linux/delay.h>
- #include <linux/init.h>
- #include <linux/io.h>
- #include <linux/smp.h>
-+#include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
- #include <mach/common.h>
-@@ -29,3 +31,46 @@ int shmobile_smp_scu_boot_secondary(unsi
- 	arch_send_wakeup_ipi_mask(cpumask_of(cpu_logical_map(cpu)));
- 	return 0;
- }
-+
-+#ifdef CONFIG_HOTPLUG_CPU
-+void shmobile_smp_scu_cpu_die(unsigned int cpu)
-+{
-+	dsb();
-+	flush_cache_all();
-+
-+	/* disable cache coherency */
-+	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
-+
-+	/* Endless loop until reset */
-+	while (1)
-+		cpu_do_idle();
-+}
-+
-+static int shmobile_smp_scu_psr_core_disabled(int cpu)
-+{
-+	unsigned long mask = SCU_PM_POWEROFF << (cpu * 8);
-+
-+	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
-+		return 1;
-+
-+	return 0;
-+}
-+
-+int shmobile_smp_scu_cpu_kill(unsigned int cpu)
-+{
-+	int k;
-+
-+	/* this function is running on another CPU than the offline target,
-+	 * here we need wait for shutdown code in platform_cpu_die() to
-+	 * finish before asking SoC-specific code to power off the CPU core.
-+	 */
-+	for (k = 0; k < 1000; k++) {
-+		if (shmobile_smp_scu_psr_core_disabled(cpu))
-+			return 1;
-+
-+		mdelay(1);
-+	}
-+
-+	return 0;
-+}
-+#endif
