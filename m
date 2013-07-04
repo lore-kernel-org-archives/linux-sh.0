@@ -1,45 +1,86 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Jul 2013 06:39:19 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7740: add PMU information to r8a7740.dtsi
-Message-Id: <20130731063918.GC5090@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 04 Jul 2013 20:38:52 +0000
+Subject: [PATCH 4/6] ARM: shmobile: Lager: add MMCIF support
+Message-Id: <1372970334-21485-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130724035909.30648.64982.sendpatchset@w520>
-In-Reply-To: <20130724035909.30648.64982.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jul 24, 2013 at 12:59:09PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add PMU information to r8a7740.dtsi. With this
-> included Armadillo800eva DT reference may use the PMU.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Add support for the MMCIF1 interface on Lager.
 
-Thanks, I will queue this up for v3.12 in the dt2 branch.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-lager.c |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
 
-> ---
-> 
->  Dry coded based on data sheet, not runtime tested.
-> 
->  arch/arm/boot/dts/r8a7740.dtsi |    5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> --- 0001/arch/arm/boot/dts/r8a7740.dtsi
-> +++ work/arch/arm/boot/dts/r8a7740.dtsi	2013-07-24 04:20:42.000000000 +0900
-> @@ -32,6 +32,11 @@
->  		      <0xc2000000 0x1000>;
->  	};
->  
-> +	pmu {
-> +		compatible = "arm,cortex-a9-pmu";
-> +		interrupts = <0 83 4>;
-> +	};
-> +
->  	/* irqpin0: IRQ0 - IRQ7 */
->  	irqpin0: irqpin@e6900000 {
->  		compatible = "renesas,intc-irqpin";
-> 
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index d0da052..2a35522 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -24,10 +24,15 @@
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -70,6 +75,22 @@ static __initdata struct gpio_keys_platform_data lager_keys_pdata = {
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+ };
+ 
++/* Fixed 3.3V regulator to be used by MMCIF */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.1"),
++};
++
++/* MMCIF */
++static struct sh_mmcif_plat_data mmcif1_pdata = {
++	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++};
++
++static struct resource mmcif1_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee220000, 0x100, "MMCIF1"),
++	DEFINE_RES_IRQ(gic_spi(170)),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+@@ -77,6 +98,11 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
+ 				  "scif1_data", "scif1"),
++	/* MMCIF1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.1", "pfc-r8a7790",
++				  "mmc1_data8", "mmc1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.1", "pfc-r8a7790",
++				  "mmc1_ctrl", "mmc1"),
+ };
+ 
+ static void __init lager_add_standard_devices(void)
+@@ -94,6 +120,11 @@ static void __init lager_add_standard_devices(void)
+ 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
+ 				      &lager_keys_pdata,
+ 				      sizeof(lager_keys_pdata));
++	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	platform_device_register_resndata(&platform_bus, "sh_mmcif", 1,
++					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
++					  &mmcif1_pdata, sizeof(mmcif1_pdata));
+ }
+ 
+ static const char *lager_boards_compat_dt[] __initdata = {
+-- 
+1.7.2.5
+
