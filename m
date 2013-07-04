@@ -1,32 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 22 Jul 2013 23:37:06 +0000
-Subject: Re: [PATCH v2 04/15] DMA: shdma: make a pointer const
-Message-Id: <2697597.tfSXoJkJMv@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 17:44:39 +0000
+Subject: [PATCH] gpio-rcar: Add interrupt controller support to the DT bindings
+Message-Id: <1372959879-24033-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de> <15445605.PE49oOgv4F@avalon> <Pine.LNX.4.64.1307220941160.7852@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1307220941160.7852@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-gpio@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Guennadi,
+Update the DT bindings documentation with the interrupt-controller
+and #interrupt-cells properties.
 
-On Monday 22 July 2013 09:53:51 Guennadi Liakhovetski wrote:
-> On Sun, 21 Jul 2013, Laurent Pinchart wrote:
-> > On Friday 19 July 2013 18:29:29 Guennadi Liakhovetski wrote:
-> > > Platform data shouldn't be changed at run-time, so, pointers to it
-> > > should be const.
-> > 
-> > If you move this patch to the beginning of the series you could make the
-> > pdata structures const in 02/15 and 03/15.
-> 
-> Are these actually related? I think they can be made const regardless?
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-Right, the compiler will probably not complain, as the platform data pointer 
-introduced by patches 02 and 03 are cast to an unsigned long.
-
+diff --git a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+index cb3dc7b..8655df9 100644
+--- a/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
++++ b/Documentation/devicetree/bindings/gpio/renesas,gpio-rcar.txt
+@@ -23,6 +23,10 @@ Required Properties:
+ Please refer to gpio.txt in this directory for details of gpio-ranges property
+ and the common GPIO bindings used by client devices.
+ 
++The GPIO controller also acts as an interrupt controller. It uses the default
++two cells specifier as described in Documentation/devicetree/bindings/
++interrupt-controller/interrupts.txt.
++
+ Example: R8A7779 (R-Car H1) GPIO controller nodes
+ 
+ 	gpio0: gpio@ffc40000 {
+@@ -33,6 +37,8 @@ Example: R8A7779 (R-Car H1) GPIO controller nodes
+ 		#gpio-cells = <2>;
+ 		gpio-controller;
+ 		gpio-ranges = <&pfc 0 0 32>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
+ 	};
+ 	...
+ 	gpio6: gpio@ffc46000 {
+@@ -43,4 +49,6 @@ Example: R8A7779 (R-Car H1) GPIO controller nodes
+ 		#gpio-cells = <2>;
+ 		gpio-controller;
+ 		gpio-ranges = <&pfc 0 192 9>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
+ 	};
 -- 
 Regards,
 
