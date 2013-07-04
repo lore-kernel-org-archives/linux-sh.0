@@ -1,48 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:32:05 +0000
-Subject: [PATCH 04/22] ARM: shmobile: emev2: Remove init_irq declaration in machine description
-Message-Id: <34dd9fc04a028edad7658006764c4d18ac3dca73.1374103272.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:27 +0000
+Subject: [PATCH v7 14/19] ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
+Message-Id: <1372961852-28490-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
+LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for shmobile as well.
-
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-emev2.c |    2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 1ccddd2..6e8b6ac 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -20,7 +20,6 @@
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
--#include <linux/irqchip.h>
- #include <linux/platform_device.h>
- #include <linux/platform_data/gpio-em.h>
- #include <linux/of_platform.h>
-@@ -454,7 +453,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.init_early	= emev2_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_irq	= irqchip_init,
- 	.init_machine	= emev2_add_standard_devices_dt,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 8ec4cd1..366f729 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -34,6 +34,21 @@
+ 		regulator-boot-on;
+ 	};
+ 
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&pfc 102 GPIO_ACTIVE_HIGH>;
++		};
++		led2 {
++			gpios = <&pfc 111 GPIO_ACTIVE_HIGH>;
++		};
++		led3 {
++			gpios = <&pfc 110 GPIO_ACTIVE_HIGH>;
++		};
++		led4 {
++			gpios = <&pfc 177 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
+ 
+ &i2c0 {
 -- 
-1.7.10.4
+1.8.1.5
 
