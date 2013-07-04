@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 03 Jul 2013 12:29:41 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 04 Jul 2013 01:23:02 +0000
 Subject: Re: [PATCH 00/08] ARM: shmobile: EMEV2 and KZM9D update
-Message-Id: <201307031429.41711.arnd@arndb.de>
+Message-Id: <20130704012301.GC13029@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130702092725.32066.54861.sendpatchset@w520>
 In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
@@ -10,7 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 02 July 2013, Magnus Damm wrote:
+On Tue, Jul 02, 2013 at 06:27:25PM +0900, Magnus Damm wrote:
 > ARM: shmobile: EMEV2 and KZM9D update
 > 
 > [PATCH 01/08] ARM: shmobile: Remove unused EMEV2/KZM9D early console
@@ -30,7 +30,7 @@ On Tuesday 02 July 2013, Magnus Damm wrote:
 > - Use DT for GIC and SMP for both regular KZM9D board code and DT
 > - Reduce the size of the EMEV2 map_io - SCU is still however needed
 > - Allow EMEV2 SMP to operate without legacy clock bits
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Looks all good to me,
-
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Thanks, I have queued up all these patches for v3.12.
