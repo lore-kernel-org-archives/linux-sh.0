@@ -1,104 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:09 +0000
-Subject: [PATCH 16/16] ARM: shmobile: Setup r8a7790 arch timer based on MD pins
-Message-Id: <81b9d5351fa96caad4accc6711bc1b9342927d4a.1374624383.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:25 +0000
+Subject: [PATCH v7 12/19] ARM: shmobile: armadillo-reference: Add st1232 pin mappings
+Message-Id: <1372961852-28490-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add pin mappings for the st1232 device to the device tree and reference
+them as the default state for the device.
 
-Update the r8a7790 arch timer setup code to configure the
-frequency dynamically at boot time. This means that the arch
-timer driver will be able to detect a timer frequency that
-has been calculated based on the MD pins instead of a fixed
-and potentially incorrect 13 MHz.
-
-With this patch applied the Linux kernel will correctly
-support the r8a7790 Lager board that uses a 20 Mhz EXTAL.
-The arch timer will operate on 10 MHz and the Linux arch
-timer driver will be correctly configured to use 10 MHz.
-
-Without this patch the 20 MHz EXTAL will be used to drive
-the arch timer at 10 MHz, but the Linux arch timer driver
-will believe it is counting at 13 Mhz.
-
-Reported-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Tested-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 51 ++++++++++++++++++++++++++++++----
- 1 file changed, 45 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 6acddc1..4c96dad 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -210,14 +210,53 @@ u32 __init r8a7790_read_mode_pins(void)
- 	return mode;
- }
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 4a7ae32..a6c6606 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -41,6 +41,8 @@
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
++		pinctrl-0 = <&st1232_pins>;
++		pinctrl-names = "default";
+ 	};
+ };
  
-+#define CNTCR 0
-+#define CNTFID0 0x20
+@@ -52,4 +54,9 @@
+ 		renesas,groups = "scifa1_data";
+ 		renesas,function = "scifa1";
+ 	};
 +
- void __init r8a7790_timer_init(void)
- {
--	void __iomem *cntcr;
--
--	/* make sure arch timer is started by setting bit 0 of CNTCT */
--	cntcr = ioremap(0xe6080000, PAGE_SIZE);
--	iowrite32(1, cntcr);
--	iounmap(cntcr);
-+#ifdef CONFIG_ARM_ARCH_TIMER
-+	u32 mode = r8a7790_read_mode_pins();
-+	void __iomem *base;
-+	int extal_mhz = 0;
-+	u32 freq;
-+
-+	/* At Linux boot time the r8a7790 arch timer comes up
-+	 * with the counter disabled. Moreover, it may also report
-+	 * a potentially incorrect fixed 13 MHz frequency. To be
-+	 * correct these registers need to be updated to use the
-+	 * frequency EXTAL / 2 which can be determined by the MD pins.
-+	 */
-+
-+	switch (mode & (MD(14) | MD(13))) {
-+	case 0:
-+		extal_mhz = 15;
-+		break;
-+	case MD(13):
-+		extal_mhz = 20;
-+		break;
-+	case MD(14):
-+		extal_mhz = 26;
-+		break;
-+	case MD(13) | MD(14):
-+		extal_mhz = 30;
-+		break;
-+	}
-+
-+	/* The arch timer frequency equals EXTAL / 2 */
-+	freq = extal_mhz * (1000000 / 2);
-+
-+	/* Remap "armgcnt address map" space */
-+	base = ioremap(0xe6080000, PAGE_SIZE);
-+
-+	/* Update registers with correct frequency */
-+	iowrite32(freq, base + CNTFID0);
-+	asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
-+
-+	/* make sure arch timer is started by setting bit 0 of CNTCR */
-+	iowrite32(1, base + CNTCR);
-+	iounmap(base);
-+#endif /* CONFIG_ARM_ARCH_TIMER */
- 
- 	shmobile_timer_init();
- }
++	st1232_pins: st1232 {
++		renesas,groups = "intc_irq10";
++		renesas,function = "intc";
++	};
+ };
 -- 
-1.8.2.1
+1.8.1.5
 
