@@ -1,118 +1,100 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Jul 2013 13:15:08 +0000
-Subject: [PATCH 02/14] sh-pfc: r8a7790: Remove trailing '_TANS' string from RTS/CTS pins
-Message-Id: <1374671720-8794-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:23 +0000
+Subject: [PATCH v7 10/19] ARM: shmobile: sh73a0: Add pin control device to device tree
+Message-Id: <1372961852-28490-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Add a pfc node to the sh73a0 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
-The RTS/CTS pins have been renamed in the datasheet, rename them here as
-well.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi                  |  8 ++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 27 +++++++++++++-------------
+ 2 files changed, 21 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 46b3fdf..6adaa85 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -441,14 +441,14 @@ enum {
- 	FN_TX0, FN_DU2_DR1, FN_LCDOUT1, FN_SCIFA0_CTS_N,
- 	FN_HCTS1_N, FN_CTS0_N, FN_MSIOF3_SYNC, FN_DU2_DG3,
- 	FN_LCDOUT11, FN_PWM0_B, FN_IIC1_SCL_C, FN_I2C1_SCL_C,
--	FN_SCIFA0_RTS_N, FN_HRTS1_N, FN_RTS0_N_TANS,
-+	FN_SCIFA0_RTS_N, FN_HRTS1_N, FN_RTS0_N,
- 	FN_MSIOF3_SS1, FN_DU2_DG0, FN_LCDOUT8, FN_PWM1_B,
- 	FN_SCIFA1_RXD, FN_AD_DI, FN_RX1,
- 	FN_DU2_EXODDF_DU2_ODDF_DISP_CDE, FN_QCPV_QDE,
- 	FN_SCIFA1_TXD, FN_AD_DO, FN_TX1, FN_DU2_DG1,
- 	FN_LCDOUT9, FN_SCIFA1_CTS_N, FN_AD_CLK,
- 	FN_CTS1_N, FN_MSIOF3_RXD, FN_DU0_DOTCLKOUT, FN_QCLK,
--	FN_SCIFA1_RTS_N, FN_AD_NCS_N, FN_RTS1_N_TANS,
-+	FN_SCIFA1_RTS_N, FN_AD_NCS_N, FN_RTS1_N,
- 	FN_MSIOF3_TXD, FN_DU1_DOTCLKOUT, FN_QSTVB_QVE,
- 	FN_HRTS0_N_C,
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index b977502..86e79fe 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -222,4 +222,12 @@
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-sh73a0";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 41092bb..d7bbd29 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -39,35 +39,35 @@ static unsigned long pin_pullup_conf[] = {
+ };
  
-@@ -808,14 +808,14 @@ enum {
- 	TX0_MARK, DU2_DR1_MARK, LCDOUT1_MARK, SCIFA0_CTS_N_MARK,
- 	HCTS1_N_MARK, CTS0_N_MARK, MSIOF3_SYNC_MARK, DU2_DG3_MARK,
- 	LCDOUT11_MARK, PWM0_B_MARK, IIC1_SCL_C_MARK, I2C1_SCL_C_MARK,
--	SCIFA0_RTS_N_MARK, HRTS1_N_MARK, RTS0_N_TANS_MARK,
-+	SCIFA0_RTS_N_MARK, HRTS1_N_MARK, RTS0_N_MARK,
- 	MSIOF3_SS1_MARK, DU2_DG0_MARK, LCDOUT8_MARK, PWM1_B_MARK,
- 	SCIFA1_RXD_MARK, AD_DI_MARK, RX1_MARK,
- 	DU2_EXODDF_DU2_ODDF_DISP_CDE_MARK, QCPV_QDE_MARK,
- 	SCIFA1_TXD_MARK, AD_DO_MARK, TX1_MARK, DU2_DG1_MARK,
- 	LCDOUT9_MARK, SCIFA1_CTS_N_MARK, AD_CLK_MARK,
- 	CTS1_N_MARK, MSIOF3_RXD_MARK, DU0_DOTCLKOUT_MARK, QCLK_MARK,
--	SCIFA1_RTS_N_MARK, AD_NCS_N_MARK, RTS1_N_TANS_MARK,
-+	SCIFA1_RTS_N_MARK, AD_NCS_N_MARK, RTS1_N_MARK,
- 	MSIOF3_TXD_MARK, DU1_DOTCLKOUT_MARK, QSTVB_QVE_MARK,
- 	HRTS0_N_C_MARK,
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
+ 				  "i2c3_1", "i2c3"),
+ 	/* MMCIF */
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				  "mmc0_data8_0", "mmc0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				  "mmc0_ctrl_0", "mmc0"),
+-	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				    "PORT279", pin_pullup_conf),
+-	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+ 				      "mmc0_data8_0", pin_pullup_conf),
+ 	/* SCIFA4 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+ 				  "scifa4_data", "scifa4"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+ 				  "scifa4_ctrl", "scifa4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SDHI2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+ 				  "sdhi2_data4", "sdhi2"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
++	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+ 				  "sdhi2_ctrl", "sdhi2"),
+ };
  
-@@ -1713,7 +1713,7 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, I2C1_SCL_C, SEL_I2C1_2),
- 	PINMUX_IPSR_MODSEL_DATA(IP14_18_16, SCIFA0_RTS_N, SEL_SCFA_0),
- 	PINMUX_IPSR_MODSEL_DATA(IP14_18_16, HRTS1_N, SEL_HSCIF1_0),
--	PINMUX_IPSR_DATA(IP14_18_16, RTS0_N_TANS),
-+	PINMUX_IPSR_DATA(IP14_18_16, RTS0_N),
- 	PINMUX_IPSR_DATA(IP14_18_16, MSIOF3_SS1),
- 	PINMUX_IPSR_DATA(IP14_18_16, DU2_DG0),
- 	PINMUX_IPSR_DATA(IP14_18_16, LCDOUT8),
-@@ -1736,7 +1736,7 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_IPSR_DATA(IP14_27_25, QCLK),
- 	PINMUX_IPSR_MODSEL_DATA(IP14_30_28, SCIFA1_RTS_N, SEL_SCIFA1_0),
- 	PINMUX_IPSR_MODSEL_DATA(IP14_30_28, AD_NCS_N, SEL_ADI_0),
--	PINMUX_IPSR_DATA(IP14_30_28, RTS1_N_TANS),
-+	PINMUX_IPSR_DATA(IP14_30_28, RTS1_N),
- 	PINMUX_IPSR_MODSEL_DATA(IP14_30_28, MSIOF3_TXD, SEL_SOF3_0),
- 	PINMUX_IPSR_DATA(IP14_30_28, DU1_DOTCLKOUT),
- 	PINMUX_IPSR_DATA(IP14_30_28, QSTVB_QVE),
-@@ -1906,7 +1906,7 @@ static const unsigned int scif0_ctrl_pins[] = {
- 	RCAR_GP_PIN(4, 31), RCAR_GP_PIN(4, 30),
- };
- static const unsigned int scif0_ctrl_mux[] = {
--	RTS0_N_TANS_MARK, CTS0_N_MARK,
-+	RTS0_N_MARK, CTS0_N_MARK,
- };
- static const unsigned int scif0_data_b_pins[] = {
- 	/* RX, TX */
-@@ -1935,7 +1935,7 @@ static const unsigned int scif1_ctrl_pins[] = {
- 	RCAR_GP_PIN(5, 3), RCAR_GP_PIN(5, 2),
- };
- static const unsigned int scif1_ctrl_mux[] = {
--	RTS1_N_TANS_MARK, CTS1_N_MARK,
-+	RTS1_N_MARK, CTS1_N_MARK,
- };
- static const unsigned int scif1_data_b_pins[] = {
- 	/* RX, TX */
-@@ -3764,7 +3764,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		/* IP14_30 [1] */
- 		0, 0,
- 		/* IP14_30_28 [3] */
--		FN_SCIFA1_RTS_N, FN_AD_NCS_N, FN_RTS1_N_TANS,
-+		FN_SCIFA1_RTS_N, FN_AD_NCS_N, FN_RTS1_N,
- 		FN_MSIOF3_TXD, FN_DU1_DOTCLKOUT, FN_QSTVB_QVE,
- 		FN_HRTS0_N_C, 0,
- 		/* IP14_27_25 [3] */
-@@ -3777,7 +3777,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		FN_SCIFA1_RXD, FN_AD_DI, FN_RX1,
- 		FN_DU2_EXODDF_DU2_ODDF_DISP_CDE, FN_QCPV_QDE, 0, 0, 0,
- 		/* IP14_18_16 [3] */
--		FN_SCIFA0_RTS_N, FN_HRTS1_N, FN_RTS0_N_TANS,
-+		FN_SCIFA0_RTS_N, FN_HRTS1_N, FN_RTS0_N,
- 		FN_MSIOF3_SS1, FN_DU2_DG0, FN_LCDOUT8, FN_PWM1_B, 0,
- 		/* IP14_15_12 [4] */
- 		FN_SCIFA0_CTS_N, FN_HCTS1_N, FN_CTS0_N, FN_MSIOF3_SYNC,
+@@ -75,7 +75,6 @@ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+-	sh73a0_pinmux_init();
+ 
+ 	/* enable SD */
+ 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
 -- 
 1.8.1.5
 
