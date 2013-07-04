@@ -1,76 +1,110 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 10 Jul 2013 19:21:13 +0000
-Subject: [PATCH 2/6] mmc: sh_mmcif: revision-specific CLK_CTRL2 handling
-Message-Id: <1373484077-10460-3-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:21 +0000
+Subject: [PATCH v7 08/19] ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
+Message-Id: <1372961852-28490-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Some newer MMCIF IP revisions contain a CE_CLK_CTRL2 register, that has to
-be set for proper operation. Support for this feature is added in a way to
-preserve the current behaviour by default, i.e. when it is not enabled
-in platform data. Patch is based on work by Nobuyuki HIRAI.
+Add GPIO controller nodes to the r8a7790 core device tree.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mmcif.c  |    4 ++++
- include/linux/mmc/sh_mmcif.h |    2 ++
- 2 files changed, 6 insertions(+), 0 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 73 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 7be20c9..dc3ce52 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -246,6 +246,7 @@ struct sh_mmcif_host {
- 	bool power;
- 	bool card_present;
- 	bool ccs_enable;		/* Command Completion Signal support */
-+	bool clk_ctrl2_enable;
- 	struct mutex thread_lock;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 13caf12..9465cfc 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -38,6 +38,78 @@
+ 		interrupts = <1 9 0xf04>;
+ 	};
  
- 	/* DMA support */
-@@ -490,6 +491,8 @@ static void sh_mmcif_sync_reset(struct sh_mmcif_host *host)
- 	sh_mmcif_writel(host->addr, MMCIF_CE_VERSION, SOFT_RST_OFF);
- 	if (host->ccs_enable)
- 		tmp |= SCCSTO_29;
-+	if (host->clk_ctrl2_enable)
-+		sh_mmcif_writel(host->addr, MMCIF_CE_CLK_CTRL2, 0x0F0F0000);
- 	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, tmp |
- 		SRSPTO_256 | SRBSYTO_29 | SRWDTO_29);
- 	/* byte swap on */
-@@ -1390,6 +1393,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	host->addr	= reg;
- 	host->timeout	= msecs_to_jiffies(1000);
- 	host->ccs_enable = !pd || !pd->ccs_unsupported;
-+	host->clk_ctrl2_enable = pd && pd->clk_ctrl2_present;
- 
- 	host->pd = pdev;
- 
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index b2a22b6..d4277d9 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -40,6 +40,7 @@ struct sh_mmcif_plat_data {
- 	unsigned int		slave_id_rx;
- 	bool			use_cd_gpio : 1;
- 	bool			ccs_unsupported : 1;
-+	bool			clk_ctrl2_present : 1;
- 	unsigned int		cd_gpio;
- 	u8			sup_pclk;	/* 1 :SH7757, 0: SH7724/SH7372 */
- 	unsigned long		caps;
-@@ -63,6 +64,7 @@ struct sh_mmcif_plat_data {
- #define MMCIF_CE_INT_MASK	0x00000044
- #define MMCIF_CE_HOST_STS1	0x00000048
- #define MMCIF_CE_HOST_STS2	0x0000004C
-+#define MMCIF_CE_CLK_CTRL2	0x00000070
- #define MMCIF_CE_VERSION	0x0000007C
- 
- /* CE_BUF_ACC */
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc40000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 4 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc41000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 5 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc42000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 6 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc43000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 7 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc44000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 8 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio5: gpio@ffc45000 {
++		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
++		reg = <0 0xffc45000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 9 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+ 		interrupts = <1 13 0xf08>,
+@@ -58,5 +130,6 @@
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7790";
+ 		reg = <0 0xe6060000 0 0x250>;
++		#gpio-range-cells = <3>;
+ 	};
+ };
 -- 
-1.7.2.5
+1.8.1.5
 
