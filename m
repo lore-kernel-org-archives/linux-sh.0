@@ -1,91 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:03 +0000
-Subject: [PATCH 10/16] ARM: shmobile: Make r8a7790 Arch timer optional
-Message-Id: <8333d8c995169e489a81241bd632a4b9370ed7c3.1374624383.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:26 +0000
+Subject: [PATCH v7 13/19] ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
+Message-Id: <1372961852-28490-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Reference the st1232 reset GPIO from the device tree and remove it from
+board code.
 
-Update the r8a7790 code to allow using other
-timers than Arch timer for clock events.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Kconfig                | 1 -
- arch/arm/mach-shmobile/board-lager.c          | 1 +
- arch/arm/mach-shmobile/include/mach/r8a7790.h | 1 +
- arch/arm/mach-shmobile/setup-r8a7790.c        | 8 ++++++++
- 4 files changed, 10 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 7 -------
+ 2 files changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 734b3ee..406077c 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -61,7 +61,6 @@ config ARCH_R8A7790
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
--	select HAVE_ARM_ARCH_TIMER
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index a6c6606..8ec4cd1 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -10,6 +10,7 @@
  
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 1e99b17..d0da052 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -102,6 +102,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
+ /dts-v1/;
+ /include/ "r8a7740.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "armadillo 800 eva reference";
+@@ -43,6 +44,7 @@
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
+ 		pinctrl-0 = <&st1232_pins>;
+ 		pinctrl-names = "default";
++		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+ 	};
  };
  
- DT_MACHINE_START(LAGER_DT, "lager")
-+	.init_early	= r8a7790_init_delay,
- 	.init_time	= r8a7790_timer_init,
- 	.init_machine	= lager_add_standard_devices,
- 	.dt_compat	= lager_boards_compat_dt,
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 2e919e6..7851cc1 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -4,6 +4,7 @@
- void r8a7790_add_standard_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
-+void r8a7790_init_delay(void);
- void r8a7790_timer_init(void);
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 4ddd299..002d8d3 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -158,7 +158,6 @@ clock_error:
+  */
+ static void __init eva_init(void)
+ {
+-
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
  
- #endif /* __ASM_R8A7790_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index ece60c6..f01542e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -208,6 +208,13 @@ void __init r8a7790_timer_init(void)
- 	shmobile_timer_init();
+@@ -171,12 +170,6 @@ static void __init eva_init(void)
+ 
+ 	r8a7740_add_standard_devices_dt();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+-
+ 	r8a7740_pm_init();
  }
  
-+void __init r8a7790_init_delay(void)
-+{
-+#ifndef CONFIG_ARM_ARCH_TIMER
-+	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
-+#endif
-+}
-+
- #ifdef CONFIG_USE_OF
- 
- static const char *r8a7790_boards_compat_dt[] __initdata = {
-@@ -216,6 +223,7 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
-+	.init_early	= r8a7790_init_delay,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= r8a7790_boards_compat_dt,
- MACHINE_END
 -- 
-1.8.2.1
+1.8.1.5
 
