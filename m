@@ -1,45 +1,158 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 01 Jul 2013 07:20:34 +0000
-Subject: [PATCH v4 3/3] ARM: shmobile: lager: enable nfsroot in DTS
-Message-Id: <1372663234-13486-4-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:30 +0000
+Subject: [PATCH v7 17/19] ARM: shmobile: kzm9g-reference: Move pinctrl mappings to device tree
+Message-Id: <1372961852-28490-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Now that Ether support has been added to the lager board
-it is possible to use nfsroot. This configuration is
-in line with that of other shmobile boards.
+Replace the pinctrl mappings in board code by device tree mappings.
+For devices that are still instantiated from board code reference the
+mappings as the default pin controller state to apply them at boot time.
 
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   | 51 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 40 --------------------
+ 2 files changed, 51 insertions(+), 40 deletions(-)
 
-This patch has a run-time dependency on "ARM: shmobile: lager: enable Ether"
-
-v2
-* Split out as a new patch from "ARM: shmobile: lager: enable Ether"
----
- arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 09a84fc..b2f61f0 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,lager", "renesas,r8a7790";
- 
- 	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+		bootargs = "console=ttySC6,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index b6f759e..11ae9ad 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -145,19 +145,70 @@
  	};
+ };
  
- 	memory@40000000 {
++&i2c3 {
++	pinctrl-0 = <&i2c3_pins>;
++	pinctrl-names = "default";
++};
++
+ &mmcif {
++	pinctrl-0 = <&mmcif_pins>;
++	pinctrl-names = "default";
++
+ 	bus-width = <8>;
+ 	vmmc-supply = <&reg_1p8v>;
+ 	status = "okay";
+ };
+ 
++&pfc {
++	pinctrl-0 = <&scifa4_pins>;
++	pinctrl-names = "default";
++
++	i2c3_pins: i2c3 {
++		renesas,groups = "i2c3_1";
++		renesas,function = "i2c3";
++	};
++
++	mmcif_pins: mmcif {
++		mux {
++			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
++			renesas,function = "mmc0";
++		};
++		cfg {
++			renesas,groups = "mmc0_data8_0";
++			renesas,pins = "PORT279";
++			bias-pull-up;
++		};
++	};
++
++	scifa4_pins: scifa4 {
++		renesas,groups = "scifa4_data", "scifa4_ctrl";
++		renesas,function = "scifa4";
++	};
++
++	sdhi0_pins: sdhi0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi2_pins: sdhi2 {
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++	};
++};
++
+ &sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
+ 
+ &sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
++
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <4>;
+ 	broken-cd;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index d7bbd29..6a9f6a3 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -26,55 +26,15 @@
+ #include <linux/irq.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+-#include <linux/pinctrl/machine.h>
+-#include <linux/pinctrl/pinconf-generic.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
+-static unsigned long pin_pullup_conf[] = {
+-	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 0),
+-};
+-
+-static const struct pinctrl_map kzm_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
+-				  "i2c3_1", "i2c3"),
+-	/* MMCIF */
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+-				  "mmc0_data8_0", "mmc0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+-				  "mmc0_ctrl_0", "mmc0"),
+-	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+-				    "PORT279", pin_pullup_conf),
+-	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+-				      "mmc0_data8_0", pin_pullup_conf),
+-	/* SCIFA4 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+-				  "scifa4_data", "scifa4"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+-				  "scifa4_ctrl", "scifa4"),
+-	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+-				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+-				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+-				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+-				  "sdhi0_wp", "sdhi0"),
+-	/* SDHI2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+-				  "sdhi2_data4", "sdhi2"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+-				  "sdhi2_ctrl", "sdhi2"),
+-};
+-
+ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+-	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+ 
+ 	/* enable SD */
+ 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
 -- 
-1.8.2.1
+1.8.1.5
 
