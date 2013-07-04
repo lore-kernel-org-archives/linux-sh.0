@@ -1,177 +1,223 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Tue, 30 Jul 2013 17:57:26 +0000
-Subject: [RFC 4/5] arm: boot: kzm9g: blink LEDs and check if DRAM works
-Message-Id: <1375207047-8655-5-git-send-email-ulrich.hecht@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 19:13:24 +0000
+Subject: [PATCH v2 1/7] backlight: Add GPIO-based backlight driver
+Message-Id: <1372965210-10024-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This is test code that shows the progress of kernel decompression and
-does a quick DRAM test:
+The GPIO backlight driver controls the backlight in on/off mode through
+a single GPIO.
 
-- all LEDs on: start of decompress_kernel()
-- LED 1 off: DRAM test. Usually the system hangs here; if it doesn't it
-will most often report an incorrect read by blinking out the address and
-value read nibble by nibble through the LEDs.
-- LED 2 off: start of kernel decompression
-- LED 3 off: end of kernel decompression; if the decompressor has returned
-an error, LED 1 will be turned back on.
-- all LEDs off: end of decompress_kernel()
-
-The likelihood of a hang is greatly reduced by inserting code between DRAM
-writes, e.g. by blinking an LED. This also eliminates readback errors.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Jingoo Han <jg1.han@samsung.com>
 ---
- arch/arm/boot/compressed/misc.c |  123 ++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 121 insertions(+), 2 deletions(-)
+ drivers/video/backlight/Kconfig              |   7 ++
+ drivers/video/backlight/Makefile             |   1 +
+ drivers/video/backlight/gpio_backlight.c     | 133 +++++++++++++++++++++++++++
+ include/linux/platform_data/gpio_backlight.h |  21 +++++
+ 4 files changed, 162 insertions(+)
+ create mode 100644 drivers/video/backlight/gpio_backlight.c
+ create mode 100644 include/linux/platform_data/gpio_backlight.h
 
-diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
-index 31bd43b..0c54a3d 100644
---- a/arch/arm/boot/compressed/misc.c
-+++ b/arch/arm/boot/compressed/misc.c
-@@ -129,6 +129,81 @@ asmlinkage void __div0(void)
+diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
+index d5ab658..5ab6423 100644
+--- a/drivers/video/backlight/Kconfig
++++ b/drivers/video/backlight/Kconfig
+@@ -425,6 +425,13 @@ config BACKLIGHT_AS3711
+ 	  If you have an Austrian Microsystems AS3711 say Y to enable the
+ 	  backlight driver.
  
- extern int do_decompress(u8 *input, int len, u8 *output, void (*error)(char *x));
- 
-+static void led_setup(void) {
-+	volatile unsigned char *led_cr;
-+	led_cr = (void*)0xe6050014;
-+	led_cr[0] = led_cr[1] = led_cr[2] = led_cr[3] = 0x10;
-+}
-+static void led_set(int n, int on) {
-+	volatile unsigned int *led_dxr;
-+	if (on) {
-+		led_dxr = (void*)0xe6074200;
-+		led_dxr[0] = 0x100000 << n;
-+	}
-+	else {
-+		led_dxr = (void*)0xe6074100;
-+		led_dxr[0] = 0x100000 << n;
-+	}
-+}
++config BACKLIGHT_GPIO
++	tristate "Generic GPIO based Backlight Driver"
++	depends on GPIOLIB
++	help
++	  If you have a LCD backlight adjustable by GPIO, say Y to enable
++	  this driver.
 +
-+static void led_delay(int n)
+ endif # BACKLIGHT_CLASS_DEVICE
+ 
+ endif # BACKLIGHT_LCD_SUPPORT
+diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
+index 92711fe..65698a8 100644
+--- a/drivers/video/backlight/Makefile
++++ b/drivers/video/backlight/Makefile
+@@ -32,6 +32,7 @@ obj-$(CONFIG_BACKLIGHT_DA903X)		+= da903x_bl.o
+ obj-$(CONFIG_BACKLIGHT_DA9052)		+= da9052_bl.o
+ obj-$(CONFIG_BACKLIGHT_EP93XX)		+= ep93xx_bl.o
+ obj-$(CONFIG_BACKLIGHT_GENERIC)		+= generic_bl.o
++obj-$(CONFIG_BACKLIGHT_GPIO)		+= gpio_backlight.o
+ obj-$(CONFIG_BACKLIGHT_HP680)		+= hp680_bl.o
+ obj-$(CONFIG_BACKLIGHT_HP700)		+= jornada720_bl.o
+ obj-$(CONFIG_BACKLIGHT_LM3533)		+= lm3533_bl.o
+diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
+new file mode 100644
+index 0000000..5fa217f
+--- /dev/null
++++ b/drivers/video/backlight/gpio_backlight.c
+@@ -0,0 +1,133 @@
++/*
++ * gpio_backlight.c - Simple GPIO-controlled backlight
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/backlight.h>
++#include <linux/err.h>
++#include <linux/fb.h>
++#include <linux/gpio.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/platform_data/gpio_backlight.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++struct gpio_backlight {
++	struct device *dev;
++	struct device *fbdev;
++
++	int gpio;
++	int active;
++};
++
++static int gpio_backlight_update_status(struct backlight_device *bl)
 +{
-+	n *= 1000000;
-+	int i = 0;
-+	for (i = 0; i < n; i++) {
-+		asm("nop");
-+	}
++	struct gpio_backlight *gbl = bl_get_data(bl);
++	int brightness = bl->props.brightness;
++
++	if (bl->props.power != FB_BLANK_UNBLANK ||
++	    bl->props.fb_blank != FB_BLANK_UNBLANK ||
++	    bl->props.state & (BL_CORE_SUSPENDED | BL_CORE_FBBLANK))
++		brightness = 0;
++
++	gpio_set_value(gbl->gpio, brightness ? gbl->active : !gbl->active);
++
++	return 0;
 +}
 +
-+static void morse_bits(unsigned int bits)
++static int gpio_backlight_get_brightness(struct backlight_device *bl)
 +{
-+#define DEL 200
-+	led_setup();
-+	led_set(0, 0);
-+	led_set(1, 0);
-+	led_set(2, 0);
-+	led_set(3, 0);
-+	led_delay(DEL);
-+	led_set(0, 1);
-+	led_set(1, 1);
-+	led_set(2, 1);
-+	led_set(3, 1);
-+	led_delay(DEL / 2);
-+	led_set(0, 0);
-+	led_set(1, 0);
-+	led_set(2, 0);
-+	led_set(3, 0);
-+	led_delay(DEL);
-+	int i;
-+	for (i = 28; i >= 0; i -= 4) {
-+		int nibble = bits >> i;
-+		led_set(0, 0);
-+		led_set(1, 0);
-+		led_set(2, 0);
-+		led_set(3, 0);
-+		led_delay(DEL / 2);
-+		led_set(0, 1);
-+		led_set(1, 1);
-+		led_set(2, 1);
-+		led_set(3, 1);
-+		led_delay(DEL / 4);
-+		led_set(0, 0);
-+		led_set(1, 0);
-+		led_set(2, 0);
-+		led_set(3, 0);
-+		led_delay(DEL / 2);
-+		led_set(0, nibble & 1);
-+		led_set(1, nibble & 2);
-+		led_set(2, nibble & 4);
-+		led_set(3, nibble & 8);
-+		led_delay(DEL * 8);
-+	}
-+	led_set(0, 0);
-+	led_set(1, 0);
-+	led_set(2, 0);
-+	led_set(3, 0);
++	return bl->props.brightness;
 +}
 +
- 
- void
- decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
-@@ -142,13 +217,57 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
- 	free_mem_end_ptr	= free_mem_ptr_end_p;
- 	__machine_arch_type	= arch_id;
- 
-+	led_setup();
-+	//morse_bits((unsigned int)output_data);
-+	led_set(0, 1);
-+	led_set(1, 1);
-+	led_set(2, 1);
-+	led_set(3, 1);
++static int gpio_backlight_check_fb(struct backlight_device *bl,
++				   struct fb_info *info)
++{
++	struct gpio_backlight *gbl = bl_get_data(bl);
 +
-+	led_set(0, 0);
-+#if 1
-+	int i;
-+	volatile unsigned int *dram = output_data;// + 0x10000000;
-+#define DRAM_TEST_SIZE  10000000
-+	for (i = 0; i < DRAM_TEST_SIZE; i++)
-+	{
-+		//led_set(0, i & 32768);
-+		//led_set(1, i & 131072);
-+		dram[i] = 0xd00df00d;
-+		dram[i] = 0xcafebabe + i;
++	return gbl->fbdev = NULL || gbl->fbdev = info->dev;
++}
++
++static const struct backlight_ops gpio_backlight_ops = {
++	.options	= BL_CORE_SUSPENDRESUME,
++	.update_status	= gpio_backlight_update_status,
++	.get_brightness	= gpio_backlight_get_brightness,
++	.check_fb	= gpio_backlight_check_fb,
++};
++
++static int gpio_backlight_probe(struct platform_device *pdev)
++{
++	struct gpio_backlight_platform_data *pdata = pdev->dev.platform_data;
++	struct backlight_properties props;
++	struct backlight_device *bl;
++	struct gpio_backlight *gbl;
++	int ret;
++
++	if (!pdata) {
++		dev_err(&pdev->dev, "failed to find platform data\n");
++		return -ENODEV;
 +	}
-+	led_set(0, 0);
-+	led_set(1, 1);
-+#if 1
-+	for (i = 0; i < DRAM_TEST_SIZE; i++) {
-+		//led_set(2, i & 32768);
-+		//led_set(3, i & 65536);
-+#if 1
-+		if (dram[i] != 0xcafebabe + i) {
-+			//led_set(0, 1);
-+			morse_bits((unsigned int)&dram[i]);
-+			morse_bits(dram[i]);
-+		}
++
++	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
++	if (gbl = NULL)
++		return -ENOMEM;
++
++	gbl->dev = &pdev->dev;
++	gbl->fbdev = pdata->fbdev;
++	gbl->gpio = pdata->gpio;
++	gbl->active = pdata->active_low ? 0 : 1;
++
++	ret = devm_gpio_request_one(gbl->dev, gbl->gpio, GPIOF_DIR_OUT |
++				    (gbl->active ? GPIOF_INIT_LOW
++						 : GPIOF_INIT_HIGH),
++				    pdata->name);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "unable to request GPIO\n");
++		return ret;
++	}
++
++	memset(&props, 0, sizeof(props));
++	props.type = BACKLIGHT_RAW;
++	props.max_brightness = 1;
++	bl = backlight_device_register(dev_name(&pdev->dev), &pdev->dev, gbl,
++				       &gpio_backlight_ops, &props);
++	if (IS_ERR(bl)) {
++		dev_err(&pdev->dev, "failed to register backlight\n");
++		return PTR_ERR(bl);
++	}
++
++	bl->props.brightness = pdata->def_value;
++	backlight_update_status(bl);
++
++	platform_set_drvdata(pdev, bl);
++	return 0;
++}
++
++static int gpio_backlight_remove(struct platform_device *pdev)
++{
++	struct backlight_device *bl = platform_get_drvdata(pdev);
++
++	backlight_device_unregister(bl);
++	return 0;
++}
++
++static struct platform_driver gpio_backlight_driver = {
++	.driver		= {
++		.name		= "gpio-backlight",
++		.owner		= THIS_MODULE,
++	},
++	.probe		= gpio_backlight_probe,
++	.remove		= gpio_backlight_remove,
++};
++
++module_platform_driver(gpio_backlight_driver);
++
++MODULE_AUTHOR("Laurent Pinchart <laurent.pinchart@ideasonboard.com>");
++MODULE_DESCRIPTION("GPIO-based Backlight Driver");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:gpio-backlight");
+diff --git a/include/linux/platform_data/gpio_backlight.h b/include/linux/platform_data/gpio_backlight.h
+new file mode 100644
+index 0000000..5ae0d9c
+--- /dev/null
++++ b/include/linux/platform_data/gpio_backlight.h
+@@ -0,0 +1,21 @@
++/*
++ * gpio_backlight.h - Simple GPIO-controlled backlight
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#ifndef __GPIO_BACKLIGHT_H__
++#define __GPIO_BACKLIGHT_H__
++
++struct device;
++
++struct gpio_backlight_platform_data {
++	struct device *fbdev;
++	int gpio;
++	int def_value;
++	bool active_low;
++	const char *name;
++};
++
 +#endif
-+	}
-+	led_set(2, 1);
-+	led_set(3, 1);
-+#endif
-+#endif
-+	
- 	arch_decomp_setup();
- 
-+	led_set(1, 0);
- 	putstr("Uncompressing Linux...");
- 	ret = do_decompress(input_data, input_data_end - input_data,
- 			    output_data, error);
--	if (ret)
-+	led_set(2, 0);
-+	if (ret) {
- 		error("decompressor returned an error");
--	else
-+		led_set(0, 1);
-+	}
-+	else {
- 		putstr(" done, booting the kernel.\n");
-+	}
-+	led_set(3, 0);
- }
 -- 
-1.7.10.4
+1.8.1.5
 
