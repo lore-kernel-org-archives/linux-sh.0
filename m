@@ -1,134 +1,123 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 18:38:18 +0000
-Subject: [PATCH 01/02] ARM: shmobile: Introduce per-CPU SMP boot / sleep code
-Message-Id: <20130731183818.31551.51694.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:19 +0000
+Subject: [PATCH v7 06/19] ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
+Message-Id: <1372961852-28490-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731183808.31551.47235.sendpatchset@w520>
-In-Reply-To: <20130731183808.31551.47235.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add GPIO controller nodes to the r8a7779 core device tree.
 
-Add per-CPU SMP boot / sleep code that can be used by all
-SoCs included in mach-shmobile.
-
-The boot code reads out the per-CPU MPIDR id value and
-matches it with the value stored for any CPU number, and
-if there is a match and the boot function is set as well
-then the boot function will be executed.
-
-The sleep code simply uses WFI and then jumps back to the
-boot code to see if anyone has asked to wake up that CPU,
-if not it will sleep again.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7779.dtsi | 85 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 85 insertions(+)
 
- arch/arm/mach-shmobile/headsmp.S             |   50 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    4 ++
- arch/arm/mach-shmobile/platsmp.c             |   18 +++++++++
- 3 files changed, 72 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/headsmp.S
-+++ work/arch/arm/mach-shmobile/headsmp.S	2013-07-31 12:23:20.000000000 +0900
-@@ -40,3 +40,53 @@ shmobile_boot_fn:
- 	.globl	shmobile_boot_arg
- shmobile_boot_arg:
- 2:	.space	4
-+
-+/*
-+ * Per-CPU SMP boot function/argument selection code based on MPIDR
-+ */
-+
-+ENTRY(shmobile_smp_boot)
-+						@ r0 = MPIDR_HWID_BITMASK
-+	mrc	p15, 0, r1, c0, c0, 5		@ r1 = MPIDR
-+	and	r0, r1, r0			@ r0 = cpu_logical_map() value
-+	mov	r1, #0				@ r1 = CPU index
-+	adr	r5, 1f				@ array of per-cpu mpidr values
-+	adr	r6, 2f				@ array of per-cpu functions
-+	adr	r7, 3f				@ array of per-cpu arguments
-+	
-+shmobile_smp_boot_find_mpidr:
-+	ldr	r8, [r5, r1, lsl #2]
-+	cmp	r8, r0
-+	bne	shmobile_smp_boot_next
-+
-+	ldr	r9, [r6, r1, lsl #2]
-+	cmp	r9, #0
-+	bne	shmobile_smp_boot_found
-+	
-+shmobile_smp_boot_next:
-+	add	r1, r1, #1
-+	cmp	r1, #CONFIG_NR_CPUS
-+	blo	shmobile_smp_boot_find_mpidr
-+
-+	b	shmobile_smp_sleep
-+	
-+shmobile_smp_boot_found:
-+	ldr	r0, [r7, r1, lsl #2]
-+	mov	pc, r9
-+ENDPROC(shmobile_smp_boot)
-+
-+ENTRY(shmobile_smp_sleep)
-+	wfi
-+	b	shmobile_smp_boot
-+ENDPROC(shmobile_smp_sleep)
-+
-+	.globl	shmobile_smp_mpidr
-+shmobile_smp_mpidr:
-+1:	.space	CONFIG_NR_CPUS * 4
-+	.globl	shmobile_smp_fn
-+shmobile_smp_fn:
-+2:	.space	CONFIG_NR_CPUS * 4
-+	.globl	shmobile_smp_arg
-+shmobile_smp_arg:
-+3:	.space	CONFIG_NR_CPUS * 4
-+
---- 0006/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-07-31 12:18:01.000000000 +0900
-@@ -10,6 +10,10 @@ extern void shmobile_setup_console(void)
- extern void shmobile_boot_vector(void);
- extern unsigned long shmobile_boot_fn;
- extern unsigned long shmobile_boot_arg;
-+extern void shmobile_smp_boot(void);
-+extern void shmobile_smp_sleep(void);
-+extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
-+			      unsigned long arg);
- extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
- extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
---- 0001/arch/arm/mach-shmobile/platsmp.c
-+++ work/arch/arm/mach-shmobile/platsmp.c	2013-07-31 12:18:01.000000000 +0900
-@@ -12,6 +12,9 @@
-  */
- #include <linux/init.h>
- #include <linux/smp.h>
-+#include <asm/cacheflush.h>
-+#include <asm/smp_plat.h>
-+#include <mach/common.h>
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 9dfc438..e9fbe3d 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -48,6 +48,90 @@
+                       <0xf0000100 0x100>;
+         };
  
- void __init shmobile_smp_init_cpus(unsigned int ncores)
- {
-@@ -26,3 +29,18 @@ void __init shmobile_smp_init_cpus(unsig
- 	for (i = 0; i < ncores; i++)
- 		set_cpu_possible(i, true);
- }
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc40000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 141 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
 +
-+extern unsigned long shmobile_smp_fn[];
-+extern unsigned long shmobile_smp_arg[];
-+extern unsigned long shmobile_smp_mpidr[];
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc41000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 142 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
 +
-+void shmobile_smp_hook(unsigned int cpu, unsigned long fn, unsigned long arg)
-+{
-+	shmobile_smp_fn[cpu] = 0;
-+	flush_cache_all();
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc42000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 143 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
 +
-+	shmobile_smp_mpidr[cpu] = cpu_logical_map(cpu);
-+	shmobile_smp_fn[cpu] = fn;
-+	shmobile_smp_arg[cpu] = arg;
-+	flush_cache_all();
-+}
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc43000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc44000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 145 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio5: gpio@ffc45000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc45000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 146 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio6: gpio@ffc46000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc46000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 147 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 9>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
+ 	irqpin0: irqpin@fe780010 {
+ 		compatible = "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+@@ -104,6 +188,7 @@
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7779";
+ 		reg = <0xfffc0000 0x23c>;
++		#gpio-range-cells = <3>;
+ 	};
+ 
+ 	thermal@ffc48000 {
+-- 
+1.8.1.5
+
