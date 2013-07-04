@@ -1,205 +1,83 @@
-From: Katsuya Matsubara <matsu@igel.co.jp>
-Date: Fri, 26 Jul 2013 09:32:15 +0000
-Subject: [PATCH 5/7] [media] vsp1: Introduce bit operations for the DPR route registers
-Message-Id: <1374831137-9219-6-git-send-email-matsu@igel.co.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:18 +0000
+Subject: [PATCH v7 05/19] ARM: shmobile: r8a7779: Add pin control device to device tree
+Message-Id: <1372961852-28490-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374831137-9219-1-git-send-email-matsu@igel.co.jp>
-In-Reply-To: <1374831137-9219-1-git-send-email-matsu@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Katsuya Matsubara <matsu@igel.co.jp>
+To: linux-sh@vger.kernel.org
 
-This change allows support for H/W IPs in which multiple DPR route
-registers are combined into one.
+Add a pfc node to the r8a7779 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
-Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/vsp1/vsp1.h       |    1 +
- drivers/media/platform/vsp1/vsp1_drv.c   |   94 +++++++++++++++++++-----------
- drivers/media/platform/vsp1/vsp1_video.c |   23 +++++---
- 3 files changed, 77 insertions(+), 41 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi                  |  5 +++++
+ arch/arm/mach-shmobile/board-marzen-reference.c | 17 ++++++++---------
+ 2 files changed, 13 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
-index 4d9b6c8..31c24a3 100644
---- a/drivers/media/platform/vsp1/vsp1.h
-+++ b/drivers/media/platform/vsp1/vsp1.h
-@@ -39,6 +39,7 @@ struct vsp1_uds;
- struct vsp1_dpr_route {
- 	unsigned int id;
- 	int reg;
-+	int shift;
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 7f146c6..9dfc438 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -101,6 +101,11 @@
+ 		interrupts = <0 81 0x4>;
+ 	};
+ 
++	pfc: pfc@fffc0000 {
++		compatible = "renesas,pfc-r8a7779";
++		reg = <0xfffc0000 0x23c>;
++	};
++
+ 	thermal@ffc48000 {
+ 		compatible = "renesas,rcar-thermal";
+ 		reg = <0xffc48000 0x38>;
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 480d882..94804f3 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -28,24 +28,24 @@
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 	/* SCIF2 (CN18: DEBUG0) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
+ 				  "scif2_data_c", "scif2"),
+ 	/* SCIF4 (CN19: DEBUG1) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
+ 				  "scif4_data", "scif4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+ 				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+ 				  "lbsc_ex_cs0", "lbsc"),
  };
  
- struct vsp1_device {
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 920edb1..ca05431 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -240,6 +240,7 @@ static void vsp1_device_init(struct vsp1_device *vsp1)
- 	unsigned int i;
- 	u32 status;
- 	u32 route_unused = vsp1->routes[VI6_DPR_NODE_UNUSED].id;
-+	u32 val;
- 
- 	/* Reset any channel that might be running. */
- 	status = vsp1_read(vsp1, VI6_STATUS);
-@@ -266,18 +267,43 @@ static void vsp1_device_init(struct vsp1_device *vsp1)
- 	vsp1_write(vsp1, VI6_CLK_DCSWT, (8 << VI6_CLK_DCSWT_CSTPW_SHIFT) |
- 		   (8 << VI6_CLK_DCSWT_CSTRW_SHIFT));
- 
--	for (i = 0; i < vsp1->pdata->rpf_count; ++i)
--		vsp1_write(vsp1, VI6_DPR_RPF_ROUTE0 + i, route_unused);
-+	for (i = 0; i < vsp1->pdata->rpf_count; ++i) {
-+		val = vsp1_read(vsp1, VI6_DPR_RPF_ROUTE0 + i);
-+		val |= route_unused
-+			<< vsp1->routes[VI6_DPR_NODE_RPF0 + i].shift;
-+		vsp1_write(vsp1, VI6_DPR_RPF_ROUTE0 + i, val);
-+	}
-+
-+	for (i = 0; i < vsp1->pdata->uds_count; ++i) {
-+		val = vsp1_read(vsp1, VI6_DPR_UDS_ROUTE0 + i);
-+		val |= route_unused
-+			<< vsp1->routes[VI6_DPR_NODE_UDS0 + i].shift;
-+		vsp1_write(vsp1, VI6_DPR_UDS_ROUTE0 + i, val);
-+	}
-+
-+	val = vsp1_read(vsp1, VI6_DPR_SRU_ROUTE);
-+	val |= route_unused << vsp1->routes[VI6_DPR_NODE_SRU].shift;
-+	vsp1_write(vsp1, VI6_DPR_SRU_ROUTE, val);
-+
-+	val = vsp1_read(vsp1, VI6_DPR_LUT_ROUTE);
-+	val |= route_unused << vsp1->routes[VI6_DPR_NODE_LUT].shift;
-+	vsp1_write(vsp1, VI6_DPR_LUT_ROUTE, val);
-+
-+	val = vsp1_read(vsp1, VI6_DPR_CLU_ROUTE);
-+	val |= route_unused << vsp1->routes[VI6_DPR_NODE_CLU].shift;
-+	vsp1_write(vsp1, VI6_DPR_CLU_ROUTE, val);
-+
-+	val = vsp1_read(vsp1, VI6_DPR_HST_ROUTE);
-+	val |= route_unused << vsp1->routes[VI6_DPR_NODE_HST].shift;
-+	vsp1_write(vsp1, VI6_DPR_HST_ROUTE, val);
- 
--	for (i = 0; i < vsp1->pdata->uds_count; ++i)
--		vsp1_write(vsp1, VI6_DPR_UDS_ROUTE0 + i, route_unused);
-+	val = vsp1_read(vsp1, VI6_DPR_HSI_ROUTE);
-+	val |= route_unused << vsp1->routes[VI6_DPR_NODE_HSI].shift;
-+	vsp1_write(vsp1, VI6_DPR_HSI_ROUTE, val);
- 
--	vsp1_write(vsp1, VI6_DPR_SRU_ROUTE, route_unused);
--	vsp1_write(vsp1, VI6_DPR_LUT_ROUTE, route_unused);
--	vsp1_write(vsp1, VI6_DPR_CLU_ROUTE, route_unused);
--	vsp1_write(vsp1, VI6_DPR_HST_ROUTE, route_unused);
--	vsp1_write(vsp1, VI6_DPR_HSI_ROUTE, route_unused);
--	vsp1_write(vsp1, VI6_DPR_BRU_ROUTE, route_unused);
-+	val = vsp1_read(vsp1, VI6_DPR_BRU_ROUTE);
-+	val |= route_unused << vsp1->routes[VI6_DPR_NODE_BRU_OUT].shift;
-+	vsp1_write(vsp1, VI6_DPR_BRU_ROUTE, val);
- 
- 	vsp1_write(vsp1, VI6_DPR_HGO_SMPPT, (7 << VI6_DPR_SMPPT_TGW_SHIFT) |
- 		   (route_unused << VI6_DPR_SMPPT_PT_SHIFT));
-@@ -590,30 +616,30 @@ static const unsigned int vsp1_reg_offs[] = {
- };
- 
- static const struct vsp1_dpr_route vsp1_routes[] = {
--	[VI6_DPR_NODE_RPF0]	= {  0, VI6_DPR_RPF_ROUTE0  },
--	[VI6_DPR_NODE_RPF1]	= {  1, VI6_DPR_RPF_ROUTE0 + 1 },
--	[VI6_DPR_NODE_RPF2]	= {  2, VI6_DPR_RPF_ROUTE0 + 2 },
--	[VI6_DPR_NODE_RPF3]	= {  3, VI6_DPR_RPF_ROUTE0 + 3 },
--	[VI6_DPR_NODE_RPF4]	= {  4, VI6_DPR_RPF_ROUTE0 + 4 },
--	[VI6_DPR_NODE_SRU]	= { 16, VI6_DPR_SRU_ROUTE },
--	[VI6_DPR_NODE_UDS0]	= { 17, VI6_DPR_UDS_ROUTE0 },
--	[VI6_DPR_NODE_UDS1]	= { 18, VI6_DPR_UDS_ROUTE0 + 1 },
--	[VI6_DPR_NODE_UDS2]	= { 19, VI6_DPR_UDS_ROUTE0 + 2 },
--	[VI6_DPR_NODE_LUT]	= { 22, VI6_DPR_LUT_ROUTE },
--	[VI6_DPR_NODE_BRU_IN0]	= { 23, 0 },
--	[VI6_DPR_NODE_BRU_IN1]	= { 24, 0 },
--	[VI6_DPR_NODE_BRU_IN2]	= { 25, 0 },
--	[VI6_DPR_NODE_BRU_IN3]	= { 26, 0 },
--	[VI6_DPR_NODE_BRU_OUT]	= { 27, VI6_DPR_BRU_ROUTE },
--	[VI6_DPR_NODE_CLU]	= { 29, VI6_DPR_CLU_ROUTE },
--	[VI6_DPR_NODE_HST]	= { 30, VI6_DPR_HST_ROUTE },
--	[VI6_DPR_NODE_HSI]	= { 31, VI6_DPR_HSI_ROUTE },
--	[VI6_DPR_NODE_LIF]	= { 55, 0 },
--	[VI6_DPR_NODE_WPF0]	= { 56, 0 },
--	[VI6_DPR_NODE_WPF1]	= { 57, 0 },
--	[VI6_DPR_NODE_WPF2]	= { 58, 0 },
--	[VI6_DPR_NODE_WPF3]	= { 59, 0 },
--	[VI6_DPR_NODE_UNUSED]	= { 63, 0 },
-+	[VI6_DPR_NODE_RPF0]	= {  0, VI6_DPR_RPF_ROUTE0, 0  },
-+	[VI6_DPR_NODE_RPF1]	= {  1, VI6_DPR_RPF_ROUTE0 + 1, 0 },
-+	[VI6_DPR_NODE_RPF2]	= {  2, VI6_DPR_RPF_ROUTE0 + 2, 0 },
-+	[VI6_DPR_NODE_RPF3]	= {  3, VI6_DPR_RPF_ROUTE0 + 3, 0 },
-+	[VI6_DPR_NODE_RPF4]	= {  4, VI6_DPR_RPF_ROUTE0 + 4, 0 },
-+	[VI6_DPR_NODE_SRU]	= { 16, VI6_DPR_SRU_ROUTE, 0 },
-+	[VI6_DPR_NODE_UDS0]	= { 17, VI6_DPR_UDS_ROUTE0, 0 },
-+	[VI6_DPR_NODE_UDS1]	= { 18, VI6_DPR_UDS_ROUTE0 + 1, 0 },
-+	[VI6_DPR_NODE_UDS2]	= { 19, VI6_DPR_UDS_ROUTE0 + 2, 0 },
-+	[VI6_DPR_NODE_LUT]	= { 22, VI6_DPR_LUT_ROUTE, 0 },
-+	[VI6_DPR_NODE_BRU_IN0]	= { 23, 0, 0 },
-+	[VI6_DPR_NODE_BRU_IN1]	= { 24, 0, 0 },
-+	[VI6_DPR_NODE_BRU_IN2]	= { 25, 0, 0 },
-+	[VI6_DPR_NODE_BRU_IN3]	= { 26, 0, 0 },
-+	[VI6_DPR_NODE_BRU_OUT]	= { 27, VI6_DPR_BRU_ROUTE, 0 },
-+	[VI6_DPR_NODE_CLU]	= { 29, VI6_DPR_CLU_ROUTE, 0 },
-+	[VI6_DPR_NODE_HST]	= { 30, VI6_DPR_HST_ROUTE, 0 },
-+	[VI6_DPR_NODE_HSI]	= { 31, VI6_DPR_HSI_ROUTE, 0 },
-+	[VI6_DPR_NODE_LIF]	= { 55, 0, 0 },
-+	[VI6_DPR_NODE_WPF0]	= { 56, 0, 0 },
-+	[VI6_DPR_NODE_WPF1]	= { 57, 0, 0 },
-+	[VI6_DPR_NODE_WPF2]	= { 58, 0, 0 },
-+	[VI6_DPR_NODE_WPF3]	= { 59, 0, 0 },
-+	[VI6_DPR_NODE_UNUSED]	= { 63, 0, 0 },
- };
- 
- static int vsp1_probe(struct platform_device *pdev)
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index aa71ba8..304a809 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -370,11 +370,16 @@ static int vsp1_pipeline_stop(struct vsp1_pipeline *pipe)
- 
- 	list_for_each_entry(entity, &pipe->entities, list_pipe) {
- 		const struct vsp1_dpr_route *routes = entity->vsp1->routes;
-+		int route_index = entity->route_index;
- 
--		if (routes[entity->route_index].reg)
--			vsp1_write(entity->vsp1,
--				   routes[entity->route_index].reg,
--				   routes[VI6_DPR_NODE_UNUSED].id);
-+		if (routes[route_index].reg) {
-+			u32 val;
-+
-+			val = vsp1_read(entity->vsp1, routes[route_index].reg);
-+			val |= routes[VI6_DPR_NODE_UNUSED].id
-+				<< routes[route_index].shift;
-+			vsp1_write(entity->vsp1, routes[route_index].reg, val);
-+		}
- 
- 		v4l2_subdev_call(&entity->subdev, video, s_stream, 0);
- 	}
-@@ -573,13 +578,17 @@ static void vsp1_entity_route_setup(struct vsp1_entity *source)
+@@ -53,7 +53,6 @@ static void __init marzen_init(void)
  {
- 	struct vsp1_entity *sink;
- 	const struct vsp1_dpr_route *routes = source->vsp1->routes;
-+	int route_index = source->route_index;
-+	u32 val;
+ 	pinctrl_register_mappings(marzen_pinctrl_map,
+ 				  ARRAY_SIZE(marzen_pinctrl_map));
+-	r8a7779_pinmux_init();
  
--	if (routes[source->route_index].reg = 0)
-+	if (routes[route_index].reg = 0)
- 		return;
- 
- 	sink = container_of(source->sink, struct vsp1_entity, subdev.entity);
--	vsp1_write(source->vsp1, routes[source->route_index].reg,
--		   routes[sink->route_index].id);
-+	val = vsp1_read(source->vsp1, routes[route_index].reg);
-+	val &= ~(routes[VI6_DPR_NODE_UNUSED].id << routes[route_index].shift);
-+	val |= routes[sink->route_index].id << routes[route_index].shift;
-+	vsp1_write(source->vsp1, routes[route_index].reg, val);
+ 	r8a7779_add_standard_devices_dt();
  }
- 
- static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
 -- 
-1.7.9.5
+1.8.1.5
 
