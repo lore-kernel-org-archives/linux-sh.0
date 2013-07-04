@@ -1,82 +1,34 @@
-From: "MICROSOFT IBERICA SL" <ibericaslmic@outlook.es>
-Date: Fri, 19 Jul 2013 21:44:20 +0000
-Subject: Yon've won a Prize
-Message-Id: <59773.83.46.143.199.1374270260.squirrel@mail1.centrum-group.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:16 +0000
+Subject: [PATCH v7 03/19] ARM: shmobile: r8a7778: Add pin control device to device tree
+Message-Id: <1372961852-28490-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: @casper.infradead.org
+To: linux-sh@vger.kernel.org
 
-Yon've won a Prize
-MICROSOFT IBERICA SL"
-YOU 'VE WON.
-ATTN:MICROSOFT IBERICA SL
-Your email has won (EUR244,000,00)
-(TWO HUNDRED AND FOURTY FOUR THOUSAND EURO)
-Batch number:XL73276498AM
-Ref number:QR352899526KC
-This is a millennium scientific computer game in which
-email addresses were used.It is a promotional program aimed at
-encouraging internet users,therefore you do not need to buy ticket to enter
-for it.
-For further development,clarification and procedure please
-Contact:Dr Eduardo Sanchez,
-Email contact:payingroll446@yahoo.com.hk
+Add a pfc node to the r8a7778 device tree.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4743735..c8dbf14 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -32,4 +32,9 @@
+ 		reg = <0xfe438000 0x1000>,
+ 		      <0xfe430000 0x100>;
+ 	};
++
++	pfc: pfc@fffc0000 {
++		compatible = "renesas,pfc-r8a7778";
++		reg = <0xfffc000 0x118>;
++	};
+ };
+-- 
+1.8.1.5
 
