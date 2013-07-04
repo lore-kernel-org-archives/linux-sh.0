@@ -1,44 +1,102 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:21:49 +0000
-Subject: [PATCH v2 05/23] drm/rcar-du: Clarify comment regarding plane Y source coordinate
-Message-Id: <1375276927-20181-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 04 Jul 2013 18:17:31 +0000
+Subject: [PATCH v7 18/19] ARM: shmobile: kzm9g-reference: Move SDHI regulators to DT
+Message-Id: <1372961852-28490-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The R8A7790 DU documentation contains further information regarding the
-plane Y source coordinate. Update the comment accordingly.
+Create two GPIO-controlled fixed-voltage regulators in the
+kzm9g-reference DT and remove manual configuration of the corresponding
+GPIOs from board code.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   | 23 +++++++++++++++++++++--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |  6 ------
+ 2 files changed, 21 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index a65f81d..38ebd20 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -103,9 +103,12 @@ void rcar_du_plane_update_base(struct rcar_du_plane *plane)
- 	struct rcar_du_device *rcdu = plane->dev;
- 	unsigned int index = plane->hwindex;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 11ae9ad..d2b2c9f 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -13,6 +13,7 @@
  
--	/* According to the datasheet the Y position is expressed in raster line
--	 * units. However, 32bpp formats seem to require a doubled Y position
--	 * value. Similarly, for the second plane, NV12 and NV21 formats seem to
-+	/* The Y position is expressed in raster line units and must be doubled
-+	 * for 32bpp formats, according to the R8A7790 datasheet. No mention of
-+	 * doubling the Y position is found in the R8A7779 datasheet, but the
-+	 * rule seems to apply there as well.
-+	 *
-+	 * Similarly, for the second plane, NV12 and NV21 formats seem to
- 	 * require a halved Y position value.
- 	 */
- 	rcar_du_plane_write(rcdu, index, PnSPXR, plane->src_x);
+ /dts-v1/;
+ /include/ "sh73a0.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "KZM-A9-GT";
+@@ -58,6 +59,24 @@
+ 		regulator-boot-on;
+ 	};
+ 
++	vmmc_sdhi0: regulator@2 {
++	        compatible = "regulator-fixed";
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 15 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vmmc_sdhi2: regulator@3 {
++	        compatible = "regulator-fixed";
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 14 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
+ 	lan9220@10000000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x10000000 0x100>;
+@@ -200,7 +219,7 @@
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	vmmc-supply = <&reg_3p3v>;
++	vmmc-supply = <&vmmc_sdhi0>;
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
+@@ -209,7 +228,7 @@
+ 	pinctrl-0 = <&sdhi2_pins>;
+ 	pinctrl-names = "default";
+ 
+-	vmmc-supply = <&reg_3p3v>;
++	vmmc-supply = <&vmmc_sdhi2>;
+ 	bus-width = <4>;
+ 	broken-cd;
+ 	status = "okay";
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 6a9f6a3..a66a808 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -21,7 +21,6 @@
+  */
+ 
+ #include <linux/delay.h>
+-#include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+ #include <linux/input.h>
+@@ -36,11 +35,6 @@ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+ 
+-	/* enable SD */
+-	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+-	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 -- 
 1.8.1.5
 
