@@ -1,139 +1,110 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 24 Jul 2013 14:09:09 +0000
-Subject: Re: [PATCH v2 1/5] media: Fix circular graph traversal
-Message-Id: <2101153.GOPGx1zmjS@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 04 Jul 2013 20:38:51 +0000
+Subject: [PATCH 3/6] ARM: shmobile: APE6EVM: add SDHI interfaces
+Message-Id: <1372970334-21485-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1592849.BGn9Ftusvr@avalon> <20130718102209.GA11823@valkosipuli.retiisi.org.uk>
-In-Reply-To: <20130718102209.GA11823@valkosipuli.retiisi.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sakari Ailus <sakari.ailus@iki.fi>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>
+To: linux-sh@vger.kernel.org
 
-Hi Sakari,
+Add support for SDHI0 and SDHI1 on APE6EVM in PIO mode only.
 
-On Thursday 18 July 2013 13:22:09 Sakari Ailus wrote:
-> On Thu, Jul 18, 2013 at 01:06:40AM +0200, Laurent Pinchart wrote:
-> > On Wednesday 17 July 2013 22:47:03 Sakari Ailus wrote:
-> > > On Wed, Jul 17, 2013 at 04:54:38PM +0200, Laurent Pinchart wrote:
-> > > > The graph traversal API (media_entity_graph_walk_*) will fail to
-> > > > correctly walk the graph when circular links exist. Fix it by checking
-> > > > whether an entity is already present in the stack before pushing it.
-> > > 
-> > > We never had any multiply connected graphs (ignoring direction, nor
-> > > supported them) before. So this is rather a patch that adds support for
-> > > those instead of fixing it. :-)
-> > 
-> > Good point, I'll add support for your comment to the commit message :-D
-> > 
-> > > > Signed-off-by: Laurent Pinchart
-> > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > > ---
-> > > > 
-> > > >  drivers/media/media-entity.c | 17 ++++++++++++-----
-> > > >  1 file changed, 12 insertions(+), 5 deletions(-)
-> > > > 
-> > > > diff --git a/drivers/media/media-entity.c
-> > > > b/drivers/media/media-entity.c
-> > > > index cb30ffb..c8aba5e 100644
-> > > > --- a/drivers/media/media-entity.c
-> > > > +++ b/drivers/media/media-entity.c
-> > > > @@ -121,9 +121,9 @@ static struct media_entity *stack_pop(struct
-> > > > media_entity_graph *graph)
-> > > > 
-> > > >  	return entity;
-> > > >  
-> > > >  }
-> > > > 
-> > > > -#define stack_peek(en)	((en)->stack[(en)->top - 1].entity)
-> > > > -#define link_top(en)	((en)->stack[(en)->top].link)
-> > > > -#define stack_top(en)	((en)->stack[(en)->top].entity)
-> > > > +#define stack_peek(en, i)	((en)->stack[i].entity)
-> > > > +#define link_top(en)		((en)->stack[(en)->top].link)
-> > > > +#define stack_top(en)		((en)->stack[(en)->top].entity)
-> > > > 
-> > > >  /**
-> > > >  
-> > > >   * media_entity_graph_walk_start - Start walking the media graph at a
-> > > >   given entity>
-> > > > 
-> > > > @@ -159,6 +159,8 @@ EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
-> > > > 
-> > > >  struct media_entity *
-> > > >  media_entity_graph_walk_next(struct media_entity_graph *graph)
-> > > >  {
-> > > > 
-> > > > +	unsigned int i;
-> > > > +
-> > > > 
-> > > >  	if (stack_top(graph) = NULL)
-> > > >  	
-> > > >  		return NULL;
-> > > > 
-> > > > @@ -181,8 +183,13 @@ media_entity_graph_walk_next(struct
-> > > > media_entity_graph *graph)>
-> > > > 
-> > > >  		/* Get the entity in the other end of the link . */
-> > > >  		next = media_entity_other(entity, link);
-> > > > 
-> > > > -		/* Was it the entity we came here from? */
-> > > > -		if (next = stack_peek(graph)) {
-> > > > +		/* Is the entity already in the path? */
-> > > > +		for (i = 1; i < graph->top; ++i) {
-> > > > +			if (next = stack_peek(graph, i))
-> > > > +				break;
-> > > > +		}
-> > > > +
-> > > > +		if (i < graph->top) {
-> > > > 
-> > > >  			link_top(graph)++;
-> > > >  			continue;
-> > > >  		
-> > > >  		}
-> > > 
-> > > I think you should also ensure a node in the graph hasn't been
-> > > enumerated in the past; otherwise it's possible to do that multiple
-> > > times in a multiply connected graph.
-> > 
-> > I'm not sure to follow you here, could you please elaborate ?
-> 
-> Depth-first search in a multiply connected graph must avoid finding again
-> the same nodes. As we didn't have multiply connected graphs, the only thing
-> that was necessary was to avoid going back exactly the same route that the
-> search came from.
-> 
-> In a multiply connected graph a node can be reached through multiple paths.
-> This means that instead of avoiding to go back where we came from (either
-> the previous node or the full stack), we must avoid finding again the same
-> nodes we've found previously.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-ape6evm.c |   47 +++++++++++++++++++++++++++++++-
+ 1 files changed, 46 insertions(+), 1 deletions(-)
 
-Indeed, I somehow managed to overlook the issue. That's not really a problem 
-in my case, as circular graphs are not supported by my hardware, but a generic 
-solution is indeed needed.
-
-> > > How about using a bit field that contained as many bits as there were
-> > > entities? It's also faster to check for a single bit than loop over the
-> > > whole path for each entity, which certainly will start showing in
-> > > execution time with these link numbres.
-> > 
-> > That's possible, yes. We would then need to dynamically allocate the bit
-> > field in the start function, and add a new media_entity_graph_walk_end()
-> > function (I would then rename media_entity_graph_walk_start() to
-> > media_entity_graph_walk_begin()) to free the bit field. If you think
-> > that's worth it I can give it a try.
-> 
-> Do you think we could define a maximum number of entities? It can be
-> increased if any driver happens to need more. I'd be more comfortable in
-> doing the allocation in the stack that way: the number will be relatively
-> small in any case, say, 32 or 64 bits for which kzalloc() would be overkill.
-
-This should work for now, but I'm a bit concerned that it would break in the 
-future if we introduce dynamic entity (un)registration. In that case the 
-maximum number of entities could be capped, but the IDs will increase.
-
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 05f8557..a0311d9 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -21,8 +21,10 @@
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+@@ -56,10 +58,12 @@ static const struct smsc911x_platform_config lan9220_data = {
+ 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
+ };
+ 
+-/* Fixed 3.3V regulator to be used by MMCIF */
++/* Fixed 3.3V regulator to be used by MMCIF and SDHI */
+ static struct regulator_consumer_supply fixed3v3_power_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
+ };
+ 
+ /* MMCIF */
+@@ -74,6 +78,29 @@ static struct resource mmcif0_resources[] = {
+ 	DEFINE_RES_IRQ(gic_spi(169)),
+ };
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_pdata = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++};
++
++static struct resource sdhi0_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI1 */
++static struct sh_mobile_sdhi_info sdhi1_pdata = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_NEEDS_POLL,
++};
++
++static struct resource sdhi1_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
++	DEFINE_RES_IRQ(gic_spi(166)),
++};
++
+ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 	/* SCIFA0 console */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+@@ -86,6 +113,18 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 				  "mmc0_data8", "mmc0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
+ 				  "mmc0_ctrl", "mmc0"),
++	/* SDHI0: uSD: no WP */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_cd", "sdhi0"),
++	/* SDHI1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a73a4",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a73a4",
++				  "sdhi1_ctrl", "sdhi1"),
+ };
+ 
+ static void __init ape6evm_add_standard_devices(void)
+@@ -123,6 +162,12 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
+ 					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
+ 					  &mmcif0_pdata, sizeof(mmcif0_pdata));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_pdata, sizeof(sdhi0_pdata));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
++					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
++					  &sdhi1_pdata, sizeof(sdhi1_pdata));
+ }
+ 
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.2.5
 
