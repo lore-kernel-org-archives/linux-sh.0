@@ -1,36 +1,82 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 10 Jul 2013 19:21:16 +0000
-Subject: [PATCH 5/6] ARM: shmobile: ape6evm: disable MMCIF Command Completion Signal
-Message-Id: <1373484077-10460-6-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 05 Jul 2013 15:25:31 +0000
+Subject: [PATCH v2 5/6] ARM: shmobile: r8a73a4: add MMCIF and SDHI DT templates
+Message-Id: <1373037932-19918-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-sh@vger.kernel.org
 
-MMCIF on r8a73a4 doesn't support Command Completion Signal, a platform
-parameter has to be added to disable it on ape6evm.
+This adds DT templates for all MMCIF and SDHI controllers on r8a73a4.
+They are added with status="disabled". To use them platform-specific
+DTs have to enable the required ones.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index e9e2108e..96a6994 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -77,6 +77,7 @@ static struct sh_mmcif_plat_data mmcif0_pdata = {
- 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
- 	.slave_id_tx	= SHDMA_SLAVE_MMCIF0_TX,
- 	.slave_id_rx	= SHDMA_SLAVE_MMCIF0_RX,
-+	.ccs_unsupported = true,
+v2:
+1. fixed MMCIF resource sizes
+2. added SDHI compatibility with the actual SoC for possible future driver
+   extensions
+
+ arch/arm/boot/dts/r8a73a4.dtsi |   45 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 45 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 4e1ddf0..0238676 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -166,4 +166,49 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 173 0x4>;
+ 	};
++
++	mmcif0: mmcif@ee200000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee200000 0 0x80>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 169 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	mmcif1: mmcif@ee220000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee220000 0 0x80>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 170 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	sdhi0: sdhi@ee100000 {
++		compatible = "renesas,r8a73a4-sdhi", "renesas,r8a7740-sdhi";
++		reg = <0 0xee100000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 165 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi1: sdhi@ee120000 {
++		compatible = "renesas,r8a73a4-sdhi", "renesas,r8a7740-sdhi";
++		reg = <0 0xee120000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 166 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi2: sdhi@ee140000 {
++		compatible = "renesas,r8a73a4-sdhi", "renesas,r8a7740-sdhi";
++		reg = <0 0xee140000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
  };
- 
- static struct resource mmcif0_resources[] = {
 -- 
 1.7.2.5
 
