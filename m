@@ -1,83 +1,89 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 06:00:08 +0000
-Subject: Re: ARM CPU Hotplug breakage on mach-shmobile and KZM9D
-Message-Id: <CANqRtoRcNGo+xXPzmgEtXgqqWF+07bbf8Ch6yRWeOFURRVMtwQ@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 05 Jul 2013 15:26:46 +0000
+Subject: [PATCH/RFC v2 4/4] ARM: shmobile: APE6EVM-reference: add ethernet support
+Message-Id: <1373038006-19973-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CANqRtoRx7voEVwJG8UNNy_Jiixo=uRJCvxTD0bZdzVohoryBUA@mail.gmail.com>
- <20130725010607.GB31464@verge.net.au>
- <20130730074939.GE7210@verge.net.au>
- <51F7CD67.6020209@windriver.com>
- <20130731010404.GJ17209@verge.net.au>
-In-Reply-To: <20130731010404.GJ17209@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon, Paul,
+Add SMSC9220 support to APE6EVM-reference. Since pinctrl configuration is
+not yet available in DT, temporarily add pin configuration in C. Similarly
+PHY reset has to be done in C.
 
-On Wed, Jul 31, 2013 at 10:04 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Tue, Jul 30, 2013 at 10:27:51AM -0400, Paul Gortmaker wrote:
->> On 13-07-30 03:49 AM, Simon Horman wrote:
->> > [ Cc Paul Gortmaker ]
->> >
->> > On Thu, Jul 25, 2013 at 10:06:07AM +0900, Simon Horman wrote:
->> >> On Thu, Jul 25, 2013 at 12:15:49AM +0900, Magnus Damm wrote:
->> >>> Hi everyone,
->> >>>
->> >>> Bad news: CPU Hotplug on KZM9D seems broken on recent kernels.
->> >>>
->> >>> On renesas-next-20130710 or earlier I can perform the following:
->> >>>
->> >>> # echo 0 > /sys/devices/system/cpu/cpu1/online
->> >>> CPU1: shutdown
->> >>> # echo 1 > /sys/devices/system/cpu/cpu1/online
->> >>> CPU1: Booted secondary processor
->> >>> #
->> >>>
->> >>> While on more recent kernels the hotplug boot fails. This may be
->> >>> related to the move to v3.11-rc. The tag renesas-next-20130710
->> >>> surprisingly seems to be the final kernel based on v3.10-rc before
->> >>> jumping to v3.11-rc.
->> >>>
->> >>> I wonder, do other ARM platforms have working CPU Hotplug in v3.11-rc?
->> >>
->> >> I have a snowball that I could test if you think it would be useful.
->> >
->> > Unfortunately getting snowball to work turned out to be rather painful.
->> > So instead I bisected the problem on the KZM9G (N.b: the D in the subject
->> > seems to be incorrect :^)
->> >
->> > The result is that the following patch, added in v3.11-rc1,
->> > appears to be the culprit.
->>
->> Double check that you have this commit present:
->>  ---------------
->> commit 8c69d7af12265e5be9326110b695e010b47505bd
->> Author: Stephen Warren <swarren@nvidia.com>
->> Date:   Fri Jul 5 22:59:42 2013 +0100
->>
->>     ARM: 7780/1: add missing linker section markup to head-common.S
->>  ---------------
->>
->> as I think you are reporting the same problem that it fixed.
->
-> Unfortunately that does not seem to resolve the problem that I am seeing.
-> I have tried both v3.11-rc3 and 22f0a27367742f65130c0fb25ef00f7297e032c1
-> with 8c69d7af12265e5be9326110b695e010b47505bd cherry picked on top and
-> in both cases I see:
->
-> # echo 0 > /sys/devices/system/cpu/cpu1/online
-> CPU1: shutdown
-> # echo 1 > /sys/devices/system/cpu/cpu1/online
-> CPU1: failed to come online
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-Thanks for your help. I've now tracked down this issue to the following fix:
+Marked "RFC," because it configures pinmux and requests a GPIO in C. If
+undesired this patch can just be left out until DT pinctrl configuration
+is available on mach-shmobile.
 
-[PATCH] ARM: Fix memblock_reserve() to include stext
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   21 +++++++++++++++++++++
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    6 ++++++
+ 2 files changed, 27 insertions(+), 0 deletions(-)
 
-Let me know if you think the code should be changed somehow.
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index aa84b09..ea386fe 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -24,11 +24,32 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
+ 
++	ape6evm_fixed_3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
+ 	lbsc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		ranges = <0 0 0 0x80000000>;
++
++		ethernet@8000000 {
++			compatible = "smsc,lan9118", "smsc,lan9115";
++			reg = <0x08000000 0x1000>;
++			interrupt-parent = <&irqc1>;
++			interrupts = <8 0x4>;
++			phy-mode = "mii";
++			reg-io-width = <4>;
++			smsc,irq-active-high;
++			smsc,irq-push-pull;
++			vdd33a-supply = <&ape6evm_fixed_3v3>;
++			vddvario-supply = <&ape6evm_fixed_3v3>;
++		};
+ 	};
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index ee9f75d..909c1bc 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -32,6 +32,9 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 	/* SCIFA0 console */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+ 				  "scifa0_data", "scifa0"),
++	/* SMSC */
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a73a4",
++				  "irqc_irq40", "irqc"),
+ };
+ 
+ static void __init ape6evm_add_standard_devices(void)
+@@ -57,6 +60,9 @@ static void __init ape6evm_add_standard_devices(void)
+ 	r8a73a4_add_aux_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a73a4_add_cpufreq_device_dt();
++
++	/* LAN9220 ethernet */
++	gpio_request_one(270, GPIOF_OUT_INIT_HIGH, NULL); /* smsc9220 RESET */
+ }
+ 
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
+-- 
+1.7.2.5
 
-Cheers,
-
-/ magnus
