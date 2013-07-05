@@ -1,30 +1,92 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Jul 2013 22:42:01 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7779: Add i2c pin groups
-Message-Id: <20130717224200.GA7578@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 05 Jul 2013 15:25:32 +0000
+Subject: [PATCH v2 6/6] ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
+Message-Id: <1373037932-19918-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374058848-6823-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1374058848-6823-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Jul 17, 2013 at 01:15:35PM +0200, Laurent Pinchart wrote:
-> Hi Phil,
-> 
-> Thanks for the patch.
-> 
-> On Wednesday 17 July 2013 12:00:48 Phil Edworthy wrote:
-> > Add all I2C pin groups to R8A7779 PFC driver.
-> > 
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> I'll take this in my tree and will send a pull request to Linus for the 
-> pinctrl tree. Please let me know if you plan to send patches that will depend 
-> on this one through Simon's tree, in which case I'll ask Linus to provide a 
-> stable branch.
+This adds DT templates for all MMCIF and SDHI controllers on r8a7790.
+They are added with status="disabled". To use them platform-specific
+DTs have to enable the required ones.
 
-Thanks Laurent.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+
+v2:
+1. fixed MMCIF resource sizes
+2. added SDHI compatibility with the actual SoC for possible future driver
+   extensions
+3. removed not directly applicable comments
+
+ arch/arm/boot/dts/r8a7790.dtsi |   54 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 54 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 339d9b1..304be59 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -54,4 +54,58 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
+ 	};
++
++	mmcif0: mmcif@ee200000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee200000 0 0x80>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 169 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	mmcif1: mmcif@ee220000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee220000 0 0x80>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 170 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	sdhi0: sdhi@ee100000 {
++		compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
++		reg = <0 0xee100000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 165 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi1: sdhi@ee120000 {
++		compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
++		reg = <0 0xee120000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 166 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi2: sdhi@ee140000 {
++		compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
++		reg = <0 0xee140000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi3: sdhi@ee160000 {
++		compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
++		reg = <0 0xee160000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 168 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
+ };
+-- 
+1.7.2.5
+
