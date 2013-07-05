@@ -1,84 +1,117 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Jul 2013 13:15:18 +0000
-Subject: [PATCH 12/14] sh-pfc: r8a7790: Add SCIF2 pin groups and functions
-Message-Id: <1374671720-8794-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 05 Jul 2013 15:25:29 +0000
+Subject: [PATCH v2 3/6] ARM: shmobile: APE6EVM: add SDHI interfaces
+Message-Id: <1373037932-19918-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add support for SDHI0 and SDHI1 on APE6EVM in PIO mode only.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 9acb0e5..2fd904f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -2311,6 +2311,28 @@ static const unsigned int scif1_clk_e_pins[] = {
- static const unsigned int scif1_clk_e_mux[] = {
- 	SCK1_E_MARK,
- };
-+/* - SCIF2 ------------------------------------------------------------------ */
-+static const unsigned int scif2_data_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 6), RCAR_GP_PIN(5, 5),
-+};
-+static const unsigned int scif2_data_mux[] = {
-+	RX2_MARK, TX2_MARK,
-+};
-+static const unsigned int scif2_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(5, 4),
-+};
-+static const unsigned int scif2_clk_mux[] = {
-+	SCK2_MARK,
-+};
-+static const unsigned int scif2_data_b_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(0, 24), RCAR_GP_PIN(0, 25),
-+};
-+static const unsigned int scif2_data_b_mux[] = {
-+	RX2_B_MARK, TX2_B_MARK,
-+};
- /* - SCIFA0 ----------------------------------------------------------------- */
- static const unsigned int scifa0_data_pins[] = {
- 	/* RXD, TXD */
-@@ -2921,6 +2943,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scif1_clk_d),
- 	SH_PFC_PIN_GROUP(scif1_data_e),
- 	SH_PFC_PIN_GROUP(scif1_clk_e),
-+	SH_PFC_PIN_GROUP(scif2_data),
-+	SH_PFC_PIN_GROUP(scif2_clk),
-+	SH_PFC_PIN_GROUP(scif2_data_b),
- 	SH_PFC_PIN_GROUP(scifa0_data),
- 	SH_PFC_PIN_GROUP(scifa0_clk),
- 	SH_PFC_PIN_GROUP(scifa0_ctrl),
-@@ -3106,6 +3131,12 @@ static const char * const scif1_groups[] = {
- 	"scif1_clk_e",
+v2: no change
+
+ arch/arm/mach-shmobile/board-ape6evm.c |   50 +++++++++++++++++++++++++++++++-
+ 1 files changed, 49 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index ab33030..e9e2108e 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -21,8 +21,10 @@
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+@@ -58,11 +60,16 @@ static const struct smsc911x_platform_config lan9220_data = {
+ 
+ /*
+  * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
+- * model a VDD supply to MMCIF, using a fixed 3.3V regulator.
++ * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use the
++ * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is also
++ * supplied by the same tps80032 regulator and thus can also be adjusted
++ * dynamically.
+  */
+ static struct regulator_consumer_supply fixed3v3_power_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
  };
  
-+static const char * const scif2_groups[] = {
-+	"scif2_data",
-+	"scif2_clk",
-+	"scif2_data_b",
+ /* MMCIF */
+@@ -77,6 +84,29 @@ static struct resource mmcif0_resources[] = {
+ 	DEFINE_RES_IRQ(gic_spi(169)),
+ };
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_pdata = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
 +};
 +
- static const char * const scifa0_groups[] = {
- 	"scifa0_data",
- 	"scifa0_clk",
-@@ -3227,6 +3258,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(msiof3),
- 	SH_PFC_FUNCTION(scif0),
- 	SH_PFC_FUNCTION(scif1),
-+	SH_PFC_FUNCTION(scif2),
- 	SH_PFC_FUNCTION(scifa0),
- 	SH_PFC_FUNCTION(scifa1),
- 	SH_PFC_FUNCTION(scifa2),
++static struct resource sdhi0_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI1 */
++static struct sh_mobile_sdhi_info sdhi1_pdata = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_NEEDS_POLL,
++};
++
++static struct resource sdhi1_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
++	DEFINE_RES_IRQ(gic_spi(166)),
++};
++
+ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 	/* SCIFA0 console */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+@@ -89,6 +119,18 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 				  "mmc0_data8", "mmc0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
+ 				  "mmc0_ctrl", "mmc0"),
++	/* SDHI0: uSD: no WP */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_cd", "sdhi0"),
++	/* SDHI1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a73a4",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a73a4",
++				  "sdhi1_ctrl", "sdhi1"),
+ };
+ 
+ static void __init ape6evm_add_standard_devices(void)
+@@ -126,6 +168,12 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
+ 					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
+ 					  &mmcif0_pdata, sizeof(mmcif0_pdata));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_pdata, sizeof(sdhi0_pdata));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
++					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
++					  &sdhi1_pdata, sizeof(sdhi1_pdata));
+ }
+ 
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
 -- 
-1.8.1.5
+1.7.2.5
 
