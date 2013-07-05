@@ -1,27 +1,67 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Sat, 20 Jul 2013 20:29:39 +0000
-Subject: Re: [PATCH] gpio-rcar: Add interrupt controller support to the DT bindings
-Message-Id: <CACRpkdaNGe0UpsXGkVz4jv-Z6KgD9fj6uDDU7tbODdvWu8ridw@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 05 Jul 2013 15:26:45 +0000
+Subject: [PATCH v2 3/4] ARM: shmobile: ape6evm-reference: add CPUFreq support
+Message-Id: <1373038006-19973-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372959879-24033-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372959879-24033-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, devicetree@vger.kernel.org
-Cc: linux-gpio@vger.kernel.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree-discuss@lists.ozlabs.org" <devicetree-discuss@lists.ozlabs.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-On Thu, Jul 4, 2013 at 7:44 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+Add CPUFreq support to ape6evm-reference, using a max8973 regulator, that
+is supplying V_DVFS for the 4 CA15 cores on r8a73a4.
 
-> Update the DT bindings documentation with the interrupt-controller
-> and #interrupt-cells properties.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-Usually I should have an ACK from some DT person (they are on
-devicetree@vger.kernel.org nowadays) but this one is so straight forward
-that I just applied it. But they may instead protest :-)
+v2: extracted from patch 2 from v1
 
-Yours,
-Linus Walleij
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   22 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    1 +
+ 2 files changed, 23 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 4990076..aa84b09 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -31,3 +31,25 @@
+ 		ranges = <0 0 0 0x80000000>;
+ 	};
+ };
++
++&i2c5 {
++	vdd_dvfs: max8973@1b {
++		compatible = "maxim,max8973";
++		reg = <0x1b>;
++
++		regulator-min-microvolt = <935000>;
++		regulator-max-microvolt = <1200000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++	operating-points = <
++		/* kHz  uV */
++		1950000 1115000
++		1462500  995000
++	>;
++	voltage-tolerance = <1>; /* 1% */
++};
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index 7e3e0d7..ee9f75d 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -56,6 +56,7 @@ static void __init ape6evm_add_standard_devices(void)
+ 	r8a73a4_pinmux_init();
+ 	r8a73a4_add_aux_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	r8a73a4_add_cpufreq_device_dt();
+ }
+ 
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
+-- 
+1.7.2.5
+
