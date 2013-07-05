@@ -1,101 +1,89 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Jul 2013 13:15:12 +0000
-Subject: [PATCH 06/14] sh-pfc: r8a7790: Swap SCIFA2_RXD_B and HRX0_C configurations
-Message-Id: <1374671720-8794-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 05 Jul 2013 15:25:30 +0000
+Subject: [PATCH v2 4/6] ARM: shmobile: Lager: add MMCIF support
+Message-Id: <1373037932-19918-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Add support for the MMCIF1 interface on Lager.
 
-The SCIFA2 RXD_B and HRX0_C pins have their pinmux configuration data
-swapped, fix it.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 350b076..b06d36c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -464,7 +464,7 @@ enum {
- 	FN_LCDOUT21, FN_MSIOF0_SCK, FN_TS_SDAT0, FN_ADICLK,
- 	FN_DU2_DB6, FN_LCDOUT22, FN_MSIOF0_SYNC, FN_TS_SCK0,
- 	FN_SSI_SCK2, FN_ADIDATA, FN_DU2_DB7, FN_LCDOUT23,
--	FN_SCIFA2_RXD_B, FN_MSIOF0_SS1, FN_ADICHS0,
-+	FN_HRX0_C, FN_MSIOF0_SS1, FN_ADICHS0,
- 	FN_DU2_DG5, FN_LCDOUT13, FN_MSIOF0_TXD, FN_ADICHS1,
- 	FN_DU2_DG6, FN_LCDOUT14,
+v2: fixed MMCIF memory resource size
+
+ arch/arm/mach-shmobile/board-lager.c |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index d0da052..3c67b2a 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -24,10 +24,15 @@
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -70,6 +75,22 @@ static __initdata struct gpio_keys_platform_data lager_keys_pdata = {
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+ };
  
-@@ -472,7 +472,7 @@ enum {
- 	FN_MSIOF0_SS2, FN_AUDIO_CLKOUT, FN_ADICHS2,
- 	FN_DU2_DISP, FN_QPOLA, FN_HTX0_C, FN_SCIFA2_TXD_B,
- 	FN_MSIOF0_RXD, FN_TS_SPSYNC0, FN_SSI_WS2,
--	FN_ADICS_SAMP, FN_DU2_CDE, FN_QPOLB, FN_HRX0_C,
-+	FN_ADICS_SAMP, FN_DU2_CDE, FN_QPOLB, FN_SCIFA2_RXD_B,
- 	FN_USB1_PWEN, FN_AUDIO_CLKOUT_D, FN_USB1_OVC,
- 	FN_TCLK1_B,
++/* Fixed 3.3V regulator to be used by MMCIF */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.1"),
++};
++
++/* MMCIF */
++static struct sh_mmcif_plat_data mmcif1_pdata = {
++	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++};
++
++static struct resource mmcif1_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee220000, 0x80, "MMCIF1"),
++	DEFINE_RES_IRQ(gic_spi(170)),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+@@ -77,6 +98,11 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
+ 				  "scif1_data", "scif1"),
++	/* MMCIF1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.1", "pfc-r8a7790",
++				  "mmc1_data8", "mmc1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.1", "pfc-r8a7790",
++				  "mmc1_ctrl", "mmc1"),
+ };
  
-@@ -827,14 +827,14 @@ enum {
- 	LCDOUT21_MARK, MSIOF0_SCK_MARK, TS_SDAT0_MARK, ADICLK_MARK,
- 	DU2_DB6_MARK, LCDOUT22_MARK, MSIOF0_SYNC_MARK, TS_SCK0_MARK,
- 	SSI_SCK2_MARK, ADIDATA_MARK, DU2_DB7_MARK, LCDOUT23_MARK,
--	SCIFA2_RXD_B_MARK, MSIOF0_SS1_MARK, ADICHS0_MARK,
-+	HRX0_C_MARK, MSIOF0_SS1_MARK, ADICHS0_MARK,
- 	DU2_DG5_MARK, LCDOUT13_MARK, MSIOF0_TXD_MARK, ADICHS1_MARK,
- 	DU2_DG6_MARK, LCDOUT14_MARK,
+ static void __init lager_add_standard_devices(void)
+@@ -94,6 +120,11 @@ static void __init lager_add_standard_devices(void)
+ 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
+ 				      &lager_keys_pdata,
+ 				      sizeof(lager_keys_pdata));
++	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	platform_device_register_resndata(&platform_bus, "sh_mmcif", 1,
++					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
++					  &mmcif1_pdata, sizeof(mmcif1_pdata));
+ }
  
- 	MSIOF0_SS2_MARK, AUDIO_CLKOUT_MARK, ADICHS2_MARK,
- 	DU2_DISP_MARK, QPOLA_MARK, HTX0_C_MARK, SCIFA2_TXD_B_MARK,
- 	MSIOF0_RXD_MARK, TS_SPSYNC0_MARK, SSI_WS2_MARK,
--	ADICS_SAMP_MARK, DU2_CDE_MARK, QPOLB_MARK, HRX0_C_MARK,
-+	ADICS_SAMP_MARK, DU2_CDE_MARK, QPOLB_MARK, SCIFA2_RXD_B_MARK,
- 	USB1_PWEN_MARK, AUDIO_CLKOUT_D_MARK, USB1_OVC_MARK,
- 	TCLK1_B_MARK,
- 	PINMUX_MARK_END,
-@@ -1742,7 +1742,7 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_IPSR_DATA(IP15_25_23, ADIDATA),
- 	PINMUX_IPSR_DATA(IP15_25_23, DU2_DB7),
- 	PINMUX_IPSR_DATA(IP15_25_23, LCDOUT23),
--	PINMUX_IPSR_MODSEL_DATA(IP15_25_23, SCIFA2_RXD_B, SEL_SCIFA2_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP15_25_23, HRX0_C, SEL_SCIFA2_1),
- 	PINMUX_IPSR_MODSEL_DATA(IP15_27_26, MSIOF0_SS1, SEL_SOF0_0),
- 	PINMUX_IPSR_DATA(IP15_27_26, ADICHS0),
- 	PINMUX_IPSR_DATA(IP15_27_26, DU2_DG5),
-@@ -1765,7 +1765,7 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_IPSR_DATA(IP16_5_3, ADICS_SAMP),
- 	PINMUX_IPSR_DATA(IP16_5_3, DU2_CDE),
- 	PINMUX_IPSR_DATA(IP16_5_3, QPOLB),
--	PINMUX_IPSR_MODSEL_DATA(IP16_5_3, HRX0_C, SEL_HSCIF0_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP16_5_3, SCIFA2_RXD_B, SEL_HSCIF0_2),
- 	PINMUX_IPSR_DATA(IP16_6, USB1_PWEN),
- 	PINMUX_IPSR_DATA(IP16_6, AUDIO_CLKOUT_D),
- 	PINMUX_IPSR_DATA(IP16_7, USB1_OVC),
-@@ -3753,7 +3753,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		FN_MSIOF0_SS1, FN_ADICHS0, FN_DU2_DG5, FN_LCDOUT13,
- 		/* IP15_25_23 [3] */
- 		FN_MSIOF0_SYNC, FN_TS_SCK0, FN_SSI_SCK2, FN_ADIDATA,
--		FN_DU2_DB7, FN_LCDOUT23, FN_SCIFA2_RXD_B, 0,
-+		FN_DU2_DB7, FN_LCDOUT23, FN_HRX0_C, 0,
- 		/* IP15_22_20 [3] */
- 		FN_MSIOF0_SCK, FN_TS_SDAT0, FN_ADICLK,
- 		FN_DU2_DB6, FN_LCDOUT22, 0, 0, 0,
-@@ -3804,7 +3804,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		FN_USB1_PWEN, FN_AUDIO_CLKOUT_D,
- 		/* IP16_5_3 [3] */
- 		FN_MSIOF0_RXD, FN_TS_SPSYNC0, FN_SSI_WS2,
--		FN_ADICS_SAMP, FN_DU2_CDE, FN_QPOLB, FN_HRX0_C, 0,
-+		FN_ADICS_SAMP, FN_DU2_CDE, FN_QPOLB, FN_SCIFA2_RXD_B, 0,
- 		/* IP16_2_0 [3] */
- 		FN_MSIOF0_SS2, FN_AUDIO_CLKOUT, FN_ADICHS2,
- 		FN_DU2_DISP, FN_QPOLA, FN_HTX0_C, FN_SCIFA2_TXD_B, 0, }
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-1.8.1.5
+1.7.2.5
 
