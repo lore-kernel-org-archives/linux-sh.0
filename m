@@ -1,45 +1,49 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 01 Jul 2013 05:42:13 +0000
-Subject: [PATCH 07/07] ARM: shmobile: Remove redundant r8a7790 callback
-Message-Id: <20130701054213.19319.40704.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 05 Jul 2013 15:26:42 +0000
+Subject: [PATCH v2 0/4] ARM: shmobile: APE6EVM: add a reference DT implementation
+Message-Id: <1373038006-19973-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130701054106.19319.46845.sendpatchset@w520>
-In-Reply-To: <20130701054106.19319.46845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+This patch series adds a DT-based APE6EVM platform implementation. The 
+first of them prepares auxiliary device handling functions for the r8a73a4 
+SoC, and the second one adds a the actual platform support.
 
-Replace the SoC-specific callback init_machine() with 
-a NULL to use the default code. This cleans up the code
-and reduces the number of lines.
+Developed and tested on top of Simon's renesas.git next snapshot of
+05.07.2013 plus my today's patch-set:
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+ARM: shmobile: DMAC, MMCIF and SDHI for H2 and APE6
+
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+
+Guennadi Liakhovetski (4):
+  ARM: shmobile: r8a73a4: move cpufreq-cpu0 device registration into a
+    function
+  ARM: shmobile: APE6EVM: add DT reference
+  ARM: shmobile: ape6evm-reference: add CPUFreq support
+  ARM: shmobile: APE6EVM-reference: add ethernet support
+
+ arch/arm/boot/dts/Makefile                       |    1 +
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   76 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                   |   11 +++
+ arch/arm/mach-shmobile/Makefile                  |    1 +
+ arch/arm/mach-shmobile/Makefile.boot             |    1 +
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |   78 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h    |    5 ++
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |   16 ++++-
+ 8 files changed, 186 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
+
+-- 
+1.7.2.5
+
+Thanks
+Guennadi
 ---
-
- arch/arm/mach-shmobile/setup-r8a7790.c |    5 -----
- 1 file changed, 5 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-07-01 13:24:33.000000000 +0900
-@@ -217,10 +217,6 @@ void __init r8a7790_init_delay(void)
- }
- 
- #ifdef CONFIG_USE_OF
--void __init r8a7790_add_standard_devices_dt(void)
--{
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
- 
- static const char *r8a7790_boards_compat_dt[] __initdata = {
- 	"renesas,r8a7790",
-@@ -230,7 +226,6 @@ static const char *r8a7790_boards_compat
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
- 	.init_early	= r8a7790_init_delay,
- 	.init_irq	= irqchip_init,
--	.init_machine	= r8a7790_add_standard_devices_dt,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= r8a7790_boards_compat_dt,
- MACHINE_END
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
