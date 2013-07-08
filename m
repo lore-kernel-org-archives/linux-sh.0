@@ -1,92 +1,54 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 05 Jul 2013 15:25:32 +0000
-Subject: [PATCH v2 6/6] ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
-Message-Id: <1373037932-19918-7-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Jul 2013 03:51:58 +0000
+Subject: Re: [PATCH v2 6/6] ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
+Message-Id: <CANqRtoQjUUNSWr8SkiOwNbhQBrkBMWzPJ9vBEmqUe6L8bck8hw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1373037932-19918-7-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373037932-19918-7-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This adds DT templates for all MMCIF and SDHI controllers on r8a7790.
-They are added with status="disabled". To use them platform-specific
-DTs have to enable the required ones.
+HI Guennadi,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
+On Sat, Jul 6, 2013 at 12:25 AM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> This adds DT templates for all MMCIF and SDHI controllers on r8a7790.
+> They are added with status="disabled". To use them platform-specific
+> DTs have to enable the required ones.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> ---
+>
+> v2:
+> 1. fixed MMCIF resource sizes
+> 2. added SDHI compatibility with the actual SoC for possible future driver
+>    extensions
+> 3. removed not directly applicable comments
+>
+>  arch/arm/boot/dts/r8a7790.dtsi |   54 ++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 54 insertions(+), 0 deletions(-)
+>
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index 339d9b1..304be59 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
 
-v2:
-1. fixed MMCIF resource sizes
-2. added SDHI compatibility with the actual SoC for possible future driver
-   extensions
-3. removed not directly applicable comments
+> +       sdhi3: sdhi@ee160000 {
+> +               compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
+> +               reg = <0 0xee160000 0 0x100>;
+> +               interrupt-parent = <&gic>;
+> +               interrupts = <0 168 4>;
+> +               cap-sd-highspeed;
+> +               status = "disabled";
 
- arch/arm/boot/dts/r8a7790.dtsi |   54 ++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 54 insertions(+), 0 deletions(-)
+Thanks for your update.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 339d9b1..304be59 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -54,4 +54,58 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
- 	};
-+
-+	mmcif0: mmcif@ee200000 {
-+		compatible = "renesas,sh-mmcif";
-+		reg = <0 0xee200000 0 0x80>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 169 0x4>;
-+		reg-io-width = <4>;
-+		status = "disabled";
-+	};
-+
-+	mmcif1: mmcif@ee220000 {
-+		compatible = "renesas,sh-mmcif";
-+		reg = <0 0xee220000 0 0x80>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 170 0x4>;
-+		reg-io-width = <4>;
-+		status = "disabled";
-+	};
-+
-+	sdhi0: sdhi@ee100000 {
-+		compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
-+		reg = <0 0xee100000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 165 4>;
-+		cap-sd-highspeed;
-+		status = "disabled";
-+	};
-+
-+	sdhi1: sdhi@ee120000 {
-+		compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
-+		reg = <0 0xee120000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 166 4>;
-+		cap-sd-highspeed;
-+		status = "disabled";
-+	};
-+
-+	sdhi2: sdhi@ee140000 {
-+		compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
-+		reg = <0 0xee140000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 167 4>;
-+		cap-sd-highspeed;
-+		status = "disabled";
-+	};
-+
-+	sdhi3: sdhi@ee160000 {
-+		compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
-+		reg = <0 0xee160000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 168 4>;
-+		cap-sd-highspeed;
-+		status = "disabled";
-+	};
- };
--- 
-1.7.2.5
+It looks to me that "cap-sd-highspeed" is used on all r8a7790 SDHI
+instances. Would it be possible to fold that flag into the driver and
+match on the "renesas,r8a7790-sdhi" compatible string?
 
+Thanks,
+
+/ magnus
