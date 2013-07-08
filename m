@@ -1,53 +1,44 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 10 Jul 2013 03:44:26 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: enable SMP Thumb2 kernel
-Message-Id: <CANqRtoSK9WoJJ2LOB-dRCjz5fQy8b5Cm+B+Fz9Mv3E5P6oFLQw@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Jul 2013 15:54:44 +0000
+Subject: [PATCH v3 5/7] mmc: SDHI: add DT compatibility strings for further SoCs
+Message-Id: <1373298887-9877-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373421397-1786-1-git-send-email-koba@kmckk.co.jp>
-In-Reply-To: <1373421397-1786-1-git-send-email-koba@kmckk.co.jp>
+References: <1373298887-9877-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373298887-9877-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-Hi Kobayashi-san,
+Add further OF compatibility strings to the SDHI driver to be able to
+precisely control driver's behaviour on each of them.
 
-Your patch series looks fine to me. Thanks for your contribution.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>
+---
 
-Acked-by: Magnus Damm <damm@opensource.se>
+As explained in patch 0/7, this patch can be pushed separately via the 
+mmc git-tree.
 
-On Wed, Jul 10, 2013 at 10:56 AM, Tetsuyuki Kobayashi <koba@kmckk.co.jp> wrote:
-> Hello,
->
-> I try to build SMP kernel for KZM-A9-GT board in CONFIG_THUMB2_KERNEL=y.
-> After some modification it successully boots in Thumb2 kernel.
-> In my case, Thumb2 kernel is 23% smaller than usual ARM kernel.
->
->    text    data     bss     dec     hex filename
-> 4763561  251580  196164 5211305  4f84a9 out.kzm9g/vmlinux
->
->    text    data     bss     dec     hex filename
-> 3595265  251668  196164 4043097  3db159 out.kzm9g_thumb/vmlinux
->
->
-> Useful info for Thumb2 kernel
-> https://wiki.linaro.org/WorkingGroups/KernelArchived/Thumb2Guide
->
-> This patch set is based on arm-soc git repositry,
-> remotes/origin/renesas/soc-cleanup branch
-> 53332005bfde9d2e3c9a66030c0e8c2598eaa1d5 ARM: shmobile: Remove Bonito board support
->
-> Tetsuyuki Kobayashi (3):
->   ARM: shmobile: fix compile error when CONFIG_THUMB2_KERNEL=y
->   ARM: shmobile: Force ARM mode to compile reset vector for secondary
->     CPUs
->   ARM: shmobile: Insert align directives before 4 bytes data
->
->  arch/arm/mach-shmobile/headsmp-scu.S  |    4 +++-
->  arch/arm/mach-shmobile/headsmp.S      |    6 +++++-
->  arch/arm/mach-shmobile/sleep-sh7372.S |    2 ++
->  3 files changed, 10 insertions(+), 2 deletions(-)
->
-> --
-> 1.7.9.5
->
+ drivers/mmc/host/sh_mobile_sdhi.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index cc4c872..b58c1a9 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -130,6 +130,9 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,shmobile-sdhi" },
+ 	{ .compatible = "renesas,sh7372-sdhi" },
+ 	{ .compatible = "renesas,r8a7740-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sh73a0-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,r8a73a4-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,r8a7790-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+-- 
+1.7.2.5
+
