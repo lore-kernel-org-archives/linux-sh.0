@@ -1,27 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 01 Jul 2013 01:29:26 +0000
-Subject: Re: [PATCH] ARM: shmobile: Sort r8a7790 MSTP entries
-Message-Id: <20130701012925.GB14567@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 08 Jul 2013 06:20:05 +0000
+Subject: [PATCH] ARM: shmobile: Fix EMEV2 clock comment typo
+Message-Id: <20130708062005.25694.62165.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130628101327.26876.89435.sendpatchset@w520>
- <20130701011456.GA14567@verge.net.au>
-In-Reply-To: <20130701011456.GA14567@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 01, 2013 at 10:14:57AM +0900, Simon Horman wrote:
-> On Fri, Jun 28, 2013 at 07:13:27PM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> > 
-> > The r8a7790 MSTP bits should be kept sorted in the same way
-> > as on other mach-shmobile SoCs. Move the HSCIF and thermal
-> > bits to clean up the current state.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> Thanks, I will queue this up in the cleanup branch.
+From: Magnus Damm <damm@opensource.se>
 
-I've added it to the soc branch instead as it is depended
-on by other patches that seem to make sense there.
+Update the STI timer frequency comment to 32.768 kHz to
+fix 37 kHz typo.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against "renesas-next-20130704v2"
+
+ arch/arm/mach-shmobile/clock-emev2.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-emev2.c
++++ work/arch/arm/mach-shmobile/clock-emev2.c	2013-07-08 15:05:16.000000000 +0900
+@@ -203,7 +203,7 @@ void __init emev2_clock_init(void)
+ 	smu_base = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
+ 	BUG_ON(!smu_base);
+ 
+-	/* setup STI timer to run on 37.768 kHz and deassert reset */
++	/* setup STI timer to run on 32.768 kHz and deassert reset */
+ 	emev2_smu_write(0, STI_CLKSEL);
+ 	emev2_smu_write(1, STI_RSTCTRL);
+ 
