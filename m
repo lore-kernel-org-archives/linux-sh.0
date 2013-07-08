@@ -1,119 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:11 +0000
-Subject: [PATCH v2 19/27] sh-pfc: sh7734: Use the common GP port style macros
-Message-Id: <1373933479-17727-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Jul 2013 15:54:39 +0000
+Subject: [PATCH v3 0/7] ARM: shmobile: DMAC, MMCIF and SDHI for H2 and APE6
+Message-Id: <1373298887-9877-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-The SoC has a bank-style PFC. Replace the custom-defined macros with
-common macros from sh-pfc.h.
+These patches add support for DMA, MMCIF and SDHI controllers to non-DT 
+APE6EVM and Lager board implementations, and MMCIF and SDHI DT templates 
+for APE6 and H2 SoCs.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-sh7734.c | 56 +++++++++++++++----------------------
- drivers/pinctrl/sh-pfc/sh_pfc.h     | 17 -----------
- 2 files changed, 22 insertions(+), 51 deletions(-)
+A note concerning SDHI OF compatibility strings. Patch 5 of this series 
+adds OF compatibility strings for sh73a0, r8a73a4, r8a7790 to make it 
+possible to use correct SoC names instead of a supposedly compatible one. 
+Patches 6 and 7 then use those names in SDHI DT templates on r8a73a4 and 
+r8a7790. This doesn't directly impose a commit order dependency, since 
+those templates are added in a disabled state. Therefore these patches 
+can be pushed upstream via different git-trees. Only when specific boards 
+enable SDHI interfaces in their .dts files, only then will it be 
+important to have both respective patches in the kernel: the drivers/mmc 
+patch and the respective SoC .dtsi patch. It is therefore proposed to 
+push these patches to 3.12 and to begin enabling SDHI interfaces in 
+respective board .dtsi files from 3.13. Also note, that sh73a0 is already 
+using "renesas,r8a7740-sdhi" compatibility in its .dtsi. After patch 5 
+this still will work, but it also will become possible to use a more 
+obvious "renesas,sh73a0-sdhi" OF compatibility string.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index 537a639..ec0c47c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -14,42 +14,30 @@
- 
- #include "sh_pfc.h"
- 
--#define CPU_32_PORT5(fn, pfx, sfx)				\
--	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
--	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
--	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
--	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
--	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx),	\
--	PORT_1(fn, pfx##10, sfx), PORT_1(fn, pfx##11, sfx)
--
--/* GPSR0 - GPSR5 */
--#define CPU_ALL_PORT(fn, pfx, sfx)				\
--	PORT_32(fn, pfx##_0_, sfx),			\
--	PORT_32(fn, pfx##_1_, sfx),				\
--	PORT_32(fn, pfx##_2_, sfx),				\
--	PORT_32(fn, pfx##_3_, sfx),				\
--	PORT_32(fn, pfx##_4_, sfx),				\
--	CPU_32_PORT5(fn, pfx##_5_, sfx)
--
--#undef _GP_GPIO
--#undef _GP_DATA
--#undef GP_ALL
--#undef PINMUX_GPIO_GP_ALL
--#undef PINMUX_DATA_GP_ALL
--
--#define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
--#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
--				       GP##pfx##_IN, GP##pfx##_OUT)
-+#define PORT_GP_12(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 0, fn, sfx),  PORT_GP_1(bank, 1, fn, sfx),	\
-+	PORT_GP_1(bank, 2, fn, sfx),  PORT_GP_1(bank, 3, fn, sfx),	\
-+	PORT_GP_1(bank, 4, fn, sfx),  PORT_GP_1(bank, 5, fn, sfx),	\
-+	PORT_GP_1(bank, 6, fn, sfx),  PORT_GP_1(bank, 7, fn, sfx),	\
-+	PORT_GP_1(bank, 8, fn, sfx),  PORT_GP_1(bank, 9, fn, sfx),	\
-+	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx)
-+
-+#define CPU_ALL_PORT(fn, sfx)						\
-+	PORT_GP_32(0, fn, sfx),						\
-+	PORT_GP_32(1, fn, sfx),						\
-+	PORT_GP_32(2, fn, sfx),						\
-+	PORT_GP_32(3, fn, sfx),						\
-+	PORT_GP_32(4, fn, sfx),						\
-+	PORT_GP_12(5, fn, sfx)
- 
--#define _GP_INOUTSEL(pfx, sfx) GP##pfx##_IN, GP##pfx##_OUT
--#define _GP_INDT(pfx, sfx) GP##pfx##_DATA
--
--#define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
--#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
-+#undef _GP_DATA
-+#define _GP_DATA(bank, pin, name, sfx)					\
-+	PINMUX_DATA(name##_DATA, name##_FN, name##_IN, name##_OUT)
- 
--#define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
--#define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
-+#define _GP_INOUTSEL(bank, pin, name, sfx)	name##_IN, name##_OUT
-+#define _GP_INDT(bank, pin, name, sfx)		name##_DATA
-+#define GP_INOUTSEL(bank)	PORT_GP_32_REV(bank, _GP_INOUTSEL, unused)
-+#define GP_INDT(bank)		PORT_GP_32_REV(bank, _GP_INDT, unused)
- 
- enum {
- 	PINMUX_RESERVED = 0,
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index f7c5b80..05b905f 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -238,23 +238,6 @@ struct sh_pfc_soc_info {
- 	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),		\
- 	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
- 
--#define PORT_10_REV(fn, pfx, sfx)					\
--	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),		\
--	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),		\
--	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),		\
--	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),		\
--	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
--
--#define PORT_32(fn, pfx, sfx)						\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),		\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),		\
--	PORT_1(fn, pfx##31, sfx)
--
--#define PORT_32_REV(fn, pfx, sfx)					\
--	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),		\
--	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
--	PORT_10_REV(fn, pfx, sfx)
--
- #define PORT_90(fn, pfx, sfx) \
- 	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),		\
- 	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),		\
+Developed and tested on top of Simon's renesas.git next snapshot of
+08.07.2013.
+
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>
+
+Guennadi Liakhovetski (7):
+  ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
+  ARM: shmobile: ape6evm: add MMCIF support
+  ARM: shmobile: ape6evm: add SDHI interfaces
+  ARM: shmobile: lager: add MMCIF support
+  mmc: SDHI: add DT compatibility strings for further SoCs
+  ARM: shmobile: r8a73a4: add MMCIF and SDHI DT templates
+  ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
+
+ arch/arm/boot/dts/r8a73a4.dtsi                |   45 ++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                |   54 +++++++++++++++
+ arch/arm/mach-shmobile/board-ape6evm.c        |   81 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-lager.c          |   31 +++++++++
+ arch/arm/mach-shmobile/clock-r8a73a4.c        |    4 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    9 +++
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |   90 +++++++++++++++++++++++++
+ drivers/mmc/host/sh_mobile_sdhi.c             |    3 +
+ 8 files changed, 316 insertions(+), 1 deletions(-)
+
 -- 
-1.8.1.5
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
