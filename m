@@ -1,36 +1,85 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Jul 2013 01:23:02 +0000
-Subject: Re: [PATCH 00/08] ARM: shmobile: EMEV2 and KZM9D update
-Message-Id: <20130704012301.GC13029@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Jul 2013 15:54:46 +0000
+Subject: [PATCH v3 7/7] ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
+Message-Id: <1373298887-9877-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130702092725.32066.54861.sendpatchset@w520>
-In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jul 02, 2013 at 06:27:25PM +0900, Magnus Damm wrote:
-> ARM: shmobile: EMEV2 and KZM9D update
-> 
-> [PATCH 01/08] ARM: shmobile: Remove unused EMEV2/KZM9D early console
-> [PATCH 02/08] ARM: shmobile: Update KZM9D dts command line
-> [PATCH 03/08] ARM: shmobile: Make EMEV2 platform devices more compact
-> [PATCH 04/08] ARM: shmobile: Add GIO to EMEV2 dtsi
-> [PATCH 05/08] ARM: shmobile: Use DT for GIC on EMEV2 and KZM9D
-> [PATCH 06/08] ARM: shmobile: Use DT for SMP on EMEV2 and KZM9D
-> [PATCH 07/08] ARM: shmobile: EMEV2 map_io update
-> [PATCH 08/08] ARM: shmobile: Disconnect EMEV2 SMP code from clocks
-> 
-> Several minor updates for the EMEV2 SoC and the KZM9D board:
-> - Get rid of early console - the 8250-em driver does not support it
-> - Update command line in DTS and remove old cruft
-> - Make the EMEV2 platform devices more compact
-> - Add GIO device nodes to the EMEV2 dtsi
-> - Use DT for GIC and SMP for both regular KZM9D board code and DT
-> - Reduce the size of the EMEV2 map_io - SCU is still however needed
-> - Allow EMEV2 SMP to operate without legacy clock bits
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+This adds DT templates for all MMCIF and SDHI controllers on r8a7790.
+They are added with status="disabled". To use them platform-specific
+DTs have to enable the required ones.
 
-Thanks, I have queued up all these patches for v3.12.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   54 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 54 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 339d9b1..9cd8820 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -54,4 +54,58 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
+ 	};
++
++	mmcif0: mmcif@ee200000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee200000 0 0x80>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 169 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	mmcif1: mmcif@ee220000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee220000 0 0x80>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 170 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	sdhi0: sdhi@ee100000 {
++		compatible = "renesas,r8a7790-sdhi";
++		reg = <0 0xee100000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 165 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi1: sdhi@ee120000 {
++		compatible = "renesas,r8a7790-sdhi";
++		reg = <0 0xee120000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 166 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi2: sdhi@ee140000 {
++		compatible = "renesas,r8a7790-sdhi";
++		reg = <0 0xee140000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi3: sdhi@ee160000 {
++		compatible = "renesas,r8a7790-sdhi";
++		reg = <0 0xee160000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 168 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
+ };
+-- 
+1.7.2.5
+
