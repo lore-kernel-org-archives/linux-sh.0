@@ -1,32 +1,76 @@
-From: Yinghai Lu <yinghai@kernel.org>
-Date: Fri, 26 Jul 2013 12:42:11 +0000
-Subject: Re: [PATCH 1/2] PCI: hotplug: Convert to be builtin only, not modular
-Message-Id: <CAE9FiQVNYB7z7e1s=1PGsgQe_kexy+7V10WAxkReA-kiQ=10yg@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Jul 2013 15:54:45 +0000
+Subject: [PATCH v3 6/7] ARM: shmobile: r8a73a4: add MMCIF and SDHI DT templates
+Message-Id: <1373298887-9877-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130725175242.6006.56007.stgit@bhelgaas-glaptop>
-	<20130725175720.6006.96448.stgit@bhelgaas-glaptop>
-In-Reply-To: <20130725175720.6006.96448.stgit@bhelgaas-glaptop>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, Fenghua Yu <fenghua.yu@intel.com>, Tony Luck <tony.luck@intel.com>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, "Rafael J. Wysocki" <rjw@sisk.pl>, Paul Mundt <lethal@linux-sh.org>, Paul Mackerras <paulus@samba.org>, linuxppc-dev@lists.ozlabs.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Jul 25, 2013 at 10:57 AM, Bjorn Helgaas <bhelgaas@google.com> wrote:
-> Convert CONFIG_HOTPLUG_PCI from tristate to bool.  This only affects
-> the hotplug core; several of the hotplug drivers can still be modules.
->
-> Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
-> ---
->  arch/ia64/configs/generic_defconfig    |    2 +-
->  arch/ia64/configs/gensparse_defconfig  |    2 +-
->  arch/ia64/configs/tiger_defconfig      |    2 +-
->  arch/ia64/configs/xen_domu_defconfig   |    2 +-
->  arch/powerpc/configs/ppc64_defconfig   |    2 +-
->  arch/powerpc/configs/ppc64e_defconfig  |    2 +-
->  arch/powerpc/configs/pseries_defconfig |    2 +-
->  arch/sh/configs/sh03_defconfig         |    2 +-
->  drivers/pci/hotplug/Kconfig            |    5 +----
->  9 files changed, 9 insertions(+), 12 deletions(-)
+This adds DT templates for all MMCIF and SDHI controllers on r8a73a4.
+They are added with status="disabled". To use them platform-specific
+DTs have to enable the required ones.
 
-Acked-by: Yinghai Lu <yinghai@kernel.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi |   45 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 45 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 4e1ddf0..6ce699b 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -166,4 +166,49 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 173 0x4>;
+ 	};
++
++	mmcif0: mmcif@ee200000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee200000 0 0x80>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 169 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	mmcif1: mmcif@ee220000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0 0xee220000 0 0x80>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 170 0x4>;
++		reg-io-width = <4>;
++		status = "disabled";
++	};
++
++	sdhi0: sdhi@ee100000 {
++		compatible = "renesas,r8a73a4-sdhi";
++		reg = <0 0xee100000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 165 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi1: sdhi@ee120000 {
++		compatible = "renesas,r8a73a4-sdhi";
++		reg = <0 0xee120000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 166 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
++
++	sdhi2: sdhi@ee140000 {
++		compatible = "renesas,r8a73a4-sdhi";
++		reg = <0 0xee140000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 4>;
++		cap-sd-highspeed;
++		status = "disabled";
++	};
+ };
+-- 
+1.7.2.5
+
