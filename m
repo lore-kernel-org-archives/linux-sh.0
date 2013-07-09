@@ -1,54 +1,41 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 08 Jul 2013 03:51:58 +0000
-Subject: Re: [PATCH v2 6/6] ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
-Message-Id: <CANqRtoQjUUNSWr8SkiOwNbhQBrkBMWzPJ9vBEmqUe6L8bck8hw@mail.gmail.com>
+Date: Tue, 09 Jul 2013 10:40:01 +0000
+Subject: [PATCH 02/04] ARM: shmobile: Use pm-rmobile on sh7372 and r8a7740 only
+Message-Id: <20130709104001.1891.16375.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373037932-19918-7-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373037932-19918-7-git-send-email-g.liakhovetski@gmx.de>
+References: <20130709103944.1891.67462.sendpatchset@w520>
+In-Reply-To: <20130709103944.1891.67462.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-HI Guennadi,
+From: Magnus Damm <damm@opensource.se>
 
-On Sat, Jul 6, 2013 at 12:25 AM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> This adds DT templates for all MMCIF and SDHI controllers on r8a7790.
-> They are added with status="disabled". To use them platform-specific
-> DTs have to enable the required ones.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
->
-> v2:
-> 1. fixed MMCIF resource sizes
-> 2. added SDHI compatibility with the actual SoC for possible future driver
->    extensions
-> 3. removed not directly applicable comments
->
->  arch/arm/boot/dts/r8a7790.dtsi |   54 ++++++++++++++++++++++++++++++++++++++++
->  1 files changed, 54 insertions(+), 0 deletions(-)
->
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index 339d9b1..304be59 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+The functions in pm-rmobile.c are only used on sh7372 and
+r8a7740, so adjust the Makefile to only link in that file
+in case those SoCs are selected.
 
-> +       sdhi3: sdhi@ee160000 {
-> +               compatible = "renesas,r8a7790-sdhi", "renesas,r8a7740-sdhi";
-> +               reg = <0 0xee160000 0 0x100>;
-> +               interrupt-parent = <&gic>;
-> +               interrupts = <0 168 4>;
-> +               cap-sd-highspeed;
-> +               status = "disabled";
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Thanks for your update.
+ arch/arm/mach-shmobile/Makefile |    7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-It looks to me that "cap-sd-highspeed" is used on all r8a7790 SDHI
-instances. Would it be possible to fold that flag into the driver and
-match on the "renesas,r8a7790-sdhi" compatible string?
-
-Thanks,
-
-/ magnus
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-07-09 18:50:08.000000000 +0900
+@@ -28,11 +28,10 @@ obj-$(CONFIG_ARCH_R8A7740)	+= entry-intc
+ # PM objects
+ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+-obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
+-obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
++obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
++obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
++obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ 
+ # Board objects
+ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
