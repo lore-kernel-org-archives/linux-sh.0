@@ -1,38 +1,90 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 09 Jul 2013 21:06:37 +0000
-Subject: Re: [PATCH 01/04] ARM: shmobile: Only build clocks when COMMON_CLK=n
-Message-Id: <201307092306.38004.arnd@arndb.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 09 Jul 2013 05:52:59 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7778: add usb phy power control function
+Message-Id: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130709054331.14007.66068.sendpatchset@w520>
- <1774541.9WRl3VrJqz@avalon>
- <CANqRtoRJhrbT4NMv4e7NwvXj0JoO001ShtjSwdquv7x-7dxKeA@mail.gmail.com>
-In-Reply-To: <CANqRtoRJhrbT4NMv4e7NwvXj0JoO001ShtjSwdquv7x-7dxKeA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tuesday 09 July 2013, Magnus Damm wrote:
-> >>
-> >> +ifndef CONFIG_COMMON_CLK
-> >>  obj-$(CONFIG_ARCH_SH7372)      += setup-sh7372.o intc-sh7372.o
-> >>  obj-$(CONFIG_ARCH_SH73A0)      += setup-sh73a0.o intc-sh73a0.o
-> >>  obj-$(CONFIG_ARCH_R8A73A4)     += setup-r8a73a4.o
-> >>  obj-$(CONFIG_ARCH_R8A7740)     += setup-r8a7740.o intc-r8a7740.o
-> >>  obj-$(CONFIG_ARCH_R8A7778)     += setup-r8a7778.o
-> >>  obj-$(CONFIG_ARCH_R8A7779)     += setup-r8a7779.o intc-r8a7779.o
-> >>  obj-$(CONFIG_ARCH_R8A7790)     += setup-r8a7790.o
-> >>  obj-$(CONFIG_ARCH_EMEV2)       += setup-emev2.o
-> >> +endif
-> >
-> > I was about to mention the same, so I think that would be a good idea.
-> 
-> Sure, that may be a more common way to handle this. =)
-> 
-> To be clear, I assume you wanted that ifndef to cover the clock-xxx.c
-> files instead of setup-xxx.c. So I will do that in next version.
-> 
+USB phy initialisation function is needed from not only
+USB Host but also USB Function too.
+This patch adds usb phy common control function.
 
-Yes, that's right, sorry for screwing up the example.
+Tested-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7778.c |   35 ++++++++++++++++++++++----------
+ 1 file changed, 24 insertions(+), 11 deletions(-)
 
-	Arnd
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 2a101eb..cd98079 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -109,29 +109,44 @@ void __init r8a7778_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
+ 					  pdata, sizeof(*pdata));
+ }
+ 
+-/* USB */
+-static struct usb_phy *phy;
+-
+-static int usb_power_on(struct platform_device *pdev)
++static int r8a7778_usb_phy_power(int enable)
+ {
++	static struct usb_phy *phy = NULL;
++	int ret = 0;
++
++	if (!phy)
++		phy = usb_get_phy(USB_PHY_TYPE_USB2);
++
+ 	if (IS_ERR(phy))
+ 		return PTR_ERR(phy);
+ 
++	if (enable)
++		ret = usb_phy_init(phy);
++	else
++		usb_phy_shutdown(phy);
++
++	return ret;
++}
++
++/* USB */
++static int usb_power_on(struct platform_device *pdev)
++{
++	int ret = r8a7778_usb_phy_power(1);
++
++	if (ret)
++		return ret;
++
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_get_sync(&pdev->dev);
+ 
+-	usb_phy_init(phy);
+-
+ 	return 0;
+ }
+ 
+ static void usb_power_off(struct platform_device *pdev)
+ {
+-	if (IS_ERR(phy))
++	if (r8a7778_usb_phy_power(0))
+ 		return;
+ 
+-	usb_phy_shutdown(phy);
+-
+ 	pm_runtime_put_sync(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+ }
+@@ -359,8 +374,6 @@ void __init r8a7778_add_standard_devices(void)
+ 
+ void __init r8a7778_init_late(void)
+ {
+-	phy = usb_get_phy(USB_PHY_TYPE_USB2);
+-
+ 	platform_device_register_full(&ehci_info);
+ 	platform_device_register_full(&ohci_info);
+ }
+-- 
+1.7.9.5
+
