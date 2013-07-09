@@ -1,54 +1,76 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 10 Jul 2013 12:02:15 +0000
-Subject: Re: [PATCH 3/4 v2] RM: shmobile: r8a7778: add r8a7778_add_usb_func_device()
-Message-Id: <51DD4D47.8050109@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 09 Jul 2013 05:43:50 +0000
+Subject: [PATCH 02/04] ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
+Message-Id: <20130709054350.14007.24354.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87siznuozu.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87siznuozu.wl%kuninori.morimoto.gx@renesas.com>
+References: <20130709054331.14007.66068.sendpatchset@w520>
+In-Reply-To: <20130709054331.14007.66068.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 10-07-2013 6:29, Kuninori Morimoto wrote:
+Add ARCH_SHMOBILE_MULTI to mach-shmobile that can be used
+to enable ARCH_MULTIPLATFORM on selected SoCs and boards.
 
-> This patch adds USB Function (= renesas_usbhs) driver support.
-> r8a7778_add_usb_phy_device()  should be called from .init_machine,
-> r8a7778_add_usb_func_device() should be called from .init_late
-> when platform use it.
+The headers stay under arch/arm/mach-shmobile/include/mach/
+for now, they can and will be migrated independently over time.
 
-> This r8a7778_add_usb_func_device() will fill
-> renesas_usbhs_platform_info::platform_callback.get_id and
-> renesas_usbhs_platform_info::platform_callback.power_ctrl
-> if these callbacks were NULL, since these don't depend
-> on platform basically.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> Tested-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[...]
+ arch/arm/Makefile               |    1 +
+ arch/arm/mach-shmobile/Kconfig  |   21 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Makefile |    2 ++
+ 3 files changed, 24 insertions(+)
 
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-> index 9ea1e25..b059ccd 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7778.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-> @@ -153,6 +153,7 @@ static void usb_power_off(struct platform_device *pdev)
->   	pm_runtime_disable(&pdev->dev);
->   }
->
-> +/* USB HOST */
-
-    s/HOST/Host/ to at least be consistent with the later comment.
-
->   static int ehci_init_internal_buffer(struct usb_hcd *hcd)
->   {
->   	/*
-> @@ -211,6 +212,44 @@ void __init r8a7778_add_usb_host_device(void)
->   	platform_device_register_full(&ohci_info);
->   }
->
-> +/* USB Func */
-
-WBR, Sergei
-
+--- 0001/arch/arm/Makefile
++++ work/arch/arm/Makefile	2013-07-08 19:17:00.000000000 +0900
+@@ -181,6 +181,7 @@ machine-$(CONFIG_ARCH_EXYNOS)		+= exynos
+ machine-$(CONFIG_ARCH_SA1100)		+= sa1100
+ machine-$(CONFIG_ARCH_SHARK)		+= shark
+ machine-$(CONFIG_ARCH_SHMOBILE) 	+= shmobile
++machine-$(CONFIG_ARCH_SHMOBILE_MULTI) 	+= shmobile
+ machine-$(CONFIG_ARCH_TEGRA)		+= tegra
+ machine-$(CONFIG_ARCH_U300)		+= u300
+ machine-$(CONFIG_ARCH_U8500)		+= ux500
+--- 0002/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-07-08 19:19:21.000000000 +0900
+@@ -1,3 +1,24 @@
++config ARCH_SHMOBILE_MULTI
++	bool "SH-Mobile Series" if ARCH_MULTI_V7
++	depends on MMU
++	select CPU_V7
++	select GENERIC_CLOCKEVENTS
++	select HAVE_ARM_SCU if SMP
++	select HAVE_ARM_TWD if LOCAL_TIMERS
++	select HAVE_SMP
++	select ARM_GIC
++	select MIGHT_HAVE_CACHE_L2X0
++	select NO_IOPORT
++	select PINCTRL
++	select ARCH_REQUIRE_GPIOLIB
++	select CLKDEV_LOOKUP
++
++if ARCH_SHMOBILE_MULTI
++
++comment "SH-Mobile System Type"
++
++endif
++
+ if ARCH_SHMOBILE
+ 
+ comment "SH-Mobile System Type"
+--- 0003/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-07-08 19:18:20.000000000 +0900
+@@ -2,6 +2,8 @@
+ # Makefile for the linux kernel.
+ #
+ 
++ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/arch/arm/mach-shmobile/include
++
+ # Common objects
+ obj-y				:= timer.o console.o
+ 
