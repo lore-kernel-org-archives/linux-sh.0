@@ -1,35 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 25 Jul 2013 23:26:43 +0000
-Subject: [PATCH 07/12] mmc: sh_mmcif: Remove .down_pwr() callback from platform data
-Message-Id: <1374794808-21890-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 09 Jul 2013 09:13:22 +0000
+Subject: [PATCH] mmc: TMIO: update Device Tree binding documentation
+Message-Id: <Pine.LNX.4.64.1307091110540.28812@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>
 
-The callback isn't used by the driver and isn't initialized by board
-code. Remove it.
+The SDHI mmc-tmio implementation has been updated to cover additional SoC
+types. This patch documents the changes.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- include/linux/mmc/sh_mmcif.h | 1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index e7d5dd6..39011eb 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -34,7 +34,6 @@
+Now, that the patch "mmc: SDHI: add DT compatibility strings for further 
+SoCs" has been approved, it shall be accompanied by this documentation 
+update.
+
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   13 +++++++++----
+ 1 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+index df204e1..ec6f5bd 100644
+--- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
++++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+@@ -13,8 +13,13 @@ Optional properties:
+ - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
  
- struct sh_mmcif_plat_data {
- 	void (*set_pwr)(struct platform_device *pdev, int state);
--	void (*down_pwr)(struct platform_device *pdev);
- 	int (*get_cd)(struct platform_device *pdef);
- 	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
- 	unsigned int		slave_id_rx;
+ When used with Renesas SDHI hardware, the following compatibility strings
+-configure various model-specific properties:
++configure properties, specific to the respective SoC model:
+ 
+-"renesas,sh7372-sdhi":	(default) compatible with SH7372
+-"renesas,r8a7740-sdhi":	compatible with R8A7740: certain MMC/SD commands have to
+-			wait for the interface to become idle.
++"renesas,shmobile-sdhi":	generic SDHI block
++"renesas,sh7372-sdhi":		SDHI block, used on SH7372 (SH-Mobile AP4)
++"renesas,sh73a0-sdhi":		SDHI block, used on SH73A0 (SH-Mobile AG5)
++"renesas,r8a73a4-sdhi":		SDHI block, used on R8A73A4 (R-Mobile APE6)
++"renesas,r8a7740-sdhi":		SDHI block, used on R8A7740 (R-Mobile A1)
++"renesas,r8a7778-sdhi":		SDHI block, used on R8A7778 (R-Car M1A)
++"renesas,r8a7779-sdhi":		SDHI block, used on R8A7779 (R-Car H1)
++"renesas,r8a7790-sdhi":		SDHI block, used on R8A7790 (R-Car H2)
 -- 
-1.8.1.5
+1.7.2.5
 
