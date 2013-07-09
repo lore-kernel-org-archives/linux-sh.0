@@ -1,80 +1,76 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:50 +0000
-Subject: [PATCH 11/19] ARM: shmobile: armadillo-reference: Move pinctrl mappings to device tree
-Message-Id: <5d244563da5326d66ca839b06dbc6f632d2f24df.1374625203.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 09 Jul 2013 05:43:59 +0000
+Subject: [PATCH 03/04] ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
+Message-Id: <20130709054359.14007.23619.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
+References: <20130709054331.14007.66068.sendpatchset@w520>
+In-Reply-To: <20130709054331.14007.66068.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+Enable build of EMEV2 and KZM9D DT Reference in
+case of ARCH_MULTIPLATFORM and ARCH_SHMOBILE_MULTI.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+A weak symbol covers the case when the clock-emev2.c
+file is not built when COMMON_CLK=y.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 10 ++++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  9 ---------
- 2 files changed, 10 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 09ea22c..4a7ae32 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -43,3 +43,13 @@
- 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
- 	};
- };
-+
-+&pfc {
-+	pinctrl-0 = <&scifa1_pins>;
-+	pinctrl-names = "default";
-+
-+	scifa1_pins: scifa1 {
-+		renesas,groups = "scifa1_data";
-+		renesas,function = "scifa1";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index f25b6aa..4ddd299 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,7 +24,6 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <linux/io.h>
--#include <linux/pinctrl/machine.h>
- #include <mach/common.h>
- #include <mach/r8a7740.h>
- #include <asm/mach/arch.h>
-@@ -119,12 +118,6 @@
-  *	usbhsf_power_ctrl()
-  */
+ arch/arm/boot/dts/Makefile           |    1 +
+ arch/arm/mach-shmobile/Kconfig       |   15 +++++++++++++++
+ arch/arm/mach-shmobile/setup-emev2.c |    5 +++++
+ 3 files changed, 21 insertions(+)
+
+--- 0002/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2013-07-09 13:10:52.000000000 +0900
+@@ -171,6 +171,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm
+ 	sh73a0-kzm9g-reference.dtb \
+ 	r8a73a4-ape6evm.dtb \
+ 	sh7372-mackerel.dtb
++dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
+ 	socfpga_vt.dtb
+ dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
+--- 0004/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-07-09 13:03:45.000000000 +0900
+@@ -17,6 +17,21 @@ if ARCH_SHMOBILE_MULTI
  
--static const struct pinctrl_map eva_pinctrl_map[] = {
--	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
--				  "scifa1_data", "scifa1"),
--};
--
- static void __init eva_clock_init(void)
+ comment "SH-Mobile System Type"
+ 
++config ARCH_EMEV2
++	bool "Emma Mobile EV2"
++
++comment "SH-Mobile Board Type"
++
++config MACH_KZM9D_REFERENCE
++	bool "KZM9D board - Reference Device Tree Implementation"
++	depends on ARCH_EMEV2
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	---help---
++	   Use reference implementation of KZM9D board support
++	   which makes a greater use of device tree at the expense
++	   of not supporting a number of devices.
++
++	   This is intended to aid developers
+ endif
+ 
+ if ARCH_SHMOBILE
+--- 0001/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-09 13:03:45.000000000 +0900
+@@ -190,6 +190,11 @@ void __init emev2_add_standard_devices(v
+ 	emev2_register_pmu();
+ }
+ 
++void __init __weak emev2_clock_init(void)
++{
++	/* in case legacy clocks are disabled then do nothing */
++}
++
+ void __init emev2_init_delay(void)
  {
- 	struct clk *system	= clk_get(NULL, "system_clk");
-@@ -169,8 +162,6 @@ static void __init eva_init(void)
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	eva_clock_init();
- 
--	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--
- 	r8a7740_meram_workaround();
- 
- #ifdef CONFIG_CACHE_L2X0
--- 
-1.8.2.1
-
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
