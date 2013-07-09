@@ -1,65 +1,44 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 01 Jul 2013 07:48:53 +0000
-Subject: Re: [PATCH 01/04] ARM: shmobile: Use default ->init_irq() on EMEV2
-Message-Id: <CANqRtoSJ=Vmvz9OdJQzgMZ8y2qyVUh3PivXhUVVGaxaurZNu2Q@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 09 Jul 2013 07:43:40 +0000
+Subject: [PATCH v4 5/7] mmc: SDHI: add DT compatibility strings for further SoCs
+Message-Id: <Pine.LNX.4.64.1307090940310.28812@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130701060103.21728.83833.sendpatchset@w520>
- <20130701060112.21728.37189.sendpatchset@w520>
- <20130701073237.GU14567@verge.net.au>
-In-Reply-To: <20130701073237.GU14567@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Simon, Maxime, everyone,
+Add further OF compatibility strings to the SDHI driver to be able to
+precisely control driver's behaviour on each of them.
 
-On Mon, Jul 1, 2013 at 4:32 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Jul 01, 2013 at 03:01:12PM +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> Remove redundant irqchip_init() callback. The default case
->> of NULL will result in invoking irqchip_init() anyway.
->>
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->> ---
->>
->>  arch/arm/mach-shmobile/setup-emev2.c |    2 --
->>  1 file changed, 2 deletions(-)
->>
->> --- 0005/arch/arm/mach-shmobile/setup-emev2.c
->> +++ work/arch/arm/mach-shmobile/setup-emev2.c 2013-07-01 13:33:39.000000000 +0900
->> @@ -20,7 +20,6 @@
->>  #include <linux/init.h>
->>  #include <linux/interrupt.h>
->>  #include <linux/irq.h>
->> -#include <linux/irqchip.h>
->>  #include <linux/platform_device.h>
->>  #include <linux/platform_data/gpio-em.h>
->>  #include <linux/of_platform.h>
->> @@ -445,7 +444,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma
->>       .smp            = smp_ops(emev2_smp_ops),
->>       .init_early     = emev2_init_delay,
->>       .nr_irqs        = NR_IRQS_LEGACY,
->> -     .init_irq       = irqchip_init,
->>       .dt_compat      = emev2_boards_compat_dt,
->>  MACHINE_END
->
-> Hi Magnus,
->
-> I mistakenly dropped the following patch from Maxime Ripard from
-> v3.11. I have re-queued it up, for v3.12, in the cleanup branch:
->
-> commit 4042de1229ecf083890d8ad5c9327e03b648c1a2
-> Author: Maxime Ripard <maxime.ripard@free-electrons.com>
-> Date:   Sun May 26 22:05:23 2013 +0900
->
->     ARM: shmobile: emev2: Remove init_irq declaration in machine description
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-Thanks for going through earlier submitted patches and picking them
-up. Of course I welcome the contribution by Maxime so please use his
-code over mine wherever possible.
+v4:
+1. added r8a7778 and r8a7779 per Morimoto-san's request
+2. sh* and r8a* entries now sorted alphabetically
 
-Cheers,
+ drivers/mmc/host/sh_mobile_sdhi.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-/ magnus
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index cc4c872..dc4f0e0 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -129,7 +129,12 @@ static const struct sh_mobile_sdhi_ops sdhi_ops = {
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,shmobile-sdhi" },
+ 	{ .compatible = "renesas,sh7372-sdhi" },
++	{ .compatible = "renesas,sh73a0-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,r8a73a4-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,r8a7740-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,r8a7778-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,r8a7779-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,r8a7790-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+-- 
+1.7.2.5
+
