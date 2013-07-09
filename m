@@ -1,32 +1,33 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 19:01:46 +0000
-Subject: [PATCH 04/13] ARM: shmobile: Use default ->init_time() on r8a7779
-Message-Id: <20130731190146.31796.53837.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 09 Jul 2013 05:51:51 +0000
+Subject: [PATCH 0/4] ARM: shmobile: r8a7778: add USB Func support
+Message-Id: <87fvvoth57.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731190110.31796.96552.sendpatchset@w520>
-In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
+Hi Simon
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+These patches add USB Func support on r8a7778/BockW.
+These are based on renesas-next-20130704v2 tag
+
+Kuninori Morimoto (4):
+      ARM: shmobile: r8a7778: add usb phy power control function
+      ARM: shmobile: r8a7778: add r8a7778_add_usb_host_device()
+      ARM: shmobile: r8a7778: add r8a7778_add_usb_func_device()
+      ARM: shmobile: bockw: add USB Function support
+
+ arch/arm/mach-shmobile/board-bockw.c          |   56 ++++++++++++++--
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    5 +-
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   86 +++++++++++++++++++------
+ 4 files changed, 125 insertions(+), 23 deletions(-)
+
+
+
+Best regards
 ---
-
- arch/arm/mach-shmobile/setup-r8a7779.c |    1 -
- 1 file changed, 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2013-08-01 03:03:30.000000000 +0900
-@@ -667,7 +667,6 @@ DT_MACHINE_START(R8A7779_DT, "Generic R8
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= r8a7779_add_standard_devices_dt,
--	.init_time	= shmobile_timer_init,
- 	.init_late	= r8a7779_init_late,
- 	.dt_compat	= r8a7779_compat_dt,
- MACHINE_END
+Kuninori Morimoto
