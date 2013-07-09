@@ -1,62 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 09 Jul 2013 04:26:54 +0000
-Subject: [PATCH] ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference
-Message-Id: <20130709042654.13658.20164.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 09 Jul 2013 11:45:17 +0000
+Subject: Re: [PATCH] ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference
+Message-Id: <51DBF7CD.8040009@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130709042654.13658.20164.sendpatchset@w520>
+In-Reply-To: <20130709042654.13658.20164.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hello.
 
-Add support for the SMSC ethernet controller found
-on the KZM9D board to the KZM9D DT Reference code.
+On 09-07-2013 8:26, Magnus Damm wrote:
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+> From: Magnus Damm <damm@opensource.se>
 
- Built on top of renesas-next-20130704v2 and
- [PATCH] ARM: shmobile: KZM9D DT reference implementation
+> Add support for the SMSC ethernet controller found
+> on the KZM9D board to the KZM9D DT Reference code.
 
- arch/arm/boot/dts/emev2-kzm9d-reference.dts |   31 +++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
 
---- 0002/arch/arm/boot/dts/emev2-kzm9d-reference.dts
-+++ work/arch/arm/boot/dts/emev2-kzm9d-reference.dts	2013-07-09 13:06:47.000000000 +0900
-@@ -23,4 +23,35 @@
- 	chosen {
- 		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
- 	};
-+
-+	reg_1p8v: regulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-1.8V";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <1800000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
-+
-+	reg_3p3v: regulator@1 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
-+
-+	lan9220@20000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x20000000 0x10000>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&gpio0>;
-+		interrupts = <1 1>;	/* active high */
-+		reg-io-width = <4>;
-+		smsc,irq-active-high;
-+		smsc,irq-push-pull;
-+		vddvario-supply = <&reg_1p8v>;
-+		vdd33a-supply = <&reg_3p3v>;
-+	};
- };
+>   Built on top of renesas-next-20130704v2 and
+>   [PATCH] ARM: shmobile: KZM9D DT reference implementation
+
+>   arch/arm/boot/dts/emev2-kzm9d-reference.dts |   31 +++++++++++++++++++++++++++
+>   1 file changed, 31 insertions(+)
+
+> --- 0002/arch/arm/boot/dts/emev2-kzm9d-reference.dts
+> +++ work/arch/arm/boot/dts/emev2-kzm9d-reference.dts	2013-07-09 13:06:47.000000000 +0900
+> @@ -23,4 +23,35 @@
+[...]
+> +	lan9220@20000000 {
+
+    Shouldn't all the Ethernet nodes be called "ethernet"?
+
+> +		compatible = "smsc,lan9220", "smsc,lan9115";
+> +		reg = <0x20000000 0x10000>;
+> +		phy-mode = "mii";
+> +		interrupt-parent = <&gpio0>;
+> +		interrupts = <1 1>;	/* active high */
+> +		reg-io-width = <4>;
+> +		smsc,irq-active-high;
+> +		smsc,irq-push-pull;
+> +		vddvario-supply = <&reg_1p8v>;
+> +		vdd33a-supply = <&reg_3p3v>;
+> +	};
+>   };
+
+WBR, Sergei
+
+
