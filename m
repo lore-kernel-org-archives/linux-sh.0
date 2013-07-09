@@ -1,108 +1,63 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 12 Jul 2013 14:56:20 +0000
-Subject: Re: [PATCH 8/8] ARM: shmobile: r8a7740: add DT nodes and clock aliases for three DMAC instances
-Message-Id: <51E01914.50704@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 09 Jul 2013 05:44:09 +0000
+Subject: [PATCH 04/04] ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration
+Message-Id: <20130709054409.14007.23571.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de> <1373636638-18496-9-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373636638-18496-9-git-send-email-g.liakhovetski@gmx.de>
+References: <20130709054331.14007.66068.sendpatchset@w520>
+In-Reply-To: <20130709054331.14007.66068.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 07/12/2013 05:43 PM, Guennadi Liakhovetski wrote:
+Move the timer configuration bits to allow use in
+case of ARCH_SHMOBILE or ARCH_SHMOBILE_MULTI.
 
-> This patch adds Device Tree support for the three generic DMA controller
-> instances on r8a7740 in a DMA multiplexer node.
+The timers all make use of the regular driver model
+so they are safe to enable for ARCH_MULTIPLATFORM.
 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
->   arch/arm/boot/dts/r8a7740.dtsi         |   61 ++++++++++++++++++++++++++++++++
->   arch/arm/mach-shmobile/clock-r8a7740.c |    3 ++
->   2 files changed, 64 insertions(+), 0 deletions(-)
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-> index 25dc930..39b596f 100644
-> --- a/arch/arm/boot/dts/r8a7740.dtsi
-> +++ b/arch/arm/boot/dts/r8a7740.dtsi
-> @@ -112,6 +112,67 @@
->   			      0 149 0x4>;
->   	};
->
-> +	dmac: dma-mux0 {
-> +		compatible = "renesas,shdma-mux";
-> +		#dma-cells = <1>;
-> +		dma-channels = <6>;
-> +		dma-requests = <256>;
-> +		#address-cells = <1>;
-> +		#size-cells = <1>;
-> +		ranges;
-> +
-> +		dma0: shdma@fe008020 {
-> +			compatible = "renesas,shdma-r8a7740";
-> +			reg = <0xfe008020 0x270>,
-> +				<0xfe009000 0xc>;
-> +			interrupt-parent = <&gic>;
-> +			interrupts = <0 34 4
-> +					0 28 4
-> +					0 29 4
-> +					0 30 4
-> +					0 31 4
-> +					0 32 4
-> +					0 33 4>;
-> +			interrupt-names = "error",
-> +					"ch0", "ch1", "ch2", "ch3",
-> +					"ch4", "ch5";
-> +		};
-> +
-> +		dma1: shdma@fe018020 {
-> +			compatible = "renesas,shdma-r8a7740";
-> +			reg = <0xfe018020 0x270>,
-> +				<0xfe019000 0xc>;
-> +			interrupt-parent = <&gic>;
-> +			interrupts = <0 41 4
-> +					0 35 4
-> +					0 36 4
-> +					0 37 4
-> +					0 38 4
-> +					0 39 4
-> +					0 40 4>;
-> +			interrupt-names = "error",
-> +					"ch0", "ch1", "ch2", "ch3",
-> +					"ch4", "ch5";
-> +		};
-> +
-> +		dma2: shdma@fe028020 {
-> +			compatible = "renesas,shdma-r8a7740";
-> +			reg = <0xfe028020 0x270>,
-> +				<0xfe029000 0xc>;
-> +			interrupt-parent = <&gic>;
-> +			interrupts = <0 48 4
-> +					0 42 4
-> +					0 43 4
-> +					0 44 4
-> +					0 45 4
-> +					0 46 4
-> +					0 47 4>;
-> +			interrupt-names = "error",
-> +					"ch0", "ch1", "ch2", "ch3",
-> +					"ch4", "ch5";
-> +		};
-> +	};
-> +
+ arch/arm/mach-shmobile/Kconfig |   16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
-    According to ePAPR [1] section 2.2.2, "the name of the node should 
-be somewhat generic, reflecting the function of the device and not its
-precise programming model. If appropriate, the name should be one of the 
-following choices:
-[...]
-- dma-controller;
-[...]"
-
-[1] http://www.power.org/resources/downloads/Power_ePAPR_APPROVED_v1.0.pdf
-  	
-WBR, Sergei
-
+--- 0005/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-07-09 12:07:23.000000000 +0900
+@@ -30,6 +30,8 @@ config MACH_KZM9D_REFERENCE
+ 	   of not supporting a number of devices.
+ 
+ 	   This is intended to aid developers
++
++comment "SH-Mobile System Configuration"
+ endif
+ 
+ if ARCH_SHMOBILE
+@@ -243,6 +245,15 @@ config CPU_HAS_INTEVT
+         bool
+ 	default y
+ 
++config SH_CLK_CPG
++	bool
++
++source "drivers/sh/Kconfig"
++
++endif
++
++if ARCH_SHMOBILE || ARCH_SHMOBILE_MULTI
++
+ menu "Timer and clock configuration"
+ 
+ config SHMOBILE_TIMER_HZ
+@@ -277,9 +288,4 @@ config EM_TIMER_STI
+ 
+ endmenu
+ 
+-config SH_CLK_CPG
+-	bool
+-
+-source "drivers/sh/Kconfig"
+-
+ endif
