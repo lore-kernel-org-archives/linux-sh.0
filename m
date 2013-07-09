@@ -1,23 +1,101 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 24 Jul 2013 08:06:19 +0000
-Subject: Re: [PATCH 1/2] ARCH: ARM: shmobile: Remove kota2 board support
-Message-Id: <20130724080619.GC10027@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 09 Jul 2013 12:50:16 +0000
+Subject: [PATCH 01/02] ARM: shmobile: Introduce r8a7790_read_mode_pins()
+Message-Id: <20130709125016.4388.47414.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374465895-8372-1-git-send-email-horms+renesas@verge.net.au>
- <1374465895-8372-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1374465895-8372-2-git-send-email-horms+renesas@verge.net.au>
+References: <20130709125007.4388.15701.sendpatchset@w520>
+In-Reply-To: <20130709125007.4388.15701.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 22, 2013 at 01:04:54PM +0900, Simon Horman wrote:
-> Remove support for the sh73a0 based kota2 board.
-> 
-> The sh73a0 SoC is continued to be supported using
-> the kzm9g board.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Magnus Damm <damm@opensource.se>
 
-I have queued this up for v3.12 in the cleanup2 branch of my renesas
-tree on kernel.org.
+Break out the r8a7790 boot mode code into a separate
+function so it can be shared by multiple users.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/clock-r8a7790.c        |   11 ++---------
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   14 ++++++++++++++
+ 3 files changed, 19 insertions(+), 9 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-07-09 20:03:09.000000000 +0900
+@@ -24,6 +24,7 @@
+ #include <linux/clkdev.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
++#include <mach/r8a7790.h>
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+@@ -42,8 +43,6 @@
+  *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
+  */
+ 
+-#define MD(nr)	(1 << nr)
+-
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x1000
+ 
+@@ -53,7 +52,6 @@
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
+ 
+-#define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+ #define SD3CKCR		0xE615007C
+@@ -288,14 +286,9 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a7790_clock_init(void)
+ {
+-	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+-	u32 mode;
++	u32 mode = r8a7790_read_mode_pins();
+ 	int k, ret = 0;
+ 
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
+-
+ 	switch (mode & (MD(14) | MD(13))) {
+ 	case 0:
+ 		R8A7790_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2013-07-09 20:02:34.000000000 +0900
+@@ -8,4 +8,7 @@ void r8a7790_pinmux_init(void);
+ void r8a7790_init_delay(void);
+ void r8a7790_timer_init(void);
+ 
++#define MD(nr) BIT(nr)
++u32 r8a7790_read_mode_pins(void);
++
+ #endif /* __ASM_R8A7790_H__ */
+--- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-07-09 19:59:37.000000000 +0900
+@@ -201,6 +201,20 @@ void __init r8a7790_add_standard_devices
+ 	r8a7790_register_thermal();
+ }
+ 
++#define MODEMR 0xe6160060
++
++u32 __init r8a7790_read_mode_pins(void)
++{
++	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++	u32 mode;
++
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	return mode;
++}
++
+ void __init r8a7790_timer_init(void)
+ {
+ 	void __iomem *cntcr;
