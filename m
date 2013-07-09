@@ -1,39 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:30 +0000
-Subject: [PATCH 03/19] ARM: shmobile: r8a7778: Add pin control device to device tree
-Message-Id: <0697ccc05473083cb9e1cdf16cd1f425f0f9395f.1374625203.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 09 Jul 2013 05:43:31 +0000
+Subject: [PATCH 00/04] ARM: shmobile: ARCH_MULTIPLATFORM for EMEV2 and KZM9D
+Message-Id: <20130709054331.14007.66068.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+ARM: shmobile: ARCH_MULTIPLATFORM for EMEV2 and KZM9D
 
-Add a pfc node to the r8a7778 device tree.
+[PATCH 01/04] ARM: shmobile: Only build clocks when COMMON_CLK=n
+[PATCH 02/04] ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
+[PATCH 03/04] ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
+[PATCH 04/04] ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This patch set extends mach-shmobile to allow a subset of SoCs and
+boards to be built for ARCH_MULTIPLATFORM. With this series applied
+the EMEV2 SoC and the KZM9D board can be built in two ways - either
+as good old ARCH_SHMOBILE or new ARCH_SHMOBILE_MULTI. The latter
+requires common clock framework for proper run time operation.
+
+The goal is to over time move all DT reference implementations from
+ARCH_SHMOBILE to ARCH_SHMOBILE_MULTI. Until CCF is available for a
+certain SoC it is to me acceptable for a DT reference board to allow
+build in both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI. The reason for
+this is to allow incremental development and easy testing during
+development of CCF for a certain SoC. The KZM9D board is now in this
+state while it is waiting for common clocks to become ready.
+
+In the near future a prototype hack will be posted that comments
+out the clock framework bits on EMEV2 and will allow boot of KZM9D
+in the case of ARCH_SHMOBILE_MULTI even though CCF is not yet
+available.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 4743735..c8dbf14 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -32,4 +32,9 @@
- 		reg = <0xfe438000 0x1000>,
- 		      <0xfe430000 0x100>;
- 	};
-+
-+	pfc: pfc@fffc0000 {
-+		compatible = "renesas,pfc-r8a7778";
-+		reg = <0xfffc000 0x118>;
-+	};
- };
--- 
-1.8.2.1
+ Built on top of renesas-next-20130704v2 and
+ [PATCH] ARM: shmobile: KZM9D DT reference implementation
 
+ arch/arm/Makefile                    |    1 
+ arch/arm/boot/dts/Makefile           |    1 
+ arch/arm/mach-shmobile/Kconfig       |   52 ++++++++++++++++++++++++++++++----
+ arch/arm/mach-shmobile/Makefile      |   32 +++++++++++++++-----
+ arch/arm/mach-shmobile/setup-emev2.c |    5 +++
+ 5 files changed, 77 insertions(+), 14 deletions(-)
