@@ -1,76 +1,30 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 09 Jul 2013 05:43:59 +0000
-Subject: [PATCH 03/04] ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
-Message-Id: <20130709054359.14007.23619.sendpatchset@w520>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 09 Jul 2013 07:37:29 +0000
+Subject: Re: [PATCH 03/04] ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
+Message-Id: <201307090937.29805.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130709054331.14007.66068.sendpatchset@w520>
-In-Reply-To: <20130709054331.14007.66068.sendpatchset@w520>
+ <20130709054359.14007.23619.sendpatchset@w520>
+In-Reply-To: <20130709054359.14007.23619.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tuesday 09 July 2013, Magnus Damm wrote:
+> +void __init __weak emev2_clock_init(void)
+> +{
+> +       /* in case legacy clocks are disabled then do nothing */
+> +}
 
-Enable build of EMEV2 and KZM9D DT Reference in
-case of ARCH_MULTIPLATFORM and ARCH_SHMOBILE_MULTI.
+Nitpicking:
 
-A weak symbol covers the case when the clock-emev2.c
-file is not built when COMMON_CLK=y.
+I don't like the __weak symbols too much, in general I prefer
+doing either
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+	if (IS_ENABLED(CONFIG_SHMOBILE_CLOCKS)
+		emev2_clock_init()
 
- arch/arm/boot/dts/Makefile           |    1 +
- arch/arm/mach-shmobile/Kconfig       |   15 +++++++++++++++
- arch/arm/mach-shmobile/setup-emev2.c |    5 +++++
- 3 files changed, 21 insertions(+)
+or using an inline alternative in the header file.
 
---- 0002/arch/arm/boot/dts/Makefile
-+++ work/arch/arm/boot/dts/Makefile	2013-07-09 13:10:52.000000000 +0900
-@@ -171,6 +171,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm
- 	sh73a0-kzm9g-reference.dtb \
- 	r8a73a4-ape6evm.dtb \
- 	sh7372-mackerel.dtb
-+dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
- 	socfpga_vt.dtb
- dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
---- 0004/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-07-09 13:03:45.000000000 +0900
-@@ -17,6 +17,21 @@ if ARCH_SHMOBILE_MULTI
- 
- comment "SH-Mobile System Type"
- 
-+config ARCH_EMEV2
-+	bool "Emma Mobile EV2"
-+
-+comment "SH-Mobile Board Type"
-+
-+config MACH_KZM9D_REFERENCE
-+	bool "KZM9D board - Reference Device Tree Implementation"
-+	depends on ARCH_EMEV2
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	---help---
-+	   Use reference implementation of KZM9D board support
-+	   which makes a greater use of device tree at the expense
-+	   of not supporting a number of devices.
-+
-+	   This is intended to aid developers
- endif
- 
- if ARCH_SHMOBILE
---- 0001/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-09 13:03:45.000000000 +0900
-@@ -190,6 +190,11 @@ void __init emev2_add_standard_devices(v
- 	emev2_register_pmu();
- }
- 
-+void __init __weak emev2_clock_init(void)
-+{
-+	/* in case legacy clocks are disabled then do nothing */
-+}
-+
- void __init emev2_init_delay(void)
- {
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+	Arnd
