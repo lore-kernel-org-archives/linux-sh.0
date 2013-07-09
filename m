@@ -1,53 +1,37 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 30 Jul 2013 07:45:48 +0000
-Subject: Re: [PATCH v8] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <Pine.LNX.4.64.1307300943001.25629@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 09 Jul 2013 09:07:13 +0000
+Subject: [PATCH] ARM: mach-shmobile: select the fixed regulator driver on BockW
+Message-Id: <87zjtwrtj6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51F0CBF7.9080201@cogentembedded.com> <20130725.162922.274362407.matsu@igel.co.jp>
- <Pine.LNX.4.64.1307261310360.22137@axis700.grange> <20130730.163652.28831662.matsu@igel.co.jp>
-In-Reply-To: <20130730.163652.28831662.matsu@igel.co.jp>
+References: <Pine.LNX.4.64.1207051515190.30191@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207051515190.30191@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Katsuya MATSUBARA <matsu@igel.co.jp>
-Cc: vladimir.barinov@cogentembedded.com, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, sergei.shtylyov@cogentembedded.com
+To: linux-sh@vger.kernel.org
 
-Hi Matsubara-san,
+34767f8dccc326026f97cd63f759dd36bd83502d
+(ARM: mach-shmobile: select the fixed regulator driver on several boards)
+decided to select fixed regulator driver on Kconfig.
+BockW follows same style.
 
-On Tue, 30 Jul 2013, Katsuya MATSUBARA wrote:
-
-> 
-> Hi Guennadi,
-> 
-> From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Date: Fri, 26 Jul 2013 13:11:52 +0200 (CEST)
-> 
-> > Hello Matsubara-san
-> > 
-> > On Thu, 25 Jul 2013, Katsuya MATSUBARA wrote:
-> > 
-> >> 
-> >>  Hi Vladimir,
-
-[snip]
-
-> >> I tested it now and confirmed the issue has gone!
-> > 
-> > Does this mean I can add your Tested-by to v9 of this driver?
-> 
-> Sure.
-> 
-> Unfortunately my marzen board has gone from my office.
-> But I made sure that the v9 VIN driver and the fixed ml86v7667
-> sensor driver work fine on a BOCK-W board with a NTSC camera.
-> 
-> Tested-by: Katsuya MATSUBARA <matsu@igel.co.jp>
-
-Thanks!
-
-Regards
-Guennadi
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 30c571b..90f449e 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -124,6 +124,7 @@ config MACH_BOCKW
+ 	depends on ARCH_R8A7778
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select RENESAS_INTC_IRQPIN
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select USE_OF
+ 
+ config MACH_MARZEN
+-- 
+1.7.9.5
+
