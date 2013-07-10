@@ -1,45 +1,24 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 09 Jul 2013 10:39:52 +0000
-Subject: [PATCH 01/04] ARM: shmobile: No need to use INTC header on r8a7779
-Message-Id: <20130709103952.1891.92697.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 10 Jul 2013 01:12:45 +0000
+Subject: Re: [PATCH 01/04] ARM: shmobile: No need to use INTC header on r8a7779
+Message-Id: <20130710011244.GL32603@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130709103944.1891.67462.sendpatchset@w520>
-In-Reply-To: <20130709103944.1891.67462.sendpatchset@w520>
+ <20130709103952.1891.92697.sendpatchset@w520>
+In-Reply-To: <20130709103952.1891.92697.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Jul 09, 2013 at 07:39:52PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Now when the intc-irqpin driver is used for external
+> IRQ pins on r8a7779 it possible to get rid of unused
+> INTC headers mach/intc.h and linux/sh_intc.h.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Now when the intc-irqpin driver is used for external
-IRQ pins on r8a7779 it possible to get rid of unused
-INTC headers mach/intc.h and linux/sh_intc.h.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/intc-r8a7779.c  |    1 -
- arch/arm/mach-shmobile/setup-r8a7779.c |    1 -
- 2 files changed, 2 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/intc-r8a7779.c
-+++ work/arch/arm/mach-shmobile/intc-r8a7779.c	2013-07-09 18:42:08.000000000 +0900
-@@ -27,7 +27,6 @@
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/irqchip.h>
- #include <mach/common.h>
--#include <mach/intc.h>
- #include <mach/irqs.h>
- #include <mach/r8a7779.h>
- #include <asm/mach-types.h>
---- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2013-07-09 18:42:25.000000000 +0900
-@@ -29,7 +29,6 @@
- #include <linux/input.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
--#include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
- #include <linux/dma-mapping.h>
- #include <linux/usb/otg.h>
+Thanks, I have queued this up for v3.12 in the cleanup branch.
+It should appear in renesas-next-20130710
