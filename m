@@ -1,39 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 08 Jul 2013 06:16:46 +0000
-Subject: [PATCH] ARM: shmobile: Minor update for the Lager DT reference code
-Message-Id: <20130708061646.25516.97272.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 10 Jul 2013 00:51:43 +0000
+Subject: Re: [PATCH] ARM: shmobile: Minor update for the Lager DT reference code
+Message-Id: <20130710005143.GC32603@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130708061646.25516.97272.sendpatchset@w520>
+In-Reply-To: <20130708061646.25516.97272.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Mon, Jul 08, 2013 at 03:16:46PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Update the Lager DT reference code to get rid of the redundant
+> irqchip header and also make lager_add_standard_devices() static.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Written against "renesas-next-20130704v2"
+> 
+>  arch/arm/mach-shmobile/board-lager-reference.c |    3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
 
-Update the Lager DT reference code to get rid of the redundant
-irqchip header and also make lager_add_standard_devices() static.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- Written against "renesas-next-20130704v2"
-
- arch/arm/mach-shmobile/board-lager-reference.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2013-07-08 15:10:21.000000000 +0900
-@@ -19,12 +19,11 @@
-  */
- 
- #include <linux/init.h>
--#include <linux/irqchip.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- 
--void __init lager_add_standard_devices(void)
-+static void __init lager_add_standard_devices(void)
- {
- 	/* clocks are setup late during boot in the case of DT */
- 	r8a7790_clock_init();
+Thanks, I have queued this up for v3.12 in the dt-lager branch.
+It should appear in renesas-next-20130710
