@@ -1,48 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 30 Jul 2013 10:37:29 +0000
-Subject: [PATCH v2 05/13] sh: ecovec24: Remove mmcif .down_pwr() callback
-Message-Id: <1375180657-23641-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 10 Jul 2013 19:21:17 +0000
+Subject: [PATCH 6/6] ARM: shmobile: lager: disable MMCIF Command Completion Signal, add CLK_CTRL2
+Message-Id: <1373484077-10460-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-The callback isn't used by the mmcif driver, don't initialize it in
-board code.
+MMCIF on r8a7790 doesn't support Command Completion Signal, but it does
+implement a CE_CLK_CTRL2 register. Platform parameters have to be added to
+account for these features on lager.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 4d46700..e1b6aa3 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -983,11 +983,6 @@ static struct platform_device vou_device = {
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 3c67b2a..9b3085f 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -84,6 +84,8 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  /* MMCIF */
+ static struct sh_mmcif_plat_data mmcif1_pdata = {
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++	.clk_ctrl2_present = true,
++	.ccs_unsupported = true,
+ };
  
- #if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SH_MMCIF */
--static void mmcif_down_pwr(struct platform_device *pdev)
--{
--	cn12_set_pwr(pdev, 0);
--}
--
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
- 		.name	= "SH_MMCIF",
-@@ -1009,7 +1004,6 @@ static struct resource sh_mmcif_resources[] = {
- 
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.set_pwr	= cn12_set_pwr,
--	.down_pwr	= mmcif_down_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
+ static struct resource mmcif1_resources[] = {
 -- 
-1.8.1.5
+1.7.2.5
 
