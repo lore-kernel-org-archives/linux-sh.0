@@ -1,46 +1,45 @@
-From: Chen Gang <gang.chen@asianux.com>
-Date: Wed, 31 Jul 2013 08:37:20 +0000
-Subject: Re: [PATCH] sh: kernel: cpu: provide 'NULL' parameter for calling cpuidle_register().
-Message-Id: <51F8CCC0.1090302@asianux.com>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Wed, 10 Jul 2013 01:56:35 +0000
+Subject: [PATCH 1/3] ARM: shmobile: fix compile error when CONFIG_THUMB2_KERNEL=y
+Message-Id: <1373421397-1786-2-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51F8BB73.2070603@asianux.com>
-In-Reply-To: <51F8BB73.2070603@asianux.com>
+References: <1373421397-1786-1-git-send-email-koba@kmckk.co.jp>
+In-Reply-To: <1373421397-1786-1-git-send-email-koba@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 07/31/2013 03:35 PM, Daniel Lezcano wrote:
-> On 07/31/2013 09:23 AM, Chen Gang wrote:
->> Need provide additional parameter for calling cpuidle_register() just
->> like some of another architectures have done, or can not pass compiling.
->>
->> The related error (with kfr2r09_defconfig):
->>
->>     CC      arch/sh/kernel/cpu/shmobile/cpuidle.o
->>   arch/sh/kernel/cpu/shmobile/cpuidle.c: In function 'sh_mobile_setup_cpuidle':
->>   arch/sh/kernel/cpu/shmobile/cpuidle.c:102:2: error: too few arguments to function 'cpuidle_register'
->>     return cpuidle_register(&cpuidle_driver);
->>     ^
->>   In file included from arch/sh/kernel/cpu/shmobile/cpuidle.c:16:0:
->>   include/linux/cpuidle.h:130:12: note: declared here
->>    extern int cpuidle_register(struct cpuidle_driver *drv,
->>             ^
->>
->> Signed-off-by: Chen Gang <gang.chen@asianux.com>
->> ---
-> 
-> Thanks for the patch.
-> 
-> I have the same fix in my tree sent by Geert Uytterhoeven
-> 
->   -- Daniel
-> 
-> 
+On KZM-A9-GT board (SMP), when CONFIG_THUMB2_KERNEL=y it fails to compile
+ 
+  AS      arch/arm/mach-shmobile/headsmp-scu.o
+/proj/koba/kernel/arm-soc/arch/arm/mach-shmobile/headsmp-scu.S: Assembler messages:
+/proj/koba/kernel/arm-soc/arch/arm/mach-shmobile/headsmp-scu.S:41: Error: shift must be constant -- `bic r2,r2,r3,lsl r1'
+make[2]: *** [arch/arm/mach-shmobile/headsmp-scu.o] Error 1
+make[1]: *** [arch/arm/mach-shmobile] Error 2
+make: *** [sub-make] Error 2
 
-OK, thanks, and I will send another patches.
+Instruction `bic r2,r2,r3,lsl r1' is not supported in thumb mode. This patch split it into 2 instructions.
 
-:-)
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+ arch/arm/mach-shmobile/headsmp-scu.S |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
+diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
+index 6f98654..5ce416c 100644
+--- a/arch/arm/mach-shmobile/headsmp-scu.S
++++ b/arch/arm/mach-shmobile/headsmp-scu.S
+@@ -38,7 +38,8 @@ ENTRY(shmobile_boot_scu)
+ 	lsl	r1, r1, #3		@ we will shift by cpu_id * 8 bits
+ 	ldr	r2, [r0, #8]		@ SCU Power Status Register
+ 	mov	r3, #3
+-	bic	r2, r2, r3, lsl r1	@ Clear bits of our CPU (Run Mode)
++	lsl	r3, r3, r1
++	bic	r2, r2, r3		@ Clear bits of our CPU (Run Mode)
+ 	str	r2, [r0, #8]		@ write back
+ 
+ 	b	shmobile_invalidate_start
 -- 
-Chen Gang
+1.7.9.5
+
