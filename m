@@ -1,85 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 05:24:12 +0000
-Subject: [PATCH 2/4] ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
-Message-Id: <efacfce5f8a523457e9419a25d52fe39db00b26a.1375161473.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 10 Jul 2013 10:19:29 +0000
+Subject: [PATCH 2/5] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
+Message-Id: <1373451572-3892-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375161473.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375161473.git.horms+renesas@verge.net.au>
+References: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The V4L2_MBUS_FMT_YUV10_1X30 code is documented as being equal to
+0x2014, while the v4l2-mediabus.h header defines it as 0x2016. Fix the
+documentation.
 
-Add ARCH_SHMOBILE_MULTI to mach-shmobile that can be used
-to enable ARCH_MULTIPLATFORM on selected SoCs and boards.
-
-The headers stay under arch/arm/mach-shmobile/include/mach/
-for now, they can and will be migrated independently over time.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/Makefile               |  1 +
- arch/arm/mach-shmobile/Kconfig  | 21 +++++++++++++++++++++
- arch/arm/mach-shmobile/Makefile |  2 ++
- 3 files changed, 24 insertions(+)
+ Documentation/DocBook/media/v4l/subdev-formats.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index c0ac0f5..d1f717c 100644
---- a/arch/arm/Makefile
-+++ b/arch/arm/Makefile
-@@ -190,6 +190,7 @@ machine-$(CONFIG_ARCH_EXYNOS)		+= exynos
- machine-$(CONFIG_ARCH_SA1100)		+= sa1100
- machine-$(CONFIG_ARCH_SHARK)		+= shark
- machine-$(CONFIG_ARCH_SHMOBILE) 	+= shmobile
-+machine-$(CONFIG_ARCH_SHMOBILE_MULTI) 	+= shmobile
- machine-$(CONFIG_ARCH_TEGRA)		+= tegra
- machine-$(CONFIG_ARCH_U300)		+= u300
- machine-$(CONFIG_ARCH_U8500)		+= ux500
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 7c5034a..4c54298 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -1,3 +1,24 @@
-+config ARCH_SHMOBILE_MULTI
-+	bool "SH-Mobile Series" if ARCH_MULTI_V7
-+	depends on MMU
-+	select CPU_V7
-+	select GENERIC_CLOCKEVENTS
-+	select HAVE_ARM_SCU if SMP
-+	select HAVE_ARM_TWD if LOCAL_TIMERS
-+	select HAVE_SMP
-+	select ARM_GIC
-+	select MIGHT_HAVE_CACHE_L2X0
-+	select NO_IOPORT
-+	select PINCTRL
-+	select ARCH_REQUIRE_GPIOLIB
-+	select CLKDEV_LOOKUP
-+
-+if ARCH_SHMOBILE_MULTI
-+
-+comment "SH-Mobile System Type"
-+
-+endif
-+
- if ARCH_SHMOBILE
- 
- comment "SH-Mobile System Type"
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 5884bea..b150c45 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -2,6 +2,8 @@
- # Makefile for the linux kernel.
- #
- 
-+ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/arch/arm/mach-shmobile/include
-+
- # Common objects
- obj-y				:= timer.o console.o
- 
+diff --git a/Documentation/DocBook/media/v4l/subdev-formats.xml b/Documentation/DocBook/media/v4l/subdev-formats.xml
+index adc6198..0c2b1f2 100644
+--- a/Documentation/DocBook/media/v4l/subdev-formats.xml
++++ b/Documentation/DocBook/media/v4l/subdev-formats.xml
+@@ -2574,7 +2574,7 @@
+ 	    </row>
+ 	    <row id="V4L2-MBUS-FMT-YUV10-1X30">
+ 	      <entry>V4L2_MBUS_FMT_YUV10_1X30</entry>
+-	      <entry>0x2014</entry>
++	      <entry>0x2016</entry>
+ 	      <entry></entry>
+ 	      <entry>y<subscript>9</subscript></entry>
+ 	      <entry>y<subscript>8</subscript></entry>
 -- 
-1.8.3.2
+1.8.1.5
 
