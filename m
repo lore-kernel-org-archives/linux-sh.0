@@ -1,95 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:12 +0000
-Subject: [PATCH v2 20/27] sh-pfc: shx3: Remove shx3_ prefix from static symbols
-Message-Id: <1373933479-17727-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 10 Jul 2013 19:21:16 +0000
+Subject: [PATCH 5/6] ARM: shmobile: ape6evm: disable MMCIF Command Completion Signal
+Message-Id: <1373484077-10460-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Unlike all other PFC SoC data, the shx3 data prefix all static symbols
-with shx3_. Remove the prefix to be consistent with the other source
-files.
+MMCIF on r8a73a4 doesn't support Command Completion Signal, a platform
+parameter has to be added to disable it on ape6evm.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-shx3.c | 28 ++++++++++++++--------------
- 1 file changed, 14 insertions(+), 14 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-index 48a6c60..775a622 100644
---- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-@@ -127,7 +127,7 @@ enum {
- 	PINMUX_MARK_END,
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index e9e2108e..96a6994 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -77,6 +77,7 @@ static struct sh_mmcif_plat_data mmcif0_pdata = {
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
+ 	.slave_id_tx	= SHDMA_SLAVE_MMCIF0_TX,
+ 	.slave_id_rx	= SHDMA_SLAVE_MMCIF0_RX,
++	.ccs_unsupported = true,
  };
  
--static const u16 shx3_pinmux_data[] = {
-+static const u16 pinmux_data[] = {
- 	/* PA GPIO */
- 	PINMUX_DATA(PA7_DATA, PA7_IN, PA7_OUT),
- 	PINMUX_DATA(PA6_DATA, PA6_IN, PA6_OUT),
-@@ -285,7 +285,7 @@ static const u16 shx3_pinmux_data[] = {
- 	PINMUX_DATA(IRQOUT_MARK,	PH0_FN),
- };
- 
--static struct sh_pfc_pin shx3_pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PA */
- 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
- 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
-@@ -365,9 +365,9 @@ static struct sh_pfc_pin shx3_pinmux_pins[] = {
- 	PINMUX_GPIO(GPIO_PH0, PH0_DATA),
- };
- 
--#define PINMUX_FN_BASE	ARRAY_SIZE(shx3_pinmux_pins)
-+#define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
- 
--static const struct pinmux_func shx3_pinmux_func_gpios[] = {
-+static const struct pinmux_func pinmux_func_gpios[] = {
- 	/* FN */
- 	GPIO_FN(D31),
- 	GPIO_FN(D30),
-@@ -433,7 +433,7 @@ static const struct pinmux_func shx3_pinmux_func_gpios[] = {
- 	GPIO_FN(IRQOUT),
- };
- 
--static const struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
-+static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	{ PINMUX_CFG_REG("PABCR", 0xffc70000, 32, 2) {
- 		PA7_FN, PA7_OUT, PA7_IN, 0,
- 		PA6_FN, PA6_OUT, PA6_IN, 0,
-@@ -509,7 +509,7 @@ static const struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
- 	{ },
- };
- 
--static const struct pinmux_data_reg shx3_pinmux_data_regs[] = {
-+static const struct pinmux_data_reg pinmux_data_regs[] = {
- 	{ PINMUX_DATA_REG("PABDR", 0xffc70010, 32) {
- 		0, 0, 0, 0, 0, 0, 0, 0,
- 		PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
-@@ -550,12 +550,12 @@ const struct sh_pfc_soc_info shx3_pinmux_info = {
- 	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
- 	.output		= { PINMUX_OUTPUT_BEGIN,   PINMUX_OUTPUT_END },
- 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
--	.pins		= shx3_pinmux_pins,
--	.nr_pins	= ARRAY_SIZE(shx3_pinmux_pins),
--	.func_gpios	= shx3_pinmux_func_gpios,
--	.nr_func_gpios	= ARRAY_SIZE(shx3_pinmux_func_gpios),
--	.gpio_data	= shx3_pinmux_data,
--	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
--	.cfg_regs	= shx3_pinmux_config_regs,
--	.data_regs	= shx3_pinmux_data_regs,
-+	.pins		= pinmux_pins,
-+	.nr_pins	= ARRAY_SIZE(pinmux_pins),
-+	.func_gpios	= pinmux_func_gpios,
-+	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
-+	.gpio_data	= pinmux_data,
-+	.gpio_data_size	= ARRAY_SIZE(pinmux_data),
-+	.cfg_regs	= pinmux_config_regs,
-+	.data_regs	= pinmux_data_regs,
- };
+ static struct resource mmcif0_resources[] = {
 -- 
-1.8.1.5
+1.7.2.5
 
