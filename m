@@ -1,63 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:33:59 +0000
-Subject: [PATCH 05/16] ARM: shmobile: r8a73a4: safeguard against wrong clk_set_rate() uses
-Message-Id: <d1c3c959f2206dad0582876af2510aded4f9eac5.1374624383.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 10 Jul 2013 02:27:12 +0000
+Subject: [PATCH 0/4 v2] ARM: shmobile: r8a7778: add USB Func support
+Message-Id: <87wqozup37.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-clk_set_rate() should only be called with exact rates, returned by
-clk_round_rate(). However, it is still good to verify, that the value,
-passed to clock's .set_rate() method is at least valid. This patch adds
-such a check for the Z-clock on r8a73a4.
+Hi Simon
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a73a4.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+These are v2 patches for adding USB Func support on r8a7778/BockW.
+These are based on renesas-next-20130704v2 tag
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 824789c..22f10ff 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -225,16 +225,28 @@ static int zclk_set_rate(struct clk *clk, unsigned long rate)
- 		goto done;
- 	}
- 
--	frqcrc = clk->mapped_reg + (FRQCRC - (u32)clk->enable_reg);
-+	/*
-+	 * Users are supposed to first call clk_set_rate() only with
-+	 * clk_round_rate() results. So, we don't fix wrong rates here, but
-+	 * guard against them anyway
-+	 */
- 
- 	p_rate = clk_get_rate(clk->parent);
- 	if (rate = p_rate) {
- 		val = 0;
- 	} else {
- 		step = DIV_ROUND_CLOSEST(p_rate, 32);
-+
-+		if (rate > p_rate || rate < step) {
-+			ret = -EINVAL;
-+			goto done;
-+		}
-+
- 		val = 32 - rate / step;
- 	}
- 
-+	frqcrc = clk->mapped_reg + (FRQCRC - (u32)clk->enable_reg);
-+
- 	iowrite32((ioread32(frqcrc) & ~(clk->div_mask << clk->enable_bit)) |
- 		  (val << clk->enable_bit), frqcrc);
- 
--- 
-1.8.2.1
+# Sorry I still couldn't get renesas-next-20130710 tag now
+# it seems need more synchronize time on server
 
+Kuninori Morimoto (4):
+      ARM: shmobile: r8a7778: add usb phy power control function
+      ARM: shmobile: r8a7778: add r8a7778_add_usb_host_device()
+      RM: shmobile: r8a7778: add r8a7778_add_usb_func_device()
+      ARM: shmobile: bockw: add USB Function support
+
+ arch/arm/mach-shmobile/board-bockw.c          |   50 +++++++++++++-
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    5 +-
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   89 ++++++++++++++++++++-----
+ 4 files changed, 124 insertions(+), 21 deletions(-)
