@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 09 Jul 2013 12:56:54 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 10 Jul 2013 00:25:15 +0000
 Subject: Re: [RFC][PATCH] ARM: shmobile: bockw: add DT reference
-Message-Id: <CANqRtoQ9Umt3QQjjLKJNppFnqB4fwAD4D6NmyJhkOfg_rSQ6yw@mail.gmail.com>
+Message-Id: <878v1fw9b0.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <8761wkt9q0.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <8761wkt9q0.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,37 +10,22 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Sergei,
 
-On Tue, Jul 9, 2013 at 9:21 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Hello.
->
->
-> On 09-07-2013 12:32, Kuninori Morimoto wrote:
->
->> This patch adds a sample DT-based Bock-W "reference" implementation.
->> The use of platform-specific C-code should be avoided
->> with this configuration as much as possible.
->
->
->    I don't quite understand why you've made BOCK-W bootable only with DT in
-> the first place if you're now also making the reference platform for it.
+Hi Magnus
 
-The reason for not using MACHINE_START is that we most likely are not
-allowed to add new board support without DT_MACHINE_START.
+> > my apology is that this is marzen-reference style.
+> >
+> > # board-marzen.c is using irq_pin(1) (= IRQ1),
+> > # but board-marzen-reference.dts is using 28 (= GIC)
+> 
+> Ok, I understand. It looks like Marzen DT reference is broken. Perhaps
+> it was written before INTC irqpin or gpio-rcar.c existed.
+> 
+> I wonder, when you have time, can you work with the author of the
+> Marzen DT reference patch to improve the situation?
 
-I base this on what happened when we added kzm9g, kzm9d and
-armadillo800eva to the upstream kernel. At that point we had unique
-mach-type numbers registered and wanted to use MACHINE_START, but we
-were requested to instead relying on the value from the boot loader
-make use of appended DTB and DT_MACHINE_START.
+OK, will do :)
 
-Regarding the differences between regular board-xxx.c and
-board-xxx-reference.c, please search the mailing lists.
-
-Hope this clarifies.
-
-Cheers,
-
-/ magnus
+Best regards
+---
+Kuninori Morimoto
