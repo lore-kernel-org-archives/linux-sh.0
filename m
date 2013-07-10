@@ -1,46 +1,44 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 05 Jul 2013 07:21:41 +0000
-Subject: Re: [PATCH 2/6] ARM: shmobile: APE6EVM: add MMCIF support
-Message-Id: <CANqRtoSb_SN2xBRZPAtYgi0eqU1zNXKtgj8-1UvGcPz3AsiL0Q@mail.gmail.com>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Wed, 10 Jul 2013 01:56:34 +0000
+Subject: [PATCH 0/3] ARM: shmobile: enable SMP Thumb2 kernel
+Message-Id: <1373421397-1786-1-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372970334-21485-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1372970334-21485-3-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 5, 2013 at 4:15 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Fri, 5 Jul 2013, Magnus Damm wrote:
->
->> Hi Guennadi,
->>
->> Thanks for your efforts on this.
->>
->> On Fri, Jul 5, 2013 at 5:38 AM, Guennadi Liakhovetski
->> <g.liakhovetski@gmx.de> wrote:
->> > Add MMCIF support to the APE6EVM board in both PIO and DMA modes, depending
->> > on the DMAC driver availability.
->> >
->> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
->>
->> This also goes without saying, but please add comments in the code and
->> in the commit log explaining how the current implementation assumes
->> the voltage to be static, but while the actual hardware allows the
->> PMIC to control the voltage.
->>
->> Also, in the near future please finalize your earlier work where you
->> add MMCIF support to the DT reference board support - a separate
->> commit is fine with me, but make sure it gets merged.
->
-> With pinmux set up in .c?
+Hello,
 
-It depends on timing. Since you have C version working  now I
-recommend to commit that as-is first. Whenever Simon rebases to -rc1
-then it should be possible to use the final PFC / GPIO DT patches from
-Laurent and then the C pinmux bits can finally be converted to DT.
+I try to build SMP kernel for KZM-A9-GT board in CONFIG_THUMB2_KERNEL=y.
+After some modification it successully boots in Thumb2 kernel.
+In my case, Thumb2 kernel is 23% smaller than usual ARM kernel.
 
-Makes sense?
+   text	   data	    bss	    dec	    hex	filename
+4763561	 251580	 196164	5211305	 4f84a9	out.kzm9g/vmlinux
 
-/ magnus
+   text	   data	    bss	    dec	    hex	filename
+3595265	 251668	 196164	4043097	 3db159	out.kzm9g_thumb/vmlinux
+
+
+Useful info for Thumb2 kernel
+https://wiki.linaro.org/WorkingGroups/KernelArchived/Thumb2Guide
+
+This patch set is based on arm-soc git repositry, 
+remotes/origin/renesas/soc-cleanup branch
+53332005bfde9d2e3c9a66030c0e8c2598eaa1d5 ARM: shmobile: Remove Bonito board support
+
+Tetsuyuki Kobayashi (3):
+  ARM: shmobile: fix compile error when CONFIG_THUMB2_KERNEL=y
+  ARM: shmobile: Force ARM mode to compile reset vector for secondary
+    CPUs
+  ARM: shmobile: Insert align directives before 4 bytes data
+
+ arch/arm/mach-shmobile/headsmp-scu.S  |    4 +++-
+ arch/arm/mach-shmobile/headsmp.S      |    6 +++++-
+ arch/arm/mach-shmobile/sleep-sh7372.S |    2 ++
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+
+-- 
+1.7.9.5
+
