@@ -1,64 +1,118 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:21:46 +0000
-Subject: [PATCH v2 02/23] drm/rcar-du: Use devm_ioremap_resource()
-Message-Id: <1375276927-20181-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 10 Jul 2013 10:09:47 +0000
+Subject: [PATCH v2 3/3] DMA: shdma: support the new CHCLR register layout
+Message-Id: <Pine.LNX.4.64.1307101204310.6609@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: "Koul, Vinod" <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Replace the devm_request_mem_region() and devm_ioremap_nocache() calls
-with devm_ioremap_resource().
+On newer r-car SoCs the CHCLR register only contains one bit per channel,
+to which a 1 has to be written to reset the channel. Older SoC versions had
+one CHCLR register per channel, to which a 0 must be written to reset the
+channel and clear its buffers. This patch adds support for the newer
+layout.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c | 22 +++-------------------
- 1 file changed, 3 insertions(+), 19 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index dc0fe09..f776b1c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -107,7 +107,6 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
- 	struct platform_device *pdev = dev->platformdev;
- 	struct rcar_du_platform_data *pdata = pdev->dev.platform_data;
- 	struct rcar_du_device *rcdu;
--	struct resource *ioarea;
- 	struct resource *mem;
- 	int ret;
+v2: remove merge order dependency. This version can be merged without 
+requiring platforms to adjust their platform data. Only new SoCs with 
+bitwise CHCLR layouts will have to use new platform data fields.
+
+ drivers/dma/sh/shdma.c |   14 ++++++++++++--
+ include/linux/sh_dma.h |   34 +++++++++++++++++++++++++++++++++-
+ 2 files changed, 45 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 1d45aed..5153af1 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -49,12 +49,22 @@
+ static DEFINE_SPINLOCK(sh_dmae_lock);
+ static LIST_HEAD(sh_dmae_devices);
  
-@@ -129,24 +128,9 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
++/*
++ * Different DMAC implementations provide different ways to clear DMA channels:
++ * (1) none - no CHCLR registers are available
++ * (2) one CHCLR register per channel - 0 has to be written to it to clear
++ *     channel buffers
++ * (3) one CHCLR per several channels - 1 has to be written to the bit,
++ *     corresponding to the specific channel to reset it
++ */
+ static void channel_clear(struct sh_dmae_chan *sh_dc)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
++	const struct sh_dmae_channel *chan_pdata = shdev->pdata->channel +
++		sh_dc->shdma_chan.id;
++	u32 val = shdev->pdata->chclr_bitwise ? 1 << chan_pdata->chclr_bit : 0;
  
- 	/* I/O resources and clocks */
- 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (mem = NULL) {
--		dev_err(&pdev->dev, "failed to get memory resource\n");
--		return -EINVAL;
--	}
--
--	ioarea = devm_request_mem_region(&pdev->dev, mem->start,
--					 resource_size(mem), pdev->name);
--	if (ioarea = NULL) {
--		dev_err(&pdev->dev, "failed to request memory region\n");
--		return -EBUSY;
--	}
--
--	rcdu->mmio = devm_ioremap_nocache(&pdev->dev, ioarea->start,
--					  resource_size(ioarea));
--	if (rcdu->mmio = NULL) {
--		dev_err(&pdev->dev, "failed to remap memory resource\n");
--		return -ENOMEM;
--	}
-+	rcdu->mmio = devm_ioremap_resource(&pdev->dev, mem);
-+	if (IS_ERR(rcdu->mmio))
-+		return PTR_ERR(rcdu->mmio);
+-	__raw_writel(0, shdev->chan_reg +
+-		shdev->pdata->channel[sh_dc->shdma_chan.id].chclr_offset);
++	__raw_writel(val, shdev->chan_reg + chan_pdata->chclr_offset);
+ }
  
- 	rcdu->clock = devm_clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(rcdu->clock)) {
+ static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index 4e83f3e..776ed9d 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -33,13 +33,44 @@ struct sh_dmae_slave_config {
+ 	char		mid_rid;
+ };
+ 
++/**
++ * struct sh_dmae_channel - DMAC channel platform data
++ * @offset:		register offset within the main IOMEM resource
++ * @dmars:		channel DMARS register offset
++ * @chclr_offset:	channel CHCLR register offset
++ * @dmars_bit:		channel DMARS field offset within the register
++ * @chclr_bit:		bit position, to be set to reset the channel
++ */
+ struct sh_dmae_channel {
+ 	unsigned int	offset;
+ 	unsigned int	dmars;
+-	unsigned int	dmars_bit;
+ 	unsigned int	chclr_offset;
++	unsigned char	dmars_bit;
++	unsigned char	chclr_bit;
+ };
+ 
++/**
++ * struct sh_dmae_pdata - DMAC platform data
++ * @slave:		array of slaves
++ * @slave_num:		number of slaves in the above array
++ * @channel:		array of DMA channels
++ * @channel_num:	number of channels in the above array
++ * @ts_low_shift:	shift of the low part of the TS field
++ * @ts_low_mask:	low TS field mask
++ * @ts_high_shift:	additional shift of the high part of the TS field
++ * @ts_high_mask:	high TS field mask
++ * @ts_shift:		array of Transfer Size shifts, indexed by TS value
++ * @ts_shift_num:	number of shifts in the above array
++ * @dmaor_init:		DMAOR initialisation value
++ * @chcr_offset:	CHCR address offset
++ * @chcr_ie_bit:	CHCR Interrupt Enable bit
++ * @dmaor_is_32bit:	DMAOR is a 32-bit register
++ * @needs_tend_set:	the TEND register has to be set
++ * @no_dmars:		DMAC has no DMARS registers
++ * @chclr_present:	DMAC has one or several CHCLR registers
++ * @chclr_bitwise:	channel CHCLR registers are bitwise
++ * @slave_only:		DMAC cannot be used for MEMCPY
++ */
+ struct sh_dmae_pdata {
+ 	const struct sh_dmae_slave_config *slave;
+ 	int slave_num;
+@@ -59,6 +90,7 @@ struct sh_dmae_pdata {
+ 	unsigned int needs_tend_set:1;
+ 	unsigned int no_dmars:1;
+ 	unsigned int chclr_present:1;
++	unsigned int chclr_bitwise:1;
+ 	unsigned int slave_only:1;
+ };
+ 
 -- 
-1.8.1.5
+1.7.2.5
 
