@@ -1,38 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 01:11:40 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: select the fixed regulator driver on BockW
-Message-Id: <20130710011139.GK32603@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 10 Jul 2013 19:21:14 +0000
+Subject: [PATCH 3/6] ARM: shmobile: armadillo800eva: disable MMCIF Command Completion Signal
+Message-Id: <1373484077-10460-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1207051515190.30191@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207051515190.30191@axis700.grange>
+References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-On Tue, Jul 09, 2013 at 02:07:13AM -0700, Kuninori Morimoto wrote:
-> 34767f8dccc326026f97cd63f759dd36bd83502d
-> (ARM: mach-shmobile: select the fixed regulator driver on several boards)
-> decided to select fixed regulator driver on Kconfig.
-> BockW follows same style.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/Kconfig |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index 30c571b..90f449e 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -124,6 +124,7 @@ config MACH_BOCKW
->  	depends on ARCH_R8A7778
->  	select ARCH_REQUIRE_GPIOLIB
->  	select RENESAS_INTC_IRQPIN
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  	select USE_OF
->  
->  config MACH_MARZEN
+MMCIF on r8a7740 doesn't support Command Completion Signal, a platform
+parameter has to be added to disable it on armadillo800eva.
 
-Thanks, I have queued this up for v3.12 in the boards branch.
-It should appear in renesas-next-20130710
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 41ff7d65..3cb006b 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -778,6 +778,7 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NONREMOVABLE,
++	.ccs_unsupported = true,
+ 	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
+ 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
+ };
+-- 
+1.7.2.5
+
