@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 01:08:55 +0000
+Date: Wed, 10 Jul 2013 01:18:35 +0000
 Subject: Re: [PATCH v4 5/7] mmc: SDHI: add DT compatibility strings for further SoCs
-Message-Id: <20130710010854.GI32603@verge.net.au>
+Message-Id: <20130710011834.GA27240@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1307090940310.28812@axis700.grange>
  <CANqRtoQY7hwEhN5XMXG5V234aXDFZ_kfei8ZQL+VMKaaxW=0DQ@mail.gmail.com>
@@ -29,5 +29,5 @@ On Tue, Jul 09, 2013 at 06:06:00PM +0900, Magnus Damm wrote:
 > 
 > Acked-by: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up for v3.12 in the soc branch.
+Thanks, I have queued this up for v3.12 in the dt branch.
 It should appear in renesas-next-20130710
