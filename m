@@ -1,46 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:32:02 +0000
-Subject: [PATCH 01/22] ARM: shmobile: armadillo800eva: remove left-overs
-Message-Id: <bcfed2a8a61a0f6ee7769f5093a8279a9e50c526.1374103272.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 10 Jul 2013 19:21:15 +0000
+Subject: [PATCH 4/6] ARM: shmobile: kzm9g: disable MMCIF Command Completion Signal
+Message-Id: <1373484077-10460-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
+References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-
-A comment and a #define in board-armadillo800eva.c have been left over
-after recent changes and are no longer relevant or needed, remove them.
+MMCIF on sh73a0 doesn't support Command Completion Signal, a platform
+parameter has to be added to disable it on kzm9g.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    9 ---------
- 1 file changed, 9 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index e115f67..66cfd56 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -679,15 +679,6 @@ static struct platform_device vcc_sdhi1 = {
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 165483c..7ec26a5 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -365,6 +365,7 @@ static struct resource sh_mmcif_resources[] = {
+ static struct sh_mmcif_plat_data sh_mmcif_platdata = {
+ 	.ocr		= MMC_VDD_165_195,
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++	.ccs_unsupported = true,
+ 	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
+ 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
  };
- 
- /* SDHI0 */
--/*
-- * FIXME
-- *
-- * It use polling mode here, since
-- * CD (= Card Detect) pin is not connected to SDHI0_CD.
-- * We can use IRQ31 as card detect irq,
-- * but it needs chattering removal operation
-- */
--#define IRQ31	irq_pin(31)
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
 -- 
-1.7.10.4
+1.7.2.5
 
