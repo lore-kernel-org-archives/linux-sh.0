@@ -1,35 +1,29 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 09 Jul 2013 10:40:08 +0000
-Subject: [PATCH 03/04] ARM: shmobile: No need to use INTC demux on r8a7740
-Message-Id: <20130709104008.1891.17746.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 10 Jul 2013 01:13:45 +0000
+Subject: Re: [PATCH 03/04] ARM: shmobile: No need to use INTC demux on r8a7740
+Message-Id: <20130710011344.GN32603@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130709103944.1891.67462.sendpatchset@w520>
-In-Reply-To: <20130709103944.1891.67462.sendpatchset@w520>
+ <20130709104008.1891.17746.sendpatchset@w520>
+In-Reply-To: <20130709104008.1891.17746.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Jul 09, 2013 at 07:40:08PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Now when the r8a7740 code has been converted to make use of
+> GIC instead of INTC for root interrupt controller it is
+> possible to exclude the low level INTC demux function
+> shmobile_handle_irq_intc from linking. 
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/mach-shmobile/Makefile |    1 -
+>  1 file changed, 1 deletion(-)
 
-Now when the r8a7740 code has been converted to make use of
-GIC instead of INTC for root interrupt controller it is
-possible to exclude the low level INTC demux function
-shmobile_handle_irq_intc from linking. 
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/Makefile |    1 -
- 1 file changed, 1 deletion(-)
-
---- 0003/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-07-09 18:54:03.000000000 +0900
-@@ -23,7 +23,6 @@ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o
- 
- # IRQ objects
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
--obj-$(CONFIG_ARCH_R8A7740)	+= entry-intc.o
- 
- # PM objects
- obj-$(CONFIG_SUSPEND)		+= suspend.o
+Thanks, I have queued this up for v3.12 in the cleanup branch.
+It should appear in renesas-next-20130710
