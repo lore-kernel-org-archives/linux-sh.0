@@ -1,87 +1,125 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:29 +0000
-Subject: [PATCH 02/19] ARM: shmobile: r8a7740: Add pin control device to device tree
-Message-Id: <f36218d25f2388775a06b6091d881b7a45b7595f.1374625203.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 10 Jul 2013 02:29:12 +0000
+Subject: [PATCH 3/4 v2] RM: shmobile: r8a7778: add r8a7778_add_usb_func_device()
+Message-Id: <87siznuozu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds USB Function (= renesas_usbhs) driver support.
+r8a7778_add_usb_phy_device()  should be called from .init_machine,
+r8a7778_add_usb_func_device() should be called from .init_late
+when platform use it.
 
-Add a pfc node to the r8a7740 device tree and remove manual pinmux
-initialization from the corresponding board files.
+This r8a7778_add_usb_func_device() will fill
+renesas_usbhs_platform_info::platform_callback.get_id and
+renesas_usbhs_platform_info::platform_callback.power_ctrl
+if these callbacks were NULL, since these don't depend
+on platform basically.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Tested-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
- 2 files changed, 16 insertions(+), 8 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 24e9306..e18a195 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -139,4 +139,12 @@
- 			      0 72 0x4
- 			      0 73 0x4>;
- 	};
-+
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a7740";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605800c 0x20>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 03b85fe..f25b6aa 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -121,7 +121,7 @@
+ - no change
+
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   39 +++++++++++++++++++++++++
+ 3 files changed, 42 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 53798e5..0d34282 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -148,6 +148,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-eth",	&mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP100]), /* USB FUNC */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index 54e0132..5d894fd 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -22,6 +22,7 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
+ #include <linux/platform_data/usb-rcar-phy.h>
++#include <linux/usb/renesas_usbhs.h>
  
- static const struct pinctrl_map eva_pinctrl_map[] = {
- 	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
- 				  "scifa1_data", "scifa1"),
- };
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+@@ -32,6 +33,7 @@ extern void r8a7778_add_hspi_device(int id);
+ extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
+ extern void r8a7778_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
+ extern void r8a7778_add_usb_host_device(void);
++extern void r8a7778_add_usb_func_device(struct renesas_usbhs_platform_info *info);
  
-@@ -170,22 +170,22 @@ static void __init eva_init(void)
- 	eva_clock_init();
- 
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--	r8a7740_pinmux_init();
- 
- 	r8a7740_meram_workaround();
- 
--	/*
--	 * Touchscreen
--	 * TODO: Move reset GPIO over to .dts when we can reference it
--	 */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
--
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
- #endif
- 
- 	r8a7740_add_standard_devices_dt();
-+
-+	/*
-+	 * Touchscreen
-+	 * TODO: Move reset GPIO over to .dts when we can reference it
-+	 */
-+	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-+
- 	r8a7740_pm_init();
+ extern void r8a7778_init_late(void);
+ extern void r8a7778_init_delay(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 9ea1e25..b059ccd 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -153,6 +153,7 @@ static void usb_power_off(struct platform_device *pdev)
+ 	pm_runtime_disable(&pdev->dev);
  }
  
++/* USB HOST */
+ static int ehci_init_internal_buffer(struct usb_hcd *hcd)
+ {
+ 	/*
+@@ -211,6 +212,44 @@ void __init r8a7778_add_usb_host_device(void)
+ 	platform_device_register_full(&ohci_info);
+ }
+ 
++/* USB Func */
++static int usbhsf_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++#define SUSPMODE	0x102
++static int usbhsf_power_ctrl(struct platform_device *pdev,
++			     void __iomem *base, int enable)
++{
++	enable = !!enable;
++
++	r8a7778_usb_phy_power(enable);
++
++	iowrite16(enable << 14, base + SUSPMODE);
++
++	return 0;
++}
++
++static struct resource usbhsf_resources[] __initdata = {
++	DEFINE_RES_MEM(0xffe60000, 0x110),
++	DEFINE_RES_IRQ(gic_iid(0x4f)),
++};
++
++void __init
++r8a7778_add_usb_func_device(struct renesas_usbhs_platform_info *info)
++{
++	if (!info->platform_callback.get_id)
++		info->platform_callback.get_id = usbhsf_get_id;
++	if (!info->platform_callback.power_ctrl)
++		info->platform_callback.power_ctrl = usbhsf_power_ctrl;
++
++	platform_device_register_resndata(&platform_bus, "renesas_usbhs", -1,
++					  usbhsf_resources,
++					  ARRAY_SIZE(usbhsf_resources),
++					  info, sizeof(*info));
++}
++
+ /* Ether */
+ static struct resource ether_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xfde00000, 0x400),
 -- 
-1.8.2.1
+1.7.9.5
 
