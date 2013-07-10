@@ -1,544 +1,68 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:09 +0000
-Subject: [PATCH v2 17/27] sh-pfc: Consolidate PFC SoC data macros
-Message-Id: <1373933479-17727-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 10 Jul 2013 10:19:28 +0000
+Subject: [PATCH 1/5] media: Fix circular graph traversal
+Message-Id: <1373451572-3892-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Move macros defined in several SoC data files to a common location and
-document them.
+The graph traversal API (media_entity_graph_walk_*) will fail to
+correctly walk the graph when circular links exist. Fix it by checking
+whether an entity is already present in the stack before pushing it.
 
+Cc: Sakari Ailus <sakari.ailus@iki.fi>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |   3 -
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   5 +-
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  40 ---------
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  61 +------------
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  57 ------------
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  |   5 +-
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |   5 +-
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  10 ++-
- drivers/pinctrl/sh-pfc/sh_pfc.h      | 168 +++++++++++++++++++++++++++--------
- 9 files changed, 140 insertions(+), 214 deletions(-)
+ drivers/media/media-entity.c | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-index d5cbbc7..d811533 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-@@ -428,9 +428,6 @@ enum {
- 	PINMUX_MARK_END,
- };
+diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
+index e1cd132..9084205 100644
+--- a/drivers/media/media-entity.c
++++ b/drivers/media/media-entity.c
+@@ -121,9 +121,9 @@ static struct media_entity *stack_pop(struct media_entity_graph *graph)
+ 	return entity;
+ }
  
--#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
--#define PINMUX_DATA_ALL()    CPU_ALL_PORT(_PORT_DATA, , unused)
--
- static const u16 pinmux_data[] = {
- 	/* specify valid pin states for each pin in GPIO mode */
- 	PINMUX_DATA_ALL(),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 214ac6c..e690051 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -583,11 +583,8 @@ enum {
- 	PINMUX_MARK_END,
- };
+-#define stack_peek(en)	((en)->stack[(en)->top - 1].entity)
+-#define link_top(en)	((en)->stack[(en)->top].link)
+-#define stack_top(en)	((en)->stack[(en)->top].entity)
++#define stack_peek(en, i)	((en)->stack[i].entity)
++#define link_top(en)		((en)->stack[(en)->top].link)
++#define stack_top(en)		((en)->stack[(en)->top].entity)
  
--#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_PORT_DATA, , unused)
--
- static const u16 pinmux_data[] = {
--	PINMUX_DATA_GP_ALL(),
-+	PINMUX_DATA_ALL(),
- 
- 	/* Port0 */
- 	PINMUX_DATA(DBGMDT2_MARK,		PORT0_FN1),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index 018d8bc..40aecfe 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -23,26 +23,6 @@
- #include <linux/kernel.h>
- #include "sh_pfc.h"
- 
--#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
--
--#define PORT_GP_32(bank, fn, sfx)					\
--	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
--	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
--	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
--	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
--	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
--	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
--	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
--	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
--	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
--	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
--	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
--	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
--	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
--	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
--	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
--	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
--
- #define PORT_GP_27(bank, fn, sfx)					\
- 	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
- 	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
-@@ -66,26 +46,6 @@
- 	PORT_GP_32(3, fn, sfx),		\
- 	PORT_GP_27(4, fn, sfx)
- 
--#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
--
--#define _GP_GPIO(bank, pin, _name, sfx)		\
--	[RCAR_GP_PIN(bank, pin)] = {		\
--		.name = __stringify(_name),	\
--		.enum_id = _name##_DATA,	\
--	}
--
--#define _GP_DATA(bank, pin, name, sfx)		\
--	PINMUX_DATA(name##_DATA, name##_FN)
--
--#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
--#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
--
--#define PINMUX_IPSR_NOGP(ispr, fn)	PINMUX_DATA(fn##_MARK, FN_##fn)
--#define PINMUX_IPSR_DATA(ipsr, fn)	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr)
--#define PINMUX_IPSR_MSEL(ipsr, fn, ms)	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr, FN_##ms)
--#define PINMUX_IPSR_NOGM(ispr, fn, ms)	PINMUX_DATA(fn##_MARK, FN_##fn,            FN_##ms)
--
- enum {
- 	PINMUX_RESERVED = 0,
- 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 290de9a..be832dc 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -24,51 +24,13 @@
- 
- #include "sh_pfc.h"
- 
--#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
--
--#define PORT_GP_32(bank, fn, sfx)					\
--	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
--	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
--	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
--	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
--	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
--	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
--	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
--	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
--	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
--	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
--	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
--	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
--	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
--	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
--	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
--	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
--
--#define PORT_GP_32_9(bank, fn, sfx)					\
-+#define PORT_GP_9(bank, fn, sfx)					\
- 	PORT_GP_1(bank, 0, fn, sfx), PORT_GP_1(bank, 1, fn, sfx),	\
- 	PORT_GP_1(bank, 2, fn, sfx), PORT_GP_1(bank, 3, fn, sfx),	\
- 	PORT_GP_1(bank, 4, fn, sfx), PORT_GP_1(bank, 5, fn, sfx),	\
- 	PORT_GP_1(bank, 6, fn, sfx), PORT_GP_1(bank, 7, fn, sfx),	\
- 	PORT_GP_1(bank, 8, fn, sfx)
- 
--#define PORT_GP_32_REV(bank, fn, sfx)					\
--	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
--	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
--	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
--	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
--	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
--	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
--	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
--	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
--	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
--	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
--	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
--	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
--	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
--	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
--	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
--	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
--
- #define CPU_ALL_PORT(fn, sfx)						\
- 	PORT_GP_32(0, fn, sfx),						\
- 	PORT_GP_32(1, fn, sfx),						\
-@@ -76,26 +38,7 @@
- 	PORT_GP_32(3, fn, sfx),						\
- 	PORT_GP_32(4, fn, sfx),						\
- 	PORT_GP_32(5, fn, sfx),						\
--	PORT_GP_32_9(6, fn, sfx)
--
--#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
--
--#define _GP_GPIO(bank, pin, _name, sfx)					\
--	[RCAR_GP_PIN(bank, pin)] = {					\
--		.name = __stringify(_name),				\
--		.enum_id = _name##_DATA,				\
--	}
--
--#define _GP_DATA(bank, pin, name, sfx)					\
--	PINMUX_DATA(name##_DATA, name##_FN)
--
--#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
--#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
--
--#define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
--#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
--							  FN_##ipsr, FN_##fn)
-+	PORT_GP_9(6, fn, sfx)
- 
- enum {
- 	PINMUX_RESERVED = 0,
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 3713c00..95b38fa 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -27,44 +27,6 @@
- #include "core.h"
- #include "sh_pfc.h"
- 
--#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
--
--#define PORT_GP_32(bank, fn, sfx)					\
--	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
--	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
--	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
--	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
--	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
--	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
--	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
--	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
--	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
--	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
--	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
--	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
--	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
--	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
--	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
--	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
--
--#define PORT_GP_32_REV(bank, fn, sfx)					\
--	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
--	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
--	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
--	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
--	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
--	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
--	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
--	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
--	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
--	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
--	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
--	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
--	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
--	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
--	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
--	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
--
- #define CPU_ALL_PORT(fn, sfx)						\
- 	PORT_GP_32(0, fn, sfx),						\
- 	PORT_GP_32(1, fn, sfx),						\
-@@ -73,25 +35,6 @@
- 	PORT_GP_32(4, fn, sfx),						\
- 	PORT_GP_32(5, fn, sfx)
- 
--#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
--
--#define _GP_GPIO(bank, pin, _name, sfx)					\
--	[(bank * 32) + pin] = {						\
--		.name = __stringify(_name),				\
--		.enum_id = _name##_DATA,				\
--	}
--
--#define _GP_DATA(bank, pin, name, sfx)					\
--	PINMUX_DATA(name##_DATA, name##_FN)
--
--#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
--#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
--
--#define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
--#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
--							  FN_##ipsr, FN_##fn)
--
- enum {
- 	PINMUX_RESERVED = 0,
- 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index f269c46..9174ff2 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -384,11 +384,8 @@ enum {
- 	PINMUX_MARK_END,
- };
- 
--#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_PORT_DATA, , unused)
--
- static const u16 pinmux_data[] = {
--	PINMUX_DATA_GP_ALL(),
-+	PINMUX_DATA_ALL(),
- 
- 	/* IRQ */
- 	PINMUX_DATA(IRQ0_6_MARK,	PORT6_FN0, 	MSEL1CR_0_0),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 985acd0..914b142 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -466,12 +466,9 @@ enum {
- 	PINMUX_MARK_END,
- };
- 
--#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
--#define PINMUX_DATA_GP_ALL()    CPU_ALL_PORT(_PORT_DATA, , unused)
--
- static const u16 pinmux_data[] = {
- 	/* specify valid pin states for each pin in GPIO mode */
--	PINMUX_DATA_GP_ALL(),
-+	PINMUX_DATA_ALL(),
- 
- 	/* Table 25-1 (Function 0-7) */
- 	PINMUX_DATA(VBUS_0_MARK, PORT0_FN1),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index 1e1e3e0..537a639 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -31,6 +31,12 @@
- 	PORT_32(fn, pfx##_4_, sfx),				\
- 	CPU_32_PORT5(fn, pfx##_5_, sfx)
- 
-+#undef _GP_GPIO
-+#undef _GP_DATA
-+#undef GP_ALL
-+#undef PINMUX_GPIO_GP_ALL
-+#undef PINMUX_DATA_GP_ALL
+ /**
+  * media_entity_graph_walk_start - Start walking the media graph at a given entity
+@@ -159,6 +159,8 @@ EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
+ struct media_entity *
+ media_entity_graph_walk_next(struct media_entity_graph *graph)
+ {
++	unsigned int i;
 +
- #define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
- #define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
- 				       GP##pfx##_IN, GP##pfx##_OUT)
-@@ -45,10 +51,6 @@
- #define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
- #define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
+ 	if (stack_top(graph) = NULL)
+ 		return NULL;
  
--#define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
--#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
--							  FN_##ipsr, FN_##fn)
--
- enum {
- 	PINMUX_RESERVED = 0,
+@@ -181,8 +183,13 @@ media_entity_graph_walk_next(struct media_entity_graph *graph)
+ 		/* Get the entity in the other end of the link . */
+ 		next = media_entity_other(entity, link);
  
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 7ad1b04..ebddfe0 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -66,19 +66,6 @@ struct pinmux_func {
- 	const char *name;
- };
- 
--#define PINMUX_GPIO(gpio, data_or_mark)			\
--	[gpio] = {					\
--		.name = __stringify(gpio),		\
--		.enum_id = data_or_mark,		\
--	}
--#define PINMUX_GPIO_FN(gpio, base, data_or_mark)	\
--	[gpio - (base)] = {				\
--		.name = __stringify(gpio),		\
--		.enum_id = data_or_mark,		\
--	}
--
--#define PINMUX_DATA(data_or_mark, ids...) data_or_mark, ids, 0
--
- struct pinmux_cfg_reg {
- 	unsigned long reg, reg_width, field_width;
- 	const u16 *enum_ids;
-@@ -159,26 +146,108 @@ struct sh_pfc_soc_info {
- 	unsigned long unlock_reg;
- };
- 
--/* helper macro for port */
-+/* -----------------------------------------------------------------------------
-+ * Helper macros to create pin and port lists
-+ */
+-		/* Was it the entity we came here from? */
+-		if (next = stack_peek(graph)) {
++		/* Is the entity already in the path? */
++		for (i = 1; i < graph->top; ++i) {
++			if (next = stack_peek(graph, i))
++				break;
++		}
 +
-+/*
-+ * sh_pfc_soc_info gpio_data array macros
-+ */
-+
-+#define PINMUX_DATA(data_or_mark, ids...)	data_or_mark, ids, 0
-+
-+#define PINMUX_IPSR_NOGP(ispr, fn)					\
-+	PINMUX_DATA(fn##_MARK, FN_##fn)
-+#define PINMUX_IPSR_DATA(ipsr, fn)					\
-+	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr)
-+#define PINMUX_IPSR_NOGM(ispr, fn, ms)					\
-+	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ms)
-+#define PINMUX_IPSR_MSEL(ipsr, fn, ms)					\
-+	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr, FN_##ms)
-+#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms)				\
-+	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
-+
-+/*
-+ * GP port style (32 ports banks)
-+ */
-+
-+#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
-+
-+#define PORT_GP_32(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
-+	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
-+	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
-+	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
-+	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
-+	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
-+	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
-+	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
-+	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
-+	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
-+	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
-+	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
-+	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
-+	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
-+	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
-+	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
-+
-+#define PORT_GP_32_REV(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
-+	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
-+	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
-+	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
-+	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
-+	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
-+	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
-+	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
-+	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
-+	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
-+	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
-+	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
-+	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
-+	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
-+	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
-+	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
-+
-+/* GP_ALL(suffix) - Expand to a list of GP_#_#_suffix */
-+#define _GP_ALL(bank, pin, name, sfx)	name##_##sfx
-+#define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
-+
-+/* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
-+#define _GP_GPIO(bank, pin, _name, sfx)					\
-+	[(bank * 32) + pin] = {						\
-+		.name = __stringify(_name),				\
-+		.enum_id = _name##_DATA,				\
-+	}
-+#define PINMUX_GPIO_GP_ALL()		CPU_ALL_PORT(_GP_GPIO, unused)
-+
-+/* PINMUX_DATA_GP_ALL -  Expand to a list of name_DATA, name_FN marks */
-+#define _GP_DATA(bank, pin, name, sfx)	PINMUX_DATA(name##_DATA, name##_FN)
-+#define PINMUX_DATA_GP_ALL()		CPU_ALL_PORT(_GP_DATA, unused)
-+
-+/*
-+ * PORT style (linear pin space)
-+ */
-+
- #define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
- 
--#define PORT_10(fn, pfx, sfx) \
--	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
--	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
--	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
--	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
-+#define PORT_10(fn, pfx, sfx)						\
-+	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),		\
-+	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),		\
-+	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),		\
-+	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),		\
- 	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
- 
--#define PORT_10_REV(fn, pfx, sfx)	\
--	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
--	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
--	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
--	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
-+#define PORT_10_REV(fn, pfx, sfx)					\
-+	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),		\
-+	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),		\
-+	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),		\
-+	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),		\
- 	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
- 
--#define PORT_32(fn, pfx, sfx)					\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
-+#define PORT_32(fn, pfx, sfx)						\
-+	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),		\
-+	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),		\
- 	PORT_1(fn, pfx##31, sfx)
- 
- #define PORT_32_REV(fn, pfx, sfx)					\
-@@ -187,22 +256,43 @@ struct sh_pfc_soc_info {
- 	PORT_10_REV(fn, pfx, sfx)
- 
- #define PORT_90(fn, pfx, sfx) \
--	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),	\
--	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),	\
--	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),	\
--	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),	\
-+	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),		\
-+	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),		\
-+	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),		\
-+	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),		\
- 	PORT_10(fn, pfx##9, sfx)
- 
--#define _PORT_ALL(pfx, sfx) pfx##_##sfx
--#define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
--#define GPIO_FN(str) PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
-+/* PORT_ALL(suffix) - Expand to a list of PORT_#_suffix */
-+#define _PORT_ALL(pfx, sfx)		pfx##_##sfx
-+#define PORT_ALL(str)			CPU_ALL_PORT(_PORT_ALL, PORT, str)
- 
--/* helper macro for pinmux data arrays */
--#define PORT_DATA_IO(nr)	\
--	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
--		    PORT##nr##_IN)
-+/* PINMUX_GPIO - Expand to a sh_pfc_pin entry */
-+#define PINMUX_GPIO(gpio, data_or_mark)					\
-+	[gpio] = {							\
-+		.name = __stringify(gpio),				\
-+		.enum_id = data_or_mark,				\
-+	}
-+
-+/* PINMUX_DATA_ALL - Expand to a list of PORT_name_DATA, PORT_name_FN0,
-+ *		     PORT_name_OUT, PORT_name_IN marks
-+ */
-+#define _PORT_DATA(pfx, sfx)						\
-+	PINMUX_DATA(PORT##pfx##_DATA, PORT##pfx##_FN0,			\
-+		    PORT##pfx##_OUT, PORT##pfx##_IN)
-+#define PINMUX_DATA_ALL()		CPU_ALL_PORT(_PORT_DATA, , unused)
-+
-+/* GPIO_FN(name) - Expand to a sh_pfc_pin entry for a function GPIO */
-+#define PINMUX_GPIO_FN(gpio, base, data_or_mark)			\
-+	[gpio - (base)] = {						\
-+		.name = __stringify(gpio),				\
-+		.enum_id = data_or_mark,				\
-+	}
-+#define GPIO_FN(str)							\
-+	PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
- 
--/* helper macro for top 4 bits in PORTnCR */
-+/*
-+ * PORTnCR macro
-+ */
- #define _PCRH(in, in_pd, in_pu, out)	\
- 	0, (out), (in), 0,		\
- 	0, 0, 0, 0,			\
++		if (i < graph->top) {
+ 			link_top(graph)++;
+ 			continue;
+ 		}
 -- 
 1.8.1.5
 
