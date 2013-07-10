@@ -1,64 +1,54 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Jul 2013 08:13:49 +0000
-Subject: Re: [PATCH] dmaengine: shdma: fix a build failure on platforms with no DMA support
-Message-Id: <Pine.LNX.4.64.1307081004190.19819@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 10 Jul 2013 02:09:12 +0000
+Subject: [PATCH] dmaengine: shdma: fix a build failure on platforms with no DMA support
+Message-Id: <1373422152-29976-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1305301650290.29171@axis700.grange>
- <51A77CF1.7040105@ti.com> <20130531024438.GB32564@verge.net.au>
- <CAGa+x8413povhYWx+BSj=TdzQDAuYFXmjF4A2kXvQt+=n+380w@mail.gmail.com>
- <Pine.LNX.4.64.1306192125480.12502@axis700.grange>
- <20130705045350.GA10947@intel.com>
-In-Reply-To: <20130705045350.GA10947@intel.com>
+In-Reply-To: <Pine.LNX.4.64.1305301650290.29171@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, 5 Jul 2013, Vinod Koul wrote:
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-> On Wed, Jun 19, 2013 at 09:32:18PM +0200, Guennadi Liakhovetski wrote:
-> > Hi Vinod
-> > 
-> > On Wed, 19 Jun 2013, Kevin Hilman wrote:
-> > 
-> > > On Thu, May 30, 2013 at 7:44 PM, Simon Horman <horms@verge.net.au> wrote:
-> > > 
-> > > [...]
-> > > 
-> > > > thanks for this. I will wait for a refresh (as we discussed earlier today).
-> > > > Can I confirm that this is a fix for v3.10? If so, could ou note
-> > > > that when you post your revised patch?
-> > > 
-> > > Any progress on this patch?
-> > > 
-> > > The SH-mobile defconfigs are still all failing in linux-next.
-> > 
-> > In
-> > 
-> > https://patchwork.kernel.org/patch/2640061/
-> And you havent CC maintainers on this patch, so I dont have it!
+On platforms with no support for the shdma dmaengine driver build is
+currently failing with
 
-Ouch, sorry, no idea how I managed not to CC you, my apologies!
+drivers/built-in.o: In function `sh_mobile_sdhi_probe':
+drivers/mmc/host/sh_mobile_sdhi.c:170: undefined reference to`shdma_chan_filter'
 
-> > I proposed a simple immediate fix for this problem. Arnd at the same time 
-> > developed an alternative solution:
-> > 
-> > https://patchwork.kernel.org/patch/2644121/
-> > https://patchwork.kernel.org/patch/2644111/
-> Reading these patches I agree with Arnd that client drivers should not depend on
-> dma slave drivers. Existing issue need to be fixed
+Fix the breakage by defining shdma_chan_filter to NULL in such
+configurations.
 
-I'm not arguing against that. My point is the following: also Arnd's 
-patches have to deal with the fact, that the filter function has to be in 
-files, which will be compiled with SHDMA enabled or disabled in .config. 
-He solves this problem by adding #ifdef's to each .c file. Whereas I think 
-it's better to add just one such #ifdef to the header. The actual issue of 
-DMA client driver dependency on a specific dmaengine controller driver is 
-a different (though related) problem and should be addressed separately.
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+[horms+renesas@verge.net.au: Apply change to shdma-base.h instead of sh_dma.h]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ include/linux/shdma-base.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+Hi Vinod,
+
+please consider this fix from Guennadi for v3.11 which I have rebased on top of
+next-20130709. It fixes a build problem on a number of shmobile defconfigs
+including bockw.
+
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index 382cf71..5b1c984 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -124,6 +124,10 @@ void shdma_chan_remove(struct shdma_chan *schan);
+ int shdma_init(struct device *dev, struct shdma_dev *sdev,
+ 		    int chan_num);
+ void shdma_cleanup(struct shdma_dev *sdev);
++#if IS_ENABLED(CONFIG_SH_DMAE_BASE)
+ bool shdma_chan_filter(struct dma_chan *chan, void *arg);
++#else
++#define shdma_chan_filter NULL
++#endif
+ 
+ #endif
+-- 
+1.8.2.1
+
