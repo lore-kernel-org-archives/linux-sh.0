@@ -1,53 +1,104 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 16 Jul 2013 05:06:25 +0000
-Subject: Re: [PATCH v7 00/19] SH Mobile pinctrl DT support
-Message-Id: <20130716050623.GA8431@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 11 Jul 2013 16:22:19 +0000
+Subject: [PATCH v2 01/02] ARM: shmobile: Introduce r8a7790_read_mode_pins()
+Message-Id: <20130711162219.933.96902.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372961852-28490-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372961852-28490-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130711162209.933.47610.sendpatchset@w520>
+In-Reply-To: <20130711162209.933.47610.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 05, 2013 at 01:11:38PM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Friday 05 July 2013 09:13:14 Simon Horman wrote:
-> > On Thu, Jul 04, 2013 at 08:17:13PM +0200, Laurent Pinchart wrote:
-> > > Hello,
-> > > 
-> > > Here's the seventh version of the SH Mobile pin controllers (PFC) DT
-> > > support patch set.
-> > > 
-> > > The patches depend on the v3.11-rc pinctrl core. Linus Torvald has merged
-> > > the pinctrl tree into his master branch, so I've based this series on a
-> > > merge of Linus' master and tags/renesas-next-20130704v3 from Simon's tree
-> > > (git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git). The
-> > > result is available in my tree at
-> > > 
-> > >         git://linuxtv.org/pinchartl/fbdev.git pinmux/3.11/dt
-> > > 
-> > > The series is pretty self-explanatory. The patches gradually move SoC code
-> > > and board code over to the device tree for the armadilla800eva-reference,
-> > > kzm9g-reference and marzen-reference boards. The code has been tested on
-> > > the three boards, but armadillo800eva has received less testing as it
-> > > can't be booted all the way to userspace with network support due to
-> > > missing DT bindings.
-> > > 
-> > > As the patches only touch the SH Mobile architecture they can all be
-> > > merged through Simon's tree. Simon, will you rebase your tree on v3.11-rc1
-> > > when it will be tagged ?
-> > 
-> > In general I like to rebase once the renesas code that was accepted into
-> > the arm-soc tree has been accepted into Linus's tree.
-> > 
-> > It appears that is already the case, except for some late fixes
-> > (renesas-fixes2-for-v3.11), as of the current (pre v3.11-rc1) master branch
-> > of Linus's tree. So yes, I plan to rebase once v3.11-rc1 is tagged.
-> 
-> Great, thanks.
+From: Magnus Damm <damm@opensource.se>
 
-I have now rebased.  Accordingly, this series is now queued up for v3.12 in
-the pinmux branch. That branch is based directly on  v3.11-rc1. This
-is available in renesas-devel-20130716.
+Break out the r8a7790 boot mode code into a separate
+function so it can be shared by multiple users.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Changes since v1:
+ - Don't ioremap() two pages, thanks Sergei!
+
+ arch/arm/mach-shmobile/clock-r8a7790.c        |   11 ++---------
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   14 ++++++++++++++
+ 3 files changed, 19 insertions(+), 9 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-07-12 01:13:42.000000000 +0900
+@@ -24,6 +24,7 @@
+ #include <linux/clkdev.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
++#include <mach/r8a7790.h>
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+@@ -42,8 +43,6 @@
+  *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
+  */
+ 
+-#define MD(nr)	(1 << nr)
+-
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x1000
+ 
+@@ -53,7 +52,6 @@
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
+ 
+-#define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+ #define SD3CKCR		0xE615007C
+@@ -288,14 +286,9 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a7790_clock_init(void)
+ {
+-	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+-	u32 mode;
++	u32 mode = r8a7790_read_mode_pins();
+ 	int k, ret = 0;
+ 
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
+-
+ 	switch (mode & (MD(14) | MD(13))) {
+ 	case 0:
+ 		R8A7790_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2013-07-12 01:13:42.000000000 +0900
+@@ -8,4 +8,7 @@ void r8a7790_pinmux_init(void);
+ void r8a7790_init_delay(void);
+ void r8a7790_timer_init(void);
+ 
++#define MD(nr) BIT(nr)
++u32 r8a7790_read_mode_pins(void);
++
+ #endif /* __ASM_R8A7790_H__ */
+--- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-07-12 01:14:03.000000000 +0900
+@@ -201,6 +201,20 @@ void __init r8a7790_add_standard_devices
+ 	r8a7790_register_thermal();
+ }
+ 
++#define MODEMR 0xe6160060
++
++u32 __init r8a7790_read_mode_pins(void)
++{
++	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++	u32 mode;
++
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	return mode;
++}
++
+ void __init r8a7790_timer_init(void)
+ {
+ 	void __iomem *cntcr;
