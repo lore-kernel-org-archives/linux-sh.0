@@ -1,93 +1,140 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 24 Jul 2013 08:06:01 +0000
-Subject: Re: [GIT 00/16] Renesas ARM based SoC updates for v3.12
-Message-Id: <20130724080600.GB9276@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 11 Jul 2013 08:32:40 +0000
+Subject: [PATCH 07/11] ARM: shmobile: r8a7779: cleanup registration of usb phy
+Message-Id: <87d2qpfqe3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jul 24, 2013 at 09:33:45AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following Renesas ARM based SoC updates for v3.12.
-> 
-> This pull request is based on renesas-dt-for-v3.12 which I have
-> previously sent a pull request for.
+usb phy driver which needs platform data at the time of
+registration is used from Marzen only.
+Now, ARM/shmobile aims to support DT,
+and the C code base board support will be removed in the future.
+The driver registration method which needs platform data
+and which is not shared complicates codes.
+This patch Registers it on board code as cleanup C code,
+here, it used current board's registration method.
 
-This pull request has conflicts with renesas-pinmux-for-v3.12, which I also
-sent a pull request for earlier today. I have a provided an example
-resolution as part of the renesas-devel-20130724v2 tag in the renesas tree.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-marzen.c         |   24 ++++++++++++++++++++++--
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 --
+ arch/arm/mach-shmobile/setup-r8a7779.c        |   17 -----------------
+ 3 files changed, 22 insertions(+), 21 deletions(-)
 
-In words: take both sides.
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index a7d1010..9d96233 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -29,6 +29,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/usb-rcar-phy.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -57,7 +58,26 @@ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+ };
+ 
+-static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
++/* USB PHY */
++static struct resource usb_phy_resources[] = {
++	[0] = {
++		.start		= 0xffe70800,
++		.end		= 0xffe70900 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct rcar_phy_platform_data usb_phy_platform_data;
++
++static struct platform_device usb_phy = {
++	.name		= "rcar_usb_phy",
++	.id		= -1,
++	.dev  = {
++		.platform_data = &usb_phy_platform_data,
++	},
++	.resource	= usb_phy_resources,
++	.num_resources	= ARRAY_SIZE(usb_phy_resources),
++};
+ 
+ /* SMSC LAN89218 */
+ static struct resource smsc911x_resources[] = {
+@@ -184,6 +204,7 @@ static struct platform_device *marzen_devices[] __initdata = {
+ 	&thermal_device,
+ 	&hspi_device,
+ 	&leds_device,
++	&usb_phy,
+ };
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+@@ -234,7 +255,6 @@ static void __init marzen_init(void)
+ 	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
+ 
+ 	r8a7779_add_standard_devices();
+-	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index fc47073..f10727f7 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -4,7 +4,6 @@
+ #include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
+ #include <linux/sh_eth.h>
+-#include <linux/platform_data/usb-rcar-phy.h>
+ 
+ struct platform_device;
+ 
+@@ -34,7 +33,6 @@ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
+-extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
+ extern void r8a7779_init_late(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index e811159..0863aa9 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -387,15 +387,6 @@ static struct platform_device sata_device = {
+ 	},
+ };
+ 
+-/* USB PHY */
+-static struct resource usb_phy_resources[] __initdata = {
+-	[0] = {
+-		.start		= 0xffe70800,
+-		.end		= 0xffe70900 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+-};
+-
+ /* USB */
+ static struct usb_phy *phy;
+ 
+@@ -601,14 +592,6 @@ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
+ 					  pdata, sizeof(*pdata));
+ }
+ 
+-void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
+-{
+-	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
+-					  usb_phy_resources,
+-					  ARRAY_SIZE(usb_phy_resources),
+-					  pdata, sizeof(*pdata));
+-}
+-
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
+-- 
+1.7.9.5
 
-The conflicting files are:
-        arch/arm/boot/dts/r8a73a4.dtsi
-        arch/arm/boot/dts/r8a7790.dtsi
-
-> 
-> The following changes since commit 66a5cab04d339d02b93a4671eadf8e251dbfdc2c:
-> 
->   ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference (2013-07-17 10:06:47 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.12
-> 
-> for you to fetch changes up to 81b9d5351fa96caad4accc6711bc1b9342927d4a:
-> 
->   ARM: shmobile: Setup r8a7790 arch timer based on MD pins (2013-07-17 14:26:56 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM based SoC updates for v3.12
-> 
-> * Setup arch timer based on MD pins on r8a7790 SoC
-> * Thermal driver support for r8a7790 SoC
-> * Make arch timer optional for r8a7790 and r8a73a4 SoCs
-> * CMT10 clock event for r8a7790 and r8a73a4 SoCs
-> * Increased clock coverage for r8a73a4 SoC
-> * MMCIF DMA definitions for r8a7740 SoC
-> * Disconnect SMP code from clocks on emev2 SoC
-> 
-> ----------------------------------------------------------------
-> Guennadi Liakhovetski (6):
->       ARM: shmobile: r8a73a4: wait for completion when kicking the clock
->       ARM: shmobile: r8a73a4: implement CPU clock scaling for CPUFreq
->       ARM: shmobile: r8a73a4: safeguard against wrong clk_set_rate() uses
->       ARM: shmobile: r8a73a4: add Z2 clock support
->       ARM: shmobile: r8a73a4: add clocks for I2C controllers
->       ARM: shmobile: r8a7740: add MMCIF DMA definitions
-> 
-> Magnus Damm (8):
->       ARM: shmobile: Sort r8a7790 MSTP entries
->       ARM: shmobile: Add r8a7790 CMT00 clock event
->       ARM: shmobile: Make r8a7790 Arch timer optional
->       ARM: shmobile: Add r8a73a4 CMT10 clock event
->       ARM: shmobile: Make r8a73a4 Arch timer optional
->       ARM: shmobile: Disconnect EMEV2 SMP code from clocks
->       ARM: shmobile: Introduce r8a7790_read_mode_pins()
->       ARM: shmobile: Setup r8a7790 arch timer based on MD pins
-> 
-> Simon Horman (2):
->       ARM: shmobile: r8a7790: add clocks for thermal
->       ARM: shmobile: r8a7790: add thermal driver support
-> 
->  arch/arm/mach-shmobile/Kconfig                |   4 +-
->  arch/arm/mach-shmobile/board-ape6evm.c        |   1 +
->  arch/arm/mach-shmobile/board-lager.c          |   1 +
->  arch/arm/mach-shmobile/clock-emev2.c          |  18 ---
->  arch/arm/mach-shmobile/clock-r8a73a4.c        | 199 ++++++++++++++++++++++++--
->  arch/arm/mach-shmobile/clock-r8a7790.c        |  23 +--
->  arch/arm/mach-shmobile/include/mach/emev2.h   |   1 -
->  arch/arm/mach-shmobile/include/mach/r8a73a4.h |   1 +
->  arch/arm/mach-shmobile/include/mach/r8a7740.h |   2 +
->  arch/arm/mach-shmobile/include/mach/r8a7790.h |   4 +
->  arch/arm/mach-shmobile/setup-r8a73a4.c        |  30 ++++
->  arch/arm/mach-shmobile/setup-r8a7740.c        |  10 ++
->  arch/arm/mach-shmobile/setup-r8a7790.c        | 106 +++++++++++++-
->  arch/arm/mach-shmobile/smp-emev2.c            |  11 +-
->  14 files changed, 363 insertions(+), 48 deletions(-)
-> 
