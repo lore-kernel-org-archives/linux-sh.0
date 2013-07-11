@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 09 Jul 2013 12:50:24 +0000
+Date: Thu, 11 Jul 2013 16:22:29 +0000
 Subject: [PATCH 02/02] ARM: shmobile: Setup r8a7790 arch timer based on MD pins
-Message-Id: <20130709125024.4388.50953.sendpatchset@w520>
+Message-Id: <20130711162229.933.53924.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130709125007.4388.15701.sendpatchset@w520>
-In-Reply-To: <20130709125007.4388.15701.sendpatchset@w520>
+References: <20130711162209.933.47610.sendpatchset@w520>
+In-Reply-To: <20130711162209.933.47610.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -27,7 +27,9 @@ Without this patch the 20 MHz EXTAL will be used to drive
 the arch timer at 10 MHz, but the Linux arch timer driver
 will believe it is counting at 13 Mhz.
 
+Reported-by: Ulrich Hecht <ulrich.hecht@gmail.com>
 Signed-off-by: Magnus Damm <damm@opensource.se>
+Tested-by: Ulrich Hecht <ulrich.hecht@gmail.com>
 ---
 
  arch/arm/mach-shmobile/setup-r8a7790.c |   49 ++++++++++++++++++++++++++++----
