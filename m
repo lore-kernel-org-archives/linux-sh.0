@@ -1,52 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 05:52:23 +0000
-Subject: Re: [PATCH 00/03] ARM: 64-bit memory fixes, APE6EVM second memory bank
-Message-Id: <CANqRtoR=oDnJc48CpvF2GZjL1bBByoaWno58fVAyP9GeqpFSfQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 11 Jul 2013 08:32:31 +0000
+Subject: [PATCH 06/11] ARM: shmobile: r8a7778: cleanup registration of hspi
+Message-Id: <87ehb5fqed.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130605104427.1720.68752.sendpatchset@w520>
- <201306051317.02284.arnd@arndb.de>
- <CANqRtoSZXz5-z4pMTM_gpTf11qQCc870Vf35qLQ4jpoCPnq4KQ@mail.gmail.com>
- <201306121441.35924.arnd@arndb.de>
-In-Reply-To: <201306121441.35924.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Russel, Arnd, Stepan,
+sh-hspi driver which doesn't need platform data at the time of
+registration can be registerd on SoC.
+And, registering these drivers in the SoC code can avoid
+unwanted device numbering issue.
+(ex. the hspi2 device number will be spi.0 if hspi2 only registered)
+This patch registers it on SoC code as cleanup C code
 
-On Wed, Jun 12, 2013 at 9:41 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Wednesday 12 June 2013, Magnus Damm wrote:
->> On Wed, Jun 5, 2013 at 8:17 PM, Arnd Bergmann <arnd@arndb.de> wrote:
->> > On Wednesday 05 June 2013, Magnus Damm wrote:
->> >> ARM: 64-bit memory fixes, APE6EVM second memory bank
->> >>
->> >> [PATCH 01/03] ARM: Let arm_add_memory() always use 64-bit arguments
->> >> [PATCH 02/03] ARM: Handle 64-bit memory in case of 32-bit phys_addr_t
->> >> [PATCH 03/03] ARM: shmobile: Add second memory bank to DTS for APE6EVM
->> >>
->> >> This patch set contains two fixes and one mach-shmobile specific patch
->> >> to add a second memory bank. The fixes attempt to improve the memory bank
->> >> handling in the ARM kernel in case of 64-bit addresses.
->> >
->> > Please have a look at this patch that Stepan Moskovchenko posted:
->> >
->> > https://patchwork.kernel.org/patch/2639171/
->> >
->> > I think we are going to need only one of the two approaches.
->>
->> Thanks for pointing out this implementation. Is there anything I can
->> do to move this forward?
->
-> I'm fine with either solution. If Russell doesn't have a preference
-> one way or the other, I'd suggest you agree with Stepan on one of the
-> two and put that into the patch tracker.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-bockw.c          |    1 -
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 -
+ arch/arm/mach-shmobile/setup-r8a7778.c        |    5 ++++-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
 
-Thanks for your guidance, Arnd. After pinging Stepan I assume that he
-doesn't have any preference either.
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 9583314..8978f61 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -205,7 +205,6 @@ static void __init bockw_init(void)
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+-	r8a7778_add_hspi_device(0);
+ 
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index d6d096d..b9dda26 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -20,7 +20,6 @@
+ 
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+-extern void r8a7778_add_hspi_device(int id);
+ 
+ extern void r8a7778_init_late(void);
+ extern void r8a7778_init_delay(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 0f6edad..b77ebab 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -258,7 +258,7 @@ static struct resource hspi_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_iid(0x75)),
+ };
+ 
+-void __init r8a7778_add_hspi_device(int id)
++void __init r8a7778_register_hspi(int id)
+ {
+ 	BUG_ON(id < 0 || id > 2);
+ 
+@@ -293,6 +293,9 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_i2c(1);
+ 	r8a7778_register_i2c(2);
+ 	r8a7778_register_i2c(3);
++	r8a7778_register_hspi(0);
++	r8a7778_register_hspi(1);
++	r8a7778_register_hspi(2);
+ }
+ 
+ void __init r8a7778_init_late(void)
+-- 
+1.7.9.5
 
-Russel, what is your opinion?
-
-Thanks,
-
-/ magnus
