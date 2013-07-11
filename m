@@ -1,56 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:08 +0000
-Subject: [PATCH v2 16/27] sh-pfc: Rename gpio arguments to be consistent with the rest of the code
-Message-Id: <1373933479-17727-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Thu, 11 Jul 2013 09:52:32 +0000
+Subject: [PATCH 3/4] ARM: shmobile: smp-r8a7790: rename s/cabar/bar/g as well
+Message-Id: <51DE8060.5010400@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130710104151.20742.56398.sendpatchset@w520>
+ <51DE7FF4.5050800@renesas.com>
+In-Reply-To: <51DE7FF4.5050800@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The gpio_get_data_reg() and gpio_setup_data_reg() functions both take an
-argument named gpio. The argument contains a GPIO offset for the first
-function and a pin index for the second one. Rename them to offset and
-idx respectively to match the rest of the code.
+I don't have strong opinion on this one, either  Leave it to you.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/gpio.c | 10 +++++-----
+ arch/arm/mach-shmobile/smp-r8a7790.c | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 3620bd8..87ae38b 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -48,11 +48,11 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
- 	return gpio_to_pfc_chip(gc)->pfc;
- }
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index e8c2636..1448e387 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -35,17 +35,17 @@
+ enum { R8A7790_CLST_CA15, R8A7790_CLST_CA7, R8A7790_CLST_NR };
  
--static void gpio_get_data_reg(struct sh_pfc_chip *chip, unsigned int gpio,
-+static void gpio_get_data_reg(struct sh_pfc_chip *chip, unsigned int offset,
- 			      struct sh_pfc_gpio_data_reg **reg,
- 			      unsigned int *bit)
- {
--	int idx = sh_pfc_get_pin_index(chip->pfc, gpio);
-+	int idx = sh_pfc_get_pin_index(chip->pfc, offset);
- 	struct sh_pfc_gpio_pin *gpio_pin = &chip->pins[idx];
+ static struct {
+-	unsigned int cabar;
++	unsigned int bar;
+ 	unsigned int rescnt;
+ 	unsigned int rescnt_magic;
+ } r8a7790_clst[R8A7790_CLST_NR] = {
+ 	[R8A7790_CLST_CA15] = {
+-		.cabar = CA15BAR,
++		.bar = CA15BAR,
+ 		.rescnt = CA15RESCNT,
+ 		.rescnt_magic = 0xa5a50000,
+ 	},
+ 	[R8A7790_CLST_CA7] = {
+-		.cabar = CA7BAR,
++		.bar = CA7BAR,
+ 		.rescnt = CA7RESCNT,
+ 		.rescnt_magic = 0x5a5a0000,
+ 	},
+@@ -63,8 +63,8 @@ static void r8a7790_deassert_reset(unsigned int cpu)
+ 	/* setup reset vectors */
+ 	p = ioremap_nocache(RST, 0x63);
+ 	bar = (MERAM >> 8) & 0xfffffc00;
+-	writel_relaxed(bar, p + r8a7790_clst[clst_id].cabar);
+-	writel_relaxed(bar | 0x10, p + r8a7790_clst[clst_id].cabar);
++	writel_relaxed(bar, p + r8a7790_clst[clst_id].bar);
++	writel_relaxed(bar | 0x10, p + r8a7790_clst[clst_id].bar);
  
- 	*reg = &chip->regs[gpio_pin->dreg];
-@@ -76,11 +76,11 @@ static void gpio_write_data_reg(struct sh_pfc_chip *chip,
- 	sh_pfc_write_raw_reg(mem, dreg->reg_width, value);
- }
- 
--static void gpio_setup_data_reg(struct sh_pfc_chip *chip, unsigned gpio)
-+static void gpio_setup_data_reg(struct sh_pfc_chip *chip, unsigned idx)
- {
- 	struct sh_pfc *pfc = chip->pfc;
--	struct sh_pfc_gpio_pin *gpio_pin = &chip->pins[gpio];
--	const struct sh_pfc_pin *pin = &pfc->info->pins[gpio];
-+	struct sh_pfc_gpio_pin *gpio_pin = &chip->pins[idx];
-+	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
- 	const struct pinmux_data_reg *dreg;
- 	unsigned int bit;
- 	unsigned int i;
+ 	/* enable per-core clocks */
+ 	mask = BIT(3 - r8a7790_cpu_id(cpu));
 -- 
-1.8.1.5
+1.8.3.2
 
