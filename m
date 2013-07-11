@@ -1,130 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:22:00 +0000
-Subject: [PATCH v2 16/23] drm/rcar-du: Add support for the R8A7790 DU
-Message-Id: <1375276927-20181-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 11 Jul 2013 08:24:03 +0000
+Subject: [PATCH 0/11] ARM: shmobile: setup cleanup / r8a7778 update
+Message-Id: <87oba9fqsg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The DU revision in the R8A7790 SoC uses one IRQ and clock per CRTC. Add
-a corresponding entry in the module platform ID table.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_drv.c  |  5 +++
- drivers/gpu/drm/rcar-du/rcar_du_regs.h | 66 ++++++++++++++++++++++++++++++++--
- 2 files changed, 68 insertions(+), 3 deletions(-)
+Hi Simon
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index fd7cdda..381dbad 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -220,8 +220,13 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
- 	.features = 0,
- };
- 
-+static const struct rcar_du_device_info rcar_du_r8a7790_info = {
-+	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK,
-+};
-+
- static const struct platform_device_id rcar_du_id_table[] = {
- 	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
-+	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
- 	{ }
- };
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-index 195ed7e..f62a9f3 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-@@ -196,6 +196,68 @@
- #define DEFR6_DEFAULT		(DEFR6_CODE | DEFR6_TCNE2)
- 
- /* -----------------------------------------------------------------------------
-+ * R8A7790-only Control Registers
-+ */
-+
-+#define DD1SSR			0x20008
-+#define DD1SSR_TVR		(1 << 15)
-+#define DD1SSR_FRM		(1 << 14)
-+#define DD1SSR_BUF		(1 << 12)
-+#define DD1SSR_VBK		(1 << 11)
-+#define DD1SSR_RINT		(1 << 9)
-+#define DD1SSR_HBK		(1 << 8)
-+#define DD1SSR_ADC(n)		(1 << ((n)-1))
-+
-+#define DD1SRCR			0x2000c
-+#define DD1SRCR_TVR		(1 << 15)
-+#define DD1SRCR_FRM		(1 << 14)
-+#define DD1SRCR_BUF		(1 << 12)
-+#define DD1SRCR_VBK		(1 << 11)
-+#define DD1SRCR_RINT		(1 << 9)
-+#define DD1SRCR_HBK		(1 << 8)
-+#define DD1SRCR_ADC(n)		(1 << ((n)-1))
-+
-+#define DD1IER			0x20010
-+#define DD1IER_TVR		(1 << 15)
-+#define DD1IER_FRM		(1 << 14)
-+#define DD1IER_BUF		(1 << 12)
-+#define DD1IER_VBK		(1 << 11)
-+#define DD1IER_RINT		(1 << 9)
-+#define DD1IER_HBK		(1 << 8)
-+#define DD1IER_ADC(n)		(1 << ((n)-1))
-+
-+#define DEFR8			0x20020
-+#define DEFR8_CODE		(0x7790 << 16)
-+#define DEFR8_VSCS		(1 << 6)
-+#define DEFR8_DRGBS_DU(n)	((n) << 4)
-+#define DEFR8_DRGBS_MASK	(3 << 4)
-+#define DEFR8_DEFE8		(1 << 0)
-+
-+#define DOFLR			0x20024
-+#define DOFLR_CODE		(0x7790 << 16)
-+#define DOFLR_HSYCFL1		(1 << 13)
-+#define DOFLR_VSYCFL1		(1 << 12)
-+#define DOFLR_ODDFL1		(1 << 11)
-+#define DOFLR_DISPFL1		(1 << 10)
-+#define DOFLR_CDEFL1		(1 << 9)
-+#define DOFLR_RGBFL1		(1 << 8)
-+#define DOFLR_HSYCFL0		(1 << 5)
-+#define DOFLR_VSYCFL0		(1 << 4)
-+#define DOFLR_ODDFL0		(1 << 3)
-+#define DOFLR_DISPFL0		(1 << 2)
-+#define DOFLR_CDEFL0		(1 << 1)
-+#define DOFLR_RGBFL0		(1 << 0)
-+
-+#define DIDSR			0x20028
-+#define DIDSR_CODE		(0x7790 << 16)
-+#define DIDSR_LCDS_DCLKIN(n)	(0 << (8 + (n) * 2))
-+#define DIDSR_LCDS_LVDS0(n)	(2 << (8 + (n) * 2))
-+#define DIDSR_LCDS_LVDS1(n)	(3 << (8 + (n) * 2))
-+#define DIDSR_LCDS_MASK(n)	(3 << (8 + (n) * 2))
-+#define DIDSR_PCDS_CLK(n, clk)	(clk << ((n) * 2))
-+#define DIDSR_PCDS_MASK(n)	(3 << ((n) * 2))
-+
-+/* -----------------------------------------------------------------------------
-  * Display Timing Generation Registers
-  */
- 
-@@ -364,12 +426,10 @@
-  * Display Capture Registers
-  */
- 
-+#define DCMR			0x0c100
- #define DCMWR			0x0c104
--#define DC2MWR			0x0c204
- #define DCSAR			0x0c120
--#define DC2SAR			0x0c220
- #define DCMLR			0x0c150
--#define DC2MLR			0x0c250
- 
- /* -----------------------------------------------------------------------------
-  * Color Palette Registers
--- 
-1.8.1.5
+These patches are
+ 1 - 6 : r8a7778 cleanup patches
+ 7 - 8 : r8a7779 cleanup patches
+ 9     : BockW DT reference
+ A - B : BockW USB Func support
 
+I talked with Magnus about current setup-r8a7778 code style
+and ARM/shmobile future work.
+Now, ARM/shmobile aims to support DT,
+and the C code base board support will be removed in the future.
+
+The current r8a7778 driver registration method which needs platform data
+and which is not shared complicates codes,
+and these will be removed if DT support was completed.
+So, these drivers are registered on board code.
+
+OTOH, driver which doesn't need platform data at the time of
+registration can be registerd on SoC.
+
+So, 1st 1 - 8 patches cleanup current r8a7778/r8a7779 code.
+9 - B patches are based on these cleanup patches
+
+Kuninori Morimoto (11):
+      1) ARM: shmobile: r8a7778: cleanup registration of sh_eth
+      2) ARM: shmobile: r8a7778: cleanup registration of mmcif
+      3) ARM: shmobile: r8a7778: cleanup registration of usb phy
+      4) ARM: shmobile: r8a7778: cleanup registration of sdhi
+      5) ARM: shmobile: r8a7778: cleanup registration of i2c
+      6) ARM: shmobile: r8a7778: cleanup registration of hspi
+      7) ARM: shmobile: r8a7779: cleanup registration of usb phy
+      8) ARM: shmobile: r8a7779: cleanup registration of sh_eth
+      9) ARM: shmobile: bockw: add DT reference
+      A) ARM: shmobile: r8a7778: add usb phy power control function
+      B) ARM: shmobile: bockw: add USB Function support
+
+ arch/arm/boot/dts/Makefile                     |    1 +
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts  |   32 ++++++
+ arch/arm/mach-shmobile/Kconfig                 |   14 +++
+ arch/arm/mach-shmobile/Makefile                |    1 +
+ arch/arm/mach-shmobile/Makefile.boot           |    1 +
+ arch/arm/mach-shmobile/board-bockw-reference.c |   62 +++++++++++
+ arch/arm/mach-shmobile/board-bockw.c           |  136 ++++++++++++++++++++++--
+ arch/arm/mach-shmobile/board-marzen.c          |   24 ++++-
+ arch/arm/mach-shmobile/clock-r8a7778.c         |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h  |   14 +--
+ arch/arm/mach-shmobile/include/mach/r8a7779.h  |    3 -
+ arch/arm/mach-shmobile/setup-r8a7778.c         |  115 +++++++-------------
+ arch/arm/mach-shmobile/setup-r8a7779.c         |   37 -------
+ 13 files changed, 302 insertions(+), 139 deletions(-)
