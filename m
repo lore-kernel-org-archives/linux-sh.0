@@ -1,47 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 01 Jul 2013 05:41:46 +0000
-Subject: [PATCH 04/07] ARM: shmobile: Remove unused r8a7779 auxdata table
-Message-Id: <20130701054146.19319.86285.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 11 Jul 2013 01:27:30 +0000
+Subject: [ANNOUNCE] Change of use of next branch in renesas tree
+Message-Id: <20130711012730.GA11120@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130701054106.19319.46845.sendpatchset@w520>
-In-Reply-To: <20130701054106.19319.46845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Summary:
 
-Pass NULL to of_platform_populate instead of passing
-an empty list. This cleans up the code and reduces the
-number of lines.
+If you have been using renesas-next-YYYYMMDD as the basis
+for development please now use renesas-devel-YYYYMMDD
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Detail:
 
- arch/arm/mach-shmobile/setup-r8a7779.c |    7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+Over the past months I have been regularly updating the next branch of the
+renesas tree as a merge of branches that contain code that I have
+queued-up. Currently this includes code that is queued-up for v3.12.
 
---- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2013-06-28 15:49:50.000000000 +0900
-@@ -665,10 +665,6 @@ void __init r8a7779_init_delay(void)
- 	shmobile_setup_delay(1000, 2, 4); /* Cortex-A9 @ 1000MHz */
- }
- 
--static const struct of_dev_auxdata r8a7779_auxdata_lookup[] __initconst = {
--	{},
--};
--
- void __init r8a7779_add_standard_devices_dt(void)
- {
- 	/* clocks are setup late during boot in the case of DT */
-@@ -676,8 +672,7 @@ void __init r8a7779_add_standard_devices
- 
- 	platform_add_devices(r8a7779_devices_dt,
- 			     ARRAY_SIZE(r8a7779_devices_dt));
--	of_platform_populate(NULL, of_default_bus_match_table,
--			     r8a7779_auxdata_lookup, NULL);
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
- static const char *r8a7779_compat_dt[] __initdata = {
+As well as being consumed by developers of shmobile code
+the next branch is included in the linux-next tree.
+
+I have been made aware that the code that I include in my
+next branch isn't always appropriate for inclusion in linux-next.
+In particular:
+
+1. Including code queued-up for v3.N before v3.(N-1)-rc1 is released.
+2. Frequent rebasing
+
+In order to address these problems I have done the following:
+
+* Updated the next branch to match the for-next branch of the arm-soc tree.
+* Created a new devel branch, for this will function the way the next
+  branch used to function. I have also taged renesas-devel-20130711
+  in line with the taging scheme that has been in use over
+  the past few months for the next branch.
+
+Moving forwards I will endeavour to reduce the number of rebases present
+in branches that are merged into next. And hopefully devel too.
