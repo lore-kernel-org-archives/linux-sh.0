@@ -1,181 +1,107 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Jul 2013 13:43:52 +0000
-Subject: [PATCH 2/8] DMA: shdma: add r8a7740 DMAC data to the device ID table
-Message-Id: <1373636638-18496-3-git-send-email-g.liakhovetski@gmx.de>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Thu, 11 Jul 2013 09:51:39 +0000
+Subject: [PATCH 1/4] ARM: shmobile: smp-r8a7790: remove the obsolete RESCNT register
+Message-Id: <51DE802B.6090401@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130710104151.20742.56398.sendpatchset@w520>
+ <51DE7FF4.5050800@renesas.com>
+In-Reply-To: <51DE7FF4.5050800@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This configuration data will be re-used, when DMAC DT support is added to
-r8a7740, DMAC platform data in setup-r8a7740.c will be removed.
+I should have notice this one, sorry for bothering you in v4 again.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+The RESCNT register, which is supposed to be used to control clock supply
+to CA15/CA7 clusters by manipulating dedicated MSTP bits, turned out that
+it doesn't do anything good for clock supply to clusters.  It was listed
+in the datasheet v0.5, but it's now obsolete in the datasheet v0.6.
+
+This patch removes the defines and routines related to RESCNT.
+
+Note that, this patch removes r8a7790_deassert_reset(0) call in
+r8a7790_smp_prepare_cpus at the time.  As we already know, it's pointless
+to deassert reset to CPU#0 (boot CPU) in the kernel initialization.  It
+was just there to set r8a7790_clst[0].use_count to 1 on start-up to keep
+.use_count balanced.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- drivers/dma/sh/Kconfig         |    4 ++
- drivers/dma/sh/Makefile        |    1 +
- drivers/dma/sh/shdma-r8a7740.c |   95 ++++++++++++++++++++++++++++++++++++++++
- drivers/dma/sh/shdma.h         |    7 +++
- drivers/dma/sh/shdmac.c        |    1 +
- 5 files changed, 108 insertions(+), 0 deletions(-)
- create mode 100644 drivers/dma/sh/shdma-r8a7740.c
+ arch/arm/mach-shmobile/smp-r8a7790.c | 22 ----------------------
+ 1 file changed, 22 deletions(-)
 
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index 5c1dee2..0ac3e94 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -22,3 +22,7 @@ config SUDMAC
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas SUDMAC controllers.
-+
-+config SHDMA_R8A7740
-+	def_bool y
-+	depends on ARCH_R8A7740 && SH_DMAE != n
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index 893ee09..acdd3cb 100644
---- a/drivers/dma/sh/Makefile
-+++ b/drivers/dma/sh/Makefile
-@@ -1,5 +1,6 @@
- obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
- obj-$(CONFIG_SH_DMAE) += shdma.o
- shdma-y := shdmac.o
-+shdma-$(CONFIG_SHDMA_R8A7740) += shdma-r8a7740.o
- shdma-objs := $(shdma-y)
- obj-$(CONFIG_SUDMAC) += sudmac.o
-diff --git a/drivers/dma/sh/shdma-r8a7740.c b/drivers/dma/sh/shdma-r8a7740.c
-new file mode 100644
-index 0000000..2597e2c
---- /dev/null
-+++ b/drivers/dma/sh/shdma-r8a7740.c
-@@ -0,0 +1,95 @@
-+#include <linux/sh_dma.h>
-+
-+#include <mach/dma-register.h>
-+#include <mach/r8a7740.h>
-+
-+static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc9,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xca,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xcd,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xce,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FSIA_TX,
-+		.addr		= 0xfe1f0024,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FSIA_RX,
-+		.addr		= 0xfe1f0020,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FSIB_TX,
-+		.addr		= 0xfe1f0064,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb5,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
-+	},
-+};
-+
-+#define DMA_CHANNEL(a, b, c)			\
-+{						\
-+	.offset		= a,			\
-+	.dmars		= b,			\
-+	.dmars_bit	= c,			\
-+	.chclr_offset	= (0x220 - 0x20) + a	\
-+}
-+
-+static const struct sh_dmae_channel r8a7740_dmae_channels[] = {
-+	DMA_CHANNEL(0x00, 0, 0),
-+	DMA_CHANNEL(0x10, 0, 8),
-+	DMA_CHANNEL(0x20, 4, 0),
-+	DMA_CHANNEL(0x30, 4, 8),
-+	DMA_CHANNEL(0x50, 8, 0),
-+	DMA_CHANNEL(0x60, 8, 8),
-+};
-+
-+struct sh_dmae_pdata r8a7740_dma_pdata = {
-+	.slave		= r8a7740_dmae_slaves,
-+	.slave_num	= ARRAY_SIZE(r8a7740_dmae_slaves),
-+	.channel	= r8a7740_dmae_channels,
-+	.channel_num	= ARRAY_SIZE(r8a7740_dmae_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init	= DMAOR_DME,
-+	.chclr_present	= 1,
-+};
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index 06aae6e..b5fe545 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -61,4 +61,11 @@ struct sh_dmae_desc {
- #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
- 				     struct sh_dmae_device, shdma_dev.dma_dev)
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index a1696f4..1ab4c04 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -25,7 +25,6 @@
+ #define CA7BAR	0x0030
+ #define CA15RESCNT 0x0040
+ #define CA7RESCNT 0x0044
+-#define RESCNT	0x0050
  
-+#ifdef CONFIG_SHDMA_R8A7740
-+extern struct sh_dmae_pdata r8a7740_dma_pdata;
-+#define r8a7740_shdma_devid &r8a7740_dma_pdata
-+#else
-+#define r8a7740_shdma_devid NULL
-+#endif
-+
- #endif	/* __DMA_SHDMA_H */
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 3c5634e..9e724ae 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -923,6 +923,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
- 
- const struct platform_device_id sh_dmae_id_table[] = {
- 	{.name = SH_DMAE_DRV_NAME,},
-+	{.name = "shdma-r8a7740", .driver_data = (kernel_ulong_t)r8a7740_shdma_devid,},
- 	{}
+ #define APMU	0xe6150000
+ #define CA15WUPCR 0x2010
+@@ -39,20 +38,16 @@ static struct {
+ 	unsigned int cabar;
+ 	unsigned int carescnt;
+ 	unsigned int carescnt_magic;
+-	unsigned int rescnt_bit;
+-	unsigned int use_count;
+ } r8a7790_clst[R8A7790_CLST_NR] = {
+ 	[R8A7790_CLST_CA15] = {
+ 		.cabar = CA15BAR,
+ 		.carescnt = CA15RESCNT,
+ 		.carescnt_magic = 0xa5a50000,
+-		.rescnt_bit = 1,
+ 	},
+ 	[R8A7790_CLST_CA7] = {
+ 		.cabar = CA7BAR,
+ 		.carescnt = CA7RESCNT,
+ 		.carescnt_magic = 0x5a5a0000,
+-		.rescnt_bit = 0,
+ 	},
  };
- MODULE_DEVICE_TABLE(platform, sh_dmae_id_table);
+ 
+@@ -71,12 +66,6 @@ static void r8a7790_deassert_reset(unsigned int cpu)
+ 	writel_relaxed(bar, p + r8a7790_clst[clst_id].cabar);
+ 	writel_relaxed(bar | 0x10, p + r8a7790_clst[clst_id].cabar);
+ 
+-	/* enable clocks for cluster */
+-	if (r8a7790_clst[clst_id].use_count++ = 0) {
+-		mask = 1 << r8a7790_clst[clst_id].rescnt_bit;
+-		writel_relaxed(readl_relaxed(p + RESCNT) & ~mask, p + RESCNT);
+-	}
+-
+ 	/* enable per-core clocks */
+ 	mask = BIT(3 - r8a7790_cpu_id(cpu));
+ 	magic = r8a7790_clst[clst_id].carescnt_magic;
+@@ -100,15 +89,6 @@ static void r8a7790_assert_reset(unsigned int cpu)
+ 	carescnt = p + r8a7790_clst[clst_id].carescnt;
+ 	writel_relaxed((readl_relaxed(carescnt) | mask) | magic, carescnt);
+ 
+-	/* disable clocks for cluster */
+-	if (r8a7790_clst[clst_id].use_count = 1) {
+-		mask = 1 << r8a7790_clst[clst_id].rescnt_bit;
+-		writel_relaxed(readl_relaxed(p + RESCNT) | mask, p + RESCNT);
+-	}
+-
+-	if (r8a7790_clst[clst_id].use_count > 0)
+-		r8a7790_clst[clst_id].use_count--;
+-
+ 	iounmap(p);
+ }
+ 
+@@ -145,8 +125,6 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ 		r8a7790_assert_reset(k);
+ 		r8a7790_power_on(k);
+ 	}
+-
+-	r8a7790_deassert_reset(0);
+ }
+ 
+ static int __cpuinit r8a7790_boot_secondary(unsigned int cpu,
 -- 
-1.7.2.5
+1.8.3.2
 
