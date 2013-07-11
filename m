@@ -1,74 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:35:47 +0000
-Subject: [GIT 00/11] Renesas ARM-based SoC DT updates for v3.12
-Message-Id: <cover.1374478037.git.horms+renesas@verge.net.au>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Thu, 11 Jul 2013 09:52:57 +0000
+Subject: [PATCH 4/4] ARM: shmobile: smp-r8a7790: power up a CPU core at .smp_boot_secondary stage
+Message-Id: <51DE8079.6000001@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130710104151.20742.56398.sendpatchset@w520>
+ <51DE7FF4.5050800@renesas.com>
+In-Reply-To: <51DE7FF4.5050800@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+With the CPU hotplug support in mind, we should not let oneline CPU cores
+get powered on at .smp_prepare_cpus stage _just_ _once_, but should power
+up a requested CPU core one by one, when .smp_boot_secondary is processed.
 
-please consider the following DT updates for v3.12.
+Otherwise, the power supply to CPU cores can never be on again after
+resume or cpu_up request via CPU hotplug.
 
-This pull request is based on renesas-cleanup-for-v3.12 which I
-have already sent a pull request for.
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+---
+ arch/arm/mach-shmobile/smp-r8a7790.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-The following changes since commit ebd9616f439a8a46b9dca9a272b342f34c5f3614:
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 1448e387..6d23c52 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -120,11 +120,9 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ 	memcpy_toio(p, shmobile_boot_vector, 16);
+ 	iounmap(p);
+ 
+-	/* keep secondary CPU cores in reset, but powered on */
+-	for (k = 1; k < 8; k++) {
++	/* keep secondary CPU cores in reset */
++	for (k = 1; k < 8; k++)
+ 		r8a7790_assert_reset(k);
+-		r8a7790_power_on(k);
+-	}
+ }
+ 
+ static int __cpuinit r8a7790_boot_secondary(unsigned int cpu,
+@@ -134,6 +132,7 @@ static int __cpuinit r8a7790_boot_secondary(unsigned int cpu,
+ 	if (r8a7790_clst_id(cpu) != r8a7790_clst_id(0))
+ 		return -ENOTSUPP;
+ 
++	r8a7790_power_on(cpu);
+ 	r8a7790_deassert_reset(cpu);
+ 	return 0;
+ }
+-- 
+1.8.3.2
 
-  ARM: shmobile: Remove unused mach/dma.h (2013-07-17 10:02:30 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.12
-
-for you to fetch changes up to 66a5cab04d339d02b93a4671eadf8e251dbfdc2c:
-
-  ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference (2013-07-17 10:06:47 +0900)
-
-----------------------------------------------------------------
-Renesas ARM-based SoC DT updates for v3.12
-
-* Reference implementation for kzm9d board
-* Add MMCIF and SDHI DT templates for r8a7790 and r8a73a4 SoCs
-* Use DT for SMP and GIC initialisation on emev2 SoC and kzm9d board
-* Add GIO to dtsi of emev2 SoC
-* Update dts command line of kzm9d board
-* Add CPUFreq support to ape6evm board
-* Add I2C controller DT nodes to r8a73a4 SoC
-
-----------------------------------------------------------------
-Guennadi Liakhovetski (4):
-      ARM: shmobile: r8a73a4: add I2C controller DT nodes
-      ARM: shmobile: ape6evm: add CPUFreq support
-      ARM: shmobile: r8a73a4: add MMCIF and SDHI DT templates
-      ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
-
-Magnus Damm (7):
-      ARM: shmobile: Update KZM9D dts command line
-      ARM: shmobile: Add GIO to EMEV2 dtsi
-      ARM: shmobile: Use DT for GIC on EMEV2 and KZM9D
-      ARM: shmobile: Use DT for SMP on EMEV2 and KZM9D
-      ARM: shmobile: EMEV2 map_io update
-      ARM: shmobile: KZM9D DT reference implementation
-      ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference
-
- arch/arm/boot/dts/Makefile                     |   1 +
- arch/arm/boot/dts/emev2-kzm9d-reference.dts    |  57 +++++++++++
- arch/arm/boot/dts/emev2-kzm9d.dts              |   2 +-
- arch/arm/boot/dts/emev2.dtsi                   |  59 ++++++++++++
- arch/arm/boot/dts/r8a73a4-ape6evm.dts          |  22 +++++
- arch/arm/boot/dts/r8a73a4.dtsi                 | 126 +++++++++++++++++++++++++
- arch/arm/boot/dts/r8a7790.dtsi                 |  54 +++++++++++
- arch/arm/mach-shmobile/Kconfig                 |  12 +++
- arch/arm/mach-shmobile/Makefile                |   1 +
- arch/arm/mach-shmobile/Makefile.boot           |   1 +
- arch/arm/mach-shmobile/board-kzm9d-reference.c |  46 +++++++++
- arch/arm/mach-shmobile/board-kzm9d.c           |   2 -
- arch/arm/mach-shmobile/include/mach/emev2.h    |   1 -
- arch/arm/mach-shmobile/setup-emev2.c           |  23 +----
- arch/arm/mach-shmobile/smp-emev2.c             |  17 +---
- 15 files changed, 384 insertions(+), 40 deletions(-)
- create mode 100644 arch/arm/boot/dts/emev2-kzm9d-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-kzm9d-reference.c
