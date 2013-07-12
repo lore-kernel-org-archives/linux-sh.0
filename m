@@ -1,132 +1,181 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:35:30 +0000
-Subject: [PATCH 5/7] sh: ecovec24: Use gpio-backlight
-Message-Id: <fe79f919f47eabf6eae08414dcc078b0d89dfd8e.1374207161.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Jul 2013 13:43:52 +0000
+Subject: [PATCH 2/8] DMA: shdma: add r8a7740 DMAC data to the device ID table
+Message-Id: <1373636638-18496-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374207161.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374207161.git.horms+renesas@verge.net.au>
+References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This configuration data will be re-used, when DMAC DT support is added to
+r8a7740, DMAC platform data in setup-r8a7740.c will be removed.
 
-Replace the backlight callback with a gpio-backlight platform device.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c |   37 ++++++++++++++++++----------------
- 1 file changed, 20 insertions(+), 17 deletions(-)
+ drivers/dma/sh/Kconfig         |    4 ++
+ drivers/dma/sh/Makefile        |    1 +
+ drivers/dma/sh/shdma-r8a7740.c |   95 ++++++++++++++++++++++++++++++++++++++++
+ drivers/dma/sh/shdma.h         |    7 +++
+ drivers/dma/sh/shdmac.c        |    1 +
+ 5 files changed, 108 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/dma/sh/shdma-r8a7740.c
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 61fade0..bcbb86b 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -30,6 +30,7 @@
- #include <linux/spi/mmc_spi.h>
- #include <linux/input.h>
- #include <linux/input/sh_keysc.h>
-+#include <linux/platform_data/gpio_backlight.h>
- #include <linux/sh_eth.h>
- #include <linux/sh_intc.h>
- #include <linux/videodev2.h>
-@@ -303,7 +304,7 @@ static struct platform_device usbhs_device = {
- 	.resource	= usbhs_resources,
- };
- 
--/* LCDC */
-+/* LCDC and backlight */
- static const struct fb_videomode ecovec_lcd_modes[] = {
- 	{
- 		.name		= "Panel",
-@@ -334,13 +335,6 @@ static const struct fb_videomode ecovec_dvi_modes[] = {
- 	},
- };
- 
--static int ecovec24_set_brightness(int brightness)
--{
--	gpio_set_value(GPIO_PTR1, brightness);
--
--	return 0;
--}
--
- static struct sh_mobile_lcdc_info lcdc_info = {
- 	.ch[0] = {
- 		.interface_type = RGB18,
-@@ -350,11 +344,6 @@ static struct sh_mobile_lcdc_info lcdc_info = {
- 			.width = 152,
- 			.height = 91,
- 		},
--		.bl_info = {
--			.name = "sh_mobile_lcdc_bl",
--			.max_brightness = 1,
--			.set_brightness = ecovec24_set_brightness,
--		},
- 	}
- };
- 
-@@ -380,6 +369,20 @@ static struct platform_device lcdc_device = {
- 	},
- };
- 
-+static struct gpio_backlight_platform_data gpio_backlight_data = {
-+	.fbdev = &lcdc_device.dev,
-+	.gpio = GPIO_PTR1,
-+	.def_value = 1,
-+	.name = "backlight",
-+};
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+index 5c1dee2..0ac3e94 100644
+--- a/drivers/dma/sh/Kconfig
++++ b/drivers/dma/sh/Kconfig
+@@ -22,3 +22,7 @@ config SUDMAC
+ 	depends on SH_DMAE_BASE
+ 	help
+ 	  Enable support for the Renesas SUDMAC controllers.
 +
-+static struct platform_device gpio_backlight_device = {
-+	.name = "gpio-backlight",
-+	.dev = {
-+		.platform_data = &gpio_backlight_data,
++config SHDMA_R8A7740
++	def_bool y
++	depends on ARCH_R8A7740 && SH_DMAE != n
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index 893ee09..acdd3cb 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -1,5 +1,6 @@
+ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
+ obj-$(CONFIG_SH_DMAE) += shdma.o
+ shdma-y := shdmac.o
++shdma-$(CONFIG_SHDMA_R8A7740) += shdma-r8a7740.o
+ shdma-objs := $(shdma-y)
+ obj-$(CONFIG_SUDMAC) += sudmac.o
+diff --git a/drivers/dma/sh/shdma-r8a7740.c b/drivers/dma/sh/shdma-r8a7740.c
+new file mode 100644
+index 0000000..2597e2c
+--- /dev/null
++++ b/drivers/dma/sh/shdma-r8a7740.c
+@@ -0,0 +1,95 @@
++#include <linux/sh_dma.h>
++
++#include <mach/dma-register.h>
++#include <mach/r8a7740.h>
++
++static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
++	{
++		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
++		.addr		= 0xe6850030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
++		.addr		= 0xe6850030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
++		.addr		= 0xe6860030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc9,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
++		.addr		= 0xe6860030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xca,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
++		.addr		= 0xe6870030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xcd,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
++		.addr		= 0xe6870030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xce,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FSIA_TX,
++		.addr		= 0xfe1f0024,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xb1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FSIA_RX,
++		.addr		= 0xfe1f0020,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xb2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FSIB_TX,
++		.addr		= 0xfe1f0064,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xb5,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
++		.addr		= 0xe6bd0034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
++		.addr		= 0xe6bd0034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd2,
 +	},
 +};
 +
- /* CEU0 */
- static struct sh_mobile_ceu_info sh_mobile_ceu0_info = {
- 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
-@@ -1049,6 +1052,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&usb1_common_device,
- 	&usbhs_device,
- 	&lcdc_device,
-+	&gpio_backlight_device,
- 	&ceu0_device,
- 	&ceu1_device,
- 	&keysc_device,
-@@ -1239,11 +1243,9 @@ static int __init arch_setup(void)
- 
- 	gpio_request(GPIO_PTE6, NULL);
- 	gpio_request(GPIO_PTU1, NULL);
--	gpio_request(GPIO_PTR1, NULL);
- 	gpio_request(GPIO_PTA2, NULL);
- 	gpio_direction_input(GPIO_PTE6);
- 	gpio_direction_output(GPIO_PTU1, 0);
--	gpio_direction_output(GPIO_PTR1, 0);
- 	gpio_direction_output(GPIO_PTA2, 0);
- 
- 	/* I/O buffer drive ability is high */
-@@ -1256,6 +1258,9 @@ static int __init arch_setup(void)
- 		lcdc_info.ch[0].lcd_modes		= ecovec_dvi_modes;
- 		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_dvi_modes);
- 
-+		/* No backlight */
-+		gpio_backlight_data.fbdev = NULL;
++#define DMA_CHANNEL(a, b, c)			\
++{						\
++	.offset		= a,			\
++	.dmars		= b,			\
++	.dmars_bit	= c,			\
++	.chclr_offset	= (0x220 - 0x20) + a	\
++}
 +
- 		gpio_set_value(GPIO_PTA2, 1);
- 		gpio_set_value(GPIO_PTU1, 1);
- 	} else {
-@@ -1265,8 +1270,6 @@ static int __init arch_setup(void)
- 		lcdc_info.ch[0].lcd_modes		= ecovec_lcd_modes;
- 		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_lcd_modes);
++static const struct sh_dmae_channel r8a7740_dmae_channels[] = {
++	DMA_CHANNEL(0x00, 0, 0),
++	DMA_CHANNEL(0x10, 0, 8),
++	DMA_CHANNEL(0x20, 4, 0),
++	DMA_CHANNEL(0x30, 4, 8),
++	DMA_CHANNEL(0x50, 8, 0),
++	DMA_CHANNEL(0x60, 8, 8),
++};
++
++struct sh_dmae_pdata r8a7740_dma_pdata = {
++	.slave		= r8a7740_dmae_slaves,
++	.slave_num	= ARRAY_SIZE(r8a7740_dmae_slaves),
++	.channel	= r8a7740_dmae_channels,
++	.channel_num	= ARRAY_SIZE(r8a7740_dmae_channels),
++	.ts_low_shift	= TS_LOW_SHIFT,
++	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift	= TS_HI_SHIFT,
++	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift	= dma_ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
++	.dmaor_init	= DMAOR_DME,
++	.chclr_present	= 1,
++};
+diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
+index 06aae6e..b5fe545 100644
+--- a/drivers/dma/sh/shdma.h
++++ b/drivers/dma/sh/shdma.h
+@@ -61,4 +61,11 @@ struct sh_dmae_desc {
+ #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
+ 				     struct sh_dmae_device, shdma_dev.dma_dev)
  
--		gpio_set_value(GPIO_PTR1, 1);
--
- 		/* FIXME
- 		 *
- 		 * LCDDON control is needed for Panel,
++#ifdef CONFIG_SHDMA_R8A7740
++extern struct sh_dmae_pdata r8a7740_dma_pdata;
++#define r8a7740_shdma_devid &r8a7740_dma_pdata
++#else
++#define r8a7740_shdma_devid NULL
++#endif
++
+ #endif	/* __DMA_SHDMA_H */
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index 3c5634e..9e724ae 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -923,6 +923,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+ 
+ const struct platform_device_id sh_dmae_id_table[] = {
+ 	{.name = SH_DMAE_DRV_NAME,},
++	{.name = "shdma-r8a7740", .driver_data = (kernel_ulong_t)r8a7740_shdma_devid,},
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(platform, sh_dmae_id_table);
 -- 
-1.7.10.4
+1.7.2.5
 
