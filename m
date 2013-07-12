@@ -1,37 +1,113 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 23 Jul 2013 04:31:16 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790 SMP prototype v5
-Message-Id: <20130723043116.GA26723@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Jul 2013 13:43:58 +0000
+Subject: [PATCH 8/8] ARM: shmobile: r8a7740: add DT nodes and clock aliases for three DMAC instances
+Message-Id: <1373636638-18496-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130717204918.30125.40588.sendpatchset@w520>
- <51E7379A.1080408@renesas.com> <20130719022904.GG4403@verge.net.au>
-In-Reply-To: <20130719022904.GG4403@verge.net.au>
+References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-On Fri, Jul 19, 2013 at 11:29:04AM +0900, Simon Horman wrote:
-> On Thu, Jul 18, 2013 at 09:32:26AM +0900, Shinya Kuribayashi wrote:
-> > On 7/18/2013 5:49 AM, Magnus Damm wrote:
-> > >  Changes since v4:
-> > >  - Rolled in the following patches from Kuribayashi-san, thanks!
-> > >    ARM: shmobile: smp-r8a7790: remove the obsolete RESCNT register
-> > >    ARM: shmobile: smp-r8a7790: rename s/carescnt/rescnt/g
-> > >    ARM: shmobile: smp-r8a7790: rename s/cabar/bar/g as well
-> > >    ARM: shmobile: smp-r8a7790: power up a CPU core at .smp_boot_secondary stage
-> > > 
-> > >  Written against kernel.org renesas git tag renesas-devel-20130717
-> > 
-> > Thanks for the update, looks good to me.
-> 
-> Thanks.
-> 
-> This seems like it is ready to queue-up.
-> Magnus, are there any outstanding reviews or issues?
+This patch adds Device Tree support for the three generic DMA controller
+instances on r8a7740 in a DMA multiplexer node.
 
-I have placed this in topic/lager-smp-v5 in the renesas tree
-to aid review. It is not yet queued up for mainline.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7740.dtsi         |   61 ++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7740.c |    3 ++
+ 2 files changed, 64 insertions(+), 0 deletions(-)
 
-topic/lager-smp still contains v3 of this patch.
-Let me know if I can delete this branch.
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 25dc930..39b596f 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -112,6 +112,67 @@
+ 			      0 149 0x4>;
+ 	};
+ 
++	dmac: dma-mux0 {
++		compatible = "renesas,shdma-mux";
++		#dma-cells = <1>;
++		dma-channels = <6>;
++		dma-requests = <256>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		dma0: shdma@fe008020 {
++			compatible = "renesas,shdma-r8a7740";
++			reg = <0xfe008020 0x270>,
++				<0xfe009000 0xc>;
++			interrupt-parent = <&gic>;
++			interrupts = <0 34 4
++					0 28 4
++					0 29 4
++					0 30 4
++					0 31 4
++					0 32 4
++					0 33 4>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5";
++		};
++
++		dma1: shdma@fe018020 {
++			compatible = "renesas,shdma-r8a7740";
++			reg = <0xfe018020 0x270>,
++				<0xfe019000 0xc>;
++			interrupt-parent = <&gic>;
++			interrupts = <0 41 4
++					0 35 4
++					0 36 4
++					0 37 4
++					0 38 4
++					0 39 4
++					0 40 4>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5";
++		};
++
++		dma2: shdma@fe028020 {
++			compatible = "renesas,shdma-r8a7740";
++			reg = <0xfe028020 0x270>,
++				<0xfe029000 0xc>;
++			interrupt-parent = <&gic>;
++			interrupts = <0 48 4
++					0 42 4
++					0 43 4
++					0 44 4
++					0 45 4
++					0 46 4
++					0 47 4>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5";
++		};
++	};
++
+ 	i2c0: i2c@fff20000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 0abe58a..38ce209 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -576,8 +576,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
+ 	CLKDEV_DEV_ID("shdma-r8a7740.2",	&mstp_clks[MSTP216]),
++	CLKDEV_DEV_ID("fe028020.shdma",		&mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("shdma-r8a7740.1",	&mstp_clks[MSTP217]),
++	CLKDEV_DEV_ID("fe018020.shdma",		&mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("shdma-r8a7740.0",	&mstp_clks[MSTP218]),
++	CLKDEV_DEV_ID("fe008020.shdma",		&mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
+ 	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+-- 
+1.7.2.5
+
