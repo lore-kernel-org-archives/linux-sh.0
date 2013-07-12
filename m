@@ -1,113 +1,108 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 12 Jul 2013 13:43:58 +0000
-Subject: [PATCH 8/8] ARM: shmobile: r8a7740: add DT nodes and clock aliases for three DMAC instances
-Message-Id: <1373636638-18496-9-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 12 Jul 2013 14:56:20 +0000
+Subject: Re: [PATCH 8/8] ARM: shmobile: r8a7740: add DT nodes and clock aliases for three DMAC instances
+Message-Id: <51E01914.50704@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de> <1373636638-18496-9-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373636638-18496-9-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-This patch adds Device Tree support for the three generic DMA controller
-instances on r8a7740 in a DMA multiplexer node.
+Hello.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
- arch/arm/boot/dts/r8a7740.dtsi         |   61 ++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7740.c |    3 ++
- 2 files changed, 64 insertions(+), 0 deletions(-)
+On 07/12/2013 05:43 PM, Guennadi Liakhovetski wrote:
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 25dc930..39b596f 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -112,6 +112,67 @@
- 			      0 149 0x4>;
- 	};
- 
-+	dmac: dma-mux0 {
-+		compatible = "renesas,shdma-mux";
-+		#dma-cells = <1>;
-+		dma-channels = <6>;
-+		dma-requests = <256>;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges;
-+
-+		dma0: shdma@fe008020 {
-+			compatible = "renesas,shdma-r8a7740";
-+			reg = <0xfe008020 0x270>,
-+				<0xfe009000 0xc>;
-+			interrupt-parent = <&gic>;
-+			interrupts = <0 34 4
-+					0 28 4
-+					0 29 4
-+					0 30 4
-+					0 31 4
-+					0 32 4
-+					0 33 4>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5";
-+		};
-+
-+		dma1: shdma@fe018020 {
-+			compatible = "renesas,shdma-r8a7740";
-+			reg = <0xfe018020 0x270>,
-+				<0xfe019000 0xc>;
-+			interrupt-parent = <&gic>;
-+			interrupts = <0 41 4
-+					0 35 4
-+					0 36 4
-+					0 37 4
-+					0 38 4
-+					0 39 4
-+					0 40 4>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5";
-+		};
-+
-+		dma2: shdma@fe028020 {
-+			compatible = "renesas,shdma-r8a7740";
-+			reg = <0xfe028020 0x270>,
-+				<0xfe029000 0xc>;
-+			interrupt-parent = <&gic>;
-+			interrupts = <0 48 4
-+					0 42 4
-+					0 43 4
-+					0 44 4
-+					0 45 4
-+					0 46 4
-+					0 47 4>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5";
-+		};
-+	};
-+
- 	i2c0: i2c@fff20000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 0abe58a..38ce209 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -576,8 +576,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
- 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
- 	CLKDEV_DEV_ID("shdma-r8a7740.2",	&mstp_clks[MSTP216]),
-+	CLKDEV_DEV_ID("fe028020.shdma",		&mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("shdma-r8a7740.1",	&mstp_clks[MSTP217]),
-+	CLKDEV_DEV_ID("fe018020.shdma",		&mstp_clks[MSTP217]),
- 	CLKDEV_DEV_ID("shdma-r8a7740.0",	&mstp_clks[MSTP218]),
-+	CLKDEV_DEV_ID("fe008020.shdma",		&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
--- 
-1.7.2.5
+> This patch adds Device Tree support for the three generic DMA controller
+> instances on r8a7740 in a DMA multiplexer node.
+
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> ---
+>   arch/arm/boot/dts/r8a7740.dtsi         |   61 ++++++++++++++++++++++++++++++++
+>   arch/arm/mach-shmobile/clock-r8a7740.c |    3 ++
+>   2 files changed, 64 insertions(+), 0 deletions(-)
+
+> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+> index 25dc930..39b596f 100644
+> --- a/arch/arm/boot/dts/r8a7740.dtsi
+> +++ b/arch/arm/boot/dts/r8a7740.dtsi
+> @@ -112,6 +112,67 @@
+>   			      0 149 0x4>;
+>   	};
+>
+> +	dmac: dma-mux0 {
+> +		compatible = "renesas,shdma-mux";
+> +		#dma-cells = <1>;
+> +		dma-channels = <6>;
+> +		dma-requests = <256>;
+> +		#address-cells = <1>;
+> +		#size-cells = <1>;
+> +		ranges;
+> +
+> +		dma0: shdma@fe008020 {
+> +			compatible = "renesas,shdma-r8a7740";
+> +			reg = <0xfe008020 0x270>,
+> +				<0xfe009000 0xc>;
+> +			interrupt-parent = <&gic>;
+> +			interrupts = <0 34 4
+> +					0 28 4
+> +					0 29 4
+> +					0 30 4
+> +					0 31 4
+> +					0 32 4
+> +					0 33 4>;
+> +			interrupt-names = "error",
+> +					"ch0", "ch1", "ch2", "ch3",
+> +					"ch4", "ch5";
+> +		};
+> +
+> +		dma1: shdma@fe018020 {
+> +			compatible = "renesas,shdma-r8a7740";
+> +			reg = <0xfe018020 0x270>,
+> +				<0xfe019000 0xc>;
+> +			interrupt-parent = <&gic>;
+> +			interrupts = <0 41 4
+> +					0 35 4
+> +					0 36 4
+> +					0 37 4
+> +					0 38 4
+> +					0 39 4
+> +					0 40 4>;
+> +			interrupt-names = "error",
+> +					"ch0", "ch1", "ch2", "ch3",
+> +					"ch4", "ch5";
+> +		};
+> +
+> +		dma2: shdma@fe028020 {
+> +			compatible = "renesas,shdma-r8a7740";
+> +			reg = <0xfe028020 0x270>,
+> +				<0xfe029000 0xc>;
+> +			interrupt-parent = <&gic>;
+> +			interrupts = <0 48 4
+> +					0 42 4
+> +					0 43 4
+> +					0 44 4
+> +					0 45 4
+> +					0 46 4
+> +					0 47 4>;
+> +			interrupt-names = "error",
+> +					"ch0", "ch1", "ch2", "ch3",
+> +					"ch4", "ch5";
+> +		};
+> +	};
+> +
+
+    According to ePAPR [1] section 2.2.2, "the name of the node should 
+be somewhat generic, reflecting the function of the device and not its
+precise programming model. If appropriate, the name should be one of the 
+following choices:
+[...]
+- dma-controller;
+[...]"
+
+[1] http://www.power.org/resources/downloads/Power_ePAPR_APPROVED_v1.0.pdf
+  	
+WBR, Sergei
 
