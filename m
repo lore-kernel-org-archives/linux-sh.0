@@ -1,130 +1,77 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 15:52:27 +0000
-Subject: [PATCH v4 0/7] Renesas VSP1 driver
-Message-Id: <1375285954-32153-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Jul 2013 13:43:50 +0000
+Subject: [PATCH 0/8] ARM: shmobile: move DMAC configuration data in the driver
+Message-Id: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Hello,
+Currently DMACs on sh-, r-mobile and r-car SoCs use platform data for 
+their configuration. This doesn't work well with DT. Adding the complete 
+DMAC configuration to DT wouldn't make sense either, because it would 
+produce duplication, it would be difficult to define future-safe bindings, 
+that wouldn't have to change with any future DMAC versions, and it is 
+unneeded, because all that configuration is SoC-specific, not board- 
+specific.
 
-Here's the fourth version of the VSP1 engine (a Video Signal Processor found
-in several Renesas R-Car SoCs) driver. There has been very few comments on v3,
-this one might be final.
+The best option is to move that configuration data to the driver, to be 
+used, depending on the device ID. Then this data can be re-used in DT- 
+and non-DT configurations.
 
-The VSP1 is a video processing engine that includes a blender, scalers,
-filters and statistics computation. Configurable data path routing logic
-allows ordering the internal blocks in a flexible way, making this driver a
-prime candidate for the media controller API.
+This patch set extends the driver, adds example configuration data sets 
+for 2 SoCs. One of those SoCs already had DMAC support, so, it is switched 
+over. The other SoC didn't include support for DMAC yet, it is added in 
+this series too. Patches 1-3 are common for DT- and non-DT cases, patches 
+4 and 5 handle the "traditional" non-DT case, and patches 6-8 deal with DT.
 
-Due to the configurable nature of the pipeline the driver doesn't use the V4L2
-mem-to-mem framework, even though the device usually operates in memory to
-memory mode.
+The DMA part applies on top of my earlier shdma patch "DMA: shdma: support 
+the new CHCLR register layout" and other patches, already in -next. The 
+ARM part applies on top of today's renesas.git devel branch.
 
-Only the read pixel formatters, up/down scalers, write pixel formatters and
-LCDC interface are supported at this stage.
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-The patch series starts with a fix for the media controller graph traversal
-code, a documentation fix and new pixel format and media bus code definitions.
-The last three patches finally add the VSP1 driver and fix two issues (I
-haven't squashed the patches together to keep proper attribution).
+Guennadi Liakhovetski (8):
+  DMA: shdma: add support for DMAC configuration data, supplied via
+    device ID
+  DMA: shdma: add r8a7740 DMAC data to the device ID table
+  DMA: shdma: add r8a73a4 DMAC data to the device ID table
+  ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
+  ARM: shmobile: r8a7740: switch DMAC controllers to using device ID
+    data
+  DMA: shdma: pass SoC-specific configuration to the driver via OF
+    matching
+  DMA: shdma: make multiplexer platform data optional
+  ARM: shmobile: r8a7740: add DT nodes and clock aliases for three DMAC
+    instances
 
-Changes since v1:
-
-- Updated to the v3.11 media controller API changes
-- Only add the LIF entity to the entities list when the LIF is present
-- Added a MODULE_ALIAS()
-- Fixed file descriptions in comment blocks
-- Removed function prototypes for the unimplemented destroy functions
-- Fixed a typo in the HST register name
-- Fixed format propagation for the UDS entities
-- Added v4l2_capability::device_caps support
-- Prefix the device name with "platform:" in bus_info
-- Zero the v4l2_pix_format priv field in the internal try format handler
-- Use vb2_is_busy() instead of vb2_is_streaming() when setting the
-  format
-- Use the vb2_ioctl_* handlers where possible
-
-Changes since v2:
-
-- Use a bitmap to track visited entities during graph traversal
-- Fixed a typo in the V4L2_MBUS_FMT_ARGB888_1X32 documentation
-- Fix register macros that were missing a n argument
-- Mask unused bits when clearing the interrupt status register
-- Explain why stride alignment to 128 bytes is needed
-- Use the aligned stride value when computing the image size
-- Assorted cosmetic changes
-
-Changes since v3:
-
-- Handle timeout errors when resetting WPFs
-- Use DECLARE_BITMAP
-- Update the NV16M/NV61M documentation to mention the multi-planar API for
-  NV61M
-
-Katsuya Matsubara (2):
-  vsp1: Fix lack of the sink entity registration for enabled links
-  vsp1: Use the maximum number of entities defined in platform data
-
-Laurent Pinchart (5):
-  media: Add support for circular graph traversal
-  v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
-  v4l: Add media format codes for ARGB8888 and AYUV8888 on 32-bit busses
-  v4l: Add V4L2_PIX_FMT_NV16M and V4L2_PIX_FMT_NV61M formats
-  v4l: Renesas R-Car VSP1 driver
-
- Documentation/DocBook/media/v4l/pixfmt-nv16m.xml   |  171 +++
- Documentation/DocBook/media/v4l/pixfmt.xml         |    1 +
- Documentation/DocBook/media/v4l/subdev-formats.xml |  611 +++++------
- Documentation/DocBook/media_api.tmpl               |    6 +
- drivers/media/media-entity.c                       |   14 +-
- drivers/media/platform/Kconfig                     |   10 +
- drivers/media/platform/Makefile                    |    2 +
- drivers/media/platform/vsp1/Makefile               |    5 +
- drivers/media/platform/vsp1/vsp1.h                 |   73 ++
- drivers/media/platform/vsp1/vsp1_drv.c             |  500 +++++++++
- drivers/media/platform/vsp1/vsp1_entity.c          |  181 ++++
- drivers/media/platform/vsp1/vsp1_entity.h          |   68 ++
- drivers/media/platform/vsp1/vsp1_lif.c             |  238 ++++
- drivers/media/platform/vsp1/vsp1_lif.h             |   37 +
- drivers/media/platform/vsp1/vsp1_regs.h            |  581 ++++++++++
- drivers/media/platform/vsp1/vsp1_rpf.c             |  209 ++++
- drivers/media/platform/vsp1/vsp1_rwpf.c            |  124 +++
- drivers/media/platform/vsp1/vsp1_rwpf.h            |   53 +
- drivers/media/platform/vsp1/vsp1_uds.c             |  346 ++++++
- drivers/media/platform/vsp1/vsp1_uds.h             |   40 +
- drivers/media/platform/vsp1/vsp1_video.c           | 1135 ++++++++++++++++++++
- drivers/media/platform/vsp1/vsp1_video.h           |  144 +++
- drivers/media/platform/vsp1/vsp1_wpf.c             |  233 ++++
- include/linux/platform_data/vsp1.h                 |   25 +
- include/media/media-entity.h                       |    4 +
- include/uapi/linux/v4l2-mediabus.h                 |    6 +-
- include/uapi/linux/videodev2.h                     |    2 +
- 27 files changed, 4448 insertions(+), 371 deletions(-)
- create mode 100644 Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
- create mode 100644 drivers/media/platform/vsp1/Makefile
- create mode 100644 drivers/media/platform/vsp1/vsp1.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_drv.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_entity.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_entity.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_lif.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_lif.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_regs.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_rpf.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_rwpf.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_rwpf.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_uds.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_uds.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_video.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_video.h
- create mode 100644 drivers/media/platform/vsp1/vsp1_wpf.c
- create mode 100644 include/linux/platform_data/vsp1.h
+ Documentation/devicetree/bindings/dma/shdma.txt |    7 +-
+ arch/arm/boot/dts/r8a7740.dtsi                  |   61 +++++++++++++
+ arch/arm/mach-shmobile/clock-r8a73a4.c          |    4 +-
+ arch/arm/mach-shmobile/clock-r8a7740.c          |    9 ++-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h   |    9 ++
+ arch/arm/mach-shmobile/setup-r8a73a4.c          |   16 ++++
+ arch/arm/mach-shmobile/setup-r8a7740.c          |  106 +----------------------
+ drivers/dma/sh/Kconfig                          |    8 ++
+ drivers/dma/sh/Makefile                         |    4 +
+ drivers/dma/sh/shdma-of.c                       |    3 -
+ drivers/dma/sh/shdma-r8a73a4.c                  |   75 ++++++++++++++++
+ drivers/dma/sh/shdma-r8a7740.c                  |   95 ++++++++++++++++++++
+ drivers/dma/sh/shdma.h                          |   14 +++
+ drivers/dma/sh/{shdma.c => shdmac.c}            |   28 +++++-
+ 14 files changed, 322 insertions(+), 117 deletions(-)
+ create mode 100644 drivers/dma/sh/shdma-r8a73a4.c
+ create mode 100644 drivers/dma/sh/shdma-r8a7740.c
+ rename drivers/dma/sh/{shdma.c => shdmac.c} (97%)
 
 -- 
-Regards,
+1.7.2.5
 
-Laurent Pinchart
-
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
