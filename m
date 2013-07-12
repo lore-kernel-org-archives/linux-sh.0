@@ -1,167 +1,88 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 01 Jul 2013 02:18:40 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: lager: Add DT reference
-Message-Id: <1372645120-27256-3-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Jul 2013 13:43:51 +0000
+Subject: [PATCH 1/8] DMA: shdma: add support for DMAC configuration data, supplied via device ID
+Message-Id: <1373636638-18496-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
+References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-This is sufficient to allow boot of the Lager board with
-a console without boards-lager.c compiled into the kernel.
-This is an example of a minimal but still useful initialisation
-of the board using DT as much as possible.
+This is going to facilitate DT support by eliminating the need in AUXDATA
+and avoiding creating complex DT data. This also fits well with DMAC
+devices, because SoCs with them often have multiple identical DMAC
+instances and it is perfectly valid to use a single configuration data set
+for all of them.
 
-As such it is the same as the boot of Lager that can be achieved
-without a board file. The intention of adding this file
-is to facilitate further work to allow board specific devices to be
-initialised via DT.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
 
-v2
-* Use recently added r8a7790_init_delay()
----
- arch/arm/boot/dts/Makefile                     |  1 +
- arch/arm/boot/dts/r8a7790-lager-reference.dts  | 31 +++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                 | 11 ++++++++
- arch/arm/mach-shmobile/Makefile                |  1 +
- arch/arm/mach-shmobile/board-lager-reference.c | 37 ++++++++++++++++++++++++++
- 5 files changed, 81 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-lager-reference.c
+A file has to be renamed to preserve the driver module name.
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index cb31259..f2dc697 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -165,6 +165,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva-reference.dtb \
- 	r8a7779-marzen-reference.dtb \
- 	r8a7790-lager.dtb \
-+	r8a7790-lager-reference.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
- 	r8a73a4-ape6evm.dtb \
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-new file mode 100644
-index 0000000..fa5b81b
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -0,0 +1,31 @@
-+/*
-+ * Device Tree Source for the Lager board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r8a7790.dtsi"
-+
-+/ {
-+	model = "Lager";
-+	compatible = "renesas,lager-reference", "renesas,r8a7790";
-+
-+	chosen {
-+		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x80000000>;
-+	};
-+
-+	lbsc {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 64dc24d..30c571b 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -150,6 +150,17 @@ config MACH_LAGER
- 	depends on ARCH_R8A7790
- 	select USE_OF
+ drivers/dma/sh/Makefile              |    2 ++
+ drivers/dma/sh/{shdma.c => shdmac.c} |   11 ++++++++++-
+ 2 files changed, 12 insertions(+), 1 deletions(-)
+ rename drivers/dma/sh/{shdma.c => shdmac.c} (98%)
+
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index c962138..893ee09 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -1,3 +1,5 @@
+ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
+ obj-$(CONFIG_SH_DMAE) += shdma.o
++shdma-y := shdmac.o
++shdma-objs := $(shdma-y)
+ obj-$(CONFIG_SUDMAC) += sudmac.o
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdmac.c
+similarity index 98%
+rename from drivers/dma/sh/shdma.c
+rename to drivers/dma/sh/shdmac.c
+index 0e9b719..3c5634e 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -667,7 +667,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
  
-+config MACH_LAGER_REFERENCE
-+	bool "Lager board - Reference Device Tree Implementation"
-+	depends on ARCH_R8A7790
-+	select USE_OF
-+	---help---
-+	   Use reference implementation of Lager board support
-+	   which makes use of device tree at the expense
-+	   of not supporting a number of devices.
+ static int sh_dmae_probe(struct platform_device *pdev)
+ {
+-	struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
++	struct sh_dmae_pdata *pdata;
+ 	unsigned long irqflags = IRQF_DISABLED,
+ 		chan_flag[SH_DMAE_MAX_CHANNELS] = {};
+ 	int errirq, chan_irq[SH_DMAE_MAX_CHANNELS];
+@@ -676,6 +676,8 @@ static int sh_dmae_probe(struct platform_device *pdev)
+ 	struct dma_device *dma_dev;
+ 	struct resource *chan, *dmars, *errirq_res, *chanirq_res;
+ 
++	pdata = (void *)pdev->id_entry->driver_data ? : pdev->dev.platform_data;
 +
-+	   This is intended to aid developers
-+
- config MACH_KZM9D
- 	bool "KZM9D board"
- 	depends on ARCH_EMEV2
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 6165a51..d813133 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
-+obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-new file mode 100644
-index 0000000..daec357
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -0,0 +1,37 @@
-+/*
-+ * Lager board support - Reference DT implementation
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Simon Horman
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/irqchip.h>
-+#include <mach/r8a7790.h>
-+#include <asm/mach/arch.h>
-+
-+static const char *lager_boards_compat_dt[] __initdata = {
-+	"renesas,lager-reference",
-+	NULL,
+ 	/* get platform data */
+ 	if (!pdata || !pdata->channel_num)
+ 		return -ENODEV;
+@@ -919,6 +921,12 @@ static const struct of_device_id sh_dmae_of_match[] = {
+ };
+ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+ 
++const struct platform_device_id sh_dmae_id_table[] = {
++	{.name = SH_DMAE_DRV_NAME,},
++	{}
 +};
++MODULE_DEVICE_TABLE(platform, sh_dmae_id_table);
 +
-+DT_MACHINE_START(LAGER_DT, "lager")
-+	.init_early	= r8a7790_init_delay,
-+	.init_irq	= irqchip_init,
-+	.init_machine	= r8a7790_add_standard_devices_dt,
-+	.init_time	= r8a7790_timer_init,
-+	.dt_compat	= lager_boards_compat_dt,
-+MACHINE_END
+ static struct platform_driver sh_dmae_driver = {
+ 	.driver 	= {
+ 		.owner	= THIS_MODULE,
+@@ -928,6 +936,7 @@ static struct platform_driver sh_dmae_driver = {
+ 	},
+ 	.remove		= sh_dmae_remove,
+ 	.shutdown	= sh_dmae_shutdown,
++	.id_table	= sh_dmae_id_table,
+ };
+ 
+ static int __init sh_dmae_init(void)
 -- 
-1.8.2.1
+1.7.2.5
 
