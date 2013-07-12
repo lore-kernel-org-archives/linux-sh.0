@@ -1,31 +1,108 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Tue, 30 Jul 2013 17:57:24 +0000
-Subject: [RFC 2/5] arm: boot: allow zboot with appended DTB
-Message-Id: <1375207047-8655-3-git-send-email-ulrich.hecht@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Jul 2013 13:43:54 +0000
+Subject: [PATCH 4/8] ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
+Message-Id: <1373636638-18496-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-I don't see any reason why this should not be allowed.
+Add a DMAC platform device and clock definitions for it on r8a73a4.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/Kconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 0ac9be6..54ac595 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -1938,7 +1938,7 @@ endchoice
+Simon: this patch supersedes my earlier patch "ARM: shmobile: r8a73a4: add 
+a DMAC platform device and clock for it". With this approach we also don't 
+have a build dependency on the DMA tree: the configuration data now 
+belongs to the driver and will also go via the DMA tree. This patch can be 
+applied independently, it just won't work until the driver is updated.
+
+ arch/arm/mach-shmobile/clock-r8a73a4.c        |    4 +++-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    9 +++++++++
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |   16 ++++++++++++++++
+ 3 files changed, 28 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 8ea5ef6..cd62b11 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -504,7 +504,7 @@ static struct clk div6_clks[DIV6_NR] = {
  
- config ARM_APPENDED_DTB
- 	bool "Use appended device tree blob to zImage (EXPERIMENTAL)"
--	depends on OF && !ZBOOT_ROM
-+	depends on OF
- 	help
- 	  With this option, the boot code will look for a device tree binary
- 	  (DTB) appended to zImage
+ /* MSTP */
+ enum {
+-	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
++	MSTP218, MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
+ 	MSTP329, MSTP323, MSTP318, MSTP317, MSTP316,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
+ 	MSTP411, MSTP410, MSTP409,
+@@ -519,6 +519,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
++	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR2, 18, 0), /* DMAC */
+ 	[MSTP300] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 0, 0), /* IIC2 */
+ 	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1],SMSTPCR3, 5, 0), /* MMCIF1 */
+ 	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI2],SMSTPCR3, 12, 0), /* SDHI2 */
+@@ -578,6 +579,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
++	CLKDEV_DEV_ID("shdma-r8a73a4.0", &mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a73a4.h b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+index f3a9b70..3a0ea48 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+@@ -1,6 +1,15 @@
+ #ifndef __ASM_R8A73A4_H__
+ #define __ASM_R8A73A4_H__
+ 
++/* DMA slave IDs */
++enum {
++	SHDMA_SLAVE_INVALID,
++	SHDMA_SLAVE_MMCIF0_TX,
++	SHDMA_SLAVE_MMCIF0_RX,
++	SHDMA_SLAVE_MMCIF1_TX,
++	SHDMA_SLAVE_MMCIF1_RX,
++};
++
+ void r8a73a4_add_standard_devices(void);
+ void r8a73a4_add_dt_devices(void);
+ void r8a73a4_clock_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 630ea4e..86af8b1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -199,6 +199,22 @@ void __init r8a73a4_add_dt_devices(void)
+ 	r8a7790_register_cmt(10);
+ }
+ 
++/* DMA */
++static struct resource dma_resources[] = {
++	DEFINE_RES_MEM(0xe6700020, 0x89e0),
++	DEFINE_RES_IRQ_NAMED(gic_spi(220), "error_irq"),
++	{
++		/* IRQ for channels 0-19 */
++		.start  = gic_spi(200),
++		.end    = gic_spi(219),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++#define r8a73a4_register_dmac()							\
++	platform_device_register_simple("shdma-r8a73a4", 0,			\
++				dma_resources, ARRAY_SIZE(dma_resources))
++
+ void __init r8a73a4_add_standard_devices(void)
+ {
+ 	r8a73a4_add_dt_devices();
 -- 
-1.7.10.4
+1.7.2.5
 
