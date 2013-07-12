@@ -1,71 +1,166 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Jul 2013 23:40:04 +0000
-Subject: [PATCH 16/19] sh-pfc: Add pin number to struct sh_pfc_pin
-Message-Id: <1373931607-4599-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 12 Jul 2013 13:43:53 +0000
+Subject: [PATCH 3/8] DMA: shdma: add r8a73a4 DMAC data to the device ID table
+Message-Id: <1373636638-18496-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373636638-18496-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-The pin number is usually equal to the GPIO number but can differ when
-GPIO numbering is sparse.
+This configuration data will be re-used, when DMAC DT support is added to
+r8a73a4.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/sh_pfc.h | 20 ++++++++++++--------
- 1 file changed, 12 insertions(+), 8 deletions(-)
+ drivers/dma/sh/Kconfig         |    4 ++
+ drivers/dma/sh/Makefile        |    1 +
+ drivers/dma/sh/shdma-r8a73a4.c |   75 ++++++++++++++++++++++++++++++++++++++++
+ drivers/dma/sh/shdma.h         |    7 ++++
+ drivers/dma/sh/shdmac.c        |    1 +
+ 5 files changed, 88 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/dma/sh/shdma-r8a73a4.c
 
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 596ceb7..839e695 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -28,6 +28,7 @@ enum {
- #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+index 0ac3e94..6921ba2 100644
+--- a/drivers/dma/sh/Kconfig
++++ b/drivers/dma/sh/Kconfig
+@@ -23,6 +23,10 @@ config SUDMAC
+ 	help
+ 	  Enable support for the Renesas SUDMAC controllers.
  
- struct sh_pfc_pin {
-+	u16 pin;
- 	u16 enum_id;
- 	const char *name;
- 	unsigned int configs;
-@@ -214,8 +215,9 @@ struct sh_pfc_soc_info {
- #define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
++config SHDMA_R8A73A4
++	def_bool y
++	depends on ARCH_R8A73A4 && SH_DMAE != n
++
+ config SHDMA_R8A7740
+ 	def_bool y
+ 	depends on ARCH_R8A7740 && SH_DMAE != n
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index acdd3cb..e08489c 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -2,5 +2,6 @@ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
+ obj-$(CONFIG_SH_DMAE) += shdma.o
+ shdma-y := shdmac.o
+ shdma-$(CONFIG_SHDMA_R8A7740) += shdma-r8a7740.o
++shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
+ shdma-objs := $(shdma-y)
+ obj-$(CONFIG_SUDMAC) += sudmac.o
+diff --git a/drivers/dma/sh/shdma-r8a73a4.c b/drivers/dma/sh/shdma-r8a73a4.c
+new file mode 100644
+index 0000000..d3b759d
+--- /dev/null
++++ b/drivers/dma/sh/shdma-r8a73a4.c
+@@ -0,0 +1,75 @@
++#include <linux/sh_dma.h>
++
++#include <mach/dma-register.h>
++#include <mach/r8a73a4.h>
++
++static const struct sh_dmae_slave_config dma_slaves[] = {
++	{
++		.slave_id	= SHDMA_SLAVE_MMCIF0_TX,
++		.addr		= 0xee200034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF0_RX,
++		.addr		= 0xee200034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF1_TX,
++		.addr		= 0xee220034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xe1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF1_RX,
++		.addr		= 0xee220034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xe2,
++	},
++};
++
++#define DMAE_CHANNEL(a, b)				\
++	{						\
++		.offset         = (a) - 0x20,		\
++		.dmars          = (a) - 0x20 + 0x40,	\
++		.chclr_bit	= (b),			\
++		.chclr_offset	= 0x80 - 0x20,		\
++	}
++
++static const struct sh_dmae_channel dma_channels[] = {
++	DMAE_CHANNEL(0x8000, 0),
++	DMAE_CHANNEL(0x8080, 1),
++	DMAE_CHANNEL(0x8100, 2),
++	DMAE_CHANNEL(0x8180, 3),
++	DMAE_CHANNEL(0x8200, 4),
++	DMAE_CHANNEL(0x8280, 5),
++	DMAE_CHANNEL(0x8300, 6),
++	DMAE_CHANNEL(0x8380, 7),
++	DMAE_CHANNEL(0x8400, 8),
++	DMAE_CHANNEL(0x8480, 9),
++	DMAE_CHANNEL(0x8500, 10),
++	DMAE_CHANNEL(0x8580, 11),
++	DMAE_CHANNEL(0x8600, 12),
++	DMAE_CHANNEL(0x8680, 13),
++	DMAE_CHANNEL(0x8700, 14),
++	DMAE_CHANNEL(0x8780, 15),
++	DMAE_CHANNEL(0x8800, 16),
++	DMAE_CHANNEL(0x8880, 17),
++	DMAE_CHANNEL(0x8900, 18),
++	DMAE_CHANNEL(0x8980, 19),
++};
++
++struct sh_dmae_pdata r8a73a4_dma_pdata = {
++	.slave		= dma_slaves,
++	.slave_num	= ARRAY_SIZE(dma_slaves),
++	.channel	= dma_channels,
++	.channel_num	= ARRAY_SIZE(dma_channels),
++	.ts_low_shift	= TS_LOW_SHIFT,
++	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift	= TS_HI_SHIFT,
++	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift	= dma_ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
++	.dmaor_init     = DMAOR_DME,
++	.chclr_present	= 1,
++	.chclr_bitwise	= 1,
++};
+diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
+index b5fe545..82a83f8 100644
+--- a/drivers/dma/sh/shdma.h
++++ b/drivers/dma/sh/shdma.h
+@@ -61,6 +61,13 @@ struct sh_dmae_desc {
+ #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
+ 				     struct sh_dmae_device, shdma_dev.dma_dev)
  
- /* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
--#define _GP_GPIO(bank, pin, _name, sfx)					\
--	[(bank * 32) + pin] = {						\
-+#define _GP_GPIO(bank, _pin, _name, sfx)				\
-+	[(bank * 32) + _pin] = {					\
-+		.pin = (bank * 32) + _pin,				\
- 		.name = __stringify(_name),				\
- 		.enum_id = _name##_DATA,				\
- 	}
-@@ -250,17 +252,19 @@ struct sh_pfc_soc_info {
- #define PORT_ALL(str)			CPU_ALL_PORT(_PORT_ALL, PORT, str)
++#ifdef CONFIG_SHDMA_R8A73A4
++extern struct sh_dmae_pdata r8a73a4_dma_pdata;
++#define r8a73a4_shdma_devid &r8a73a4_dma_pdata
++#else
++#define r8a73a4_shdma_devid NULL
++#endif
++
+ #ifdef CONFIG_SHDMA_R8A7740
+ extern struct sh_dmae_pdata r8a7740_dma_pdata;
+ #define r8a7740_shdma_devid &r8a7740_dma_pdata
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index 9e724ae..a6d53fa 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -923,6 +923,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
  
- /* PINMUX_GPIO - Expand to a sh_pfc_pin entry */
--#define PINMUX_GPIO(pin)						\
--	[GPIO_##pin] = {						\
-+#define PINMUX_GPIO(_pin)						\
-+	[GPIO_##_pin] = {						\
-+		.pin = (u16)-1,						\
- 		.name = __stringify(name),				\
--		.enum_id = pin##_DATA,					\
-+		.enum_id = _pin##_DATA,					\
- 	}
- 
- /* SH_PFC_PIN_CFG - Expand to a sh_pfc_pin entry (named PORT#) with config */
--#define SH_PFC_PIN_CFG(pin, cfgs)					\
-+#define SH_PFC_PIN_CFG(_pin, cfgs)					\
- 	{								\
--		.name = __stringify(PORT##pin),				\
--		.enum_id = PORT##pin##_DATA,				\
-+		.pin = _pin,						\
-+		.name = __stringify(PORT##_pin),			\
-+		.enum_id = PORT##_pin##_DATA,				\
- 		.configs = cfgs,					\
- 	}
- 
+ const struct platform_device_id sh_dmae_id_table[] = {
+ 	{.name = SH_DMAE_DRV_NAME,},
++	{.name = "shdma-r8a73a4", .driver_data = (kernel_ulong_t)r8a73a4_shdma_devid,},
+ 	{.name = "shdma-r8a7740", .driver_data = (kernel_ulong_t)r8a7740_shdma_devid,},
+ 	{}
+ };
 -- 
-1.8.1.5
+1.7.2.5
 
