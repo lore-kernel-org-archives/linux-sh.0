@@ -1,48 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:32:08 +0000
-Subject: [PATCH 07/22] ARM: shmobile: r8a7790: Remove init_irq declaration in machine description
-Message-Id: <125332daf2e4119614c561bc8cbf1f49cd243023.1374103272.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Jul 2013 23:40:05 +0000
+Subject: [PATCH 17/19] sh-pfc: Rename struct sh_pfc nr_pins field to nr_gpio_pins
+Message-Id: <1373931607-4599-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Maxime Ripard <maxime.ripard@free-electrons.com>
+The field contains the number of pins with an associated GPIO port. This
+is currently equal to the total number of pins but will be modified when
+adding support for pins without a GPIO port. Rename the field
+accordingly.
 
-Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
-specified") removed the need to explictly setup the init_irq field in
-the machine description when using only irqchip_init. Remove that
-declaration for shmobile as well.
-
-Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c |    2 --
- 1 file changed, 2 deletions(-)
+ drivers/pinctrl/sh-pfc/core.h    | 2 +-
+ drivers/pinctrl/sh-pfc/gpio.c    | 4 ++--
+ drivers/pinctrl/sh-pfc/pinctrl.c | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 28f9475..d405dbd 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -19,7 +19,6 @@
-  */
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index f02ba1d..93963a1 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -34,7 +34,7 @@ struct sh_pfc {
+ 	unsigned int num_windows;
+ 	struct sh_pfc_window *window;
  
- #include <linux/irq.h>
--#include <linux/irqchip.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/serial_sci.h>
-@@ -188,7 +187,6 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
- };
+-	unsigned int nr_pins;
++	unsigned int nr_gpio_pins;
  
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
--	.init_irq	= irqchip_init,
- 	.init_machine	= r8a7790_add_standard_devices_dt,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= r8a7790_boards_compat_dt,
+ 	struct sh_pfc_chip *gpio;
+ 	struct sh_pfc_chip *func;
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 87ae38b..7661be5 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -245,7 +245,7 @@ static int gpio_pin_setup(struct sh_pfc_chip *chip)
+ 	gc->dev = pfc->dev;
+ 	gc->owner = THIS_MODULE;
+ 	gc->base = 0;
+-	gc->ngpio = pfc->nr_pins;
++	gc->ngpio = pfc->nr_gpio_pins;
+ 
+ 	return 0;
+ }
+@@ -293,7 +293,7 @@ static int gpio_function_setup(struct sh_pfc_chip *chip)
+ 
+ 	gc->label = pfc->info->name;
+ 	gc->owner = THIS_MODULE;
+-	gc->base = pfc->nr_pins;
++	gc->base = pfc->nr_gpio_pins;
+ 	gc->ngpio = pfc->info->nr_func_gpios;
+ 
+ 	return 0;
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index bc8b028..314255d 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -632,7 +632,7 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 		}
+ 	}
+ 
+-	pfc->nr_pins = ranges[nr_ranges-1].end + 1;
++	pfc->nr_gpio_pins = ranges[nr_ranges-1].end + 1;
+ 
+ 	return nr_ranges;
+ }
 -- 
-1.7.10.4
+1.8.1.5
 
