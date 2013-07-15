@@ -1,40 +1,72 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 07:07:02 +0000
-Subject: [PATCH 00/07] ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
-Message-Id: <20130731070702.14444.64961.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Jul 2013 23:39:53 +0000
+Subject: [PATCH 05/19] sh-pfc: Remove unused GPIO_PORT_ALL macro
+Message-Id: <1373931607-4599-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
+The macro isn't used, remove it.
 
-[PATCH 01/07] ARM: shmobile: Introduce shared SCU SMP boot code
-[PATCH 02/07] ARM: shmobile: Use shared SCU SMP boot code on sh73a0
-[PATCH 03/07] ARM: shmobile: Use shared SCU SMP boot code on r8a7779
-[PATCH 04/07] ARM: shmobile: Use shared SCU SMP boot code on emev2
-[PATCH 05/07] ARM: shmobile: Add shared SCU CPU Hotplug code
-[PATCH 06/07] ARM: shmobile: Use shared SCU CPU Hotplug code on sh73a0
-[PATCH 07/07] ARM: shmobile: Use shared SCU CPU Hotplug code on r8a7779
-
-This series consolidates mach-shmobile SMP code into SCU specific code
-for SMP boot and CPU Hotplug. The shared SCU code will in the future hook
-into some low level assembly code that provides SMP boot and sleep
-functionality, so this is is also preparations for future work.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 7 -------
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  | 7 -------
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 2 --
+ 3 files changed, 16 deletions(-)
 
- Written against renesas.git renesas-devel-20130731
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index f6ea47c..3fb1e0b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -34,13 +34,6 @@
+ 	PORT_10(fn, pfx##20, sfx),					\
+ 	PORT_1(fn, pfx##210, sfx),	PORT_1(fn, pfx##211, sfx)
  
- Requires "[PATCH] ARM: Fix memblock_reserve() to include stext" during
- run time to allow test of CPU Hotplug with v3.11-rc kernels.
+-#undef _GPIO_PORT
+-#define _GPIO_PORT(gpio, sfx)						\
+-	[gpio] = {							\
+-		.name = __stringify(PORT##gpio),			\
+-		.enum_id = PORT##gpio##_DATA,				\
+-	}
+-
+ #define IRQC_PIN_MUX(irq, pin)						\
+ static const unsigned int intc_irq##irq##_pins[] = {			\
+ 	pin,								\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 6dfb187..cd431e4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -38,13 +38,6 @@
+ 	PORT_10(fn, pfx##16, sfx),	PORT_10(fn, pfx##17, sfx), \
+ 	PORT_10(fn, pfx##18, sfx),	PORT_1(fn, pfx##190, sfx)
+ 
+-#undef _GPIO_PORT
+-#define _GPIO_PORT(gpio, sfx)						\
+-	[gpio] = {							\
+-		.name = __stringify(PORT##gpio),			\
+-		.enum_id = PORT##gpio##_DATA,				\
+-	}
+-
+ #define IRQC_PIN_MUX(irq, pin)						\
+ static const unsigned int intc_irq##irq##_pins[] = {			\
+ 	pin,								\
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 2105487..363ea8c 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -196,9 +196,7 @@ struct sh_pfc_soc_info {
+ 	PORT_10(fn, pfx##9, sfx)
+ 
+ #define _PORT_ALL(pfx, sfx) pfx##_##sfx
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+ #define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
+-#define GPIO_PORT_ALL()	CPU_ALL_PORT(_GPIO_PORT, , unused)
+ #define GPIO_FN(str) PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
+ 
+ /* helper macro for pinmux_enum_t */
+-- 
+1.8.1.5
 
- arch/arm/mach-shmobile/Makefile              |    6 +-
- arch/arm/mach-shmobile/include/mach/common.h |    5 +
- arch/arm/mach-shmobile/platsmp-scu.c         |   76 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/smp-emev2.c           |   19 +++---
- arch/arm/mach-shmobile/smp-r8a7779.c         |   64 +++++----------------
- arch/arm/mach-shmobile/smp-sh73a0.c          |   67 +++++-----------------
- 6 files changed, 126 insertions(+), 111 deletions(-)
