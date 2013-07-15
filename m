@@ -1,51 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:47 +0000
-Subject: [GIT 0/5] Renesas ARM based SoC fixes for v3.12
-Message-Id: <cover.1374478336.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Jul 2013 23:39:52 +0000
+Subject: [PATCH 04/19] sh-pfc: Remove unneeded const keywords
+Message-Id: <1373931607-4599-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Arnd,
-										please consider the following fixes v3.12.
+Two integer field structures are needlesly defined as const. Remove the
+const keyword.
 
-The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index d0a8ff8..2105487 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -30,7 +30,7 @@ enum {
+ #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
+ 
+ struct sh_pfc_pin {
+-	const pinmux_enum_t enum_id;
++	pinmux_enum_t enum_id;
+ 	const char *name;
+ 	unsigned int configs;
+ };
+@@ -64,7 +64,7 @@ struct sh_pfc_function {
+ };
+ 
+ struct pinmux_func {
+-	const pinmux_enum_t enum_id;
++	pinmux_enum_t enum_id;
+ 	const char *name;
+ };
+ 
+-- 
+1.8.1.5
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes-for-v3.12
-
-for you to fetch changes up to 93d8a6fbe69a629a7bb37bb546699a5c49963dc5:
-
-  ARM: shmobile: r8a7740: Fix TPU clock name (2013-07-19 11:12:35 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based SoC fixes for v3.12
-
-* Fix TPU clock name for r8a7740 SoC
-* Update romImage to relocate appended DTB
-* Thumb fixes
-
-----------------------------------------------------------------
-Laurent Pinchart (1):
-      ARM: shmobile: r8a7740: Fix TPU clock name
-
-Magnus Damm (1):
-      ARM: shmobile: Update romImage to relocate appended DTB
-
-Tetsuyuki Kobayashi (3):
-      ARM: shmobile: fix compile error when CONFIG_THUMB2_KERNEL=y
-      ARM: shmobile: Force ARM mode to compile reset vector for secondary CPUs
-      ARM: shmobile: Insert align directives before 4 bytes data
-
- arch/arm/boot/compressed/head-shmobile.S    | 43 ++++++++++++++++++++++++++---
- arch/arm/mach-shmobile/clock-r8a7740.c      |  2 +-
- arch/arm/mach-shmobile/headsmp-scu.S        |  4 ++-
- arch/arm/mach-shmobile/headsmp.S            |  6 +++-
- arch/arm/mach-shmobile/include/mach/zboot.h |  2 --
- arch/arm/mach-shmobile/sleep-sh7372.S       |  2 ++
- 6 files changed, 50 insertions(+), 9 deletions(-)
