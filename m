@@ -1,32 +1,65 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 19:02:14 +0000
-Subject: [PATCH 07/13] ARM: shmobile: Use default ->init_time() on Armadillo DT ref
-Message-Id: <20130731190214.31796.97852.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Jul 2013 23:39:50 +0000
+Subject: [PATCH 02/19] sh-pfc: Remove unused PORT_DATA_* macros
+Message-Id: <1373931607-4599-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731190110.31796.96552.sendpatchset@w520>
-In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Most of the PORT_DATA_* macros are not used, remove them.
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 30 ------------------------------
+ 1 file changed, 30 deletions(-)
 
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    1 -
- 1 file changed, 1 deletion(-)
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 64219f6..0e3e00f 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -209,40 +209,10 @@ enum { GPIO_CFG_REQ, GPIO_CFG_FREE };
+ #define GPIO_FN(str) PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
+ 
+ /* helper macro for pinmux_enum_t */
+-#define PORT_DATA_I(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_IN)
+-
+-#define PORT_DATA_I_PD(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PD)
+-
+-#define PORT_DATA_I_PU(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PU)
+-
+-#define PORT_DATA_I_PU_PD(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,			\
+-		    PORT##nr##_IN, PORT##nr##_IN_PD, PORT##nr##_IN_PU)
+-
+-#define PORT_DATA_O(nr)		\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT)
+-
+ #define PORT_DATA_IO(nr)	\
+ 	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+ 		    PORT##nr##_IN)
+ 
+-#define PORT_DATA_IO_PD(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PD)
+-
+-#define PORT_DATA_IO_PU(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PU)
+-
+-#define PORT_DATA_IO_PU_PD(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PD, PORT##nr##_IN_PU)
+-
+ /* helper macro for top 4 bits in PORTnCR */
+ #define _PCRH(in, in_pd, in_pu, out)	\
+ 	0, (out), (in), 0,		\
+-- 
+1.8.1.5
 
---- 0001/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ work/arch/arm/mach-shmobile/board-armadillo800eva-reference.c	2013-08-01 03:09:22.000000000 +0900
-@@ -190,7 +190,6 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "ar
- 	.init_early	= r8a7740_init_delay,
- 	.init_irq	= r8a7740_init_irq_of,
- 	.init_machine	= eva_init,
--	.init_time	= shmobile_timer_init,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= eva_boards_compat_dt,
- 	.restart	= eva_restart,
