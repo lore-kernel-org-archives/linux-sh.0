@@ -1,39 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:31:59 +0000
-Subject: [PATCH 20/22] ARM: shmobile: Fix EMEV2 clock comment typo
-Message-Id: <09cb2e366737ac70f1d7c6c0a3747a75c8f90f1e.1374103272.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Jul 2013 23:39:51 +0000
+Subject: [PATCH 03/19] sh-pfc: Remove unused macro and enum entries
+Message-Id: <1373931607-4599-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The SH_PFC_MARK_INVALID macro and the PINMUX_FLAG_TYPE, GPIO_CFG_REQ and
+GPIO_CFG_FREE enum entries are used, remove them.
 
-Update the STI timer frequency comment to 32.768 kHz to
-fix 37 kHz typo.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-emev2.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 7 -------
+ 1 file changed, 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-emev2.c b/arch/arm/mach-shmobile/clock-emev2.c
-index 4710f18..56dd0cf 100644
---- a/arch/arm/mach-shmobile/clock-emev2.c
-+++ b/arch/arm/mach-shmobile/clock-emev2.c
-@@ -221,7 +221,7 @@ void __init emev2_clock_init(void)
- 	smu_base = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
- 	BUG_ON(!smu_base);
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 0e3e00f..d0a8ff8 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -16,17 +16,12 @@
  
--	/* setup STI timer to run on 37.768 kHz and deassert reset */
-+	/* setup STI timer to run on 32.768 kHz and deassert reset */
- 	emev2_smu_write(0, STI_CLKSEL);
- 	emev2_smu_write(1, STI_RSTCTRL);
+ typedef unsigned short pinmux_enum_t;
+ 
+-#define SH_PFC_MARK_INVALID	((pinmux_enum_t)-1)
+-
+ enum {
+ 	PINMUX_TYPE_NONE,
+-
+ 	PINMUX_TYPE_FUNCTION,
+ 	PINMUX_TYPE_GPIO,
+ 	PINMUX_TYPE_OUTPUT,
+ 	PINMUX_TYPE_INPUT,
+-
+-	PINMUX_FLAG_TYPE,	/* must be last */
+ };
+ 
+ #define SH_PFC_PIN_CFG_INPUT		(1 << 0)
+@@ -166,8 +161,6 @@ struct sh_pfc_soc_info {
+ 	unsigned long unlock_reg;
+ };
+ 
+-enum { GPIO_CFG_REQ, GPIO_CFG_FREE };
+-
+ /* helper macro for port */
+ #define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
  
 -- 
-1.7.10.4
+1.8.1.5
 
