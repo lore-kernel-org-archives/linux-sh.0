@@ -1,115 +1,544 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:03 +0000
-Subject: [PATCH 09/16] ARM: shmobile: Add r8a7790 CMT00 clock event
-Message-Id: <99ade1a0f02e086248874d9908def3e8e4539418.1374624383.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Jul 2013 23:39:57 +0000
+Subject: [PATCH 09/19] sh-pfc: Consolidate PFC SoC data macros
+Message-Id: <1373931607-4599-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Move macros defined in several SoC data files to a common location and
+document them.
 
-Add clock event support for CMT0 timer channel 0
-to the r8a7790 SoC code. On most ARM mach-shmobile
-the CMT is hooked up to a 32KHz clock but on r8a7790
-a 31.7KHz clock is instead used.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
- arch/arm/mach-shmobile/setup-r8a7790.c | 23 ++++++++++++++++++++++-
- 2 files changed, 26 insertions(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |   3 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   5 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  40 ---------
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  61 +------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  57 ------------
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  |   5 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |   5 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  10 ++-
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 168 +++++++++++++++++++++++++++--------
+ 9 files changed, 140 insertions(+), 214 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 10d99b3..62d8162 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -47,6 +47,7 @@
- #define CPG_BASE 0xe6150000
- #define CPG_LEN 0x1000
- 
-+#define SMSTPCR1 0xe6150134
- #define SMSTPCR2 0xe6150138
- #define SMSTPCR3 0xe615013c
- #define SMSTPCR5 0xe6150144
-@@ -186,6 +187,7 @@ enum {
- 	MSTP522,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
-+	MSTP124,
- 	MSTP_NR
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+index d5cbbc7..d811533 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+@@ -428,9 +428,6 @@ enum {
+ 	PINMUX_MARK_END,
  };
  
-@@ -208,6 +210,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
-+	[MSTP124] = SH_CLK_MSTP32(&rclk_clk, SMSTPCR1, 24, 0), /* CMT0 */
+-#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
+-#define PINMUX_DATA_ALL()    CPU_ALL_PORT(_PORT_DATA, , unused)
+-
+ static const u16 pinmux_data[] = {
+ 	/* specify valid pin states for each pin in GPIO mode */
+ 	PINMUX_DATA_ALL(),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 214ac6c..e690051 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -583,11 +583,8 @@ enum {
+ 	PINMUX_MARK_END,
  };
  
- static struct clk_lookup lookups[] = {
-@@ -270,6 +273,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
-+	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- };
+-#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
+-#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_PORT_DATA, , unused)
+-
+ static const u16 pinmux_data[] = {
+-	PINMUX_DATA_GP_ALL(),
++	PINMUX_DATA_ALL(),
  
- #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index bc40a44..ece60c6 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -21,9 +21,10 @@
- #include <linux/irq.h>
+ 	/* Port0 */
+ 	PINMUX_DATA(DBGMDT2_MARK,		PORT0_FN1),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index 018d8bc..40aecfe 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -23,26 +23,6 @@
  #include <linux/kernel.h>
- #include <linux/of_platform.h>
--#include <linux/serial_sci.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/irq-renesas-irqc.h>
-+#include <linux/serial_sci.h>
-+#include <linux/sh_timer.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7790.h>
-@@ -159,6 +160,25 @@ static struct resource thermal_resources[] __initdata = {
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
+ #include "sh_pfc.h"
  
-+static struct sh_timer_config cmt00_platform_data = {
-+	.name = "CMT00",
-+	.timer_bit = 0,
-+	.clockevent_rating = 80,
-+};
-+
-+static struct resource cmt00_resources[] = {
-+	DEFINE_RES_MEM(0xffca0510, 0x0c),
-+	DEFINE_RES_MEM(0xffca0500, 0x04),
-+	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-+};
-+
-+#define r8a7790_register_cmt(idx)					\
-+	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+					  idx, cmt##idx##_resources,	\
-+					  ARRAY_SIZE(cmt##idx##_resources), \
-+					  &cmt##idx##_platform_data,	\
-+					  sizeof(struct sh_timer_config))
-+
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_register_scif(SCIFA0);
-@@ -173,6 +193,7 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(HSCIF1);
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
-+	r8a7790_register_cmt(00);
- }
+-#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
+-
+-#define PORT_GP_32(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+-	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+-	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+-	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+-	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+-	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+-	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
+-	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
+-	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+-	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+-	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+-	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
+-	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
+-	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
+-	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
+-
+ #define PORT_GP_27(bank, fn, sfx)					\
+ 	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+ 	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+@@ -66,26 +46,6 @@
+ 	PORT_GP_32(3, fn, sfx),		\
+ 	PORT_GP_27(4, fn, sfx)
  
- void __init r8a7790_timer_init(void)
+-#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
+-
+-#define _GP_GPIO(bank, pin, _name, sfx)		\
+-	[RCAR_GP_PIN(bank, pin)] = {		\
+-		.name = __stringify(_name),	\
+-		.enum_id = _name##_DATA,	\
+-	}
+-
+-#define _GP_DATA(bank, pin, name, sfx)		\
+-	PINMUX_DATA(name##_DATA, name##_FN)
+-
+-#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
+-#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
+-#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
+-
+-#define PINMUX_IPSR_NOGP(ispr, fn)	PINMUX_DATA(fn##_MARK, FN_##fn)
+-#define PINMUX_IPSR_DATA(ipsr, fn)	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr)
+-#define PINMUX_IPSR_MSEL(ipsr, fn, ms)	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr, FN_##ms)
+-#define PINMUX_IPSR_NOGM(ispr, fn, ms)	PINMUX_DATA(fn##_MARK, FN_##fn,            FN_##ms)
+-
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 290de9a..be832dc 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -24,51 +24,13 @@
+ 
+ #include "sh_pfc.h"
+ 
+-#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
+-
+-#define PORT_GP_32(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+-	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+-	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+-	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+-	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+-	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+-	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
+-	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
+-	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+-	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+-	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+-	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
+-	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
+-	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
+-	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
+-
+-#define PORT_GP_32_9(bank, fn, sfx)					\
++#define PORT_GP_9(bank, fn, sfx)					\
+ 	PORT_GP_1(bank, 0, fn, sfx), PORT_GP_1(bank, 1, fn, sfx),	\
+ 	PORT_GP_1(bank, 2, fn, sfx), PORT_GP_1(bank, 3, fn, sfx),	\
+ 	PORT_GP_1(bank, 4, fn, sfx), PORT_GP_1(bank, 5, fn, sfx),	\
+ 	PORT_GP_1(bank, 6, fn, sfx), PORT_GP_1(bank, 7, fn, sfx),	\
+ 	PORT_GP_1(bank, 8, fn, sfx)
+ 
+-#define PORT_GP_32_REV(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
+-	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
+-	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
+-	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
+-	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
+-	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
+-	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
+-	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
+-	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
+-	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
+-	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
+-	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
+-	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
+-	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
+-	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
+-	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
+-
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+ 	PORT_GP_32(1, fn, sfx),						\
+@@ -76,26 +38,7 @@
+ 	PORT_GP_32(3, fn, sfx),						\
+ 	PORT_GP_32(4, fn, sfx),						\
+ 	PORT_GP_32(5, fn, sfx),						\
+-	PORT_GP_32_9(6, fn, sfx)
+-
+-#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
+-
+-#define _GP_GPIO(bank, pin, _name, sfx)					\
+-	[RCAR_GP_PIN(bank, pin)] = {					\
+-		.name = __stringify(_name),				\
+-		.enum_id = _name##_DATA,				\
+-	}
+-
+-#define _GP_DATA(bank, pin, name, sfx)					\
+-	PINMUX_DATA(name##_DATA, name##_FN)
+-
+-#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
+-#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
+-#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
+-
+-#define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
+-#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+-							  FN_##ipsr, FN_##fn)
++	PORT_GP_9(6, fn, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 3713c00..95b38fa 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -27,44 +27,6 @@
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
+-#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
+-
+-#define PORT_GP_32(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+-	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+-	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+-	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+-	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+-	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+-	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
+-	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
+-	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+-	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+-	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+-	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
+-	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
+-	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
+-	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
+-
+-#define PORT_GP_32_REV(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
+-	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
+-	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
+-	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
+-	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
+-	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
+-	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
+-	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
+-	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
+-	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
+-	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
+-	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
+-	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
+-	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
+-	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
+-	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
+-
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+ 	PORT_GP_32(1, fn, sfx),						\
+@@ -73,25 +35,6 @@
+ 	PORT_GP_32(4, fn, sfx),						\
+ 	PORT_GP_32(5, fn, sfx)
+ 
+-#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
+-
+-#define _GP_GPIO(bank, pin, _name, sfx)					\
+-	[(bank * 32) + pin] = {						\
+-		.name = __stringify(_name),				\
+-		.enum_id = _name##_DATA,				\
+-	}
+-
+-#define _GP_DATA(bank, pin, name, sfx)					\
+-	PINMUX_DATA(name##_DATA, name##_FN)
+-
+-#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
+-#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
+-#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
+-
+-#define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
+-#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+-							  FN_##ipsr, FN_##fn)
+-
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index f269c46..9174ff2 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -384,11 +384,8 @@ enum {
+ 	PINMUX_MARK_END,
+ };
+ 
+-#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
+-#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_PORT_DATA, , unused)
+-
+ static const u16 pinmux_data[] = {
+-	PINMUX_DATA_GP_ALL(),
++	PINMUX_DATA_ALL(),
+ 
+ 	/* IRQ */
+ 	PINMUX_DATA(IRQ0_6_MARK,	PORT6_FN0, 	MSEL1CR_0_0),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 985acd0..914b142 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -466,12 +466,9 @@ enum {
+ 	PINMUX_MARK_END,
+ };
+ 
+-#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
+-#define PINMUX_DATA_GP_ALL()    CPU_ALL_PORT(_PORT_DATA, , unused)
+-
+ static const u16 pinmux_data[] = {
+ 	/* specify valid pin states for each pin in GPIO mode */
+-	PINMUX_DATA_GP_ALL(),
++	PINMUX_DATA_ALL(),
+ 
+ 	/* Table 25-1 (Function 0-7) */
+ 	PINMUX_DATA(VBUS_0_MARK, PORT0_FN1),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+index 1e1e3e0..537a639 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+@@ -31,6 +31,12 @@
+ 	PORT_32(fn, pfx##_4_, sfx),				\
+ 	CPU_32_PORT5(fn, pfx##_5_, sfx)
+ 
++#undef _GP_GPIO
++#undef _GP_DATA
++#undef GP_ALL
++#undef PINMUX_GPIO_GP_ALL
++#undef PINMUX_DATA_GP_ALL
++
+ #define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
+ #define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
+ 				       GP##pfx##_IN, GP##pfx##_OUT)
+@@ -45,10 +51,6 @@
+ #define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
+ #define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
+ 
+-#define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
+-#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+-							  FN_##ipsr, FN_##fn)
+-
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 7ad1b04..ebddfe0 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -66,19 +66,6 @@ struct pinmux_func {
+ 	const char *name;
+ };
+ 
+-#define PINMUX_GPIO(gpio, data_or_mark)			\
+-	[gpio] = {					\
+-		.name = __stringify(gpio),		\
+-		.enum_id = data_or_mark,		\
+-	}
+-#define PINMUX_GPIO_FN(gpio, base, data_or_mark)	\
+-	[gpio - (base)] = {				\
+-		.name = __stringify(gpio),		\
+-		.enum_id = data_or_mark,		\
+-	}
+-
+-#define PINMUX_DATA(data_or_mark, ids...) data_or_mark, ids, 0
+-
+ struct pinmux_cfg_reg {
+ 	unsigned long reg, reg_width, field_width;
+ 	const u16 *enum_ids;
+@@ -159,26 +146,108 @@ struct sh_pfc_soc_info {
+ 	unsigned long unlock_reg;
+ };
+ 
+-/* helper macro for port */
++/* -----------------------------------------------------------------------------
++ * Helper macros to create pin and port lists
++ */
++
++/*
++ * sh_pfc_soc_info gpio_data array macros
++ */
++
++#define PINMUX_DATA(data_or_mark, ids...)	data_or_mark, ids, 0
++
++#define PINMUX_IPSR_NOGP(ispr, fn)					\
++	PINMUX_DATA(fn##_MARK, FN_##fn)
++#define PINMUX_IPSR_DATA(ipsr, fn)					\
++	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr)
++#define PINMUX_IPSR_NOGM(ispr, fn, ms)					\
++	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ms)
++#define PINMUX_IPSR_MSEL(ipsr, fn, ms)					\
++	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr, FN_##ms)
++#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms)				\
++	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
++
++/*
++ * GP port style (32 ports banks)
++ */
++
++#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
++
++#define PORT_GP_32(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
++	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
++	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
++	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
++	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
++	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
++	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
++	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
++	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
++	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
++	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
++	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
++	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
++	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
++	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
++	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
++
++#define PORT_GP_32_REV(bank, fn, sfx)					\
++	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
++	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
++	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
++	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
++	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
++	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
++	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
++	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
++	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
++	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
++	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
++	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
++	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
++	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
++	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
++	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
++
++/* GP_ALL(suffix) - Expand to a list of GP_#_#_suffix */
++#define _GP_ALL(bank, pin, name, sfx)	name##_##sfx
++#define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
++
++/* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
++#define _GP_GPIO(bank, pin, _name, sfx)					\
++	[(bank * 32) + pin] = {						\
++		.name = __stringify(_name),				\
++		.enum_id = _name##_DATA,				\
++	}
++#define PINMUX_GPIO_GP_ALL()		CPU_ALL_PORT(_GP_GPIO, unused)
++
++/* PINMUX_DATA_GP_ALL -  Expand to a list of name_DATA, name_FN marks */
++#define _GP_DATA(bank, pin, name, sfx)	PINMUX_DATA(name##_DATA, name##_FN)
++#define PINMUX_DATA_GP_ALL()		CPU_ALL_PORT(_GP_DATA, unused)
++
++/*
++ * PORT style (linear pin space)
++ */
++
+ #define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
+ 
+-#define PORT_10(fn, pfx, sfx) \
+-	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
+-	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
+-	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
+-	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
++#define PORT_10(fn, pfx, sfx)						\
++	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),		\
++	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),		\
++	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),		\
++	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),		\
+ 	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
+ 
+-#define PORT_10_REV(fn, pfx, sfx)	\
+-	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
+-	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
+-	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
+-	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
++#define PORT_10_REV(fn, pfx, sfx)					\
++	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),		\
++	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),		\
++	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),		\
++	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),		\
+ 	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
+ 
+-#define PORT_32(fn, pfx, sfx)					\
+-	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
+-	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
++#define PORT_32(fn, pfx, sfx)						\
++	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),		\
++	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),		\
+ 	PORT_1(fn, pfx##31, sfx)
+ 
+ #define PORT_32_REV(fn, pfx, sfx)					\
+@@ -187,22 +256,43 @@ struct sh_pfc_soc_info {
+ 	PORT_10_REV(fn, pfx, sfx)
+ 
+ #define PORT_90(fn, pfx, sfx) \
+-	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),	\
+-	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),	\
+-	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),	\
+-	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),	\
++	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),		\
++	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),		\
++	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),		\
++	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),		\
+ 	PORT_10(fn, pfx##9, sfx)
+ 
+-#define _PORT_ALL(pfx, sfx) pfx##_##sfx
+-#define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
+-#define GPIO_FN(str) PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
++/* PORT_ALL(suffix) - Expand to a list of PORT_#_suffix */
++#define _PORT_ALL(pfx, sfx)		pfx##_##sfx
++#define PORT_ALL(str)			CPU_ALL_PORT(_PORT_ALL, PORT, str)
+ 
+-/* helper macro for pinmux data arrays */
+-#define PORT_DATA_IO(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+-		    PORT##nr##_IN)
++/* PINMUX_GPIO - Expand to a sh_pfc_pin entry */
++#define PINMUX_GPIO(gpio, data_or_mark)					\
++	[gpio] = {							\
++		.name = __stringify(gpio),				\
++		.enum_id = data_or_mark,				\
++	}
++
++/* PINMUX_DATA_ALL - Expand to a list of PORT_name_DATA, PORT_name_FN0,
++ *		     PORT_name_OUT, PORT_name_IN marks
++ */
++#define _PORT_DATA(pfx, sfx)						\
++	PINMUX_DATA(PORT##pfx##_DATA, PORT##pfx##_FN0,			\
++		    PORT##pfx##_OUT, PORT##pfx##_IN)
++#define PINMUX_DATA_ALL()		CPU_ALL_PORT(_PORT_DATA, , unused)
++
++/* GPIO_FN(name) - Expand to a sh_pfc_pin entry for a function GPIO */
++#define PINMUX_GPIO_FN(gpio, base, data_or_mark)			\
++	[gpio - (base)] = {						\
++		.name = __stringify(gpio),				\
++		.enum_id = data_or_mark,				\
++	}
++#define GPIO_FN(str)							\
++	PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
+ 
+-/* helper macro for top 4 bits in PORTnCR */
++/*
++ * PORTnCR macro
++ */
+ #define _PCRH(in, in_pd, in_pu, out)	\
+ 	0, (out), (in), 0,		\
+ 	0, 0, 0, 0,			\
 -- 
-1.8.2.1
+1.8.1.5
 
