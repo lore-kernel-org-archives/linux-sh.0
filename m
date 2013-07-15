@@ -1,49 +1,353 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 05:24:00 +0000
-Subject: [PATCH 0/4] Renesas ARM based SoC multiplatform updates for v3.12
-Message-Id: <cover.1375161473.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Jul 2013 23:40:06 +0000
+Subject: [PATCH 18/19] sh-pfc: Compute pin ranges automatically
+Message-Id: <1373931607-4599-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Arnd,
+Remove the manually specified ranges from PFC SoC data and compute the
+ranges automatically. This prevents ranges from being out-of-sync with
+pins definitions.
 
-please consider the following Renesas ARM based SoC multiplatform updates
-for v3.12. This pull-request is based on renesas-dt-for-v3.12, which I have
-already sent a pull-request for, in order to provide pre-requisite code.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/core.c        | 70 +++++++++++++++++++++++++++++++-----
+ drivers/pinctrl/sh-pfc/core.h        |  8 +++++
+ drivers/pinctrl/sh-pfc/gpio.c        | 21 +++--------
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 17 ---------
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |  9 -----
+ drivers/pinctrl/sh-pfc/pinctrl.c     | 49 ++++++++-----------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |  2 --
+ 7 files changed, 88 insertions(+), 88 deletions(-)
 
-The following changes since commit 66a5cab04d339d02b93a4671eadf8e251dbfdc2c:
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 96b0224..cb47bce 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -82,17 +82,14 @@ int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin)
+ 	unsigned int offset;
+ 	unsigned int i;
+ 
+-	if (pfc->info->ranges = NULL)
+-		return pin;
+-
+-	for (i = 0, offset = 0; i < pfc->info->nr_ranges; ++i) {
+-		const struct pinmux_range *range = &pfc->info->ranges[i];
++	for (i = 0, offset = 0; i < pfc->nr_ranges; ++i) {
++		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
+ 
+ 		if (pin <= range->end)
+-			return pin >= range->begin
+-			     ? offset + pin - range->begin : -1;
++			return pin >= range->start
++			     ? offset + pin - range->start : -1;
+ 
+-		offset += range->end - range->begin + 1;
++		offset += range->end - range->start + 1;
+ 	}
+ 
+ 	return -EINVAL;
+@@ -341,6 +338,59 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
+ 	return 0;
+ }
+ 
++static int sh_pfc_init_ranges(struct sh_pfc *pfc)
++{
++	struct sh_pfc_pin_range *range;
++	unsigned int nr_ranges;
++	unsigned int i;
++
++	if (pfc->info->pins[0].pin = (u16)-1) {
++		/* Pin number -1 denotes that the SoC doesn't report pin numbers
++		 * in its pin arrays yet. Consider the pin numbers range as
++		 * continuous and allocate a single range.
++		 */
++		pfc->nr_ranges = 1;
++		pfc->ranges = devm_kzalloc(pfc->dev, sizeof(*pfc->ranges),
++					   GFP_KERNEL);
++		if (pfc->ranges = NULL)
++			return -ENOMEM;
++
++		pfc->ranges->start = 0;
++		pfc->ranges->end = pfc->info->nr_pins - 1;
++		pfc->nr_gpio_pins = pfc->info->nr_pins;
++
++		return 0;
++	}
++
++	/* Count, allocate and fill the ranges. */
++	for (i = 1, nr_ranges = 1; i < pfc->info->nr_pins; ++i) {
++		if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin - 1)
++			nr_ranges++;
++	}
++
++	pfc->nr_ranges = nr_ranges;
++	pfc->ranges = devm_kzalloc(pfc->dev, sizeof(*pfc->ranges) * nr_ranges,
++				   GFP_KERNEL);
++	if (pfc->ranges = NULL)
++		return -ENOMEM;
++
++	range = pfc->ranges;
++	range->start = pfc->info->pins[0].pin;
++
++	for (i = 1; i < pfc->info->nr_pins; ++i) {
++		if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin - 1) {
++			range->end = pfc->info->pins[i-1].pin;
++			range++;
++			range->start = pfc->info->pins[i].pin;
++		}
++	}
++
++	range->end = pfc->info->pins[i-1].pin;
++	pfc->nr_gpio_pins = range->end + 1;
++
++	return 0;
++}
++
+ #ifdef CONFIG_OF
+ static const struct of_device_id sh_pfc_of_table[] = {
+ #ifdef CONFIG_PINCTRL_PFC_R8A73A4
+@@ -431,6 +481,10 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 
+ 	pinctrl_provide_dummies();
+ 
++	ret = sh_pfc_init_ranges(pfc);
++	if (ret < 0)
++		return ret;
++
+ 	/*
+ 	 * Initialize pinctrl bindings first
+ 	 */
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 93963a1..a1b2376 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -25,6 +25,11 @@ struct sh_pfc_window {
+ struct sh_pfc_chip;
+ struct sh_pfc_pinctrl;
+ 
++struct sh_pfc_pin_range {
++	u16 start;
++	u16 end;
++};
++
+ struct sh_pfc {
+ 	struct device *dev;
+ 	const struct sh_pfc_soc_info *info;
+@@ -34,6 +39,9 @@ struct sh_pfc {
+ 	unsigned int num_windows;
+ 	struct sh_pfc_window *window;
+ 
++	struct sh_pfc_pin_range *ranges;
++	unsigned int nr_ranges;
++
+ 	unsigned int nr_gpio_pins;
+ 
+ 	struct sh_pfc_chip *gpio;
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 7661be5..78fcb80 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -334,10 +334,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ {
+-	const struct pinmux_range *ranges;
+-	struct pinmux_range def_range;
+ 	struct sh_pfc_chip *chip;
+-	unsigned int nr_ranges;
+ 	unsigned int i;
+ 	int ret;
+ 
+@@ -368,23 +365,13 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	pfc->gpio = chip;
+ 
+ 	/* Register the GPIO to pin mappings. */
+-	if (pfc->info->ranges = NULL) {
+-		def_range.begin = 0;
+-		def_range.end = pfc->info->nr_pins - 1;
+-		ranges = &def_range;
+-		nr_ranges = 1;
+-	} else {
+-		ranges = pfc->info->ranges;
+-		nr_ranges = pfc->info->nr_ranges;
+-	}
+-
+-	for (i = 0; i < nr_ranges; ++i) {
+-		const struct pinmux_range *range = &ranges[i];
++	for (i = 0; i < pfc->nr_ranges; ++i) {
++		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
+ 
+ 		ret = gpiochip_add_pin_range(&chip->gpio_chip,
+ 					     dev_name(pfc->dev),
+-					     range->begin, range->begin,
+-					     range->end - range->begin + 1);
++					     range->start, range->start,
++					     range->end - range->start + 1);
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+index 04ecb5e..05d96ae 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+@@ -1398,20 +1398,6 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	R8A73A4_PIN_IO_PU_PD(328), R8A73A4_PIN_IO_PU_PD(329),
+ };
+ 
+-static const struct pinmux_range pinmux_ranges[] = {
+-	{.begin = 0, .end = 30,},
+-	{.begin = 32, .end = 40,},
+-	{.begin = 64, .end = 85,},
+-	{.begin = 96, .end = 126,},
+-	{.begin = 128, .end = 134,},
+-	{.begin = 160, .end = 178,},
+-	{.begin = 192, .end = 222,},
+-	{.begin = 224, .end = 250,},
+-	{.begin = 256, .end = 283,},
+-	{.begin = 288, .end = 308,},
+-	{.begin = 320, .end = 329,},
+-};
+-
+ /* - IRQC ------------------------------------------------------------------- */
+ #define IRQC_PINS_MUX(pin, irq_mark)				\
+ static const unsigned int irqc_irq##irq_mark##_pins[] = {	\
+@@ -2756,9 +2742,6 @@ const struct sh_pfc_soc_info r8a73a4_pinmux_info = {
+ 	.pins = pinmux_pins,
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
+ 
+-	.ranges = pinmux_ranges,
+-	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
+-
+ 	.groups = pinmux_groups,
+ 	.nr_groups = ARRAY_SIZE(pinmux_groups),
+ 	.functions = pinmux_functions,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index acf8392..1f4dbe4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1446,13 +1446,6 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	SH73A0_PIN_O(309),
+ };
+ 
+-static const struct pinmux_range pinmux_ranges[] = {
+-	{.begin = 0, .end = 118,},
+-	{.begin = 128, .end = 164,},
+-	{.begin = 192, .end = 282,},
+-	{.begin = 288, .end = 309,},
+-};
+-
+ /* Pin numbers for pins without a corresponding GPIO port number are computed
+  * from the row and column numbers with a 1000 offset to avoid collisions with
+  * GPIO port numbers.
+@@ -3894,8 +3887,6 @@ const struct sh_pfc_soc_info sh73a0_pinmux_info = {
+ 
+ 	.pins = pinmux_pins,
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
+-	.ranges = pinmux_ranges,
+-	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
+ 	.groups = pinmux_groups,
+ 	.nr_groups = ARRAY_SIZE(pinmux_groups),
+ 	.functions = pinmux_functions,
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 314255d..8649ec3 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -587,22 +587,9 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
+ /* PFC ranges -> pinctrl pin descs */
+ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+-	const struct pinmux_range *ranges;
+-	struct pinmux_range def_range;
+-	unsigned int nr_ranges;
+-	unsigned int nr_pins;
+ 	unsigned int i;
+ 
+-	if (pfc->info->ranges = NULL) {
+-		def_range.begin = 0;
+-		def_range.end = pfc->info->nr_pins - 1;
+-		ranges = &def_range;
+-		nr_ranges = 1;
+-	} else {
+-		ranges = pfc->info->ranges;
+-		nr_ranges = pfc->info->nr_ranges;
+-	}
+-
++	/* Allocate and initialize the pins and configs arrays. */
+ 	pmx->pins = devm_kzalloc(pfc->dev,
+ 				 sizeof(*pmx->pins) * pfc->info->nr_pins,
+ 				 GFP_KERNEL);
+@@ -615,32 +602,24 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 	if (unlikely(!pmx->configs))
+ 		return -ENOMEM;
+ 
+-	for (i = 0, nr_pins = 0; i < nr_ranges; ++i) {
+-		const struct pinmux_range *range = &ranges[i];
+-		unsigned int number;
++	for (i = 0; i < pfc->info->nr_pins; ++i) {
++		const struct sh_pfc_pin *info = &pfc->info->pins[i];
++		struct sh_pfc_pin_config *cfg = &pmx->configs[i];
++		struct pinctrl_pin_desc *pin = &pmx->pins[i];
+ 
+-		for (number = range->begin; number <= range->end;
+-		     number++, nr_pins++) {
+-			struct sh_pfc_pin_config *cfg = &pmx->configs[nr_pins];
+-			struct pinctrl_pin_desc *pin = &pmx->pins[nr_pins];
+-			const struct sh_pfc_pin *info -				&pfc->info->pins[nr_pins];
+-
+-			pin->number = number;
+-			pin->name = info->name;
+-			cfg->type = PINMUX_TYPE_NONE;
+-		}
++		/* If the pin number is equal to -1 all pins are considered */
++		pin->number = info->pin != (u16)-1 ? info->pin : i;
++		pin->name = info->name;
++		cfg->type = PINMUX_TYPE_NONE;
+ 	}
+ 
+-	pfc->nr_gpio_pins = ranges[nr_ranges-1].end + 1;
+-
+-	return nr_ranges;
++	return 0;
+ }
+ 
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ {
+ 	struct sh_pfc_pinctrl *pmx;
+-	int nr_ranges;
++	int ret;
+ 
+ 	pmx = devm_kzalloc(pfc->dev, sizeof(*pmx), GFP_KERNEL);
+ 	if (unlikely(!pmx))
+@@ -649,9 +628,9 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	pmx->pfc = pfc;
+ 	pfc->pinctrl = pmx;
+ 
+-	nr_ranges = sh_pfc_map_pins(pfc, pmx);
+-	if (unlikely(nr_ranges < 0))
+-		return nr_ranges;
++	ret = sh_pfc_map_pins(pfc, pmx);
++	if (ret < 0)
++		return ret;
+ 
+ 	pmx->pctl_desc.name = DRV_NAME;
+ 	pmx->pctl_desc.owner = THIS_MODULE;
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 839e695..2469b35 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -125,8 +125,6 @@ struct sh_pfc_soc_info {
+ 
+ 	const struct sh_pfc_pin *pins;
+ 	unsigned int nr_pins;
+-	const struct pinmux_range *ranges;
+-	unsigned int nr_ranges;
+ 	const struct sh_pfc_pin_group *groups;
+ 	unsigned int nr_groups;
+ 	const struct sh_pfc_function *functions;
+-- 
+1.8.1.5
 
-  ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference (2013-07-17 10:06:47 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-multiplatform-for-v3.12
-
-for you to fetch changes up to fd071b669ee2405e986636e389a3d1b6776e50a0:
-
-  ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration (2013-07-23 09:52:44 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based SoC multiplatform updates for v3.12
-
-Move Renesas ARM based SoCs a little closer to using
-multiplatform by adding ARCH_SHMOBILE_MULTI and only
-building clocks when COMMON_CLK=n.
-
-----------------------------------------------------------------
-Magnus Damm (4):
-      ARM: shmobile: Only build clocks when COMMON_CLK=n
-      ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
-      ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
-      ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration
-
- arch/arm/Makefile                              |  1 +
- arch/arm/boot/dts/Makefile                     |  1 +
- arch/arm/mach-shmobile/Kconfig                 | 52 +++++++++++++++++++++++---
- arch/arm/mach-shmobile/Makefile                | 33 +++++++++++-----
- arch/arm/mach-shmobile/board-kzm9d-reference.c |  3 +-
- arch/arm/mach-shmobile/setup-emev2.c           |  3 +-
- 6 files changed, 77 insertions(+), 16 deletions(-)
