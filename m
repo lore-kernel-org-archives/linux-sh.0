@@ -1,119 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 01 Jul 2013 04:25:53 +0000
-Subject: [PATCH v3 1/3] ARM: shmobile: r8a7790: add Ether support
-Message-Id: <1372652755-16948-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 15 Jul 2013 23:39:48 +0000
+Subject: [PATCH 00/19] sh-pfc: Support pins with no associated GPIO port
+Message-Id: <1373931607-4599-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372652755-16948-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372652755-16948-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add Ether clock and platform device for R8A7779 SoC; add a function to
-register this device with board-specific platform data.
+Hello,
 
-Based on a similar change for the r8a7779 by Sergei Shtylyov.
+Here's a patch series that cleans up and refactors to sh-pfc driver to add
+support for pins with no associated GPIO port.
 
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Most configurable pins in SuperH and SH Mobile devices can be used as a GPIO.
+However, some of them have selectable functions but are not associated with a
+GPIO. Those pins must be defined in the pinmux pins array but not registered
+in the GPIOs ranges.
 
----
+The series first cleans up the sh-pfc driver by removing unused features (01
+to 05) and then gradually refactors the code (06 to 13) to add pin numbers to
+the sh_pfc_pin structure (14 to 16). It finally computes pin ranges
+automatically (18) and adds support for pins without a GPIO port (19).
 
-This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
+The patches have been compiled for all supported SoCs and tested on the KZM9G
+board (SH73A0) with a hack to add I2C4 pins that have no GPIO port. I'm
+lacking hardware to test R8A7778 which would be a good test candidate.
 
-v3
-* Use newly added "r8a7790-ether" instead of "sh-eth"
+The patches are based on v3.11-rc1.
 
-v2
-* Do not add MSTP812, EtherAVB. It is not used.
-* As suggested by Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-  - Move Ethernet element of MSTP enum to a separate line
-  - Move declaration of r8a7790_add_ether_device() to immediately
-    after that of r8a7790_add_standard_devices()
-  - Add __initdata annotation to ether_resource.
----
- arch/arm/mach-shmobile/clock-r8a7790.c        |  4 ++++
- arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
- arch/arm/mach-shmobile/setup-r8a7790.c        | 14 ++++++++++++++
- 3 files changed, 21 insertions(+)
+Laurent Pinchart (19):
+  sh-pfc: Remove unused input_pd and input_pu ranges
+  sh-pfc: Remove unused PORT_DATA_* macros
+  sh-pfc: Remove unused macro and enum entries
+  sh-pfc: Remove unneeded const keywords
+  sh-pfc: Remove unused GPIO_PORT_ALL macro
+  sh-pfc: Don't overallocate memory for the GPIO chip pins array
+  sh-pfc: Replace pinmux_enum_id typedef with u16
+  sh-pfc: Rename gpio arguments to be consistent with the rest of the
+    code
+  sh-pfc: Consolidate PFC SoC data macros
+  sh-pfc: Consolidate pin definition macros
+  sh-pfc: sh7734: Use the common GP port style macros
+  sh-pfc: shx3: Remove shx3_ prefix from static symbols
+  sh-pfc: Don't duplicate argument to PINMUX_GPIO macro
+  sh-pfc: Add port numbers to the CPU_ALL_PORT macro
+  sh-pfc: Pass the pin number down to the port function macro
+  sh-pfc: Add pin number to struct sh_pfc_pin
+  sh-pfc: Rename struct sh_pfc nr_pins field to nr_gpio_pins
+  sh-pfc: Compute pin ranges automatically
+  sh-pfc: Support pins not associated with a GPIO port
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 62d8162..2f52c0f 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -52,6 +52,7 @@
- #define SMSTPCR3 0xe615013c
- #define SMSTPCR5 0xe6150144
- #define SMSTPCR7 0xe615014c
-+#define SMSTPCR8 0xe6150990
- 
- #define MODEMR		0xE6160060
- #define SDCKCR		0xE6150074
-@@ -182,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
- 
- /* MSTP */
- enum {
-+	MSTP813,
- 	MSTP721, MSTP720,
- 	MSTP717, MSTP716,
- 	MSTP522,
-@@ -192,6 +194,7 @@ enum {
- };
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
- 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
- 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
- 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
-@@ -260,6 +263,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
-+	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 7851cc1..b827b49 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -1,7 +1,10 @@
- #ifndef __ASM_R8A7790_H__
- #define __ASM_R8A7790_H__
- 
-+#include <linux/sh_eth.h>
-+
- void r8a7790_add_standard_devices(void);
-+void r8a7790_add_ether_device(struct sh_eth_plat_data *pdata);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
- void r8a7790_init_delay(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index d89cd83..fad4251 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -31,6 +31,20 @@
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- 
-+/* Ether */
-+static struct resource ether_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xee700000, 0x400),
-+	DEFINE_RES_IRQ(gic_spi(162)), /* IRQ0 */
-+};
-+
-+void __init r8a7790_add_ether_device(struct sh_eth_plat_data *pdata)
-+{
-+	platform_device_register_resndata(&platform_bus, "r8a7790-ether", -1,
-+					  ether_resources,
-+					  ARRAY_SIZE(ether_resources),
-+					  pdata, sizeof(*pdata));
-+}
-+
- static struct resource pfc_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xe6060000, 0x250),
- };
+ drivers/pinctrl/sh-pfc/core.c        |   99 ++-
+ drivers/pinctrl/sh-pfc/core.h        |   10 +-
+ drivers/pinctrl/sh-pfc/gpio.c        |   45 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  157 ++---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   47 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   55 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   63 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   59 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c  |  202 ++++---
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c  |  246 ++++----
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c  |  285 +++++----
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  |   53 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |  104 ++--
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c  |  701 +++++++++++-----------
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c  |  747 +++++++++++------------
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c  |  381 ++++++------
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c  | 1093 ++++++++++++++++------------------
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  |   60 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c  |  709 +++++++++++-----------
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c  |  700 +++++++++++-----------
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c  |  383 ++++++------
+ drivers/pinctrl/sh-pfc/pfc-shx3.c    |  423 +++++++------
+ drivers/pinctrl/sh-pfc/pinctrl.c     |   49 +-
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |  277 +++++----
+ 24 files changed, 3275 insertions(+), 3673 deletions(-)
+
 -- 
-1.8.2.1
+Regards,
+
+Laurent Pinchart
 
