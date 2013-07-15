@@ -1,47 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Jun 2013 08:22:01 +0000
-Subject: [PATCH 03/11] ARM: shmobile: kzm9d: resigser smsc911x platform device with id -1
-Message-Id: <1370593329-27559-4-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 15 Jul 2013 21:54:02 +0000
+Subject: Help with fitting unusual devices into IIO framework
+Message-Id: <51E46F7A.9020400@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1370593329-27559-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Jonathan Cameron <jic23@cam.ac.uk>, linux-iio@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-As the kzm9d only has one smsc911x device it
-may be registered as a platform device with id -1.
+Hello.
 
-This allows the kzm9d board to access the smsc911x device
-when CONFIG_REGULATOR (and CONFIG_REGULATOR_FIXED_VOLTAGE)
-are set. The motivation for which is twofold: using regulators
-seems to be generally a good thing; it will move the kzm9d defconfig
-one step closer to being able to be consolidated with other
-shmobile defconfigs.
+     Recently I have posted a driver for drivers/misc/ driving a pair of 
+devices: Renesas R-Car Gyro-ADC and speed-pulse interfaces [1]. Arnd 
+Bergmann, one of the maintainers told me that such driver would fit 
+better into the IIO infrastructure. I have studied this infrastructure
+for some time and only found in it a place for the Gyro-ADC interface.
+    Let me describe the devices to be driven in some detail. Gyro-ADC 
+i/f is an interface to multichannel serial ADC (of 3 certain models)
+which can also calculate and average of each 8 samples and sum up 10 of 
+these average values. Speed-pulse interface can count PWM-type input 
+signal pulses and period between them. Though  being two separate 
+devices, these two have to be driven together because of the shared 
+start/stop register (located in Gyro-ADC i/f still) and the clock with 
+1.25 ms period supplied from the Gyro-ADC i/f to the speed-pulse i/f;
+at the same time speed-pulse i/f generates interrupt with 100 ms period 
+to be used by both interfaces.
+    At this time, only speed-pulse interface support is required, 
+Gyro-ADC can be largely ignored (though it has to be initialized). 
+Perhaps we could add a new I/O channel type for speed-pulse i/f? What's 
+your thoughts?
 
-An alternate but so far untested approach would be to
-update the definition of dummy_supplies in board-kzm9d.c
-to use "smsc911x.0" instead of "smsc911x".
+[1] marc.info/?l=linux-kernel&m7367311823027
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-kzm9d.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
-index c016ccd..4368000 100644
---- a/arch/arm/mach-shmobile/board-kzm9d.c
-+++ b/arch/arm/mach-shmobile/board-kzm9d.c
-@@ -56,7 +56,7 @@ static struct smsc911x_platform_config smsc911x_platdata = {
- 
- static struct platform_device smsc91x_device = {
- 	.name	= "smsc911x",
--	.id	= 0,
-+	.id	= -1,
- 	.dev	= {
- 		  .platform_data = &smsc911x_platdata,
- 		},
--- 
-1.8.2.1
-
+WBR, Sergei
