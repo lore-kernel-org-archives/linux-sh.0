@@ -1,63 +1,41 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 19 Jul 2013 11:32:38 +0000
-Subject: Re: [PATCH 1/3] ARM: shmobile: use common platform header for HPB-DMAC
-Message-Id: <51E923D6.5050502@cogentembedded.com>
+Date: Mon, 15 Jul 2013 19:12:21 +0000
+Subject: [PATCH] ml86v7667: override default field interlace order
+Message-Id: <201307152312.22371.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
- <201306300245.58486.sergei.shtylyov@cogentembedded.com>
- <CANqRtoTCaJfbECSpX7nMZoV8SPeQqs-xrJQ0-+-smA+bx3QG=w@mail.gmail.com>
- <51E865FA.9000706@cogentembedded.com>
- <87txjrbe11.wl%kuninori.morimoto.gx@renesas.com>
- <51E92053.5080103@cogentembedded.com>
-In-Reply-To: <51E92053.5080103@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: mchehab@redhat.com, linux-media@vger.kernel.org, hverkuil@xs4all.nl
+Cc: matsu@igel.co.jp, linux-sh@vger.kernel.org, vladimir.barinov@cogentembedded.com
 
-Hello.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-On 19-07-2013 15:17, Sergei Shtylyov wrote:
+ML86V7667 always transmits top field first for both PAL and  NTSC -- that makes
+application incorrectly  treat interlaced  fields when relying on the standard.
+Hence we must set V4L2_FIELD_INTERLACED_TB format explicitly.
 
->>>>> From: Max Filippov <max.filippov@cogentembedded.com>
+Reported-by: Katsuya MATSUBARA <matsu@igel.co.jp>
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: added a comment.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->>>>> Use previously empty <mach/dma.h> to declare HPB-DMA slave IDs.
+---
+This patch is against the 'media_tree.git' repo.
 
->>>>> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
->>>>> [Sergei: changed the guard macro name, fixed comment, extended copyright.]
->>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+ drivers/media/i2c/ml86v7667.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
->>>>> ---
->>>>>    arch/arm/mach-shmobile/include/mach/dma.h |   25
->>>>> ++++++++++++++++++++++++-
->>>>>    1 file changed, 24 insertions(+), 1 deletion(-)
-
->>>> Thanks for your patch. Can you please explain the reason why you put
->>>> this shared information under mach/?
-
-    IIUC, because the only 2 file using it were under arch/arm/mach-shmobile/.
-
->>>      I'm afraid that's more a question to the original author, Phil Edworthy.
->>> He put this stuff into <mach/hpb-dmae.h>.
-
->> Then, why you could send this patch instead of original author,
-
->     Ask Phil why didn't he upstream his stuff. We, unlike him, do have
-> obligation to upstream it.
-
->> even though you can't answer any question about it ?
-
->     I'm not the author of the patch, let me remind you, Max Filippov is.
-> He was on vacations.
-
-    Phil's patches were only for R8A7778, IIRC (yet, the platfrom DMA code was 
-placed in a separate file, not r8a7778.c). Max decided to use the 
-<mach/hpb-dmae.h> header for sharing the DMA channel IDs between R8A777[89], I 
-agreed but suggested to use the empty <mach/dma.h> instead.
-
->> Best regards
->> ---
->> Kuninori Morimoto
-
-WBR, Sergei
-
+Index: media_tree/drivers/media/i2c/ml86v7667.c
+=================================--- media_tree.orig/drivers/media/i2c/ml86v7667.c
++++ media_tree/drivers/media/i2c/ml86v7667.c
+@@ -209,7 +209,8 @@ static int ml86v7667_mbus_fmt(struct v4l
+ 
+ 	fmt->code = V4L2_MBUS_FMT_YUYV8_2X8;
+ 	fmt->colorspace = V4L2_COLORSPACE_SMPTE170M;
+-	fmt->field = V4L2_FIELD_INTERLACED;
++	/* The top field is always transferred first by the chip */
++	fmt->field = V4L2_FIELD_INTERLACED_TB;
+ 	fmt->width = 720;
+ 	fmt->height = priv->std & V4L2_STD_525_60 ? 480 : 576;
+ 
