@@ -1,54 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 09:28:22 +0000
-Subject: [PATCH 07/08] ARM: shmobile: EMEV2 map_io update
-Message-Id: <20130702092822.32066.80242.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 00:11:15 +0000
+Subject: [PATCH v2 23/27] sh-pfc: Pass the pin number down to the port function macro
+Message-Id: <1373933479-17727-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130702092725.32066.54861.sendpatchset@w520>
-In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The PORT_1 macro invokes a macro passed as a parameter. Pass the pin
+number down to that macro at the bottom of the call stack. This will be
+used to compute the pin ranges automatically.
 
-Update the EMEV2 struct map_desc to exclude the SMU
-and also include the ->map_io() callback in the DT
-version of EMEV2 board support.
-
-The EMEV2 SMP code can these days perform ioremap()
-early on without the SMU information in the io_desc[].
-
-To correctly support SMP in case of DT-only board
-support then the ->map_io() callback is needed.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
- arch/arm/mach-shmobile/setup-emev2.c |    8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 005b482..596ceb7 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -229,7 +229,7 @@ struct sh_pfc_soc_info {
+  * PORT style (linear pin space)
+  */
+ 
+-#define PORT_1(pn, fn, pfx, sfx) fn(pfx, sfx)
++#define PORT_1(pn, fn, pfx, sfx) fn(pn, pfx, sfx)
+ 
+ #define PORT_10(pn, fn, pfx, sfx)					  \
+ 	PORT_1(pn,   fn, pfx##0, sfx), PORT_1(pn+1, fn, pfx##1, sfx),	  \
+@@ -246,7 +246,7 @@ struct sh_pfc_soc_info {
+ 	PORT_10(pn+90, fn, pfx##9, sfx)
+ 
+ /* PORT_ALL(suffix) - Expand to a list of PORT_#_suffix */
+-#define _PORT_ALL(pfx, sfx)		pfx##_##sfx
++#define _PORT_ALL(pn, pfx, sfx)		pfx##_##sfx
+ #define PORT_ALL(str)			CPU_ALL_PORT(_PORT_ALL, PORT, str)
+ 
+ /* PINMUX_GPIO - Expand to a sh_pfc_pin entry */
+@@ -267,7 +267,7 @@ struct sh_pfc_soc_info {
+ /* PINMUX_DATA_ALL - Expand to a list of PORT_name_DATA, PORT_name_FN0,
+  *		     PORT_name_OUT, PORT_name_IN marks
+  */
+-#define _PORT_DATA(pfx, sfx)						\
++#define _PORT_DATA(pn, pfx, sfx)					\
+ 	PINMUX_DATA(PORT##pfx##_DATA, PORT##pfx##_FN0,			\
+ 		    PORT##pfx##_OUT, PORT##pfx##_IN)
+ #define PINMUX_DATA_ALL()		CPU_ALL_PORT(_PORT_DATA, , unused)
+-- 
+1.8.1.5
 
---- 0004/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-02 15:22:37.000000000 +0900
-@@ -38,13 +38,6 @@
- 
- static struct map_desc emev2_io_desc[] __initdata = {
- #ifdef CONFIG_SMP
--	/* 128K entity map for 0xe0100000 (SMU) */
--	{
--		.virtual	= 0xe0100000,
--		.pfn		= __phys_to_pfn(0xe0100000),
--		.length		= SZ_128K,
--		.type		= MT_DEVICE
--	},
- 	/* 2M mapping for SCU + L2 controller */
- 	{
- 		.virtual	= 0xf0000000,
-@@ -220,6 +213,7 @@ static const char *emev2_boards_compat_d
- 
- DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
-+	.map_io		= emev2_map_io,
- 	.init_early	= emev2_init_delay,
- 	.init_machine	= emev2_add_standard_devices_dt,
- 	.dt_compat	= emev2_boards_compat_dt,
