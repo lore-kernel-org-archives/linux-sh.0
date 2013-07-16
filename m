@@ -1,77 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Jul 2013 02:21:56 +0000
-Subject: Re: [PATCH v2 1/2] ARM: shmobile: ape6evm-reference: switch PFC to DT
-Message-Id: <20130730022156.GB31526@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 09:19:34 +0000
+Subject: [PATCH] ARM: shmobile: r8a7740: Fix ethernet device name in clock definition
+Message-Id: <1373966374-15716-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1307231316170.19465@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1307231316170.19465@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jul 23, 2013 at 01:19:07PM +0200, Guennadi Liakhovetski wrote:
-> PFC pinctrl configuration can now be performed via DT. Update
-> ape6evm-reference to use this.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The ethernet device is named r8a7740-gether, fix the clock definition
+accordingly.
 
-Thanks, I have queued this up for v3.12 in the dt2 branch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> ---
-> 
-> v2: no change
-> 
->  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   10 ++++++++++
->  arch/arm/mach-shmobile/board-ape6evm-reference.c |    9 ---------
->  2 files changed, 10 insertions(+), 9 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> index 6f4506e..bbd09d8 100644
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> @@ -53,3 +53,13 @@
->  	>;
->  	voltage-tolerance = <1>; /* 1% */
->  };
-> +
-> +&pfc {
-> +	pinctrl-0 = <&scifa0_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	scifa0_pins: scifa0 {
-> +		renesas,groups = "scifa0_data";
-> +		renesas,function = "scifa0";
-> +	};
-> +};
-> diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-> index 46b41de..52cc5fa 100644
-> --- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-> +++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-> @@ -29,12 +29,6 @@
->  #include <asm/mach-types.h>
->  #include <asm/mach/arch.h>
->  
-> -static const struct pinctrl_map ape6evm_pinctrl_map[] = {
-> -	/* SCIFA0 console */
-> -	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
-> -				  "scifa0_data", "scifa0"),
-> -};
-> -
->  static void __init ape6evm_add_standard_devices(void)
->  {
->  
-> @@ -52,9 +46,6 @@ static void __init ape6evm_add_standard_devices(void)
->  	clk_put(parent);
->  	clk_put(mp);
->  
-> -	pinctrl_register_mappings(ape6evm_pinctrl_map,
-> -				  ARRAY_SIZE(ape6evm_pinctrl_map));
-> -	r8a73a4_pinmux_init();
->  	r8a73a4_add_dt_devices();
->  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->  	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
-> -- 
-> 1.7.2.5
-> 
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index de10fd7..e1e8710 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -595,7 +595,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("r8a7740-gether",		&mstp_clks[MSTP309]),
+-	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
++	CLKDEV_DEV_ID("e9a00000.r8a7740-gether", &mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("renesas_tpu_pwm",	&mstp_clks[MSTP304]),
+ 
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
+-- 
+Regards,
+
+Laurent Pinchart
+
