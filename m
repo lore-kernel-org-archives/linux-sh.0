@@ -1,99 +1,122 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:31 +0000
-Subject: [PATCH 04/19] ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
-Message-Id: <aaf7eda80cb8371bbf26d7171241cfb94b787b0f.1374625203.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 10:32:05 +0000
+Subject: [PATCH v5 2/5] ARM: shmobile: armadillo800eva: Add backlight support
+Message-Id: <1373970728-28648-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Add GPIO controller nodes to the r8a7778 core device tree.
+The flat panel backlight on the Armadillo 800 EVA board is driven by the
+TPU PWM output.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Simon Horman <horms@verge.net.au>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 61 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 54 +++++++++++++++++++++++++-
+ 1 file changed, 52 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index c8dbf14..45ac404 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -33,8 +33,69 @@
- 		      <0xfe430000 0x100>;
- 	};
- 
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc40000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc41000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc42000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc43000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
-+		reg = <0xffc44000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 103 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 27>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7778";
- 		reg = <0xfffc000 0x118>;
-+		#gpio-range-cells = <3>;
- 	};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 4432f05..2412fca 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -31,6 +31,8 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/regulator/driver.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/pwm-renesas-tpu.h>
++#include <linux/pwm_backlight.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+@@ -387,7 +389,50 @@ static struct platform_device sh_eth_device = {
+ 	.num_resources = ARRAY_SIZE(sh_eth_resources),
  };
+ 
+-/* LCDC */
++/* PWM */
++static struct resource pwm_resources[] = {
++	[0] = {
++		.start = 0xe6600000,
++		.end = 0xe66000ff,
++		.flags = IORESOURCE_MEM,
++	},
++};
++
++static struct tpu_pwm_platform_data pwm_device_data = {
++	.channels[2] = {
++		.polarity = PWM_POLARITY_INVERSED,
++	}
++};
++
++static struct platform_device pwm_device = {
++	.name = "renesas-tpu-pwm",
++	.id = -1,
++	.dev = {
++		.platform_data = &pwm_device_data,
++	},
++	.num_resources = ARRAY_SIZE(pwm_resources),
++	.resource = pwm_resources,
++};
++
++static struct pwm_lookup pwm_lookup[] = {
++	PWM_LOOKUP("renesas-tpu-pwm", 2, "pwm-backlight.0", NULL),
++};
++
++/* LCDC and backlight */
++static struct platform_pwm_backlight_data pwm_backlight_data = {
++	.lth_brightness = 50,
++	.max_brightness = 255,
++	.dft_brightness = 255,
++	.pwm_period_ns = 33333, /* 30kHz */
++};
++
++static struct platform_device pwm_backlight_device = {
++	.name = "pwm-backlight",
++	.dev = {
++		.platform_data = &pwm_backlight_data,
++	},
++};
++
+ static struct fb_videomode lcdc0_mode = {
+ 	.name		= "AMPIER/AM-800480",
+ 	.xres		= 800,
+@@ -1023,6 +1068,8 @@ static struct i2c_board_info i2c2_devices[] = {
+  */
+ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
++	&pwm_device,
++	&pwm_backlight_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
+ 	&vcc_sdhi0,
+@@ -1094,6 +1141,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* ST1232 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("0-0055", "pfc-r8a7740",
+ 				  "intc_irq10", "intc"),
++	/* TPU0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas-tpu-pwm", "pfc-r8a7740",
++				  "tpu0_to2_1", "tpu0"),
+ 	/* USBHS */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7740",
+ 				  "intc_irq7_1", "intc"),
+@@ -1147,13 +1197,13 @@ static void __init eva_init(void)
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 
+ 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
++	pwm_add_table(pwm_lookup, ARRAY_SIZE(pwm_lookup));
+ 
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
+ 
+ 	/* LCDC0 */
+ 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+-	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
+ 
+ 	/* Touchscreen */
+ 	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
 -- 
-1.8.2.1
+1.8.1.5
 
