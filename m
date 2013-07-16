@@ -1,33 +1,95 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 09 Jul 2013 05:51:51 +0000
-Subject: [PATCH 0/4] ARM: shmobile: r8a7778: add USB Func support
-Message-Id: <87fvvoth57.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 00:11:12 +0000
+Subject: [PATCH v2 20/27] sh-pfc: shx3: Remove shx3_ prefix from static symbols
+Message-Id: <1373933479-17727-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Unlike all other PFC SoC data, the shx3 data prefix all static symbols
+with shx3_. Remove the prefix to be consistent with the other source
+files.
 
-Hi Simon
-
-These patches add USB Func support on r8a7778/BockW.
-These are based on renesas-next-20130704v2 tag
-
-Kuninori Morimoto (4):
-      ARM: shmobile: r8a7778: add usb phy power control function
-      ARM: shmobile: r8a7778: add r8a7778_add_usb_host_device()
-      ARM: shmobile: r8a7778: add r8a7778_add_usb_func_device()
-      ARM: shmobile: bockw: add USB Function support
-
- arch/arm/mach-shmobile/board-bockw.c          |   56 ++++++++++++++--
- arch/arm/mach-shmobile/clock-r8a7778.c        |    1 +
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    5 +-
- arch/arm/mach-shmobile/setup-r8a7778.c        |   86 +++++++++++++++++++------
- 4 files changed, 125 insertions(+), 23 deletions(-)
-
-
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
+ drivers/pinctrl/sh-pfc/pfc-shx3.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+index 48a6c60..775a622 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
++++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+@@ -127,7 +127,7 @@ enum {
+ 	PINMUX_MARK_END,
+ };
+ 
+-static const u16 shx3_pinmux_data[] = {
++static const u16 pinmux_data[] = {
+ 	/* PA GPIO */
+ 	PINMUX_DATA(PA7_DATA, PA7_IN, PA7_OUT),
+ 	PINMUX_DATA(PA6_DATA, PA6_IN, PA6_OUT),
+@@ -285,7 +285,7 @@ static const u16 shx3_pinmux_data[] = {
+ 	PINMUX_DATA(IRQOUT_MARK,	PH0_FN),
+ };
+ 
+-static struct sh_pfc_pin shx3_pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* PA */
+ 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
+ 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
+@@ -365,9 +365,9 @@ static struct sh_pfc_pin shx3_pinmux_pins[] = {
+ 	PINMUX_GPIO(GPIO_PH0, PH0_DATA),
+ };
+ 
+-#define PINMUX_FN_BASE	ARRAY_SIZE(shx3_pinmux_pins)
++#define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+ 
+-static const struct pinmux_func shx3_pinmux_func_gpios[] = {
++static const struct pinmux_func pinmux_func_gpios[] = {
+ 	/* FN */
+ 	GPIO_FN(D31),
+ 	GPIO_FN(D30),
+@@ -433,7 +433,7 @@ static const struct pinmux_func shx3_pinmux_func_gpios[] = {
+ 	GPIO_FN(IRQOUT),
+ };
+ 
+-static const struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
++static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	{ PINMUX_CFG_REG("PABCR", 0xffc70000, 32, 2) {
+ 		PA7_FN, PA7_OUT, PA7_IN, 0,
+ 		PA6_FN, PA6_OUT, PA6_IN, 0,
+@@ -509,7 +509,7 @@ static const struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
+ 	{ },
+ };
+ 
+-static const struct pinmux_data_reg shx3_pinmux_data_regs[] = {
++static const struct pinmux_data_reg pinmux_data_regs[] = {
+ 	{ PINMUX_DATA_REG("PABDR", 0xffc70010, 32) {
+ 		0, 0, 0, 0, 0, 0, 0, 0,
+ 		PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
+@@ -550,12 +550,12 @@ const struct sh_pfc_soc_info shx3_pinmux_info = {
+ 	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
+ 	.output		= { PINMUX_OUTPUT_BEGIN,   PINMUX_OUTPUT_END },
+ 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+-	.pins		= shx3_pinmux_pins,
+-	.nr_pins	= ARRAY_SIZE(shx3_pinmux_pins),
+-	.func_gpios	= shx3_pinmux_func_gpios,
+-	.nr_func_gpios	= ARRAY_SIZE(shx3_pinmux_func_gpios),
+-	.gpio_data	= shx3_pinmux_data,
+-	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
+-	.cfg_regs	= shx3_pinmux_config_regs,
+-	.data_regs	= shx3_pinmux_data_regs,
++	.pins		= pinmux_pins,
++	.nr_pins	= ARRAY_SIZE(pinmux_pins),
++	.func_gpios	= pinmux_func_gpios,
++	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
++	.gpio_data	= pinmux_data,
++	.gpio_data_size	= ARRAY_SIZE(pinmux_data),
++	.cfg_regs	= pinmux_config_regs,
++	.data_regs	= pinmux_data_regs,
+ };
+-- 
+1.8.1.5
+
