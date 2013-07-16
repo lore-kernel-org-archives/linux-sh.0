@@ -1,52 +1,125 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:31:54 +0000
-Subject: [PATCH 15/22] ARM: shmobile: Remove unused sh7372 auxdata table
-Message-Id: <975e5af958916f8b76a8926cd4d50c04936d7079.1374103272.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 00:10:55 +0000
+Subject: [PATCH v2 03/27] sh-pfc: sh7723: Remove unused input_pu range
+Message-Id: <1373933479-17727-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The PFC SH7723 SoC data contains a input_pu range used to configure
+pull-up resistors using the legacy non-pinconf API. That API has been
+removed from the driver, the range is thus not used anymore. Remove it.
 
-Pass NULL to of_platform_populate instead of passing
-an empty list. This cleans up the code and reduces the
-number of lines.
+If required, configuring pull-up resistors for the SH7723 can be
+implemented using the pinconf API, as done for the SH-Mobile, R-Mobile
+and R-Car platforms.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |    7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c | 39 +++++++++++++++----------------------
+ 1 file changed, 16 insertions(+), 23 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 5502d62..13e6fdb 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1147,10 +1147,6 @@ void __init sh7372_add_early_devices_dt(void)
- 	shmobile_setup_console();
- }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7723.c b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+index 07ad1d8..da0dbb0 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7723.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+@@ -102,12 +102,6 @@ enum {
+ 	PTZ3_IN, PTZ2_IN, PTZ1_IN, PTZ0_IN,
+ 	PINMUX_INPUT_END,
  
--static const struct of_dev_auxdata sh7372_auxdata_lookup[] __initconst = {
--	{ }
--};
+-	PINMUX_INPUT_PULLUP_BEGIN,
+-	PTA4_IN_PU, PTA3_IN_PU, PTA2_IN_PU, PTA1_IN_PU, PTA0_IN_PU,
+-	PTB2_IN_PU, PTB1_IN_PU,
+-	PTR2_IN_PU,
+-	PINMUX_INPUT_PULLUP_END,
 -
- void __init sh7372_add_standard_devices_dt(void)
- {
- 	/* clocks are setup late during boot in the case of DT */
-@@ -1159,8 +1155,7 @@ void __init sh7372_add_standard_devices_dt(void)
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
+ 	PINMUX_OUTPUT_BEGIN,
+ 	PTA7_OUT, PTA6_OUT, PTA5_OUT, PTA4_OUT,
+ 	PTA3_OUT, PTA2_OUT, PTA1_OUT, PTA0_OUT,
+@@ -355,11 +349,11 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(PTA7_DATA, PTA7_IN, PTA7_OUT),
+ 	PINMUX_DATA(PTA6_DATA, PTA6_IN, PTA6_OUT),
+ 	PINMUX_DATA(PTA5_DATA, PTA5_IN, PTA5_OUT),
+-	PINMUX_DATA(PTA4_DATA, PTA4_IN, PTA4_OUT, PTA4_IN_PU),
+-	PINMUX_DATA(PTA3_DATA, PTA3_IN, PTA3_OUT, PTA3_IN_PU),
+-	PINMUX_DATA(PTA2_DATA, PTA2_IN, PTA2_OUT, PTA2_IN_PU),
+-	PINMUX_DATA(PTA1_DATA, PTA1_IN, PTA1_OUT, PTA1_IN_PU),
+-	PINMUX_DATA(PTA0_DATA, PTA0_IN, PTA0_OUT, PTA0_IN_PU),
++	PINMUX_DATA(PTA4_DATA, PTA4_IN, PTA4_OUT),
++	PINMUX_DATA(PTA3_DATA, PTA3_IN, PTA3_OUT),
++	PINMUX_DATA(PTA2_DATA, PTA2_IN, PTA2_OUT),
++	PINMUX_DATA(PTA1_DATA, PTA1_IN, PTA1_OUT),
++	PINMUX_DATA(PTA0_DATA, PTA0_IN, PTA0_OUT),
  
--	of_platform_populate(NULL, of_default_bus_match_table,
--			     sh7372_auxdata_lookup, NULL);
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ 	/* PTB GPIO */
+ 	PINMUX_DATA(PTB7_DATA, PTB7_IN, PTB7_OUT),
+@@ -367,8 +361,8 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(PTB5_DATA, PTB5_IN, PTB5_OUT),
+ 	PINMUX_DATA(PTB4_DATA, PTB4_IN, PTB4_OUT),
+ 	PINMUX_DATA(PTB3_DATA, PTB3_IN, PTB3_OUT),
+-	PINMUX_DATA(PTB2_DATA, PTB2_IN, PTB2_OUT, PTB2_IN_PU),
+-	PINMUX_DATA(PTB1_DATA, PTB1_IN, PTB1_OUT, PTB1_IN_PU),
++	PINMUX_DATA(PTB2_DATA, PTB2_IN, PTB2_OUT),
++	PINMUX_DATA(PTB1_DATA, PTB1_IN, PTB1_OUT),
+ 	PINMUX_DATA(PTB0_DATA, PTB0_IN, PTB0_OUT),
  
- static const char *sh7372_boards_compat_dt[] __initdata = {
+ 	/* PTC GPIO */
+@@ -487,7 +481,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(PTR5_DATA, PTR5_IN, PTR5_OUT),
+ 	PINMUX_DATA(PTR4_DATA, PTR4_IN, PTR4_OUT),
+ 	PINMUX_DATA(PTR3_DATA, PTR3_IN),
+-	PINMUX_DATA(PTR2_DATA, PTR2_IN, PTR2_IN_PU),
++	PINMUX_DATA(PTR2_DATA, PTR2_IN),
+ 	PINMUX_DATA(PTR1_DATA, PTR1_IN, PTR1_OUT),
+ 	PINMUX_DATA(PTR0_DATA, PTR0_IN, PTR0_OUT),
+ 
+@@ -1520,11 +1514,11 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		PTA7_FN, PTA7_OUT, 0, PTA7_IN,
+ 		PTA6_FN, PTA6_OUT, 0, PTA6_IN,
+ 		PTA5_FN, PTA5_OUT, 0, PTA5_IN,
+-		PTA4_FN, PTA4_OUT, PTA4_IN_PU, PTA4_IN,
+-		PTA3_FN, PTA3_OUT, PTA3_IN_PU, PTA3_IN,
+-		PTA2_FN, PTA2_OUT, PTA2_IN_PU, PTA2_IN,
+-		PTA1_FN, PTA1_OUT, PTA1_IN_PU, PTA1_IN,
+-		PTA0_FN, PTA0_OUT, PTA0_IN_PU, PTA0_IN }
++		PTA4_FN, PTA4_OUT, 0, PTA4_IN,
++		PTA3_FN, PTA3_OUT, 0, PTA3_IN,
++		PTA2_FN, PTA2_OUT, 0, PTA2_IN,
++		PTA1_FN, PTA1_OUT, 0, PTA1_IN,
++		PTA0_FN, PTA0_OUT, 0, PTA0_IN }
+ 	},
+ 	{ PINMUX_CFG_REG("PBCR", 0xa4050102, 16, 2) {
+ 		PTB7_FN, PTB7_OUT, 0, PTB7_IN,
+@@ -1532,8 +1526,8 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		PTB5_FN, PTB5_OUT, 0, PTB5_IN,
+ 		PTB4_FN, PTB4_OUT, 0, PTB4_IN,
+ 		PTB3_FN, PTB3_OUT, 0, PTB3_IN,
+-		PTB2_FN, PTB2_OUT, PTB2_IN_PU, PTB2_IN,
+-		PTB1_FN, PTB1_OUT, PTB1_IN_PU, PTB1_IN,
++		PTB2_FN, PTB2_OUT, 0, PTB2_IN,
++		PTB1_FN, PTB1_OUT, 0, PTB1_IN,
+ 		PTB0_FN, PTB0_OUT, 0, PTB0_IN }
+ 	},
+ 	{ PINMUX_CFG_REG("PCCR", 0xa4050104, 16, 2) {
+@@ -1662,7 +1656,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		PTR5_FN, PTR5_OUT, 0, PTR5_IN,
+ 		PTR4_FN, PTR4_OUT, 0, PTR4_IN,
+ 		PTR3_FN, 0, 0, PTR3_IN,
+-		PTR2_FN, 0, PTR2_IN_PU, PTR2_IN,
++		PTR2_FN, 0, 0, PTR2_IN,
+ 		PTR1_FN, PTR1_OUT, 0, PTR1_IN,
+ 		PTR0_FN, PTR0_OUT, 0, PTR0_IN }
+ 	},
+@@ -1888,7 +1882,6 @@ static const struct pinmux_data_reg pinmux_data_regs[] = {
+ const struct sh_pfc_soc_info sh7723_pinmux_info = {
+ 	.name = "sh7723_pfc",
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+-	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
 -- 
-1.7.10.4
+1.8.1.5
 
