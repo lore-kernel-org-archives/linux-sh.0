@@ -1,153 +1,318 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 29 Jul 2013 20:31:41 +0000
-Subject: [PATCH/RFC] ARM: shmobile: Mount root file systems in r/w mode for all DT platforms
-Message-Id: <1375129901-8636-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 00:11:14 +0000
+Subject: [PATCH v2 22/27] sh-pfc: Add port numbers to the CPU_ALL_PORT macro
+Message-Id: <1373933479-17727-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The shmobile DT files available in the kernel are reference
-implementations intended to be used as sample code, as well as for
-development. As such, it makes sense to mount the root file system in
-read/write mode by default.
+Pass down the port number down to the PORT_1 macro. The port number will
+be used to compute the pin ranges automatically.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 2 +-
- arch/arm/boot/dts/r8a73a4-ape6evm.dts           | 2 +-
- arch/arm/boot/dts/r8a7778-bockw-reference.dts   | 2 +-
- arch/arm/boot/dts/r8a7778-bockw.dts             | 2 +-
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 2 +-
- arch/arm/boot/dts/r8a7790-lager-reference.dts   | 2 +-
- arch/arm/boot/dts/r8a7790-lager.dts             | 2 +-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    | 2 +-
- arch/arm/boot/dts/sh73a0-kzm9g.dts              | 2 +-
- 9 files changed, 9 insertions(+), 9 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 124 +++++++++++++++++------------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   8 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  |  14 ++--
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |  52 +++++++--------
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |  30 ++++-----
+ 5 files changed, 114 insertions(+), 114 deletions(-)
 
-I've been carrying similar patches locally in my tree for way too long now. I
-believe the modification makes sense for mainline.
-
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index 6f4506e..c655756 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+index 288821b..04ecb5e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+@@ -28,78 +28,78 @@
  
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
- 	};
+ #define CPU_ALL_PORT(fn, pfx, sfx)					\
+ 	/*  Port0 - Port30 */						\
+-	PORT_10(fn, pfx, sfx),						\
+-	PORT_10(fn, pfx##1, sfx),					\
+-	PORT_10(fn, pfx##2, sfx),					\
+-	PORT_1(fn,  pfx##30, sfx),					\
++	PORT_10(0, fn, pfx, sfx),					\
++	PORT_10(10, fn, pfx##1, sfx),					\
++	PORT_10(20, fn, pfx##2, sfx),					\
++	PORT_1(30, fn, pfx##30, sfx),					\
+ 	/* Port32 - Port40 */						\
+-	PORT_1(fn,  pfx##32, sfx),	PORT_1(fn,  pfx##33, sfx),	\
+-	PORT_1(fn,  pfx##34, sfx),	PORT_1(fn,  pfx##35, sfx),	\
+-	PORT_1(fn,  pfx##36, sfx),	PORT_1(fn,  pfx##37, sfx),	\
+-	PORT_1(fn,  pfx##38, sfx),	PORT_1(fn,  pfx##39, sfx),	\
+-	PORT_1(fn,  pfx##40, sfx),					\
++	PORT_1(32, fn, pfx##32, sfx),	PORT_1(33, fn, pfx##33, sfx),	\
++	PORT_1(34, fn, pfx##34, sfx),	PORT_1(35, fn, pfx##35, sfx),	\
++	PORT_1(36, fn, pfx##36, sfx),	PORT_1(37, fn, pfx##37, sfx),	\
++	PORT_1(38, fn, pfx##38, sfx),	PORT_1(39, fn, pfx##39, sfx),	\
++	PORT_1(40, fn, pfx##40, sfx),					\
+ 	/* Port64  - Port85 */						\
+-	PORT_1(fn, pfx##64, sfx),	PORT_1(fn, pfx##65, sfx),	\
+-	PORT_1(fn, pfx##66, sfx),	PORT_1(fn, pfx##67, sfx),	\
+-	PORT_1(fn, pfx##68, sfx),	PORT_1(fn, pfx##69, sfx),	\
+-	PORT_10(fn, pfx##7, sfx),					\
+-	PORT_1(fn, pfx##80, sfx),	PORT_1(fn, pfx##81, sfx),	\
+-	PORT_1(fn, pfx##82, sfx),	PORT_1(fn, pfx##83, sfx),	\
+-	PORT_1(fn, pfx##84, sfx),	PORT_1(fn, pfx##85, sfx),	\
++	PORT_1(64, fn, pfx##64, sfx),	PORT_1(65, fn, pfx##65, sfx),	\
++	PORT_1(66, fn, pfx##66, sfx),	PORT_1(67, fn, pfx##67, sfx),	\
++	PORT_1(68, fn, pfx##68, sfx),	PORT_1(69, fn, pfx##69, sfx),	\
++	PORT_10(70, fn, pfx##7, sfx),					\
++	PORT_1(80, fn, pfx##80, sfx),	PORT_1(81, fn, pfx##81, sfx),	\
++	PORT_1(82, fn, pfx##82, sfx),	PORT_1(83, fn, pfx##83, sfx),	\
++	PORT_1(84, fn, pfx##84, sfx),	PORT_1(85, fn, pfx##85, sfx),	\
+ 	/* Port96  - Port126 */						\
+-	PORT_1(fn, pfx##96, sfx),	PORT_1(fn, pfx##97, sfx),	\
+-	PORT_1(fn, pfx##98, sfx),	PORT_1(fn, pfx##99, sfx),	\
+-	PORT_10(fn, pfx##10, sfx),					\
+-	PORT_10(fn, pfx##11, sfx),					\
+-	PORT_1(fn, pfx##120, sfx),	PORT_1(fn, pfx##121, sfx),	\
+-	PORT_1(fn, pfx##122, sfx),	PORT_1(fn, pfx##123, sfx),	\
+-	PORT_1(fn, pfx##124, sfx),	PORT_1(fn, pfx##125, sfx),	\
+-	PORT_1(fn, pfx##126, sfx),					\
++	PORT_1(96, fn, pfx##96, sfx),	PORT_1(97, fn, pfx##97, sfx),	\
++	PORT_1(98, fn, pfx##98, sfx),	PORT_1(99, fn, pfx##99, sfx),	\
++	PORT_10(100, fn, pfx##10, sfx),					\
++	PORT_10(110, fn, pfx##11, sfx),					\
++	PORT_1(120, fn, pfx##120, sfx),	PORT_1(121, fn, pfx##121, sfx),	\
++	PORT_1(122, fn, pfx##122, sfx),	PORT_1(123, fn, pfx##123, sfx),	\
++	PORT_1(124, fn, pfx##124, sfx),	PORT_1(125, fn, pfx##125, sfx),	\
++	PORT_1(126, fn, pfx##126, sfx),					\
+ 	/* Port128 - Port134 */						\
+-	PORT_1(fn, pfx##128, sfx),	PORT_1(fn, pfx##129, sfx),	\
+-	PORT_1(fn, pfx##130, sfx),	PORT_1(fn, pfx##131, sfx),	\
+-	PORT_1(fn, pfx##132, sfx),	PORT_1(fn, pfx##133, sfx),	\
+-	PORT_1(fn, pfx##134, sfx),					\
++	PORT_1(128, fn, pfx##128, sfx),	PORT_1(129, fn, pfx##129, sfx),	\
++	PORT_1(130, fn, pfx##130, sfx),	PORT_1(131, fn, pfx##131, sfx),	\
++	PORT_1(132, fn, pfx##132, sfx),	PORT_1(133, fn, pfx##133, sfx),	\
++	PORT_1(134, fn, pfx##134, sfx),					\
+ 	/* Port160 - Port178 */						\
+-	PORT_10(fn, pfx##16, sfx),					\
+-	PORT_1(fn, pfx##170, sfx),	PORT_1(fn, pfx##171, sfx),	\
+-	PORT_1(fn, pfx##172, sfx),	PORT_1(fn, pfx##173, sfx),	\
+-	PORT_1(fn, pfx##174, sfx),	PORT_1(fn, pfx##175, sfx),	\
+-	PORT_1(fn, pfx##176, sfx),	PORT_1(fn, pfx##177, sfx),	\
+-	PORT_1(fn, pfx##178, sfx),					\
++	PORT_10(160, fn, pfx##16, sfx),					\
++	PORT_1(170, fn, pfx##170, sfx),	PORT_1(171, fn, pfx##171, sfx),	\
++	PORT_1(172, fn, pfx##172, sfx),	PORT_1(173, fn, pfx##173, sfx),	\
++	PORT_1(174, fn, pfx##174, sfx),	PORT_1(175, fn, pfx##175, sfx),	\
++	PORT_1(176, fn, pfx##176, sfx),	PORT_1(177, fn, pfx##177, sfx),	\
++	PORT_1(178, fn, pfx##178, sfx),					\
+ 	/* Port192 - Port222 */						\
+-	PORT_1(fn, pfx##192, sfx),	PORT_1(fn, pfx##193, sfx),	\
+-	PORT_1(fn, pfx##194, sfx),	PORT_1(fn, pfx##195, sfx),	\
+-	PORT_1(fn, pfx##196, sfx),	PORT_1(fn, pfx##197, sfx),	\
+-	PORT_1(fn, pfx##198, sfx),	PORT_1(fn, pfx##199, sfx),	\
+-	PORT_10(fn, pfx##20, sfx),					\
+-	PORT_10(fn, pfx##21, sfx),					\
+-	PORT_1(fn, pfx##220, sfx),	PORT_1(fn, pfx##221, sfx),	\
+-	PORT_1(fn, pfx##222, sfx),					\
++	PORT_1(192, fn, pfx##192, sfx),	PORT_1(193, fn, pfx##193, sfx),	\
++	PORT_1(194, fn, pfx##194, sfx),	PORT_1(195, fn, pfx##195, sfx),	\
++	PORT_1(196, fn, pfx##196, sfx),	PORT_1(197, fn, pfx##197, sfx),	\
++	PORT_1(198, fn, pfx##198, sfx),	PORT_1(199, fn, pfx##199, sfx),	\
++	PORT_10(200, fn, pfx##20, sfx),					\
++	PORT_10(210, fn, pfx##21, sfx),					\
++	PORT_1(220, fn, pfx##220, sfx),	PORT_1(221, fn, pfx##221, sfx),	\
++	PORT_1(222, fn, pfx##222, sfx),					\
+ 	/* Port224 - Port250 */						\
+-	PORT_1(fn, pfx##224, sfx),	PORT_1(fn, pfx##225, sfx),	\
+-	PORT_1(fn, pfx##226, sfx),	PORT_1(fn, pfx##227, sfx),	\
+-	PORT_1(fn, pfx##228, sfx),	PORT_1(fn, pfx##229, sfx),	\
+-	PORT_10(fn, pfx##23, sfx),					\
+-	PORT_10(fn, pfx##24, sfx),					\
+-	PORT_1(fn, pfx##250, sfx),					\
++	PORT_1(224, fn, pfx##224, sfx),	PORT_1(225, fn, pfx##225, sfx),	\
++	PORT_1(226, fn, pfx##226, sfx),	PORT_1(227, fn, pfx##227, sfx),	\
++	PORT_1(228, fn, pfx##228, sfx),	PORT_1(229, fn, pfx##229, sfx),	\
++	PORT_10(230, fn, pfx##23, sfx),					\
++	PORT_10(240, fn, pfx##24, sfx),					\
++	PORT_1(250, fn, pfx##250, sfx),					\
+ 	/* Port256 - Port283 */						\
+-	PORT_1(fn, pfx##256, sfx),	PORT_1(fn, pfx##257, sfx),	\
+-	PORT_1(fn, pfx##258, sfx),	PORT_1(fn, pfx##259, sfx),	\
+-	PORT_10(fn, pfx##26, sfx),					\
+-	PORT_10(fn, pfx##27, sfx),					\
+-	PORT_1(fn, pfx##280, sfx),	PORT_1(fn, pfx##281, sfx),	\
+-	PORT_1(fn, pfx##282, sfx),	PORT_1(fn, pfx##283, sfx),	\
++	PORT_1(256, fn, pfx##256, sfx),	PORT_1(257, fn, pfx##257, sfx),	\
++	PORT_1(258, fn, pfx##258, sfx),	PORT_1(259, fn, pfx##259, sfx),	\
++	PORT_10(260, fn, pfx##26, sfx),					\
++	PORT_10(270, fn, pfx##27, sfx),					\
++	PORT_1(280, fn, pfx##280, sfx),	PORT_1(281, fn, pfx##281, sfx),	\
++	PORT_1(282, fn, pfx##282, sfx),	PORT_1(283, fn, pfx##283, sfx),	\
+ 	/* Port288 - Port308 */						\
+-	PORT_1(fn, pfx##288, sfx),	PORT_1(fn, pfx##289, sfx),	\
+-	PORT_10(fn, pfx##29, sfx),					\
+-	PORT_1(fn, pfx##300, sfx),	PORT_1(fn, pfx##301, sfx),	\
+-	PORT_1(fn, pfx##302, sfx),	PORT_1(fn, pfx##303, sfx),	\
+-	PORT_1(fn, pfx##304, sfx),	PORT_1(fn, pfx##305, sfx),	\
+-	PORT_1(fn, pfx##306, sfx),	PORT_1(fn, pfx##307, sfx),	\
+-	PORT_1(fn, pfx##308, sfx),					\
++	PORT_1(288, fn, pfx##288, sfx),	PORT_1(289, fn, pfx##289, sfx),	\
++	PORT_10(290, fn, pfx##29, sfx),					\
++	PORT_1(300, fn, pfx##300, sfx),	PORT_1(301, fn, pfx##301, sfx),	\
++	PORT_1(302, fn, pfx##302, sfx),	PORT_1(303, fn, pfx##303, sfx),	\
++	PORT_1(304, fn, pfx##304, sfx),	PORT_1(305, fn, pfx##305, sfx),	\
++	PORT_1(306, fn, pfx##306, sfx),	PORT_1(307, fn, pfx##307, sfx),	\
++	PORT_1(308, fn, pfx##308, sfx),					\
+ 	/* Port320 - Port329 */						\
+-	PORT_10(fn, pfx##32, sfx)
++	PORT_10(320, fn, pfx##32, sfx)
  
- 	memory@40000000 {
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index e657a9d..72f867e 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,ape6evm", "renesas,r8a73a4";
  
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 	};
+ enum {
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index b5bc1d0..2c74536 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -29,10 +29,10 @@
+ #include "sh_pfc.h"
  
- 	memory@40000000 {
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index f5b8d77..9bb903a 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -22,7 +22,7 @@
- 	compatible = "renesas,bockw-reference", "renesas,r8a7778";
+ #define CPU_ALL_PORT(fn, pfx, sfx)					\
+-	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx),		\
+-	PORT_10(fn, pfx##10, sfx),	PORT_90(fn, pfx##1, sfx),	\
+-	PORT_10(fn, pfx##20, sfx),					\
+-	PORT_1(fn, pfx##210, sfx),	PORT_1(fn, pfx##211, sfx)
++	PORT_10(0,  fn, pfx, sfx),	PORT_90(0,   fn, pfx, sfx),	\
++	PORT_10(100, fn, pfx##10, sfx),	PORT_90(100, fn, pfx##1, sfx),	\
++	PORT_10(200, fn, pfx##20, sfx),					\
++	PORT_1(210, fn, pfx##210, sfx),	PORT_1(211, fn, pfx##211, sfx)
  
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
- 	};
+ #define IRQC_PIN_MUX(irq, pin)						\
+ static const unsigned int intc_irq##irq##_pins[] = {			\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 17f1c17..02526df 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -30,13 +30,13 @@
+ #include "core.h"
+ #include "sh_pfc.h"
  
- 	memory {
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 0076b1e..12bbebc 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -22,7 +22,7 @@
- 	compatible = "renesas,bockw", "renesas,r8a7778";
+-#define CPU_ALL_PORT(fn, pfx, sfx) \
+-	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx), \
+-	PORT_10(fn, pfx##10, sfx),	PORT_10(fn, pfx##11, sfx), \
+-	PORT_10(fn, pfx##12, sfx),	PORT_10(fn, pfx##13, sfx), \
+-	PORT_10(fn, pfx##14, sfx),	PORT_10(fn, pfx##15, sfx), \
+-	PORT_10(fn, pfx##16, sfx),	PORT_10(fn, pfx##17, sfx), \
+-	PORT_10(fn, pfx##18, sfx),	PORT_1(fn, pfx##190, sfx)
++#define CPU_ALL_PORT(fn, pfx, sfx)					\
++	PORT_10(0,  fn, pfx, sfx),	PORT_90(0,  fn, pfx, sfx),	\
++	PORT_10(100, fn, pfx##10, sfx),	PORT_10(110, fn, pfx##11, sfx),	\
++	PORT_10(120, fn, pfx##12, sfx),	PORT_10(130, fn, pfx##13, sfx),	\
++	PORT_10(140, fn, pfx##14, sfx),	PORT_10(150, fn, pfx##15, sfx),	\
++	PORT_10(160, fn, pfx##16, sfx),	PORT_10(170, fn, pfx##17, sfx),	\
++	PORT_10(180, fn, pfx##18, sfx),	PORT_1(190, fn, pfx##190, sfx)
  
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
- 	};
+ #define IRQC_PIN_MUX(irq, pin)						\
+ static const unsigned int intc_irq##irq##_pins[] = {			\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 1d35b42..acf8392 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -31,32 +31,32 @@
+ #include "core.h"
+ #include "sh_pfc.h"
  
- 	memory {
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index b64705b..6d55083 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -18,7 +18,7 @@
- 	compatible = "renesas,marzen-reference", "renesas,r8a7779";
+-#define CPU_ALL_PORT(fn, pfx, sfx)				\
+-	PORT_10(fn, pfx,    sfx), PORT_90(fn, pfx, sfx),	\
+-	PORT_10(fn, pfx##10, sfx),				\
+-	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
+-	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
+-	PORT_1(fn, pfx##114, sfx), PORT_1(fn, pfx##115, sfx),	\
+-	PORT_1(fn, pfx##116, sfx), PORT_1(fn, pfx##117, sfx),	\
+-	PORT_1(fn, pfx##118, sfx),				\
+-	PORT_1(fn, pfx##128, sfx), PORT_1(fn, pfx##129, sfx),	\
+-	PORT_10(fn, pfx##13, sfx), PORT_10(fn, pfx##14, sfx),	\
+-	PORT_10(fn, pfx##15, sfx),				\
+-	PORT_1(fn, pfx##160, sfx), PORT_1(fn, pfx##161, sfx),	\
+-	PORT_1(fn, pfx##162, sfx), PORT_1(fn, pfx##163, sfx),	\
+-	PORT_1(fn, pfx##164, sfx),				\
+-	PORT_1(fn, pfx##192, sfx), PORT_1(fn, pfx##193, sfx),	\
+-	PORT_1(fn, pfx##194, sfx), PORT_1(fn, pfx##195, sfx),	\
+-	PORT_1(fn, pfx##196, sfx), PORT_1(fn, pfx##197, sfx),	\
+-	PORT_1(fn, pfx##198, sfx), PORT_1(fn, pfx##199, sfx),	\
+-	PORT_10(fn, pfx##20, sfx), PORT_10(fn, pfx##21, sfx),	\
+-	PORT_10(fn, pfx##22, sfx), PORT_10(fn, pfx##23, sfx),	\
+-	PORT_10(fn, pfx##24, sfx), PORT_10(fn, pfx##25, sfx),	\
+-	PORT_10(fn, pfx##26, sfx), PORT_10(fn, pfx##27, sfx),	\
+-	PORT_1(fn, pfx##280, sfx), PORT_1(fn, pfx##281, sfx),	\
+-	PORT_1(fn, pfx##282, sfx),				\
+-	PORT_1(fn, pfx##288, sfx), PORT_1(fn, pfx##289, sfx),	\
+-	PORT_10(fn, pfx##29, sfx), PORT_10(fn, pfx##30, sfx)
++#define CPU_ALL_PORT(fn, pfx, sfx)					\
++	PORT_10(0,  fn, pfx, sfx), PORT_90(0, fn, pfx, sfx),		\
++	PORT_10(100, fn, pfx##10, sfx),					\
++	PORT_1(110, fn, pfx##110, sfx), PORT_1(111, fn, pfx##111, sfx),	\
++	PORT_1(112, fn, pfx##112, sfx), PORT_1(113, fn, pfx##113, sfx),	\
++	PORT_1(114, fn, pfx##114, sfx), PORT_1(115, fn, pfx##115, sfx),	\
++	PORT_1(116, fn, pfx##116, sfx), PORT_1(117, fn, pfx##117, sfx),	\
++	PORT_1(118, fn, pfx##118, sfx),					\
++	PORT_1(128, fn, pfx##128, sfx), PORT_1(129, fn, pfx##129, sfx),	\
++	PORT_10(130, fn, pfx##13, sfx), PORT_10(140, fn, pfx##14, sfx),	\
++	PORT_10(150, fn, pfx##15, sfx),					\
++	PORT_1(160, fn, pfx##160, sfx), PORT_1(161, fn, pfx##161, sfx),	\
++	PORT_1(162, fn, pfx##162, sfx), PORT_1(163, fn, pfx##163, sfx),	\
++	PORT_1(164, fn, pfx##164, sfx),					\
++	PORT_1(192, fn, pfx##192, sfx), PORT_1(193, fn, pfx##193, sfx),	\
++	PORT_1(194, fn, pfx##194, sfx), PORT_1(195, fn, pfx##195, sfx),	\
++	PORT_1(196, fn, pfx##196, sfx), PORT_1(197, fn, pfx##197, sfx),	\
++	PORT_1(198, fn, pfx##198, sfx), PORT_1(199, fn, pfx##199, sfx),	\
++	PORT_10(200, fn, pfx##20, sfx), PORT_10(210, fn, pfx##21, sfx),	\
++	PORT_10(220, fn, pfx##22, sfx), PORT_10(230, fn, pfx##23, sfx),	\
++	PORT_10(240, fn, pfx##24, sfx), PORT_10(250, fn, pfx##25, sfx),	\
++	PORT_10(260, fn, pfx##26, sfx), PORT_10(270, fn, pfx##27, sfx),	\
++	PORT_1(280, fn, pfx##280, sfx), PORT_1(281, fn, pfx##281, sfx),	\
++	PORT_1(282, fn, pfx##282, sfx),					\
++	PORT_1(288, fn, pfx##288, sfx), PORT_1(289, fn, pfx##289, sfx),	\
++	PORT_10(290, fn, pfx##29, sfx), PORT_10(300, fn, pfx##30, sfx)
  
- 	chosen {
--		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
-+		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
- 	};
+ enum {
+ 	PINMUX_RESERVED = 0,
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 61205fb..005b482 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -229,21 +229,21 @@ struct sh_pfc_soc_info {
+  * PORT style (linear pin space)
+  */
  
- 	memory {
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-index 5ee71cf5..c462ef1 100644
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -17,7 +17,7 @@
- 	compatible = "renesas,lager-reference", "renesas,r8a7790";
+-#define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define PORT_10(fn, pfx, sfx)						\
+-	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),		\
+-	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),		\
+-	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),		\
+-	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),		\
+-	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
+-
+-#define PORT_90(fn, pfx, sfx) \
+-	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),		\
+-	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),		\
+-	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),		\
+-	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),		\
+-	PORT_10(fn, pfx##9, sfx)
++#define PORT_1(pn, fn, pfx, sfx) fn(pfx, sfx)
++
++#define PORT_10(pn, fn, pfx, sfx)					  \
++	PORT_1(pn,   fn, pfx##0, sfx), PORT_1(pn+1, fn, pfx##1, sfx),	  \
++	PORT_1(pn+2, fn, pfx##2, sfx), PORT_1(pn+3, fn, pfx##3, sfx),	  \
++	PORT_1(pn+4, fn, pfx##4, sfx), PORT_1(pn+5, fn, pfx##5, sfx),	  \
++	PORT_1(pn+6, fn, pfx##6, sfx), PORT_1(pn+7, fn, pfx##7, sfx),	  \
++	PORT_1(pn+8, fn, pfx##8, sfx), PORT_1(pn+9, fn, pfx##9, sfx)
++
++#define PORT_90(pn, fn, pfx, sfx)					  \
++	PORT_10(pn+10, fn, pfx##1, sfx), PORT_10(pn+20, fn, pfx##2, sfx), \
++	PORT_10(pn+30, fn, pfx##3, sfx), PORT_10(pn+40, fn, pfx##4, sfx), \
++	PORT_10(pn+50, fn, pfx##5, sfx), PORT_10(pn+60, fn, pfx##6, sfx), \
++	PORT_10(pn+70, fn, pfx##7, sfx), PORT_10(pn+80, fn, pfx##8, sfx), \
++	PORT_10(pn+90, fn, pfx##9, sfx)
  
- 	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
- 	};
- 
- 	memory@40000000 {
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 09a84fc..631b93b 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,lager", "renesas,r8a7790";
- 
- 	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
- 	};
- 
- 	memory@40000000 {
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index b99e890..2122306 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -33,7 +33,7 @@
- 	};
- 
- 	chosen {
--		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
-+		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
- 	};
- 
- 	memory {
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 7c4071e..0f1ca77 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,kzm9g", "renesas,sh73a0";
- 
- 	chosen {
--		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
-+		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
- 	};
- 
- 	memory {
+ /* PORT_ALL(suffix) - Expand to a list of PORT_#_suffix */
+ #define _PORT_ALL(pfx, sfx)		pfx##_##sfx
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.1.5
 
