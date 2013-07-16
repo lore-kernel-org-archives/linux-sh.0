@@ -1,57 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:33:55 +0000
-Subject: [PATCH 01/16] ARM: shmobile: r8a7790: add clocks for thermal
-Message-Id: <a4b91be0b607ffecf6cf9dacdefcaa0797340e3c.1374624383.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 00:11:04 +0000
+Subject: [PATCH v2 12/27] sh-pfc: Remove unneeded const keywords
+Message-Id: <1373933479-17727-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Two integer field structures are needlesly defined as const. Remove the
+const keyword.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 5d71313..28eccd1 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -49,6 +49,7 @@
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index d0a8ff8..2105487 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -30,7 +30,7 @@ enum {
+ #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
  
- #define SMSTPCR2 0xe6150138
- #define SMSTPCR3 0xe615013c
-+#define SMSTPCR5 0xe6150144
- #define SMSTPCR7 0xe615014c
- 
- #define MODEMR		0xE6160060
-@@ -182,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
- enum {
- 	MSTP721, MSTP720,
- 	MSTP717, MSTP716,
-+	MSTP522,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
- 	MSTP_NR
-@@ -203,6 +205,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
-+	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
- 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
- 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+ struct sh_pfc_pin {
+-	const pinmux_enum_t enum_id;
++	pinmux_enum_t enum_id;
+ 	const char *name;
+ 	unsigned int configs;
  };
-@@ -254,6 +257,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
-+	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
+@@ -64,7 +64,7 @@ struct sh_pfc_function {
+ };
+ 
+ struct pinmux_func {
+-	const pinmux_enum_t enum_id;
++	pinmux_enum_t enum_id;
+ 	const char *name;
+ };
+ 
 -- 
-1.8.2.1
+1.8.1.5
 
