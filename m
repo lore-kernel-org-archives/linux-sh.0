@@ -1,32 +1,71 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 19:02:24 +0000
-Subject: [PATCH 08/13] ARM: shmobile: Use default ->init_time() on APE6EVM
-Message-Id: <20130731190224.31796.18362.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 00:11:16 +0000
+Subject: [PATCH v2 24/27] sh-pfc: Add pin number to struct sh_pfc_pin
+Message-Id: <1373933479-17727-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731190110.31796.96552.sendpatchset@w520>
-In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The pin number is usually equal to the GPIO number but can differ when
+GPIO numbering is sparse.
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
 
- arch/arm/mach-shmobile/board-ape6evm.c |    1 -
- 1 file changed, 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/board-ape6evm.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-08-01 03:11:13.000000000 +0900
-@@ -181,7 +181,6 @@ static const char *ape6evm_boards_compat
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 596ceb7..839e695 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -28,6 +28,7 @@ enum {
+ #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
  
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
- 	.init_early	= r8a73a4_init_delay,
--	.init_time	= shmobile_timer_init,
- 	.init_machine	= ape6evm_add_standard_devices,
- 	.dt_compat	= ape6evm_boards_compat_dt,
- MACHINE_END
+ struct sh_pfc_pin {
++	u16 pin;
+ 	u16 enum_id;
+ 	const char *name;
+ 	unsigned int configs;
+@@ -214,8 +215,9 @@ struct sh_pfc_soc_info {
+ #define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
+ 
+ /* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
+-#define _GP_GPIO(bank, pin, _name, sfx)					\
+-	[(bank * 32) + pin] = {						\
++#define _GP_GPIO(bank, _pin, _name, sfx)				\
++	[(bank * 32) + _pin] = {					\
++		.pin = (bank * 32) + _pin,				\
+ 		.name = __stringify(_name),				\
+ 		.enum_id = _name##_DATA,				\
+ 	}
+@@ -250,17 +252,19 @@ struct sh_pfc_soc_info {
+ #define PORT_ALL(str)			CPU_ALL_PORT(_PORT_ALL, PORT, str)
+ 
+ /* PINMUX_GPIO - Expand to a sh_pfc_pin entry */
+-#define PINMUX_GPIO(pin)						\
+-	[GPIO_##pin] = {						\
++#define PINMUX_GPIO(_pin)						\
++	[GPIO_##_pin] = {						\
++		.pin = (u16)-1,						\
+ 		.name = __stringify(name),				\
+-		.enum_id = pin##_DATA,					\
++		.enum_id = _pin##_DATA,					\
+ 	}
+ 
+ /* SH_PFC_PIN_CFG - Expand to a sh_pfc_pin entry (named PORT#) with config */
+-#define SH_PFC_PIN_CFG(pin, cfgs)					\
++#define SH_PFC_PIN_CFG(_pin, cfgs)					\
+ 	{								\
+-		.name = __stringify(PORT##pin),				\
+-		.enum_id = PORT##pin##_DATA,				\
++		.pin = _pin,						\
++		.name = __stringify(PORT##_pin),			\
++		.enum_id = PORT##_pin##_DATA,				\
+ 		.configs = cfgs,					\
+ 	}
+ 
+-- 
+1.8.1.5
+
