@@ -1,43 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Jul 2013 08:31:49 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager: do not annotate gpio_buttons as __initdata
-Message-Id: <20130730083148.GC12147@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 09:45:56 +0000
+Subject: [PATCH] ARM: shmobile: lager-reference: Add LED6-LED8 to the device tree
+Message-Id: <1373967956-3651-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374829772-10939-1-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoRUc1r_5=4HHa19ZCr71r1jv5AwZQ39Jv7eFNOUomtjag@mail.gmail.com>
-In-Reply-To: <CANqRtoRUc1r_5=4HHa19ZCr71r1jv5AwZQ39Jv7eFNOUomtjag@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jul 30, 2013 at 05:26:57PM +0900, Magnus Damm wrote:
-> On Fri, Jul 26, 2013 at 6:09 PM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > When the gpio-keys device is registered using
-> > platform_device_register_data() the platform data argument,
-> > lager_keys_pdata is duplicated and thus should be marked as __initdata
-> > to avoid wasting memory. However, this is not true of gpio_buttons,
-> > a reference to it rather than its value is duplicated when lager_keys_pdata
-> > is duplicated.
-> >
-> > This avoids accessing freed memory if gpio-key events occur
-> > after unused kernel memory is freed late in the kernel's boot.
-> >
-> > This but was added when support for gpio-keys was added to lager
-> > in c3842e4fcbb7664276443b79187b7808c2e80a35
-> > ("ARM: shmobile: lager: support GPIO switches") which was included
-> > in v3.11-rc1.
-> >
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >
-> > ---
-> >
-> > * Noticed when adding gpio-keys support to ape6evm
-> > * Compile tested only
-> 
-> I just got around to test this patch on a Lager board, works well. Thanks!
-> 
-> Tested-by: Magnus Damm <damm@opensource.se>
+LED6 to LED8 are GPIO LEDs. Add corresponding DT nodes.
 
-Thanks, I have queued this up for v3.11 in the fixes-for-v3.11 branch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790-lager-reference.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+The patch is based on renesas-devel-20130716.
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index fa5b81b..5ee71cf5 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -10,6 +10,7 @@
+ 
+ /dts-v1/;
+ /include/ "r8a7790.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Lager";
+@@ -28,4 +29,17 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
++		};
++		led7 {
++			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
++		};
++		led8 {
++			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
+-- 
+Regards,
+
+Laurent Pinchart
+
