@@ -1,70 +1,66 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 02:09:47 +0000
+Date: Tue, 16 Jul 2013 01:20:41 +0000
 Subject: Re: [PATCH] dmaengine: shdma: fix a build failure on platforms with no DMA support
-Message-Id: <20130710020947.GP32603@verge.net.au>
+Message-Id: <20130716012041.GA942@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305301650290.29171@axis700.grange>
- <51A77CF1.7040105@ti.com> <20130531024438.GB32564@verge.net.au>
- <CAGa+x8413povhYWx+BSj=TdzQDAuYFXmjF4A2kXvQt+=n+380w@mail.gmail.com>
- <Pine.LNX.4.64.1306192125480.12502@axis700.grange>
- <20130705045350.GA10947@intel.com>
- <CAOesGMjp4Ort89z8ZhQT9xAPNyG-0uU-kz9G2f_GzRFF-Y2MxA@mail.gmail.com>
- <20130708072114.GF16653@intel.com>
-In-Reply-To: <20130708072114.GF16653@intel.com>
+References: <1373422152-29976-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1373422152-29976-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 08, 2013 at 12:51:14PM +0530, Vinod Koul wrote:
-> On Mon, Jul 08, 2013 at 12:52:16AM -0700, Olof Johansson wrote:
-> > On Thu, Jul 4, 2013 at 9:53 PM, Vinod Koul <vinod.koul@intel.com> wrote:
-> > > On Wed, Jun 19, 2013 at 09:32:18PM +0200, Guennadi Liakhovetski wrote:
-> > >> Hi Vinod
-> > >>
-> > >> On Wed, 19 Jun 2013, Kevin Hilman wrote:
-> > >>
-> > >> > On Thu, May 30, 2013 at 7:44 PM, Simon Horman <horms@verge.net.au> wrote:
-> > >> >
-> > >> > [...]
-> > >> >
-> > >> > > thanks for this. I will wait for a refresh (as we discussed earlier today).
-> > >> > > Can I confirm that this is a fix for v3.10? If so, could ou note
-> > >> > > that when you post your revised patch?
-> > >> >
-> > >> > Any progress on this patch?
-> > >> >
-> > >> > The SH-mobile defconfigs are still all failing in linux-next.
-> > >>
-> > >> In
-> > >>
-> > >> https://patchwork.kernel.org/patch/2640061/
-> > > And you havent CC maintainers on this patch, so I dont have it!
-> > >>
-> > >> I proposed a simple immediate fix for this problem. Arnd at the same time
-> > >> developed an alternative solution:
-> > >>
-> > >> https://patchwork.kernel.org/patch/2644121/
-> > >> https://patchwork.kernel.org/patch/2644111/
-> > > Reading these patches I agree with Arnd that client drivers should not depend on
-> > > dma slave drivers. Existing issue need to be fixed
-> > >
-> > > Arnd, Have you merged these changes?
-> > 
-> > Looks like we now have breakage in linux-next for this again (new
-> > breakage due to the header file move being applied by you on Friday,
-> > Vinod? Are you planning on sending the code in for 3.11? If not, you
-> > shouldn't apply patches right now).
-> Well they were already in my tree since 18th June. (tree was rebased to fixup for
-> pull on friday) and now these are in Linus's tree.
+On Wed, Jul 10, 2013 at 11:09:12AM +0900, Simon Horman wrote:
+> From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 > 
-> Can we have a fix for breakage for now sent to linus for now and then address the
-> proper way to do this?
+> On platforms with no support for the shdma dmaengine driver build is
+> currently failing with
+> 
+> drivers/built-in.o: In function `sh_mobile_sdhi_probe':
+> drivers/mmc/host/sh_mobile_sdhi.c:170: undefined reference to`shdma_chan_filter'
+> 
+> Fix the breakage by defining shdma_chan_filter to NULL in such
+> configurations.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> [horms+renesas@verge.net.au: Apply change to shdma-base.h instead of sh_dma.h]
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  include/linux/shdma-base.h | 4 ++++
+>  1 file changed, 4 insertions(+)
 
-That is my preferred approach.
+> 
+> Hi Vinod,
+> 
+> please consider this fix from Guennadi for v3.11 which I have rebased on top of
+> next-20130709. It fixes a build problem on a number of shmobile defconfigs
+> including bockw.
 
-I will repost the patch at the link
-https://patchwork.kernel.org/patch/2640061/ above, rebased for the header
-file rename.
+Ping.
 
-Vinod, can you take things from there?
+Would it be appropriate for me to take this change through my tree?
+It seems to resolve a regression in v3.11-rc1.
+
+> diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+> index 382cf71..5b1c984 100644
+> --- a/include/linux/shdma-base.h
+> +++ b/include/linux/shdma-base.h
+> @@ -124,6 +124,10 @@ void shdma_chan_remove(struct shdma_chan *schan);
+>  int shdma_init(struct device *dev, struct shdma_dev *sdev,
+>  		    int chan_num);
+>  void shdma_cleanup(struct shdma_dev *sdev);
+> +#if IS_ENABLED(CONFIG_SH_DMAE_BASE)
+>  bool shdma_chan_filter(struct dma_chan *chan, void *arg);
+> +#else
+> +#define shdma_chan_filter NULL
+> +#endif
+>  
+>  #endif
+> -- 
+> 1.8.2.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
