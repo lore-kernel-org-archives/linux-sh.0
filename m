@@ -1,59 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Jul 2013 02:47:19 +0000
-Subject: Re: [PATCH 6/6 v2] ARM: shmobile: r8a7779: cleanup registration of usb phy
-Message-Id: <20130730024719.GB5595@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 10:32:04 +0000
+Subject: [PATCH v5 1/5] ARM: shmobile: r8a7740: Fix TPU clock name
+Message-Id: <1373970728-28648-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y58tbwoy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y58tbwoy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jul 30, 2013 at 11:44:08AM +0900, Simon Horman wrote:
-> On Tue, Jul 30, 2013 at 11:39:18AM +0900, Simon Horman wrote:
-> > On Fri, Jul 26, 2013 at 05:14:48PM +0400, Sergei Shtylyov wrote:
-> > > Hello.
-> > > 
-> > > On 26-07-2013 11:35, Kuninori Morimoto wrote:
-> > > 
-> > >    The subject hardly matches what's being done in the patch.
-> > > 
-> > > >usb phy driver which needs platform data at the time of
-> > > >registration is used from BockW only.
-> > > 
-> > >    s/BockW/Marzen/.
-> > > 
-> > > >Now, ARM/shmobile aims to support DT,
-> > > >and the C code base board support will be removed
-> > > >if DT support is completed.
-> > > >Current driver registration method which needs platform data
-> > > >and which is not shared complicates codes.
-> > > >This means legacy C code cleanup after DT supporting
-> > > >will be more complicated
-> > > >This patch registers it on board code as cleanup C code
-> > > 
-> > > >Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > 
-> > >    I cannot approve this patch. I see it as nothing other as pointless churn.
-> > > My opinion probably doesn't matter in the light of Magnus' desire to
-> > > get it merged but I'm still clinging to it.
-> > 
-> > Magnus has explained quite clearly the reasons for this change,
-> > which are to make this board consistent with other boards which
-> > are written in this way for historical reasons.
-> > 
-> > I understand that you have a different opinion but
-> > the place for cleanly separating SoC and board code is
-> > in DT not in the legacy C code.
-> > 
-> > Both Magnus and now I are in agreement on this.
-> > 
-> > I plan to fix up s/BockW/Marzen/ and queue up this patch for v3.12
-> > in the cleanup3 branch.
-> 
-> As this is a r8a7779 patch it turns out that the cleanup2
-> branch has all the dependencies so I have queued-up this patch there.
+The TPU device is called renesas-tpu-pwm, not renesas_tpu_pwm. Fix the
+clock name accordingly.
 
-Incidently, I am going to lunch now, so I will not be pushing
-anything I have queued-up this morning until this afternoon.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index de10fd7..f4265e5 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -596,7 +596,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("r8a7740-gether",		&mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+-	CLKDEV_DEV_ID("renesas_tpu_pwm",	&mstp_clks[MSTP304]),
++	CLKDEV_DEV_ID("renesas-tpu-pwm",	&mstp_clks[MSTP304]),
+ 
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
+ 	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
+-- 
+1.8.1.5
+
