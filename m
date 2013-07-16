@@ -1,181 +1,360 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 19 Jul 2013 16:29:27 +0000
-Subject: [PATCH v2 02/15] DMA: shdma: add r8a7740 DMAC data to the device ID table
-Message-Id: <1374251374-30186-3-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 00:10:59 +0000
+Subject: [PATCH v2 07/27] sh-pfc: sh7786: Remove unused input_pu range
+Message-Id: <1373933479-17727-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-sh@vger.kernel.org
 
-This configuration data will be re-used, when DMAC DT support is added to
-r8a7740, DMAC platform data in setup-r8a7740.c will be removed.
+The PFC SH7786 SoC data contains a input_pu range used to configure
+pull-up resistors using the legacy non-pinconf API. That API has been
+removed from the driver, the range is thus not used anymore. Remove it.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+If required, configuring pull-up resistors for the SH7786 can be
+implemented using the pinconf API, as done for the SH-Mobile, R-Mobile
+and R-Car platforms.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/dma/sh/Kconfig         |    4 ++
- drivers/dma/sh/Makefile        |    1 +
- drivers/dma/sh/shdma-r8a7740.c |   95 ++++++++++++++++++++++++++++++++++++++++
- drivers/dma/sh/shdma.h         |    7 +++
- drivers/dma/sh/shdmac.c        |    1 +
- 5 files changed, 108 insertions(+), 0 deletions(-)
- create mode 100644 drivers/dma/sh/shdma-r8a7740.c
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c | 260 +++++++++++++++++-------------------
+ 1 file changed, 120 insertions(+), 140 deletions(-)
 
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index 5c1dee2..0ac3e94 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -22,3 +22,7 @@ config SUDMAC
- 	depends on SH_DMAE_BASE
- 	help
- 	  Enable support for the Renesas SUDMAC controllers.
-+
-+config SHDMA_R8A7740
-+	def_bool y
-+	depends on ARCH_R8A7740 && SH_DMAE != n
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index 893ee09..acdd3cb 100644
---- a/drivers/dma/sh/Makefile
-+++ b/drivers/dma/sh/Makefile
-@@ -1,5 +1,6 @@
- obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
- obj-$(CONFIG_SH_DMAE) += shdma.o
- shdma-y := shdmac.o
-+shdma-$(CONFIG_SHDMA_R8A7740) += shdma-r8a7740.o
- shdma-objs := $(shdma-y)
- obj-$(CONFIG_SUDMAC) += sudmac.o
-diff --git a/drivers/dma/sh/shdma-r8a7740.c b/drivers/dma/sh/shdma-r8a7740.c
-new file mode 100644
-index 0000000..2597e2c
---- /dev/null
-+++ b/drivers/dma/sh/shdma-r8a7740.c
-@@ -0,0 +1,95 @@
-+#include <linux/sh_dma.h>
-+
-+#include <mach/dma-register.h>
-+#include <mach/r8a7740.h>
-+
-+static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc9,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xca,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xcd,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xce,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FSIA_TX,
-+		.addr		= 0xfe1f0024,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FSIA_RX,
-+		.addr		= 0xfe1f0020,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FSIB_TX,
-+		.addr		= 0xfe1f0064,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb5,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
-+	},
-+};
-+
-+#define DMA_CHANNEL(a, b, c)			\
-+{						\
-+	.offset		= a,			\
-+	.dmars		= b,			\
-+	.dmars_bit	= c,			\
-+	.chclr_offset	= (0x220 - 0x20) + a	\
-+}
-+
-+static const struct sh_dmae_channel r8a7740_dmae_channels[] = {
-+	DMA_CHANNEL(0x00, 0, 0),
-+	DMA_CHANNEL(0x10, 0, 8),
-+	DMA_CHANNEL(0x20, 4, 0),
-+	DMA_CHANNEL(0x30, 4, 8),
-+	DMA_CHANNEL(0x50, 8, 0),
-+	DMA_CHANNEL(0x60, 8, 8),
-+};
-+
-+struct sh_dmae_pdata r8a7740_dma_pdata = {
-+	.slave		= r8a7740_dmae_slaves,
-+	.slave_num	= ARRAY_SIZE(r8a7740_dmae_slaves),
-+	.channel	= r8a7740_dmae_channels,
-+	.channel_num	= ARRAY_SIZE(r8a7740_dmae_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init	= DMAOR_DME,
-+	.chclr_present	= 1,
-+};
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index 06aae6e..b5fe545 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -61,4 +61,11 @@ struct sh_dmae_desc {
- #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
- 				     struct sh_dmae_device, shdma_dev.dma_dev)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7786.c b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+index 8ae0e32..c855fca 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7786.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+@@ -60,25 +60,6 @@ enum {
+ 	PJ3_IN, PJ2_IN, PJ1_IN,
+ 	PINMUX_INPUT_END,
  
-+#ifdef CONFIG_SHDMA_R8A7740
-+extern struct sh_dmae_pdata r8a7740_dma_pdata;
-+#define r8a7740_shdma_devid &r8a7740_dma_pdata
-+#else
-+#define r8a7740_shdma_devid NULL
-+#endif
-+
- #endif	/* __DMA_SHDMA_H */
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 751a4e3..fe54cda 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -907,6 +907,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+-	PINMUX_INPUT_PULLUP_BEGIN,
+-	PA7_IN_PU, PA6_IN_PU, PA5_IN_PU, PA4_IN_PU,
+-	PA3_IN_PU, PA2_IN_PU, PA1_IN_PU, PA0_IN_PU,
+-	PB7_IN_PU, PB6_IN_PU, PB5_IN_PU, PB4_IN_PU,
+-	PB3_IN_PU, PB2_IN_PU, PB1_IN_PU, PB0_IN_PU,
+-	PC7_IN_PU, PC6_IN_PU, PC5_IN_PU, PC4_IN_PU,
+-	PC3_IN_PU, PC2_IN_PU, PC1_IN_PU, PC0_IN_PU,
+-	PD7_IN_PU, PD6_IN_PU, PD5_IN_PU, PD4_IN_PU,
+-	PD3_IN_PU, PD2_IN_PU, PD1_IN_PU, PD0_IN_PU,
+-	PE7_IN_PU, PE6_IN_PU,
+-	PF7_IN_PU, PF6_IN_PU, PF5_IN_PU, PF4_IN_PU,
+-	PF3_IN_PU, PF2_IN_PU, PF1_IN_PU, PF0_IN_PU,
+-	PG7_IN_PU, PG6_IN_PU, PG5_IN_PU,
+-	PH7_IN_PU, PH6_IN_PU, PH5_IN_PU, PH4_IN_PU,
+-	PH3_IN_PU, PH2_IN_PU, PH1_IN_PU, PH0_IN_PU,
+-	PJ7_IN_PU, PJ6_IN_PU, PJ5_IN_PU, PJ4_IN_PU,
+-	PJ3_IN_PU, PJ2_IN_PU, PJ1_IN_PU,
+-	PINMUX_INPUT_PULLUP_END,
+-
+ 	PINMUX_OUTPUT_BEGIN,
+ 	PA7_OUT, PA6_OUT, PA5_OUT, PA4_OUT,
+ 	PA3_OUT, PA2_OUT, PA1_OUT, PA0_OUT,
+@@ -194,82 +175,82 @@ enum {
+ static const pinmux_enum_t pinmux_data[] = {
  
- const struct platform_device_id sh_dmae_id_table[] = {
- 	{.name = SH_DMAE_DRV_NAME,},
-+	{.name = "shdma-r8a7740", .driver_data = (kernel_ulong_t)r8a7740_shdma_devid,},
- 	{}
- };
- MODULE_DEVICE_TABLE(platform, sh_dmae_id_table);
+ 	/* PA GPIO */
+-	PINMUX_DATA(PA7_DATA, PA7_IN, PA7_OUT, PA7_IN_PU),
+-	PINMUX_DATA(PA6_DATA, PA6_IN, PA6_OUT, PA6_IN_PU),
+-	PINMUX_DATA(PA5_DATA, PA5_IN, PA5_OUT, PA5_IN_PU),
+-	PINMUX_DATA(PA4_DATA, PA4_IN, PA4_OUT, PA4_IN_PU),
+-	PINMUX_DATA(PA3_DATA, PA3_IN, PA3_OUT, PA3_IN_PU),
+-	PINMUX_DATA(PA2_DATA, PA2_IN, PA2_OUT, PA2_IN_PU),
+-	PINMUX_DATA(PA1_DATA, PA1_IN, PA1_OUT, PA1_IN_PU),
+-	PINMUX_DATA(PA0_DATA, PA0_IN, PA0_OUT, PA0_IN_PU),
++	PINMUX_DATA(PA7_DATA, PA7_IN, PA7_OUT),
++	PINMUX_DATA(PA6_DATA, PA6_IN, PA6_OUT),
++	PINMUX_DATA(PA5_DATA, PA5_IN, PA5_OUT),
++	PINMUX_DATA(PA4_DATA, PA4_IN, PA4_OUT),
++	PINMUX_DATA(PA3_DATA, PA3_IN, PA3_OUT),
++	PINMUX_DATA(PA2_DATA, PA2_IN, PA2_OUT),
++	PINMUX_DATA(PA1_DATA, PA1_IN, PA1_OUT),
++	PINMUX_DATA(PA0_DATA, PA0_IN, PA0_OUT),
+ 
+ 	/* PB GPIO */
+-	PINMUX_DATA(PB7_DATA, PB7_IN, PB7_OUT, PB7_IN_PU),
+-	PINMUX_DATA(PB6_DATA, PB6_IN, PB6_OUT, PB6_IN_PU),
+-	PINMUX_DATA(PB5_DATA, PB5_IN, PB5_OUT, PB5_IN_PU),
+-	PINMUX_DATA(PB4_DATA, PB4_IN, PB4_OUT, PB4_IN_PU),
+-	PINMUX_DATA(PB3_DATA, PB3_IN, PB3_OUT, PB3_IN_PU),
+-	PINMUX_DATA(PB2_DATA, PB2_IN, PB2_OUT, PB2_IN_PU),
+-	PINMUX_DATA(PB1_DATA, PB1_IN, PB1_OUT, PB1_IN_PU),
+-	PINMUX_DATA(PB0_DATA, PB0_IN, PB0_OUT, PB0_IN_PU),
++	PINMUX_DATA(PB7_DATA, PB7_IN, PB7_OUT),
++	PINMUX_DATA(PB6_DATA, PB6_IN, PB6_OUT),
++	PINMUX_DATA(PB5_DATA, PB5_IN, PB5_OUT),
++	PINMUX_DATA(PB4_DATA, PB4_IN, PB4_OUT),
++	PINMUX_DATA(PB3_DATA, PB3_IN, PB3_OUT),
++	PINMUX_DATA(PB2_DATA, PB2_IN, PB2_OUT),
++	PINMUX_DATA(PB1_DATA, PB1_IN, PB1_OUT),
++	PINMUX_DATA(PB0_DATA, PB0_IN, PB0_OUT),
+ 
+ 	/* PC GPIO */
+-	PINMUX_DATA(PC7_DATA, PC7_IN, PC7_OUT, PC7_IN_PU),
+-	PINMUX_DATA(PC6_DATA, PC6_IN, PC6_OUT, PC6_IN_PU),
+-	PINMUX_DATA(PC5_DATA, PC5_IN, PC5_OUT, PC5_IN_PU),
+-	PINMUX_DATA(PC4_DATA, PC4_IN, PC4_OUT, PC4_IN_PU),
+-	PINMUX_DATA(PC3_DATA, PC3_IN, PC3_OUT, PC3_IN_PU),
+-	PINMUX_DATA(PC2_DATA, PC2_IN, PC2_OUT, PC2_IN_PU),
+-	PINMUX_DATA(PC1_DATA, PC1_IN, PC1_OUT, PC1_IN_PU),
+-	PINMUX_DATA(PC0_DATA, PC0_IN, PC0_OUT, PC0_IN_PU),
++	PINMUX_DATA(PC7_DATA, PC7_IN, PC7_OUT),
++	PINMUX_DATA(PC6_DATA, PC6_IN, PC6_OUT),
++	PINMUX_DATA(PC5_DATA, PC5_IN, PC5_OUT),
++	PINMUX_DATA(PC4_DATA, PC4_IN, PC4_OUT),
++	PINMUX_DATA(PC3_DATA, PC3_IN, PC3_OUT),
++	PINMUX_DATA(PC2_DATA, PC2_IN, PC2_OUT),
++	PINMUX_DATA(PC1_DATA, PC1_IN, PC1_OUT),
++	PINMUX_DATA(PC0_DATA, PC0_IN, PC0_OUT),
+ 
+ 	/* PD GPIO */
+-	PINMUX_DATA(PD7_DATA, PD7_IN, PD7_OUT, PD7_IN_PU),
+-	PINMUX_DATA(PD6_DATA, PD6_IN, PD6_OUT, PD6_IN_PU),
+-	PINMUX_DATA(PD5_DATA, PD5_IN, PD5_OUT, PD5_IN_PU),
+-	PINMUX_DATA(PD4_DATA, PD4_IN, PD4_OUT, PD4_IN_PU),
+-	PINMUX_DATA(PD3_DATA, PD3_IN, PD3_OUT, PD3_IN_PU),
+-	PINMUX_DATA(PD2_DATA, PD2_IN, PD2_OUT, PD2_IN_PU),
+-	PINMUX_DATA(PD1_DATA, PD1_IN, PD1_OUT, PD1_IN_PU),
+-	PINMUX_DATA(PD0_DATA, PD0_IN, PD0_OUT, PD0_IN_PU),
++	PINMUX_DATA(PD7_DATA, PD7_IN, PD7_OUT),
++	PINMUX_DATA(PD6_DATA, PD6_IN, PD6_OUT),
++	PINMUX_DATA(PD5_DATA, PD5_IN, PD5_OUT),
++	PINMUX_DATA(PD4_DATA, PD4_IN, PD4_OUT),
++	PINMUX_DATA(PD3_DATA, PD3_IN, PD3_OUT),
++	PINMUX_DATA(PD2_DATA, PD2_IN, PD2_OUT),
++	PINMUX_DATA(PD1_DATA, PD1_IN, PD1_OUT),
++	PINMUX_DATA(PD0_DATA, PD0_IN, PD0_OUT),
+ 
+ 	/* PE GPIO */
+-	PINMUX_DATA(PE7_DATA, PE7_IN, PE7_OUT, PE7_IN_PU),
+-	PINMUX_DATA(PE6_DATA, PE6_IN, PE6_OUT, PE6_IN_PU),
++	PINMUX_DATA(PE7_DATA, PE7_IN, PE7_OUT),
++	PINMUX_DATA(PE6_DATA, PE6_IN, PE6_OUT),
+ 
+ 	/* PF GPIO */
+-	PINMUX_DATA(PF7_DATA, PF7_IN, PF7_OUT, PF7_IN_PU),
+-	PINMUX_DATA(PF6_DATA, PF6_IN, PF6_OUT, PF6_IN_PU),
+-	PINMUX_DATA(PF5_DATA, PF5_IN, PF5_OUT, PF5_IN_PU),
+-	PINMUX_DATA(PF4_DATA, PF4_IN, PF4_OUT, PF4_IN_PU),
+-	PINMUX_DATA(PF3_DATA, PF3_IN, PF3_OUT, PF3_IN_PU),
+-	PINMUX_DATA(PF2_DATA, PF2_IN, PF2_OUT, PF2_IN_PU),
+-	PINMUX_DATA(PF1_DATA, PF1_IN, PF1_OUT, PF1_IN_PU),
+-	PINMUX_DATA(PF0_DATA, PF0_IN, PF0_OUT, PF0_IN_PU),
++	PINMUX_DATA(PF7_DATA, PF7_IN, PF7_OUT),
++	PINMUX_DATA(PF6_DATA, PF6_IN, PF6_OUT),
++	PINMUX_DATA(PF5_DATA, PF5_IN, PF5_OUT),
++	PINMUX_DATA(PF4_DATA, PF4_IN, PF4_OUT),
++	PINMUX_DATA(PF3_DATA, PF3_IN, PF3_OUT),
++	PINMUX_DATA(PF2_DATA, PF2_IN, PF2_OUT),
++	PINMUX_DATA(PF1_DATA, PF1_IN, PF1_OUT),
++	PINMUX_DATA(PF0_DATA, PF0_IN, PF0_OUT),
+ 
+ 	/* PG GPIO */
+-	PINMUX_DATA(PG7_DATA, PG7_IN, PG7_OUT, PG7_IN_PU),
+-	PINMUX_DATA(PG6_DATA, PG6_IN, PG6_OUT, PG6_IN_PU),
+-	PINMUX_DATA(PG5_DATA, PG5_IN, PG5_OUT, PG5_IN_PU),
++	PINMUX_DATA(PG7_DATA, PG7_IN, PG7_OUT),
++	PINMUX_DATA(PG6_DATA, PG6_IN, PG6_OUT),
++	PINMUX_DATA(PG5_DATA, PG5_IN, PG5_OUT),
+ 
+ 	/* PH GPIO */
+-	PINMUX_DATA(PH7_DATA, PH7_IN, PH7_OUT, PH7_IN_PU),
+-	PINMUX_DATA(PH6_DATA, PH6_IN, PH6_OUT, PH6_IN_PU),
+-	PINMUX_DATA(PH5_DATA, PH5_IN, PH5_OUT, PH5_IN_PU),
+-	PINMUX_DATA(PH4_DATA, PH4_IN, PH4_OUT, PH4_IN_PU),
+-	PINMUX_DATA(PH3_DATA, PH3_IN, PH3_OUT, PH3_IN_PU),
+-	PINMUX_DATA(PH2_DATA, PH2_IN, PH2_OUT, PH2_IN_PU),
+-	PINMUX_DATA(PH1_DATA, PH1_IN, PH1_OUT, PH1_IN_PU),
+-	PINMUX_DATA(PH0_DATA, PH0_IN, PH0_OUT, PH0_IN_PU),
++	PINMUX_DATA(PH7_DATA, PH7_IN, PH7_OUT),
++	PINMUX_DATA(PH6_DATA, PH6_IN, PH6_OUT),
++	PINMUX_DATA(PH5_DATA, PH5_IN, PH5_OUT),
++	PINMUX_DATA(PH4_DATA, PH4_IN, PH4_OUT),
++	PINMUX_DATA(PH3_DATA, PH3_IN, PH3_OUT),
++	PINMUX_DATA(PH2_DATA, PH2_IN, PH2_OUT),
++	PINMUX_DATA(PH1_DATA, PH1_IN, PH1_OUT),
++	PINMUX_DATA(PH0_DATA, PH0_IN, PH0_OUT),
+ 
+ 	/* PJ GPIO */
+-	PINMUX_DATA(PJ7_DATA, PJ7_IN, PJ7_OUT, PJ7_IN_PU),
+-	PINMUX_DATA(PJ6_DATA, PJ6_IN, PJ6_OUT, PJ6_IN_PU),
+-	PINMUX_DATA(PJ5_DATA, PJ5_IN, PJ5_OUT, PJ5_IN_PU),
+-	PINMUX_DATA(PJ4_DATA, PJ4_IN, PJ4_OUT, PJ4_IN_PU),
+-	PINMUX_DATA(PJ3_DATA, PJ3_IN, PJ3_OUT, PJ3_IN_PU),
+-	PINMUX_DATA(PJ2_DATA, PJ2_IN, PJ2_OUT, PJ2_IN_PU),
+-	PINMUX_DATA(PJ1_DATA, PJ1_IN, PJ1_OUT, PJ1_IN_PU),
++	PINMUX_DATA(PJ7_DATA, PJ7_IN, PJ7_OUT),
++	PINMUX_DATA(PJ6_DATA, PJ6_IN, PJ6_OUT),
++	PINMUX_DATA(PJ5_DATA, PJ5_IN, PJ5_OUT),
++	PINMUX_DATA(PJ4_DATA, PJ4_IN, PJ4_OUT),
++	PINMUX_DATA(PJ3_DATA, PJ3_IN, PJ3_OUT),
++	PINMUX_DATA(PJ2_DATA, PJ2_IN, PJ2_OUT),
++	PINMUX_DATA(PJ1_DATA, PJ1_IN, PJ1_OUT),
+ 
+ 	/* PA FN */
+ 	PINMUX_DATA(CDE_MARK,		P1MSEL2_0, PA7_FN),
+@@ -651,48 +632,48 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 
+ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	{ PINMUX_CFG_REG("PACR", 0xffcc0000, 16, 2) {
+-		PA7_FN, PA7_OUT, PA7_IN, PA7_IN_PU,
+-		PA6_FN, PA6_OUT, PA6_IN, PA6_IN_PU,
+-		PA5_FN, PA5_OUT, PA5_IN, PA5_IN_PU,
+-		PA4_FN, PA4_OUT, PA4_IN, PA4_IN_PU,
+-		PA3_FN, PA3_OUT, PA3_IN, PA3_IN_PU,
+-		PA2_FN, PA2_OUT, PA2_IN, PA2_IN_PU,
+-		PA1_FN, PA1_OUT, PA1_IN, PA1_IN_PU,
+-		PA0_FN, PA0_OUT, PA0_IN, PA0_IN_PU }
++		PA7_FN, PA7_OUT, PA7_IN, 0,
++		PA6_FN, PA6_OUT, PA6_IN, 0,
++		PA5_FN, PA5_OUT, PA5_IN, 0,
++		PA4_FN, PA4_OUT, PA4_IN, 0,
++		PA3_FN, PA3_OUT, PA3_IN, 0,
++		PA2_FN, PA2_OUT, PA2_IN, 0,
++		PA1_FN, PA1_OUT, PA1_IN, 0,
++		PA0_FN, PA0_OUT, PA0_IN, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG("PBCR", 0xffcc0002, 16, 2) {
+-		PB7_FN, PB7_OUT, PB7_IN, PB7_IN_PU,
+-		PB6_FN, PB6_OUT, PB6_IN, PB6_IN_PU,
+-		PB5_FN, PB5_OUT, PB5_IN, PB5_IN_PU,
+-		PB4_FN, PB4_OUT, PB4_IN, PB4_IN_PU,
+-		PB3_FN, PB3_OUT, PB3_IN, PB3_IN_PU,
+-		PB2_FN, PB2_OUT, PB2_IN, PB2_IN_PU,
+-		PB1_FN, PB1_OUT, PB1_IN, PB1_IN_PU,
+-		PB0_FN, PB0_OUT, PB0_IN, PB0_IN_PU }
++		PB7_FN, PB7_OUT, PB7_IN, 0,
++		PB6_FN, PB6_OUT, PB6_IN, 0,
++		PB5_FN, PB5_OUT, PB5_IN, 0,
++		PB4_FN, PB4_OUT, PB4_IN, 0,
++		PB3_FN, PB3_OUT, PB3_IN, 0,
++		PB2_FN, PB2_OUT, PB2_IN, 0,
++		PB1_FN, PB1_OUT, PB1_IN, 0,
++		PB0_FN, PB0_OUT, PB0_IN, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG("PCCR", 0xffcc0004, 16, 2) {
+-		PC7_FN, PC7_OUT, PC7_IN, PC7_IN_PU,
+-		PC6_FN, PC6_OUT, PC6_IN, PC6_IN_PU,
+-		PC5_FN, PC5_OUT, PC5_IN, PC5_IN_PU,
+-		PC4_FN, PC4_OUT, PC4_IN, PC4_IN_PU,
+-		PC3_FN, PC3_OUT, PC3_IN, PC3_IN_PU,
+-		PC2_FN, PC2_OUT, PC2_IN, PC2_IN_PU,
+-		PC1_FN, PC1_OUT, PC1_IN, PC1_IN_PU,
+-		PC0_FN, PC0_OUT, PC0_IN, PC0_IN_PU }
++		PC7_FN, PC7_OUT, PC7_IN, 0,
++		PC6_FN, PC6_OUT, PC6_IN, 0,
++		PC5_FN, PC5_OUT, PC5_IN, 0,
++		PC4_FN, PC4_OUT, PC4_IN, 0,
++		PC3_FN, PC3_OUT, PC3_IN, 0,
++		PC2_FN, PC2_OUT, PC2_IN, 0,
++		PC1_FN, PC1_OUT, PC1_IN, 0,
++		PC0_FN, PC0_OUT, PC0_IN, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG("PDCR", 0xffcc0006, 16, 2) {
+-		PD7_FN, PD7_OUT, PD7_IN, PD7_IN_PU,
+-		PD6_FN, PD6_OUT, PD6_IN, PD6_IN_PU,
+-		PD5_FN, PD5_OUT, PD5_IN, PD5_IN_PU,
+-		PD4_FN, PD4_OUT, PD4_IN, PD4_IN_PU,
+-		PD3_FN, PD3_OUT, PD3_IN, PD3_IN_PU,
+-		PD2_FN, PD2_OUT, PD2_IN, PD2_IN_PU,
+-		PD1_FN, PD1_OUT, PD1_IN, PD1_IN_PU,
+-		PD0_FN, PD0_OUT, PD0_IN, PD0_IN_PU }
++		PD7_FN, PD7_OUT, PD7_IN, 0,
++		PD6_FN, PD6_OUT, PD6_IN, 0,
++		PD5_FN, PD5_OUT, PD5_IN, 0,
++		PD4_FN, PD4_OUT, PD4_IN, 0,
++		PD3_FN, PD3_OUT, PD3_IN, 0,
++		PD2_FN, PD2_OUT, PD2_IN, 0,
++		PD1_FN, PD1_OUT, PD1_IN, 0,
++		PD0_FN, PD0_OUT, PD0_IN, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG("PECR", 0xffcc0008, 16, 2) {
+-		PE7_FN, PE7_OUT, PE7_IN, PE7_IN_PU,
+-		PE6_FN, PE6_OUT, PE6_IN, PE6_IN_PU,
++		PE7_FN, PE7_OUT, PE7_IN, 0,
++		PE6_FN, PE6_OUT, PE6_IN, 0,
+ 		0, 0, 0, 0,
+ 		0, 0, 0, 0,
+ 		0, 0, 0, 0,
+@@ -701,19 +682,19 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		0, 0, 0, 0, }
+ 	},
+ 	{ PINMUX_CFG_REG("PFCR", 0xffcc000a, 16, 2) {
+-		PF7_FN, PF7_OUT, PF7_IN, PF7_IN_PU,
+-		PF6_FN, PF6_OUT, PF6_IN, PF6_IN_PU,
+-		PF5_FN, PF5_OUT, PF5_IN, PF5_IN_PU,
+-		PF4_FN, PF4_OUT, PF4_IN, PF4_IN_PU,
+-		PF3_FN, PF3_OUT, PF3_IN, PF3_IN_PU,
+-		PF2_FN, PF2_OUT, PF2_IN, PF2_IN_PU,
+-		PF1_FN, PF1_OUT, PF1_IN, PF1_IN_PU,
+-		PF0_FN, PF0_OUT, PF0_IN, PF0_IN_PU }
++		PF7_FN, PF7_OUT, PF7_IN, 0,
++		PF6_FN, PF6_OUT, PF6_IN, 0,
++		PF5_FN, PF5_OUT, PF5_IN, 0,
++		PF4_FN, PF4_OUT, PF4_IN, 0,
++		PF3_FN, PF3_OUT, PF3_IN, 0,
++		PF2_FN, PF2_OUT, PF2_IN, 0,
++		PF1_FN, PF1_OUT, PF1_IN, 0,
++		PF0_FN, PF0_OUT, PF0_IN, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG("PGCR", 0xffcc000c, 16, 2) {
+-		PG7_FN, PG7_OUT, PG7_IN, PG7_IN_PU,
+-		PG6_FN, PG6_OUT, PG6_IN, PG6_IN_PU,
+-		PG5_FN, PG5_OUT, PG5_IN, PG5_IN_PU,
++		PG7_FN, PG7_OUT, PG7_IN, 0,
++		PG6_FN, PG6_OUT, PG6_IN, 0,
++		PG5_FN, PG5_OUT, PG5_IN, 0,
+ 		0, 0, 0, 0,
+ 		0, 0, 0, 0,
+ 		0, 0, 0, 0,
+@@ -721,23 +702,23 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		0, 0, 0, 0, }
+ 	},
+ 	{ PINMUX_CFG_REG("PHCR", 0xffcc000e, 16, 2) {
+-		PH7_FN, PH7_OUT, PH7_IN, PH7_IN_PU,
+-		PH6_FN, PH6_OUT, PH6_IN, PH6_IN_PU,
+-		PH5_FN, PH5_OUT, PH5_IN, PH5_IN_PU,
+-		PH4_FN, PH4_OUT, PH4_IN, PH4_IN_PU,
+-		PH3_FN, PH3_OUT, PH3_IN, PH3_IN_PU,
+-		PH2_FN, PH2_OUT, PH2_IN, PH2_IN_PU,
+-		PH1_FN, PH1_OUT, PH1_IN, PH1_IN_PU,
+-		PH0_FN, PH0_OUT, PH0_IN, PH0_IN_PU }
++		PH7_FN, PH7_OUT, PH7_IN, 0,
++		PH6_FN, PH6_OUT, PH6_IN, 0,
++		PH5_FN, PH5_OUT, PH5_IN, 0,
++		PH4_FN, PH4_OUT, PH4_IN, 0,
++		PH3_FN, PH3_OUT, PH3_IN, 0,
++		PH2_FN, PH2_OUT, PH2_IN, 0,
++		PH1_FN, PH1_OUT, PH1_IN, 0,
++		PH0_FN, PH0_OUT, PH0_IN, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG("PJCR", 0xffcc0010, 16, 2) {
+-		PJ7_FN, PJ7_OUT, PJ7_IN, PJ7_IN_PU,
+-		PJ6_FN, PJ6_OUT, PJ6_IN, PJ6_IN_PU,
+-		PJ5_FN, PJ5_OUT, PJ5_IN, PJ5_IN_PU,
+-		PJ4_FN, PJ4_OUT, PJ4_IN, PJ4_IN_PU,
+-		PJ3_FN, PJ3_OUT, PJ3_IN, PJ3_IN_PU,
+-		PJ2_FN, PJ2_OUT, PJ2_IN, PJ2_IN_PU,
+-		PJ1_FN, PJ1_OUT, PJ1_IN, PJ1_IN_PU,
++		PJ7_FN, PJ7_OUT, PJ7_IN, 0,
++		PJ6_FN, PJ6_OUT, PJ6_IN, 0,
++		PJ5_FN, PJ5_OUT, PJ5_IN, 0,
++		PJ4_FN, PJ4_OUT, PJ4_IN, 0,
++		PJ3_FN, PJ3_OUT, PJ3_IN, 0,
++		PJ2_FN, PJ2_OUT, PJ2_IN, 0,
++		PJ1_FN, PJ1_OUT, PJ1_IN, 0,
+ 		0, 0, 0, 0, }
+ 	},
+ 	{ PINMUX_CFG_REG("P1MSELR", 0xffcc0080, 16, 1) {
+@@ -822,7 +803,6 @@ static const struct pinmux_data_reg pinmux_data_regs[] = {
+ const struct sh_pfc_soc_info sh7786_pinmux_info = {
+ 	.name = "sh7786_pfc",
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+-	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
 -- 
-1.7.2.5
+1.8.1.5
 
