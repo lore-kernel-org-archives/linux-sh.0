@@ -1,223 +1,353 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 30 Jul 2013 10:37:26 +0000
-Subject: [PATCH v2 02/13] mmc: mmc_spi: Support CD/RO GPIOs
-Message-Id: <1375180657-23641-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 00:11:18 +0000
+Subject: [PATCH v2 26/27] sh-pfc: Compute pin ranges automatically
+Message-Id: <1373933479-17727-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add support for passing CD/RO GPIO numbers directly to the mmc_spi
-driver instead of relying solely on board code callbacks to retrieve the
-CD/RO signals values. The driver will enable debouncing on the card
-detect GPIO if the cd_debounce field is set to a non-zero value.
+Remove the manually specified ranges from PFC SoC data and compute the
+ranges automatically. This prevents ranges from being out-of-sync with
+pins definitions.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/mmc_spi.c    | 33 ++++++++++++++++++++++---------
- drivers/mmc/host/of_mmc_spi.c | 46 +++++++++++--------------------------------
- include/linux/spi/mmc_spi.h   | 16 +++++++++++++++
- 3 files changed, 52 insertions(+), 43 deletions(-)
+ drivers/pinctrl/sh-pfc/core.c        | 70 +++++++++++++++++++++++++++++++-----
+ drivers/pinctrl/sh-pfc/core.h        |  8 +++++
+ drivers/pinctrl/sh-pfc/gpio.c        | 21 +++--------
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 17 ---------
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |  9 -----
+ drivers/pinctrl/sh-pfc/pinctrl.c     | 49 ++++++++-----------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |  2 --
+ 7 files changed, 88 insertions(+), 88 deletions(-)
 
-diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
-index 74145d1..62fb82d 100644
---- a/drivers/mmc/host/mmc_spi.c
-+++ b/drivers/mmc/host/mmc_spi.c
-@@ -36,6 +36,7 @@
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 96b0224..cb47bce 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -82,17 +82,14 @@ int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin)
+ 	unsigned int offset;
+ 	unsigned int i;
  
- #include <linux/mmc/host.h>
- #include <linux/mmc/mmc.h>		/* for R1_SPI_* bit values */
-+#include <linux/mmc/slot-gpio.h>
+-	if (pfc->info->ranges = NULL)
+-		return pin;
+-
+-	for (i = 0, offset = 0; i < pfc->info->nr_ranges; ++i) {
+-		const struct pinmux_range *range = &pfc->info->ranges[i];
++	for (i = 0, offset = 0; i < pfc->nr_ranges; ++i) {
++		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
  
- #include <linux/spi/spi.h>
- #include <linux/spi/mmc_spi.h>
-@@ -1278,11 +1279,8 @@ static int mmc_spi_get_ro(struct mmc_host *mmc)
+ 		if (pin <= range->end)
+-			return pin >= range->begin
+-			     ? offset + pin - range->begin : -1;
++			return pin >= range->start
++			     ? offset + pin - range->start : -1;
  
- 	if (host->pdata && host->pdata->get_ro)
- 		return !!host->pdata->get_ro(mmc->parent);
--	/*
--	 * Board doesn't support read only detection; let the mmc core
--	 * decide what to do.
--	 */
--	return -ENOSYS;
-+	else
-+		return mmc_gpio_get_ro(mmc);
- }
- 
- static int mmc_spi_get_cd(struct mmc_host *mmc)
-@@ -1291,7 +1289,8 @@ static int mmc_spi_get_cd(struct mmc_host *mmc)
- 
- 	if (host->pdata && host->pdata->get_cd)
- 		return !!host->pdata->get_cd(mmc->parent);
--	return -ENOSYS;
-+	else
-+		return mmc_gpio_get_cd(mmc);
- }
- 
- static const struct mmc_host_ops mmc_spi_ops = {
-@@ -1324,6 +1323,7 @@ static int mmc_spi_probe(struct spi_device *spi)
- 	struct mmc_host		*mmc;
- 	struct mmc_spi_host	*host;
- 	int			status;
-+	bool			has_ro = false;
- 
- 	/* We rely on full duplex transfers, mostly to reduce
- 	 * per-transfer overheads (by making fewer transfers).
-@@ -1448,18 +1448,33 @@ static int mmc_spi_probe(struct spi_device *spi)
+-		offset += range->end - range->begin + 1;
++		offset += range->end - range->start + 1;
  	}
  
- 	/* pass platform capabilities, if any */
--	if (host->pdata)
-+	if (host->pdata) {
- 		mmc->caps |= host->pdata->caps;
-+		mmc->caps2 |= host->pdata->caps2;
-+	}
- 
- 	status = mmc_add_host(mmc);
- 	if (status != 0)
- 		goto fail_add_host;
- 
-+	if (host->pdata && host->pdata->flags & MMC_SPI_USE_CD_GPIO) {
-+		status = mmc_gpio_request_cd(mmc, host->pdata->cd_gpio,
-+					     host->pdata->cd_debounce);
-+		if (status != 0)
-+			goto fail_add_host;
-+	}
-+
-+	if (host->pdata && host->pdata->flags & MMC_SPI_USE_RO_GPIO) {
-+		has_ro = true;
-+		status = mmc_gpio_request_ro(mmc, host->pdata->ro_gpio);
-+		if (status != 0)
-+			goto fail_add_host;
-+	}
-+
- 	dev_info(&spi->dev, "SD/MMC host %s%s%s%s%s\n",
- 			dev_name(&mmc->class_dev),
- 			host->dma_dev ? "" : ", no DMA",
--			(host->pdata && host->pdata->get_ro)
--				? "" : ", no WP",
-+			has_ro ? "" : ", no WP",
- 			(host->pdata && host->pdata->setpower)
- 				? "" : ", no poweroff",
- 			(mmc->caps & MMC_CAP_NEEDS_POLL)
-diff --git a/drivers/mmc/host/of_mmc_spi.c b/drivers/mmc/host/of_mmc_spi.c
-index d720b5e..6e218fb 100644
---- a/drivers/mmc/host/of_mmc_spi.c
-+++ b/drivers/mmc/host/of_mmc_spi.c
-@@ -50,25 +50,6 @@ static struct of_mmc_spi *to_of_mmc_spi(struct device *dev)
- 	return container_of(dev->platform_data, struct of_mmc_spi, pdata);
+ 	return -EINVAL;
+@@ -341,6 +338,59 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
+ 	return 0;
  }
  
--static int of_mmc_spi_read_gpio(struct device *dev, int gpio_num)
--{
--	struct of_mmc_spi *oms = to_of_mmc_spi(dev);
--	bool active_low = oms->alow_gpios[gpio_num];
--	bool value = gpio_get_value(oms->gpios[gpio_num]);
--
--	return active_low ^ value;
--}
--
--static int of_mmc_spi_get_cd(struct device *dev)
--{
--	return of_mmc_spi_read_gpio(dev, CD_GPIO);
--}
--
--static int of_mmc_spi_get_ro(struct device *dev)
--{
--	return of_mmc_spi_read_gpio(dev, WP_GPIO);
--}
--
- static int of_mmc_spi_init(struct device *dev,
- 			   irqreturn_t (*irqhandler)(int, void *), void *mmc)
- {
-@@ -130,20 +111,22 @@ struct mmc_spi_platform_data *mmc_spi_get_pdata(struct spi_device *spi)
- 		if (!gpio_is_valid(oms->gpios[i]))
- 			continue;
- 
--		ret = gpio_request(oms->gpios[i], dev_name(dev));
--		if (ret < 0) {
--			oms->gpios[i] = -EINVAL;
--			continue;
--		}
--
- 		if (gpio_flags & OF_GPIO_ACTIVE_LOW)
- 			oms->alow_gpios[i] = true;
- 	}
- 
--	if (gpio_is_valid(oms->gpios[CD_GPIO]))
--		oms->pdata.get_cd = of_mmc_spi_get_cd;
--	if (gpio_is_valid(oms->gpios[WP_GPIO]))
--		oms->pdata.get_ro = of_mmc_spi_get_ro;
-+	if (gpio_is_valid(oms->gpios[CD_GPIO])) {
-+		oms->pdata.cd_gpio = oms->gpios[CD_GPIO];
-+		oms->pdata.flags |= MMC_SPI_USE_CD_GPIO;
-+		if (!oms->alow_gpios[CD_GPIO])
-+			oms->pdata.caps2 |= MMC_CAP2_CD_ACTIVE_HIGH;
-+	}
-+	if (gpio_is_valid(oms->gpios[WP_GPIO])) {
-+		oms->pdata.ro_gpio = oms->gpios[WP_GPIO];
-+		oms->pdata.flags |= MMC_SPI_USE_RO_GPIO;
-+		if (!oms->alow_gpios[WP_GPIO])
-+			oms->pdata.caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
-+	}
- 
- 	oms->detect_irq = irq_of_parse_and_map(np, 0);
- 	if (oms->detect_irq != 0) {
-@@ -166,15 +149,10 @@ void mmc_spi_put_pdata(struct spi_device *spi)
- 	struct device *dev = &spi->dev;
- 	struct device_node *np = dev->of_node;
- 	struct of_mmc_spi *oms = to_of_mmc_spi(dev);
--	int i;
- 
- 	if (!dev->platform_data || !np)
- 		return;
- 
--	for (i = 0; i < ARRAY_SIZE(oms->gpios); i++) {
--		if (gpio_is_valid(oms->gpios[i]))
--			gpio_free(oms->gpios[i]);
--	}
- 	kfree(oms);
- 	dev->platform_data = NULL;
- }
-diff --git a/include/linux/spi/mmc_spi.h b/include/linux/spi/mmc_spi.h
-index 32be8db..87cdb35 100644
---- a/include/linux/spi/mmc_spi.h
-+++ b/include/linux/spi/mmc_spi.h
-@@ -7,6 +7,11 @@
- struct device;
- struct mmc_host;
- 
-+#define MMC_SPI_USE_CD_GPIO			(1 << 0)
-+#define MMC_SPI_USE_RO_GPIO			(1 << 1)
-+#define MMC_SPI_CD_GPIO_ACTIVE_LOW		(1 << 2)
-+#define MMC_SPI_RO_GPIO_ACTIVE_LOW		(1 << 3)
++static int sh_pfc_init_ranges(struct sh_pfc *pfc)
++{
++	struct sh_pfc_pin_range *range;
++	unsigned int nr_ranges;
++	unsigned int i;
 +
- /* Put this in platform_data of a device being used to manage an MMC/SD
-  * card slot.  (Modeled after PXA mmc glue; see that for usage examples.)
-  *
-@@ -30,8 +35,19 @@ struct mmc_spi_platform_data {
++	if (pfc->info->pins[0].pin = (u16)-1) {
++		/* Pin number -1 denotes that the SoC doesn't report pin numbers
++		 * in its pin arrays yet. Consider the pin numbers range as
++		 * continuous and allocate a single range.
++		 */
++		pfc->nr_ranges = 1;
++		pfc->ranges = devm_kzalloc(pfc->dev, sizeof(*pfc->ranges),
++					   GFP_KERNEL);
++		if (pfc->ranges = NULL)
++			return -ENOMEM;
++
++		pfc->ranges->start = 0;
++		pfc->ranges->end = pfc->info->nr_pins - 1;
++		pfc->nr_gpio_pins = pfc->info->nr_pins;
++
++		return 0;
++	}
++
++	/* Count, allocate and fill the ranges. */
++	for (i = 1, nr_ranges = 1; i < pfc->info->nr_pins; ++i) {
++		if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin - 1)
++			nr_ranges++;
++	}
++
++	pfc->nr_ranges = nr_ranges;
++	pfc->ranges = devm_kzalloc(pfc->dev, sizeof(*pfc->ranges) * nr_ranges,
++				   GFP_KERNEL);
++	if (pfc->ranges = NULL)
++		return -ENOMEM;
++
++	range = pfc->ranges;
++	range->start = pfc->info->pins[0].pin;
++
++	for (i = 1; i < pfc->info->nr_pins; ++i) {
++		if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin - 1) {
++			range->end = pfc->info->pins[i-1].pin;
++			range++;
++			range->start = pfc->info->pins[i].pin;
++		}
++	}
++
++	range->end = pfc->info->pins[i-1].pin;
++	pfc->nr_gpio_pins = range->end + 1;
++
++	return 0;
++}
++
+ #ifdef CONFIG_OF
+ static const struct of_device_id sh_pfc_of_table[] = {
+ #ifdef CONFIG_PINCTRL_PFC_R8A73A4
+@@ -431,6 +481,10 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 
+ 	pinctrl_provide_dummies();
+ 
++	ret = sh_pfc_init_ranges(pfc);
++	if (ret < 0)
++		return ret;
++
+ 	/*
+ 	 * Initialize pinctrl bindings first
  	 */
- 	int (*get_cd)(struct device *);
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 93963a1..a1b2376 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -25,6 +25,11 @@ struct sh_pfc_window {
+ struct sh_pfc_chip;
+ struct sh_pfc_pinctrl;
  
-+	/*
-+	 * Card Detect and Read Only GPIOs. To enable debouncing on the card
-+	 * detect GPIO, set the cd_debounce to the debounce time in
-+	 * microseconds.
-+	 */
-+	unsigned int flags;
-+	unsigned int cd_gpio;
-+	unsigned int cd_debounce;
-+	unsigned int ro_gpio;
++struct sh_pfc_pin_range {
++	u16 start;
++	u16 end;
++};
 +
- 	/* Capabilities to pass into mmc core (e.g. MMC_CAP_NEEDS_POLL). */
- 	unsigned long caps;
-+	unsigned long caps2;
+ struct sh_pfc {
+ 	struct device *dev;
+ 	const struct sh_pfc_soc_info *info;
+@@ -34,6 +39,9 @@ struct sh_pfc {
+ 	unsigned int num_windows;
+ 	struct sh_pfc_window *window;
  
- 	/* how long to debounce card detect, in msecs */
- 	u16 detect_delay;
++	struct sh_pfc_pin_range *ranges;
++	unsigned int nr_ranges;
++
+ 	unsigned int nr_gpio_pins;
+ 
+ 	struct sh_pfc_chip *gpio;
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 7661be5..78fcb80 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -334,10 +334,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ {
+-	const struct pinmux_range *ranges;
+-	struct pinmux_range def_range;
+ 	struct sh_pfc_chip *chip;
+-	unsigned int nr_ranges;
+ 	unsigned int i;
+ 	int ret;
+ 
+@@ -368,23 +365,13 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	pfc->gpio = chip;
+ 
+ 	/* Register the GPIO to pin mappings. */
+-	if (pfc->info->ranges = NULL) {
+-		def_range.begin = 0;
+-		def_range.end = pfc->info->nr_pins - 1;
+-		ranges = &def_range;
+-		nr_ranges = 1;
+-	} else {
+-		ranges = pfc->info->ranges;
+-		nr_ranges = pfc->info->nr_ranges;
+-	}
+-
+-	for (i = 0; i < nr_ranges; ++i) {
+-		const struct pinmux_range *range = &ranges[i];
++	for (i = 0; i < pfc->nr_ranges; ++i) {
++		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
+ 
+ 		ret = gpiochip_add_pin_range(&chip->gpio_chip,
+ 					     dev_name(pfc->dev),
+-					     range->begin, range->begin,
+-					     range->end - range->begin + 1);
++					     range->start, range->start,
++					     range->end - range->start + 1);
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+index 04ecb5e..05d96ae 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+@@ -1398,20 +1398,6 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	R8A73A4_PIN_IO_PU_PD(328), R8A73A4_PIN_IO_PU_PD(329),
+ };
+ 
+-static const struct pinmux_range pinmux_ranges[] = {
+-	{.begin = 0, .end = 30,},
+-	{.begin = 32, .end = 40,},
+-	{.begin = 64, .end = 85,},
+-	{.begin = 96, .end = 126,},
+-	{.begin = 128, .end = 134,},
+-	{.begin = 160, .end = 178,},
+-	{.begin = 192, .end = 222,},
+-	{.begin = 224, .end = 250,},
+-	{.begin = 256, .end = 283,},
+-	{.begin = 288, .end = 308,},
+-	{.begin = 320, .end = 329,},
+-};
+-
+ /* - IRQC ------------------------------------------------------------------- */
+ #define IRQC_PINS_MUX(pin, irq_mark)				\
+ static const unsigned int irqc_irq##irq_mark##_pins[] = {	\
+@@ -2756,9 +2742,6 @@ const struct sh_pfc_soc_info r8a73a4_pinmux_info = {
+ 	.pins = pinmux_pins,
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
+ 
+-	.ranges = pinmux_ranges,
+-	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
+-
+ 	.groups = pinmux_groups,
+ 	.nr_groups = ARRAY_SIZE(pinmux_groups),
+ 	.functions = pinmux_functions,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index acf8392..1f4dbe4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1446,13 +1446,6 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	SH73A0_PIN_O(309),
+ };
+ 
+-static const struct pinmux_range pinmux_ranges[] = {
+-	{.begin = 0, .end = 118,},
+-	{.begin = 128, .end = 164,},
+-	{.begin = 192, .end = 282,},
+-	{.begin = 288, .end = 309,},
+-};
+-
+ /* Pin numbers for pins without a corresponding GPIO port number are computed
+  * from the row and column numbers with a 1000 offset to avoid collisions with
+  * GPIO port numbers.
+@@ -3894,8 +3887,6 @@ const struct sh_pfc_soc_info sh73a0_pinmux_info = {
+ 
+ 	.pins = pinmux_pins,
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
+-	.ranges = pinmux_ranges,
+-	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
+ 	.groups = pinmux_groups,
+ 	.nr_groups = ARRAY_SIZE(pinmux_groups),
+ 	.functions = pinmux_functions,
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 314255d..8649ec3 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -587,22 +587,9 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
+ /* PFC ranges -> pinctrl pin descs */
+ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+-	const struct pinmux_range *ranges;
+-	struct pinmux_range def_range;
+-	unsigned int nr_ranges;
+-	unsigned int nr_pins;
+ 	unsigned int i;
+ 
+-	if (pfc->info->ranges = NULL) {
+-		def_range.begin = 0;
+-		def_range.end = pfc->info->nr_pins - 1;
+-		ranges = &def_range;
+-		nr_ranges = 1;
+-	} else {
+-		ranges = pfc->info->ranges;
+-		nr_ranges = pfc->info->nr_ranges;
+-	}
+-
++	/* Allocate and initialize the pins and configs arrays. */
+ 	pmx->pins = devm_kzalloc(pfc->dev,
+ 				 sizeof(*pmx->pins) * pfc->info->nr_pins,
+ 				 GFP_KERNEL);
+@@ -615,32 +602,24 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 	if (unlikely(!pmx->configs))
+ 		return -ENOMEM;
+ 
+-	for (i = 0, nr_pins = 0; i < nr_ranges; ++i) {
+-		const struct pinmux_range *range = &ranges[i];
+-		unsigned int number;
++	for (i = 0; i < pfc->info->nr_pins; ++i) {
++		const struct sh_pfc_pin *info = &pfc->info->pins[i];
++		struct sh_pfc_pin_config *cfg = &pmx->configs[i];
++		struct pinctrl_pin_desc *pin = &pmx->pins[i];
+ 
+-		for (number = range->begin; number <= range->end;
+-		     number++, nr_pins++) {
+-			struct sh_pfc_pin_config *cfg = &pmx->configs[nr_pins];
+-			struct pinctrl_pin_desc *pin = &pmx->pins[nr_pins];
+-			const struct sh_pfc_pin *info -				&pfc->info->pins[nr_pins];
+-
+-			pin->number = number;
+-			pin->name = info->name;
+-			cfg->type = PINMUX_TYPE_NONE;
+-		}
++		/* If the pin number is equal to -1 all pins are considered */
++		pin->number = info->pin != (u16)-1 ? info->pin : i;
++		pin->name = info->name;
++		cfg->type = PINMUX_TYPE_NONE;
+ 	}
+ 
+-	pfc->nr_gpio_pins = ranges[nr_ranges-1].end + 1;
+-
+-	return nr_ranges;
++	return 0;
+ }
+ 
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ {
+ 	struct sh_pfc_pinctrl *pmx;
+-	int nr_ranges;
++	int ret;
+ 
+ 	pmx = devm_kzalloc(pfc->dev, sizeof(*pmx), GFP_KERNEL);
+ 	if (unlikely(!pmx))
+@@ -649,9 +628,9 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	pmx->pfc = pfc;
+ 	pfc->pinctrl = pmx;
+ 
+-	nr_ranges = sh_pfc_map_pins(pfc, pmx);
+-	if (unlikely(nr_ranges < 0))
+-		return nr_ranges;
++	ret = sh_pfc_map_pins(pfc, pmx);
++	if (ret < 0)
++		return ret;
+ 
+ 	pmx->pctl_desc.name = DRV_NAME;
+ 	pmx->pctl_desc.owner = THIS_MODULE;
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 839e695..2469b35 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -125,8 +125,6 @@ struct sh_pfc_soc_info {
+ 
+ 	const struct sh_pfc_pin *pins;
+ 	unsigned int nr_pins;
+-	const struct pinmux_range *ranges;
+-	unsigned int nr_ranges;
+ 	const struct sh_pfc_pin_group *groups;
+ 	unsigned int nr_groups;
+ 	const struct sh_pfc_function *functions;
 -- 
 1.8.1.5
 
