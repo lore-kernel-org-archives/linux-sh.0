@@ -1,72 +1,86 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:05 +0000
-Subject: [PATCH v2 13/27] sh-pfc: Remove unused GPIO_PORT_ALL macro
-Message-Id: <1373933479-17727-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 16 Jul 2013 10:32:03 +0000
+Subject: [PATCH v5 0/5] Renesas TPU PWM support
+Message-Id: <1373970728-28648-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The macro isn't used, remove it.
+This is the fifth version of the Renesas TPU PWM unit support patches. Now
+that the TPU PWM driver has been merged, we can replace leds-renesas-tpu
+usage with a combination of leds-pwm and renesas-tpu-pwm.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 7 -------
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  | 7 -------
- drivers/pinctrl/sh-pfc/sh_pfc.h      | 2 --
- 3 files changed, 16 deletions(-)
+As an added bonus patch 4/5 removes function GPIOs support from the sh73a0
+platform. mach-shmobile is now free of function GPIOs. Once again we still
+need volunteer(s) to migrate arch/sh.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index f6ea47c..3fb1e0b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -34,13 +34,6 @@
- 	PORT_10(fn, pfx##20, sfx),					\
- 	PORT_1(fn, pfx##210, sfx),	PORT_1(fn, pfx##211, sfx)
- 
--#undef _GPIO_PORT
--#define _GPIO_PORT(gpio, sfx)						\
--	[gpio] = {							\
--		.name = __stringify(PORT##gpio),			\
--		.enum_id = PORT##gpio##_DATA,				\
--	}
--
- #define IRQC_PIN_MUX(irq, pin)						\
- static const unsigned int intc_irq##irq##_pins[] = {			\
- 	pin,								\
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 6dfb187..cd431e4 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -38,13 +38,6 @@
- 	PORT_10(fn, pfx##16, sfx),	PORT_10(fn, pfx##17, sfx), \
- 	PORT_10(fn, pfx##18, sfx),	PORT_1(fn, pfx##190, sfx)
- 
--#undef _GPIO_PORT
--#define _GPIO_PORT(gpio, sfx)						\
--	[gpio] = {							\
--		.name = __stringify(PORT##gpio),			\
--		.enum_id = PORT##gpio##_DATA,				\
--	}
--
- #define IRQC_PIN_MUX(irq, pin)						\
- static const unsigned int intc_irq##irq##_pins[] = {			\
- 	pin,								\
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 2105487..363ea8c 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -196,9 +196,7 @@ struct sh_pfc_soc_info {
- 	PORT_10(fn, pfx##9, sfx)
- 
- #define _PORT_ALL(pfx, sfx) pfx##_##sfx
--#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
- #define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
--#define GPIO_PORT_ALL()	CPU_ALL_PORT(_GPIO_PORT, , unused)
- #define GPIO_FN(str) PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
- 
- /* helper macro for pinmux_enum_t */
+I've tested the code on Armadillo only as I don't have access to a kota2
+board. This is why I've added backlight support to Armadillo as part of this
+set.
+
+The patches are based on Simon's renesas-devel-20130716 tag.
+
+The last patch in the series remove the leds-renesas-tpu driver. It would be
+easier to merge it through Simon's tree as there is little risks of conflict.
+If Bryan or Richard would prefer to take it in the LEDs tree I have no
+objection, but we will then need to provide a stable branch with the first
+four patches.
+
+Changes sinve v4:
+
+- Dropped the patch that adds the TPU PWM driver as it has been merged
+  upstream
+- Fix the TPU device name in clock entries
+
+Changes since v3:
+
+- Set the driver name to renesas-tpu-pwm instead of renesas_tpu_pwm
+- Allocate the PWM device in the request handler
+- Fixed device name in sh73a0 clocks lookup array
+- Added support for TPU0 on sh73a0
+
+Changes since v2:
+
+- Dropped SH Mobile arch patches that have already been merged
+- Replaced active_low pdata field with pwm_polarity
+- Replaced TPU_PWM_ID with pwm_lookup's
+- Set the platform_driver .owner field
+- Replaced devm_ioremap_nocache() with devm_ioremap_resource()
+- Added a .set_polarity() implementation
+- Use kernel block comment style
+- Don't enable/disable the clock around clk_get_rate()
+- Removed duplicate sanity checks in the .config() operation
+
+Changes since v1:
+
+- Renamed the pwm-rmob driver to pwm-renesas-tpu, as TPU units are found in
+  Renesas SH-Mobile, R-Mobile and R-Car SoCs.
+- Added TPU clock and pin groups for r8a7790.
+
+Laurent Pinchart (5):
+  ARM: shmobile: r8a7740: Fix TPU clock name
+  ARM: shmobile: armadillo800eva: Add backlight support
+  ARM: shmobile: kota2: Use leds-pwm + pwm-rmob
+  ARM: shmobile: sh73a0: Remove all GPIOs
+  leds: Remove leds-renesas-tpu driver
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  54 +++-
+ arch/arm/mach-shmobile/board-kota2.c           | 169 ++++++-----
+ arch/arm/mach-shmobile/clock-r8a7740.c         |   2 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c          |  12 +-
+ arch/arm/mach-shmobile/include/mach/sh73a0.h   | 373 +------------------------
+ drivers/leds/Kconfig                           |  12 -
+ drivers/leds/Makefile                          |   1 -
+ drivers/leds/leds-renesas-tpu.c                | 337 ----------------------
+ include/linux/platform_data/leds-renesas-tpu.h |  14 -
+ 9 files changed, 144 insertions(+), 830 deletions(-)
+ delete mode 100644 drivers/leds/leds-renesas-tpu.c
+ delete mode 100644 include/linux/platform_data/leds-renesas-tpu.h
+
 -- 
-1.8.1.5
+Regards,
+
+Laurent Pinchart
 
