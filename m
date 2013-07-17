@@ -1,24 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 00:40:59 +0000
-Subject: Re: [PATCH v3 7/7] ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
-Message-Id: <20130710004059.GG15011@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:50:58 +0000
+Subject: [PATCH fix for v3.11 (repost)] dmaengine: shdma: fix a build failure on platforms with no DMA suppor
+Message-Id: <20130717235058.GA10683@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373298887-9877-8-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373298887-9877-8-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 08, 2013 at 05:54:46PM +0200, Guennadi Liakhovetski wrote:
-> This adds DT templates for all MMCIF and SDHI controllers on r8a7790.
-> They are added with status="disabled". To use them platform-specific
-> DTs have to enable the required ones.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi |   54 ++++++++++++++++++++++++++++++++++++++++
->  1 files changed, 54 insertions(+), 0 deletions(-)
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Thanks, I have queued this up for v3.12 in the dt branch.
-It should appear in renesas-next-20130710
+On platforms with no support for the shdma dmaengine driver build is
+currently failing with
+
+drivers/built-in.o: In function `sh_mobile_sdhi_probe':
+drivers/mmc/host/sh_mobile_sdhi.c:170: undefined reference to`shdma_chan_filter'
+
+Fix the breakage by defining shdma_chan_filter to NULL in such
+configurations.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+[horms+renesas@verge.net.au: Apply change to shdma-base.h instead of sh_dma.h]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ include/linux/shdma-base.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+Hi Vinod,
+
+please consider this fix from Guennadi for v3.11 which I have rebased on top of
+next-20130709. It fixes a build problem on a number of shmobile defconfigs
+including bockw.
+
+Alternatively, I would be happy to take this through the renesas tree.
+
+I posted this patch last week but I'm wondering if you missed it somehow.
+This patch resolves a regression in v3.11-rc1.
+
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index 382cf71..5b1c984 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -124,6 +124,10 @@ void shdma_chan_remove(struct shdma_chan *schan);
+ int shdma_init(struct device *dev, struct shdma_dev *sdev,
+ 		    int chan_num);
+ void shdma_cleanup(struct shdma_dev *sdev);
++#if IS_ENABLED(CONFIG_SH_DMAE_BASE)
+ bool shdma_chan_filter(struct dma_chan *chan, void *arg);
++#else
++#define shdma_chan_filter NULL
++#endif
+ 
+ #endif
+-- 
+1.8.2.1
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
