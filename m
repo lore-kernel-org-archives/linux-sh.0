@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 17 Jul 2013 14:04:39 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 17 Jul 2013 14:20:48 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7740: Fix ethernet device name in clock definition
-Message-Id: <8133004.mB0VHTk0YA@avalon>
+Message-Id: <51E6A840.7080005@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1373966374-15716-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1373966374-15716-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,69 +10,79 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+Hello.
 
-On Wednesday 17 July 2013 17:40:17 Sergei Shtylyov wrote:
-> On 17-07-2013 17:11, Laurent Pinchart wrote:
-> >>>>>> The ethernet device is named r8a7740-gether, fix the clock definition
-> >>>>>> accordingly.
-> >>>>>> 
-> >>>>>> Signed-off-by: Laurent Pinchart
-> >>>>>> <laurent.pinchart+renesas@ideasonboard.com>
-> >>>>>> ---
-> >>>>>> 
-> >>>>>>     arch/arm/mach-shmobile/clock-r8a7740.c | 2 +-
-> >>>>>>     1 file changed, 1 insertion(+), 1 deletion(-)
-> >>>>>> 
-> >>>>>> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c
-> >>>>>> b/arch/arm/mach-shmobile/clock-r8a7740.c
-> >>>>>> index de10fd7..e1e8710 100644
-> >>>>>> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
-> >>>>>> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-> >>>>>> @@ -595,7 +595,7 @@ static struct clk_lookup lookups[] = {
-> >>>>>> 
-> >>>>>>         CLKDEV_DEV_ID("sh_mmcif",        &mstp_clks[MSTP312]),
-> >>>>>>         CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
-> >>>>>>         CLKDEV_DEV_ID("r8a7740-gether",        &mstp_clks[MSTP309]),
-> >>>>>> 
-> >>>>>> -    CLKDEV_DEV_ID("e9a00000.sh-eth",    &mstp_clks[MSTP309]),
-> >>>>>> +    CLKDEV_DEV_ID("e9a00000.r8a7740-gether", &mstp_clks[MSTP309]),
-> >>>>>> 
-> >>>>>       Al Ethernet devices should be named "ethernet", according to
-> >>>>>       ePAPR
-> >>>>>       spec.
-> >>>>       
-> >>>>       BTW, I'm not seeing a patch to r8a7740.dtsi, describing this
-> >>>>       device.
-> >>> 
-> >>> Let's delay this patch until the device gets added to r8a7740.dtsi then.
-> >> 
-> >> I don't see a use for this line even then. sh-eth.c can't be converted
-> >> to device tree due to procedural platform data, so I'm planning to use
-> >> OF_DEV_AUXDATA() for it which doesn't require defining an extra clock.
-> > 
-> > The usage of OF_DEV_AUXDATA() is discouraged. A quick grep shows that the
-> > only
->
-> We have the case where it's the only resort. And the other platforms use it
-> quite often, even if only to support [devm_]clk_get() in the drivers.
->
-> > board code callback in sh_eth_plat_data (.set_mdio_gate) isn't used on ARM
-> > platforms, so the driver should support pure DT bindings without auxiliary
-> > data.
-> 
-> Maybe it isn't used on ARM but it exists. IMO that's enough reason not to
-> convert the platform data to the DT properties.
+On 17-07-2013 18:04, Laurent Pinchart wrote:
 
-I don't agree. The proper fix would be to fix the SuperH platform that uses 
-that callback (there's one only) to replace the callback function with a 
-proper kernel framework. As arch/sh/ has seen very little activity lately I 
-don't think that will happen soon, so we'll need to keep support for the 
-.set_mdio_gate() callback in the sh-eth driver, but new platforms should not 
-use it, and it shouldn't be a reason not to implement proper DT bindings.
+>>>>>>>> The ethernet device is named r8a7740-gether, fix the clock definition
+>>>>>>>> accordingly.
 
--- 
-Regards,
+>>>>>>>> Signed-off-by: Laurent Pinchart
+>>>>>>>> <laurent.pinchart+renesas@ideasonboard.com>
+>>>>>>>> ---
 
-Laurent Pinchart
+>>>>>>>>      arch/arm/mach-shmobile/clock-r8a7740.c | 2 +-
+>>>>>>>>      1 file changed, 1 insertion(+), 1 deletion(-)
+
+>>>>>>>> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c
+>>>>>>>> b/arch/arm/mach-shmobile/clock-r8a7740.c
+>>>>>>>> index de10fd7..e1e8710 100644
+>>>>>>>> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
+>>>>>>>> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+>>>>>>>> @@ -595,7 +595,7 @@ static struct clk_lookup lookups[] = {
+>>>>>>>>
+>>>>>>>>          CLKDEV_DEV_ID("sh_mmcif",        &mstp_clks[MSTP312]),
+>>>>>>>>          CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+>>>>>>>>          CLKDEV_DEV_ID("r8a7740-gether",        &mstp_clks[MSTP309]),
+>>>>>>>>
+>>>>>>>> -    CLKDEV_DEV_ID("e9a00000.sh-eth",    &mstp_clks[MSTP309]),
+>>>>>>>> +    CLKDEV_DEV_ID("e9a00000.r8a7740-gether", &mstp_clks[MSTP309]),
+
+>>>>>>>        Al Ethernet devices should be named "ethernet", according to
+>>>>>>>        ePAPR
+>>>>>>>        spec.
+
+>>>>>>        BTW, I'm not seeing a patch to r8a7740.dtsi, describing this
+>>>>>>        device.
+
+>>>>> Let's delay this patch until the device gets added to r8a7740.dtsi then.
+
+>>>> I don't see a use for this line even then. sh-eth.c can't be converted
+>>>> to device tree due to procedural platform data, so I'm planning to use
+>>>> OF_DEV_AUXDATA() for it which doesn't require defining an extra clock.
+
+>>> The usage of OF_DEV_AUXDATA() is discouraged. A quick grep shows that the
+>>> only
+
+>> We have the case where it's the only resort. And the other platforms use it
+>> quite often, even if only to support [devm_]clk_get() in the drivers.
+
+>>> board code callback in sh_eth_plat_data (.set_mdio_gate) isn't used on ARM
+>>> platforms, so the driver should support pure DT bindings without auxiliary
+>>> data.
+
+>> Maybe it isn't used on ARM but it exists. IMO that's enough reason not to
+>> convert the platform data to the DT properties.
+
+> I don't agree. The proper fix would be to fix the SuperH platform that uses
+> that callback (there's one only) to replace the callback function with a
+> proper kernel framework.
+
+    At least suggest such framework first.
+
+> As arch/sh/ has seen very little activity lately I
+> don't think that will happen soon,
+
+    I can take this in my own hands, if you get any ideas.
+
+> so we'll need to keep support for the
+> .set_mdio_gate() callback in the sh-eth driver, but new platforms should not
+> use it, and it shouldn't be a reason not to implement proper DT bindings.
+
+    What if they have to use it again?
+    Besides, it's not the only obstacle on this way: the platform data 
+includes some fields which should really be inside the driver's data 
+structures, as they're SoC, not board specific...
+
+WBR, Sergei
 
