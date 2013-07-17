@@ -1,76 +1,59 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 26 Jul 2013 00:51:50 +0000
-Subject: [PATCH v3 1/4] ARM: shmobile: marzen: Add  r8a7779-marzen.dtb
-Message-Id: <1374799913-27461-2-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:31:51 +0000
+Subject: [PATCH 12/22] ARM: shmobile: Remove unused r8a7740 auxdata table
+Message-Id: <88378837780166d67a11142cd6f76596c0a2d8c3.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374799913-27461-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1374799913-27461-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is in preparation for converting the marzen board to
-use DT_MACHINE_START.
+From: Magnus Damm <damm@opensource.se>
 
+Pass NULL to of_platform_populate instead of passing
+an empty list. This cleans up the code and reduces the
+number of lines.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
+ arch/arm/mach-shmobile/setup-r8a7740.c |   16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
-v3
-* First post
-* Broke out of "ARM: shmobile: marzen: Switch to DT_MACHINE_START"
----
- arch/arm/boot/dts/Makefile           |  1 +
- arch/arm/boot/dts/r8a7779-marzen.dts | 27 +++++++++++++++++++++++++++
- 2 files changed, 28 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7779-marzen.dts
-
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index ae98d8f..ec4196d 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -188,6 +188,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7740-armadillo800eva-reference.dtb \
-+	r8a7779-marzen.dtb \
- 	r8a7779-marzen-reference.dtb \
- 	r8a7790-lager.dtb \
- 	r8a7790-lager-reference.dtb \
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-new file mode 100644
-index 0000000..f3f7f79
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -0,0 +1,27 @@
-+/*
-+ * Device Tree Source for the Marzen board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Simon Horman
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 00c5a70..ac29c2e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -986,16 +986,22 @@ void __init r8a7740_add_early_devices(void)
+ 
+ #ifdef CONFIG_USE_OF
+ 
+-static const struct of_dev_auxdata r8a7740_auxdata_lookup[] __initconst = {
+-	{ }
+-};
++void __init r8a7740_add_early_devices_dt(void)
++{
++	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
 +
-+/dts-v1/;
-+/include/ "r8a7779.dtsi"
++	early_platform_add_devices(r8a7740_early_devices,
++				   ARRAY_SIZE(r8a7740_early_devices));
 +
-+/ {
-+	model = "marzen";
-+	compatible = "renesas,marzen", "renesas,r8a7779";
-+
-+	chosen {
-+		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
-+	};
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x60000000 0x40000000>;
-+	};
-+};
++	/* setup early console here as well */
++	shmobile_setup_console();
++}
+ 
+ void __init r8a7740_add_standard_devices_dt(void)
+ {
+ 	platform_add_devices(r8a7740_devices_dt,
+ 			    ARRAY_SIZE(r8a7740_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     r8a7740_auxdata_lookup, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ void __init r8a7740_init_delay(void)
 -- 
-1.8.2.1
+1.7.10.4
 
