@@ -1,35 +1,106 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 09:27:41 +0000
-Subject: [PATCH 02/08] ARM: shmobile: Update KZM9D dts command line
-Message-Id: <20130702092741.32066.76218.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:32:00 +0000
+Subject: [PATCH 21/22] ARM: shmobile: r8a7778: remove r8a7778_init_irq()
+Message-Id: <54aa4c48bc0d364565e7d1c722b07314efdc2a10.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130702092725.32066.54861.sendpatchset@w520>
-In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Update the KZM9D DTS command line to remove following cruft:
- - console=tty0 - no graphic support upstream anyway
- - earlyprintk= - not supported by the 8250-em driver anyway
- - mem= - this is provided via DT anyway
+This patch removes r8a7778_init_irq(), since no-one is using it.
+And now, there is no reason to have r8a7778_init_irq_common().
+r8a7778_init_irq_dt() includes it.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 -
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   37 ++++++-------------------
+ 2 files changed, 9 insertions(+), 29 deletions(-)
 
- arch/arm/boot/dts/emev2-kzm9d.dts |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0001/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ work/arch/arm/boot/dts/emev2-kzm9d.dts	2013-07-02 17:07:18.000000000 +0900
-@@ -21,6 +21,6 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index 851d027..9b561bf 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -33,7 +33,6 @@ extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
  
- 	chosen {
--		bootargs = "console=tty0 console=ttyS1,115200n81 earlyprintk=serial8250-em.1,115200n81 mem8M@0x40000000 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
-+		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
- 	};
- };
+ extern void r8a7778_init_late(void);
+ extern void r8a7778_init_delay(void);
+-extern void r8a7778_init_irq(void);
+ extern void r8a7778_init_irq_dt(void);
+ extern void r8a7778_clock_init(void);
+ extern void r8a7778_init_irq_extpin(int irlm);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 2a101eb..a3a2e37 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -408,17 +408,25 @@ void __init r8a7778_init_irq_extpin(int irlm)
+ 			&irqpin_platform_data, sizeof(irqpin_platform_data));
+ }
+ 
++void __init r8a7778_init_delay(void)
++{
++	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
++}
++
++#ifdef CONFIG_USE_OF
+ #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
+ #define INT2SMSKCR1	0x8228c /* 0xfe78228c */
+ 
+ #define INT2NTSR0	0x00018 /* 0xfe700018 */
+ #define INT2NTSR1	0x0002c /* 0xfe70002c */
+-static void __init r8a7778_init_irq_common(void)
++void __init r8a7778_init_irq_dt(void)
+ {
+ 	void __iomem *base = ioremap_nocache(0xfe700000, 0x00100000);
+ 
+ 	BUG_ON(!base);
+ 
++	irqchip_init();
++
+ 	/* route all interrupts to ARM */
+ 	__raw_writel(0x73ffffff, base + INT2NTSR0);
+ 	__raw_writel(0xffffffff, base + INT2NTSR1);
+@@ -430,33 +438,6 @@ static void __init r8a7778_init_irq_common(void)
+ 	iounmap(base);
+ }
+ 
+-void __init r8a7778_init_irq(void)
+-{
+-	void __iomem *gic_dist_base;
+-	void __iomem *gic_cpu_base;
+-
+-	gic_dist_base = ioremap_nocache(0xfe438000, PAGE_SIZE);
+-	gic_cpu_base  = ioremap_nocache(0xfe430000, PAGE_SIZE);
+-	BUG_ON(!gic_dist_base || !gic_cpu_base);
+-
+-	/* use GIC to handle interrupts */
+-	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+-
+-	r8a7778_init_irq_common();
+-}
+-
+-void __init r8a7778_init_delay(void)
+-{
+-	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
+-}
+-
+-#ifdef CONFIG_USE_OF
+-void __init r8a7778_init_irq_dt(void)
+-{
+-	irqchip_init();
+-	r8a7778_init_irq_common();
+-}
+-
+ static const char *r8a7778_compat_dt[] __initdata = {
+ 	"renesas,r8a7778",
+ 	NULL,
+-- 
+1.7.10.4
+
