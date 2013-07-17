@@ -1,82 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 30 Jul 2013 10:37:31 +0000
-Subject: [PATCH v2 07/13] mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
-Message-Id: <1375180657-23641-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:31:49 +0000
+Subject: [PATCH 10/22] ARM: shmobile: kzm9g: Remove init_irq declaration in machine description
+Message-Id: <fc492ba58aa6642f34eba716daf6ec4d2715e492.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-All platforms now pass the CD and RO GPIOs to the MMC SPI driver, those
-callbacks are not used anymore. Remove them.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Remove redundant irqchip_init() callback. The default case
+of NULL will result in invoking irqchip_init() anyway.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+[ horms+renesas@verge.net.au: Trimmed patch to remove portion
+  that updates the sh73a0 SoC and altered the subject to
+  use the same format as the patch that updates the sh73a0. ]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/mmc_spi.c  | 24 ++----------------------
- include/linux/spi/mmc_spi.h |  9 ---------
- 2 files changed, 2 insertions(+), 31 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
-index 62fb82d..0a87e56 100644
---- a/drivers/mmc/host/mmc_spi.c
-+++ b/drivers/mmc/host/mmc_spi.c
-@@ -1273,31 +1273,11 @@ static void mmc_spi_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	}
- }
- 
--static int mmc_spi_get_ro(struct mmc_host *mmc)
--{
--	struct mmc_spi_host *host = mmc_priv(mmc);
--
--	if (host->pdata && host->pdata->get_ro)
--		return !!host->pdata->get_ro(mmc->parent);
--	else
--		return mmc_gpio_get_ro(mmc);
--}
--
--static int mmc_spi_get_cd(struct mmc_host *mmc)
--{
--	struct mmc_spi_host *host = mmc_priv(mmc);
--
--	if (host->pdata && host->pdata->get_cd)
--		return !!host->pdata->get_cd(mmc->parent);
--	else
--		return mmc_gpio_get_cd(mmc);
--}
--
- static const struct mmc_host_ops mmc_spi_ops = {
- 	.request	= mmc_spi_request,
- 	.set_ios	= mmc_spi_set_ios,
--	.get_ro		= mmc_spi_get_ro,
--	.get_cd		= mmc_spi_get_cd,
-+	.get_ro		= mmc_gpio_get_ro,
-+	.get_cd		= mmc_gpio_get_cd,
- };
- 
- 
-diff --git a/include/linux/spi/mmc_spi.h b/include/linux/spi/mmc_spi.h
-index 87cdb35..274bc0f 100644
---- a/include/linux/spi/mmc_spi.h
-+++ b/include/linux/spi/mmc_spi.h
-@@ -26,15 +26,6 @@ struct mmc_spi_platform_data {
- 		void *);
- 	void (*exit)(struct device *, void *);
- 
--	/* sense switch on sd cards */
--	int (*get_ro)(struct device *);
--
--	/*
--	 * If board does not use CD interrupts, driver can optimize polling
--	 * using this function.
--	 */
--	int (*get_cd)(struct device *);
--
- 	/*
- 	 * Card Detect and Read Only GPIOs. To enable debouncing on the card
- 	 * detect GPIO, set the cd_debounce to the debounce time in
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 44055fe..41092bb 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -24,7 +24,6 @@
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+ #include <linux/pinctrl/machine.h>
+@@ -99,7 +98,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= kzm_init,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
 -- 
-1.8.1.5
+1.7.10.4
 
