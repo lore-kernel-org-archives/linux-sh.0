@@ -1,23 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 24 Jul 2013 08:06:25 +0000
-Subject: Re: [PATCH 2/2] ARCH: ARM: shmobile: Remove ag5evm board support
-Message-Id: <20130724080625.GD10027@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 17 Jul 2013 20:30:49 +0000
+Subject: [PATCH v2 00/04] ARM: shmobile: ARCH_MULTIPLATFORM for EMEV2 and KZM9D
+Message-Id: <20130717203049.27542.78385.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374465895-8372-1-git-send-email-horms+renesas@verge.net.au>
- <1374465895-8372-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1374465895-8372-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 22, 2013 at 01:04:55PM +0900, Simon Horman wrote:
-> Remove support for the sh73a0 based ag5evm board.
-> 
-> The sh73a0 SoC is continued to be supported using
-> the kzm9g board.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+ARM: shmobile: ARCH_MULTIPLATFORM for EMEV2 and KZM9D (v2)
 
-I have queued this up for v3.12 in the cleanup2 branch of my renesas
-tree on kernel.org.  
+[PATCH v2 01/04] ARM: shmobile: Only build clocks when COMMON_CLK=n
+[PATCH 02/04] ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
+[PATCH v2 03/04] ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
+[PATCH 04/04] ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration
+
+This patch set extends mach-shmobile to allow a subset of SoCs and
+boards to be built for ARCH_MULTIPLATFORM. With this v2 series applied
+the EMEV2 SoC and the KZM9D board can be built in two ways - either
+as good old ARCH_SHMOBILE or new ARCH_SHMOBILE_MULTI. The latter
+requires common clock framework for proper run time operation.
+
+The goal is to over time move all DT reference implementations from
+ARCH_SHMOBILE to ARCH_SHMOBILE_MULTI. Until CCF is available for a
+certain SoC it is to me acceptable for a DT reference board to allow
+build in both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI. The reason for
+this is to allow incremental development and easy testing during
+development of CCF for a certain SoC. The KZM9D board is now in this
+state while it is waiting for common clocks to become ready.
+
+Until CCF is supported for EMEV2 the KZM9D board can be tested with
+ARCH_SMOBILE_MULTI without clocks using the following prototype:
+[PATCH] ARM: shmobile: MULTIPLATFORM KZM9D with no clocks prototype hack
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Built on top of renesas-devel-20130717
+
+ arch/arm/Makefile                              |    1 
+ arch/arm/boot/dts/Makefile                     |    1 
+ arch/arm/mach-shmobile/Kconfig                 |   52 +++++++++++++++++++++---
+ arch/arm/mach-shmobile/Makefile                |   33 +++++++++++----
+ arch/arm/mach-shmobile/board-kzm9d-reference.c |    3 -
+ arch/arm/mach-shmobile/setup-emev2.c           |    3 -
+ 6 files changed, 77 insertions(+), 16 deletions(-)
