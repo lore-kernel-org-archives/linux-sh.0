@@ -1,41 +1,34 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 23 Jul 2013 16:12:00 +0000
-Subject: [PATCH 0/4] net: smsc911x: support reset GPIO and use it on ape6evm
-Message-Id: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:32:01 +0000
+Subject: [PATCH 22/22] ARM: shmobile: Remove unused mach/dma.h
+Message-Id: <ebd9616f439a8a46b9dca9a272b342f34c5f3614.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Steve Glendinning <steve.glendinning@shawell.net>, netdev@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-The first two patches add support for a reset GPIO to the smsc911x driver
-in the platform data and in DT. The latter 2 patches use the reset GPIO
-on APE6EVM in DT and non-DT modes. They therefore should be applied after
-the first two patches are merged.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Remove mach-shmobile mach/dma.h since it only
+seems to be used on non-mach-shmobile platforms.
 
-Guennadi Liakhovetski (4):
-  net: smsc911x: add support for a reset GPIO
-  net: smsc911x: add a reset GPIO DT binding
-  ARM: shmobile: ape6evm: use smsc911x platform parameters to handle
-    eth reset
-  ARM: shmobile: ape6evm-reference: add smsc911x ethernet support
-
- Documentation/devicetree/bindings/net/smsc911x.txt |    1 +
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |   25 ++++++++++++++++-
- arch/arm/mach-shmobile/board-ape6evm.c             |    5 +--
- drivers/net/ethernet/smsc/smsc911x.c               |   30 +++++++++++++++++++-
- include/linux/smsc911x.h                           |   10 ++++++
- 5 files changed, 66 insertions(+), 5 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/include/mach/dma.h |    1 -
+ 1 file changed, 1 deletion(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/dma.h
+
+diff --git a/arch/arm/mach-shmobile/include/mach/dma.h b/arch/arm/mach-shmobile/include/mach/dma.h
+deleted file mode 100644
+index 40a8c17..0000000
+--- a/arch/arm/mach-shmobile/include/mach/dma.h
++++ /dev/null
+@@ -1 +0,0 @@
+-/* empty */
+-- 
+1.7.10.4
+
