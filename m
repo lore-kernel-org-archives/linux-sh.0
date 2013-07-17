@@ -1,30 +1,55 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
-Date: Wed, 17 Jul 2013 14:33:43 +0000
-Subject: Re: [v2,2/2] spi: bitbang: convert to using core message queue
-Message-Id: <20130717143343.GA32014@pengutronix.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:31:50 +0000
+Subject: [PATCH 11/22] ARM: shmobile: Remove unused EMEV2 auxdata and callback
+Message-Id: <a597d8df88143f7a409b260b1e89735eb0bdca05.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1301091507120.13376@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1301091507120.13376@axis700.grange>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Grant Likely <grant.likely@secretlab.ca>, spi-devel-general@lists.sourceforge.net, Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, kernel@pengutronix.de
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 09, 2013 at 03:08:59PM +0100, Guennadi Liakhovetski wrote:
-> The SPI subsystem core now manages message queues internally. Remove the
-> local message queue implementation from the spi-bitbang driver and
-> migrate to the common one.
->=20
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-It works fine for me on an efm32 board communicating with an ks8851.
-Maybe the mmc problem is to be found in the mmc subsystem?
+From: Magnus Damm <damm@opensource.se>
 
-Tested-by: Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>
+Replace the SoC-specific callback init_machine() with
+a NULL to use the default code. This cleans up the code
+and reduces the number of lines.
 
-Best regards
-Uwe
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-emev2.c |   10 ----------
+ 1 file changed, 10 deletions(-)
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index 6e8b6ac..b0564ce 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -434,15 +434,6 @@ void __init emev2_init_irq(void)
+ }
+ 
+ #ifdef CONFIG_USE_OF
+-static const struct of_dev_auxdata emev2_auxdata_lookup[] __initconst = {
+-	{ }
+-};
+-
+-static void __init emev2_add_standard_devices_dt(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     emev2_auxdata_lookup, NULL);
+-}
+ 
+ static const char *emev2_boards_compat_dt[] __initdata = {
+ 	"renesas,emev2",
+@@ -453,7 +444,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.init_early	= emev2_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_machine	= emev2_add_standard_devices_dt,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
+ 
+-- 
+1.7.10.4
+
