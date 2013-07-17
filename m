@@ -1,46 +1,67 @@
-From: H Hartley Sweeten <hartleys@visionengravers.com>
-Date: Tue, 30 Jul 2013 17:35:47 +0000
-Subject: RE: [PATCH v2 00/13] Remove platform callbacks from mmc_spi, sh_mmcif and sh_mobile_sdhi drivers
-Message-Id: <ADE657CA350FB648AAC2C43247A983F0021DAC5C24E0@AUSP01VMBX24.collaborationhost.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Jul 2013 14:54:38 +0000
+Subject: [PATCH v2 1/5] media: Fix circular graph traversal
+Message-Id: <1374072882-14598-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>
 
-On Tuesday, July 30, 2013 3:37 AM, Laurent Pinchart wrote:
->
-> This patch set replaces callbacks to board code with regulators and GPIOs in
-> the mmc_spi, sh_mmcif and sh_mobile_sdhi MMC drivers.
+The graph traversal API (media_entity_graph_walk_*) will fail to
+correctly walk the graph when circular links exist. Fix it by checking
+whether an entity is already present in the stack before pushing it.
 
-Just tested this series on the vision_ep93xx board. Everything looks ok.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/media-entity.c | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
 
-For patches 01/13, 02/13 and 07/13 you can add:
-
-Reviewed-by: H Hartley Sweeten <hsweeten@visionengravers.com>
-
-For patch 03/13:
-
-Acked-by: H Hartley Sweeten <hsweeten@visionengravers.com>
-
-> This will be a bit messy to merge, as the series interleaves patches for
-> drivers and board files. Given that the mmc_spi driver is marked as orphan in
-> MAINTAINERS and that the vision_ep9307 hasn't seen any board-specific
-> modification in the last couple of kernel versions one option would be to
-> merge all patches (or at least patches 01/13 to 07/13) through Simon's tree if
-> all involved maintainers agree.
->
-> If patch 01/13 should better be merged through the MMC tree (in which case
-> 02/13 should go through that tree as well), the two patches should be applied
-> first to the MMC tree, and a stable branch will be needed for Simon to base
-> the rest of the series on.
-
-I'm fine with whatever merge path you end up using. I don't currently have
-any changes planned to vision_ep93xx.
-
-Thanks,
-Hartley
-
+diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
+index cb30ffb..c8aba5e 100644
+--- a/drivers/media/media-entity.c
++++ b/drivers/media/media-entity.c
+@@ -121,9 +121,9 @@ static struct media_entity *stack_pop(struct media_entity_graph *graph)
+ 	return entity;
+ }
+ 
+-#define stack_peek(en)	((en)->stack[(en)->top - 1].entity)
+-#define link_top(en)	((en)->stack[(en)->top].link)
+-#define stack_top(en)	((en)->stack[(en)->top].entity)
++#define stack_peek(en, i)	((en)->stack[i].entity)
++#define link_top(en)		((en)->stack[(en)->top].link)
++#define stack_top(en)		((en)->stack[(en)->top].entity)
+ 
+ /**
+  * media_entity_graph_walk_start - Start walking the media graph at a given entity
+@@ -159,6 +159,8 @@ EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
+ struct media_entity *
+ media_entity_graph_walk_next(struct media_entity_graph *graph)
+ {
++	unsigned int i;
++
+ 	if (stack_top(graph) = NULL)
+ 		return NULL;
+ 
+@@ -181,8 +183,13 @@ media_entity_graph_walk_next(struct media_entity_graph *graph)
+ 		/* Get the entity in the other end of the link . */
+ 		next = media_entity_other(entity, link);
+ 
+-		/* Was it the entity we came here from? */
+-		if (next = stack_peek(graph)) {
++		/* Is the entity already in the path? */
++		for (i = 1; i < graph->top; ++i) {
++			if (next = stack_peek(graph, i))
++				break;
++		}
++
++		if (i < graph->top) {
+ 			link_top(graph)++;
+ 			continue;
+ 		}
+-- 
+1.8.1.5
 
