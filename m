@@ -1,10 +1,10 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 09:28:06 +0000
-Subject: [PATCH 05/08] ARM: shmobile: Use DT for GIC on EMEV2 and KZM9D
-Message-Id: <20130702092806.32066.58281.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:31:53 +0000
+Subject: [PATCH 14/22] ARM: shmobile: Remove unused r8a7779 auxdata table
+Message-Id: <41b0156ca5a1460f8f6dde7e57baf1b80d6a7030.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130702092725.32066.54861.sendpatchset@w520>
-In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,66 +12,41 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Remove the C version of the EMEV2 GIC setup code,
-instead rely on GIC information provided by DT.
+Pass NULL to of_platform_populate instead of passing
+an empty list. This cleans up the code and reduces the
+number of lines.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-r8a7779.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
- arch/arm/mach-shmobile/board-kzm9d.c        |    2 --
- arch/arm/mach-shmobile/include/mach/emev2.h |    1 -
- arch/arm/mach-shmobile/setup-emev2.c        |   15 ---------------
- 3 files changed, 18 deletions(-)
-
---- 0002/arch/arm/mach-shmobile/board-kzm9d.c
-+++ work/arch/arm/mach-shmobile/board-kzm9d.c	2013-07-02 15:01:32.000000000 +0900
-@@ -86,8 +86,6 @@ DT_MACHINE_START(KZM9D_DT, "kzm9d")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.map_io		= emev2_map_io,
- 	.init_early	= emev2_init_delay,
--	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_irq	= emev2_init_irq,
- 	.init_machine	= kzm9d_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= kzm9d_boards_compat_dt,
---- 0002/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2013-07-02 15:01:48.000000000 +0900
-@@ -2,7 +2,6 @@
- #define __ASM_EMEV2_H__
- 
- extern void emev2_map_io(void);
--extern void emev2_init_irq(void);
- extern void emev2_init_delay(void);
- extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
---- 0003/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-07-02 15:01:17.000000000 +0900
-@@ -202,20 +202,6 @@ void __init emev2_init_delay(void)
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 3986877..66d3826 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -665,10 +665,6 @@ void __init r8a7779_init_delay(void)
+ 	shmobile_setup_delay(1000, 2, 4); /* Cortex-A9 @ 1000MHz */
  }
  
--void __init emev2_init_irq(void)
--{
--	void __iomem *gic_dist_base;
--	void __iomem *gic_cpu_base;
+-static const struct of_dev_auxdata r8a7779_auxdata_lookup[] __initconst = {
+-	{},
+-};
 -
--	/* Static mappings, never released */
--	gic_dist_base = ioremap(0xe0028000, PAGE_SIZE);
--	gic_cpu_base = ioremap(0xe0020000, PAGE_SIZE);
--	BUG_ON(!gic_dist_base || !gic_cpu_base);
--
--	/* Use GIC to handle interrupts */
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
--}
--
- #ifdef CONFIG_USE_OF
- static const struct of_dev_auxdata emev2_auxdata_lookup[] __initconst = {
- 	{ }
-@@ -235,7 +221,6 @@ static const char *emev2_boards_compat_d
- DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.init_early	= emev2_init_delay,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_machine	= emev2_add_standard_devices_dt,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
+ void __init r8a7779_add_standard_devices_dt(void)
+ {
+ 	/* clocks are setup late during boot in the case of DT */
+@@ -676,8 +672,7 @@ void __init r8a7779_add_standard_devices_dt(void)
+ 
+ 	platform_add_devices(r8a7779_devices_dt,
+ 			     ARRAY_SIZE(r8a7779_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     r8a7779_auxdata_lookup, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ static const char *r8a7779_compat_dt[] __initdata = {
+-- 
+1.7.10.4
+
