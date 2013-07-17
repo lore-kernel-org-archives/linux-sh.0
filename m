@@ -1,61 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:07 +0000
-Subject: [PATCH 14/16] ARM: shmobile: r8a7740: add MMCIF DMA definitions
-Message-Id: <9a1456242c7c644d0032032ba80e8538b8322d3c.1374624383.git.horms+renesas@verge.net.au>
+From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
+Date: Wed, 17 Jul 2013 14:33:43 +0000
+Subject: Re: [v2,2/2] spi: bitbang: convert to using core message queue
+Message-Id: <20130717143343.GA32014@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
+References: <Pine.LNX.4.64.1301091507120.13376@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1301091507120.13376@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Grant Likely <grant.likely@secretlab.ca>, spi-devel-general@lists.sourceforge.net, Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, kernel@pengutronix.de
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+On Wed, Jan 09, 2013 at 03:08:59PM +0100, Guennadi Liakhovetski wrote:
+> The SPI subsystem core now manages message queues internally. Remove the
+> local message queue implementation from the spi-bitbang driver and
+> migrate to the common one.
+>=20
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+It works fine for me on an efm32 board communicating with an ks8851.
+Maybe the mmc problem is to be found in the mmc subsystem?
 
-Add DMA channel slave IDs and configuration entries for the r8a7740
-MMCIF controller.
+Tested-by: Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/r8a7740.h |  2 ++
- arch/arm/mach-shmobile/setup-r8a7740.c        | 10 ++++++++++
- 2 files changed, 12 insertions(+)
+Best regards
+Uwe
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index b34d19b..56f3750 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -42,6 +42,8 @@ enum {
- 	SHDMA_SLAVE_FSIB_TX,
- 	SHDMA_SLAVE_USBHS_TX,
- 	SHDMA_SLAVE_USBHS_RX,
-+	SHDMA_SLAVE_MMCIF_TX,
-+	SHDMA_SLAVE_MMCIF_RX,
- };
- 
- extern void r8a7740_meram_workaround(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index ac29c2e..84c5bb6 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -588,6 +588,16 @@ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
- 		.addr		= 0xfe1f0064,
- 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xb5,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
-+		.addr		= 0xe6bd0034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
- 	},
- };
- 
--- 
-1.8.2.1
-
+--=20
+Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
