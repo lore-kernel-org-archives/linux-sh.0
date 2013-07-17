@@ -1,134 +1,56 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:35:32 +0000
-Subject: [PATCH 7/7] ARM: mach-shmobile: ag5evm: Use bd6107 backlight driver
-Message-Id: <0fb19cdabfc3f8884bac53fd81b02bf61c7904af.1374207161.git.horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:31:52 +0000
+Subject: [PATCH 13/22] ARM: shmobile: Remove unused r8a7778 auxdata and callback
+Message-Id: <40216263d3d0b9b46688a28a96daf66fe75caa28.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374207161.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374207161.git.horms+renesas@verge.net.au>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Replace the backlight callback with a bd6107 backlight platform device.
+Replace the SoC-specific callback init_machine() with
+a NULL to use the default code. This cleans up the code
+and reduces the number of lines.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c |   65 ++++++++-------------------------
- 1 file changed, 16 insertions(+), 49 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7778.c |   11 -----------
+ 1 file changed, 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index c754071..f6d6449 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -41,6 +41,7 @@
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <linux/platform_data/bd6107.h>
- #include <linux/sh_clk.h>
- #include <linux/irqchip/arm-gic.h>
- #include <video/sh_mobile_lcdc.h>
-@@ -291,47 +292,7 @@ static struct platform_device mipidsi0_device = {
- 	},
- };
- 
--static unsigned char lcd_backlight_seq[3][2] = {
--	{ 0x04, 0x07 },
--	{ 0x23, 0x80 },
--	{ 0x03, 0x01 },
--};
--
--static int lcd_backlight_set_brightness(int brightness)
--{
--	struct i2c_adapter *adap;
--	struct i2c_msg msg;
--	unsigned int i;
--	int ret;
--
--	if (brightness = 0) {
--		/* Reset the chip */
--		gpio_set_value(235, 0);
--		mdelay(24);
--		gpio_set_value(235, 1);
--		return 0;
--	}
--
--	adap = i2c_get_adapter(1);
--	if (adap = NULL)
--		return -ENODEV;
--
--	for (i = 0; i < ARRAY_SIZE(lcd_backlight_seq); i++) {
--		msg.addr = 0x6d;
--		msg.buf = &lcd_backlight_seq[i][0];
--		msg.len = 2;
--		msg.flags = 0;
--
--		ret = i2c_transfer(adap, &msg, 1);
--		if (ret < 0)
--			break;
--	}
--
--	i2c_put_adapter(adap);
--	return ret < 0 ? ret : 0;
--}
--
--/* LCDC0 */
-+/* LCDC0 and backlight */
- static const struct fb_videomode lcdc0_modes[] = {
- 	{
- 		.name		= "R63302(QHD)",
-@@ -361,11 +322,6 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
- 			.width = 44,
- 			.height = 79,
- 		},
--		.bl_info = {
--			.name = "sh_mobile_lcdc_bl",
--			.max_brightness = 1,
--			.set_brightness = lcd_backlight_set_brightness,
--		},
- 		.tx_dev = &mipidsi0_device,
- 	}
- };
-@@ -394,6 +350,17 @@ static struct platform_device lcdc0_device = {
- 	},
- };
- 
-+static struct bd6107_platform_data backlight_data = {
-+	.fbdev = &lcdc0_device.dev,
-+	.reset = 235,
-+	.def_value = 0,
-+};
-+
-+static struct i2c_board_info backlight_board_info = {
-+	I2C_BOARD_INFO("bd6107", 0x6d),
-+	.platform_data = &backlight_data,
-+};
-+
- /* Fixed 2.8V regulators to be used by SDHI0 */
- static struct regulator_consumer_supply fixed2v8_power_consumers[]  {
-@@ -648,15 +615,15 @@ static void __init ag5evm_init(void)
- 	gpio_set_value(217, 1);
- 	mdelay(100);
- 
--	/* LCD backlight controller */
--	gpio_request_one(235, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
--	lcd_backlight_set_brightness(0);
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 64K*8way */
- 	l2x0_init(IOMEM(0xf0100000), 0x00460000, 0xc2000fff);
- #endif
- 	sh73a0_add_standard_devices();
-+
-+	i2c_register_board_info(1, &backlight_board_info, 1);
-+
- 	platform_add_devices(ag5evm_devices, ARRAY_SIZE(ag5evm_devices));
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index b70bfee..2a101eb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -457,16 +457,6 @@ void __init r8a7778_init_irq_dt(void)
+ 	r8a7778_init_irq_common();
  }
  
+-static const struct of_dev_auxdata r8a7778_auxdata_lookup[] __initconst = {
+-	{},
+-};
+-
+-void __init r8a7778_add_standard_devices_dt(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     r8a7778_auxdata_lookup, NULL);
+-}
+-
+ static const char *r8a7778_compat_dt[] __initdata = {
+ 	"renesas,r8a7778",
+ 	NULL,
+@@ -475,7 +465,6 @@ static const char *r8a7778_compat_dt[] __initdata = {
+ DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
+ 	.init_early	= r8a7778_init_delay,
+ 	.init_irq	= r8a7778_init_irq_dt,
+-	.init_machine	= r8a7778_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a7778_compat_dt,
+ 	.init_late      = r8a7778_init_late,
 -- 
 1.7.10.4
 
