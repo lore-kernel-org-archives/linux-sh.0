@@ -1,240 +1,230 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 31 Jul 2013 21:37:02 +0000
-Subject: Re: [PATCH] dma: add driver for R-Car HPB-DMAC
-Message-Id: <51F9837E.3070000@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Jul 2013 14:54:41 +0000
+Subject: [PATCH v2 4/5] v4l: Add V4L2_PIX_FMT_NV16M and V4L2_PIX_FMT_NV61M formats
+Message-Id: <1374072882-14598-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201306300015.50713.sergei.shtylyov@cogentembedded.com> <20130729150552.GM29095@intel.com>
-In-Reply-To: <20130729150552.GM29095@intel.com>
+References: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: djbw@fb.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Max Filippov <max.filippov@cogentembedded.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>
 
-Hello.
+NV16M and NV61M are planar YCbCr 4:2:2 and YCrCb 4:2:2 formats with a
+luma plane followed by an interleaved chroma plane. The planes are not
+required to be contiguous in memory, and the formats can only be used
+with the multi-planar formats API.
 
-On 07/29/2013 07:05 PM, Vinod Koul wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ Documentation/DocBook/media/v4l/pixfmt-nv16m.xml | 170 +++++++++++++++++++++++
+ Documentation/DocBook/media/v4l/pixfmt.xml       |   1 +
+ include/uapi/linux/videodev2.h                   |   2 +
+ 3 files changed, 173 insertions(+)
+ create mode 100644 Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
 
->> +config RCAR_HPB_DMAE
->> +	tristate "Renesas R-Car HPB DMAC support"
->> +	depends on SH_DMAE_BASE
-
-> you should select DMA stuff here
-
-    CONFIG_DMAENGINE is already selected by CONFIG_SH_DMAE_BASE.
-
->> +#define DSAR0		0x00
->> +#define DDAR0		0x04
->> +#define DTCR0		0x08
->> +#define DSAR1		0x0C
->> +#define DDAR1		0x10
->> +#define DTCR1		0x14
->> +#define DSASR		0x18
->> +#define DDASR		0x1C
->> +#define DTCSR		0x20
->> +#define DPTR		0x24
->> +#define DCR		0x28
->> +#define DCMDR		0x2C
->> +#define DSTPR		0x30
->> +#define DSTSR		0x34
->> +#define DDBGR		0x38
->> +#define DDBGR2		0x3C
->> +#define HPB_CHAN(n)	(0x40 * (n))
-
-> Pls namespace this aptly
-
-    You mean prefixing with something like 'HPBDMA_'? Not that I like that 
-idea, but OK. Note that the SHDMA driver doesn't do it.
-
->> +/* DMA command register (DCMDR) bits */
->> +#define DCMDR_BDOUT	BIT(7)
->> +#define DCMDR_DQSPD	BIT(6)
->> +#define DCMDR_DQSPC	BIT(5)
->> +#define DCMDR_DMSPD	BIT(4)
->> +#define DCMDR_DMSPC	BIT(3)
->> +#define DCMDR_DQEND	BIT(2)
->> +#define DCMDR_DNXT	BIT(1)
->> +#define DCMDR_DMEN	BIT(0)
-
-> ditto
-
-    They are already kind of name-spaced with the register name. I'm afraid 
-the names will grow too long with yet another prefix but if you insist...
-
->> +static void ch_reg_write(struct hpb_dmae_chan *hpb_dc, u32 data, u32 reg)
->> +{
->> +	__raw_writel(data, hpb_dc->base + reg);
->> +}
->> +
->> +static u32 ch_reg_read(struct hpb_dmae_chan *hpb_dc, u32 reg)
->> +{
->> +	return __raw_readl(hpb_dc->base + reg);
->> +}
-
-> You dont need barrier?
-
-    Where, after a read? Seems to work fine without any barriers...
-
->> +static void dcmdr_write(struct hpb_dmae_device *hpbdev, u32 data)
->> +{
->> +	__raw_writel(data, hpbdev->chan_reg + DCMDR);
->> +}
->> +
->> +static void hsrstr_write(struct hpb_dmae_device *hpbdev, u32 ch)
->> +{
->> +	__raw_writel(0x1, hpbdev->comm_reg + HSRSTR(ch));
->> +}
-
-> why do you need reads
-
-    You mean writes?
-
-> for specfic registers?
-
-    Can remove those ones probably, although the latter has value written 
-predefined.
-
-> And why isn't this using above helpers?
-
-    Because those are for channel registers, and these functions write to the 
-common registers.
-
->> +static u32 dintsr_read(struct hpb_dmae_device *hpbdev, u32 ch)
->> +{
->> +	u32 v;
->> +
->> +	if (ch < 32)
->> +		v = __raw_readl(hpbdev->comm_reg + DINTSR0) >> ch;
->> +	else
->> +		v = __raw_readl(hpbdev->comm_reg + DINTSR1) >> (ch - 32);
-
-> ditto
-
-    I think this case is rather self-explaining.
-
->> +	return v & 0x1;
->> +}
-[...]
->> +static void hpb_dmae_async_reset(struct hpb_dmae_device *hpbdev, u32 data)
->> +{
->> +	u32 rstr;
->> +	int timeout = 10000;	/* 100 ms */
->> +
->> +	spin_lock(&hpbdev->reg_lock);
->> +	rstr = __raw_readl(hpbdev->reset_reg);
->> +	rstr |= data;
->> +	__raw_writel(rstr, hpbdev->reset_reg);
->> +	do {
->> +		rstr = __raw_readl(hpbdev->reset_reg);
->> +		if ((rstr & data) = data)
->> +			break;
->> +		udelay(10);
->> +	} while (timeout--);
->> +
->> +	if (timeout < 0)
-
-> <= perhaps
-
-    No, due to post-decrement we'll never reach this point with 0 on timeout.
-
->> +		dev_err(hpbdev->shdma_dev.dma_dev.dev,
->> +			"%s timeout\n", __func__);
->> +
->> +	rstr &= ~data;
->> +	__raw_writel(rstr, hpbdev->reset_reg);
-
-> no barriers?
-
-    Seem to work fine without. Max, what can you say?
-
->> +	spin_unlock(&hpbdev->reg_lock);
->> +}
-
-[...]
-
->> +static unsigned int calc_xmit_shift(struct hpb_dmae_chan *hpb_chan)
->> +{
->> +	struct hpb_dmae_device *hpbdev = to_dev(hpb_chan);
->> +	struct hpb_dmae_pdata *pdata = hpbdev->pdata;
->> +	int width = ch_reg_read(hpb_chan, DCR);
->> +	int i;
->> +
->> +	switch (width & (DCR_SPDS_MASK | DCR_DPDS_MASK)) {
->> +	case DCR_SPDS_8BIT | DCR_DPDS_8BIT:
->> +	default:
->> +		i = XMIT_SZ_8BIT;
->> +		break;
-
-> this is unconventional, typically default is supposed to be last and is more
-> readble IMO
-
-   OK, though arguable.
-
->> +static bool hpb_dmae_desc_completed(struct shdma_chan *schan,
->> +				    struct shdma_desc *sdesc)
->> +{
->> +	return true;
->> +}
-
-> always?
-
-    I'll have to defer this question to Max.
-
->> +/* DMA control register (DCR) bits */
->> +#define	DCR_DTAMD	(1u << 26)
->> +#define	DCR_DTAC	(1u << 25)
->> +#define	DCR_DTAU	(1u << 24)
->> +#define	DCR_DTAU1	(1u << 23)
->> +#define	DCR_SWMD	(1u << 22)
->> +#define	DCR_BTMD	(1u << 21)
->> +#define	DCR_PKMD	(1u << 20)
->> +#define	DCR_CT		(1u << 18)
->> +#define	DCR_ACMD	(1u << 17)
->> +#define	DCR_DIP		(1u << 16)
->> +#define	DCR_SMDL	(1u << 13)
->> +#define	DCR_SPDAM	(1u << 12)
->> +#define	DCR_SDRMD_MASK	(3u << 10)
->> +#define	DCR_SDRMD_MOD	(0u << 10)
->> +#define	DCR_SDRMD_AUTO	(1u << 10)
->> +#define	DCR_SDRMD_TIMER	(2u << 10)
->> +#define	DCR_SPDS_MASK	(3u << 8)
->> +#define	DCR_SPDS_8BIT	(0u << 8)
->> +#define	DCR_SPDS_16BIT	(1u << 8)
->> +#define	DCR_SPDS_32BIT	(2u << 8)
->> +#define	DCR_DMDL	(1u << 5)
->> +#define	DCR_DPDAM	(1u << 4)
->> +#define	DCR_DDRMD_MASK	(3u << 2)
->> +#define	DCR_DDRMD_MOD	(0u << 2)
->> +#define	DCR_DDRMD_AUTO	(1u << 2)
->> +#define	DCR_DDRMD_TIMER	(2u << 2)
->> +#define	DCR_DPDS_MASK	(3u << 0)
->> +#define	DCR_DPDS_8BIT	(0u << 0)
->> +#define	DCR_DPDS_16BIT	(1u << 0)
->> +#define	DCR_DPDS_32BIT	(2u << 0)
-
-> again need namespace..
-
-    Again afraid of too long names (and kinda namespaced already) but OK...
-
->> +
->> +/* Asynchronous reset register (ASYNCRSTR) bits */
->> +#define	ASYNCRSTR_ASRST41	BIT(10)
->> +#define	ASYNCRSTR_ASRST40	BIT(9)
->> +#define	ASYNCRSTR_ASRST39	BIT(8)
->> +#define	ASYNCRSTR_ASRST27	BIT(7)
->> +#define	ASYNCRSTR_ASRST26	BIT(6)
->> +#define	ASYNCRSTR_ASRST25	BIT(5)
->> +#define	ASYNCRSTR_ASRST24	BIT(4)
->> +#define	ASYNCRSTR_ASRST23	BIT(3)
->> +#define	ASYNCRSTR_ASRST22	BIT(2)
->> +#define	ASYNCRSTR_ASRST21	BIT(1)
->> +#define	ASYNCRSTR_ASRST20	BIT(0)
-
-> ditto...
-
-    Perhaps worth parametrizing these...
-
-> ~Vinod
-
-WBR, Sergei
+diff --git a/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml b/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
+new file mode 100644
+index 0000000..84a8bb3
+--- /dev/null
++++ b/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
+@@ -0,0 +1,170 @@
++    <refentry>
++      <refmeta>
++	<refentrytitle>V4L2_PIX_FMT_NV16M ('NM16'), V4L2_PIX_FMT_NV61M ('NM61')</refentrytitle>
++	&manvol;
++      </refmeta>
++      <refnamediv>
++	<refname id="V4L2-PIX-FMT-NV16M"><constant>V4L2_PIX_FMT_NV16M</constant></refname>
++	<refname id="V4L2-PIX-FMT-NV61M"><constant>V4L2_PIX_FMT_NV61M</constant></refname>
++	<refpurpose>Variation of <constant>V4L2_PIX_FMT_NV16</constant> and <constant>V4L2_PIX_FMT_NV61</constant> with planes
++	  non contiguous in memory. </refpurpose>
++      </refnamediv>
++      <refsect1>
++	<title>Description</title>
++
++	<para>This is a multi-planar, two-plane version of the YUV 4:2:0 format.
++The three components are separated into two sub-images or planes.
++<constant>V4L2_PIX_FMT_NV16M</constant> differs from <constant>V4L2_PIX_FMT_NV16
++</constant> in that the two planes are non-contiguous in memory, i.e. the chroma
++plane do not necessarily immediately follows the luma plane.
++The luminance data occupies the first plane. The Y plane has one byte per pixel.
++In the second plane there is a chrominance data with alternating chroma samples.
++The CbCr plane is the same width and height, in bytes, as the Y plane.
++Each CbCr pair belongs to four pixels. For example,
++Cb<subscript>0</subscript>/Cr<subscript>0</subscript> belongs to
++Y'<subscript>00</subscript>, Y'<subscript>01</subscript>,
++Y'<subscript>10</subscript>, Y'<subscript>11</subscript>.
++<constant>V4L2_PIX_FMT_NV61M</constant> is the same as <constant>V4L2_PIX_FMT_NV16M</constant>
++except the Cb and Cr bytes are swapped, the CrCb plane starts with a Cr byte.</para>
++
++	<para><constant>V4L2_PIX_FMT_NV16M</constant> is intended to be
++used only in drivers and applications that support the multi-planar API,
++described in <xref linkend="planar-apis"/>. </para>
++
++	<example>
++	  <title><constant>V4L2_PIX_FMT_NV16M</constant> 4 &times; 4 pixel image</title>
++
++	  <formalpara>
++	    <title>Byte Order.</title>
++	    <para>Each cell is one byte.
++		<informaltable frame="none">
++		<tgroup cols="5" align="center">
++		  <colspec align="left" colwidth="2*" />
++		  <tbody valign="top">
++		    <row>
++		      <entry>start0&nbsp;+&nbsp;0:</entry>
++		      <entry>Y'<subscript>00</subscript></entry>
++		      <entry>Y'<subscript>01</subscript></entry>
++		      <entry>Y'<subscript>02</subscript></entry>
++		      <entry>Y'<subscript>03</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start0&nbsp;+&nbsp;4:</entry>
++		      <entry>Y'<subscript>10</subscript></entry>
++		      <entry>Y'<subscript>11</subscript></entry>
++		      <entry>Y'<subscript>12</subscript></entry>
++		      <entry>Y'<subscript>13</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start0&nbsp;+&nbsp;8:</entry>
++		      <entry>Y'<subscript>20</subscript></entry>
++		      <entry>Y'<subscript>21</subscript></entry>
++		      <entry>Y'<subscript>22</subscript></entry>
++		      <entry>Y'<subscript>23</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start0&nbsp;+&nbsp;12:</entry>
++		      <entry>Y'<subscript>30</subscript></entry>
++		      <entry>Y'<subscript>31</subscript></entry>
++		      <entry>Y'<subscript>32</subscript></entry>
++		      <entry>Y'<subscript>33</subscript></entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		    </row>
++		    <row>
++		      <entry>start1&nbsp;+&nbsp;0:</entry>
++		      <entry>Cb<subscript>00</subscript></entry>
++		      <entry>Cr<subscript>00</subscript></entry>
++		      <entry>Cb<subscript>02</subscript></entry>
++		      <entry>Cr<subscript>02</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start1&nbsp;+&nbsp;4:</entry>
++		      <entry>Cb<subscript>10</subscript></entry>
++		      <entry>Cr<subscript>10</subscript></entry>
++		      <entry>Cb<subscript>12</subscript></entry>
++		      <entry>Cr<subscript>12</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start1&nbsp;+&nbsp;8:</entry>
++		      <entry>Cb<subscript>20</subscript></entry>
++		      <entry>Cr<subscript>20</subscript></entry>
++		      <entry>Cb<subscript>22</subscript></entry>
++		      <entry>Cr<subscript>22</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start1&nbsp;+&nbsp;12:</entry>
++		      <entry>Cb<subscript>30</subscript></entry>
++		      <entry>Cr<subscript>30</subscript></entry>
++		      <entry>Cb<subscript>32</subscript></entry>
++		      <entry>Cr<subscript>32</subscript></entry>
++		    </row>
++		  </tbody>
++		</tgroup>
++		</informaltable>
++	      </para>
++	  </formalpara>
++
++	  <formalpara>
++	    <title>Color Sample Location.</title>
++	    <para>
++		<informaltable frame="none">
++		<tgroup cols="7" align="center">
++		  <tbody valign="top">
++		    <row>
++		      <entry></entry>
++		      <entry>0</entry><entry></entry><entry>1</entry><entry></entry>
++		      <entry>2</entry><entry></entry><entry>3</entry>
++		    </row>
++		    <row>
++		      <entry>0</entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry>
++		    </row>
++		    <row>
++		      <entry>1</entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		    </row>
++		    <row>
++		      <entry>2</entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry>
++		    </row>
++		    <row>
++		      <entry>3</entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry>
++		    </row>
++		  </tbody>
++		</tgroup>
++		</informaltable>
++	      </para>
++	  </formalpara>
++	</example>
++      </refsect1>
++    </refentry>
+diff --git a/Documentation/DocBook/media/v4l/pixfmt.xml b/Documentation/DocBook/media/v4l/pixfmt.xml
+index 99b8d2a..16db350 100644
+--- a/Documentation/DocBook/media/v4l/pixfmt.xml
++++ b/Documentation/DocBook/media/v4l/pixfmt.xml
+@@ -718,6 +718,7 @@ information.</para>
+     &sub-nv12m;
+     &sub-nv12mt;
+     &sub-nv16;
++    &sub-nv16m;
+     &sub-nv24;
+     &sub-m420;
+   </section>
+diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+index 95ef455..fec0c20 100644
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
+@@ -348,6 +348,8 @@ struct v4l2_pix_format {
+ /* two non contiguous planes - one Y, one Cr + Cb interleaved  */
+ #define V4L2_PIX_FMT_NV12M   v4l2_fourcc('N', 'M', '1', '2') /* 12  Y/CbCr 4:2:0  */
+ #define V4L2_PIX_FMT_NV21M   v4l2_fourcc('N', 'M', '2', '1') /* 21  Y/CrCb 4:2:0  */
++#define V4L2_PIX_FMT_NV16M   v4l2_fourcc('N', 'M', '1', '6') /* 16  Y/CbCr 4:2:2  */
++#define V4L2_PIX_FMT_NV61M   v4l2_fourcc('N', 'M', '6', '1') /* 16  Y/CrCb 4:2:2  */
+ #define V4L2_PIX_FMT_NV12MT  v4l2_fourcc('T', 'M', '1', '2') /* 12  Y/CbCr 4:2:0 64x32 macroblocks */
+ #define V4L2_PIX_FMT_NV12MT_16X16 v4l2_fourcc('V', 'M', '1', '2') /* 12  Y/CbCr 4:2:0 16x16 macroblocks */
+ 
+-- 
+1.8.1.5
 
