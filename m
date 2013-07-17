@@ -1,135 +1,37 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Wed, 17 Jul 2013 09:11:03 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Jul 2013 23:01:13 +0000
 Subject: Re: [PATCH v4 1/3] ARM: shmobile: r8a7790: add Ether support
-Message-Id: <20130717091103.GD15981@e106331-lin.cambridge.arm.com>
+Message-Id: <20130717230113.GA8154@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
  <1372663234-13486-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372663234-13486-2-git-send-email-horms+renesas@verge.net.au>
+ <20130717091103.GD15981@e106331-lin.cambridge.arm.com>
+In-Reply-To: <20130717091103.GD15981@e106331-lin.cambridge.arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 01, 2013 at 08:20:32AM +0100, Simon Horman wrote:
-> Add Ether clock and platform device for R8A7779 SoC; add a function to
-> register this device with board-specific platform data.
-> 
-> Based on a similar change for the r8a7779 by Sergei Shtylyov.
-> 
-> Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> ---
-> 
-> This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
-> 
-> v3
-> * Use newly added "r8a7790-ether" instead of "sh-eth"
-> 
-> v2
-> * Do not add MSTP812, EtherAVB. It is not used.
-> * As suggested by Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->   - Move Ethernet element of MSTP enum to a separate line
->   - Move declaration of r8a7790_add_ether_device() to immediately
->     after that of r8a7790_add_standard_devices()
->   - Add __initdata annotation to ether_resource.
-> ---
->  arch/arm/mach-shmobile/clock-r8a7790.c        |  4 ++++
->  arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
->  arch/arm/mach-shmobile/setup-r8a7790.c        | 14 ++++++++++++++
->  3 files changed, 21 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-> index 62d8162..2f52c0f 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-> @@ -52,6 +52,7 @@
->  #define SMSTPCR3 0xe615013c
->  #define SMSTPCR5 0xe6150144
->  #define SMSTPCR7 0xe615014c
-> +#define SMSTPCR8 0xe6150990
->  
->  #define MODEMR		0xE6160060
->  #define SDCKCR		0xE6150074
-> @@ -182,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
->  
->  /* MSTP */
->  enum {
-> +	MSTP813,
->  	MSTP721, MSTP720,
->  	MSTP717, MSTP716,
->  	MSTP522,
-> @@ -192,6 +194,7 @@ enum {
->  };
->  
->  static struct clk mstp_clks[MSTP_NR] = {
-> +	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
->  	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
->  	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
->  	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
-> @@ -260,6 +263,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
->  	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
->  	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
-> +	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
->  	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
->  	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
->  	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
-> diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-> index 7851cc1..b827b49 100644
-> --- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-> +++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-> @@ -1,7 +1,10 @@
->  #ifndef __ASM_R8A7790_H__
->  #define __ASM_R8A7790_H__
->  
-> +#include <linux/sh_eth.h>
-> +
->  void r8a7790_add_standard_devices(void);
-> +void r8a7790_add_ether_device(struct sh_eth_plat_data *pdata);
->  void r8a7790_clock_init(void);
->  void r8a7790_pinmux_init(void);
->  void r8a7790_init_delay(void);
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-> index d89cd83..fad4251 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-> @@ -31,6 +31,20 @@
->  #include <mach/r8a7790.h>
->  #include <asm/mach/arch.h>
->  
-> +/* Ether */
-> +static struct resource ether_resources[] __initdata = {
-> +	DEFINE_RES_MEM(0xee700000, 0x400),
-> +	DEFINE_RES_IRQ(gic_spi(162)), /* IRQ0 */
-> +};
-> +
-> +void __init r8a7790_add_ether_device(struct sh_eth_plat_data *pdata)
-> +{
-> +	platform_device_register_resndata(&platform_bus, "r8a7790-ether", -1,
-> +					  ether_resources,
-> +					  ARRAY_SIZE(ether_resources),
-> +					  pdata, sizeof(*pdata));
-> +}
+On Wed, Jul 17, 2013 at 10:11:03AM +0100, Mark Rutland wrote:
 
-Why are we hardcoding the address and interrupt of a device rather than
-describing it in the devicetree? This is the most trivial case to
-describe.
+[snip]
 
-Thanks,
-Mark.
+> Why are we hardcoding the address and interrupt of a device rather than
+> describing it in the devicetree? This is the most trivial case to
+> describe.
 
-> +
->  static struct resource pfc_resources[] __initdata = {
->  	DEFINE_RES_MEM(0xe6060000, 0x250),
->  };
-> -- 
-> 1.8.2.1
-> 
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> 
+The approach that shmobile is taking is to either initialise a device
+entirely using C (non-DT) or entirely using DT. And moreover to either
+initialise a board using C or DT (though in the latter case some devices
+still end up being initialised in C to provide a minimally working system).
+
+At this time for more recent boards we typically provide both a C and DT
+versions to initialise a board. The C version typically is able to
+initialise a fuller set of hardware while the DT version catches up.
+
+In this case the device is being initialised in C. And this code is
+intended ti be used when a board and thus its SoC is initialised using C.
+
+Once the SH ethernet driver and all its pre-requisite drivers and
+infrastructure can be initialised using DT then that will be used when
+initialising the board using DT.
