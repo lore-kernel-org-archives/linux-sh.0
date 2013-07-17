@@ -1,53 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:15 +0000
-Subject: [PATCH v2 23/27] sh-pfc: Pass the pin number down to the port function macro
-Message-Id: <1373933479-17727-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:32:10 +0000
+Subject: [PATCH 09/22] ARM: shmobile: sh73a0: Remove init_irq declaration in machine description
+Message-Id: <7d6b8883547feacc705c476cdb7f272e309d9fb0.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The PORT_1 macro invokes a macro passed as a parameter. Pass the pin
-number down to that macro at the bottom of the call stack. This will be
-used to compute the pin ranges automatically.
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for shmobile as well.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/sh_pfc.h | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 005b482..596ceb7 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -229,7 +229,7 @@ struct sh_pfc_soc_info {
-  * PORT style (linear pin space)
-  */
- 
--#define PORT_1(pn, fn, pfx, sfx) fn(pfx, sfx)
-+#define PORT_1(pn, fn, pfx, sfx) fn(pn, pfx, sfx)
- 
- #define PORT_10(pn, fn, pfx, sfx)					  \
- 	PORT_1(pn,   fn, pfx##0, sfx), PORT_1(pn+1, fn, pfx##1, sfx),	  \
-@@ -246,7 +246,7 @@ struct sh_pfc_soc_info {
- 	PORT_10(pn+90, fn, pfx##9, sfx)
- 
- /* PORT_ALL(suffix) - Expand to a list of PORT_#_suffix */
--#define _PORT_ALL(pfx, sfx)		pfx##_##sfx
-+#define _PORT_ALL(pn, pfx, sfx)		pfx##_##sfx
- #define PORT_ALL(str)			CPU_ALL_PORT(_PORT_ALL, PORT, str)
- 
- /* PINMUX_GPIO - Expand to a sh_pfc_pin entry */
-@@ -267,7 +267,7 @@ struct sh_pfc_soc_info {
- /* PINMUX_DATA_ALL - Expand to a list of PORT_name_DATA, PORT_name_FN0,
-  *		     PORT_name_OUT, PORT_name_IN marks
-  */
--#define _PORT_DATA(pfx, sfx)						\
-+#define _PORT_DATA(pn, pfx, sfx)					\
- 	PINMUX_DATA(PORT##pfx##_DATA, PORT##pfx##_FN0,			\
- 		    PORT##pfx##_OUT, PORT##pfx##_IN)
- #define PINMUX_DATA_ALL()		CPU_ALL_PORT(_PORT_DATA, , unused)
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 79a6040..bd9370f 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -22,7 +22,6 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+@@ -975,7 +974,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
 -- 
-1.8.1.5
+1.7.10.4
 
