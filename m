@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:31:52 +0000
-Subject: [PATCH 13/22] ARM: shmobile: Remove unused r8a7778 auxdata and callback
-Message-Id: <40216263d3d0b9b46688a28a96daf66fe75caa28.1374103272.git.horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:32:09 +0000
+Subject: [PATCH 08/22] ARM: shmobile: lager: Remove init_irq declaration in machine description
+Message-Id: <5f85052c606e38c98de28170a2df72f78931aa30.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1374103272.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
@@ -12,45 +12,38 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Replace the SoC-specific callback init_machine() with
-a NULL to use the default code. This cleans up the code
-and reduces the number of lines.
+Remove redundant irqchip_init() callback. The default case
+of NULL will result in invoking irqchip_init() anyway.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
+[ horms+renesas@verge.net.au: Trimmed patch to remove portion
+  that updates the r8a7790 SoC and altered the subject to
+  use the same format as the patch that updates the r8a7790. ]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c |   11 -----------
- 1 file changed, 11 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index b70bfee..2a101eb 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -457,16 +457,6 @@ void __init r8a7778_init_irq_dt(void)
- 	r8a7778_init_irq_common();
- }
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index d73e21d..1e99b17 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -22,7 +22,6 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/pinctrl/machine.h>
+@@ -103,7 +102,6 @@ static const char *lager_boards_compat_dt[] __initdata = {
+ };
  
--static const struct of_dev_auxdata r8a7778_auxdata_lookup[] __initconst = {
--	{},
--};
--
--void __init r8a7778_add_standard_devices_dt(void)
--{
--	of_platform_populate(NULL, of_default_bus_match_table,
--			     r8a7778_auxdata_lookup, NULL);
--}
--
- static const char *r8a7778_compat_dt[] __initdata = {
- 	"renesas,r8a7778",
- 	NULL,
-@@ -475,7 +465,6 @@ static const char *r8a7778_compat_dt[] __initdata = {
- DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
--	.init_machine	= r8a7778_add_standard_devices_dt,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a7778_compat_dt,
- 	.init_late      = r8a7778_init_late,
+ DT_MACHINE_START(LAGER_DT, "lager")
+-	.init_irq	= irqchip_init,
+ 	.init_time	= r8a7790_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.dt_compat	= lager_boards_compat_dt,
 -- 
 1.7.10.4
 
