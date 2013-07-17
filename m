@@ -1,49 +1,48 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 09 Jul 2013 09:13:22 +0000
-Subject: [PATCH] mmc: TMIO: update Device Tree binding documentation
-Message-Id: <Pine.LNX.4.64.1307091110540.28812@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:32:08 +0000
+Subject: [PATCH 07/22] ARM: shmobile: r8a7790: Remove init_irq declaration in machine description
+Message-Id: <125332daf2e4119614c561bc8cbf1f49cd243023.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-The SDHI mmc-tmio implementation has been updated to cover additional SoC
-types. This patch documents the changes.
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for shmobile as well.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-r8a7790.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-Now, that the patch "mmc: SDHI: add DT compatibility strings for further 
-SoCs" has been approved, it shall be accompanied by this documentation 
-update.
-
- Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   13 +++++++++----
- 1 files changed, 9 insertions(+), 4 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-index df204e1..ec6f5bd 100644
---- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-+++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-@@ -13,8 +13,13 @@ Optional properties:
- - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 28f9475..d405dbd 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -19,7 +19,6 @@
+  */
  
- When used with Renesas SDHI hardware, the following compatibility strings
--configure various model-specific properties:
-+configure properties, specific to the respective SoC model:
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
+@@ -188,7 +187,6 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
+ };
  
--"renesas,sh7372-sdhi":	(default) compatible with SH7372
--"renesas,r8a7740-sdhi":	compatible with R8A7740: certain MMC/SD commands have to
--			wait for the interface to become idle.
-+"renesas,shmobile-sdhi":	generic SDHI block
-+"renesas,sh7372-sdhi":		SDHI block, used on SH7372 (SH-Mobile AP4)
-+"renesas,sh73a0-sdhi":		SDHI block, used on SH73A0 (SH-Mobile AG5)
-+"renesas,r8a73a4-sdhi":		SDHI block, used on R8A73A4 (R-Mobile APE6)
-+"renesas,r8a7740-sdhi":		SDHI block, used on R8A7740 (R-Mobile A1)
-+"renesas,r8a7778-sdhi":		SDHI block, used on R8A7778 (R-Car M1A)
-+"renesas,r8a7779-sdhi":		SDHI block, used on R8A7779 (R-Car H1)
-+"renesas,r8a7790-sdhi":		SDHI block, used on R8A7790 (R-Car H2)
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a7790_add_standard_devices_dt,
+ 	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
 -- 
-1.7.2.5
+1.7.10.4
 
