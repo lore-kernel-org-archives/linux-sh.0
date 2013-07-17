@@ -1,87 +1,48 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:17 +0000
-Subject: [PATCH 05/11] ARM: shmobile: Use DT for GIC on EMEV2 and KZM9D
-Message-Id: <23260e1b417843ea875bd7b21f17c5c80031c4cd.1374478037.git.horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:32:06 +0000
+Subject: [PATCH 05/22] ARM: shmobile: r8a73a4: Remove init_irq declaration in machine description
+Message-Id: <0bdbe04db005e025d3522ad3ae9797a4954528e9.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478037.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
 
-Remove the C version of the EMEV2 GIC setup code,
-instead rely on GIC information provided by DT.
+Commit ebafed7a ("ARM: irq: Call irqchip_init if no init_irq function is
+specified") removed the need to explictly setup the init_irq field in
+the machine description when using only irqchip_init. Remove that
+declaration for shmobile as well.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-kzm9d.c        |  2 --
- arch/arm/mach-shmobile/include/mach/emev2.h |  1 -
- arch/arm/mach-shmobile/setup-emev2.c        | 15 ---------------
- 3 files changed, 18 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a73a4.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
-index 15900f1..30c2cc6 100644
---- a/arch/arm/mach-shmobile/board-kzm9d.c
-+++ b/arch/arm/mach-shmobile/board-kzm9d.c
-@@ -86,8 +86,6 @@ DT_MACHINE_START(KZM9D_DT, "kzm9d")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.map_io		= emev2_map_io,
- 	.init_early	= emev2_init_delay,
--	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_irq	= emev2_init_irq,
- 	.init_machine	= kzm9d_add_standard_devices,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= kzm9d_boards_compat_dt,
-diff --git a/arch/arm/mach-shmobile/include/mach/emev2.h b/arch/arm/mach-shmobile/include/mach/emev2.h
-index 3e0c044..b0ab4b7 100644
---- a/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ b/arch/arm/mach-shmobile/include/mach/emev2.h
-@@ -2,7 +2,6 @@
- #define __ASM_EMEV2_H__
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 7f45c2e..a8c4e41 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -18,7 +18,6 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ #include <linux/irq.h>
+-#include <linux/irqchip.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/irq-renesas-irqc.h>
+@@ -194,7 +193,6 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ };
  
- extern void emev2_map_io(void);
--extern void emev2_init_irq(void);
- extern void emev2_init_delay(void);
- extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index e4b4693..6fa485d 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -202,20 +202,6 @@ void __init emev2_init_delay(void)
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
- }
- 
--void __init emev2_init_irq(void)
--{
--	void __iomem *gic_dist_base;
--	void __iomem *gic_cpu_base;
--
--	/* Static mappings, never released */
--	gic_dist_base = ioremap(0xe0028000, PAGE_SIZE);
--	gic_cpu_base = ioremap(0xe0020000, PAGE_SIZE);
--	BUG_ON(!gic_dist_base || !gic_cpu_base);
--
--	/* Use GIC to handle interrupts */
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
--}
--
- #ifdef CONFIG_USE_OF
- 
- static const char *emev2_boards_compat_dt[] __initdata = {
-@@ -226,7 +212,6 @@ static const char *emev2_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.init_early	= emev2_init_delay,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
- 
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+-	.init_irq	= irqchip_init,
+ 	.init_machine	= r8a73a4_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
 -- 
-1.8.2.1
+1.7.10.4
 
