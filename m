@@ -1,10 +1,10 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 09:27:57 +0000
-Subject: [PATCH 04/08] ARM: shmobile: Add GIO to EMEV2 dtsi
-Message-Id: <20130702092757.32066.58136.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:31:55 +0000
+Subject: [PATCH 16/22] ARM: shmobile: Remove unused sh73a0 auxdata table
+Message-Id: <ea31597fe72245985e9d2521ea7e87acf2f14252.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130702092725.32066.54861.sendpatchset@w520>
-In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,84 +12,41 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add GIO0->GIO4 device nodes to the EMEV2 dtsi file.
+Pass NULL to of_platform_populate instead of passing
+an empty list. This cleans up the code and reduces the
+number of lines.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-sh73a0.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
- arch/arm/boot/dts/emev2.dtsi |   59 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 59 insertions(+)
-
---- 0001/arch/arm/boot/dts/emev2.dtsi
-+++ work/arch/arm/boot/dts/emev2.dtsi	2013-07-02 16:27:34.000000000 +0900
-@@ -14,6 +14,14 @@
- 	compatible = "renesas,emev2";
- 	interrupt-parent = <&gic>;
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index bd9370f..516c239 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -944,10 +944,6 @@ void __init sh73a0_add_early_devices(void)
  
-+	aliases {
-+		gpio0 = &gpio0;
-+		gpio1 = &gpio1;
-+		gpio2 = &gpio2;
-+		gpio3 = &gpio3;
-+		gpio4 = &gpio4;
-+	};
-+
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -67,4 +75,55 @@
- 		reg = <0xe1050000 0x38>;
- 		interrupts = <0 11 0>;
- 	};
-+
-+	gpio0: gpio@e0050000 {
-+		compatible = "renesas,em-gio";
-+		reg = <0xe0050000 0x2c>, <0xe0050040 0x20>;
-+		interrupts = <0 67 0>, <0 68 0>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		ngpios = <32>;
-+		interrupt-controller;
-+		#interrupt-cells = <2>;
-+	};
-+	gpio1: gpio@e0050080 {
-+		compatible = "renesas,em-gio";
-+		reg = <0xe0050080 0x2c>, <0xe00500c0 0x20>;
-+		interrupts = <0 69 0>, <0 70 0>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		ngpios = <32>;
-+		interrupt-controller;
-+		#interrupt-cells = <2>;
-+	};
-+	gpio2: gpio@e0050100 {
-+		compatible = "renesas,em-gio";
-+		reg = <0xe0050100 0x2c>, <0xe0050140 0x20>;
-+		interrupts = <0 71 0>, <0 72 0>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		ngpios = <32>;
-+		interrupt-controller;
-+		#interrupt-cells = <2>;
-+	};
-+	gpio3: gpio@e0050180 {
-+		compatible = "renesas,em-gio";
-+		reg = <0xe0050180 0x2c>, <0xe00501c0 0x20>;
-+		interrupts = <0 73 0>, <0 74 0>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		ngpios = <32>;
-+		interrupt-controller;
-+		#interrupt-cells = <2>;
-+	};
-+	gpio4: gpio@e0050200 {
-+		compatible = "renesas,em-gio";
-+		reg = <0xe0050200 0x2c>, <0xe0050240 0x20>;
-+		interrupts = <0 75 0>, <0 76 0>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		ngpios = <31>;
-+		interrupt-controller;
-+		#interrupt-cells = <2>;
-+	};
- };
+ #ifdef CONFIG_USE_OF
+ 
+-static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
+-	{},
+-};
+-
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
+ 	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
+@@ -957,8 +953,7 @@ void __init sh73a0_add_standard_devices_dt(void)
+ 
+ 	platform_add_devices(sh73a0_devices_dt,
+ 			     ARRAY_SIZE(sh73a0_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-			     sh73a0_auxdata_lookup, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	/* Instantiate cpufreq-cpu0 */
+ 	platform_device_register_full(&devinfo);
+-- 
+1.7.10.4
+
