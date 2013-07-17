@@ -1,119 +1,38 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:28 +0000
-Subject: [PATCH v7 15/19] ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
-Message-Id: <1372961852-28490-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Jul 2013 14:54:39 +0000
+Subject: [PATCH v2 2/5] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
+Message-Id: <1374072882-14598-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+The V4L2_MBUS_FMT_YUV10_1X30 code is documented as being equal to
+0x2014, while the v4l2-mediabus.h header defines it as 0x2016. Fix the
+documentation.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 35 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-marzen-reference.c | 27 -------------------
- 2 files changed, 35 insertions(+), 27 deletions(-)
+ Documentation/DocBook/media/v4l/subdev-formats.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 72be4c8..6d20247 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -37,6 +37,9 @@
- 	lan0@18000000 {
- 		compatible = "smsc,lan9220", "smsc,lan9115";
- 		reg = <0x18000000 0x100>;
-+		pinctrl-0 = <&lan0_pins>;
-+		pinctrl-names = "default";
-+
- 		phy-mode = "mii";
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 28 0x4>;
-@@ -45,3 +48,35 @@
- 		vdd33a-supply = <&fixedregulator3v3>;
- 	};
- };
-+
-+&pfc {
-+	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	lan0_pins: lan0 {
-+		intc {
-+			renesas,groups = "intc_irq1_b";
-+			renesas,function = "intc";
-+		};
-+		lbsc {
-+			renesas,groups = "lbsc_ex_cs0";
-+			renesas,function = "lbsc";
-+		};
-+	};
-+
-+	scif2_pins: scif2 {
-+		renesas,groups = "scif2_data_c";
-+		renesas,function = "scif2";
-+	};
-+
-+	scif4_pins: scif4 {
-+		renesas,groups = "scif4_data";
-+		renesas,function = "scif4";
-+	};
-+
-+	sdhi0_pins: sdhi0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
-+				 "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 94804f3..3d1c439 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,41 +19,14 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
--#include <linux/pinctrl/machine.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <asm/irq.h>
- #include <asm/mach/arch.h>
- 
--static const struct pinctrl_map marzen_pinctrl_map[] = {
--	/* SCIF2 (CN18: DEBUG0) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
--				  "scif2_data_c", "scif2"),
--	/* SCIF4 (CN19: DEBUG1) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
--				  "scif4_data", "scif4"),
--	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_wp", "sdhi0"),
--	/* SMSC */
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
--				  "intc_irq1_b", "intc"),
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
--				  "lbsc_ex_cs0", "lbsc"),
--};
--
- static void __init marzen_init(void)
- {
--	pinctrl_register_mappings(marzen_pinctrl_map,
--				  ARRAY_SIZE(marzen_pinctrl_map));
--
- 	r8a7779_add_standard_devices_dt();
- }
- 
+diff --git a/Documentation/DocBook/media/v4l/subdev-formats.xml b/Documentation/DocBook/media/v4l/subdev-formats.xml
+index adc6198..0c2b1f2 100644
+--- a/Documentation/DocBook/media/v4l/subdev-formats.xml
++++ b/Documentation/DocBook/media/v4l/subdev-formats.xml
+@@ -2574,7 +2574,7 @@
+ 	    </row>
+ 	    <row id="V4L2-MBUS-FMT-YUV10-1X30">
+ 	      <entry>V4L2_MBUS_FMT_YUV10_1X30</entry>
+-	      <entry>0x2014</entry>
++	      <entry>0x2016</entry>
+ 	      <entry></entry>
+ 	      <entry>y<subscript>9</subscript></entry>
+ 	      <entry>y<subscript>8</subscript></entry>
 -- 
 1.8.1.5
 
