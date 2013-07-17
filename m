@@ -1,80 +1,46 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 23 Jul 2013 16:12:04 +0000
-Subject: [PATCH 4/4] ARM: shmobile: ape6evm-reference: add smsc911x ethernet support
-Message-Id: <1374595924-12338-5-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 17 Jul 2013 23:32:02 +0000
+Subject: [PATCH 01/22] ARM: shmobile: armadillo800eva: remove left-overs
+Message-Id: <bcfed2a8a61a0f6ee7769f5093a8279a9e50c526.1374103272.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
+References: <cover.1374103272.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Steve Glendinning <steve.glendinning@shawell.net>, netdev@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Add support for the SMSC9220 ethernet chip on the board.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+A comment and a #define in board-armadillo800eva.c have been left over
+after recent changes and are no longer relevant or needed, remove them.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |   25 ++++++++++++++++++++++-
- 1 files changed, 24 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    9 ---------
+ 1 file changed, 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index 3bcbc9f..4215ebc 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -8,6 +8,8 @@
-  * kind, whether express or implied.
-  */
- 
-+#include <dt-bindings/gpio/gpio.h>
-+
- /dts-v1/;
- /include/ "r8a73a4.dtsi"
- 
-@@ -16,7 +18,7 @@
- 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+		bootargs = "console=ttySC0,115200 debug ip=dhcp root=/dev/nfs";
- 	};
- 
- 	memory@40000000 {
-@@ -37,6 +39,22 @@
- 		#address-cells = <1>;
- 		#size-cells = <1>;
- 		ranges = <0 0 0 0x80000000>;
-+
-+		ethernet@8000000 {
-+			compatible = "smsc,lan9118", "smsc,lan9115";
-+			reg = <0x08000000 0x1000>;
-+			interrupt-parent = <&irqc1>;
-+			interrupts = <8 0x4>;
-+			phy-mode = "mii";
-+			reg-io-width = <4>;
-+			smsc,irq-active-high;
-+			smsc,irq-push-pull;
-+			smsc,reset-gpios = <&pfc 270 GPIO_ACTIVE_LOW>;
-+			pinctrl-names = "default";
-+			pinctrl-0 = <&smsc_pins>;
-+			vdd33a-supply = <&ape6evm_fixed_3v3>;
-+			vddvario-supply = <&ape6evm_fixed_3v3>;
-+		};
- 	};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index e115f67..66cfd56 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -679,15 +679,6 @@ static struct platform_device vcc_sdhi1 = {
  };
  
-@@ -85,6 +103,11 @@
- 		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
- 		renesas,function = "sdhi1";
- 	};
-+
-+	smsc_pins: eth0 {
-+		renesas,groups = "irqc_irq40";
-+		renesas,function = "irqc";
-+	};
- };
- 
- &mmcif0 {
+ /* SDHI0 */
+-/*
+- * FIXME
+- *
+- * It use polling mode here, since
+- * CD (= Card Detect) pin is not connected to SDHI0_CD.
+- * We can use IRQ31 as card detect irq,
+- * but it needs chattering removal operation
+- */
+-#define IRQ31	irq_pin(31)
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
 -- 
-1.7.2.5
+1.7.10.4
 
