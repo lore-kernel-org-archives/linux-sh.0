@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 09 Jul 2013 05:43:50 +0000
+Date: Wed, 17 Jul 2013 20:31:09 +0000
 Subject: [PATCH 02/04] ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
-Message-Id: <20130709054350.14007.24354.sendpatchset@w520>
+Message-Id: <20130717203109.27542.77708.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130709054331.14007.66068.sendpatchset@w520>
-In-Reply-To: <20130709054331.14007.66068.sendpatchset@w520>
+References: <20130717203049.27542.78385.sendpatchset@w520>
+In-Reply-To: <20130717203049.27542.78385.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
