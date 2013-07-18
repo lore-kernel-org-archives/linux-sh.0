@@ -1,86 +1,93 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 01 Jul 2013 04:12:25 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 18 Jul 2013 22:04:20 +0000
 Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7778: add HPB-DMAC support
-Message-Id: <87d2r2j4uy.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <51E86664.1060509@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
  <201306300248.57898.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306300248.57898.sergei.shtylyov@cogentembedded.com>
+ <87d2r2j4uy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d2r2j4uy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hello.
 
-Hi
+On 07/01/2013 08:12 AM, Kuninori Morimoto wrote:
 
-> From: Max Filippov <max.filippov@cogentembedded.com>
-> 
-> Add HPB-DMAC platform device on R8A7778 SoC along with its slave and channel
-> configurations.
-> 
-> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
+>> From: Max Filippov <max.filippov@cogentembedded.com>
+
+>> Add HPB-DMAC platform device on R8A7778 SoC along with its slave and channel
+>> configurations.
+
+>> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>> ---
+> (snip)
+>> +static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+>> +	{
+>> +		.id	= HPBDMA_SLAVE_SDHI0_TX,
+>> +		.addr	= 0xffe4c000 + 0x30,
+>> +		.dcr	= DCR_SPDS_16BIT | DCR_DMDL | DCR_DPDS_16BIT,
+>> +		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
+>> +			  ASYNCRSTR_ASRST23,
+>> +		.mdr	= ASYNCMDR_ASMD21_SINGLE,
+>> +		.mdm	= ASYNCMDR_ASMD21_MASK,
+>> +		.port	= 0x0D0C,
+>> +		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
+>> +		.dma_ch	= 21,
+>> +	}, {
+>> +		.id	= HPBDMA_SLAVE_SDHI0_RX,
+>> +		.addr	= 0xffe4c000 + 0x30,
+>> +		.dcr	= DCR_SMDL | DCR_SPDS_16BIT | DCR_DPDS_16BIT,
+>> +		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
+>> +			  ASYNCRSTR_ASRST23,
+>> +		.mdr	= ASYNCMDR_ASMD22_SINGLE,
+>> +		.mdm	= ASYNCMDR_ASMD22_MASK,
+>> +		.port	= 0x0D0C,
+>> +		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
+>> +		.dma_ch	= 22,
+>> +	}, {
+>> +		.id	= HPBDMA_SLAVE_SSI0_TX_ST,
+>> +		.addr	= 0xffd90000 + 0x1008,
+>> +		.dcr	= DCR_CT | DCR_DIP | DCR_SPDS_32BIT | DCR_DMDL |
+>> +			  DCR_DPDS_32BIT,
+>> +		.port	= 0x0000,
+>> +		.dma_ch	= 28,
+>> +	}, {
+>> +		.id	= HPBDMA_SLAVE_SSI0_TX_MN,
+>> +		.addr	= 0xffd90000 + 0x1008,
+>> +		.dcr	= DCR_CT | DCR_DIP | DCR_SPDS_16BIT | DCR_DMDL |
+>> +			  DCR_DPDS_16BIT,
+>> +		.port	= 0x0000,
+>> +		.dma_ch	= 28,
+>> +	}, {
+>> +		.id	= HPBDMA_SLAVE_SSI1_RX_ST,
+>> +		.addr	= 0xffd90000 + 0x104c,
+>> +		.dcr	= DCR_CT | DCR_DIP | DCR_SMDL | DCR_SPDS_32BIT |
+>> +			  DCR_DPDAM | DCR_DPDS_32BIT,
+>> +		.port	= 0x0101,
+>> +		.dma_ch	= 29,
+>> +	}, {
+>> +		.id	= HPBDMA_SLAVE_SSI1_RX_MN,
+>> +		.addr	= 0xffd90000 + 0x104c,
+>> +		.dcr	= DCR_CT | DCR_DIP | DCR_SMDL | DCR_SPDS_16BIT |
+>> +			  DCR_DPDAM | DCR_DPDS_16BIT,
+>> +		.port	= 0x0101,
+>> +		.dma_ch	= 29,
+>> +	},
+>> +};
+
+> How did you test SSI ?
+> remove these
+
+    OK. The SSI stuff came from the original patch.
+
+> Best regards
 > ---
-(snip)
-> +static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
-> +	{
-> +		.id	= HPBDMA_SLAVE_SDHI0_TX,
-> +		.addr	= 0xffe4c000 + 0x30,
-> +		.dcr	= DCR_SPDS_16BIT | DCR_DMDL | DCR_DPDS_16BIT,
-> +		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
-> +			  ASYNCRSTR_ASRST23,
-> +		.mdr	= ASYNCMDR_ASMD21_SINGLE,
-> +		.mdm	= ASYNCMDR_ASMD21_MASK,
-> +		.port	= 0x0D0C,
-> +		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
-> +		.dma_ch	= 21,
-> +	}, {
-> +		.id	= HPBDMA_SLAVE_SDHI0_RX,
-> +		.addr	= 0xffe4c000 + 0x30,
-> +		.dcr	= DCR_SMDL | DCR_SPDS_16BIT | DCR_DPDS_16BIT,
-> +		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
-> +			  ASYNCRSTR_ASRST23,
-> +		.mdr	= ASYNCMDR_ASMD22_SINGLE,
-> +		.mdm	= ASYNCMDR_ASMD22_MASK,
-> +		.port	= 0x0D0C,
-> +		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
-> +		.dma_ch	= 22,
-> +	}, {
-> +		.id	= HPBDMA_SLAVE_SSI0_TX_ST,
-> +		.addr	= 0xffd90000 + 0x1008,
-> +		.dcr	= DCR_CT | DCR_DIP | DCR_SPDS_32BIT | DCR_DMDL |
-> +			  DCR_DPDS_32BIT,
-> +		.port	= 0x0000,
-> +		.dma_ch	= 28,
-> +	}, {
-> +		.id	= HPBDMA_SLAVE_SSI0_TX_MN,
-> +		.addr	= 0xffd90000 + 0x1008,
-> +		.dcr	= DCR_CT | DCR_DIP | DCR_SPDS_16BIT | DCR_DMDL |
-> +			  DCR_DPDS_16BIT,
-> +		.port	= 0x0000,
-> +		.dma_ch	= 28,
-> +	}, {
-> +		.id	= HPBDMA_SLAVE_SSI1_RX_ST,
-> +		.addr	= 0xffd90000 + 0x104c,
-> +		.dcr	= DCR_CT | DCR_DIP | DCR_SMDL | DCR_SPDS_32BIT |
-> +			  DCR_DPDAM | DCR_DPDS_32BIT,
-> +		.port	= 0x0101,
-> +		.dma_ch	= 29,
-> +	}, {
-> +		.id	= HPBDMA_SLAVE_SSI1_RX_MN,
-> +		.addr	= 0xffd90000 + 0x104c,
-> +		.dcr	= DCR_CT | DCR_DIP | DCR_SMDL | DCR_SPDS_16BIT |
-> +			  DCR_DPDAM | DCR_DPDS_16BIT,
-> +		.port	= 0x0101,
-> +		.dma_ch	= 29,
-> +	},
-> +};
+> Kuninori Morimoto
 
-How did you test SSI ?
-remove these
+WBR, Sergei
 
-Best regards
----
-Kuninori Morimoto
