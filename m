@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 18 Jul 2013 11:54:33 +0000
+Date: Thu, 18 Jul 2013 12:26:17 +0000
 Subject: Re: [PATCH 01/11] ARM: shmobile: r8a7778: cleanup registration of sh_eth
-Message-Id: <51E7D779.8000301@cogentembedded.com>
+Message-Id: <51E7DEE9.8060208@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87li5dfqft.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87li5dfqft.wl%kuninori.morimoto.gx@renesas.com>
@@ -12,37 +12,41 @@ To: linux-sh@vger.kernel.org
 
 Hello.
 
-On 18-07-2013 3:11, Simon Horman wrote:
+On 18-07-2013 10:35, Kuninori Morimoto wrote:
 
->>>>> sh_eth driver which needs platform data at the time of
->>>>> registration is used from BockW only.
->>>>> Now, ARM/shmobile aims to support DT,
->>>>> and the C code base board support will be removed in the future.
->>>>> The driver registration method which needs platform data
->>>>> and which is not shared complicates codes.
->>>>> This patch registers it on board code as cleanup C code
+>> But is it really that much easier?
+>> Does this series remove all the other unused code from setup.c?
+>> Does it really matter if we forget to remove some bits of setup.c
+>> once they are unused?
 
->>>>> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> The point is not "unused code", but "non-shared sharing code".
+> I guess people use copy-paste base development.
+> So, if we don't clean-up these "non-shared sharing code" now,
+> we will have more and more r8a77xx_add_xxx_device(pdata) type method
+> (which is the "non-shared sharing code" :)
 
->>>>     NAK.
+    And that will teach them doing things the right, scalable way from the start.
 
->>> Please provide some reasoning for your objection to this change.
->>> Likewise for other patches in this series to which you have replied
->>> in the same manner. I for one do not understand what it is you object to.
+> in both board-xxx.c and setup-xxx.c before we have DT support.
+> This means clean-up these "after" DT support will be more complex.
+> I don't want this type of nightmare.
 
->>     Sorry, I was just out of words when I saw this. I for one do not
->> understand how this change will help the DT support and to me it
->> seems no more than a pointless churn and step backward from what we
->> had. Under no circumstances I will accept this change -- I'm totally
->> opposed to the idea of moving the SoC devices to the board code.
+    And I don't want "SoC device in the board code" non-scalable nightmare
+when people will start producing their own boards based on Renesas SoCs. I 
+don't want to give them the bad example that your USB code was before my 
+9-patch cleanup, and another several bad examples which you're now to trying 
+to push into renesas.git. I don't want my efforts wasted.
 
-> Hi,
+> Do you mean r8a7779 sh_eth clean-up code ?
+> If so, 1) I can't find "board" code which is using r8a7779_add_ether_device(xx),
+> 2) I guess marzen board doesn't have sh_eth HW implementation.
 
-> I believe that the crux of your concern is that the way that
-> SH ethernet support has been added recently is to place SoC portions
-> in setup-xxx.c and board-specific portions into board-YYY.c
+    It has several types of daughter boards with Ethernet PHY and connector. 
+See my off-list email.
 
-    Not only Ether but all the SoC devices. Hence were the NAKs for other patches.
+> Best regards
+> ---
+> Kuninori Morimoto
 
 WBR, Sergei
 
