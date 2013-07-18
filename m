@@ -1,55 +1,67 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 04:59:20 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 18 Jul 2013 21:56:36 +0000
 Subject: Re: [PATCH 1/3] ARM: shmobile: use common platform header for HPB-DMAC
-Message-Id: <CANqRtoTCaJfbECSpX7nMZoV8SPeQqs-xrJQ0-+-smA+bx3QG=w@mail.gmail.com>
+Message-Id: <51E86494.5050906@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
  <201306300245.58486.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201306300245.58486.sergei.shtylyov@cogentembedded.com>
+ <87ehbij4wc.wl%kuninori.morimoto.gx@renesas.com>
+ <51D171E4.3080108@cogentembedded.com>
+In-Reply-To: <51D171E4.3080108@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Hello.
 
-On Sun, Jun 30, 2013 at 7:45 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> From: Max Filippov <max.filippov@cogentembedded.com>
->
-> Use previously empty <mach/dma.h> to declare HPB-DMA slave IDs.
->
-> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-> [Sergei: changed the guard macro name, fixed comment, extended copyright.]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
-> ---
->  arch/arm/mach-shmobile/include/mach/dma.h |   25 ++++++++++++++++++++++++-
->  1 file changed, 24 insertions(+), 1 deletion(-)
+On 07/01/2013 04:11 PM, Sergei Shtylyov wrote:
 
-Thanks for your patch. Can you please explain the reason why you put
-this shared information under mach/?
+>>> From: Max Filippov <max.filippov@cogentembedded.com>
 
-From my point of view we should really have as few special things as
-possible under mach/. Starting to share DMA stuff here looks special.
-I would like mach-shmobile to be as standard as possible (basically
-only ARM code in the future), and in the case we have I/O devices or
-other IOMMUs or DMA controllers then we should use include/linux or
-that recently added platform data directory if needed. We need to make
-sure that our headers stay compatible with multiplatform support.
+>>> Use previously empty <mach/dma.h> to declare HPB-DMA slave IDs.
 
-I realize you may want to share this header between multiple SoCs, but
-I really want to avoid creating local common code under arch/arm/ that
-has nothing to do with ARM. Also, this is IMO a total non-issue,
-instead of merging code and making back porting more difficult for any
-particular SoC, then how about spending effort on the ling term
-instead, like DMA DT?
+>>> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+>>> [Sergei: changed the guard macro name, fixed comment, extended copyright.]
+>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-So my recommendation is to keep this information together with each
-SoC. And also work on DT. In between have a coffee or work on DT, but
-please do not spend time on merging short term per-SoC information and
-making back porting more difficult.
+>>> ---
+>>>   arch/arm/mach-shmobile/include/mach/dma.h |   25 ++++++++++++++++++++++++-
+>>>   1 file changed, 24 insertions(+), 1 deletion(-)
 
-Thanks,
+>>> Index: renesas/arch/arm/mach-shmobile/include/mach/dma.h
+>>> =================================>>> --- renesas.orig/arch/arm/mach-shmobile/include/mach/dma.h
+>>> +++ renesas/arch/arm/mach-shmobile/include/mach/dma.h
+>>> @@ -1 +1,24 @@
+>>> -/* empty */
+>>> +/*
+>>> + * Copyright (C) 2011-2013 Renesas Electronics Corporation
+>>> + * Copyright (C) 2013 Cogent Embedded, Inc.
+>>> + *
+>>> + * This program is free software; you can redistribute it and/or modify
+>>> + * it under the terms of the GNU General Public License version 2
+>>> + * as published by the Free Software Foundation.
+>>> + */
+>>> +
+>>> +#ifndef __MACH_DMA_H
+>>> +#define __MACH_DMA_H
+>>> +
+>>> +/* HPB-DMA slave IDs */
+>>> +enum {
+>>> +    HPBDMA_SLAVE_DUMMY,
+>>> +    HPBDMA_SLAVE_SDHI0_TX,
+>>> +    HPBDMA_SLAVE_SDHI0_RX,
+>>> +    HPBDMA_SLAVE_SSI0_TX_ST,
+>>> +    HPBDMA_SLAVE_SSI0_TX_MN,
+>>> +    HPBDMA_SLAVE_SSI1_RX_ST,
+>>> +    HPBDMA_SLAVE_SSI1_RX_MN,
+>>> +};
 
-/ magnus
+>> it should be in r8a7778.h
+
+>     It will be shared with R8A7779.
+
+    Apparently not anymore as this file is gone now.
+
+WBR, Sergei
+
