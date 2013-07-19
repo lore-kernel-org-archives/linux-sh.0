@@ -1,39 +1,66 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 30 Jul 2013 00:30:21 +0000
-Subject: Re: [PATCH v2 1/2] ARM: shmobile: r8a7778: add HPB-DMAC support
-Message-Id: <uzjt499eq.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Jul 2013 16:29:33 +0000
+Subject: [PATCH v2 08/15] DMA: shdma: move two macros to a header
+Message-Id: <1374251374-30186-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201307230218.01495.sergei.shtylyov@cogentembedded.com>
- <201307230222.04763.sergei.shtylyov@cogentembedded.com>
- <20130726001052.GA28912@verge.net.au>
- <87a9lacd6o.wl%kuninori.morimoto.gx@renesas.com>
- <51F6F0BF.2030004@cogentembedded.com>
-In-Reply-To: <51F6F0BF.2030004@cogentembedded.com>
+References: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
+Move two generic pointer-conversion macros to a header for common shdma use.
 
-Hi Sergei
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/dma/sh/shdma-base.c |    3 ---
+ drivers/dma/sh/shdma-of.c   |    2 --
+ include/linux/shdma-base.h  |    3 +++
+ 3 files changed, 3 insertions(+), 5 deletions(-)
 
-> > Is this correct ?
-> > And what is 0x0C port ?
-> 
->     SDHI0 if you look into the table 16.7 of the R-Car M1A manual 1.00 for the 
-> channels 21 thru 23.
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index c5ea256..5b92e72 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -36,9 +36,6 @@ enum shdma_desc_status {
+ 
+ #define NR_DESCS_PER_CHANNEL 32
+ 
+-#define to_shdma_chan(c) container_of(c, struct shdma_chan, dma_chan)
+-#define to_shdma_dev(d) container_of(d, struct shdma_dev, dma_dev)
+-
+ /*
+  * For slave DMA we assume, that there is a finite number of DMA slaves in the
+  * system, and that each such slave can only use a finite number of channels.
+diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
+index 2acf7b6..80d07b5 100644
+--- a/drivers/dma/sh/shdma-of.c
++++ b/drivers/dma/sh/shdma-of.c
+@@ -17,8 +17,6 @@
+ #include <linux/platform_device.h>
+ #include <linux/shdma-base.h>
+ 
+-#define to_shdma_chan(c) container_of(c, struct shdma_chan, dma_chan)
+-
+ static struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
+ 				       struct of_dma *ofdma)
+ {
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index 31cf89f..45191d7 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -114,6 +114,9 @@ struct shdma_dev {
+ #define shdma_for_each_chan(c, d, i) for (i = 0, c = (d)->schan[0]; \
+ 				i < (d)->dma_dev.chancnt; c = (d)->schan[++i])
+ 
++#define to_shdma_chan(c) container_of(c, struct shdma_chan, dma_chan)
++#define to_shdma_dev(d) container_of(d, struct shdma_dev, dma_dev)
++
+ int shdma_request_irq(struct shdma_chan *, int,
+ 			   unsigned long, const char *);
+ bool shdma_reset(struct shdma_dev *sdev);
+-- 
+1.7.2.5
 
-Ahh... yes, indeed
-sorry for my noise
-
-> > I want 1 line for 1 channels on hpb_dmae_channels.
-> > like this
-> 
-> > static const struct hpb_dmae_channel hpb_dmae_channels[] = {
-> > 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch21 */
-> > 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch22 */
-> > }
-> 
->     OK, done.
-
-Thank you
