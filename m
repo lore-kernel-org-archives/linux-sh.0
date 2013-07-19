@@ -1,33 +1,62 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 09:09:18 +0000
-Subject: [PATCH v6 0/3] ARM: shmobile: lager: enable Ether
-Message-Id: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:34:48 +0000
+Subject: [GIT 0/7] Renesas ARM and SH based SoC backlight drivers for v3.12
+Message-Id: <cover.1374207161.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-this short series enables the on-board ethernet
-of the r8a7790 SoC for on lager board.
+Hi Olof, Hi Arnd,
 
-It has a run-time dependency on
-"sh_eth: add support for r8a7790 SoC"
+please consider the following backlight drivers for v3.12.
 
-It has been built on top of renesas-next-20130726.
+The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
 
-Changes noted in changelogs of individual patches.
+  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
 
-Simon Horman (3):
-  ARM: shmobile: r8a7790: clocks for Ether support
-  ARM: shmobile: lager: enable Ether
-  ARM: shmobile: lager: enable nfsroot in DTS
+are available in the git repository at:
 
- arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
- arch/arm/mach-shmobile/board-lager.c   | 30 ++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
- 3 files changed, 35 insertions(+), 1 deletion(-)
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-backlight-for-v3.12
 
--- 
-1.8.3.2
+for you to fetch changes up to 0fb19cdabfc3f8884bac53fd81b02bf61c7904af:
 
+  ARM: mach-shmobile: ag5evm: Use bd6107 backlight driver (2013-07-17 10:06:18 +0900)
+
+----------------------------------------------------------------
+Renesas ARM and SH based SoC backlight drivers for v3.12
+
+Backlight drivers used by SH and ARM SH-Mobile boards.
+
+----------------------------------------------------------------
+Laurent Pinchart (7):
+      backlight: Add GPIO-based backlight driver
+      backlight: Add Sanyo LV5207LP backlight driver
+      backlight: Add ROHM BD6107 backlight driver
+      ARM: mach-shmobile: mackerel: Use gpio-backlight
+      sh: ecovec24: Use gpio-backlight
+      sh: kfr2r09: Use lv5207lp backlight
+      ARM: mach-shmobile: ag5evm: Use bd6107 backlight driver
+
+ arch/arm/mach-shmobile/board-ag5evm.c        |   65 ++------
+ arch/arm/mach-shmobile/board-mackerel.c      |   34 ++--
+ arch/sh/boards/mach-ecovec24/setup.c         |   37 +++--
+ arch/sh/boards/mach-kfr2r09/lcd_wqvga.c      |   48 ------
+ arch/sh/boards/mach-kfr2r09/setup.c          |   19 ++-
+ arch/sh/include/mach-kfr2r09/mach/kfr2r09.h  |    2 -
+ drivers/video/backlight/Kconfig              |   19 +++
+ drivers/video/backlight/Makefile             |    3 +
+ drivers/video/backlight/bd6107.c             |  213 ++++++++++++++++++++++++++
+ drivers/video/backlight/gpio_backlight.c     |  133 ++++++++++++++++
+ drivers/video/backlight/lv5207lp.c           |  171 +++++++++++++++++++++
+ include/linux/platform_data/bd6107.h         |   19 +++
+ include/linux/platform_data/gpio_backlight.h |   21 +++
+ include/linux/platform_data/lv5207lp.h       |   19 +++
+ 14 files changed, 665 insertions(+), 138 deletions(-)
+ create mode 100644 drivers/video/backlight/bd6107.c
+ create mode 100644 drivers/video/backlight/gpio_backlight.c
+ create mode 100644 drivers/video/backlight/lv5207lp.c
+ create mode 100644 include/linux/platform_data/bd6107.h
+ create mode 100644 include/linux/platform_data/gpio_backlight.h
+ create mode 100644 include/linux/platform_data/lv5207lp.h
