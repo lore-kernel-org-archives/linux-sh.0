@@ -1,110 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:08 +0000
-Subject: [PATCH 15/16] ARM: shmobile: Introduce r8a7790_read_mode_pins()
-Message-Id: <512e53bc7f0088e3adfd89b3fea3447495fc8423.1374624383.git.horms+renesas@verge.net.au>
+From: "MICROSOFT IBERICA SL" <ibericaslmic@outlook.es>
+Date: Fri, 19 Jul 2013 21:44:20 +0000
+Subject: Yon've won a Prize
+Message-Id: <59773.83.46.143.199.1374270260.squirrel@mail1.centrum-group.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374624383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: @casper.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Yon've won a Prize
+MICROSOFT IBERICA SL"
+YOU 'VE WON.
+ATTN:MICROSOFT IBERICA SL
+Your email has won (EUR244,000,00)
+(TWO HUNDRED AND FOURTY FOUR THOUSAND EURO)
+Batch number:XL73276498AM
+Ref number:QR352899526KC
+This is a millennium scientific computer game in which
+email addresses were used.It is a promotional program aimed at
+encouraging internet users,therefore you do not need to buy ticket to enter
+for it.
+For further development,clarification and procedure please
+Contact:Dr Eduardo Sanchez,
+Email contact:payingroll446@yahoo.com.hk
 
-Break out the r8a7790 boot mode code into a separate
-function so it can be shared by multiple users.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7790.c        | 11 ++---------
- arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
- arch/arm/mach-shmobile/setup-r8a7790.c        | 14 ++++++++++++++
- 3 files changed, 19 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 62d8162..50d96f9 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -24,6 +24,7 @@
- #include <linux/clkdev.h>
- #include <mach/clock.h>
- #include <mach/common.h>
-+#include <mach/r8a7790.h>
- 
- /*
-  *   MD		EXTAL		PLL0	PLL1	PLL3
-@@ -42,8 +43,6 @@
-  *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
-  */
- 
--#define MD(nr)	(1 << nr)
--
- #define CPG_BASE 0xe6150000
- #define CPG_LEN 0x1000
- 
-@@ -53,7 +52,6 @@
- #define SMSTPCR5 0xe6150144
- #define SMSTPCR7 0xe615014c
- 
--#define MODEMR		0xE6160060
- #define SDCKCR		0xE6150074
- #define SD2CKCR		0xE6150078
- #define SD3CKCR		0xE615007C
-@@ -288,14 +286,9 @@ static struct clk_lookup lookups[] = {
- 
- void __init r8a7790_clock_init(void)
- {
--	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
--	u32 mode;
-+	u32 mode = r8a7790_read_mode_pins();
- 	int k, ret = 0;
- 
--	BUG_ON(!modemr);
--	mode = ioread32(modemr);
--	iounmap(modemr);
--
- 	switch (mode & (MD(14) | MD(13))) {
- 	case 0:
- 		R8A7790_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 7851cc1..7aaef40 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -7,4 +7,7 @@ void r8a7790_pinmux_init(void);
- void r8a7790_init_delay(void);
- void r8a7790_timer_init(void);
- 
-+#define MD(nr) BIT(nr)
-+u32 r8a7790_read_mode_pins(void);
-+
- #endif /* __ASM_R8A7790_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index f01542e..6acddc1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -196,6 +196,20 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_cmt(00);
- }
- 
-+#define MODEMR 0xe6160060
-+
-+u32 __init r8a7790_read_mode_pins(void)
-+{
-+	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
-+	u32 mode;
-+
-+	BUG_ON(!modemr);
-+	mode = ioread32(modemr);
-+	iounmap(modemr);
-+
-+	return mode;
-+}
-+
- void __init r8a7790_timer_init(void)
- {
- 	void __iomem *cntcr;
--- 
-1.8.2.1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
