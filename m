@@ -1,52 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 25 Jul 2013 23:26:44 +0000
-Subject: [PATCH 08/12] mmc: sh_mmcif: Remove .set_pwr() callback from platform data
-Message-Id: <1374794808-21890-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Jul 2013 16:29:31 +0000
+Subject: [PATCH v2 06/15] DMA: shdma: make multiplexer platform data optional
+Message-Id: <1374251374-30186-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-The .set_pwr() callback isn't used anymore as all platforms register
-GPIO-controlled regulators. Remove it.
+Instead of supplying platform data to the shdma dmaengine driver via
+AUXDATA in the DT case, we now support platform data via an OF match table.
+Make platform data optional.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/mmc/host/sh_mmcif.c  | 3 ---
- include/linux/mmc/sh_mmcif.h | 1 -
- 2 files changed, 4 deletions(-)
+ drivers/dma/sh/shdma-of.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 6706b5e..b827c58 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -956,11 +956,8 @@ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
+diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
+index 11bcb05..2acf7b6 100644
+--- a/drivers/dma/sh/shdma-of.c
++++ b/drivers/dma/sh/shdma-of.c
+@@ -45,9 +45,6 @@ static int shdma_of_probe(struct platform_device *pdev)
+ 	const struct of_dev_auxdata *lookup = pdev->dev.platform_data;
+ 	int ret;
  
- static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
- {
--	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
- 	struct mmc_host *mmc = host->mmc;
- 
--	if (pd && pd->set_pwr)
--		pd->set_pwr(host->pd, ios->power_mode != MMC_POWER_OFF);
- 	if (!IS_ERR(mmc->supply.vmmc))
- 		/* Errors ignored... */
- 		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index 39011eb..767fac5 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -33,7 +33,6 @@
-  */
- 
- struct sh_mmcif_plat_data {
--	void (*set_pwr)(struct platform_device *pdev, int state);
- 	int (*get_cd)(struct platform_device *pdef);
- 	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
- 	unsigned int		slave_id_rx;
+-	if (!lookup)
+-		return -EINVAL;
+-
+ 	ret = of_dma_controller_register(pdev->dev.of_node,
+ 					 shdma_of_xlate, pdev);
+ 	if (ret < 0)
 -- 
-1.8.1.5
+1.7.2.5
 
