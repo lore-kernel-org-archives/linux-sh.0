@@ -1,34 +1,47 @@
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Date: Thu, 11 Jul 2013 01:21:54 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: Force ARM mode to compile reset vector for secondary CPUs
-Message-Id: <51DE08B2.6060309@kmckk.co.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Jul 2013 16:02:16 +0000
+Subject: [PATCH] ARM: shmobile: armadillo800eva-reference: fix compiler warning
+Message-Id: <Pine.LNX.4.64.1307191758510.26183@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373421397-1786-1-git-send-email-koba@kmckk.co.jp>
- <1373421397-1786-3-git-send-email-koba@kmckk.co.jp>
- <20130710132059.GC13716@verge.net.au>
-In-Reply-To: <20130710132059.GC13716@verge.net.au>
+References: <1361223490-20106-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1361223490-20106-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Thank you, Simon-san.
+Fix the compiler warning:
 
-I will post the backport patch to next LTSI kernel.
+arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: initialization from incompatible pointer type [enabled by default]
+arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: (near initialization for '__mach_desc_ARMADILLO800EVA_DT.restart') [enabled by default]
 
-(2013/07/10 22:20), Simon Horman wrote:
-> On Wed, Jul 10, 2013 at 10:56:36AM +0900, Tetsuyuki Kobayashi wrote:
->> Instructions start from boot vector must be ARM mode.
->> This patch specify ARM mode explicitly and use 'bx' instruction to be
->> able to change to Thumb mode.
->>
->> Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
->> ---
->>   arch/arm/mach-shmobile/headsmp.S |    5 ++++-
->>   1 file changed, 4 insertions(+), 1 deletion(-)
->
-> Thanks, I have queued this up with Magnus's ack in the thumb-fixes
-> branch of my renesas tree on kernel.org. It should be
-> included in the renesas-next-20130710v2 tag.
->
+While at it also remove superfluous parenthesis.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+
+renesas.git devel branch
+
+ .../board-armadillo800eva-reference.c              |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 002d8d3..fd2446d 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -174,10 +174,10 @@ static void __init eva_init(void)
+ }
+ 
+ #define RESCNT2 IOMEM(0xe6188020)
+-static void eva_restart(char mode, const char *cmd)
++static void eva_restart(enum reboot_mode mode, const char *cmd)
+ {
+ 	/* Do soft power on reset */
+-	writel((1 << 31), RESCNT2);
++	writel(1 << 31, RESCNT2);
+ }
+ 
+ static const char *eva_boards_compat_dt[] __initdata = {
+-- 
+1.7.2.5
 
