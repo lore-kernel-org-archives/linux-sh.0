@@ -1,22 +1,99 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 00:37:34 +0000
-Subject: Re: [PATCH v3 4/7] ARM: shmobile: lager: add MMCIF support
-Message-Id: <20130710003734.GD15011@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:36:58 +0000
+Subject: [PATCH 04/19] ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
+Message-Id: <789ff14261cc1d951a6dfd68edd72e4b44407ddd.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373298887-9877-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373298887-9877-5-git-send-email-g.liakhovetski@gmx.de>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 08, 2013 at 05:54:43PM +0200, Guennadi Liakhovetski wrote:
-> Add support for the MMCIF1 interface on Lager.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
->  arch/arm/mach-shmobile/board-lager.c |   31 +++++++++++++++++++++++++++++++
->  1 files changed, 31 insertions(+), 0 deletions(-)
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks, I have queued this up for v3.12 in the boards branch.
-It should appear in renesas-next-20130710
+Add GPIO controller nodes to the r8a7778 core device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778.dtsi |   61 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index c8dbf14..45ac404 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -33,8 +33,69 @@
+ 		      <0xfe430000 0x100>;
+ 	};
+ 
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc40000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc41000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc42000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc43000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
++		reg = <0xffc44000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 103 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 27>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7778";
+ 		reg = <0xfffc000 0x118>;
++		#gpio-range-cells = <3>;
+ 	};
+ };
+-- 
+1.7.10.4
+
