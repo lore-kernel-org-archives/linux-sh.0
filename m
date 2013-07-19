@@ -1,24 +1,128 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 01:12:45 +0000
-Subject: Re: [PATCH 01/04] ARM: shmobile: No need to use INTC header on r8a7779
-Message-Id: <20130710011244.GL32603@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:00 +0000
+Subject: [PATCH 06/19] ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
+Message-Id: <d96a1d8bb88a38eef93207daba91338450b3295f.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130709103944.1891.67462.sendpatchset@w520>
- <20130709103952.1891.92697.sendpatchset@w520>
-In-Reply-To: <20130709103952.1891.92697.sendpatchset@w520>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 09, 2013 at 07:39:52PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Now when the intc-irqpin driver is used for external
-> IRQ pins on r8a7779 it possible to get rid of unused
-> INTC headers mach/intc.h and linux/sh_intc.h.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks, I have queued this up for v3.12 in the cleanup branch.
-It should appear in renesas-next-20130710
+Add GPIO controller nodes to the r8a7779 core device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779.dtsi |   85 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 85 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 9dfc438..e9fbe3d 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -48,6 +48,90 @@
+                       <0xf0000100 0x100>;
+         };
+ 
++	gpio0: gpio@ffc40000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc40000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 141 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio1: gpio@ffc41000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc41000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 142 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio2: gpio@ffc42000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc42000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 143 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio3: gpio@ffc43000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc43000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio4: gpio@ffc44000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc44000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 145 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio5: gpio@ffc45000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc45000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 146 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	gpio6: gpio@ffc46000 {
++		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
++		reg = <0xffc46000 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 147 0x4>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 9>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
+ 	irqpin0: irqpin@fe780010 {
+ 		compatible = "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+@@ -104,6 +188,7 @@
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7779";
+ 		reg = <0xfffc0000 0x23c>;
++		#gpio-range-cells = <3>;
+ 	};
+ 
+ 	thermal@ffc48000 {
+-- 
+1.7.10.4
+
