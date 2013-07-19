@@ -1,42 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 19 Jul 2013 00:16:05 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 19 Jul 2013 11:17:39 +0000
 Subject: Re: [PATCH 1/3] ARM: shmobile: use common platform header for HPB-DMAC
-Message-Id: <87txjrbe11.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <51E92053.5080103@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201306300243.57180.sergei.shtylyov@cogentembedded.com>
  <201306300245.58486.sergei.shtylyov@cogentembedded.com>
  <CANqRtoTCaJfbECSpX7nMZoV8SPeQqs-xrJQ0-+-smA+bx3QG=w@mail.gmail.com>
  <51E865FA.9000706@cogentembedded.com>
-In-Reply-To: <51E865FA.9000706@cogentembedded.com>
+ <87txjrbe11.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87txjrbe11.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hello.
 
-Hi
+On 19-07-2013 4:16, Kuninori Morimoto wrote:
 
-> >> From: Max Filippov <max.filippov@cogentembedded.com>
-> 
-> >> Use previously empty <mach/dma.h> to declare HPB-DMA slave IDs.
-> 
-> >> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-> >> [Sergei: changed the guard macro name, fixed comment, extended copyright.]
-> >> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >> ---
-> >>   arch/arm/mach-shmobile/include/mach/dma.h |   25 ++++++++++++++++++++++++-
-> >>   1 file changed, 24 insertions(+), 1 deletion(-)
-> 
-> > Thanks for your patch. Can you please explain the reason why you put
-> > this shared information under mach/?
-> 
->     I'm afraid that's more a question to the original author, Phil Edworthy.
-> He put this stuff into <mach/hpb-dmae.h>.
+>>>> From: Max Filippov <max.filippov@cogentembedded.com>
 
-Then, why you could send this patch instead of original author,
-even though you can't answer any question about it ?
+>>>> Use previously empty <mach/dma.h> to declare HPB-DMA slave IDs.
 
-Best regards
----
-Kuninori Morimoto
+>>>> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+>>>> [Sergei: changed the guard macro name, fixed comment, extended copyright.]
+>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>>>> ---
+>>>>    arch/arm/mach-shmobile/include/mach/dma.h |   25 ++++++++++++++++++++++++-
+>>>>    1 file changed, 24 insertions(+), 1 deletion(-)
+
+>>> Thanks for your patch. Can you please explain the reason why you put
+>>> this shared information under mach/?
+
+>>      I'm afraid that's more a question to the original author, Phil Edworthy.
+>> He put this stuff into <mach/hpb-dmae.h>.
+
+> Then, why you could send this patch instead of original author,
+
+    Ask Phil why didn't he upstream his stuff. We, unlike him, do have 
+obligation to upstream it.
+
+> even though you can't answer any question about it ?
+
+    I'm not the author of the patch, let me remind you, Max Filippov is.
+He was on vacations.
+
+> Best regards
+> ---
+> Kuninori Morimoto
+
+WBR, Sergei
+
