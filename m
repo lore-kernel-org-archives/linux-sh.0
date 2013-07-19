@@ -1,101 +1,166 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 07:07:59 +0000
-Subject: [PATCH 06/07] ARM: shmobile: Use shared SCU CPU Hotplug code on sh73a0
-Message-Id: <20130731070759.14444.7805.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Jul 2013 16:29:28 +0000
+Subject: [PATCH v2 03/15] DMA: shdma: add r8a73a4 DMAC data to the device ID table
+Message-Id: <1374251374-30186-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731070702.14444.64961.sendpatchset@w520>
-In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
+References: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+This configuration data will be re-used, when DMAC DT support is added to
+r8a73a4.
 
-Update the sh73a0 specific CPU Hotplug code to make use of
-the recently introduced shared SCU functions. The sh73a0
-power control hardware relies on SCU_PM_POWEROFF with WFI
-so the shared SCU code will as-is power down the hardware
-as expected.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
+ drivers/dma/sh/Kconfig         |    4 ++
+ drivers/dma/sh/Makefile        |    1 +
+ drivers/dma/sh/shdma-r8a73a4.c |   75 ++++++++++++++++++++++++++++++++++++++++
+ drivers/dma/sh/shdma.h         |    7 ++++
+ drivers/dma/sh/shdmac.c        |    1 +
+ 5 files changed, 88 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/dma/sh/shdma-r8a73a4.c
 
- arch/arm/mach-shmobile/smp-sh73a0.c |   41 ++---------------------------------
- 1 file changed, 3 insertions(+), 38 deletions(-)
-
---- 0005/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-07-29 21:48:41.000000000 +0900
-@@ -20,14 +20,11 @@
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/smp.h>
--#include <linux/spinlock.h>
- #include <linux/io.h>
- #include <linux/delay.h>
- #include <mach/common.h>
--#include <asm/cacheflush.h>
--#include <asm/smp_plat.h>
- #include <mach/sh73a0.h>
--#include <asm/smp_scu.h>
-+#include <asm/smp_plat.h>
- #include <asm/smp_twd.h>
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+index 0ac3e94..6921ba2 100644
+--- a/drivers/dma/sh/Kconfig
++++ b/drivers/dma/sh/Kconfig
+@@ -23,6 +23,10 @@ config SUDMAC
+ 	help
+ 	  Enable support for the Renesas SUDMAC controllers.
  
- #define WUPCR		IOMEM(0xe6151010)
-@@ -36,8 +33,6 @@
- #define SBAR		IOMEM(0xe6180020)
- #define APARMBAREA	IOMEM(0xe6f10020)
++config SHDMA_R8A73A4
++	def_bool y
++	depends on ARCH_R8A73A4 && SH_DMAE != n
++
+ config SHDMA_R8A7740
+ 	def_bool y
+ 	depends on ARCH_R8A7740 && SH_DMAE != n
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index acdd3cb..e08489c 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -2,5 +2,6 @@ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
+ obj-$(CONFIG_SH_DMAE) += shdma.o
+ shdma-y := shdmac.o
+ shdma-$(CONFIG_SHDMA_R8A7740) += shdma-r8a7740.o
++shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
+ shdma-objs := $(shdma-y)
+ obj-$(CONFIG_SUDMAC) += sudmac.o
+diff --git a/drivers/dma/sh/shdma-r8a73a4.c b/drivers/dma/sh/shdma-r8a73a4.c
+new file mode 100644
+index 0000000..d3b759d
+--- /dev/null
++++ b/drivers/dma/sh/shdma-r8a73a4.c
+@@ -0,0 +1,75 @@
++#include <linux/sh_dma.h>
++
++#include <mach/dma-register.h>
++#include <mach/r8a73a4.h>
++
++static const struct sh_dmae_slave_config dma_slaves[] = {
++	{
++		.slave_id	= SHDMA_SLAVE_MMCIF0_TX,
++		.addr		= 0xee200034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF0_RX,
++		.addr		= 0xee200034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF1_TX,
++		.addr		= 0xee220034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xe1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF1_RX,
++		.addr		= 0xee220034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xe2,
++	},
++};
++
++#define DMAE_CHANNEL(a, b)				\
++	{						\
++		.offset         = (a) - 0x20,		\
++		.dmars          = (a) - 0x20 + 0x40,	\
++		.chclr_bit	= (b),			\
++		.chclr_offset	= 0x80 - 0x20,		\
++	}
++
++static const struct sh_dmae_channel dma_channels[] = {
++	DMAE_CHANNEL(0x8000, 0),
++	DMAE_CHANNEL(0x8080, 1),
++	DMAE_CHANNEL(0x8100, 2),
++	DMAE_CHANNEL(0x8180, 3),
++	DMAE_CHANNEL(0x8200, 4),
++	DMAE_CHANNEL(0x8280, 5),
++	DMAE_CHANNEL(0x8300, 6),
++	DMAE_CHANNEL(0x8380, 7),
++	DMAE_CHANNEL(0x8400, 8),
++	DMAE_CHANNEL(0x8480, 9),
++	DMAE_CHANNEL(0x8500, 10),
++	DMAE_CHANNEL(0x8580, 11),
++	DMAE_CHANNEL(0x8600, 12),
++	DMAE_CHANNEL(0x8680, 13),
++	DMAE_CHANNEL(0x8700, 14),
++	DMAE_CHANNEL(0x8780, 15),
++	DMAE_CHANNEL(0x8800, 16),
++	DMAE_CHANNEL(0x8880, 17),
++	DMAE_CHANNEL(0x8900, 18),
++	DMAE_CHANNEL(0x8980, 19),
++};
++
++struct sh_dmae_pdata r8a73a4_dma_pdata = {
++	.slave		= dma_slaves,
++	.slave_num	= ARRAY_SIZE(dma_slaves),
++	.channel	= dma_channels,
++	.channel_num	= ARRAY_SIZE(dma_channels),
++	.ts_low_shift	= TS_LOW_SHIFT,
++	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift	= TS_HI_SHIFT,
++	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift	= dma_ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
++	.dmaor_init     = DMAOR_DME,
++	.chclr_present	= 1,
++	.chclr_bitwise	= 1,
++};
+diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
+index b5fe545..82a83f8 100644
+--- a/drivers/dma/sh/shdma.h
++++ b/drivers/dma/sh/shdma.h
+@@ -61,6 +61,13 @@ struct sh_dmae_desc {
+ #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
+ 				     struct sh_dmae_device, shdma_dev.dma_dev)
  
--#define PSTR_SHUTDOWN_MODE	3
--
- #define SH73A0_SCU_BASE 0xf0000000
++#ifdef CONFIG_SHDMA_R8A73A4
++extern struct sh_dmae_pdata r8a73a4_dma_pdata;
++#define r8a73a4_shdma_devid &r8a73a4_dma_pdata
++#else
++#define r8a73a4_shdma_devid NULL
++#endif
++
+ #ifdef CONFIG_SHDMA_R8A7740
+ extern struct sh_dmae_pdata r8a7740_dma_pdata;
+ #define r8a7740_shdma_devid &r8a7740_dma_pdata
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index fe54cda..6546bf9 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -907,6 +907,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
  
- #ifdef CONFIG_HAVE_ARM_TWD
-@@ -77,36 +72,6 @@ static void __init sh73a0_smp_prepare_cp
- }
- 
- #ifdef CONFIG_HOTPLUG_CPU
--static int sh73a0_cpu_kill(unsigned int cpu)
--{
--
--	int k;
--	u32 pstr;
--
--	/*
--	 * wait until the power status register confirms the shutdown of the
--	 * offline target
--	 */
--	for (k = 0; k < 1000; k++) {
--		pstr = (__raw_readl(PSTR) >> (4 * cpu)) & 3;
--		if (pstr = PSTR_SHUTDOWN_MODE)
--			return 1;
--
--		mdelay(1);
--	}
--
--	return 0;
--}
--
--static void sh73a0_cpu_die(unsigned int cpu)
--{
--	/* Set power off mode. This takes the CPU out of the MP cluster */
--	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
--
--	/* Enter shutdown mode */
--	cpu_do_idle();
--}
--
- static int sh73a0_cpu_disable(unsigned int cpu)
- {
- 	return 0; /* CPU0 and CPU1 supported */
-@@ -117,8 +82,8 @@ struct smp_operations sh73a0_smp_ops __i
- 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
- 	.smp_boot_secondary	= sh73a0_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
--	.cpu_kill		= sh73a0_cpu_kill,
--	.cpu_die		= sh73a0_cpu_die,
- 	.cpu_disable		= sh73a0_cpu_disable,
-+	.cpu_die		= shmobile_smp_scu_cpu_die,
-+	.cpu_kill		= shmobile_smp_scu_cpu_kill,
- #endif
+ const struct platform_device_id sh_dmae_id_table[] = {
+ 	{.name = SH_DMAE_DRV_NAME,},
++	{.name = "shdma-r8a73a4", .driver_data = (kernel_ulong_t)r8a73a4_shdma_devid,},
+ 	{.name = "shdma-r8a7740", .driver_data = (kernel_ulong_t)r8a7740_shdma_devid,},
+ 	{}
  };
+-- 
+1.7.2.5
+
