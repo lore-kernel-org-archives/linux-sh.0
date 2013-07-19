@@ -1,36 +1,72 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Jul 2013 01:46:07 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7740: Add TPU node to the device tree
-Message-Id: <20130731014607.GL17209@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:12 +0000
+Subject: [PATCH 13/19] ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
+Message-Id: <9900595b3dac2948112ed7745dbb28d2a8bf99f9.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 26, 2013 at 12:51:00AM +0200, Laurent Pinchart wrote:
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/boot/dts/r8a7740.dtsi | 7 +++++++
->  1 file changed, 7 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-> index e18a195..639822d 100644
-> --- a/arch/arm/boot/dts/r8a7740.dtsi
-> +++ b/arch/arm/boot/dts/r8a7740.dtsi
-> @@ -147,4 +147,11 @@
->  		gpio-controller;
->  		#gpio-cells = <2>;
->  	};
-> +
-> +	tpu: pwm@e6600000 {
-> +		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
-> +		reg = <0xe6600000 0x100>;
-> +		status = "disabled";
-> +		#pwm-cells = <3>;
-> +	};
->  };
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks, I will queue this up for v3.12 in the tpu-pwm branch.
+Reference the st1232 reset GPIO from the device tree and remove it from
+board code.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  |    2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    7 -------
+ 2 files changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index a6c6606..8ec4cd1 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -10,6 +10,7 @@
+ 
+ /dts-v1/;
+ /include/ "r8a7740.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "armadillo 800 eva reference";
+@@ -43,6 +44,7 @@
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
+ 		pinctrl-0 = <&st1232_pins>;
+ 		pinctrl-names = "default";
++		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+ 	};
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 4ddd299..002d8d3 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -158,7 +158,6 @@ clock_error:
+  */
+ static void __init eva_init(void)
+ {
+-
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
+ 
+@@ -171,12 +170,6 @@ static void __init eva_init(void)
+ 
+ 	r8a7740_add_standard_devices_dt();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+-
+ 	r8a7740_pm_init();
+ }
+ 
+-- 
+1.7.10.4
+
