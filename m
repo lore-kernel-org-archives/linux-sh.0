@@ -1,52 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:58 +0000
-Subject: [PATCH 19/19] ARM: shmobile: kzm9g-reference: Add LED1-LED4 to the device tree
-Message-Id: <1469273960de45275f33276c7254456edcba9da2.1374625203.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Jul 2013 15:30:20 +0000
+Subject: [PATCH 1/2] ARM: shmobile: ape6evm-reference: switch PFC to DT
+Message-Id: <Pine.LNX.4.64.1307191723470.26183@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+PFC pinctrl configuration can now be performed via DT. Update
+ape6evm-reference to use this.
 
-LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   10 ++++++++++
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    9 ---------
+ 2 files changed, 10 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index d2b2c9f..b99e890 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -89,6 +89,22 @@
- 		vddvario-supply = <&reg_1p8v>;
- 		vdd33a-supply = <&reg_3p3v>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&pfc 20 GPIO_ACTIVE_LOW>;
-+		};
-+		led2 {
-+			gpios = <&pfc 21 GPIO_ACTIVE_LOW>;
-+		};
-+		led3 {
-+			gpios = <&pfc 22 GPIO_ACTIVE_LOW>;
-+		};
-+		led4 {
-+			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
-+		};
-+	};
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 6f4506e..bbd09d8 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -53,3 +53,13 @@
+ 	>;
+ 	voltage-tolerance = <1>; /* 1% */
  };
++
++&pfc {
++	pinctrl-0 = <&scifa0_pins>;
++	pinctrl-names = "default";
++
++	scifa0_pins: scifa0 {
++		renesas,groups = "scifa0_data";
++		renesas,function = "scifa0";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index 46b41de..52cc5fa 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -29,12 +29,6 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
- &i2c0 {
+-static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+-	/* SCIFA0 console */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+-				  "scifa0_data", "scifa0"),
+-};
+-
+ static void __init ape6evm_add_standard_devices(void)
+ {
+ 
+@@ -52,9 +46,6 @@ static void __init ape6evm_add_standard_devices(void)
+ 	clk_put(parent);
+ 	clk_put(mp);
+ 
+-	pinctrl_register_mappings(ape6evm_pinctrl_map,
+-				  ARRAY_SIZE(ape6evm_pinctrl_map));
+-	r8a73a4_pinmux_init();
+ 	r8a73a4_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
 -- 
-1.8.2.1
+1.7.2.5
 
