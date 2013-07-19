@@ -1,71 +1,87 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 26 Jul 2013 02:38:39 +0000
-Subject: Re: [PATCH] ARM: shmobile: sh73a0: Rely on DT for SMP CPU info
-Message-Id: <20130726023838.GC32490@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:36:56 +0000
+Subject: [PATCH 02/19] ARM: shmobile: r8a7740: Add pin control device to device tree
+Message-Id: <bce4d99ee1c246a12a043c196faba6948f3bdf9d.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130724072739.28333.44251.sendpatchset@w520>
-In-Reply-To: <20130724072739.28333.44251.sendpatchset@w520>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 24, 2013 at 04:27:39PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Remove sh73a0 specific ->smp_init_cpus() callback and
-> instead of relying on shmobile_smp_init_cpus() simply
-> use DT for CPU core information.
-> 
-> This assumes that DT_MACHINE_START is used which is
-> the case when AG5EVM and Kota2 are removed.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-And indeed they are queued-up for removal.
+Add a pfc node to the r8a7740 device tree and remove manual pinmux
+initialization from the corresponding board files.
 
-I have queued-up this patch for v3.12 in the dt2 branch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740.dtsi                         |    8 ++++++++
+ .../mach-shmobile/board-armadillo800eva-reference.c    |   16 ++++++++--------
+ 2 files changed, 16 insertions(+), 8 deletions(-)
 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/smp-sh73a0.c |   11 ++---------
->  1 file changed, 2 insertions(+), 9 deletions(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
-> +++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-07-24 15:59:16.000000000 +0900
-> @@ -62,6 +62,8 @@ static int sh73a0_boot_secondary(unsigne
->  
->  static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
->  {
-> +	/* setup sh73a0 specific SCU base */
-> +	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
->  	scu_enable(shmobile_scu_base);
->  
->  	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
-> @@ -74,14 +76,6 @@ static void __init sh73a0_smp_prepare_cp
->  	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
->  }
->  
-> -static void __init sh73a0_smp_init_cpus(void)
-> -{
-> -	/* setup sh73a0 specific SCU base */
-> -	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
-> -
-> -	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
-> -}
-> -
->  #ifdef CONFIG_HOTPLUG_CPU
->  static int sh73a0_cpu_kill(unsigned int cpu)
->  {
-> @@ -120,7 +114,6 @@ static int sh73a0_cpu_disable(unsigned i
->  #endif /* CONFIG_HOTPLUG_CPU */
->  
->  struct smp_operations sh73a0_smp_ops __initdata = {
-> -	.smp_init_cpus		= sh73a0_smp_init_cpus,
->  	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
->  	.smp_boot_secondary	= sh73a0_boot_secondary,
->  #ifdef CONFIG_HOTPLUG_CPU
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 24e9306..e18a195 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -139,4 +139,12 @@
+ 			      0 72 0x4
+ 			      0 73 0x4>;
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a7740";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605800c 0x20>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 03b85fe..f25b6aa 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -121,7 +121,7 @@
+ 
+ static const struct pinctrl_map eva_pinctrl_map[] = {
+ 	/* SCIFA1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
+ 				  "scifa1_data", "scifa1"),
+ };
+ 
+@@ -170,22 +170,22 @@ static void __init eva_init(void)
+ 	eva_clock_init();
+ 
+ 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+-	r8a7740_pinmux_init();
+ 
+ 	r8a7740_meram_workaround();
+ 
+-	/*
+-	 * Touchscreen
+-	 * TODO: Move reset GPIO over to .dts when we can reference it
+-	 */
+-	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+ #endif
+ 
+ 	r8a7740_add_standard_devices_dt();
++
++	/*
++	 * Touchscreen
++	 * TODO: Move reset GPIO over to .dts when we can reference it
++	 */
++	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
++
+ 	r8a7740_pm_init();
+ }
+ 
+-- 
+1.7.10.4
+
