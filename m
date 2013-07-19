@@ -1,57 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 25 Jul 2013 11:44:12 +0000
-Subject: Re: [PATCH v2 3/5] v4l: Add media format codes for ARGB8888 and AYUV8888 on 32-bit busses
-Message-Id: <2328654.t4tri5nhxO@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:11 +0000
+Subject: [PATCH 12/19] ARM: shmobile: armadillo-reference: Add st1232 pin mappings
+Message-Id: <448bd4531a795df3d7541a4dbe40d3fab5f1f68c.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1374072882-14598-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <51F04688.6090900@gmail.com>
-In-Reply-To: <51F04688.6090900@gmail.com>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sylwester,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On Wednesday 24 July 2013 23:26:32 Sylwester Nawrocki wrote:
-> On 07/17/2013 04:54 PM, Laurent Pinchart wrote:
-> > Signed-off-by: Laurent Pinchart<laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > ---
-> > 
-> >   Documentation/DocBook/media/v4l/subdev-formats.xml | 609   ++++++-------
-> >   Documentation/DocBook/media_api.tmpl               |   6 +
-> >   include/uapi/linux/v4l2-mediabus.h                 |   6 +-
-> >   3 files changed, 254 insertions(+), 367 deletions(-)
-> > 
-> > diff --git a/Documentation/DocBook/media/v4l/subdev-formats.xml
-> > b/Documentation/DocBook/media/v4l/subdev-formats.xml index
-> > 0c2b1f2..9100674 100644
-> > --- a/Documentation/DocBook/media/v4l/subdev-formats.xml
-> > +++ b/Documentation/DocBook/media/v4l/subdev-formats.xml
-> > @@ -97,31 +97,39 @@
-> 
-> [...]
-> 
-> > +	<row id="V4L2-MBUS-FMT-ARGB888-1X24">
-> > +	<entry>V4L2_MBUS_FMT_ARGB888_1X24</entry>
-> 
-> This should be V4L2_MBUS_FMT_ARGB888_1X32, right ?
+Add pin mappings for the st1232 device to the device tree and reference
+them as the default state for the device.
 
-Oops, indeed.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-> 
-> Fix this correction feel free to add:
-> 
->   Reviewed-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-
-Thank you.
-
-> > +	<entry>0x100d</entry>
-> > +	<entry></entry>
-
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 4a7ae32..a6c6606 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -41,6 +41,8 @@
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+ 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
++		pinctrl-0 = <&st1232_pins>;
++		pinctrl-names = "default";
+ 	};
+ };
+ 
+@@ -52,4 +54,9 @@
+ 		renesas,groups = "scifa1_data";
+ 		renesas,function = "scifa1";
+ 	};
++
++	st1232_pins: st1232 {
++		renesas,groups = "intc_irq10";
++		renesas,function = "intc";
++	};
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
