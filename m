@@ -1,72 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 25 Jul 2013 02:03:18 +0000
-Subject: Re: [PATCH] ARM: shmobile: marzen: Switch to DT_MACHINE_START
-Message-Id: <20130725020317.GA21110@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:15 +0000
+Subject: [PATCH 16/19] ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
+Message-Id: <1cf6e1795452f9c1f82b55b1a72585c42249836e.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130724073042.28351.33041.sendpatchset@w520>
- <20130724073952.GD17045@verge.net.au>
- <20130724084637.GA5774@verge.net.au>
- <CANqRtoT46LimTXt4mihFJS-DDpXOu5wONVX3yWwt=sr9SDvnsg@mail.gmail.com>
-In-Reply-To: <CANqRtoT46LimTXt4mihFJS-DDpXOu5wONVX3yWwt=sr9SDvnsg@mail.gmail.com>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 24, 2013 at 07:00:05PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Wed, Jul 24, 2013 at 5:46 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Jul 24, 2013 at 04:39:53PM +0900, Simon Horman wrote:
-> >> On Wed, Jul 24, 2013 at 04:30:42PM +0900, Magnus Damm wrote:
-> >> > From: Magnus Damm <damm@opensource.se>
-> >> >
-> >> > Convert the marzen board to use DT_MACHINE_START. With this in
-> >> > place all mach-shmobile boards use DT_MACHINE_START. Also, this
-> >> > makes it possible for the r8a7779 SMP code to use DT for CPUs.
-> >> >
-> >> > So appended DTB is the way forward on this board.
-> >>
-> >> Please supply a patch to update the defconfig accordingly.
-> >
-> > In the course of testing this patch I created
-> > a patch to update the defconfig. I will post it with
-> > a patch to use DT for SMP but I have some questions about this patch.
-> >
-> > It seems to me that the following is also needed:
-> >
-> > * Select USE_OF in Kconfig
-> > * Provide dt_compat in DT_MACHINE_START
-> > * Provide r8a7779-marzen dts
-> >
-> > I have a revised version of this patch which does the above.
-> > But I wanted to check with you that I am on the right track
-> > before posting it.
-> 
-> Yes, you are correct. It seems that I was (am) too trigger happy.
-> Thanks for fixing these.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-No problem, I'll post the patches.
+LED2 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
-> > Also, I think that once sh73a0 and r8a7779 uses DT for SMP we can remove
-> > shmobile_smp_init_cpus(). As you have posted a patch for sh73a0 I have
-> > prepated a patch for r8a7779 I have also prepared a patch to remove
-> > shmobile_smp_init_cpus().
-> 
-> I think we should remove that function, but I'd like to put some
-> shared code in the same file. So I don't want to remove the file.
-> Perhaps the easiest is to leave it as-is for now and let me deal with
-> that in an upcoming series.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-Sure, if that is how you would like to roll.
-Another option is to remove the file and then add it back again later.
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 6d20247..b64705b 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -11,6 +11,7 @@
+ 
+ /dts-v1/;
+ /include/ "r8a7779.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "marzen";
+@@ -47,6 +48,19 @@
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led2 {
++			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
++		};
++		led3 {
++			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
++		};
++		led4 {
++			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
+ 
+ &pfc {
+-- 
+1.7.10.4
 
-> > My plan is to post all relevant patches as a series once
-> > my questions above are resolved.
-> 
-> Sounds good, thanks for your help!
-> 
-> Thanks,
-> 
-> / magnus
-> 
