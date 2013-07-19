@@ -1,63 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 25 Jul 2013 23:26:45 +0000
-Subject: [PATCH 09/12] mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
-Message-Id: <1374794808-21890-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Jul 2013 16:29:25 +0000
+Subject: [PATCH v2 00/15] ARM: shmobile: move DMAC configuration data in the driver
+Message-Id: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-All platforms pass the CD GPIO number to the driver in the .cd_gpio
-field. The .get_cd() callback isn't used anymore, remove it.
+An extended and slightly updated to address comments from Sergei Shtylyov 
+version of my patch set of 12.07. As with v1, ARM patches should be 
+applied after DMA. Since the DMA part only affects the shdma driver, maybe 
+it would be possible to have them acked and pulled via the ARM tree too. 
+Otherwise the ARM patches will have to wait for 1 cycle.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/mmc/host/sh_mobile_sdhi.c  | 9 ---------
- include/linux/mmc/sh_mobile_sdhi.h | 1 -
- 2 files changed, 10 deletions(-)
+Guennadi Liakhovetski (15):
+  DMA: shdma: add support for DMAC configuration data, supplied via
+    device ID
+  DMA: shdma: add r8a7740 DMAC data to the device ID table
+  DMA: shdma: add r8a73a4 DMAC data to the device ID table
+  DMA: shdma: make a pointer const
+  DMA: shdma: pass SoC-specific configuration to the driver via OF
+    matching
+  DMA: shdma: make multiplexer platform data optional
+  DMA: shdma: add sh73a0 DMAC data to the device ID table
+  DMA: shdma: move two macros to a header
+  DMA: shdma: support referencing specific DMACs within a multiplexer
+    in DT
+  ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
+  ARM: shmobile: r8a7740: switch DMAC controllers to using device ID
+    data
+  ARM: shmobile: r8a7740: add DT nodes and clock aliases for three DMAC
+    instances
+  ARM: shmobile: r8a73a4: add a DT node and a clock alias for the DMAC
+  ARM: shmobile: sh73a0: switch DMAC controllers to using device ID
+    data
+  ARM: shmobile: r8a7740: add support for 2 RTDMACs
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index ebea749..663a672 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -77,13 +77,6 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
- 	p->set_pwr(pdev, state);
- }
- 
--static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
--{
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--
--	return p->get_cd(pdev);
--}
--
- static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
- {
- 	int timeout = 1000;
-@@ -182,8 +175,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->cd_gpio = p->cd_gpio;
- 		if (p->set_pwr)
- 			mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
--		if (p->get_cd)
--			mmc_data->get_cd = sh_mobile_sdhi_get_cd;
- 
- 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
- 			/*
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index b76bcf0..f31c692 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -26,7 +26,6 @@ struct sh_mobile_sdhi_info {
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
- 	void (*set_pwr)(struct platform_device *pdev, int state);
--	int (*get_cd)(struct platform_device *pdev);
- 
- 	/* callbacks for board specific setup code */
- 	int (*init)(struct platform_device *pdev,
+ Documentation/devicetree/bindings/dma/shdma.txt |   23 +-
+ arch/arm/boot/dts/r8a73a4.dtsi                  |   43 +
+ arch/arm/boot/dts/r8a7740.dtsi                  |   95 +++
+ arch/arm/mach-shmobile/clock-r8a73a4.c          |    5 +-
+ arch/arm/mach-shmobile/clock-r8a7740.c          |   17 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c           |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h   |    9 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c          |   17 +
+ arch/arm/mach-shmobile/setup-r8a7740.c          |  178 ++---
+ arch/arm/mach-shmobile/setup-sh73a0.c           |  182 +----
+ drivers/dma/sh/Kconfig                          |   12 +
+ drivers/dma/sh/Makefile                         |    5 +
+ drivers/dma/sh/shdma-base.c                     |    3 -
+ drivers/dma/sh/shdma-of.c                       |    5 -
+ drivers/dma/sh/shdma-r8a73a4.c                  |   75 ++
+ drivers/dma/sh/shdma-r8a7740.c                  |   95 +++
+ drivers/dma/sh/shdma-sh73a0.c                   |  181 ++++
+ drivers/dma/sh/shdma.c                          |  939 ---------------------
+ drivers/dma/sh/shdma.h                          |   30 +-
+ drivers/dma/sh/shdmac.c                         | 1025 +++++++++++++++++++++++
+ include/linux/shdma-base.h                      |    3 +
+ 21 files changed, 1705 insertions(+), 1239 deletions(-)
+ create mode 100644 drivers/dma/sh/shdma-r8a73a4.c
+ create mode 100644 drivers/dma/sh/shdma-r8a7740.c
+ create mode 100644 drivers/dma/sh/shdma-sh73a0.c
+ delete mode 100644 drivers/dma/sh/shdma.c
+ create mode 100644 drivers/dma/sh/shdmac.c
+
 -- 
-1.8.1.5
+1.7.2.5
 
