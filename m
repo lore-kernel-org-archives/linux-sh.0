@@ -1,37 +1,124 @@
-From: Jingoo Han <jg1.han@samsung.com>
-Date: Wed, 10 Jul 2013 01:49:43 +0000
-Subject: Re: [PATCH v2 3/7] backlight: Add ROHM BD6107 backlight driver
-Message-Id: <000b01ce7d0f$c0024a00$4006de00$@samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:14 +0000
+Subject: [PATCH 15/19] ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
+Message-Id: <fb0978516f4a7c2d62e097d05c86f47d407fe4a2.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372965210-10024-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1372965210-10024-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Friday, July 05, 2013 4:13 AM, Laurent Pinchart wrote:
-> 
-> The BD6107 is a multi-purpose 10 channels LED driver for the mobile
-> market. Only the main channel is supported by this driver.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This looks good.
-Acked-by: Jingoo Han <jg1.han@samsung.com>
+Replace the pinctrl mappings in board code by device tree mappings.
+For devices that are still instantiated from board code reference the
+mappings as the default pin controller state to apply them at boot time.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  |   35 +++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-marzen-reference.c |   27 -----------------
+ 2 files changed, 35 insertions(+), 27 deletions(-)
 
-Best regards,
-Jingoo Han
-
-> ---
->  drivers/video/backlight/Kconfig      |   6 +
->  drivers/video/backlight/Makefile     |   1 +
->  drivers/video/backlight/bd6107.c     | 213 +++++++++++++++++++++++++++++++++++
->  include/linux/platform_data/bd6107.h |  19 ++++
->  4 files changed, 239 insertions(+)
->  create mode 100644 drivers/video/backlight/bd6107.c
->  create mode 100644 include/linux/platform_data/bd6107.h
-
-
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 72be4c8..6d20247 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -37,6 +37,9 @@
+ 	lan0@18000000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x18000000 0x100>;
++		pinctrl-0 = <&lan0_pins>;
++		pinctrl-names = "default";
++
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 28 0x4>;
+@@ -45,3 +48,35 @@
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
+ };
++
++&pfc {
++	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
++	pinctrl-names = "default";
++
++	lan0_pins: lan0 {
++		intc {
++			renesas,groups = "intc_irq1_b";
++			renesas,function = "intc";
++		};
++		lbsc {
++			renesas,groups = "lbsc_ex_cs0";
++			renesas,function = "lbsc";
++		};
++	};
++
++	scif2_pins: scif2 {
++		renesas,groups = "scif2_data_c";
++		renesas,function = "scif2";
++	};
++
++	scif4_pins: scif4 {
++		renesas,groups = "scif4_data";
++		renesas,function = "scif4";
++	};
++
++	sdhi0_pins: sdhi0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
++				 "sdhi0_wp";
++		renesas,function = "sdhi0";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 94804f3..3d1c439 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,41 +19,14 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/pinctrl/machine.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
+ 
+-static const struct pinctrl_map marzen_pinctrl_map[] = {
+-	/* SCIF2 (CN18: DEBUG0) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
+-				  "scif2_data_c", "scif2"),
+-	/* SCIF4 (CN19: DEBUG1) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
+-				  "scif4_data", "scif4"),
+-	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+-				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+-				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+-				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+-				  "sdhi0_wp", "sdhi0"),
+-	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+-				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+-				  "lbsc_ex_cs0", "lbsc"),
+-};
+-
+ static void __init marzen_init(void)
+ {
+-	pinctrl_register_mappings(marzen_pinctrl_map,
+-				  ARRAY_SIZE(marzen_pinctrl_map));
+-
+ 	r8a7779_add_standard_devices_dt();
+ }
+ 
+-- 
+1.7.10.4
 
