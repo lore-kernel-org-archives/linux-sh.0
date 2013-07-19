@@ -1,174 +1,88 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 22 Jul 2013 13:16:18 +0000
-Subject: [PATCH 3/6] ARM: shmobile: armadillo800eva-reference: add MMCIF and SDHI DT nodes
-Message-Id: <1374498981-5263-4-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:36:59 +0000
+Subject: [PATCH 05/19] ARM: shmobile: r8a7779: Add pin control device to device tree
+Message-Id: <c829db7cacd0a5dd857bf59f74db1c5e1d3f32f6.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363915432-21720-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363915432-21720-4-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add MMCIF, SDHI0 and SDHI1 DT nodes to armadillo800eva-reference together
-with required regulators and pinctrl bindings.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Add a pfc node to the r8a7779 device tree and remove manual pinmux
+initialization from the corresponding board files.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   83 ++++++++++++++++++++
- arch/arm/boot/dts/r8a7740.dtsi                     |   33 ++++++++
- 2 files changed, 116 insertions(+), 0 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi                  |    5 +++++
+ arch/arm/mach-shmobile/board-marzen-reference.c |   17 ++++++++---------
+ 2 files changed, 13 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 366f729..1acf1bd 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -49,6 +49,44 @@
- 			gpios = <&pfc 177 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	vcc_sdhi0: regulator@1 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "vcc-sdhi0";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&pfc 75 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vcc_sdhi1: regulator@2 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "vcc-sdhi1";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&pfc 16 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi0: gpio-regulator@0 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "vccq-sdhi0";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+		vin-supply = <&vcc_sdhi0>;
-+
-+		enable-gpio = <&pfc 74 GPIO_ACTIVE_HIGH>;
-+		gpios = <&pfc 17 GPIO_ACTIVE_HIGH>;
-+		states = <3300000 0
-+			  1800000 1>;
-+
-+		enable-active-high;
-+	};
- };
- 
- &i2c0 {
-@@ -63,6 +101,36 @@
- 	};
- };
- 
-+&mmcif0 {
-+	vmmc-supply = <&reg_3p3v>;
-+	bus-width = <8>;
-+	non-removable;
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&mmc0_pins>;
-+	status = "okay";
-+};
-+
-+&sdhi0 {
-+	vmmc-supply = <&vcc_sdhi0>;
-+	vqmmc-supply = <&vccq_sdhi0>;
-+	cap-power-off-card;
-+	bus-width = <4>;
-+	cd-gpios = <&pfc 167 GPIO_ACTIVE_LOW>;
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&sdhi0_pins>;
-+	status = "okay";
-+};
-+
-+&sdhi1 {
-+	vmmc-supply = <&vcc_sdhi1>;
-+	cap-power-off-card;
-+	bus-width = <4>;
-+	cd-gpios = <&pfc 72 GPIO_ACTIVE_LOW>;
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&sdhi1_pins>;
-+	status = "okay";
-+};
-+
- &pfc {
- 	pinctrl-0 = <&scifa1_pins>;
- 	pinctrl-names = "default";
-@@ -76,4 +144,19 @@
- 		renesas,groups = "intc_irq10";
- 		renesas,function = "intc";
- 	};
-+
-+	mmc0_pins: mmcif {
-+		renesas,groups = "mmc0_data8_1", "mmc0_ctrl_1";
-+		renesas,function = "mmc0";
-+	};
-+
-+	sdhi0_pins: sdhi0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi1_pins: sdhi1 {
-+		renesas,groups = "sdhi1_data4", "sdhi1_ctrl", "sdhi1_cd", "sdhi1_wp";
-+		renesas,function = "sdhi1";
-+	};
- };
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 638ada2..1d112f9 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -235,6 +235,39 @@
- 			      0 73 0x4>;
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 7f146c6..9dfc438 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -101,6 +101,11 @@
+ 		interrupts = <0 81 0x4>;
  	};
  
-+	mmcif0: mmcif@e6bd0000 {
-+		compatible = "renesas,sh-mmcif", "renesas,sh7372-mmcif";
-+		reg = <0xe6bd0000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 56 4
-+				0 57 4>;
-+		status = "disabled";
++	pfc: pfc@fffc0000 {
++		compatible = "renesas,pfc-r8a7779";
++		reg = <0xfffc0000 0x23c>;
 +	};
 +
-+	sdhi0: sdhi@e6850000 {
-+		compatible = "renesas,r8a7740-sdhi";
-+		reg = <0xe6850000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 117 4
-+				0 118 4
-+				0 119 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
-+
-+	sdhi1: sdhi@e6860000 {
-+		compatible = "renesas,r8a7740-sdhi";
-+		reg = <0xe6860000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 121 4
-+				0 122 4
-+				0 123 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
-+
- 	pfc: pfc@e6050000 {
- 		compatible = "renesas,pfc-r8a7740";
- 		reg = <0xe6050000 0x8000>,
+ 	thermal@ffc48000 {
+ 		compatible = "renesas,rcar-thermal";
+ 		reg = <0xffc48000 0x38>;
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 480d882..94804f3 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -28,24 +28,24 @@
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 	/* SCIF2 (CN18: DEBUG0) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
+ 				  "scif2_data_c", "scif2"),
+ 	/* SCIF4 (CN19: DEBUG1) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
+ 				  "scif4_data", "scif4"),
+ 	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+ 				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
+ 				  "lbsc_ex_cs0", "lbsc"),
+ };
+ 
+@@ -53,7 +53,6 @@ static void __init marzen_init(void)
+ {
+ 	pinctrl_register_mappings(marzen_pinctrl_map,
+ 				  ARRAY_SIZE(marzen_pinctrl_map));
+-	r8a7779_pinmux_init();
+ 
+ 	r8a7779_add_standard_devices_dt();
+ }
 -- 
-1.7.2.5
+1.7.10.4
 
