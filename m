@@ -1,23 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 23 Jul 2013 01:24:38 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager-reference: Add LED6-LED8 to the device tree
-Message-Id: <20130723012438.GB16481@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:01 +0000
+Subject: [PATCH 07/19] ARM: shmobile: r8a7790: Add pin control device to device tree
+Message-Id: <2d6dcdb5352160d064cffefcd63368ad0d518860.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373967956-3651-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1373967956-3651-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 16, 2013 at 11:45:56AM +0200, Laurent Pinchart wrote:
-> LED6 to LED8 are GPIO LEDs. Add corresponding DT nodes.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/boot/dts/r8a7790-lager-reference.dts | 14 ++++++++++++++
->  1 file changed, 14 insertions(+)
-> 
-> The patch is based on renesas-devel-20130716.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks, I have queued this up for v3.12 in the dt2 branch of the renesas tree.
+Add a pfc node to the r8a7790 device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 339d9b1..13caf12 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -54,4 +54,9 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
+ 	};
++
++	pfc: pfc@e6060000 {
++		compatible = "renesas,pfc-r8a7790";
++		reg = <0 0xe6060000 0 0x250>;
++	};
+ };
+-- 
+1.7.10.4
+
