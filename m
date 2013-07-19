@@ -1,44 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Jul 2013 06:39:10 +0000
-Subject: Re: [PATCH] ARM: shmobile: sh73a0: add PMU information to sh73a0.dtsi
-Message-Id: <20130731063909.GB5090@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:03 +0000
+Subject: [PATCH 09/19] ARM: shmobile: sh7372: Add pin control device to device tree
+Message-Id: <ed3dcde41b77aa23ef04ea12c46ed78a816c2a50.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130724034503.30609.21892.sendpatchset@w520>
-In-Reply-To: <20130724034503.30609.21892.sendpatchset@w520>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, koba@kmckk.co.jp, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 24, 2013 at 12:45:03PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add PMU information to sh73a0.dtsi. With this
-> included KZM9G DT reference may use the PMU.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks, I will queue this up for v3.12 in the dt2 branch.
+Add a pfc node to the sh7372 device tree.
 
-> ---
-> 
->  arch/arm/boot/dts/sh73a0.dtsi |    6 ++++++
->  1 file changed, 6 insertions(+)
-> 
-> --- 0001/arch/arm/boot/dts/sh73a0.dtsi
-> +++ work/arch/arm/boot/dts/sh73a0.dtsi	2013-07-24 04:12:57.000000000 +0900
-> @@ -38,6 +38,12 @@
->  		      <0xf0000100 0x100>;
->  	};
->  
-> +	pmu {
-> +		compatible = "arm,cortex-a9-pmu";
-> +		interrupts = <0 55 4>,
-> +			     <0 56 4>;
-> +	};
-> +
->  	irqpin0: irqpin@e6900000 {
->  		compatible = "renesas,intc-irqpin";
->  		#interrupt-cells = <2>;
-> 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh7372.dtsi |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
+index 7bf020e..249f65be2 100644
+--- a/arch/arm/boot/dts/sh7372.dtsi
++++ b/arch/arm/boot/dts/sh7372.dtsi
+@@ -23,4 +23,12 @@
+ 			reg = <0x0>;
+ 		};
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-sh7372";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+-- 
+1.7.10.4
+
