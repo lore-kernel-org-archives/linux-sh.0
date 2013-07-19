@@ -1,67 +1,163 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Jul 2013 01:22:50 +0000
-Subject: Re: [PATCH v4 5/7] mmc: SDHI: add DT compatibility strings for further SoCs
-Message-Id: <20130717012247.GA2797@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:16 +0000
+Subject: [PATCH 17/19] ARM: shmobile: kzm9g-reference: Move pinctrl mappings to device tree
+Message-Id: <61eea6ffedd96e3a1d107cde6e5f6c1a444094ff.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1307090940310.28812@axis700.grange>
- <CANqRtoQY7hwEhN5XMXG5V234aXDFZ_kfei8ZQL+VMKaaxW=0DQ@mail.gmail.com>
- <20130710011834.GA27240@verge.net.au>
-In-Reply-To: <20130710011834.GA27240@verge.net.au>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, SH-Linux <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 10, 2013 at 10:18:35AM +0900, Simon Horman wrote:
-> On Tue, Jul 09, 2013 at 06:06:00PM +0900, Magnus Damm wrote:
-> > On Tue, Jul 9, 2013 at 4:43 PM, Guennadi Liakhovetski
-> > <g.liakhovetski@gmx.de> wrote:
-> > > Add further OF compatibility strings to the SDHI driver to be able to
-> > > precisely control driver's behaviour on each of them.
-> > >
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > > ---
-> > >
-> > > v4:
-> > > 1. added r8a7778 and r8a7779 per Morimoto-san's request
-> > > 2. sh* and r8a* entries now sorted alphabetically
-> > 
-> > This looks good to me, thanks.
-> > 
-> > Acked-by: Magnus Damm <damm@opensource.se>
-> 
-> Thanks, I have queued this up for v3.12 in the dt branch.
-> It should appear in renesas-next-20130710
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Reviewing this, I now think that it should got through the MMC tree.
-Chris, could you consider the patch below?
+Replace the pinctrl mappings in board code by device tree mappings.
+For devices that are still instantiated from board code reference the
+mappings as the default pin controller state to apply them at boot time.
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   51 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   40 -------------------
+ 2 files changed, 51 insertions(+), 40 deletions(-)
 
-mmc: SDHI: add DT compatibility strings for further SoCs
-
-Add further OF compatibility strings to the SDHI driver to be able to
-precisely control driver's behaviour on each of them.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Acked-by: Simon Horman <horms@verge.net.au>
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index ebea749..afa1bba 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -129,7 +129,12 @@ static const struct sh_mobile_sdhi_ops sdhi_ops = {
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,shmobile-sdhi" },
- 	{ .compatible = "renesas,sh7372-sdhi" },
-+	{ .compatible = "renesas,sh73a0-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,r8a73a4-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,r8a7740-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,r8a7778-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,r8a7779-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,r8a7790-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{},
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index b6f759e..11ae9ad 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -145,19 +145,70 @@
+ 	};
  };
- MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+ 
++&i2c3 {
++	pinctrl-0 = <&i2c3_pins>;
++	pinctrl-names = "default";
++};
++
+ &mmcif {
++	pinctrl-0 = <&mmcif_pins>;
++	pinctrl-names = "default";
++
+ 	bus-width = <8>;
+ 	vmmc-supply = <&reg_1p8v>;
+ 	status = "okay";
+ };
+ 
++&pfc {
++	pinctrl-0 = <&scifa4_pins>;
++	pinctrl-names = "default";
++
++	i2c3_pins: i2c3 {
++		renesas,groups = "i2c3_1";
++		renesas,function = "i2c3";
++	};
++
++	mmcif_pins: mmcif {
++		mux {
++			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
++			renesas,function = "mmc0";
++		};
++		cfg {
++			renesas,groups = "mmc0_data8_0";
++			renesas,pins = "PORT279";
++			bias-pull-up;
++		};
++	};
++
++	scifa4_pins: scifa4 {
++		renesas,groups = "scifa4_data", "scifa4_ctrl";
++		renesas,function = "scifa4";
++	};
++
++	sdhi0_pins: sdhi0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi2_pins: sdhi2 {
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++	};
++};
++
+ &sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
+ 
+ &sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
++
+ 	vmmc-supply = <&reg_3p3v>;
+ 	bus-width = <4>;
+ 	broken-cd;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 6ff6ca2..fc2bb37 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -27,55 +27,15 @@
+ #include <linux/irqchip.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+-#include <linux/pinctrl/machine.h>
+-#include <linux/pinctrl/pinconf-generic.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
+-static unsigned long pin_pullup_conf[] = {
+-	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 0),
+-};
+-
+-static const struct pinctrl_map kzm_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
+-				  "i2c3_1", "i2c3"),
+-	/* MMCIF */
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+-				  "mmc0_data8_0", "mmc0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+-				  "mmc0_ctrl_0", "mmc0"),
+-	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+-				    "PORT279", pin_pullup_conf),
+-	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
+-				      "mmc0_data8_0", pin_pullup_conf),
+-	/* SCIFA4 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+-				  "scifa4_data", "scifa4"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
+-				  "scifa4_ctrl", "scifa4"),
+-	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+-				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+-				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+-				  "sdhi0_cd", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
+-				  "sdhi0_wp", "sdhi0"),
+-	/* SDHI2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+-				  "sdhi2_data4", "sdhi2"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
+-				  "sdhi2_ctrl", "sdhi2"),
+-};
+-
+ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+-	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+ 
+ 	/* enable SD */
+ 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-- 
+1.7.10.4
+
