@@ -1,30 +1,107 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 22 Jul 2013 04:06:18 +0000
-Subject: Re: [PATCH v5 5/5] leds: Remove leds-renesas-tpu driver
-Message-Id: <20130722040618.GH12445@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:37:17 +0000
+Subject: [PATCH 18/19] ARM: shmobile: kzm9g-reference: Move SDHI regulators to DT
+Message-Id: <14036bb1a37f8928ea0d1813b9419472e0a517a7.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373970728-28648-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1373970728-28648-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jul 18, 2013 at 09:44:36PM -0700, Bryan Wu wrote:
-> On Thu, Jul 18, 2013 at 9:44 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Tue, Jul 16, 2013 at 12:32:08PM +0200, Laurent Pinchart wrote:
-> >> The driver is superseded by the generic pwm-renesas-tpu driver used with
-> >> leds-pwm.
-> >>
-> >> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> >> Acked-by: Bryan Wu <cooloney@gmail.com>
-> >> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >
-> > I am happy to queue this up in the tpu-pwm branch of the renesas tree,
-> > but I would like some guidance from Bryan or Richard that they are
-> > happy with that approach.
-> >
-> 
-> No problem. Please go ahead with my ack.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks, will do.
+Create two GPIO-controlled fixed-voltage regulators in the
+kzm9g-reference DT and remove manual configuration of the corresponding
+GPIOs from board code.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   23 +++++++++++++++++++++--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    6 ------
+ 2 files changed, 21 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 11ae9ad..d2b2c9f 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -13,6 +13,7 @@
+ 
+ /dts-v1/;
+ /include/ "sh73a0.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "KZM-A9-GT";
+@@ -58,6 +59,24 @@
+ 		regulator-boot-on;
+ 	};
+ 
++	vmmc_sdhi0: regulator@2 {
++	        compatible = "regulator-fixed";
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 15 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vmmc_sdhi2: regulator@3 {
++	        compatible = "regulator-fixed";
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pfc 14 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
+ 	lan9220@10000000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x10000000 0x100>;
+@@ -200,7 +219,7 @@
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	vmmc-supply = <&reg_3p3v>;
++	vmmc-supply = <&vmmc_sdhi0>;
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
+@@ -209,7 +228,7 @@
+ 	pinctrl-0 = <&sdhi2_pins>;
+ 	pinctrl-names = "default";
+ 
+-	vmmc-supply = <&reg_3p3v>;
++	vmmc-supply = <&vmmc_sdhi2>;
+ 	bus-width = <4>;
+ 	broken-cd;
+ 	status = "okay";
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index fc2bb37..1847b4d 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -21,7 +21,6 @@
+  */
+ 
+ #include <linux/delay.h>
+-#include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+ #include <linux/irqchip.h>
+@@ -37,11 +36,6 @@ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+ 
+-	/* enable SD */
+-	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+-	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+-- 
+1.7.10.4
+
