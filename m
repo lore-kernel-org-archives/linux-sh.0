@@ -1,103 +1,153 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 11 Jul 2013 08:33:22 +0000
-Subject: [PATCH 10/11] ARM: shmobile: r8a7778: add usb phy power control function
-Message-Id: <878v1dfqcx.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:35:31 +0000
+Subject: [PATCH 6/7] sh: kfr2r09: Use lv5207lp backlight
+Message-Id: <3f3bee2e31f6fbf8ac09b58b8e87374d24387cef.1374207161.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374207161.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374207161.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-USB phy initialisation function is needed from not only
-USB Host but also USB Function too.
-This patch adds usb phy common control function.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Replace the backlight callback with a lv5207lp backlight platform
+device.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
- arch/arm/mach-shmobile/setup-r8a7778.c        |   37 +++++++++++++++++--------
- 2 files changed, 28 insertions(+), 11 deletions(-)
+ arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |   48 ---------------------------
+ arch/sh/boards/mach-kfr2r09/setup.c         |   19 ++++++++---
+ arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |    2 --
+ 3 files changed, 14 insertions(+), 55 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index 7527e27..bfc24c6 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -29,4 +29,6 @@ extern void r8a7778_clock_init(void);
- extern void r8a7778_init_irq_extpin(int irlm);
- extern void r8a7778_pinmux_init(void);
- 
-+extern int r8a7778_usb_phy_power(bool enable);
-+
- #endif /* __ASM_R8A7778_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 737dc02..e0011aa 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -95,29 +95,46 @@ static struct sh_timer_config sh_tmu1_platform_data __initdata = {
- 		&sh_tmu##idx##_platform_data,		\
- 		sizeof(sh_tmu##idx##_platform_data))
- 
--/* USB */
--static struct usb_phy *phy;
-+int r8a7778_usb_phy_power(bool enable)
-+{
-+	static struct usb_phy *phy = NULL;
-+	int ret = 0;
-+
-+	if (!phy)
-+		phy = usb_get_phy(USB_PHY_TYPE_USB2);
-+
-+	if (IS_ERR(phy)) {
-+		pr_err("it doesn't have usb phy driver\n");
-+		return PTR_ERR(phy);
-+	}
-+
-+	if (enable)
-+		ret = usb_phy_init(phy);
-+	else
-+		usb_phy_shutdown(phy);
- 
-+	return ret;
-+}
-+
-+/* USB */
- static int usb_power_on(struct platform_device *pdev)
+diff --git a/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c b/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
+index c620503..355a78a 100644
+--- a/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
++++ b/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
+@@ -276,51 +276,3 @@ void kfr2r09_lcd_start(void *sohandle, struct sh_mobile_lcdc_sys_bus_ops *so)
  {
--	if (IS_ERR(phy))
--		return PTR_ERR(phy);
-+	int ret = r8a7778_usb_phy_power(true);
+ 	write_memory_start(sohandle, so);
+ }
+-
+-#define CTRL_CKSW       0x10
+-#define CTRL_C10        0x20
+-#define CTRL_CPSW       0x80
+-#define MAIN_MLED4      0x40
+-#define MAIN_MSW        0x80
+-
+-int kfr2r09_lcd_set_brightness(int brightness)
+-{
+-	struct i2c_adapter *a;
+-	struct i2c_msg msg;
+-	unsigned char buf[2];
+-	int ret;
+-
+-	a = i2c_get_adapter(0);
+-	if (!a)
+-		return -ENODEV;
+-
+-	buf[0] = 0x00;
+-	if (brightness)
+-		buf[1] = CTRL_CPSW | CTRL_C10 | CTRL_CKSW;
+-	else
+-		buf[1] = 0;
+-
+-	msg.addr = 0x75;
+-	msg.buf = buf;
+-	msg.len = 2;
+-	msg.flags = 0;
+-	ret = i2c_transfer(a, &msg, 1);
+-	if (ret != 1)
+-		return -ENODEV;
+-
+-	buf[0] = 0x01;
+-	if (brightness)
+-		buf[1] = MAIN_MSW | MAIN_MLED4 | 0x0c;
+-	else
+-		buf[1] = 0;
+-
+-	msg.addr = 0x75;
+-	msg.buf = buf;
+-	msg.len = 2;
+-	msg.flags = 0;
+-	ret = i2c_transfer(a, &msg, 1);
+-	if (ret != 1)
+-		return -ENODEV;
+-
+-	return 0;
+-}
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index ab502f12..1df4398 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -21,6 +21,7 @@
+ #include <linux/input.h>
+ #include <linux/input/sh_keysc.h>
+ #include <linux/i2c.h>
++#include <linux/platform_data/lv5207lp.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/usb/r8a66597.h>
+@@ -159,11 +160,6 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+ 			.setup_sys = kfr2r09_lcd_setup,
+ 			.start_transfer = kfr2r09_lcd_start,
+ 		},
+-		.bl_info = {
+-			.name = "sh_mobile_lcdc_bl",
+-			.max_brightness = 1,
+-			.set_brightness = kfr2r09_lcd_set_brightness,
+-		},
+ 		.sys_bus_cfg = {
+ 			.ldmt2r = 0x07010904,
+ 			.ldmt3r = 0x14012914,
+@@ -195,6 +191,17 @@ static struct platform_device kfr2r09_sh_lcdc_device = {
+ 	},
+ };
+ 
++static struct lv5207lp_platform_data kfr2r09_backlight_data = {
++	.fbdev = &kfr2r09_sh_lcdc_device.dev,
++	.def_value = 13,
++	.max_value = 13,
++};
 +
-+	if (ret)
-+		return ret;
++static struct i2c_board_info kfr2r09_backlight_board_info = {
++	I2C_BOARD_INFO("lv5207lp", 0x75),
++	.platform_data = &kfr2r09_backlight_data,
++};
++
+ static struct r8a66597_platdata kfr2r09_usb0_gadget_data = {
+ 	.on_chip = 1,
+ };
+@@ -627,6 +634,8 @@ static int __init kfr2r09_devices_setup(void)
+ 	gpio_request(GPIO_FN_SDHI0CMD, NULL);
+ 	gpio_request(GPIO_FN_SDHI0CLK, NULL);
  
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_get_sync(&pdev->dev);
- 
--	usb_phy_init(phy);
--
- 	return 0;
++	i2c_register_board_info(0, &kfr2r09_backlight_board_info, 1);
++
+ 	return platform_add_devices(kfr2r09_devices,
+ 				    ARRAY_SIZE(kfr2r09_devices));
  }
+diff --git a/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h b/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
+index c20c9e5..79f154e 100644
+--- a/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
++++ b/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
+@@ -4,13 +4,11 @@
+ #include <video/sh_mobile_lcdc.h>
  
- static void usb_power_off(struct platform_device *pdev)
+ #if defined(CONFIG_FB_SH_MOBILE_LCDC) || defined(CONFIG_FB_SH_MOBILE_LCDC_MODULE)
+-int kfr2r09_lcd_set_brightness(int brightness);
+ int kfr2r09_lcd_setup(void *sys_ops_handle,
+ 		      struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+ void kfr2r09_lcd_start(void *sys_ops_handle,
+ 		       struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+ #else
+-static int kfr2r09_lcd_set_brightness(int brightness) {}
+ static int kfr2r09_lcd_setup(void *sys_ops_handle,
+ 				struct sh_mobile_lcdc_sys_bus_ops *sys_ops)
  {
--	if (IS_ERR(phy))
-+	if (r8a7778_usb_phy_power(false))
- 		return;
- 
--	usb_phy_shutdown(phy);
--
- 	pm_runtime_put_sync(&pdev->dev);
- 	pm_runtime_disable(&pdev->dev);
- }
-@@ -305,8 +322,6 @@ void __init r8a7778_add_standard_devices(void)
- 
- void __init r8a7778_init_late(void)
- {
--	phy = usb_get_phy(USB_PHY_TYPE_USB2);
--
- 	platform_device_register_full(&ehci_info);
- 	platform_device_register_full(&ohci_info);
- }
 -- 
-1.7.9.5
+1.7.10.4
 
