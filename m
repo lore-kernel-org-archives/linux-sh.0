@@ -1,51 +1,122 @@
-From: Sascha Hauer <s.hauer@pengutronix.de>
-Date: Tue, 23 Jul 2013 22:18:08 +0000
-Subject: Re: [PATCH 2/4] net: smsc911x: add a reset GPIO DT binding
-Message-Id: <20130723221808.GA7727@pengutronix.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:36:55 +0000
+Subject: [PATCH 01/19] ARM: shmobile: r8a73a4: Add pin control device to device tree
+Message-Id: <c173e780f82e5dea3da21f9eda47bc48aa3f57b1.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
- <1374595924-12338-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374595924-12338-3-git-send-email-g.liakhovetski@gmx.de>
+References: <cover.1374208262.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Steve Glendinning <steve.glendinning@shawell.net>, netdev@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 23, 2013 at 06:12:02PM +0200, Guennadi Liakhovetski wrote:
-> Add a new DT property to specify a reset GPIO.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> Cc: devicetree@vger.kernel.org
-> ---
->  Documentation/devicetree/bindings/net/smsc911x.txt |    1 +
->  drivers/net/ethernet/smsc/smsc911x.c               |   11 +++++++++++
->  2 files changed, 12 insertions(+), 0 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/net/smsc911x.txt b/Documentation/devicetree/bindings/net/smsc911x.txt
-> index adb5b57..2bf32be 100644
-> --- a/Documentation/devicetree/bindings/net/smsc911x.txt
-> +++ b/Documentation/devicetree/bindings/net/smsc911x.txt
-> @@ -23,6 +23,7 @@ Optional properties:
->    external PHY
->  - smsc,save-mac-address : Indicates that mac address needs to be saved
->    before resetting the controller
-> +- smsc,reset-gpios : a GPIO binding to take the controller out of reset
->  - local-mac-address : 6 bytes, mac address
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-BTW there's also:
+Add a pfc node to the r8a73a4 device tree.
 
-[PATCH v10] reset: Add driver for gpio-controlled reset pins
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi |   88 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 88 insertions(+)
 
-http://www.mail-archive.com/devicetree-discuss@lists.ozlabs.org/msg36900.html
-
-which may be a generic way to handle device resets. Not mainline yet,
-though.
-
-Sascha
-
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 4ff2019..f1a35d5 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -85,4 +85,92 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 69 4>;
+ 	};
++
++	i2c0: i2c@e6500000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6500000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 174 0x4>;
++	};
++
++	i2c1: i2c@e6510000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6510000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 175 0x4>;
++	};
++
++	i2c2: i2c@e6520000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6520000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 176 0x4>;
++	};
++
++	i2c3: i2c@e6530000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6530000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 177 0x4>;
++	};
++
++	i2c4: i2c@e6540000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6540000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 178 0x4>;
++	};
++
++	i2c5: i2c@e60b0000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe60b0000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 179 0x4>;
++	};
++
++	i2c6: i2c@e6550000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6550000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 184 0x4>;
++	};
++
++	i2c7: i2c@e6560000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6560000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 185 0x4>;
++	};
++
++	i2c8: i2c@e6570000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6570000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 173 0x4>;
++	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a73a4";
++		reg = <0xe6050000 0x9000>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
 -- 
-Pengutronix e.K.                           |                             |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+1.7.10.4
+
