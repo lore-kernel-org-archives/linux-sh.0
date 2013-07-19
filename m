@@ -1,106 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 30 Jul 2013 18:04:36 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct regulators
-Message-Id: <2934639.0JXSs3LymF@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 19 Jul 2013 04:36:29 +0000
+Subject: [GIT 00/19] Renesas ARM based SoC pinmux updates for v3.12
+Message-Id: <cover.1374208262.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1307301739260.25629@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1307301739260.25629@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Guennadi,
+The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
 
-Thanks for the patch.
+  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
 
-On Tuesday 30 July 2013 17:50:00 Guennadi Liakhovetski wrote:
-> Currently a dummy fixed always-on regulator is used for all 3 SD/MMC
-> interfaces on ape6evm. This patch updates the board to use correct supplies
-> for MMC0, SDHI0 and SDHI1 VDD. SDHI0 VccQ supply regulator should be
-> implemented in a separate patch.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
-> 
-> Marked as RFC, because this doesn't properlly describe MMC0 VDD, VccQ and
-> SDHI0 VccQ power supplies. If this is accepted I'll make another patch for
-> ape6evm-reference.
+are available in the git repository at:
 
-The patch looks good to me, but maybe you should replace the comment removed 
-below with a comment that explains this problem ?
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux-for-v3.12
 
->  arch/arm/mach-shmobile/board-ape6evm.c |   43 ++++++++++++++++++++++-------
->  1 files changed, 33 insertions(+), 10 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-ape6evm.c
-> b/arch/arm/mach-shmobile/board-ape6evm.c index ccf8b04..27b7c9d 100644
-> --- a/arch/arm/mach-shmobile/board-ape6evm.c
-> +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> @@ -58,17 +58,35 @@ static const struct smsc911x_platform_config
-> lan9220_data = { .irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
->  };
-> 
-> -/*
-> - * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now
-> - * we model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use
-> - * the static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is
-> - * also supplied by the same tps80032 regulator and thus can also be
-> - * adjusted dynamically.
-> - */
-> -static struct regulator_consumer_supply fixed3v3_power_consumers[] > +/* MMC0, SDHI0 and SDHI1 power supplies */
-> +static struct regulator_consumer_supply vcc_mmc0_consumers[] >  {
->  	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-> +};
-> +
-> +static struct regulator_consumer_supply vcc_sdhi0_consumers[] > +{
->  	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-> +};
-> +
-> +static struct regulator_init_data vcc_sdhi0_init_data = {
-> +	.constraints = {
-> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-> +	},
-> +	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
-> +	.consumer_supplies      = vcc_sdhi0_consumers,
-> +};
-> +
-> +static const struct fixed_voltage_config vcc_sdhi0_info __initdata = {
-> +	.supply_name = "SDHI0 Vcc",
-> +	.microvolts = 3000000,
-> +	.gpio = 76,
-> +	.enable_high = 1,
-> +	.init_data = &vcc_sdhi0_init_data,
-> +};
-> +
-> +static struct regulator_consumer_supply vcc_sdhi1_consumers[] > +{
->  	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
->  };
-> 
-> @@ -161,14 +179,19 @@ static void __init ape6evm_add_standard_devices(void)
->  	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
->  					  lan9220_res, ARRAY_SIZE(lan9220_res),
->  					  &lan9220_data, sizeof(lan9220_data));
-> -	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
-> -				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-> +
-> +	regulator_register_always_on(1, "MMC0 Vcc", vcc_mmc0_consumers,
-> +				     ARRAY_SIZE(vcc_mmc0_consumers), 2800000);
->  	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
->  					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
->  					  &mmcif0_pdata, sizeof(mmcif0_pdata));
-> +	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 2,
-> +				      &vcc_sdhi0_info, sizeof(vcc_sdhi0_info));
->  	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
->  					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
->  					  &sdhi0_pdata, sizeof(sdhi0_pdata));
-> +	regulator_register_always_on(3, "SDHI1 Vcc", vcc_sdhi1_consumers,
-> +				     ARRAY_SIZE(vcc_sdhi1_consumers), 3300000);
->  	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
->  					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
->  					  &sdhi1_pdata, sizeof(sdhi1_pdata));
--- 
-Regards,
+for you to fetch changes up to 838a7070ce8bfff11e19ed434edd9a4423b478bd:
 
-Laurent Pinchart
+  ARM: shmobile: kzm9g-reference: Add LED1-LED4 to the device tree (2013-07-16 12:55:04 +0900)
 
+----------------------------------------------------------------
+Renesas ARM based SoC pinmux updates for v3.12
+
+SH Mobile pinctrl DT support
+
+----------------------------------------------------------------
+Laurent Pinchart (19):
+      ARM: shmobile: r8a73a4: Add pin control device to device tree
+      ARM: shmobile: r8a7740: Add pin control device to device tree
+      ARM: shmobile: r8a7778: Add pin control device to device tree
+      ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
+      ARM: shmobile: r8a7779: Add pin control device to device tree
+      ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
+      ARM: shmobile: r8a7790: Add pin control device to device tree
+      ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
+      ARM: shmobile: sh7372: Add pin control device to device tree
+      ARM: shmobile: sh73a0: Add pin control device to device tree
+      ARM: shmobile: armadillo-reference: Move pinctrl mappings to device tree
+      ARM: shmobile: armadillo-reference: Add st1232 pin mappings
+      ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
+      ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
+      ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
+      ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
+      ARM: shmobile: kzm9g-reference: Move pinctrl mappings to device tree
+      ARM: shmobile: kzm9g-reference: Move SDHI regulators to DT
+      ARM: shmobile: kzm9g-reference: Add LED1-LED4 to the device tree
+
+ arch/arm/boot/dts/r8a73a4.dtsi                     |   88 +++++++++++++++++++
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   34 ++++++++
+ arch/arm/boot/dts/r8a7740.dtsi                     |    8 ++
+ arch/arm/boot/dts/r8a7778.dtsi                     |   66 ++++++++++++++
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts     |   49 +++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi                     |   90 ++++++++++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                     |   78 +++++++++++++++++
+ arch/arm/boot/dts/sh7372.dtsi                      |    8 ++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   90 +++++++++++++++++++-
+ arch/arm/boot/dts/sh73a0.dtsi                      |    8 ++
+ .../board-armadillo800eva-reference.c              |   18 +---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c     |   47 ----------
+ arch/arm/mach-shmobile/board-marzen-reference.c    |   28 ------
+ 13 files changed, 518 insertions(+), 94 deletions(-)
