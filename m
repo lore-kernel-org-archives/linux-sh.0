@@ -1,55 +1,73 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:31:50 +0000
-Subject: [PATCH 11/22] ARM: shmobile: Remove unused EMEV2 auxdata and callback
-Message-Id: <a597d8df88143f7a409b260b1e89735eb0bdca05.1374103272.git.horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:37:01 +0000
+Subject: [PATCH 4/5] ARM: shmobile: Insert align directives before 4 bytes data
+Message-Id: <0b933cb305e7a987e0a711ee15457bd70055d682.1374478336.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
+References: <cover.1374478336.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374478336.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-Replace the SoC-specific callback init_machine() with
-a NULL to use the default code. This cleans up the code
-and reduces the number of lines.
+In thumb2 mode instructions are not align to 4 byte. This patch insert
+align directives before putting 4 byte data.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-emev2.c |   10 ----------
- 1 file changed, 10 deletions(-)
+ arch/arm/mach-shmobile/headsmp-scu.S  | 1 +
+ arch/arm/mach-shmobile/headsmp.S      | 1 +
+ arch/arm/mach-shmobile/sleep-sh7372.S | 2 ++
+ 3 files changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 6e8b6ac..b0564ce 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -434,15 +434,6 @@ void __init emev2_init_irq(void)
- }
+diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
+index 5ce416c..0a77488 100644
+--- a/arch/arm/mach-shmobile/headsmp-scu.S
++++ b/arch/arm/mach-shmobile/headsmp-scu.S
+@@ -46,6 +46,7 @@ ENTRY(shmobile_boot_scu)
+ ENDPROC(shmobile_boot_scu)
  
- #ifdef CONFIG_USE_OF
--static const struct of_dev_auxdata emev2_auxdata_lookup[] __initconst = {
--	{ }
--};
--
--static void __init emev2_add_standard_devices_dt(void)
--{
--	of_platform_populate(NULL, of_default_bus_match_table,
--			     emev2_auxdata_lookup, NULL);
--}
+ 	.text
++	.align	2
+ 	.globl	shmobile_scu_base
+ shmobile_scu_base:
+ 	.space	4
+diff --git a/arch/arm/mach-shmobile/headsmp.S b/arch/arm/mach-shmobile/headsmp.S
+index afed58e..dfb41df 100644
+--- a/arch/arm/mach-shmobile/headsmp.S
++++ b/arch/arm/mach-shmobile/headsmp.S
+@@ -35,6 +35,7 @@ ENTRY(shmobile_boot_vector)
  
- static const char *emev2_boards_compat_dt[] __initdata = {
- 	"renesas,emev2",
-@@ -453,7 +444,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.init_early	= emev2_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_machine	= emev2_add_standard_devices_dt,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
+ ENDPROC(shmobile_boot_vector)
  
++	.align	2
+ 	.globl	shmobile_boot_fn
+ shmobile_boot_fn:
+ 1:	.space	4
+diff --git a/arch/arm/mach-shmobile/sleep-sh7372.S b/arch/arm/mach-shmobile/sleep-sh7372.S
+index 53f4840..9782862 100644
+--- a/arch/arm/mach-shmobile/sleep-sh7372.S
++++ b/arch/arm/mach-shmobile/sleep-sh7372.S
+@@ -41,6 +41,7 @@
+ sh7372_resume_core_standby_sysc:
+ 	ldr     pc, 1f
+ 
++	.align	2
+ 	.globl	sh7372_cpu_resume
+ sh7372_cpu_resume:
+ 1:	.space	4
+@@ -96,6 +97,7 @@ sh7372_do_idle_sysc:
+ 1:
+ 	b      1b
+ 
++	.align	2
+ kernel_flush:
+ 	.word v7_flush_dcache_all
+ #endif
 -- 
-1.7.10.4
+1.8.2.1
 
