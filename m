@@ -1,47 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 26 Jul 2013 00:51:53 +0000
-Subject: [PATCH v3 4/4] ARM: shmobile: marzen: Enable ARM_APPENDED_DTB in defconfig
-Message-Id: <1374799913-27461-5-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 22 Jul 2013 13:16:17 +0000
+Subject: [PATCH 2/6] ARM: shmobile: ape6evm-reference: enable DMA for the MMC interface
+Message-Id: <1374498981-5263-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374799913-27461-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1374799913-27461-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-"ARM: shmobile: marzen: Switch to DT_MACHINE_START" moves marzen
-over to use DT_MACHINE_START, however, the prevalent boot loader
-does not support booting with a separate dtb. Thus, it makes
-sense to use ARM_APPENDED_DTB by default.
+This patch adds DMA slave bindings for the two required DMA channels
+for MMCIF0 to ape6evm-reference.
 
-This is consistent with other shmobile defconfigs.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-v3
-* Corrected typo in changelog
-
-v2
-* First post
----
- arch/arm/configs/marzen_defconfig | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 494e70a..82e4040 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -29,6 +29,7 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
-+CONFIG_ARM_APPENDED_DTB=y
- CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
- CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 292414f..edbc4ba 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -83,6 +83,9 @@
+ 	vmmc-supply = <&ape6evm_fixed_3v3>;
+ 	bus-width = <8>;
+ 	non-removable;
++	dmas = <&dmac 0xd1
++		&dmac 0xd2>;
++	dma-names = "tx", "rx";
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&mmc0_pins>;
+ 	status = "okay";
 -- 
-1.8.2.1
+1.7.2.5
 
