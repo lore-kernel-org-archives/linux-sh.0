@@ -1,31 +1,88 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 19:02:42 +0000
-Subject: [PATCH 10/13] ARM: shmobile: Use default ->init_time() on Marzen DT ref
-Message-Id: <20130731190242.31796.98376.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:15:48 +0000
+Subject: [PATCH 2/2] sh_eth: Add support for r8a7790 SoC
+Message-Id: <1374477348-1349-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731190110.31796.96552.sendpatchset@w520>
-In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
+References: <1374477348-1349-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1374477348-1349-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Magnus Damm <damm@opensource.se>
+This is a copy of support for r8a7778/9 with the .rmiimode mode bit
+of struct sh_eth_cpu_data set.
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
+Also update R8A7779 to R8A777x.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
 
- arch/arm/mach-shmobile/board-marzen-reference.c |    1 -
- 1 file changed, 1 deletion(-)
+v4
+* s/R8A7779/R8A777x/ as requested by Sergei Shtylyov.
 
---- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2013-08-01 03:13:42.000000000 +0900
-@@ -42,6 +42,5 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
--	.init_time	= shmobile_timer_init,
- 	.dt_compat	= marzen_boards_compat_dt,
- MACHINE_END
+v3
+* Add r8a7790_data rather than updating r8a777x_data.
+  As requested by Sergei Shtylyov.
+
+v2
+* Split from "sh_eth: add support RMIIMODE register"
+---
+ drivers/net/ethernet/renesas/Kconfig  |  2 +-
+ drivers/net/ethernet/renesas/sh_eth.c | 21 +++++++++++++++++++++
+ 2 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/Kconfig b/drivers/net/ethernet/renesas/Kconfig
+index 19a8a04..a30c439 100644
+--- a/drivers/net/ethernet/renesas/Kconfig
++++ b/drivers/net/ethernet/renesas/Kconfig
+@@ -13,4 +13,4 @@ config SH_ETH
+ 	  Renesas SuperH Ethernet device driver.
+ 	  This driver supporting CPUs are:
+ 		- SH7619, SH7710, SH7712, SH7724, SH7734, SH7763, SH7757,
+-		  R8A7740 and R8A7779.
++		  R8A7740, R8A777x and R8A7790.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 87af49f..fedc0a0 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -393,6 +393,26 @@ static struct sh_eth_cpu_data r8a777x_data = {
+ 	.hw_swap	= 1,
+ };
+ 
++/* R8A7790 */
++static struct sh_eth_cpu_data r8a7790_data = {
++	.set_duplex	= sh_eth_set_duplex,
++	.set_rate	= sh_eth_set_rate_r8a777x,
++
++	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
++	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
++	.eesipr_value	= 0x01ff009f,
++
++	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
++			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++
++	.apr		= 1,
++	.mpr		= 1,
++	.tpauser	= 1,
++	.hw_swap	= 1,
++	.rmiimode	= 1,
++};
++
+ static void sh_eth_set_rate_sh7724(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -2753,6 +2773,7 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
++	{ "r8a7790-ether", (kernel_ulong_t)&r8a7790_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
+-- 
+1.8.2.1
+
