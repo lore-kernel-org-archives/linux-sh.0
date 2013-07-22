@@ -1,71 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:16 +0000
-Subject: [PATCH v2 24/27] sh-pfc: Add pin number to struct sh_pfc_pin
-Message-Id: <1373933479-17727-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:36:47 +0000
+Subject: [GIT 0/5] Renesas ARM based SoC fixes for v3.12
+Message-Id: <cover.1374478336.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The pin number is usually equal to the GPIO number but can differ when
-GPIO numbering is sparse.
+Hi Olof, Hi Arnd,
+										please consider the following fixes v3.12.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/sh_pfc.h | 20 ++++++++++++--------
- 1 file changed, 12 insertions(+), 8 deletions(-)
+The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
 
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 596ceb7..839e695 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -28,6 +28,7 @@ enum {
- #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
- 
- struct sh_pfc_pin {
-+	u16 pin;
- 	u16 enum_id;
- 	const char *name;
- 	unsigned int configs;
-@@ -214,8 +215,9 @@ struct sh_pfc_soc_info {
- #define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
- 
- /* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
--#define _GP_GPIO(bank, pin, _name, sfx)					\
--	[(bank * 32) + pin] = {						\
-+#define _GP_GPIO(bank, _pin, _name, sfx)				\
-+	[(bank * 32) + _pin] = {					\
-+		.pin = (bank * 32) + _pin,				\
- 		.name = __stringify(_name),				\
- 		.enum_id = _name##_DATA,				\
- 	}
-@@ -250,17 +252,19 @@ struct sh_pfc_soc_info {
- #define PORT_ALL(str)			CPU_ALL_PORT(_PORT_ALL, PORT, str)
- 
- /* PINMUX_GPIO - Expand to a sh_pfc_pin entry */
--#define PINMUX_GPIO(pin)						\
--	[GPIO_##pin] = {						\
-+#define PINMUX_GPIO(_pin)						\
-+	[GPIO_##_pin] = {						\
-+		.pin = (u16)-1,						\
- 		.name = __stringify(name),				\
--		.enum_id = pin##_DATA,					\
-+		.enum_id = _pin##_DATA,					\
- 	}
- 
- /* SH_PFC_PIN_CFG - Expand to a sh_pfc_pin entry (named PORT#) with config */
--#define SH_PFC_PIN_CFG(pin, cfgs)					\
-+#define SH_PFC_PIN_CFG(_pin, cfgs)					\
- 	{								\
--		.name = __stringify(PORT##pin),				\
--		.enum_id = PORT##pin##_DATA,				\
-+		.pin = _pin,						\
-+		.name = __stringify(PORT##_pin),			\
-+		.enum_id = PORT##_pin##_DATA,				\
- 		.configs = cfgs,					\
- 	}
- 
--- 
-1.8.1.5
+  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes-for-v3.12
+
+for you to fetch changes up to 93d8a6fbe69a629a7bb37bb546699a5c49963dc5:
+
+  ARM: shmobile: r8a7740: Fix TPU clock name (2013-07-19 11:12:35 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC fixes for v3.12
+
+* Fix TPU clock name for r8a7740 SoC
+* Update romImage to relocate appended DTB
+* Thumb fixes
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: r8a7740: Fix TPU clock name
+
+Magnus Damm (1):
+      ARM: shmobile: Update romImage to relocate appended DTB
+
+Tetsuyuki Kobayashi (3):
+      ARM: shmobile: fix compile error when CONFIG_THUMB2_KERNEL=y
+      ARM: shmobile: Force ARM mode to compile reset vector for secondary CPUs
+      ARM: shmobile: Insert align directives before 4 bytes data
+
+ arch/arm/boot/compressed/head-shmobile.S    | 43 ++++++++++++++++++++++++++---
+ arch/arm/mach-shmobile/clock-r8a7740.c      |  2 +-
+ arch/arm/mach-shmobile/headsmp-scu.S        |  4 ++-
+ arch/arm/mach-shmobile/headsmp.S            |  6 +++-
+ arch/arm/mach-shmobile/include/mach/zboot.h |  2 --
+ arch/arm/mach-shmobile/sleep-sh7372.S       |  2 ++
+ 6 files changed, 50 insertions(+), 9 deletions(-)
