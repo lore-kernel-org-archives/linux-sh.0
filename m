@@ -1,49 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:31:49 +0000
-Subject: [PATCH 10/22] ARM: shmobile: kzm9g: Remove init_irq declaration in machine description
-Message-Id: <fc492ba58aa6642f34eba716daf6ec4d2715e492.1374103272.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 22 Jul 2013 16:21:44 +0000
+Subject: [PATCH v2 2/3] irqchip: intc-irqpin: pre-map all interrupts in the DT case
+Message-Id: <1374510105-21896-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+In the DT case interrupts in the irq-renesas-intc-irqpin.c driver are
+mapped dynamically only if requested by a user. This works fine, except
+on sh73a0, where masking of IRQPIN interrupts on the irqpin controller
+is broken and interrupts have to be masked on the parent instead. This
+forced masking can only be done, if interrupts are also mapped without
+being requested. This patch pre-maps interrupts in such a case during
+probing.
 
-Remove redundant irqchip_init() callback. The default case
-of NULL will result in invoking irqchip_init() anyway.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-[ horms+renesas@verge.net.au: Trimmed patch to remove portion
-  that updates the sh73a0 SoC and altered the subject to
-  use the same format as the patch that updates the sh73a0. ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 --
- 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 44055fe..41092bb 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -24,7 +24,6 @@
- #include <linux/gpio.h>
- #include <linux/io.h>
- #include <linux/irq.h>
--#include <linux/irqchip.h>
- #include <linux/input.h>
- #include <linux/of_platform.h>
- #include <linux/pinctrl/machine.h>
-@@ -99,7 +98,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_irq	= irqchip_init,
- 	.init_machine	= kzm_init,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= kzm9g_boards_compat_dt,
+v2: in v1 spurious interrupts were mapped in the interrupt handler upon
+their first occurrence. This version maps them all during probing instead.
+
+ drivers/irqchip/irq-renesas-intc-irqpin.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 82cec63..ca5a8b63 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -336,7 +336,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	void (*enable_fn)(struct irq_data *d);
+ 	void (*disable_fn)(struct irq_data *d);
+ 	const char *name = dev_name(&pdev->dev);
+-	int ref_irq;
++	int ref_irq, min_irq = INT_MAX;
+ 	int ret;
+ 	int k;
+ 
+@@ -380,6 +380,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 
+ 		p->irq[k].p = p;
+ 		p->irq[k].requested_irq = irq->start;
++		if (min_irq > irq->start)
++			min_irq = irq->start;
+ 	}
+ 
+ 	p->number_of_irqs = k;
+@@ -467,6 +469,12 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
++	if (pdev->dev.of_node && p->config.control_parent &&
++	    !p->config.irq_base)
++		for (k = 0; k < p->number_of_irqs; k++)
++			irq_create_mapping(p->irq_domain,
++					   p->irq[k].requested_irq - min_irq);
++
+ 	if (p->shared_irqs) {
+ 		/* request one shared interrupt */
+ 		if (devm_request_irq(&pdev->dev, p->irq[0].requested_irq,
 -- 
-1.7.10.4
+1.7.2.5
 
