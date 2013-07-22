@@ -1,31 +1,32 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 29 Jul 2013 14:36:11 +0000
-Subject: Re: [GIT PULL FOR v3.12] sh-pfc fixes and enhancements
-Message-Id: <CACRpkdanWFjFCpZKGNt601bPAa7Fx6PrPJfw5esZUsJEK2TwyQ@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 22 Jul 2013 13:16:16 +0000
+Subject: [PATCH 1/6] ARM: shmobile: ape6evm: add DMA support to MMCIF
+Message-Id: <1374498981-5263-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4601856.fyKLDdx1qP@avalon>
- <CACRpkdYjjEt4pKznz95FMkmYi4AkKGmb_=Cdbrrqp5x0B5GnzA@mail.gmail.com>
-In-Reply-To: <CACRpkdYjjEt4pKznz95FMkmYi4AkKGmb_=Cdbrrqp5x0B5GnzA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jul 29, 2013 at 4:29 PM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Mon, Jul 29, 2013 at 4:11 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
->
->> Hi Linus,
->>
->> The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
->>
->>   Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
->>
->> are available in the git repository at:
->
-> Excellent Laurent, pulled and pushed for-next for testing.
+Add DMA support for MMCIF on APE6EVM, using the shdma dmaengine driver.
 
-I re-pulled this on top of the GPIO fixes and pushed.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-ape6evm.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 97c0dad..96a6994 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -75,6 +75,8 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  /* MMCIF */
+ static struct sh_mmcif_plat_data mmcif0_pdata = {
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++	.slave_id_tx	= SHDMA_SLAVE_MMCIF0_TX,
++	.slave_id_rx	= SHDMA_SLAVE_MMCIF0_RX,
+ 	.ccs_unsupported = true,
+ };
+ 
+-- 
+1.7.2.5
+
