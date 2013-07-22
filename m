@@ -1,86 +1,164 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 26 Jul 2013 07:01:23 +0000
-Subject: Re: [PATCH 00/12] Remove platform callbacks from mmc_spi, sh_mmcif and sh_mobile_sdhi drivers
-Message-Id: <Pine.LNX.4.64.1307260859410.20450@axis700.grange>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 22 Jul 2013 22:22:04 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7778: add HPB-DMAC support
+Message-Id: <201307230222.04763.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201307230218.01495.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201307230218.01495.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-On Fri, 26 Jul 2013, Laurent Pinchart wrote:
+Add HPB-DMAC platform device on R8A7778 SoC along with its slave and channel
+configurations.
 
-> Hello,
-> 
-> This patch set replaces callbacks to board code with regulators and GPIOs in
-> the mmc_spi, sh_mmcif and sh_mobile_sdhi MMC drivers.
-> 
-> Most of the required infrastructure is in place already on the drivers side,
-> except for CD/RO GPIOs support in the mmc_spi driver. The series thus starts
-> with patch 01/12 that adds this feature to the mmc_spi driver.
-> 
-> Patches 02/12 to 05/12 remove the board callbacks from the ecovec24 and
-> vision_ep9307 boards. The code has been compile-tested only as I don't have
-> access to those boards.
-> 
-> Patches 06/12 to 07/12 then proceed to remove the callbacks from the drivers
-> themselves and from the platform data structures.
-> 
-> This will be a bit messy to merge, as the series interleaves patches for
-> drivers and board files. Given that the mmc_spi driver is marked as orphan in
-> MAINTAINERS and that the vision_ep9307 hasn't seen any board-specific
-> modification in the last couple of kernel versions one option would be to
-> merge all patches (or at least patches 01/12 to 06/12) through Simon's tree if
-> all involved maintainers agree.
-> 
-> The series is based on tag renesas-devel-20130725 from
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-> 
-> Laurent Pinchart (12):
->   mmc: mmc_spi: Support CD/RO GPIOs
->   ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
->   sh: ecovec24: Use MMC/SDHI CD and RO GPIO
->   sh: ecovec24: Remove mmcif .down_pwr() callback
->   sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
->   mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
->   mmc: sh_mmcif: Remove .down_pwr() callback from platform data
->   mmc: sh_mmcif: Remove .set_pwr() callback from platform data
->   mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
->   mmc: sh_mobile_sdhi: Remove .set_pwr() callback from platform data
->   mmc: tmio-mmc: Remove .get_cd() callback from platform data
->   mmc: tmio-mmc: Remove .set_pwr() callback from platform data
-
-For #3-5, 7-12
-
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-
-Thanks
-Guennadi
-
->  arch/arm/mach-ep93xx/vision_ep9307.c | 56 ++---------------------
->  arch/sh/boards/mach-ecovec24/setup.c | 89 ++++--------------------------------
->  drivers/mmc/host/mmc_spi.c           | 48 +++++++++----------
->  drivers/mmc/host/of_mmc_spi.c        | 46 +++++--------------
->  drivers/mmc/host/sh_mmcif.c          |  3 --
->  drivers/mmc/host/sh_mobile_sdhi.c    | 18 --------
->  drivers/mmc/host/tmio_mmc.h          |  1 -
->  drivers/mmc/host/tmio_mmc_pio.c      | 23 +---------
->  include/linux/mfd/tmio.h             |  2 -
->  include/linux/mmc/sh_mmcif.h         |  2 -
->  include/linux/mmc/sh_mobile_sdhi.h   |  2 -
->  include/linux/spi/mmc_spi.h          | 18 ++++----
->  12 files changed, 56 insertions(+), 252 deletions(-)
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: moved *enum* declaring HPB-DMAC slave IDs from now removed <mach/dma.h>
+to <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c, removed
+SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[] and
+hpb_dmae_channels[].]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Changes in version 2:
+- moved *enum* declaring HPB-DMAC slave IDs from the separate header file to
+  <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c;
+- removed SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[]
+  and hpb_dmae_channels[].
+
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    8 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   80 ++++++++++++++++++++++++++
+ 2 files changed, 88 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -23,6 +24,13 @@
+ #include <linux/sh_eth.h>
+ #include <linux/platform_data/usb-rcar-phy.h>
+ 
++/* HPB-DMA slave IDs */
++enum {
++	HPBDMA_SLAVE_DUMMY,
++	HPBDMA_SLAVE_SDHI0_TX,
++	HPBDMA_SLAVE_SDHI0_RX,
++};
++
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -24,6 +24,7 @@
+ #include <linux/irqchip/arm-gic.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/dma-rcar-hpbdma.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/platform_device.h>
+@@ -333,6 +334,84 @@ void __init r8a7778_add_mmc_device(struc
+ 		info, sizeof(*info));
+ }
+ 
++/* HPB-DMA */
++
++/* Asynchronous mode register (ASYNCMDR) bits */
++#define	ASYNCMDR_ASMD22_MASK	BIT(2)	/* SDHI0 */
++#define	ASYNCMDR_ASMD22_SINGLE	BIT(2)	/* SDHI0 */
++#define	ASYNCMDR_ASMD22_MULTI	0	/* SDHI0 */
++#define	ASYNCMDR_ASMD21_MASK	BIT(1)	/* SDHI0 */
++#define	ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
++#define	ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
++
++static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
++	{
++		.id	= HPBDMA_SLAVE_SDHI0_TX,
++		.addr	= 0xffe4c000 + 0x30,
++		.dcr	= DCR_SPDS_16BIT | DCR_DMDL | DCR_DPDS_16BIT,
++		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
++			  ASYNCRSTR_ASRST23,
++		.mdr	= ASYNCMDR_ASMD21_SINGLE,
++		.mdm	= ASYNCMDR_ASMD21_MASK,
++		.port	= 0x0D0C,
++		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
++		.dma_ch	= 21,
++	}, {
++		.id	= HPBDMA_SLAVE_SDHI0_RX,
++		.addr	= 0xffe4c000 + 0x30,
++		.dcr	= DCR_SMDL | DCR_SPDS_16BIT | DCR_DPDS_16BIT,
++		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
++			  ASYNCRSTR_ASRST23,
++		.mdr	= ASYNCMDR_ASMD22_SINGLE,
++		.mdm	= ASYNCMDR_ASMD22_MASK,
++		.port	= 0x0D0C,
++		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
++		.dma_ch	= 22,
++	},
++};
++
++static const struct hpb_dmae_channel hpb_dmae_channels[] = {
++	/* ch. 21 SD0 */
++	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX),
++	/* ch. 22 SD0 */
++	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX),
++};
++
++static struct hpb_dmae_pdata dma_platform_data __initdata = {
++	.slaves			= hpb_dmae_slaves,
++	.num_slaves		= ARRAY_SIZE(hpb_dmae_slaves),
++	.channels		= hpb_dmae_channels,
++	.num_channels		= ARRAY_SIZE(hpb_dmae_channels),
++	.ts_shift		= {
++		[XMIT_SZ_8BIT]	= 0,
++		[XMIT_SZ_16BIT]	= 1,
++		[XMIT_SZ_32BIT]	= 2,
++	},
++	.num_hw_channels	= 39,
++};
++
++static struct resource hpb_dmae_resources[] __initdata = {
++	/* Channel registers */
++	DEFINE_RES_MEM(0xffc08000, 0x1000),
++	/* Common registers */
++	DEFINE_RES_MEM(0xffc09000, 0x170),
++	/* Asynchronous reset registers */
++	DEFINE_RES_MEM(0xffc00300, 4),
++	/* Asynchronous mode registers */
++	DEFINE_RES_MEM(0xffc00400, 4),
++	/* IRQ for DMA channels */
++	DEFINE_RES_NAMED(gic_iid(0x7b), 5, NULL, IORESOURCE_IRQ),
++};
++
++static void __init r8a7778_register_hpb_dmae(void)
++{
++	platform_device_register_resndata(&platform_bus, "hpb-dma-engine", -1,
++					  hpb_dmae_resources,
++					  ARRAY_SIZE(hpb_dmae_resources),
++					  &dma_platform_data,
++					  sizeof(dma_platform_data));
++}
++
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	int i;
+@@ -355,6 +434,7 @@ void __init r8a7778_add_standard_devices
+ 
+ 	r8a7778_register_tmu(0);
+ 	r8a7778_register_tmu(1);
++	r8a7778_register_hpb_dmae();
+ }
+ 
+ void __init r8a7778_init_late(void)
