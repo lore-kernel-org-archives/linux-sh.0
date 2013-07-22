@@ -1,60 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:19 +0000
-Subject: [PATCH 07/11] ARM: shmobile: EMEV2 map_io update
-Message-Id: <0ea2b5389ab1b63aa880c5735c15be0b26b91b1a.1374478037.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 22 Jul 2013 17:30:43 +0000
+Subject: Re: [PATCH 07/11] ARM: shmobile: EMEV2 map_io update
+Message-Id: <51ED6C43.5070404@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1374478037.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
+ <0ea2b5389ab1b63aa880c5735c15be0b26b91b1a.1374478037.git.horms+renesas@verge.net.au>
+In-Reply-To: <0ea2b5389ab1b63aa880c5735c15be0b26b91b1a.1374478037.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On 22/07/13 08:36, Simon Horman wrote:
+> From: Magnus Damm<damm@opensource.se>
+>
+> Update the EMEV2 struct map_desc to exclude the SMU
+> and also include the ->map_io() callback in the DT
+> version of EMEV2 board support.
+>
+> The EMEV2 SMP code can these days perform ioremap()
+> early on without the SMU information in the io_desc[].
+>
+> To correctly support SMP in case of DT-only board
+> support then the ->map_io() callback is needed.
+>
+> Signed-off-by: Magnus Damm<damm@opensource.se>
+> Acked-by: Arnd Bergmann<arnd@arndb.de>
+> Signed-off-by: Simon Horman<horms+renesas@verge.net.au>
 
-Update the EMEV2 struct map_desc to exclude the SMU
-and also include the ->map_io() callback in the DT
-version of EMEV2 board support.
+This looks roughly what we did to get the the EMEV2 working
+here, although ours is a little more hacky.
 
-The EMEV2 SMP code can these days perform ioremap()
-early on without the SMU information in the io_desc[].
-
-To correctly support SMP in case of DT-only board
-support then the ->map_io() callback is needed.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-emev2.c | 8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 6fa485d..19980be 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -38,13 +38,6 @@
- 
- static struct map_desc emev2_io_desc[] __initdata = {
- #ifdef CONFIG_SMP
--	/* 128K entity map for 0xe0100000 (SMU) */
--	{
--		.virtual	= 0xe0100000,
--		.pfn		= __phys_to_pfn(0xe0100000),
--		.length		= SZ_128K,
--		.type		= MT_DEVICE
--	},
- 	/* 2M mapping for SCU + L2 controller */
- 	{
- 		.virtual	= 0xf0000000,
-@@ -211,6 +204,7 @@ static const char *emev2_boards_compat_dt[] __initdata = {
- 
- DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
-+	.map_io		= emev2_map_io,
- 	.init_early	= emev2_init_delay,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
 -- 
-1.8.2.1
-
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
