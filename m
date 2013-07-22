@@ -1,73 +1,112 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:17 +0000
-Subject: [PATCH v2 25/27] sh-pfc: Rename struct sh_pfc nr_pins field to nr_gpio_pins
-Message-Id: <1373933479-17727-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:36:58 +0000
+Subject: [PATCH 1/5] ARM: shmobile: Update romImage to relocate appended DTB
+Message-Id: <2c408d149299e99c89fc4be80fb4fe00a7016f02.1374478336.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374478336.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374478336.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The field contains the number of pins with an associated GPIO port. This
-is currently equal to the total number of pins but will be modified when
-adding support for pins without a GPIO port. Rename the field
-accordingly.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Instead of relying of MACH_TYPE for board identification,
+update the romImage code to relocate an appended DTB to
+the beginning of RAM. This implementation is independent
+of ARM_APPENDED_DTB, this because it is necessary to copy
+the DTB to memory so the kernel can access it.
+
+Without this patch Mackerel does not boot via the Mask ROM
+over USB (r_usb_boot) - this since non-DT boot was broken
+ages ago in commit:
+
+0ce53cd ARM: mach-shmobile: Use DT_MACHINE for mackerel
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/core.h    | 2 +-
- drivers/pinctrl/sh-pfc/gpio.c    | 4 ++--
- drivers/pinctrl/sh-pfc/pinctrl.c | 2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/compressed/head-shmobile.S    | 43 ++++++++++++++++++++++++++---
+ arch/arm/mach-shmobile/include/mach/zboot.h |  2 --
+ 2 files changed, 39 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index f02ba1d..93963a1 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -34,7 +34,7 @@ struct sh_pfc {
- 	unsigned int num_windows;
- 	struct sh_pfc_window *window;
+diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
+index e2d6363..e7f8092 100644
+--- a/arch/arm/boot/compressed/head-shmobile.S
++++ b/arch/arm/boot/compressed/head-shmobile.S
+@@ -55,12 +55,47 @@ __tmp_stack:
+ __continue:
+ #endif /* CONFIG_ZBOOT_ROM_MMC || CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI */
  
--	unsigned int nr_pins;
-+	unsigned int nr_gpio_pins;
+-	/* Set board ID necessary for boot */
+-	ldr	r7, 1f				@ Set machine type register
+-	mov	r8, #0				@ pass null pointer as atag
++	adr	r0, dtb_info
++	ldmia	r0, {r1, r3, r4, r5, r7}
++
++	sub	r0, r0, r1		@ calculate the delta offset
++	add	r5, r5, r0		@ _edata
++
++	ldr	lr, [r5, #0]		@ check if valid DTB is present
++	cmp	lr, r3
++	bne	0f
++
++	add	r9, r7, #31		@ rounded up to a multiple
++	bic	r9, r9, #31		@ ... of 32 bytes
++
++	add	r6, r9, r5		@ copy from _edata
++	add	r9, r9, r4		@ to MEMORY_START
++
++1:	ldmdb	r6!, {r0 - r3, r10 - r12, lr}
++	cmp	r6, r5
++	stmdb	r9!, {r0 - r3, r10 - r12, lr}
++	bhi	1b
++
++	/* Success: Zero board ID, pointer to start of memory for atag/dtb */
++	mov	r7, #0
++	mov	r8, r4
+ 	b	2f
  
- 	struct sh_pfc_chip *gpio;
- 	struct sh_pfc_chip *func;
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 87ae38b..7661be5 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -245,7 +245,7 @@ static int gpio_pin_setup(struct sh_pfc_chip *chip)
- 	gc->dev = pfc->dev;
- 	gc->owner = THIS_MODULE;
- 	gc->base = 0;
--	gc->ngpio = pfc->nr_pins;
-+	gc->ngpio = pfc->nr_gpio_pins;
+-1 :	.long MACH_TYPE
++	.align	2
++dtb_info:
++	.word	dtb_info
++#ifndef __ARMEB__
++	.word	0xedfe0dd0		@ sig is 0xd00dfeed big endian
++#else
++	.word	0xd00dfeed
++#endif
++	.word	MEMORY_START
++	.word	_edata
++	.word	0x4000			@ maximum DTB size
++0:
++	/* Failure: Zero board ID, NULL atag/dtb */
++	mov 	r7, #0
++	mov	r8, #0			@ pass null pointer as atag
+ 2 :
  
- 	return 0;
- }
-@@ -293,7 +293,7 @@ static int gpio_function_setup(struct sh_pfc_chip *chip)
+ #endif /* CONFIG_ZBOOT_ROM */
+diff --git a/arch/arm/mach-shmobile/include/mach/zboot.h b/arch/arm/mach-shmobile/include/mach/zboot.h
+index f2d8744..c3c4669 100644
+--- a/arch/arm/mach-shmobile/include/mach/zboot.h
++++ b/arch/arm/mach-shmobile/include/mach/zboot.h
+@@ -1,7 +1,6 @@
+ #ifndef ZBOOT_H
+ #define ZBOOT_H
  
- 	gc->label = pfc->info->name;
- 	gc->owner = THIS_MODULE;
--	gc->base = pfc->nr_pins;
-+	gc->base = pfc->nr_gpio_pins;
- 	gc->ngpio = pfc->info->nr_func_gpios;
+-#include <asm/mach-types.h>
+ #include <mach/zboot_macros.h>
  
- 	return 0;
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index bc8b028..314255d 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -632,7 +632,7 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		}
- 	}
+ /**************************************************
+@@ -11,7 +10,6 @@
+  **************************************************/
  
--	pfc->nr_pins = ranges[nr_ranges-1].end + 1;
-+	pfc->nr_gpio_pins = ranges[nr_ranges-1].end + 1;
- 
- 	return nr_ranges;
- }
+ #ifdef CONFIG_MACH_MACKEREL
+-#define MACH_TYPE	MACH_TYPE_MACKEREL
+ #define MEMORY_START	0x40000000
+ #include "mach/head-mackerel.txt"
+ #else
 -- 
-1.8.1.5
+1.8.2.1
 
