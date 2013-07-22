@@ -1,45 +1,101 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 02 Jul 2013 04:35:53 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a73a4: Fix resources for SCIFB0
-Message-Id: <f820b60582f75e73e83b8505d7e48fe59770f558.1372739438.git.horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:36:16 +0000
+Subject: [PATCH 04/11] ARM: shmobile: Add GIO to EMEV2 dtsi
+Message-Id: <12d035b13b224ee69886b64fd33d1c1224e79187.1374478037.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1372739438.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1372739438.git.horms+renesas@verge.net.au>
+References: <cover.1374478037.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Takanari Hayama <taki@igel.co.jp>
+From: Magnus Damm <damm@opensource.se>
 
-Fix base address and IRQ resources associated with SCIFB0.
+Add GIO0->GIO4 device nodes to the EMEV2 dtsi file.
 
-This bug was introduced by e481a528901d0cd18b5b5fcbdc55207ea3b6ef68
-("ARM: shmobile: r8a73a4 SCIF support V3") which was included in v3.10.
-
-Signed-off-by: Takanari Hayama <taki@igel.co.jp>
-Acked-by: Magnus Damm <damm@opensource.se>
-[ horms+renesas@verge.net.au: Add information about commit and version
-  this bug was added in ]
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Cc: stable@vger.kernel.org
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/emev2.dtsi | 59 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index c5a75a7..7f45c2e 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -62,7 +62,7 @@ enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFB3 };
- static const struct plat_sci_port scif[] = {
- 	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
- 	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
--	SCIFB_DATA(SCIFB0, 0xe6c50000, gic_spi(145)), /* SCIFB0 */
-+	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
- 	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
- 	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
- 	SCIFB_DATA(SCIFB3, 0xe6cf0000, gic_spi(151)), /* SCIFB3 */
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index c8a8c08..99ad2b2 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -14,6 +14,14 @@
+ 	compatible = "renesas,emev2";
+ 	interrupt-parent = <&gic>;
+ 
++	aliases {
++		gpio0 = &gpio0;
++		gpio1 = &gpio1;
++		gpio2 = &gpio2;
++		gpio3 = &gpio3;
++		gpio4 = &gpio4;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -67,4 +75,55 @@
+ 		reg = <0xe1050000 0x38>;
+ 		interrupts = <0 11 0>;
+ 	};
++
++	gpio0: gpio@e0050000 {
++		compatible = "renesas,em-gio";
++		reg = <0xe0050000 0x2c>, <0xe0050040 0x20>;
++		interrupts = <0 67 0>, <0 68 0>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		ngpios = <32>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
++	gpio1: gpio@e0050080 {
++		compatible = "renesas,em-gio";
++		reg = <0xe0050080 0x2c>, <0xe00500c0 0x20>;
++		interrupts = <0 69 0>, <0 70 0>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		ngpios = <32>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
++	gpio2: gpio@e0050100 {
++		compatible = "renesas,em-gio";
++		reg = <0xe0050100 0x2c>, <0xe0050140 0x20>;
++		interrupts = <0 71 0>, <0 72 0>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		ngpios = <32>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
++	gpio3: gpio@e0050180 {
++		compatible = "renesas,em-gio";
++		reg = <0xe0050180 0x2c>, <0xe00501c0 0x20>;
++		interrupts = <0 73 0>, <0 74 0>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		ngpios = <32>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
++	gpio4: gpio@e0050200 {
++		compatible = "renesas,em-gio";
++		reg = <0xe0050200 0x2c>, <0xe0050240 0x20>;
++		interrupts = <0 75 0>, <0 76 0>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		ngpios = <31>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
+ };
 -- 
 1.8.2.1
 
