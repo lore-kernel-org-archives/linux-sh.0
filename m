@@ -1,75 +1,74 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:24 +0000
-Subject: [PATCH v7 11/19] ARM: shmobile: armadillo-reference: Move pinctrl mappings to device tree
-Message-Id: <1372961852-28490-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:35:47 +0000
+Subject: [GIT 00/11] Renesas ARM-based SoC DT updates for v3.12
+Message-Id: <cover.1374478037.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+Hi Olof, Hi Arnd,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 10 ++++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |  9 ---------
- 2 files changed, 10 insertions(+), 9 deletions(-)
+please consider the following DT updates for v3.12.
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 09ea22c..4a7ae32 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -43,3 +43,13 @@
- 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
- 	};
- };
-+
-+&pfc {
-+	pinctrl-0 = <&scifa1_pins>;
-+	pinctrl-names = "default";
-+
-+	scifa1_pins: scifa1 {
-+		renesas,groups = "scifa1_data";
-+		renesas,function = "scifa1";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index f25b6aa..4ddd299 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,7 +24,6 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <linux/io.h>
--#include <linux/pinctrl/machine.h>
- #include <mach/common.h>
- #include <mach/r8a7740.h>
- #include <asm/mach/arch.h>
-@@ -119,12 +118,6 @@
-  *	usbhsf_power_ctrl()
-  */
- 
--static const struct pinctrl_map eva_pinctrl_map[] = {
--	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
--				  "scifa1_data", "scifa1"),
--};
--
- static void __init eva_clock_init(void)
- {
- 	struct clk *system	= clk_get(NULL, "system_clk");
-@@ -169,8 +162,6 @@ static void __init eva_init(void)
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	eva_clock_init();
- 
--	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--
- 	r8a7740_meram_workaround();
- 
- #ifdef CONFIG_CACHE_L2X0
--- 
-1.8.1.5
+This pull request is based on renesas-cleanup-for-v3.12 which I
+have already sent a pull request for.
 
+The following changes since commit ebd9616f439a8a46b9dca9a272b342f34c5f3614:
+
+  ARM: shmobile: Remove unused mach/dma.h (2013-07-17 10:02:30 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.12
+
+for you to fetch changes up to 66a5cab04d339d02b93a4671eadf8e251dbfdc2c:
+
+  ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference (2013-07-17 10:06:47 +0900)
+
+----------------------------------------------------------------
+Renesas ARM-based SoC DT updates for v3.12
+
+* Reference implementation for kzm9d board
+* Add MMCIF and SDHI DT templates for r8a7790 and r8a73a4 SoCs
+* Use DT for SMP and GIC initialisation on emev2 SoC and kzm9d board
+* Add GIO to dtsi of emev2 SoC
+* Update dts command line of kzm9d board
+* Add CPUFreq support to ape6evm board
+* Add I2C controller DT nodes to r8a73a4 SoC
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (4):
+      ARM: shmobile: r8a73a4: add I2C controller DT nodes
+      ARM: shmobile: ape6evm: add CPUFreq support
+      ARM: shmobile: r8a73a4: add MMCIF and SDHI DT templates
+      ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
+
+Magnus Damm (7):
+      ARM: shmobile: Update KZM9D dts command line
+      ARM: shmobile: Add GIO to EMEV2 dtsi
+      ARM: shmobile: Use DT for GIC on EMEV2 and KZM9D
+      ARM: shmobile: Use DT for SMP on EMEV2 and KZM9D
+      ARM: shmobile: EMEV2 map_io update
+      ARM: shmobile: KZM9D DT reference implementation
+      ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference
+
+ arch/arm/boot/dts/Makefile                     |   1 +
+ arch/arm/boot/dts/emev2-kzm9d-reference.dts    |  57 +++++++++++
+ arch/arm/boot/dts/emev2-kzm9d.dts              |   2 +-
+ arch/arm/boot/dts/emev2.dtsi                   |  59 ++++++++++++
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts          |  22 +++++
+ arch/arm/boot/dts/r8a73a4.dtsi                 | 126 +++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                 |  54 +++++++++++
+ arch/arm/mach-shmobile/Kconfig                 |  12 +++
+ arch/arm/mach-shmobile/Makefile                |   1 +
+ arch/arm/mach-shmobile/Makefile.boot           |   1 +
+ arch/arm/mach-shmobile/board-kzm9d-reference.c |  46 +++++++++
+ arch/arm/mach-shmobile/board-kzm9d.c           |   2 -
+ arch/arm/mach-shmobile/include/mach/emev2.h    |   1 -
+ arch/arm/mach-shmobile/setup-emev2.c           |  23 +----
+ arch/arm/mach-shmobile/smp-emev2.c             |  17 +---
+ 15 files changed, 384 insertions(+), 40 deletions(-)
+ create mode 100644 arch/arm/boot/dts/emev2-kzm9d-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-kzm9d-reference.c
