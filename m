@@ -1,67 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:26 +0000
-Subject: [PATCH v7 13/19] ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
-Message-Id: <1372961852-28490-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:36:18 +0000
+Subject: [PATCH 06/11] ARM: shmobile: Use DT for SMP on EMEV2 and KZM9D
+Message-Id: <683101a66203149da96e93fb8c0740c726bc114f.1374478037.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374478037.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Reference the st1232 reset GPIO from the device tree and remove it from
-board code.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Rework the EMEV2 SMP code to rely on DT for CPU information
+instead of reading out number of CPU cores from the SCU.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 2 ++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 7 -------
- 2 files changed, 2 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/smp-emev2.c | 17 +++--------------
+ 1 file changed, 3 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index a6c6606..8ec4cd1 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -10,6 +10,7 @@
+diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
+index 80991b3..9787165 100644
+--- a/arch/arm/mach-shmobile/smp-emev2.c
++++ b/arch/arm/mach-shmobile/smp-emev2.c
+@@ -38,9 +38,12 @@ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *
  
- /dts-v1/;
- /include/ "r8a7740.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "armadillo 800 eva reference";
-@@ -43,6 +44,7 @@
- 		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
- 		pinctrl-0 = <&st1232_pins>;
- 		pinctrl-names = "default";
-+		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
- 	};
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 4ddd299..002d8d3 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -158,7 +158,6 @@ clock_error:
-  */
- static void __init eva_init(void)
+ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
  {
--
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	eva_clock_init();
++	/* setup EMEV2 specific SCU base, enable */
++	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+ 	scu_enable(shmobile_scu_base);
  
-@@ -171,12 +170,6 @@ static void __init eva_init(void)
- 
- 	r8a7740_add_standard_devices_dt();
- 
--	/*
--	 * Touchscreen
--	 * TODO: Move reset GPIO over to .dts when we can reference it
--	 */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
--
- 	r8a7740_pm_init();
+ 	/* Tell ROM loader about our vector (in headsmp-scu.S, headsmp.S) */
++	emev2_clock_init(); /* need ioremapped SMU */
+ 	emev2_set_boot_vector(__pa(shmobile_boot_vector));
+ 	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
+ 	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
+@@ -49,21 +52,7 @@ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
  }
  
+-static void __init emev2_smp_init_cpus(void)
+-{
+-	unsigned int ncores;
+-
+-	/* setup EMEV2 specific SCU base */
+-	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+-	emev2_clock_init(); /* need ioremapped SMU */
+-
+-	ncores = shmobile_scu_base ? scu_get_core_count(shmobile_scu_base) : 1;
+-
+-	shmobile_smp_init_cpus(ncores);
+-}
+-
+ struct smp_operations emev2_smp_ops __initdata = {
+-	.smp_init_cpus		= emev2_smp_init_cpus,
+ 	.smp_prepare_cpus	= emev2_smp_prepare_cpus,
+ 	.smp_boot_secondary	= emev2_boot_secondary,
+ };
 -- 
-1.8.1.5
+1.8.2.1
 
