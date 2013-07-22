@@ -1,28 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 11 Jul 2013 11:32:11 +0000
-Subject: Re: [PATCH 03/11] ARM: shmobile: r8a7778: cleanup registration of usb phy
-Message-Id: <51DE97BB.7050906@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 22 Jul 2013 16:21:42 +0000
+Subject: [PATCH v2 0/3] ARM: shmobile: sh73a0: fix spurious irqpin interrupts
+Message-Id: <1374510105-21896-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ip0hfqf9.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ip0hfqf9.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 11.07.2013 12:31, Kuninori Morimoto wrote:
+On sh73a0 irqpin interrupts have to be masked on the parent GIC controller.
+This can only be done if interrupts are mapped when the first spurious IRQ
+occurs. Patch 2 in this series maps all irqpin interrupts at probe time to
+fix the problem. The third patch adds support for an irqpin IRQ to
+kzm9g-reference.
 
-> usb phy driver which needs platform data at the time of
-> registration is used from BockW only.
-> Now, ARM/shmobile aims to support DT,
-> and the C code base board support will be removed in the future.
-> The driver registration method which needs platform data
-> and which is not shared complicates codes.
-> This patch registers it on board code as cleanup C code
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Guennadi Liakhovetski (3):
+  ARM: shmobile: sh73a0: fix spurious irqpin interrupts in the DT case
+  irqchip: intc-irqpin: pre-map all interrupts in the DT case
+  ARM: shmobile: kzm9g-reference: use GPIO for card detection on SDHI2
 
-    NAK.
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    2 +-
+ arch/arm/boot/dts/sh73a0.dtsi                |    2 ++
+ drivers/irqchip/irq-renesas-intc-irqpin.c    |   10 +++++++++-
+ 3 files changed, 12 insertions(+), 2 deletions(-)
 
-WBR, Sergei
+-- 
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
