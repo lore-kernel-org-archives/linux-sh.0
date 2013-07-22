@@ -1,37 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Jul 2013 23:01:13 +0000
-Subject: Re: [PATCH v4 1/3] ARM: shmobile: r8a7790: add Ether support
-Message-Id: <20130717230113.GA8154@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:36:19 +0000
+Subject: [PATCH 07/11] ARM: shmobile: EMEV2 map_io update
+Message-Id: <0ea2b5389ab1b63aa880c5735c15be0b26b91b1a.1374478037.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372663234-13486-1-git-send-email-horms+renesas@verge.net.au>
- <1372663234-13486-2-git-send-email-horms+renesas@verge.net.au>
- <20130717091103.GD15981@e106331-lin.cambridge.arm.com>
-In-Reply-To: <20130717091103.GD15981@e106331-lin.cambridge.arm.com>
+References: <cover.1374478037.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 17, 2013 at 10:11:03AM +0100, Mark Rutland wrote:
+From: Magnus Damm <damm@opensource.se>
 
-[snip]
+Update the EMEV2 struct map_desc to exclude the SMU
+and also include the ->map_io() callback in the DT
+version of EMEV2 board support.
 
-> Why are we hardcoding the address and interrupt of a device rather than
-> describing it in the devicetree? This is the most trivial case to
-> describe.
+The EMEV2 SMP code can these days perform ioremap()
+early on without the SMU information in the io_desc[].
 
-The approach that shmobile is taking is to either initialise a device
-entirely using C (non-DT) or entirely using DT. And moreover to either
-initialise a board using C or DT (though in the latter case some devices
-still end up being initialised in C to provide a minimally working system).
+To correctly support SMP in case of DT-only board
+support then the ->map_io() callback is needed.
 
-At this time for more recent boards we typically provide both a C and DT
-versions to initialise a board. The C version typically is able to
-initialise a fuller set of hardware while the DT version catches up.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-emev2.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
-In this case the device is being initialised in C. And this code is
-intended ti be used when a board and thus its SoC is initialised using C.
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index 6fa485d..19980be 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -38,13 +38,6 @@
+ 
+ static struct map_desc emev2_io_desc[] __initdata = {
+ #ifdef CONFIG_SMP
+-	/* 128K entity map for 0xe0100000 (SMU) */
+-	{
+-		.virtual	= 0xe0100000,
+-		.pfn		= __phys_to_pfn(0xe0100000),
+-		.length		= SZ_128K,
+-		.type		= MT_DEVICE
+-	},
+ 	/* 2M mapping for SCU + L2 controller */
+ 	{
+ 		.virtual	= 0xf0000000,
+@@ -211,6 +204,7 @@ static const char *emev2_boards_compat_dt[] __initdata = {
+ 
+ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
++	.map_io		= emev2_map_io,
+ 	.init_early	= emev2_init_delay,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
+-- 
+1.8.2.1
 
-Once the SH ethernet driver and all its pre-requisite drivers and
-infrastructure can be initialised using DT then that will be used when
-initialising the board using DT.
