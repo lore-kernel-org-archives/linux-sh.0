@@ -1,97 +1,117 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:21:58 +0000
-Subject: [PATCH v2 14/23] drm/rcar-du: Remove register definitions for the second channel
-Message-Id: <1375276927-20181-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:36:13 +0000
+Subject: [PATCH 01/11] ARM: shmobile: r8a73a4: add I2C controller DT nodes
+Message-Id: <f98c1069bf1748ffa18cbebbc3a9f88dfc19a631.1374478037.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1374478037.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Channels are accessed through a global channel memory offset, there's no
-need to define register addresses for the second channel.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add Device Tree nodes for the 9 I2C controllers on r8a73a4, compatible with
+the i2c-sh_mobile.c driver.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_regs.h | 9 ---------
- 1 file changed, 9 deletions(-)
+ arch/arm/boot/dts/r8a73a4.dtsi | 81 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 81 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-index 3aba27f..195ed7e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-@@ -20,7 +20,6 @@
-  */
- 
- #define DSYSR			0x00000	/* display 1 */
--#define D2SYSR			0x30000	/* display 2 */
- #define DSYSR_ILTS		(1 << 29)
- #define DSYSR_DSEC		(1 << 20)
- #define DSYSR_IUPD		(1 << 16)
-@@ -35,7 +34,6 @@
- #define DSYSR_SCM_INT_VIDEO	(3 << 4)
- 
- #define DSMR			0x00004
--#define D2SMR			0x30004
- #define DSMR_VSPM		(1 << 28)
- #define DSMR_ODPM		(1 << 27)
- #define DSMR_DIPM_DISP		(0 << 25)
-@@ -60,7 +58,6 @@
- #define DSMR_CSY_MASK		(3 << 6)
- 
- #define DSSR			0x00008
--#define D2SSR			0x30008
- #define DSSR_VC1FB_DSA0		(0 << 30)
- #define DSSR_VC1FB_DSA1		(1 << 30)
- #define DSSR_VC1FB_DSA2		(2 << 30)
-@@ -80,7 +77,6 @@
- #define DSSR_ADC(n)		(1 << ((n)-1))
- 
- #define DSRCR			0x0000c
--#define D2SRCR			0x3000c
- #define DSRCR_TVCL		(1 << 15)
- #define DSRCR_FRCL		(1 << 14)
- #define DSRCR_VBCL		(1 << 11)
-@@ -90,7 +86,6 @@
- #define DSRCR_MASK		0x0000cbff
- 
- #define DIER			0x00010
--#define D2IER			0x30010
- #define DIER_TVE		(1 << 15)
- #define DIER_FRE		(1 << 14)
- #define DIER_VBE		(1 << 11)
-@@ -114,7 +109,6 @@
- #define DPPR_BPP32		(DPPR_BPP32_P1 | DPPR_BPP32_P2)	/* plane1 & 2 */
- 
- #define DEFR			0x00020
--#define D2EFR			0x30020
- #define DEFR_CODE		(0x7773 << 16)
- #define DEFR_EXSL		(1 << 12)
- #define DEFR_EXVL		(1 << 11)
-@@ -137,12 +131,10 @@
- #define DCPCR_DCE		(1 << 0)
- 
- #define DEFR2			0x00034
--#define D2EFR2			0x30034
- #define DEFR2_CODE		(0x7775 << 16)
- #define DEFR2_DEFE2G		(1 << 0)
- 
- #define DEFR3			0x00038
--#define D2EFR3			0x30038
- #define DEFR3_CODE		(0x7776 << 16)
- #define DEFR3_EVDA		(1 << 14)
- #define DEFR3_EVDM_1		(1 << 12)
-@@ -153,7 +145,6 @@
- #define DEFR3_DEFE3		(1 << 0)
- 
- #define DEFR4			0x0003c
--#define D2EFR4			0x3003c
- #define DEFR4_CODE		(0x7777 << 16)
- #define DEFR4_LRUO		(1 << 5)
- #define DEFR4_SPCE		(1 << 4)
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 4ff2019..4e1ddf0 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -85,4 +85,85 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 69 4>;
+ 	};
++
++	i2c0: i2c@e6500000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6500000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 174 0x4>;
++	};
++
++	i2c1: i2c@e6510000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6510000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 175 0x4>;
++	};
++
++	i2c2: i2c@e6520000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6520000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 176 0x4>;
++	};
++
++	i2c3: i2c@e6530000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6530000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 177 0x4>;
++	};
++
++	i2c4: i2c@e6540000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6540000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 178 0x4>;
++	};
++
++	i2c5: i2c@e60b0000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe60b0000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 179 0x4>;
++	};
++
++	i2c6: i2c@e6550000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6550000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 184 0x4>;
++	};
++
++	i2c7: i2c@e6560000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6560000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 185 0x4>;
++	};
++
++	i2c8: i2c@e6570000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0 0xe6570000 0 0x428>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 173 0x4>;
++	};
+ };
 -- 
-1.8.1.5
+1.8.2.1
 
