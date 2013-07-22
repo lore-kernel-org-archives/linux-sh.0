@@ -1,73 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Jul 2013 23:40:05 +0000
-Subject: [PATCH 17/19] sh-pfc: Rename struct sh_pfc nr_pins field to nr_gpio_pins
-Message-Id: <1373931607-4599-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 22 Jul 2013 07:36:14 +0000
+Subject: [PATCH 02/11] ARM: shmobile: ape6evm: add CPUFreq support
+Message-Id: <463a2432a435ea3eda4714626f231b7b22f0ac3d.1374478037.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374478037.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The field contains the number of pins with an associated GPIO port. This
-is currently equal to the total number of pins but will be modified when
-adding support for pins without a GPIO port. Rename the field
-accordingly.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds OPPs to the CA15 DT node and a max8973 DT node to support
+clock and voltage scaling, using the cpufreq-cpu0 CPUFreq driver.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/core.h    | 2 +-
- drivers/pinctrl/sh-pfc/gpio.c    | 4 ++--
- drivers/pinctrl/sh-pfc/pinctrl.c | 2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index f02ba1d..93963a1 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -34,7 +34,7 @@ struct sh_pfc {
- 	unsigned int num_windows;
- 	struct sh_pfc_window *window;
- 
--	unsigned int nr_pins;
-+	unsigned int nr_gpio_pins;
- 
- 	struct sh_pfc_chip *gpio;
- 	struct sh_pfc_chip *func;
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 87ae38b..7661be5 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -245,7 +245,7 @@ static int gpio_pin_setup(struct sh_pfc_chip *chip)
- 	gc->dev = pfc->dev;
- 	gc->owner = THIS_MODULE;
- 	gc->base = 0;
--	gc->ngpio = pfc->nr_pins;
-+	gc->ngpio = pfc->nr_gpio_pins;
- 
- 	return 0;
- }
-@@ -293,7 +293,7 @@ static int gpio_function_setup(struct sh_pfc_chip *chip)
- 
- 	gc->label = pfc->info->name;
- 	gc->owner = THIS_MODULE;
--	gc->base = pfc->nr_pins;
-+	gc->base = pfc->nr_gpio_pins;
- 	gc->ngpio = pfc->info->nr_func_gpios;
- 
- 	return 0;
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index bc8b028..314255d 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -632,7 +632,7 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		}
- 	}
- 
--	pfc->nr_pins = ranges[nr_ranges-1].end + 1;
-+	pfc->nr_gpio_pins = ranges[nr_ranges-1].end + 1;
- 
- 	return nr_ranges;
- }
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index f603c69..e657a9d 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -50,3 +50,25 @@
+ 		};
+ 	};
+ };
++
++&i2c5 {
++	vdd_dvfs: max8973@1b {
++		compatible = "maxim,max8973";
++		reg = <0x1b>;
++
++		regulator-min-microvolt = <935000>;
++		regulator-max-microvolt = <1200000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++	operating-points = <
++		/* kHz  uV */
++		1950000 1115000
++		1462500  995000
++	>;
++	voltage-tolerance = <1>; /* 1% */
++};
 -- 
-1.8.1.5
+1.8.2.1
 
