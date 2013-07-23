@@ -1,57 +1,88 @@
-From: Jonathan Cameron <jic23@kernel.org>
-Date: Tue, 16 Jul 2013 08:31:14 +0000
-Subject: Re: Help with fitting unusual devices into IIO framework
-Message-Id: <51E504D2.5030000@kernel.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 23 Jul 2013 01:18:05 +0000
+Subject: [PATCH v4 net-next repost 2/2] sh_eth: Add support for r8a7790 SoC
+Message-Id: <1374542285-19602-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51E46F7A.9020400@cogentembedded.com>
-In-Reply-To: <51E46F7A.9020400@cogentembedded.com>
+References: <1374542285-19602-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1374542285-19602-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Jonathan Cameron <jic23@cam.ac.uk>, linux-iio@vger.kernel.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-On 07/15/2013 10:54 PM, Sergei Shtylyov wrote:
-> Hello.
-> 
-One quick point first, if you could persuade your email client to wrap at 80 characters
-that  would be great.
+This is a copy of support for r8a7778/9 with the .rmiimode mode bit
+of struct sh_eth_cpu_data set.
 
-> Recently I have posted a driver for drivers/misc/ driving a pair of devices: Renesas R-Car > Gyro-ADC and speed-pulse interfaces [1]. Arnd Bergmann, one of the maintainers told me
-> that such driver would fit better into the IIO infrastructure. I have studied this
-> infrastructure for some time and only found in it a place for the Gyro-ADC
-> interface.
+Also update R8A7779 to R8A777x.
 
-> Let me describe the devices to be driven in some detail. Gyro-ADC i/f is an
-> interface to multichannel serial ADC (of 3 certain models) which can also calculate and
-> average of each 8 samples and sum up 10 of these average values.
-That is indeed fairly standard although some of the ABI for summed values is still under
-discussion.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-http://thread.gmane.org/gmane.linux.kernel.iio/7978/focusy864 for example.
+---
 
-> Speed-pulse interface
-> can count PWM-type input signal pulses and period between them. Though  being
-> two separate devices, these two have to be driven together because of the shared 
-> start/stop register (located in Gyro-ADC i/f still) and the clock with 1.25 ms period
-> supplied from the Gyro-ADC i/f to the speed-pulse i/f; at the same time speed-pulse i/f
-> generates interrupt with 100 ms period to be used by both interfaces. At this time, only
-> speed-pulse interface support is required, Gyro-ADC can be largely ignored (though it
-> has to be initialized). Perhaps  we could add a new I/O channel type for speed-pulse i/f?
-> What's your thoughts?
+v4
+* s/R8A7779/R8A777x/ as requested by Sergei Shtylyov.
 
-I certainly have no problem with adding this device type.
-Would you like to propose a suitable ABI addition to
-/Documentation/ABI/test/sysfs-bus-iio to cover this type of device.
+v3
+* Add r8a7790_data rather than updating r8a777x_data.
+  As requested by Sergei Shtylyov.
 
-I do vaguely wonder if we would be better treating these entirely generically as pulse
-counters rather than specifically as being for speed measurement? (Note I have only
-the sketchiest idea of what this device actually does ;)
-> 
-> [1] marc.info/?l=linux-kernel&m7367311823027
-> 
-> WBR, Sergei
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-iio" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+v2
+* Split from "sh_eth: add support RMIIMODE register"
+---
+ drivers/net/ethernet/renesas/Kconfig  |  2 +-
+ drivers/net/ethernet/renesas/sh_eth.c | 21 +++++++++++++++++++++
+ 2 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/Kconfig b/drivers/net/ethernet/renesas/Kconfig
+index 19a8a04..a30c439 100644
+--- a/drivers/net/ethernet/renesas/Kconfig
++++ b/drivers/net/ethernet/renesas/Kconfig
+@@ -13,4 +13,4 @@ config SH_ETH
+ 	  Renesas SuperH Ethernet device driver.
+ 	  This driver supporting CPUs are:
+ 		- SH7619, SH7710, SH7712, SH7724, SH7734, SH7763, SH7757,
+-		  R8A7740 and R8A7779.
++		  R8A7740, R8A777x and R8A7790.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 87af49f..fedc0a0 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -393,6 +393,26 @@ static struct sh_eth_cpu_data r8a777x_data = {
+ 	.hw_swap	= 1,
+ };
+ 
++/* R8A7790 */
++static struct sh_eth_cpu_data r8a7790_data = {
++	.set_duplex	= sh_eth_set_duplex,
++	.set_rate	= sh_eth_set_rate_r8a777x,
++
++	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
++	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
++	.eesipr_value	= 0x01ff009f,
++
++	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
++			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++
++	.apr		= 1,
++	.mpr		= 1,
++	.tpauser	= 1,
++	.hw_swap	= 1,
++	.rmiimode	= 1,
++};
++
+ static void sh_eth_set_rate_sh7724(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -2753,6 +2773,7 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
++	{ "r8a7790-ether", (kernel_ulong_t)&r8a7790_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
+-- 
+1.8.2.1
+
