@@ -1,27 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Jul 2013 08:28:21 +0000
-Subject: Re: [PATCH 2/2 v3] ARM: shmobile: r8a7778: cleanup registration of hspi
-Message-Id: <20130730082820.GB12147@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 23 Jul 2013 16:12:02 +0000
+Subject: [PATCH 2/4] net: smsc911x: add a reset GPIO DT binding
+Message-Id: <1374595924-12338-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87a9l4edj6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a9l4edj6.wl%kuninori.morimoto.gx@renesas.com>
+References: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Steve Glendinning <steve.glendinning@shawell.net>, netdev@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>, devicetree@vger.kernel.org
 
-On Tue, Jul 30, 2013 at 12:02:24AM -0700, Kuninori Morimoto wrote:
-> sh-hspi driver which doesn't need platform data at the time of
-> registration can be registerd on SoC.
-> And, registering these drivers in the SoC code can avoid
-> unwanted device numbering issue.
-> (ex. the hspi2 device number will be spi.0 if hspi2 only registered)
-> This patch registers it on SoC code as cleanup C code
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v2 -> v3
-> 
->  - based on 1/2 patch
+Add a new DT property to specify a reset GPIO.
 
-Thanks, I have queued this up for v3.12 in the cleanup3 branch.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: devicetree@vger.kernel.org
+---
+ Documentation/devicetree/bindings/net/smsc911x.txt |    1 +
+ drivers/net/ethernet/smsc/smsc911x.c               |   11 +++++++++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/smsc911x.txt b/Documentation/devicetree/bindings/net/smsc911x.txt
+index adb5b57..2bf32be 100644
+--- a/Documentation/devicetree/bindings/net/smsc911x.txt
++++ b/Documentation/devicetree/bindings/net/smsc911x.txt
+@@ -23,6 +23,7 @@ Optional properties:
+   external PHY
+ - smsc,save-mac-address : Indicates that mac address needs to be saved
+   before resetting the controller
++- smsc,reset-gpios : a GPIO binding to take the controller out of reset
+ - local-mac-address : 6 bytes, mac address
+ 
+ Examples:
+diff --git a/drivers/net/ethernet/smsc/smsc911x.c b/drivers/net/ethernet/smsc/smsc911x.c
+index ca01c03..db6255e 100644
+--- a/drivers/net/ethernet/smsc/smsc911x.c
++++ b/drivers/net/ethernet/smsc/smsc911x.c
+@@ -2328,6 +2328,8 @@ static int smsc911x_probe_config_dt(struct smsc911x_platform_config *config,
+ {
+ 	const char *mac;
+ 	u32 width = 0;
++	enum of_gpio_flags flags;
++	int gpio;
+ 
+ 	if (!np)
+ 		return -ENODEV;
+@@ -2361,6 +2363,15 @@ static int smsc911x_probe_config_dt(struct smsc911x_platform_config *config,
+ 	if (of_get_property(np, "smsc,save-mac-address", NULL))
+ 		config->flags |= SMSC911X_SAVE_MAC_ADDRESS;
+ 
++	gpio = of_get_named_gpio_flags(np, "smsc,reset-gpios", 0, &flags);
++	if (gpio = -EPROBE_DEFER)
++		return gpio;
++	if (gpio_is_valid(gpio)) {
++		config->reset_gpio = gpio;
++		config->reset_gpio_config = SMSC911X_RESET_GPIO_VALID |
++			(flags & OF_GPIO_ACTIVE_LOW ? GPIOF_INIT_LOW : GPIOF_INIT_HIGH);
++	}
++
+ 	return 0;
+ }
+ #else
+-- 
+1.7.2.5
+
