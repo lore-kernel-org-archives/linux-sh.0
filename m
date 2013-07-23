@@ -1,150 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:22:05 +0000
-Subject: [PATCH v2 21/23] drm/rcar-du: Configure RGB output routing to DPAD0
-Message-Id: <1375276927-20181-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 23 Jul 2013 10:49:54 +0000
+Subject: [PATCH v4 00/15] ARM: shmobile: move DMAC configuration data in the driver
+Message-Id: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-The R8A7790 DU variant has a single RGB output called DPAD0 that can be
-fed with the output of DU0, DU1 or DU2. Making the routing configurable.
+An updated version of an shdma driver platform driver conversion and Device
+Tree support. No functional changes since v2/v3, just made some structs
+const, updated documentation, removed an unused generic DT match entry,
+adjusted file order in the Makefile.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c  |  5 ++++
- drivers/gpu/drm/rcar-du/rcar_du_drv.h   |  2 ++
- drivers/gpu/drm/rcar-du/rcar_du_group.c | 45 ++++++++++++++++++++++++++++++---
- drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 +-
- 4 files changed, 50 insertions(+), 4 deletions(-)
+Patch 9 "DMA: shdma: support referencing specific DMACs within a
+multiplexer in DT" is actually an RFC. It proposes a method to support
+referencing a specific DMAC ninstance within a multiplexer DT node from
+slave DT nodes. As described in the documentation, the idea is to add a
+"#dma-cells" property to DMAC instances, that has to be made available
+for such targeted channel allocation. AFAICS, this is the only way to
+support both muxed and targeted referencing without core code
+modifications.
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 680606e..245800d 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -139,6 +139,11 @@ void rcar_du_crtc_route_output(struct drm_crtc *crtc,
- 	 * configured when starting the CRTC.
- 	 */
- 	rcrtc->outputs |= BIT(output);
-+
-+	/* Store RGB routing to DPAD0 for R8A7790. */
-+	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_DEFR8) &&
-+	    output = RCAR_DU_OUTPUT_DPAD0)
-+		rcdu->dpad0_source = rcrtc->index;
- }
- 
- void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-index d5243f4..924f5e0 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-@@ -68,6 +68,8 @@ struct rcar_du_device {
- 	unsigned int num_crtcs;
- 
- 	struct rcar_du_group groups[2];
-+
-+	unsigned int dpad0_source;
- };
- 
- static inline bool rcar_du_has(struct rcar_du_device *rcdu,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-index 9df6fb6..eb53cd9 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-@@ -27,6 +27,7 @@
-  * counterpart in the DU documentation, that models those semi-global resources.
-  */
- 
-+#include <linux/clk.h>
- #include <linux/io.h>
- 
- #include "rcar_du_drv.h"
-@@ -43,6 +44,22 @@ void rcar_du_group_write(struct rcar_du_group *rgrp, u32 reg, u32 data)
- 	rcar_du_write(rgrp->dev, rgrp->mmio_offset + reg, data);
- }
- 
-+static void rcar_du_group_setup_defr8(struct rcar_du_group *rgrp)
-+{
-+	u32 defr8 = DEFR8_CODE | DEFR8_DEFE8;
-+
-+	if (!rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_DEFR8))
-+		return;
-+
-+	/* The DEFR8 register for the first group also controls RGB output
-+	 * routing to DPAD0
-+	 */
-+	if (rgrp->index = 0)
-+		defr8 |= DEFR8_DRGBS_DU(rgrp->dev->dpad0_source);
-+
-+	rcar_du_group_write(rgrp, DEFR8, defr8);
-+}
-+
- static void rcar_du_group_setup(struct rcar_du_group *rgrp)
- {
- 	/* Enable extended features */
-@@ -51,8 +68,8 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
- 	rcar_du_group_write(rgrp, DEFR3, DEFR3_CODE | DEFR3_DEFE3);
- 	rcar_du_group_write(rgrp, DEFR4, DEFR4_CODE);
- 	rcar_du_group_write(rgrp, DEFR5, DEFR5_CODE | DEFR5_DEFE5);
--	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_DEFR8))
--		rcar_du_group_write(rgrp, DEFR8, DEFR8_CODE | DEFR8_DEFE8);
-+
-+	rcar_du_group_setup_defr8(rgrp);
- 
- 	/* Use DS1PR and DS2PR to configure planes priorities and connects the
- 	 * superposition 0 to DU0 pins. DU1 pins will be configured dynamically.
-@@ -128,7 +145,27 @@ void rcar_du_group_restart(struct rcar_du_group *rgrp)
- 	__rcar_du_group_start_stop(rgrp, true);
- }
- 
--void rcar_du_group_set_routing(struct rcar_du_group *rgrp)
-+static int rcar_du_set_dpad0_routing(struct rcar_du_device *rcdu)
-+{
-+	int ret;
-+
-+	/* RGB output routing to DPAD0 is configured in the DEFR8 register of
-+	 * the first group. As this function can be called with the DU0 and DU1
-+	 * CRTCs disabled, we need to enable the first group clock before
-+	 * accessing the register.
-+	 */
-+	ret = clk_prepare_enable(rcdu->crtcs[0].clock);
-+	if (ret < 0)
-+		return ret;
-+
-+	rcar_du_group_setup_defr8(&rcdu->groups[0]);
-+
-+	clk_disable_unprepare(rcdu->crtcs[0].clock);
-+
-+	return 0;
-+}
-+
-+int rcar_du_group_set_routing(struct rcar_du_group *rgrp)
- {
- 	struct rcar_du_crtc *crtc0 = &rgrp->dev->crtcs[rgrp->index * 2];
- 	u32 dorcr = rcar_du_group_read(rgrp, DORCR);
-@@ -145,4 +182,6 @@ void rcar_du_group_set_routing(struct rcar_du_group *rgrp)
- 		dorcr |= DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_DS2;
- 
- 	rcar_du_group_write(rgrp, DORCR, dorcr);
-+
-+	return rcar_du_set_dpad0_routing(rgrp->dev);
- }
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-index 4487e83..5025930 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-@@ -45,6 +45,6 @@ int rcar_du_group_get(struct rcar_du_group *rgrp);
- void rcar_du_group_put(struct rcar_du_group *rgrp);
- void rcar_du_group_start_stop(struct rcar_du_group *rgrp, bool start);
- void rcar_du_group_restart(struct rcar_du_group *rgrp);
--void rcar_du_group_set_routing(struct rcar_du_group *rgrp);
-+int rcar_du_group_set_routing(struct rcar_du_group *rgrp);
- 
- #endif /* __RCAR_DU_GROUP_H__ */
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+
+Guennadi Liakhovetski (15):
+  DMA: shdma: add support for DMAC configuration data, supplied via
+    device ID
+  DMA: shdma: add r8a7740 DMAC data to the device ID table
+  DMA: shdma: add r8a73a4 DMAC data to the device ID table
+  DMA: shdma: make a pointer const
+  DMA: shdma: pass SoC-specific configuration to the driver via OF
+    matching
+  DMA: shdma: make multiplexer platform data optional
+  DMA: shdma: add sh73a0 DMAC data to the device ID table
+  DMA: shdma: move two macros to a header
+  DMA: shdma: support referencing specific DMACs within a multiplexer
+    in DT
+  ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
+  ARM: shmobile: r8a7740: switch DMAC controllers to using device ID
+    data
+  ARM: shmobile: r8a7740: add DT nodes and clock aliases for three DMAC
+    instances
+  ARM: shmobile: r8a73a4: add a DT node and a clock alias for the DMAC
+  ARM: shmobile: sh73a0: switch DMAC controllers to using device ID
+    data
+  ARM: shmobile: r8a7740: add support for 2 RTDMACs
+
+ Documentation/devicetree/bindings/dma/shdma.txt |   23 +++-
+ arch/arm/boot/dts/r8a73a4.dtsi                  |   43 ++++++
+ arch/arm/boot/dts/r8a7740.dtsi                  |   95 ++++++++++++
+ arch/arm/mach-shmobile/clock-r8a73a4.c          |    5 +-
+ arch/arm/mach-shmobile/clock-r8a7740.c          |   17 ++-
+ arch/arm/mach-shmobile/clock-sh73a0.c           |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h   |    9 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c          |   17 ++
+ arch/arm/mach-shmobile/setup-r8a7740.c          |  178 +++++++++-------------
+ arch/arm/mach-shmobile/setup-sh73a0.c           |  182 +----------------------
+ drivers/dma/sh/Kconfig                          |   12 ++
+ drivers/dma/sh/Makefile                         |    5 +
+ drivers/dma/sh/shdma-base.c                     |    3 -
+ drivers/dma/sh/shdma-of.c                       |    5 -
+ drivers/dma/sh/shdma-r8a73a4.c                  |   75 +++++++++
+ drivers/dma/sh/shdma-r8a7740.c                  |   95 ++++++++++++
+ drivers/dma/sh/shdma-sh73a0.c                   |  181 ++++++++++++++++++++++
+ drivers/dma/sh/shdma.h                          |   30 ++++-
+ drivers/dma/sh/{shdma.c => shdmac.c}            |  104 ++++++++++++-
+ include/linux/shdma-base.h                      |    3 +
+ 20 files changed, 775 insertions(+), 309 deletions(-)
+ create mode 100644 drivers/dma/sh/shdma-r8a73a4.c
+ create mode 100644 drivers/dma/sh/shdma-r8a7740.c
+ create mode 100644 drivers/dma/sh/shdma-sh73a0.c
+ rename drivers/dma/sh/{shdma.c => shdmac.c} (89%)
+
 -- 
-1.8.1.5
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
