@@ -1,91 +1,170 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 05 Jul 2013 15:25:28 +0000
-Subject: [PATCH v2 2/6] ARM: shmobile: APE6EVM: add MMCIF support
-Message-Id: <1373037932-19918-3-git-send-email-g.liakhovetski@gmx.de>
+Date: Tue, 23 Jul 2013 10:49:57 +0000
+Subject: [PATCH v4 03/15] DMA: shdma: add r8a73a4 DMAC data to the device ID table
+Message-Id: <1374576609-27748-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Add MMCIF support to the APE6EVM board in both PIO and DMA modes, depending
-on the DMAC driver availability. Power supply is fixed for now, eventually
-support for the tps80032 regulator, also supplying both VDD and VccQ to the
-MMCIF slot should be added to APE6EVM.
+This configuration data will be re-used, when DMAC DT support is added to
+r8a73a4.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Magnus Damm <damm@opensource.se>
 ---
 
-v2: Added a comment about a regulator, supplying power to eMMC on APE6EVM.
+v4: make struct sh_dmae_pdata r8a73a4_dma_pdata "const"
 
- arch/arm/mach-shmobile/board-ape6evm.c |   33 ++++++++++++++++++++++++++++++++
- 1 files changed, 33 insertions(+), 0 deletions(-)
+ drivers/dma/sh/Kconfig         |    4 ++
+ drivers/dma/sh/Makefile        |    1 +
+ drivers/dma/sh/shdma-r8a73a4.c |   75 ++++++++++++++++++++++++++++++++++++++++
+ drivers/dma/sh/shdma.h         |    7 ++++
+ drivers/dma/sh/shdmac.c        |    1 +
+ 5 files changed, 88 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/dma/sh/shdma-r8a73a4.c
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index af6dd39..ab33030 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -21,6 +21,8 @@
- #include <linux/gpio.h>
- #include <linux/interrupt.h>
- #include <linux/kernel.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mmcif.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
-@@ -54,6 +56,27 @@ static const struct smsc911x_platform_config lan9220_data = {
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+index 0ac3e94..6921ba2 100644
+--- a/drivers/dma/sh/Kconfig
++++ b/drivers/dma/sh/Kconfig
+@@ -23,6 +23,10 @@ config SUDMAC
+ 	help
+ 	  Enable support for the Renesas SUDMAC controllers.
+ 
++config SHDMA_R8A73A4
++	def_bool y
++	depends on ARCH_R8A73A4 && SH_DMAE != n
++
+ config SHDMA_R8A7740
+ 	def_bool y
+ 	depends on ARCH_R8A7740 && SH_DMAE != n
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index acdd3cb..8352bfb 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -1,6 +1,7 @@
+ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
+ obj-$(CONFIG_SH_DMAE) += shdma.o
+ shdma-y := shdmac.o
++shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
+ shdma-$(CONFIG_SHDMA_R8A7740) += shdma-r8a7740.o
+ shdma-objs := $(shdma-y)
+ obj-$(CONFIG_SUDMAC) += sudmac.o
+diff --git a/drivers/dma/sh/shdma-r8a73a4.c b/drivers/dma/sh/shdma-r8a73a4.c
+new file mode 100644
+index 0000000..9db9b4d
+--- /dev/null
++++ b/drivers/dma/sh/shdma-r8a73a4.c
+@@ -0,0 +1,75 @@
++#include <linux/sh_dma.h>
++
++#include <mach/dma-register.h>
++#include <mach/r8a73a4.h>
++
++static const struct sh_dmae_slave_config dma_slaves[] = {
++	{
++		.slave_id	= SHDMA_SLAVE_MMCIF0_TX,
++		.addr		= 0xee200034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF0_RX,
++		.addr		= 0xee200034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF1_TX,
++		.addr		= 0xee220034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xe1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF1_RX,
++		.addr		= 0xee220034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xe2,
++	},
++};
++
++#define DMAE_CHANNEL(a, b)				\
++	{						\
++		.offset         = (a) - 0x20,		\
++		.dmars          = (a) - 0x20 + 0x40,	\
++		.chclr_bit	= (b),			\
++		.chclr_offset	= 0x80 - 0x20,		\
++	}
++
++static const struct sh_dmae_channel dma_channels[] = {
++	DMAE_CHANNEL(0x8000, 0),
++	DMAE_CHANNEL(0x8080, 1),
++	DMAE_CHANNEL(0x8100, 2),
++	DMAE_CHANNEL(0x8180, 3),
++	DMAE_CHANNEL(0x8200, 4),
++	DMAE_CHANNEL(0x8280, 5),
++	DMAE_CHANNEL(0x8300, 6),
++	DMAE_CHANNEL(0x8380, 7),
++	DMAE_CHANNEL(0x8400, 8),
++	DMAE_CHANNEL(0x8480, 9),
++	DMAE_CHANNEL(0x8500, 10),
++	DMAE_CHANNEL(0x8580, 11),
++	DMAE_CHANNEL(0x8600, 12),
++	DMAE_CHANNEL(0x8680, 13),
++	DMAE_CHANNEL(0x8700, 14),
++	DMAE_CHANNEL(0x8780, 15),
++	DMAE_CHANNEL(0x8800, 16),
++	DMAE_CHANNEL(0x8880, 17),
++	DMAE_CHANNEL(0x8900, 18),
++	DMAE_CHANNEL(0x8980, 19),
++};
++
++const struct sh_dmae_pdata r8a73a4_dma_pdata = {
++	.slave		= dma_slaves,
++	.slave_num	= ARRAY_SIZE(dma_slaves),
++	.channel	= dma_channels,
++	.channel_num	= ARRAY_SIZE(dma_channels),
++	.ts_low_shift	= TS_LOW_SHIFT,
++	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift	= TS_HI_SHIFT,
++	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift	= dma_ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
++	.dmaor_init     = DMAOR_DME,
++	.chclr_present	= 1,
++	.chclr_bitwise	= 1,
++};
+diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
+index b5fe545..82a83f8 100644
+--- a/drivers/dma/sh/shdma.h
++++ b/drivers/dma/sh/shdma.h
+@@ -61,6 +61,13 @@ struct sh_dmae_desc {
+ #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
+ 				     struct sh_dmae_device, shdma_dev.dma_dev)
+ 
++#ifdef CONFIG_SHDMA_R8A73A4
++extern const struct sh_dmae_pdata r8a73a4_dma_pdata;
++#define r8a73a4_shdma_devid &r8a73a4_dma_pdata
++#else
++#define r8a73a4_shdma_devid NULL
++#endif
++
+ #ifdef CONFIG_SHDMA_R8A7740
+ extern const struct sh_dmae_pdata r8a7740_dma_pdata;
+ #define r8a7740_shdma_devid &r8a7740_dma_pdata
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index fe54cda..6546bf9 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -907,6 +907,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+ 
+ const struct platform_device_id sh_dmae_id_table[] = {
+ 	{.name = SH_DMAE_DRV_NAME,},
++	{.name = "shdma-r8a73a4", .driver_data = (kernel_ulong_t)r8a73a4_shdma_devid,},
+ 	{.name = "shdma-r8a7740", .driver_data = (kernel_ulong_t)r8a7740_shdma_devid,},
+ 	{}
  };
- 
-+/*
-+ * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
-+ * model a VDD supply to MMCIF, using a fixed 3.3V regulator.
-+ */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+};
-+
-+/* MMCIF */
-+static struct sh_mmcif_plat_data mmcif0_pdata = {
-+	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
-+	.slave_id_tx	= SHDMA_SLAVE_MMCIF0_TX,
-+	.slave_id_rx	= SHDMA_SLAVE_MMCIF0_RX,
-+};
-+
-+static struct resource mmcif0_resources[] = {
-+	DEFINE_RES_MEM_NAMED(0xee200000, 0x100, "MMCIF0"),
-+	DEFINE_RES_IRQ(gic_spi(169)),
-+};
-+
- static const struct pinctrl_map ape6evm_pinctrl_map[] = {
- 	/* SCIFA0 console */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
-@@ -61,6 +84,11 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
- 	/* SMSC */
- 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a73a4",
- 				  "irqc_irq40", "irqc"),
-+	/* MMCIF0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
-+				  "mmc0_data8", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
-+				  "mmc0_ctrl", "mmc0"),
- };
- 
- static void __init ape6evm_add_standard_devices(void)
-@@ -93,6 +121,11 @@ static void __init ape6evm_add_standard_devices(void)
- 	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
- 					  lan9220_res, ARRAY_SIZE(lan9220_res),
- 					  &lan9220_data, sizeof(lan9220_data));
-+	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
-+					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
-+					  &mmcif0_pdata, sizeof(mmcif0_pdata));
- }
- 
- static const char *ape6evm_boards_compat_dt[] __initdata = {
 -- 
 1.7.2.5
 
