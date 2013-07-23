@@ -1,49 +1,31 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 23 Jul 2013 01:11:47 +0000
+Date: Tue, 23 Jul 2013 01:58:24 +0000
 Subject: Re: [PATCH v2 2/2] ARM: shmobile: BOCK-W: enable DMA for SDHI0
-Message-Id: <20130723011147.GA17885@verge.net.au>
+Message-Id: <20130723015824.GJ16481@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201307230218.01495.sergei.shtylyov@cogentembedded.com>
  <201307230223.24954.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201307230223.24954.sergei.shtylyov@cogentembedded.com>
+ <20130723011147.GA17885@verge.net.au>
+In-Reply-To: <20130723011147.GA17885@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 23, 2013 at 02:23:24AM +0400, Sergei Shtylyov wrote:
-> From: Max Filippov <max.filippov@cogentembedded.com>
+On Tue, Jul 23, 2013 at 10:11:47AM +0900, Simon Horman wrote:
+> On Tue, Jul 23, 2013 at 02:23:24AM +0400, Sergei Shtylyov wrote:
+> > From: Max Filippov <max.filippov@cogentembedded.com>
+> > 
+> > Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
+> > driver.
+> > 
+> > Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+> > [Sergei: removed #include <mach/dma.h>]
+> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 > 
-> Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
-> driver.
-> 
-> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-> [Sergei: removed #include <mach/dma.h>]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> I don't see HPBDMA_SLAVE_SDHI0_TX in v3.11-rc2.
+> Please repost this patch when it is available in
+> a branch I can used as a base.
 
-I don't see HPBDMA_SLAVE_SDHI0_TX in v3.11-rc2.
-Please repost this patch when it is available in
-a branch I can used as a base.
-
-> 
-> ---
-> Changes in version 2:
-> - removed #include <mach/dma.h>;
-> - refreshed the patch.
-> 
->  arch/arm/mach-shmobile/board-bockw.c |    2 ++
->  1 file changed, 2 insertions(+)
-> 
-> Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-> =================================> --- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-> +++ renesas/arch/arm/mach-shmobile/board-bockw.c
-> @@ -81,6 +81,8 @@ static struct rcar_phy_platform_data usb
->  
->  /* SDHI */
->  static struct sh_mobile_sdhi_info sdhi0_info = {
-> +	.dma_slave_tx	= HPBDMA_SLAVE_SDHI0_TX,
-> +	.dma_slave_rx	= HPBDMA_SLAVE_SDHI0_RX,
->  	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
->  	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
->  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
-> 
+Sorry, I now see it in patch 1/2.
+Somehow I missed that :(
