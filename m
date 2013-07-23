@@ -1,318 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Jul 2013 23:40:02 +0000
-Subject: [PATCH 14/19] sh-pfc: Add port numbers to the CPU_ALL_PORT macro
-Message-Id: <1373931607-4599-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 23 Jul 2013 10:49:55 +0000
+Subject: [PATCH v4 01/15] DMA: shdma: add support for DMAC configuration data, supplied via device ID
+Message-Id: <1374576609-27748-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Pass down the port number down to the PORT_1 macro. The port number will
-be used to compute the pin ranges automatically.
+This is going to facilitate DT support by eliminating the need in AUXDATA
+and avoiding creating complex DT data. This also fits well with DMAC
+devices, because SoCs with them often have multiple identical DMAC
+instances and it is perfectly valid to use a single configuration data set
+for all of them.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 124 +++++++++++++++++------------------
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   8 +--
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  |  14 ++--
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |  52 +++++++--------
- drivers/pinctrl/sh-pfc/sh_pfc.h      |  30 ++++-----
- 5 files changed, 114 insertions(+), 114 deletions(-)
+ drivers/dma/sh/Makefile              |    2 ++
+ drivers/dma/sh/{shdma.c => shdmac.c} |   11 ++++++++++-
+ 2 files changed, 12 insertions(+), 1 deletions(-)
+ rename drivers/dma/sh/{shdma.c => shdmac.c} (98%)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-index 288821b..04ecb5e 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-@@ -28,78 +28,78 @@
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index c962138..893ee09 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -1,3 +1,5 @@
+ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
+ obj-$(CONFIG_SH_DMAE) += shdma.o
++shdma-y := shdmac.o
++shdma-objs := $(shdma-y)
+ obj-$(CONFIG_SUDMAC) += sudmac.o
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdmac.c
+similarity index 98%
+rename from drivers/dma/sh/shdma.c
+rename to drivers/dma/sh/shdmac.c
+index 5153af1..751a4e3 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -665,7 +665,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
  
- #define CPU_ALL_PORT(fn, pfx, sfx)					\
- 	/*  Port0 - Port30 */						\
--	PORT_10(fn, pfx, sfx),						\
--	PORT_10(fn, pfx##1, sfx),					\
--	PORT_10(fn, pfx##2, sfx),					\
--	PORT_1(fn,  pfx##30, sfx),					\
-+	PORT_10(0, fn, pfx, sfx),					\
-+	PORT_10(10, fn, pfx##1, sfx),					\
-+	PORT_10(20, fn, pfx##2, sfx),					\
-+	PORT_1(30, fn, pfx##30, sfx),					\
- 	/* Port32 - Port40 */						\
--	PORT_1(fn,  pfx##32, sfx),	PORT_1(fn,  pfx##33, sfx),	\
--	PORT_1(fn,  pfx##34, sfx),	PORT_1(fn,  pfx##35, sfx),	\
--	PORT_1(fn,  pfx##36, sfx),	PORT_1(fn,  pfx##37, sfx),	\
--	PORT_1(fn,  pfx##38, sfx),	PORT_1(fn,  pfx##39, sfx),	\
--	PORT_1(fn,  pfx##40, sfx),					\
-+	PORT_1(32, fn, pfx##32, sfx),	PORT_1(33, fn, pfx##33, sfx),	\
-+	PORT_1(34, fn, pfx##34, sfx),	PORT_1(35, fn, pfx##35, sfx),	\
-+	PORT_1(36, fn, pfx##36, sfx),	PORT_1(37, fn, pfx##37, sfx),	\
-+	PORT_1(38, fn, pfx##38, sfx),	PORT_1(39, fn, pfx##39, sfx),	\
-+	PORT_1(40, fn, pfx##40, sfx),					\
- 	/* Port64  - Port85 */						\
--	PORT_1(fn, pfx##64, sfx),	PORT_1(fn, pfx##65, sfx),	\
--	PORT_1(fn, pfx##66, sfx),	PORT_1(fn, pfx##67, sfx),	\
--	PORT_1(fn, pfx##68, sfx),	PORT_1(fn, pfx##69, sfx),	\
--	PORT_10(fn, pfx##7, sfx),					\
--	PORT_1(fn, pfx##80, sfx),	PORT_1(fn, pfx##81, sfx),	\
--	PORT_1(fn, pfx##82, sfx),	PORT_1(fn, pfx##83, sfx),	\
--	PORT_1(fn, pfx##84, sfx),	PORT_1(fn, pfx##85, sfx),	\
-+	PORT_1(64, fn, pfx##64, sfx),	PORT_1(65, fn, pfx##65, sfx),	\
-+	PORT_1(66, fn, pfx##66, sfx),	PORT_1(67, fn, pfx##67, sfx),	\
-+	PORT_1(68, fn, pfx##68, sfx),	PORT_1(69, fn, pfx##69, sfx),	\
-+	PORT_10(70, fn, pfx##7, sfx),					\
-+	PORT_1(80, fn, pfx##80, sfx),	PORT_1(81, fn, pfx##81, sfx),	\
-+	PORT_1(82, fn, pfx##82, sfx),	PORT_1(83, fn, pfx##83, sfx),	\
-+	PORT_1(84, fn, pfx##84, sfx),	PORT_1(85, fn, pfx##85, sfx),	\
- 	/* Port96  - Port126 */						\
--	PORT_1(fn, pfx##96, sfx),	PORT_1(fn, pfx##97, sfx),	\
--	PORT_1(fn, pfx##98, sfx),	PORT_1(fn, pfx##99, sfx),	\
--	PORT_10(fn, pfx##10, sfx),					\
--	PORT_10(fn, pfx##11, sfx),					\
--	PORT_1(fn, pfx##120, sfx),	PORT_1(fn, pfx##121, sfx),	\
--	PORT_1(fn, pfx##122, sfx),	PORT_1(fn, pfx##123, sfx),	\
--	PORT_1(fn, pfx##124, sfx),	PORT_1(fn, pfx##125, sfx),	\
--	PORT_1(fn, pfx##126, sfx),					\
-+	PORT_1(96, fn, pfx##96, sfx),	PORT_1(97, fn, pfx##97, sfx),	\
-+	PORT_1(98, fn, pfx##98, sfx),	PORT_1(99, fn, pfx##99, sfx),	\
-+	PORT_10(100, fn, pfx##10, sfx),					\
-+	PORT_10(110, fn, pfx##11, sfx),					\
-+	PORT_1(120, fn, pfx##120, sfx),	PORT_1(121, fn, pfx##121, sfx),	\
-+	PORT_1(122, fn, pfx##122, sfx),	PORT_1(123, fn, pfx##123, sfx),	\
-+	PORT_1(124, fn, pfx##124, sfx),	PORT_1(125, fn, pfx##125, sfx),	\
-+	PORT_1(126, fn, pfx##126, sfx),					\
- 	/* Port128 - Port134 */						\
--	PORT_1(fn, pfx##128, sfx),	PORT_1(fn, pfx##129, sfx),	\
--	PORT_1(fn, pfx##130, sfx),	PORT_1(fn, pfx##131, sfx),	\
--	PORT_1(fn, pfx##132, sfx),	PORT_1(fn, pfx##133, sfx),	\
--	PORT_1(fn, pfx##134, sfx),					\
-+	PORT_1(128, fn, pfx##128, sfx),	PORT_1(129, fn, pfx##129, sfx),	\
-+	PORT_1(130, fn, pfx##130, sfx),	PORT_1(131, fn, pfx##131, sfx),	\
-+	PORT_1(132, fn, pfx##132, sfx),	PORT_1(133, fn, pfx##133, sfx),	\
-+	PORT_1(134, fn, pfx##134, sfx),					\
- 	/* Port160 - Port178 */						\
--	PORT_10(fn, pfx##16, sfx),					\
--	PORT_1(fn, pfx##170, sfx),	PORT_1(fn, pfx##171, sfx),	\
--	PORT_1(fn, pfx##172, sfx),	PORT_1(fn, pfx##173, sfx),	\
--	PORT_1(fn, pfx##174, sfx),	PORT_1(fn, pfx##175, sfx),	\
--	PORT_1(fn, pfx##176, sfx),	PORT_1(fn, pfx##177, sfx),	\
--	PORT_1(fn, pfx##178, sfx),					\
-+	PORT_10(160, fn, pfx##16, sfx),					\
-+	PORT_1(170, fn, pfx##170, sfx),	PORT_1(171, fn, pfx##171, sfx),	\
-+	PORT_1(172, fn, pfx##172, sfx),	PORT_1(173, fn, pfx##173, sfx),	\
-+	PORT_1(174, fn, pfx##174, sfx),	PORT_1(175, fn, pfx##175, sfx),	\
-+	PORT_1(176, fn, pfx##176, sfx),	PORT_1(177, fn, pfx##177, sfx),	\
-+	PORT_1(178, fn, pfx##178, sfx),					\
- 	/* Port192 - Port222 */						\
--	PORT_1(fn, pfx##192, sfx),	PORT_1(fn, pfx##193, sfx),	\
--	PORT_1(fn, pfx##194, sfx),	PORT_1(fn, pfx##195, sfx),	\
--	PORT_1(fn, pfx##196, sfx),	PORT_1(fn, pfx##197, sfx),	\
--	PORT_1(fn, pfx##198, sfx),	PORT_1(fn, pfx##199, sfx),	\
--	PORT_10(fn, pfx##20, sfx),					\
--	PORT_10(fn, pfx##21, sfx),					\
--	PORT_1(fn, pfx##220, sfx),	PORT_1(fn, pfx##221, sfx),	\
--	PORT_1(fn, pfx##222, sfx),					\
-+	PORT_1(192, fn, pfx##192, sfx),	PORT_1(193, fn, pfx##193, sfx),	\
-+	PORT_1(194, fn, pfx##194, sfx),	PORT_1(195, fn, pfx##195, sfx),	\
-+	PORT_1(196, fn, pfx##196, sfx),	PORT_1(197, fn, pfx##197, sfx),	\
-+	PORT_1(198, fn, pfx##198, sfx),	PORT_1(199, fn, pfx##199, sfx),	\
-+	PORT_10(200, fn, pfx##20, sfx),					\
-+	PORT_10(210, fn, pfx##21, sfx),					\
-+	PORT_1(220, fn, pfx##220, sfx),	PORT_1(221, fn, pfx##221, sfx),	\
-+	PORT_1(222, fn, pfx##222, sfx),					\
- 	/* Port224 - Port250 */						\
--	PORT_1(fn, pfx##224, sfx),	PORT_1(fn, pfx##225, sfx),	\
--	PORT_1(fn, pfx##226, sfx),	PORT_1(fn, pfx##227, sfx),	\
--	PORT_1(fn, pfx##228, sfx),	PORT_1(fn, pfx##229, sfx),	\
--	PORT_10(fn, pfx##23, sfx),					\
--	PORT_10(fn, pfx##24, sfx),					\
--	PORT_1(fn, pfx##250, sfx),					\
-+	PORT_1(224, fn, pfx##224, sfx),	PORT_1(225, fn, pfx##225, sfx),	\
-+	PORT_1(226, fn, pfx##226, sfx),	PORT_1(227, fn, pfx##227, sfx),	\
-+	PORT_1(228, fn, pfx##228, sfx),	PORT_1(229, fn, pfx##229, sfx),	\
-+	PORT_10(230, fn, pfx##23, sfx),					\
-+	PORT_10(240, fn, pfx##24, sfx),					\
-+	PORT_1(250, fn, pfx##250, sfx),					\
- 	/* Port256 - Port283 */						\
--	PORT_1(fn, pfx##256, sfx),	PORT_1(fn, pfx##257, sfx),	\
--	PORT_1(fn, pfx##258, sfx),	PORT_1(fn, pfx##259, sfx),	\
--	PORT_10(fn, pfx##26, sfx),					\
--	PORT_10(fn, pfx##27, sfx),					\
--	PORT_1(fn, pfx##280, sfx),	PORT_1(fn, pfx##281, sfx),	\
--	PORT_1(fn, pfx##282, sfx),	PORT_1(fn, pfx##283, sfx),	\
-+	PORT_1(256, fn, pfx##256, sfx),	PORT_1(257, fn, pfx##257, sfx),	\
-+	PORT_1(258, fn, pfx##258, sfx),	PORT_1(259, fn, pfx##259, sfx),	\
-+	PORT_10(260, fn, pfx##26, sfx),					\
-+	PORT_10(270, fn, pfx##27, sfx),					\
-+	PORT_1(280, fn, pfx##280, sfx),	PORT_1(281, fn, pfx##281, sfx),	\
-+	PORT_1(282, fn, pfx##282, sfx),	PORT_1(283, fn, pfx##283, sfx),	\
- 	/* Port288 - Port308 */						\
--	PORT_1(fn, pfx##288, sfx),	PORT_1(fn, pfx##289, sfx),	\
--	PORT_10(fn, pfx##29, sfx),					\
--	PORT_1(fn, pfx##300, sfx),	PORT_1(fn, pfx##301, sfx),	\
--	PORT_1(fn, pfx##302, sfx),	PORT_1(fn, pfx##303, sfx),	\
--	PORT_1(fn, pfx##304, sfx),	PORT_1(fn, pfx##305, sfx),	\
--	PORT_1(fn, pfx##306, sfx),	PORT_1(fn, pfx##307, sfx),	\
--	PORT_1(fn, pfx##308, sfx),					\
-+	PORT_1(288, fn, pfx##288, sfx),	PORT_1(289, fn, pfx##289, sfx),	\
-+	PORT_10(290, fn, pfx##29, sfx),					\
-+	PORT_1(300, fn, pfx##300, sfx),	PORT_1(301, fn, pfx##301, sfx),	\
-+	PORT_1(302, fn, pfx##302, sfx),	PORT_1(303, fn, pfx##303, sfx),	\
-+	PORT_1(304, fn, pfx##304, sfx),	PORT_1(305, fn, pfx##305, sfx),	\
-+	PORT_1(306, fn, pfx##306, sfx),	PORT_1(307, fn, pfx##307, sfx),	\
-+	PORT_1(308, fn, pfx##308, sfx),					\
- 	/* Port320 - Port329 */						\
--	PORT_10(fn, pfx##32, sfx)
-+	PORT_10(320, fn, pfx##32, sfx)
+ static int sh_dmae_probe(struct platform_device *pdev)
+ {
+-	struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
++	struct sh_dmae_pdata *pdata;
+ 	unsigned long irqflags = IRQF_DISABLED,
+ 		chan_flag[SH_DMAE_MAX_CHANNELS] = {};
+ 	int errirq, chan_irq[SH_DMAE_MAX_CHANNELS];
+@@ -674,6 +674,8 @@ static int sh_dmae_probe(struct platform_device *pdev)
+ 	struct dma_device *dma_dev;
+ 	struct resource *chan, *dmars, *errirq_res, *chanirq_res;
  
- 
- enum {
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index b5bc1d0..2c74536 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -29,10 +29,10 @@
- #include "sh_pfc.h"
- 
- #define CPU_ALL_PORT(fn, pfx, sfx)					\
--	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx),		\
--	PORT_10(fn, pfx##10, sfx),	PORT_90(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##20, sfx),					\
--	PORT_1(fn, pfx##210, sfx),	PORT_1(fn, pfx##211, sfx)
-+	PORT_10(0,  fn, pfx, sfx),	PORT_90(0,   fn, pfx, sfx),	\
-+	PORT_10(100, fn, pfx##10, sfx),	PORT_90(100, fn, pfx##1, sfx),	\
-+	PORT_10(200, fn, pfx##20, sfx),					\
-+	PORT_1(210, fn, pfx##210, sfx),	PORT_1(211, fn, pfx##211, sfx)
- 
- #define IRQC_PIN_MUX(irq, pin)						\
- static const unsigned int intc_irq##irq##_pins[] = {			\
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 17f1c17..02526df 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -30,13 +30,13 @@
- #include "core.h"
- #include "sh_pfc.h"
- 
--#define CPU_ALL_PORT(fn, pfx, sfx) \
--	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx), \
--	PORT_10(fn, pfx##10, sfx),	PORT_10(fn, pfx##11, sfx), \
--	PORT_10(fn, pfx##12, sfx),	PORT_10(fn, pfx##13, sfx), \
--	PORT_10(fn, pfx##14, sfx),	PORT_10(fn, pfx##15, sfx), \
--	PORT_10(fn, pfx##16, sfx),	PORT_10(fn, pfx##17, sfx), \
--	PORT_10(fn, pfx##18, sfx),	PORT_1(fn, pfx##190, sfx)
-+#define CPU_ALL_PORT(fn, pfx, sfx)					\
-+	PORT_10(0,  fn, pfx, sfx),	PORT_90(0,  fn, pfx, sfx),	\
-+	PORT_10(100, fn, pfx##10, sfx),	PORT_10(110, fn, pfx##11, sfx),	\
-+	PORT_10(120, fn, pfx##12, sfx),	PORT_10(130, fn, pfx##13, sfx),	\
-+	PORT_10(140, fn, pfx##14, sfx),	PORT_10(150, fn, pfx##15, sfx),	\
-+	PORT_10(160, fn, pfx##16, sfx),	PORT_10(170, fn, pfx##17, sfx),	\
-+	PORT_10(180, fn, pfx##18, sfx),	PORT_1(190, fn, pfx##190, sfx)
- 
- #define IRQC_PIN_MUX(irq, pin)						\
- static const unsigned int intc_irq##irq##_pins[] = {			\
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 1d35b42..acf8392 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -31,32 +31,32 @@
- #include "core.h"
- #include "sh_pfc.h"
- 
--#define CPU_ALL_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx,    sfx), PORT_90(fn, pfx, sfx),	\
--	PORT_10(fn, pfx##10, sfx),				\
--	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
--	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
--	PORT_1(fn, pfx##114, sfx), PORT_1(fn, pfx##115, sfx),	\
--	PORT_1(fn, pfx##116, sfx), PORT_1(fn, pfx##117, sfx),	\
--	PORT_1(fn, pfx##118, sfx),				\
--	PORT_1(fn, pfx##128, sfx), PORT_1(fn, pfx##129, sfx),	\
--	PORT_10(fn, pfx##13, sfx), PORT_10(fn, pfx##14, sfx),	\
--	PORT_10(fn, pfx##15, sfx),				\
--	PORT_1(fn, pfx##160, sfx), PORT_1(fn, pfx##161, sfx),	\
--	PORT_1(fn, pfx##162, sfx), PORT_1(fn, pfx##163, sfx),	\
--	PORT_1(fn, pfx##164, sfx),				\
--	PORT_1(fn, pfx##192, sfx), PORT_1(fn, pfx##193, sfx),	\
--	PORT_1(fn, pfx##194, sfx), PORT_1(fn, pfx##195, sfx),	\
--	PORT_1(fn, pfx##196, sfx), PORT_1(fn, pfx##197, sfx),	\
--	PORT_1(fn, pfx##198, sfx), PORT_1(fn, pfx##199, sfx),	\
--	PORT_10(fn, pfx##20, sfx), PORT_10(fn, pfx##21, sfx),	\
--	PORT_10(fn, pfx##22, sfx), PORT_10(fn, pfx##23, sfx),	\
--	PORT_10(fn, pfx##24, sfx), PORT_10(fn, pfx##25, sfx),	\
--	PORT_10(fn, pfx##26, sfx), PORT_10(fn, pfx##27, sfx),	\
--	PORT_1(fn, pfx##280, sfx), PORT_1(fn, pfx##281, sfx),	\
--	PORT_1(fn, pfx##282, sfx),				\
--	PORT_1(fn, pfx##288, sfx), PORT_1(fn, pfx##289, sfx),	\
--	PORT_10(fn, pfx##29, sfx), PORT_10(fn, pfx##30, sfx)
-+#define CPU_ALL_PORT(fn, pfx, sfx)					\
-+	PORT_10(0,  fn, pfx, sfx), PORT_90(0, fn, pfx, sfx),		\
-+	PORT_10(100, fn, pfx##10, sfx),					\
-+	PORT_1(110, fn, pfx##110, sfx), PORT_1(111, fn, pfx##111, sfx),	\
-+	PORT_1(112, fn, pfx##112, sfx), PORT_1(113, fn, pfx##113, sfx),	\
-+	PORT_1(114, fn, pfx##114, sfx), PORT_1(115, fn, pfx##115, sfx),	\
-+	PORT_1(116, fn, pfx##116, sfx), PORT_1(117, fn, pfx##117, sfx),	\
-+	PORT_1(118, fn, pfx##118, sfx),					\
-+	PORT_1(128, fn, pfx##128, sfx), PORT_1(129, fn, pfx##129, sfx),	\
-+	PORT_10(130, fn, pfx##13, sfx), PORT_10(140, fn, pfx##14, sfx),	\
-+	PORT_10(150, fn, pfx##15, sfx),					\
-+	PORT_1(160, fn, pfx##160, sfx), PORT_1(161, fn, pfx##161, sfx),	\
-+	PORT_1(162, fn, pfx##162, sfx), PORT_1(163, fn, pfx##163, sfx),	\
-+	PORT_1(164, fn, pfx##164, sfx),					\
-+	PORT_1(192, fn, pfx##192, sfx), PORT_1(193, fn, pfx##193, sfx),	\
-+	PORT_1(194, fn, pfx##194, sfx), PORT_1(195, fn, pfx##195, sfx),	\
-+	PORT_1(196, fn, pfx##196, sfx), PORT_1(197, fn, pfx##197, sfx),	\
-+	PORT_1(198, fn, pfx##198, sfx), PORT_1(199, fn, pfx##199, sfx),	\
-+	PORT_10(200, fn, pfx##20, sfx), PORT_10(210, fn, pfx##21, sfx),	\
-+	PORT_10(220, fn, pfx##22, sfx), PORT_10(230, fn, pfx##23, sfx),	\
-+	PORT_10(240, fn, pfx##24, sfx), PORT_10(250, fn, pfx##25, sfx),	\
-+	PORT_10(260, fn, pfx##26, sfx), PORT_10(270, fn, pfx##27, sfx),	\
-+	PORT_1(280, fn, pfx##280, sfx), PORT_1(281, fn, pfx##281, sfx),	\
-+	PORT_1(282, fn, pfx##282, sfx),					\
-+	PORT_1(288, fn, pfx##288, sfx), PORT_1(289, fn, pfx##289, sfx),	\
-+	PORT_10(290, fn, pfx##29, sfx), PORT_10(300, fn, pfx##30, sfx)
- 
- enum {
- 	PINMUX_RESERVED = 0,
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 61205fb..005b482 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -229,21 +229,21 @@ struct sh_pfc_soc_info {
-  * PORT style (linear pin space)
-  */
- 
--#define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
--
--#define PORT_10(fn, pfx, sfx)						\
--	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),		\
--	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),		\
--	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),		\
--	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),		\
--	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
--
--#define PORT_90(fn, pfx, sfx) \
--	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),		\
--	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),		\
--	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),		\
--	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),		\
--	PORT_10(fn, pfx##9, sfx)
-+#define PORT_1(pn, fn, pfx, sfx) fn(pfx, sfx)
++	pdata = (void *)pdev->id_entry->driver_data ? : pdev->dev.platform_data;
 +
-+#define PORT_10(pn, fn, pfx, sfx)					  \
-+	PORT_1(pn,   fn, pfx##0, sfx), PORT_1(pn+1, fn, pfx##1, sfx),	  \
-+	PORT_1(pn+2, fn, pfx##2, sfx), PORT_1(pn+3, fn, pfx##3, sfx),	  \
-+	PORT_1(pn+4, fn, pfx##4, sfx), PORT_1(pn+5, fn, pfx##5, sfx),	  \
-+	PORT_1(pn+6, fn, pfx##6, sfx), PORT_1(pn+7, fn, pfx##7, sfx),	  \
-+	PORT_1(pn+8, fn, pfx##8, sfx), PORT_1(pn+9, fn, pfx##9, sfx)
-+
-+#define PORT_90(pn, fn, pfx, sfx)					  \
-+	PORT_10(pn+10, fn, pfx##1, sfx), PORT_10(pn+20, fn, pfx##2, sfx), \
-+	PORT_10(pn+30, fn, pfx##3, sfx), PORT_10(pn+40, fn, pfx##4, sfx), \
-+	PORT_10(pn+50, fn, pfx##5, sfx), PORT_10(pn+60, fn, pfx##6, sfx), \
-+	PORT_10(pn+70, fn, pfx##7, sfx), PORT_10(pn+80, fn, pfx##8, sfx), \
-+	PORT_10(pn+90, fn, pfx##9, sfx)
+ 	/* get platform data */
+ 	if (!pdata || !pdata->channel_num)
+ 		return -ENODEV;
+@@ -903,6 +905,12 @@ static const struct of_device_id sh_dmae_of_match[] = {
+ };
+ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
  
- /* PORT_ALL(suffix) - Expand to a list of PORT_#_suffix */
- #define _PORT_ALL(pfx, sfx)		pfx##_##sfx
++const struct platform_device_id sh_dmae_id_table[] = {
++	{.name = SH_DMAE_DRV_NAME,},
++	{}
++};
++MODULE_DEVICE_TABLE(platform, sh_dmae_id_table);
++
+ static struct platform_driver sh_dmae_driver = {
+ 	.driver 	= {
+ 		.owner	= THIS_MODULE,
+@@ -912,6 +920,7 @@ static struct platform_driver sh_dmae_driver = {
+ 	},
+ 	.remove		= sh_dmae_remove,
+ 	.shutdown	= sh_dmae_shutdown,
++	.id_table	= sh_dmae_id_table,
+ };
+ 
+ static int __init sh_dmae_init(void)
 -- 
-1.8.1.5
+1.7.2.5
 
