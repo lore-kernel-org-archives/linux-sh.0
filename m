@@ -1,238 +1,241 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 02 Jul 2013 15:45:55 +0000
-Subject: [PATCH 1/3] DMA: shdma: switch to managed resource allocation
-Message-Id: <Pine.LNX.4.64.1307021744110.1965@axis700.grange>
+Date: Tue, 23 Jul 2013 10:50:08 +0000
+Subject: [PATCH v4 14/15] ARM: shmobile: sh73a0: switch DMAC controllers to using device ID data
+Message-Id: <1374576609-27748-15-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1307021738500.1965@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1307021738500.1965@axis700.grange>
+References: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: "Koul, Vinod" <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Switch shdma to using devm_* managed functions for allocation of memory,
-requesting IRQs, mapping IO resources etc.
+This patch removes DMAC platform data on sh73a0 and switches to using
+device ID data.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/dma/sh/shdma-base.c |   11 +-----
- drivers/dma/sh/shdma.c      |   71 ++++++++-----------------------------------
- drivers/dma/sh/sudmac.c     |    1 -
- include/linux/shdma-base.h  |    1 -
- 4 files changed, 15 insertions(+), 69 deletions(-)
+ arch/arm/mach-shmobile/clock-sh73a0.c |    2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c |  182 +--------------------------------
+ 2 files changed, 2 insertions(+), 182 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 28ca361..c5ea256 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -831,8 +831,8 @@ static irqreturn_t chan_irqt(int irq, void *dev)
- int shdma_request_irq(struct shdma_chan *schan, int irq,
- 			   unsigned long flags, const char *name)
- {
--	int ret = request_threaded_irq(irq, chan_irq, chan_irqt,
--				       flags, name, schan);
-+	int ret = devm_request_threaded_irq(schan->dev, irq, chan_irq,
-+					    chan_irqt, flags, name, schan);
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 1942eae..3a00b49 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -646,7 +646,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[MSTP100]), /* LCDC0 */
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP219]), /* SCIFA7 */
+-	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]), /* SY-DMAC */
++	CLKDEV_DEV_ID("shdma-sh73a0.0", &mstp_clks[MSTP218]), /* SY-DMAC */
+ 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP217]), /* MP-DMAC */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 516c239..2e9f3cc 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -396,183 +396,6 @@ static struct platform_device i2c4_device = {
+ 	.num_resources	= ARRAY_SIZE(i2c4_resources),
+ };
  
- 	schan->irq = ret < 0 ? ret : irq;
- 
-@@ -840,13 +840,6 @@ int shdma_request_irq(struct shdma_chan *schan, int irq,
- }
- EXPORT_SYMBOL(shdma_request_irq);
- 
--void shdma_free_irq(struct shdma_chan *schan)
--{
--	if (schan->irq >= 0)
--		free_irq(schan->irq, schan);
--}
--EXPORT_SYMBOL(shdma_free_irq);
+-static const struct sh_dmae_slave_config sh73a0_dmae_slaves[] = {
+-	{
+-		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+-		.addr		= 0xe6c40020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x21,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
+-		.addr		= 0xe6c40024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x22,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
+-		.addr		= 0xe6c50020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x25,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
+-		.addr		= 0xe6c50024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x26,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
+-		.addr		= 0xe6c60020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x29,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
+-		.addr		= 0xe6c60024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2a,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
+-		.addr		= 0xe6c70020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2d,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
+-		.addr		= 0xe6c70024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2e,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
+-		.addr		= 0xe6c80020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x39,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
+-		.addr		= 0xe6c80024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3a,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
+-		.addr		= 0xe6cb0020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x35,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
+-		.addr		= 0xe6cb0024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x36,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF6_TX,
+-		.addr		= 0xe6cc0020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x1d,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF6_RX,
+-		.addr		= 0xe6cc0024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x1e,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF7_TX,
+-		.addr		= 0xe6cd0020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x19,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF7_RX,
+-		.addr		= 0xe6cd0024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x1a,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF8_TX,
+-		.addr		= 0xe6c30040,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3d,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF8_RX,
+-		.addr		= 0xe6c30060,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3e,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+-		.addr		= 0xee100030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc1,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
+-		.addr		= 0xee100030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc2,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
+-		.addr		= 0xee120030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc9,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
+-		.addr		= 0xee120030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xca,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
+-		.addr		= 0xee140030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xcd,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
+-		.addr		= 0xee140030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xce,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
+-		.addr		= 0xe6bd0034,
+-		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd1,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
+-		.addr		= 0xe6bd0034,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd2,
+-	},
+-};
 -
- void shdma_chan_probe(struct shdma_dev *sdev,
- 			   struct shdma_chan *schan, int id)
- {
-diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
-index c7950be..3083d62 100644
---- a/drivers/dma/sh/shdma.c
-+++ b/drivers/dma/sh/shdma.c
-@@ -507,7 +507,8 @@ static int sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
- 	struct shdma_chan *schan;
- 	int err;
- 
--	sh_chan = kzalloc(sizeof(struct sh_dmae_chan), GFP_KERNEL);
-+	sh_chan = devm_kzalloc(sdev->dma_dev.dev, sizeof(struct sh_dmae_chan),
-+			       GFP_KERNEL);
- 	if (!sh_chan) {
- 		dev_err(sdev->dma_dev.dev,
- 			"No free memory for allocating dma channels!\n");
-@@ -543,7 +544,6 @@ static int sh_dmae_chan_probe(struct sh_dmae_device *shdev, int id,
- err_no_irq:
- 	/* remove from dmaengine device node */
- 	shdma_chan_remove(schan);
--	kfree(sh_chan);
- 	return err;
- }
- 
-@@ -554,14 +554,9 @@ static void sh_dmae_chan_remove(struct sh_dmae_device *shdev)
- 	int i;
- 
- 	shdma_for_each_chan(schan, &shdev->shdma_dev, i) {
--		struct sh_dmae_chan *sh_chan = container_of(schan,
--					struct sh_dmae_chan, shdma_chan);
- 		BUG_ON(!schan);
- 
--		shdma_free_irq(&sh_chan->shdma_chan);
--
- 		shdma_chan_remove(schan);
--		kfree(sh_chan);
- 	}
- 	dma_dev->chancnt = 0;
- }
-@@ -698,33 +693,22 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 	if (!chan || !errirq_res)
- 		return -ENODEV;
- 
--	if (!request_mem_region(chan->start, resource_size(chan), pdev->name)) {
--		dev_err(&pdev->dev, "DMAC register region already claimed\n");
--		return -EBUSY;
+-#define DMAE_CHANNEL(_offset)					\
+-	{							\
+-		.offset         = _offset - 0x20,		\
+-		.dmars          = _offset - 0x20 + 0x40,	\
 -	}
 -
--	if (dmars && !request_mem_region(dmars->start, resource_size(dmars), pdev->name)) {
--		dev_err(&pdev->dev, "DMAC DMARS region already claimed\n");
--		err = -EBUSY;
--		goto ermrdmars;
--	}
+-static const struct sh_dmae_channel sh73a0_dmae_channels[] = {
+-	DMAE_CHANNEL(0x8000),
+-	DMAE_CHANNEL(0x8080),
+-	DMAE_CHANNEL(0x8100),
+-	DMAE_CHANNEL(0x8180),
+-	DMAE_CHANNEL(0x8200),
+-	DMAE_CHANNEL(0x8280),
+-	DMAE_CHANNEL(0x8300),
+-	DMAE_CHANNEL(0x8380),
+-	DMAE_CHANNEL(0x8400),
+-	DMAE_CHANNEL(0x8480),
+-	DMAE_CHANNEL(0x8500),
+-	DMAE_CHANNEL(0x8580),
+-	DMAE_CHANNEL(0x8600),
+-	DMAE_CHANNEL(0x8680),
+-	DMAE_CHANNEL(0x8700),
+-	DMAE_CHANNEL(0x8780),
+-	DMAE_CHANNEL(0x8800),
+-	DMAE_CHANNEL(0x8880),
+-	DMAE_CHANNEL(0x8900),
+-	DMAE_CHANNEL(0x8980),
+-};
 -
--	err = -ENOMEM;
--	shdev = kzalloc(sizeof(struct sh_dmae_device), GFP_KERNEL);
-+	shdev = devm_kzalloc(&pdev->dev, sizeof(struct sh_dmae_device),
-+			     GFP_KERNEL);
- 	if (!shdev) {
- 		dev_err(&pdev->dev, "Not enough memory\n");
--		goto ealloc;
-+		return -ENOMEM;
- 	}
- 
- 	dma_dev = &shdev->shdma_dev.dma_dev;
- 
--	shdev->chan_reg = ioremap(chan->start, resource_size(chan));
--	if (!shdev->chan_reg)
--		goto emapchan;
-+	shdev->chan_reg = devm_ioremap_resource(&pdev->dev, chan);
-+	if (IS_ERR(shdev->chan_reg))
-+		return PTR_ERR(shdev->chan_reg);
- 	if (dmars) {
--		shdev->dmars = ioremap(dmars->start, resource_size(dmars));
--		if (!shdev->dmars)
--			goto emapdmars;
-+		shdev->dmars = devm_ioremap_resource(&pdev->dev, dmars);
-+		if (IS_ERR(shdev->dmars))
-+			return PTR_ERR(shdev->dmars);
- 	}
- 
- 	if (!pdata->slave_only)
-@@ -785,8 +769,8 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 
- 	errirq = errirq_res->start;
- 
--	err = request_irq(errirq, sh_dmae_err, irqflags,
--			  "DMAC Address Error", shdev);
-+	err = devm_request_irq(&pdev->dev, errirq, sh_dmae_err, irqflags,
-+			       "DMAC Address Error", shdev);
- 	if (err) {
- 		dev_err(&pdev->dev,
- 			"DMA failed requesting irq #%d, error %d\n",
-@@ -875,7 +859,6 @@ chan_probe_err:
- 	sh_dmae_chan_remove(shdev);
- 
- #if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
--	free_irq(errirq, shdev);
- eirq_err:
- #endif
- rst_err:
-@@ -889,18 +872,7 @@ rst_err:
- 	platform_set_drvdata(pdev, NULL);
- 	shdma_cleanup(&shdev->shdma_dev);
- eshdma:
--	if (dmars)
--		iounmap(shdev->dmars);
--emapdmars:
--	iounmap(shdev->chan_reg);
- 	synchronize_rcu();
--emapchan:
--	kfree(shdev);
--ealloc:
--	if (dmars)
--		release_mem_region(dmars->start, resource_size(dmars));
--ermrdmars:
--	release_mem_region(chan->start, resource_size(chan));
- 
- 	return err;
- }
-@@ -909,17 +881,12 @@ static int sh_dmae_remove(struct platform_device *pdev)
- {
- 	struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
- 	struct dma_device *dma_dev = &shdev->shdma_dev.dma_dev;
--	struct resource *res;
--	int errirq = platform_get_irq(pdev, 0);
- 
- 	dma_async_device_unregister(dma_dev);
- 
- 	/* Is a NOP if this controller isn't registered with of-dma */
- 	of_dma_controller_free(pdev->dev.of_node);
- 
--	if (errirq > 0)
--		free_irq(errirq, shdev);
+-static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
+-	.slave          = sh73a0_dmae_slaves,
+-	.slave_num      = ARRAY_SIZE(sh73a0_dmae_slaves),
+-	.channel        = sh73a0_dmae_channels,
+-	.channel_num    = ARRAY_SIZE(sh73a0_dmae_channels),
+-	.ts_low_shift   = TS_LOW_SHIFT,
+-	.ts_low_mask    = TS_LOW_BIT << TS_LOW_SHIFT,
+-	.ts_high_shift  = TS_HI_SHIFT,
+-	.ts_high_mask   = TS_HI_BIT << TS_HI_SHIFT,
+-	.ts_shift       = dma_ts_shift,
+-	.ts_shift_num   = ARRAY_SIZE(dma_ts_shift),
+-	.dmaor_init     = DMAOR_DME,
+-};
 -
- 	spin_lock_irq(&sh_dmae_lock);
- 	list_del_rcu(&shdev->node);
- 	spin_unlock_irq(&sh_dmae_lock);
-@@ -929,21 +896,9 @@ static int sh_dmae_remove(struct platform_device *pdev)
- 	sh_dmae_chan_remove(shdev);
- 	shdma_cleanup(&shdev->shdma_dev);
+ static struct resource sh73a0_dmae_resources[] = {
+ 	DEFINE_RES_MEM(0xfe000020, 0x89e0),
+ 	{
+@@ -590,13 +413,10 @@ static struct resource sh73a0_dmae_resources[] = {
+ };
  
--	if (shdev->dmars)
--		iounmap(shdev->dmars);
--	iounmap(shdev->chan_reg);
--
- 	platform_set_drvdata(pdev, NULL);
+ static struct platform_device dma0_device = {
+-	.name		= "sh-dma-engine",
++	.name		= "shdma-sh73a0",
+ 	.id		= 0,
+ 	.resource	= sh73a0_dmae_resources,
+ 	.num_resources	= ARRAY_SIZE(sh73a0_dmae_resources),
+-	.dev		= {
+-		.platform_data	= &sh73a0_dmae_platform_data,
+-	},
+ };
  
- 	synchronize_rcu();
--	kfree(shdev);
--
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (res)
--		release_mem_region(res->start, resource_size(res));
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
--	if (res)
--		release_mem_region(res->start, resource_size(res));
- 
- 	return 0;
- }
-diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-index e7c94bb..3477901 100644
---- a/drivers/dma/sh/sudmac.c
-+++ b/drivers/dma/sh/sudmac.c
-@@ -302,7 +302,6 @@ static void sudmac_chan_remove(struct sudmac_device *su_dev)
- 
- 		BUG_ON(!schan);
- 
--		shdma_free_irq(&sc->shdma_chan);
- 		shdma_chan_remove(schan);
- 	}
- 	dma_dev->chancnt = 0;
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index 9d67bb1..1aa1f19 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -116,7 +116,6 @@ struct shdma_dev {
- 
- int shdma_request_irq(struct shdma_chan *, int,
- 			   unsigned long, const char *);
--void shdma_free_irq(struct shdma_chan *);
- bool shdma_reset(struct shdma_dev *sdev);
- void shdma_chan_probe(struct shdma_dev *sdev,
- 			   struct shdma_chan *schan, int id);
+ /* MPDMAC */
 -- 
 1.7.2.5
 
