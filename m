@@ -1,68 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 26 Jul 2013 00:51:52 +0000
-Subject: [PATCH v3 3/4] ARM: shmobile: r8a7779: Rely on DT for SMP CPU info
-Message-Id: <1374799913-27461-4-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 23 Jul 2013 16:12:04 +0000
+Subject: [PATCH 4/4] ARM: shmobile: ape6evm-reference: add smsc911x ethernet support
+Message-Id: <1374595924-12338-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374799913-27461-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1374799913-27461-1-git-send-email-horms+renesas@verge.net.au>
+References: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Steve Glendinning <steve.glendinning@shawell.net>, netdev@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Remove r8a7779 specific ->smp_init_cpus() callback and
-instead of relying on shmobile_smp_init_cpus() simply
-use DT for CPU core information.
+Add support for the SMSC9220 ethernet chip on the board.
 
-Based on work for the sh73a0 by Magnus Damm.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |   25 ++++++++++++++++++++++-
+ 1 files changed, 24 insertions(+), 1 deletions(-)
 
-v2
-* First post
----
- arch/arm/mach-shmobile/smp-r8a7779.c | 12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index 9bdf810..42170af 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -99,6 +99,9 @@ static int r8a7779_boot_secondary(unsigned int cpu, struct task_struct *idle)
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 3bcbc9f..4215ebc 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -8,6 +8,8 @@
+  * kind, whether express or implied.
+  */
  
- static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- {
++#include <dt-bindings/gpio/gpio.h>
 +
-+	/* setup r8a7779 specific SCU base */
-+	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
- 	scu_enable(shmobile_scu_base);
+ /dts-v1/;
+ /include/ "r8a73a4.dtsi"
  
- 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
-@@ -117,14 +120,6 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- 	r8a7779_platform_cpu_kill(3);
- }
+@@ -16,7 +18,7 @@
+ 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
  
--static void __init r8a7779_smp_init_cpus(void)
--{
--	/* setup r8a7779 specific SCU base */
--	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
--
--	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
--}
--
- #ifdef CONFIG_HOTPLUG_CPU
- static int r8a7779_scu_psr_core_disabled(int cpu)
- {
-@@ -175,7 +170,6 @@ static int r8a7779_cpu_disable(unsigned int cpu)
- #endif /* CONFIG_HOTPLUG_CPU */
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel";
++		bootargs = "console=ttySC0,115200 debug ip=dhcp root=/dev/nfs";
+ 	};
  
- struct smp_operations r8a7779_smp_ops  __initdata = {
--	.smp_init_cpus		= r8a7779_smp_init_cpus,
- 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
- 	.smp_boot_secondary	= r8a7779_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
+ 	memory@40000000 {
+@@ -37,6 +39,22 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		ranges = <0 0 0 0x80000000>;
++
++		ethernet@8000000 {
++			compatible = "smsc,lan9118", "smsc,lan9115";
++			reg = <0x08000000 0x1000>;
++			interrupt-parent = <&irqc1>;
++			interrupts = <8 0x4>;
++			phy-mode = "mii";
++			reg-io-width = <4>;
++			smsc,irq-active-high;
++			smsc,irq-push-pull;
++			smsc,reset-gpios = <&pfc 270 GPIO_ACTIVE_LOW>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&smsc_pins>;
++			vdd33a-supply = <&ape6evm_fixed_3v3>;
++			vddvario-supply = <&ape6evm_fixed_3v3>;
++		};
+ 	};
+ };
+ 
+@@ -85,6 +103,11 @@
+ 		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
+ 		renesas,function = "sdhi1";
+ 	};
++
++	smsc_pins: eth0 {
++		renesas,groups = "irqc_irq40";
++		renesas,function = "irqc";
++	};
+ };
+ 
+ &mmcif0 {
 -- 
-1.8.2.1
+1.7.2.5
 
