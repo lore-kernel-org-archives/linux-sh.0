@@ -1,37 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 01 Jul 2013 01:36:28 +0000
-Subject: Re: [PATCH] ARM: shmobile: Update romImage to relocate appended DTB
-Message-Id: <20130701013627.GD14567@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 23 Jul 2013 16:12:00 +0000
+Subject: [PATCH 0/4] net: smsc911x: support reset GPIO and use it on ape6evm
+Message-Id: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130626234807.11425.24645.sendpatchset@w520>
-In-Reply-To: <20130626234807.11425.24645.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Steve Glendinning <steve.glendinning@shawell.net>, netdev@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-On Thu, Jun 27, 2013 at 08:48:07AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Instead of relying of MACH_TYPE for board identification,
-> update the romImage code to relocate an appended DTB to
-> the beginning of RAM. This implementation is independent
-> of ARM_APPENDED_DTB, this because it is necessary to copy
-> the DTB to memory so the kernel can access it.
-> 
-> Without this patch Mackerel does not boot via the Mask ROM
-> over USB (r_usb_boot) - this since non-DT boot was broken
-> ages ago in commit:
-> 
-> 0ce53cd ARM: mach-shmobile: Use DT_MACHINE for mackerel
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Written against renesas-next-20130620
-> 
->  arch/arm/boot/compressed/head-shmobile.S    |   43 ++++++++++++++++++++++++---
->  arch/arm/mach-shmobile/include/mach/zboot.h |    2 -
->  2 files changed, 39 insertions(+), 6 deletions(-)
+The first two patches add support for a reset GPIO to the smsc911x driver
+in the platform data and in DT. The latter 2 patches use the reset GPIO
+on APE6EVM in DT and non-DT modes. They therefore should be applied after
+the first two patches are merged.
 
-Thanks, I have queued this up in the boot-cleanup branch.
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+
+Guennadi Liakhovetski (4):
+  net: smsc911x: add support for a reset GPIO
+  net: smsc911x: add a reset GPIO DT binding
+  ARM: shmobile: ape6evm: use smsc911x platform parameters to handle
+    eth reset
+  ARM: shmobile: ape6evm-reference: add smsc911x ethernet support
+
+ Documentation/devicetree/bindings/net/smsc911x.txt |    1 +
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |   25 ++++++++++++++++-
+ arch/arm/mach-shmobile/board-ape6evm.c             |    5 +--
+ drivers/net/ethernet/smsc/smsc911x.c               |   30 +++++++++++++++++++-
+ include/linux/smsc911x.h                           |   10 ++++++
+ 5 files changed, 66 insertions(+), 5 deletions(-)
+
+-- 
+1.7.2.5
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
