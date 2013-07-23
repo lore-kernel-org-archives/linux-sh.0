@@ -1,36 +1,36 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 22 Jul 2013 17:30:43 +0000
-Subject: Re: [PATCH 07/11] ARM: shmobile: EMEV2 map_io update
-Message-Id: <51ED6C43.5070404@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 23 Jul 2013 01:18:03 +0000
+Subject: [PATCH 0/2 v4 net-next repost] sh_eth: Add support for r8a7790 SoC
+Message-Id: <1374542285-19602-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478037.git.horms+renesas@verge.net.au>
- <0ea2b5389ab1b63aa880c5735c15be0b26b91b1a.1374478037.git.horms+renesas@verge.net.au>
-In-Reply-To: <0ea2b5389ab1b63aa880c5735c15be0b26b91b1a.1374478037.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-On 22/07/13 08:36, Simon Horman wrote:
-> From: Magnus Damm<damm@opensource.se>
->
-> Update the EMEV2 struct map_desc to exclude the SMU
-> and also include the ->map_io() callback in the DT
-> version of EMEV2 board support.
->
-> The EMEV2 SMP code can these days perform ioremap()
-> early on without the SMU information in the io_desc[].
->
-> To correctly support SMP in case of DT-only board
-> support then the ->map_io() callback is needed.
->
-> Signed-off-by: Magnus Damm<damm@opensource.se>
-> Acked-by: Arnd Bergmann<arnd@arndb.de>
-> Signed-off-by: Simon Horman<horms+renesas@verge.net.au>
+[ Repost with v4 and net-next tags in subject ]
 
-This looks roughly what we did to get the the EMEV2 working
-here, although ours is a little more hacky.
+Hi,
+
+this short series enhances the sh_eth driver for use with the r8a7790 SoC.
+
+Changes since v3:
+
+* Removed "sh_eth: add support for gpio reset" as it appears unnecessary
+  and I am not entirely confident is is correct.
+* Updated "sh_eth: Add support for r8a7790 SoC" to
+  refer to R8A777x intead of R8A7779.
+
+Simon Horman (2):
+  sh_eth: add support for RMIIMODE register
+  sh_eth: Add support for r8a7790 SoC
+
+ drivers/net/ethernet/renesas/Kconfig  |  2 +-
+ drivers/net/ethernet/renesas/sh_eth.c | 25 +++++++++++++++++++++++++
+ drivers/net/ethernet/renesas/sh_eth.h |  2 ++
+ 3 files changed, 28 insertions(+), 1 deletion(-)
 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.2.1
+
