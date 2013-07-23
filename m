@@ -1,64 +1,157 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 03 Jul 2013 02:26:09 +0000
-Subject: Re: [PATCH v2 0/2] ARM: shmobile: lager: Add DT reference
-Message-Id: <20130703022608.GA31914@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 23 Jul 2013 08:09:26 +0000
+Subject: [PATCH v2] ARM: shmobile: Add lager defconfig
+Message-Id: <1374566966-30345-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoSk2+mgkzOWZMsyDbJKYCS+Pp2cXMu4=SvO35EQ9sKtig@mail.gmail.com>
-In-Reply-To: <CANqRtoSk2+mgkzOWZMsyDbJKYCS+Pp2cXMu4=SvO35EQ9sKtig@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 02, 2013 at 04:41:01PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Mon, Jul 1, 2013 at 11:18 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Hi,
-> >
-> > this short series adds DT reference to Lager.
-> 
-> Thanks for your work on this.
-> 
-> > The intention of this is to allow the board to be
-> > brought up as much as possible using DT. And for
-> > this to act as a basis for further DT coverage
-> > of devices present on the Lager and its r8a7790 SoC.
-> >
-> >
-> > This series differs from v2 in that it has been
-> > rebased on top of reneas-next-20130701 and now makes use
-> > of r8a7790_init_delay().
-> >
-> >
-> > Simon Horman (2):
-> >   ARM: shmobile: r8a7790:  Initialise clocks and SCIF in
-> >     r8a7790_add_dt_devices()
-> 
-> At this point I'm inclined to say "no" to new DT reference using
-> platform devices for SCIF. I believe we instead should really work on
-> adding DT support to the SCIF driver and use DT for SCIF on more
-> recent boards. Also, we probably don't want to enable clocks like
-> that, instead we should tie in common clocks. That will take a little
-> bit longer time though, so I wonder what is a good solution until
-> then..
+This is intended to be used until multi-arch is able to be
+used for the lager board at which time a more generic configuration
+will be used in place of this one.
 
-I guess we should just delay lager-reference until its dependencies are ready.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-> >   ARM: shmobile: lager: Add DT reference
-> 
-> I think you want to update Makefile.boot to include the
-> lager-reference board. Also, I believe that without SCIF and clocks
-> the init_machine() and init_irq() callbacks can be left unset to make
-> use of the default behaviour.
-> 
-> Cheers,
-> 
-> / magnus
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+---
+
+v2
+* Place defconfig in correct directory
+* Bump SERIAL_SH_SCI_NR_UARTS up to 10 to reflect the
+  number of devices present
+---
+ arch/arm/configs/lager_defconfig | 121 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 121 insertions(+)
+ create mode 100644 arch/arm/configs/lager_defconfig
+
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+new file mode 100644
+index 0000000..f9efae1
+--- /dev/null
++++ b/arch/arm/configs/lager_defconfig
+@@ -0,0 +1,121 @@
++CONFIG_SYSVIPC=y
++CONFIG_NO_HZ=y
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
++CONFIG_LOG_BUF_SHIFT
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_SYSCTL_SYSCALL=y
++CONFIG_EMBEDDED=y
++CONFIG_PERF_EVENTS=y
++CONFIG_SLAB=y
++# CONFIG_LBDAF is not set
++# CONFIG_BLK_DEV_BSG is not set
++# CONFIG_IOSCHED_DEADLINE is not set
++# CONFIG_IOSCHED_CFQ is not set
++CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_R8A7790=y
++CONFIG_MACH_LAGER=y
++# CONFIG_SH_TIMER_TMU is not set
++# CONFIG_EM_TIMER_STI is not set
++# CONFIG_SWP_EMULATE is not set
++CONFIG_ARM_ERRATA_430973=y
++CONFIG_ARM_ERRATA_458693=y
++CONFIG_ARM_ERRATA_460075=y
++CONFIG_ARM_ERRATA_743622=y
++CONFIG_ARM_ERRATA_754322=y
++CONFIG_SMP=y
++CONFIG_NR_CPUS=2
++# CONFIG_LOCAL_TIMERS is not set
++CONFIG_AEABI=y
++# CONFIG_OABI_COMPAT is not set
++CONFIG_FORCE_MAX_ZONEORDER
++CONFIG_ZBOOT_ROM_TEXT=0x0
++CONFIG_ZBOOT_ROM_BSS=0x0
++CONFIG_ARM_APPENDED_DTB=y
++CONFIG_KEXEC=y
++CONFIG_AUTO_ZRELADDR=y
++CONFIG_VFP=y
++CONFIG_NEON=y
++# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
++CONFIG_PM_RUNTIME=y
++CONFIG_NET=y
++CONFIG_PACKET=y
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
++# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
++# CONFIG_INET_XFRM_MODE_TUNNEL is not set
++# CONFIG_INET_XFRM_MODE_BEET is not set
++# CONFIG_INET_LRO is not set
++# CONFIG_INET_DIAG is not set
++# CONFIG_IPV6 is not set
++# CONFIG_WIRELESS is not set
++CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_NETDEVICES=y
++# CONFIG_NET_CORE is not set
++# CONFIG_NET_VENDOR_ARC is not set
++# CONFIG_NET_CADENCE is not set
++# CONFIG_NET_VENDOR_BROADCOM is not set
++# CONFIG_NET_VENDOR_CIRRUS is not set
++# CONFIG_NET_VENDOR_FARADAY is not set
++# CONFIG_NET_VENDOR_INTEL is not set
++# CONFIG_NET_VENDOR_MARVELL is not set
++# CONFIG_NET_VENDOR_MICREL is not set
++# CONFIG_NET_VENDOR_NATSEMI is not set
++CONFIG_SH_ETH=y
++# CONFIG_NET_VENDOR_SEEQ is not set
++# CONFIG_NET_VENDOR_SMSC is not set
++# CONFIG_NET_VENDOR_STMICRO is not set
++# CONFIG_NET_VENDOR_VIA is not set
++# CONFIG_NET_VENDOR_WIZNET is not set
++# CONFIG_WLAN is not set
++# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
++CONFIG_INPUT_EVDEV=y
++# CONFIG_KEYBOARD_ATKBD is not set
++CONFIG_KEYBOARD_GPIO=y
++# CONFIG_INPUT_MOUSE is not set
++# CONFIG_SERIO is not set
++# CONFIG_LEGACY_PTYS is not set
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
++# CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_GPIO=y
++CONFIG_I2C_SH_MOBILE=y
++CONFIG_GPIO_SH_PFC=y
++CONFIG_GPIOLIB=y
++CONFIG_GPIO_RCAR=y
++# CONFIG_HWMON is not set
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_FIXED_VOLTAGE=y
++# CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_SDHI=y
++CONFIG_MMC_SH_MMCIF=y
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++CONFIG_LEDS_GPIO=y
++CONFIG_RTC_CLASS=y
++CONFIG_DMADEVICES=y
++CONFIG_SH_DMAE=y
++# CONFIG_IOMMU_SUPPORT is not set
++# CONFIG_DNOTIFY is not set
++CONFIG_MSDOS_FS=y
++CONFIG_VFAT_FS=y
++CONFIG_TMPFS=y
++CONFIG_CONFIGFS_FS=y
++# CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_NFS_V3_ACL=y
++CONFIG_NFS_V4=y
++CONFIG_NFS_V4_1=y
++CONFIG_ROOT_NFS=y
++CONFIG_NLS_CODEPAGE_437=y
++CONFIG_NLS_ISO8859_1=y
++# CONFIG_ENABLE_WARN_DEPRECATED is not set
++# CONFIG_ENABLE_MUST_CHECK is not set
++# CONFIG_ARM_UNWIND is not set
++# CONFIG_CRYPTO_ANSI_CPRNG is not set
++# CONFIG_CRYPTO_HW is not set
+-- 
+1.8.2.1
+
