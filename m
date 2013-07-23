@@ -1,55 +1,57 @@
-From: Sakari Ailus <sakari.ailus@iki.fi>
-Date: Tue, 30 Jul 2013 11:32:21 +0000
-Subject: Re: [PATCH v3 4/5] v4l: Add V4L2_PIX_FMT_NV16M and V4L2_PIX_FMT_NV61M formats
-Message-Id: <20130730113221.GO12281@valkosipuli.retiisi.org.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 23 Jul 2013 20:20:03 +0000
+Subject: Re: Build regressions/improvements in v3.11-rc2
+Message-Id: <alpine.DEB.2.02.1307232210440.32577@ayla.of.borg>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374757213-20194-1-git-send-email-laurent.pinchart@ideasonboard.com>
- <1374757213-20194-5-git-send-email-laurent.pinchart@ideasonboard.com>
- <20130730110934.GN12281@valkosipuli.retiisi.org.uk>
- <3004984.tPvT1zp9Z5@avalon>
-In-Reply-To: <3004984.tPvT1zp9Z5@avalon>
+References: <alpine.DEB.2.02.1307232209510.32497@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.02.1307232209510.32497@ayla.of.borg>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: Linux Kernel Development <linux-kernel@vger.kernel.org>
+Cc: Andrew Veliath <andrewtv@usa.net>, linux-kbuild@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Tue, Jul 30, 2013 at 01:16:54PM +0200, Laurent Pinchart wrote:
-...
-> > > +	<para>This is a multi-planar, two-plane version of the YUV 4:2:0 
-> format.
-> > > +The three components are separated into two sub-images or planes.
-> > > +<constant>V4L2_PIX_FMT_NV16M</constant> differs from
-> > > <constant>V4L2_PIX_FMT_NV16 +</constant> in that the two planes are
-> > > non-contiguous in memory, i.e. the chroma +plane do not necessarily
-> > > immediately follows the luma plane.
-> > > +The luminance data occupies the first plane. The Y plane has one byte per
-> > > pixel. +In the second plane there is a chrominance data with alternating
-> > > chroma samples. +The CbCr plane is the same width and height, in bytes,
-> > > as the Y plane. +Each CbCr pair belongs to four pixels. For example,
-> > > +Cb<subscript>0</subscript>/Cr<subscript>0</subscript> belongs to
-> > > +Y'<subscript>00</subscript>, Y'<subscript>01</subscript>,
-> > > +Y'<subscript>10</subscript>, Y'<subscript>11</subscript>.
-> > > +<constant>V4L2_PIX_FMT_NV61M</constant> is the same as
-> > > <constant>V4L2_PIX_FMT_NV16M</constant> +except the Cb and Cr bytes are
-> > > swapped, the CrCb plane starts with a Cr byte.</para> +
-> > > +	<para><constant>V4L2_PIX_FMT_NV16M</constant> is intended to be
-> > > +used only in drivers and applications that support the multi-planar API,
-> > > +described in <xref linkend="planar-apis"/>. </para>
-> > 
-> > I think you could refer to V4L2_PIX_FMT_NV61M or alternatively move the
-> > sentence explaining V4L2_PIX_FMT_NV61M after the above. Up to you.
-> 
-> Something like
-> 
->         <para><constant>V4L2_PIX_FMT_NV16M</constant> and 
-> <constant>V4L2_PIX_FMT_NV61M</constant> are intended to be used only in 
-> drivers and applications that support the multi-planar API, described in 
+On Tue, 23 Jul 2013, Geert Uytterhoeven wrote:
+> JFYI, when comparing v3.11-rc2 to v3.11-rc1[3], the summaries are:
+>   - build errors: +9/-23
 
-Fine for me.
+Ignoring a few new R_PPC64_REL24 truncated relocations, we have:
 
--- 
-Cheers,
+  + error: No rule to make target /etc/sound/msndinit.bin:  => N/A
+  + error: No rule to make target /etc/sound/msndperm.bin:  => N/A
+  + error: No rule to make target /etc/sound/pndsperm.bin:  => N/A
+  + error: No rule to make target /etc/sound/pndspini.bin:  => N/A
 
-Sakari Ailus
-e-mail: sakari.ailus@iki.fi	XMPP: sailus@retiisi.org.uk
+i386-randconfig, due to an OSS sound issue:
+
+make[3]: *** No rule to make target `/etc/sound/msndperm.bin', needed by `sound/oss/msndperm.c'.
+make[3]: *** No rule to make target `/etc/sound/msndinit.bin', needed by `sound/oss/msndinit.c'.
+make[3]: *** No rule to make target `/etc/sound/pndsperm.bin', needed by `sound/oss/pndsperm.c'.
+make[3]: *** No rule to make target `/etc/sound/pndspini.bin', needed by `sound/oss/pndspini.c'.
+
+  + error: No rule to make target include/config/auto.conf:  => N/A
+
+powerpc-randconfig, due to a kconfig issue:
+
+Expose SCOM controllers via debugfs (SCOM_DEBUGFS) [N/y] (NEW) aborted!
+Console input/output is redirected. Run 'make oldconfig' to update configuration
+.
+make[3]: *** [silentoldconfig] Error 1
+
+  + error: sh_mobile_sdhi.c: undefined reference to `shdma_chan_filter':  => .text+0x124658)
+
+sh-randconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/6461/ (all 120 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/6435/ (all 120 configs)
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
