@@ -1,44 +1,71 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Jul 2013 07:33:21 +0000
-Subject: Re: [PATCH] ARM: shmobile: emev2: add PMU information to emev2.dtsi
-Message-Id: <20130731073320.GH5090@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 23 Jul 2013 11:19:07 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: ape6evm-reference: switch PFC to DT
+Message-Id: <Pine.LNX.4.64.1307231316170.19465@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130724034240.30596.52917.sendpatchset@w520>
- <20130731063900.GA5090@verge.net.au>
- <20130731070550.GA28921@verge.net.au>
- <CANqRtoTVVp5xY7monC6c87Ni=pS5dNG=fS_isAg3qZNQCzaNNg@mail.gmail.com>
-In-Reply-To: <CANqRtoTVVp5xY7monC6c87Ni=pS5dNG=fS_isAg3qZNQCzaNNg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, Tetsuyuki Kobayashi <koba@kmckk.co.jp>, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wed, Jul 31, 2013 at 04:11:23PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Wed, Jul 31, 2013 at 4:05 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Jul 31, 2013 at 03:39:04PM +0900, Simon Horman wrote:
-> >> On Wed, Jul 24, 2013 at 12:42:40PM +0900, Magnus Damm wrote:
-> >> > From: Magnus Damm <damm@opensource.se>
-> >> >
-> >> > Add PMU information to emev2.dtsi. With this
-> >> > included KZM9D DT reference may use the PMU.
-> >>
-> >> Thanks, I will queue this up for v3.12 in the dt2 branch.
-> >
-> > When booting a debian armel userspace with this patch applied on top of
-> > renesas-devel-20130731 I see the following.
-> >
-> > I do not observe this problem with the sh73a0 or r8a7740 versions
-> > of this patch applied, though I assume that in the case of the r8a7740
-> > that is because it is UP.
-> 
-> Looks like the STI clockevent rating patch is missing. SMP operation
-> of EMEV2 is broken without that patch.
+PFC pinctrl configuration can now be performed via DT. Update
+ape6evm-reference to use this.
 
-Thanks, that patch resolves the problem that I was seeing.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
 
-I'll put it into devel for now in topic/em_sti.
-topic/ indicating that is isn't queued-up yet as
-I'd like to give the clocksource people a chance to review it.
+v2: no change
+
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   10 ++++++++++
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    9 ---------
+ 2 files changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 6f4506e..bbd09d8 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -53,3 +53,13 @@
+ 	>;
+ 	voltage-tolerance = <1>; /* 1% */
+ };
++
++&pfc {
++	pinctrl-0 = <&scifa0_pins>;
++	pinctrl-names = "default";
++
++	scifa0_pins: scifa0 {
++		renesas,groups = "scifa0_data";
++		renesas,function = "scifa0";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index 46b41de..52cc5fa 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -29,12 +29,6 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
+-static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+-	/* SCIFA0 console */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+-				  "scifa0_data", "scifa0"),
+-};
+-
+ static void __init ape6evm_add_standard_devices(void)
+ {
+ 
+@@ -52,9 +46,6 @@ static void __init ape6evm_add_standard_devices(void)
+ 	clk_put(parent);
+ 	clk_put(mp);
+ 
+-	pinctrl_register_mappings(ape6evm_pinctrl_map,
+-				  ARRAY_SIZE(ape6evm_pinctrl_map));
+-	r8a73a4_pinmux_init();
+ 	r8a73a4_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+-- 
+1.7.2.5
+
