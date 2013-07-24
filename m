@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:01 +0000
+Date: Wed, 24 Jul 2013 00:32:34 +0000
 Subject: [PATCH 07/19] ARM: shmobile: r8a7790: Add pin control device to device tree
-Message-Id: <2d6dcdb5352160d064cffefcd63368ad0d518860.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <9694c778048e006604c3fbade6b0aefa5dd0b516.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,7 +17,7 @@ Add a pfc node to the r8a7790 device tree.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |    5 +++++
+ arch/arm/boot/dts/r8a7790.dtsi | 5 +++++
  1 file changed, 5 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
@@ -35,5 +35,5 @@ index 339d9b1..13caf12 100644
 +	};
  };
 -- 
-1.7.10.4
+1.8.2.1
 
