@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:00 +0000
+Date: Wed, 24 Jul 2013 00:32:33 +0000
 Subject: [PATCH 06/19] ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
-Message-Id: <d96a1d8bb88a38eef93207daba91338450b3295f.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <f5c771b5610b4c0d4daf9729aa03539ef1779a92.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,7 +17,7 @@ Add GPIO controller nodes to the r8a7779 core device tree.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi |   85 ++++++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi | 85 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 85 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
@@ -124,5 +124,5 @@ index 9dfc438..e9fbe3d 100644
  
  	thermal@ffc48000 {
 -- 
-1.7.10.4
+1.8.2.1
 
