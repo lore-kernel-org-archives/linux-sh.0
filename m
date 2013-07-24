@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:17 +0000
+Date: Wed, 24 Jul 2013 00:32:57 +0000
 Subject: [PATCH 18/19] ARM: shmobile: kzm9g-reference: Move SDHI regulators to DT
-Message-Id: <14036bb1a37f8928ea0d1813b9419472e0a517a7.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <f8f77ce940b84c17378db432a05186476bd8dd04.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,8 +19,8 @@ GPIOs from board code.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   23 +++++++++++++++++++++--
- arch/arm/mach-shmobile/board-kzm9g-reference.c |    6 ------
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   | 23 +++++++++++++++++++++--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |  6 ------
  2 files changed, 21 insertions(+), 8 deletions(-)
 
 diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
@@ -103,5 +103,5 @@ index fc2bb37..1847b4d 100644
  	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
  	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 -- 
-1.7.10.4
+1.8.2.1
 
