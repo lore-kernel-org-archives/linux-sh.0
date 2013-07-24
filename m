@@ -1,196 +1,118 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Jul 2013 23:39:58 +0000
-Subject: [PATCH 10/19] sh-pfc: Consolidate pin definition macros
-Message-Id: <1373931607-4599-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Jul 2013 13:15:08 +0000
+Subject: [PATCH 02/14] sh-pfc: r8a7790: Remove trailing '_TANS' string from RTS/CTS pins
+Message-Id: <1374671720-8794-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Move the pin definition macros to a common header file.
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
+The RTS/CTS pins have been renamed in the datasheet, rename them here as
+well.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 11 ++---------
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 25 +++++++++----------------
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  | 25 +++++++++----------------
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 23 ++++++++---------------
- drivers/pinctrl/sh-pfc/sh_pfc.h      |  8 ++++++++
- 5 files changed, 36 insertions(+), 56 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-index d811533..288821b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
-@@ -1266,19 +1266,12 @@ static const u16 pinmux_data[] = {
- 	PINMUX_DATA(IRQ57_MARK,			PORT329_FN0),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 46b3fdf..6adaa85 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -441,14 +441,14 @@ enum {
+ 	FN_TX0, FN_DU2_DR1, FN_LCDOUT1, FN_SCIFA0_CTS_N,
+ 	FN_HCTS1_N, FN_CTS0_N, FN_MSIOF3_SYNC, FN_DU2_DG3,
+ 	FN_LCDOUT11, FN_PWM0_B, FN_IIC1_SCL_C, FN_I2C1_SCL_C,
+-	FN_SCIFA0_RTS_N, FN_HRTS1_N, FN_RTS0_N_TANS,
++	FN_SCIFA0_RTS_N, FN_HRTS1_N, FN_RTS0_N,
+ 	FN_MSIOF3_SS1, FN_DU2_DG0, FN_LCDOUT8, FN_PWM1_B,
+ 	FN_SCIFA1_RXD, FN_AD_DI, FN_RX1,
+ 	FN_DU2_EXODDF_DU2_ODDF_DISP_CDE, FN_QCPV_QDE,
+ 	FN_SCIFA1_TXD, FN_AD_DO, FN_TX1, FN_DU2_DG1,
+ 	FN_LCDOUT9, FN_SCIFA1_CTS_N, FN_AD_CLK,
+ 	FN_CTS1_N, FN_MSIOF3_RXD, FN_DU0_DOTCLKOUT, FN_QCLK,
+-	FN_SCIFA1_RTS_N, FN_AD_NCS_N, FN_RTS1_N_TANS,
++	FN_SCIFA1_RTS_N, FN_AD_NCS_N, FN_RTS1_N,
+ 	FN_MSIOF3_TXD, FN_DU1_DOTCLKOUT, FN_QSTVB_QVE,
+ 	FN_HRTS0_N_C,
+ 
+@@ -808,14 +808,14 @@ enum {
+ 	TX0_MARK, DU2_DR1_MARK, LCDOUT1_MARK, SCIFA0_CTS_N_MARK,
+ 	HCTS1_N_MARK, CTS0_N_MARK, MSIOF3_SYNC_MARK, DU2_DG3_MARK,
+ 	LCDOUT11_MARK, PWM0_B_MARK, IIC1_SCL_C_MARK, I2C1_SCL_C_MARK,
+-	SCIFA0_RTS_N_MARK, HRTS1_N_MARK, RTS0_N_TANS_MARK,
++	SCIFA0_RTS_N_MARK, HRTS1_N_MARK, RTS0_N_MARK,
+ 	MSIOF3_SS1_MARK, DU2_DG0_MARK, LCDOUT8_MARK, PWM1_B_MARK,
+ 	SCIFA1_RXD_MARK, AD_DI_MARK, RX1_MARK,
+ 	DU2_EXODDF_DU2_ODDF_DISP_CDE_MARK, QCPV_QDE_MARK,
+ 	SCIFA1_TXD_MARK, AD_DO_MARK, TX1_MARK, DU2_DG1_MARK,
+ 	LCDOUT9_MARK, SCIFA1_CTS_N_MARK, AD_CLK_MARK,
+ 	CTS1_N_MARK, MSIOF3_RXD_MARK, DU0_DOTCLKOUT_MARK, QCLK_MARK,
+-	SCIFA1_RTS_N_MARK, AD_NCS_N_MARK, RTS1_N_TANS_MARK,
++	SCIFA1_RTS_N_MARK, AD_NCS_N_MARK, RTS1_N_MARK,
+ 	MSIOF3_TXD_MARK, DU1_DOTCLKOUT_MARK, QSTVB_QVE_MARK,
+ 	HRTS0_N_C_MARK,
+ 
+@@ -1713,7 +1713,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, I2C1_SCL_C, SEL_I2C1_2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_18_16, SCIFA0_RTS_N, SEL_SCFA_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_18_16, HRTS1_N, SEL_HSCIF1_0),
+-	PINMUX_IPSR_DATA(IP14_18_16, RTS0_N_TANS),
++	PINMUX_IPSR_DATA(IP14_18_16, RTS0_N),
+ 	PINMUX_IPSR_DATA(IP14_18_16, MSIOF3_SS1),
+ 	PINMUX_IPSR_DATA(IP14_18_16, DU2_DG0),
+ 	PINMUX_IPSR_DATA(IP14_18_16, LCDOUT8),
+@@ -1736,7 +1736,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP14_27_25, QCLK),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_30_28, SCIFA1_RTS_N, SEL_SCIFA1_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_30_28, AD_NCS_N, SEL_ADI_0),
+-	PINMUX_IPSR_DATA(IP14_30_28, RTS1_N_TANS),
++	PINMUX_IPSR_DATA(IP14_30_28, RTS1_N),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_30_28, MSIOF3_TXD, SEL_SOF3_0),
+ 	PINMUX_IPSR_DATA(IP14_30_28, DU1_DOTCLKOUT),
+ 	PINMUX_IPSR_DATA(IP14_30_28, QSTVB_QVE),
+@@ -1906,7 +1906,7 @@ static const unsigned int scif0_ctrl_pins[] = {
+ 	RCAR_GP_PIN(4, 31), RCAR_GP_PIN(4, 30),
  };
- 
--#define R8A73A4_PIN(pin, cfgs)			\
--	{					\
--		.name = __stringify(PORT##pin),	\
--		.enum_id = PORT##pin##_DATA,	\
--		.configs = cfgs,		\
--	}
--
- #define __O	(SH_PFC_PIN_CFG_OUTPUT)
- #define __IO	(SH_PFC_PIN_CFG_INPUT | SH_PFC_PIN_CFG_OUTPUT)
- #define __PUD	(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
- 
--#define R8A73A4_PIN_IO_PU_PD(pin)       R8A73A4_PIN(pin, __IO | __PUD)
--#define R8A73A4_PIN_O(pin)              R8A73A4_PIN(pin, __O)
-+#define R8A73A4_PIN_IO_PU_PD(pin)       SH_PFC_PIN_CFG(pin, __IO | __PUD)
-+#define R8A73A4_PIN_O(pin)              SH_PFC_PIN_CFG(pin, __O)
- 
- static struct sh_pfc_pin pinmux_pins[] = {
- 	R8A73A4_PIN_IO_PU_PD(0), R8A73A4_PIN_IO_PU_PD(1),
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index e690051..b5bc1d0 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -1527,13 +1527,6 @@ static const u16 pinmux_data[] = {
- 	PINMUX_DATA(TRACEAUD_FROM_MEMC_MARK,			MSEL5CR_30_1,	MSEL5CR_29_0),
+ static const unsigned int scif0_ctrl_mux[] = {
+-	RTS0_N_TANS_MARK, CTS0_N_MARK,
++	RTS0_N_MARK, CTS0_N_MARK,
  };
- 
--#define R8A7740_PIN(pin, cfgs)						\
--	{								\
--		.name = __stringify(PORT##pin),				\
--		.enum_id = PORT##pin##_DATA,				\
--		.configs = cfgs,					\
--	}
--
- #define __I		(SH_PFC_PIN_CFG_INPUT)
- #define __O		(SH_PFC_PIN_CFG_OUTPUT)
- #define __IO		(SH_PFC_PIN_CFG_INPUT | SH_PFC_PIN_CFG_OUTPUT)
-@@ -1541,15 +1534,15 @@ static const u16 pinmux_data[] = {
- #define __PU		(SH_PFC_PIN_CFG_PULL_UP)
- #define __PUD		(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
- 
--#define R8A7740_PIN_I_PD(pin)		R8A7740_PIN(pin, __I | __PD)
--#define R8A7740_PIN_I_PU(pin)		R8A7740_PIN(pin, __I | __PU)
--#define R8A7740_PIN_I_PU_PD(pin)		R8A7740_PIN(pin, __I | __PUD)
--#define R8A7740_PIN_IO(pin)		R8A7740_PIN(pin, __IO)
--#define R8A7740_PIN_IO_PD(pin)		R8A7740_PIN(pin, __IO | __PD)
--#define R8A7740_PIN_IO_PU(pin)		R8A7740_PIN(pin, __IO | __PU)
--#define R8A7740_PIN_IO_PU_PD(pin)	R8A7740_PIN(pin, __IO | __PUD)
--#define R8A7740_PIN_O(pin)		R8A7740_PIN(pin, __O)
--#define R8A7740_PIN_O_PU_PD(pin)		R8A7740_PIN(pin, __O | __PUD)
-+#define R8A7740_PIN_I_PD(pin)		SH_PFC_PIN_CFG(pin, __I | __PD)
-+#define R8A7740_PIN_I_PU(pin)		SH_PFC_PIN_CFG(pin, __I | __PU)
-+#define R8A7740_PIN_I_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __I | __PUD)
-+#define R8A7740_PIN_IO(pin)		SH_PFC_PIN_CFG(pin, __IO)
-+#define R8A7740_PIN_IO_PD(pin)		SH_PFC_PIN_CFG(pin, __IO | __PD)
-+#define R8A7740_PIN_IO_PU(pin)		SH_PFC_PIN_CFG(pin, __IO | __PU)
-+#define R8A7740_PIN_IO_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __IO | __PUD)
-+#define R8A7740_PIN_O(pin)		SH_PFC_PIN_CFG(pin, __O)
-+#define R8A7740_PIN_O_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __O | __PUD)
- 
- static struct sh_pfc_pin pinmux_pins[] = {
- 	/* Table 56-1 (I/O and Pull U/D) */
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 9174ff2..17f1c17 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -829,13 +829,6 @@ static const u16 pinmux_data[] = {
- 	PINMUX_DATA(MFIv4_MARK,		MSEL4CR_6_1),
+ static const unsigned int scif0_data_b_pins[] = {
+ 	/* RX, TX */
+@@ -1935,7 +1935,7 @@ static const unsigned int scif1_ctrl_pins[] = {
+ 	RCAR_GP_PIN(5, 3), RCAR_GP_PIN(5, 2),
  };
- 
--#define SH7372_PIN(pin, cfgs)						\
--	{								\
--		.name = __stringify(PORT##pin),				\
--		.enum_id = PORT##pin##_DATA,				\
--		.configs = cfgs,					\
--	}
--
- #define __I		(SH_PFC_PIN_CFG_INPUT)
- #define __O		(SH_PFC_PIN_CFG_OUTPUT)
- #define __IO		(SH_PFC_PIN_CFG_INPUT | SH_PFC_PIN_CFG_OUTPUT)
-@@ -843,15 +836,15 @@ static const u16 pinmux_data[] = {
- #define __PU		(SH_PFC_PIN_CFG_PULL_UP)
- #define __PUD		(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
- 
--#define SH7372_PIN_I_PD(pin)		SH7372_PIN(pin, __I | __PD)
--#define SH7372_PIN_I_PU(pin)		SH7372_PIN(pin, __I | __PU)
--#define SH7372_PIN_I_PU_PD(pin)		SH7372_PIN(pin, __I | __PUD)
--#define SH7372_PIN_IO(pin)		SH7372_PIN(pin, __IO)
--#define SH7372_PIN_IO_PD(pin)		SH7372_PIN(pin, __IO | __PD)
--#define SH7372_PIN_IO_PU(pin)		SH7372_PIN(pin, __IO | __PU)
--#define SH7372_PIN_IO_PU_PD(pin)	SH7372_PIN(pin, __IO | __PUD)
--#define SH7372_PIN_O(pin)		SH7372_PIN(pin, __O)
--#define SH7372_PIN_O_PU_PD(pin)		SH7372_PIN(pin, __O | __PUD)
-+#define SH7372_PIN_I_PD(pin)		SH_PFC_PIN_CFG(pin, __I | __PD)
-+#define SH7372_PIN_I_PU(pin)		SH_PFC_PIN_CFG(pin, __I | __PU)
-+#define SH7372_PIN_I_PU_PD(pin)		SH_PFC_PIN_CFG(pin, __I | __PUD)
-+#define SH7372_PIN_IO(pin)		SH_PFC_PIN_CFG(pin, __IO)
-+#define SH7372_PIN_IO_PD(pin)		SH_PFC_PIN_CFG(pin, __IO | __PD)
-+#define SH7372_PIN_IO_PU(pin)		SH_PFC_PIN_CFG(pin, __IO | __PU)
-+#define SH7372_PIN_IO_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __IO | __PUD)
-+#define SH7372_PIN_O(pin)		SH_PFC_PIN_CFG(pin, __O)
-+#define SH7372_PIN_O_PU_PD(pin)		SH_PFC_PIN_CFG(pin, __O | __PUD)
- 
- static struct sh_pfc_pin pinmux_pins[] = {
- 	/* Table 57-1 (I/O and Pull U/D) */
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 914b142..1d35b42 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1157,13 +1157,6 @@ static const u16 pinmux_data[] = {
- 	PINMUX_DATA(EDBGREQ_PU_MARK, MSEL4CR_MSEL1_1),
+ static const unsigned int scif1_ctrl_mux[] = {
+-	RTS1_N_TANS_MARK, CTS1_N_MARK,
++	RTS1_N_MARK, CTS1_N_MARK,
  };
- 
--#define SH73A0_PIN(pin, cfgs)						\
--	{								\
--		.name = __stringify(PORT##pin),				\
--		.enum_id = PORT##pin##_DATA,				\
--		.configs = cfgs,					\
--	}
--
- #define __I		(SH_PFC_PIN_CFG_INPUT)
- #define __O		(SH_PFC_PIN_CFG_OUTPUT)
- #define __IO		(SH_PFC_PIN_CFG_INPUT | SH_PFC_PIN_CFG_OUTPUT)
-@@ -1171,14 +1164,14 @@ static const u16 pinmux_data[] = {
- #define __PU		(SH_PFC_PIN_CFG_PULL_UP)
- #define __PUD		(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
- 
--#define SH73A0_PIN_I_PD(pin)		SH73A0_PIN(pin, __I | __PD)
--#define SH73A0_PIN_I_PU(pin)		SH73A0_PIN(pin, __I | __PU)
--#define SH73A0_PIN_I_PU_PD(pin)		SH73A0_PIN(pin, __I | __PUD)
--#define SH73A0_PIN_IO(pin)		SH73A0_PIN(pin, __IO)
--#define SH73A0_PIN_IO_PD(pin)		SH73A0_PIN(pin, __IO | __PD)
--#define SH73A0_PIN_IO_PU(pin)		SH73A0_PIN(pin, __IO | __PU)
--#define SH73A0_PIN_IO_PU_PD(pin)	SH73A0_PIN(pin, __IO | __PUD)
--#define SH73A0_PIN_O(pin)		SH73A0_PIN(pin, __O)
-+#define SH73A0_PIN_I_PD(pin)		SH_PFC_PIN_CFG(pin, __I | __PD)
-+#define SH73A0_PIN_I_PU(pin)		SH_PFC_PIN_CFG(pin, __I | __PU)
-+#define SH73A0_PIN_I_PU_PD(pin)		SH_PFC_PIN_CFG(pin, __I | __PUD)
-+#define SH73A0_PIN_IO(pin)		SH_PFC_PIN_CFG(pin, __IO)
-+#define SH73A0_PIN_IO_PD(pin)		SH_PFC_PIN_CFG(pin, __IO | __PD)
-+#define SH73A0_PIN_IO_PU(pin)		SH_PFC_PIN_CFG(pin, __IO | __PU)
-+#define SH73A0_PIN_IO_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __IO | __PUD)
-+#define SH73A0_PIN_O(pin)		SH_PFC_PIN_CFG(pin, __O)
- 
- static struct sh_pfc_pin pinmux_pins[] = {
- 	/* Table 25-1 (I/O and Pull U/D) */
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index ebddfe0..f7c5b80 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -273,6 +273,14 @@ struct sh_pfc_soc_info {
- 		.enum_id = data_or_mark,				\
- 	}
- 
-+/* SH_PFC_PIN_CFG - Expand to a sh_pfc_pin entry (named PORT#) with config */
-+#define SH_PFC_PIN_CFG(pin, cfgs)					\
-+	{								\
-+		.name = __stringify(PORT##pin),				\
-+		.enum_id = PORT##pin##_DATA,				\
-+		.configs = cfgs,					\
-+	}
-+
- /* PINMUX_DATA_ALL - Expand to a list of PORT_name_DATA, PORT_name_FN0,
-  *		     PORT_name_OUT, PORT_name_IN marks
-  */
+ static const unsigned int scif1_data_b_pins[] = {
+ 	/* RX, TX */
+@@ -3764,7 +3764,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP14_30 [1] */
+ 		0, 0,
+ 		/* IP14_30_28 [3] */
+-		FN_SCIFA1_RTS_N, FN_AD_NCS_N, FN_RTS1_N_TANS,
++		FN_SCIFA1_RTS_N, FN_AD_NCS_N, FN_RTS1_N,
+ 		FN_MSIOF3_TXD, FN_DU1_DOTCLKOUT, FN_QSTVB_QVE,
+ 		FN_HRTS0_N_C, 0,
+ 		/* IP14_27_25 [3] */
+@@ -3777,7 +3777,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_SCIFA1_RXD, FN_AD_DI, FN_RX1,
+ 		FN_DU2_EXODDF_DU2_ODDF_DISP_CDE, FN_QCPV_QDE, 0, 0, 0,
+ 		/* IP14_18_16 [3] */
+-		FN_SCIFA0_RTS_N, FN_HRTS1_N, FN_RTS0_N_TANS,
++		FN_SCIFA0_RTS_N, FN_HRTS1_N, FN_RTS0_N,
+ 		FN_MSIOF3_SS1, FN_DU2_DG0, FN_LCDOUT8, FN_PWM1_B, 0,
+ 		/* IP14_15_12 [4] */
+ 		FN_SCIFA0_CTS_N, FN_HCTS1_N, FN_CTS0_N, FN_MSIOF3_SYNC,
 -- 
 1.8.1.5
 
