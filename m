@@ -1,28 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Jul 2013 04:31:04 +0000
-Subject: Re: [PATCH v3 0/4] ARM: shmobile: marzen: Switch to DT_MACHINE_START
-Message-Id: <20130730043103.GE5595@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Jul 2013 07:27:39 +0000
+Subject: [PATCH] ARM: shmobile: sh73a0: Rely on DT for SMP CPU info
+Message-Id: <20130724072739.28333.44251.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374799913-27461-1-git-send-email-horms+renesas@verge.net.au>
- <20130730022703.GE31526@verge.net.au>
- <CANqRtoQy91tKZP2mUYAGeqegWcEzvk81EbZ6=gzxvefKcBaZyg@mail.gmail.com>
-In-Reply-To: <CANqRtoQy91tKZP2mUYAGeqegWcEzvk81EbZ6=gzxvefKcBaZyg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 30, 2013 at 12:53:53PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Tue, Jul 30, 2013 at 11:27 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Fri, Jul 26, 2013 at 09:51:49AM +0900, Simon Horman wrote:
-> >> A short series to use DT_MACHINE_START on the marzen board.
-> >
-> > Magnus, could you find a few moments to review this series?
-> 
-> These are fine with me, thanks for your help!
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued them up for v3.12.
+Remove sh73a0 specific ->smp_init_cpus() callback and
+instead of relying on shmobile_smp_init_cpus() simply
+use DT for CPU core information.
+
+This assumes that DT_MACHINE_START is used which is
+the case when AG5EVM and Kota2 are removed.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/smp-sh73a0.c |   11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
++++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-07-24 15:59:16.000000000 +0900
+@@ -62,6 +62,8 @@ static int sh73a0_boot_secondary(unsigne
+ 
+ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ {
++	/* setup sh73a0 specific SCU base */
++	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
+ 	scu_enable(shmobile_scu_base);
+ 
+ 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
+@@ -74,14 +76,6 @@ static void __init sh73a0_smp_prepare_cp
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+ }
+ 
+-static void __init sh73a0_smp_init_cpus(void)
+-{
+-	/* setup sh73a0 specific SCU base */
+-	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
+-
+-	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+-}
+-
+ #ifdef CONFIG_HOTPLUG_CPU
+ static int sh73a0_cpu_kill(unsigned int cpu)
+ {
+@@ -120,7 +114,6 @@ static int sh73a0_cpu_disable(unsigned i
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 
+ struct smp_operations sh73a0_smp_ops __initdata = {
+-	.smp_init_cpus		= sh73a0_smp_init_cpus,
+ 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
+ 	.smp_boot_secondary	= sh73a0_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
