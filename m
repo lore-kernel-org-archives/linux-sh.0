@@ -1,187 +1,254 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 03 Jul 2013 23:53:40 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: uImage load address rework
-Message-Id: <13462253.7rIkoX3g1h@avalon>
+From: Katsuya MATSUBARA <matsu@igel.co.jp>
+Date: Wed, 24 Jul 2013 10:38:39 +0000
+Subject: Re: [PATCH v2 5/5] v4l: Renesas R-Car VSP1 driver
+Message-Id: <20130724.193839.163790917.matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130610092857.19175.25629.sendpatchset@w520>
- <76205076.EsFJngGrIh@avalon>
- <CANqRtoTmhrdB+U_kTdwStXY2xrrGxjMWOEY7NWMgFGXDYQNVNQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTmhrdB+U_kTdwStXY2xrrGxjMWOEY7NWMgFGXDYQNVNQ@mail.gmail.com>
+References: <1374072882-14598-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<1374072882-14598-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374072882-14598-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: laurent.pinchart+renesas@ideasonboard.com
+Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, hverkuil@xs4all.nl, sakari.ailus@iki.fi
 
-Hi Magnus,
 
-On Tuesday 25 June 2013 23:00:49 Magnus Damm wrote:
-> On Wed, Jun 19, 2013 at 10:16 PM, Laurent Pinchart wrote:
-> > On Wednesday 12 June 2013 04:31:26 Laurent Pinchart wrote:
-> >> On Wednesday 12 June 2013 11:21:34 Magnus Damm wrote:
-> >> > On Wed, Jun 12, 2013 at 6:50 AM, Laurent Pinchart wrote:
-> >> > > I've noticed today that KZM9G doesn't boot v3.10-rc2 with
-> >> > > CONFIG_AUTO_ZRELADDR=y. While not caused by this patch, that's
-> >> > > something that will need to be fixed to support multi-arch kernels.
-> >> > > I'm not too familiar with early boot code, would you be able to have
-> >> > > a look at this ?
-> >> > 
-> >> > I will have a look. I suspect that issue is not related to this patch,
-> >> > is it?
-> >> 
-> >> No, it isn't, the issue is present in v3.10-rc2. I don't know if it has
-> >> ever worked.
-> > 
-> > The following patch fixes the issue, caused by physical RAM being present
-> > at 0x41000000 on KZM9G. I'm not sure if it would be acceptable as a
-> > generic solution though.
-> > 
-> > diff --git a/arch/arm/boot/compressed/head.S
-> > b/arch/arm/boot/compressed/head.S index fe4d9c3..ea2f112 100644
-> > --- a/arch/arm/boot/compressed/head.S
-> > +++ b/arch/arm/boot/compressed/head.S
-> > @@ -176,7 +176,7 @@ not_angel:
-> >  #ifdef CONFIG_AUTO_ZRELADDR
-> >                 @ determine final kernel image address
-> >                 mov     r4, pc
-> > -               and     r4, r4, #0xf8000000
-> > +               and     r4, r4, #0xff000000
-> >                 add     r4, r4, #TEXT_OFFSET
-> >  #else
-> >                 ldr     r4, =zreladdr
-> 
-> Thanks for tracking this down. I've now been looking into this a bit, and I
-> think we should try to get KZM9G working without modifying the generic code.
-> I am afraid that I have not been able to find the proper fix for this
-> though, see below for a dump of the current state.
-> 
-> To be able to get some more details from the kernel I've cooked up some
-> debug patches. It turns out that it's not really the code in
-> boot/compressed/ that is problematic - more the kernel itself. Also, before
-> trying to enable relocatable support via AUTO_ZRELADDR=y I think we should
-> try to get the regular AUTO_ZRELADDR=n case going with an address that is
-> compatible with the generic code that you pointed out above. Then when that
-> is fine it should be relatively easy to support the relocatable case as
-> well.
-> 
-> The attached patch
-> "linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch"
-> makes sure the uImage gets loaded at 0x48008000 which from the
-> boot/compressed code is compatible with either AUTO_ZRELADDR=n or =y.
-> 
-> I've used the following patches on top of renesas git
-> renesas-next-20130620 to enable output together with DEBUG_LL=y and
-> EARLY_PRINTK=y:
-> 
-> linux-3.11-pre-arm-shmobile-kzm9g-putc-20130625b.patch
-> linux-3.11-pre-arm-shmobile-kzm9g-debug-macro-20130625.patch
-> linux-3.11-pre-arm-mem-add-printout-20130625.patch
-> linux-3.11-pre-arm-shmobile-kzm9g-zreladdr-48000000-20130625.patch
-> 
-> With the patches applied I get this serial output:
-> 
-> - - -
-> 
-> Filename 'kzm9g/uImage'.
-> Load address: 0x43000000
-> Loading: #################################################################
->          ##########################
-> done
-> Bytes transferred = 1335151 (145f6f hex)
-> ## Booting kernel from Legacy Image at 43000000 ...
->    Image Name:   'Linux-3.10.0-rc2'
->    Image Type:   ARM Linux Kernel Image (uncompressed)
->    Data Size:    1335087 Bytes = 1.3 MiB
->    Load Address: 48008000
->    Entry Point:  48008000
->    Verifying Checksum ... OK
->    Loading Kernel Image ... OK
-> OK
-> 
-> Starting kernel ...
-> 
-> Uncompressing Linux... done, booting the kernel.
-> Booting Linux on physical CPU 0x0
-> Linux version 3.10.0-rc2 (damm@w520) (gcc version 4.5.1 (Sourcery G++
-> Lite 2010.09-50) ) #1 SMP Tue Jun 25 22:25:10 JST 2013
-> CPU: ARMv7 Processor [412fc098] revision 8 (ARMv7), crc5347d
-> CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
-> Machine: kzm9g, model: KZM-A9-GT
-> Adding RAM at 41000000-5f7fffff.
-> bootconsole [earlycon0] enabled
-> debug: ignoring loglevel setting.
-> Ignoring RAM at 41000000-5f7fffff (vmalloc region overlap).
-> cma: CMA: failed to reserve 16 MiB
-> Memory policy: ECC disabled, Data cache writealloc
-> Kernel panic - not syncing: ERROR: Failed to allocate 0x1000 bytes below
-> 0x0.
-> 
-> - - -
-> 
-> The fatal memory allocation most likely fails because all system memory is
-> ignored, see "(vmalloc region overlap)" above. This seems to be the case
-> regardless of HIGHMEM=y or =n.
-> 
-> It is possible to work around this issue by changing the memory bank start
-> address in the DTS:
-> 
-> --- 0001/arch/arm/boot/dts/sh73a0-kzm9g.dts
-> +++ work/arch/arm/boot/dts/sh73a0-kzm9g.dts     2013-06-25
-> 22:17:19.000000000 +0900
-> @@ -19,8 +19,14 @@
->                 bootargs = "console=tty0 console=ttySC4,115200
-> root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
->         };
-> 
-> -       memory {
-> +       memory@48000000 {
->                 device_type = "memory";
-> -               reg = <0x41000000 0x1e800000>;
-> +               reg = <0x48000000 0x10000000>;
->         };
-> 
-> With the above hunk the kernel boots just fine. Unfortunately we cannot
-> enable all memory which is kind of limiting. =)
-> 
-> So my current conclusion is that it looks like the kernel doesn't like to
-> have the memory start address not aligned to 128 MByte somehow..
+Hi Laurent,
 
-The vmalloc overlap range check will be gone in v3.11-rc1, but that 
-unfortunately won't fix our issue. The kernel now fails to boot with
+Thank you for your great work for VSP1.
+Some comments below.
 
-Uncompressing Linux... done, booting the kernel.
-Booting Linux on physical CPU 0x0
-Linux version 3.10.0-ag5+ (laurent@avalon) (gcc version 4.7.3 20130205 
-(prerelease) (crosstool-NG linaro-1.13.1-4.7-2013.02-01-20130221 - Linaro GCC 
-2013.02) ) #450 SMP Thu Jul 4 01:16:013
-CPU: ARMv7 Processor [412fc098] revision 8 (ARMv7), crc5387d
-CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
-Machine: kzm9g, model: KZM-A9-GT
-Adding RAM at 41000000-5f7fffff.
-debug: ignoring loglevel setting.
-bootconsole [earlycon0] enabled
-cma: dma_contiguous_reserve(limit 5f800000)
-cma: dma_contiguous_reserve: reserving 16 MiB for global area
-cma: dma_declare_contiguous(size 1000000, base 00000000, limit 5f800000)
-cma: CMA: reserved 16 MiB at 5e800000
-Memory policy: ECC disabled, Data cache writealloc
-BUG: not creating mapping for 0x41000000 at 0xb9000000 in user region
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 17 Jul 2013 16:54:42 +0200
 
-Further investigation showed that the problem lies in a wrong dynamic 
-PHYS_OFFSET computation, in __fixup_pv_table (arch/arm/kernel/head.S). The 
-code assumes that the kernel is loaded at the beginning of the physical memory 
-and thus computes a PHYS_OFFSET of 0x48000000. The value is stored in 
-__pv_phys_offset, later used in the __phys_to_virt() implementation.
+(snip)
+> +++ b/drivers/media/platform/vsp1/vsp1_drv.c
+> +/*
+> + * vsp1_drv.c  --  R-Car VSP1 Driver
+> + *
+> + * Copyright (C) 2013 Renesas Corporation
+> + *
+> + * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; either version 2 of the License, or
+> + * (at your option) any later version.
+> + */
+> +
+> +#include <linux/clk.h>
+> +#include <linux/delay.h>
+> +#include <linux/device.h>
+> +#include <linux/interrupt.h>
+> +#include <linux/module.h>
+> +#include <linux/platform_device.h>
+> +#include <linux/videodev2.h>
+> +
+> +#include "vsp1.h"
+> +#include "vsp1_lif.h"
+> +#include "vsp1_rwpf.h"
+> +#include "vsp1_uds.h"
+> +
+> +/* -----------------------------------------------------------------------------
+> + * Interrupt Handling
+> + */
+> +
+> +static irqreturn_t vsp1_irq_handler(int irq, void *data)
+> +{
+> +	struct vsp1_device *vsp1 = data;
+> +	irqreturn_t ret = IRQ_NONE;
+> +	unsigned int i;
+> +
+> +	for (i = 0; i < VPS1_MAX_WPF; ++i) {
+> +		struct vsp1_rwpf *wpf = vsp1->wpf[i];
+> +		struct vsp1_pipeline *pipe;
+> +		u32 status;
+> +
+> +		if (wpf = NULL)
+> +			continue;
+> +
+> +		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
+> +		status = vsp1_read(vsp1, VI6_WPF_IRQ_STA(i));
+> +		vsp1_write(vsp1, VI6_WPF_IRQ_STA(i), ~status);
 
-When adding low memory the base physical address 0x41000000 is erroneously 
-converted to a virtual address of 0xb9000000 instead of 0xc0000000, which 
-leads to the bug.
+The value set into the VI6_WPF_IRQ_STA register should be masked
+with VI6_WFP_IRQ_STA_FRE since unused (upper) bits in the register
+must be written with 0.
 
-I'm pretty new to early boot code, so don't really see a way to compute the 
-PHYS_OFFSET without assuming that the kernel is loaded at the beginning of the 
-physical memory.
+(snip)
+> +static int vsp1_create_links(struct vsp1_device *vsp1, struct vsp1_entity *sink)
+> +{
+> +	struct media_entity *entity = &sink->subdev.entity;
+> +	struct vsp1_entity *source;
+> +	unsigned int pad;
+> +	int ret;
+> +
+> +	list_for_each_entry(source, &vsp1->entities, list_dev) {
+> +		u32 flags;
+> +
+> +		if (source->type = sink->type)
+> +			continue;
+> +
+> +		if (source->type = VSP1_ENTITY_LIF ||
+> +		    source->type = VSP1_ENTITY_WPF)
+> +			continue;
+> +
+> +		flags = source->type = VSP1_ENTITY_RPF &&
+> +			sink->type = VSP1_ENTITY_WPF &&
+> +			source->index = sink->index
+> +		      ? MEDIA_LNK_FL_ENABLED : 0;
+> +
+> +		for (pad = 0; pad < entity->num_pads; ++pad) {
+> +			if (!(entity->pads[pad].flags & MEDIA_PAD_FL_SINK))
+> +				continue;
+> +
+> +			ret = media_entity_create_link(&source->subdev.entity,
+> +						       source->source_pad,
+> +						       entity, pad, flags);
+> +			if (ret < 0)
+> +				return ret;
 
--- 
-Regards,
+This initialization enables some of links as the initial status.
+I think link_setup() for each linked entity should be invoked here
+to set up the sink value in the vsp_entity structure.
 
-Laurent Pinchart
+(snip)
+> +++ b/drivers/media/platform/vsp1/vsp1_regs.h
+> @@ -0,0 +1,581 @@
+> +/*
+> + * vsp1_regs.h  --  R-Car VSP1 Registers Definitions
+> + *
+> + * Copyright (C) 2013 Renesas Electronics Corporation
+> + *
+> + * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License version 2
+> + * as published by the Free Software Foundation.
+> + */
+> +
+> +#ifndef __VSP1_REGS_H__
+> +#define __VSP1_REGS_H__
+> +
+(snip)
+> +/* -----------------------------------------------------------------------------
+> + * HGO Control Registers
+> + */
+> +
+> +#define VI6_HGO_OFFSET			0x3000
+> +#define VI6_HGO_SIZE			0x3004
+> +#define VI6_HGO_MODE			0x3008
+> +#define VI6_HGO_LB_TH			0x300c
+> +#define VI6_HGO_LBn_H			(0x3010 + (n) * 8)
+> +#define VI6_HGO_LBn_V			(0x3014 + (n) * 8)
 
+It looks like the 'n' argument is missing for VI6_HGO_LBn_H
+and VI6_HGO_LBn_V.
+
+> +#define VI6_HGO_R_HISTO			0x3030
+> +#define VI6_HGO_R_MAXMIN		0x3130
+> +#define VI6_HGO_R_SUM			0x3134
+> +#define VI6_HGO_R_LB_DET		0x3138
+> +#define VI6_HGO_G_HISTO			0x3140
+> +#define VI6_HGO_G_MAXMIN		0x3240
+> +#define VI6_HGO_G_SUM			0x3244
+> +#define VI6_HGO_G_LB_DET		0x3248
+> +#define VI6_HGO_B_HISTO			0x3250
+> +#define VI6_HGO_B_MAXMIN		0x3350
+> +#define VI6_HGO_B_SUM			0x3354
+> +#define VI6_HGO_B_LB_DET		0x3358
+> +#define VI6_HGO_REGRST			0x33fc
+> +
+> +/* -----------------------------------------------------------------------------
+> + * HGT Control Registers
+> + */
+> +
+> +#define VI6_HGT_OFFSET			0x3400
+> +#define VI6_HGT_SIZE			0x3404
+> +#define VI6_HGT_MODE			0x3408
+> +#define VI6_HGT_HUE_AREA(n)		(0x340c + (n) * 4)
+> +#define VI6_HGT_LB_TH			0x3424
+> +#define VI6_HGT_LBn_H			(0x3438 + (n) * 8)
+> +#define VI6_HGT_LBn_V			(0x342c + (n) * 8)
+
+The 'n' arguments for VI6_HGT_LBn_H and VI6_HGT_LBn_H are missing too.
+
+(snip)
+> +++ b/drivers/media/platform/vsp1/vsp1_video.c
+> @@ -0,0 +1,1129 @@
+> +/*
+> + * vsp1_video.c  --  R-Car VSP1 Video Node
+> + *
+> + * Copyright (C) 2013 Renesas Corporation
+> + *
+> + * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; either version 2 of the License, or
+> + * (at your option) any later version.
+> + */
+> +
+(snip)
+> +static int __vsp1_video_try_format(struct vsp1_video *video,
+> +				   struct v4l2_pix_format_mplane *pix,
+> +				   const struct vsp1_format_info **fmtinfo)
+> +{
+> +	const struct vsp1_format_info *info;
+> +	unsigned int width = pix->width;
+> +	unsigned int height = pix->height;
+> +	unsigned int i;
+> +
+> +	/* Retrieve format information and select the default format if the
+> +	 * requested format isn't supported.
+> +	 */
+> +	info = vsp1_get_format_info(pix->pixelformat);
+> +	if (info = NULL)
+> +		info = vsp1_get_format_info(VSP1_VIDEO_DEF_FORMAT);
+> +
+> +	pix->pixelformat = info->fourcc;
+> +	pix->colorspace = V4L2_COLORSPACE_SRGB;
+> +	pix->field = V4L2_FIELD_NONE;
+> +	memset(pix->reserved, 0, sizeof(pix->reserved));
+> +
+> +	/* Align the width and height for YUV 4:2:2 and 4:2:0 formats. */
+> +	width = round_down(width, info->hsub);
+> +	height = round_down(height, info->vsub);
+> +
+> +	/* Clamp the width and height. */
+> +	pix->width = clamp(width, VSP1_VIDEO_MIN_WIDTH, VSP1_VIDEO_MAX_WIDTH);
+> +	pix->height = clamp(height, VSP1_VIDEO_MIN_HEIGHT,
+> +			    VSP1_VIDEO_MAX_HEIGHT);
+> +
+> +	/* Compute and clamp the stride and image size. */
+> +	for (i = 0; i < max(info->planes, 2U); ++i) {
+> +		unsigned int hsub = i > 0 ? info->hsub : 1;
+> +		unsigned int vsub = i > 0 ? info->vsub : 1;
+> +		unsigned int bpl;
+> +
+> +		bpl = clamp_t(unsigned int, pix->plane_fmt[i].bytesperline,
+> +			      pix->width / hsub * info->bpp[i] / 8,
+> +			      round_down(65535U, 128));
+> +
+> +		pix->plane_fmt[i].bytesperline = round_up(bpl, 128);
+
+I am not sure why 'bytesperlines' should be aligned to 128 bytes.
+VSP1 doesn't seem to have this limitation.
+
+> +		pix->plane_fmt[i].sizeimage = bpl * pix->height / vsub;
+
+If the round up for bytesperlines is required, sizeimage should be
+calculated with 'bytesperline' rather than 'bpl'.
+
+
+Actually, I had been implementing a V4L2 MEM2MEM driver for VIO6,
+which is an older version of the VSP1 used by many of the current
+Renesas SoCs.
+VSP1 should be compatible with VIO6, so I rebased my work onto your
+implementation. I will post a patch to add support of VIO6 for your
+code once it is finished.
+
+Thanks,
+---
+Katsuya Matsubara / IGEL Co., Ltd
+matsu@igel.co.jp
