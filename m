@@ -1,86 +1,98 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:21:55 +0000
-Subject: [PATCH v2 11/23] drm/rcar-du: Rename rcar_du_plane_(init|register) to rcar_du_planes_*
-Message-Id: <1375276927-20181-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Jul 2013 13:15:19 +0000
+Subject: [PATCH 13/14] sh-pfc: r8a7790: Add USB pin groups and functions
+Message-Id: <1374671720-8794-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The functions initialize or register all planes, rename them
-accordingly.
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 4 ++--
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 4 ++--
- drivers/gpu/drm/rcar-du/rcar_du_plane.h | 5 +++--
- 3 files changed, 7 insertions(+), 6 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 42 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index a8eef16..a1343fb 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -174,7 +174,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 	rcdu->ddev->mode_config.max_height = 2047;
- 	rcdu->ddev->mode_config.funcs = &rcar_du_mode_config_funcs;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 2fd904f..fa501ef 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2869,6 +2869,30 @@ static const unsigned int tpu0_to3_pins[] = {
+ static const unsigned int tpu0_to3_mux[] = {
+ 	TPU0TO3_MARK,
+ };
++/* - USB0 ------------------------------------------------------------------- */
++static const unsigned int usb0_pins[] = {
++	/* PWEN, OVC/VBUS */
++	RCAR_GP_PIN(5, 18), RCAR_GP_PIN(5, 19),
++};
++static const unsigned int usb0_mux[] = {
++	USB0_PWEN_MARK, USB0_OVC_VBUS_MARK,
++};
++/* - USB1 ------------------------------------------------------------------- */
++static const unsigned int usb1_pins[] = {
++	/* PWEN, OVC */
++	RCAR_GP_PIN(5, 20), RCAR_GP_PIN(5, 21),
++};
++static const unsigned int usb1_mux[] = {
++	USB1_PWEN_MARK, USB1_OVC_MARK,
++};
++/* - USB2 ------------------------------------------------------------------- */
++static const unsigned int usb2_pins[] = {
++	/* PWEN, OVC */
++	RCAR_GP_PIN(5, 22), RCAR_GP_PIN(5, 23),
++};
++static const unsigned int usb2_mux[] = {
++	USB2_PWEN_MARK, USB2_OVC_MARK,
++};
  
--	ret = rcar_du_plane_init(rcdu);
-+	ret = rcar_du_planes_init(rcdu);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -215,7 +215,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 		encoder->possible_clones = 1 << 0;
- 	}
- 
--	ret = rcar_du_plane_register(rcdu);
-+	ret = rcar_du_planes_register(rcdu);
- 	if (ret < 0)
- 		return ret;
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index 38ebd20..29f2147 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -435,7 +435,7 @@ static const uint32_t formats[] = {
- 	DRM_FORMAT_NV16,
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(eth_link),
+@@ -3021,6 +3045,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(tpu0_to1),
+ 	SH_PFC_PIN_GROUP(tpu0_to2),
+ 	SH_PFC_PIN_GROUP(tpu0_to3),
++	SH_PFC_PIN_GROUP(usb0),
++	SH_PFC_PIN_GROUP(usb1),
++	SH_PFC_PIN_GROUP(usb2),
  };
  
--int rcar_du_plane_init(struct rcar_du_device *rcdu)
-+int rcar_du_planes_init(struct rcar_du_device *rcdu)
- {
- 	unsigned int i;
- 
-@@ -475,7 +475,7 @@ int rcar_du_plane_init(struct rcar_du_device *rcdu)
- 	return 0;
- }
- 
--int rcar_du_plane_register(struct rcar_du_device *rcdu)
-+int rcar_du_planes_register(struct rcar_du_device *rcdu)
- {
- 	unsigned int i;
- 	int ret;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-index 5c8488c..bcf6f76 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-@@ -67,8 +67,9 @@ struct rcar_du_planes {
- 	struct drm_property *zpos;
+ static const char * const eth_groups[] = {
+@@ -3245,6 +3272,18 @@ static const char * const tpu0_groups[] = {
+ 	"tpu0_to3",
  };
  
--int rcar_du_plane_init(struct rcar_du_device *rcdu);
--int rcar_du_plane_register(struct rcar_du_device *rcdu);
-+int rcar_du_planes_init(struct rcar_du_device *rcdu);
-+int rcar_du_planes_register(struct rcar_du_device *rcdu);
++static const char * const usb0_groups[] = {
++	"usb0",
++};
 +
- void rcar_du_plane_setup(struct rcar_du_plane *plane);
- void rcar_du_plane_update_base(struct rcar_du_plane *plane);
- void rcar_du_plane_compute_base(struct rcar_du_plane *plane,
++static const char * const usb1_groups[] = {
++	"usb1",
++};
++
++static const char * const usb2_groups[] = {
++	"usb2",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(eth),
+ 	SH_PFC_FUNCTION(hscif0),
+@@ -3270,6 +3309,9 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi2),
+ 	SH_PFC_FUNCTION(sdhi3),
+ 	SH_PFC_FUNCTION(tpu0),
++	SH_PFC_FUNCTION(usb0),
++	SH_PFC_FUNCTION(usb1),
++	SH_PFC_FUNCTION(usb2),
+ };
+ 
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
 -- 
 1.8.1.5
 
