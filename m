@@ -1,49 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 24 Jul 2013 07:37:16 +0000
-Subject: Re: [PATCH 0/6] DMA for MMCIF and SDHI devices in DT mode
-Message-Id: <20130724073715.GC17045@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Jul 2013 03:53:15 +0000
+Subject: [PATCH] ARM: shmobile: r8a73a4: Remove ->init_machine() special case
+Message-Id: <20130724035315.30631.28824.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374498981-5263-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374498981-5263-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, horms@verge.net.au, g.liakhovetski@gmx.de, linux-sh@vger.kernel.org
 
-On Wed, Jul 24, 2013 at 04:18:42PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Tue, Jul 23, 2013 at 10:47 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Jul 22, 2013 at 03:16:15PM +0200, Guennadi Liakhovetski wrote:
-> >> This patch series adds DMA support for MMCIF and SDHI on APE6EVM,
-> >> armadillo800eva and KZM9G in DT mode.
-> >>
-> >> Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> >>
-> >> Guennadi Liakhovetski (6):
-> >>   ARM: shmobile: ape6evm: add DMA support to MMCIF
-> >>   ARM: shmobile: ape6evm-reference: enable DMA for the MMC interface
-> >>   ARM: shmobile: armadillo800eva-reference: add MMCIF and SDHI DT nodes
-> >>   ARM: shmobile: armadillo800eva-reference: add DMA to SDHI and MMCIF
-> >>   ARM: shmobile: sh73a0: add support for the DMA0 controller in DT
-> >>   ARM: shmobile: kzm9g-reference: add DMA channels to MMCIF and SDHI DT
-> >>
-> >>  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |    3 +
-> >>  .../boot/dts/r8a7740-armadillo800eva-reference.dts |   92 ++++++++++++++++++++
-> >>  arch/arm/boot/dts/r8a7740.dtsi                     |   33 +++++++
-> >>  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |    9 ++
-> >>  arch/arm/boot/dts/sh73a0.dtsi                      |   43 +++++++++
-> >>  arch/arm/mach-shmobile/board-ape6evm.c             |    2 +
-> >>  arch/arm/mach-shmobile/clock-sh73a0.c              |    1 +
-> >>  arch/arm/mach-shmobile/setup-sh73a0.c              |    3 +
-> >>  8 files changed, 186 insertions(+), 0 deletions(-)
-> >
-> > Magnus, could you review this?
-> 
-> I've now asked Guennadi to rework his DMAC DT v4 series and include a
-> subset of these patches. These ones look fine, but I'd like to have
-> them together with the DMAC DT bits to get the full picture if
-> possible. I'm a bit hesitant with moving the SHDMA_SLAVE_xx bits into
-> drivers/ when they are not going to be used by DT anyway.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, understood.
+No need to special case r8a73a4 ->init_machine(),
+so get rid of undesired cpufreq platform device
+from the generic long term r8a73a4 DT support code.
+
+For short term support on APE6EVM the DT reference
+implementation already adds a "cpufreq-cpu0" platform
+device so that can be used for development.
+
+Regarding more long term cpufreq support, perhaps
+it makes sense to adjust the cpufreq driver to check
+for DT information directly instead of using a
+platform device for software configuration and DT
+for hardware parameters.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/setup-r8a73a4.c |    6 ------
+ 1 file changed, 6 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-07-23 16:22:29.000000000 +0900
+@@ -215,11 +215,6 @@ void __init r8a73a4_init_delay(void)
+ }
+ 
+ #ifdef CONFIG_USE_OF
+-void __init r8a73a4_add_standard_devices_dt(void)
+-{
+-	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+ 
+ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a73a4",
+@@ -228,7 +223,6 @@ static const char *r8a73a4_boards_compat
+ 
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+ 	.init_early	= r8a73a4_init_delay,
+-	.init_machine	= r8a73a4_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
+ MACHINE_END
