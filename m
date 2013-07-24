@@ -1,73 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 22 Jul 2013 00:43:30 +0000
-Subject: Re: [PATCH 01/19] ARM: shmobile: r8a73a4: Add pin control device to device tree
-Message-Id: <20130722004329.GE12445@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:32:28 +0000
+Subject: [PATCH 01/19] ARM: shmobile: r8a73a4: Add pin control device to device tree
+Message-Id: <803d319cb2fb41e646669061b45701f3ea78e611.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
- <c173e780f82e5dea3da21f9eda47bc48aa3f57b1.1374208262.git.horms+renesas@verge.net.au>
- <51E931EA.6010805@cogentembedded.com> <5391577.hBy909tQ3H@avalon>
-In-Reply-To: <5391577.hBy909tQ3H@avalon>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 19, 2013 at 02:42:14PM +0200, Laurent Pinchart wrote:
-> On Friday 19 July 2013 16:32:42 Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> > On 19-07-2013 8:36, Simon Horman wrote:
-> > > From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > > 
-> > > Add a pfc node to the r8a73a4 device tree.
-> > 
-> >     This patch looks strange...
-> > 
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > > ---
-> > > 
-> > >   arch/arm/boot/dts/r8a73a4.dtsi |   88
-> > >   ++++++++++++++++++++++++++++++++++++++++ 1 file changed, 88
-> > >   insertions(+)
-> > > 
-> > > diff --git a/arch/arm/boot/dts/r8a73a4.dtsi
-> > > b/arch/arm/boot/dts/r8a73a4.dtsi index 4ff2019..f1a35d5 100644
-> > > --- a/arch/arm/boot/dts/r8a73a4.dtsi
-> > > +++ b/arch/arm/boot/dts/r8a73a4.dtsi
-> > > @@ -85,4 +85,92 @@
-> > > 
-> > >   		interrupt-parent = <&gic>;
-> > >   		interrupts = <0 69 4>;
-> > >   	
-> > >   	};
-> > > 
-> > > +
-> > > +	i2c0: i2c@e6500000 {
-> > > +		#address-cells = <1>;
-> > > +		#size-cells = <0>;
-> > > +		compatible = "renesas,rmobile-iic";
-> > > +		reg = <0 0xe6500000 0 0x428>;
-> > > +		interrupt-parent = <&gic>;
-> > > +		interrupts = <0 174 0x4>;
-> > > +	};
-> > 
-> > [...]
-> > 
-> > > +	i2c8: i2c@e6570000 {
-> > > +		#address-cells = <1>;
-> > > +		#size-cells = <0>;
-> > > +		compatible = "renesas,rmobile-iic";
-> > > +		reg = <0 0xe6570000 0 0x428>;
-> > > +		interrupt-parent = <&gic>;
-> > > +		interrupts = <0 173 0x4>;
-> > > +	};
-> > > +
-> > 
-> > Hm, this also adds a bunch of I2C controllers which is not mentioned in the
-> > changelog at all.
-> 
-> Rebase error ? They were not included in my original patch.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Sorry, I will correct that and repost.
+Add a pfc node to the r8a73a4 device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[g.liakhovetski+renesas@gmail.com use 2 nodes for address and size]
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 4ff2019..b886afd 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -85,4 +85,11 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 69 4>;
+ 	};
++
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a73a4";
++		reg = <0 0xe6050000 0 0x9000>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+-- 
+1.8.2.1
+
