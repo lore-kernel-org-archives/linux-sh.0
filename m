@@ -1,58 +1,57 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 02 Jul 2013 15:37:58 +0000
-Subject: [PATCH] DMA: shdma: fix CHCLR register address calculation
-Message-Id: <Pine.LNX.4.64.1307021733280.1965@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:33:55 +0000
+Subject: [PATCH 01/16] ARM: shmobile: r8a7790: add clocks for thermal
+Message-Id: <a4b91be0b607ffecf6cf9dacdefcaa0797340e3c.1374624383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374624383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: "Koul, Vinod" <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-struct sh_dmae_device::chan_reg is a pointer to u32, therefore when adding
-offsets to it care should be taken to add offsets in sizeof(u32) units, not
-in bytes. This patch corrects such a bug. While at it we also remove the
-redundant parameter of the affected function.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-This is a theoretical fix, I don't have a test-case for it, but the 
-original calculation does seem to be buggy to me. Reviews and tests are 
-welcome.
-
- drivers/dma/sh/shdma.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
-index 98b2693..c7950be 100644
---- a/drivers/dma/sh/shdma.c
-+++ b/drivers/dma/sh/shdma.c
-@@ -51,12 +51,12 @@
- static DEFINE_SPINLOCK(sh_dmae_lock);
- static LIST_HEAD(sh_dmae_devices);
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 5d71313..28eccd1 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -49,6 +49,7 @@
  
--static void chclr_write(struct sh_dmae_chan *sh_dc, u32 data)
-+static void channel_clear(struct sh_dmae_chan *sh_dc)
- {
- 	struct sh_dmae_device *shdev = to_sh_dev(sh_dc);
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR3 0xe615013c
++#define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
  
--	__raw_writel(data, shdev->chan_reg +
--		     shdev->pdata->channel[sh_dc->shdma_chan.id].chclr_offset);
-+	__raw_writel(0, shdev->chan_reg +
-+		shdev->pdata->channel[sh_dc->shdma_chan.id].chclr_offset / sizeof(u32));
- }
- 
- static void sh_dmae_writel(struct sh_dmae_chan *sh_dc, u32 data, u32 reg)
-@@ -135,7 +135,7 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
- 		for (i = 0; i < shdev->pdata->channel_num; i++) {
- 			struct sh_dmae_chan *sh_chan = shdev->chan[i];
- 			if (sh_chan)
--				chclr_write(sh_chan, 0);
-+				channel_clear(sh_chan);
- 		}
- 	}
- 
+ #define MODEMR		0xE6160060
+@@ -182,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ enum {
+ 	MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
++	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+ 	MSTP_NR
+@@ -203,6 +205,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
+ 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
++	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+ 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+ };
+@@ -254,6 +257,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
++	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
 -- 
-1.7.2.5
+1.8.2.1
 
