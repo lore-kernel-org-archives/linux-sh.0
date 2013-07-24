@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:18 +0000
+Date: Wed, 24 Jul 2013 00:32:58 +0000
 Subject: [PATCH 19/19] ARM: shmobile: kzm9g-reference: Add LED1-LED4 to the device tree
-Message-Id: <838a7070ce8bfff11e19ed434edd9a4423b478bd.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <1469273960de45275f33276c7254456edcba9da2.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,7 +17,7 @@ LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   16 ++++++++++++++++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 16 ++++++++++++++++
  1 file changed, 16 insertions(+)
 
 diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
@@ -48,5 +48,5 @@ index d2b2c9f..b99e890 100644
  
  &i2c0 {
 -- 
-1.7.10.4
+1.8.2.1
 
