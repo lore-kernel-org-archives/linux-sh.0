@@ -1,123 +1,101 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:19 +0000
-Subject: [PATCH v7 06/19] ARM: shmobile: r8a7779: Add GPIO controller devices to device tree
-Message-Id: <1372961852-28490-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Jul 2013 13:15:12 +0000
+Subject: [PATCH 06/14] sh-pfc: r8a7790: Swap SCIFA2_RXD_B and HRX0_C configurations
+Message-Id: <1374671720-8794-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add GPIO controller nodes to the r8a7779 core device tree.
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
+The SCIFA2 RXD_B and HRX0_C pins have their pinmux configuration data
+swapped, fix it.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 85 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 85 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 9dfc438..e9fbe3d 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -48,6 +48,90 @@
-                       <0xf0000100 0x100>;
-         };
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 350b076..b06d36c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -464,7 +464,7 @@ enum {
+ 	FN_LCDOUT21, FN_MSIOF0_SCK, FN_TS_SDAT0, FN_ADICLK,
+ 	FN_DU2_DB6, FN_LCDOUT22, FN_MSIOF0_SYNC, FN_TS_SCK0,
+ 	FN_SSI_SCK2, FN_ADIDATA, FN_DU2_DB7, FN_LCDOUT23,
+-	FN_SCIFA2_RXD_B, FN_MSIOF0_SS1, FN_ADICHS0,
++	FN_HRX0_C, FN_MSIOF0_SS1, FN_ADICHS0,
+ 	FN_DU2_DG5, FN_LCDOUT13, FN_MSIOF0_TXD, FN_ADICHS1,
+ 	FN_DU2_DG6, FN_LCDOUT14,
  
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc40000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 141 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc41000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc42000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 143 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc43000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc44000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 145 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio5: gpio@ffc45000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc45000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 146 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio6: gpio@ffc46000 {
-+		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
-+		reg = <0xffc46000 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 147 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 192 9>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
- 	irqpin0: irqpin@fe780010 {
- 		compatible = "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
-@@ -104,6 +188,7 @@
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7779";
- 		reg = <0xfffc0000 0x23c>;
-+		#gpio-range-cells = <3>;
- 	};
+@@ -472,7 +472,7 @@ enum {
+ 	FN_MSIOF0_SS2, FN_AUDIO_CLKOUT, FN_ADICHS2,
+ 	FN_DU2_DISP, FN_QPOLA, FN_HTX0_C, FN_SCIFA2_TXD_B,
+ 	FN_MSIOF0_RXD, FN_TS_SPSYNC0, FN_SSI_WS2,
+-	FN_ADICS_SAMP, FN_DU2_CDE, FN_QPOLB, FN_HRX0_C,
++	FN_ADICS_SAMP, FN_DU2_CDE, FN_QPOLB, FN_SCIFA2_RXD_B,
+ 	FN_USB1_PWEN, FN_AUDIO_CLKOUT_D, FN_USB1_OVC,
+ 	FN_TCLK1_B,
  
- 	thermal@ffc48000 {
+@@ -827,14 +827,14 @@ enum {
+ 	LCDOUT21_MARK, MSIOF0_SCK_MARK, TS_SDAT0_MARK, ADICLK_MARK,
+ 	DU2_DB6_MARK, LCDOUT22_MARK, MSIOF0_SYNC_MARK, TS_SCK0_MARK,
+ 	SSI_SCK2_MARK, ADIDATA_MARK, DU2_DB7_MARK, LCDOUT23_MARK,
+-	SCIFA2_RXD_B_MARK, MSIOF0_SS1_MARK, ADICHS0_MARK,
++	HRX0_C_MARK, MSIOF0_SS1_MARK, ADICHS0_MARK,
+ 	DU2_DG5_MARK, LCDOUT13_MARK, MSIOF0_TXD_MARK, ADICHS1_MARK,
+ 	DU2_DG6_MARK, LCDOUT14_MARK,
+ 
+ 	MSIOF0_SS2_MARK, AUDIO_CLKOUT_MARK, ADICHS2_MARK,
+ 	DU2_DISP_MARK, QPOLA_MARK, HTX0_C_MARK, SCIFA2_TXD_B_MARK,
+ 	MSIOF0_RXD_MARK, TS_SPSYNC0_MARK, SSI_WS2_MARK,
+-	ADICS_SAMP_MARK, DU2_CDE_MARK, QPOLB_MARK, HRX0_C_MARK,
++	ADICS_SAMP_MARK, DU2_CDE_MARK, QPOLB_MARK, SCIFA2_RXD_B_MARK,
+ 	USB1_PWEN_MARK, AUDIO_CLKOUT_D_MARK, USB1_OVC_MARK,
+ 	TCLK1_B_MARK,
+ 	PINMUX_MARK_END,
+@@ -1742,7 +1742,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP15_25_23, ADIDATA),
+ 	PINMUX_IPSR_DATA(IP15_25_23, DU2_DB7),
+ 	PINMUX_IPSR_DATA(IP15_25_23, LCDOUT23),
+-	PINMUX_IPSR_MODSEL_DATA(IP15_25_23, SCIFA2_RXD_B, SEL_SCIFA2_1),
++	PINMUX_IPSR_MODSEL_DATA(IP15_25_23, HRX0_C, SEL_SCIFA2_1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP15_27_26, MSIOF0_SS1, SEL_SOF0_0),
+ 	PINMUX_IPSR_DATA(IP15_27_26, ADICHS0),
+ 	PINMUX_IPSR_DATA(IP15_27_26, DU2_DG5),
+@@ -1765,7 +1765,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP16_5_3, ADICS_SAMP),
+ 	PINMUX_IPSR_DATA(IP16_5_3, DU2_CDE),
+ 	PINMUX_IPSR_DATA(IP16_5_3, QPOLB),
+-	PINMUX_IPSR_MODSEL_DATA(IP16_5_3, HRX0_C, SEL_HSCIF0_2),
++	PINMUX_IPSR_MODSEL_DATA(IP16_5_3, SCIFA2_RXD_B, SEL_HSCIF0_2),
+ 	PINMUX_IPSR_DATA(IP16_6, USB1_PWEN),
+ 	PINMUX_IPSR_DATA(IP16_6, AUDIO_CLKOUT_D),
+ 	PINMUX_IPSR_DATA(IP16_7, USB1_OVC),
+@@ -3753,7 +3753,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_MSIOF0_SS1, FN_ADICHS0, FN_DU2_DG5, FN_LCDOUT13,
+ 		/* IP15_25_23 [3] */
+ 		FN_MSIOF0_SYNC, FN_TS_SCK0, FN_SSI_SCK2, FN_ADIDATA,
+-		FN_DU2_DB7, FN_LCDOUT23, FN_SCIFA2_RXD_B, 0,
++		FN_DU2_DB7, FN_LCDOUT23, FN_HRX0_C, 0,
+ 		/* IP15_22_20 [3] */
+ 		FN_MSIOF0_SCK, FN_TS_SDAT0, FN_ADICLK,
+ 		FN_DU2_DB6, FN_LCDOUT22, 0, 0, 0,
+@@ -3804,7 +3804,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_USB1_PWEN, FN_AUDIO_CLKOUT_D,
+ 		/* IP16_5_3 [3] */
+ 		FN_MSIOF0_RXD, FN_TS_SPSYNC0, FN_SSI_WS2,
+-		FN_ADICS_SAMP, FN_DU2_CDE, FN_QPOLB, FN_HRX0_C, 0,
++		FN_ADICS_SAMP, FN_DU2_CDE, FN_QPOLB, FN_SCIFA2_RXD_B, 0,
+ 		/* IP16_2_0 [3] */
+ 		FN_MSIOF0_SS2, FN_AUDIO_CLKOUT, FN_ADICHS2,
+ 		FN_DU2_DISP, FN_QPOLA, FN_HTX0_C, FN_SCIFA2_TXD_B, 0, }
 -- 
 1.8.1.5
 
