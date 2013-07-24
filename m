@@ -1,39 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Jul 2013 13:09:25 +0000
-Subject: [PATCH 0/3] sh-pfc: Don't include mach/*.h headers were not required
-Message-Id: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Jul 2013 14:44:05 +0000
+Subject: Re: [PATCH 0/3] sh-pfc: Don't include mach/*.h headers were not required
+Message-Id: <CANqRtoQHD9bk4uyAE9GAPvz_ZTLx1EtohFjaYhnetmwQ1Te1qg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+Hi Laurent,
 
-The (long) road to multiplatform kernels requires getting rid of mach/*.h
-headers in device drivers. This patch set removes some of the included mach
-headers from the sh-pfc driver. The only remaining one is mach/irqs.h, to get
-the irq_pin() macro. This will require more work, see [1] for a discussion of
-the issue.
+On Wed, Jul 24, 2013 at 10:09 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> Hello,
+>
+> The (long) road to multiplatform kernels requires getting rid of mach/*.h
+> headers in device drivers. This patch set removes some of the included mach
+> headers from the sh-pfc driver. The only remaining one is mach/irqs.h, to get
+> the irq_pin() macro. This will require more work, see [1] for a discussion of
+> the issue.
 
-The patches are based on v3.11-rc2. Linus, do you usually pick pinctrl patches
-from the list, or should I send you a pull request ?
+That's a blocker for some of the SoCs, right? I suppose the ones using
+a separate GPIO controller are OK as-is?
 
-[1] http://www.mail-archive.com/linux-kernel@vger.kernel.org/msg473450.html
+> The patches are based on v3.11-rc2. Linus, do you usually pick pinctrl patches
+> from the list, or should I send you a pull request ?
+>
+> [1] http://www.mail-archive.com/linux-kernel@vger.kernel.org/msg473450.html
+>
+> Laurent Pinchart (3):
+>   sh-pfc: Remove unneeded mach/<soc>.h includes
+>   sh-pfc: sh7372: Replace <mach/irqs.h> with <linux/sh_intc.h>
+>   sh-pfc: sh73a0: Remove EXT_IRQ16L and EXT_IRQ16H macros
 
-Laurent Pinchart (3):
-  sh-pfc: Remove unneeded mach/<soc>.h includes
-  sh-pfc: sh7372: Replace <mach/irqs.h> with <linux/sh_intc.h>
-  sh-pfc: sh73a0: Remove EXT_IRQ16L and EXT_IRQ16H macros
+These are fine with me. Thanks for your help!
 
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  1 -
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  1 -
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  |  4 +--
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 68 +++++++++++++++++-------------------
- 4 files changed, 33 insertions(+), 41 deletions(-)
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Acked-by: Magnus Damm <damm@opensource.se>
