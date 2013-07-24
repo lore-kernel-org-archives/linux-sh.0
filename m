@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:36:56 +0000
+Date: Wed, 24 Jul 2013 00:32:29 +0000
 Subject: [PATCH 02/19] ARM: shmobile: r8a7740: Add pin control device to device tree
-Message-Id: <bce4d99ee1c246a12a043c196faba6948f3bdf9d.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <f36218d25f2388775a06b6091d881b7a45b7595f.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,8 +18,8 @@ initialization from the corresponding board files.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi                         |    8 ++++++++
- .../mach-shmobile/board-armadillo800eva-reference.c    |   16 ++++++++--------
+ arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
  2 files changed, 16 insertions(+), 8 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
@@ -83,5 +83,5 @@ index 03b85fe..f25b6aa 100644
  }
  
 -- 
-1.7.10.4
+1.8.2.1
 
