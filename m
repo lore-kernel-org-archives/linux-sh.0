@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 19 Jul 2013 16:02:16 +0000
-Subject: [PATCH] ARM: shmobile: armadillo800eva-reference: fix compiler warning
-Message-Id: <Pine.LNX.4.64.1307191758510.26183@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 24 Jul 2013 08:06:12 +0000
+Subject: Re: [PATCH] ARM: shmobile: armadillo800eva-reference: fix compiler warning
+Message-Id: <20130724080611.GA10027@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1361223490-20106-1-git-send-email-hechtb+renesas@gmail.com>
 In-Reply-To: <1361223490-20106-1-git-send-email-hechtb+renesas@gmail.com>
@@ -10,38 +10,14 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Fix the compiler warning:
+On Fri, Jul 19, 2013 at 06:02:16PM +0200, Guennadi Liakhovetski wrote:
+> Fix the compiler warning:
+> 
+> arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: initialization from incompatible pointer type [enabled by default]
+> arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: (near initialization for '__mach_desc_ARMADILLO800EVA_DT.restart') [enabled by default]
+> 
+> While at it also remove superfluous parenthesis.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: initialization from incompatible pointer type [enabled by default]
-arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: (near initialization for '__mach_desc_ARMADILLO800EVA_DT.restart') [enabled by default]
-
-While at it also remove superfluous parenthesis.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
-
-renesas.git devel branch
-
- .../board-armadillo800eva-reference.c              |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 002d8d3..fd2446d 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -174,10 +174,10 @@ static void __init eva_init(void)
- }
- 
- #define RESCNT2 IOMEM(0xe6188020)
--static void eva_restart(char mode, const char *cmd)
-+static void eva_restart(enum reboot_mode mode, const char *cmd)
- {
- 	/* Do soft power on reset */
--	writel((1 << 31), RESCNT2);
-+	writel(1 << 31, RESCNT2);
- }
- 
- static const char *eva_boards_compat_dt[] __initdata = {
--- 
-1.7.2.5
-
+Thanks, I have queued this up for v3.12 in the fixes2-for-v3.12 branch.
