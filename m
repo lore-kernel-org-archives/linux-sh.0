@@ -1,107 +1,115 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Thu, 11 Jul 2013 09:51:39 +0000
-Subject: [PATCH 1/4] ARM: shmobile: smp-r8a7790: remove the obsolete RESCNT register
-Message-Id: <51DE802B.6090401@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:34:03 +0000
+Subject: [PATCH 09/16] ARM: shmobile: Add r8a7790 CMT00 clock event
+Message-Id: <99ade1a0f02e086248874d9908def3e8e4539418.1374624383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130710104151.20742.56398.sendpatchset@w520>
- <51DE7FF4.5050800@renesas.com>
-In-Reply-To: <51DE7FF4.5050800@renesas.com>
+References: <cover.1374624383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-I should have notice this one, sorry for bothering you in v4 again.
+From: Magnus Damm <damm@opensource.se>
 
-The RESCNT register, which is supposed to be used to control clock supply
-to CA15/CA7 clusters by manipulating dedicated MSTP bits, turned out that
-it doesn't do anything good for clock supply to clusters.  It was listed
-in the datasheet v0.5, but it's now obsolete in the datasheet v0.6.
+Add clock event support for CMT0 timer channel 0
+to the r8a7790 SoC code. On most ARM mach-shmobile
+the CMT is hooked up to a 32KHz clock but on r8a7790
+a 31.7KHz clock is instead used.
 
-This patch removes the defines and routines related to RESCNT.
-
-Note that, this patch removes r8a7790_deassert_reset(0) call in
-r8a7790_smp_prepare_cpus at the time.  As we already know, it's pointless
-to deassert reset to CPU#0 (boot CPU) in the kernel initialization.  It
-was just there to set r8a7790_clst[0].use_count to 1 on start-up to keep
-.use_count balanced.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-r8a7790.c | 22 ----------------------
- 1 file changed, 22 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
+ arch/arm/mach-shmobile/setup-r8a7790.c | 23 ++++++++++++++++++++++-
+ 2 files changed, 26 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index a1696f4..1ab4c04 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -25,7 +25,6 @@
- #define CA7BAR	0x0030
- #define CA15RESCNT 0x0040
- #define CA7RESCNT 0x0044
--#define RESCNT	0x0050
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 10d99b3..62d8162 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -47,6 +47,7 @@
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x1000
  
- #define APMU	0xe6150000
- #define CA15WUPCR 0x2010
-@@ -39,20 +38,16 @@ static struct {
- 	unsigned int cabar;
- 	unsigned int carescnt;
- 	unsigned int carescnt_magic;
--	unsigned int rescnt_bit;
--	unsigned int use_count;
- } r8a7790_clst[R8A7790_CLST_NR] = {
- 	[R8A7790_CLST_CA15] = {
- 		.cabar = CA15BAR,
- 		.carescnt = CA15RESCNT,
- 		.carescnt_magic = 0xa5a50000,
--		.rescnt_bit = 1,
- 	},
- 	[R8A7790_CLST_CA7] = {
- 		.cabar = CA7BAR,
- 		.carescnt = CA7RESCNT,
- 		.carescnt_magic = 0x5a5a0000,
--		.rescnt_bit = 0,
- 	},
++#define SMSTPCR1 0xe6150134
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR3 0xe615013c
+ #define SMSTPCR5 0xe6150144
+@@ -186,6 +187,7 @@ enum {
+ 	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
++	MSTP124,
+ 	MSTP_NR
  };
  
-@@ -71,12 +66,6 @@ static void r8a7790_deassert_reset(unsigned int cpu)
- 	writel_relaxed(bar, p + r8a7790_clst[clst_id].cabar);
- 	writel_relaxed(bar | 0x10, p + r8a7790_clst[clst_id].cabar);
+@@ -208,6 +210,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
+ 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
++	[MSTP124] = SH_CLK_MSTP32(&rclk_clk, SMSTPCR1, 24, 0), /* CMT0 */
+ };
  
--	/* enable clocks for cluster */
--	if (r8a7790_clst[clst_id].use_count++ = 0) {
--		mask = 1 << r8a7790_clst[clst_id].rescnt_bit;
--		writel_relaxed(readl_relaxed(p + RESCNT) & ~mask, p + RESCNT);
--	}
--
- 	/* enable per-core clocks */
- 	mask = BIT(3 - r8a7790_cpu_id(cpu));
- 	magic = r8a7790_clst[clst_id].carescnt_magic;
-@@ -100,15 +89,6 @@ static void r8a7790_assert_reset(unsigned int cpu)
- 	carescnt = p + r8a7790_clst[clst_id].carescnt;
- 	writel_relaxed((readl_relaxed(carescnt) | mask) | magic, carescnt);
+ static struct clk_lookup lookups[] = {
+@@ -270,6 +273,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
++	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ };
  
--	/* disable clocks for cluster */
--	if (r8a7790_clst[clst_id].use_count = 1) {
--		mask = 1 << r8a7790_clst[clst_id].rescnt_bit;
--		writel_relaxed(readl_relaxed(p + RESCNT) | mask, p + RESCNT);
--	}
--
--	if (r8a7790_clst[clst_id].use_count > 0)
--		r8a7790_clst[clst_id].use_count--;
--
- 	iounmap(p);
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index bc40a44..ece60c6 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -21,9 +21,10 @@
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+-#include <linux/serial_sci.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/irq-renesas-irqc.h>
++#include <linux/serial_sci.h>
++#include <linux/sh_timer.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7790.h>
+@@ -159,6 +160,25 @@ static struct resource thermal_resources[] __initdata = {
+ 					thermal_resources,		\
+ 					ARRAY_SIZE(thermal_resources))
+ 
++static struct sh_timer_config cmt00_platform_data = {
++	.name = "CMT00",
++	.timer_bit = 0,
++	.clockevent_rating = 80,
++};
++
++static struct resource cmt00_resources[] = {
++	DEFINE_RES_MEM(0xffca0510, 0x0c),
++	DEFINE_RES_MEM(0xffca0500, 0x04),
++	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
++};
++
++#define r8a7790_register_cmt(idx)					\
++	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++					  idx, cmt##idx##_resources,	\
++					  ARRAY_SIZE(cmt##idx##_resources), \
++					  &cmt##idx##_platform_data,	\
++					  sizeof(struct sh_timer_config))
++
+ void __init r8a7790_add_standard_devices(void)
+ {
+ 	r8a7790_register_scif(SCIFA0);
+@@ -173,6 +193,7 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_scif(HSCIF1);
+ 	r8a7790_register_irqc(0);
+ 	r8a7790_register_thermal();
++	r8a7790_register_cmt(00);
  }
  
-@@ -145,8 +125,6 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
- 		r8a7790_assert_reset(k);
- 		r8a7790_power_on(k);
- 	}
--
--	r8a7790_deassert_reset(0);
- }
- 
- static int __cpuinit r8a7790_boot_secondary(unsigned int cpu,
+ void __init r8a7790_timer_init(void)
 -- 
-1.8.3.2
+1.8.2.1
 
