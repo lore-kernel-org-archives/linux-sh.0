@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:13 +0000
+Date: Wed, 24 Jul 2013 00:32:53 +0000
 Subject: [PATCH 14/19] ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
-Message-Id: <35b235cac74f549e0e7b71c42234566b26ecb90f.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <0a4f788961f196baa3e8ffd840a2c5931434854e.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,7 +17,7 @@ LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts |   15 +++++++++++++++
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
@@ -47,5 +47,5 @@ index 8ec4cd1..366f729 100644
  
  &i2c0 {
 -- 
-1.7.10.4
+1.8.2.1
 
