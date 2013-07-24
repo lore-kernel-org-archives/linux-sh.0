@@ -1,47 +1,51 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Thu, 25 Jul 2013 17:57:12 +0000
-Subject: [PATCH 0/2] PCI: Convert hotplug core and pciehp to be builtin only
-Message-Id: <20130725175242.6006.56007.stgit@bhelgaas-glaptop>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:34:02 +0000
+Subject: [PATCH 08/16] ARM: shmobile: Sort r8a7790 MSTP entries
+Message-Id: <29eb2ba89c63c6f57dc3a8b1a89241c7a877a3c8.1374624383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1374624383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: Fenghua Yu <fenghua.yu@intel.com>, Tony Luck <tony.luck@intel.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, "Rafael J. Wysocki" <rjw@sisk.pl>, Paul Mundt <lethal@linux-sh.org>, Paul Mackerras <paulus@samba.org>, Yinghai Lu <yinghai@kernel.org>, linuxppc-dev@lists.ozlabs.org
+To: linux-arm-kernel@lists.infradead.org
 
-Yinghai is working on a regression fix ("PCI: Separate stop and remove
-devices in pciehp") that needs to go into v3.11, and his fix will be
-simpler if we remove the module option for pciehp in v3.11.  That will mean
-he won't have to export pci_stop_bus_device() and pci_remove_bus_device()
-for use by modules.
+From: Magnus Damm <damm@opensource.se>
 
-So these two patches convert CONFIG_HOTPLUG_PCI and CONFIG_HOTPLUG_PCI_PCIE
-to be bool (not tristate) and update defconfig files that had
-CONFIG_HOTPLUG_PCI=m.
+The r8a7790 MSTP bits should be kept sorted in the same way
+as on other mach-shmobile SoCs. Move the HSCIF and thermal
+bits to clean up the current state.
 
-The motivation was for CONFIG_HOTPLUG_PCI_PCIE, but I also converted
-CONFIG_HOTPLUG_PCI to bool because the CONFIG_HOTPLUG_PCI=m and
-CONFIG_HOTPLUG_PCI_PCIE=y combination was accepted by Kconfig and builds a
-kernel, but pciehp doesn't actually work in that case (pointed out by
-Yinghai, thanks!)
-
-These are intended for v3.11.
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Bjorn Helgaas (2):
-      PCI: hotplug: Convert to be builtin only, not modular
-      PCI: pciehp: Convert pciehp to be builtin only, not modular
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 28eccd1..10d99b3 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -192,6 +192,9 @@ enum {
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
++	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
++	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
++	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
+ 	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_SD1], SMSTPCR3, 13, 0), /* SDHI1 */
+@@ -205,9 +208,6 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
+ 	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
+-	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+-	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+-	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+-- 
+1.8.2.1
 
-
- arch/ia64/configs/generic_defconfig    |    2 +-
- arch/ia64/configs/gensparse_defconfig  |    2 +-
- arch/ia64/configs/tiger_defconfig      |    2 +-
- arch/ia64/configs/xen_domu_defconfig   |    2 +-
- arch/powerpc/configs/ppc64_defconfig   |    2 +-
- arch/powerpc/configs/ppc64e_defconfig  |    2 +-
- arch/powerpc/configs/pseries_defconfig |    2 +-
- arch/sh/configs/sh03_defconfig         |    2 +-
- drivers/pci/hotplug/Kconfig            |    5 +----
- drivers/pci/pcie/Kconfig               |    5 +----
- 10 files changed, 10 insertions(+), 16 deletions(-)
