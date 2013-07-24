@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:36:59 +0000
+Date: Wed, 24 Jul 2013 00:32:32 +0000
 Subject: [PATCH 05/19] ARM: shmobile: r8a7779: Add pin control device to device tree
-Message-Id: <c829db7cacd0a5dd857bf59f74db1c5e1d3f32f6.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <3ab03d01a989e4d77ed6ba0bc8c2efd9211df7c8.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,8 +18,8 @@ initialization from the corresponding board files.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi                  |    5 +++++
- arch/arm/mach-shmobile/board-marzen-reference.c |   17 ++++++++---------
+ arch/arm/boot/dts/r8a7779.dtsi                  |  5 +++++
+ arch/arm/mach-shmobile/board-marzen-reference.c | 17 ++++++++---------
  2 files changed, 13 insertions(+), 9 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
@@ -84,5 +84,5 @@ index 480d882..94804f3 100644
  	r8a7779_add_standard_devices_dt();
  }
 -- 
-1.7.10.4
+1.8.2.1
 
