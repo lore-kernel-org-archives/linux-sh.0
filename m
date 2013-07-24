@@ -1,67 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 25 Jul 2013 02:13:42 +0000
-Subject: [PATCH v2 2/3] ARM: shmobile: r8a7779: Rely on DT for SMP CPU info
-Message-Id: <1374718423-24230-3-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:34:20 +0000
+Subject: [GIT 0/4] Renesas TPU PWM support for v3.12
+Message-Id: <cover.1374624997.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374718423-24230-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1374718423-24230-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Remove r8a7779 specific ->smp_init_cpus() callback and
-instead of relying on shmobile_smp_init_cpus() simply
-use DT for CPU core information.
+Hi Olof, Hi Arnd,
 
-Based on work for the sh73a0 by Magnus Damm.
+please consider this pull request, which adds support for
+the renesas TPU PWM unit, for v3.12.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
 
---
+  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
 
-Run-time dependency on "ARM: shmobile: marzen: Switch to DT_MACHINE_START".
----
- arch/arm/mach-shmobile/smp-r8a7779.c | 12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
+are available in the git repository at:
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index 9bdf810..42170af 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -99,6 +99,9 @@ static int r8a7779_boot_secondary(unsigned int cpu, struct task_struct *idle)
- 
- static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- {
-+
-+	/* setup r8a7779 specific SCU base */
-+	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
- 	scu_enable(shmobile_scu_base);
- 
- 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
-@@ -117,14 +120,6 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- 	r8a7779_platform_cpu_kill(3);
- }
- 
--static void __init r8a7779_smp_init_cpus(void)
--{
--	/* setup r8a7779 specific SCU base */
--	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
--
--	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
--}
--
- #ifdef CONFIG_HOTPLUG_CPU
- static int r8a7779_scu_psr_core_disabled(int cpu)
- {
-@@ -175,7 +170,6 @@ static int r8a7779_cpu_disable(unsigned int cpu)
- #endif /* CONFIG_HOTPLUG_CPU */
- 
- struct smp_operations r8a7779_smp_ops  __initdata = {
--	.smp_init_cpus		= r8a7779_smp_init_cpus,
- 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
- 	.smp_boot_secondary	= r8a7779_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
--- 
-1.8.2.1
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-tpu-pwm-for-v3.12
 
+for you to fetch changes up to ae3e4c277669e16093f0e71ca927cf33e7dde053:
+
+  leds: Remove leds-renesas-tpu driver (2013-07-22 10:16:54 +0900)
+
+----------------------------------------------------------------
+Renesas TPU PWM support for v3.12
+
+Add Renesas TPU PWM unit support
+
+----------------------------------------------------------------
+Laurent Pinchart (4):
+      ARM: shmobile: armadillo800eva: Add backlight support
+      ARM: shmobile: kota2: Use leds-pwm + pwm-rmob
+      ARM: shmobile: sh73a0: Remove all GPIOs
+      leds: Remove leds-renesas-tpu driver
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  54 +++-
+ arch/arm/mach-shmobile/board-kota2.c           | 169 ++++++-----
+ arch/arm/mach-shmobile/clock-sh73a0.c          |  12 +-
+ arch/arm/mach-shmobile/include/mach/sh73a0.h   | 373 +------------------------
+ drivers/leds/Kconfig                           |  12 -
+ drivers/leds/Makefile                          |   1 -
+ drivers/leds/leds-renesas-tpu.c                | 337 ----------------------
+ include/linux/platform_data/leds-renesas-tpu.h |  14 -
+ 8 files changed, 143 insertions(+), 829 deletions(-)
+ delete mode 100644 drivers/leds/leds-renesas-tpu.c
+ delete mode 100644 include/linux/platform_data/leds-renesas-tpu.h
