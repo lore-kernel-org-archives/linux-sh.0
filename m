@@ -1,69 +1,146 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:32:04 +0000
-Subject: [PATCH 03/22] ARM: shmobile: sh73a0 pinmux platform device cleanup
-Message-Id: <474f67587345bf7b32bbd9d2b5621e85500103c5.1374103272.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Jul 2013 13:15:15 +0000
+Subject: [PATCH 09/14] sh-pfc: r8a7790: Fix miscellaneous pinmux configuration tables mistakes
+Message-Id: <1374671720-8794-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
+References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-Use DEFINE_RES_MEM() and platform_device_register_simple()
-to save a couple of lines of code.
+Fix erroneous entries in the pinmux configuration tables that affect
+HSCIF, I2C, LBSC, SCIF, SSI and VIN operation.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-[ remove const from resource pfc_resources to avoid section miss-match
-  reported by 4.4.5 ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |   25 ++++++-------------------
- 1 file changed, 6 insertions(+), 19 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 31 +++++++++++++++----------------
+ 1 file changed, 15 insertions(+), 16 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 96e7ca1..79a6040 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -61,29 +61,16 @@ void __init sh73a0_map_io(void)
- 	iotable_init(sh73a0_io_desc, ARRAY_SIZE(sh73a0_io_desc));
- }
- 
--static struct resource sh73a0_pfc_resources[] = {
--	[0] = {
--		.start	= 0xe6050000,
--		.end	= 0xe6057fff,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= 0xe605801c,
--		.end	= 0xe6058027,
--		.flags	= IORESOURCE_MEM,
--	}
--};
--
--static struct platform_device sh73a0_pfc_device = {
--	.name		= "pfc-sh73a0",
--	.id		= -1,
--	.resource	= sh73a0_pfc_resources,
--	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
-+/* PFC */
-+static struct resource pfc_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xe6050000, 0x8000),
-+	DEFINE_RES_MEM(0xe605801c, 0x000c),
- };
- 
- void __init sh73a0_pinmux_init(void)
- {
--	platform_device_register(&sh73a0_pfc_device);
-+	platform_device_register_simple("pfc-sh73a0", -1, pfc_resources,
-+					ARRAY_SIZE(pfc_resources));
- }
- 
- static struct plat_sci_port scif0_platform_data = {
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 9a63063..62ac0d2 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -934,7 +934,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP1_14_12, VI0_HSYNC_N_B, SEL_VI0_1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP1_14_12, VI2_DATA4_VI2_B4, SEL_VI2_0),
+ 	PINMUX_IPSR_DATA(IP1_17_15, D13),
+-	PINMUX_IPSR_MODSEL_DATA(IP1_17_15, AVB_TXD5, SEL_SCIFA1_2),
++	PINMUX_IPSR_DATA(IP1_17_15, AVB_TXD5),
+ 	PINMUX_IPSR_MODSEL_DATA(IP1_17_15, VI0_VSYNC_N, SEL_VI0_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP1_17_15, VI0_VSYNC_N_B, SEL_VI0_1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP1_17_15, VI2_DATA5_VI2_B5, SEL_VI2_0),
+@@ -1005,14 +1005,14 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_3_0, VI1_R0, SEL_VI1_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_3_0, VI1_R0_B, SEL_VI1_1),
+ 	PINMUX_IPSR_DATA(IP3_3_0, VI2_G0),
+-	PINMUX_IPSR_DATA(IP3_3_0, VI2_DATA3_VI2_B3_B),
++	PINMUX_IPSR_MODSEL_DATA(IP3_3_0, VI2_DATA3_VI2_B3_B, SEL_VI2_1),
+ 	PINMUX_IPSR_DATA(IP3_7_4, A12),
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_7_4, SCIFB2_RXD_B, SEL_SCIFB2_1),
+ 	PINMUX_IPSR_DATA(IP3_7_4, MSIOF2_TXD),
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_7_4, VI1_R1, SEL_VI1_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_7_4, VI1_R1_B, SEL_VI1_1),
+ 	PINMUX_IPSR_DATA(IP3_7_4, VI2_G1),
+-	PINMUX_IPSR_DATA(IP3_7_4, VI2_DATA4_VI2_B4_B),
++	PINMUX_IPSR_MODSEL_DATA(IP3_7_4, VI2_DATA4_VI2_B4_B, SEL_VI2_1),
+ 	PINMUX_IPSR_DATA(IP3_11_8, A13),
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_11_8, SCIFB2_RTS_N_B, SEL_SCIFB2_1),
+ 	PINMUX_IPSR_DATA(IP3_11_8, EX_WAIT2),
+@@ -1020,7 +1020,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_11_8, VI1_R2, SEL_VI1_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_11_8, VI1_R2_B, SEL_VI1_1),
+ 	PINMUX_IPSR_DATA(IP3_11_8, VI2_G2),
+-	PINMUX_IPSR_MODSEL_DATA(IP3_11_8, VI2_DATA5_VI2_B5_B, SEL_VI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP3_11_8, VI2_DATA5_VI2_B5_B, SEL_VI2_1),
+ 	PINMUX_IPSR_DATA(IP3_14_12, A14),
+ 	PINMUX_IPSR_MODSEL_DATA(IP3_14_12, SCIFB2_TXD_B, SEL_SCIFB2_1),
+ 	PINMUX_IPSR_DATA(IP3_14_12, ATACS11_N),
+@@ -1112,7 +1112,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP5_2_0, VI1_G1, SEL_VI1_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP5_2_0, VI1_G1_B, SEL_VI1_1),
+ 	PINMUX_IPSR_DATA(IP5_2_0, VI2_R3),
+-	PINMUX_IPSR_MODSEL_DATA(IP5_5_3, EX_CS4_N, SEL_I2C1_0),
++	PINMUX_IPSR_DATA(IP5_5_3, EX_CS4_N),
+ 	PINMUX_IPSR_MODSEL_DATA(IP5_5_3, MSIOF1_SCK_B, SEL_SOF1_1),
+ 	PINMUX_IPSR_DATA(IP5_5_3, VI3_HSYNC_N),
+ 	PINMUX_IPSR_MODSEL_DATA(IP5_5_3, VI2_HSYNC_N, SEL_VI2_0),
+@@ -1159,7 +1159,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP5_23_21, VI2_R6),
+ 	PINMUX_IPSR_MODSEL_DATA(IP5_23_21, SCIFA0_CTS_N_B, SEL_SCFA_1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP5_23_21, IERX_C, SEL_IEB_2),
+-	PINMUX_IPSR_DATA(IP5_26_24, EX_WAIT0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_26_24, EX_WAIT0, SEL_LBS_0),
+ 	PINMUX_IPSR_DATA(IP5_26_24, IRQ3),
+ 	PINMUX_IPSR_DATA(IP5_26_24, INTC_IRQ3_N),
+ 	PINMUX_IPSR_MODSEL_DATA(IP5_26_24, VI3_CLK, SEL_VI3_0),
+@@ -1240,8 +1240,8 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP7_2_0, SIM0_D_C, SEL_SIM_2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP7_2_0, HCTS0_N_F, SEL_HSCIF0_5),
+ 	PINMUX_IPSR_DATA(IP7_5_3, ETH_TXD1),
+-	PINMUX_IPSR_MODSEL_DATA(IP7_5_3, HTX0_F, SEL_HSCIF0_4),
+-	PINMUX_IPSR_MODSEL_DATA(IP7_5_3, BPFCLK_G, SEL_SIM_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_5_3, HTX0_F, SEL_HSCIF0_5),
++	PINMUX_IPSR_MODSEL_DATA(IP7_5_3, BPFCLK_G, SEL_FM_6),
+ 	PINMUX_IPSR_DATA(IP7_7_6, ETH_TX_EN),
+ 	PINMUX_IPSR_MODSEL_DATA(IP7_7_6, SIM0_CLK_C, SEL_SIM_2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP7_7_6, HRTS0_N_F, SEL_HSCIF0_5),
+@@ -1318,7 +1318,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP8_25_24, SCIFA1_RTS_N_D, SEL_SCIFA1_3),
+ 	PINMUX_IPSR_DATA(IP8_25_24, AVB_MAGIC),
+ 	PINMUX_IPSR_MODSEL_DATA(IP8_26, VI1_DATA5_VI1_B5, SEL_VI1_0),
+-	PINMUX_IPSR_MODSEL_DATA(IP8_26, AVB_PHY_INT, SEL_SCIFA1_3),
++	PINMUX_IPSR_DATA(IP8_26, AVB_PHY_INT),
+ 	PINMUX_IPSR_MODSEL_DATA(IP8_27, VI1_DATA6_VI1_B6, SEL_VI1_0),
+ 	PINMUX_IPSR_DATA(IP8_27, AVB_GTXREFCLK),
+ 	PINMUX_IPSR_DATA(IP8_28, SD0_CLK),
+@@ -1522,7 +1522,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP12_5_4, MOUT5),
+ 	PINMUX_IPSR_DATA(IP12_7_6, SSI_SDATA2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP12_7_6, CAN1_RX_B, SEL_CAN1_1),
+-	PINMUX_IPSR_MODSEL_DATA(IP12_7_6, CAN1_TX_B, SEL_CAN1_1),
++	PINMUX_IPSR_DATA(IP12_7_6, SSI_SCK1),
+ 	PINMUX_IPSR_DATA(IP12_7_6, MOUT6),
+ 	PINMUX_IPSR_DATA(IP12_10_8, SSI_SCK34),
+ 	PINMUX_IPSR_DATA(IP12_10_8, STP_OPWM_0),
+@@ -1659,11 +1659,11 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP14_11_9, LCDOUT1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, SCIFA0_CTS_N, SEL_SCFA_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, HCTS1_N, SEL_HSCIF1_0),
+-	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, CTS0_N, SEL_SCIF0_0),
++	PINMUX_IPSR_DATA(IP14_15_12, CTS0_N),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, MSIOF3_SYNC, SEL_SOF3_0),
+ 	PINMUX_IPSR_DATA(IP14_15_12, DU2_DG3),
+-	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, LCDOUT11, SEL_HSCIF1_0),
+-	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, PWM0_B, SEL_SCIF0_0),
++	PINMUX_IPSR_DATA(IP14_15_12, LCDOUT11),
++	PINMUX_IPSR_DATA(IP14_15_12, PWM0_B),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, IIC1_SCL_C, SEL_IIC1_2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_15_12, I2C1_SCL_C, SEL_I2C1_2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP14_18_16, SCIFA0_RTS_N, SEL_SCFA_0),
+@@ -1703,7 +1703,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP15_2_0, MSIOF3_SCK, SEL_SOF3_0),
+ 	PINMUX_IPSR_DATA(IP15_2_0, DU2_DG7),
+ 	PINMUX_IPSR_DATA(IP15_2_0, LCDOUT15),
+-	PINMUX_IPSR_MODSEL_DATA(IP15_2_0, SCIF_CLK_B, SEL_SCIFCLK_0),
++	PINMUX_IPSR_MODSEL_DATA(IP15_2_0, SCIF_CLK_B, SEL_SCIFCLK_1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP15_5_3, SCIFA2_RXD, SEL_SCIFA2_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP15_5_3, FMIN, SEL_FM_0),
+ 	PINMUX_IPSR_MODSEL_DATA(IP15_5_3, TX2, SEL_SCIF2_0),
+@@ -1722,8 +1722,7 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP15_11_9, TS_SDEN0, SEL_TSIF0_0),
+ 	PINMUX_IPSR_DATA(IP15_11_9, DU2_DG4),
+ 	PINMUX_IPSR_DATA(IP15_11_9, LCDOUT12),
+-	PINMUX_IPSR_MODSEL_DATA(IP15_11_9, HCTS0_N_C, SEL_IIC2_0),
+-	PINMUX_IPSR_MODSEL_DATA(IP15_11_9, I2C2_SDA, SEL_I2C2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP15_11_9, HCTS0_N_C, SEL_HSCIF0_2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP15_13_12, HRX0, SEL_HSCIF0_0),
+ 	PINMUX_IPSR_DATA(IP15_13_12, DU2_DB2),
+ 	PINMUX_IPSR_DATA(IP15_13_12, LCDOUT18),
 -- 
-1.7.10.4
+1.8.1.5
 
