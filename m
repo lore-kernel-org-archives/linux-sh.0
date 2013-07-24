@@ -1,32 +1,21 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Jul 2013 03:37:34 +0000
-Subject: [PATCH 02/08] ARM: shmobile: Remove sh7372 use of <mach/hardware.h>
-Message-Id: <20130724033734.30567.25082.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 24 Jul 2013 08:06:37 +0000
+Subject: Re: [PATCH 02/08] ARM: shmobile: Remove sh7372 use of <mach/hardware.h>
+Message-Id: <20130724080636.GF10027@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130724033715.30567.82782.sendpatchset@w520>
-In-Reply-To: <20130724033715.30567.82782.sendpatchset@w520>
+ <20130724033734.30567.25082.sendpatchset@w520>
+In-Reply-To: <20130724033734.30567.25082.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Jul 24, 2013 at 12:37:34PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Remove unused <mach/hardware.h> on sh7372.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Remove unused <mach/hardware.h> on sh7372.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/setup-sh7372.c |    1 -
- 1 file changed, 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2013-07-23 16:00:52.000000000 +0900
-@@ -35,7 +35,6 @@
- #include <linux/dma-mapping.h>
- #include <linux/platform_data/sh_ipmmu.h>
- #include <mach/dma-register.h>
--#include <mach/hardware.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
- #include <mach/common.h>
+Thanks, I have queued this up for v3.12 in the cleanup2 branch.
