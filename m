@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:15 +0000
+Date: Wed, 24 Jul 2013 00:32:55 +0000
 Subject: [PATCH 16/19] ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
-Message-Id: <1cf6e1795452f9c1f82b55b1a72585c42249836e.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <80d1126fae07fd4bd6a93ad626ad14e753f9d892.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,7 +17,7 @@ LED2 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts |   14 ++++++++++++++
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 14 ++++++++++++++
  1 file changed, 14 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
@@ -53,5 +53,5 @@ index 6d20247..b64705b 100644
  
  &pfc {
 -- 
-1.7.10.4
+1.8.2.1
 
