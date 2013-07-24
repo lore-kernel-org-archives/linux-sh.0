@@ -1,29 +1,32 @@
-From: Sakari Ailus <sakari.ailus@iki.fi>
-Date: Wed, 31 Jul 2013 20:40:31 +0000
-Subject: Re: [PATCH v4 1/7] media: Add support for circular graph traversal
-Message-Id: <20130731204030.GQ12281@valkosipuli.retiisi.org.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Jul 2013 03:38:20 +0000
+Subject: [PATCH 07/08] ARM: shmobile: Remove Marzen use of <mach/hardware.h>
+Message-Id: <20130724033820.30567.27069.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375285954-32153-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1375285954-32153-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375285954-32153-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130724033715.30567.82782.sendpatchset@w520>
+In-Reply-To: <20130724033715.30567.82782.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 31, 2013 at 05:52:28PM +0200, Laurent Pinchart wrote:
-> The graph traversal API (media_entity_graph_walk_*) doesn't support
-> cyclic graphs and will fail to correctly walk a graph when circular
-> links exist. Support circular graph traversal by checking whether an
-> entity has already been visited before pushing it to the stack.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, Laurent!
+Remove unused <mach/hardware.h> on Marzen.
 
-Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
--- 
-Cheers,
+ arch/arm/mach-shmobile/board-marzen.c |    1 -
+ 1 file changed, 1 deletion(-)
 
-Sakari Ailus
-e-mail: sakari.ailus@iki.fi	XMPP: sailus@retiisi.org.uk
+--- 0001/arch/arm/mach-shmobile/board-marzen.c
++++ work/arch/arm/mach-shmobile/board-marzen.c	2013-07-23 16:05:06.000000000 +0900
+@@ -37,7 +37,6 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+-#include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
