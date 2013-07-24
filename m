@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:16 +0000
+Date: Wed, 24 Jul 2013 00:32:56 +0000
 Subject: [PATCH 17/19] ARM: shmobile: kzm9g-reference: Move pinctrl mappings to device tree
-Message-Id: <61eea6ffedd96e3a1d107cde6e5f6c1a444094ff.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <ec028600f4a4bd1b272465caea3e2ff066e40377.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,8 +19,8 @@ mappings as the default pin controller state to apply them at boot time.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   51 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-kzm9g-reference.c |   40 -------------------
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   | 51 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 40 --------------------
  2 files changed, 51 insertions(+), 40 deletions(-)
 
 diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
@@ -159,5 +159,5 @@ index 6ff6ca2..fc2bb37 100644
  	/* enable SD */
  	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
 -- 
-1.7.10.4
+1.8.2.1
 
