@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:11 +0000
+Date: Wed, 24 Jul 2013 00:32:51 +0000
 Subject: [PATCH 12/19] ARM: shmobile: armadillo-reference: Add st1232 pin mappings
-Message-Id: <448bd4531a795df3d7541a4dbe40d3fab5f1f68c.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <f46a6b0f6a54e80ebf1003134f2e6f4258e53688.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,7 +18,7 @@ them as the default state for the device.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts |    7 +++++++
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 7 +++++++
  1 file changed, 7 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
@@ -45,5 +45,5 @@ index 4a7ae32..a6c6606 100644
 +	};
  };
 -- 
-1.7.10.4
+1.8.2.1
 
