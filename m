@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:14 +0000
+Date: Wed, 24 Jul 2013 00:32:54 +0000
 Subject: [PATCH 15/19] ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
-Message-Id: <fb0978516f4a7c2d62e097d05c86f47d407fe4a2.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <c4a003f6075c8e3e4e5a0d8958518882d779ef74.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,8 +19,8 @@ mappings as the default pin controller state to apply them at boot time.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  |   35 +++++++++++++++++++++++
- arch/arm/mach-shmobile/board-marzen-reference.c |   27 -----------------
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 35 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-marzen-reference.c | 27 -------------------
  2 files changed, 35 insertions(+), 27 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
@@ -120,5 +120,5 @@ index 94804f3..3d1c439 100644
  }
  
 -- 
-1.7.10.4
+1.8.2.1
 
