@@ -1,32 +1,61 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 19:01:37 +0000
-Subject: [PATCH 03/13] ARM: shmobile: Use default ->init_time() on r8a7778
-Message-Id: <20130731190137.31796.78683.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:34:07 +0000
+Subject: [PATCH 14/16] ARM: shmobile: r8a7740: add MMCIF DMA definitions
+Message-Id: <9a1456242c7c644d0032032ba80e8538b8322d3c.1374624383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731190110.31796.96552.sendpatchset@w520>
-In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
+References: <cover.1374624383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
+Add DMA channel slave IDs and configuration entries for the r8a7740
+MMCIF controller.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |  2 ++
+ arch/arm/mach-shmobile/setup-r8a7740.c        | 10 ++++++++++
+ 2 files changed, 12 insertions(+)
 
- arch/arm/mach-shmobile/setup-r8a7778.c |    1 -
- 1 file changed, 1 deletion(-)
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index b34d19b..56f3750 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -42,6 +42,8 @@ enum {
+ 	SHDMA_SLAVE_FSIB_TX,
+ 	SHDMA_SLAVE_USBHS_TX,
+ 	SHDMA_SLAVE_USBHS_RX,
++	SHDMA_SLAVE_MMCIF_TX,
++	SHDMA_SLAVE_MMCIF_RX,
+ };
+ 
+ extern void r8a7740_meram_workaround(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index ac29c2e..84c5bb6 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -588,6 +588,16 @@ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
+ 		.addr		= 0xfe1f0064,
+ 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb5,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
++		.addr		= 0xe6bd0034,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
++		.addr		= 0xe6bd0034,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0xd2,
+ 	},
+ };
+ 
+-- 
+1.8.2.1
 
---- 0001/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7778.c	2013-08-01 03:02:21.000000000 +0900
-@@ -406,7 +406,6 @@ static const char *r8a7778_compat_dt[] _
- DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
--	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a7778_compat_dt,
- 	.init_late      = r8a7778_init_late,
- MACHINE_END
