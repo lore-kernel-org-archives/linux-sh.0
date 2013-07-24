@@ -1,46 +1,56 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 08:56:09 +0000
-Subject: [PATCH v5 3/3] ARM: shmobile: lager: enable nfsroot in DTS
-Message-Id: <1374656169-9241-4-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:33:56 +0000
+Subject: [PATCH 02/16] ARM: shmobile: r8a7790: add thermal driver support
+Message-Id: <0b8eeba45143030e29ec39c43daa1383146581e6.1374624383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374656169-9241-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1374656169-9241-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1374624383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Now that Ether support has been added to the lager board
-it is possible to use nfsroot. This configuration is
-in line with that of other shmobile boards.
+The current temperature may be read using:
+cat /sys/class/thermal/thermal_zone0/temp
 
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Based on similar work for the r8a73a4 by Kuninori Morimoto.
+
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
+ arch/arm/mach-shmobile/setup-r8a7790.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-This patch has a run-time dependency on "ARM: shmobile: lager: enable Ether"
-
-v2
-* Split out as a new patch from "ARM: shmobile: lager: enable Ether"
----
- arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 09a84fc..b2f61f0 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,lager", "renesas,r8a7790";
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index b7e78b9..bc40a44 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -148,6 +148,17 @@ static struct resource irqc0_resources[] __initdata = {
+ 					  &irqc##idx##_data,		\
+ 					  sizeof(struct renesas_irqc_config))
  
- 	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+		bootargs = "console=ttySC6,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
- 	};
++static struct resource thermal_resources[] __initdata = {
++	DEFINE_RES_MEM(0xe61f0000, 0x14),
++	DEFINE_RES_MEM(0xe61f0100, 0x38),
++	DEFINE_RES_IRQ(gic_spi(69)),
++};
++
++#define r8a7790_register_thermal()					\
++	platform_device_register_simple("rcar_thermal", -1,		\
++					thermal_resources,		\
++					ARRAY_SIZE(thermal_resources))
++
+ void __init r8a7790_add_standard_devices(void)
+ {
+ 	r8a7790_register_scif(SCIFA0);
+@@ -161,6 +172,7 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_scif(HSCIF0);
+ 	r8a7790_register_scif(HSCIF1);
+ 	r8a7790_register_irqc(0);
++	r8a7790_register_thermal();
+ }
  
- 	memory@40000000 {
+ void __init r8a7790_timer_init(void)
 -- 
 1.8.2.1
 
