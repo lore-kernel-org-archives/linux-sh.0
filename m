@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:12 +0000
+Date: Wed, 24 Jul 2013 00:32:52 +0000
 Subject: [PATCH 13/19] ARM: shmobile: armadillo-reference: Move st1232 reset GPIO to DT
-Message-Id: <9900595b3dac2948112ed7745dbb28d2a8bf99f9.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <14d0a2b79623e4773e5fc78950dadac213a30400.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,8 +18,8 @@ board code.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  |    2 ++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    7 -------
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts  | 2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 7 -------
  2 files changed, 2 insertions(+), 7 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
@@ -68,5 +68,5 @@ index 4ddd299..002d8d3 100644
  }
  
 -- 
-1.7.10.4
+1.8.2.1
 
