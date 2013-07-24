@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:03 +0000
+Date: Wed, 24 Jul 2013 00:32:36 +0000
 Subject: [PATCH 09/19] ARM: shmobile: sh7372: Add pin control device to device tree
-Message-Id: <ed3dcde41b77aa23ef04ea12c46ed78a816c2a50.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <871e4b3e9e437b48287c635c5e66ba80b5cd365a.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,7 +17,7 @@ Add a pfc node to the sh7372 device tree.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh7372.dtsi |    8 ++++++++
+ arch/arm/boot/dts/sh7372.dtsi | 8 ++++++++
  1 file changed, 8 insertions(+)
 
 diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
@@ -38,5 +38,5 @@ index 7bf020e..249f65be2 100644
 +	};
  };
 -- 
-1.7.10.4
+1.8.2.1
 
