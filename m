@@ -1,61 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 01:23:10 +0000
-Subject: Re: [PATCH 01/02] ARM: shmobile: Introduce r8a7790_read_mode_pins()
-Message-Id: <20130710012309.GS32603@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Jul 2013 03:38:01 +0000
+Subject: [PATCH 05/08] ARM: shmobile: Remove AG5EVM use of <mach/hardware.h>
+Message-Id: <20130724033801.30567.89261.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130709125007.4388.15701.sendpatchset@w520>
- <20130709125016.4388.47414.sendpatchset@w520>
- <51DC08A5.2080705@cogentembedded.com>
- <CANqRtoTvSGvNWwBQ9XD43CtdJNJCebzC2xtXUQcFSXxATkuNpQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTvSGvNWwBQ9XD43CtdJNJCebzC2xtXUQcFSXxATkuNpQ@mail.gmail.com>
+References: <20130724033715.30567.82782.sendpatchset@w520>
+In-Reply-To: <20130724033715.30567.82782.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 09, 2013 at 10:05:15PM +0900, Magnus Damm wrote:
-> Hi Sergei,
-> 
-> On Tue, Jul 9, 2013 at 9:57 PM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
-> > Hello.
-> >
-> >
-> > On 09-07-2013 16:50, Magnus Damm wrote:
-> >
-> >> From: Magnus Damm <damm@opensource.se>
-> >
-> >
-> >> Break out the r8a7790 boot mode code into a separate
-> >> function so it can be shared by multiple users.
-> >
-> >
-> >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> ---
-> >
-> >
-> > [...]
-> >
-> >
-> >> --- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
-> >> +++ work/arch/arm/mach-shmobile/setup-r8a7790.c 2013-07-09
-> >> 19:59:37.000000000 +0900
-> >> @@ -201,6 +201,20 @@ void __init r8a7790_add_standard_devices
-> >>         r8a7790_register_thermal();
-> >>   }
-> >>
-> >> +#define MODEMR 0xe6160060
-> >> +
-> >> +u32 __init r8a7790_read_mode_pins(void)
-> >> +{
-> >> +       void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
-> >
-> >
-> >    Why ioremap the whole page if you only need 4 bytes, and the address is
-> > not aligned to page?
-> 
-> Because the original code did so. =)
-> 
-> But yes, indeed, using two pages seems kind of pointless.
+From: Magnus Damm <damm@opensource.se>
 
-Lets fix that up in another patch, it seems orthogonal to this change.
+Remove unused <mach/hardware.h> on AG5EVM.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-ag5evm.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/board-ag5evm.c
++++ work/arch/arm/mach-shmobile/board-ag5evm.c	2013-07-23 16:03:31.000000000 +0900
+@@ -47,7 +47,6 @@
+ #include <video/sh_mobile_lcdc.h>
+ #include <video/sh_mipi_dsi.h>
+ #include <sound/sh_fsi.h>
+-#include <mach/hardware.h>
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
