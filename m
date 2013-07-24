@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:37:09 +0000
+Date: Wed, 24 Jul 2013 00:32:49 +0000
 Subject: [PATCH 10/19] ARM: shmobile: sh73a0: Add pin control device to device tree
-Message-Id: <3e987e22d0aca598b4455948510db013e96f325a.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <3f59007e8efc29bb6cce08329bf010bcd9b19101.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,8 +18,8 @@ initialization from the corresponding board files.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi                  |    8 +++++++
- arch/arm/mach-shmobile/board-kzm9g-reference.c |   27 ++++++++++++------------
+ arch/arm/boot/dts/sh73a0.dtsi                  |  8 ++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 27 +++++++++++++-------------
  2 files changed, 21 insertions(+), 14 deletions(-)
 
 diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
@@ -101,5 +101,5 @@ index 44055fe..6ff6ca2 100644
  	/* enable SD */
  	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
 -- 
-1.7.10.4
+1.8.2.1
 
