@@ -1,50 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:31:56 +0000
-Subject: [PATCH 17/22] ARM: shmobile: Remove redundant r8a7790 callback
-Message-Id: <fdbc45dbbe5a69a2c665630ab577726e01eadf23.1374103272.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Jul 2013 13:09:27 +0000
+Subject: [PATCH 2/3] sh-pfc: sh7372: Replace <mach/irqs.h> with <linux/sh_intc.h>
+Message-Id: <1374671368-4681-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
+References: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+The mach/irqs.h header is included only to get the evt2irq macro
+definition. The macro is defined in linux/sh_intc.h, include it directly
+instead of the mach-specific header.
 
-Replace the SoC-specific callback init_machine() with
-a NULL to use the default code. This cleans up the code
-and reduces the number of lines.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c |    5 -----
- 1 file changed, 5 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index d405dbd..b7e78b9 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -176,10 +176,6 @@ void __init r8a7790_timer_init(void)
- }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 1528693..5a0b445 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -23,8 +23,7 @@
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+-
+-#include <mach/irqs.h>
++#include <linux/sh_intc.h>
  
- #ifdef CONFIG_USE_OF
--void __init r8a7790_add_standard_devices_dt(void)
--{
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
- 
- static const char *r8a7790_boards_compat_dt[] __initdata = {
- 	"renesas,r8a7790",
-@@ -187,7 +183,6 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
--	.init_machine	= r8a7790_add_standard_devices_dt,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= r8a7790_boards_compat_dt,
- MACHINE_END
+ #include "core.h"
+ #include "sh_pfc.h"
 -- 
-1.7.10.4
+1.8.1.5
 
