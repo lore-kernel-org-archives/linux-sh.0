@@ -1,41 +1,97 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 09:00:51 +0000
-Subject: [PATCH 3/5] ARM: shmobile: select the fixed regulator driver on BockW
-Message-Id: <c9996e51e45df0630cf5493fa0359a257a191eee.1375174556.git.horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:34:01 +0000
+Subject: [PATCH 07/16] ARM: shmobile: r8a73a4: add clocks for I2C controllers
+Message-Id: <1e453df90047f052cdce2041a572830c8eb32084.1374624383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375174556.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375174556.git.horms+renesas@verge.net.au>
+References: <cover.1374624383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-34767f8dccc326026f97cd63f759dd36bd83502d
-(ARM: mach-shmobile: select the fixed regulator driver on several boards)
-decided to select fixed regulator driver on Kconfig.
-BockW follows same style.
+r8a73a4 SoCs have numerous I2C controllers, of which 9 are compatible with
+the i2c-sh_mobile.c driver. This patch adds clock definitions for them.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[horms+renesas@verge.net.au: Change mach-shmobile to shmobile in changelog]
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/clock-r8a73a4.c | 25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index dd80f21..f76fca6 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -124,6 +124,7 @@ config MACH_BOCKW
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
- 	select RENESAS_INTC_IRQPIN
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select USE_OF
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 27ff58c..f831b3b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -30,6 +30,7 @@
  
- config MACH_MARZEN
+ #define SMSTPCR2 0xe6150138
+ #define SMSTPCR3 0xe615013c
++#define SMSTPCR4 0xe6150140
+ #define SMSTPCR5 0xe6150144
+ 
+ #define FRQCRA		0xE6150000
+@@ -504,8 +505,10 @@ static struct clk div6_clks[DIV6_NR] = {
+ /* MSTP */
+ enum {
+ 	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
+-	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305,
+-	MSTP522,
++	MSTP323, MSTP318, MSTP317, MSTP316,
++	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
++	MSTP411, MSTP410, MSTP409,
++	MSTP522, MSTP515,
+ 	MSTP_NR
+ };
+ 
+@@ -516,12 +519,21 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
++	[MSTP300] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 0, 0), /* IIC2 */
+ 	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1],SMSTPCR3, 5, 0), /* MMCIF1 */
+ 	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI2],SMSTPCR3, 12, 0), /* SDHI2 */
+ 	[MSTP313] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI1],SMSTPCR3, 13, 0), /* SDHI1 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI0],SMSTPCR3, 14, 0), /* SDHI0 */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0],SMSTPCR3, 15, 0), /* MMCIF0 */
++	[MSTP316] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 16, 0), /* IIC6 */
++	[MSTP317] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 17, 0), /* IIC7 */
++	[MSTP318] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 18, 0), /* IIC0 */
++	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 23, 0), /* IIC1 */
++	[MSTP409] = SH_CLK_MSTP32(&main_div2_clk,	SMSTPCR4, 9, 0), /* IIC5 */
++	[MSTP410] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 10, 0), /* IIC4 */
++	[MSTP411] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR4, 11, 0), /* IIC3 */
+ 	[MSTP522] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR5, 22, 0), /* Thermal */
++	[MSTP515] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR5, 15, 0), /* IIC8 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+@@ -566,6 +578,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
++	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+@@ -576,6 +589,14 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
++	CLKDEV_DEV_ID("e6550000.i2c", &mstp_clks[MSTP316]),
++	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
++	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
++	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
++	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
++	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
++	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
++	CLKDEV_DEV_ID("e6570000.i2c", &mstp_clks[MSTP515]),
+ 
+ 	/* for DT */
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
 -- 
-1.8.3.2
+1.8.2.1
 
