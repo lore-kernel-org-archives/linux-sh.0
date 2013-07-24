@@ -1,55 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Jul 2013 03:53:15 +0000
-Subject: [PATCH] ARM: shmobile: r8a73a4: Remove ->init_machine() special case
-Message-Id: <20130724035315.30631.28824.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 24 Jul 2013 08:07:12 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a73a4: Remove ->init_machine() special case
+Message-Id: <20130724080711.GM10027@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130724035315.30631.28824.sendpatchset@w520>
+In-Reply-To: <20130724035315.30631.28824.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, horms@verge.net.au, g.liakhovetski@gmx.de, linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-kernel@vger.kernel.org, g.liakhovetski@gmx.de, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Jul 24, 2013 at 12:53:15PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> No need to special case r8a73a4 ->init_machine(),
+> so get rid of undesired cpufreq platform device
+> from the generic long term r8a73a4 DT support code.
+> 
+> For short term support on APE6EVM the DT reference
+> implementation already adds a "cpufreq-cpu0" platform
+> device so that can be used for development.
+> 
+> Regarding more long term cpufreq support, perhaps
+> it makes sense to adjust the cpufreq driver to check
+> for DT information directly instead of using a
+> platform device for software configuration and DT
+> for hardware parameters.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/mach-shmobile/setup-r8a73a4.c |    6 ------
+>  1 file changed, 6 deletions(-)
 
-No need to special case r8a73a4 ->init_machine(),
-so get rid of undesired cpufreq platform device
-from the generic long term r8a73a4 DT support code.
-
-For short term support on APE6EVM the DT reference
-implementation already adds a "cpufreq-cpu0" platform
-device so that can be used for development.
-
-Regarding more long term cpufreq support, perhaps
-it makes sense to adjust the cpufreq driver to check
-for DT information directly instead of using a
-platform device for software configuration and DT
-for hardware parameters.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/setup-r8a73a4.c |    6 ------
- 1 file changed, 6 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-07-23 16:22:29.000000000 +0900
-@@ -215,11 +215,6 @@ void __init r8a73a4_init_delay(void)
- }
- 
- #ifdef CONFIG_USE_OF
--void __init r8a73a4_add_standard_devices_dt(void)
--{
--	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
- 
- static const char *r8a73a4_boards_compat_dt[] __initdata = {
- 	"renesas,r8a73a4",
-@@ -228,7 +223,6 @@ static const char *r8a73a4_boards_compat
- 
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
- 	.init_early	= r8a73a4_init_delay,
--	.init_machine	= r8a73a4_add_standard_devices_dt,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
- MACHINE_END
+Thanks, I have queued this up for v3.12 in the cleanup2 branch.
