@@ -1,117 +1,110 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:13 +0000
-Subject: [PATCH 01/11] ARM: shmobile: r8a73a4: add I2C controller DT nodes
-Message-Id: <f98c1069bf1748ffa18cbebbc3a9f88dfc19a631.1374478037.git.horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 00:34:08 +0000
+Subject: [PATCH 15/16] ARM: shmobile: Introduce r8a7790_read_mode_pins()
+Message-Id: <512e53bc7f0088e3adfd89b3fea3447495fc8423.1374624383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478037.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
+References: <cover.1374624383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-Add Device Tree nodes for the 9 I2C controllers on r8a73a4, compatible with
-the i2c-sh_mobile.c driver.
+Break out the r8a7790 boot mode code into a separate
+function so it can be shared by multiple users.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 81 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 81 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c        | 11 ++---------
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        | 14 ++++++++++++++
+ 3 files changed, 19 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 4ff2019..4e1ddf0 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -85,4 +85,85 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 69 4>;
- 	};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 62d8162..50d96f9 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -24,6 +24,7 @@
+ #include <linux/clkdev.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
++#include <mach/r8a7790.h>
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+@@ -42,8 +43,6 @@
+  *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
+  */
+ 
+-#define MD(nr)	(1 << nr)
+-
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x1000
+ 
+@@ -53,7 +52,6 @@
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
+ 
+-#define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+ #define SD3CKCR		0xE615007C
+@@ -288,14 +286,9 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a7790_clock_init(void)
+ {
+-	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+-	u32 mode;
++	u32 mode = r8a7790_read_mode_pins();
+ 	int k, ret = 0;
+ 
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
+-
+ 	switch (mode & (MD(14) | MD(13))) {
+ 	case 0:
+ 		R8A7790_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 7851cc1..7aaef40 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -7,4 +7,7 @@ void r8a7790_pinmux_init(void);
+ void r8a7790_init_delay(void);
+ void r8a7790_timer_init(void);
+ 
++#define MD(nr) BIT(nr)
++u32 r8a7790_read_mode_pins(void);
 +
-+	i2c0: i2c@e6500000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe6500000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 174 0x4>;
-+	};
+ #endif /* __ASM_R8A7790_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index f01542e..6acddc1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -196,6 +196,20 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_register_cmt(00);
+ }
+ 
++#define MODEMR 0xe6160060
 +
-+	i2c1: i2c@e6510000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe6510000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 175 0x4>;
-+	};
++u32 __init r8a7790_read_mode_pins(void)
++{
++	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++	u32 mode;
 +
-+	i2c2: i2c@e6520000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe6520000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 176 0x4>;
-+	};
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
 +
-+	i2c3: i2c@e6530000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe6530000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 177 0x4>;
-+	};
++	return mode;
++}
 +
-+	i2c4: i2c@e6540000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe6540000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 178 0x4>;
-+	};
-+
-+	i2c5: i2c@e60b0000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe60b0000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 179 0x4>;
-+	};
-+
-+	i2c6: i2c@e6550000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe6550000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 184 0x4>;
-+	};
-+
-+	i2c7: i2c@e6560000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe6560000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 185 0x4>;
-+	};
-+
-+	i2c8: i2c@e6570000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0 0xe6570000 0 0x428>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 173 0x4>;
-+	};
- };
+ void __init r8a7790_timer_init(void)
+ {
+ 	void __iomem *cntcr;
 -- 
 1.8.2.1
 
