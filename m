@@ -1,95 +1,84 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Jul 2013 23:40:00 +0000
-Subject: [PATCH 12/19] sh-pfc: shx3: Remove shx3_ prefix from static symbols
-Message-Id: <1373931607-4599-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Jul 2013 13:15:18 +0000
+Subject: [PATCH 12/14] sh-pfc: r8a7790: Add SCIF2 pin groups and functions
+Message-Id: <1374671720-8794-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-
-Unlike all other PFC SoC data, the shx3 data prefix all static symbols
-with shx3_. Remove the prefix to be consistent with the other source
-files.
+To: linux-arm-kernel@lists.infradead.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-shx3.c | 28 ++++++++++++++--------------
- 1 file changed, 14 insertions(+), 14 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-index 48a6c60..775a622 100644
---- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-@@ -127,7 +127,7 @@ enum {
- 	PINMUX_MARK_END,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 9acb0e5..2fd904f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2311,6 +2311,28 @@ static const unsigned int scif1_clk_e_pins[] = {
+ static const unsigned int scif1_clk_e_mux[] = {
+ 	SCK1_E_MARK,
+ };
++/* - SCIF2 ------------------------------------------------------------------ */
++static const unsigned int scif2_data_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(5, 6), RCAR_GP_PIN(5, 5),
++};
++static const unsigned int scif2_data_mux[] = {
++	RX2_MARK, TX2_MARK,
++};
++static const unsigned int scif2_clk_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(5, 4),
++};
++static const unsigned int scif2_clk_mux[] = {
++	SCK2_MARK,
++};
++static const unsigned int scif2_data_b_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(0, 24), RCAR_GP_PIN(0, 25),
++};
++static const unsigned int scif2_data_b_mux[] = {
++	RX2_B_MARK, TX2_B_MARK,
++};
+ /* - SCIFA0 ----------------------------------------------------------------- */
+ static const unsigned int scifa0_data_pins[] = {
+ 	/* RXD, TXD */
+@@ -2921,6 +2943,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scif1_clk_d),
+ 	SH_PFC_PIN_GROUP(scif1_data_e),
+ 	SH_PFC_PIN_GROUP(scif1_clk_e),
++	SH_PFC_PIN_GROUP(scif2_data),
++	SH_PFC_PIN_GROUP(scif2_clk),
++	SH_PFC_PIN_GROUP(scif2_data_b),
+ 	SH_PFC_PIN_GROUP(scifa0_data),
+ 	SH_PFC_PIN_GROUP(scifa0_clk),
+ 	SH_PFC_PIN_GROUP(scifa0_ctrl),
+@@ -3106,6 +3131,12 @@ static const char * const scif1_groups[] = {
+ 	"scif1_clk_e",
  };
  
--static const u16 shx3_pinmux_data[] = {
-+static const u16 pinmux_data[] = {
- 	/* PA GPIO */
- 	PINMUX_DATA(PA7_DATA, PA7_IN, PA7_OUT),
- 	PINMUX_DATA(PA6_DATA, PA6_IN, PA6_OUT),
-@@ -285,7 +285,7 @@ static const u16 shx3_pinmux_data[] = {
- 	PINMUX_DATA(IRQOUT_MARK,	PH0_FN),
- };
- 
--static struct sh_pfc_pin shx3_pinmux_pins[] = {
-+static struct sh_pfc_pin pinmux_pins[] = {
- 	/* PA */
- 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
- 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
-@@ -365,9 +365,9 @@ static struct sh_pfc_pin shx3_pinmux_pins[] = {
- 	PINMUX_GPIO(GPIO_PH0, PH0_DATA),
- };
- 
--#define PINMUX_FN_BASE	ARRAY_SIZE(shx3_pinmux_pins)
-+#define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
- 
--static const struct pinmux_func shx3_pinmux_func_gpios[] = {
-+static const struct pinmux_func pinmux_func_gpios[] = {
- 	/* FN */
- 	GPIO_FN(D31),
- 	GPIO_FN(D30),
-@@ -433,7 +433,7 @@ static const struct pinmux_func shx3_pinmux_func_gpios[] = {
- 	GPIO_FN(IRQOUT),
- };
- 
--static const struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
-+static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	{ PINMUX_CFG_REG("PABCR", 0xffc70000, 32, 2) {
- 		PA7_FN, PA7_OUT, PA7_IN, 0,
- 		PA6_FN, PA6_OUT, PA6_IN, 0,
-@@ -509,7 +509,7 @@ static const struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
- 	{ },
- };
- 
--static const struct pinmux_data_reg shx3_pinmux_data_regs[] = {
-+static const struct pinmux_data_reg pinmux_data_regs[] = {
- 	{ PINMUX_DATA_REG("PABDR", 0xffc70010, 32) {
- 		0, 0, 0, 0, 0, 0, 0, 0,
- 		PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
-@@ -550,12 +550,12 @@ const struct sh_pfc_soc_info shx3_pinmux_info = {
- 	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
- 	.output		= { PINMUX_OUTPUT_BEGIN,   PINMUX_OUTPUT_END },
- 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
--	.pins		= shx3_pinmux_pins,
--	.nr_pins	= ARRAY_SIZE(shx3_pinmux_pins),
--	.func_gpios	= shx3_pinmux_func_gpios,
--	.nr_func_gpios	= ARRAY_SIZE(shx3_pinmux_func_gpios),
--	.gpio_data	= shx3_pinmux_data,
--	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
--	.cfg_regs	= shx3_pinmux_config_regs,
--	.data_regs	= shx3_pinmux_data_regs,
-+	.pins		= pinmux_pins,
-+	.nr_pins	= ARRAY_SIZE(pinmux_pins),
-+	.func_gpios	= pinmux_func_gpios,
-+	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
-+	.gpio_data	= pinmux_data,
-+	.gpio_data_size	= ARRAY_SIZE(pinmux_data),
-+	.cfg_regs	= pinmux_config_regs,
-+	.data_regs	= pinmux_data_regs,
- };
++static const char * const scif2_groups[] = {
++	"scif2_data",
++	"scif2_clk",
++	"scif2_data_b",
++};
++
+ static const char * const scifa0_groups[] = {
+ 	"scifa0_data",
+ 	"scifa0_clk",
+@@ -3227,6 +3258,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(msiof3),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
++	SH_PFC_FUNCTION(scif2),
+ 	SH_PFC_FUNCTION(scifa0),
+ 	SH_PFC_FUNCTION(scifa1),
+ 	SH_PFC_FUNCTION(scifa2),
 -- 
 1.8.1.5
 
