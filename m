@@ -1,28 +1,32 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 01 Jul 2013 14:27:16 +0000
-Subject: Re: [PATCH net-next v3 2/3] sh_eth: add support RMIIMODE register
-Message-Id: <51D191C4.1030103@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Jul 2013 15:15:49 +0000
+Subject: ARM CPU Hotplug breakage on mach-shmobile and KZM9D
+Message-Id: <CANqRtoRx7voEVwJG8UNNy_Jiixo=uRJCvxTD0bZdzVohoryBUA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372652695-16606-1-git-send-email-horms+renesas@verge.net.au> <1372652695-16606-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372652695-16606-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi everyone,
 
-On 01-07-2013 8:24, Simon Horman wrote:
+Bad news: CPU Hotplug on KZM9D seems broken on recent kernels.
 
-> This change is motivated by the lager board which uses the r8a7790 SoC,
-> an R-Car SoC. For this board setting the RMIIMODE register is necessary.
+On renesas-next-20130710 or earlier I can perform the following:
 
-> This patch assumes this is valid for all R-Car SoCs.
+# echo 0 > /sys/devices/system/cpu/cpu1/online
+CPU1: shutdown
+# echo 1 > /sys/devices/system/cpu/cpu1/online
+CPU1: Booted secondary processor
+#
 
-    This is not so for this version of the patch.
+While on more recent kernels the hotplug boot fails. This may be
+related to the move to v3.11-rc. The tag renesas-next-20130710
+surprisingly seems to be the final kernel based on v3.10-rc before
+jumping to v3.11-rc.
 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+I wonder, do other ARM platforms have working CPU Hotplug in v3.11-rc?
 
-WBR, Sergei
+Cheers,
 
+/ magnus
