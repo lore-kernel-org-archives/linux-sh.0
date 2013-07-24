@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:36:58 +0000
+Date: Wed, 24 Jul 2013 00:32:31 +0000
 Subject: [PATCH 04/19] ARM: shmobile: r8a7778: Add GPIO controller devices to device tree
-Message-Id: <789ff14261cc1d951a6dfd68edd72e4b44407ddd.1374208262.git.horms+renesas@verge.net.au>
+Message-Id: <aaf7eda80cb8371bbf26d7171241cfb94b787b0f.1374625203.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374208262.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374208262.git.horms+renesas@verge.net.au>
+References: <cover.1374625203.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,7 +17,7 @@ Add GPIO controller nodes to the r8a7778 core device tree.
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi |   61 ++++++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7778.dtsi | 61 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 61 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
@@ -95,5 +95,5 @@ index c8dbf14..45ac404 100644
  	};
  };
 -- 
-1.7.10.4
+1.8.2.1
 
