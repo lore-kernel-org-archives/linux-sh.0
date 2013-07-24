@@ -1,34 +1,103 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 01:59:01 +0000
-Subject: [PATCH 2/4] ARM: shmobile: ape6evm: Enable gpio-keys in defconfig
-Message-Id: <1375149543-27564-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 24 Jul 2013 13:09:28 +0000
+Subject: [PATCH 3/3] sh-pfc: sh73a0: Remove EXT_IRQ16L and EXT_IRQ16H macros
+Message-Id: <1374671368-4681-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
+References: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/ape6evm_defconfig | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+The macros expand to irq_pin() calls and where most probably introduced
+from a copy&paste of the sh7372 PFC data. Replace them with irq_pin().
 
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-index dab5a7d..e4359c7 100644
---- a/arch/arm/configs/ape6evm_defconfig
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -54,7 +54,8 @@ CONFIG_NETDEVICES=y
- CONFIG_SMC91X=y
- CONFIG_SMSC911X=y
- # CONFIG_INPUT_MOUSEDEV is not set
--# CONFIG_INPUT_KEYBOARD is not set
-+CONFIG_INPUT_EVDEV=y
-+CONFIG_KEYBOARD_GPIO=y
- # CONFIG_INPUT_MOUSE is not set
- # CONFIG_SERIO is not set
- CONFIG_SERIAL_NONSTANDARD=y
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 68 +++++++++++++++++--------------------
+ 1 file changed, 32 insertions(+), 36 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 7956df5..d2e8168 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -3674,43 +3674,39 @@ static const struct pinmux_data_reg pinmux_data_regs[] = {
+ 	{ },
+ };
+ 
+-/* External IRQ pins mapped at IRQPIN_BASE */
+-#define EXT_IRQ16L(n) irq_pin(n)
+-#define EXT_IRQ16H(n) irq_pin(n)
+-
+ static const struct pinmux_irq pinmux_irqs[] = {
+-	PINMUX_IRQ(EXT_IRQ16H(19), 9),
+-	PINMUX_IRQ(EXT_IRQ16L(1), 10),
+-	PINMUX_IRQ(EXT_IRQ16L(0), 11),
+-	PINMUX_IRQ(EXT_IRQ16H(18), 13),
+-	PINMUX_IRQ(EXT_IRQ16H(20), 14),
+-	PINMUX_IRQ(EXT_IRQ16H(21), 15),
+-	PINMUX_IRQ(EXT_IRQ16H(31), 26),
+-	PINMUX_IRQ(EXT_IRQ16H(30), 27),
+-	PINMUX_IRQ(EXT_IRQ16H(29), 28),
+-	PINMUX_IRQ(EXT_IRQ16H(22), 40),
+-	PINMUX_IRQ(EXT_IRQ16H(23), 53),
+-	PINMUX_IRQ(EXT_IRQ16L(10), 54),
+-	PINMUX_IRQ(EXT_IRQ16L(9), 56),
+-	PINMUX_IRQ(EXT_IRQ16H(26), 115),
+-	PINMUX_IRQ(EXT_IRQ16H(27), 116),
+-	PINMUX_IRQ(EXT_IRQ16H(28), 117),
+-	PINMUX_IRQ(EXT_IRQ16H(24), 118),
+-	PINMUX_IRQ(EXT_IRQ16L(6), 147),
+-	PINMUX_IRQ(EXT_IRQ16L(2), 149),
+-	PINMUX_IRQ(EXT_IRQ16L(7), 150),
+-	PINMUX_IRQ(EXT_IRQ16L(12), 156),
+-	PINMUX_IRQ(EXT_IRQ16L(4), 159),
+-	PINMUX_IRQ(EXT_IRQ16H(25), 164),
+-	PINMUX_IRQ(EXT_IRQ16L(8), 223),
+-	PINMUX_IRQ(EXT_IRQ16L(3), 224),
+-	PINMUX_IRQ(EXT_IRQ16L(5), 227),
+-	PINMUX_IRQ(EXT_IRQ16H(17), 234),
+-	PINMUX_IRQ(EXT_IRQ16L(11), 238),
+-	PINMUX_IRQ(EXT_IRQ16L(13), 239),
+-	PINMUX_IRQ(EXT_IRQ16H(16), 249),
+-	PINMUX_IRQ(EXT_IRQ16L(14), 251),
+-	PINMUX_IRQ(EXT_IRQ16L(9), 308),
++	PINMUX_IRQ(irq_pin(19), 9),
++	PINMUX_IRQ(irq_pin(1), 10),
++	PINMUX_IRQ(irq_pin(0), 11),
++	PINMUX_IRQ(irq_pin(18), 13),
++	PINMUX_IRQ(irq_pin(20), 14),
++	PINMUX_IRQ(irq_pin(21), 15),
++	PINMUX_IRQ(irq_pin(31), 26),
++	PINMUX_IRQ(irq_pin(30), 27),
++	PINMUX_IRQ(irq_pin(29), 28),
++	PINMUX_IRQ(irq_pin(22), 40),
++	PINMUX_IRQ(irq_pin(23), 53),
++	PINMUX_IRQ(irq_pin(10), 54),
++	PINMUX_IRQ(irq_pin(9), 56),
++	PINMUX_IRQ(irq_pin(26), 115),
++	PINMUX_IRQ(irq_pin(27), 116),
++	PINMUX_IRQ(irq_pin(28), 117),
++	PINMUX_IRQ(irq_pin(24), 118),
++	PINMUX_IRQ(irq_pin(6), 147),
++	PINMUX_IRQ(irq_pin(2), 149),
++	PINMUX_IRQ(irq_pin(7), 150),
++	PINMUX_IRQ(irq_pin(12), 156),
++	PINMUX_IRQ(irq_pin(4), 159),
++	PINMUX_IRQ(irq_pin(25), 164),
++	PINMUX_IRQ(irq_pin(8), 223),
++	PINMUX_IRQ(irq_pin(3), 224),
++	PINMUX_IRQ(irq_pin(5), 227),
++	PINMUX_IRQ(irq_pin(17), 234),
++	PINMUX_IRQ(irq_pin(11), 238),
++	PINMUX_IRQ(irq_pin(13), 239),
++	PINMUX_IRQ(irq_pin(16), 249),
++	PINMUX_IRQ(irq_pin(14), 251),
++	PINMUX_IRQ(irq_pin(9), 308),
+ };
+ 
+ /* -----------------------------------------------------------------------------
 -- 
-1.8.3.2
+1.8.1.5
 
