@@ -1,47 +1,32 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 31 Jul 2013 01:33:49 +0000
-Subject: [PATCH 1/4] ARM: shmobile: armadillo800eva: Don't request GPIO 166 in board code
-Message-Id: <16b551dd22cc7edacb952f7a2e175f36c3aa4bdb.1375234088.git.horms+renesas@verge.net.au>
+Date: Wed, 24 Jul 2013 08:56:06 +0000
+Subject: [PATCH v5 0/3] ARM: shmobile: lager: enable Ether
+Message-Id: <1374656169-9241-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375234088.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375234088.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+this short series enables the on-board ethernet
+of the r8a7790 SoC for on lager board.
 
-89ae7b5bbd3e65bc6ab7a577ca5ec18569589c8c
-(ARM: shmobile: armadillo800eva: Register pinctrl mapping for INTC)
-mistakenly requests GPIO 166 in board code,
-most probably due to a wrong merge conflict resolution.
-As the GPIO is passed to the st1232 driver through platform
-data and requested by the driver,
-there's no need to request it in board code. Fix it.
+It has a run-time dependency on
+"sh_eth: add support for r8a7790 SoC"
 
-Tested by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-armadillo800eva.c | 3 ---
- 1 file changed, 3 deletions(-)
+It has been built on top of renesas-next-20130724v2.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index e115f67..c5be60d 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1162,9 +1162,6 @@ static void __init eva_init(void)
- 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
- 	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
- 
--	/* Touchscreen */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
--
- 	/* GETHER */
- 	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
- 
+Simon Horman (3):
+  ARM: shmobile: r8a7790: clocks for Ether support
+  ARM: shmobile: lager: enable Ether
+  ARM: shmobile: lager: enable nfsroot in DTS
+
+ arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
+ arch/arm/mach-shmobile/board-lager.c   | 30 ++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
+ 3 files changed, 35 insertions(+), 1 deletion(-)
+
 -- 
-1.8.3.2
+1.8.2.1
 
