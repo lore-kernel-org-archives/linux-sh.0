@@ -1,42 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 30 Jul 2013 07:01:02 +0000
-Subject: Re: [PATCH 4/6 v2] ARM: shmobile: r8a7778: cleanup registration of i2c
-Message-Id: <87d2q0edlh.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Jul 2013 07:30:42 +0000
+Subject: [PATCH] ARM: shmobile: marzen: Switch to DT_MACHINE_START
+Message-Id: <20130724073042.28351.33041.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871u6ldb9z.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871u6ldb9z.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Simon
+Convert the marzen board to use DT_MACHINE_START. With this in
+place all mach-shmobile boards use DT_MACHINE_START. Also, this
+makes it possible for the r8a7779 SMP code to use DT for CPUs.
 
-> > > > I notice that you are now registering i2c devices in
-> > > > r8a7778_add_dt_devices(). Which I believe means that they
-> > > > will be registered in C when bockw-reference is used.
-> > > > Is that intentional?
-> > > 
-> > > Oops, it is my mistake.
-> > > I2C should not be called from C when bockw-reference.
-> > > Can I send v2 patch ?
-> > 
-> > Please do.
-> > 
-> > Could you also re-post 5/6 at the same time?
-> > No changes are required.
-> 
-> OK, will do
+So appended DTB is the way forward on this board.
 
-These are v3 of above
-based on renesas-devel-20130730
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Kuninori Morimoto (2):
-      ARM: shmobile: r8a7778: i2c should not be called from C in DT
-      ARM: shmobile: r8a7778: cleanup registration of hspi
+ Written on top of renesas-devel-20130724
 
- arch/arm/mach-shmobile/board-bockw.c          |    1 -
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 -
- arch/arm/mach-shmobile/setup-r8a7778.c        |   13 ++++++++-----
- 3 files changed, 8 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/board-marzen.c
++++ work/arch/arm/mach-shmobile/board-marzen.c	2013-07-24 15:45:39.000000000 +0900
+@@ -238,7 +238,7 @@ static void __init marzen_init(void)
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+ 
+-MACHINE_START(MARZEN, "marzen")
++DT_MACHINE_START(MARZEN, "marzen")
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= r8a7779_add_early_devices,
