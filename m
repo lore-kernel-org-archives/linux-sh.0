@@ -1,60 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 01:03:17 +0000
-Subject: Re: [PATCH] ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference
-Message-Id: <20130710010317.GG32603@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 24 Jul 2013 03:37:52 +0000
+Subject: [PATCH 04/08] ARM: shmobile: Remove r8a7779 use of <mach/hardware.h>
+Message-Id: <20130724033752.30567.70305.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130709042654.13658.20164.sendpatchset@w520>
- <51DBF7CD.8040009@cogentembedded.com>
- <CANqRtoQfkk9KFggw5dadqih-kqNTCGC+kVCKkOUO8G=1w+kh6g@mail.gmail.com>
- <51DC0BA0.2060306@cogentembedded.com>
-In-Reply-To: <51DC0BA0.2060306@cogentembedded.com>
+References: <20130724033715.30567.82782.sendpatchset@w520>
+In-Reply-To: <20130724033715.30567.82782.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 09, 2013 at 05:09:52PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 09-07-2013 17:03, Magnus Damm wrote:
-> 
-> >>>From: Magnus Damm <damm@opensource.se>
-> 
-> >>>Add support for the SMSC ethernet controller found
-> >>>on the KZM9D board to the KZM9D DT Reference code.
-> 
-> >>>Signed-off-by: Magnus Damm <damm@opensource.se>
-> >>>---
-> 
-> >>>   Built on top of renesas-next-20130704v2 and
-> >>>   [PATCH] ARM: shmobile: KZM9D DT reference implementation
-> 
-> >>>   arch/arm/boot/dts/emev2-kzm9d-reference.dts |   31
-> >>>+++++++++++++++++++++++++++
-> >>>   1 file changed, 31 insertions(+)
-> 
-> >>>--- 0002/arch/arm/boot/dts/emev2-kzm9d-reference.dts
-> >>>+++ work/arch/arm/boot/dts/emev2-kzm9d-reference.dts    2013-07-09
-> >>>13:06:47.000000000 +0900
-> >>>@@ -23,4 +23,35 @@
-> 
-> >>[...]
-> 
-> >>>+       lan9220@20000000 {
-> 
-> >>    Shouldn't all the Ethernet nodes be called "ethernet"?
-> 
-> >Good question. Grepping in arch/arm/boot/dts shows various ways to
-> >name the Ethernet nodes. Exactly what is correct or not I can't really
-> >say.
-> 
->    See "Node Names" section of [1].
-> 
-> [1] http://www.devicetree.org/Device_Tree_Usage
+From: Magnus Damm <damm@opensource.se>
 
-I will queue up this patch for v3.12 in the dt branch and
-it should appear in renesas-next-20130710.
+Remove unused <mach/hardware.h> on r8a7779.
 
-If there is a desire to consistently name nodes as "ethernet" for shmobile
-then I would appreciate a cleanup patches to fix all the relevant dts and
-dtsi files. One SoC or board per patch.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2013-07-23 16:02:42.000000000 +0900
+@@ -36,7 +36,6 @@
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+-#include <mach/hardware.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
