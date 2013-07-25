@@ -1,7 +1,7 @@
-From: Willy Tarreau <w@1wt.eu>
-Date: Thu, 25 Jul 2013 05:40:36 +0000
+From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
+Date: Thu, 25 Jul 2013 06:41:08 +0000
 Subject: Re: Mainline kernel on snowball
-Message-Id: <20130725054036.GD31954@1wt.eu>
+Message-Id: <20130725064108.GH1754@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130725052317.GA25854@verge.net.au>
 In-Reply-To: <20130725052317.GA25854@verge.net.au>
@@ -10,11 +10,9 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+Hello Simon,
 
 On Thu, Jul 25, 2013 at 02:23:17PM +0900, Simon Horman wrote:
-> Hi,
->=20
 > I apologise for the na=EFve nature of this question,
 > but I do not seem to be able to make any progress of my own accord.
 >=20
@@ -35,6 +33,13 @@ On Thu, Jul 25, 2013 at 02:23:17PM +0900, Simon Horman wrote:
 > 2. Append dtb to zImage and recreate uImage
 > mv arch/arm/boot/zImage arch/arm/boot/zImage.tmp
 > cat arch/arm/boot/zImage.tmp arch/arm/boot/dts/snowball.dtb
+There must be a redirection in the cat command, something like
+
+	cat arch/arm/boot/zImage.tmp arch/arm/boot/dts/snowball.dtb > arch/arm/boo=
+t/zImage
+
+(I guess you have that as otherwise the following command would fail.)
+
 > /bin/sh scripts/mkuboot.sh \
 > 	-A arm -O linux -C none  -T kernel \
 > 	-a 0x100000 -e 0x100000 -n 'Linux-3.10.2' \
@@ -73,27 +78,12 @@ On Thu, Jul 25, 2013 at 02:23:17PM +0900, Simon Horman wrote:
 > OK
 >=20
 > Starting kernel ...
->=20
->=20
-> This is as far as it gets.
+Try enabling DEBUG_LL and EARLY_PRINTK and pass "earlyprintk" on the
+kernel commandline. That might make the kernel more talkative.
 
-Are you sure you have the correct bootargs by default ? It was a
-pain for me to figure the correct ones, and I finally found them
-in the boot scripts. Mine is booted with this :
+Best regards
+Uwe
 
-# cat /proc/cmdline=20
-console=3Dtty0 console=3DttyAMA2,115200n8  root=3DUUID=018e1580-e7e9-460b-9=
-5c5-236f6b87b13d rootwait ro fixrtc nocompcache vmalloc00M mem=128M@0 mali.=
-mali_memdM@128M hwmem=168M@192M mem"M@360M mem_issw=3D1M@383M memd0M@384M
-
-# uname -a
-Linux snowball 3.10.0-rc5-snowball #2 SMP Fri Jun 14 09:19:28 CEST 2013 arm=
-v7l GNU/Linux
-
-I don't have the CONFIG_ARM_APPENDED_DTB set, instead I have copied
-the dtb on the flash since u-boot supports it (I find this boot
-procedure quite annoying btw).
-
-Hoping this helps,
-Willy
-
+--=20
+Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
