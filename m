@@ -1,33 +1,82 @@
-From: Chen Gang <gang.chen@asianux.com>
-Date: Tue, 30 Jul 2013 02:09:42 +0000
-Subject: [PATCH 2/2] sh64: kernel: remove useless variable 'regs'
-Message-Id: <51F72066.9080407@asianux.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 25 Jul 2013 23:26:42 +0000
+Subject: [PATCH 06/12] mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
+Message-Id: <1374794808-21890-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-remvoe useless variable 'regs' to avoid the related warnings (warning
-is treated as error).
+All platforms now pass the CD and RO GPIOs to the MMC SPI driver, those
+callbacks are not used anymore. Remove them.
 
-Signed-off-by: Chen Gang <gang.chen@asianux.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/kernel/process_64.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ drivers/mmc/host/mmc_spi.c  | 24 ++----------------------
+ include/linux/spi/mmc_spi.h |  9 ---------
+ 2 files changed, 2 insertions(+), 31 deletions(-)
 
-diff --git a/arch/sh/kernel/process_64.c b/arch/sh/kernel/process_64.c
-index eac5947..e2062e6 100644
---- a/arch/sh/kernel/process_64.c
-+++ b/arch/sh/kernel/process_64.c
-@@ -374,7 +374,7 @@ asmlinkage void ret_from_kernel_thread(void);
- int copy_thread(unsigned long clone_flags, unsigned long usp,
- 		unsigned long arg, struct task_struct *p)
- {
--	struct pt_regs *childregs, *regs = current_pt_regs();
-+	struct pt_regs *childregs;
+diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
+index 4e83908..19aa660 100644
+--- a/drivers/mmc/host/mmc_spi.c
++++ b/drivers/mmc/host/mmc_spi.c
+@@ -1273,31 +1273,11 @@ static void mmc_spi_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	}
+ }
  
- #ifdef CONFIG_SH_FPU
- 	/* can't happen for a kernel thread */
+-static int mmc_spi_get_ro(struct mmc_host *mmc)
+-{
+-	struct mmc_spi_host *host = mmc_priv(mmc);
+-
+-	if (host->pdata && host->pdata->get_ro)
+-		return !!host->pdata->get_ro(mmc->parent);
+-	else
+-		return mmc_gpio_get_ro(mmc);
+-}
+-
+-static int mmc_spi_get_cd(struct mmc_host *mmc)
+-{
+-	struct mmc_spi_host *host = mmc_priv(mmc);
+-
+-	if (host->pdata && host->pdata->get_cd)
+-		return !!host->pdata->get_cd(mmc->parent);
+-	else
+-		return mmc_gpio_get_cd(mmc);
+-}
+-
+ static const struct mmc_host_ops mmc_spi_ops = {
+ 	.request	= mmc_spi_request,
+ 	.set_ios	= mmc_spi_set_ios,
+-	.get_ro		= mmc_spi_get_ro,
+-	.get_cd		= mmc_spi_get_cd,
++	.get_ro		= mmc_gpio_get_ro,
++	.get_cd		= mmc_gpio_get_cd,
+ };
+ 
+ 
+diff --git a/include/linux/spi/mmc_spi.h b/include/linux/spi/mmc_spi.h
+index a54da4a..46cc2f8 100644
+--- a/include/linux/spi/mmc_spi.h
++++ b/include/linux/spi/mmc_spi.h
+@@ -26,15 +26,6 @@ struct mmc_spi_platform_data {
+ 		void *);
+ 	void (*exit)(struct device *, void *);
+ 
+-	/* sense switch on sd cards */
+-	int (*get_ro)(struct device *);
+-
+-	/*
+-	 * If board does not use CD interrupts, driver can optimize polling
+-	 * using this function.
+-	 */
+-	int (*get_cd)(struct device *);
+-
+ 	/* Card Detect and Read Only GPIOs */
+ 	unsigned int flags;
+ 	unsigned int cd_gpio;
 -- 
-1.7.7.6
+1.8.1.5
+
