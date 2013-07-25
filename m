@@ -1,342 +1,67 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:21:50 +0000
-Subject: [PATCH v2 06/23] drm/rcar-du: Split LVDS encoder and connector
-Message-Id: <1375276927-20181-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 25 Jul 2013 23:26:47 +0000
+Subject: [PATCH 11/12] mmc: tmio-mmc: Remove .get_cd() callback from platform data
+Message-Id: <1374794808-21890-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This prepares for the encoders rework.
+All platforms pass the CD GPIO number to the driver in the .cd_gpio
+field. The .get_cd() callback isn't used anymore, remove it
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/Makefile          |   1 +
- drivers/gpu/drm/rcar-du/rcar_du_lvds.c    | 120 +--------------------------
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 130 ++++++++++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h |  25 ++++++
- 4 files changed, 158 insertions(+), 118 deletions(-)
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
+ drivers/mmc/host/tmio_mmc_pio.c | 16 +---------------
+ include/linux/mfd/tmio.h        |  1 -
+ 2 files changed, 1 insertion(+), 16 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/Makefile b/drivers/gpu/drm/rcar-du/Makefile
-index 7333c00..5def510 100644
---- a/drivers/gpu/drm/rcar-du/Makefile
-+++ b/drivers/gpu/drm/rcar-du/Makefile
-@@ -2,6 +2,7 @@ rcar-du-drm-y := rcar_du_crtc.o \
- 		 rcar_du_drv.o \
- 		 rcar_du_kms.o \
- 		 rcar_du_lvds.o \
-+		 rcar_du_lvdscon.o \
- 		 rcar_du_plane.o \
- 		 rcar_du_vga.o
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b72edb7..a335fb8 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -932,25 +932,11 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ 		 (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
+ }
  
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvds.c b/drivers/gpu/drm/rcar-du/rcar_du_lvds.c
-index 7aefe72..82e5157 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvds.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvds.c
-@@ -1,5 +1,5 @@
- /*
-- * rcar_du_lvds.c  --  R-Car Display Unit LVDS Encoder and Connector
-+ * rcar_du_lvds.c  --  R-Car Display Unit LVDS Encoder
-  *
-  * Copyright (C) 2013 Renesas Corporation
-  *
-@@ -18,123 +18,7 @@
- #include "rcar_du_drv.h"
- #include "rcar_du_kms.h"
- #include "rcar_du_lvds.h"
--
--struct rcar_du_lvds_connector {
--	struct rcar_du_connector connector;
--
--	const struct rcar_du_panel_data *panel;
--};
--
--#define to_rcar_lvds_connector(c) \
--	container_of(c, struct rcar_du_lvds_connector, connector.connector)
--
--/* -----------------------------------------------------------------------------
-- * Connector
-- */
--
--static int rcar_du_lvds_connector_get_modes(struct drm_connector *connector)
+-static int tmio_mmc_get_cd(struct mmc_host *mmc)
 -{
--	struct rcar_du_lvds_connector *lvdscon = to_rcar_lvds_connector(connector);
--	struct drm_display_mode *mode;
--
--	mode = drm_mode_create(connector->dev);
--	if (mode = NULL)
--		return 0;
--
--	mode->type = DRM_MODE_TYPE_PREFERRED | DRM_MODE_TYPE_DRIVER;
--	mode->clock = lvdscon->panel->mode.clock;
--	mode->hdisplay = lvdscon->panel->mode.hdisplay;
--	mode->hsync_start = lvdscon->panel->mode.hsync_start;
--	mode->hsync_end = lvdscon->panel->mode.hsync_end;
--	mode->htotal = lvdscon->panel->mode.htotal;
--	mode->vdisplay = lvdscon->panel->mode.vdisplay;
--	mode->vsync_start = lvdscon->panel->mode.vsync_start;
--	mode->vsync_end = lvdscon->panel->mode.vsync_end;
--	mode->vtotal = lvdscon->panel->mode.vtotal;
--	mode->flags = lvdscon->panel->mode.flags;
--
--	drm_mode_set_name(mode);
--	drm_mode_probed_add(connector, mode);
--
--	return 1;
--}
--
--static int rcar_du_lvds_connector_mode_valid(struct drm_connector *connector,
--					    struct drm_display_mode *mode)
--{
--	return MODE_OK;
--}
--
--static const struct drm_connector_helper_funcs connector_helper_funcs = {
--	.get_modes = rcar_du_lvds_connector_get_modes,
--	.mode_valid = rcar_du_lvds_connector_mode_valid,
--	.best_encoder = rcar_du_connector_best_encoder,
--};
--
--static void rcar_du_lvds_connector_destroy(struct drm_connector *connector)
--{
--	drm_sysfs_connector_remove(connector);
--	drm_connector_cleanup(connector);
--}
--
--static enum drm_connector_status
--rcar_du_lvds_connector_detect(struct drm_connector *connector, bool force)
--{
--	return connector_status_connected;
--}
--
--static const struct drm_connector_funcs connector_funcs = {
--	.dpms = drm_helper_connector_dpms,
--	.detect = rcar_du_lvds_connector_detect,
--	.fill_modes = drm_helper_probe_single_connector_modes,
--	.destroy = rcar_du_lvds_connector_destroy,
--};
--
--static int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
--				       struct rcar_du_encoder *renc,
--				       const struct rcar_du_panel_data *panel)
--{
--	struct rcar_du_lvds_connector *lvdscon;
--	struct drm_connector *connector;
--	int ret;
--
--	lvdscon = devm_kzalloc(rcdu->dev, sizeof(*lvdscon), GFP_KERNEL);
--	if (lvdscon = NULL)
--		return -ENOMEM;
--
--	lvdscon->panel = panel;
--
--	connector = &lvdscon->connector.connector;
--	connector->display_info.width_mm = panel->width_mm;
--	connector->display_info.height_mm = panel->height_mm;
--
--	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
--				 DRM_MODE_CONNECTOR_LVDS);
--	if (ret < 0)
+-	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct tmio_mmc_data *pdata = host->pdata;
+-	int ret = mmc_gpio_get_cd(mmc);
+-	if (ret >= 0)
 -		return ret;
 -
--	drm_connector_helper_add(connector, &connector_helper_funcs);
--	ret = drm_sysfs_connector_add(connector);
--	if (ret < 0)
--		return ret;
--
--	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
--	drm_object_property_set_value(&connector->base,
--		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
--
--	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
--	if (ret < 0)
--		return ret;
--
--	connector->encoder = &renc->encoder;
--	lvdscon->connector.encoder = renc;
--
--	return 0;
+-	if (!pdata->get_cd)
+-		return -ENOSYS;
+-	else
+-		return pdata->get_cd(host->pdev);
 -}
 -
--/* -----------------------------------------------------------------------------
-- * Encoder
-- */
-+#include "rcar_du_lvdscon.h"
+ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.request	= tmio_mmc_request,
+ 	.set_ios	= tmio_mmc_set_ios,
+ 	.get_ro         = tmio_mmc_get_ro,
+-	.get_cd		= tmio_mmc_get_cd,
++	.get_cd		= mmc_gpio_get_cd,
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
+ };
  
- static void rcar_du_lvds_encoder_dpms(struct drm_encoder *encoder, int mode)
- {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-new file mode 100644
-index 0000000..6cfcc94
---- /dev/null
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-@@ -0,0 +1,130 @@
-+/*
-+ * rcar_du_lvdscon.c  --  R-Car Display Unit LVDS Connector
-+ *
-+ * Copyright (C) 2013 Renesas Corporation
-+ *
-+ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#include <drm/drmP.h>
-+#include <drm/drm_crtc.h>
-+#include <drm/drm_crtc_helper.h>
-+
-+#include "rcar_du_drv.h"
-+#include "rcar_du_kms.h"
-+#include "rcar_du_lvdscon.h"
-+
-+struct rcar_du_lvds_connector {
-+	struct rcar_du_connector connector;
-+
-+	const struct rcar_du_panel_data *panel;
-+};
-+
-+#define to_rcar_lvds_connector(c) \
-+	container_of(c, struct rcar_du_lvds_connector, connector.connector)
-+
-+static int rcar_du_lvds_connector_get_modes(struct drm_connector *connector)
-+{
-+	struct rcar_du_lvds_connector *lvdscon +		to_rcar_lvds_connector(connector);
-+	struct drm_display_mode *mode;
-+
-+	mode = drm_mode_create(connector->dev);
-+	if (mode = NULL)
-+		return 0;
-+
-+	mode->type = DRM_MODE_TYPE_PREFERRED | DRM_MODE_TYPE_DRIVER;
-+	mode->clock = lvdscon->panel->mode.clock;
-+	mode->hdisplay = lvdscon->panel->mode.hdisplay;
-+	mode->hsync_start = lvdscon->panel->mode.hsync_start;
-+	mode->hsync_end = lvdscon->panel->mode.hsync_end;
-+	mode->htotal = lvdscon->panel->mode.htotal;
-+	mode->vdisplay = lvdscon->panel->mode.vdisplay;
-+	mode->vsync_start = lvdscon->panel->mode.vsync_start;
-+	mode->vsync_end = lvdscon->panel->mode.vsync_end;
-+	mode->vtotal = lvdscon->panel->mode.vtotal;
-+	mode->flags = lvdscon->panel->mode.flags;
-+
-+	drm_mode_set_name(mode);
-+	drm_mode_probed_add(connector, mode);
-+
-+	return 1;
-+}
-+
-+static int rcar_du_lvds_connector_mode_valid(struct drm_connector *connector,
-+					    struct drm_display_mode *mode)
-+{
-+	return MODE_OK;
-+}
-+
-+static const struct drm_connector_helper_funcs connector_helper_funcs = {
-+	.get_modes = rcar_du_lvds_connector_get_modes,
-+	.mode_valid = rcar_du_lvds_connector_mode_valid,
-+	.best_encoder = rcar_du_connector_best_encoder,
-+};
-+
-+static void rcar_du_lvds_connector_destroy(struct drm_connector *connector)
-+{
-+	drm_sysfs_connector_remove(connector);
-+	drm_connector_cleanup(connector);
-+}
-+
-+static enum drm_connector_status
-+rcar_du_lvds_connector_detect(struct drm_connector *connector, bool force)
-+{
-+	return connector_status_connected;
-+}
-+
-+static const struct drm_connector_funcs connector_funcs = {
-+	.dpms = drm_helper_connector_dpms,
-+	.detect = rcar_du_lvds_connector_detect,
-+	.fill_modes = drm_helper_probe_single_connector_modes,
-+	.destroy = rcar_du_lvds_connector_destroy,
-+};
-+
-+int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
-+				struct rcar_du_encoder *renc,
-+				const struct rcar_du_panel_data *panel)
-+{
-+	struct rcar_du_lvds_connector *lvdscon;
-+	struct drm_connector *connector;
-+	int ret;
-+
-+	lvdscon = devm_kzalloc(rcdu->dev, sizeof(*lvdscon), GFP_KERNEL);
-+	if (lvdscon = NULL)
-+		return -ENOMEM;
-+
-+	lvdscon->panel = panel;
-+
-+	connector = &lvdscon->connector.connector;
-+	connector->display_info.width_mm = panel->width_mm;
-+	connector->display_info.height_mm = panel->height_mm;
-+
-+	ret = drm_connector_init(rcdu->ddev, connector, &connector_funcs,
-+				 DRM_MODE_CONNECTOR_LVDS);
-+	if (ret < 0)
-+		return ret;
-+
-+	drm_connector_helper_add(connector, &connector_helper_funcs);
-+	ret = drm_sysfs_connector_add(connector);
-+	if (ret < 0)
-+		return ret;
-+
-+	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
-+	drm_object_property_set_value(&connector->base,
-+		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
-+
-+	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
-+	if (ret < 0)
-+		return ret;
-+
-+	connector->encoder = &renc->encoder;
-+	lvdscon->connector.encoder = renc;
-+
-+	return 0;
-+}
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
-new file mode 100644
-index 0000000..bff8683
---- /dev/null
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
-@@ -0,0 +1,25 @@
-+/*
-+ * rcar_du_lvdscon.h  --  R-Car Display Unit LVDS Connector
-+ *
-+ * Copyright (C) 2013 Renesas Corporation
-+ *
-+ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __RCAR_DU_LVDSCON_H__
-+#define __RCAR_DU_LVDSCON_H__
-+
-+struct rcar_du_device;
-+struct rcar_du_encoder;
-+struct rcar_du_panel_data;
-+
-+int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
-+				struct rcar_du_encoder *renc,
-+				const struct rcar_du_panel_data *panel);
-+
-+#endif /* __RCAR_DU_LVDSCON_H__ */
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index ce35113..b22883d 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -108,7 +108,6 @@ struct tmio_mmc_data {
+ 	unsigned int			cd_gpio;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+-	int (*get_cd)(struct platform_device *host);
+ 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
+ 	/* clock management callbacks */
+ 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
 -- 
 1.8.1.5
 
