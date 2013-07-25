@@ -1,57 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:55 +0000
-Subject: [PATCH 16/19] ARM: shmobile: marzen-reference: Add LED2-LED4 to the device tree
-Message-Id: <80d1126fae07fd4bd6a93ad626ad14e753f9d892.1374625203.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 25 Jul 2013 22:51:00 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7740: Add TPU node to the device tree
+Message-Id: <1374792660-15893-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
+References: <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-LED2 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+To: linux-sh@vger.kernel.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ arch/arm/boot/dts/r8a7740.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 6d20247..b64705b 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -11,6 +11,7 @@
- 
- /dts-v1/;
- /include/ "r8a7779.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "marzen";
-@@ -47,6 +48,19 @@
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index e18a195..639822d 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -147,4 +147,11 @@
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
  	};
 +
-+	leds {
-+		compatible = "gpio-leds";
-+		led2 {
-+			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-+		};
-+		led3 {
-+			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-+		};
-+		led4 {
-+			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-+		};
++	tpu: pwm@e6600000 {
++		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
++		reg = <0xe6600000 0x100>;
++		status = "disabled";
++		#pwm-cells = <3>;
 +	};
  };
- 
- &pfc {
 -- 
-1.8.2.1
+1.8.1.5
 
