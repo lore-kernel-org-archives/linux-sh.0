@@ -1,47 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Jul 2013 13:15:06 +0000
-Subject: [PATCH 00/14] sh-pfc: r8a7790: Various fixes and improvements
-Message-Id: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 25 Jul 2013 02:13:40 +0000
+Subject: [PATCH v2 0/3] ARM: shmobile: marzen: Switch to DT_MACHINE_START
+Message-Id: <1374718423-24230-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+A short series to use DT_MACHINE_START on the marzen board.
 
-Here's a set of 14 assorted sh-pfc fixes, cleanups and improvements for the
-r8a7790 platform. There's not much more to tell, the individual patches are
-pretty self-descriptive.
+Changes since v1
 
-Kunihito Higashiyama (1):
-  sh-pfc: r8a7790: Add MSIOF pin groups and functions
+* Add "ARM: shmobile: marzen: Enable ARM_APPENDED_DTB in defconfig" patch
+* Add "ARM: shmobile: r8a7779: Rely on DT for SMP CPU info" patch
+* Enhance "ARM: shmobile: marzen: Switch to DT_MACHINE_START" to:
+  - Select USE_OF in Kconfig
+  - Provide dt_compat in DT_MACHINE_START
+  - Provide r8a7779-marzen dts
 
-Laurent Pinchart (2):
-  sh-pfc: r8a7790: Sort pin groups and functions alphabetically
-  sh-pfc: r8a7790: Add SCIF2 pin groups and functions
+Magnus Damm (1):
+  ARM: shmobile: marzen: Switch to DT_MACHINE_START
 
-Shinobu Uehara (2):
-  sh-pfc: r8a7790: Add USB pin groups and functions
-  sh-pfc: r8a7790: Add VIN pin groups and functions
+Simon Horman (2):
+  ARM: shmobile: r8a7779: Rely on DT for SMP CPU info
+  ARM: shmobile: marzen: Enable ARM_APPENDED_DTB in defconfig
 
-Shinya Kuribayashi (9):
-  sh-pfc: r8a7790: Rename I2C SDA/SCL pins
-  sh-pfc: r8a7790: Remove trailing '_TANS' string from RTS/CTS pins
-  sh-pfc: r8a7790: Remove deprecated Ethernet MII/RMII pins
-  sh-pfc: r8a7790: Remove deprecated RDS pins
-  sh-pfc: r8a7790: Remove deprecated SPV_EVEN pin
-  sh-pfc: r8a7790: Swap SCIFA2_RXD_B and HRX0_C configurations
-  sh-pfc: r8a7790: Add TCLK1 pin configuration support
-  sh-pfc: r8a7790: Add SCIF2 pins configuration support
-  sh-pfc: r8a7790: Fix miscellaneous pinmux configuration tables
-    mistakes
-
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 1621 +++++++++++++++++++++-------------
- 1 file changed, 994 insertions(+), 627 deletions(-)
+ arch/arm/boot/dts/Makefile            |  1 +
+ arch/arm/boot/dts/r8a7779-marzen.dts  | 27 +++++++++++++++++++++++++++
+ arch/arm/configs/marzen_defconfig     |  1 +
+ arch/arm/mach-shmobile/Kconfig        |  1 +
+ arch/arm/mach-shmobile/board-marzen.c |  8 +++++++-
+ arch/arm/mach-shmobile/smp-r8a7779.c  | 12 +++---------
+ 6 files changed, 40 insertions(+), 10 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a7779-marzen.dts
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.2.1
 
