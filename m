@@ -1,292 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Jul 2013 13:15:17 +0000
-Subject: [PATCH 11/14] sh-pfc: r8a7790: Add MSIOF pin groups and functions
-Message-Id: <1374671720-8794-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 25 Jul 2013 02:13:42 +0000
+Subject: [PATCH v2 2/3] ARM: shmobile: r8a7779: Rely on DT for SMP CPU info
+Message-Id: <1374718423-24230-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374671720-8794-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1374718423-24230-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1374718423-24230-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kunihito Higashiyama <kunihito.higashiyama.ur@renesas.com>
+Remove r8a7779 specific ->smp_init_cpus() callback and
+instead of relying on shmobile_smp_init_cpus() simply
+use DT for CPU core information.
 
-Signed-off-by: Kunihito Higashiyama <kunihito.higashiyama.ur@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Based on work for the sh73a0 by Magnus Damm.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+--
+
+Run-time dependency on "ARM: shmobile: marzen: Switch to DT_MACHINE_START".
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 236 +++++++++++++++++++++++++++++++++++
- 1 file changed, 236 insertions(+)
+ arch/arm/mach-shmobile/smp-r8a7779.c | 12 +++---------
+ 1 file changed, 3 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 7f7b2bd..9acb0e5 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -2046,6 +2046,178 @@ static const unsigned int mmc1_ctrl_pins[] = {
- static const unsigned int mmc1_ctrl_mux[] = {
- 	MMC1_CLK_MARK, MMC1_CMD_MARK,
- };
-+/* - MSIOF0 ----------------------------------------------------------------- */
-+static const unsigned int msiof0_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(5, 12),
-+};
-+static const unsigned int msiof0_clk_mux[] = {
-+	MSIOF0_SCK_MARK,
-+};
-+static const unsigned int msiof0_sync_pins[] = {
-+	/* SYNC */
-+	RCAR_GP_PIN(5, 13),
-+};
-+static const unsigned int msiof0_sync_mux[] = {
-+	MSIOF0_SYNC_MARK,
-+};
-+static const unsigned int msiof0_ss1_pins[] = {
-+	/* SS1 */
-+	RCAR_GP_PIN(5, 14),
-+};
-+static const unsigned int msiof0_ss1_mux[] = {
-+	MSIOF0_SS1_MARK,
-+};
-+static const unsigned int msiof0_ss2_pins[] = {
-+	/* SS2 */
-+	RCAR_GP_PIN(5, 16),
-+};
-+static const unsigned int msiof0_ss2_mux[] = {
-+	MSIOF0_SS2_MARK,
-+};
-+static const unsigned int msiof0_rx_pins[] = {
-+	/* RXD */
-+	RCAR_GP_PIN(5, 17),
-+};
-+static const unsigned int msiof0_rx_mux[] = {
-+	MSIOF0_RXD_MARK,
-+};
-+static const unsigned int msiof0_tx_pins[] = {
-+	/* TXD */
-+	RCAR_GP_PIN(5, 15),
-+};
-+static const unsigned int msiof0_tx_mux[] = {
-+	MSIOF0_TXD_MARK,
-+};
-+/* - MSIOF1 ----------------------------------------------------------------- */
-+static const unsigned int msiof1_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(4, 8),
-+};
-+static const unsigned int msiof1_clk_mux[] = {
-+	MSIOF1_SCK_MARK,
-+};
-+static const unsigned int msiof1_sync_pins[] = {
-+	/* SYNC */
-+	RCAR_GP_PIN(4, 9),
-+};
-+static const unsigned int msiof1_sync_mux[] = {
-+	MSIOF1_SYNC_MARK,
-+};
-+static const unsigned int msiof1_ss1_pins[] = {
-+	/* SS1 */
-+	RCAR_GP_PIN(4, 10),
-+};
-+static const unsigned int msiof1_ss1_mux[] = {
-+	MSIOF1_SS1_MARK,
-+};
-+static const unsigned int msiof1_ss2_pins[] = {
-+	/* SS2 */
-+	RCAR_GP_PIN(4, 11),
-+};
-+static const unsigned int msiof1_ss2_mux[] = {
-+	MSIOF1_SS2_MARK,
-+};
-+static const unsigned int msiof1_rx_pins[] = {
-+	/* RXD */
-+	RCAR_GP_PIN(4, 13),
-+};
-+static const unsigned int msiof1_rx_mux[] = {
-+	MSIOF1_RXD_MARK,
-+};
-+static const unsigned int msiof1_tx_pins[] = {
-+	/* TXD */
-+	RCAR_GP_PIN(4, 12),
-+};
-+static const unsigned int msiof1_tx_mux[] = {
-+	MSIOF1_TXD_MARK,
-+};
-+/* - MSIOF2 ----------------------------------------------------------------- */
-+static const unsigned int msiof2_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(0, 27),
-+};
-+static const unsigned int msiof2_clk_mux[] = {
-+	MSIOF2_SCK_MARK,
-+};
-+static const unsigned int msiof2_sync_pins[] = {
-+	/* SYNC */
-+	RCAR_GP_PIN(0, 26),
-+};
-+static const unsigned int msiof2_sync_mux[] = {
-+	MSIOF2_SYNC_MARK,
-+};
-+static const unsigned int msiof2_ss1_pins[] = {
-+	/* SS1 */
-+	RCAR_GP_PIN(0, 30),
-+};
-+static const unsigned int msiof2_ss1_mux[] = {
-+	MSIOF2_SS1_MARK,
-+};
-+static const unsigned int msiof2_ss2_pins[] = {
-+	/* SS2 */
-+	RCAR_GP_PIN(0, 31),
-+};
-+static const unsigned int msiof2_ss2_mux[] = {
-+	MSIOF2_SS2_MARK,
-+};
-+static const unsigned int msiof2_rx_pins[] = {
-+	/* RXD */
-+	RCAR_GP_PIN(0, 29),
-+};
-+static const unsigned int msiof2_rx_mux[] = {
-+	MSIOF2_RXD_MARK,
-+};
-+static const unsigned int msiof2_tx_pins[] = {
-+	/* TXD */
-+	RCAR_GP_PIN(0, 28),
-+};
-+static const unsigned int msiof2_tx_mux[] = {
-+	MSIOF2_TXD_MARK,
-+};
-+/* - MSIOF3 ----------------------------------------------------------------- */
-+static const unsigned int msiof3_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(5, 4),
-+};
-+static const unsigned int msiof3_clk_mux[] = {
-+	MSIOF3_SCK_MARK,
-+};
-+static const unsigned int msiof3_sync_pins[] = {
-+	/* SYNC */
-+	RCAR_GP_PIN(4, 30),
-+};
-+static const unsigned int msiof3_sync_mux[] = {
-+	MSIOF3_SYNC_MARK,
-+};
-+static const unsigned int msiof3_ss1_pins[] = {
-+	/* SS1 */
-+	RCAR_GP_PIN(4, 31),
-+};
-+static const unsigned int msiof3_ss1_mux[] = {
-+	MSIOF3_SS1_MARK,
-+};
-+static const unsigned int msiof3_ss2_pins[] = {
-+	/* SS2 */
-+	RCAR_GP_PIN(4, 27),
-+};
-+static const unsigned int msiof3_ss2_mux[] = {
-+	MSIOF3_SS2_MARK,
-+};
-+static const unsigned int msiof3_rx_pins[] = {
-+	/* RXD */
-+	RCAR_GP_PIN(5, 2),
-+};
-+static const unsigned int msiof3_rx_mux[] = {
-+	MSIOF3_RXD_MARK,
-+};
-+static const unsigned int msiof3_tx_pins[] = {
-+	/* TXD */
-+	RCAR_GP_PIN(5, 3),
-+};
-+static const unsigned int msiof3_tx_mux[] = {
-+	MSIOF3_TXD_MARK,
-+};
- /* - SCIF0 ------------------------------------------------------------------ */
- static const unsigned int scif0_data_pins[] = {
- 	/* RX, TX */
-@@ -2712,6 +2884,30 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(mmc1_data4),
- 	SH_PFC_PIN_GROUP(mmc1_data8),
- 	SH_PFC_PIN_GROUP(mmc1_ctrl),
-+	SH_PFC_PIN_GROUP(msiof0_clk),
-+	SH_PFC_PIN_GROUP(msiof0_sync),
-+	SH_PFC_PIN_GROUP(msiof0_ss1),
-+	SH_PFC_PIN_GROUP(msiof0_ss2),
-+	SH_PFC_PIN_GROUP(msiof0_rx),
-+	SH_PFC_PIN_GROUP(msiof0_tx),
-+	SH_PFC_PIN_GROUP(msiof1_clk),
-+	SH_PFC_PIN_GROUP(msiof1_sync),
-+	SH_PFC_PIN_GROUP(msiof1_ss1),
-+	SH_PFC_PIN_GROUP(msiof1_ss2),
-+	SH_PFC_PIN_GROUP(msiof1_rx),
-+	SH_PFC_PIN_GROUP(msiof1_tx),
-+	SH_PFC_PIN_GROUP(msiof2_clk),
-+	SH_PFC_PIN_GROUP(msiof2_sync),
-+	SH_PFC_PIN_GROUP(msiof2_ss1),
-+	SH_PFC_PIN_GROUP(msiof2_ss2),
-+	SH_PFC_PIN_GROUP(msiof2_rx),
-+	SH_PFC_PIN_GROUP(msiof2_tx),
-+	SH_PFC_PIN_GROUP(msiof3_clk),
-+	SH_PFC_PIN_GROUP(msiof3_sync),
-+	SH_PFC_PIN_GROUP(msiof3_ss1),
-+	SH_PFC_PIN_GROUP(msiof3_ss2),
-+	SH_PFC_PIN_GROUP(msiof3_rx),
-+	SH_PFC_PIN_GROUP(msiof3_tx),
- 	SH_PFC_PIN_GROUP(scif0_data),
- 	SH_PFC_PIN_GROUP(scif0_clk),
- 	SH_PFC_PIN_GROUP(scif0_ctrl),
-@@ -2855,6 +3051,42 @@ static const char * const mmc1_groups[] = {
- 	"mmc1_ctrl",
- };
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 9bdf810..42170af 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -99,6 +99,9 @@ static int r8a7779_boot_secondary(unsigned int cpu, struct task_struct *idle)
  
-+static const char * const msiof0_groups[] = {
-+	"msiof0_clk",
-+	"msiof0_sync",
-+	"msiof0_ss1",
-+	"msiof0_ss2",
-+	"msiof0_rx",
-+	"msiof0_tx",
-+};
+ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
 +
-+static const char * const msiof1_groups[] = {
-+	"msiof1_clk",
-+	"msiof1_sync",
-+	"msiof1_ss1",
-+	"msiof1_ss2",
-+	"msiof1_rx",
-+	"msiof1_tx",
-+};
-+
-+static const char * const msiof2_groups[] = {
-+	"msiof2_clk",
-+	"msiof2_sync",
-+	"msiof2_ss1",
-+	"msiof2_ss2",
-+	"msiof2_rx",
-+	"msiof2_tx",
-+};
-+
-+static const char * const msiof3_groups[] = {
-+	"msiof3_clk",
-+	"msiof3_sync",
-+	"msiof3_ss1",
-+	"msiof3_ss2",
-+	"msiof3_rx",
-+	"msiof3_tx",
-+};
-+
- static const char * const scif0_groups[] = {
- 	"scif0_data",
- 	"scif0_clk",
-@@ -2989,6 +3221,10 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(intc),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(mmc1),
-+	SH_PFC_FUNCTION(msiof0),
-+	SH_PFC_FUNCTION(msiof1),
-+	SH_PFC_FUNCTION(msiof2),
-+	SH_PFC_FUNCTION(msiof3),
- 	SH_PFC_FUNCTION(scif0),
- 	SH_PFC_FUNCTION(scif1),
- 	SH_PFC_FUNCTION(scifa0),
++	/* setup r8a7779 specific SCU base */
++	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
+ 	scu_enable(shmobile_scu_base);
+ 
+ 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
+@@ -117,14 +120,6 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ 	r8a7779_platform_cpu_kill(3);
+ }
+ 
+-static void __init r8a7779_smp_init_cpus(void)
+-{
+-	/* setup r8a7779 specific SCU base */
+-	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
+-
+-	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+-}
+-
+ #ifdef CONFIG_HOTPLUG_CPU
+ static int r8a7779_scu_psr_core_disabled(int cpu)
+ {
+@@ -175,7 +170,6 @@ static int r8a7779_cpu_disable(unsigned int cpu)
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 
+ struct smp_operations r8a7779_smp_ops  __initdata = {
+-	.smp_init_cpus		= r8a7779_smp_init_cpus,
+ 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a7779_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
 -- 
-1.8.1.5
+1.8.2.1
 
