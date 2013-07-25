@@ -1,140 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 05 Jul 2013 11:19:38 +0000
-Subject: Re: [PATCH v3] ARM: shmobile: lager: Add DT reference
-Message-Id: <1631144.is6NKUrafF@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 25 Jul 2013 23:26:36 +0000
+Subject: [PATCH 00/12] Remove platform callbacks from mmc_spi, sh_mmcif and sh_mobile_sdhi drivers
+Message-Id: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372838251-6314-1-git-send-email-horms+renesas@verge.net.au>
- <1438555.HIWtKGAp3v@avalon>
- <CANqRtoRzBAxeirMyKRqb-PrufFPGDQOqCnkKDEkx1pNsJqXPJA@mail.gmail.com>
-In-Reply-To: <CANqRtoRzBAxeirMyKRqb-PrufFPGDQOqCnkKDEkx1pNsJqXPJA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Hello,
 
-On Friday 05 July 2013 01:25:18 Magnus Damm wrote:
-> On Fri, Jul 5, 2013 at 12:02 AM, Laurent Pinchart wrote:
-> > On Wednesday 03 July 2013 16:57:31 Simon Horman wrote:
-> >> This is sufficient to allow boot of the Lager board with a console
-> >> without boards-lager.c compiled into the kernel. This is an example of a
-> >> minimal but still useful initialisation of the board using DT as much as
-> >> possible.
-> >> 
-> >> As such it is the same as the boot of Lager that can be achieved without
-> >> a board file. The intention of adding this file is to facilitate further
-> >> work to allow board specific devices to be initialised via DT.
-> > 
-> > At some (hopefully not too distant) point we should stop adding both
-> > traditional and DT board files. DT is supposed to lower the number of
-> > board files, not multiply it by two.
-> 
-> Well, mr-multiply-by-two: While I dislike code duplication I can't recall
-> when the number of files actually decreased with DT.
->
-> I realize that when we can use DT fully to describe a board then a single
-> DTS file is enough to describe board specific hardware together with per-SoC
-> C code. I can't however see how that would reduce the number of files, but
-> whatever. I always thought the goal was to reduce the memory footprint of
-> the kernel and that the source would not come with that many limitations,
-> but it seems that I got that all wrong...
+This patch set replaces callbacks to board code with regulators and GPIOs in
+the mmc_spi, sh_mmcif and sh_mobile_sdhi MMC drivers.
 
-I meant board files, sorry. The total number of files hasn't decreased much, 
-if at all.
+Most of the required infrastructure is in place already on the drivers side,
+except for CD/RO GPIOs support in the mmc_spi driver. The series thus starts
+with patch 01/12 that adds this feature to the mmc_spi driver.
 
-> Anyway, the current split on mach-shmobile is intentional:
-> 
-> 1) The C version of board support (board-xxx.c)
-> 
-> This is where platform devices are used (with power domains in some cases)
-> and where out-of-tree people can experiment with things. This code is using
-> legacy SH clock code and is not targeted for multiplatform. These should go
-> away, the sooner the better.
-> 
-> 2) The DT reference support (board-xxx-reference.c)
-> 
-> This file contains whatever bits of C code needed to get the DT support
-> going. All the board specific devices should be described via DT. The DT
-> reference board support is where we build incremental support to catch up
-> with 1) board-xxx.c. Ideally we wouldn't need the board-xxx-reference.c file
-> and instead only go with .dts, but in some cases we need some extra glue and
-> until pinctrl DT is done we also need those written in C. The DT reference
-> support will use common clocks as soon as they are available.
-> 
-> 3) SoC DT support (setup-xxx.c)
-> 
-> This is what will be used when 2) is caught up with 1). Common clocks and
-> multiplatform, one SoC at a time.
+Patches 02/12 to 05/12 remove the board callbacks from the ecovec24 and
+vision_ep9307 boards. The code has been compile-tested only as I don't have
+access to those boards.
 
-Thanks for the clarification.
+Patches 06/12 to 07/12 then proceed to remove the callbacks from the drivers
+themselves and from the platform data structures.
 
-> > Work is still needed in order to achieve this, as we lack DT bindings for
-> > core (and non core) devices. That's something we need to work on. As a
-> > first step, do we have a roadmap with a list of devices that lack DT
-> > support ? At the very least I see more work needed on
-> > 
-> > - Common clock framework
-> 
-> Yes, I agree. Please see below for more about that.
-> 
-> > - SCI
-> 
-> Indeed, someone needs to continue earlier efforts for the SCIF driver.
+This will be a bit messy to merge, as the series interleaves patches for
+drivers and board files. Given that the mmc_spi driver is marked as orphan in
+MAINTAINERS and that the vision_ep9307 hasn't seen any board-specific
+modification in the last couple of kernel versions one option would be to
+merge all patches (or at least patches 01/12 to 06/12) through Simon's tree if
+all involved maintainers agree.
 
-It shouldn't be too difficult, Bastian has already layed out a plan, but the 
-dependency on DT clock bindings has prevented the patches from going upstream.
+The series is based on tag renesas-devel-20130725 from
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
 
-> Fortunately, with EMEV2 our UART driver already supports DT, so we can
-> implement DT-only multiplatform support on EMEV2 regardless of the state of
-> SCIF.
-> 
-> > - Timers
-> 
-> We can use DT-only with Arch timer, but unfortunately another clock evenit
-> is needed unconditionally for high resolution timer support, search for
-> clock event and the C3STOP flag if you want to see me moan about that.
-> 
-> Regardless I believe someone took a couple of first steps towards DT support
-> for our timers some time ago. But as we discussed face to face about a month
-> ago, it makes sense to describe the hardware via DT but in case of timers
-> and clock event / clock sources it does not make sense to associate 87 timer
-> channels for operating system time keeping. So we need some user space
-> configuration interface to associate different kind of timer applications
-> (operating system timer, PWM, clock generation, etc) to different channels.
+Laurent Pinchart (12):
+  mmc: mmc_spi: Support CD/RO GPIOs
+  ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
+  sh: ecovec24: Use MMC/SDHI CD and RO GPIO
+  sh: ecovec24: Remove mmcif .down_pwr() callback
+  sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
+  mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
+  mmc: sh_mmcif: Remove .down_pwr() callback from platform data
+  mmc: sh_mmcif: Remove .set_pwr() callback from platform data
+  mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
+  mmc: sh_mobile_sdhi: Remove .set_pwr() callback from platform data
+  mmc: tmio-mmc: Remove .get_cd() callback from platform data
+  mmc: tmio-mmc: Remove .set_pwr() callback from platform data
 
-I agree that we need an API for this. It might make sense to restrict the API 
-to in-kernel usage to start with, but we need an API nonetheless. Has this 
-topic been discussed with clocks/timers people ? It might be worth bringing it 
-up for LPC or KS.
-
-> Since you mention it: =)
-> - PINCTRL DT and GPIO DT
->
-> I'd like to start picking up the remaining PINCTRL and GPIO bits for
-> v3.12 merge. Can you please rebase and resend on top of the latest
-> renesas-next tag?
-
-Patches for v3.12 have been sent yesterday :-)
-
-> > We shouldn't delay CCF much longer, v3.12 seems an achievable target to
-> > me. Who will work on that ?
-> 
-> So I am currently preparing EMEV2 for multiplatform, will most likely have
-> patches posted for that next week. And yes, I intend to send a new DT
-> reference board support file.
-> 
-> In parallel Kuribayashi-san is taking a stab at moving to common clocks for
-> EMEV2 as a first step.
-
-That's great news. I'm looking forward to reviewing the patches :-)
-
-> I expect the above to be in order for v3.12, but not much more that that.
-
-That sounds like a reasonable time frame to me.
+ arch/arm/mach-ep93xx/vision_ep9307.c | 56 ++---------------------
+ arch/sh/boards/mach-ecovec24/setup.c | 89 ++++--------------------------------
+ drivers/mmc/host/mmc_spi.c           | 48 +++++++++----------
+ drivers/mmc/host/of_mmc_spi.c        | 46 +++++--------------
+ drivers/mmc/host/sh_mmcif.c          |  3 --
+ drivers/mmc/host/sh_mobile_sdhi.c    | 18 --------
+ drivers/mmc/host/tmio_mmc.h          |  1 -
+ drivers/mmc/host/tmio_mmc_pio.c      | 23 +---------
+ include/linux/mfd/tmio.h             |  2 -
+ include/linux/mmc/sh_mmcif.h         |  2 -
+ include/linux/mmc/sh_mobile_sdhi.h   |  2 -
+ include/linux/spi/mmc_spi.h          | 18 ++++----
+ 12 files changed, 56 insertions(+), 252 deletions(-)
 
 -- 
-Cheers,
+Regards,
 
 Laurent Pinchart
 
