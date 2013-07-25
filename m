@@ -1,46 +1,75 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Jul 2013 10:49:47 +0000
-Subject: Re: [PATCH/RFC 2/3] ethernet: add a PHY reset GPIO DT binding to sh_eth
-Message-Id: <Pine.LNX.4.64.1307081247530.19819@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 25 Jul 2013 05:23:17 +0000
+Subject: Mainline kernel on snowball
+Message-Id: <20130725052317.GA25854@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
- <1359043653-11374-3-git-send-email-g.liakhovetski@gmx.de>
- <7921225.sfO3PIeLVS@avalon>
- <Pine.LNX.4.64.1301251127460.17518@axis700.grange>
- <20130125182137.GB7393@obsidianresearch.com>
-In-Reply-To: <20130125182137.GB7393@obsidianresearch.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Jason
+Hi,
 
-Sorry for resuming an old thread, but I'd like to get this solved 
-eventually.
+I apologise for the na=C3=AFve nature of this question,
+but I do not seem to be able to make any progress of my own accord.
 
-On Fri, 25 Jan 2013, Jason Gunthorpe wrote:
+I would like to boot the mainline kernel - ideally v3.10 and v3.11-rcX -
+on snowball. The reason being to verify CPU hotplug which
+seems to be broken on shmobile, though that is tangential to this post.
 
-> On Fri, Jan 25, 2013 at 11:34:55AM +0100, Guennadi Liakhovetski wrote:
-> 
-> > > Is there no need to reset the phy at runtime ?
-> > 
-> > No idea, I'm not developing the driver, I'm just porting one specific 
-> > feature from one API to another with no functional changes (apart from 
-> > postponing setting the GPIO).
-> 
-> Generally Linux relies on resetting the phy via the inband MDIO method,
-> which is what Linux does. It is pretty much never required to reset
-> via the hard pin - but you do need to generate a robust reset edge on
-> the reset pin once after power up.
+My procedure, which does not work, is as follows.
+I have tried a number of different versions all with roughly
+the same result.
 
-This all sounds good. So, is there a preferred way to do that? Where in 
-the ethernet framework would you propose to hook up such a reset edge 
-generation?
+1. Build kernel
+# git checkout v3.10.2 # I have tried several over versions too.
+# make u8500_defconfig
+Edit .config to enable CONFIG_ARM_APPENDED_DTB
+# LOADADDR=3D0x100000 make uImage dtbs
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+2. Append dtb to zImage and recreate uImage
+mv arch/arm/boot/zImage arch/arm/boot/zImage.tmp
+cat arch/arm/boot/zImage.tmp arch/arm/boot/dts/snowball.dtb
+/bin/sh scripts/mkuboot.sh \
+	-A arm -O linux -C none  -T kernel \
+	-a 0x100000 -e 0x100000 -n 'Linux-3.10.2' \
+	-d arch/arm/boot/zImage arch/arm/boot/uImage
+
+3. Boot uImage from u-boot
+Snowball $ setenv ethaddr 3e:c4:73:05:d1:a1
+Snowball $ bootp;bootm
+smc911x: detected LAN9221 controller
+smc911x: phy initialized
+smc911x: MAC 3e:c4:73:05:d1:a1
+BOOTP broadcast 1
+*** Unhandled DHCP Option in OFFER/ACK: 28
+*** Unhandled DHCP Option in OFFER/ACK: 44
+*** Unhandled DHCP Option in OFFER/ACK: 28
+*** Unhandled DHCP Option in OFFER/ACK: 44
+DHCP client bound to address 10.3.3.146
+Using smc911x-0 device
+TFTP from server 10.3.3.135; our IP address is 10.3.3.146
+Filename 'snowball/uImage'.
+Load address: 0x100000
+Loading: #################################################################
+         #################################################################
+         #################################################################
+         #################################################################
+         ##########################################################
+done
+Bytes transferred =3D 2540191 (26c29f hex)
+## Booting kernel from Legacy Image at 00100000 ...
+   Image Name:   'Linux-3.10.2'
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    2540127 Bytes =3D  2.4 MB
+   Load Address: 00100000
+   Entry Point:  00100000
+   XIP Kernel Image ... OK
+OK
+
+Starting kernel ...
+
+
+
+
+This is as far as it gets.
