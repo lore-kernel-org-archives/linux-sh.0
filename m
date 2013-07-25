@@ -1,48 +1,216 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 25 Jul 2013 13:23:19 +0000
-Subject: Re: [PATCH v2 1/3] ARM: shmobile: marzen: Switch to DT_MACHINE_START
-Message-Id: <20130725132319.GC30895@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 25 Jul 2013 23:26:37 +0000
+Subject: [PATCH 01/12] mmc: mmc_spi: Support CD/RO GPIOs
+Message-Id: <1374794808-21890-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374718423-24230-1-git-send-email-horms+renesas@verge.net.au>
- <1374718423-24230-2-git-send-email-horms+renesas@verge.net.au>
- <51F140C8.8070802@cogentembedded.com>
-In-Reply-To: <51F140C8.8070802@cogentembedded.com>
+References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jul 25, 2013 at 07:14:16PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 25-07-2013 6:13, Simon Horman wrote:
-> 
-> >From: Magnus Damm <damm@opensource.se>
-> 
->    Don't think it makes sense to keep Magnus as an author with so
-> many of your added changes. But well, it's your decision...
+Add support for passing CD/RO GPIO numbers directly to the mmc_spi
+driver instead of relying solely on board code callbacks to retrieve the
+CD/RO signals values.
 
-I am comfortable with things the way they are so long as Magnus is too.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/mmc/host/mmc_spi.c    | 32 +++++++++++++++++++++---------
+ drivers/mmc/host/of_mmc_spi.c | 46 +++++++++++--------------------------------
+ include/linux/spi/mmc_spi.h   | 11 +++++++++++
+ 3 files changed, 46 insertions(+), 43 deletions(-)
 
-> >Convert the marzen board to use DT_MACHINE_START. With this in
-> >place all mach-shmobile boards use DT_MACHINE_START. Also, this
-> >makes it possible for the r8a7779 SMP code to use DT for CPUs.
-> 
-> >So appended DTB is the way forward on this board.
-> 
-> >Signed-off-by: Magnus Damm <damm@opensource.se>
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> >v2 [Simon Horman]
-> >* Select USE_OF in Kconfig
-> >* Provide dt_compat in DT_MACHINE_START
-> >* Provide r8a7779-marzen dts
-> 
-> >v1 [Magnus Damm]
-> >---
-> >  arch/arm/boot/dts/Makefile            |  1 +
-> >  arch/arm/boot/dts/r8a7779-marzen.dts  | 27 +++++++++++++++++++++++++++
-> 
->    Perhaps arch/arm/boot/dts/ changes should be put into a separate patch?
+diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
+index 74145d1..4e83908 100644
+--- a/drivers/mmc/host/mmc_spi.c
++++ b/drivers/mmc/host/mmc_spi.c
+@@ -36,6 +36,7 @@
+ 
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/mmc.h>		/* for R1_SPI_* bit values */
++#include <linux/mmc/slot-gpio.h>
+ 
+ #include <linux/spi/spi.h>
+ #include <linux/spi/mmc_spi.h>
+@@ -1278,11 +1279,8 @@ static int mmc_spi_get_ro(struct mmc_host *mmc)
+ 
+ 	if (host->pdata && host->pdata->get_ro)
+ 		return !!host->pdata->get_ro(mmc->parent);
+-	/*
+-	 * Board doesn't support read only detection; let the mmc core
+-	 * decide what to do.
+-	 */
+-	return -ENOSYS;
++	else
++		return mmc_gpio_get_ro(mmc);
+ }
+ 
+ static int mmc_spi_get_cd(struct mmc_host *mmc)
+@@ -1291,7 +1289,8 @@ static int mmc_spi_get_cd(struct mmc_host *mmc)
+ 
+ 	if (host->pdata && host->pdata->get_cd)
+ 		return !!host->pdata->get_cd(mmc->parent);
+-	return -ENOSYS;
++	else
++		return mmc_gpio_get_cd(mmc);
+ }
+ 
+ static const struct mmc_host_ops mmc_spi_ops = {
+@@ -1324,6 +1323,7 @@ static int mmc_spi_probe(struct spi_device *spi)
+ 	struct mmc_host		*mmc;
+ 	struct mmc_spi_host	*host;
+ 	int			status;
++	bool			has_ro = false;
+ 
+ 	/* We rely on full duplex transfers, mostly to reduce
+ 	 * per-transfer overheads (by making fewer transfers).
+@@ -1448,18 +1448,32 @@ static int mmc_spi_probe(struct spi_device *spi)
+ 	}
+ 
+ 	/* pass platform capabilities, if any */
+-	if (host->pdata)
++	if (host->pdata) {
+ 		mmc->caps |= host->pdata->caps;
++		mmc->caps2 |= host->pdata->caps2;
++	}
+ 
+ 	status = mmc_add_host(mmc);
+ 	if (status != 0)
+ 		goto fail_add_host;
+ 
++	if (host->pdata && host->pdata->flags & MMC_SPI_USE_CD_GPIO) {
++		status = mmc_gpio_request_cd(mmc, host->pdata->cd_gpio);
++		if (status != 0)
++			goto fail_add_host;
++	}
++
++	if (host->pdata && host->pdata->flags & MMC_SPI_USE_RO_GPIO) {
++		has_ro = true;
++		status = mmc_gpio_request_ro(mmc, host->pdata->ro_gpio);
++		if (status != 0)
++			goto fail_add_host;
++	}
++
+ 	dev_info(&spi->dev, "SD/MMC host %s%s%s%s%s\n",
+ 			dev_name(&mmc->class_dev),
+ 			host->dma_dev ? "" : ", no DMA",
+-			(host->pdata && host->pdata->get_ro)
+-				? "" : ", no WP",
++			has_ro ? "" : ", no WP",
+ 			(host->pdata && host->pdata->setpower)
+ 				? "" : ", no poweroff",
+ 			(mmc->caps & MMC_CAP_NEEDS_POLL)
+diff --git a/drivers/mmc/host/of_mmc_spi.c b/drivers/mmc/host/of_mmc_spi.c
+index d720b5e..6e218fb 100644
+--- a/drivers/mmc/host/of_mmc_spi.c
++++ b/drivers/mmc/host/of_mmc_spi.c
+@@ -50,25 +50,6 @@ static struct of_mmc_spi *to_of_mmc_spi(struct device *dev)
+ 	return container_of(dev->platform_data, struct of_mmc_spi, pdata);
+ }
+ 
+-static int of_mmc_spi_read_gpio(struct device *dev, int gpio_num)
+-{
+-	struct of_mmc_spi *oms = to_of_mmc_spi(dev);
+-	bool active_low = oms->alow_gpios[gpio_num];
+-	bool value = gpio_get_value(oms->gpios[gpio_num]);
+-
+-	return active_low ^ value;
+-}
+-
+-static int of_mmc_spi_get_cd(struct device *dev)
+-{
+-	return of_mmc_spi_read_gpio(dev, CD_GPIO);
+-}
+-
+-static int of_mmc_spi_get_ro(struct device *dev)
+-{
+-	return of_mmc_spi_read_gpio(dev, WP_GPIO);
+-}
+-
+ static int of_mmc_spi_init(struct device *dev,
+ 			   irqreturn_t (*irqhandler)(int, void *), void *mmc)
+ {
+@@ -130,20 +111,22 @@ struct mmc_spi_platform_data *mmc_spi_get_pdata(struct spi_device *spi)
+ 		if (!gpio_is_valid(oms->gpios[i]))
+ 			continue;
+ 
+-		ret = gpio_request(oms->gpios[i], dev_name(dev));
+-		if (ret < 0) {
+-			oms->gpios[i] = -EINVAL;
+-			continue;
+-		}
+-
+ 		if (gpio_flags & OF_GPIO_ACTIVE_LOW)
+ 			oms->alow_gpios[i] = true;
+ 	}
+ 
+-	if (gpio_is_valid(oms->gpios[CD_GPIO]))
+-		oms->pdata.get_cd = of_mmc_spi_get_cd;
+-	if (gpio_is_valid(oms->gpios[WP_GPIO]))
+-		oms->pdata.get_ro = of_mmc_spi_get_ro;
++	if (gpio_is_valid(oms->gpios[CD_GPIO])) {
++		oms->pdata.cd_gpio = oms->gpios[CD_GPIO];
++		oms->pdata.flags |= MMC_SPI_USE_CD_GPIO;
++		if (!oms->alow_gpios[CD_GPIO])
++			oms->pdata.caps2 |= MMC_CAP2_CD_ACTIVE_HIGH;
++	}
++	if (gpio_is_valid(oms->gpios[WP_GPIO])) {
++		oms->pdata.ro_gpio = oms->gpios[WP_GPIO];
++		oms->pdata.flags |= MMC_SPI_USE_RO_GPIO;
++		if (!oms->alow_gpios[WP_GPIO])
++			oms->pdata.caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
++	}
+ 
+ 	oms->detect_irq = irq_of_parse_and_map(np, 0);
+ 	if (oms->detect_irq != 0) {
+@@ -166,15 +149,10 @@ void mmc_spi_put_pdata(struct spi_device *spi)
+ 	struct device *dev = &spi->dev;
+ 	struct device_node *np = dev->of_node;
+ 	struct of_mmc_spi *oms = to_of_mmc_spi(dev);
+-	int i;
+ 
+ 	if (!dev->platform_data || !np)
+ 		return;
+ 
+-	for (i = 0; i < ARRAY_SIZE(oms->gpios); i++) {
+-		if (gpio_is_valid(oms->gpios[i]))
+-			gpio_free(oms->gpios[i]);
+-	}
+ 	kfree(oms);
+ 	dev->platform_data = NULL;
+ }
+diff --git a/include/linux/spi/mmc_spi.h b/include/linux/spi/mmc_spi.h
+index 32be8db..a54da4a 100644
+--- a/include/linux/spi/mmc_spi.h
++++ b/include/linux/spi/mmc_spi.h
+@@ -7,6 +7,11 @@
+ struct device;
+ struct mmc_host;
+ 
++#define MMC_SPI_USE_CD_GPIO			(1 << 0)
++#define MMC_SPI_USE_RO_GPIO			(1 << 1)
++#define MMC_SPI_CD_GPIO_ACTIVE_LOW		(1 << 2)
++#define MMC_SPI_RO_GPIO_ACTIVE_LOW		(1 << 3)
++
+ /* Put this in platform_data of a device being used to manage an MMC/SD
+  * card slot.  (Modeled after PXA mmc glue; see that for usage examples.)
+  *
+@@ -30,8 +35,14 @@ struct mmc_spi_platform_data {
+ 	 */
+ 	int (*get_cd)(struct device *);
+ 
++	/* Card Detect and Read Only GPIOs */
++	unsigned int flags;
++	unsigned int cd_gpio;
++	unsigned int ro_gpio;
++
+ 	/* Capabilities to pass into mmc core (e.g. MMC_CAP_NEEDS_POLL). */
+ 	unsigned long caps;
++	unsigned long caps2;
+ 
+ 	/* how long to debounce card detect, in msecs */
+ 	u16 detect_delay;
+-- 
+1.8.1.5
 
-That sounds reasonable.
