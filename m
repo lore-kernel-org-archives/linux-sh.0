@@ -1,84 +1,103 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 26 Jul 2013 15:33:55 +0000
-Subject: Re: [PATCH v5 0/3] ARM: shmobile: lager: enable Ether
-Message-Id: <1585887.1Wse2jq6qr@avalon>
+Date: Thu, 25 Jul 2013 12:59:29 +0000
+Subject: [PATCH v3 1/5] media: Add support for circular graph traversal
+Message-Id: <1374757213-20194-2-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374656169-9241-1-git-send-email-horms+renesas@verge.net.au> <20130726005506.GD28912@verge.net.au> <51F288CD.60608@cogentembedded.com>
-In-Reply-To: <51F288CD.60608@cogentembedded.com>
+References: <1374757213-20194-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1374757213-20194-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Simon Horman <horms@verge.net.au>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-Hi Sergei,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On Friday 26 July 2013 18:33:49 Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 26-07-2013 4:55, Simon Horman wrote:
-> >>> this short series enables the on-board ethernet
-> >>> of the r8a7790 SoC for on lager board.
-> >>> 
-> >>> It has a run-time dependency on
-> >>> "sh_eth: add support for r8a7790 SoC"
-> >>> 
-> >>> It has been built on top of renesas-next-20130724v2.
-> >>> 
-> >>> Simon Horman (3):
-> >>>    ARM: shmobile: r8a7790: clocks for Ether support
-> >>>    ARM: shmobile: lager: enable Ether
-> >>>    ARM: shmobile: lager: enable nfsroot in DTS
-> >>>   
-> >>>   arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
-> >>>   arch/arm/mach-shmobile/board-lager.c   | 30 ++++++++++++++++++++++++++ 
-> >>>   arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
-> >>>   3 files changed, 35 insertions(+), 1 deletion(-)
-> >> 
-> >> With this series and "[PATCH 0/2 v4 net-next repost] sh_eth: Add support
-> >> for r8a7790 SoC" applied on top of renesas-devel-20130725, booting the
-> >> Lager board usually (about 90% of the time) results in receive FIFO
-> >> overflows and disabling of the sh-eth IRQ:
->
-> Looking at the trace, disabling of IRQ is probably caused by something other
-> than RX FIFO overflow (when it caused disabling IRQ, there were no error
-> messages printed because RFE interrupt went completely unhandled). Probably
-> there's more interrupt mask issues lurking in the driver...
+The graph traversal API (media_entity_graph_walk_*) doesn't support
+cyclic graphs and will fail to correctly walk a graph when circular
+links exist. Support circular graph traversal by checking whether an
+entity has already been visited before pushing it to the stack.
 
-I think we're having two issues here. The first one is that receive FIFO 
-overflows happen, and the second one is that the driver doesn't recover 
-properly, resulting in an interrupt storm. Both should be fixed.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/media-entity.c | 14 +++++++++++---
+ include/media/media-entity.h |  3 +++
+ 2 files changed, 14 insertions(+), 3 deletions(-)
 
-At least one of the issues might be related to interrupt latency. As the 
-interrupt storm occurs when the mmc0 got probed, I've tried to disable the MMC 
-subsystem, and the situation improved. I still get NFS errors:
-
-[   25.692576] nfs: server 192.168.1.47 not responding, still trying
-[   25.698824] nfs: server 192.168.1.47 not responding, still trying
-[   25.705055] nfs: server 192.168.1.47 not responding, still trying
-[   26.196158] nfs: server 192.168.1.47 not responding, still trying
-[   26.203230] nfs: server 192.168.1.47 OK
-[   26.207248] nfs: server 192.168.1.47 OK
-[   26.211261] nfs: server 192.168.1.47 OK
-[   26.215278] nfs: server 192.168.1.47 OK
-
-But the system boots properly.
-
-> > Thanks.
-> > 
-> > Unfortunately I am having trouble with using NFS root at all in my test
-> > environment. I'll work with Magnus to resolve this issue.
-> > 
-> > Sergei do you have any idea what might be causing this?
-> 
-> No idea. I still don't have access to Lager and on BOCK-W we have no issues
-> with NFS. What are your symptoms?
-
-I think the kernel boot log from my original e-mail showed the symptoms pretty 
-explicitly :-)
-
+diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
+index cb30ffb..2c286c3 100644
+--- a/drivers/media/media-entity.c
++++ b/drivers/media/media-entity.c
+@@ -20,6 +20,7 @@
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+ 
++#include <linux/bitmap.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ #include <media/media-entity.h>
+@@ -121,7 +122,6 @@ static struct media_entity *stack_pop(struct media_entity_graph *graph)
+ 	return entity;
+ }
+ 
+-#define stack_peek(en)	((en)->stack[(en)->top - 1].entity)
+ #define link_top(en)	((en)->stack[(en)->top].link)
+ #define stack_top(en)	((en)->stack[(en)->top].entity)
+ 
+@@ -140,6 +140,12 @@ void media_entity_graph_walk_start(struct media_entity_graph *graph,
+ {
+ 	graph->top = 0;
+ 	graph->stack[graph->top].entity = NULL;
++	bitmap_zero(graph->entities, MEDIA_ENTITY_ENUM_MAX_ID);
++
++	if (WARN_ON(entity->id >= MEDIA_ENTITY_ENUM_MAX_ID))
++		return;
++
++	__set_bit(entity->id, graph->entities);
+ 	stack_push(graph, entity);
+ }
+ EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
+@@ -180,9 +186,11 @@ media_entity_graph_walk_next(struct media_entity_graph *graph)
+ 
+ 		/* Get the entity in the other end of the link . */
+ 		next = media_entity_other(entity, link);
++		if (WARN_ON(next->id >= MEDIA_ENTITY_ENUM_MAX_ID))
++			return NULL;
+ 
+-		/* Was it the entity we came here from? */
+-		if (next = stack_peek(graph)) {
++		/* Has the entity already been visited? */
++		if (__test_and_set_bit(next->id, graph->entities)) {
+ 			link_top(graph)++;
+ 			continue;
+ 		}
+diff --git a/include/media/media-entity.h b/include/media/media-entity.h
+index 06bacf9..0b39662 100644
+--- a/include/media/media-entity.h
++++ b/include/media/media-entity.h
+@@ -23,6 +23,7 @@
+ #ifndef _MEDIA_ENTITY_H
+ #define _MEDIA_ENTITY_H
+ 
++#include <linux/bitops.h>
+ #include <linux/list.h>
+ #include <linux/media.h>
+ 
+@@ -113,12 +114,14 @@ static inline u32 media_entity_subtype(struct media_entity *entity)
+ }
+ 
+ #define MEDIA_ENTITY_ENUM_MAX_DEPTH	16
++#define MEDIA_ENTITY_ENUM_MAX_ID	64
+ 
+ struct media_entity_graph {
+ 	struct {
+ 		struct media_entity *entity;
+ 		int link;
+ 	} stack[MEDIA_ENTITY_ENUM_MAX_DEPTH];
++	unsigned long entities[BITS_TO_LONGS(MEDIA_ENTITY_ENUM_MAX_ID)];
+ 	int top;
+ };
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.1.5
 
