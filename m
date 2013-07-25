@@ -1,33 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 25 Jul 2013 01:06:08 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Jul 2013 01:49:05 +0000
 Subject: Re: ARM CPU Hotplug breakage on mach-shmobile and KZM9D
-Message-Id: <20130725010607.GB31464@verge.net.au>
+Message-Id: <CANqRtoR3XoTVpTTOG8OS_Am+qB35ACD_PtV3O8v2J+1zqTBtfA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CANqRtoRx7voEVwJG8UNNy_Jiixo=uRJCvxTD0bZdzVohoryBUA@mail.gmail.com>
-In-Reply-To: <CANqRtoRx7voEVwJG8UNNy_Jiixo=uRJCvxTD0bZdzVohoryBUA@mail.gmail.com>
+ <20130725010607.GB31464@verge.net.au>
+In-Reply-To: <20130725010607.GB31464@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jul 25, 2013 at 12:15:49AM +0900, Magnus Damm wrote:
-> Hi everyone,
-> 
-> Bad news: CPU Hotplug on KZM9D seems broken on recent kernels.
-> 
-> On renesas-next-20130710 or earlier I can perform the following:
-> 
-> # echo 0 > /sys/devices/system/cpu/cpu1/online
-> CPU1: shutdown
-> # echo 1 > /sys/devices/system/cpu/cpu1/online
-> CPU1: Booted secondary processor
-> #
-> 
-> While on more recent kernels the hotplug boot fails. This may be
-> related to the move to v3.11-rc. The tag renesas-next-20130710
-> surprisingly seems to be the final kernel based on v3.10-rc before
-> jumping to v3.11-rc.
-> 
-> I wonder, do other ARM platforms have working CPU Hotplug in v3.11-rc?
+Hi Simon,
 
-I have a snowball that I could test if you think it would be useful.
+On Thu, Jul 25, 2013 at 10:06 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Jul 25, 2013 at 12:15:49AM +0900, Magnus Damm wrote:
+>> Hi everyone,
+>>
+>> Bad news: CPU Hotplug on KZM9D seems broken on recent kernels.
+>>
+>> On renesas-next-20130710 or earlier I can perform the following:
+>>
+>> # echo 0 > /sys/devices/system/cpu/cpu1/online
+>> CPU1: shutdown
+>> # echo 1 > /sys/devices/system/cpu/cpu1/online
+>> CPU1: Booted secondary processor
+>> #
+>>
+>> While on more recent kernels the hotplug boot fails. This may be
+>> related to the move to v3.11-rc. The tag renesas-next-20130710
+>> surprisingly seems to be the final kernel based on v3.10-rc before
+>> jumping to v3.11-rc.
+>>
+>> I wonder, do other ARM platforms have working CPU Hotplug in v3.11-rc?
+>
+> I have a snowball that I could test if you think it would be useful.
+
+That would be excellent, thanks!
+
+/ magnus
