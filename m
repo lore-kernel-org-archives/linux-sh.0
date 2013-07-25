@@ -1,55 +1,31 @@
-From: Willy Tarreau <w@1wt.eu>
-Date: Thu, 25 Jul 2013 08:36:18 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 25 Jul 2013 09:27:41 +0000
 Subject: Re: Mainline kernel on snowball
-Message-Id: <20130725083618.GA2346@1wt.eu>
+Message-Id: <CACRpkdagoo965=8QMR-TwiD3GEwE4FjgdJv2ET1E4R0OWq+efw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130725052317.GA25854@verge.net.au>
- <20130725054036.GD31954@1wt.eu> <20130725072525.GC7654@verge.net.au>
- <20130725075203.GE31954@1wt.eu> <20130725082639.GA25311@verge.net.au>
-In-Reply-To: <20130725082639.GA25311@verge.net.au>
+In-Reply-To: <20130725052317.GA25854@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jul 25, 2013 at 05:26:39PM +0900, Simon Horman wrote:
-> On Thu, Jul 25, 2013 at 09:52:03AM +0200, Willy Tarreau wrote:
-> > On Thu, Jul 25, 2013 at 04:25:25PM +0900, Simon Horman wrote:
-> > > > # cat /proc/cmdline=20
-> > > > console=3Dtty0 console=3DttyAMA2,115200n8  root=3DUUID=018e1580-e7e=
-9-460b-95c5-236f6b87b13d rootwait ro fixrtc nocompcache vmalloc00M mem=128M=
-@0 mali.mali_memdM@128M hwmem=168M@192M mem"M@360M mem_issw=3D1M@383M memd0=
-M@384M
-> > >=20
-> > > Thanks. Rummaging around in the environment present in uboot I came u=
-p with
-> > > the following:
-> > >=20
-> > > bootargs=CAchepolicy=3Dwritealloc noinitrd init=3Dinit board_id=3D1 c=
-rashkernel=3Dcrashkernel=3D1M@0x5600000 logo.nologo startup_graphics=3D1 mp=
-core_wdt.mpcore_margin59 loglevel=3D8 console=3DttyAMA2,115200n8 mem=128M@0=
- mali.mali_memdM@128M
-> > > mem$M@192M hwmem=167M@216M mem_issw=3D1M@383M memd0M@384M vmalloc%6M
-> > >=20
-> > > Unfortunately neither this, nor the boot args you are using seem
-> > > to get me any further.
-> >=20
-> > OK, I'm attaching the config that works for me on 3.10-rc5 (not
-> > tested a new one yet). It boots with the cmdline above and with
-> > the DTB from the kernel.
-> >=20
-> > Hoping this helps,
-> > Willy
-> >=20
->=20
-> Thanks! I have something working now.
->=20
-> It seems that part of my problem may have been the compiler that
-> I was using. But that is just speculation at this time.
+On Thu, Jul 25, 2013 at 7:23 AM, Simon Horman <horms@verge.net.au> wrote:
 
-I have some vague memories about failures that I attributed to some
-flavor of 4.5 but I don't remember if it was the real cause in the end
-or not.
+> I would like to boot the mainline kernel - ideally v3.10 and v3.11-rcX -
+> on snowball. The reason being to verify CPU hotplug which
+> seems to be broken on shmobile, though that is tangential to this post.
 
-Willy
+I usually compile my kernel with this makefile:
+http://www.df.lth.se/~triad/krad/makefiles/u8500.mak
 
+It appends an initramfs and it appends a DTB (if you compile it
+with config-dt and build-dt) and need nothing from any FS or
+similar.
+
+But the way it looks up compilers and initramfs etc is a bit
+custom I gues ... you have a copy of my initramfs here:
+http://www.df.lth.se/~triad/krad/ux00/rootfs-u8500.cpio
+
+Yours,
+Linus Walleij
