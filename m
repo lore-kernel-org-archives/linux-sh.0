@@ -1,71 +1,66 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 24 Jul 2013 20:38:32 +0000
+From: Katsuya MATSUBARA <matsu@igel.co.jp>
+Date: Thu, 25 Jul 2013 03:01:13 +0000
 Subject: Re: [PATCH v8] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <Pine.LNX.4.64.1307242227141.5611@axis700.grange>
+Message-Id: <20130725.120113.75189051.matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201307200314.35345.sergei.shtylyov@cogentembedded.com>
- <Pine.LNX.4.64.1307241731560.2179@axis700.grange> <51F02CA1.7050603@cogentembedded.com>
-In-Reply-To: <51F02CA1.7050603@cogentembedded.com>
+In-Reply-To: <201307200314.35345.sergei.shtylyov@cogentembedded.com>
+	<51C58E46.6000801@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp
+To: vladimir.barinov@cogentembedded.com
+Cc: g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, sergei.shtylyov@cogentembedded.com
 
-Hi Vladimir
 
-On Wed, 24 Jul 2013, Vladimir Barinov wrote:
+ Hi Vladimir,
 
-> Hi Guennadi,
+ Thank you for the revised patch.
+
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 20 Jul 2013 03:14:34 +0400
+
+> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 > 
-> Thank you for the v8 review.
+> Add Renesas R-Car VIN (Video In) V4L2 driver.
 > 
-> On 07/24/2013 08:14 PM, Guennadi Liakhovetski wrote:
-> > [snip]
-> > > +	/* output format */
-> > > +	switch (icd->current_fmt->host_fmt->fourcc) {
-> > > +	case V4L2_PIX_FMT_NV16:
-> > > +		iowrite32(ALIGN(cam->width * cam->height, 0x80),
-> > > +			  priv->base + VNUVAOF_REG);
-> > > +		dmr = VNDMR_DTMD_YCSEP;
-> > > +		output_is_yuv = true;
-> > > +		break;
-> > > +	case V4L2_PIX_FMT_YUYV:
-> > > +		dmr = VNDMR_BPSM;
-> > > +		output_is_yuv = true;
-> > > +		break;
-> > > +	case V4L2_PIX_FMT_UYVY:
-> > > +		dmr = 0;
-> > > +		output_is_yuv = true;
-> > > +		break;
-> > > +	case V4L2_PIX_FMT_RGB555X:
-> > > +		dmr = VNDMR_DTMD_ARGB1555;
-> > > +		break;
-> > > +	case V4L2_PIX_FMT_RGB565:
-> > > +		dmr = 0;
-> > > +		break;
-> > > +	case V4L2_PIX_FMT_RGB32:
-> > > +		if (priv->chip = RCAR_H1 || priv->chip = RCAR_E1) {
-> > > +			dmr = VNDMR_EXRGB;
-> > > +			break;
-> > > +		}
-> > > +	default:
-> > > +		BUG();
-> > as commented above, please, remove
-> Does WARN_ON(1) work instead of removal?
+> Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
+> 
+> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> [Sergei: removed deprecated IRQF_DISABLED flag, reordered/renamed 'enum chip_id'
+> values, reordered rcar_vin_id_table[] entries,  removed senseless parens from
+> to_buf_list() macro, used ALIGN() macro in rcar_vin_setup(), added {} to the
+> *if* statement  and used 'bool' values instead of 0/1 where necessary, removed
+> unused macros, done some reformatting and clarified some comments.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> ---
+> This patch is against the 'media_tree.git' repo.
+> 
+> Changes since version 7:
+> - remove 'icd' field from 'struct rcar_vin_priv' in accordance with the commit
+>   f7f6ce2d09c86bd80ee11bd654a1ac1e8f5dfe13 ([media] soc-camera: move common code
+>   to soc_camera.c);
+> - added mandatory clock_{start|stop}() methods in accordance with the commit
+>   a78fcc11264b824d9651b55abfeedd16d5cd8415 ([media] soc-camera: make .clock_
+>   {start,stop} compulsory, .add / .remove optional).
 
-Sorry, by "remove" I certainly meant replace with a proper handling, not 
-just delete. In principle the above condition should never be entered, 
-right? Also for fmt = V4L2_PIX_FMT_RGB32 but chip not one of RCAR_H1 or 
-RCAR_E1? Well, this function is called from your driver's .buf_queue(), 
-which doesn't return an error. But yes, I would make rcar_vin_setup() 
-issue a warning and return an error and then, back in 
-rcar_vin_videobuf_queue() return the buffer with an error code (goto 
-error).
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Subject: Re: [PATCH v6] V4L2: soc_camera: Renesas R-Car VIN driver
+Date: Sat, 22 Jun 2013 15:45:10 +0400
 
-Thanks
-Guennadi
+>> But, captured images are still incorrect that means wrong
+>> order of fields desite '_BT' chosen for V4L2_STD_525_60.
+>>   
+> I've ordered the NTSC camera.
+> I will return once I get it.
+
+ Did you get an NTSC camera and see the field order issue
+ occurs on your BOCK-W board?
+ You may want to consider adding a workaround into
+ the VIN driver if the issue remains in the latest patch.
+
+ Thanks,
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ Katsuya Matsubara / IGEL Co., Ltd
+ matsu@igel.co.jp
