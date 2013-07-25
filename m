@@ -1,51 +1,169 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:53 +0000
-Subject: [PATCH 14/19] ARM: shmobile: armadillo-reference: Add LED1-LED4 to the device tree
-Message-Id: <0a4f788961f196baa3e8ffd840a2c5931434854e.1374625203.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 25 Jul 2013 22:27:41 +0000
+Subject: [PATCH] pwm: renesas-tpu: Add DT support
+Message-Id: <1374791261-9850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pwm@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+Specify DT bindings for the TPU PWM controller and add OF support to the
+driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ .../devicetree/bindings/pwm/renesas,tpu-pwm.txt    | 28 +++++++++++++++
+ drivers/pwm/pwm-renesas-tpu.c                      | 41 ++++++++++++++++++----
+ 2 files changed, 62 insertions(+), 7 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pwm/renesas,tpu-pwm.txt
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 8ec4cd1..366f729 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -34,6 +34,21 @@
- 		regulator-boot-on;
- 	};
- 
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&pfc 102 GPIO_ACTIVE_HIGH>;
-+		};
-+		led2 {
-+			gpios = <&pfc 111 GPIO_ACTIVE_HIGH>;
-+		};
-+		led3 {
-+			gpios = <&pfc 110 GPIO_ACTIVE_HIGH>;
-+		};
-+		led4 {
-+			gpios = <&pfc 177 GPIO_ACTIVE_HIGH>;
-+		};
+This patch depends on the "[PATCH v2 0/4] Add PWM polarity flag macro for DT"
+series that is scheduled for merge in the PWM tree, and should thus go in via
+the same tree.
+
+The code has been tested on an Armadillo800EVA with additional platform patches
+that I'm going to submit next.
+
+diff --git a/Documentation/devicetree/bindings/pwm/renesas,tpu-pwm.txt b/Documentation/devicetree/bindings/pwm/renesas,tpu-pwm.txt
+new file mode 100644
+index 0000000..b067e84
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pwm/renesas,tpu-pwm.txt
+@@ -0,0 +1,28 @@
++* Renesas R-Car Timer Pulse Unit PWM Controller
++
++Required Properties:
++
++  - compatible: should be one of the following.
++    - "renesas,tpu-r8a73a4": for R8A77A4 (R-Mobile APE6) compatible PWM controller.
++    - "renesas,tpu-r8a7740": for R8A7740 (R-Mobile A1) compatible PWM controller.
++    - "renesas,tpu-r8a7790": for R8A7790 (R-Car H2) compatible PWM controller.
++    - "renesas,tpu-sh7372": for SH7372 (SH-Mobile AP4) compatible PWM controller.
++    - "renesas,tpu": for generic R-Car TPU PWM controller.
++
++  - reg: Base address and length of each memory resource used by the PWM
++    controller hardware module.
++
++  - #pwm-cells: should be 3. See pwm.txt in this directory for a description of
++    the cells format. The only third cell flag supported by this binding is
++    PWM_POLARITY_INVERTED.
++
++Please refer to pwm.txt in this directory for details of the common PWM bindings
++used by client devices.
++
++Example: R8A7740 (R-Car A1) TPU controller node
++
++	tpu: pwm@e6600000 {
++		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
++		reg = <0xe6600000 0x100>;
++		#pwm-cells = <3>;
 +	};
+diff --git a/drivers/pwm/pwm-renesas-tpu.c b/drivers/pwm/pwm-renesas-tpu.c
+index 2600892..3eeffff 100644
+--- a/drivers/pwm/pwm-renesas-tpu.c
++++ b/drivers/pwm/pwm-renesas-tpu.c
+@@ -20,6 +20,7 @@
+ #include <linux/ioport.h>
+ #include <linux/module.h>
+ #include <linux/mutex.h>
++#include <linux/of.h>
+ #include <linux/platform_data/pwm-renesas-tpu.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+@@ -86,7 +87,7 @@ struct tpu_pwm_device {
+ 
+ struct tpu_device {
+ 	struct platform_device *pdev;
+-	struct tpu_pwm_platform_data *pdata;
++	enum pwm_polarity polarities[TPU_CHANNEL_MAX];
+ 	struct pwm_chip chip;
+ 	spinlock_t lock;
+ 
+@@ -228,8 +229,7 @@ static int tpu_pwm_request(struct pwm_chip *chip, struct pwm_device *_pwm)
+ 
+ 	pwm->tpu = tpu;
+ 	pwm->channel = _pwm->hwpwm;
+-	pwm->polarity = tpu->pdata ? tpu->pdata->channels[pwm->channel].polarity
+-		      : PWM_POLARITY_NORMAL;
++	pwm->polarity = tpu->polarities[pwm->channel];
+ 	pwm->prescaler = 0;
+ 	pwm->period = 0;
+ 	pwm->duty = 0;
+@@ -388,6 +388,16 @@ static const struct pwm_ops tpu_pwm_ops = {
+  * Probe and remove
+  */
+ 
++static void tpu_parse_pdata(struct tpu_device *tpu)
++{
++	struct tpu_pwm_platform_data *pdata = tpu->pdev->dev.platform_data;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(tpu->polarities); ++i)
++		tpu->polarities[i] = pdata ? pdata->channels[i].polarity
++				   : PWM_POLARITY_NORMAL;
++}
++
+ static int tpu_probe(struct platform_device *pdev)
+ {
+ 	struct tpu_device *tpu;
+@@ -400,7 +410,11 @@ static int tpu_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
+-	tpu->pdata = pdev->dev.platform_data;
++	spin_lock_init(&tpu->lock);
++	tpu->pdev = pdev;
++
++	/* Initialize device configuration from platform data. */
++	tpu_parse_pdata(tpu);
+ 
+ 	/* Map memory, get clock and pin control. */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+@@ -422,11 +436,10 @@ static int tpu_probe(struct platform_device *pdev)
+ 	/* Initialize and register the device. */
+ 	platform_set_drvdata(pdev, tpu);
+ 
+-	spin_lock_init(&tpu->lock);
+-	tpu->pdev = pdev;
+-
+ 	tpu->chip.dev = &pdev->dev;
+ 	tpu->chip.ops = &tpu_pwm_ops;
++	tpu->chip.of_xlate = of_pwm_xlate_with_flags;
++	tpu->chip.of_pwm_n_cells = 3;
+ 	tpu->chip.base = -1;
+ 	tpu->chip.npwm = TPU_CHANNEL_MAX;
+ 
+@@ -457,12 +470,26 @@ static int tpu_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_OF
++static const struct of_device_id tpu_of_table[] = {
++	{ .compatible = "renesas,tpu-r8a73a4", },
++	{ .compatible = "renesas,tpu-r8a7740", },
++	{ .compatible = "renesas,tpu-r8a7790", },
++	{ .compatible = "renesas,tpu-sh7372", },
++	{ .compatible = "renesas,tpu", },
++	{ },
++};
++
++MODULE_DEVICE_TABLE(of, tpu_of_table);
++#endif
++
+ static struct platform_driver tpu_driver = {
+ 	.probe		= tpu_probe,
+ 	.remove		= tpu_remove,
+ 	.driver		= {
+ 		.name	= "renesas-tpu-pwm",
+ 		.owner	= THIS_MODULE,
++		.of_match_table = of_match_ptr(tpu_of_table),
+ 	}
  };
  
- &i2c0 {
 -- 
-1.8.2.1
+Regards,
+
+Laurent Pinchart
 
