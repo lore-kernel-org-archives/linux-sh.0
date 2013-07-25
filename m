@@ -1,41 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 15 Jul 2013 19:12:21 +0000
-Subject: [PATCH] ml86v7667: override default field interlace order
-Message-Id: <201307152312.22371.sergei.shtylyov@cogentembedded.com>
+From: Katsuya MATSUBARA <matsu@igel.co.jp>
+Date: Thu, 25 Jul 2013 07:32:56 +0000
+Subject: Re: [PATCH] ml86v7667: override default field interlace order
+Message-Id: <20130725.163256.373541261.matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201307152312.22371.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201307152312.22371.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: mchehab@redhat.com, linux-media@vger.kernel.org, hverkuil@xs4all.nl
-Cc: matsu@igel.co.jp, linux-sh@vger.kernel.org, vladimir.barinov@cogentembedded.com
+To: sergei.shtylyov@cogentembedded.com
+Cc: mchehab@redhat.com, linux-media@vger.kernel.org, hverkuil@xs4all.nl, linux-sh@vger.kernel.org, vladimir.barinov@cogentembedded.com
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-ML86V7667 always transmits top field first for both PAL and  NTSC -- that makes
-application incorrectly  treat interlaced  fields when relying on the standard.
-Hence we must set V4L2_FIELD_INTERLACED_TB format explicitly.
+ Hi Vladimir,
 
-Reported-by: Katsuya MATSUBARA <matsu@igel.co.jp>
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: added a comment.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Subject: [PATCH] ml86v7667: override default field interlace order
+Date: Mon, 15 Jul 2013 23:12:21 +0400
+
+> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> 
+> ML86V7667 always transmits top field first for both PAL and  NTSC -- that makes
+> application incorrectly  treat interlaced  fields when relying on the standard.
+> Hence we must set V4L2_FIELD_INTERLACED_TB format explicitly.
+> 
+> Reported-by: Katsuya MATSUBARA <matsu@igel.co.jp>
+> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> [Sergei: added a comment.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+(snip)
+
+I made sure that it works well on the Renesas BOCK-W board.
+
+Tested-by: Katsuya MATSUBARA <matsu@igel.co.jp>
 
 ---
-This patch is against the 'media_tree.git' repo.
-
- drivers/media/i2c/ml86v7667.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-Index: media_tree/drivers/media/i2c/ml86v7667.c
-=================================--- media_tree.orig/drivers/media/i2c/ml86v7667.c
-+++ media_tree/drivers/media/i2c/ml86v7667.c
-@@ -209,7 +209,8 @@ static int ml86v7667_mbus_fmt(struct v4l
- 
- 	fmt->code = V4L2_MBUS_FMT_YUYV8_2X8;
- 	fmt->colorspace = V4L2_COLORSPACE_SMPTE170M;
--	fmt->field = V4L2_FIELD_INTERLACED;
-+	/* The top field is always transferred first by the chip */
-+	fmt->field = V4L2_FIELD_INTERLACED_TB;
- 	fmt->width = 720;
- 	fmt->height = priv->std & V4L2_STD_525_60 ? 480 : 576;
- 
+Katsuya Matsubara / IGEL Co., Ltd
+matsu@igel.co.jp
