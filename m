@@ -1,22 +1,94 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Jul 2013 00:01:13 +0000
-Subject: Re: [PATCH] ARM: shmobile: Remove unused mach/sdhi*.h headers
-Message-Id: <20130730000112.GE11142@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 25 Jul 2013 23:26:38 +0000
+Subject: [PATCH 02/12] ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
+Message-Id: <1374794808-21890-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375125846-25149-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375125846-25149-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 29, 2013 at 09:27:02PM +0200, Laurent Pinchart wrote:
-> On Monday 29 July 2013 21:24:06 Laurent Pinchart wrote:
-> > The headers are not used anymore, remove them.
-> > 
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Scratch this, my bad, I hadn't realized the headers were still needed by 
-> arch/arm/boot/compressed/sdhi-mobile.c. Sorry for the noise.
+Pass the CD and RO GPIO numbers to the MMC SPI driver and remove the
+custom .get_cd() and .get_ro() callback functions.
 
-Scratched.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-ep93xx/vision_ep9307.c | 56 +++---------------------------------
+ 1 file changed, 4 insertions(+), 52 deletions(-)
+
+diff --git a/arch/arm/mach-ep93xx/vision_ep9307.c b/arch/arm/mach-ep93xx/vision_ep9307.c
+index 605956f..ab94dc5 100644
+--- a/arch/arm/mach-ep93xx/vision_ep9307.c
++++ b/arch/arm/mach-ep93xx/vision_ep9307.c
+@@ -224,62 +224,14 @@ static struct ep93xx_spi_chip_ops vision_spi_flash_hw = {
+ #define VISION_SPI_MMC_WP	EP93XX_GPIO_LINE_F(0)
+ #define VISION_SPI_MMC_CD	EP93XX_GPIO_LINE_EGPIO15
+ 
+-static struct gpio vision_spi_mmc_gpios[] = {
+-	{ VISION_SPI_MMC_WP, GPIOF_DIR_IN, "mmc_spi:wp" },
+-	{ VISION_SPI_MMC_CD, GPIOF_DIR_IN, "mmc_spi:cd" },
+-};
+-
+-static int vision_spi_mmc_init(struct device *pdev,
+-			irqreturn_t (*func)(int, void *), void *pdata)
+-{
+-	int err;
+-
+-	err = gpio_request_array(vision_spi_mmc_gpios,
+-				 ARRAY_SIZE(vision_spi_mmc_gpios));
+-	if (err)
+-		return err;
+-
+-	err = gpio_set_debounce(VISION_SPI_MMC_CD, 1);
+-	if (err)
+-		goto exit_err;
+-
+-	err = request_irq(gpio_to_irq(VISION_SPI_MMC_CD), func,
+-			IRQ_TYPE_EDGE_BOTH, "mmc_spi:cd", pdata);
+-	if (err)
+-		goto exit_err;
+-
+-	return 0;
+-
+-exit_err:
+-	gpio_free_array(vision_spi_mmc_gpios, ARRAY_SIZE(vision_spi_mmc_gpios));
+-	return err;
+-
+-}
+-
+-static void vision_spi_mmc_exit(struct device *pdev, void *pdata)
+-{
+-	free_irq(gpio_to_irq(VISION_SPI_MMC_CD), pdata);
+-	gpio_free_array(vision_spi_mmc_gpios, ARRAY_SIZE(vision_spi_mmc_gpios));
+-}
+-
+-static int vision_spi_mmc_get_ro(struct device *pdev)
+-{
+-	return !!gpio_get_value(VISION_SPI_MMC_WP);
+-}
+-
+-static int vision_spi_mmc_get_cd(struct device *pdev)
+-{
+-	return !gpio_get_value(VISION_SPI_MMC_CD);
+-}
+-
+ static struct mmc_spi_platform_data vision_spi_mmc_data = {
+-	.init		= vision_spi_mmc_init,
+-	.exit		= vision_spi_mmc_exit,
+-	.get_ro		= vision_spi_mmc_get_ro,
+-	.get_cd		= vision_spi_mmc_get_cd,
+ 	.detect_delay	= 100,
+ 	.powerup_msecs	= 100,
+ 	.ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
++	.flags		= MMC_SPI_USE_CD_GPIO | MMC_SPI_USE_RO_GPIO,
++	.cd_gpio	= VISION_SPI_MMC_CD,
++	.ro_gpio	= VISION_SPI_MMC_WP,
++	.caps2		= MMC_CAP2_RO_ACTIVE_HIGH,
+ };
+ 
+ static int vision_spi_mmc_hw_setup(struct spi_device *spi)
+-- 
+1.8.1.5
+
