@@ -1,59 +1,71 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Jul 2013 07:27:39 +0000
-Subject: [PATCH] ARM: shmobile: sh73a0: Rely on DT for SMP CPU info
-Message-Id: <20130724072739.28333.44251.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 26 Jul 2013 02:38:39 +0000
+Subject: Re: [PATCH] ARM: shmobile: sh73a0: Rely on DT for SMP CPU info
+Message-Id: <20130726023838.GC32490@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130724072739.28333.44251.sendpatchset@w520>
+In-Reply-To: <20130724072739.28333.44251.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Jul 24, 2013 at 04:27:39PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Remove sh73a0 specific ->smp_init_cpus() callback and
+> instead of relying on shmobile_smp_init_cpus() simply
+> use DT for CPU core information.
+> 
+> This assumes that DT_MACHINE_START is used which is
+> the case when AG5EVM and Kota2 are removed.
 
-Remove sh73a0 specific ->smp_init_cpus() callback and
-instead of relying on shmobile_smp_init_cpus() simply
-use DT for CPU core information.
+And indeed they are queued-up for removal.
 
-This assumes that DT_MACHINE_START is used which is
-the case when AG5EVM and Kota2 are removed.
+I have queued-up this patch for v3.12 in the dt2 branch.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/smp-sh73a0.c |   11 ++---------
- 1 file changed, 2 insertions(+), 9 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-07-24 15:59:16.000000000 +0900
-@@ -62,6 +62,8 @@ static int sh73a0_boot_secondary(unsigne
- 
- static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- {
-+	/* setup sh73a0 specific SCU base */
-+	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
- 	scu_enable(shmobile_scu_base);
- 
- 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
-@@ -74,14 +76,6 @@ static void __init sh73a0_smp_prepare_cp
- 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
- }
- 
--static void __init sh73a0_smp_init_cpus(void)
--{
--	/* setup sh73a0 specific SCU base */
--	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
--
--	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
--}
--
- #ifdef CONFIG_HOTPLUG_CPU
- static int sh73a0_cpu_kill(unsigned int cpu)
- {
-@@ -120,7 +114,6 @@ static int sh73a0_cpu_disable(unsigned i
- #endif /* CONFIG_HOTPLUG_CPU */
- 
- struct smp_operations sh73a0_smp_ops __initdata = {
--	.smp_init_cpus		= sh73a0_smp_init_cpus,
- 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
- 	.smp_boot_secondary	= sh73a0_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/mach-shmobile/smp-sh73a0.c |   11 ++---------
+>  1 file changed, 2 insertions(+), 9 deletions(-)
+> 
+> --- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
+> +++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-07-24 15:59:16.000000000 +0900
+> @@ -62,6 +62,8 @@ static int sh73a0_boot_secondary(unsigne
+>  
+>  static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+>  {
+> +	/* setup sh73a0 specific SCU base */
+> +	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
+>  	scu_enable(shmobile_scu_base);
+>  
+>  	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
+> @@ -74,14 +76,6 @@ static void __init sh73a0_smp_prepare_cp
+>  	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+>  }
+>  
+> -static void __init sh73a0_smp_init_cpus(void)
+> -{
+> -	/* setup sh73a0 specific SCU base */
+> -	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
+> -
+> -	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+> -}
+> -
+>  #ifdef CONFIG_HOTPLUG_CPU
+>  static int sh73a0_cpu_kill(unsigned int cpu)
+>  {
+> @@ -120,7 +114,6 @@ static int sh73a0_cpu_disable(unsigned i
+>  #endif /* CONFIG_HOTPLUG_CPU */
+>  
+>  struct smp_operations sh73a0_smp_ops __initdata = {
+> -	.smp_init_cpus		= sh73a0_smp_init_cpus,
+>  	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
+>  	.smp_boot_secondary	= sh73a0_boot_secondary,
+>  #ifdef CONFIG_HOTPLUG_CPU
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
