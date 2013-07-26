@@ -1,7 +1,7 @@
 From: H Hartley Sweeten <hartleys@visionengravers.com>
-Date: Thu, 25 Jul 2013 23:33:44 +0000
+Date: Fri, 26 Jul 2013 00:19:52 +0000
 Subject: RE: [PATCH 02/12] ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
-Message-Id: <ADE657CA350FB648AAC2C43247A983F0021DAC5C20A6@AUSP01VMBX24.collaborationhost.net>
+Message-Id: <ADE657CA350FB648AAC2C43247A983F0021DAC5C20AC@AUSP01VMBX24.collaborationhost.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1374794808-21890-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -20,9 +20,73 @@ On Thursday, July 25, 2013 4:27 PM, Laurent Pinchart wrote:
 > ---
 >  arch/arm/mach-ep93xx/vision_ep9307.c | 56 +++---------------------------------
 >  1 file changed, 4 insertions(+), 52 deletions(-)
+>
+> diff --git a/arch/arm/mach-ep93xx/vision_ep9307.c b/arch/arm/mach-ep93xx/vision_ep9307.c
+> index 605956f..ab94dc5 100644
+> --- a/arch/arm/mach-ep93xx/vision_ep9307.c
+> +++ b/arch/arm/mach-ep93xx/vision_ep9307.c
+> @@ -224,62 +224,14 @@ static struct ep93xx_spi_chip_ops vision_spi_flash_hw = {
+>  #define VISION_SPI_MMC_WP	EP93XX_GPIO_LINE_F(0)
+>  #define VISION_SPI_MMC_CD	EP93XX_GPIO_LINE_EGPIO15
+>  
+> -static struct gpio vision_spi_mmc_gpios[] = {
+> -	{ VISION_SPI_MMC_WP, GPIOF_DIR_IN, "mmc_spi:wp" },
+> -	{ VISION_SPI_MMC_CD, GPIOF_DIR_IN, "mmc_spi:cd" },
+> -};
+> -
+> -static int vision_spi_mmc_init(struct device *pdev,
+> -			irqreturn_t (*func)(int, void *), void *pdata)
+> -{
+> -	int err;
+> -
+> -	err = gpio_request_array(vision_spi_mmc_gpios,
+> -				 ARRAY_SIZE(vision_spi_mmc_gpios));
+> -	if (err)
+> -		return err;
+> -
+> -	err = gpio_set_debounce(VISION_SPI_MMC_CD, 1);
+> -	if (err)
+> -		goto exit_err;
 
-I'll try testing this tomorrow.
+I tested this and it _kind_ of works.
 
-Thanks,
+The card detect is a bit flaky due to the gpio interrupt debounce not being enabled.
+
+The only way I can see to fix this is add the following to this patch:
+
+@@ -233,8 +233,31 @@ static struct mmc_spi_platform_data vision_spi_mmc_data = {
+        .caps2          = MMC_CAP2_RO_ACTIVE_HIGH,
+ };
+ 
++static int vision_spi_mmc_enable_cd_debounce(struct spi_device *spi)
++{
++       int ret;
++
++       ret = gpio_request_one(VISION_SPI_MMC_CD, GPIOF_DIR_IN, spi->modalias);
++       if (ret)
++               return ret;
++
++       ret = gpio_set_debounce(VISION_SPI_MMC_CD, 1);
++       if (ret)
++               return ret;
++
++       gpio_free(VISION_SPI_MMC_CD);
++
++       return 0;
++}
++
+ static int vision_spi_mmc_hw_setup(struct spi_device *spi)
+ {
++       int ret;
++
++       ret = vision_spi_mmc_enable_cd_debounce(spi);
++       if (ret)
++               return ret;
++
+        return gpio_request_one(VISION_SPI_MMC_CS, GPIOF_INIT_HIGH,
+                                spi->modalias);
+ }
+
+Regards,
 Hartley
 
