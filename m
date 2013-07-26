@@ -1,83 +1,79 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 22 Jul 2013 10:46:43 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: ape6evm-reference: switch PFC to DT
-Message-Id: <6806989.5dnuyRGYJh@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 26 Jul 2013 07:35:08 +0000
+Subject: [PATCH 4/6 v2] ARM: shmobile: r8a7778: cleanup registration of i2c
+Message-Id: <871u6ldb9z.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1307191723470.26183@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1307191723470.26183@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+i2c-rcar driver which doesn't need platform data at the time of
+registration can be registerd on SoC.
+And, registering these drivers in the SoC code can avoid
+unwanted device numbering issue.
+(ex. the i2c3 device number will be i2c.0 if i2c3 only registered)
+This patch registers it on SoC code as cleanup C code
 
-Thanks for the patch.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
+ - based on renesas-devel-20130726
+ - update git log
 
-On Friday 19 July 2013 17:30:20 Guennadi Liakhovetski wrote:
-> PFC pinctrl configuration can now be performed via DT. Update
-> ape6evm-reference to use this.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+ arch/arm/mach-shmobile/board-bockw.c          |    1 -
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 -
+ arch/arm/mach-shmobile/setup-r8a7778.c        |    6 +++++-
+ 3 files changed, 5 insertions(+), 3 deletions(-)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   10 ++++++++++
->  arch/arm/mach-shmobile/board-ape6evm-reference.c |    9 ---------
->  2 files changed, 10 insertions(+), 9 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts index 6f4506e..bbd09d8
-> 100644
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> @@ -53,3 +53,13 @@
-> 
->  	>;
-> 
->  	voltage-tolerance = <1>; /* 1% */
->  };
-> +
-> +&pfc {
-> +	pinctrl-0 = <&scifa0_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	scifa0_pins: scifa0 {
-> +		renesas,groups = "scifa0_data";
-> +		renesas,function = "scifa0";
-> +	};
-> +};
-> diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-> b/arch/arm/mach-shmobile/board-ape6evm-reference.c index 46b41de..52cc5fa
-> 100644
-> --- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-> +++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-> @@ -29,12 +29,6 @@
->  #include <asm/mach-types.h>
->  #include <asm/mach/arch.h>
-> 
-> -static const struct pinctrl_map ape6evm_pinctrl_map[] = {
-> -	/* SCIFA0 console */
-> -	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
-> -				  "scifa0_data", "scifa0"),
-> -};
-> -
->  static void __init ape6evm_add_standard_devices(void)
->  {
-> 
-> @@ -52,9 +46,6 @@ static void __init ape6evm_add_standard_devices(void)
->  	clk_put(parent);
->  	clk_put(mp);
-> 
-> -	pinctrl_register_mappings(ape6evm_pinctrl_map,
-> -				  ARRAY_SIZE(ape6evm_pinctrl_map));
-> -	r8a73a4_pinmux_init();
->  	r8a73a4_add_dt_devices();
->  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->  	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 1c876ab..d7d3427 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -200,7 +200,6 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_ether_device(&ether_platform_data);
+-	r8a7778_add_i2c_device(0);
+ 	r8a7778_add_hspi_device(0);
+ 
+ 	i2c_register_board_info(0, i2c0_devices,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index aaa0544..9874511 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -23,7 +23,6 @@
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+-extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
+ extern void r8a7778_add_dt_devices(void);
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index c585ee0..e975fcc1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -250,7 +250,7 @@ static struct resource i2c_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_iid(0x6d)),
+ };
+ 
+-void __init r8a7778_add_i2c_device(int id)
++static void __init r8a7778_register_i2c(int id)
+ {
+ 	BUG_ON(id < 0 || id > 3);
+ 
+@@ -303,6 +303,10 @@ void __init r8a7778_add_dt_devices(void)
+ 
+ 	r8a7778_register_tmu(0);
+ 	r8a7778_register_tmu(1);
++	r8a7778_register_i2c(0);
++	r8a7778_register_i2c(1);
++	r8a7778_register_i2c(2);
++	r8a7778_register_i2c(3);
+ }
+ 
+ void __init r8a7778_add_standard_devices(void)
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
