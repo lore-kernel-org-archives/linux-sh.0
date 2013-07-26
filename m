@@ -1,29 +1,69 @@
-From: Sakari Ailus <sakari.ailus@iki.fi>
-Date: Wed, 31 Jul 2013 21:08:40 +0000
-Subject: Re: [PATCH v4 7/7] vsp1: Use the maximum number of entities defined in platform data
-Message-Id: <20130731210840.GS12281@valkosipuli.retiisi.org.uk>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Jul 2013 10:19:22 +0000
+Subject: [PATCH] cpufreq-cpu0: support Device Tree initialisation
+Message-Id: <Pine.LNX.4.64.1307261214430.22137@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375285954-32153-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1375285954-32153-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375285954-32153-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Shawn Guo <shawn.guo@linaro.org>
 
-On Wed, Jul 31, 2013 at 05:52:34PM +0200, Laurent Pinchart wrote:
-> From: Katsuya Matsubara <matsu@igel.co.jp>
-> 
-> The VSP1 driver allows to define the maximum number of each module
-> such as RPF, WPF, and UDS in a platform data definition.
-> This suppresses operations for nonexistent or unused modules.
-> 
-> Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Currently the cpufreq-cpu0 driver doesn't support Device Tree probing. To
+support it we add an OF match table to it. In principle this alone is
+enough to get the driver working with DT devices, but then the driver
+rewrites the .of_node field of the probed device with a different one,
+which isn't clean. To avoid this we use the cpu0 system device for clock
+and OPP handling, similar to what the arm_big_little CPUFreq driver does.
+This is also less intrusive, since the cpu0 device's .of_node field is
+initially NULL, since this isn't a DT device.
 
-Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/cpufreq/cpufreq-cpu0.c |   14 +++++++++++---
+ 1 files changed, 11 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/cpufreq/cpufreq-cpu0.c b/drivers/cpufreq/cpufreq-cpu0.c
+index ad1fde2..d2ad7b8 100644
+--- a/drivers/cpufreq/cpufreq-cpu0.c
++++ b/drivers/cpufreq/cpufreq-cpu0.c
+@@ -12,6 +12,7 @@
+ #define pr_fmt(fmt)	KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/clk.h>
++#include <linux/cpu.h>
+ #include <linux/cpufreq.h>
+ #include <linux/err.h>
+ #include <linux/module.h>
+@@ -194,7 +195,7 @@ static int cpu0_cpufreq_probe(struct platform_device *pdev)
+ 		goto out_put_parent;
+ 	}
+ 
+-	cpu_dev = &pdev->dev;
++	cpu_dev = get_cpu_device(0);
+ 	cpu_dev->of_node = np;
+ 
+ 	cpu_reg = devm_regulator_get(cpu_dev, "cpu0");
+@@ -289,10 +290,17 @@ static int cpu0_cpufreq_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static const struct of_device_id cpu0_cpufreq_of_match[] = {
++	{.compatible = "cpufreq-cpu0"},
++	{}
++};
++MODULE_DEVICE_TABLE(of, cpu0_cpufreq_of_match);
++
+ static struct platform_driver cpu0_cpufreq_platdrv = {
+ 	.driver = {
+-		.name	= "cpufreq-cpu0",
+-		.owner	= THIS_MODULE,
++		.name		= "cpufreq-cpu0",
++		.of_match_table	= cpu0_cpufreq_of_match,
++		.owner		= THIS_MODULE,
+ 	},
+ 	.probe		= cpu0_cpufreq_probe,
+ 	.remove		= cpu0_cpufreq_remove,
 -- 
-Sakari Ailus
-e-mail: sakari.ailus@iki.fi	XMPP: sailus@retiisi.org.uk
+1.7.2.5
+
