@@ -1,38 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 18 Jul 2013 11:47:07 +0000
-Subject: Re: [PATCH 08/11] ARM: shmobile: r8a7779: cleanup registration of sh_eth
-Message-Id: <51E7D5BB.6030305@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 26 Jul 2013 09:09:32 +0000
+Subject: [PATCH] ARM: shmobile: lager: do not annotate gpio_buttons as __initdata
+Message-Id: <1374829772-10939-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bo69fqds.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bo69fqds.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+When the gpio-keys device is registered using
+platform_device_register_data() the platform data argument,
+lager_keys_pdata is duplicated and thus should be marked as __initdata
+to avoid wasting memory. However, this is not true of gpio_buttons,
+a reference to it rather than its value is duplicated when lager_keys_pdata
+is duplicated.
 
-On 18-07-2013 3:15, Simon Horman wrote:
+This avoids accessing freed memory if gpio-key events occur
+after unused kernel memory is freed late in the kernel's boot.
 
->>>> No one is using sh_eth on r8a7779 board.
->>>> remove it
+This but was added when support for gpio-keys was added to lager
+in c3842e4fcbb7664276443b79187b7808c2e80a35
+("ARM: shmobile: lager: support GPIO switches") which was included
+in v3.11-rc1.
 
->>     This may yet change (depends on information/support from
->> Renesas), so this is a bit premature. And there's no r8a7779 board,
->> there's Marzen (of the supported now boards).
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
->>>> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
 
->>>     NAK.
+* Noticed when adding gpio-keys support to ape6evm
+* Compile tested only
+---
+ arch/arm/mach-shmobile/board-lager.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->>     I've added it not to be removed 2 releases later. Quit creating
->> churn please.
-
-> Is there any planned usage for this code, in say the next 3 releases?
-> If not I'm inclined to accept this patch. As its not being exercised it
-> could easily bit-rot. And it could easily be re-added if it is needed.
-
-     Replied off-list.
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 3c67b2a..3a1a6fd 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -63,7 +63,7 @@ static __initdata struct gpio_led_platform_data lager_leds_pdata = {
+ #define GPIO_KEY(c, g, d, ...) \
+ 	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
+ 
+-static __initdata struct gpio_keys_button gpio_buttons[] = {
++static struct gpio_keys_button gpio_buttons[] = {
+ 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
+ 	GPIO_KEY(KEY_3,		RCAR_GP_PIN(1, 26),	"SW2-pin3"),
+ 	GPIO_KEY(KEY_2,		RCAR_GP_PIN(1, 24),	"SW2-pin2"),
+-- 
+1.8.3.2
 
