@@ -1,28 +1,92 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 01:58:59 +0000
-Subject: [PATCH 0/4] ARM: shmobile: ape6evm: support GPIO switches and LEDs
-Message-Id: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 26 Jul 2013 14:22:02 +0000
+Subject: [PATCH] serial8250-em: Convert to devm_* managed helpers
+Message-Id: <1374848522-13125-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-serial@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>
 
-This short series adds support for GPIO swtiches and LEDS to
-the ape6evm board.
+Replace kzalloc and clk_get by their managed counterparts to simplify
+error and cleanup paths.
 
-Applies on top of renesas-devel-20130726.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/tty/serial/8250/8250_em.c | 27 ++++++++-------------------
+ 1 file changed, 8 insertions(+), 19 deletions(-)
 
-Simon Horman (4):
-  ARM: shmobile: ape6evm: support GPIO switches
-  ARM: shmobile: ape6evm: Enable gpio-keys in defconfig
-  ARM: shmobile: ape6evm: Add GPIO LEDs
-  ARM: shmobile: ape6evm: Enable gpio-leds in defconfig
-
- arch/arm/configs/ape6evm_defconfig     |  6 +++-
- arch/arm/mach-shmobile/board-ape6evm.c | 60 ++++++++++++++++++++++++++++++++++
- 2 files changed, 65 insertions(+), 1 deletion(-)
-
+diff --git a/drivers/tty/serial/8250/8250_em.c b/drivers/tty/serial/8250/8250_em.c
+index 916cc19..5f3bba1 100644
+--- a/drivers/tty/serial/8250/8250_em.c
++++ b/drivers/tty/serial/8250/8250_em.c
+@@ -95,25 +95,23 @@ static int serial8250_em_probe(struct platform_device *pdev)
+ 	struct resource *irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+ 	struct serial8250_em_priv *priv;
+ 	struct uart_8250_port up;
+-	int ret = -EINVAL;
++	int ret;
+ 
+ 	if (!regs || !irq) {
+ 		dev_err(&pdev->dev, "missing registers or irq\n");
+-		goto err0;
++		return -EINVAL;
+ 	}
+ 
+-	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
++	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv) {
+ 		dev_err(&pdev->dev, "unable to allocate private data\n");
+-		ret = -ENOMEM;
+-		goto err0;
++		return -ENOMEM;
+ 	}
+ 
+-	priv->sclk = clk_get(&pdev->dev, "sclk");
++	priv->sclk = devm_clk_get(&pdev->dev, "sclk");
+ 	if (IS_ERR(priv->sclk)) {
+ 		dev_err(&pdev->dev, "unable to get clock\n");
+-		ret = PTR_ERR(priv->sclk);
+-		goto err1;
++		return PTR_ERR(priv->sclk);
+ 	}
+ 
+ 	memset(&up, 0, sizeof(up));
+@@ -136,20 +134,13 @@ static int serial8250_em_probe(struct platform_device *pdev)
+ 	ret = serial8250_register_8250_port(&up);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "unable to register 8250 port\n");
+-		goto err2;
++		clk_disable(priv->sclk);
++		return ret;
+ 	}
+ 
+ 	priv->line = ret;
+ 	platform_set_drvdata(pdev, priv);
+ 	return 0;
+-
+- err2:
+-	clk_disable(priv->sclk);
+-	clk_put(priv->sclk);
+- err1:
+-	kfree(priv);
+- err0:
+-	return ret;
+ }
+ 
+ static int serial8250_em_remove(struct platform_device *pdev)
+@@ -158,8 +149,6 @@ static int serial8250_em_remove(struct platform_device *pdev)
+ 
+ 	serial8250_unregister_port(priv->line);
+ 	clk_disable(priv->sclk);
+-	clk_put(priv->sclk);
+-	kfree(priv);
+ 	return 0;
+ }
+ 
 -- 
-1.8.3.2
+Regards,
+
+Laurent Pinchart
 
