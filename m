@@ -1,110 +1,125 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 29 Jul 2013 23:59:52 +0000
-Subject: Re: [PATCH v4 net-next repost 2/2] sh_eth: Add support for r8a7790 SoC
-Message-Id: <20130729235952.GD11142@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 26 Jul 2013 07:34:58 +0000
+Subject: [PATCH 3/6 v2] ARM: shmobile: r8a7778: cleanup registration of sdhi
+Message-Id: <8738r1dba9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374542285-19602-1-git-send-email-horms+renesas@verge.net.au>
- <1374542285-19602-3-git-send-email-horms+renesas@verge.net.au>
- <3564962.xOo6qNYDyG@avalon>
-In-Reply-To: <3564962.xOo6qNYDyG@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-sh@vger.kernel.org
 
-On Tue, Jul 30, 2013 at 01:32:33AM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Tuesday 23 July 2013 10:18:05 Simon Horman wrote:
-> > This is a copy of support for r8a7778/9 with the .rmiimode mode bit
-> > of struct sh_eth_cpu_data set.
-> > 
-> > Also update R8A7779 to R8A777x.
-> > 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > 
-> > ---
-> > 
-> > v4
-> > * s/R8A7779/R8A777x/ as requested by Sergei Shtylyov.
-> > 
-> > v3
-> > * Add r8a7790_data rather than updating r8a777x_data.
-> >   As requested by Sergei Shtylyov.
-> > 
-> > v2
-> > * Split from "sh_eth: add support RMIIMODE register"
-> > ---
-> >  drivers/net/ethernet/renesas/Kconfig  |  2 +-
-> >  drivers/net/ethernet/renesas/sh_eth.c | 21 +++++++++++++++++++++
-> >  2 files changed, 22 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/drivers/net/ethernet/renesas/Kconfig
-> > b/drivers/net/ethernet/renesas/Kconfig index 19a8a04..a30c439 100644
-> > --- a/drivers/net/ethernet/renesas/Kconfig
-> > +++ b/drivers/net/ethernet/renesas/Kconfig
-> > @@ -13,4 +13,4 @@ config SH_ETH
-> >  	  Renesas SuperH Ethernet device driver.
-> >  	  This driver supporting CPUs are:
-> >  		- SH7619, SH7710, SH7712, SH7724, SH7734, SH7763, SH7757,
-> > -		  R8A7740 and R8A7779.
-> > +		  R8A7740, R8A777x and R8A7790.
-> > diff --git a/drivers/net/ethernet/renesas/sh_eth.c
-> > b/drivers/net/ethernet/renesas/sh_eth.c index 87af49f..fedc0a0 100644
-> > --- a/drivers/net/ethernet/renesas/sh_eth.c
-> > +++ b/drivers/net/ethernet/renesas/sh_eth.c
-> > @@ -393,6 +393,26 @@ static struct sh_eth_cpu_data r8a777x_data = {
-> >  	.hw_swap	= 1,
-> >  };
-> > 
-> > +/* R8A7790 */
-> > +static struct sh_eth_cpu_data r8a7790_data = {
-> > +	.set_duplex	= sh_eth_set_duplex,
-> > +	.set_rate	= sh_eth_set_rate_r8a777x,
-> > +
-> > +	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
-> > +	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
-> > +	.eesipr_value	= 0x01ff009f,
-> > +
-> > +	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
-> > +	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
-> > +			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
-> 
-> Is there a reason why the EESR_RFE bit isn't set in eesr_err_check (and thus 
-> ignored in the interrupt handler) but set in eesipr_value ?
-> 
-> If it's just an omission I'll send a patch.
+sdhi driver which needs platform data at the time of
+registration is used from BockW only.
+Now, ARM/shmobile aims to support DT,
+and the C code base board support will be removed
+if DT support is completed.
+Current driver registration method which needs platform data
+and which is not shared complicates codes.
+This means legacy C code cleanup after DT supporting
+will be more complicated
+This patch registers it on board code as cleanup C code
 
-I believe it is just an omission.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
+ - based on renesas-devel-20130726
+ - update git log
 
-> > +
-> > +	.apr		= 1,
-> > +	.mpr		= 1,
-> > +	.tpauser	= 1,
-> > +	.hw_swap	= 1,
-> > +	.rmiimode	= 1,
-> > +};
-> > +
-> >  static void sh_eth_set_rate_sh7724(struct net_device *ndev)
-> >  {
-> >  	struct sh_eth_private *mdp = netdev_priv(ndev);
-> > @@ -2753,6 +2773,7 @@ static struct platform_device_id sh_eth_id_table[] = {
-> > { "sh7763-gether", (kernel_ulong_t)&sh7763_data },
-> >  	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
-> >  	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
-> > +	{ "r8a7790-ether", (kernel_ulong_t)&r8a7790_data },
-> >  	{ }
-> >  };
-> >  MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ arch/arm/mach-shmobile/board-bockw.c          |   11 ++++++++++-
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 --
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   24 ------------------------
+ 3 files changed, 10 insertions(+), 27 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index c94622a..1c876ab 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -20,6 +20,7 @@
+ 
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/pinctrl/machine.h>
+@@ -93,6 +94,11 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ };
+ 
++static struct resource sdhi0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xFFE4C000, 0x100),
++	DEFINE_RES_IRQ(gic_iid(0x77)),
++};
++
+ static struct sh_eth_plat_data ether_platform_data __initdata = {
+ 	.phy		= 0x01,
+ 	.edmac_endian	= EDMAC_LITTLE_ENDIAN,
+@@ -253,7 +259,10 @@ static void __init bockw_init(void)
+ 		iowrite32(ioread32(base + PUPR4) | (3 << 26), base + PUPR4);
+ 		iounmap(base);
+ 
+-		r8a7778_sdhi_init(0, &sdhi0_info);
++		platform_device_register_resndata(
++			&platform_bus, "sh_mobile_sdhi", 0,
++			sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++			&sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
+ 	}
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index a184a13..aaa0544 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -18,7 +18,6 @@
+ #ifndef __ASM_R8A7778_H__
+ #define __ASM_R8A7778_H__
+ 
+-#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
+ 
+ extern void r8a7778_add_standard_devices(void);
+@@ -34,6 +33,5 @@ extern void r8a7778_init_irq_dt(void);
+ extern void r8a7778_clock_init(void);
+ extern void r8a7778_init_irq_extpin(int irlm);
+ extern void r8a7778_pinmux_init(void);
+-extern void r8a7778_sdhi_init(int id, struct sh_mobile_sdhi_info *info);
+ 
+ #endif /* __ASM_R8A7778_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 8947507..c585ee0 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -234,30 +234,6 @@ void __init r8a7778_pinmux_init(void)
+ 	r8a7778_register_gpio(4);
+ };
+ 
+-/* SDHI */
+-static struct resource sdhi_resources[] __initdata = {
+-	/* SDHI0 */
+-	DEFINE_RES_MEM(0xFFE4C000, 0x100),
+-	DEFINE_RES_IRQ(gic_iid(0x77)),
+-	/* SDHI1 */
+-	DEFINE_RES_MEM(0xFFE4D000, 0x100),
+-	DEFINE_RES_IRQ(gic_iid(0x78)),
+-	/* SDHI2 */
+-	DEFINE_RES_MEM(0xFFE4F000, 0x100),
+-	DEFINE_RES_IRQ(gic_iid(0x76)),
+-};
+-
+-void __init r8a7778_sdhi_init(int id,
+-			      struct sh_mobile_sdhi_info *info)
+-{
+-	BUG_ON(id < 0 || id > 2);
+-
+-	platform_device_register_resndata(
+-		&platform_bus, "sh_mobile_sdhi", id,
+-		sdhi_resources + (2 * id), 2,
+-		info, sizeof(*info));
+-}
+-
+ /* I2C */
+ static struct resource i2c_resources[] __initdata = {
+ 	/* I2C0 */
+-- 
+1.7.9.5
+
