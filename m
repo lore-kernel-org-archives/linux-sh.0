@@ -1,62 +1,70 @@
-From: Katsuya Matsubara <matsu@igel.co.jp>
-Date: Fri, 26 Jul 2013 09:32:10 +0000
-Subject: [PATCH 0/7] [media] vsp1: Add VIO6 support
-Message-Id: <1374831137-9219-1-git-send-email-matsu@igel.co.jp>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 26 Jul 2013 16:18:00 +0000
+Subject: Re: [PATCH 0/7] [media] vsp1: Add VIO6 support
+Message-Id: <2022655.TxvuY7dTVO@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374831137-9219-1-git-send-email-matsu@igel.co.jp>
+In-Reply-To: <1374831137-9219-1-git-send-email-matsu@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Katsuya Matsubara <matsu@igel.co.jp>
+To: Katsuya Matsubara <matsu@igel.co.jp>
+Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-Hi Laurent,
+Hi Matsubara-san,
 
-Could you please consider the following patches to add VIO6 support
-into your VSP1 driver implementation?
-Any comments or ideas of better implementation are of course welcome.
+On Friday 26 July 2013 18:32:10 Katsuya Matsubara wrote:
+> Hi Laurent,
+> 
+> Could you please consider the following patches to add VIO6 support into
+> your VSP1 driver implementation?
+> Any comments or ideas of better implementation are of course welcome.
 
-The first two patches are fixes, not only for VIO6.
-The next four patches are preparations of supporting multiple
-versions of the H/W IP.
-The final one is adding definitions of VIO6.
+Thank you for the patches. The first two patches being fixes, I've already 
+applied them to my tree. I will review the remaining patches as soon as 
+possible and will send you my comments.
 
-The code has been tested on an Armadillo800EVA board.
-
-The series is based on the following patchset:
- [PATCH v3 0/5] Renesas VSP1 driver
- [PATCH v3 1/5] media: Add support for circular graph traversal
- [PATCH v3 2/5] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
- [PATCH v3 3/5] v4l: Add media format codes for ARGB8888 and AYUV8888 on 32-bit busses
- [PATCH v3 4/5] v4l: Add V4L2_PIX_FMT_NV16M and V4L2_PIX_FMT_NV61M formats
- [PATCH v3 5/5] v4l: Renesas R-Car VSP1 driver
-
-
-Katsuya Matsubara (7):
-  [media] vsp1: Fix lack of the sink entity setting for enabled links.
-  [media] vsp1: Use the maximum number defined in platform data
-  [media] vsp1: Rewrite the definition of registers' offset as enum and
-    arrays
-  [media] vsp1: Rewrite the value definitions for DPR routing as enum
-    and arrays
-  [media] vsp1: Introduce bit operations for the DPR route registers
-  [media] vsp1: Move the DPR_WPF_FPORCH register settings into the
-    device initialization
-  [media] vsp1: Add VIO6 support
-
- drivers/media/platform/vsp1/vsp1.h        |   23 +-
- drivers/media/platform/vsp1/vsp1_drv.c    |  492 ++++++++++++++++++++++++++--
- drivers/media/platform/vsp1/vsp1_entity.c |   31 +-
- drivers/media/platform/vsp1/vsp1_entity.h |    3 +-
- drivers/media/platform/vsp1/vsp1_lif.c    |    2 +-
- drivers/media/platform/vsp1/vsp1_regs.h   |  497 +++++++++++++++++------------
- drivers/media/platform/vsp1/vsp1_rpf.c    |   19 +-
- drivers/media/platform/vsp1/vsp1_uds.c    |   14 +-
- drivers/media/platform/vsp1/vsp1_video.c  |   27 +-
- drivers/media/platform/vsp1/vsp1_wpf.c    |   29 +-
- 10 files changed, 849 insertions(+), 288 deletions(-)
-
+> The first two patches are fixes, not only for VIO6.
+> The next four patches are preparations of supporting multiple versions of
+> the H/W IP.
+> The final one is adding definitions of VIO6.
+> 
+> The code has been tested on an Armadillo800EVA board.
+> 
+> The series is based on the following patchset:
+>  [PATCH v3 0/5] Renesas VSP1 driver
+>  [PATCH v3 1/5] media: Add support for circular graph traversal
+>  [PATCH v3 2/5] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
+> [PATCH v3 3/5] v4l: Add media format codes for ARGB8888 and AYUV8888 on
+> 32-bit busses [PATCH v3 4/5] v4l: Add V4L2_PIX_FMT_NV16M and
+> V4L2_PIX_FMT_NV61M formats [PATCH v3 5/5] v4l: Renesas R-Car VSP1 driver
+> 
+> 
+> Katsuya Matsubara (7):
+>   [media] vsp1: Fix lack of the sink entity setting for enabled links.
+>   [media] vsp1: Use the maximum number defined in platform data
+>   [media] vsp1: Rewrite the definition of registers' offset as enum and
+>     arrays
+>   [media] vsp1: Rewrite the value definitions for DPR routing as enum
+>     and arrays
+>   [media] vsp1: Introduce bit operations for the DPR route registers
+>   [media] vsp1: Move the DPR_WPF_FPORCH register settings into the
+>     device initialization
+>   [media] vsp1: Add VIO6 support
+> 
+>  drivers/media/platform/vsp1/vsp1.h        |   23 +-
+>  drivers/media/platform/vsp1/vsp1_drv.c    |  492 ++++++++++++++++++++++++--
+>  drivers/media/platform/vsp1/vsp1_entity.c |   31 +-
+>  drivers/media/platform/vsp1/vsp1_entity.h |    3 +-
+>  drivers/media/platform/vsp1/vsp1_lif.c    |    2 +-
+>  drivers/media/platform/vsp1/vsp1_regs.h   |  497 ++++++++++++++------------
+>  drivers/media/platform/vsp1/vsp1_rpf.c    |   19 +-
+>  drivers/media/platform/vsp1/vsp1_uds.c    |   14 +-
+>  drivers/media/platform/vsp1/vsp1_video.c  |   27 +-
+>  drivers/media/platform/vsp1/vsp1_wpf.c    |   29 +-
+>  10 files changed, 849 insertions(+), 288 deletions(-)
 -- 
-Thanks,
+Regards,
 
-Katsuya Matsubara / IGEL Co., Ltd.
-matsu@igel.co.jp
+Laurent Pinchart
+
