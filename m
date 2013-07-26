@@ -1,47 +1,57 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 01 Jul 2013 03:38:35 +0000
-Subject: Re: [PATCH 03/06] ARM: shmobile: Remove unused r8a7778 auxdata table
-Message-Id: <CANqRtoSrr=wKynP30N9v=4Dsp+yNVsFd5fPSbXr5Qt-bm9kO6w@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Jul 2013 15:51:32 +0000
+Subject: [PATCH/RFC 2/2] ARM: shmobile: kzm9g: support DDR50 mode with 1.8V VccQ on MMCIF
+Message-Id: <Pine.LNX.4.64.1307261748260.22137@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130628102930.31451.85334.sendpatchset@w520>
- <20130628102958.31451.56355.sendpatchset@w520>
- <201306281350.40472.arnd@arndb.de>
-In-Reply-To: <201306281350.40472.arnd@arndb.de>
+References: <Pine.LNX.4.64.1307261747210.22137@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1307261747210.22137@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, devicetree@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-Hi Arnd,
+MMCIF on sh73a0 supports the UHS DDR50 mode and on the kzm9g board it can
+be used with MMC VccQ = 1.8V. This patch enables them.
 
-On Fri, Jun 28, 2013 at 8:50 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Friday 28 June 2013, Magnus Damm wrote:
->> ach-shmobile/setup-r8a7778.c
->> +++ work/arch/arm/mach-shmobile/setup-r8a7778.c 2013-06-28 15:48:43.000000000 +0900
->> @@ -457,14 +457,9 @@ void __init r8a7778_init_irq_dt(void)
->>         r8a7778_init_irq_common();
->>  }
->>
->> -static const struct of_dev_auxdata r8a7778_auxdata_lookup[] __initconst = {
->> -       {},
->> -};
->> -
->>  void __init r8a7778_add_standard_devices_dt(void)
->>  {
->> -       of_platform_populate(NULL, of_default_bus_match_table,
->> -                            r8a7778_auxdata_lookup, NULL);
->> +       of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->>  }
->>
->>  static const char *r8a7778_compat_dt[] __initdata = {
->
-> Since this is now the trivial form of the function, you can
-> drop r8a7778_add_standard_devices_dt entirely and have a NULL
-> init_machine pointer. Same for the first two patches.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-Thanks, I will rework the patches for the SoCs where NULL is possible
-and resend the series.
+This patch is correct AFAICS, but pointless on kzm9g, because (at least on 
+my board) th eMMC chip, installed on the board and connected to MMCIF 
+doesn't support DDR, so, it cannot be enabled. This patch is therefore 
+more of an example how these flags shall be used, than a real use case. If 
+it is decided to apply it, it can be applied even before patch 1/2, it 
+just won't have any effect at all.
 
-Cheers,
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    1 +
+ arch/arm/boot/dts/sh73a0.dtsi                |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-/ magnus
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index b99e890..d90de01 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -191,6 +191,7 @@
+ 
+ 	bus-width = <8>;
+ 	vmmc-supply = <&reg_1p8v>;
++	ddr-1v8;
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 86e79fe..1146be8 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -186,6 +186,7 @@
+ 		interrupts = <0 140 0x4
+ 			      0 141 0x4>;
+ 		reg-io-width = <4>;
++		uhs-ddr50;
+ 		status = "disabled";
+ 	};
+ 
+-- 
+1.7.2.5
+
