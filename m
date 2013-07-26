@@ -1,57 +1,84 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Jul 2013 14:33:49 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 26 Jul 2013 15:33:55 +0000
 Subject: Re: [PATCH v5 0/3] ARM: shmobile: lager: enable Ether
-Message-Id: <51F288CD.60608@cogentembedded.com>
+Message-Id: <1585887.1Wse2jq6qr@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374656169-9241-1-git-send-email-horms+renesas@verge.net.au> <3554825.Zlt5jMD3jh@avalon> <20130726005506.GD28912@verge.net.au>
-In-Reply-To: <20130726005506.GD28912@verge.net.au>
+References: <1374656169-9241-1-git-send-email-horms+renesas@verge.net.au> <20130726005506.GD28912@verge.net.au> <51F288CD.60608@cogentembedded.com>
+In-Reply-To: <51F288CD.60608@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Simon Horman <horms@verge.net.au>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Hello.
+Hi Sergei,
 
-On 26-07-2013 4:55, Simon Horman wrote:
+On Friday 26 July 2013 18:33:49 Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 26-07-2013 4:55, Simon Horman wrote:
+> >>> this short series enables the on-board ethernet
+> >>> of the r8a7790 SoC for on lager board.
+> >>> 
+> >>> It has a run-time dependency on
+> >>> "sh_eth: add support for r8a7790 SoC"
+> >>> 
+> >>> It has been built on top of renesas-next-20130724v2.
+> >>> 
+> >>> Simon Horman (3):
+> >>>    ARM: shmobile: r8a7790: clocks for Ether support
+> >>>    ARM: shmobile: lager: enable Ether
+> >>>    ARM: shmobile: lager: enable nfsroot in DTS
+> >>>   
+> >>>   arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
+> >>>   arch/arm/mach-shmobile/board-lager.c   | 30 ++++++++++++++++++++++++++ 
+> >>>   arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
+> >>>   3 files changed, 35 insertions(+), 1 deletion(-)
+> >> 
+> >> With this series and "[PATCH 0/2 v4 net-next repost] sh_eth: Add support
+> >> for r8a7790 SoC" applied on top of renesas-devel-20130725, booting the
+> >> Lager board usually (about 90% of the time) results in receive FIFO
+> >> overflows and disabling of the sh-eth IRQ:
+>
+> Looking at the trace, disabling of IRQ is probably caused by something other
+> than RX FIFO overflow (when it caused disabling IRQ, there were no error
+> messages printed because RFE interrupt went completely unhandled). Probably
+> there's more interrupt mask issues lurking in the driver...
 
->>> this short series enables the on-board ethernet
->>> of the r8a7790 SoC for on lager board.
+I think we're having two issues here. The first one is that receive FIFO 
+overflows happen, and the second one is that the driver doesn't recover 
+properly, resulting in an interrupt storm. Both should be fixed.
 
->>> It has a run-time dependency on
->>> "sh_eth: add support for r8a7790 SoC"
+At least one of the issues might be related to interrupt latency. As the 
+interrupt storm occurs when the mmc0 got probed, I've tried to disable the MMC 
+subsystem, and the situation improved. I still get NFS errors:
 
->>> It has been built on top of renesas-next-20130724v2.
+[   25.692576] nfs: server 192.168.1.47 not responding, still trying
+[   25.698824] nfs: server 192.168.1.47 not responding, still trying
+[   25.705055] nfs: server 192.168.1.47 not responding, still trying
+[   26.196158] nfs: server 192.168.1.47 not responding, still trying
+[   26.203230] nfs: server 192.168.1.47 OK
+[   26.207248] nfs: server 192.168.1.47 OK
+[   26.211261] nfs: server 192.168.1.47 OK
+[   26.215278] nfs: server 192.168.1.47 OK
 
->>> Simon Horman (3):
->>>    ARM: shmobile: r8a7790: clocks for Ether support
->>>    ARM: shmobile: lager: enable Ether
->>>    ARM: shmobile: lager: enable nfsroot in DTS
+But the system boots properly.
 
->>>   arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
->>>   arch/arm/mach-shmobile/board-lager.c   | 30 ++++++++++++++++++++++++++++++
->>>   arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
->>>   3 files changed, 35 insertions(+), 1 deletion(-)
+> > Thanks.
+> > 
+> > Unfortunately I am having trouble with using NFS root at all in my test
+> > environment. I'll work with Magnus to resolve this issue.
+> > 
+> > Sergei do you have any idea what might be causing this?
+> 
+> No idea. I still don't have access to Lager and on BOCK-W we have no issues
+> with NFS. What are your symptoms?
 
->> With this series and "[PATCH 0/2 v4 net-next repost] sh_eth: Add support for
->> r8a7790 SoC" applied on top of renesas-devel-20130725, booting the Lager
->> board usually (about 90% of the time) results in receive FIFO overflows and
->> disabling of the sh-eth IRQ:
+I think the kernel boot log from my original e-mail showed the symptoms pretty 
+explicitly :-)
 
-    Looking at the trace, disabling of IRQ is probably caused by something 
-other than RX FIFO overflow (when it caused disabling IRQ, there were no error 
-messages printed because RFE interrupt went completely unhandled). Probably 
-there's more interrupt mask issues lurking in the driver...
+-- 
+Regards,
 
-> Thanks.
-
-> Unfortunately I am having trouble with using NFS root at all
-> in my test environment. I'll work with Magnus to resolve this issue.
-
-> Sergei do you have any idea what might be causing this?
-
-    No idea. I still don't have access to Lager and on BOCK-W we have no 
-issues with NFS. What are your symptoms?
-
-WBR, Sergei
+Laurent Pinchart
 
