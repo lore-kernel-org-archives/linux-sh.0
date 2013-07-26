@@ -1,92 +1,146 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 01 Jul 2013 07:18:48 +0000
-Subject: Re: [PATCH v3 2/3] ARM: shmobile: lager: enable Ether
-Message-Id: <20130701071848.GT14567@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 26 Jul 2013 07:35:29 +0000
+Subject: [PATCH 6/6 v2] ARM: shmobile: r8a7779: cleanup registration of usb phy
+Message-Id: <87y58tbwoy.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372652755-16948-1-git-send-email-horms+renesas@verge.net.au>
- <1372652755-16948-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372652755-16948-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jul 01, 2013 at 01:25:54PM +0900, Simon Horman wrote:
-> Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> ---
-> 
-> This patch has a build-time dependency on "sh_eth: add support for gpio reset".
-> This patch has a run-time dependency on "sh_eth: add support for r8a7790 SoC".
-> 
-> v3
-> * Rebase
-> 
-> v2
-> * As suggested by Laurent Pinchart
->   - Do not manipilate sh_eth reset GPIO directly,
->     rather, do so through newly proposed support for this in
->     the sh_eth driver.
-> * A suggested by Sergei Shtylyov
->   - Move DTS portion into a separate patch
-> ---
->  arch/arm/mach-shmobile/board-lager.c | 24 ++++++++++++++++++++++++
->  1 file changed, 24 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-> index 0b4a1f9..4fecaf6 100644
-> --- a/arch/arm/mach-shmobile/board-lager.c
-> +++ b/arch/arm/mach-shmobile/board-lager.c
-> @@ -71,6 +71,17 @@ static __initdata struct gpio_keys_platform_data lager_keys_pdata = {
->  	.nbuttons	= ARRAY_SIZE(gpio_buttons),
->  };
->  
-> +/* Ether */
-> +static struct sh_eth_plat_data ether_platdata = {
+usb phy driver which needs platform data at the time of
+registration is used from BockW only.
+Now, ARM/shmobile aims to support DT,
+and the C code base board support will be removed
+if DT support is completed.
+Current driver registration method which needs platform data
+and which is not shared complicates codes.
+This means legacy C code cleanup after DT supporting
+will be more complicated
+This patch registers it on board code as cleanup C code
 
-This should be annotated as __initdata, I will re-post.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
+ - based on renesas-devel-20130726
+ - update git log
 
-> +	.phy			= 0x1,
-> +	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-> +	.register_type		= SH_ETH_REG_FAST_RCAR,
-> +	.phy_interface		= PHY_INTERFACE_MODE_RMII,
-> +	.ether_link_active_low	= 1,
-> +	.needs_gpio_reset	= 1,
-> +	.reset_gpio		= RCAR_GP_PIN(5, 31),
-> +};
-> +
->  static const struct pinctrl_map lager_pinctrl_map[] = {
->  	/* SCIF0 (CN19: DEBUG SERIAL0) */
->  	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
-> @@ -78,6 +89,17 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
->  	/* SCIF1 (CN20: DEBUG SERIAL1) */
->  	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
->  				  "scif1_data", "scif1"),
-> +	/* Ether */
-> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-> +				  "eth_link", "eth"),
-> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-> +				  "eth_magic", "eth"),
-> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-> +				  "eth_mdio", "eth"),
-> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-> +				  "eth_rmii", "eth"),
-> +	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7790",
-> +				  "intc_irq0", "intc"),
->  };
->  
->  static void __init lager_add_standard_devices(void)
-> @@ -89,6 +111,8 @@ static void __init lager_add_standard_devices(void)
->  	r8a7790_pinmux_init();
->  
->  	r8a7790_add_standard_devices();
-> +	r8a7790_add_ether_device(&ether_platdata);
-> +
->  	platform_device_register_data(&platform_bus, "leds-gpio", -1,
->  				      &lager_leds_pdata,
->  				      sizeof(lager_leds_pdata));
-> -- 
-> 1.8.2.1
-> 
+ arch/arm/mach-shmobile/board-marzen.c         |   24 ++++++++++++++++++++++--
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 --
+ arch/arm/mach-shmobile/setup-r8a7779.c        |   17 -----------------
+ 3 files changed, 22 insertions(+), 21 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 1f57865..7474a60 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -29,6 +29,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/usb-rcar-phy.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -56,7 +57,26 @@ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+ };
+ 
+-static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
++/* USB PHY */
++static struct resource usb_phy_resources[] = {
++	[0] = {
++		.start		= 0xffe70800,
++		.end		= 0xffe70900 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct rcar_phy_platform_data usb_phy_platform_data;
++
++static struct platform_device usb_phy = {
++	.name		= "rcar_usb_phy",
++	.id		= -1,
++	.dev  = {
++		.platform_data = &usb_phy_platform_data,
++	},
++	.resource	= usb_phy_resources,
++	.num_resources	= ARRAY_SIZE(usb_phy_resources),
++};
+ 
+ /* SMSC LAN89218 */
+ static struct resource smsc911x_resources[] = {
+@@ -183,6 +203,7 @@ static struct platform_device *marzen_devices[] __initdata = {
+ 	&thermal_device,
+ 	&hspi_device,
+ 	&leds_device,
++	&usb_phy,
+ };
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+@@ -233,7 +254,6 @@ static void __init marzen_init(void)
+ 	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
+ 
+ 	r8a7779_add_standard_devices();
+-	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index fc47073..f10727f7 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -4,7 +4,6 @@
+ #include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
+ #include <linux/sh_eth.h>
+-#include <linux/platform_data/usb-rcar-phy.h>
+ 
+ struct platform_device;
+ 
+@@ -34,7 +33,6 @@ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
+-extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
+ extern void r8a7779_init_late(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index bb8b967..ddee4aa 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -386,15 +386,6 @@ static struct platform_device sata_device = {
+ 	},
+ };
+ 
+-/* USB PHY */
+-static struct resource usb_phy_resources[] __initdata = {
+-	[0] = {
+-		.start		= 0xffe70800,
+-		.end		= 0xffe70900 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+-};
+-
+ /* USB */
+ static struct usb_phy *phy;
+ 
+@@ -600,14 +591,6 @@ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
+ 					  pdata, sizeof(*pdata));
+ }
+ 
+-void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
+-{
+-	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
+-					  usb_phy_resources,
+-					  ARRAY_SIZE(usb_phy_resources),
+-					  pdata, sizeof(*pdata));
+-}
+-
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
+-- 
+1.7.9.5
+
