@@ -1,49 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 29 Jul 2013 14:34:40 +0000
-Subject: Re: [PATCH v2 00/27] sh-pfc: Support pins with no associated GPIO port
-Message-Id: <4664220.bfjJW75nMR@avalon>
+From: Katsuya Matsubara <matsu@igel.co.jp>
+Date: Fri, 26 Jul 2013 09:32:10 +0000
+Subject: [PATCH 0/7] [media] vsp1: Add VIO6 support
+Message-Id: <1374831137-9219-1-git-send-email-matsu@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373933479-17727-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1373933479-17727-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Katsuya Matsubara <matsu@igel.co.jp>
 
-Hi Linus,
+Hi Laurent,
 
-On Monday 29 July 2013 16:32:05 Linus Walleij wrote:
-> On Mon, Jul 29, 2013 at 3:22 PM, Laurent Pinchart wrote:
-> > On Saturday 27 July 2013 01:14:10 Linus Walleij wrote:
-> >> On Wed, Jul 24, 2013 at 3:28 PM, Laurent Pinchart wrote:
-> >> > On Sunday 21 July 2013 00:19:36 Linus Walleij wrote:
-> >> >> That's very helpful, I can then pull it in and inspect the files
-> >> >> before and after this train of patches, which is probably the most
-> >> >> efficient way to review it.
-> >> > 
-> >> > The patches can be found in my git tree at
-> >> > 
-> >> >         git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pin-no-gpio
-> >> > 
-> >> > If you have time, could you already review them ?
-> >> 
-> >> I'd like to pull this into the pinctrl tree but then I'd prefer if they
-> >> were based on v3.11-rc1 if possible?
-> > 
-> > Sure. I've rebased
-> > 
-> >         git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pin-no-gpio
-> > 
-> > on top of v3.11-rc1.
-> 
-> Bah I got confused by the other pull request.
-> 
-> I have pulled *this* series and pushed for-next.
+Could you please consider the following patches to add VIO6 support
+into your VSP1 driver implementation?
+Any comments or ideas of better implementation are of course welcome.
 
-No worries. Feel free to pull the other one as well ;-)
+The first two patches are fixes, not only for VIO6.
+The next four patches are preparations of supporting multiple
+versions of the H/W IP.
+The final one is adding definitions of VIO6.
+
+The code has been tested on an Armadillo800EVA board.
+
+The series is based on the following patchset:
+ [PATCH v3 0/5] Renesas VSP1 driver
+ [PATCH v3 1/5] media: Add support for circular graph traversal
+ [PATCH v3 2/5] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
+ [PATCH v3 3/5] v4l: Add media format codes for ARGB8888 and AYUV8888 on 32-bit busses
+ [PATCH v3 4/5] v4l: Add V4L2_PIX_FMT_NV16M and V4L2_PIX_FMT_NV61M formats
+ [PATCH v3 5/5] v4l: Renesas R-Car VSP1 driver
+
+
+Katsuya Matsubara (7):
+  [media] vsp1: Fix lack of the sink entity setting for enabled links.
+  [media] vsp1: Use the maximum number defined in platform data
+  [media] vsp1: Rewrite the definition of registers' offset as enum and
+    arrays
+  [media] vsp1: Rewrite the value definitions for DPR routing as enum
+    and arrays
+  [media] vsp1: Introduce bit operations for the DPR route registers
+  [media] vsp1: Move the DPR_WPF_FPORCH register settings into the
+    device initialization
+  [media] vsp1: Add VIO6 support
+
+ drivers/media/platform/vsp1/vsp1.h        |   23 +-
+ drivers/media/platform/vsp1/vsp1_drv.c    |  492 ++++++++++++++++++++++++++--
+ drivers/media/platform/vsp1/vsp1_entity.c |   31 +-
+ drivers/media/platform/vsp1/vsp1_entity.h |    3 +-
+ drivers/media/platform/vsp1/vsp1_lif.c    |    2 +-
+ drivers/media/platform/vsp1/vsp1_regs.h   |  497 +++++++++++++++++------------
+ drivers/media/platform/vsp1/vsp1_rpf.c    |   19 +-
+ drivers/media/platform/vsp1/vsp1_uds.c    |   14 +-
+ drivers/media/platform/vsp1/vsp1_video.c  |   27 +-
+ drivers/media/platform/vsp1/vsp1_wpf.c    |   29 +-
+ 10 files changed, 849 insertions(+), 288 deletions(-)
 
 -- 
-Regards,
+Thanks,
 
-Laurent Pinchart
-
+Katsuya Matsubara / IGEL Co., Ltd.
+matsu@igel.co.jp
