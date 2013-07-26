@@ -1,47 +1,36 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 26 Jul 2013 23:46:33 +0000
-Subject: [PATCH] ARM: shmobile: BOCK-W: fix SDHI0 PFC settings
-Message-Id: <201307270346.34002.sergei.shtylyov@cogentembedded.com>
+Date: Fri, 26 Jul 2013 23:55:12 +0000
+Subject: Re: [PATCH] ARM: shmobile: BOCK-W: fix SDHI0 PFC settings
+Message-Id: <51F30C60.5050504@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201307270346.34002.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201307270346.34002.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The following message is printed on the BOCK-W kernel bootup: 
+Hello.
 
-sh-pfc pfc-r8a7778: invalid group "sdhi0" for function "sdhi0" 
+On 07/27/2013 03:46 AM, Sergei Shtylyov wrote:
 
-In addition, SD card cannot be detected.  The reason is apparently that commit
-ca7bb309485e4ec89a9addd47bea (ARM: shmobile: bockw: add SDHI0 support) matched
-the previous version of commit 564617d2f92473031d035deb273da5 (sh-pfc: r8a7778:
-add SDHI support).
+> The following message is printed on the BOCK-W kernel bootup:
 
-Add the missing pin groups according to the BOCK-W board schematics.
+> sh-pfc pfc-r8a7778: invalid group "sdhi0" for function "sdhi0"
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> In addition, SD card cannot be detected.  The reason is apparently that commit
+> ca7bb309485e4ec89a9addd47bea (ARM: shmobile: bockw: add SDHI0 support) matched
+> the previous version of commit 564617d2f92473031d035deb273da5 (sh-pfc: r8a7778:
+> add SDHI support).
 
----
-The patch is atop of Simon's 'renesas.git' repo, 'renesas-devel-20130726' tag.
+> Add the missing pin groups according to the BOCK-W board schematics.
 
- arch/arm/mach-shmobile/board-bockw.c |    8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -167,7 +167,13 @@ static const struct pinctrl_map bockw_pi
- 				  "usb1", "usb1"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
--				  "sdhi0", "sdhi0"),
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
-+				  "sdhi0_cd", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
-+				  "sdhi0_wp", "sdhi0"),
- };
- 
- #define FPGA	0x18200000
+> ---
+> The patch is atop of Simon's 'renesas.git' repo, 'renesas-devel-20130726' tag.
+
+    It also applies to the current Linus' tree cleanly. Please push it for 3.11.
+
+WBR, Sergei
+
