@@ -1,7 +1,7 @@
-From: Ryan Mallon <rmallon@gmail.com>
-Date: Thu, 25 Jul 2013 23:37:17 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Jul 2013 07:01:23 +0000
 Subject: Re: [PATCH 00/12] Remove platform callbacks from mmc_spi, sh_mmcif and sh_mobile_sdhi drivers
-Message-Id: <51F1B6AD.5060909@gmail.com>
+Message-Id: <Pine.LNX.4.64.1307260859410.20450@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,7 +10,10 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 26/07/13 09:26, Laurent Pinchart wrote:
+Hi Laurent
+
+On Fri, 26 Jul 2013, Laurent Pinchart wrote:
+
 > Hello,
 > 
 > This patch set replaces callbacks to board code with regulators and GPIOs in
@@ -33,12 +36,6 @@ On 26/07/13 09:26, Laurent Pinchart wrote:
 > modification in the last couple of kernel versions one option would be to
 > merge all patches (or at least patches 01/12 to 06/12) through Simon's tree if
 > all involved maintainers agree.
-
-I'm fine with this. The ep93xx tree sees very few patches, so it would
-be easier. As long as you get Ack's from Hartley, and please also check
-with the arm-soc team (Arnd and Olof, Cc'ed) so that they are aware of
-the patches.
-
 > 
 > The series is based on tag renesas-devel-20130725 from
 > git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
@@ -56,7 +53,14 @@ the patches.
 >   mmc: sh_mobile_sdhi: Remove .set_pwr() callback from platform data
 >   mmc: tmio-mmc: Remove .get_cd() callback from platform data
 >   mmc: tmio-mmc: Remove .set_pwr() callback from platform data
-> 
+
+For #3-5, 7-12
+
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Thanks
+Guennadi
+
 >  arch/arm/mach-ep93xx/vision_ep9307.c | 56 ++---------------------
 >  arch/sh/boards/mach-ecovec24/setup.c | 89 ++++--------------------------------
 >  drivers/mmc/host/mmc_spi.c           | 48 +++++++++----------
@@ -71,4 +75,12 @@ the patches.
 >  include/linux/spi/mmc_spi.h          | 18 ++++----
 >  12 files changed, 56 insertions(+), 252 deletions(-)
 > 
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
 
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
