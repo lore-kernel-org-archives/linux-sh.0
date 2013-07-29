@@ -1,166 +1,153 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 19 Jul 2013 16:29:28 +0000
-Subject: [PATCH v2 03/15] DMA: shdma: add r8a73a4 DMAC data to the device ID table
-Message-Id: <1374251374-30186-4-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 29 Jul 2013 20:31:41 +0000
+Subject: [PATCH/RFC] ARM: shmobile: Mount root file systems in r/w mode for all DT platforms
+Message-Id: <1375129901-8636-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-sh@vger.kernel.org
 
-This configuration data will be re-used, when DMAC DT support is added to
-r8a73a4.
+The shmobile DT files available in the kernel are reference
+implementations intended to be used as sample code, as well as for
+development. As such, it makes sense to mount the root file system in
+read/write mode by default.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/dma/sh/Kconfig         |    4 ++
- drivers/dma/sh/Makefile        |    1 +
- drivers/dma/sh/shdma-r8a73a4.c |   75 ++++++++++++++++++++++++++++++++++++++++
- drivers/dma/sh/shdma.h         |    7 ++++
- drivers/dma/sh/shdmac.c        |    1 +
- 5 files changed, 88 insertions(+), 0 deletions(-)
- create mode 100644 drivers/dma/sh/shdma-r8a73a4.c
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 2 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts           | 2 +-
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts   | 2 +-
+ arch/arm/boot/dts/r8a7778-bockw.dts             | 2 +-
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 2 +-
+ arch/arm/boot/dts/r8a7790-lager-reference.dts   | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts             | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g.dts              | 2 +-
+ 9 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index 0ac3e94..6921ba2 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -23,6 +23,10 @@ config SUDMAC
- 	help
- 	  Enable support for the Renesas SUDMAC controllers.
+I've been carrying similar patches locally in my tree for way too long now. I
+believe the modification makes sense for mainline.
+
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 6f4506e..c655756 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
  
-+config SHDMA_R8A73A4
-+	def_bool y
-+	depends on ARCH_R8A73A4 && SH_DMAE != n
-+
- config SHDMA_R8A7740
- 	def_bool y
- 	depends on ARCH_R8A7740 && SH_DMAE != n
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index acdd3cb..e08489c 100644
---- a/drivers/dma/sh/Makefile
-+++ b/drivers/dma/sh/Makefile
-@@ -2,5 +2,6 @@ obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
- obj-$(CONFIG_SH_DMAE) += shdma.o
- shdma-y := shdmac.o
- shdma-$(CONFIG_SHDMA_R8A7740) += shdma-r8a7740.o
-+shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
- shdma-objs := $(shdma-y)
- obj-$(CONFIG_SUDMAC) += sudmac.o
-diff --git a/drivers/dma/sh/shdma-r8a73a4.c b/drivers/dma/sh/shdma-r8a73a4.c
-new file mode 100644
-index 0000000..d3b759d
---- /dev/null
-+++ b/drivers/dma/sh/shdma-r8a73a4.c
-@@ -0,0 +1,75 @@
-+#include <linux/sh_dma.h>
-+
-+#include <mach/dma-register.h>
-+#include <mach/r8a73a4.h>
-+
-+static const struct sh_dmae_slave_config dma_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_MMCIF0_TX,
-+		.addr		= 0xee200034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF0_RX,
-+		.addr		= 0xee200034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF1_TX,
-+		.addr		= 0xee220034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xe1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF1_RX,
-+		.addr		= 0xee220034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xe2,
-+	},
-+};
-+
-+#define DMAE_CHANNEL(a, b)				\
-+	{						\
-+		.offset         = (a) - 0x20,		\
-+		.dmars          = (a) - 0x20 + 0x40,	\
-+		.chclr_bit	= (b),			\
-+		.chclr_offset	= 0x80 - 0x20,		\
-+	}
-+
-+static const struct sh_dmae_channel dma_channels[] = {
-+	DMAE_CHANNEL(0x8000, 0),
-+	DMAE_CHANNEL(0x8080, 1),
-+	DMAE_CHANNEL(0x8100, 2),
-+	DMAE_CHANNEL(0x8180, 3),
-+	DMAE_CHANNEL(0x8200, 4),
-+	DMAE_CHANNEL(0x8280, 5),
-+	DMAE_CHANNEL(0x8300, 6),
-+	DMAE_CHANNEL(0x8380, 7),
-+	DMAE_CHANNEL(0x8400, 8),
-+	DMAE_CHANNEL(0x8480, 9),
-+	DMAE_CHANNEL(0x8500, 10),
-+	DMAE_CHANNEL(0x8580, 11),
-+	DMAE_CHANNEL(0x8600, 12),
-+	DMAE_CHANNEL(0x8680, 13),
-+	DMAE_CHANNEL(0x8700, 14),
-+	DMAE_CHANNEL(0x8780, 15),
-+	DMAE_CHANNEL(0x8800, 16),
-+	DMAE_CHANNEL(0x8880, 17),
-+	DMAE_CHANNEL(0x8900, 18),
-+	DMAE_CHANNEL(0x8980, 19),
-+};
-+
-+struct sh_dmae_pdata r8a73a4_dma_pdata = {
-+	.slave		= dma_slaves,
-+	.slave_num	= ARRAY_SIZE(dma_slaves),
-+	.channel	= dma_channels,
-+	.channel_num	= ARRAY_SIZE(dma_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init     = DMAOR_DME,
-+	.chclr_present	= 1,
-+	.chclr_bitwise	= 1,
-+};
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index b5fe545..82a83f8 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -61,6 +61,13 @@ struct sh_dmae_desc {
- #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
- 				     struct sh_dmae_device, shdma_dev.dma_dev)
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel";
++		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
+ 	};
  
-+#ifdef CONFIG_SHDMA_R8A73A4
-+extern struct sh_dmae_pdata r8a73a4_dma_pdata;
-+#define r8a73a4_shdma_devid &r8a73a4_dma_pdata
-+#else
-+#define r8a73a4_shdma_devid NULL
-+#endif
-+
- #ifdef CONFIG_SHDMA_R8A7740
- extern struct sh_dmae_pdata r8a7740_dma_pdata;
- #define r8a7740_shdma_devid &r8a7740_dma_pdata
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index fe54cda..6546bf9 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -907,6 +907,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+ 	memory@40000000 {
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index e657a9d..72f867e 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,ape6evm", "renesas,r8a73a4";
  
- const struct platform_device_id sh_dmae_id_table[] = {
- 	{.name = SH_DMAE_DRV_NAME,},
-+	{.name = "shdma-r8a73a4", .driver_data = (kernel_ulong_t)r8a73a4_shdma_devid,},
- 	{.name = "shdma-r8a7740", .driver_data = (kernel_ulong_t)r8a7740_shdma_devid,},
- 	{}
- };
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
++		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
+ 
+ 	memory@40000000 {
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index f5b8d77..9bb903a 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -22,7 +22,7 @@
+ 	compatible = "renesas,bockw-reference", "renesas,r8a7778";
+ 
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel";
++		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
+ 	};
+ 
+ 	memory {
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 0076b1e..12bbebc 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -22,7 +22,7 @@
+ 	compatible = "renesas,bockw", "renesas,r8a7778";
+ 
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs";
++		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
+ 	};
+ 
+ 	memory {
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index b64705b..6d55083 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -18,7 +18,7 @@
+ 	compatible = "renesas,marzen-reference", "renesas,r8a7779";
+ 
+ 	chosen {
+-		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
++		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
+ 	};
+ 
+ 	memory {
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index 5ee71cf5..c462ef1 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -17,7 +17,7 @@
+ 	compatible = "renesas,lager-reference", "renesas,r8a7790";
+ 
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel";
++		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
+ 	};
+ 
+ 	memory@40000000 {
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 09a84fc..631b93b 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,lager", "renesas,r8a7790";
+ 
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel";
++		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
+ 	};
+ 
+ 	memory@40000000 {
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index b99e890..2122306 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -33,7 +33,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
++		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
+ 	};
+ 
+ 	memory {
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 7c4071e..0f1ca77 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,kzm9g", "renesas,sh73a0";
+ 
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
++		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
+ 	};
+ 
+ 	memory {
 -- 
-1.7.2.5
+Regards,
+
+Laurent Pinchart
 
