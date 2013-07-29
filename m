@@ -1,58 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Jul 2013 00:52:16 +0000
-Subject: Re: [PATCH resend] shdma: fixup sh_dmae_get_partial() calculation error
-Message-Id: <20130731005216.GI17209@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 29 Jul 2013 14:11:44 +0000
+Subject: [GIT PULL FOR v3.12] sh-pfc fixes and enhancements
+Message-Id: <4601856.fyKLDdx1qP@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373422152-29976-1-git-send-email-horms+renesas@verge.net.au>
- <20130716012041.GA942@verge.net.au>
- <20130723023907.GC14983@quad.lixom.net>
- <20130723041220.GA22253@verge.net.au>
- <87zjtddgtg.wl%kuninori.morimoto.gx@renesas.com>
- <20130724034009.GA18355@verge.net.au>
- <87d2q8v6fs.wl%kuninori.morimoto.gx@renesas.com>
- <87bo5sv63u.wl%kuninori.morimoto.gx@renesas.com>
- <20130730084957.GA17209@verge.net.au>
- <Pine.LNX.4.64.1307301114020.25629@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1307301114020.25629@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Olof Johansson <olof@lixom.net>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 30, 2013 at 11:22:31AM +0200, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> On Tue, 30 Jul 2013, Simon Horman wrote:
-> 
-> > [ Cc Vinod ]
-> > 
-> > On Tue, Jul 23, 2013 at 11:12:41PM -0700, Kuninori Morimoto wrote:
-> > > sh_desc->hw.tcr is controlling real data size,
-> > > and, register TCR is controlling data transfer count
-> > > which was xmit_shifted value of hw.tcr.
-> > > Current sh_dmae_get_partial() is calculating in different unit.
-> > > This patch fixes it.
-> > > 
-> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > Can I confirm that this was a regression introduced by
-> > 4f46f8ac80416b0e8fd3aba6a0d842205fb29140                   
-> > ("dmaengine: shdma: restore partial transfer calculation") ?
-> 
-> No, don't think so. That patch only restores what was accidentally deleted 
-> from the driver before. So, you cannot say, that before that patch the 
-> calculation was correct. And even the way it restores it was already wrong 
-> before. The error goes back to the original implementation:
-> 
-> commit c014906a870ce70e009def0c9d170ccabeb0be63
-> Author: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Date:   Thu Feb 18 16:30:02 2010 +0000
-> 
->     dmaengine: shdma: extend .device_terminate_all() to record partial transfer
+Hi Linus,
 
-Thanks, I will add the following to the changelog:
+The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
 
-This bug has been present since c014906a870ce70e009def0c9d170ccabeb0be63
-("dmaengine: shdma: extend .device_terminate_all() to record partial
-transfer"), which was added in 2.6.34-rc1.
+  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
+
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git pinmux/next/fixes
+
+for you to fetch changes up to e120cacfaac24d4de31b181371daaef6a5773ee3:
+
+  sh-pfc: r8a7790: Add VIN pin groups and functions (2013-07-29 15:52:14 
++0200)
+
+The patches don't conflict with the 'pin-no-gpio' series, the two series can 
+be applied independently.
+
+----------------------------------------------------------------
+Kunihito Higashiyama (1):
+      sh-pfc: r8a7790: Add MSIOF pin groups and functions
+
+Laurent Pinchart (5):
+      sh-pfc: Remove unneeded mach/<soc>.h includes
+      sh-pfc: sh7372: Replace <mach/irqs.h> with <linux/sh_intc.h>
+      sh-pfc: sh73a0: Remove EXT_IRQ16L and EXT_IRQ16H macros
+      sh-pfc: r8a7790: Sort pin groups and functions alphabetically
+      sh-pfc: r8a7790: Add SCIF2 pin groups and functions
+
+Phil Edworthy (1):
+      sh-pfc: r8a7779: Add I2C pin groups
+
+Shinobu Uehara (2):
+      sh-pfc: r8a7790: Add USB pin groups and functions
+      sh-pfc: r8a7790: Add VIN pin groups and functions
+
+Shinya Kuribayashi (9):
+      sh-pfc: r8a7790: Rename I2C SDA/SCL pins
+      sh-pfc: r8a7790: Remove trailing '_TANS' string from RTS/CTS pins
+      sh-pfc: r8a7790: Remove deprecated Ethernet MII/RMII pins
+      sh-pfc: r8a7790: Remove deprecated RDS pins
+      sh-pfc: r8a7790: Remove deprecated SPV_EVEN pin
+      sh-pfc: r8a7790: Swap SCIFA2_RXD_B and HRX0_C configurations
+      sh-pfc: r8a7790: Add TCLK1 pin configuration support
+      sh-pfc: r8a7790: Add SCIF2 pins configuration support
+      sh-pfc: r8a7790: Fix miscellaneous pinmux configuration tables mistakes
+
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |    1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |    1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  105 +++
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 1621 ++++++++++++++++++++-------------
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  |    4 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |   68 +-
+ 6 files changed, 1132 insertions(+), 668 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
