@@ -1,11 +1,13 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 29 Jul 2013 11:10:52 +0000
+Date: Mon, 29 Jul 2013 11:27:13 +0000
 Subject: Re: [PATCH 1/2] mmc: add Device Tree properties for UHS modes
-Message-Id: <Pine.LNX.4.64.1307291309310.14405@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1307291312300.14405@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1307261747210.22137@axis700.grange>
- <51F2ADA2.2030503@wwwdotorg.org> <1375095436.3340.13.camel@hornet>
-In-Reply-To: <1375095436.3340.13.camel@hornet>
+ <51F2ADA2.2030503@wwwdotorg.org>  <Pine.LNX.4.64.1307262215110.27439@axis700.grange>
+  <51F2EBD4.1060603@wwwdotorg.org>  <Pine.LNX.4.64.1307290753090.14405@axis700.grange>
+  <Pine.LNX.4.64.1307290903360.14405@axis700.grange> <1375095053.3340.7.camel@hornet>
+In-Reply-To: <1375095053.3340.7.camel@hornet>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,33 +16,37 @@ Cc: Stephen Warren <swarren@wwwdotorg.org>, "linux-sh@vger.kernel.org" <linux-sh
 
 On Mon, 29 Jul 2013, Pawel Moll wrote:
 
-> On Fri, 2013-07-26 at 18:10 +0100, Stephen Warren wrote:
-> > > +- uhs-sdr12: the host supports UHS SDR12 mode
-> > > +- uhs-sdr25: the host supports UHS SDR25 mode
-> > > +- uhs-sdr50: the host supports UHS SDR50 mode
-> > > +- uhs-sdr104: the host supports UHS SDR104 mode
-> > > +- uhs-ddr50: the host supports UHS DDR50 mode
-> > > +- ddr-1v2: the host can support DDR, using 1.2V VccQ
-> > > +- ddr-1v8: the host can support DDR, using 1.8V VccQ
+> On Mon, 2013-07-29 at 08:18 +0100, Guennadi Liakhovetski wrote:
+> > A short addendum. At least with Renesas SoCs I see the situation in the 
+> > following way: new SoC versions appear relatively frequently. 
 > 
-> I understand that they are equivalent of the mmc caps #defines. Having
-> absolutely no UHS knowledge (nor access to the spec) I'm just wondering
-> if some of them couldn't be derived from the "environment", being the
-> way the host is wired up?
+> What frequency are we talking about? Once per year? Once per month? I'm
+> not trying to be picky, it really makes a difference...
 
-Indeed it would be good to get a reply from someone with access to the 
-specs.
+Definitely not every month - not until now in the mainline at least. I 
+currently count 9 SoCs, added since 2010, which makes about 2-3 SoCs per 
+year.
 
 Thanks
 Guennadi
 
-> An example would be the classic OCR VDD fields - the voltage range bits
-> are taken from the regulator "vmmc" supply (see
-> mmc_regulator_get_supply()).
+> > With compatibility strings we have to change _all_ Renesas drivers for _each_ 
+> > SoC version even if just to add a new struct of_device_id entry. This 
+> > doesn't seem very productive to me.
 > 
-> Of course I this may be completely wrong approach here...
+> There is at least precedence in the MMC world - have a look at
+> drivers/mmc/host/mmci.c and the struct variant_data... There seem to be
+> a new variant every 6 months or so (I must admit guilt of of making some
+> of them ;-) coming from two different companies.
+> 
+> And although it's a primecell (aka amba_bus) device, so the compatibilty
+> string remains the same, the struct amba_id was being extended every
+> time which is pretty much the same thing.
 > 
 > Pawel
+> 
+> PS. Having said all that I'm hoping the MMCI evolution has finally
+> stopped so no new variants will be needed ;-)
 
 ---
 Guennadi Liakhovetski, Ph.D.
