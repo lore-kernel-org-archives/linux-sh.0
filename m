@@ -1,68 +1,27 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 30 Jul 2013 10:37:36 +0000
-Subject: [PATCH v2 12/13] mmc: tmio-mmc: Remove .get_cd() callback from platform data
-Message-Id: <1375180657-23641-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Chen Gang <gang.chen@asianux.com>
+Date: Tue, 30 Jul 2013 02:07:51 +0000
+Subject: [PATCH 0/2] sh64: kernel: fix the compiling issue for process_64.c
+Message-Id: <51F71FF7.8080104@asianux.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-All platforms pass the CD GPIO number to the driver in the .cd_gpio
-field. The .get_cd() callback isn't used anymore, remove it
+The related 2 patches are for fixing the issue below:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/mmc/host/tmio_mmc_pio.c | 16 +---------------
- include/linux/mfd/tmio.h        |  1 -
- 2 files changed, 1 insertion(+), 16 deletions(-)
+The related errors:
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 8486a22..2a7eb5a 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -932,25 +932,11 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
- 		 (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
- }
- 
--static int tmio_mmc_get_cd(struct mmc_host *mmc)
--{
--	struct tmio_mmc_host *host = mmc_priv(mmc);
--	struct tmio_mmc_data *pdata = host->pdata;
--	int ret = mmc_gpio_get_cd(mmc);
--	if (ret >= 0)
--		return ret;
--
--	if (!pdata->get_cd)
--		return -ENOSYS;
--	else
--		return pdata->get_cd(host->pdev);
--}
--
- static const struct mmc_host_ops tmio_mmc_ops = {
- 	.request	= tmio_mmc_request,
- 	.set_ios	= tmio_mmc_set_ios,
- 	.get_ro         = tmio_mmc_get_ro,
--	.get_cd		= tmio_mmc_get_cd,
-+	.get_cd		= mmc_gpio_get_cd,
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
- };
- 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index ce35113..b22883d 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -108,7 +108,6 @@ struct tmio_mmc_data {
- 	unsigned int			cd_gpio;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
--	int (*get_cd)(struct platform_device *host);
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
- 	/* clock management callbacks */
- 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
--- 
-1.8.1.5
+    CC      arch/sh/kernel/process_64.o
+  arch/sh/kernel/process_64.c: In function =91copy_thread=92:
+  arch/sh/kernel/process_64.c:396:39: error: =91fn=92 undeclared (first use=
+ in this function)
+  arch/sh/kernel/process_64.c:396:39: note: each undeclared identifier is r=
+eported only once for each function it appears in
+  arch/sh/kernel/process_64.c:377:30: error: unused variable =91regs=92 [-W=
+error=3Dunused-variable]
+  cc1: all warnings being treated as errors
 
+--
+ arch/sh/kernel/process_64.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
