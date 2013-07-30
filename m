@@ -1,39 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:34 +0000
-Subject: [PATCH 07/19] ARM: shmobile: r8a7790: Add pin control device to device tree
-Message-Id: <9694c778048e006604c3fbade6b0aefa5dd0b516.1374625203.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 30 Jul 2013 07:01:55 +0000
+Subject: [PATCH 1/2 v3] ARM: shmobile: r8a7778: i2c should not be called from C in DT
+Message-Id: <87bo5kedk0.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+c9fa47e287b304f3df02fc4b4b683a8d394bb9a4
+(ARM: shmobile: r8a7778: cleanup registration of i2c)
+added i2c register functions,
+but i2c will be called from C code in DT case.
+This patch fixup it
 
-Add a pfc node to the r8a7790 device tree.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 339d9b1..13caf12 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -54,4 +54,9 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
- 	};
-+
-+	pfc: pfc@e6060000 {
-+		compatible = "renesas,pfc-r8a7790";
-+		reg = <0 0xe6060000 0 0x250>;
-+	};
- };
+ - fixup v2's miss
+
+ arch/arm/mach-shmobile/setup-r8a7778.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index e975fcc1..ce3b54d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -303,15 +303,15 @@ void __init r8a7778_add_dt_devices(void)
+ 
+ 	r8a7778_register_tmu(0);
+ 	r8a7778_register_tmu(1);
+-	r8a7778_register_i2c(0);
+-	r8a7778_register_i2c(1);
+-	r8a7778_register_i2c(2);
+-	r8a7778_register_i2c(3);
+ }
+ 
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
++	r8a7778_register_i2c(0);
++	r8a7778_register_i2c(1);
++	r8a7778_register_i2c(2);
++	r8a7778_register_i2c(3);
+ }
+ 
+ void __init r8a7778_init_late(void)
 -- 
-1.8.2.1
+1.7.9.5
 
