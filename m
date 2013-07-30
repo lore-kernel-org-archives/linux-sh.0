@@ -1,46 +1,90 @@
-From: "Yann E. MORIN" <yann.morin.1998@free.fr>
-Date: Sat, 27 Jul 2013 13:29:15 +0000
-Subject: Re: Build regressions/improvements in v3.11-rc2
-Message-Id: <20130727132915.GA3655@free.fr>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 30 Jul 2013 09:00:52 +0000
+Subject: [PATCH 4/5] ARM: shmobile: ape6evm: add MMCIF support
+Message-Id: <8711613252ed931037f9e9f8646935519dd8f362.1375174556.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.02.1307232209510.32497@ayla.of.borg>
- <alpine.DEB.2.02.1307232210440.32577@ayla.of.borg>
-In-Reply-To: <alpine.DEB.2.02.1307232210440.32577@ayla.of.borg>
+References: <cover.1375174556.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375174556.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux Kernel Development <linux-kernel@vger.kernel.org>, Andrew Veliath <andrewtv@usa.net>, linux-kbuild@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Geert, All,
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Sorry to chime in a bit late...
+Add MMCIF support to the APE6EVM board in PIO mode only. Power supply is
+fixed for now, eventually support for the tps80032 regulator, also
+supplying both VDD and VccQ to the MMCIF slot should be added to APE6EVM.
 
-On 2013-07-23 22:20 +0200, Geert Uytterhoeven spake thusly:
-> On Tue, 23 Jul 2013, Geert Uytterhoeven wrote:
-> > JFYI, when comparing v3.11-rc2 to v3.11-rc1[3], the summaries are:
-> >   - build errors: +9/-23
-[--SNIP--]
-> powerpc-randconfig, due to a kconfig issue:
-> 
-> Expose SCOM controllers via debugfs (SCOM_DEBUGFS) [N/y] (NEW) aborted!
-> Console input/output is redirected. Run 'make oldconfig' to update configuration
-> .
-> make[3]: *** [silentoldconfig] Error 1
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-ape6evm.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
-Can you give me instructions on how to reproduce this error?
-
-randconfig now should print the RNF seed, so that's d be nice to have to
-reproduce the error. Also, having the problematic changeset would be
-nice.
-
-Regards,
-Yann E. MORIN.
-
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index af6dd39..8c7529c 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -21,6 +21,8 @@
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+@@ -54,6 +56,25 @@ static const struct smsc911x_platform_config lan9220_data = {
+ 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
+ };
+ 
++/*
++ * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
++ * model a VDD supply to MMCIF, using a fixed 3.3V regulator.
++ */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++};
++
++/* MMCIF */
++static struct sh_mmcif_plat_data mmcif0_pdata = {
++	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++};
++
++static struct resource mmcif0_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee200000, 0x100, "MMCIF0"),
++	DEFINE_RES_IRQ(gic_spi(169)),
++};
++
+ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 	/* SCIFA0 console */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+@@ -61,6 +82,11 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 	/* SMSC */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a73a4",
+ 				  "irqc_irq40", "irqc"),
++	/* MMCIF0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
++				  "mmc0_data8", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
++				  "mmc0_ctrl", "mmc0"),
+ };
+ 
+ static void __init ape6evm_add_standard_devices(void)
+@@ -93,6 +119,11 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
+ 					  lan9220_res, ARRAY_SIZE(lan9220_res),
+ 					  &lan9220_data, sizeof(lan9220_data));
++	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
++					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
++					  &mmcif0_pdata, sizeof(mmcif0_pdata));
+ }
+ 
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
 -- 
-.-----------------.--------------------.------------------.--------------------.
-|  Yann E. MORIN  | Real-Time Embedded | /"\ ASCII RIBBON | Erics' conspiracy: |
-| +33 662 376 056 | Software  Designer | \ / CAMPAIGN     |  ___               |
-| +33 223 225 172 `------------.-------:  X  AGAINST      |  \e/  There is no  |
-| http://ymorin.is-a-geek.org/ | _/*\_ | / \ HTML MAIL    |   v   conspiracy.  |
-'------------------------------^-------^------------------^--------------------'
+1.8.3.2
+
