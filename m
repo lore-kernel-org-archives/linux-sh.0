@@ -1,88 +1,81 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 15 Jul 2013 23:53:12 +0000
-Subject: Re: [PATCH 00/19] sh-pfc: Support pins with no associated GPIO port
-Message-Id: <47403578.eS39U2dpec@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 30 Jul 2013 10:37:24 +0000
+Subject: [PATCH v2 00/13] Remove platform callbacks from mmc_spi, sh_mmcif and sh_mobile_sdhi drivers
+Message-Id: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373931607-4599-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1373931607-4599-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 16 July 2013 01:39:48 Laurent Pinchart wrote:
-> Hello,
-> 
-> Here's a patch series that cleans up and refactors to sh-pfc driver to add
-> support for pins with no associated GPIO port.
-> 
-> Most configurable pins in SuperH and SH Mobile devices can be used as a
-> GPIO. However, some of them have selectable functions but are not
-> associated with a GPIO. Those pins must be defined in the pinmux pins array
-> but not registered in the GPIOs ranges.
-> 
-> The series first cleans up the sh-pfc driver by removing unused features (01
-> to 05) and then gradually refactors the code (06 to 13) to add pin numbers
-> to the sh_pfc_pin structure (14 to 16). It finally computes pin ranges
-> automatically (18) and adds support for pins without a GPIO port (19).
-> 
-> The patches have been compiled for all supported SoCs and tested on the
-> KZM9G board (SH73A0) with a hack to add I2C4 pins that have no GPIO port.
-> I'm lacking hardware to test R8A7778 which would be a good test candidate.
-> 
-> The patches are based on v3.11-rc1.
-> 
-> Laurent Pinchart (19):
->   sh-pfc: Remove unused input_pd and input_pu ranges
+Hello,
 
-It seems like the first patch is too big for vger :-/ I'll split it and 
-repost.
+This patch set replaces callbacks to board code with regulators and GPIOs in
+the mmc_spi, sh_mmcif and sh_mobile_sdhi MMC drivers.
 
->   sh-pfc: Remove unused PORT_DATA_* macros
->   sh-pfc: Remove unused macro and enum entries
->   sh-pfc: Remove unneeded const keywords
->   sh-pfc: Remove unused GPIO_PORT_ALL macro
->   sh-pfc: Don't overallocate memory for the GPIO chip pins array
->   sh-pfc: Replace pinmux_enum_id typedef with u16
->   sh-pfc: Rename gpio arguments to be consistent with the rest of the
->     code
->   sh-pfc: Consolidate PFC SoC data macros
->   sh-pfc: Consolidate pin definition macros
->   sh-pfc: sh7734: Use the common GP port style macros
->   sh-pfc: shx3: Remove shx3_ prefix from static symbols
->   sh-pfc: Don't duplicate argument to PINMUX_GPIO macro
->   sh-pfc: Add port numbers to the CPU_ALL_PORT macro
->   sh-pfc: Pass the pin number down to the port function macro
->   sh-pfc: Add pin number to struct sh_pfc_pin
->   sh-pfc: Rename struct sh_pfc nr_pins field to nr_gpio_pins
->   sh-pfc: Compute pin ranges automatically
->   sh-pfc: Support pins not associated with a GPIO port
-> 
->  drivers/pinctrl/sh-pfc/core.c        |   99 ++-
->  drivers/pinctrl/sh-pfc/core.h        |   10 +-
->  drivers/pinctrl/sh-pfc/gpio.c        |   45 +-
->  drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  157 ++---
->  drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   47 +-
->  drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   55 +-
->  drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   63 +-
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   59 +-
->  drivers/pinctrl/sh-pfc/pfc-sh7203.c  |  202 ++++---
->  drivers/pinctrl/sh-pfc/pfc-sh7264.c  |  246 ++++----
->  drivers/pinctrl/sh-pfc/pfc-sh7269.c  |  285 +++++----
->  drivers/pinctrl/sh-pfc/pfc-sh7372.c  |   53 +-
->  drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |  104 ++--
->  drivers/pinctrl/sh-pfc/pfc-sh7720.c  |  701 +++++++++++-----------
->  drivers/pinctrl/sh-pfc/pfc-sh7722.c  |  747 +++++++++++------------
->  drivers/pinctrl/sh-pfc/pfc-sh7723.c  |  381 ++++++------
->  drivers/pinctrl/sh-pfc/pfc-sh7724.c  | 1093 +++++++++++++++----------------
->  drivers/pinctrl/sh-pfc/pfc-sh7734.c  |   60 +-
->  drivers/pinctrl/sh-pfc/pfc-sh7757.c  |  709 +++++++++++-----------
->  drivers/pinctrl/sh-pfc/pfc-sh7785.c  |  700 +++++++++++-----------
->  drivers/pinctrl/sh-pfc/pfc-sh7786.c  |  383 ++++++------
->  drivers/pinctrl/sh-pfc/pfc-shx3.c    |  423 +++++++------
->  drivers/pinctrl/sh-pfc/pinctrl.c     |   49 +-
->  drivers/pinctrl/sh-pfc/sh_pfc.h      |  277 +++++----
->  24 files changed, 3275 insertions(+), 3673 deletions(-)
+Most of the required infrastructure is in place already on the drivers side,
+except for CD debouncing support in the MMC core and CD/RO GPIOs support in
+the mmc_spi driver. The series thus starts with patches 01/13 and 02/13 that
+add those features to the MMC core and mmc_spi driver.
+
+Patches 03/13 to 06/13 remove the board callbacks from the ecovec24 and
+vision_ep9307 boards. The code has been compile-tested only as I don't have
+access to those boards.
+
+Patches 07/13 to 13/13 then proceed to remove the callbacks from the drivers
+themselves and from the platform data structures.
+
+This will be a bit messy to merge, as the series interleaves patches for
+drivers and board files. Given that the mmc_spi driver is marked as orphan in
+MAINTAINERS and that the vision_ep9307 hasn't seen any board-specific
+modification in the last couple of kernel versions one option would be to
+merge all patches (or at least patches 01/13 to 07/13) through Simon's tree if
+all involved maintainers agree.
+
+If patch 01/13 should better be merged through the MMC tree (in which case
+02/13 should go through that tree as well), the two patches should be applied
+first to the MMC tree, and a stable branch will be needed for Simon to base
+the rest of the series on.
+
+The series is based on tag renesas-devel-20130730v2 from
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+
+Laurent Pinchart (13):
+  mmc: slot-gpio: Add debouncing capability to mmc_gpio_request_cd()
+  mmc: mmc_spi: Support CD/RO GPIOs
+  ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
+  sh: ecovec24: Use MMC/SDHI CD and RO GPIO
+  sh: ecovec24: Remove mmcif .down_pwr() callback
+  sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
+  mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
+  mmc: sh_mmcif: Remove .down_pwr() callback from platform data
+  mmc: sh_mmcif: Remove .set_pwr() callback from platform data
+  mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
+  mmc: sh_mobile_sdhi: Remove .set_pwr() callback from platform data
+  mmc: tmio-mmc: Remove .get_cd() callback from platform data
+  mmc: tmio-mmc: Remove .set_pwr() callback from platform data
+
+ arch/arm/mach-ep93xx/vision_ep9307.c | 57 ++---------------------
+ arch/sh/boards/mach-ecovec24/setup.c | 89 ++++--------------------------------
+ drivers/mmc/core/host.c              |  2 +-
+ drivers/mmc/core/slot-gpio.c         | 14 +++++-
+ drivers/mmc/host/jz4740_mmc.c        |  2 +-
+ drivers/mmc/host/mmc_spi.c           | 49 +++++++++-----------
+ drivers/mmc/host/mvsdio.c            |  3 +-
+ drivers/mmc/host/of_mmc_spi.c        | 46 +++++--------------
+ drivers/mmc/host/sdhci-esdhc-imx.c   |  2 +-
+ drivers/mmc/host/sdhci-pxav3.c       |  3 +-
+ drivers/mmc/host/sdhci-sirf.c        |  2 +-
+ drivers/mmc/host/sh_mmcif.c          |  5 +-
+ drivers/mmc/host/sh_mobile_sdhi.c    | 18 --------
+ drivers/mmc/host/tmio_mmc.h          |  1 -
+ drivers/mmc/host/tmio_mmc_pio.c      | 25 +---------
+ include/linux/mfd/tmio.h             |  2 -
+ include/linux/mmc/sh_mmcif.h         |  2 -
+ include/linux/mmc/sh_mobile_sdhi.h   |  2 -
+ include/linux/mmc/slot-gpio.h        |  3 +-
+ include/linux/spi/mmc_spi.h          | 19 +++++---
+ 20 files changed, 86 insertions(+), 260 deletions(-)
 
 -- 
 Regards,
