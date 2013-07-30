@@ -1,90 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 09:00:52 +0000
-Subject: [PATCH 4/5] ARM: shmobile: ape6evm: add MMCIF support
-Message-Id: <8711613252ed931037f9e9f8646935519dd8f362.1375174556.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 30 Jul 2013 12:59:28 +0000
+Subject: Re: [PATCH 4/5] ARM: shmobile: ape6evm: add MMCIF support
+Message-Id: <51F7B8B0.3080201@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1375174556.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375174556.git.horms+renesas@verge.net.au>
+ <8711613252ed931037f9e9f8646935519dd8f362.1375174556.git.horms+renesas@verge.net.au>
+In-Reply-To: <8711613252ed931037f9e9f8646935519dd8f362.1375174556.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hello.
 
-Add MMCIF support to the APE6EVM board in PIO mode only. Power supply is
-fixed for now, eventually support for the tps80032 regulator, also
-supplying both VDD and VccQ to the MMCIF slot should be added to APE6EVM.
+On 30-07-2013 13:00, Simon Horman wrote:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-ape6evm.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+> From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index af6dd39..8c7529c 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -21,6 +21,8 @@
- #include <linux/gpio.h>
- #include <linux/interrupt.h>
- #include <linux/kernel.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mmcif.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
-@@ -54,6 +56,25 @@ static const struct smsc911x_platform_config lan9220_data = {
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
- };
- 
-+/*
-+ * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
-+ * model a VDD supply to MMCIF, using a fixed 3.3V regulator.
-+ */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+};
-+
-+/* MMCIF */
-+static struct sh_mmcif_plat_data mmcif0_pdata = {
-+	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
-+};
-+
-+static struct resource mmcif0_resources[] = {
-+	DEFINE_RES_MEM_NAMED(0xee200000, 0x100, "MMCIF0"),
-+	DEFINE_RES_IRQ(gic_spi(169)),
-+};
-+
- static const struct pinctrl_map ape6evm_pinctrl_map[] = {
- 	/* SCIFA0 console */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
-@@ -61,6 +82,11 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
- 	/* SMSC */
- 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a73a4",
- 				  "irqc_irq40", "irqc"),
-+	/* MMCIF0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
-+				  "mmc0_data8", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
-+				  "mmc0_ctrl", "mmc0"),
- };
- 
- static void __init ape6evm_add_standard_devices(void)
-@@ -93,6 +119,11 @@ static void __init ape6evm_add_standard_devices(void)
- 	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
- 					  lan9220_res, ARRAY_SIZE(lan9220_res),
- 					  &lan9220_data, sizeof(lan9220_data));
-+	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
-+					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
-+					  &mmcif0_pdata, sizeof(mmcif0_pdata));
- }
- 
- static const char *ape6evm_boards_compat_dt[] __initdata = {
--- 
-1.8.3.2
+> Add MMCIF support to the APE6EVM board in PIO mode only. Power supply is
+> fixed for now, eventually support for the tps80032 regulator, also
+> supplying both VDD and VccQ to the MMCIF slot should be added to APE6EVM.
+
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> Acked-by: Magnus Damm <damm@opensource.se>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>   arch/arm/mach-shmobile/board-ape6evm.c | 31 +++++++++++++++++++++++++++++++
+>   1 file changed, 31 insertions(+)
+
+> diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+> index af6dd39..8c7529c 100644
+> --- a/arch/arm/mach-shmobile/board-ape6evm.c
+> +++ b/arch/arm/mach-shmobile/board-ape6evm.c
+[...]
+> @@ -54,6 +56,25 @@ static const struct smsc911x_platform_config lan9220_data = {
+[...]
+> +/* MMCIF */
+> +static struct sh_mmcif_plat_data mmcif0_pdata = {
+> +	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
+> +};
+> +
+> +static struct resource mmcif0_resources[] = {
+> +	DEFINE_RES_MEM_NAMED(0xee200000, 0x100, "MMCIF0"),
+> +	DEFINE_RES_IRQ(gic_spi(169)),
+> +};
+> +
+
+    The above needed '__initdata' too. And I have only noticed...
+
+>   static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+>   	/* SCIFA0 console */
+>   	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+[...]
+> @@ -93,6 +119,11 @@ static void __init ape6evm_add_standard_devices(void)
+>   	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
+>   					  lan9220_res, ARRAY_SIZE(lan9220_res),
+>   					  &lan9220_data, sizeof(lan9220_data));
+> +	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
+> +				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+> +	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
+> +					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
+> +					  &mmcif0_pdata, sizeof(mmcif0_pdata));
+>   }
+
+WBR, Sergei
 
