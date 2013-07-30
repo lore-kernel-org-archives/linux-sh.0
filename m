@@ -1,27 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 01:14:05 +0000
-Subject: Re: [PATCH 04/04] ARM: shmobile: Remove unused mach/dma.h
-Message-Id: <20130710011404.GO32603@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 30 Jul 2013 00:08:48 +0000
+Subject: [PATCH] sh_eth: r8a7790: Handle the RFE (Receive FIFO overflow Error) interrupt
+Message-Id: <1375142928-17769-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130709103944.1891.67462.sendpatchset@w520>
- <20130709104016.1891.68682.sendpatchset@w520>
-In-Reply-To: <20130709104016.1891.68682.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Tue, Jul 09, 2013 at 07:40:16PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Remove mach-shmobile mach/dma.h since it only
-> seems to be used on non-mach-shmobile platforms.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/include/mach/dma.h |    1 -
->  1 file changed, 1 deletion(-)
+The RFE interrupt is enabled for the r8a7790 but isn't handled,
+resulting in the interrupts core noticing unhandled interrupts, and
+eventually disabling the ethernet IRQ.
 
-Thanks, I have queued this up for v3.12 in the cleanup branch.
-It should appear in renesas-next-20130710
+Fix it by adding RFE to the bitmask of error interrupts to be handled
+for r8a7790.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index fedc0a0..9e2afe8 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -403,8 +403,9 @@ static struct sh_eth_cpu_data r8a7790_data = {
+ 	.eesipr_value	= 0x01ff009f,
+ 
+ 	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
+-	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
+-			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RFE |
++			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE |
++			  EESR_ECI,
+ 
+ 	.apr		= 1,
+ 	.mpr		= 1,
+-- 
+Regards,
+
+Laurent Pinchart
+
