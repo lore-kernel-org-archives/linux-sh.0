@@ -1,62 +1,177 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:01 +0000
-Subject: [PATCH v2 09/27] sh-pfc: Remove unused input_pd and input_pu ranges
-Message-Id: <1373933479-17727-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 30 Jul 2013 17:57:26 +0000
+Subject: [RFC 4/5] arm: boot: kzm9g: blink LEDs and check if DRAM works
+Message-Id: <1375207047-8655-5-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The ranges are not used anymore, remove them.
+This is test code that shows the progress of kernel decompression and
+does a quick DRAM test:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+- all LEDs on: start of decompress_kernel()
+- LED 1 off: DRAM test. Usually the system hangs here; if it doesn't it
+will most often report an incorrect read by blinking out the address and
+value read nibble by nibble through the LEDs.
+- LED 2 off: start of kernel decompression
+- LED 3 off: end of kernel decompression; if the decompressor has returned
+an error, LED 1 will be turned back on.
+- all LEDs off: end of decompress_kernel()
+
+The likelihood of a hang is greatly reduced by inserting code between DRAM
+writes, e.g. by blinking an LED. This also eliminates readback errors.
 ---
- drivers/pinctrl/sh-pfc/core.c   | 8 --------
- drivers/pinctrl/sh-pfc/sh_pfc.h | 4 ----
- 2 files changed, 12 deletions(-)
+ arch/arm/boot/compressed/misc.c |  123 ++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 121 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index f3fc66b..1c8597c 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -283,14 +283,6 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
- 		range = &pfc->info->input;
- 		break;
+diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
+index 31bd43b..0c54a3d 100644
+--- a/arch/arm/boot/compressed/misc.c
++++ b/arch/arm/boot/compressed/misc.c
+@@ -129,6 +129,81 @@ asmlinkage void __div0(void)
  
--	case PINMUX_TYPE_INPUT_PULLUP:
--		range = &pfc->info->input_pu;
--		break;
--
--	case PINMUX_TYPE_INPUT_PULLDOWN:
--		range = &pfc->info->input_pd;
--		break;
--
- 	default:
- 		return -EINVAL;
- 	}
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 830ae1f..64219f6 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -25,8 +25,6 @@ enum {
- 	PINMUX_TYPE_GPIO,
- 	PINMUX_TYPE_OUTPUT,
- 	PINMUX_TYPE_INPUT,
--	PINMUX_TYPE_INPUT_PULLUP,
--	PINMUX_TYPE_INPUT_PULLDOWN,
+ extern int do_decompress(u8 *input, int len, u8 *output, void (*error)(char *x));
  
- 	PINMUX_FLAG_TYPE,	/* must be last */
- };
-@@ -141,8 +139,6 @@ struct sh_pfc_soc_info {
- 	const struct sh_pfc_soc_operations *ops;
++static void led_setup(void) {
++	volatile unsigned char *led_cr;
++	led_cr = (void*)0xe6050014;
++	led_cr[0] = led_cr[1] = led_cr[2] = led_cr[3] = 0x10;
++}
++static void led_set(int n, int on) {
++	volatile unsigned int *led_dxr;
++	if (on) {
++		led_dxr = (void*)0xe6074200;
++		led_dxr[0] = 0x100000 << n;
++	}
++	else {
++		led_dxr = (void*)0xe6074100;
++		led_dxr[0] = 0x100000 << n;
++	}
++}
++
++static void led_delay(int n)
++{
++	n *= 1000000;
++	int i = 0;
++	for (i = 0; i < n; i++) {
++		asm("nop");
++	}
++}
++
++static void morse_bits(unsigned int bits)
++{
++#define DEL 200
++	led_setup();
++	led_set(0, 0);
++	led_set(1, 0);
++	led_set(2, 0);
++	led_set(3, 0);
++	led_delay(DEL);
++	led_set(0, 1);
++	led_set(1, 1);
++	led_set(2, 1);
++	led_set(3, 1);
++	led_delay(DEL / 2);
++	led_set(0, 0);
++	led_set(1, 0);
++	led_set(2, 0);
++	led_set(3, 0);
++	led_delay(DEL);
++	int i;
++	for (i = 28; i >= 0; i -= 4) {
++		int nibble = bits >> i;
++		led_set(0, 0);
++		led_set(1, 0);
++		led_set(2, 0);
++		led_set(3, 0);
++		led_delay(DEL / 2);
++		led_set(0, 1);
++		led_set(1, 1);
++		led_set(2, 1);
++		led_set(3, 1);
++		led_delay(DEL / 4);
++		led_set(0, 0);
++		led_set(1, 0);
++		led_set(2, 0);
++		led_set(3, 0);
++		led_delay(DEL / 2);
++		led_set(0, nibble & 1);
++		led_set(1, nibble & 2);
++		led_set(2, nibble & 4);
++		led_set(3, nibble & 8);
++		led_delay(DEL * 8);
++	}
++	led_set(0, 0);
++	led_set(1, 0);
++	led_set(2, 0);
++	led_set(3, 0);
++}
++
  
- 	struct pinmux_range input;
--	struct pinmux_range input_pd;
--	struct pinmux_range input_pu;
- 	struct pinmux_range output;
- 	struct pinmux_range function;
+ void
+ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
+@@ -142,13 +217,57 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
+ 	free_mem_end_ptr	= free_mem_ptr_end_p;
+ 	__machine_arch_type	= arch_id;
  
++	led_setup();
++	//morse_bits((unsigned int)output_data);
++	led_set(0, 1);
++	led_set(1, 1);
++	led_set(2, 1);
++	led_set(3, 1);
++
++	led_set(0, 0);
++#if 1
++	int i;
++	volatile unsigned int *dram = output_data;// + 0x10000000;
++#define DRAM_TEST_SIZE  10000000
++	for (i = 0; i < DRAM_TEST_SIZE; i++)
++	{
++		//led_set(0, i & 32768);
++		//led_set(1, i & 131072);
++		dram[i] = 0xd00df00d;
++		dram[i] = 0xcafebabe + i;
++	}
++	led_set(0, 0);
++	led_set(1, 1);
++#if 1
++	for (i = 0; i < DRAM_TEST_SIZE; i++) {
++		//led_set(2, i & 32768);
++		//led_set(3, i & 65536);
++#if 1
++		if (dram[i] != 0xcafebabe + i) {
++			//led_set(0, 1);
++			morse_bits((unsigned int)&dram[i]);
++			morse_bits(dram[i]);
++		}
++#endif
++	}
++	led_set(2, 1);
++	led_set(3, 1);
++#endif
++#endif
++	
+ 	arch_decomp_setup();
+ 
++	led_set(1, 0);
+ 	putstr("Uncompressing Linux...");
+ 	ret = do_decompress(input_data, input_data_end - input_data,
+ 			    output_data, error);
+-	if (ret)
++	led_set(2, 0);
++	if (ret) {
+ 		error("decompressor returned an error");
+-	else
++		led_set(0, 1);
++	}
++	else {
+ 		putstr(" done, booting the kernel.\n");
++	}
++	led_set(3, 0);
+ }
 -- 
-1.8.1.5
+1.7.10.4
 
