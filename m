@@ -1,170 +1,194 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 23 Jul 2013 10:49:57 +0000
-Subject: [PATCH v4 03/15] DMA: shdma: add r8a73a4 DMAC data to the device ID table
-Message-Id: <1374576609-27748-4-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 30 Jul 2013 10:37:25 +0000
+Subject: [PATCH v2 01/13] mmc: slot-gpio: Add debouncing capability to mmc_gpio_request_cd()
+Message-Id: <1375180657-23641-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374576609-27748-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This configuration data will be re-used, when DMAC DT support is added to
-r8a73a4.
+Add a debounce parameter to the mmc_gpio_request_cd() function that
+enables GPIO debouncing when set to a non-zero value. This can be used
+by MMC host drivers to enable debouncing on the card detect signal.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/mmc/core/host.c            |  2 +-
+ drivers/mmc/core/slot-gpio.c       | 14 +++++++++++++-
+ drivers/mmc/host/jz4740_mmc.c      |  2 +-
+ drivers/mmc/host/mvsdio.c          |  3 ++-
+ drivers/mmc/host/sdhci-esdhc-imx.c |  2 +-
+ drivers/mmc/host/sdhci-pxav3.c     |  3 ++-
+ drivers/mmc/host/sdhci-sirf.c      |  2 +-
+ drivers/mmc/host/sh_mmcif.c        |  2 +-
+ drivers/mmc/host/tmio_mmc_pio.c    |  2 +-
+ include/linux/mmc/slot-gpio.h      |  3 ++-
+ 10 files changed, 25 insertions(+), 10 deletions(-)
 
-v4: make struct sh_dmae_pdata r8a73a4_dma_pdata "const"
-
- drivers/dma/sh/Kconfig         |    4 ++
- drivers/dma/sh/Makefile        |    1 +
- drivers/dma/sh/shdma-r8a73a4.c |   75 ++++++++++++++++++++++++++++++++++++++++
- drivers/dma/sh/shdma.h         |    7 ++++
- drivers/dma/sh/shdmac.c        |    1 +
- 5 files changed, 88 insertions(+), 0 deletions(-)
- create mode 100644 drivers/dma/sh/shdma-r8a73a4.c
-
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index 0ac3e94..6921ba2 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -23,6 +23,10 @@ config SUDMAC
- 	help
- 	  Enable support for the Renesas SUDMAC controllers.
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index 6fb6f77..49bc403 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -374,7 +374,7 @@ int mmc_of_parse(struct mmc_host *host)
+ 			if (!(flags & OF_GPIO_ACTIVE_LOW))
+ 				gpio_inv_cd = true;
  
-+config SHDMA_R8A73A4
-+	def_bool y
-+	depends on ARCH_R8A73A4 && SH_DMAE != n
-+
- config SHDMA_R8A7740
- 	def_bool y
- 	depends on ARCH_R8A7740 && SH_DMAE != n
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index acdd3cb..8352bfb 100644
---- a/drivers/dma/sh/Makefile
-+++ b/drivers/dma/sh/Makefile
-@@ -1,6 +1,7 @@
- obj-$(CONFIG_SH_DMAE_BASE) += shdma-base.o shdma-of.o
- obj-$(CONFIG_SH_DMAE) += shdma.o
- shdma-y := shdmac.o
-+shdma-$(CONFIG_SHDMA_R8A73A4) += shdma-r8a73a4.o
- shdma-$(CONFIG_SHDMA_R8A7740) += shdma-r8a7740.o
- shdma-objs := $(shdma-y)
- obj-$(CONFIG_SUDMAC) += sudmac.o
-diff --git a/drivers/dma/sh/shdma-r8a73a4.c b/drivers/dma/sh/shdma-r8a73a4.c
-new file mode 100644
-index 0000000..9db9b4d
---- /dev/null
-+++ b/drivers/dma/sh/shdma-r8a73a4.c
-@@ -0,0 +1,75 @@
-+#include <linux/sh_dma.h>
-+
-+#include <mach/dma-register.h>
-+#include <mach/r8a73a4.h>
-+
-+static const struct sh_dmae_slave_config dma_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_MMCIF0_TX,
-+		.addr		= 0xee200034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF0_RX,
-+		.addr		= 0xee200034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF1_TX,
-+		.addr		= 0xee220034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xe1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF1_RX,
-+		.addr		= 0xee220034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xe2,
-+	},
-+};
-+
-+#define DMAE_CHANNEL(a, b)				\
-+	{						\
-+		.offset         = (a) - 0x20,		\
-+		.dmars          = (a) - 0x20 + 0x40,	\
-+		.chclr_bit	= (b),			\
-+		.chclr_offset	= 0x80 - 0x20,		\
+-			ret = mmc_gpio_request_cd(host, gpio);
++			ret = mmc_gpio_request_cd(host, gpio, 0);
+ 			if (ret < 0) {
+ 				dev_err(host->parent,
+ 					"Failed to request CD GPIO #%d: %d!\n",
+diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
+index 3242351..46596b71 100644
+--- a/drivers/mmc/core/slot-gpio.c
++++ b/drivers/mmc/core/slot-gpio.c
+@@ -135,6 +135,7 @@ EXPORT_SYMBOL(mmc_gpio_request_ro);
+  * mmc_gpio_request_cd - request a gpio for card-detection
+  * @host: mmc host
+  * @gpio: gpio number requested
++ * @debounce: debounce time in microseconds
+  *
+  * As devm_* managed functions are used in mmc_gpio_request_cd(), client
+  * drivers do not need to explicitly call mmc_gpio_free_cd() for freeing up,
+@@ -143,9 +144,14 @@ EXPORT_SYMBOL(mmc_gpio_request_ro);
+  * switching for card-detection, they are responsible for calling
+  * mmc_gpio_request_cd() and mmc_gpio_free_cd() as a pair on their own.
+  *
++ * If GPIO debouncing is desired, set the debounce parameter to a non-zero
++ * value. The caller is responsible for ensuring that the GPIO driver associated
++ * with the GPIO supports debouncing, otherwise an error will be returned.
++ *
+  * Returns zero on success, else an error.
+  */
+-int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
++int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio,
++			unsigned int debounce)
+ {
+ 	struct mmc_gpio *ctx;
+ 	int irq = gpio_to_irq(gpio);
+@@ -167,6 +173,12 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ 		 */
+ 		return ret;
+ 
++	if (debounce) {
++		ret = gpio_set_debounce(gpio, debounce);
++		if (ret < 0)
++			return ret;
 +	}
 +
-+static const struct sh_dmae_channel dma_channels[] = {
-+	DMAE_CHANNEL(0x8000, 0),
-+	DMAE_CHANNEL(0x8080, 1),
-+	DMAE_CHANNEL(0x8100, 2),
-+	DMAE_CHANNEL(0x8180, 3),
-+	DMAE_CHANNEL(0x8200, 4),
-+	DMAE_CHANNEL(0x8280, 5),
-+	DMAE_CHANNEL(0x8300, 6),
-+	DMAE_CHANNEL(0x8380, 7),
-+	DMAE_CHANNEL(0x8400, 8),
-+	DMAE_CHANNEL(0x8480, 9),
-+	DMAE_CHANNEL(0x8500, 10),
-+	DMAE_CHANNEL(0x8580, 11),
-+	DMAE_CHANNEL(0x8600, 12),
-+	DMAE_CHANNEL(0x8680, 13),
-+	DMAE_CHANNEL(0x8700, 14),
-+	DMAE_CHANNEL(0x8780, 15),
-+	DMAE_CHANNEL(0x8800, 16),
-+	DMAE_CHANNEL(0x8880, 17),
-+	DMAE_CHANNEL(0x8900, 18),
-+	DMAE_CHANNEL(0x8980, 19),
-+};
-+
-+const struct sh_dmae_pdata r8a73a4_dma_pdata = {
-+	.slave		= dma_slaves,
-+	.slave_num	= ARRAY_SIZE(dma_slaves),
-+	.channel	= dma_channels,
-+	.channel_num	= ARRAY_SIZE(dma_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init     = DMAOR_DME,
-+	.chclr_present	= 1,
-+	.chclr_bitwise	= 1,
-+};
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index b5fe545..82a83f8 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -61,6 +61,13 @@ struct sh_dmae_desc {
- #define to_sh_dev(chan) container_of(chan->shdma_chan.dma_chan.device,\
- 				     struct sh_dmae_device, shdma_dev.dma_dev)
+ 	/*
+ 	 * Even if gpio_to_irq() returns a valid IRQ number, the platform might
+ 	 * still prefer to poll, e.g., because that IRQ number is already used
+diff --git a/drivers/mmc/host/jz4740_mmc.c b/drivers/mmc/host/jz4740_mmc.c
+index 0308c9f..d868946 100644
+--- a/drivers/mmc/host/jz4740_mmc.c
++++ b/drivers/mmc/host/jz4740_mmc.c
+@@ -713,7 +713,7 @@ static int jz4740_mmc_request_gpios(struct mmc_host *mmc,
+ 		mmc->caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
  
-+#ifdef CONFIG_SHDMA_R8A73A4
-+extern const struct sh_dmae_pdata r8a73a4_dma_pdata;
-+#define r8a73a4_shdma_devid &r8a73a4_dma_pdata
-+#else
-+#define r8a73a4_shdma_devid NULL
-+#endif
-+
- #ifdef CONFIG_SHDMA_R8A7740
- extern const struct sh_dmae_pdata r8a7740_dma_pdata;
- #define r8a7740_shdma_devid &r8a7740_dma_pdata
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index fe54cda..6546bf9 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -907,6 +907,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+ 	if (gpio_is_valid(pdata->gpio_card_detect)) {
+-		ret = mmc_gpio_request_cd(mmc, pdata->gpio_card_detect);
++		ret = mmc_gpio_request_cd(mmc, pdata->gpio_card_detect, 0);
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/drivers/mmc/host/mvsdio.c b/drivers/mmc/host/mvsdio.c
+index 4ddd83f..06c5b0b 100644
+--- a/drivers/mmc/host/mvsdio.c
++++ b/drivers/mmc/host/mvsdio.c
+@@ -757,7 +757,8 @@ static int __init mvsd_probe(struct platform_device *pdev)
+ 		if (mvsd_data->gpio_card_detect &&
+ 		    gpio_is_valid(mvsd_data->gpio_card_detect)) {
+ 			ret = mmc_gpio_request_cd(mmc,
+-						  mvsd_data->gpio_card_detect);
++						  mvsd_data->gpio_card_detect,
++						  0);
+ 			if (ret)
+ 				goto out;
+ 		} else {
+diff --git a/drivers/mmc/host/sdhci-esdhc-imx.c b/drivers/mmc/host/sdhci-esdhc-imx.c
+index 1dd5ba8..abc8cf0 100644
+--- a/drivers/mmc/host/sdhci-esdhc-imx.c
++++ b/drivers/mmc/host/sdhci-esdhc-imx.c
+@@ -616,7 +616,7 @@ static int sdhci_esdhc_imx_probe(struct platform_device *pdev)
+ 	/* card_detect */
+ 	switch (boarddata->cd_type) {
+ 	case ESDHC_CD_GPIO:
+-		err = mmc_gpio_request_cd(host->mmc, boarddata->cd_gpio);
++		err = mmc_gpio_request_cd(host->mmc, boarddata->cd_gpio, 0);
+ 		if (err) {
+ 			dev_err(mmc_dev(host->mmc),
+ 				"failed to request card-detect gpio!\n");
+diff --git a/drivers/mmc/host/sdhci-pxav3.c b/drivers/mmc/host/sdhci-pxav3.c
+index bf99359..793dacd 100644
+--- a/drivers/mmc/host/sdhci-pxav3.c
++++ b/drivers/mmc/host/sdhci-pxav3.c
+@@ -278,7 +278,8 @@ static int sdhci_pxav3_probe(struct platform_device *pdev)
+ 			host->mmc->pm_caps |= pdata->pm_caps;
  
- const struct platform_device_id sh_dmae_id_table[] = {
- 	{.name = SH_DMAE_DRV_NAME,},
-+	{.name = "shdma-r8a73a4", .driver_data = (kernel_ulong_t)r8a73a4_shdma_devid,},
- 	{.name = "shdma-r8a7740", .driver_data = (kernel_ulong_t)r8a7740_shdma_devid,},
- 	{}
- };
+ 		if (gpio_is_valid(pdata->ext_cd_gpio)) {
+-			ret = mmc_gpio_request_cd(host->mmc, pdata->ext_cd_gpio);
++			ret = mmc_gpio_request_cd(host->mmc, pdata->ext_cd_gpio,
++						  0);
+ 			if (ret) {
+ 				dev_err(mmc_dev(host->mmc),
+ 					"failed to allocate card detect gpio\n");
+diff --git a/drivers/mmc/host/sdhci-sirf.c b/drivers/mmc/host/sdhci-sirf.c
+index 62a4a83..696122c 100644
+--- a/drivers/mmc/host/sdhci-sirf.c
++++ b/drivers/mmc/host/sdhci-sirf.c
+@@ -84,7 +84,7 @@ static int sdhci_sirf_probe(struct platform_device *pdev)
+ 	 * gets setup in sdhci_add_host() and we oops.
+ 	 */
+ 	if (gpio_is_valid(priv->gpio_cd)) {
+-		ret = mmc_gpio_request_cd(host->mmc, priv->gpio_cd);
++		ret = mmc_gpio_request_cd(host->mmc, priv->gpio_cd, 0);
+ 		if (ret) {
+ 			dev_err(&pdev->dev, "card detect irq request failed: %d\n",
+ 				ret);
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 6706b5e..35f61cc 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1436,7 +1436,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	if (pd && pd->use_cd_gpio) {
+-		ret = mmc_gpio_request_cd(mmc, pd->cd_gpio);
++		ret = mmc_gpio_request_cd(mmc, pd->cd_gpio, 0);
+ 		if (ret < 0)
+ 			goto erqcd;
+ 	}
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b72edb7..8486a22 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1106,7 +1106,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
+ 
+ 	if (pdata->flags & TMIO_MMC_USE_GPIO_CD) {
+-		ret = mmc_gpio_request_cd(mmc, pdata->cd_gpio);
++		ret = mmc_gpio_request_cd(mmc, pdata->cd_gpio, 0);
+ 		if (ret < 0) {
+ 			tmio_mmc_host_remove(_host);
+ 			return ret;
+diff --git a/include/linux/mmc/slot-gpio.h b/include/linux/mmc/slot-gpio.h
+index 7d88d27..b0c73e4 100644
+--- a/include/linux/mmc/slot-gpio.h
++++ b/include/linux/mmc/slot-gpio.h
+@@ -18,7 +18,8 @@ int mmc_gpio_request_ro(struct mmc_host *host, unsigned int gpio);
+ void mmc_gpio_free_ro(struct mmc_host *host);
+ 
+ int mmc_gpio_get_cd(struct mmc_host *host);
+-int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio);
++int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio,
++			unsigned int debounce);
+ void mmc_gpio_free_cd(struct mmc_host *host);
+ 
+ #endif
 -- 
-1.7.2.5
+1.8.1.5
 
