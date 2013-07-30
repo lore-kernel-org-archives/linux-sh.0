@@ -1,110 +1,82 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:21 +0000
-Subject: [PATCH v7 08/19] ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
-Message-Id: <1372961852-28490-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 30 Jul 2013 10:37:37 +0000
+Subject: [PATCH v2 13/13] mmc: tmio-mmc: Remove .set_pwr() callback from platform data
+Message-Id: <1375180657-23641-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add GPIO controller nodes to the r8a7790 core device tree.
+The .set_pwr() callback isn't used anymore as all platforms register
+GPIO-controlled regulators. Remove it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 73 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+ drivers/mmc/host/tmio_mmc.h     | 1 -
+ drivers/mmc/host/tmio_mmc_pio.c | 7 -------
+ include/linux/mfd/tmio.h        | 1 -
+ 3 files changed, 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 13caf12..9465cfc 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -38,6 +38,78 @@
- 		interrupts = <1 9 0xf04>;
- 	};
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 86fd21e..39c2f45 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -68,7 +68,6 @@ struct tmio_mmc_host {
+ 	enum tmio_mmc_power	power;
  
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc40000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 4 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc41000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 5 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc42000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 6 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc43000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 7 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc44000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 8 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio5: gpio@ffc45000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc45000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 9 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
- 	timer {
- 		compatible = "arm,armv7-timer";
- 		interrupts = <1 13 0xf08>,
-@@ -58,5 +130,6 @@
- 	pfc: pfc@e6060000 {
- 		compatible = "renesas,pfc-r8a7790";
- 		reg = <0 0xe6060000 0 0x250>;
-+		#gpio-range-cells = <3>;
- 	};
- };
+ 	/* Callbacks for clock / power control */
+-	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 
+ 	/* pio related stuff */
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 2a7eb5a..4675513 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -777,9 +777,6 @@ static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
+ 
+ 	/* .set_ios() is returning void, so, no chance to report an error */
+ 
+-	if (host->set_pwr)
+-		host->set_pwr(host->pdev, 1);
+-
+ 	if (!IS_ERR(mmc->supply.vmmc)) {
+ 		ret = mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, vdd);
+ 		/*
+@@ -809,9 +806,6 @@ static void tmio_mmc_power_off(struct tmio_mmc_host *host)
+ 
+ 	if (!IS_ERR(mmc->supply.vmmc))
+ 		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, 0);
+-
+-	if (host->set_pwr)
+-		host->set_pwr(host->pdev, 0);
+ }
+ 
+ /* Set MMC clock / power.
+@@ -998,7 +992,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	_host->pdev = pdev;
+ 	platform_set_drvdata(pdev, mmc);
+ 
+-	_host->set_pwr = pdata->set_pwr;
+ 	_host->set_clk_div = pdata->set_clk_div;
+ 
+ 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index b22883d..baa2346 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -106,7 +106,6 @@ struct tmio_mmc_data {
+ 	struct tmio_mmc_dma		*dma;
+ 	struct device			*dev;
+ 	unsigned int			cd_gpio;
+-	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
+ 	/* clock management callbacks */
 -- 
 1.8.1.5
 
