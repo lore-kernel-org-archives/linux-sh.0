@@ -1,119 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 15 Jul 2013 23:39:59 +0000
-Subject: [PATCH 11/19] sh-pfc: sh7734: Use the common GP port style macros
-Message-Id: <1373931607-4599-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 30 Jul 2013 09:09:19 +0000
+Subject: [PATCH v6 1/3] ARM: shmobile: r8a7790: clocks for Ether support
+Message-Id: <1375175361-23027-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The SoC has a bank-style PFC. Replace the custom-defined macros with
-common macros from sh-pfc.h.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7734.c | 56 +++++++++++++++----------------------
- drivers/pinctrl/sh-pfc/sh_pfc.h     | 17 -----------
- 2 files changed, 22 insertions(+), 51 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index 537a639..ec0c47c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -14,42 +14,30 @@
+v5
+* Split out from "ARM: shmobile: r8a7790: add Ether support"
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 50d96f9..fc36d3d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -51,6 +51,7 @@
+ #define SMSTPCR3 0xe615013c
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
++#define SMSTPCR8 0xe6150990
  
- #include "sh_pfc.h"
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+@@ -180,6 +181,7 @@ static struct clk div6_clks[DIV6_NR] = {
  
--#define CPU_32_PORT5(fn, pfx, sfx)				\
--	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
--	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
--	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
--	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
--	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx),	\
--	PORT_1(fn, pfx##10, sfx), PORT_1(fn, pfx##11, sfx)
--
--/* GPSR0 - GPSR5 */
--#define CPU_ALL_PORT(fn, pfx, sfx)				\
--	PORT_32(fn, pfx##_0_, sfx),			\
--	PORT_32(fn, pfx##_1_, sfx),				\
--	PORT_32(fn, pfx##_2_, sfx),				\
--	PORT_32(fn, pfx##_3_, sfx),				\
--	PORT_32(fn, pfx##_4_, sfx),				\
--	CPU_32_PORT5(fn, pfx##_5_, sfx)
--
--#undef _GP_GPIO
--#undef _GP_DATA
--#undef GP_ALL
--#undef PINMUX_GPIO_GP_ALL
--#undef PINMUX_DATA_GP_ALL
--
--#define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
--#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
--				       GP##pfx##_IN, GP##pfx##_OUT)
-+#define PORT_GP_12(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 0, fn, sfx),  PORT_GP_1(bank, 1, fn, sfx),	\
-+	PORT_GP_1(bank, 2, fn, sfx),  PORT_GP_1(bank, 3, fn, sfx),	\
-+	PORT_GP_1(bank, 4, fn, sfx),  PORT_GP_1(bank, 5, fn, sfx),	\
-+	PORT_GP_1(bank, 6, fn, sfx),  PORT_GP_1(bank, 7, fn, sfx),	\
-+	PORT_GP_1(bank, 8, fn, sfx),  PORT_GP_1(bank, 9, fn, sfx),	\
-+	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx)
-+
-+#define CPU_ALL_PORT(fn, sfx)						\
-+	PORT_GP_32(0, fn, sfx),						\
-+	PORT_GP_32(1, fn, sfx),						\
-+	PORT_GP_32(2, fn, sfx),						\
-+	PORT_GP_32(3, fn, sfx),						\
-+	PORT_GP_32(4, fn, sfx),						\
-+	PORT_GP_12(5, fn, sfx)
- 
--#define _GP_INOUTSEL(pfx, sfx) GP##pfx##_IN, GP##pfx##_OUT
--#define _GP_INDT(pfx, sfx) GP##pfx##_DATA
--
--#define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
--#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
--#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
-+#undef _GP_DATA
-+#define _GP_DATA(bank, pin, name, sfx)					\
-+	PINMUX_DATA(name##_DATA, name##_FN, name##_IN, name##_OUT)
- 
--#define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
--#define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
-+#define _GP_INOUTSEL(bank, pin, name, sfx)	name##_IN, name##_OUT
-+#define _GP_INDT(bank, pin, name, sfx)		name##_DATA
-+#define GP_INOUTSEL(bank)	PORT_GP_32_REV(bank, _GP_INOUTSEL, unused)
-+#define GP_INDT(bank)		PORT_GP_32_REV(bank, _GP_INDT, unused)
- 
+ /* MSTP */
  enum {
- 	PINMUX_RESERVED = 0,
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index f7c5b80..05b905f 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -238,23 +238,6 @@ struct sh_pfc_soc_info {
- 	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),		\
- 	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
++	MSTP813,
+ 	MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+ 	MSTP522,
+@@ -190,6 +192,7 @@ enum {
+ };
  
--#define PORT_10_REV(fn, pfx, sfx)					\
--	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),		\
--	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),		\
--	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),		\
--	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),		\
--	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
--
--#define PORT_32(fn, pfx, sfx)						\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),		\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),		\
--	PORT_1(fn, pfx##31, sfx)
--
--#define PORT_32_REV(fn, pfx, sfx)					\
--	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),		\
--	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
--	PORT_10_REV(fn, pfx, sfx)
--
- #define PORT_90(fn, pfx, sfx) \
- 	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),		\
- 	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),		\
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+@@ -258,6 +261,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
++	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
 -- 
-1.8.1.5
+1.8.3.2
 
