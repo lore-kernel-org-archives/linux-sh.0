@@ -1,55 +1,119 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 24 Jul 2013 14:49:45 +0000
-Subject: Re: [PATCH 0/3] sh-pfc: Don't include mach/*.h headers were not required
-Message-Id: <2297366.cgFF8sJl8f@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 30 Jul 2013 09:00:53 +0000
+Subject: [PATCH 5/5] ARM: shmobile: ape6evm: add SDHI interfaces
+Message-Id: <f79d68da510bf1b95beff4d556b78d06801f11dc.1375174556.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CANqRtoQHD9bk4uyAE9GAPvz_ZTLx1EtohFjaYhnetmwQ1Te1qg@mail.gmail.com>
-In-Reply-To: <CANqRtoQHD9bk4uyAE9GAPvz_ZTLx1EtohFjaYhnetmwQ1Te1qg@mail.gmail.com>
+References: <cover.1375174556.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375174556.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-On Wednesday 24 July 2013 23:44:05 Magnus Damm wrote:
-> On Wed, Jul 24, 2013 at 10:09 PM, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > The (long) road to multiplatform kernels requires getting rid of mach/*.h
-> > headers in device drivers. This patch set removes some of the included
-> > mach headers from the sh-pfc driver. The only remaining one is
-> > mach/irqs.h, to get the irq_pin() macro. This will require more work, see
-> > [1] for a discussion of the issue.
-> 
-> That's a blocker for some of the SoCs, right? I suppose the ones using a
-> separate GPIO controller are OK as-is?
+Add support for SDHI0 and SDHI1 on APE6EVM in PIO mode only.
 
-Yes. It's a multiplatform blocker for r8a73a4, r8a7740 and sh73a0. SoCs using 
-a separate GPIO controller are fine (although the same problem might pop up 
-for future SoCs with a separate GPIO controller if the GPIO IRQs are handled 
-by a device separate from the GPIO controller).
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-ape6evm.c | 50 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 1 deletion(-)
 
-> > The patches are based on v3.11-rc2. Linus, do you usually pick pinctrl
-> > patches from the list, or should I send you a pull request ?
-> > 
-> > [1]
-> > http://www.mail-archive.com/linux-kernel@vger.kernel.org/msg473450.html
-> > 
-> > Laurent Pinchart (3):
-> >   sh-pfc: Remove unneeded mach/<soc>.h includes
-> >   sh-pfc: sh7372: Replace <mach/irqs.h> with <linux/sh_intc.h>
-> >   sh-pfc: sh73a0: Remove EXT_IRQ16L and EXT_IRQ16H macros
-> 
-> These are fine with me. Thanks for your help!
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
-
-Thank you.
-
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 8c7529c..ccf8b04 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -21,8 +21,10 @@
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+@@ -58,11 +60,16 @@ static const struct smsc911x_platform_config lan9220_data = {
+ 
+ /*
+  * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
+- * model a VDD supply to MMCIF, using a fixed 3.3V regulator.
++ * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use the
++ * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is also
++ * supplied by the same tps80032 regulator and thus can also be adjusted
++ * dynamically.
+  */
+ static struct regulator_consumer_supply fixed3v3_power_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
+ };
+ 
+ /* MMCIF */
+@@ -75,6 +82,29 @@ static struct resource mmcif0_resources[] = {
+ 	DEFINE_RES_IRQ(gic_spi(169)),
+ };
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_pdata = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++};
++
++static struct resource sdhi0_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI1 */
++static struct sh_mobile_sdhi_info sdhi1_pdata = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_NEEDS_POLL,
++};
++
++static struct resource sdhi1_resources[] = {
++	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
++	DEFINE_RES_IRQ(gic_spi(166)),
++};
++
+ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 	/* SCIFA0 console */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+@@ -87,6 +117,18 @@ static const struct pinctrl_map ape6evm_pinctrl_map[] = {
+ 				  "mmc0_data8", "mmc0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a73a4",
+ 				  "mmc0_ctrl", "mmc0"),
++	/* SDHI0: uSD: no WP */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a73a4",
++				  "sdhi0_cd", "sdhi0"),
++	/* SDHI1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a73a4",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a73a4",
++				  "sdhi1_ctrl", "sdhi1"),
+ };
+ 
+ static void __init ape6evm_add_standard_devices(void)
+@@ -124,6 +166,12 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
+ 					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
+ 					  &mmcif0_pdata, sizeof(mmcif0_pdata));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_pdata, sizeof(sdhi0_pdata));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
++					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
++					  &sdhi1_pdata, sizeof(sdhi1_pdata));
+ }
+ 
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
