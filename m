@@ -1,60 +1,74 @@
-From: Katsuya Matsubara <matsu@igel.co.jp>
-Date: Fri, 26 Jul 2013 09:32:12 +0000
-Subject: [PATCH 2/7] [media] vsp1: Use the maximum number defined in platform data
-Message-Id: <1374831137-9219-3-git-send-email-matsu@igel.co.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 30 Jul 2013 05:24:11 +0000
+Subject: [PATCH 1/4] ARM: shmobile: Only build clocks when COMMON_CLK=n
+Message-Id: <a360feb9e9e6cc36d61e683c03dc13974663298b.1375161473.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374831137-9219-1-git-send-email-matsu@igel.co.jp>
-In-Reply-To: <1374831137-9219-1-git-send-email-matsu@igel.co.jp>
+References: <cover.1375161473.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375161473.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Katsuya Matsubara <matsu@igel.co.jp>
+To: linux-arm-kernel@lists.infradead.org
 
-The VSP1 driver allows to define the maximum number of each module
-such as RPF, WPF, and UDS in a platform data definition.
-This suppresses operations for nonexistent or unused modules.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
+Move shared clock.c file and per-SoC clock-xxx.c files
+to only build when CONFIG_COMMON_CLK != y.
+
+The regular ARCH_SHMOBILE case with legacy SH clock framework
+will build just as before with this patch applied, however
+the case when COMMON_CLK=y will exclude all the clock files.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_drv.c |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/Makefile | 31 ++++++++++++++++++++++---------
+ 1 file changed, 22 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 0ead308..a8c21f8 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -35,7 +35,7 @@ static irqreturn_t vsp1_irq_handler(int irq, void *data)
- 	irqreturn_t ret = IRQ_NONE;
- 	unsigned int i;
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index e8d0a2c..5884bea 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -3,17 +3,30 @@
+ #
  
--	for (i = 0; i < VPS1_MAX_WPF; ++i) {
-+	for (i = 0; i < vsp1->pdata->wpf_count; ++i) {
- 		struct vsp1_rwpf *wpf = vsp1->wpf[i];
- 		struct vsp1_pipeline *pipe;
- 		u32 status;
-@@ -243,7 +243,7 @@ static void vsp1_device_init(struct vsp1_device *vsp1)
- 	/* Reset any channel that might be running. */
- 	status = vsp1_read(vsp1, VI6_STATUS);
+ # Common objects
+-obj-y				:= timer.o console.o clock.o
++obj-y				:= timer.o console.o
  
--	for (i = 0; i < VPS1_MAX_WPF; ++i) {
-+	for (i = 0; i < vsp1->pdata->wpf_count; ++i) {
- 		unsigned int timeout;
+ # CPU objects
+-obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
+-obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
+-obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
+-obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o clock-r8a7790.o
+-obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
++obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o
++obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o
++obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
++obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o intc-r8a7740.o
++obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
++obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o intc-r8a7779.o
++obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
++obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
++
++# Clock objects
++ifndef CONFIG_COMMON_CLK
++obj-y				+= clock.o
++obj-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
++obj-$(CONFIG_ARCH_SH73A0)	+= clock-sh73a0.o
++obj-$(CONFIG_ARCH_R8A73A4)	+= clock-r8a73a4.o
++obj-$(CONFIG_ARCH_R8A7740)	+= clock-r8a7740.o
++obj-$(CONFIG_ARCH_R8A7778)	+= clock-r8a7778.o
++obj-$(CONFIG_ARCH_R8A7779)	+= clock-r8a7779.o
++obj-$(CONFIG_ARCH_R8A7790)	+= clock-r8a7790.o
++obj-$(CONFIG_ARCH_EMEV2)	+= clock-emev2.o
++endif
  
- 		if (!(status & VI6_STATUS_SYS_ACT(i)))
-@@ -265,10 +265,10 @@ static void vsp1_device_init(struct vsp1_device *vsp1)
- 	vsp1_write(vsp1, VI6_CLK_DCSWT, (8 << VI6_CLK_DCSWT_CSTPW_SHIFT) |
- 		   (8 << VI6_CLK_DCSWT_CSTRW_SHIFT));
- 
--	for (i = 0; i < VPS1_MAX_RPF; ++i)
-+	for (i = 0; i < vsp1->pdata->rpf_count; ++i)
- 		vsp1_write(vsp1, VI6_DPR_RPF_ROUTE(i), VI6_DPR_NODE_UNUSED);
- 
--	for (i = 0; i < VPS1_MAX_UDS; ++i)
-+	for (i = 0; i < vsp1->pdata->uds_count; ++i)
- 		vsp1_write(vsp1, VI6_DPR_UDS_ROUTE(i), VI6_DPR_NODE_UNUSED);
- 
- 	vsp1_write(vsp1, VI6_DPR_SRU_ROUTE, VI6_DPR_NODE_UNUSED);
+ # SMP objects
+ smp-y				:= platsmp.o headsmp.o
 -- 
-1.7.9.5
+1.8.3.2
 
