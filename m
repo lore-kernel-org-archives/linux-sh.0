@@ -1,47 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 25 Jul 2013 23:26:40 +0000
-Subject: [PATCH 04/12] sh: ecovec24: Remove mmcif .down_pwr() callback
-Message-Id: <1374794808-21890-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 30 Jul 2013 01:59:00 +0000
+Subject: [PATCH 1/4] ARM: shmobile: ape6evm: support GPIO switches
+Message-Id: <1375149543-27564-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The callback isn't used by the mmcif driver, don't initialize it in
-board code.
+The ape6evm board has switches S16 - S23 wired up to GPIO pins.
+This patch allows access to those pins as gpio-keys.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 4d46700..e1b6aa3 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -983,11 +983,6 @@ static struct platform_device vou_device = {
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index ccf8b04..677752c 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -19,6 +19,8 @@
+  */
  
- #if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SH_MMCIF */
--static void mmcif_down_pwr(struct platform_device *pdev)
--{
--	cn12_set_pwr(pdev, 0);
--}
--
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
- 		.name	= "SH_MMCIF",
-@@ -1009,7 +1004,6 @@ static struct resource sh_mmcif_resources[] = {
+ #include <linux/gpio.h>
++#include <linux/gpio_keys.h>
++#include <linux/input.h>
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/mfd/tmio.h>
+@@ -37,6 +39,24 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.set_pwr	= cn12_set_pwr,
--	.down_pwr	= mmcif_down_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
++/* GPIO KEY */
++#define GPIO_KEY(c, g, d, ...) \
++	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
++
++static struct gpio_keys_button gpio_buttons[] = {
++	GPIO_KEY(KEY_0,			324,	"S16"),
++	GPIO_KEY(KEY_MENU,		325,	"S17"),
++	GPIO_KEY(KEY_HOME,		326,	"S18"),
++	GPIO_KEY(KEY_BACK,		327,	"S19"),
++	GPIO_KEY(KEY_VOLUMEUP,		328,	"S20"),
++	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
++};
++
++static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
++	.buttons	= gpio_buttons,
++	.nbuttons	= ARRAY_SIZE(gpio_buttons),
++};
++
+ /* Dummy supplies, where voltage doesn't matter */
+ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+@@ -172,6 +192,9 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
+ 					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
+ 					  &sdhi1_pdata, sizeof(sdhi1_pdata));
++	platform_device_register_data(&platform_bus, "gpio-keys", -1,
++				      &ape6evm_keys_pdata,
++				      sizeof(ape6evm_keys_pdata));
+ }
+ 
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
 -- 
-1.8.1.5
+1.8.3.2
 
