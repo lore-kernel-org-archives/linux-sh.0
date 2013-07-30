@@ -1,45 +1,33 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 05 Jul 2013 15:25:26 +0000
-Subject: [PATCH v2 0/6] ARM: shmobile: DMAC, MMCIF and SDHI for H2 and APE6
-Message-Id: <1373037932-19918-1-git-send-email-g.liakhovetski@gmx.de>
+From: Chen Gang <gang.chen@asianux.com>
+Date: Tue, 30 Jul 2013 02:09:42 +0000
+Subject: [PATCH 2/2] sh64: kernel: remove useless variable 'regs'
+Message-Id: <51F72066.9080407@asianux.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-These patches add support for DMA, MMCIF and SDHI controllers to non-DT 
-APE6EVM and Lager board implementations, and MMCIF and SDHI DT templates 
-for APE6 and H2 SoCs.
+remvoe useless variable 'regs' to avoid the related warnings (warning
+is treated as error).
 
-Developed and tested on top of Simon's renesas.git next snapshot of
-05.07.2013.
-
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-
-Guennadi Liakhovetski (6):
-  ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
-  ARM: shmobile: APE6EVM: add MMCIF support
-  ARM: shmobile: APE6EVM: add SDHI interfaces
-  ARM: shmobile: Lager: add MMCIF support
-  ARM: shmobile: r8a73a4: add MMCIF and SDHI DT templates
-  ARM: shmobile: r8a7790: add MMCIF and SDHI DT templates
-
- arch/arm/boot/dts/r8a73a4.dtsi                |   45 +++++++++
- arch/arm/boot/dts/r8a7790.dtsi                |   54 +++++++++++
- arch/arm/mach-shmobile/board-ape6evm.c        |   81 +++++++++++++++++
- arch/arm/mach-shmobile/board-lager.c          |   31 +++++++
- arch/arm/mach-shmobile/clock-r8a73a4.c        |    4 +-
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |   15 +++
- arch/arm/mach-shmobile/setup-r8a73a4.c        |  120 +++++++++++++++++++++++++
- 7 files changed, 349 insertions(+), 1 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Chen Gang <gang.chen@asianux.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/sh/kernel/process_64.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/kernel/process_64.c b/arch/sh/kernel/process_64.c
+index eac5947..e2062e6 100644
+--- a/arch/sh/kernel/process_64.c
++++ b/arch/sh/kernel/process_64.c
+@@ -374,7 +374,7 @@ asmlinkage void ret_from_kernel_thread(void);
+ int copy_thread(unsigned long clone_flags, unsigned long usp,
+ 		unsigned long arg, struct task_struct *p)
+ {
+-	struct pt_regs *childregs, *regs = current_pt_regs();
++	struct pt_regs *childregs;
+ 
+ #ifdef CONFIG_SH_FPU
+ 	/* can't happen for a kernel thread */
+-- 
+1.7.7.6
