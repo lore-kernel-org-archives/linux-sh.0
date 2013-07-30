@@ -1,50 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:34:20 +0000
-Subject: [GIT 0/4] Renesas TPU PWM support for v3.12
-Message-Id: <cover.1374624997.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 30 Jul 2013 10:37:34 +0000
+Subject: [PATCH v2 10/13] mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
+Message-Id: <1375180657-23641-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+All platforms pass the CD GPIO number to the driver in the .cd_gpio
+field. The .get_cd() callback isn't used anymore, remove it.
 
-please consider this pull request, which adds support for
-the renesas TPU PWM unit, for v3.12.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c  | 9 ---------
+ include/linux/mmc/sh_mobile_sdhi.h | 1 -
+ 2 files changed, 10 deletions(-)
 
-The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index ebea749..663a672 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -77,13 +77,6 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
+ 	p->set_pwr(pdev, state);
+ }
+ 
+-static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
+-{
+-	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+-
+-	return p->get_cd(pdev);
+-}
+-
+ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+ {
+ 	int timeout = 1000;
+@@ -182,8 +175,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		mmc_data->cd_gpio = p->cd_gpio;
+ 		if (p->set_pwr)
+ 			mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+-		if (p->get_cd)
+-			mmc_data->get_cd = sh_mobile_sdhi_get_cd;
+ 
+ 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
+ 			/*
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index b76bcf0..f31c692 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -26,7 +26,6 @@ struct sh_mobile_sdhi_info {
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
+ 	unsigned int cd_gpio;
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+-	int (*get_cd)(struct platform_device *pdev);
+ 
+ 	/* callbacks for board specific setup code */
+ 	int (*init)(struct platform_device *pdev,
+-- 
+1.8.1.5
 
-  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-tpu-pwm-for-v3.12
-
-for you to fetch changes up to ae3e4c277669e16093f0e71ca927cf33e7dde053:
-
-  leds: Remove leds-renesas-tpu driver (2013-07-22 10:16:54 +0900)
-
-----------------------------------------------------------------
-Renesas TPU PWM support for v3.12
-
-Add Renesas TPU PWM unit support
-
-----------------------------------------------------------------
-Laurent Pinchart (4):
-      ARM: shmobile: armadillo800eva: Add backlight support
-      ARM: shmobile: kota2: Use leds-pwm + pwm-rmob
-      ARM: shmobile: sh73a0: Remove all GPIOs
-      leds: Remove leds-renesas-tpu driver
-
- arch/arm/mach-shmobile/board-armadillo800eva.c |  54 +++-
- arch/arm/mach-shmobile/board-kota2.c           | 169 ++++++-----
- arch/arm/mach-shmobile/clock-sh73a0.c          |  12 +-
- arch/arm/mach-shmobile/include/mach/sh73a0.h   | 373 +------------------------
- drivers/leds/Kconfig                           |  12 -
- drivers/leds/Makefile                          |   1 -
- drivers/leds/leds-renesas-tpu.c                | 337 ----------------------
- include/linux/platform_data/leds-renesas-tpu.h |  14 -
- 8 files changed, 143 insertions(+), 829 deletions(-)
- delete mode 100644 drivers/leds/leds-renesas-tpu.c
- delete mode 100644 include/linux/platform_data/leds-renesas-tpu.h
