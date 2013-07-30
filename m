@@ -1,82 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:15 +0000
-Subject: [PATCH v7 02/19] ARM: shmobile: r8a7740: Add pin control device to device tree
-Message-Id: <1372961852-28490-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 30 Jul 2013 09:09:18 +0000
+Subject: [PATCH v6 0/3] ARM: shmobile: lager: enable Ether
+Message-Id: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the r8a7740 device tree and remove manual pinmux
-initialization from the corresponding board files.
+this short series enables the on-board ethernet
+of the r8a7790 SoC for on lager board.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7740.dtsi                           |  8 ++++++++
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 16 ++++++++--------
- 2 files changed, 16 insertions(+), 8 deletions(-)
+It has a run-time dependency on
+"sh_eth: add support for r8a7790 SoC"
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 24e9306..e18a195 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -139,4 +139,12 @@
- 			      0 72 0x4
- 			      0 73 0x4>;
- 	};
-+
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a7740";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605800c 0x20>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 03b85fe..f25b6aa 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -121,7 +121,7 @@
- 
- static const struct pinctrl_map eva_pinctrl_map[] = {
- 	/* SCIFA1 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.1", "e6050000.pfc",
- 				  "scifa1_data", "scifa1"),
- };
- 
-@@ -170,22 +170,22 @@ static void __init eva_init(void)
- 	eva_clock_init();
- 
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--	r8a7740_pinmux_init();
- 
- 	r8a7740_meram_workaround();
- 
--	/*
--	 * Touchscreen
--	 * TODO: Move reset GPIO over to .dts when we can reference it
--	 */
--	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
--
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
- #endif
- 
- 	r8a7740_add_standard_devices_dt();
-+
-+	/*
-+	 * Touchscreen
-+	 * TODO: Move reset GPIO over to .dts when we can reference it
-+	 */
-+	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-+
- 	r8a7740_pm_init();
- }
- 
+It has been built on top of renesas-next-20130726.
+
+Changes noted in changelogs of individual patches.
+
+Simon Horman (3):
+  ARM: shmobile: r8a7790: clocks for Ether support
+  ARM: shmobile: lager: enable Ether
+  ARM: shmobile: lager: enable nfsroot in DTS
+
+ arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
+ arch/arm/mach-shmobile/board-lager.c   | 30 ++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
+ 3 files changed, 35 insertions(+), 1 deletion(-)
+
 -- 
-1.8.1.5
+1.8.3.2
 
