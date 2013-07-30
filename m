@@ -1,21 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 05 Jul 2013 05:41:51 +0000
-Subject: Re: [PATCH 3/6] ARM: shmobile: APE6EVM: add SDHI interfaces
-Message-Id: <CANqRtoQKuXzZbcGzv2s_uj_G8T3UdTfFA31f_9pGK=JqQO=EFA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 30 Jul 2013 09:00:41 +0000
+Subject: [PATCH 0/5] Renesas ARM-based SoC board updates for v3.12
+Message-Id: <cover.1375174556.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372970334-21485-4-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1372970334-21485-4-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 5, 2013 at 5:38 AM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> Add support for SDHI0 and SDHI1 on APE6EVM in PIO mode only.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Hi Olof, Hi Arnd,
 
-Looks good to me, thanks.
+please consider these Renesas ARM-based SoC board updates for v3.12.
+This pull-request is based on renesas-soc-for-v3.12 which I have previously
+sent a pull-request for.
 
-Acked-by: Magnus Damm <damm@opensource.se>
+The following changes since commit 81b9d5351fa96caad4accc6711bc1b9342927d4a:
+
+  ARM: shmobile: Setup r8a7790 arch timer based on MD pins (2013-07-17 14:26:56 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
+
+for you to fetch changes up to f79d68da510bf1b95beff4d556b78d06801f11dc:
+
+  ARM: shmobile: ape6evm: add SDHI interfaces (2013-07-25 14:46:38 +0900)
+
+----------------------------------------------------------------
+Renesas ARM-based SoC board updates for v3.12
+
+* ape6evm: Add SDHI and MMCIF support
+* lager: Add MMCIF support
+* armadillo800eva: Add DMA support for MMCIF
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (4):
+      ARM: shmobile: armadillo800eva: add DMA support to MMCIF
+      ARM: shmobile: lager: add MMCIF support
+      ARM: shmobile: ape6evm: add MMCIF support
+      ARM: shmobile: ape6evm: add SDHI interfaces
+
+Kuninori Morimoto (1):
+      ARM: shmobile: select the fixed regulator driver on BockW
+
+ arch/arm/mach-shmobile/Kconfig                 |  1 +
+ arch/arm/mach-shmobile/board-ape6evm.c         | 79 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  2 +
+ arch/arm/mach-shmobile/board-lager.c           | 31 ++++++++++
+ 4 files changed, 113 insertions(+)
