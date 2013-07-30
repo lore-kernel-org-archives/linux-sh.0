@@ -1,51 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 26 Jul 2013 09:09:32 +0000
-Subject: [PATCH] ARM: shmobile: lager: do not annotate gpio_buttons as __initdata
-Message-Id: <1374829772-10939-1-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 30 Jul 2013 08:26:57 +0000
+Subject: Re: [PATCH] ARM: shmobile: lager: do not annotate gpio_buttons as __initdata
+Message-Id: <CANqRtoRUc1r_5=4HHa19ZCr71r1jv5AwZQ39Jv7eFNOUomtjag@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1374829772-10939-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1374829772-10939-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-When the gpio-keys device is registered using
-platform_device_register_data() the platform data argument,
-lager_keys_pdata is duplicated and thus should be marked as __initdata
-to avoid wasting memory. However, this is not true of gpio_buttons,
-a reference to it rather than its value is duplicated when lager_keys_pdata
-is duplicated.
+On Fri, Jul 26, 2013 at 6:09 PM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> When the gpio-keys device is registered using
+> platform_device_register_data() the platform data argument,
+> lager_keys_pdata is duplicated and thus should be marked as __initdata
+> to avoid wasting memory. However, this is not true of gpio_buttons,
+> a reference to it rather than its value is duplicated when lager_keys_pdata
+> is duplicated.
+>
+> This avoids accessing freed memory if gpio-key events occur
+> after unused kernel memory is freed late in the kernel's boot.
+>
+> This but was added when support for gpio-keys was added to lager
+> in c3842e4fcbb7664276443b79187b7808c2e80a35
+> ("ARM: shmobile: lager: support GPIO switches") which was included
+> in v3.11-rc1.
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>
+> ---
+>
+> * Noticed when adding gpio-keys support to ape6evm
+> * Compile tested only
 
-This avoids accessing freed memory if gpio-key events occur
-after unused kernel memory is freed late in the kernel's boot.
+I just got around to test this patch on a Lager board, works well. Thanks!
 
-This but was added when support for gpio-keys was added to lager
-in c3842e4fcbb7664276443b79187b7808c2e80a35
-("ARM: shmobile: lager: support GPIO switches") which was included
-in v3.11-rc1.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
----
-
-* Noticed when adding gpio-keys support to ape6evm
-* Compile tested only
----
- arch/arm/mach-shmobile/board-lager.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 3c67b2a..3a1a6fd 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -63,7 +63,7 @@ static __initdata struct gpio_led_platform_data lager_leds_pdata = {
- #define GPIO_KEY(c, g, d, ...) \
- 	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
- 
--static __initdata struct gpio_keys_button gpio_buttons[] = {
-+static struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
- 	GPIO_KEY(KEY_3,		RCAR_GP_PIN(1, 26),	"SW2-pin3"),
- 	GPIO_KEY(KEY_2,		RCAR_GP_PIN(1, 24),	"SW2-pin2"),
--- 
-1.8.3.2
-
+Tested-by: Magnus Damm <damm@opensource.se>
