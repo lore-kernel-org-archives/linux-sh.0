@@ -1,37 +1,94 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 23 Jul 2013 01:24:33 +0000
-Subject: Re: [PATCH v2 03/04] ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
-Message-Id: <20130723012432.GA16481@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 30 Jul 2013 15:50:00 +0000
+Subject: [PATCH/RFC] ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct regulators
+Message-Id: <Pine.LNX.4.64.1307301739260.25629@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130717203049.27542.78385.sendpatchset@w520>
- <20130717203118.27542.37940.sendpatchset@w520>
-In-Reply-To: <20130717203118.27542.37940.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Jul 18, 2013 at 05:31:18AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Enable build of EMEV2 and KZM9D DT Reference in
-> case of ARCH_MULTIPLATFORM and ARCH_SHMOBILE_MULTI.
-> 
-> IS_ENABLED() is leaves the clock-emev2.c file out
-> in case of COMMON_CLK=y.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Changes since V1:
->  - use IS_ENABLED() instead of weak symbol, thanks Arnd!
-> 
->  arch/arm/boot/dts/Makefile                     |    1 +
->  arch/arm/mach-shmobile/Kconfig                 |   15 +++++++++++++++
->  arch/arm/mach-shmobile/board-kzm9d-reference.c |    3 ++-
->  arch/arm/mach-shmobile/setup-emev2.c           |    3 ++-
->  4 files changed, 20 insertions(+), 2 deletions(-)
+Currently a dummy fixed always-on regulator is used for all 3 SD/MMC
+interfaces on ape6evm. This patch updates the board to use correct supplies
+for MMC0, SDHI0 and SDHI1 VDD. SDHI0 VccQ supply regulator should be
+implemented in a separate patch.
 
-Thanks, I have queued this up for v3.12 in a new multiarch branch
-of the renesas tree.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+
+Marked as RFC, because this doesn't properlly describe MMC0 VDD, VccQ and 
+SDHI0 VccQ power supplies. If this is accepted I'll make another patch for 
+ape6evm-reference.
+
+ arch/arm/mach-shmobile/board-ape6evm.c |   43 ++++++++++++++++++++++++-------
+ 1 files changed, 33 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index ccf8b04..27b7c9d 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -58,17 +58,35 @@ static const struct smsc911x_platform_config lan9220_data = {
+ 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
+ };
+ 
+-/*
+- * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
+- * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use the
+- * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is also
+- * supplied by the same tps80032 regulator and thus can also be adjusted
+- * dynamically.
+- */
+-static struct regulator_consumer_supply fixed3v3_power_consumers[] +/* MMC0, SDHI0 and SDHI1 power supplies */
++static struct regulator_consumer_supply vcc_mmc0_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++};
++
++static struct regulator_consumer_supply vcc_sdhi0_consumers[] +{
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++};
++
++static struct regulator_init_data vcc_sdhi0_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
++	.consumer_supplies      = vcc_sdhi0_consumers,
++};
++
++static const struct fixed_voltage_config vcc_sdhi0_info __initdata = {
++	.supply_name = "SDHI0 Vcc",
++	.microvolts = 3000000,
++	.gpio = 76,
++	.enable_high = 1,
++	.init_data = &vcc_sdhi0_init_data,
++};
++
++static struct regulator_consumer_supply vcc_sdhi1_consumers[] +{
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
+ };
+ 
+@@ -161,14 +179,19 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
+ 					  lan9220_res, ARRAY_SIZE(lan9220_res),
+ 					  &lan9220_data, sizeof(lan9220_data));
+-	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
+-				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++
++	regulator_register_always_on(1, "MMC0 Vcc", vcc_mmc0_consumers,
++				     ARRAY_SIZE(vcc_mmc0_consumers), 2800000);
+ 	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
+ 					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
+ 					  &mmcif0_pdata, sizeof(mmcif0_pdata));
++	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 2,
++				      &vcc_sdhi0_info, sizeof(vcc_sdhi0_info));
+ 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
+ 					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
+ 					  &sdhi0_pdata, sizeof(sdhi0_pdata));
++	regulator_register_always_on(3, "SDHI1 Vcc", vcc_sdhi1_consumers,
++				     ARRAY_SIZE(vcc_sdhi1_consumers), 3300000);
+ 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
+ 					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
+ 					  &sdhi1_pdata, sizeof(sdhi1_pdata));
+-- 
+1.7.2.5
 
