@@ -1,62 +1,78 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 19 Jul 2013 04:34:48 +0000
-Subject: [GIT 0/7] Renesas ARM and SH based SoC backlight drivers for v3.12
-Message-Id: <cover.1374207161.git.horms+renesas@verge.net.au>
+Date: Tue, 30 Jul 2013 01:59:02 +0000
+Subject: [PATCH 3/4] ARM: shmobile: ape6evm: Add GPIO LEDs
+Message-Id: <1375149543-27564-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+The board has 6 LEDs connected to GPIOs. Add a led-gpio device to
+support them.
 
-please consider the following backlight drivers for v3.12.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-ape6evm.c | 37 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
 
-The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 677752c..db97460 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -39,6 +39,40 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* LEDS */
++static struct gpio_led ape6evm_leds[] = {
++	{
++		.name		= "gnss-en",
++		.gpio		= 28,
++		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
++	}, {
++		.name		= "nfc-nrst",
++		.gpio		= 126,
++		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
++	}, {
++		.name		= "gnss-nrst",
++		.gpio		= 132,
++		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
++	}, {
++		.name		= "bt-wakeup",
++		.gpio		= 232,
++		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
++	}, {
++		.name		= "strobe",
++		.gpio		= 250,
++		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
++	}, {
++		.name		= "bbresetout",
++		.gpio		= 288,
++		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
++	},
++};
++
++static __initdata struct gpio_led_platform_data ape6evm_leds_pdata = {
++	.leds		= ape6evm_leds,
++	.num_leds	= ARRAY_SIZE(ape6evm_leds),
++};
++
+ /* GPIO KEY */
+ #define GPIO_KEY(c, g, d, ...) \
+ 	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
+@@ -195,6 +229,9 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
+ 				      &ape6evm_keys_pdata,
+ 				      sizeof(ape6evm_keys_pdata));
++	platform_device_register_data(&platform_bus, "leds-gpio", -1,
++				      &ape6evm_leds_pdata,
++				      sizeof(ape6evm_leds_pdata));
+ }
+ 
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
+-- 
+1.8.3.2
 
-  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-backlight-for-v3.12
-
-for you to fetch changes up to 0fb19cdabfc3f8884bac53fd81b02bf61c7904af:
-
-  ARM: mach-shmobile: ag5evm: Use bd6107 backlight driver (2013-07-17 10:06:18 +0900)
-
-----------------------------------------------------------------
-Renesas ARM and SH based SoC backlight drivers for v3.12
-
-Backlight drivers used by SH and ARM SH-Mobile boards.
-
-----------------------------------------------------------------
-Laurent Pinchart (7):
-      backlight: Add GPIO-based backlight driver
-      backlight: Add Sanyo LV5207LP backlight driver
-      backlight: Add ROHM BD6107 backlight driver
-      ARM: mach-shmobile: mackerel: Use gpio-backlight
-      sh: ecovec24: Use gpio-backlight
-      sh: kfr2r09: Use lv5207lp backlight
-      ARM: mach-shmobile: ag5evm: Use bd6107 backlight driver
-
- arch/arm/mach-shmobile/board-ag5evm.c        |   65 ++------
- arch/arm/mach-shmobile/board-mackerel.c      |   34 ++--
- arch/sh/boards/mach-ecovec24/setup.c         |   37 +++--
- arch/sh/boards/mach-kfr2r09/lcd_wqvga.c      |   48 ------
- arch/sh/boards/mach-kfr2r09/setup.c          |   19 ++-
- arch/sh/include/mach-kfr2r09/mach/kfr2r09.h  |    2 -
- drivers/video/backlight/Kconfig              |   19 +++
- drivers/video/backlight/Makefile             |    3 +
- drivers/video/backlight/bd6107.c             |  213 ++++++++++++++++++++++++++
- drivers/video/backlight/gpio_backlight.c     |  133 ++++++++++++++++
- drivers/video/backlight/lv5207lp.c           |  171 +++++++++++++++++++++
- include/linux/platform_data/bd6107.h         |   19 +++
- include/linux/platform_data/gpio_backlight.h |   21 +++
- include/linux/platform_data/lv5207lp.h       |   19 +++
- 14 files changed, 665 insertions(+), 138 deletions(-)
- create mode 100644 drivers/video/backlight/bd6107.c
- create mode 100644 drivers/video/backlight/gpio_backlight.c
- create mode 100644 drivers/video/backlight/lv5207lp.c
- create mode 100644 include/linux/platform_data/bd6107.h
- create mode 100644 include/linux/platform_data/gpio_backlight.h
- create mode 100644 include/linux/platform_data/lv5207lp.h
