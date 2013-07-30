@@ -1,58 +1,65 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Wed, 31 Jul 2013 20:45:47 +0000
-Subject: Re: [PATCH] clocksource: em_sti: Adjust clock event rating to fix SMP broadcast
-Message-Id: <51F9777B.2080500@codeaurora.org>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 30 Jul 2013 17:57:22 +0000
+Subject: [RFC 0/5] Non-functional zboot implementation for KZM9G
+Message-Id: <1375207047-8655-1-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375251940-7809-1-git-send-email-horms+renesas@verge.net.au>
- <51F94A35.2020907@codeaurora.org>
- <CANqRtoR0Wwctor1mpM+8nuC0_pZsPHUSShPuZFX4FVtoVKEuNw@mail.gmail.com>
-In-Reply-To: <CANqRtoR0Wwctor1mpM+8nuC0_pZsPHUSShPuZFX4FVtoVKEuNw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 07/31/13 12:17, Magnus Damm wrote:
-> Hi Stephen,
->
-> On Thu, Aug 1, 2013 at 2:32 AM, Stephen Boyd <sboyd@codeaurora.org> wrote:
->> On 07/30/13 23:25, Simon Horman wrote:
->>> From: Magnus Damm <damm@opensource.se>
->>>
->>> Update the STI rating from 200 to 80 to fix SMP operation with
->>> the ARM broadcast timer. This breakage was introduced by:
->>>
->>> f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
->>>
->>> Without this fix SMP operation is broken on EMEV2 since no
->>> broadcast timer interrupts trigger on the secondary CPU cores.
->>>
->>> Signed-off-by: Magnus Damm <damm@opensource.se>
->>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->>> ---
->> This looks suspicious. Are you're purposefully deflating the rating so
->> that the STI timer fills in the broadcast position? Why not make the STI
->> cpumask be all possible CPUs? Presumably the interrupt can target all
->> CPUs since it isn't a per-cpu interrupt and doing this would cause the
->> STI to fill in the broadcast slot, leaving the per-cpu dummys in the
->> tick position.
-> While letting the timer broadcast to all CPUs sounds interesting the
-> STI driver has so far only been used to drive a single CPU core. This
-> used to work well for us but has since some time unfortunately been
-> broken. I agree that it may be suboptimal with a single timer like STI
-> and using IPI for broadcast, but for more efficient SMP we already
-> have TWD or arch timer.
+Hi!
 
-I think there is some confusion. The mask field says what CPUs the timer
-can possibly interrupt and for non-percpu interrupts this should be all
-possible CPUs (unless we're talking clusters, etc. but I don't think we
-are). Can you please give the output of /proc/timer_list or confirm that
-the STI is your broadcast source? If so you should probably be marking
-the cpumask for all possible CPUs so that the clockevent core knows to
-prefer this clockevent for the broadcast source and not a per-cpu
-source. Then you can leave the rating as is.
+This is an attempt to implement zboot on the KZM9G board. It is based on the
+setup code from u-boot and is intended to be loaded to MERAM via USB and
+booted by the mask ROM boot loader.
+
+The problem is that the DRAM setup appears to be wrong somehow. Even though
+it slavishly follows the example set by u-boot it fails to set the DRAM up
+in a stable manner for some reason.  The effect observed is that many
+consecutive writes to DRAM in most cases cause the system to hang.  In the
+few cases it doesn't the data written cannot be read back correctly.
+
+I have tried yanking every bit in the SBSC back and forth (see the
+commented-out lines in head-kzm9g.txt for details), but the DRAM stays flaky
+in exactly the same way.  I suspect that the mask ROM boot loader does
+something to the hardware that interferes with DRAM operation.  The sh73a0
+documentation details what the loader is supposed to be doing, and I have
+tried to revert the few things that are not overridden by the u-boot setup
+anyway, but that didn't to anything either.
+
+If you want to give it a try, apply the patches and configure your kernel
+with CONFIG_ZBOOT_ROM_BSS=0xe5580000 and CONFIG_ZBOOT_ROM=y.  You will have
+to disable a lot of features because MERAM is only 1.5 MB, and the entire
+image will have to fit in there.  Don't forget to append the DTB.  Set the
+mode switch (SW1) positions 1, 2, and 8 to OFF, all others to ON.  Then
+upload the zImage using Magnus' r_usb_tool.  If LEDs 1-4 light up and then
+turn off one by one, your board works better than mine.  If only LED 1 turns
+off or the LEDs start blinking crazy bit patterns, it exhibits the same
+behavior as mine.
+
+Ideas what could be wrong here are most welcome.
+
+CU
+Uli
+
+
+Ulrich Hecht (5):
+  USB boot tool for SH-Mobile ARM SoCs
+  arm: boot: allow zboot with appended DTB
+  arm: shmobile: KZM9G zboot support (not working)
+  arm: boot: kzm9g: blink LEDs and check if DRAM works
+  arm: boot: kzm9g: raise core voltage
+
+ Documentation/arm/SH-Mobile/r_usb_boot.c           |  544 ++++++++++++++++
+ arch/arm/Kconfig                                   |    2 +-
+ arch/arm/boot/compressed/misc.c                    |  327 +++++++++-
+ arch/arm/mach-shmobile/include/mach/head-kzm9g.txt |  680 ++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/zboot.h        |    6 +
+ 5 files changed, 1556 insertions(+), 3 deletions(-)
+ create mode 100644 Documentation/arm/SH-Mobile/r_usb_boot.c
+ create mode 100644 arch/arm/mach-shmobile/include/mach/head-kzm9g.txt
 
 -- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-hosted by The Linux Foundation
+1.7.10.4
 
