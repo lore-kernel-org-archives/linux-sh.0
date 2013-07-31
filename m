@@ -1,120 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:21:53 +0000
-Subject: [PATCH v2 09/23] drm/rcar-du: Rename platform data fields to match what they describe
-Message-Id: <1375276927-20181-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 07:07:21 +0000
+Subject: [PATCH 02/07] ARM: shmobile: Use shared SCU SMP boot code on sh73a0
+Message-Id: <20130731070721.14444.80422.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130731070702.14444.64961.sendpatchset@w520>
+In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The struct rcar_du_encoder_data encoder::field describes the encoder
-type, and the rcar_du_encoder_lvds_data and rcar_du_encoder_vga_data
-structures describe connector properties. Rename them accordingly.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Use shared SCU code on sh73a0 for SMP boot.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h |  3 ++-
- drivers/gpu/drm/rcar-du/rcar_du_kms.c     |  5 ++---
- include/linux/platform_data/rcar-du.h     | 19 +++++++++++++------
- 4 files changed, 18 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 15a5643..0d0375c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -137,7 +137,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
- 	switch (type) {
- 	case RCAR_DU_ENCODER_LVDS:
- 		return rcar_du_lvds_connector_init(rcdu, renc,
--						   &data->u.lvds.panel);
-+						   &data->connector.lvds.panel);
+ arch/arm/mach-shmobile/Makefile     |    2 +-
+ arch/arm/mach-shmobile/smp-sh73a0.c |   26 +++++++++++++-------------
+ 2 files changed, 14 insertions(+), 14 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-07-29 21:40:18.000000000 +0900
+@@ -17,7 +17,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.
  
- 	case RCAR_DU_ENCODER_VGA:
- 		return rcar_du_vga_connector_init(rcdu, renc);
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index 4f76e16..08cde12 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -14,10 +14,11 @@
- #ifndef __RCAR_DU_ENCODER_H__
- #define __RCAR_DU_ENCODER_H__
+ # SMP objects
+ smp-y				:= platsmp.o headsmp.o
+-smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o
++smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
  
-+#include <linux/platform_data/rcar-du.h>
+--- 0002/arch/arm/mach-shmobile/smp-sh73a0.c
++++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-07-29 21:41:27.000000000 +0900
+@@ -50,30 +50,30 @@ void __init sh73a0_register_twd(void)
+ 
+ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+-	cpu = cpu_logical_map(cpu);
++	unsigned int lcpu = cpu_logical_map(cpu);
++	int ret;
+ 
+-	if (((__raw_readl(PSTR) >> (4 * cpu)) & 3) = 3)
+-		__raw_writel(1 << cpu, WUPCR);	/* wake up */
++	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
++	if (ret)
++		return ret;
 +
- #include <drm/drm_crtc.h>
++	if (((__raw_readl(PSTR) >> (4 * lcpu)) & 3) = 3)
++		__raw_writel(1 << lcpu, WUPCR);	/* wake up */
+ 	else
+-		__raw_writel(1 << cpu, SRESCR);	/* reset */
++		__raw_writel(1 << lcpu, SRESCR);	/* reset */
  
- struct rcar_du_device;
--struct rcar_du_encoder_data;
+ 	return 0;
+ }
  
- struct rcar_du_encoder {
- 	struct drm_encoder encoder;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 3f8483c..a8eef16 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -191,7 +191,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 		const struct rcar_du_encoder_data *pdata  			&rcdu->pdata->encoders[i];
+ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	/* setup sh73a0 specific SCU base */
+-	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
+-	scu_enable(shmobile_scu_base);
+-
+-	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
++	/* Map the reset vector (in headsmp.S) */
+ 	__raw_writel(0, APARMBAREA);      /* 4k */
+ 	__raw_writel(__pa(shmobile_boot_vector), SBAR);
+-	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
+-	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
  
--		if (pdata->encoder = RCAR_DU_ENCODER_UNUSED)
-+		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
- 			continue;
+-	/* enable cache coherency on booting CPU */
+-	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
++	/* setup sh73a0 specific SCU bits */
++	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
++	shmobile_smp_scu_prepare_cpus(max_cpus);
+ }
  
- 		if (pdata->output >= ARRAY_SIZE(rcdu->crtcs)) {
-@@ -201,8 +201,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 			continue;
- 		}
- 
--		rcar_du_encoder_init(rcdu, pdata->encoder, pdata->output,
--				     pdata);
-+		rcar_du_encoder_init(rcdu, pdata->type, pdata->output, pdata);
- 	}
- 
- 	/* Set the possible CRTCs and possible clones. All encoders can be
-diff --git a/include/linux/platform_data/rcar-du.h b/include/linux/platform_data/rcar-du.h
-index 80587fd..64cd863 100644
---- a/include/linux/platform_data/rcar-du.h
-+++ b/include/linux/platform_data/rcar-du.h
-@@ -28,22 +28,29 @@ struct rcar_du_panel_data {
- 	struct drm_mode_modeinfo mode;
- };
- 
--struct rcar_du_encoder_lvds_data {
-+struct rcar_du_connector_lvds_data {
- 	struct rcar_du_panel_data panel;
- };
- 
--struct rcar_du_encoder_vga_data {
-+struct rcar_du_connector_vga_data {
- 	/* TODO: Add DDC information for EDID retrieval */
- };
- 
-+/*
-+ * struct rcar_du_encoder_data - Encoder platform data
-+ * @type: the encoder type (RCAR_DU_ENCODER_*)
-+ * @output: the DU output the connector is connected to
-+ * @connector.lvds: platform data for LVDS connectors
-+ * @connector.vga: platform data for VGA connectors
-+ */
- struct rcar_du_encoder_data {
--	enum rcar_du_encoder_type encoder;
-+	enum rcar_du_encoder_type type;
- 	unsigned int output;
- 
- 	union {
--		struct rcar_du_encoder_lvds_data lvds;
--		struct rcar_du_encoder_vga_data vga;
--	} u;
-+		struct rcar_du_connector_lvds_data lvds;
-+		struct rcar_du_connector_vga_data vga;
-+	} connector;
- };
- 
- struct rcar_du_platform_data {
--- 
-1.8.1.5
-
+ #ifdef CONFIG_HOTPLUG_CPU
