@@ -1,91 +1,104 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 09:00:50 +0000
-Subject: [PATCH 2/5] ARM: shmobile: lager: add MMCIF support
-Message-Id: <63d0539e5466e1c5765b9dfdffafd619d4115ba5.1375174556.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:59 +0000
+Subject: [PATCH v2 15/23] drm/rcar-du: Move output routing configuration to group
+Message-Id: <1375276927-20181-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375174556.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375174556.git.horms+renesas@verge.net.au>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Output routing is configured in group registers, move the corresponding
+code from rcar_du_crtc.c to rcar_du_group.c.
 
-Add support for the MMCIF1 interface on Lager.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 21 +--------------------
+ drivers/gpu/drm/rcar-du/rcar_du_group.c | 19 +++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 +-
+ 3 files changed, 21 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index d0da052..3c67b2a 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -24,10 +24,15 @@
- #include <linux/interrupt.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mmcif.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_device.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r8a7790.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -70,6 +75,22 @@ static __initdata struct gpio_keys_platform_data lager_keys_pdata = {
- 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
- };
- 
-+/* Fixed 3.3V regulator to be used by MMCIF */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.1"),
-+};
-+
-+/* MMCIF */
-+static struct sh_mmcif_plat_data mmcif1_pdata = {
-+	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
-+};
-+
-+static struct resource mmcif1_resources[] = {
-+	DEFINE_RES_MEM_NAMED(0xee220000, 0x80, "MMCIF1"),
-+	DEFINE_RES_IRQ(gic_spi(170)),
-+};
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
-@@ -77,6 +98,11 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* SCIF1 (CN20: DEBUG SERIAL1) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
- 				  "scif1_data", "scif1"),
-+	/* MMCIF1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.1", "pfc-r8a7790",
-+				  "mmc1_data8", "mmc1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.1", "pfc-r8a7790",
-+				  "mmc1_ctrl", "mmc1"),
- };
- 
- static void __init lager_add_standard_devices(void)
-@@ -94,6 +120,11 @@ static void __init lager_add_standard_devices(void)
- 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
- 				      &lager_keys_pdata,
- 				      sizeof(lager_keys_pdata));
-+	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+	platform_device_register_resndata(&platform_bus, "sh_mmcif", 1,
-+					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
-+					  &mmcif1_pdata, sizeof(mmcif1_pdata));
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 7784a3b..6a2b959 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -130,25 +130,6 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
+ 	rcar_du_crtc_write(rcrtc, DEWR,  mode->hdisplay);
  }
  
- static const char *lager_boards_compat_dt[] __initdata = {
+-static void rcar_du_crtc_set_routing(struct rcar_du_crtc *rcrtc)
+-{
+-	struct rcar_du_device *rcdu = rcrtc->group->dev;
+-	u32 dorcr = rcar_du_read(rcdu, DORCR);
+-
+-	dorcr &= ~(DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_MASK);
+-
+-	/* Set the DU1 pins sources. Select CRTC 0 if explicitly requested and
+-	 * CRTC 1 in all other cases to avoid cloning CRTC 0 to DU0 and DU1 by
+-	 * default.
+-	 */
+-	if (rcrtc->outputs & (1 << 1) && rcrtc->index = 0)
+-		dorcr |= DORCR_PG2D_DS1;
+-	else
+-		dorcr |= DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_DS2;
+-
+-	rcar_du_write(rcdu, DORCR, dorcr);
+-}
+-
+ void rcar_du_crtc_route_output(struct drm_crtc *crtc, unsigned int output)
+ {
+ 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
+@@ -245,7 +226,7 @@ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
+ 
+ 	/* Configure display timings and output routing */
+ 	rcar_du_crtc_set_display_timing(rcrtc);
+-	rcar_du_crtc_set_routing(rcrtc);
++	rcar_du_group_set_routing(rcrtc->group);
+ 
+ 	mutex_lock(&rcrtc->group->planes.lock);
+ 	rcrtc->plane->enabled = true;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 625b9f4..7e75451 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -125,3 +125,22 @@ void rcar_du_group_restart(struct rcar_du_group *rgrp)
+ 	__rcar_du_group_start_stop(rgrp, false);
+ 	__rcar_du_group_start_stop(rgrp, true);
+ }
++
++void rcar_du_group_set_routing(struct rcar_du_group *rgrp)
++{
++	struct rcar_du_crtc *crtc0 = &rgrp->dev->crtcs[rgrp->index * 2];
++	u32 dorcr = rcar_du_group_read(rgrp, DORCR);
++
++	dorcr &= ~(DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_MASK);
++
++	/* Set the DU1 pins sources. Select CRTC 0 if explicitly requested and
++	 * CRTC 1 in all other cases to avoid cloning CRTC 0 to DU0 and DU1 by
++	 * default.
++	 */
++	if (crtc0->outputs & (1 << 1))
++		dorcr |= DORCR_PG2D_DS1;
++	else
++		dorcr |= DORCR_PG2T | DORCR_DK2S | DORCR_PG2D_DS2;
++
++	rcar_du_group_write(rgrp, DORCR, dorcr);
++}
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+index 748331b..180c739 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+@@ -42,6 +42,6 @@ int rcar_du_group_get(struct rcar_du_group *rgrp);
+ void rcar_du_group_put(struct rcar_du_group *rgrp);
+ void rcar_du_group_start_stop(struct rcar_du_group *rgrp, bool start);
+ void rcar_du_group_restart(struct rcar_du_group *rgrp);
+-
++void rcar_du_group_set_routing(struct rcar_du_group *rgrp);
+ 
+ #endif /* __RCAR_DU_GROUP_H__ */
 -- 
-1.8.3.2
+1.8.1.5
 
