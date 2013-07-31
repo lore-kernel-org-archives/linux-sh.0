@@ -1,186 +1,64 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:19 +0000
-Subject: [PATCH v2 27/27] sh-pfc: Support pins not associated with a GPIO port
-Message-Id: <1373933479-17727-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:22:03 +0000
+Subject: [PATCH v2 19/23] drm/rcar-du: Add support for DEFR8 register
+Message-Id: <1375276927-20181-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Pins with selectable functions but without a GPIO port can't be named
-PORT_# or GP_#_#. Add a SH_PFC_PIN_NAMED macro to declare such pins in
-the pinmux pins array, naming them with the PIN_ prefix followed by the
-pin physical position.
-
-In order to make sure not to register those pins as GPIOs, add a
-SH_PFC_PIN_CFG_NO_GPIO pin flag to denote pins without a GPIO port.
+The R8A7790 DU has a new extended function control register. Support it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/core.c        | 22 +++++++++++++++-------
- drivers/pinctrl/sh-pfc/gpio.c        |  8 +++++++-
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 13 +++++++++----
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 15 +++++++++------
- drivers/pinctrl/sh-pfc/sh_pfc.h      |  9 +++++++++
- 5 files changed, 49 insertions(+), 18 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c   | 3 ++-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h   | 1 +
+ drivers/gpu/drm/rcar-du/rcar_du_group.c | 2 ++
+ 3 files changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index cb47bce..9e66614 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -362,7 +362,10 @@ static int sh_pfc_init_ranges(struct sh_pfc *pfc)
- 		return 0;
- 	}
- 
--	/* Count, allocate and fill the ranges. */
-+	/* Count, allocate and fill the ranges. The PFC SoC data pins array must
-+	 * be sorted by pin numbers, and pins without a GPIO port must come
-+	 * last.
-+	 */
- 	for (i = 1, nr_ranges = 1; i < pfc->info->nr_pins; ++i) {
- 		if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin - 1)
- 			nr_ranges++;
-@@ -378,15 +381,20 @@ static int sh_pfc_init_ranges(struct sh_pfc *pfc)
- 	range->start = pfc->info->pins[0].pin;
- 
- 	for (i = 1; i < pfc->info->nr_pins; ++i) {
--		if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin - 1) {
--			range->end = pfc->info->pins[i-1].pin;
--			range++;
--			range->start = pfc->info->pins[i].pin;
--		}
-+		if (pfc->info->pins[i-1].pin = pfc->info->pins[i].pin - 1)
-+			continue;
-+
-+		range->end = pfc->info->pins[i-1].pin;
-+		if (!(pfc->info->pins[i-1].configs & SH_PFC_PIN_CFG_NO_GPIO))
-+			pfc->nr_gpio_pins = range->end + 1;
-+
-+		range++;
-+		range->start = pfc->info->pins[i].pin;
- 	}
- 
- 	range->end = pfc->info->pins[i-1].pin;
--	pfc->nr_gpio_pins = range->end + 1;
-+	if (!(pfc->info->pins[i-1].configs & SH_PFC_PIN_CFG_NO_GPIO))
-+		pfc->nr_gpio_pins = range->end + 1;
- 
- 	return 0;
- }
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 78fcb80..04bf52b 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -364,10 +364,16 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 
- 	pfc->gpio = chip;
- 
--	/* Register the GPIO to pin mappings. */
-+	/* Register the GPIO to pin mappings. As pins with GPIO ports must come
-+	 * first in the ranges, skip the pins without GPIO ports by stopping at
-+	 * the first range that contains such a pin.
-+	 */
- 	for (i = 0; i < pfc->nr_ranges; ++i) {
- 		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
- 
-+		if (range->start >= pfc->nr_gpio_pins)
-+			break;
-+
- 		ret = gpiochip_add_pin_range(&chip->gpio_chip,
- 					     dev_name(pfc->dev),
- 					     range->start, range->start,
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index 40aecfe..428d2a6 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -1254,16 +1254,21 @@ static const u16 pinmux_data[] = {
- 	PINMUX_IPSR_MSEL(IP10_24_22,	CAN_CLK_C,	SEL_CANCLK_C),
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 8694a46..f878535 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -222,7 +222,8 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
  };
  
--static struct sh_pfc_pin pinmux_pins[] = {
--	PINMUX_GPIO_GP_ALL(),
--};
--
- /* Pin numbers for pins without a corresponding GPIO port number are computed
-  * from the row and column numbers with a 1000 offset to avoid collisions with
-  * GPIO port numbers.
-  */
- #define PIN_NUMBER(row, col)		(1000+((row)-1)*25+(col)-1)
+ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+-	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B,
++	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B
++		  | RCAR_DU_FEATURE_DEFR8,
+ 	.num_crtcs = 3,
+ };
  
-+static struct sh_pfc_pin pinmux_pins[] = {
-+	PINMUX_GPIO_GP_ALL(),
-+
-+	/* Pins not associated with a GPIO port */
-+	SH_PFC_PIN_NAMED(3, 20, C20),
-+	SH_PFC_PIN_NAMED(20, 1, T1),
-+	SH_PFC_PIN_NAMED(25, 2, Y2),
-+};
-+
- /* - macro */
- #define SH_PFC_PINS(name, args...) \
- 	static const unsigned int name ##_pins[] = { args }
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 1f4dbe4..6417be5 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1173,6 +1173,12 @@ static const u16 pinmux_data[] = {
- #define SH73A0_PIN_IO_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __IO | __PUD)
- #define SH73A0_PIN_O(pin)		SH_PFC_PIN_CFG(pin, __O)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 160e5eb..70c335f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -27,6 +27,7 @@ struct rcar_du_device;
  
-+/* Pin numbers for pins without a corresponding GPIO port number are computed
-+ * from the row and column numbers with a 1000 offset to avoid collisions with
-+ * GPIO port numbers.
-+ */
-+#define PIN_NUMBER(row, col)		(1000+((row)-1)*34+(col)-1)
-+
- static struct sh_pfc_pin pinmux_pins[] = {
- 	/* Table 25-1 (I/O and Pull U/D) */
- 	SH73A0_PIN_I_PD(0),
-@@ -1444,13 +1450,10 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 	SH73A0_PIN_O(307),
- 	SH73A0_PIN_I_PU(308),
- 	SH73A0_PIN_O(309),
--};
+ #define RCAR_DU_FEATURE_CRTC_IRQ_CLOCK	(1 << 0)	/* Per-CRTC IRQ and clock */
+ #define RCAR_DU_FEATURE_ALIGN_128B	(1 << 1)	/* Align pitches to 128 bytes */
++#define RCAR_DU_FEATURE_DEFR8		(1 << 2)	/* Has DEFR8 register */
  
--/* Pin numbers for pins without a corresponding GPIO port number are computed
-- * from the row and column numbers with a 1000 offset to avoid collisions with
-- * GPIO port numbers.
-- */
--#define PIN_NUMBER(row, col)		(1000+((row)-1)*34+(col)-1)
-+	/* Pins not associated with a GPIO port */
-+	SH_PFC_PIN_NAMED(6, 26, F26),
-+};
+ /*
+  * struct rcar_du_device_info - DU model-specific information
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 0eb106e..f3ba0ca 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -51,6 +51,8 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
+ 	rcar_du_group_write(rgrp, DEFR3, DEFR3_CODE | DEFR3_DEFE3);
+ 	rcar_du_group_write(rgrp, DEFR4, DEFR4_CODE);
+ 	rcar_du_group_write(rgrp, DEFR5, DEFR5_CODE | DEFR5_DEFE5);
++	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_DEFR8))
++		rcar_du_group_write(rgrp, DEFR8, DEFR8_CODE | DEFR8_DEFE8);
  
- /* - BSC -------------------------------------------------------------------- */
- static const unsigned int bsc_data_0_7_pins[] = {
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 2469b35..11bd0d9 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -26,6 +26,7 @@ enum {
- #define SH_PFC_PIN_CFG_OUTPUT		(1 << 1)
- #define SH_PFC_PIN_CFG_PULL_UP		(1 << 2)
- #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
-+#define SH_PFC_PIN_CFG_NO_GPIO		(1 << 31)
- 
- struct sh_pfc_pin {
- 	u16 pin;
-@@ -266,6 +267,14 @@ struct sh_pfc_soc_info {
- 		.configs = cfgs,					\
- 	}
- 
-+/* SH_PFC_PIN_NAMED - Expand to a sh_pfc_pin entry with the given name */
-+#define SH_PFC_PIN_NAMED(row, col, _name)				\
-+	{								\
-+		.pin = PIN_NUMBER(row, col),				\
-+		.name = __stringify(PIN_##_name),			\
-+		.configs = SH_PFC_PIN_CFG_NO_GPIO,			\
-+	}
-+
- /* PINMUX_DATA_ALL - Expand to a list of PORT_name_DATA, PORT_name_FN0,
-  *		     PORT_name_OUT, PORT_name_IN marks
-  */
+ 	/* Use DS1PR and DS2PR to configure planes priorities and connects the
+ 	 * superposition 0 to DU0 pins. DU1 pins will be configured dynamically.
 -- 
 1.8.1.5
 
