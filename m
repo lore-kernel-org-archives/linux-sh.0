@@ -1,116 +1,164 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 19 Jul 2013 20:22:53 +0000
-Subject: [PATCH v2 12/15] ARM: shmobile: r8a7740: add DT nodes and clock aliases for three DMAC instances
-Message-Id: <1374265376-30777-3-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 31 Jul 2013 06:29:25 +0000
+Subject: [PATCH v4] ARM: shmobile: Add lager defconfig
+Message-Id: <1375252165-9019-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374251374-30186-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds Device Tree support for the three generic DMA controller
-instances on r8a7740 in a DMA multiplexer node.
+This is intended to be used until multi-arch is able to be
+used for the lager board at which time a more generic configuration
+will be used in place of this one.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
 
-v2: Use "dma-controller" for DMA controller DT nodes
+v4
+* Enable CONFIG_HAVE_ARM_ARCH_TIMER
 
- arch/arm/boot/dts/r8a7740.dtsi         |   61 ++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7740.c |    3 ++
- 2 files changed, 64 insertions(+), 0 deletions(-)
+v3
+* Disable CONFIG_SMP: The code does not currently support SMP
+* Enable CONFIG_RCAR_THERMAL
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index e18a195..4797f1e 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -116,6 +116,67 @@
- 			      0 149 0x4>;
- 	};
- 
-+	dmac: dma-multiplexer@0 {
-+		compatible = "renesas,shdma-mux";
-+		#dma-cells = <1>;
-+		dma-channels = <6>;
-+		dma-requests = <256>;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges;
-+
-+		dma0: dma-controller@fe008020 {
-+			compatible = "renesas,shdma-r8a7740";
-+			reg = <0xfe008020 0x270>,
-+				<0xfe009000 0xc>;
-+			interrupt-parent = <&gic>;
-+			interrupts = <0 34 4
-+					0 28 4
-+					0 29 4
-+					0 30 4
-+					0 31 4
-+					0 32 4
-+					0 33 4>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5";
-+		};
-+
-+		dma1: dma-controller@fe018020 {
-+			compatible = "renesas,shdma-r8a7740";
-+			reg = <0xfe018020 0x270>,
-+				<0xfe019000 0xc>;
-+			interrupt-parent = <&gic>;
-+			interrupts = <0 41 4
-+					0 35 4
-+					0 36 4
-+					0 37 4
-+					0 38 4
-+					0 39 4
-+					0 40 4>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5";
-+		};
-+
-+		dma2: dma-controller@fe028020 {
-+			compatible = "renesas,shdma-r8a7740";
-+			reg = <0xfe028020 0x270>,
-+				<0xfe029000 0xc>;
-+			interrupt-parent = <&gic>;
-+			interrupts = <0 48 4
-+					0 42 4
-+					0 43 4
-+					0 44 4
-+					0 45 4
-+					0 46 4
-+					0 47 4>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5";
-+		};
-+	};
-+
- 	i2c0: i2c@fff20000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 62b86f9..4e76fb8 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -576,8 +576,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
- 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
- 	CLKDEV_DEV_ID("shdma-r8a7740.2",	&mstp_clks[MSTP216]),
-+	CLKDEV_DEV_ID("fe028020.dma-controller",&mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("shdma-r8a7740.1",	&mstp_clks[MSTP217]),
-+	CLKDEV_DEV_ID("fe018020.dma-controller",&mstp_clks[MSTP217]),
- 	CLKDEV_DEV_ID("shdma-r8a7740.0",	&mstp_clks[MSTP218]),
-+	CLKDEV_DEV_ID("fe008020.dma-controller",&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+v2
+* Place defconfig in correct directory
+* Bump SERIAL_SH_SCI_NR_UARTS up to 10 to reflect the
+  number of devices present
+---
+ arch/arm/configs/lager_defconfig | 120 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 120 insertions(+)
+ create mode 100644 arch/arm/configs/lager_defconfig
+
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+new file mode 100644
+index 0000000..e777ef2
+--- /dev/null
++++ b/arch/arm/configs/lager_defconfig
+@@ -0,0 +1,120 @@
++CONFIG_SYSVIPC=y
++CONFIG_NO_HZ=y
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
++CONFIG_LOG_BUF_SHIFT
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_SYSCTL_SYSCALL=y
++CONFIG_EMBEDDED=y
++CONFIG_PERF_EVENTS=y
++CONFIG_SLAB=y
++# CONFIG_LBDAF is not set
++# CONFIG_BLK_DEV_BSG is not set
++# CONFIG_IOSCHED_DEADLINE is not set
++# CONFIG_IOSCHED_CFQ is not set
++CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_R8A7790=y
++CONFIG_MACH_LAGER=y
++# CONFIG_SH_TIMER_TMU is not set
++# CONFIG_EM_TIMER_STI is not set
++CONFIG_ARM_ERRATA_430973=y
++CONFIG_ARM_ERRATA_458693=y
++CONFIG_ARM_ERRATA_460075=y
++CONFIG_ARM_ERRATA_743622=y
++CONFIG_ARM_ERRATA_754322=y
++CONFIG_HAVE_ARM_ARCH_TIMER=y
++CONFIG_AEABI=y
++# CONFIG_OABI_COMPAT is not set
++CONFIG_FORCE_MAX_ZONEORDER
++CONFIG_ZBOOT_ROM_TEXT=0x0
++CONFIG_ZBOOT_ROM_BSS=0x0
++CONFIG_ARM_APPENDED_DTB=y
++CONFIG_KEXEC=y
++CONFIG_AUTO_ZRELADDR=y
++CONFIG_VFP=y
++CONFIG_NEON=y
++# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
++CONFIG_PM_RUNTIME=y
++CONFIG_NET=y
++CONFIG_PACKET=y
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
++# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
++# CONFIG_INET_XFRM_MODE_TUNNEL is not set
++# CONFIG_INET_XFRM_MODE_BEET is not set
++# CONFIG_INET_LRO is not set
++# CONFIG_INET_DIAG is not set
++# CONFIG_IPV6 is not set
++# CONFIG_WIRELESS is not set
++CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_NETDEVICES=y
++# CONFIG_NET_CORE is not set
++# CONFIG_NET_VENDOR_ARC is not set
++# CONFIG_NET_CADENCE is not set
++# CONFIG_NET_VENDOR_BROADCOM is not set
++# CONFIG_NET_VENDOR_CIRRUS is not set
++# CONFIG_NET_VENDOR_FARADAY is not set
++# CONFIG_NET_VENDOR_INTEL is not set
++# CONFIG_NET_VENDOR_MARVELL is not set
++# CONFIG_NET_VENDOR_MICREL is not set
++# CONFIG_NET_VENDOR_NATSEMI is not set
++CONFIG_SH_ETH=y
++# CONFIG_NET_VENDOR_SEEQ is not set
++# CONFIG_NET_VENDOR_SMSC is not set
++# CONFIG_NET_VENDOR_STMICRO is not set
++# CONFIG_NET_VENDOR_VIA is not set
++# CONFIG_NET_VENDOR_WIZNET is not set
++# CONFIG_WLAN is not set
++# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
++CONFIG_INPUT_EVDEV=y
++# CONFIG_KEYBOARD_ATKBD is not set
++CONFIG_KEYBOARD_GPIO=y
++# CONFIG_INPUT_MOUSE is not set
++# CONFIG_SERIO is not set
++# CONFIG_LEGACY_PTYS is not set
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
++# CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_GPIO=y
++CONFIG_I2C_SH_MOBILE=y
++CONFIG_GPIO_SH_PFC=y
++CONFIG_GPIOLIB=y
++CONFIG_GPIO_RCAR=y
++# CONFIG_HWMON is not set
++CONFIG_THERMAL=y
++CONFIG_RCAR_THERMAL=y
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_FIXED_VOLTAGE=y
++# CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_SDHI=y
++CONFIG_MMC_SH_MMCIF=y
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++CONFIG_LEDS_GPIO=y
++CONFIG_RTC_CLASS=y
++CONFIG_DMADEVICES=y
++CONFIG_SH_DMAE=y
++# CONFIG_IOMMU_SUPPORT is not set
++# CONFIG_DNOTIFY is not set
++CONFIG_MSDOS_FS=y
++CONFIG_VFAT_FS=y
++CONFIG_TMPFS=y
++CONFIG_CONFIGFS_FS=y
++# CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_NFS_V3_ACL=y
++CONFIG_NFS_V4=y
++CONFIG_NFS_V4_1=y
++CONFIG_ROOT_NFS=y
++CONFIG_NLS_CODEPAGE_437=y
++CONFIG_NLS_ISO8859_1=y
++# CONFIG_ENABLE_WARN_DEPRECATED is not set
++# CONFIG_ENABLE_MUST_CHECK is not set
++# CONFIG_ARM_UNWIND is not set
++# CONFIG_CRYPTO_ANSI_CPRNG is not set
++# CONFIG_CRYPTO_HW is not set
 -- 
-1.7.2.5
+1.8.3.2
 
