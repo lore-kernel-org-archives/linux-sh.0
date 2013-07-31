@@ -1,67 +1,233 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 25 Jul 2013 23:26:47 +0000
-Subject: [PATCH 11/12] mmc: tmio-mmc: Remove .get_cd() callback from platform data
-Message-Id: <1374794808-21890-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 15:52:31 +0000
+Subject: [PATCH v4 4/7] v4l: Add V4L2_PIX_FMT_NV16M and V4L2_PIX_FMT_NV61M formats
+Message-Id: <1375285954-32153-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1375285954-32153-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375285954-32153-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-All platforms pass the CD GPIO number to the driver in the .cd_gpio
-field. The .get_cd() callback isn't used anymore, remove it
+NV16M and NV61M are planar YCbCr 4:2:2 and YCrCb 4:2:2 formats with a
+luma plane followed by an interleaved chroma plane. The planes are not
+required to be contiguous in memory, and the formats can only be used
+with the multi-planar formats API.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Reviewed-by: Sakari Ailus <sakari.ailus@iki.fi>
 ---
- drivers/mmc/host/tmio_mmc_pio.c | 16 +---------------
- include/linux/mfd/tmio.h        |  1 -
- 2 files changed, 1 insertion(+), 16 deletions(-)
+ Documentation/DocBook/media/v4l/pixfmt-nv16m.xml | 171 +++++++++++++++++++++++
+ Documentation/DocBook/media/v4l/pixfmt.xml       |   1 +
+ include/uapi/linux/videodev2.h                   |   2 +
+ 3 files changed, 174 insertions(+)
+ create mode 100644 Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b72edb7..a335fb8 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -932,25 +932,11 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
- 		 (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
- }
+diff --git a/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml b/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
+new file mode 100644
+index 0000000..afec039
+--- /dev/null
++++ b/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
+@@ -0,0 +1,171 @@
++    <refentry>
++      <refmeta>
++	<refentrytitle>V4L2_PIX_FMT_NV16M ('NM16'), V4L2_PIX_FMT_NV61M ('NM61')</refentrytitle>
++	&manvol;
++      </refmeta>
++      <refnamediv>
++	<refname id="V4L2-PIX-FMT-NV16M"><constant>V4L2_PIX_FMT_NV16M</constant></refname>
++	<refname id="V4L2-PIX-FMT-NV61M"><constant>V4L2_PIX_FMT_NV61M</constant></refname>
++	<refpurpose>Variation of <constant>V4L2_PIX_FMT_NV16</constant> and <constant>V4L2_PIX_FMT_NV61</constant> with planes
++	  non contiguous in memory. </refpurpose>
++      </refnamediv>
++      <refsect1>
++	<title>Description</title>
++
++	<para>This is a multi-planar, two-plane version of the YUV 4:2:0 format.
++The three components are separated into two sub-images or planes.
++<constant>V4L2_PIX_FMT_NV16M</constant> differs from <constant>V4L2_PIX_FMT_NV16
++</constant> in that the two planes are non-contiguous in memory, i.e. the chroma
++plane do not necessarily immediately follows the luma plane.
++The luminance data occupies the first plane. The Y plane has one byte per pixel.
++In the second plane there is a chrominance data with alternating chroma samples.
++The CbCr plane is the same width and height, in bytes, as the Y plane.
++Each CbCr pair belongs to four pixels. For example,
++Cb<subscript>0</subscript>/Cr<subscript>0</subscript> belongs to
++Y'<subscript>00</subscript>, Y'<subscript>01</subscript>,
++Y'<subscript>10</subscript>, Y'<subscript>11</subscript>.
++<constant>V4L2_PIX_FMT_NV61M</constant> is the same as <constant>V4L2_PIX_FMT_NV16M</constant>
++except the Cb and Cr bytes are swapped, the CrCb plane starts with a Cr byte.</para>
++
++	<para><constant>V4L2_PIX_FMT_NV16M</constant> and
++<constant>V4L2_PIX_FMT_NV61M</constant> are intended to be used only in drivers
++and applications that support the multi-planar API, described in
++<xref linkend="planar-apis"/>. </para>
++
++	<example>
++	  <title><constant>V4L2_PIX_FMT_NV16M</constant> 4 &times; 4 pixel image</title>
++
++	  <formalpara>
++	    <title>Byte Order.</title>
++	    <para>Each cell is one byte.
++		<informaltable frame="none">
++		<tgroup cols="5" align="center">
++		  <colspec align="left" colwidth="2*" />
++		  <tbody valign="top">
++		    <row>
++		      <entry>start0&nbsp;+&nbsp;0:</entry>
++		      <entry>Y'<subscript>00</subscript></entry>
++		      <entry>Y'<subscript>01</subscript></entry>
++		      <entry>Y'<subscript>02</subscript></entry>
++		      <entry>Y'<subscript>03</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start0&nbsp;+&nbsp;4:</entry>
++		      <entry>Y'<subscript>10</subscript></entry>
++		      <entry>Y'<subscript>11</subscript></entry>
++		      <entry>Y'<subscript>12</subscript></entry>
++		      <entry>Y'<subscript>13</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start0&nbsp;+&nbsp;8:</entry>
++		      <entry>Y'<subscript>20</subscript></entry>
++		      <entry>Y'<subscript>21</subscript></entry>
++		      <entry>Y'<subscript>22</subscript></entry>
++		      <entry>Y'<subscript>23</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start0&nbsp;+&nbsp;12:</entry>
++		      <entry>Y'<subscript>30</subscript></entry>
++		      <entry>Y'<subscript>31</subscript></entry>
++		      <entry>Y'<subscript>32</subscript></entry>
++		      <entry>Y'<subscript>33</subscript></entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		    </row>
++		    <row>
++		      <entry>start1&nbsp;+&nbsp;0:</entry>
++		      <entry>Cb<subscript>00</subscript></entry>
++		      <entry>Cr<subscript>00</subscript></entry>
++		      <entry>Cb<subscript>02</subscript></entry>
++		      <entry>Cr<subscript>02</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start1&nbsp;+&nbsp;4:</entry>
++		      <entry>Cb<subscript>10</subscript></entry>
++		      <entry>Cr<subscript>10</subscript></entry>
++		      <entry>Cb<subscript>12</subscript></entry>
++		      <entry>Cr<subscript>12</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start1&nbsp;+&nbsp;8:</entry>
++		      <entry>Cb<subscript>20</subscript></entry>
++		      <entry>Cr<subscript>20</subscript></entry>
++		      <entry>Cb<subscript>22</subscript></entry>
++		      <entry>Cr<subscript>22</subscript></entry>
++		    </row>
++		    <row>
++		      <entry>start1&nbsp;+&nbsp;12:</entry>
++		      <entry>Cb<subscript>30</subscript></entry>
++		      <entry>Cr<subscript>30</subscript></entry>
++		      <entry>Cb<subscript>32</subscript></entry>
++		      <entry>Cr<subscript>32</subscript></entry>
++		    </row>
++		  </tbody>
++		</tgroup>
++		</informaltable>
++	      </para>
++	  </formalpara>
++
++	  <formalpara>
++	    <title>Color Sample Location.</title>
++	    <para>
++		<informaltable frame="none">
++		<tgroup cols="7" align="center">
++		  <tbody valign="top">
++		    <row>
++		      <entry></entry>
++		      <entry>0</entry><entry></entry><entry>1</entry><entry></entry>
++		      <entry>2</entry><entry></entry><entry>3</entry>
++		    </row>
++		    <row>
++		      <entry>0</entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry>
++		    </row>
++		    <row>
++		      <entry>1</entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		    </row>
++		    <row>
++		      <entry>2</entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry>
++		    </row>
++		    <row>
++		      <entry>3</entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
++		      <entry>Y</entry><entry></entry><entry>Y</entry>
++		    </row>
++		    <row>
++		      <entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
++		      <entry></entry><entry>C</entry><entry></entry>
++		    </row>
++		  </tbody>
++		</tgroup>
++		</informaltable>
++	      </para>
++	  </formalpara>
++	</example>
++      </refsect1>
++    </refentry>
+diff --git a/Documentation/DocBook/media/v4l/pixfmt.xml b/Documentation/DocBook/media/v4l/pixfmt.xml
+index 99b8d2a..16db350 100644
+--- a/Documentation/DocBook/media/v4l/pixfmt.xml
++++ b/Documentation/DocBook/media/v4l/pixfmt.xml
+@@ -718,6 +718,7 @@ information.</para>
+     &sub-nv12m;
+     &sub-nv12mt;
+     &sub-nv16;
++    &sub-nv16m;
+     &sub-nv24;
+     &sub-m420;
+   </section>
+diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+index 95ef455..fec0c20 100644
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
+@@ -348,6 +348,8 @@ struct v4l2_pix_format {
+ /* two non contiguous planes - one Y, one Cr + Cb interleaved  */
+ #define V4L2_PIX_FMT_NV12M   v4l2_fourcc('N', 'M', '1', '2') /* 12  Y/CbCr 4:2:0  */
+ #define V4L2_PIX_FMT_NV21M   v4l2_fourcc('N', 'M', '2', '1') /* 21  Y/CrCb 4:2:0  */
++#define V4L2_PIX_FMT_NV16M   v4l2_fourcc('N', 'M', '1', '6') /* 16  Y/CbCr 4:2:2  */
++#define V4L2_PIX_FMT_NV61M   v4l2_fourcc('N', 'M', '6', '1') /* 16  Y/CrCb 4:2:2  */
+ #define V4L2_PIX_FMT_NV12MT  v4l2_fourcc('T', 'M', '1', '2') /* 12  Y/CbCr 4:2:0 64x32 macroblocks */
+ #define V4L2_PIX_FMT_NV12MT_16X16 v4l2_fourcc('V', 'M', '1', '2') /* 12  Y/CbCr 4:2:0 16x16 macroblocks */
  
--static int tmio_mmc_get_cd(struct mmc_host *mmc)
--{
--	struct tmio_mmc_host *host = mmc_priv(mmc);
--	struct tmio_mmc_data *pdata = host->pdata;
--	int ret = mmc_gpio_get_cd(mmc);
--	if (ret >= 0)
--		return ret;
--
--	if (!pdata->get_cd)
--		return -ENOSYS;
--	else
--		return pdata->get_cd(host->pdev);
--}
--
- static const struct mmc_host_ops tmio_mmc_ops = {
- 	.request	= tmio_mmc_request,
- 	.set_ios	= tmio_mmc_set_ios,
- 	.get_ro         = tmio_mmc_get_ro,
--	.get_cd		= tmio_mmc_get_cd,
-+	.get_cd		= mmc_gpio_get_cd,
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
- };
- 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index ce35113..b22883d 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -108,7 +108,6 @@ struct tmio_mmc_data {
- 	unsigned int			cd_gpio;
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
--	int (*get_cd)(struct platform_device *host);
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
- 	/* clock management callbacks */
- 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
 -- 
 1.8.1.5
 
