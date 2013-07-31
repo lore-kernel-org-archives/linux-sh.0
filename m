@@ -1,102 +1,89 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 30 Jul 2013 10:37:30 +0000
-Subject: [PATCH v2 06/13] sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
-Message-Id: <1375180657-23641-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:54 +0000
+Subject: [PATCH v2 10/23] drm/rcar-du: Create rcar_du_planes structure
+Message-Id: <1375276927-20181-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-The MMCIF and SHDI platform data .set_pwr() callbacks are used to
-control the vmmc/vqmmc power supplies. As the power supplies already
-register control GPIOs there's no need to perform the operation
-manually. Remove the callback functions.
+Move the plane-related fields of struct rcar_du_device to their own
+structure.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 41 ------------------------------------
- 1 file changed, 41 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h   | 11 +----------
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h | 17 +++++++++++++++--
+ 2 files changed, 16 insertions(+), 12 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index e1b6aa3..60bf82c 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -601,29 +601,9 @@ static struct platform_device sdhi0_power = {
- 	},
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 7d2320f..0305c21 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -15,7 +15,6 @@
+ #define __RCAR_DU_DRV_H__
+ 
+ #include <linux/kernel.h>
+-#include <linux/mutex.h>
+ #include <linux/platform_data/rcar-du.h>
+ 
+ #include "rcar_du_crtc.h"
+@@ -49,15 +48,7 @@ struct rcar_du_device {
+ 	unsigned int used_crtcs;
+ 	unsigned int num_crtcs;
+ 
+-	struct {
+-		struct rcar_du_plane planes[RCAR_DU_NUM_SW_PLANES];
+-		unsigned int free;
+-		struct mutex lock;
+-
+-		struct drm_property *alpha;
+-		struct drm_property *colorkey;
+-		struct drm_property *zpos;
+-	} planes;
++	struct rcar_du_planes planes;
  };
  
--static void sdhi0_set_pwr(struct platform_device *pdev, int state)
--{
--	static int power_gpio = -EINVAL;
--
--	if (power_gpio < 0) {
--		int ret = gpio_request(GPIO_PTB6, NULL);
--		if (!ret) {
--			power_gpio = GPIO_PTB6;
--			gpio_direction_output(power_gpio, 0);
--		}
--	}
--
--	/*
--	 * Toggle the GPIO regardless, whether we managed to grab it above or
--	 * the fixed regulator driver did.
--	 */
--	gpio_set_value(GPIO_PTB6, state);
--}
--
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.set_pwr	= sdhi0_set_pwr,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
- 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
-@@ -653,25 +633,6 @@ static struct platform_device sdhi0_device = {
- 	},
+ static inline bool rcar_du_has(struct rcar_du_device *rcdu,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index 5397dba..5c8488c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -14,8 +14,11 @@
+ #ifndef __RCAR_DU_PLANE_H__
+ #define __RCAR_DU_PLANE_H__
+ 
+-struct drm_crtc;
+-struct drm_framebuffer;
++#include <linux/mutex.h>
++
++#include <drm/drmP.h>
++#include <drm/drm_crtc.h>
++
+ struct rcar_du_device;
+ struct rcar_du_format_info;
+ 
+@@ -54,6 +57,16 @@ struct rcar_du_plane {
+ 	unsigned int dst_y;
  };
  
--static void cn12_set_pwr(struct platform_device *pdev, int state)
--{
--	static int power_gpio = -EINVAL;
--
--	if (power_gpio < 0) {
--		int ret = gpio_request(GPIO_PTB7, NULL);
--		if (!ret) {
--			power_gpio = GPIO_PTB7;
--			gpio_direction_output(power_gpio, 0);
--		}
--	}
--
--	/*
--	 * Toggle the GPIO regardless, whether we managed to grab it above or
--	 * the fixed regulator driver did.
--	 */
--	gpio_set_value(GPIO_PTB7, state);
--}
--
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SDHI1 */
- static struct sh_mobile_sdhi_info sdhi1_info = {
-@@ -681,7 +642,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 			  MMC_CAP_NEEDS_POLL,
- 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
- 	.cd_gpio	= GPIO_PTW7,
--	.set_pwr	= cn12_set_pwr,
- };
- 
- static struct resource sdhi1_resources[] = {
-@@ -1003,7 +963,6 @@ static struct resource sh_mmcif_resources[] = {
- };
- 
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
--	.set_pwr	= cn12_set_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
++struct rcar_du_planes {
++	struct rcar_du_plane planes[RCAR_DU_NUM_SW_PLANES];
++	unsigned int free;
++	struct mutex lock;
++
++	struct drm_property *alpha;
++	struct drm_property *colorkey;
++	struct drm_property *zpos;
++};
++
+ int rcar_du_plane_init(struct rcar_du_device *rcdu);
+ int rcar_du_plane_register(struct rcar_du_device *rcdu);
+ void rcar_du_plane_setup(struct rcar_du_plane *plane);
 -- 
 1.8.1.5
 
