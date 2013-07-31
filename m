@@ -1,56 +1,65 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Wed, 31 Jul 2013 17:32:37 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 19:17:39 +0000
 Subject: Re: [PATCH] clocksource: em_sti: Adjust clock event rating to fix SMP broadcast
-Message-Id: <51F94A35.2020907@codeaurora.org>
+Message-Id: <CANqRtoR0Wwctor1mpM+8nuC0_pZsPHUSShPuZFX4FVtoVKEuNw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1375251940-7809-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1375251940-7809-1-git-send-email-horms+renesas@verge.net.au>
+ <51F94A35.2020907@codeaurora.org>
+In-Reply-To: <51F94A35.2020907@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 07/30/13 23:25, Simon Horman wrote:
-> From: Magnus Damm <damm@opensource.se>
->
-> Update the STI rating from 200 to 80 to fix SMP operation with
-> the ARM broadcast timer. This breakage was introduced by:
->
-> f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
->
-> Without this fix SMP operation is broken on EMEV2 since no
-> broadcast timer interrupts trigger on the secondary CPU cores.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
+Hi Stephen,
 
-This looks suspicious. Are you're purposefully deflating the rating so
-that the STI timer fills in the broadcast position? Why not make the STI
-cpumask be all possible CPUs? Presumably the interrupt can target all
-CPUs since it isn't a per-cpu interrupt and doing this would cause the
-STI to fill in the broadcast slot, leaving the per-cpu dummys in the
-tick position.
-
->  drivers/clocksource/em_sti.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+On Thu, Aug 1, 2013 at 2:32 AM, Stephen Boyd <sboyd@codeaurora.org> wrote:
+> On 07/30/13 23:25, Simon Horman wrote:
+>> From: Magnus Damm <damm@opensource.se>
+>>
+>> Update the STI rating from 200 to 80 to fix SMP operation with
+>> the ARM broadcast timer. This breakage was introduced by:
+>>
+>> f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
+>>
+>> Without this fix SMP operation is broken on EMEV2 since no
+>> broadcast timer interrupts trigger on the secondary CPU cores.
+>>
+>> Signed-off-by: Magnus Damm <damm@opensource.se>
+>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>> ---
 >
-> diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
-> index b9c81b7..37b87c0 100644
-> --- a/drivers/clocksource/em_sti.c
-> +++ b/drivers/clocksource/em_sti.c
-> @@ -300,7 +300,7 @@ static void em_sti_register_clockevent(struct em_sti_priv *p)
->  	memset(ced, 0, sizeof(*ced));
->  	ced->name = dev_name(&p->pdev->dev);
->  	ced->features = CLOCK_EVT_FEAT_ONESHOT;
-> -	ced->rating = 200;
-> +	ced->rating = 80;
->  	ced->cpumask = cpumask_of(0);
->  	ced->set_next_event = em_sti_clock_event_next;
->  	ced->set_mode = em_sti_clock_event_mode;
+> This looks suspicious. Are you're purposefully deflating the rating so
+> that the STI timer fills in the broadcast position? Why not make the STI
+> cpumask be all possible CPUs? Presumably the interrupt can target all
+> CPUs since it isn't a per-cpu interrupt and doing this would cause the
+> STI to fill in the broadcast slot, leaving the per-cpu dummys in the
+> tick position.
 
+While letting the timer broadcast to all CPUs sounds interesting the
+STI driver has so far only been used to drive a single CPU core. This
+used to work well for us but has since some time unfortunately been
+broken. I agree that it may be suboptimal with a single timer like STI
+and using IPI for broadcast, but for more efficient SMP we already
+have TWD or arch timer.
 
--- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-hosted by The Linux Foundation
+This particular patch just does what should have been done during
+development of the following commit:
 
+f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over
+real hardware clock-event
+
+Basically, the f7db706 commit changes the dummy clockevent rating from
+400 to 100. Our timers in drivers/clocksource all had a rating higher
+than 100 so the commit basically broke everything. I can understand
+that the CMT, TMU and MTU2 timers were overlooked due to clock event
+rating in platform data, but a simple grep would have saved this
+driver..
+
+Anyway, this patch adjusts the STI rating from 200 down to 80 so we
+now once again are below the dummy clock event rating. So now SMP is
+working again, yay!
+
+Thanks for your comments!
+
+/ magnus
