@@ -1,223 +1,95 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 19:13:24 +0000
-Subject: [PATCH v2 1/7] backlight: Add GPIO-based backlight driver
-Message-Id: <1372965210-10024-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:44 +0000
+Subject: [PATCH v2 00/23] R-Car DU DRM support for R8A7790
+Message-Id: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-The GPIO backlight driver controls the backlight in on/off mode through
-a single GPIO.
+Hello,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Jingoo Han <jg1.han@samsung.com>
----
- drivers/video/backlight/Kconfig              |   7 ++
- drivers/video/backlight/Makefile             |   1 +
- drivers/video/backlight/gpio_backlight.c     | 133 +++++++++++++++++++++++++++
- include/linux/platform_data/gpio_backlight.h |  21 +++++
- 4 files changed, 162 insertions(+)
- create mode 100644 drivers/video/backlight/gpio_backlight.c
- create mode 100644 include/linux/platform_data/gpio_backlight.h
+Here's the second version of a patch set that adds support for the DU found in
+the R8A7790 SoC.
 
-diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
-index d5ab658..5ab6423 100644
---- a/drivers/video/backlight/Kconfig
-+++ b/drivers/video/backlight/Kconfig
-@@ -425,6 +425,13 @@ config BACKLIGHT_AS3711
- 	  If you have an Austrian Microsystems AS3711 say Y to enable the
- 	  backlight driver.
- 
-+config BACKLIGHT_GPIO
-+	tristate "Generic GPIO based Backlight Driver"
-+	depends on GPIOLIB
-+	help
-+	  If you have a LCD backlight adjustable by GPIO, say Y to enable
-+	  this driver.
-+
- endif # BACKLIGHT_CLASS_DEVICE
- 
- endif # BACKLIGHT_LCD_SUPPORT
-diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
-index 92711fe..65698a8 100644
---- a/drivers/video/backlight/Makefile
-+++ b/drivers/video/backlight/Makefile
-@@ -32,6 +32,7 @@ obj-$(CONFIG_BACKLIGHT_DA903X)		+= da903x_bl.o
- obj-$(CONFIG_BACKLIGHT_DA9052)		+= da9052_bl.o
- obj-$(CONFIG_BACKLIGHT_EP93XX)		+= ep93xx_bl.o
- obj-$(CONFIG_BACKLIGHT_GENERIC)		+= generic_bl.o
-+obj-$(CONFIG_BACKLIGHT_GPIO)		+= gpio_backlight.o
- obj-$(CONFIG_BACKLIGHT_HP680)		+= hp680_bl.o
- obj-$(CONFIG_BACKLIGHT_HP700)		+= jornada720_bl.o
- obj-$(CONFIG_BACKLIGHT_LM3533)		+= lm3533_bl.o
-diff --git a/drivers/video/backlight/gpio_backlight.c b/drivers/video/backlight/gpio_backlight.c
-new file mode 100644
-index 0000000..5fa217f
---- /dev/null
-+++ b/drivers/video/backlight/gpio_backlight.c
-@@ -0,0 +1,133 @@
-+/*
-+ * gpio_backlight.c - Simple GPIO-controlled backlight
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#include <linux/backlight.h>
-+#include <linux/err.h>
-+#include <linux/fb.h>
-+#include <linux/gpio.h>
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/platform_data/gpio_backlight.h>
-+#include <linux/platform_device.h>
-+#include <linux/slab.h>
-+
-+struct gpio_backlight {
-+	struct device *dev;
-+	struct device *fbdev;
-+
-+	int gpio;
-+	int active;
-+};
-+
-+static int gpio_backlight_update_status(struct backlight_device *bl)
-+{
-+	struct gpio_backlight *gbl = bl_get_data(bl);
-+	int brightness = bl->props.brightness;
-+
-+	if (bl->props.power != FB_BLANK_UNBLANK ||
-+	    bl->props.fb_blank != FB_BLANK_UNBLANK ||
-+	    bl->props.state & (BL_CORE_SUSPENDED | BL_CORE_FBBLANK))
-+		brightness = 0;
-+
-+	gpio_set_value(gbl->gpio, brightness ? gbl->active : !gbl->active);
-+
-+	return 0;
-+}
-+
-+static int gpio_backlight_get_brightness(struct backlight_device *bl)
-+{
-+	return bl->props.brightness;
-+}
-+
-+static int gpio_backlight_check_fb(struct backlight_device *bl,
-+				   struct fb_info *info)
-+{
-+	struct gpio_backlight *gbl = bl_get_data(bl);
-+
-+	return gbl->fbdev = NULL || gbl->fbdev = info->dev;
-+}
-+
-+static const struct backlight_ops gpio_backlight_ops = {
-+	.options	= BL_CORE_SUSPENDRESUME,
-+	.update_status	= gpio_backlight_update_status,
-+	.get_brightness	= gpio_backlight_get_brightness,
-+	.check_fb	= gpio_backlight_check_fb,
-+};
-+
-+static int gpio_backlight_probe(struct platform_device *pdev)
-+{
-+	struct gpio_backlight_platform_data *pdata = pdev->dev.platform_data;
-+	struct backlight_properties props;
-+	struct backlight_device *bl;
-+	struct gpio_backlight *gbl;
-+	int ret;
-+
-+	if (!pdata) {
-+		dev_err(&pdev->dev, "failed to find platform data\n");
-+		return -ENODEV;
-+	}
-+
-+	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
-+	if (gbl = NULL)
-+		return -ENOMEM;
-+
-+	gbl->dev = &pdev->dev;
-+	gbl->fbdev = pdata->fbdev;
-+	gbl->gpio = pdata->gpio;
-+	gbl->active = pdata->active_low ? 0 : 1;
-+
-+	ret = devm_gpio_request_one(gbl->dev, gbl->gpio, GPIOF_DIR_OUT |
-+				    (gbl->active ? GPIOF_INIT_LOW
-+						 : GPIOF_INIT_HIGH),
-+				    pdata->name);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "unable to request GPIO\n");
-+		return ret;
-+	}
-+
-+	memset(&props, 0, sizeof(props));
-+	props.type = BACKLIGHT_RAW;
-+	props.max_brightness = 1;
-+	bl = backlight_device_register(dev_name(&pdev->dev), &pdev->dev, gbl,
-+				       &gpio_backlight_ops, &props);
-+	if (IS_ERR(bl)) {
-+		dev_err(&pdev->dev, "failed to register backlight\n");
-+		return PTR_ERR(bl);
-+	}
-+
-+	bl->props.brightness = pdata->def_value;
-+	backlight_update_status(bl);
-+
-+	platform_set_drvdata(pdev, bl);
-+	return 0;
-+}
-+
-+static int gpio_backlight_remove(struct platform_device *pdev)
-+{
-+	struct backlight_device *bl = platform_get_drvdata(pdev);
-+
-+	backlight_device_unregister(bl);
-+	return 0;
-+}
-+
-+static struct platform_driver gpio_backlight_driver = {
-+	.driver		= {
-+		.name		= "gpio-backlight",
-+		.owner		= THIS_MODULE,
-+	},
-+	.probe		= gpio_backlight_probe,
-+	.remove		= gpio_backlight_remove,
-+};
-+
-+module_platform_driver(gpio_backlight_driver);
-+
-+MODULE_AUTHOR("Laurent Pinchart <laurent.pinchart@ideasonboard.com>");
-+MODULE_DESCRIPTION("GPIO-based Backlight Driver");
-+MODULE_LICENSE("GPL");
-+MODULE_ALIAS("platform:gpio-backlight");
-diff --git a/include/linux/platform_data/gpio_backlight.h b/include/linux/platform_data/gpio_backlight.h
-new file mode 100644
-index 0000000..5ae0d9c
---- /dev/null
-+++ b/include/linux/platform_data/gpio_backlight.h
-@@ -0,0 +1,21 @@
-+/*
-+ * gpio_backlight.h - Simple GPIO-controlled backlight
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+#ifndef __GPIO_BACKLIGHT_H__
-+#define __GPIO_BACKLIGHT_H__
-+
-+struct device;
-+
-+struct gpio_backlight_platform_data {
-+	struct device *fbdev;
-+	int gpio;
-+	int def_value;
-+	bool active_low;
-+	const char *name;
-+};
-+
-+#endif
+Compared to the R8A7779 DU, the R8A7790 has a third CRTC, internal LVDS
+encoders and different output routing options.
+
+These patches are based on the drm-next branch are are targetted at v3.12.
+
+Laurent Pinchart (23):
+  drm/rcar-du: Add missing alpha plane register definitions
+  drm/rcar-du: Use devm_ioremap_resource()
+  drm/rcar-du: Add platform module device table
+  drm/rcar-du: Support per-CRTC clock and IRQ
+  drm/rcar-du: Clarify comment regarding plane Y source coordinate
+  drm/rcar-du: Split LVDS encoder and connector
+  drm/rcar-du: Split VGA encoder and connector
+  drm/rcar-du: Merge LVDS and VGA encoder code
+  drm/rcar-du: Rename platform data fields to match what they describe
+  drm/rcar-du: Create rcar_du_planes structure
+  drm/rcar-du: Rename rcar_du_plane_(init|register) to rcar_du_planes_*
+  drm/rcar-du: Introduce CRTCs groups
+  drm/rcar-du: Use dynamic number of CRTCs instead of CRTCs array size
+  drm/rcar-du: Remove register definitions for the second channel
+  drm/rcar-du: Move output routing configuration to group
+  drm/rcar-du: Add support for the R8A7790 DU
+  drm/rcar-du: Fix buffer pitch alignment for R8A7790 DU
+  drm/rcar-du: Add support for multiple groups
+  drm/rcar-du: Add support for DEFR8 register
+  drm/rcar-du: Rework output routing support
+  drm/rcar-du: Configure RGB output routing to DPAD0
+  drm/rcar-du: Add internal LVDS encoder support
+  drm/rcar-du: Add FBDEV emulation support
+
+ drivers/gpu/drm/rcar-du/Kconfig           |   7 +
+ drivers/gpu/drm/rcar-du/Makefile          |  10 +-
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c    | 255 ++++++++++++++++--------------
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.h    |  13 +-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c     | 173 +++++++++-----------
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h     |  63 ++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 202 +++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h |  49 ++++++
+ drivers/gpu/drm/rcar-du/rcar_du_group.c   | 187 ++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_group.h   |  50 ++++++
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c     | 165 +++++++++++--------
+ drivers/gpu/drm/rcar-du/rcar_du_kms.h     |  29 +---
+ drivers/gpu/drm/rcar-du/rcar_du_lvds.c    | 216 -------------------------
+ drivers/gpu/drm/rcar-du/rcar_du_lvds.h    |  24 ---
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 131 +++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h |  25 +++
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 196 +++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h |  46 ++++++
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c   | 170 ++++++++++----------
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h   |  26 ++-
+ drivers/gpu/drm/rcar-du/rcar_du_regs.h    |  94 +++++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_vga.c     | 149 -----------------
+ drivers/gpu/drm/rcar-du/rcar_du_vga.h     |  24 ---
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  |  96 +++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.h  |  23 +++
+ drivers/gpu/drm/rcar-du/rcar_lvds_regs.h  |  69 ++++++++
+ include/linux/platform_data/rcar-du.h     |  34 +++-
+ 27 files changed, 1665 insertions(+), 861 deletions(-)
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_group.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_group.h
+ delete mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.c
+ delete mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdscon.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
+ delete mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.c
+ delete mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vgacon.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
+
 -- 
-1.8.1.5
+Regards,
+
+Laurent Pinchart
 
