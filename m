@@ -1,84 +1,54 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:15:47 +0000
-Subject: [PATCH 1/2] sh_eth: add support for RMIIMODE register
-Message-Id: <1374477348-1349-2-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 31 Jul 2013 01:33:51 +0000
+Subject: [PATCH 3/4] ARM: shmobile: BOCK-W: fix SDHI0 PFC settings
+Message-Id: <fa3e0cee12fbdd9e0b03470b2b8cf968f537c161.1375234088.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374477348-1349-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1374477348-1349-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1375234088.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375234088.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-This register is prsent on the r8a7790 SoC.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+The following message is printed on the BOCK-W kernel bootup:
+
+sh-pfc pfc-r8a7778: invalid group "sdhi0" for function "sdhi0"
+
+In addition, SD card cannot be detected.  The reason is apparently that commit
+ca7bb309485e4ec89a9addd47bea (ARM: shmobile: bockw: add SDHI0 support) matched
+the previous version of commit 564617d2f92473031d035deb273da5 (sh-pfc: r8a7778:
+add SDHI support).
+
+Add the missing pin groups according to the BOCK-W board schematics.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
---
-
-v4
-* Update changelog.
-
-v3
-* The subsequent patch to add r8a7790 support has been reworked.
-  To reflect this do not add set the rmmimode bit of any
-  currently available struct sh_eth_cpu_data. A new one
-  will be added for r8a7790 and the bit will be set when
-  it is added.
-
-v2
-* Split from patch to add r8a7790 support to driver (ifdef nastiness)
-* As suggested by Sergei Shtylyov
-  - Add a field to struct sh_eth_cpu_data to indicate if the
-    rmiimode register is present. This replaces an extremely ugly ifdef.
 ---
- drivers/net/ethernet/renesas/sh_eth.c | 4 ++++
- drivers/net/ethernet/renesas/sh_eth.h | 2 ++
- 2 files changed, 6 insertions(+)
+ arch/arm/mach-shmobile/board-bockw.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index a753928..87af49f 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -189,6 +189,7 @@ static const u16 sh_eth_offset_fast_rcar[SH_ETH_MAX_REGISTER_OFFSET] = {
- 	[RMCR]		= 0x0258,
- 	[TFUCR]		= 0x0264,
- 	[RFOCR]		= 0x0268,
-+	[RMIIMODE]      = 0x026c,
- 	[FCFTR]		= 0x0270,
- 	[TRIMD]		= 0x027c,
- };
-@@ -1124,6 +1125,9 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
- 	if (ret)
- 		goto out;
- 
-+	if (mdp->cd->rmiimode)
-+		sh_eth_write(ndev, 0x1, RMIIMODE);
-+
- 	/* Descriptor format */
- 	sh_eth_ring_format(ndev);
- 	if (mdp->cd->rpadir)
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index 99995bf..da93f5c 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -60,6 +60,7 @@ enum {
- 	EDOCR,
- 	TFUCR,
- 	RFOCR,
-+	RMIIMODE,
- 	FCFTR,
- 	RPADIR,
- 	TRIMD,
-@@ -482,6 +483,7 @@ struct sh_eth_cpu_data {
- 	unsigned hw_crc:1;	/* E-DMAC have CSMR */
- 	unsigned select_mii:1;	/* EtherC have RMII_MII (MII select register) */
- 	unsigned shift_rd0:1;	/* shift Rx descriptor word 0 right by 16 */
-+	unsigned rmiimode:1;	/* EtherC has RMIIMODE register */
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index d555464..3354a85 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -167,7 +167,13 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 				  "usb1", "usb1"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
+-				  "sdhi0", "sdhi0"),
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
++				  "sdhi0_wp", "sdhi0"),
  };
  
- struct sh_eth_private {
+ #define FPGA	0x18200000
 -- 
-1.8.2.1
+1.8.3.2
 
