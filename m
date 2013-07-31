@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 07:07:31 +0000
-Subject: [PATCH 03/07] ARM: shmobile: Use shared SCU SMP boot code on r8a7779
-Message-Id: <20130731070731.14444.50089.sendpatchset@w520>
+Date: Wed, 31 Jul 2013 19:01:19 +0000
+Subject: [PATCH 01/13] ARM: shmobile: Use default ->init_time() on r8a73a4
+Message-Id: <20130731190119.31796.56612.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731070702.14444.64961.sendpatchset@w520>
-In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
+References: <20130731190110.31796.96552.sendpatchset@w520>
+In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,71 +12,21 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Use shared SCU code on r8a7779 for SMP boot.
+Leave ->init_time() set to NULL to use the default ARM behaviour.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/Makefile      |    2 +-
- arch/arm/mach-shmobile/smp-r8a7779.c |   23 ++++++++++++-----------
- 2 files changed, 13 insertions(+), 12 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a73a4.c |    1 -
+ 1 file changed, 1 deletion(-)
 
---- 0003/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-07-31 11:56:16.000000000 +0900
-@@ -33,7 +33,7 @@ endif
- # SMP objects
- smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
--smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
-+smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
+--- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-08-01 02:58:37.000000000 +0900
+@@ -223,7 +223,6 @@ static const char *r8a73a4_boards_compat
  
- # IRQ objects
---- 0001/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-07-31 11:55:30.000000000 +0900
-@@ -84,33 +84,34 @@ static int r8a7779_platform_cpu_kill(uns
- static int r8a7779_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
- 	struct r8a7779_pm_ch *ch = NULL;
--	int ret = -EIO;
-+	unsigned int lcpu = cpu_logical_map(cpu);
-+	int ret;
- 
--	cpu = cpu_logical_map(cpu);
-+	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
-+	if (ret)
-+		return ret;
- 
--	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
--		ch = r8a7779_ch_cpu[cpu];
-+	if (lcpu < ARRAY_SIZE(r8a7779_ch_cpu))
-+		ch = r8a7779_ch_cpu[lcpu];
- 
- 	if (ch)
- 		ret = r8a7779_sysc_power_up(ch);
-+	else
-+		ret = -EIO;
- 
- 	return ret;
- }
- 
- static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- {
--
--	/* setup r8a7779 specific SCU base */
--	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
--	scu_enable(shmobile_scu_base);
--
- 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
- 	__raw_writel(__pa(shmobile_boot_vector), AVECR);
- 	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
- 	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
- 
--	/* enable cache coherency on booting CPU */
--	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
-+	/* setup r8a7779 specific SCU bits */
-+	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
-+	shmobile_smp_scu_prepare_cpus(max_cpus);
- 
- 	r8a7779_pm_init();
- 
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+ 	.init_early	= r8a73a4_init_delay,
+-	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
