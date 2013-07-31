@@ -1,103 +1,74 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 24 Jul 2013 13:09:28 +0000
-Subject: [PATCH 3/3] sh-pfc: sh73a0: Remove EXT_IRQ16L and EXT_IRQ16H macros
-Message-Id: <1374671368-4681-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Chen Gang <gang.chen@asianux.com>
+Date: Wed, 31 Jul 2013 09:04:58 +0000
+Subject: [PATCH] scripts/recordmcount.pl: remove "-m32" for sh architecture
+Message-Id: <51F8D33A.3050406@asianux.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374671368-4681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <51F8BB73.2070603@asianux.com> <51F8BE59.4030506@linaro.org> <51F8CCC0.1090302@asianux.com>
+In-Reply-To: <51F8CCC0.1090302@asianux.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: Paul Mundt <lethal@linux-sh.org>, rafael.j.wysocki@intel.com, horms+renesas@verge.net.au, khilman@linaro.org, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-The macros expand to irq_pin() calls and where most probably introduced
-from a copy&paste of the sh7372 PFC data. Replace them with irq_pin().
+'allmodconfig' will report error for "-m32", Now "-m32" is useless for
+latest compiler and neither can find "-m32" in "arch/sh" directory, so
+just remove it is OK.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The related error:
+
+    CC      init/main.o
+  sh3-gchen-linux-gnu-gcc: error: unrecognized command line option '-m32'
+  sh3-gchen-linux-gnu-ld: cannot find init/.tmp_mc_main.o: No such file or directory
+  sh3-gchen-linux-gnu-objcopy: 'init/.tmp_mx_main.o': No such file
+  rm: cannot remove `init/.tmp_mx_main.o': No such file or directory
+  rm: cannot remove `init/.tmp_mc_main.o': No such file or directory
+    CHK     include/generated/compile.h
+    CC      init/version.o
+    CC      init/do_mounts.o
+  sh3-gchen-linux-gnu-gcc: error: unrecognized command line option '-m32'
+  sh3-gchen-linux-gnu-ld: cannot find init/.tmp_mc_do_mounts.o: No such file or directory
+  mv: cannot stat `init/.tmp_mx_do_mounts.o': No such file or directory
+  rm: cannot remove `init/.tmp_mc_do_mounts.o': No such file or directory
+    CC      init/do_mounts_initrd.o
+    LD      init/mounts.o
+    CC      init/initramfs.o
+    CC      init/init_task.o
+    LD      init/built-in.o
+  sh3-gchen-linux-gnu-ld: cannot find init/main.o: No such file or directory
+  make[1]: *** [init/built-in.o] Error 1
+  make: *** [init] Error 2
+
+The related compiler information:
+
+  [root@dhcp122 linux-next]# sh3-gchen-linux-gnu-gcc -v
+  Using built-in specs.
+  COLLECT_GCC=sh3-gchen-linux-gnu-gcc
+  COLLECT_LTO_WRAPPER=/home/gchen/x-tools/sh3-gchen-linux-gnu/bin/../libexec/gcc/sh3-gchen-linux-gnu/4.8.0/lto-wrapper
+  Target: sh3-gchen-linux-gnu
+  Configured with: /root/src/toolchain_sh/crosstool-ng-2685dfa9de14/.build/src/gcc-4.8.0/configure --build=x86_64-build_unknown-linux-gnu --host=x86_64-build_unknown-linux-gnu --target=sh3-gchen-linux-gnu --prefix=/root/src/toolchain_sh/crosstool-ng-2685dfa9de14/.build/sh3-gchen-linux-gnu/buildtools --with-local-prefix=/home/gchen/x-tools/sh3-gchen-linux-gnu/sh3-gchen-linux-gnu/sysroot --disable-libmudflap --with-sysroot=/home/gchen/x-tools/sh3-gchen-linux-gnu/sh3-gchen-linux-gnu/sysroot --enable-shared --with-pkgversion='crosstool-NG hg+unknown-20130731.103227' --enable-__cxa_atexit --with-gmp=/root/src/toolchain_sh/crosstool-ng-2685dfa9de14/.build/sh3-gchen-linux-gnu/buildtools --with-mpfr=/root/src/toolchain_sh/crosstool-ng-2685dfa9de14/.build/sh3-gchen-linux-gnu/buildtools --with-mpc=/root/src/toolchain_sh/crosstool-ng-2685dfa9de14/.build/sh3-gchen-linux-gnu/buildtools --with-isl=/root/src/toolchain_sh/crosstool-ng-2685dfa9de14/.build/sh3-gchen-linux-gnu/buildtools --with
+ -cloog=/r
+oot/src/toolchain_sh/crosstool-ng-2685dfa9de14/.build/sh3-gchen-linux-gnu/buildtools --with-libelf=/root/src/toolchain_sh/crosstool-ng-2685dfa9de14/.build/sh3-gchen-linux-gnu/buildtools --enable-lto --enable-target-optspace --disable-libgomp --disable-libmudflap --disable-nls --disable-multilib --enable-languages=c
+  Thread model: posix
+  gcc version 4.8.0 (crosstool-NG hg+unknown-20130731.103227) 
+
+
+Signed-off-by: Chen Gang <gang.chen@asianux.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 68 +++++++++++++++++--------------------
- 1 file changed, 32 insertions(+), 36 deletions(-)
+ scripts/recordmcount.pl |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 7956df5..d2e8168 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -3674,43 +3674,39 @@ static const struct pinmux_data_reg pinmux_data_regs[] = {
- 	{ },
- };
+diff --git a/scripts/recordmcount.pl b/scripts/recordmcount.pl
+index 858966a..679218b 100755
+--- a/scripts/recordmcount.pl
++++ b/scripts/recordmcount.pl
+@@ -262,7 +262,6 @@ if ($arch eq "x86_64") {
+     # force flags for this arch
+     $ld .= " -m shlelf_linux";
+     $objcopy .= " -O elf32-sh-linux";
+-    $cc .= " -m32";
  
--/* External IRQ pins mapped at IRQPIN_BASE */
--#define EXT_IRQ16L(n) irq_pin(n)
--#define EXT_IRQ16H(n) irq_pin(n)
--
- static const struct pinmux_irq pinmux_irqs[] = {
--	PINMUX_IRQ(EXT_IRQ16H(19), 9),
--	PINMUX_IRQ(EXT_IRQ16L(1), 10),
--	PINMUX_IRQ(EXT_IRQ16L(0), 11),
--	PINMUX_IRQ(EXT_IRQ16H(18), 13),
--	PINMUX_IRQ(EXT_IRQ16H(20), 14),
--	PINMUX_IRQ(EXT_IRQ16H(21), 15),
--	PINMUX_IRQ(EXT_IRQ16H(31), 26),
--	PINMUX_IRQ(EXT_IRQ16H(30), 27),
--	PINMUX_IRQ(EXT_IRQ16H(29), 28),
--	PINMUX_IRQ(EXT_IRQ16H(22), 40),
--	PINMUX_IRQ(EXT_IRQ16H(23), 53),
--	PINMUX_IRQ(EXT_IRQ16L(10), 54),
--	PINMUX_IRQ(EXT_IRQ16L(9), 56),
--	PINMUX_IRQ(EXT_IRQ16H(26), 115),
--	PINMUX_IRQ(EXT_IRQ16H(27), 116),
--	PINMUX_IRQ(EXT_IRQ16H(28), 117),
--	PINMUX_IRQ(EXT_IRQ16H(24), 118),
--	PINMUX_IRQ(EXT_IRQ16L(6), 147),
--	PINMUX_IRQ(EXT_IRQ16L(2), 149),
--	PINMUX_IRQ(EXT_IRQ16L(7), 150),
--	PINMUX_IRQ(EXT_IRQ16L(12), 156),
--	PINMUX_IRQ(EXT_IRQ16L(4), 159),
--	PINMUX_IRQ(EXT_IRQ16H(25), 164),
--	PINMUX_IRQ(EXT_IRQ16L(8), 223),
--	PINMUX_IRQ(EXT_IRQ16L(3), 224),
--	PINMUX_IRQ(EXT_IRQ16L(5), 227),
--	PINMUX_IRQ(EXT_IRQ16H(17), 234),
--	PINMUX_IRQ(EXT_IRQ16L(11), 238),
--	PINMUX_IRQ(EXT_IRQ16L(13), 239),
--	PINMUX_IRQ(EXT_IRQ16H(16), 249),
--	PINMUX_IRQ(EXT_IRQ16L(14), 251),
--	PINMUX_IRQ(EXT_IRQ16L(9), 308),
-+	PINMUX_IRQ(irq_pin(19), 9),
-+	PINMUX_IRQ(irq_pin(1), 10),
-+	PINMUX_IRQ(irq_pin(0), 11),
-+	PINMUX_IRQ(irq_pin(18), 13),
-+	PINMUX_IRQ(irq_pin(20), 14),
-+	PINMUX_IRQ(irq_pin(21), 15),
-+	PINMUX_IRQ(irq_pin(31), 26),
-+	PINMUX_IRQ(irq_pin(30), 27),
-+	PINMUX_IRQ(irq_pin(29), 28),
-+	PINMUX_IRQ(irq_pin(22), 40),
-+	PINMUX_IRQ(irq_pin(23), 53),
-+	PINMUX_IRQ(irq_pin(10), 54),
-+	PINMUX_IRQ(irq_pin(9), 56),
-+	PINMUX_IRQ(irq_pin(26), 115),
-+	PINMUX_IRQ(irq_pin(27), 116),
-+	PINMUX_IRQ(irq_pin(28), 117),
-+	PINMUX_IRQ(irq_pin(24), 118),
-+	PINMUX_IRQ(irq_pin(6), 147),
-+	PINMUX_IRQ(irq_pin(2), 149),
-+	PINMUX_IRQ(irq_pin(7), 150),
-+	PINMUX_IRQ(irq_pin(12), 156),
-+	PINMUX_IRQ(irq_pin(4), 159),
-+	PINMUX_IRQ(irq_pin(25), 164),
-+	PINMUX_IRQ(irq_pin(8), 223),
-+	PINMUX_IRQ(irq_pin(3), 224),
-+	PINMUX_IRQ(irq_pin(5), 227),
-+	PINMUX_IRQ(irq_pin(17), 234),
-+	PINMUX_IRQ(irq_pin(11), 238),
-+	PINMUX_IRQ(irq_pin(13), 239),
-+	PINMUX_IRQ(irq_pin(16), 249),
-+	PINMUX_IRQ(irq_pin(14), 251),
-+	PINMUX_IRQ(irq_pin(9), 308),
- };
- 
- /* -----------------------------------------------------------------------------
+ } elsif ($arch eq "powerpc") {
+     $local_regex = "^[0-9a-fA-F]+\\s+t\\s+(\\.?\\S+)";
 -- 
-1.8.1.5
-
+1.7.7.6
