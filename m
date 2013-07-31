@@ -1,47 +1,64 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 23 Jul 2013 16:12:03 +0000
-Subject: [PATCH 3/4] ARM: shmobile: ape6evm: use smsc911x platform parameters to handle eth reset
-Message-Id: <1374595924-12338-4-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:46 +0000
+Subject: [PATCH v2 02/23] drm/rcar-du: Use devm_ioremap_resource()
+Message-Id: <1375276927-20181-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374595924-12338-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Steve Glendinning <steve.glendinning@shawell.net>, netdev@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Instead of fixing ethernet reset GPIO in platform initialisation code, pass
-the GPIO to the driver.
+Replace the devm_request_mem_region() and devm_ioremap_nocache() calls
+with devm_ioremap_resource().
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c |    5 ++---
- 1 files changed, 2 insertions(+), 3 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c | 22 +++-------------------
+ 1 file changed, 3 insertions(+), 19 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 96a6994..bd46c75 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -56,6 +56,8 @@ static const struct smsc911x_platform_config lan9220_data = {
- 	.flags		= SMSC911X_USE_32BIT,
- 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
-+	.reset_gpio	= 270,
-+	.reset_gpio_config = SMSC911X_RESET_GPIO_VALID | GPIOF_INIT_LOW,
- };
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index dc0fe09..f776b1c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -107,7 +107,6 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
+ 	struct platform_device *pdev = dev->platformdev;
+ 	struct rcar_du_platform_data *pdata = pdev->dev.platform_data;
+ 	struct rcar_du_device *rcdu;
+-	struct resource *ioarea;
+ 	struct resource *mem;
+ 	int ret;
  
- /*
-@@ -156,9 +158,6 @@ static void __init ape6evm_add_standard_devices(void)
- 	r8a73a4_pinmux_init();
- 	r8a73a4_add_standard_devices();
+@@ -129,24 +128,9 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
  
--	/* LAN9220 ethernet */
--	gpio_request_one(270, GPIOF_OUT_INIT_HIGH, NULL); /* smsc9220 RESET */
+ 	/* I/O resources and clocks */
+ 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (mem = NULL) {
+-		dev_err(&pdev->dev, "failed to get memory resource\n");
+-		return -EINVAL;
+-	}
 -
- 	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+-	ioarea = devm_request_mem_region(&pdev->dev, mem->start,
+-					 resource_size(mem), pdev->name);
+-	if (ioarea = NULL) {
+-		dev_err(&pdev->dev, "failed to request memory region\n");
+-		return -EBUSY;
+-	}
+-
+-	rcdu->mmio = devm_ioremap_nocache(&pdev->dev, ioarea->start,
+-					  resource_size(ioarea));
+-	if (rcdu->mmio = NULL) {
+-		dev_err(&pdev->dev, "failed to remap memory resource\n");
+-		return -ENOMEM;
+-	}
++	rcdu->mmio = devm_ioremap_resource(&pdev->dev, mem);
++	if (IS_ERR(rcdu->mmio))
++		return PTR_ERR(rcdu->mmio);
  
- 	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
+ 	rcdu->clock = devm_clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(rcdu->clock)) {
 -- 
-1.7.2.5
+1.8.1.5
 
