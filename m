@@ -1,36 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 27 Jul 2013 22:20:48 +0000
-Subject: Re: [PATCH] ml86v7667: override default field interlace order
-Message-Id: <51F447C0.9030901@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 19:03:00 +0000
+Subject: [PATCH 12/13] ARM: shmobile: Use clocksource_of_init() on r8a7790
+Message-Id: <20130731190300.31796.23926.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201307152312.22371.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201307152312.22371.sergei.shtylyov@cogentembedded.com>
+References: <20130731190110.31796.96552.sendpatchset@w520>
+In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: mchehab@samsung.com, linux-media@vger.kernel.org, hverkuil@xs4all.nl
-Cc: matsu@igel.co.jp, linux-sh@vger.kernel.org, vladimir.barinov@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 15.07.2013 23:12, I wrote:
+Replace the call to shmobile_timer_init() with
+clocksource_of_init(). This will allow us to
+get rid of shmobile_timer_init().
 
-> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> ML86V7667 always transmits top field first for both PAL and  NTSC -- that makes
-> application incorrectly  treat interlaced  fields when relying on the standard.
-> Hence we must set V4L2_FIELD_INTERLACED_TB format explicitly.
+ arch/arm/mach-shmobile/setup-r8a7790.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> Reported-by: Katsuya MATSUBARA <matsu@igel.co.jp>
-> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> [Sergei: added a comment.]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-> ---
-> This patch is against the 'media_tree.git' repo.
-
-    I forgot to mention that it was against the 'fixes' branch, and we 
-intended it as a fix (I'm seeing this patch committed to the 'master' branch).
-
-WBR, Sergei
-
+--- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-08-01 03:17:48.000000000 +0900
+@@ -263,7 +263,7 @@ void __init r8a7790_timer_init(void)
+ 	iounmap(base);
+ #endif /* CONFIG_ARM_ARCH_TIMER */
+ 
+-	shmobile_timer_init();
++	clocksource_of_init();
+ }
+ 
+ void __init r8a7790_init_delay(void)
