@@ -1,122 +1,88 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:32:03 +0000
-Subject: [PATCH 02/22] ARM: shmobile: r8a7778: add __initdata on resource and device data
-Message-Id: <c9031fbb35bd44d99c5cfe7d3c97ec238d63643a.1374103272.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 07:08:09 +0000
+Subject: [PATCH 07/07] ARM: shmobile: Use shared SCU CPU Hotplug code on r8a7779
+Message-Id: <20130731070809.14444.98907.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
+References: <20130731070702.14444.64961.sendpatchset@w520>
+In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-These data will be kmemdup()'ed on
-platform_device_add_resources() and platform_device_add_data()
+Update the r8a7779 specific CPU Hotplug code to make use of
+the recently introduced shared SCU functions. The r8a7779
+power domain hardware requires special power down handling
+at ->kill() time.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c |   24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 80c2039..b70bfee 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -53,7 +53,7 @@
- 	.irqs		= SCIx_IRQ_MUXED(irq),			\
- }
- 
--static struct plat_sci_port scif_platform_data[] = {
-+static struct plat_sci_port scif_platform_data[] __initdata = {
- 	SCIF_INFO(0xffe40000, gic_iid(0x66)),
- 	SCIF_INFO(0xffe41000, gic_iid(0x67)),
- 	SCIF_INFO(0xffe42000, gic_iid(0x68)),
-@@ -63,24 +63,24 @@ static struct plat_sci_port scif_platform_data[] = {
- };
- 
- /* TMU */
--static struct resource sh_tmu0_resources[] = {
-+static struct resource sh_tmu0_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xffd80008, 12),
- 	DEFINE_RES_IRQ(gic_iid(0x40)),
- };
- 
--static struct sh_timer_config sh_tmu0_platform_data = {
-+static struct sh_timer_config sh_tmu0_platform_data __initdata = {
- 	.name			= "TMU00",
- 	.channel_offset		= 0x4,
- 	.timer_bit		= 0,
- 	.clockevent_rating	= 200,
- };
- 
--static struct resource sh_tmu1_resources[] = {
-+static struct resource sh_tmu1_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xffd80014, 12),
- 	DEFINE_RES_IRQ(gic_iid(0x41)),
- };
- 
--static struct sh_timer_config sh_tmu1_platform_data = {
-+static struct sh_timer_config sh_tmu1_platform_data __initdata = {
- 	.name			= "TMU01",
- 	.channel_offset		= 0x10,
- 	.timer_bit		= 1,
-@@ -189,7 +189,7 @@ USB_PLATFORM_INFO(ehci);
- USB_PLATFORM_INFO(ohci);
- 
- /* Ether */
--static struct resource ether_resources[] = {
-+static struct resource ether_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xfde00000, 0x400),
- 	DEFINE_RES_IRQ(gic_iid(0x89)),
- };
-@@ -203,17 +203,17 @@ void __init r8a7778_add_ether_device(struct sh_eth_plat_data *pdata)
- }
- 
- /* PFC/GPIO */
--static struct resource pfc_resources[] = {
-+static struct resource pfc_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xfffc0000, 0x118),
- };
- 
- #define R8A7778_GPIO(idx)						\
--static struct resource r8a7778_gpio##idx##_resources[] = {		\
-+static struct resource r8a7778_gpio##idx##_resources[] __initdata = {	\
- 	DEFINE_RES_MEM(0xffc40000 + 0x1000 * (idx), 0x30),		\
- 	DEFINE_RES_IRQ(gic_iid(0x87)),					\
- };									\
- 									\
--static struct gpio_rcar_config r8a7778_gpio##idx##_platform_data = {	\
-+static struct gpio_rcar_config r8a7778_gpio##idx##_platform_data __initdata = { \
- 	.gpio_base	= 32 * (idx),					\
- 	.irq_base	= GPIO_IRQ_BASE(idx),				\
- 	.number_of_pins	= 32,						\
-@@ -249,7 +249,7 @@ void __init r8a7778_pinmux_init(void)
- };
- 
- /* SDHI */
--static struct resource sdhi_resources[] = {
-+static struct resource sdhi_resources[] __initdata = {
- 	/* SDHI0 */
- 	DEFINE_RES_MEM(0xFFE4C000, 0x100),
- 	DEFINE_RES_IRQ(gic_iid(0x77)),
-@@ -365,12 +365,12 @@ void __init r8a7778_init_late(void)
- 	platform_device_register_full(&ohci_info);
- }
- 
--static struct renesas_intc_irqpin_config irqpin_platform_data = {
-+static struct renesas_intc_irqpin_config irqpin_platform_data __initdata = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
- 	.sense_bitfield_width = 2,
- };
- 
--static struct resource irqpin_resources[] = {
-+static struct resource irqpin_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
- 	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
- 	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
--- 
-1.7.10.4
+ arch/arm/mach-shmobile/smp-r8a7779.c |   41 +++-------------------------------
+ 1 file changed, 4 insertions(+), 37 deletions(-)
 
+--- 0004/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-07-31 12:12:26.000000000 +0900
+@@ -122,47 +122,14 @@ static void __init r8a7779_smp_prepare_c
+ }
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
+-static int r8a7779_scu_psr_core_disabled(int cpu)
+-{
+-	unsigned long mask = 3 << (cpu * 8);
+-
+-	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
+-		return 1;
+-
+-	return 0;
+-}
+-
+ static int r8a7779_cpu_kill(unsigned int cpu)
+ {
+-	int k;
+-
+-	/* this function is running on another CPU than the offline target,
+-	 * here we need wait for shutdown code in platform_cpu_die() to
+-	 * finish before asking SoC-specific code to power off the CPU core.
+-	 */
+-	for (k = 0; k < 1000; k++) {
+-		if (r8a7779_scu_psr_core_disabled(cpu))
+-			return r8a7779_platform_cpu_kill(cpu);
+-
+-		mdelay(1);
+-	}
++	if (shmobile_smp_scu_cpu_kill(cpu))
++		return r8a7779_platform_cpu_kill(cpu);
+ 
+ 	return 0;
+ }
+ 
+-static void r8a7779_cpu_die(unsigned int cpu)
+-{
+-	dsb();
+-	flush_cache_all();
+-
+-	/* disable cache coherency */
+-	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
+-
+-	/* Endless loop until power off from r8a7779_cpu_kill() */
+-	while (1)
+-		cpu_do_idle();
+-}
+-
+ static int r8a7779_cpu_disable(unsigned int cpu)
+ {
+ 	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
+@@ -174,8 +141,8 @@ struct smp_operations r8a7779_smp_ops  _
+ 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a7779_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_kill		= r8a7779_cpu_kill,
+-	.cpu_die		= r8a7779_cpu_die,
+ 	.cpu_disable		= r8a7779_cpu_disable,
++	.cpu_die		= shmobile_smp_scu_cpu_die,
++	.cpu_kill		= r8a7779_cpu_kill,
+ #endif
+ };
