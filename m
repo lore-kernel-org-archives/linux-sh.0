@@ -1,40 +1,34 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 24 Jul 2013 03:37:15 +0000
-Subject: [PATCH 00/08] ARM: shmobile: Get rid of <mach/hardware.h>
-Message-Id: <20130724033715.30567.82782.sendpatchset@w520>
+Date: Wed, 31 Jul 2013 18:38:08 +0000
+Subject: [PATCH 00/02] ARM: shmobile: Per-CPU SMP boot / sleep code
+Message-Id: <20130731183808.31551.47235.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Get rid of <mach/hardware.h>
+ARM: shmobile: Per-CPU SMP boot / sleep code
 
-[PATCH 01/08] ARM: shmobile: Remove sh73a0 use of <mach/hardware.h>
-[PATCH 02/08] ARM: shmobile: Remove sh7372 use of <mach/hardware.h>
-[PATCH 03/08] ARM: shmobile: Remove EMEV2 use of <mach/hardware.h>
-[PATCH 04/08] ARM: shmobile: Remove r8a7779 use of <mach/hardware.h>
-[PATCH 05/08] ARM: shmobile: Remove AG5EVM use of <mach/hardware.h>
-[PATCH 06/08] ARM: shmobile: Remove Kota2 use of <mach/hardware.h>
-[PATCH 07/08] ARM: shmobile: Remove Marzen use of <mach/hardware.h>
-[PATCH 08/08] ARM: shmobile: Remove include <mach/hardware.h>
+[PATCH 01/02] ARM: shmobile: Introduce per-CPU SMP boot / sleep code
+[PATCH 02/02] ARM: shmobile: Per-CPU SMP boot / sleep code for SCU SoCs
 
-The <mach/hardware.h> file is empty anyway, so let's stop using it.
-
-Feel free to drop Kota2 or AG5EVM patches in case those boards get
-removed before this series is applied.
+This series adds per-CPU SMP boot / sleep code to mach-shmobile and ties
+it in with the Cortex-A9 SoCs using the shared SCU code. With this code
+in place mach-shmobile has a common per-CPU demuxer that CPUs to start
+from and a place where CPUs also go to sleep (perhaps forever).
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Built on top of renesas-devel-20130723
+ Written against renesas.git renesas-devel-20130731 and
+ [PATCH 00/07] ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
+ 
+ Requires "[PATCH] ARM: Fix memblock_reserve() to include stext" during
+ run time to allow test of CPU Hotplug with v3.11-rc kernels.
 
- arch/arm/mach-shmobile/board-ag5evm.c          |    1 -
- arch/arm/mach-shmobile/board-kota2.c           |    1 -
- arch/arm/mach-shmobile/board-marzen.c          |    1 -
- arch/arm/mach-shmobile/include/mach/hardware.h |    4 ----
- arch/arm/mach-shmobile/setup-emev2.c           |    1 -
- arch/arm/mach-shmobile/setup-r8a7779.c         |    1 -
- arch/arm/mach-shmobile/setup-sh7372.c          |    1 -
- arch/arm/mach-shmobile/setup-sh73a0.c          |    1 -
- 8 files changed, 11 deletions(-)
+ arch/arm/mach-shmobile/headsmp.S             |   50 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    4 ++
+ arch/arm/mach-shmobile/platsmp-scu.c         |   17 +++++---
+ arch/arm/mach-shmobile/platsmp.c             |   18 +++++++++
+ 4 files changed, 83 insertions(+), 6 deletions(-)
