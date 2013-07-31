@@ -1,30 +1,32 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 10 Jul 2013 02:27:12 +0000
-Subject: [PATCH 0/4 v2] ARM: shmobile: r8a7778: add USB Func support
-Message-Id: <87wqozup37.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 19:02:24 +0000
+Subject: [PATCH 08/13] ARM: shmobile: Use default ->init_time() on APE6EVM
+Message-Id: <20130731190224.31796.18362.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130731190110.31796.96552.sendpatchset@w520>
+In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Simon
+Leave ->init_time() set to NULL to use the default ARM behaviour.
 
-These are v2 patches for adding USB Func support on r8a7778/BockW.
-These are based on renesas-next-20130704v2 tag
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-# Sorry I still couldn't get renesas-next-20130710 tag now
-# it seems need more synchronize time on server
+ arch/arm/mach-shmobile/board-ape6evm.c |    1 -
+ 1 file changed, 1 deletion(-)
 
-Kuninori Morimoto (4):
-      ARM: shmobile: r8a7778: add usb phy power control function
-      ARM: shmobile: r8a7778: add r8a7778_add_usb_host_device()
-      RM: shmobile: r8a7778: add r8a7778_add_usb_func_device()
-      ARM: shmobile: bockw: add USB Function support
-
- arch/arm/mach-shmobile/board-bockw.c          |   50 +++++++++++++-
- arch/arm/mach-shmobile/clock-r8a7778.c        |    1 +
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    5 +-
- arch/arm/mach-shmobile/setup-r8a7778.c        |   89 ++++++++++++++++++++-----
- 4 files changed, 124 insertions(+), 21 deletions(-)
+--- 0001/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-08-01 03:11:13.000000000 +0900
+@@ -181,7 +181,6 @@ static const char *ape6evm_boards_compat
+ 
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+ 	.init_early	= r8a73a4_init_delay,
+-	.init_time	= shmobile_timer_init,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+ MACHINE_END
