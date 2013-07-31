@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 19:01:19 +0000
-Subject: [PATCH 01/13] ARM: shmobile: Use default ->init_time() on r8a73a4
-Message-Id: <20130731190119.31796.56612.sendpatchset@w520>
+Date: Wed, 31 Jul 2013 19:01:55 +0000
+Subject: [PATCH 05/13] ARM: shmobile: Use default ->init_time() on Bockw
+Message-Id: <20130731190155.31796.59580.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130731190110.31796.96552.sendpatchset@w520>
 In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
@@ -17,16 +17,16 @@ Leave ->init_time() set to NULL to use the default ARM behaviour.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/setup-r8a73a4.c |    1 -
+ arch/arm/mach-shmobile/board-bockw.c |    1 -
  1 file changed, 1 deletion(-)
 
---- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-08-01 02:58:37.000000000 +0900
-@@ -223,7 +223,6 @@ static const char *r8a73a4_boards_compat
- 
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
- 	.init_early	= r8a73a4_init_delay,
+--- 0001/arch/arm/mach-shmobile/board-bockw.c
++++ work/arch/arm/mach-shmobile/board-bockw.c	2013-08-01 03:06:01.000000000 +0900
+@@ -279,7 +279,6 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
+ 	.init_early	= r8a7778_init_delay,
+ 	.init_irq	= r8a7778_init_irq_dt,
+ 	.init_machine	= bockw_init,
 -	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
+ 	.dt_compat	= bockw_boards_compat_dt,
+ 	.init_late      = r8a7778_init_late,
  MACHINE_END
- #endif /* CONFIG_USE_OF */
