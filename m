@@ -1,32 +1,97 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 31 Jul 2013 19:01:55 +0000
-Subject: [PATCH 05/13] ARM: shmobile: Use default ->init_time() on Bockw
-Message-Id: <20130731190155.31796.59580.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:22:01 +0000
+Subject: [PATCH v2 17/23] drm/rcar-du: Fix buffer pitch alignment for R8A7790 DU
+Message-Id: <1375276927-20181-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731190110.31796.96552.sendpatchset@w520>
-In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The R8A7790 DU seems to require a 128 bytes pitch alignment, even though
+the documentation only mentions a 16 pixels alignement as for the
+R8A7779 DU. Make this configurable through a device flag.
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c |  2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h |  1 +
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 17 ++++++++++++++---
+ 3 files changed, 16 insertions(+), 4 deletions(-)
 
- arch/arm/mach-shmobile/board-bockw.c |    1 -
- 1 file changed, 1 deletion(-)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 381dbad..3cd9815 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -221,7 +221,7 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
+ };
+ 
+ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+-	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK,
++	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B,
+ };
+ 
+ static const struct platform_device_id rcar_du_id_table[] = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 5b57a2f..072e28e 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -26,6 +26,7 @@ struct drm_device;
+ struct rcar_du_device;
+ 
+ #define RCAR_DU_FEATURE_CRTC_IRQ_CLOCK	(1 << 0)	/* Per-CRTC IRQ and clock */
++#define RCAR_DU_FEATURE_ALIGN_128B	(1 << 1)	/* Align pitches to 128 bytes */
+ 
+ /*
+  * struct rcar_du_device_info - DU model-specific information
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 845bcb3..418d902 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -111,11 +111,18 @@ const struct rcar_du_format_info *rcar_du_format_info(u32 fourcc)
+ int rcar_du_dumb_create(struct drm_file *file, struct drm_device *dev,
+ 			struct drm_mode_create_dumb *args)
+ {
++	struct rcar_du_device *rcdu = dev->dev_private;
+ 	unsigned int min_pitch = DIV_ROUND_UP(args->width * args->bpp, 8);
+ 	unsigned int align;
+ 
+-	/* The pitch must be aligned to a 16 pixels boundary. */
+-	align = 16 * args->bpp / 8;
++	/* The R8A7779 DU requires a 16 pixels pitch alignment as documented,
++	 * but the R8A7790 DU seems to require a 128 bytes pitch alignment.
++	 */
++	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_ALIGN_128B))
++		align = 128;
++	else
++		align = 16 * args->bpp / 8;
++
+ 	args->pitch = roundup(max(args->pitch, min_pitch), align);
+ 
+ 	return drm_gem_cma_dumb_create(file, dev, args);
+@@ -125,6 +132,7 @@ static struct drm_framebuffer *
+ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
+ 		  struct drm_mode_fb_cmd2 *mode_cmd)
+ {
++	struct rcar_du_device *rcdu = dev->dev_private;
+ 	const struct rcar_du_format_info *format;
+ 	unsigned int align;
+ 
+@@ -135,7 +143,10 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	align = 16 * format->bpp / 8;
++	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_ALIGN_128B))
++		align = 128;
++	else
++		align = 16 * format->bpp / 8;
+ 
+ 	if (mode_cmd->pitches[0] & (align - 1) ||
+ 	    mode_cmd->pitches[0] >= 8192) {
+-- 
+1.8.1.5
 
---- 0001/arch/arm/mach-shmobile/board-bockw.c
-+++ work/arch/arm/mach-shmobile/board-bockw.c	2013-08-01 03:06:01.000000000 +0900
-@@ -279,7 +279,6 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.init_machine	= bockw_init,
--	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
- 	.init_late      = r8a7778_init_late,
- MACHINE_END
