@@ -1,118 +1,107 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Wed, 10 Jul 2013 14:47:26 +0000
-Subject: Re: [PATCH 5/5] v4l: Renesas R-Car VSP1 driver
-Message-Id: <201307101647.26582.hverkuil@xs4all.nl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 31 Jul 2013 06:19:17 +0000
+Subject: [PATCH 1/2 v2] ARM: shmobile: r8a7778: add usb phy power control function
+Message-Id: <87r4efb6al.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <201307101434.25019.hverkuil@xs4all.nl> <37123229.iGJOoGNLf7@avalon>
-In-Reply-To: <37123229.iGJOoGNLf7@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed July 10 2013 16:24:58 Laurent Pinchart wrote:
-> Hi Hans,
-> 
-> Thank you for the very quick review.
-> 
-> On Wednesday 10 July 2013 14:34:24 Hans Verkuil wrote:
-> > On Wed 10 July 2013 12:19:32 Laurent Pinchart wrote:
-> > > The VSP1 is a video processing engine that includes a blender, scalers,
-> > > filters and statistics computation. Configurable data path routing logic
-> > > allows ordering the internal blocks in a flexible way.
-> > > 
-> > > Due to the configurable nature of the pipeline the driver implements the
-> > > media controller API and doesn't use the V4L2 mem-to-mem framework, even
-> > > though the device usually operates in memory to memory mode.
-> > > 
-> > > Only the read pixel formatters, up/down scalers, write pixel formatters
-> > > and LCDC interface are supported at this stage.
-> > > 
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > ---
-> > > 
-> > >  drivers/media/platform/Kconfig            |   10 +
-> > >  drivers/media/platform/Makefile           |    2 +
-> > >  drivers/media/platform/vsp1/Makefile      |    5 +
-> > >  drivers/media/platform/vsp1/vsp1.h        |   73 ++
-> > >  drivers/media/platform/vsp1/vsp1_drv.c    |  475 ++++++++++++
-> > >  drivers/media/platform/vsp1/vsp1_entity.c |  186 +++++
-> > >  drivers/media/platform/vsp1/vsp1_entity.h |   68 ++
-> > >  drivers/media/platform/vsp1/vsp1_lif.c    |  237 ++++++
-> > >  drivers/media/platform/vsp1/vsp1_lif.h    |   38 +
-> > >  drivers/media/platform/vsp1/vsp1_regs.h   |  581 +++++++++++++++
-> > >  drivers/media/platform/vsp1/vsp1_rpf.c    |  209 ++++++
-> > >  drivers/media/platform/vsp1/vsp1_rwpf.c   |  124 ++++
-> > >  drivers/media/platform/vsp1/vsp1_rwpf.h   |   56 ++
-> > >  drivers/media/platform/vsp1/vsp1_uds.c    |  346 +++++++++
-> > >  drivers/media/platform/vsp1/vsp1_uds.h    |   41 +
-> > >  drivers/media/platform/vsp1/vsp1_video.c  | 1154 ++++++++++++++++++++++++
-> > >  drivers/media/platform/vsp1/vsp1_video.h  |  144 ++++
-> > >  drivers/media/platform/vsp1/vsp1_wpf.c    |  233 ++++++
-> > >  include/linux/platform_data/vsp1.h        |   25 +
-> > >  19 files changed, 4007 insertions(+)
-> > >  create mode 100644 drivers/media/platform/vsp1/Makefile
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1.h
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_drv.c
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_entity.c
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_entity.h
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_lif.c
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_lif.h
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_regs.h
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_rpf.c
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_rwpf.c
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_rwpf.h
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_uds.c
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_uds.h
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_video.c
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_video.h
-> > >  create mode 100644 drivers/media/platform/vsp1/vsp1_wpf.c
-> > >  create mode 100644 include/linux/platform_data/vsp1.h
-> > 
-> > Hi Laurent,
-> > 
-> > It took some effort, but I finally did find some things to complain about
-> > :-)
-> 
-> :-)
-> 
-> > > diff --git a/drivers/media/platform/vsp1/vsp1_video.c
-> > > b/drivers/media/platform/vsp1/vsp1_video.c new file mode 100644
-> > > index 0000000..47a739a
-> > > --- /dev/null
-> > > +++ b/drivers/media/platform/vsp1/vsp1_video.c
-> 
-> [snip]
-> 
-> > > +static int __vsp1_video_try_format(struct vsp1_video *video,
-> > > +				   struct v4l2_pix_format_mplane *pix,
-> > > +				   const struct vsp1_format_info **fmtinfo)
-> > > +{
-> > > +	const struct vsp1_format_info *info;
-> > > +	unsigned int width = pix->width;
-> > > +	unsigned int height = pix->height;
-> > > +	unsigned int i;
-> > > +
-> > > +	/* Retrieve format information and select the default format if the
-> > > +	 * requested format isn't supported.
-> > > +	 */
-> > > +	info = vsp1_get_format_info(pix->pixelformat);
-> > > +	if (info = NULL)
-> > > +		info = vsp1_get_format_info(VSP1_VIDEO_DEF_FORMAT);
-> > > +
-> > > +	pix->pixelformat = info->fourcc;
-> > > +	pix->colorspace = V4L2_COLORSPACE_SRGB;
-> > > +	pix->field = V4L2_FIELD_NONE;
-> > 
-> > pix->priv should be set to 0. v4l2-compliance catches such errors, BTW.
-> 
-> Isn't this handled by the CLEAR_AFTER_FIELD() macros in v4l2-ioctl2.c ?
+USB phy initialisation function is needed from not only
+USB Host but also USB Function too.
+This patch adds usb phy common control function.
 
-For G_FMT, yes, but there is no CLEAR_AFTER_FIELD for S/TRY_FMT. So priv
-needs to be zeroed manually.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Regards,
+ - based on renesas-devel-20130731
 
-	Hans
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   37 +++++++++++++++++--------
+ 2 files changed, 28 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index 41fd6da..b5706fb 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -32,4 +32,6 @@ extern void r8a7778_clock_init(void);
+ extern void r8a7778_init_irq_extpin(int irlm);
+ extern void r8a7778_pinmux_init(void);
+ 
++extern int r8a7778_usb_phy_power(bool enable);
++
+ #endif /* __ASM_R8A7778_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 1a154d4..b65044a 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -95,29 +95,46 @@ static struct sh_timer_config sh_tmu1_platform_data __initdata = {
+ 		&sh_tmu##idx##_platform_data,		\
+ 		sizeof(sh_tmu##idx##_platform_data))
+ 
+-/* USB */
+-static struct usb_phy *phy;
++int r8a7778_usb_phy_power(bool enable)
++{
++	static struct usb_phy *phy = NULL;
++	int ret = 0;
++
++	if (!phy)
++		phy = usb_get_phy(USB_PHY_TYPE_USB2);
++
++	if (IS_ERR(phy)) {
++		pr_err("it doesn't have usb phy driver\n");
++		return PTR_ERR(phy);
++	}
++
++	if (enable)
++		ret = usb_phy_init(phy);
++	else
++		usb_phy_shutdown(phy);
+ 
++	return ret;
++}
++
++/* USB */
+ static int usb_power_on(struct platform_device *pdev)
+ {
+-	if (IS_ERR(phy))
+-		return PTR_ERR(phy);
++	int ret = r8a7778_usb_phy_power(true);
++
++	if (ret)
++		return ret;
+ 
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_get_sync(&pdev->dev);
+ 
+-	usb_phy_init(phy);
+-
+ 	return 0;
+ }
+ 
+ static void usb_power_off(struct platform_device *pdev)
+ {
+-	if (IS_ERR(phy))
++	if (r8a7778_usb_phy_power(false))
+ 		return;
+ 
+-	usb_phy_shutdown(phy);
+-
+ 	pm_runtime_put_sync(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+ }
+@@ -319,8 +336,6 @@ void __init r8a7778_add_standard_devices(void)
+ 
+ void __init r8a7778_init_late(void)
+ {
+-	phy = usb_get_phy(USB_PHY_TYPE_USB2);
+-
+ 	platform_device_register_full(&ehci_info);
+ 	platform_device_register_full(&ohci_info);
+ }
+-- 
+1.7.9.5
+
