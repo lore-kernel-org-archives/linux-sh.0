@@ -1,105 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:49 +0000
-Subject: [PATCH 10/19] ARM: shmobile: sh73a0: Add pin control device to device tree
-Message-Id: <3f59007e8efc29bb6cce08329bf010bcd9b19101.1374625203.git.horms+renesas@verge.net.au>
+From: Chen Gang <gang.chen@asianux.com>
+Date: Wed, 31 Jul 2013 08:53:30 +0000
+Subject: [PATCH] sh: include: asm: include "linux/sched.h" in "ptrace.h"
+Message-Id: <51F8D08A.8000502@asianux.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Need include "linux/sched.h" in "ptrace.h", or 'allmodconfig' can not
 
-Add a pfc node to the sh73a0 device tree and remove manual pinmux
-initialization from the corresponding board files.
+pass compiling.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The relate error:
+
+    CC      arch/sh/kernel/kgdb.o
+  In file included from /root/linux-next/arch/sh/include/asm/kgdb.h:5:0,
+                   from include/linux/kgdb.h:20,
+                   from arch/sh/kernel/kgdb.c:12:
+  arch/sh/kernel/kgdb.c: In function 'sleeping_thread_to_gdb_regs':
+  arch/sh/include/asm/ptrace.h:103:11: error: implicit declaration of function 'task_stack_page' [-Werror=implicit-function-declaration]
+    ((struct pt_regs *) (task_stack_page(task) + THREAD_SIZE) - 1)
+             ^
+  arch/sh/kernel/kgdb.c:225:32: note: in expansion of macro 'task_pt_regs'
+    struct pt_regs *thread_regs = task_pt_regs(p);
+                                  ^
+  arch/sh/kernel/kgdb.c:242:23: error: dereferencing pointer to incomplete type
+    gdb_regs[GDB_R15] = p->thread.sp;
+                         ^
+  arch/sh/kernel/kgdb.c:243:22: error: dereferencing pointer to incomplete type
+    gdb_regs[GDB_PC] = p->thread.pc;
+                        ^
+  arch/sh/kernel/kgdb.c: In function 'singlestep_trap_handler':
+  arch/sh/kernel/kgdb.c:310:27: error: 'SIGTRAP' undeclared (first use in this function)
+    kgdb_handle_exception(0, SIGTRAP, 0, regs);
+                             ^
+  arch/sh/kernel/kgdb.c:310:27: note: each undeclared identifier is reported only once for each function it appears in
+
+
+Signed-off-by: Chen Gang <gang.chen@asianux.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi                  |  8 ++++++++
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 27 +++++++++++++-------------
- 2 files changed, 21 insertions(+), 14 deletions(-)
+ arch/sh/include/asm/ptrace.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index b977502..86e79fe 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -222,4 +222,12 @@
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-+
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-sh73a0";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605801c 0x1c>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 44055fe..6ff6ca2 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -40,35 +40,35 @@ static unsigned long pin_pullup_conf[] = {
- };
+diff --git a/arch/sh/include/asm/ptrace.h b/arch/sh/include/asm/ptrace.h
+index 2506c7d..b5784f9 100644
+--- a/arch/sh/include/asm/ptrace.h
++++ b/arch/sh/include/asm/ptrace.h
+@@ -11,6 +11,7 @@
+ #include <asm/addrspace.h>
+ #include <asm/page.h>
+ #include <uapi/asm/ptrace.h>
++#include <linux/sched.h>
  
- static const struct pinctrl_map kzm_pinctrl_map[] = {
--	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
- 				  "i2c3_1", "i2c3"),
- 	/* MMCIF */
--	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
- 				  "mmc0_data8_0", "mmc0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
- 				  "mmc0_ctrl_0", "mmc0"),
--	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-+	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
- 				    "PORT279", pin_pullup_conf),
--	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-+	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
- 				      "mmc0_data8_0", pin_pullup_conf),
- 	/* SCIFA4 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
- 				  "scifa4_data", "scifa4"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
- 				  "scifa4_ctrl", "scifa4"),
- 	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
- 				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
- 				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
- 				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
- 				  "sdhi0_wp", "sdhi0"),
- 	/* SDHI2 */
--	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
- 				  "sdhi2_data4", "sdhi2"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
- 				  "sdhi2_ctrl", "sdhi2"),
- };
- 
-@@ -76,7 +76,6 @@ static void __init kzm_init(void)
- {
- 	sh73a0_add_standard_devices_dt();
- 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
--	sh73a0_pinmux_init();
- 
- 	/* enable SD */
- 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ #define user_mode(regs)			(((regs)->sr & 0x40000000)=0)
+ #define kernel_stack_pointer(_regs)	((unsigned long)(_regs)->regs[15])
 -- 
-1.8.2.1
-
+1.7.7.6
