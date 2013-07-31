@@ -1,42 +1,28 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 05 Jul 2013 15:26:42 +0000
-Subject: [PATCH v2 0/4] ARM: shmobile: APE6EVM: add a reference DT implementation
-Message-Id: <1373038006-19973-1-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 31 Jul 2013 12:40:13 +0000
+Subject: [PATCH 0/3] ARM: shmobile: ape6evm: MMCIF, SDHI and their regulators
+Message-Id: <1375274416-23455-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch series adds a DT-based APE6EVM platform implementation. The 
-first of them prepares auxiliary device handling functions for the r8a73a4 
-SoC, and the second one adds a the actual platform support.
-
-Developed and tested on top of Simon's renesas.git next snapshot of
-05.07.2013 plus my today's patch-set:
-
-ARM: shmobile: DMAC, MMCIF and SDHI for H2 and APE6
+The first patch moves several data blocks to a read-only .init section on 
+ape6evm. The other two add MMCIF and SDHI DT nodes on ape6evm-reference 
+and update existing regulators on ape6evm.
 
 Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Guennadi Liakhovetski (4):
-  ARM: shmobile: r8a73a4: move cpufreq-cpu0 device registration into a
-    function
-  ARM: shmobile: APE6EVM: add DT reference
-  ARM: shmobile: ape6evm-reference: add CPUFreq support
-  ARM: shmobile: APE6EVM-reference: add ethernet support
+Guennadi Liakhovetski (3):
+  ARM: shmobile: ape6evm: add "__initconst" annotations where needed
+  ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct
+    regulators
+  ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
 
- arch/arm/boot/dts/Makefile                       |    1 +
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   76 +++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                   |   11 +++
- arch/arm/mach-shmobile/Makefile                  |    1 +
- arch/arm/mach-shmobile/Makefile.boot             |    1 +
- arch/arm/mach-shmobile/board-ape6evm-reference.c |   78 ++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/r8a73a4.h    |    5 ++
- arch/arm/mach-shmobile/setup-r8a73a4.c           |   16 ++++-
- 8 files changed, 186 insertions(+), 3 deletions(-)
- create mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |   72 +++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-ape6evm.c          |   72 +++++++++++++++++-----
+ 2 files changed, 127 insertions(+), 17 deletions(-)
 
 -- 
 1.7.2.5
