@@ -1,54 +1,44 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 22 Jul 2013 13:16:21 +0000
-Subject: [PATCH 6/6] ARM: shmobile: kzm9g-reference: add DMA channels to MMCIF and SDHI DT
-Message-Id: <1374498981-5263-7-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:49 +0000
+Subject: [PATCH v2 05/23] drm/rcar-du: Clarify comment regarding plane Y source coordinate
+Message-Id: <1375276927-20181-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-MMCIF and SDHI drivers can use DMA for data transfer, add suitable
-Device Tree bindings.
+The R8A7790 DU documentation contains further information regarding the
+plane Y source coordinate. Update the comment accordingly.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index b99e890..e5b84d1c 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -191,6 +191,9 @@
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index a65f81d..38ebd20 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -103,9 +103,12 @@ void rcar_du_plane_update_base(struct rcar_du_plane *plane)
+ 	struct rcar_du_device *rcdu = plane->dev;
+ 	unsigned int index = plane->hwindex;
  
- 	bus-width = <8>;
- 	vmmc-supply = <&reg_1p8v>;
-+	dmas = <&dmac 0xd1
-+		&dmac 0xd2>;
-+	dma-names = "tx", "rx";
- 	status = "okay";
- };
- 
-@@ -237,6 +240,9 @@
- 
- 	vmmc-supply = <&vmmc_sdhi0>;
- 	bus-width = <4>;
-+	dmas = <&dmac 0xc1
-+		&dmac 0xc2>;
-+	dma-names = "tx", "rx";
- 	status = "okay";
- };
- 
-@@ -247,5 +253,8 @@
- 	vmmc-supply = <&vmmc_sdhi2>;
- 	bus-width = <4>;
- 	broken-cd;
-+	dmas = <&dmac 0xcd
-+		&dmac 0xce>;
-+	dma-names = "tx", "rx";
- 	status = "okay";
- };
+-	/* According to the datasheet the Y position is expressed in raster line
+-	 * units. However, 32bpp formats seem to require a doubled Y position
+-	 * value. Similarly, for the second plane, NV12 and NV21 formats seem to
++	/* The Y position is expressed in raster line units and must be doubled
++	 * for 32bpp formats, according to the R8A7790 datasheet. No mention of
++	 * doubling the Y position is found in the R8A7779 datasheet, but the
++	 * rule seems to apply there as well.
++	 *
++	 * Similarly, for the second plane, NV12 and NV21 formats seem to
+ 	 * require a halved Y position value.
+ 	 */
+ 	rcar_du_plane_write(rcdu, index, PnSPXR, plane->src_x);
 -- 
-1.7.2.5
+1.8.1.5
 
