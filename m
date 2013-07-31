@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 30 Jul 2013 05:24:13 +0000
-Subject: [PATCH 3/4] ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
-Message-Id: <cbc60e7c04f3c1390144d4a881f0a7b98b49da98.1375161473.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 07:07:31 +0000
+Subject: [PATCH 03/07] ARM: shmobile: Use shared SCU SMP boot code on r8a7779
+Message-Id: <20130731070731.14444.50089.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375161473.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375161473.git.horms+renesas@verge.net.au>
+References: <20130731070702.14444.64961.sendpatchset@w520>
+In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,87 +12,71 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Enable build of EMEV2 and KZM9D DT Reference in
-case of ARCH_MULTIPLATFORM and ARCH_SHMOBILE_MULTI.
-
-IS_ENABLED() is leaves the clock-emev2.c file out
-in case of COMMON_CLK=y.
+Use shared SCU code on r8a7779 for SMP boot.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile                     |  1 +
- arch/arm/mach-shmobile/Kconfig                 | 15 +++++++++++++++
- arch/arm/mach-shmobile/board-kzm9d-reference.c |  3 ++-
- arch/arm/mach-shmobile/setup-emev2.c           |  3 ++-
- 4 files changed, 20 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index af19e38..f3861de 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -193,6 +193,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	sh73a0-kzm9g-reference.dtb \
- 	r8a73a4-ape6evm.dtb \
- 	sh7372-mackerel.dtb
-+dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
- 	socfpga_vt.dtb
- dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 4c54298..8914c9b 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -17,6 +17,21 @@ if ARCH_SHMOBILE_MULTI
+ arch/arm/mach-shmobile/Makefile      |    2 +-
+ arch/arm/mach-shmobile/smp-r8a7779.c |   23 ++++++++++++-----------
+ 2 files changed, 13 insertions(+), 12 deletions(-)
+
+--- 0003/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-07-31 11:56:16.000000000 +0900
+@@ -33,7 +33,7 @@ endif
+ # SMP objects
+ smp-y				:= platsmp.o headsmp.o
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+-smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
++smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
  
- comment "SH-Mobile System Type"
- 
-+config ARCH_EMEV2
-+	bool "Emma Mobile EV2"
-+
-+comment "SH-Mobile Board Type"
-+
-+config MACH_KZM9D_REFERENCE
-+	bool "KZM9D board - Reference Device Tree Implementation"
-+	depends on ARCH_EMEV2
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	---help---
-+	   Use reference implementation of KZM9D board support
-+	   which makes a greater use of device tree at the expense
-+	   of not supporting a number of devices.
-+
-+	   This is intended to aid developers
- endif
- 
- if ARCH_SHMOBILE
-diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-index a7b28b2..8f8bb2f 100644
---- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-@@ -26,7 +26,8 @@
- 
- static void __init kzm9d_add_standard_devices(void)
+ # IRQ objects
+--- 0001/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-07-31 11:55:30.000000000 +0900
+@@ -84,33 +84,34 @@ static int r8a7779_platform_cpu_kill(uns
+ static int r8a7779_boot_secondary(unsigned int cpu, struct task_struct *idle)
  {
--	emev2_clock_init();
-+	if (!IS_ENABLED(CONFIG_COMMON_CLK))
-+		emev2_clock_init();
+ 	struct r8a7779_pm_ch *ch = NULL;
+-	int ret = -EIO;
++	unsigned int lcpu = cpu_logical_map(cpu);
++	int ret;
  
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	cpu = cpu_logical_map(cpu);
++	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
++	if (ret)
++		return ret;
+ 
+-	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+-		ch = r8a7779_ch_cpu[cpu];
++	if (lcpu < ARRAY_SIZE(r8a7779_ch_cpu))
++		ch = r8a7779_ch_cpu[lcpu];
+ 
+ 	if (ch)
+ 		ret = r8a7779_sysc_power_up(ch);
++	else
++		ret = -EIO;
+ 
+ 	return ret;
  }
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 19980be..1553af8 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -175,7 +175,8 @@ static struct resource pmu_resources[] = {
  
- void __init emev2_add_standard_devices(void)
+ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
  {
--	emev2_clock_init();
-+	if (!IS_ENABLED(CONFIG_COMMON_CLK))
-+		emev2_clock_init();
+-
+-	/* setup r8a7779 specific SCU base */
+-	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
+-	scu_enable(shmobile_scu_base);
+-
+ 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
+ 	__raw_writel(__pa(shmobile_boot_vector), AVECR);
+ 	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
+ 	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
  
- 	emev2_register_uart(0);
- 	emev2_register_uart(1);
--- 
-1.8.3.2
-
+-	/* enable cache coherency on booting CPU */
+-	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
++	/* setup r8a7779 specific SCU bits */
++	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
++	shmobile_smp_scu_prepare_cpus(max_cpus);
+ 
+ 	r8a7779_pm_init();
+ 
