@@ -1,53 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:21:45 +0000
-Subject: [PATCH v2 01/23] drm/rcar-du: Add missing alpha plane register definitions
-Message-Id: <1375276927-20181-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 19:02:14 +0000
+Subject: [PATCH 07/13] ARM: shmobile: Use default ->init_time() on Armadillo DT ref
+Message-Id: <20130731190214.31796.97852.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130731190110.31796.96552.sendpatchset@w520>
+In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Several alpha plane register definitions are missing, add them.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Leave ->init_time() set to NULL to use the default ARM behaviour.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_regs.h | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-index 69f21f1..3aba27f 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-@@ -349,10 +349,25 @@
- #define APnMR_BM_AD		(2 << 4)	/* Auto Display Change Mode */
- 
- #define APnMWR			0x0a104
-+
-+#define APnDSXR			0x0a110
-+#define APnDSYR			0x0a114
-+#define APnDPXR			0x0a118
-+#define APnDPYR			0x0a11c
-+
- #define APnDSA0R		0x0a120
- #define APnDSA1R		0x0a124
- #define APnDSA2R		0x0a128
-+
-+#define APnSPXR			0x0a130
-+#define APnSPYR			0x0a134
-+#define APnWASPR		0x0a138
-+#define APnWAMWR		0x0a13c
-+
-+#define APnBTR			0x0a140
-+
- #define APnMLR			0x0a150
-+#define APnSWAPR		0x0a180
- 
- /* -----------------------------------------------------------------------------
-  * Display Capture Registers
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    1 -
+ 1 file changed, 1 deletion(-)
 
+--- 0001/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ work/arch/arm/mach-shmobile/board-armadillo800eva-reference.c	2013-08-01 03:09:22.000000000 +0900
+@@ -190,7 +190,6 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "ar
+ 	.init_early	= r8a7740_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.init_machine	= eva_init,
+-	.init_time	= shmobile_timer_init,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= eva_boards_compat_dt,
+ 	.restart	= eva_restart,
