@@ -1,100 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 04 Jul 2013 18:17:23 +0000
-Subject: [PATCH v7 10/19] ARM: shmobile: sh73a0: Add pin control device to device tree
-Message-Id: <1372961852-28490-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 31 Jul 2013 01:33:44 +0000
+Subject: [GIT 0/4] Second round of Renesas ARM based SoC fixes for v3.11
+Message-Id: <cover.1375234088.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node to the sh73a0 device tree and remove manual pinmux
-initialization from the corresponding board files.
+Hi Olof, Hi Arnd,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/sh73a0.dtsi                  |  8 ++++++++
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 27 +++++++++++++-------------
- 2 files changed, 21 insertions(+), 14 deletions(-)
+please consider the following Renesas ARM based SoC fixes for v3.11.
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index b977502..86e79fe 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -222,4 +222,12 @@
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-+
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-sh73a0";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605801c 0x1c>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 41092bb..d7bbd29 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -39,35 +39,35 @@ static unsigned long pin_pullup_conf[] = {
- };
- 
- static const struct pinctrl_map kzm_pinctrl_map[] = {
--	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "e6050000.pfc",
- 				  "i2c3_1", "i2c3"),
- 	/* MMCIF */
--	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
- 				  "mmc0_data8_0", "mmc0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
- 				  "mmc0_ctrl_0", "mmc0"),
--	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-+	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
- 				    "PORT279", pin_pullup_conf),
--	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-+	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "e6050000.pfc",
- 				      "mmc0_data8_0", pin_pullup_conf),
- 	/* SCIFA4 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
- 				  "scifa4_data", "scifa4"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
- 				  "scifa4_ctrl", "scifa4"),
- 	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
- 				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
- 				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
- 				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "e6050000.pfc",
- 				  "sdhi0_wp", "sdhi0"),
- 	/* SDHI2 */
--	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
- 				  "sdhi2_data4", "sdhi2"),
--	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "e6050000.pfc",
- 				  "sdhi2_ctrl", "sdhi2"),
- };
- 
-@@ -75,7 +75,6 @@ static void __init kzm_init(void)
- {
- 	sh73a0_add_standard_devices_dt();
- 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
--	sh73a0_pinmux_init();
- 
- 	/* enable SD */
- 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
--- 
-1.8.1.5
+The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
 
+  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes2-for-v3.11
+
+for you to fetch changes up to a601469386b543df2a4d97ad7d524716945278a3:
+
+  ARM: shmobile: lager: do not annotate gpio_buttons as __initdata (2013-07-31 10:11:17 +0900)
+
+----------------------------------------------------------------
+Second round of Renesas ARM based SoC fixes for v3.11
+
+* Lager board: do not annotate gpio_buttons as __initdata
+  - This avoids accessing uninitialised memory if keys are pressed
+    after kernel initialisation completes.
+  - Bug introduced in gpio-keys were enabled in v3.11-rc1
+
+* Bock-W board: fix SDHI0 PFC settings
+  - Allow detection of SD card
+  - Bug introduced in SDHI support was added in v3.11-rc1
+
+* shdma: fixup sh_dmae_get_partial() calculation error
+  - Bug introduced in 2.6.34-rc1.
+
+* armadillo800eva board: Don't request GPIO 166 in board code
+  - Allow use of touchscreen
+  - Bug introduced in v3.11-rc1
+
+----------------------------------------------------------------
+Kuninori Morimoto (2):
+      ARM: shmobile: armadillo800eva: Don't request GPIO 166 in board code
+      shdma: fixup sh_dmae_get_partial() calculation error
+
+Sergei Shtylyov (1):
+      ARM: shmobile: BOCK-W: fix SDHI0 PFC settings
+
+Simon Horman (1):
+      ARM: shmobile: lager: do not annotate gpio_buttons as __initdata
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 3 ---
+ arch/arm/mach-shmobile/board-bockw.c           | 8 +++++++-
+ arch/arm/mach-shmobile/board-lager.c           | 2 +-
+ drivers/dma/sh/shdma.c                         | 4 ++--
+ 4 files changed, 10 insertions(+), 7 deletions(-)
