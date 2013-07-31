@@ -1,36 +1,43 @@
-From: Paul Bolle <pebolle@tiscali.nl>
-Date: Tue, 16 Jul 2013 07:54:29 +0000
-Subject: Re: [PATCH] sh: remove references to CPU_SUBTYPE_SH7764
-Message-Id: <1373961269.2591.50.camel@x61.thuisdomein>
+From: Chen Gang <gang.chen@asianux.com>
+Date: Wed, 31 Jul 2013 07:23:31 +0000
+Subject: [PATCH] sh: kernel: cpu: provide 'NULL' parameter for calling cpuidle_register().
+Message-Id: <51F8BB73.2070603@asianux.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363002940.3137.65.camel@x61.thuisdomein>
-	 <20130312075747.GB3553@linux-sh.org>
-In-Reply-To: <20130312075747.GB3553@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, netdev@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Paul,
+Need provide additional parameter for calling cpuidle_register() just
+like some of another architectures have done, or can not pass compiling.
 
-On Tue, 2013-03-12 at 16:57 +0900, Paul Mundt wrote:
-> On Mon, Mar 11, 2013 at 12:55:40PM +0100, Paul Bolle wrote:
-> > Since release v2.6.29 the tree has a few references to the Kconfig
-> > symbol CPU_SUBTYPE_SH7764 and the Kconfig macro
-> > CONFIG_CPU_SUBTYPE_SH7764. But the actual symbol CPU_SUBTYPE_SH7764 was
-> > never added to the tree. Perhaps no one noticed because these references
-> > were never used alone. Anyhow, these references serve no purpose and
-> > can be removed.
-> > 
-> > Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
-> 
-> Looks fine, I suspect Iwamatsu-san let this trickle in from some vendor
-> branch given that these are all his drivers. I'll queue it up, thanks.
+The related error (with kfr2r09_defconfig):
 
-This didn't (yet) make it into mainline. Is there an issue with this
-patch? Or is it queued somewhere?
+    CC      arch/sh/kernel/cpu/shmobile/cpuidle.o
+  arch/sh/kernel/cpu/shmobile/cpuidle.c: In function 'sh_mobile_setup_cpuidle':
+  arch/sh/kernel/cpu/shmobile/cpuidle.c:102:2: error: too few arguments to function 'cpuidle_register'
+    return cpuidle_register(&cpuidle_driver);
+    ^
+  In file included from arch/sh/kernel/cpu/shmobile/cpuidle.c:16:0:
+  include/linux/cpuidle.h:130:12: note: declared here
+   extern int cpuidle_register(struct cpuidle_driver *drv,
+            ^
 
+Signed-off-by: Chen Gang <gang.chen@asianux.com>
+---
+ arch/sh/kernel/cpu/shmobile/cpuidle.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Paul Bolle
-
+diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+index d306225..5f88393 100644
+--- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
++++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+@@ -99,5 +99,5 @@ int __init sh_mobile_setup_cpuidle(void)
+ 	if (sh_mobile_sleep_supported & SUSP_SH_STANDBY)
+ 		cpuidle_driver.states[2].disabled = false;
+ 
+-	return cpuidle_register(&cpuidle_driver);
++	return cpuidle_register(&cpuidle_driver, NULL);
+ }
+-- 
+1.7.7.6
