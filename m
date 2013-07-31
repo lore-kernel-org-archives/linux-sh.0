@@ -1,101 +1,92 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 25 Jul 2013 23:26:41 +0000
-Subject: [PATCH 05/12] sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
-Message-Id: <1374794808-21890-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 31 Jul 2013 12:40:14 +0000
+Subject: [PATCH 1/3] ARM: shmobile: ape6evm: add "__initconst" annotations where needed
+Message-Id: <1375274416-23455-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374794808-21890-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The MMCIF and SHDI platform data .set_pwr() callbacks are used to
-control the vmmc/vqmmc power supplies. As the power supplies already
-register control GPIOs there's no need to perform the operation
-manually. Remove the callback functions.
+This patch adds __initconst markers to the platform data and resources,
+used on ape6evm as parameters to platform_device_register_resndata().
+The data is duplicated inside that function, therefore original data
+can be discarded after initialisation is completed.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 41 ------------------------------------
- 1 file changed, 41 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm.c |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index e1b6aa3..60bf82c 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -601,29 +601,9 @@ static struct platform_device sdhi0_power = {
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index ccf8b04..c5e6cba 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -44,7 +44,7 @@ static struct regulator_consumer_supply dummy_supplies[] = {
+ };
+ 
+ /* SMSC LAN9220 */
+-static const struct resource lan9220_res[] = {
++static const struct resource lan9220_res[] __initconst = {
+ 	DEFINE_RES_MEM(0x08000000, 0x1000),
+ 	{
+ 		.start	= irq_pin(40), /* IRQ40 */
+@@ -52,7 +52,7 @@ static const struct resource lan9220_res[] = {
  	},
  };
  
--static void sdhi0_set_pwr(struct platform_device *pdev, int state)
--{
--	static int power_gpio = -EINVAL;
--
--	if (power_gpio < 0) {
--		int ret = gpio_request(GPIO_PTB6, NULL);
--		if (!ret) {
--			power_gpio = GPIO_PTB6;
--			gpio_direction_output(power_gpio, 0);
--		}
--	}
--
--	/*
--	 * Toggle the GPIO regardless, whether we managed to grab it above or
--	 * the fixed regulator driver did.
--	 */
--	gpio_set_value(GPIO_PTB6, state);
--}
--
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.set_pwr	= sdhi0_set_pwr,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
- 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
-@@ -653,25 +633,6 @@ static struct platform_device sdhi0_device = {
- 	},
+-static const struct smsc911x_platform_config lan9220_data = {
++static const struct smsc911x_platform_config lan9220_data __initconst = {
+ 	.flags		= SMSC911X_USE_32BIT,
+ 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
+ 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
+@@ -73,39 +73,39 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  };
+ 
+ /* MMCIF */
+-static struct sh_mmcif_plat_data mmcif0_pdata = {
++static const struct sh_mmcif_plat_data mmcif0_pdata __initconst = {
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
  };
  
--static void cn12_set_pwr(struct platform_device *pdev, int state)
--{
--	static int power_gpio = -EINVAL;
--
--	if (power_gpio < 0) {
--		int ret = gpio_request(GPIO_PTB7, NULL);
--		if (!ret) {
--			power_gpio = GPIO_PTB7;
--			gpio_direction_output(power_gpio, 0);
--		}
--	}
--
--	/*
--	 * Toggle the GPIO regardless, whether we managed to grab it above or
--	 * the fixed regulator driver did.
--	 */
--	gpio_set_value(GPIO_PTB7, state);
--}
--
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+-static struct resource mmcif0_resources[] = {
++static const struct resource mmcif0_resources[] __initconst = {
+ 	DEFINE_RES_MEM_NAMED(0xee200000, 0x100, "MMCIF0"),
+ 	DEFINE_RES_IRQ(gic_spi(169)),
+ };
+ 
+ /* SDHI0 */
+-static struct sh_mobile_sdhi_info sdhi0_pdata = {
++static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ };
+ 
+-static struct resource sdhi0_resources[] = {
++static const struct resource sdhi0_resources[] __initconst = {
+ 	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
+ 	DEFINE_RES_IRQ(gic_spi(165)),
+ };
+ 
  /* SDHI1 */
- static struct sh_mobile_sdhi_info sdhi1_info = {
-@@ -681,7 +642,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
+-static struct sh_mobile_sdhi_info sdhi1_pdata = {
++static const struct sh_mobile_sdhi_info sdhi1_pdata __initconst = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
  			  MMC_CAP_NEEDS_POLL,
- 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
- 	.cd_gpio	= GPIO_PTW7,
--	.set_pwr	= cn12_set_pwr,
  };
  
- static struct resource sdhi1_resources[] = {
-@@ -1003,7 +963,6 @@ static struct resource sh_mmcif_resources[] = {
+-static struct resource sdhi1_resources[] = {
++static const struct resource sdhi1_resources[] __initconst = {
+ 	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
+ 	DEFINE_RES_IRQ(gic_spi(166)),
  };
  
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
--	.set_pwr	= cn12_set_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
+-static const struct pinctrl_map ape6evm_pinctrl_map[] = {
++static const struct pinctrl_map ape6evm_pinctrl_map[] __initconst = {
+ 	/* SCIFA0 console */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
+ 				  "scifa0_data", "scifa0"),
 -- 
-1.8.1.5
+1.7.2.5
 
