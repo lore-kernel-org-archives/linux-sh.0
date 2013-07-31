@@ -1,97 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:22:01 +0000
-Subject: [PATCH v2 17/23] drm/rcar-du: Fix buffer pitch alignment for R8A7790 DU
-Message-Id: <1375276927-20181-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 07:07:02 +0000
+Subject: [PATCH 00/07] ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
+Message-Id: <20130731070702.14444.64961.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The R8A7790 DU seems to require a 128 bytes pitch alignment, even though
-the documentation only mentions a 16 pixels alignement as for the
-R8A7779 DU. Make this configurable through a device flag.
+ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[PATCH 01/07] ARM: shmobile: Introduce shared SCU SMP boot code
+[PATCH 02/07] ARM: shmobile: Use shared SCU SMP boot code on sh73a0
+[PATCH 03/07] ARM: shmobile: Use shared SCU SMP boot code on r8a7779
+[PATCH 04/07] ARM: shmobile: Use shared SCU SMP boot code on emev2
+[PATCH 05/07] ARM: shmobile: Add shared SCU CPU Hotplug code
+[PATCH 06/07] ARM: shmobile: Use shared SCU CPU Hotplug code on sh73a0
+[PATCH 07/07] ARM: shmobile: Use shared SCU CPU Hotplug code on r8a7779
+
+This series consolidates mach-shmobile SMP code into SCU specific code
+for SMP boot and CPU Hotplug. The shared SCU code will in the future hook
+into some low level assembly code that provides SMP boot and sleep
+functionality, so this is is also preparations for future work.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_drv.h |  1 +
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 17 ++++++++++++++---
- 3 files changed, 16 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 381dbad..3cd9815 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -221,7 +221,7 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
- };
+ Written against renesas.git renesas-devel-20130731
  
- static const struct rcar_du_device_info rcar_du_r8a7790_info = {
--	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK,
-+	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B,
- };
- 
- static const struct platform_device_id rcar_du_id_table[] = {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-index 5b57a2f..072e28e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-@@ -26,6 +26,7 @@ struct drm_device;
- struct rcar_du_device;
- 
- #define RCAR_DU_FEATURE_CRTC_IRQ_CLOCK	(1 << 0)	/* Per-CRTC IRQ and clock */
-+#define RCAR_DU_FEATURE_ALIGN_128B	(1 << 1)	/* Align pitches to 128 bytes */
- 
- /*
-  * struct rcar_du_device_info - DU model-specific information
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 845bcb3..418d902 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -111,11 +111,18 @@ const struct rcar_du_format_info *rcar_du_format_info(u32 fourcc)
- int rcar_du_dumb_create(struct drm_file *file, struct drm_device *dev,
- 			struct drm_mode_create_dumb *args)
- {
-+	struct rcar_du_device *rcdu = dev->dev_private;
- 	unsigned int min_pitch = DIV_ROUND_UP(args->width * args->bpp, 8);
- 	unsigned int align;
- 
--	/* The pitch must be aligned to a 16 pixels boundary. */
--	align = 16 * args->bpp / 8;
-+	/* The R8A7779 DU requires a 16 pixels pitch alignment as documented,
-+	 * but the R8A7790 DU seems to require a 128 bytes pitch alignment.
-+	 */
-+	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_ALIGN_128B))
-+		align = 128;
-+	else
-+		align = 16 * args->bpp / 8;
-+
- 	args->pitch = roundup(max(args->pitch, min_pitch), align);
- 
- 	return drm_gem_cma_dumb_create(file, dev, args);
-@@ -125,6 +132,7 @@ static struct drm_framebuffer *
- rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
- 		  struct drm_mode_fb_cmd2 *mode_cmd)
- {
-+	struct rcar_du_device *rcdu = dev->dev_private;
- 	const struct rcar_du_format_info *format;
- 	unsigned int align;
- 
-@@ -135,7 +143,10 @@ rcar_du_fb_create(struct drm_device *dev, struct drm_file *file_priv,
- 		return ERR_PTR(-EINVAL);
- 	}
- 
--	align = 16 * format->bpp / 8;
-+	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_ALIGN_128B))
-+		align = 128;
-+	else
-+		align = 16 * format->bpp / 8;
- 
- 	if (mode_cmd->pitches[0] & (align - 1) ||
- 	    mode_cmd->pitches[0] >= 8192) {
--- 
-1.8.1.5
+ Requires "[PATCH] ARM: Fix memblock_reserve() to include stext" during
+ run time to allow test of CPU Hotplug with v3.11-rc kernels.
 
+ arch/arm/mach-shmobile/Makefile              |    6 +-
+ arch/arm/mach-shmobile/include/mach/common.h |    5 +
+ arch/arm/mach-shmobile/platsmp-scu.c         |   76 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/smp-emev2.c           |   19 +++---
+ arch/arm/mach-shmobile/smp-r8a7779.c         |   64 +++++----------------
+ arch/arm/mach-shmobile/smp-sh73a0.c          |   67 +++++-----------------
+ 6 files changed, 126 insertions(+), 111 deletions(-)
