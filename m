@@ -1,49 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:59 +0000
-Subject: [PATCH 2/5] ARM: shmobile: fix compile error when CONFIG_THUMB2_KERNEL=y
-Message-Id: <bdea6c657e15a709e666ea707e72327c555e8e04.1374478336.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:57 +0000
+Subject: [PATCH v2 13/23] drm/rcar-du: Use dynamic number of CRTCs instead of CRTCs array size
+Message-Id: <1375276927-20181-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478336.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478336.git.horms+renesas@verge.net.au>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+The rcar_du_device structure contains a field that stores the number of
+CRTCs, use it instead of the CRTCs array size. This prepares the driver
+to support a variable number of CRTCs.
 
-On KZM-A9-GT board (SMP), when CONFIG_THUMB2_KERNEL=y it fails to compile
-
-  AS      arch/arm/mach-shmobile/headsmp-scu.o
-/proj/koba/kernel/arm-soc/arch/arm/mach-shmobile/headsmp-scu.S: Assembler messages:
-/proj/koba/kernel/arm-soc/arch/arm/mach-shmobile/headsmp-scu.S:41: Error: shift must be constant -- `bic r2,r2,r3,lsl r1'
-make[2]: *** [arch/arm/mach-shmobile/headsmp-scu.o] Error 1
-make[1]: *** [arch/arm/mach-shmobile] Error 2
-make: *** [sub-make] Error 2
-
-Instruction `bic r2,r2,r3,lsl r1' is not supported in thumb mode. This patch split it into 2 instructions.
-
-Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/headsmp-scu.S | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c | 2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
-index 6f98654..5ce416c 100644
---- a/arch/arm/mach-shmobile/headsmp-scu.S
-+++ b/arch/arm/mach-shmobile/headsmp-scu.S
-@@ -38,7 +38,8 @@ ENTRY(shmobile_boot_scu)
- 	lsl	r1, r1, #3		@ we will shift by cpu_id * 8 bits
- 	ldr	r2, [r0, #8]		@ SCU Power Status Register
- 	mov	r3, #3
--	bic	r2, r2, r3, lsl r1	@ Clear bits of our CPU (Run Mode)
-+	lsl	r3, r3, r1
-+	bic	r2, r2, r3		@ Clear bits of our CPU (Run Mode)
- 	str	r2, [r0, #8]		@ write back
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index cdc363b..fd7cdda 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -105,7 +105,7 @@ static void rcar_du_preclose(struct drm_device *dev, struct drm_file *file)
+ 	struct rcar_du_device *rcdu = dev->dev_private;
+ 	unsigned int i;
  
- 	b	shmobile_invalidate_start
+-	for (i = 0; i < ARRAY_SIZE(rcdu->crtcs); ++i)
++	for (i = 0; i < rcdu->num_crtcs; ++i)
+ 		rcar_du_crtc_cancel_page_flip(&rcdu->crtcs[i], file);
+ }
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index c32e0f9..845bcb3 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -197,7 +197,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
+ 			continue;
+ 
+-		if (pdata->output >= ARRAY_SIZE(rcdu->crtcs)) {
++		if (pdata->output >= rcdu->num_crtcs) {
+ 			dev_warn(rcdu->dev,
+ 				 "encoder %u references unexisting output %u, skipping\n",
+ 				 i, pdata->output);
 -- 
-1.8.2.1
+1.8.1.5
 
