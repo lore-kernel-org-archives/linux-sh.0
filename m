@@ -1,115 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:35 +0000
-Subject: [PATCH 08/19] ARM: shmobile: r8a7790: Add GPIO controller devices to device tree
-Message-Id: <f98e10c88aa95bf7d37cce6dbacec0820dd6ecc2.1374625203.git.horms+renesas@verge.net.au>
+Date: Wed, 31 Jul 2013 06:25:40 +0000
+Subject: [PATCH] clocksource: em_sti: Adjust clock event rating to fix SMP broadcast
+Message-Id: <1375251940-7809-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Add GPIO controller nodes to the r8a7790 core device tree.
+Update the STI rating from 200 to 80 to fix SMP operation with
+the ARM broadcast timer. This breakage was introduced by:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
+
+Without this fix SMP operation is broken on EMEV2 since no
+broadcast timer interrupts trigger on the secondary CPU cores.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 73 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+ drivers/clocksource/em_sti.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 13caf12..9465cfc 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -38,6 +38,78 @@
- 		interrupts = <1 9 0xf04>;
- 	};
- 
-+	gpio0: gpio@ffc40000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc40000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 4 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio1: gpio@ffc41000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc41000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 5 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio2: gpio@ffc42000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc42000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 6 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio3: gpio@ffc43000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc43000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 7 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio4: gpio@ffc44000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc44000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 8 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
-+	gpio5: gpio@ffc45000 {
-+		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
-+		reg = <0 0xffc45000 0 0x2c>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 9 0x4>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+	};
-+
- 	timer {
- 		compatible = "arm,armv7-timer";
- 		interrupts = <1 13 0xf08>,
-@@ -58,5 +130,6 @@
- 	pfc: pfc@e6060000 {
- 		compatible = "renesas,pfc-r8a7790";
- 		reg = <0 0xe6060000 0 0x250>;
-+		#gpio-range-cells = <3>;
- 	};
- };
+diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
+index b9c81b7..37b87c0 100644
+--- a/drivers/clocksource/em_sti.c
++++ b/drivers/clocksource/em_sti.c
+@@ -300,7 +300,7 @@ static void em_sti_register_clockevent(struct em_sti_priv *p)
+ 	memset(ced, 0, sizeof(*ced));
+ 	ced->name = dev_name(&p->pdev->dev);
+ 	ced->features = CLOCK_EVT_FEAT_ONESHOT;
+-	ced->rating = 200;
++	ced->rating = 80;
+ 	ced->cpumask = cpumask_of(0);
+ 	ced->set_next_event = em_sti_clock_event_next;
+ 	ced->set_mode = em_sti_clock_event_mode;
 -- 
-1.8.2.1
+1.8.3.2
 
