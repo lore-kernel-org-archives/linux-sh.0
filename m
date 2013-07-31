@@ -1,64 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 31 Jul 2013 13:22:03 +0000
-Subject: [PATCH v2 19/23] drm/rcar-du: Add support for DEFR8 register
-Message-Id: <1375276927-20181-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 18:38:27 +0000
+Subject: [PATCH 02/02] ARM: shmobile: Per-CPU SMP boot / sleep code for SCU SoCs
+Message-Id: <20130731183827.31551.83583.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130731183808.31551.47235.sendpatchset@w520>
+In-Reply-To: <20130731183808.31551.47235.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The R8A7790 DU has a new extended function control register. Support it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hook in the per-CPU boot and sleep code in the shared
+mach-shmobile SCU code. CPUs may be kept in the asm
+routine until ->boot_secondary() when the per-CPU
+boot vector is installed. At the end of ->die() the
+asm sleep routine is invoked.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c   | 3 ++-
- drivers/gpu/drm/rcar-du/rcar_du_drv.h   | 1 +
- drivers/gpu/drm/rcar-du/rcar_du_group.c | 2 ++
- 3 files changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 8694a46..f878535 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -222,7 +222,8 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
- };
- 
- static const struct rcar_du_device_info rcar_du_r8a7790_info = {
--	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B,
-+	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_ALIGN_128B
-+		  | RCAR_DU_FEATURE_DEFR8,
- 	.num_crtcs = 3,
- };
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-index 160e5eb..70c335f 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-@@ -27,6 +27,7 @@ struct rcar_du_device;
- 
- #define RCAR_DU_FEATURE_CRTC_IRQ_CLOCK	(1 << 0)	/* Per-CRTC IRQ and clock */
- #define RCAR_DU_FEATURE_ALIGN_128B	(1 << 1)	/* Align pitches to 128 bytes */
-+#define RCAR_DU_FEATURE_DEFR8		(1 << 2)	/* Has DEFR8 register */
- 
- /*
-  * struct rcar_du_device_info - DU model-specific information
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-index 0eb106e..f3ba0ca 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-@@ -51,6 +51,8 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
- 	rcar_du_group_write(rgrp, DEFR3, DEFR3_CODE | DEFR3_DEFE3);
- 	rcar_du_group_write(rgrp, DEFR4, DEFR4_CODE);
- 	rcar_du_group_write(rgrp, DEFR5, DEFR5_CODE | DEFR5_DEFE5);
-+	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_DEFR8))
-+		rcar_du_group_write(rgrp, DEFR8, DEFR8_CODE | DEFR8_DEFE8);
- 
- 	/* Use DS1PR and DS2PR to configure planes priorities and connects the
- 	 * superposition 0 to DU0 pins. DU1 pins will be configured dynamically.
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/platsmp-scu.c |   17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
+--- 0006/arch/arm/mach-shmobile/platsmp-scu.c
++++ work/arch/arm/mach-shmobile/platsmp-scu.c	2013-07-31 12:18:32.000000000 +0900
+@@ -18,8 +18,9 @@
+ 
+ void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
+ {
+-	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
+-	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
++	/* install boot code shared by all CPUs */
++	shmobile_boot_fn = virt_to_phys(shmobile_smp_boot);
++	shmobile_boot_arg = MPIDR_HWID_BITMASK;
+ 
+ 	/* enable SCU and cache coherency on booting CPU */
+ 	scu_enable(shmobile_scu_base);
+@@ -28,22 +29,26 @@ void __init shmobile_smp_scu_prepare_cpu
+ 
+ int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+-	/* do nothing for now */
++	/* For this particular CPU register SCU boot vector */
++	shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
++			  (unsigned long)shmobile_scu_base);
+ 	return 0;
+ }
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
+ void shmobile_smp_scu_cpu_die(unsigned int cpu)
+ {
++	/* For this particular CPU deregister boot vector */
++	shmobile_smp_hook(cpu, 0, 0);
++
+ 	dsb();
+ 	flush_cache_all();
+ 
+ 	/* disable cache coherency */
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
+ 
+-	/* Endless loop until reset */
+-	while (1)
+-		cpu_do_idle();
++	/* jump to shared mach-shmobile sleep / reset code */
++	shmobile_smp_sleep();
+ }
+ 
+ static int shmobile_smp_scu_psr_core_disabled(int cpu)
