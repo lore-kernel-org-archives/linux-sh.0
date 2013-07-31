@@ -1,40 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 00:58:57 +0000
-Subject: Re: [PATCH v3 1/2] ARM: shmobile: ape6evm: add DT reference
-Message-Id: <20130710005857.GE32603@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 19:01:10 +0000
+Subject: [PATCH 00/13] ARM: shmobile: Rework ->init_time() / shmobile_timer_init()
+Message-Id: <20130731190110.31796.96552.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373299498-10044-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1373299498-10044-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 08, 2013 at 06:04:57PM +0200, Guennadi Liakhovetski wrote:
-> This patch adds a sample DT-based APE6EVM "reference" implementation. The
-> use of platform-specific C-code should be avoided with this configuration
-> as much as possible.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
-> 
-> v3: (former "PATCH v2 2/4")
-> 1. same function name "r8a73a4_add_dt_devices()"
-> 2. preserve device registration order in setup-r8a73a4.c to match r8a7790
-> 3. don't use networking / NFS in bootargs
-> 
->  arch/arm/boot/dts/Makefile                       |    1 +
->  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  |   33 ++++++++++
->  arch/arm/mach-shmobile/Kconfig                   |   11 ++++
->  arch/arm/mach-shmobile/Makefile                  |    1 +
->  arch/arm/mach-shmobile/Makefile.boot             |    1 +
->  arch/arm/mach-shmobile/board-ape6evm-reference.c |   71 ++++++++++++++++++++++
->  arch/arm/mach-shmobile/include/mach/r8a73a4.h    |    1 +
->  arch/arm/mach-shmobile/setup-r8a73a4.c           |    9 ++-
->  8 files changed, 126 insertions(+), 2 deletions(-)
->  create mode 100644 arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
->  create mode 100644 arch/arm/mach-shmobile/board-ape6evm-reference.c
+ARM: shmobile: Rework ->init_time() / shmobile_timer_init()
 
+[PATCH 01/13] ARM: shmobile: Use default ->init_time() on r8a73a4
+[PATCH 02/13] ARM: shmobile: Use default ->init_time() on r8a7740
+[PATCH 03/13] ARM: shmobile: Use default ->init_time() on r8a7778
+[PATCH 04/13] ARM: shmobile: Use default ->init_time() on r8a7779
+[PATCH 05/13] ARM: shmobile: Use default ->init_time() on Bockw
+[PATCH 06/13] ARM: shmobile: Use default ->init_time() on Bockw DT ref
+[PATCH 07/13] ARM: shmobile: Use default ->init_time() on Armadillo DT ref
+[PATCH 08/13] ARM: shmobile: Use default ->init_time() on APE6EVM
+[PATCH 09/13] ARM: shmobile: Use default ->init_time() on APE6EVM DT ref
+[PATCH 10/13] ARM: shmobile: Use default ->init_time() on Marzen DT ref
+[PATCH 11/13] ARM: shmobile: Use default ->init_time() on KZM9G DT ref
+[PATCH 12/13] ARM: shmobile: Use clocksource_of_init() on r8a7790
+[PATCH 13/13] ARM: shmobile: Remove unused shmobile_init_time()
 
-Thanks, I have queued this up for v3.12 in the dt-ape6evm branch
-with Magnus's Ack.  It should appear in renesas-next-20130710
+Set ->init_time() to NULL to use the default ARM behaviour which
+happens to be clocksource_of_init(). Also, replace the call to
+shmobile_time_init() with clocksource_of_init(). Finally, remove
+shmobile_init_time() that now is unused.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas.git renesas-devel-20130731 and
+ [PATCH 00/07] ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
+ [PATCH 00/02] ARM: shmobile: Per-CPU SMP boot / sleep code
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c         |    1 -
+ arch/arm/mach-shmobile/board-ape6evm.c                   |    1 -
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    1 -
+ arch/arm/mach-shmobile/board-bockw-reference.c           |    1 -
+ arch/arm/mach-shmobile/board-bockw.c                     |    1 -
+ arch/arm/mach-shmobile/board-kzm9g-reference.c           |    1 -
+ arch/arm/mach-shmobile/board-marzen-reference.c          |    1 -
+ arch/arm/mach-shmobile/include/mach/common.h             |    1 -
+ arch/arm/mach-shmobile/setup-r8a73a4.c                   |    1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c                   |    1 -
+ arch/arm/mach-shmobile/setup-r8a7778.c                   |    1 -
+ arch/arm/mach-shmobile/setup-r8a7779.c                   |    1 -
+ arch/arm/mach-shmobile/setup-r8a7790.c                   |    2 +-
+ arch/arm/mach-shmobile/timer.c                           |    4 ----
+ 14 files changed, 1 insertion(+), 17 deletions(-)
