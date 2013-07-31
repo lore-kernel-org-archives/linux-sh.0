@@ -1,29 +1,75 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 10 Jul 2013 01:13:45 +0000
-Subject: Re: [PATCH 03/04] ARM: shmobile: No need to use INTC demux on r8a7740
-Message-Id: <20130710011344.GN32603@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 14:18:31 +0000
+Subject: [PATCH] mmc: tmio-mmc: Check the regulator_enable() return value
+Message-Id: <1375280311-6003-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130709103944.1891.67462.sendpatchset@w520>
- <20130709104008.1891.17746.sendpatchset@w520>
-In-Reply-To: <20130709104008.1891.17746.sendpatchset@w520>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Ian Molton <ian@mnementh.co.uk>
 
-On Tue, Jul 09, 2013 at 07:40:08PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Now when the r8a7740 code has been converted to make use of
-> GIC instead of INTC for root interrupt controller it is
-> possible to exclude the low level INTC demux function
-> shmobile_handle_irq_intc from linking. 
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/Makefile |    1 -
->  1 file changed, 1 deletion(-)
+The regulator_enable() function is marked with __must_check, check its
+return value and return an error in case of failure. This removes the
+following warning during kernel compilation:
 
-Thanks, I have queued this up for v3.12 in the cleanup branch.
-It should appear in renesas-next-20130710
+drivers/mmc/host/tmio_mmc_pio.c: In function ‘tmio_mmc_power_on’:
+drivers/mmc/host/tmio_mmc_pio.c:795:19: warning: ignoring return value
+of ‘regulator_enable’, declared with attribute warn_unused_result
+[-Wunused-result]
+
+The error isn't propagated back to the MMC core, as the .set_ios()
+operation in which the regulator is enabled doesn't have a return value.
+This should be fixed as well.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/mmc/host/tmio_mmc_pio.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 4675513..e3e2645 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -770,15 +770,18 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
+ 	return ret;
+ }
+ 
+-static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
++static int tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
+ {
+ 	struct mmc_host *mmc = host->mmc;
+-	int ret = 0;
++	int ret;
+ 
+ 	/* .set_ios() is returning void, so, no chance to report an error */
+ 
+ 	if (!IS_ERR(mmc->supply.vmmc)) {
+ 		ret = mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, vdd);
++		if (ret < 0)
++			return ret;
++
+ 		/*
+ 		 * Attention: empiric value. With a b43 WiFi SDIO card this
+ 		 * delay proved necessary for reliable card-insertion probing.
+@@ -791,10 +794,15 @@ static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
+ 	 * It seems, VccQ should be switched on after Vcc, this is also what the
+ 	 * omap_hsmmc.c driver does.
+ 	 */
+-	if (!IS_ERR(mmc->supply.vqmmc) && !ret) {
+-		regulator_enable(mmc->supply.vqmmc);
++	if (!IS_ERR(mmc->supply.vqmmc)) {
++		ret = regulator_enable(mmc->supply.vqmmc);
++		if (ret < 0)
++			return ret;
++
+ 		udelay(200);
+ 	}
++
++	return 0;
+ }
+ 
+ static void tmio_mmc_power_off(struct tmio_mmc_host *host)
+-- 
+1.8.1.5
+
