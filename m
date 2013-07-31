@@ -1,84 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 01 Jul 2013 02:18:39 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790:  Initialise clocks and SCIF in r8a7790_add_dt_devices()
-Message-Id: <1372645120-27256-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:45 +0000
+Subject: [PATCH v2 01/23] drm/rcar-du: Add missing alpha plane register definitions
+Message-Id: <1375276927-20181-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-This is sufficient to allow boot of the Lager board with
-a console without boards-lager.c compiled into the kernel.
-This is an example of a minimal but still useful initialisation
-of the board using DT as much as possible.
+Several alpha plane register definitions are missing, add them.
 
-Also provide r8a7790_add_dt_device() in
-r8a7790.h to allow it be used from a boards-lager-reference.c
-file which will be added by a subsequent patch.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/gpu/drm/rcar-du/rcar_du_regs.h | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-v2
-
-* Rebase
----
- arch/arm/mach-shmobile/include/mach/r8a7790.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7790.c        | 11 ++++++++++-
- 2 files changed, 11 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 7851cc1..7a25138 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -2,6 +2,7 @@
- #define __ASM_R8A7790_H__
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+index 69f21f1..3aba27f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
+@@ -349,10 +349,25 @@
+ #define APnMR_BM_AD		(2 << 4)	/* Auto Display Change Mode */
  
- void r8a7790_add_standard_devices(void);
-+void r8a7790_add_standard_devices_dt(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
- void r8a7790_init_delay(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index d89cd83..770109b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -180,7 +180,7 @@ static struct resource cmt00_resources[] = {
- 					  &cmt##idx##_platform_data,	\
- 					  sizeof(struct sh_timer_config))
- 
--void __init r8a7790_add_standard_devices(void)
-+void __init r8a7790_add_dt_devices(void)
- {
- 	r8a7790_register_scif(SCIFA0);
- 	r8a7790_register_scif(SCIFA1);
-@@ -192,6 +192,11 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(SCIF1);
- 	r8a7790_register_scif(HSCIF0);
- 	r8a7790_register_scif(HSCIF1);
-+}
+ #define APnMWR			0x0a104
 +
-+void __init r8a7790_add_standard_devices(void)
-+{
-+	r8a7790_add_dt_devices();
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
- 	r8a7790_register_cmt(00);
-@@ -219,6 +224,10 @@ void __init r8a7790_init_delay(void)
- #ifdef CONFIG_USE_OF
- void __init r8a7790_add_standard_devices_dt(void)
- {
-+	/* clocks are setup late during boot in the case of DT */
-+	r8a7790_clock_init();
++#define APnDSXR			0x0a110
++#define APnDSYR			0x0a114
++#define APnDPXR			0x0a118
++#define APnDPYR			0x0a11c
 +
-+	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ #define APnDSA0R		0x0a120
+ #define APnDSA1R		0x0a124
+ #define APnDSA2R		0x0a128
++
++#define APnSPXR			0x0a130
++#define APnSPYR			0x0a134
++#define APnWASPR		0x0a138
++#define APnWAMWR		0x0a13c
++
++#define APnBTR			0x0a140
++
+ #define APnMLR			0x0a150
++#define APnSWAPR		0x0a180
  
+ /* -----------------------------------------------------------------------------
+  * Display Capture Registers
 -- 
-1.8.2.1
+1.8.1.5
 
