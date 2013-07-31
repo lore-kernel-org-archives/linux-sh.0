@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 02 Jul 2013 09:28:14 +0000
-Subject: [PATCH 06/08] ARM: shmobile: Use DT for SMP on EMEV2 and KZM9D
-Message-Id: <20130702092814.32066.30138.sendpatchset@w520>
+Date: Wed, 31 Jul 2013 19:02:42 +0000
+Subject: [PATCH 10/13] ARM: shmobile: Use default ->init_time() on Marzen DT ref
+Message-Id: <20130731190242.31796.98376.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130702092725.32066.54861.sendpatchset@w520>
-In-Reply-To: <20130702092725.32066.54861.sendpatchset@w520>
+References: <20130731190110.31796.96552.sendpatchset@w520>
+In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,49 +12,20 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Rework the EMEV2 SMP code to rely on DT for CPU information
-instead of reading out number of CPU cores from the SCU.
+Leave ->init_time() set to NULL to use the default ARM behaviour.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/smp-emev2.c |   17 +++--------------
- 1 file changed, 3 insertions(+), 14 deletions(-)
+ arch/arm/mach-shmobile/board-marzen-reference.c |    1 -
+ 1 file changed, 1 deletion(-)
 
---- 0001/arch/arm/mach-shmobile/smp-emev2.c
-+++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-07-02 15:09:53.000000000 +0900
-@@ -38,9 +38,12 @@ static int __cpuinit emev2_boot_secondar
- 
- static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
- {
-+	/* setup EMEV2 specific SCU base, enable */
-+	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
- 	scu_enable(shmobile_scu_base);
- 
- 	/* Tell ROM loader about our vector (in headsmp-scu.S, headsmp.S) */
-+	emev2_clock_init(); /* need ioremapped SMU */
- 	emev2_set_boot_vector(__pa(shmobile_boot_vector));
- 	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
- 	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
-@@ -49,21 +52,7 @@ static void __init emev2_smp_prepare_cpu
- 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
- }
- 
--static void __init emev2_smp_init_cpus(void)
--{
--	unsigned int ncores;
--
--	/* setup EMEV2 specific SCU base */
--	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
--	emev2_clock_init(); /* need ioremapped SMU */
--
--	ncores = shmobile_scu_base ? scu_get_core_count(shmobile_scu_base) : 1;
--
--	shmobile_smp_init_cpus(ncores);
--}
--
- struct smp_operations emev2_smp_ops __initdata = {
--	.smp_init_cpus		= emev2_smp_init_cpus,
- 	.smp_prepare_cpus	= emev2_smp_prepare_cpus,
- 	.smp_boot_secondary	= emev2_boot_secondary,
- };
+--- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
++++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2013-08-01 03:13:42.000000000 +0900
+@@ -42,6 +42,5 @@ DT_MACHINE_START(MARZEN, "marzen")
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_machine	= marzen_init,
+-	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= marzen_boards_compat_dt,
+ MACHINE_END
