@@ -1,45 +1,45 @@
-From: Sakari Ailus <sakari.ailus@iki.fi>
-Date: Tue, 30 Jul 2013 10:57:51 +0000
-Subject: Re: [PATCH v3 2/5] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
-Message-Id: <20130730105751.GM12281@valkosipuli.retiisi.org.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 31 Jul 2013 07:42:11 +0000
+Subject: [PATCH/RESEND net-next] sh_eth: r8a7790: Handle the RFE (Receive FIFO overflow Error) interrupt
+Message-Id: <1375256531-28884-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374757213-20194-1-git-send-email-laurent.pinchart@ideasonboard.com>
- <1374757213-20194-3-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1374757213-20194-3-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms+renesas@verge.net.au>
 
-On Thu, Jul 25, 2013 at 03:00:10PM +0200, Laurent Pinchart wrote:
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> The V4L2_MBUS_FMT_YUV10_1X30 code is documented as being equal to
-> 0x2014, while the v4l2-mediabus.h header defines it as 0x2016. Fix the
-> documentation.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  Documentation/DocBook/media/v4l/subdev-formats.xml | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/Documentation/DocBook/media/v4l/subdev-formats.xml b/Documentation/DocBook/media/v4l/subdev-formats.xml
-> index adc6198..0c2b1f2 100644
-> --- a/Documentation/DocBook/media/v4l/subdev-formats.xml
-> +++ b/Documentation/DocBook/media/v4l/subdev-formats.xml
-> @@ -2574,7 +2574,7 @@
->  	    </row>
->  	    <row id="V4L2-MBUS-FMT-YUV10-1X30">
->  	      <entry>V4L2_MBUS_FMT_YUV10_1X30</entry>
-> -	      <entry>0x2014</entry>
-> +	      <entry>0x2016</entry>
->  	      <entry></entry>
->  	      <entry>y<subscript>9</subscript></entry>
->  	      <entry>y<subscript>8</subscript></entry>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+The RFE interrupt is enabled for the r8a7790 but isn't handled,
+resulting in the interrupts core noticing unhandled interrupts, and
+eventually disabling the ethernet IRQ.
 
+Fix it by adding RFE to the bitmask of error interrupts to be handled
+for r8a7790.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index fedc0a0..9e2afe8 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -403,8 +403,9 @@ static struct sh_eth_cpu_data r8a7790_data = {
+ 	.eesipr_value	= 0x01ff009f,
+ 
+ 	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
+-	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RDE |
+-			  EESR_RFRMER | EESR_TFE | EESR_TDE | EESR_ECI,
++	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RFE |
++			  EESR_RDE | EESR_RFRMER | EESR_TFE | EESR_TDE |
++			  EESR_ECI,
+ 
+ 	.apr		= 1,
+ 	.mpr		= 1,
 -- 
-Sakari Ailus
-e-mail: sakari.ailus@iki.fi	XMPP: sailus@retiisi.org.uk
+1.8.3.2
+
