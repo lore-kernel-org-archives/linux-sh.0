@@ -1,68 +1,101 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 10 Jul 2013 10:19:28 +0000
-Subject: [PATCH 1/5] media: Fix circular graph traversal
-Message-Id: <1373451572-3892-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 07:07:59 +0000
+Subject: [PATCH 06/07] ARM: shmobile: Use shared SCU CPU Hotplug code on sh73a0
+Message-Id: <20130731070759.14444.7805.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1373451572-3892-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130731070702.14444.64961.sendpatchset@w520>
+In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The graph traversal API (media_entity_graph_walk_*) will fail to
-correctly walk the graph when circular links exist. Fix it by checking
-whether an entity is already present in the stack before pushing it.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Sakari Ailus <sakari.ailus@iki.fi>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Update the sh73a0 specific CPU Hotplug code to make use of
+the recently introduced shared SCU functions. The sh73a0
+power control hardware relies on SCU_PM_POWEROFF with WFI
+so the shared SCU code will as-is power down the hardware
+as expected.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/media/media-entity.c | 17 ++++++++++++-----
- 1 file changed, 12 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
-index e1cd132..9084205 100644
---- a/drivers/media/media-entity.c
-+++ b/drivers/media/media-entity.c
-@@ -121,9 +121,9 @@ static struct media_entity *stack_pop(struct media_entity_graph *graph)
- 	return entity;
+ arch/arm/mach-shmobile/smp-sh73a0.c |   41 ++---------------------------------
+ 1 file changed, 3 insertions(+), 38 deletions(-)
+
+--- 0005/arch/arm/mach-shmobile/smp-sh73a0.c
++++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-07-29 21:48:41.000000000 +0900
+@@ -20,14 +20,11 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/smp.h>
+-#include <linux/spinlock.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
+ #include <mach/common.h>
+-#include <asm/cacheflush.h>
+-#include <asm/smp_plat.h>
+ #include <mach/sh73a0.h>
+-#include <asm/smp_scu.h>
++#include <asm/smp_plat.h>
+ #include <asm/smp_twd.h>
+ 
+ #define WUPCR		IOMEM(0xe6151010)
+@@ -36,8 +33,6 @@
+ #define SBAR		IOMEM(0xe6180020)
+ #define APARMBAREA	IOMEM(0xe6f10020)
+ 
+-#define PSTR_SHUTDOWN_MODE	3
+-
+ #define SH73A0_SCU_BASE 0xf0000000
+ 
+ #ifdef CONFIG_HAVE_ARM_TWD
+@@ -77,36 +72,6 @@ static void __init sh73a0_smp_prepare_cp
  }
  
--#define stack_peek(en)	((en)->stack[(en)->top - 1].entity)
--#define link_top(en)	((en)->stack[(en)->top].link)
--#define stack_top(en)	((en)->stack[(en)->top].entity)
-+#define stack_peek(en, i)	((en)->stack[i].entity)
-+#define link_top(en)		((en)->stack[(en)->top].link)
-+#define stack_top(en)		((en)->stack[(en)->top].entity)
- 
- /**
-  * media_entity_graph_walk_start - Start walking the media graph at a given entity
-@@ -159,6 +159,8 @@ EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
- struct media_entity *
- media_entity_graph_walk_next(struct media_entity_graph *graph)
+ #ifdef CONFIG_HOTPLUG_CPU
+-static int sh73a0_cpu_kill(unsigned int cpu)
+-{
+-
+-	int k;
+-	u32 pstr;
+-
+-	/*
+-	 * wait until the power status register confirms the shutdown of the
+-	 * offline target
+-	 */
+-	for (k = 0; k < 1000; k++) {
+-		pstr = (__raw_readl(PSTR) >> (4 * cpu)) & 3;
+-		if (pstr = PSTR_SHUTDOWN_MODE)
+-			return 1;
+-
+-		mdelay(1);
+-	}
+-
+-	return 0;
+-}
+-
+-static void sh73a0_cpu_die(unsigned int cpu)
+-{
+-	/* Set power off mode. This takes the CPU out of the MP cluster */
+-	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
+-
+-	/* Enter shutdown mode */
+-	cpu_do_idle();
+-}
+-
+ static int sh73a0_cpu_disable(unsigned int cpu)
  {
-+	unsigned int i;
-+
- 	if (stack_top(graph) = NULL)
- 		return NULL;
- 
-@@ -181,8 +183,13 @@ media_entity_graph_walk_next(struct media_entity_graph *graph)
- 		/* Get the entity in the other end of the link . */
- 		next = media_entity_other(entity, link);
- 
--		/* Was it the entity we came here from? */
--		if (next = stack_peek(graph)) {
-+		/* Is the entity already in the path? */
-+		for (i = 1; i < graph->top; ++i) {
-+			if (next = stack_peek(graph, i))
-+				break;
-+		}
-+
-+		if (i < graph->top) {
- 			link_top(graph)++;
- 			continue;
- 		}
--- 
-1.8.1.5
-
+ 	return 0; /* CPU0 and CPU1 supported */
+@@ -117,8 +82,8 @@ struct smp_operations sh73a0_smp_ops __i
+ 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
+ 	.smp_boot_secondary	= sh73a0_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_kill		= sh73a0_cpu_kill,
+-	.cpu_die		= sh73a0_cpu_die,
+ 	.cpu_disable		= sh73a0_cpu_disable,
++	.cpu_die		= shmobile_smp_scu_cpu_die,
++	.cpu_kill		= shmobile_smp_scu_cpu_kill,
+ #endif
+ };
