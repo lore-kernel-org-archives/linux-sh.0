@@ -1,43 +1,75 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 16 Jul 2013 00:11:04 +0000
-Subject: [PATCH v2 12/27] sh-pfc: Remove unneeded const keywords
-Message-Id: <1373933479-17727-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 07:07:12 +0000
+Subject: [PATCH 01/07] ARM: shmobile: Introduce shared SCU SMP boot code
+Message-Id: <20130731070712.14444.49956.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130731070702.14444.64961.sendpatchset@w520>
+In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Two integer field structures are needlesly defined as const. Remove the
-const keyword.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add SMP boot functions for SCU equipped mach-shmobile SoCs.
+
+At this point shmobile_smp_scu_prepare_cpus() controls the SCU and
+installs boot fn and arg, while shmobile_smp_scu_boot_secondary()
+currently does nothing. In the future the boot function and arg
+install code will be reworked, so the empty function is ground
+work for that.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/pinctrl/sh-pfc/sh_pfc.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index d0a8ff8..2105487 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -30,7 +30,7 @@ enum {
- #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
- 
- struct sh_pfc_pin {
--	const pinmux_enum_t enum_id;
-+	pinmux_enum_t enum_id;
- 	const char *name;
- 	unsigned int configs;
- };
-@@ -64,7 +64,7 @@ struct sh_pfc_function {
- };
- 
- struct pinmux_func {
--	const pinmux_enum_t enum_id;
-+	pinmux_enum_t enum_id;
- 	const char *name;
- };
- 
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/include/mach/common.h |    3 ++
+ arch/arm/mach-shmobile/platsmp-scu.c         |   31 ++++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+)
 
+--- 0001/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-07-29 16:50:17.000000000 +0900
+@@ -11,6 +11,9 @@ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
+ extern void shmobile_boot_scu(void);
++extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
++extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
++					   struct task_struct *idle);
+ struct clk;
+ extern int shmobile_clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
+--- /dev/null
++++ work/arch/arm/mach-shmobile/platsmp-scu.c	2013-07-29 21:39:30.000000000 +0900
+@@ -0,0 +1,31 @@
++/*
++ * SMP support for SoCs with SCU covered by mach-shmobile
++ *
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/smp.h>
++#include <asm/smp_plat.h>
++#include <asm/smp_scu.h>
++#include <mach/common.h>
++
++void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
++{
++	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
++	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
++
++	/* enable SCU and cache coherency on booting CPU */
++	scu_enable(shmobile_scu_base);
++	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
++}
++
++int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
++{
++	/* do nothing for now */
++	return 0;
++}
