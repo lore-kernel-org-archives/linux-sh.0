@@ -1,124 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 24 Jul 2013 00:32:54 +0000
-Subject: [PATCH 15/19] ARM: shmobile: marzen-reference: Move pinctrl mappings to device tree
-Message-Id: <c4a003f6075c8e3e4e5a0d8958518882d779ef74.1374625203.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 05:58:07 +0000
+Subject: [PATCH] ARM: Fix memblock_reserve() to include stext
+Message-Id: <20130731055807.14054.70106.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374625203.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Replace the pinctrl mappings in board code by device tree mappings.
-For devices that are still instantiated from board code reference the
-mappings as the default pin controller state to apply them at boot time.
+This fix for the ARM architecture will include stext
+in the memblock_reserve() call to make sure that the
+following symbols are not overwritten (from System.map):
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+c0008000 T _text
+c0008000 T stext
+...
+c0008138 T secondary_startup
+...
+c0009000 T _stext
+
+With this patch applied CPU Hotplug starts working
+again. Without this patch code in secondary_startup
+never gets reached as expected.
+
+This issue started triggering on kernels later than
+v3.10 - perhaps a side effect of the CPU Hotplug init
+section rework - so this is a fix for v3.11-rc.
+
+Tested on the sh73a0 KZM9G board with CPU Hotplug:
+
+ # echo 0 > /sys/devices/system/cpu/cpu1/online
+ CPU1: shutdown
+ # echo 1 > /sys/devices/system/cpu/cpu1/online
+ CPU1: Booted secondary processor
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 35 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-marzen-reference.c | 27 -------------------
- 2 files changed, 35 insertions(+), 27 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 72be4c8..6d20247 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -37,6 +37,9 @@
- 	lan0@18000000 {
- 		compatible = "smsc,lan9220", "smsc,lan9115";
- 		reg = <0x18000000 0x100>;
-+		pinctrl-0 = <&lan0_pins>;
-+		pinctrl-names = "default";
-+
- 		phy-mode = "mii";
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 28 0x4>;
-@@ -45,3 +48,35 @@
- 		vdd33a-supply = <&fixedregulator3v3>;
- 	};
- };
-+
-+&pfc {
-+	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	lan0_pins: lan0 {
-+		intc {
-+			renesas,groups = "intc_irq1_b";
-+			renesas,function = "intc";
-+		};
-+		lbsc {
-+			renesas,groups = "lbsc_ex_cs0";
-+			renesas,function = "lbsc";
-+		};
-+	};
-+
-+	scif2_pins: scif2 {
-+		renesas,groups = "scif2_data_c";
-+		renesas,function = "scif2";
-+	};
-+
-+	scif4_pins: scif4 {
-+		renesas,groups = "scif4_data";
-+		renesas,function = "scif4";
-+	};
-+
-+	sdhi0_pins: sdhi0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
-+				 "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 94804f3..3d1c439 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,41 +19,14 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
--#include <linux/pinctrl/machine.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <asm/irq.h>
- #include <asm/mach/arch.h>
- 
--static const struct pinctrl_map marzen_pinctrl_map[] = {
--	/* SCIF2 (CN18: DEBUG0) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "fffc0000.pfc",
--				  "scif2_data_c", "scif2"),
--	/* SCIF4 (CN19: DEBUG1) */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "fffc0000.pfc",
--				  "scif4_data", "scif4"),
--	/* SDHI0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_data4", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_ctrl", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "fffc0000.pfc",
--				  "sdhi0_wp", "sdhi0"),
--	/* SMSC */
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
--				  "intc_irq1_b", "intc"),
--	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "fffc0000.pfc",
--				  "lbsc_ex_cs0", "lbsc"),
--};
--
- static void __init marzen_init(void)
- {
--	pinctrl_register_mappings(marzen_pinctrl_map,
--				  ARRAY_SIZE(marzen_pinctrl_map));
--
- 	r8a7779_add_standard_devices_dt();
- }
- 
--- 
-1.8.2.1
+ arch/arm/mm/init.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+--- 0001/arch/arm/mm/init.c
++++ work/arch/arm/mm/init.c	2013-07-31 14:17:49.000000000 +0900
+@@ -346,7 +346,7 @@ void __init arm_memblock_init(struct mem
+ #ifdef CONFIG_XIP_KERNEL
+ 	memblock_reserve(__pa(_sdata), _end - _sdata);
+ #else
+-	memblock_reserve(__pa(_stext), _end - _stext);
++	memblock_reserve(__pa(_text), _end - _text);
+ #endif
+ #ifdef CONFIG_BLK_DEV_INITRD
+ 	if (phys_initrd_size &&
