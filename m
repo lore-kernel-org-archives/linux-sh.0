@@ -1,112 +1,102 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 22 Jul 2013 07:36:58 +0000
-Subject: [PATCH 1/5] ARM: shmobile: Update romImage to relocate appended DTB
-Message-Id: <2c408d149299e99c89fc4be80fb4fe00a7016f02.1374478336.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:47 +0000
+Subject: [PATCH v2 03/23] drm/rcar-du: Add platform module device table
+Message-Id: <1375276927-20181-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478336.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478336.git.horms+renesas@verge.net.au>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The platform device id driver data field points to a device information
+structure that only contains a (currently empty) features field for now.
+Support for additional model-dependent features will be added later.
 
-Instead of relying of MACH_TYPE for board identification,
-update the romImage code to relocate an appended DTB to
-the beginning of RAM. This implementation is independent
-of ARM_APPENDED_DTB, this because it is necessary to copy
-the DTB to memory so the kernel can access it.
+Only the R8A7779 variant is currently supported.
 
-Without this patch Mackerel does not boot via the Mask ROM
-over USB (r_usb_boot) - this since non-DT boot was broken
-ages ago in commit:
-
-0ce53cd ARM: mach-shmobile: Use DT_MACHINE for mackerel
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/compressed/head-shmobile.S    | 43 ++++++++++++++++++++++++++---
- arch/arm/mach-shmobile/include/mach/zboot.h |  2 --
- 2 files changed, 39 insertions(+), 6 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c | 13 +++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h | 15 +++++++++++++++
+ 2 files changed, 28 insertions(+)
 
-diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
-index e2d6363..e7f8092 100644
---- a/arch/arm/boot/compressed/head-shmobile.S
-+++ b/arch/arm/boot/compressed/head-shmobile.S
-@@ -55,12 +55,47 @@ __tmp_stack:
- __continue:
- #endif /* CONFIG_ZBOOT_ROM_MMC || CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index f776b1c..bb7193d 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -123,6 +123,7 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
  
--	/* Set board ID necessary for boot */
--	ldr	r7, 1f				@ Set machine type register
--	mov	r8, #0				@ pass null pointer as atag
-+	adr	r0, dtb_info
-+	ldmia	r0, {r1, r3, r4, r5, r7}
-+
-+	sub	r0, r0, r1		@ calculate the delta offset
-+	add	r5, r5, r0		@ _edata
-+
-+	ldr	lr, [r5, #0]		@ check if valid DTB is present
-+	cmp	lr, r3
-+	bne	0f
-+
-+	add	r9, r7, #31		@ rounded up to a multiple
-+	bic	r9, r9, #31		@ ... of 32 bytes
-+
-+	add	r6, r9, r5		@ copy from _edata
-+	add	r9, r9, r4		@ to MEMORY_START
-+
-+1:	ldmdb	r6!, {r0 - r3, r10 - r12, lr}
-+	cmp	r6, r5
-+	stmdb	r9!, {r0 - r3, r10 - r12, lr}
-+	bhi	1b
-+
-+	/* Success: Zero board ID, pointer to start of memory for atag/dtb */
-+	mov	r7, #0
-+	mov	r8, r4
- 	b	2f
+ 	rcdu->dev = &pdev->dev;
+ 	rcdu->pdata = pdata;
++	rcdu->info = (struct rcar_du_device_info *)pdev->id_entry->driver_data;
+ 	rcdu->ddev = dev;
+ 	dev->dev_private = rcdu;
  
--1 :	.long MACH_TYPE
-+	.align	2
-+dtb_info:
-+	.word	dtb_info
-+#ifndef __ARMEB__
-+	.word	0xedfe0dd0		@ sig is 0xd00dfeed big endian
-+#else
-+	.word	0xd00dfeed
-+#endif
-+	.word	MEMORY_START
-+	.word	_edata
-+	.word	0x4000			@ maximum DTB size
-+0:
-+	/* Failure: Zero board ID, NULL atag/dtb */
-+	mov 	r7, #0
-+	mov	r8, #0			@ pass null pointer as atag
- 2 :
+@@ -297,6 +298,17 @@ static int rcar_du_remove(struct platform_device *pdev)
+ 	return 0;
+ }
  
- #endif /* CONFIG_ZBOOT_ROM */
-diff --git a/arch/arm/mach-shmobile/include/mach/zboot.h b/arch/arm/mach-shmobile/include/mach/zboot.h
-index f2d8744..c3c4669 100644
---- a/arch/arm/mach-shmobile/include/mach/zboot.h
-+++ b/arch/arm/mach-shmobile/include/mach/zboot.h
-@@ -1,7 +1,6 @@
- #ifndef ZBOOT_H
- #define ZBOOT_H
++static const struct rcar_du_device_info rcar_du_r8a7779_info = {
++	.features = 0,
++};
++
++static const struct platform_device_id rcar_du_id_table[] = {
++	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
++	{ }
++};
++
++MODULE_DEVICE_TABLE(platform, rcar_du_id_table);
++
+ static struct platform_driver rcar_du_platform_driver = {
+ 	.probe		= rcar_du_probe,
+ 	.remove		= rcar_du_remove,
+@@ -305,6 +317,7 @@ static struct platform_driver rcar_du_platform_driver = {
+ 		.name	= "rcar-du",
+ 		.pm	= &rcar_du_pm_ops,
+ 	},
++	.id_table	= rcar_du_id_table,
+ };
  
--#include <asm/mach-types.h>
- #include <mach/zboot_macros.h>
+ module_platform_driver(rcar_du_platform_driver);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 193cc59..06dbf4f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -25,9 +25,18 @@ struct clk;
+ struct device;
+ struct drm_device;
  
- /**************************************************
-@@ -11,7 +10,6 @@
-  **************************************************/
++/*
++ * struct rcar_du_device_info - DU model-specific information
++ * @features: device features (RCAR_DU_FEATURE_*)
++ */
++struct rcar_du_device_info {
++	unsigned int features;
++};
++
+ struct rcar_du_device {
+ 	struct device *dev;
+ 	const struct rcar_du_platform_data *pdata;
++	const struct rcar_du_device_info *info;
  
- #ifdef CONFIG_MACH_MACKEREL
--#define MACH_TYPE	MACH_TYPE_MACKEREL
- #define MEMORY_START	0x40000000
- #include "mach/head-mackerel.txt"
- #else
+ 	void __iomem *mmio;
+ 	struct clk *clock;
+@@ -50,6 +59,12 @@ struct rcar_du_device {
+ 	} planes;
+ };
+ 
++static inline bool rcar_du_has(struct rcar_du_device *rcdu,
++			       unsigned int feature)
++{
++	return rcdu->info->features & feature;
++}
++
+ int rcar_du_get(struct rcar_du_device *rcdu);
+ void rcar_du_put(struct rcar_du_device *rcdu);
+ 
 -- 
-1.8.2.1
+1.8.1.5
 
