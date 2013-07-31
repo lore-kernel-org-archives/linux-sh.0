@@ -1,54 +1,50 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 22 Jul 2013 13:16:19 +0000
-Subject: [PATCH 4/6] ARM: shmobile: armadillo800eva-reference: add DMA to SDHI and MMCIF
-Message-Id: <1374498981-5263-5-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 31 Jul 2013 01:33:50 +0000
+Subject: [PATCH 2/4] shdma: fixup sh_dmae_get_partial() calculation error
+Message-Id: <3c4d9276626c93477af0b0b9d46b4dcb37e2eed2.1375234088.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375234088.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375234088.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add DMA bindings to SDHI and MMCIF DT nodes on armadillo800eva-reference.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+sh_desc->hw.tcr is controlling real data size,
+and, register TCR is controlling data transfer count
+which was xmit_shifted value of hw.tcr.
+Current sh_dmae_get_partial() is calculating in different unit.
+This patch fixes it.
+
+This bug has been present since c014906a870ce70e009def0c9d170ccabeb0be63
+("dmaengine: shdma: extend .device_terminate_all() to record partial
+transfer"), which was added in 2.6.34-rc1.
+
+Cc: Vinod Koul <vinod.koul@intel.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ drivers/dma/sh/shdma.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 1acf1bd..146a855 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -105,6 +105,9 @@
- 	vmmc-supply = <&reg_3p3v>;
- 	bus-width = <8>;
- 	non-removable;
-+	dmas = <&dmac 0xd1
-+		&dmac 0xd2>;
-+	dma-names = "tx", "rx";
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&mmc0_pins>;
- 	status = "okay";
-@@ -116,6 +119,9 @@
- 	cap-power-off-card;
- 	bus-width = <4>;
- 	cd-gpios = <&pfc 167 GPIO_ACTIVE_LOW>;
-+	dmas = <&dmac 0xc1
-+		&dmac 0xc2>;
-+	dma-names = "tx", "rx";
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&sdhi0_pins>;
- 	status = "okay";
-@@ -126,6 +132,9 @@
- 	cap-power-off-card;
- 	bus-width = <4>;
- 	cd-gpios = <&pfc 72 GPIO_ACTIVE_LOW>;
-+	dmas = <&dmac 0xc9
-+		&dmac 0xca>;
-+	dma-names = "tx", "rx";
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&sdhi1_pins>;
- 	status = "okay";
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index b67f45f..5039fbc 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -400,8 +400,8 @@ static size_t sh_dmae_get_partial(struct shdma_chan *schan,
+ 						    shdma_chan);
+ 	struct sh_dmae_desc *sh_desc = container_of(sdesc,
+ 					struct sh_dmae_desc, shdma_desc);
+-	return (sh_desc->hw.tcr - sh_dmae_readl(sh_chan, TCR)) <<
+-		sh_chan->xmit_shift;
++	return sh_desc->hw.tcr -
++		(sh_dmae_readl(sh_chan, TCR) << sh_chan->xmit_shift);
+ }
+ 
+ /* Called from error IRQ or NMI */
 -- 
-1.7.2.5
+1.8.3.2
 
