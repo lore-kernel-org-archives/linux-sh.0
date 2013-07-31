@@ -1,109 +1,120 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 17 Jul 2013 23:31:57 +0000
-Subject: [PATCH 18/22] ARM: shmobile: Remove unused EMEV2/KZM9D early console
-Message-Id: <4146fa8861419ac0d2c3607168339621586f6c03.1374103272.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 31 Jul 2013 13:21:53 +0000
+Subject: [PATCH v2 09/23] drm/rcar-du: Rename platform data fields to match what they describe
+Message-Id: <1375276927-20181-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374103272.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374103272.git.horms+renesas@verge.net.au>
+References: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375276927-20181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The struct rcar_du_encoder_data encoder::field describes the encoder
+type, and the rcar_du_encoder_lvds_data and rcar_du_encoder_vga_data
+structures describe connector properties. Rename them accordingly.
 
-Remove EMEV2 early console code from KZM9D and instead
-rely on console setup during regular platform device
-probe time. This makes the DT code and the KZM9D board
-support behave the same.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9d.c        |    2 +-
- arch/arm/mach-shmobile/include/mach/emev2.h |    2 +-
- arch/arm/mach-shmobile/setup-emev2.c        |   24 +++---------------------
- 3 files changed, 5 insertions(+), 23 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c |  2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h |  3 ++-
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c     |  5 ++---
+ include/linux/platform_data/rcar-du.h     | 19 +++++++++++++------
+ 4 files changed, 18 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
-index 4368000..15900f1 100644
---- a/arch/arm/mach-shmobile/board-kzm9d.c
-+++ b/arch/arm/mach-shmobile/board-kzm9d.c
-@@ -85,7 +85,7 @@ static const char *kzm9d_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(KZM9D_DT, "kzm9d")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.map_io		= emev2_map_io,
--	.init_early	= emev2_add_early_devices,
-+	.init_early	= emev2_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= emev2_init_irq,
- 	.init_machine	= kzm9d_add_standard_devices,
-diff --git a/arch/arm/mach-shmobile/include/mach/emev2.h b/arch/arm/mach-shmobile/include/mach/emev2.h
-index ac37517..3e0c044 100644
---- a/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ b/arch/arm/mach-shmobile/include/mach/emev2.h
-@@ -3,7 +3,7 @@
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+index 15a5643..0d0375c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+@@ -137,7 +137,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 	switch (type) {
+ 	case RCAR_DU_ENCODER_LVDS:
+ 		return rcar_du_lvds_connector_init(rcdu, renc,
+-						   &data->u.lvds.panel);
++						   &data->connector.lvds.panel);
  
- extern void emev2_map_io(void);
- extern void emev2_init_irq(void);
--extern void emev2_add_early_devices(void);
-+extern void emev2_init_delay(void);
- extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
- extern void emev2_set_boot_vector(unsigned long value);
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index b0564ce..f6edd19 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -375,14 +375,11 @@ static struct platform_device pmu_device = {
- 	.resource	= pmu_resources,
+ 	case RCAR_DU_ENCODER_VGA:
+ 		return rcar_du_vga_connector_init(rcdu, renc);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+index 4f76e16..08cde12 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+@@ -14,10 +14,11 @@
+ #ifndef __RCAR_DU_ENCODER_H__
+ #define __RCAR_DU_ENCODER_H__
+ 
++#include <linux/platform_data/rcar-du.h>
++
+ #include <drm/drm_crtc.h>
+ 
+ struct rcar_du_device;
+-struct rcar_du_encoder_data;
+ 
+ struct rcar_du_encoder {
+ 	struct drm_encoder encoder;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 3f8483c..a8eef16 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -191,7 +191,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 		const struct rcar_du_encoder_data *pdata  			&rcdu->pdata->encoders[i];
+ 
+-		if (pdata->encoder = RCAR_DU_ENCODER_UNUSED)
++		if (pdata->type = RCAR_DU_ENCODER_UNUSED)
+ 			continue;
+ 
+ 		if (pdata->output >= ARRAY_SIZE(rcdu->crtcs)) {
+@@ -201,8 +201,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 			continue;
+ 		}
+ 
+-		rcar_du_encoder_init(rcdu, pdata->encoder, pdata->output,
+-				     pdata);
++		rcar_du_encoder_init(rcdu, pdata->type, pdata->output, pdata);
+ 	}
+ 
+ 	/* Set the possible CRTCs and possible clones. All encoders can be
+diff --git a/include/linux/platform_data/rcar-du.h b/include/linux/platform_data/rcar-du.h
+index 80587fd..64cd863 100644
+--- a/include/linux/platform_data/rcar-du.h
++++ b/include/linux/platform_data/rcar-du.h
+@@ -28,22 +28,29 @@ struct rcar_du_panel_data {
+ 	struct drm_mode_modeinfo mode;
  };
  
--static struct platform_device *emev2_early_devices[] __initdata = {
-+static struct platform_device *emev2_devices[] __initdata = {
- 	&uart0_device,
- 	&uart1_device,
- 	&uart2_device,
- 	&uart3_device,
--};
--
--static struct platform_device *emev2_late_devices[] __initdata = {
- 	&sti_device,
- 	&gio0_device,
- 	&gio1_device,
-@@ -396,29 +393,14 @@ void __init emev2_add_standard_devices(void)
- {
- 	emev2_clock_init();
+-struct rcar_du_encoder_lvds_data {
++struct rcar_du_connector_lvds_data {
+ 	struct rcar_du_panel_data panel;
+ };
  
--	platform_add_devices(emev2_early_devices,
--			     ARRAY_SIZE(emev2_early_devices));
--
--	platform_add_devices(emev2_late_devices,
--			     ARRAY_SIZE(emev2_late_devices));
-+	platform_add_devices(emev2_devices, ARRAY_SIZE(emev2_devices));
- }
+-struct rcar_du_encoder_vga_data {
++struct rcar_du_connector_vga_data {
+ 	/* TODO: Add DDC information for EDID retrieval */
+ };
  
--static void __init emev2_init_delay(void)
-+void __init emev2_init_delay(void)
- {
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
- }
++/*
++ * struct rcar_du_encoder_data - Encoder platform data
++ * @type: the encoder type (RCAR_DU_ENCODER_*)
++ * @output: the DU output the connector is connected to
++ * @connector.lvds: platform data for LVDS connectors
++ * @connector.vga: platform data for VGA connectors
++ */
+ struct rcar_du_encoder_data {
+-	enum rcar_du_encoder_type encoder;
++	enum rcar_du_encoder_type type;
+ 	unsigned int output;
  
--void __init emev2_add_early_devices(void)
--{
--	emev2_init_delay();
--
--	early_platform_add_devices(emev2_early_devices,
--				   ARRAY_SIZE(emev2_early_devices));
--
--	/* setup early console here as well */
--	shmobile_setup_console();
--}
--
- void __init emev2_init_irq(void)
- {
- 	void __iomem *gic_dist_base;
+ 	union {
+-		struct rcar_du_encoder_lvds_data lvds;
+-		struct rcar_du_encoder_vga_data vga;
+-	} u;
++		struct rcar_du_connector_lvds_data lvds;
++		struct rcar_du_connector_vga_data vga;
++	} connector;
+ };
+ 
+ struct rcar_du_platform_data {
 -- 
-1.7.10.4
+1.8.1.5
 
