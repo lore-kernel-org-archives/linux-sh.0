@@ -1,53 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 30 Jul 2013 10:37:33 +0000
-Subject: [PATCH v2 09/13] mmc: sh_mmcif: Remove .set_pwr() callback from platform data
-Message-Id: <1375180657-23641-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 31 Jul 2013 19:01:37 +0000
+Subject: [PATCH 03/13] ARM: shmobile: Use default ->init_time() on r8a7778
+Message-Id: <20130731190137.31796.78683.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375180657-23641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130731190110.31796.96552.sendpatchset@w520>
+In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The .set_pwr() callback isn't used anymore as all platforms register
-GPIO-controlled regulators. Remove it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Leave ->init_time() set to NULL to use the default ARM behaviour.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mmcif.c  | 3 ---
- include/linux/mmc/sh_mmcif.h | 1 -
- 2 files changed, 4 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 35f61cc..ac8e109 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -956,11 +956,8 @@ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
- 
- static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
- {
--	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
- 	struct mmc_host *mmc = host->mmc;
- 
--	if (pd && pd->set_pwr)
--		pd->set_pwr(host->pd, ios->power_mode != MMC_POWER_OFF);
- 	if (!IS_ERR(mmc->supply.vmmc))
- 		/* Errors ignored... */
- 		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index 39011eb..767fac5 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -33,7 +33,6 @@
-  */
- 
- struct sh_mmcif_plat_data {
--	void (*set_pwr)(struct platform_device *pdev, int state);
- 	int (*get_cd)(struct platform_device *pdef);
- 	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
- 	unsigned int		slave_id_rx;
--- 
-1.8.1.5
+ arch/arm/mach-shmobile/setup-r8a7778.c |    1 -
+ 1 file changed, 1 deletion(-)
 
+--- 0001/arch/arm/mach-shmobile/setup-r8a7778.c
++++ work/arch/arm/mach-shmobile/setup-r8a7778.c	2013-08-01 03:02:21.000000000 +0900
+@@ -406,7 +406,6 @@ static const char *r8a7778_compat_dt[] _
+ DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
+ 	.init_early	= r8a7778_init_delay,
+ 	.init_irq	= r8a7778_init_irq_dt,
+-	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a7778_compat_dt,
+ 	.init_late      = r8a7778_init_late,
+ MACHINE_END
