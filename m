@@ -1,40 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:24:18 +0000
-Subject: [GIT PULL 1/4] ARM: shmobile: marzen: Enable ARM_APPENDED_DTB in defconfig
-Message-Id: <8c167a825d56e9946bb54d91017a53efb04ffdaf.1375842392.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Aug 2013 07:23:18 +0000
+Subject: Re: [PATCH v6 0/3] ARM: shmobile: lager: enable Ether
+Message-Id: <20130801072318.GA26015@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375842392.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375842392.git.horms+renesas@verge.net.au>
+References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-"ARM: shmobile: marzen: Switch to DT_MACHINE_START" moves marzen
-over to use DT_MACHINE_START, however, the prevalent boot loader
-does not support booting with a separate dtb. Thus, it makes
-sense to use ARM_APPENDED_DTB by default.
+On Tue, Jul 30, 2013 at 06:09:18PM +0900, Simon Horman wrote:
+> this short series enables the on-board ethernet
+> of the r8a7790 SoC for on lager board.
+> 
+> It has a run-time dependency on
+> "sh_eth: add support for r8a7790 SoC"
+> 
+> It has been built on top of renesas-next-20130726.
+> 
+> Changes noted in changelogs of individual patches.
+> 
+> Simon Horman (3):
+>   ARM: shmobile: r8a7790: clocks for Ether support
+>   ARM: shmobile: lager: enable Ether
+>   ARM: shmobile: lager: enable nfsroot in DTS
+> 
+>  arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
+>  arch/arm/mach-shmobile/board-lager.c   | 30 ++++++++++++++++++++++++++++++
+>  arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
+>  3 files changed, 35 insertions(+), 1 deletion(-)
 
-This is consistent with other shmobile defconfigs.
+Hi Magnus, Hi all,
 
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/marzen_defconfig | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 494e70a..82e4040 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -29,6 +29,7 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
-+CONFIG_ARM_APPENDED_DTB=y
- CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
- CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
--- 
-1.8.3.2
-
+I would appreciate some review of this, and if appropriate an Ack.
