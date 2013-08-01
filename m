@@ -1,31 +1,39 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 31 Aug 2013 23:18:09 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7778: add Ether clock for DT case
-Message-Id: <201309010318.10337.sergei.shtylyov@cogentembedded.com>
+Date: Thu, 01 Aug 2013 21:17:17 +0000
+Subject: [PATCH] tmio_mmc_dma: fix PIO fallback on SDHI
+Message-Id: <201308020117.17897.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, g.liakhovetski@gmx.de, ian@mnementh.co.uk, cjb@laptop.org
+Cc: linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
 
-Add extra Ether clock lookup entry in the device tree case.
+I'm testing SH-Mobile SDHI driver in DMA mode with a  new DMA controller  using
+'bonnie++' and getting DMA error after which the tmio_mmc_dma.c code falls back
+to PIO but all commands time out after that.  It turned out that the fallback
+code calls tmio_mmc_enable_dma() with RX/TX channels already freed and pointers
+to them cleared, so that the function bails out early instead  of clearing the
+DMA bit in the CTL_DMA_ENABLE register.  Fixing the RX/TX channel check so that
+it takes place only when enabling DMA helps with the PIO fallback.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c |    1 +
- 1 file changed, 1 insertion(+)
+The patch is against Chris Ball's 'mmc.git' repo, 'master' branch.
 
-Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -146,6 +146,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("fde00000.ethernet", &mstp_clks[MSTP114]), /* Ether w/DT */
- 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+ drivers/mmc/host/tmio_mmc_dma.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: mmc/drivers/mmc/host/tmio_mmc_dma.c
+=================================--- mmc.orig/drivers/mmc/host/tmio_mmc_dma.c
++++ mmc/drivers/mmc/host/tmio_mmc_dma.c
+@@ -25,7 +25,7 @@
+ 
+ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ {
+-	if (!host->chan_tx || !host->chan_rx)
++	if (enable && !(host->chan_tx && host->chan_rx))
+ 		return;
+ 
+ #if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
