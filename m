@@ -1,79 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 30 Aug 2013 06:58:07 +0000
-Subject: Re: [PATCH 04/14] ARM: shmobile: sh73a0: Remove ->init_machine() special case
-Message-Id: <CANqRtoTOU1CAGUKmAe__WL+KGBU=ZH81qO=cyiX69F8DVEK1qw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Aug 2013 07:34:44 +0000
+Subject: Re: [PATCH] ARM: Fix memblock_reserve() to include stext
+Message-Id: <20130801073443.GB15265@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130809094748.6530.16511.sendpatchset@w520>
- <1634183.WaD7XDSkzI@avalon>
- <CANqRtoSrfUaMYqADNP9d5+ourtWuhgscvAVVW-nCVXFyYsCfFQ@mail.gmail.com>
- <2171121.JyqUPDDIrz@avalon>
-In-Reply-To: <2171121.JyqUPDDIrz@avalon>
+References: <20130731055807.14054.70106.sendpatchset@w520>
+ <20130731094352.GV24642@n2100.arm.linux.org.uk>
+ <CANqRtoR5j2VyRwf0suABfVLxzU30pZndEcCj7uZ2sSrzfGmx_A@mail.gmail.com>
+ <20130731193930.GY24642@n2100.arm.linux.org.uk>
+In-Reply-To: <20130731193930.GY24642@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+On Wed, Jul 31, 2013 at 08:39:30PM +0100, Russell King - ARM Linux wrote:
+> On Thu, Aug 01, 2013 at 04:34:03AM +0900, Magnus Damm wrote:
+> > Are you aware of any existing fix for this or anyone working on
+> > solving this issue? If not then I don't mind stepping up. I can
+> > however think of quite a few other things to do if this has been
+> > solved already though, so please let me know if you think I should
+> > focus on fixing this.
+> 
+> I committed a fix for it this morning, so it should be in linux-next by
+> tomorrow.
 
-On Fri, Aug 30, 2013 at 9:30 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> On Wednesday 28 August 2013 21:19:50 Magnus Damm wrote:
->> On Wed, Aug 28, 2013 at 9:08 PM, Laurent Pinchart wrote:
->> > On Wednesday 28 August 2013 15:40:50 Magnus Damm wrote:
->> >> On Fri, Aug 9, 2013 at 7:47 PM, Laurent Pinchart wrote:
->> >> > On Friday 09 August 2013 18:48:32 Magnus Damm wrote:
->> >> >> From: Magnus Damm <damm@opensource.se>
->> >> >>
->> >> >> No need to special case sh73a0 ->init_machine(),
->> >> >> so get rid of undesired cpufreq platform device
->> >> >> from the generic long term sh73a0 DT support code.
->> >> >>
->> >> >> For short term support on KZM9D the DT reference
->> >> >> implementation now adds a "cpufreq-cpu0" platform
->> >> >> device so that can be used for development.
->> >> >
->> >> > Doesn't this go against the spirit of the -reference platforms that
->> >> > don't use DT devices in board code ? I don't see an urgent need for
->> >> > this, how far along are the DT cpufreq-related bindings ?
->> >>
->> >> I'm not sure what the latest state of DT cpufreq bindings are. Actually,
->> >> it seems to me that the cpufreq platform device is a software policy that
->> >> shouldn't be described with DT. And to be honest, I can't really see how
->> >> this policy has anything to do with any particular SoC.
->> >
->> > I'm no cpufreq expert, but if we need to register the device in C code,
->> > I'm pretty uneasy with having that code in board files. One of the DT
->> > goals is to get rid of most board files.
->>
->> I'm not sure if we actually _have_to_ register via the platform device, or
->> if it just happens to be like that today because no one has bothered
->> creating a better abstraction. It is a mystery to me that both a platform
->> device is used to select actual driver, and then DT is used to provide
->> frequency and voltage information.
->>
->> The cpufreq software policy is neither board nor SoC specific. It must be
->> application specific. I can understand that putting it in a board file seems
->> odd, but putting it in a SoC file is IMO equally odd, and with the added
->> damage that people starting to write generic DT code may assume that the SoC
->> will keep on using the same cpufreq software policy in the future.
->>
->> Perhaps the cpufreq registration interface should be reworked somehow?
->
-> Perhaps :-) The situation needs to be at least clarified. Feel free to CC me
-> :-)
+Hi Russell,
 
-Thanks. =)
+Magnus has some outstanding patches for Renesas SoC boards which I believe
+depend on this problem being resolved.  Could you indicate when you expect
+this patch to be in a stable branch which I could use as a base for a
+branch that will subsequently be pulled into arm-soc.
 
-There are CPUFreq dependencies on SMP and multi-cluster frequency
-scaling for some SoCs, so to begin with I prefer to allow selected
-boards use whatever old interface that is available now and over time
-incrementally improve the situation. I don't however want the shared
-per-SoC DT_MACHINE code in setup-xxx.c to enable anything by default
-for now though - this portion we can modify when we have SMP and
-multi-cluster working.
-
-Cheers,
-
-/ magnus
+Thanks.
