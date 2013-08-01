@@ -1,43 +1,47 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 28 Aug 2013 17:02:29 +0000
-Subject: Re: [GIT PULL 00/26] Third round of Renesas ARM based SoC cleanups for v3.12
-Message-Id: <20130828170229.GB8607@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 01 Aug 2013 08:27:23 +0000
+Subject: [PATCH] ARM: shmobile: armadillo800eva-reference: fix compiler warning
+Message-Id: <ab40900b70dc31a64f23b1b4dbb0917afb039775.1375345067.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <cover.1375345067.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375345067.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Aug 07, 2013 at 01:38:19PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider this third round of Renesas ARM based SoC cleanups for
-> v3.12.
-> 
-> This pull-request is based on a merge of renesas-cleanup2-for-v3.12 and
-> renesas-dt2-for-v3.12 which I have previously sent pull-requests for.
-> 
-> This pull-request has some minor conflicts:
-> 
-> * There are some conflicts with renesas-multiplatform-for-v3.12,
->   which I have previously sent a pull request for,
->   in arch/arm/mach-shmobile/Makefile.
-> 
-> I have provided an example of how to merge these as part of
-> the renesas-devel-20180807 tag in the renesas tree.
-> 
-> 
-> The following changes since commit 4e0f3fcfe2f3716e3fa9c442cee93211bf2ac793:
-> 
->   Merge branch 'dt2' into cleanup3-base (2013-08-06 18:06:53 +0900)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup3-for-v3.12
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Pulled.
+Fix the compiler warning:
 
--Olof
+arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: initialization from incompatible pointer type [enabled by default]
+arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: (near initialization for '__mach_desc_ARMADILLO800EVA_DT.restart') [enabled by default]
+
+While at it also remove superfluous parenthesis.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 03b85fe..8f677df 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -190,10 +190,10 @@ static void __init eva_init(void)
+ }
+ 
+ #define RESCNT2 IOMEM(0xe6188020)
+-static void eva_restart(char mode, const char *cmd)
++static void eva_restart(enum reboot_mode mode, const char *cmd)
+ {
+ 	/* Do soft power on reset */
+-	writel((1 << 31), RESCNT2);
++	writel(1 << 31, RESCNT2);
+ }
+ 
+ static const char *eva_boards_compat_dt[] __initdata = {
+-- 
+1.8.3.2
+
