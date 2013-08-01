@@ -1,153 +1,37 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:28:36 +0000
-Subject: [GIT PULL 15/19] ARM: shmobile: Mount root file systems in r/w mode for all DT platforms
-Message-Id: <d2f463a66abb1edc3b0ab6cc8252d9fa4e3d30e8.1375838900.git.horms+renesas@verge.net.au>
+Date: Thu, 01 Aug 2013 08:26:28 +0000
+Subject: [PATCH 06/14] ARM: shmobile: Remove r8a7779 use of <mach/hardware.h>
+Message-Id: <603e45827b4a565506417fbdc3400eedf8846c3d.1375344714.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375838900.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
+References: <cover.1375344714.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-The shmobile DT files available in the kernel are reference
-implementations intended to be used as sample code, as well as for
-development. As such, it makes sense to mount the root file system in
-read/write mode by default.
+Remove unused <mach/hardware.h> on r8a7779.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 2 +-
- arch/arm/boot/dts/r8a73a4-ape6evm.dts           | 2 +-
- arch/arm/boot/dts/r8a7778-bockw-reference.dts   | 2 +-
- arch/arm/boot/dts/r8a7778-bockw.dts             | 2 +-
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 2 +-
- arch/arm/boot/dts/r8a7790-lager-reference.dts   | 2 +-
- arch/arm/boot/dts/r8a7790-lager.dts             | 2 +-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    | 2 +-
- arch/arm/boot/dts/sh73a0-kzm9g.dts              | 2 +-
- 9 files changed, 9 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index bbd09d8..f444624 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
- 	};
- 
- 	memory@40000000 {
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index e657a9d..72f867e 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,ape6evm", "renesas,r8a73a4";
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 	};
- 
- 	memory@40000000 {
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index f5b8d77..9bb903a 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -22,7 +22,7 @@
- 	compatible = "renesas,bockw-reference", "renesas,r8a7778";
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
- 	};
- 
- 	memory {
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 0076b1e..12bbebc 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -22,7 +22,7 @@
- 	compatible = "renesas,bockw", "renesas,r8a7778";
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
- 	};
- 
- 	memory {
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 72be4c8..5c22fee 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -17,7 +17,7 @@
- 	compatible = "renesas,marzen-reference", "renesas,r8a7779";
- 
- 	chosen {
--		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
-+		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
- 	};
- 
- 	memory {
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-index 5ee71cf5..c462ef1 100644
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -17,7 +17,7 @@
- 	compatible = "renesas,lager-reference", "renesas,r8a7790";
- 
- 	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
- 	};
- 
- 	memory@40000000 {
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 09a84fc..631b93b 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,lager", "renesas,r8a7790";
- 
- 	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
- 	};
- 
- 	memory@40000000 {
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index b6f759e..6d9ece2 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -32,7 +32,7 @@
- 	};
- 
- 	chosen {
--		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
-+		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
- 	};
- 
- 	memory {
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 7c4071e..0f1ca77 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,kzm9g", "renesas,sh73a0";
- 
- 	chosen {
--		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
-+		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
- 	};
- 
- 	memory {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 66d3826..6ab7405 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -37,7 +37,6 @@
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+-#include <mach/hardware.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
 -- 
 1.8.3.2
 
