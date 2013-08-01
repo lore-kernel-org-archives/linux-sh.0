@@ -1,61 +1,90 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 30 Aug 2013 00:13:51 +0000
-Subject: Re: [PATCH 3/3 v4] ARM: shmobile: bockw: add USB Function support
-Message-Id: <87zjs0qbly.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 01 Aug 2013 08:26:14 +0000
+Subject: [GIT 00/14] Second round of Renesas ARM based SoC cleanups for v3.12
+Message-Id: <cover.1375344714.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878v2g6psd.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878v2g6psd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+Hi Olof, Hi Arnd,
+
+Please consider this second round of Renesas ARM based SoC cleanups for
+v3.12.
+
+This pull-request is based on a merge of renesas-tpu-pwm-for-v3.12,
+renesas-backlight-for-v3.12 and renesas-soc-for-v3.12, each of which
+I have previously sent a pull-request for, in order to provide
+the pre-requisite code that that is being removed or cleaned up.
+
+The following changes since commit 4431374926363df1d907d9c8783f473eb7facf42:
+
+  Merge branches 'tpu-pwm', 'backlight' and 'soc' into cleanup2-base (2013-07-24 16:35:12 +0900)
+
+are available in the git repository at:
 
 
-Hi Magnus
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup2-for-v3.12
 
-> > Magnus, could you review this?
-> 
-> Sure, I can try. Just to be clear though - I think I know this board
-> and SoC as little as you do. =)
+for you to fetch changes up to 98724b7ec9d34d875fc193660c87d6dd0d17ceb7:
 
-Thank you
+  ARM: shmobile: r8a7779: Remove '0x's from R8A7779 DTS file (2013-07-30 14:21:43 +0900)
 
-> Thanks for your work on this. In this patch I understand that you
-> based on Kconfig select if ehci-platform or renesas-usbhs should be
-> used. I wonder how well that will work together with multiplatform
-> kernels in the future. Probably not so well. So we need to figure out
-> how to handle this in the future.
-> 
-> I propose that we accept this patch as-is today to enable the
-> hardware, but we should also investigate if we for instance could let
-> the PFC handle mutual exclusion of the hardware and use bind/unbind to
-> start/stop devices during run time. Paul Mundt and I talked about this
-> ages ago but I'm not sure if it is actually possible with pinctrl or
-> not. If possible would install both ehci-platform and renesas-usbhs
-> devices in parallel and instead dynamically select one of them through
-> sysfs.
-> 
-> Laurent, do you think it is possible to use pinctrl for mutual
-> exclusion control in the drivers somehow? Basically, if the requested
-> pins are already in use then the conflicting driver instance should
-> error out.
+----------------------------------------------------------------
+Second round of Renesas ARM based SoC cleanups for v3.12
 
-Thank you for your help, and I think it is good point.
+* Remove mach/hardware.h which has no useful contents
+* Remove ag5evm board support
+* Remove kota2 board support
+* Use pm-rmobile on sh7372 and r8a7740 SoCs only, it is otherwise unneeded
+* Remove use of INTC header on r8a7779 and r8a7740 SoCs
+* Cleanup registration of usb phy in r8a7779 SoC
+* Remove '0x's from R8A7779 DTS file for r8a7779 SoC
 
-bind/unbind control USB seems nice idea if pinctrl works well.
-But, It has 2 issues on this run time exchange.
- 1) USB switching Host/Func needs dip-switch settings.
- 2) USB Host/Func switching needs USB-PHY re-settings
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      ARM: shmobile: r8a7779: cleanup registration of usb phy
 
-I guess it is a little bit difficult 2) case in bind/unbind control
+Lee Jones (1):
+      ARM: shmobile: r8a7779: Remove '0x's from R8A7779 DTS file
 
-Some boards are difficult to full-support on multiplatform ?
+Magnus Damm (10):
+      ARM: shmobile: Remove sh73a0 use of <mach/hardware.h>
+      ARM: shmobile: Remove sh7372 use of <mach/hardware.h>
+      ARM: shmobile: Remove EMEV2 use of <mach/hardware.h>
+      ARM: shmobile: Remove r8a7779 use of <mach/hardware.h>
+      ARM: shmobile: Remove Marzen use of <mach/hardware.h>
+      ARM: shmobile: Remove include <mach/hardware.h>
+      ARM: shmobile: r8a73a4: Remove ->init_machine() special case
+      ARM: shmobile: Use pm-rmobile on sh7372 and r8a7740 only
+      ARM: shmobile: No need to use INTC demux on r8a7740
+      ARM: shmobile: No need to use INTC header on r8a7779
 
-> We also want to have DT bindings for USB drivers. Morimoto-san, can
-> you please work on adding USB support to Bock-W DT reference?
+Simon Horman (2):
+      ARCH: ARM: shmobile: Remove kota2 board support
+      ARCH: ARM: shmobile: Remove ag5evm board support
 
-OK, I will try it
-
-Best regards
----
-Kuninori Morimoto
+ arch/arm/boot/dts/r8a7779.dtsi                 |   8 +-
+ arch/arm/configs/ag5evm_defconfig              |  83 ----
+ arch/arm/configs/kota2_defconfig               | 121 -----
+ arch/arm/mach-shmobile/Kconfig                 |  13 -
+ arch/arm/mach-shmobile/Makefile                |  10 +-
+ arch/arm/mach-shmobile/Makefile.boot           |   2 -
+ arch/arm/mach-shmobile/board-ag5evm.c          | 639 -------------------------
+ arch/arm/mach-shmobile/board-kota2.c           | 550 ---------------------
+ arch/arm/mach-shmobile/board-marzen.c          |  25 +-
+ arch/arm/mach-shmobile/include/mach/hardware.h |   4 -
+ arch/arm/mach-shmobile/include/mach/r8a7779.h  |   2 -
+ arch/arm/mach-shmobile/intc-r8a7779.c          |   1 -
+ arch/arm/mach-shmobile/setup-emev2.c           |   1 -
+ arch/arm/mach-shmobile/setup-r8a73a4.c         |   6 -
+ arch/arm/mach-shmobile/setup-r8a7779.c         |  19 -
+ arch/arm/mach-shmobile/setup-sh7372.c          |   1 -
+ arch/arm/mach-shmobile/setup-sh73a0.c          |   1 -
+ 17 files changed, 29 insertions(+), 1457 deletions(-)
+ delete mode 100644 arch/arm/configs/ag5evm_defconfig
+ delete mode 100644 arch/arm/configs/kota2_defconfig
+ delete mode 100644 arch/arm/mach-shmobile/board-ag5evm.c
+ delete mode 100644 arch/arm/mach-shmobile/board-kota2.c
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/hardware.h
