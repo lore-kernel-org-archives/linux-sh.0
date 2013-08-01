@@ -1,40 +1,52 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:42:59 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7779: Rename DU device in clock lookups list
-Message-Id: <f3f4c304dd227f117a3fc3b5d6b57836321bab71.1377652063.git.horms+renesas@verge.net.au>
+Date: Thu, 01 Aug 2013 08:26:54 +0000
+Subject: [PATCH 12/14] ARM: shmobile: No need to use INTC header on r8a7779
+Message-Id: <d2ef0b9a5192e921490d2f66f4467f26235412bd.1375344714.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377652063.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377652063.git.horms+renesas@verge.net.au>
+References: <cover.1375344714.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-The DU device will be called rcar-du-r8a7779. Rename the clock lookup
-entry accordingly.
+Now when the intc-irqpin driver is used for external
+IRQ pins on r8a7779 it possible to get rid of unused
+INTC headers mach/intc.h and linux/sh_intc.h.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/intc-r8a7779.c  | 1 -
+ arch/arm/mach-shmobile/setup-r8a7779.c | 1 -
+ 2 files changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 10340f5..21e6364 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -190,7 +190,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
--	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
-+	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
- };
- 
- void __init r8a7779_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/intc-r8a7779.c b/arch/arm/mach-shmobile/intc-r8a7779.c
+index b86dc89..5f9e5dc 100644
+--- a/arch/arm/mach-shmobile/intc-r8a7779.c
++++ b/arch/arm/mach-shmobile/intc-r8a7779.c
+@@ -27,7 +27,6 @@
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/irqchip.h>
+ #include <mach/common.h>
+-#include <mach/intc.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7779.h>
+ #include <asm/mach-types.h>
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 6ab7405..bb8b967 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -29,7 +29,6 @@
+ #include <linux/input.h>
+ #include <linux/io.h>
+ #include <linux/serial_sci.h>
+-#include <linux/sh_intc.h>
+ #include <linux/sh_timer.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/usb/otg.h>
 -- 
 1.8.3.2
 
