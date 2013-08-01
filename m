@@ -1,40 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 22 Aug 2013 21:27:08 +0000
-Subject: [PATCH v5 3/3] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
-Message-Id: <201308230127.09051.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Aug 2013 07:34:53 +0000
+Subject: Re: [PATCH 00/07] ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
+Message-Id: <20130801073452.GD26015@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
+References: <20130731070702.14444.64961.sendpatchset@w520>
+In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+On Wed, Jul 31, 2013 at 04:07:02PM +0900, Magnus Damm wrote:
+> ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
+> 
+> [PATCH 01/07] ARM: shmobile: Introduce shared SCU SMP boot code
+> [PATCH 02/07] ARM: shmobile: Use shared SCU SMP boot code on sh73a0
+> [PATCH 03/07] ARM: shmobile: Use shared SCU SMP boot code on r8a7779
+> [PATCH 04/07] ARM: shmobile: Use shared SCU SMP boot code on emev2
+> [PATCH 05/07] ARM: shmobile: Add shared SCU CPU Hotplug code
+> [PATCH 06/07] ARM: shmobile: Use shared SCU CPU Hotplug code on sh73a0
+> [PATCH 07/07] ARM: shmobile: Use shared SCU CPU Hotplug code on r8a7779
+> 
+> This series consolidates mach-shmobile SMP code into SCU specific code
+> for SMP boot and CPU Hotplug. The shared SCU code will in the future hook
+> into some low level assembly code that provides SMP boot and sleep
+> functionality, so this is is also preparations for future work.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Written against renesas.git renesas-devel-20130731
+>  
+>  Requires "[PATCH] ARM: Fix memblock_reserve() to include stext" during
+>  run time to allow test of CPU Hotplug with v3.11-rc kernels.
 
-Add the VIN and ADV7180 drivers to 'marzen_defconfig'.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
----
- arch/arm/configs/marzen_defconfig |    7 +++++++
- 1 file changed, 7 insertions(+)
-
-Index: media_tree/arch/arm/configs/marzen_defconfig
-=================================--- media_tree.orig/arch/arm/configs/marzen_defconfig
-+++ media_tree/arch/arm/configs/marzen_defconfig
-@@ -84,6 +84,13 @@ CONFIG_GPIO_RCAR=y
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_SSB=y
-+CONFIG_MEDIA_SUPPORT=y
-+CONFIG_MEDIA_CAMERA_SUPPORT=y
-+CONFIG_V4L_PLATFORM_DRIVERS=y
-+CONFIG_SOC_CAMERA=y
-+CONFIG_VIDEO_RCAR_VIN=y
-+# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
-+CONFIG_VIDEO_ADV7180=y
- CONFIG_USB=y
- CONFIG_USB_RCAR_PHY=y
- CONFIG_MMC=y
+I guess we need to wait for Russell's alternate fix to hit a stable branch.
