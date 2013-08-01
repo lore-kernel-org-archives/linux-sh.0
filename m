@@ -1,55 +1,52 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 28 Aug 2013 23:22:17 +0000
-Subject: [PATCH v2 03/03] ARM: shmobile: Add r8a7790 CA15 CPU cores
-Message-Id: <20130828232217.7321.62854.sendpatchset@w520>
+Date: Thu, 01 Aug 2013 09:39:16 +0000
+Subject: Re: [RFC 2/5] arm: boot: allow zboot with appended DTB
+Message-Id: <CANqRtoThVs9o4hwYm4pVcnQX+oPA563cbbMkLbFh=T7yhiY87g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130828232148.7321.45739.sendpatchset@w520>
-In-Reply-To: <20130828232148.7321.45739.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Ulrich,
 
-Add CA15 CPU cores to r8a7790 for a total of 4 x CA15.
+On Wed, Jul 31, 2013 at 2:57 AM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
+> I don't see any reason why this should not be allowed.
+> ---
+>  arch/arm/Kconfig |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+> index 0ac9be6..54ac595 100644
+> --- a/arch/arm/Kconfig
+> +++ b/arch/arm/Kconfig
+> @@ -1938,7 +1938,7 @@ endchoice
+>
+>  config ARM_APPENDED_DTB
+>         bool "Use appended device tree blob to zImage (EXPERIMENTAL)"
+> -       depends on OF && !ZBOOT_ROM
+> +       depends on OF
+>         help
+>           With this option, the boot code will look for a device tree binary
+>           (DTB) appended to zImage
+> --
+> 1.7.10.4
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Thanks for your patches. I'm not sure about the reason behind this
+!ZBOOT_ROM - perhaps the kernel should run from ROM initially somehow
+and shouldn't be overwritten?
 
- Changes since V1:
- - Got rid of APMU DT node
+Regardless I believe the code handles DTB automatically in
+arch/arm/boot/compressed/head-shmobile.S - at least in recent
+renesas.git (I checked renesas-devel-20130801).
 
- arch/arm/boot/dts/r8a7790.dtsi |   21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+So based on that I don't think you need this patch. At least I've been
+able to boot a zImage via USB Mask ROM on Mackerel with appended DTB
+without setting ARM_APPENDED_DTB. The reason to special case our DTB
+handling is that the MERAM used for DTB storage while booting from USB
+Mask ROM can't really be used to pass the DTB to the kernel - so
+because of that we need to relocate our DTB to RAM early on.
 
---- 0001/arch/arm/boot/dts/r8a7790.dtsi
-+++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-08-28 21:00:55.000000000 +0900
-@@ -24,6 +24,27 @@
- 			reg = <0>;
- 			clock-frequency = <1300000000>;
- 		};
-+
-+		cpu1: cpu@1 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <1>;
-+			clock-frequency = <1300000000>;
-+		};
-+
-+		cpu2: cpu@2 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <2>;
-+			clock-frequency = <1300000000>;
-+		};
-+
-+		cpu3: cpu@3 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <3>;
-+			clock-frequency = <1300000000>;
-+		};
- 	};
- 
- 	gic: interrupt-controller@f1001000 {
+Cheers,
+
+/ magnus
