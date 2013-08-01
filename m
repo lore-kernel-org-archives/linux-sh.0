@@ -1,61 +1,27 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:43:00 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7790: Add DU and LVDS clocks
-Message-Id: <c223d986b953a4686f2540091f82e44030a50daa.1377652063.git.horms+renesas@verge.net.au>
+From: Chen Gang <gang.chen@asianux.com>
+Date: Thu, 01 Aug 2013 00:30:44 +0000
+Subject: Re: [PATCH] sh: include: asm: include "linux/sched.h" in "ptrace.h"
+Message-Id: <51F9AC34.6010106@asianux.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377652063.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377652063.git.horms+renesas@verge.net.au>
+References: <51F8D08A.8000502@asianux.com>
+In-Reply-To: <51F8D08A.8000502@asianux.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On 07/31/2013 06:03 PM, David Howells wrote:
+> Chen Gang <gang.chen@asianux.com> wrote:
+> 
+>> > Need include "linux/sched.h" in "ptrace.h", or 'allmodconfig' can not
+>> > pass compiling.
+> You can't do that.  linux/sched.h #includes asm/ptrace.h already.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+OH, really it is. Although it can pass compiling, it is incorrect (will
+make things worse).
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index fc36d3d..d99b87b 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -182,7 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
- /* MSTP */
- enum {
- 	MSTP813,
--	MSTP721, MSTP720,
-+	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
- 	MSTP717, MSTP716,
- 	MSTP522,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
-@@ -193,6 +193,11 @@ enum {
- 
- static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
-+	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
-+	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
-+	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
-+	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
-+	[MSTP722] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 22, 0), /* DU2 */
- 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
- 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
- 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
-@@ -251,6 +256,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
- 
- 	/* MSTP */
-+	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
-+	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
-+	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
-+	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
-+	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+I will send patch v2 for it. :-)
+
+Thanks.
 -- 
-1.8.3.2
-
+Chen Gang
