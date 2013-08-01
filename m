@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:39:27 +0000
-Subject: [GIT PULL 1/9] ARM: shmobile: Introduce shared SCU SMP boot code
-Message-Id: <c970d4ef3ac6d56f5fd02902ad2ad80377c0bca1.1375841380.git.horms+renesas@verge.net.au>
+Date: Thu, 01 Aug 2013 08:26:31 +0000
+Subject: [PATCH 09/14] ARM: shmobile: r8a73a4: Remove ->init_machine() special case
+Message-Id: <67fde41ea4251f722b4466597c479fb42fccac2c.1375344714.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375841380.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
+References: <cover.1375344714.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,73 +12,50 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add SMP boot functions for SCU equipped mach-shmobile SoCs.
+No need to special case r8a73a4 ->init_machine(),
+so get rid of undesired cpufreq platform device
+from the generic long term r8a73a4 DT support code.
 
-At this point shmobile_smp_scu_prepare_cpus() controls the SCU and
-installs boot fn and arg, while shmobile_smp_scu_boot_secondary()
-currently does nothing. In the future the boot function and arg
-install code will be reworked, so the empty function is ground
-work for that.
+For short term support on APE6EVM the DT reference
+implementation already adds a "cpufreq-cpu0" platform
+device so that can be used for development.
+
+Regarding more long term cpufreq support, perhaps
+it makes sense to adjust the cpufreq driver to check
+for DT information directly instead of using a
+platform device for software configuration and DT
+for hardware parameters.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |  3 +++
- arch/arm/mach-shmobile/platsmp-scu.c         | 31 ++++++++++++++++++++++++++++
- 2 files changed, 34 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/platsmp-scu.c
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index e818f02..42761f4 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -11,6 +11,9 @@ extern void shmobile_boot_vector(void);
- extern unsigned long shmobile_boot_fn;
- extern unsigned long shmobile_boot_arg;
- extern void shmobile_boot_scu(void);
-+extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
-+extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
-+					   struct task_struct *idle);
- struct clk;
- extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
-diff --git a/arch/arm/mach-shmobile/platsmp-scu.c b/arch/arm/mach-shmobile/platsmp-scu.c
-new file mode 100644
-index 0000000..8f478e4
---- /dev/null
-+++ b/arch/arm/mach-shmobile/platsmp-scu.c
-@@ -0,0 +1,31 @@
-+/*
-+ * SMP support for SoCs with SCU covered by mach-shmobile
-+ *
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+#include <linux/init.h>
-+#include <linux/io.h>
-+#include <linux/smp.h>
-+#include <asm/smp_plat.h>
-+#include <asm/smp_scu.h>
-+#include <mach/common.h>
-+
-+void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
-+{
-+	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
-+	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
-+
-+	/* enable SCU and cache coherency on booting CPU */
-+	scu_enable(shmobile_scu_base);
-+	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
-+}
-+
-+int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
-+{
-+	/* do nothing for now */
-+	return 0;
-+}
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index d533bd2..11c0f63 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -210,11 +210,6 @@ void __init r8a73a4_init_delay(void)
+ }
+ 
+ #ifdef CONFIG_USE_OF
+-void __init r8a73a4_add_standard_devices_dt(void)
+-{
+-	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+ 
+ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a73a4",
+@@ -223,7 +218,6 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ 
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+ 	.init_early	= r8a73a4_init_delay,
+-	.init_machine	= r8a73a4_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
+ MACHINE_END
 -- 
 1.8.3.2
 
