@@ -1,30 +1,20 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 07 Aug 2013 12:02:21 +0000
-Subject: [PATCH 0/2] R8A7790 PFC DU support
-Message-Id: <1375876943-11824-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Aug 2013 07:42:06 +0000
+Subject: Re: [PATCH 1/3] ARM: shmobile: ape6evm: add "__initconst" annotations where needed
+Message-Id: <20130801074205.GC15265@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+On Wed, Jul 31, 2013 at 02:40:14PM +0200, Guennadi Liakhovetski wrote:
+> This patch adds __initconst markers to the platform data and resources,
+> used on ape6evm as parameters to platform_device_register_resndata().
+> The data is duplicated inside that function, therefore original data
+> can be discarded after initialisation is completed.
+> 
+> Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Those two patches add pin groups and functions for the Display Unit in the
-R8A7790 SoC. They're based on the latest pinctrl/for-next branch and can be
-found in my git tree at
-
-	git://linuxtv.org/pinchartl/fbdev.git pinmux/next/r8a7790
-
-Laurent Pinchart (2):
-  sh-pfc: r8a7790: Rename DU1_DOTCLKIN to DU_DOTCLKIN1
-  sh-pfc: r8a7790: Add DU pin groups and functions
-
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 142 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 138 insertions(+), 4 deletions(-)
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Thanks, I have queued this up for v3.12 in the cleanup4 branch.
