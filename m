@@ -1,52 +1,37 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Fri, 23 Aug 2013 15:03:42 +0000
-Subject: [PATCH v3 0/5] clk: clock deregistration support
-Message-Id: <1377270227-1030-1-git-send-email-s.nawrocki@samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 01 Aug 2013 08:26:29 +0000
+Subject: [PATCH 07/14] ARM: shmobile: Remove Marzen use of <mach/hardware.h>
+Message-Id: <85469abe4930fb001c79ac5f0ca17b65c7b2580d.1375344714.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375344714.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch set is intended to add clock deregistration support to
-the common clock framework, required for clock suppliers as loadable
-modules.  Previous version of this series can be found at [1].
+From: Magnus Damm <damm@opensource.se>
 
-Changes since v2:
- - reordered the patches so the race condition is fixed before it can
-   actually cause any issues,
- - fixed handling of NULL clock pointers in __clk_get(), __clk_put(),
- - added patch adding actual asignment of clk->owner; more details are
-   discussed in that specific patch.
+Remove unused <mach/hardware.h> on Marzen.
 
-Changes since v1:
- - moved of_clk_{lock, unlock}, __of_clk_get_from_provider() function
-   declaractions to a local header,
- - renamed clk_dummy_* to clk_nodrv_*.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-
-[1] http://www.spinics.net/lists/linux-sh/msg22948.html
-
-Sylwester Nawrocki (5):
-  clk: Provide not locked variant of of_clk_get_from_provider()
-  clkdev: Fix race condition in clock lookup from device tree
-  clk: Add common __clk_get(), __clk_put() implementations
-  clk: Assign module owner of a clock being registered
-  clk: Implement clk_unregister
-
- arch/arm/include/asm/clkdev.h      |    2 +
- arch/blackfin/include/asm/clkdev.h |    2 +
- arch/mips/include/asm/clkdev.h     |    2 +
- arch/sh/include/asm/clkdev.h       |    2 +
- drivers/clk/clk.c                  |  189 +++++++++++++++++++++++++++++++++---
- drivers/clk/clk.h                  |   16 +++
- drivers/clk/clkdev.c               |   12 ++-
- include/linux/clk-private.h        |    5 +
- include/linux/clk-provider.h       |    2 +
- include/linux/clkdev.h             |    5 +
- 10 files changed, 224 insertions(+), 13 deletions(-)
- create mode 100644 drivers/clk/clk.h
-
---
-1.7.9.5
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index a7d1010..1f57865 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -37,7 +37,6 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+-#include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+-- 
+1.8.3.2
 
