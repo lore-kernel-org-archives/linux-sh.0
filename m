@@ -1,32 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 06 Aug 2013 02:58:12 +0000
-Subject: Re: [PATCH v6 3/3] ARM: shmobile: lager: enable nfsroot in DTS
-Message-Id: <87pptrh6f3.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 01 Aug 2013 08:27:15 +0000
+Subject: [GIT] Second Round of Renesas ARM based SoC fixes for v3.12
+Message-Id: <cover.1375345067.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
- <1375175361-23027-4-git-send-email-horms+renesas@verge.net.au>
- <87bo5h3lb3.wl%kuninori.morimoto.gx@renesas.com>
- <20130801080226.GF15265@verge.net.au>
- <20130806010736.GA20940@verge.net.au>
- <87r4e7h88z.wl%kuninori.morimoto.gx@renesas.com>
- <20130806022955.GA25114@verge.net.au>
-In-Reply-To: <20130806022955.GA25114@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Olof, Hi Arnd,
 
-Hi Simon
+please consider this second round of Renesas ARM based SoC fixes for v3.12.
 
-> Yes, I think we can remove it.
-> Would you like to make some patches?
+It is based on the first round of Renesas ARM based SoC fixes for v3.12,
+/renesas-fixes-for-v3.12, which I have already send a pull-request for.
 
-Yes, I can send patches.
-But, I can't test emev2-kzm9d board.
-Do you have it ?
+The following changes since commit 93d8a6fbe69a629a7bb37bb546699a5c49963dc5:
 
+  ARM: shmobile: r8a7740: Fix TPU clock name (2013-07-19 11:12:35 +0900)
 
-Best regards
----
-Kuninori Morimoto
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes2-for-v3.12
+
+for you to fetch changes up to ab40900b70dc31a64f23b1b4dbb0917afb039775:
+
+  ARM: shmobile: armadillo800eva-reference: fix compiler warning (2013-07-23 10:35:33 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM based SoC fixes for v3.12
+
+* Fix compiler warning in armadillo800eva board code
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      ARM: shmobile: armadillo800eva-reference: fix compiler warning
+
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
