@@ -1,41 +1,30 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 31 Aug 2013 00:09:23 +0000
-Subject: Re: [PATCH v3] dma: add driver for R-Car HPB-DMAC
-Message-Id: <52213433.5070603@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Aug 2013 08:01:32 +0000
+Subject: Re: [PATCH 0/4] ARM: shmobile: ape6evm: support GPIO switches and LEDs
+Message-Id: <20130801080132.GA2157@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308250033.24936.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308250033.24936.sergei.shtylyov@cogentembedded.com>
+References: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1375149543-27564-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: vinod.koul@intel.com
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Tue, Jul 30, 2013 at 10:58:59AM +0900, Simon Horman wrote:
+> This short series adds support for GPIO swtiches and LEDS to
+> the ape6evm board.
+> 
+> Applies on top of renesas-devel-20130726.
+> 
+> Simon Horman (4):
+>   ARM: shmobile: ape6evm: support GPIO switches
+>   ARM: shmobile: ape6evm: Enable gpio-keys in defconfig
+>   ARM: shmobile: ape6evm: Add GPIO LEDs
+>   ARM: shmobile: ape6evm: Enable gpio-leds in defconfig
+> 
+>  arch/arm/configs/ape6evm_defconfig     |  6 +++-
+>  arch/arm/mach-shmobile/board-ape6evm.c | 60 ++++++++++++++++++++++++++++++++++
 
-On 08/25/2013 12:33 AM, Sergei Shtylyov wrote:
+Hi Magnus, Hi All,
 
-> From: Max Filippov <max.filippov@cogentembedded.com>
-
-> Add support for HPB-DMAC found in Renesas R-Car SoCs, using 'shdma-base' DMA
-> driver framework.
-
-> Based on the original patch by Phil Edworthy <phil.edworthy@renesas.com>.
-
-> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-> [Sergei: removed useless #include, sorted #include's, fixed HPB_DMA_TCR_MAX,
-> fixed formats and removed line breaks in the dev_dbg() calls, rephrased and
-> added IRQ # to the shdma_request_irq() failure message, added MODULE_AUTHOR(),
-> removed '__init'/'__exit' annotations from the probe()/remove() methods, removed
-> '__initdata' annotation from 'hpb_dmae_driver', fixed guard macro name in the
-> header file, fixed #define ASYNCRSTR_ASRST20, added #define ASYNCRSTR_ASRST24,
-> added the necessary runtime PM calls to the probe() and remove() methods,
-> handled errors returned by dma_async_device_register(), beautified comments
-> and #define's.]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-    Vinod, we've posted the updated patch almost a week ago. Is there any hope 
-to get it into 3.12?
-
-WBR, Sergei
-
+could I get a review of this, and if appropriate an Ack.
