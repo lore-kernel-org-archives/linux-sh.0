@@ -1,25 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 05 Aug 2013 08:35:55 +0000
-Subject: Re: [PATCH 02/02] ARM: shmobile: Per-CPU SMP boot / sleep code for SCU SoCs
-Message-Id: <20130805083553.GC13274@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 01 Aug 2013 08:26:27 +0000
+Subject: [PATCH 05/14] ARM: shmobile: Remove EMEV2 use of <mach/hardware.h>
+Message-Id: <7ffdc70e14756135da5949a6c9bc32e2086f3d02.1375344714.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731183808.31551.47235.sendpatchset@w520>
- <20130731183827.31551.83583.sendpatchset@w520>
-In-Reply-To: <20130731183827.31551.83583.sendpatchset@w520>
+References: <cover.1375344714.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 01, 2013 at 03:38:27AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Hook in the per-CPU boot and sleep code in the shared
-> mach-shmobile SCU code. CPUs may be kept in the asm
-> routine until ->boot_secondary() when the per-CPU
-> boot vector is installed. At the end of ->die() the
-> asm sleep routine is invoked.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up for v3.12 in the smp branch.
+Remove unused <mach/hardware.h> on EMEV2.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-emev2.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index 19980be..fed753d 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -27,7 +27,6 @@
+ #include <linux/input.h>
+ #include <linux/io.h>
+ #include <linux/irqchip/arm-gic.h>
+-#include <mach/hardware.h>
+ #include <mach/common.h>
+ #include <mach/emev2.h>
+ #include <mach/irqs.h>
+-- 
+1.8.3.2
+
