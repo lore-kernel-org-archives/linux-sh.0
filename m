@@ -1,107 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:37:54 +0000
-Subject: [PATCH 4/5] ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct regulators
-Message-Id: <02823096d2d5f38b7d6c7badc1215a38e1113f3d.1377653181.git.horms+renesas@verge.net.au>
+From: Chen Gang <gang.chen@asianux.com>
+Date: Thu, 01 Aug 2013 01:01:34 +0000
+Subject: [PATCH v2] sh: include: asm: include "linux/sched.h" instead of "asm/ptrace.h" in "kgdb.h"
+Message-Id: <51F9B36E.6090609@asianux.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377653181.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377653181.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Before really use "asm/ptrace.h", need include "linux/sched.h" firstly,
+and also "linux/sched.h" has already included "asm/ptrace.h".
 
-Currently a dummy fixed always-on regulator is used for all 3 SD/MMC
-interfaces on ape6evm. This patch updates the board to use correct supplies
-for MMC0, SDHI0 and SDHI1 VDD. SDHI0 VccQ supply regulator should be
-implemented in a separate patch.
+So in "kgdb.h", need include "linux/sched.h" instead of "asm/ptrace.h",
+or 'allmodconfig' can not pass compiling.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The relate error:
+
+    CC      arch/sh/kernel/kgdb.o
+  In file included from /root/linux-next/arch/sh/include/asm/kgdb.h:5:0,
+                   from include/linux/kgdb.h:20,
+                   from arch/sh/kernel/kgdb.c:12:
+  arch/sh/kernel/kgdb.c: In function 'sleeping_thread_to_gdb_regs':
+  arch/sh/include/asm/ptrace.h:103:11: error: implicit declaration of function 'task_stack_page' [-Werror=implicit-function-declaration]
+    ((struct pt_regs *) (task_stack_page(task) + THREAD_SIZE) - 1)
+             ^
+  arch/sh/kernel/kgdb.c:225:32: note: in expansion of macro 'task_pt_regs'
+    struct pt_regs *thread_regs = task_pt_regs(p);
+                                  ^
+  arch/sh/kernel/kgdb.c:242:23: error: dereferencing pointer to incomplete type
+    gdb_regs[GDB_R15] = p->thread.sp;
+                         ^
+  arch/sh/kernel/kgdb.c:243:22: error: dereferencing pointer to incomplete type
+    gdb_regs[GDB_PC] = p->thread.pc;
+                        ^
+  arch/sh/kernel/kgdb.c: In function 'singlestep_trap_handler':
+  arch/sh/kernel/kgdb.c:310:27: error: 'SIGTRAP' undeclared (first use in this function)
+    kgdb_handle_exception(0, SIGTRAP, 0, regs);
+                             ^
+  arch/sh/kernel/kgdb.c:310:27: note: each undeclared identifier is reported only once for each function it appears in
+
+
+Signed-off-by: Chen Gang <gang.chen@asianux.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c | 54 +++++++++++++++++++++++++++++-----
- 1 file changed, 46 insertions(+), 8 deletions(-)
+ arch/sh/include/asm/kgdb.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 38c6c73..cc951b1 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -113,16 +113,49 @@ static const struct smsc911x_platform_config lan9220_data __initconst = {
- };
+diff --git a/arch/sh/include/asm/kgdb.h b/arch/sh/include/asm/kgdb.h
+index 9e7d2d1..fef7091 100644
+--- a/arch/sh/include/asm/kgdb.h
++++ b/arch/sh/include/asm/kgdb.h
+@@ -2,7 +2,7 @@
+ #define __ASM_SH_KGDB_H
  
- /*
-- * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
-- * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use the
-- * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is also
-- * supplied by the same tps80032 regulator and thus can also be adjusted
-- * dynamically.
-+ * MMC0 power supplies:
-+ * Both Vcc and VccQ to eMMC on APE6EVM are supplied by a tps80032 voltage
-+ * regulator. Until support for it is added to this file we simulate the
-+ * Vcc supply by a fixed always-on regulator
-  */
--static struct regulator_consumer_supply fixed3v3_power_consumers[] +static struct regulator_consumer_supply vcc_mmc0_consumers[]  {
- 	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+};
-+
-+/*
-+ * SDHI0 power supplies:
-+ * Vcc to SDHI0 on APE6EVM is supplied by a GPIO-switchable regulator. VccQ is
-+ * provided by the same tps80032 regulator as both MMC0 voltages - see comment
-+ * above
-+ */
-+static struct regulator_consumer_supply vcc_sdhi0_consumers[] +{
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+};
-+
-+static struct regulator_init_data vcc_sdhi0_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
-+	.consumer_supplies      = vcc_sdhi0_consumers,
-+};
-+
-+static const struct fixed_voltage_config vcc_sdhi0_info __initconst = {
-+	.supply_name = "SDHI0 Vcc",
-+	.microvolts = 3300000,
-+	.gpio = 76,
-+	.enable_high = 1,
-+	.init_data = &vcc_sdhi0_init_data,
-+};
-+
-+/*
-+ * SDHI1 power supplies:
-+ * Vcc and VccQ to SDHI1 on APE6EVM are both fixed at 3.3V
-+ */
-+static struct regulator_consumer_supply vcc_sdhi1_consumers[] +{
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
- };
+ #include <asm/cacheflush.h>
+-#include <asm/ptrace.h>
++#include <linux/sched.h>
  
-@@ -215,14 +248,19 @@ static void __init ape6evm_add_standard_devices(void)
- 	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
- 					  lan9220_res, ARRAY_SIZE(lan9220_res),
- 					  &lan9220_data, sizeof(lan9220_data));
--	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
--				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+
-+	regulator_register_always_on(1, "MMC0 Vcc", vcc_mmc0_consumers,
-+				     ARRAY_SIZE(vcc_mmc0_consumers), 2800000);
- 	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
- 					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
- 					  &mmcif0_pdata, sizeof(mmcif0_pdata));
-+	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 2,
-+				      &vcc_sdhi0_info, sizeof(vcc_sdhi0_info));
- 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
- 					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
- 					  &sdhi0_pdata, sizeof(sdhi0_pdata));
-+	regulator_register_always_on(3, "SDHI1 Vcc", vcc_sdhi1_consumers,
-+				     ARRAY_SIZE(vcc_sdhi1_consumers), 3300000);
- 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
- 					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
- 					  &sdhi1_pdata, sizeof(sdhi1_pdata));
+ enum regnames {
+ 	GDB_R0, GDB_R1, GDB_R2, GDB_R3, GDB_R4, GDB_R5, GDB_R6, GDB_R7,
 -- 
-1.8.3.2
-
+1.7.7.6
