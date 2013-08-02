@@ -1,102 +1,270 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:36 +0000
-Subject: [PATCH v3 06/14] sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
-Message-Id: <1375958324-29683-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 02 Aug 2013 06:39:56 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a7779: move r8a7779_init_irq_xxx() to setup
+Message-Id: <87d2pw8ukn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The MMCIF and SHDI platform data .set_pwr() callbacks are used to
-control the vmmc/vqmmc power supplies. As the power supplies already
-register control GPIOs there's no need to perform the operation
-manually. Remove the callback functions.
+This patch moves r8a7779_init_irq_xxx() to setup code,
+and remove intc-r8a7779.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Now, r8a7779_init_irq_extpin() uses
+platform_device_register_resndata() instead of
+platform_device_register()
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 41 ------------------------------------
- 1 file changed, 41 deletions(-)
+ arch/arm/mach-shmobile/Makefile        |    2 +-
+ arch/arm/mach-shmobile/intc-r8a7779.c  |  116 --------------------------------
+ arch/arm/mach-shmobile/setup-r8a7779.c |   80 ++++++++++++++++++++++
+ 3 files changed, 81 insertions(+), 117 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/intc-r8a7779.c
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 5af40f5..0332d25 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -598,29 +598,9 @@ static struct platform_device sdhi0_power = {
- 	},
- };
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 25d8890..c30867c 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -13,7 +13,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o intc-r8a7779.o
++obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
  
--static void sdhi0_set_pwr(struct platform_device *pdev, int state)
+diff --git a/arch/arm/mach-shmobile/intc-r8a7779.c b/arch/arm/mach-shmobile/intc-r8a7779.c
+deleted file mode 100644
+index e992a68..0000000
+--- a/arch/arm/mach-shmobile/intc-r8a7779.c
++++ /dev/null
+@@ -1,116 +0,0 @@
+-/*
+- * r8a7779 processor support - INTC hardware block
+- *
+- * Copyright (C) 2011  Renesas Solutions Corp.
+- * Copyright (C) 2011  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/platform_device.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/io.h>
+-#include <linux/irqchip/arm-gic.h>
+-#include <linux/platform_data/irq-renesas-intc-irqpin.h>
+-#include <linux/irqchip.h>
+-#include <mach/common.h>
+-#include <mach/irqs.h>
+-#include <mach/r8a7779.h>
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-
+-#define INT2SMSKCR0 IOMEM(0xfe7822a0)
+-#define INT2SMSKCR1 IOMEM(0xfe7822a4)
+-#define INT2SMSKCR2 IOMEM(0xfe7822a8)
+-#define INT2SMSKCR3 IOMEM(0xfe7822ac)
+-#define INT2SMSKCR4 IOMEM(0xfe7822b0)
+-
+-#define INT2NTSR0 IOMEM(0xfe700060)
+-#define INT2NTSR1 IOMEM(0xfe700064)
+-
+-static struct renesas_intc_irqpin_config irqpin0_platform_data = {
+-	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+-	.sense_bitfield_width = 2,
+-};
+-
+-static struct resource irqpin0_resources[] = {
+-	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
+-	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
+-	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
+-	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
+-	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
+-	DEFINE_RES_IRQ(gic_spi(27)), /* IRQ0 */
+-	DEFINE_RES_IRQ(gic_spi(28)), /* IRQ1 */
+-	DEFINE_RES_IRQ(gic_spi(29)), /* IRQ2 */
+-	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
+-};
+-
+-static struct platform_device irqpin0_device = {
+-	.name		= "renesas_intc_irqpin",
+-	.id		= 0,
+-	.resource	= irqpin0_resources,
+-	.num_resources	= ARRAY_SIZE(irqpin0_resources),
+-	.dev		= {
+-		.platform_data	= &irqpin0_platform_data,
+-	},
+-};
+-
+-void __init r8a7779_init_irq_extpin(int irlm)
 -{
--	static int power_gpio = -EINVAL;
+-	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
+-	unsigned long tmp;
 -
--	if (power_gpio < 0) {
--		int ret = gpio_request(GPIO_PTB6, NULL);
--		if (!ret) {
--			power_gpio = GPIO_PTB6;
--			gpio_direction_output(power_gpio, 0);
--		}
--	}
+-	if (icr0) {
+-		tmp = ioread32(icr0);
+-		if (irlm)
+-			tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
+-		else
+-			tmp &= ~(1 << 23); /* IRL mode - not supported */
+-		tmp |= (1 << 21); /* LVLMODE = 1 */
+-		iowrite32(tmp, icr0);
+-		iounmap(icr0);
 -
--	/*
--	 * Toggle the GPIO regardless, whether we managed to grab it above or
--	 * the fixed regulator driver did.
--	 */
--	gpio_set_value(GPIO_PTB6, state);
+-		if (irlm)
+-			platform_device_register(&irqpin0_device);
+-	} else
+-		pr_warn("r8a7779: unable to setup external irq pin mode\n");
 -}
 -
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.set_pwr	= sdhi0_set_pwr,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
- 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
-@@ -650,25 +630,6 @@ static struct platform_device sdhi0_device = {
- 	},
- };
- 
--static void cn12_set_pwr(struct platform_device *pdev, int state)
+-#ifdef CONFIG_OF
+-static int r8a7779_set_wake(struct irq_data *data, unsigned int on)
 -{
--	static int power_gpio = -EINVAL;
--
--	if (power_gpio < 0) {
--		int ret = gpio_request(GPIO_PTB7, NULL);
--		if (!ret) {
--			power_gpio = GPIO_PTB7;
--			gpio_direction_output(power_gpio, 0);
--		}
--	}
--
--	/*
--	 * Toggle the GPIO regardless, whether we managed to grab it above or
--	 * the fixed regulator driver did.
--	 */
--	gpio_set_value(GPIO_PTB7, state);
+-	return 0; /* always allow wakeup */
 -}
 -
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SDHI1 */
- static struct sh_mobile_sdhi_info sdhi1_info = {
-@@ -678,7 +639,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 			  MMC_CAP_NEEDS_POLL,
- 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
- 	.cd_gpio	= GPIO_PTW7,
--	.set_pwr	= cn12_set_pwr,
- };
+-void __init r8a7779_init_irq_dt(void)
+-{
+-	gic_arch_extn.irq_set_wake = r8a7779_set_wake;
+-
+-	irqchip_init();
+-
+-	/* route all interrupts to ARM */
+-	__raw_writel(0xffffffff, INT2NTSR0);
+-	__raw_writel(0x3fffffff, INT2NTSR1);
+-
+-	/* unmask all known interrupts in INTCS2 */
+-	__raw_writel(0xfffffff0, INT2SMSKCR0);
+-	__raw_writel(0xfff7ffff, INT2SMSKCR1);
+-	__raw_writel(0xfffbffdf, INT2SMSKCR2);
+-	__raw_writel(0xbffffffc, INT2SMSKCR3);
+-	__raw_writel(0x003fee3f, INT2SMSKCR4);
+-
+-}
+-#endif
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 6095ab3..4eff42b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -22,8 +22,11 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/irqchip/arm-gic.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/input.h>
+@@ -67,6 +70,60 @@ void __init r8a7779_map_io(void)
+ 	iotable_init(r8a7779_io_desc, ARRAY_SIZE(r8a7779_io_desc));
+ }
  
- static struct resource sdhi1_resources[] = {
-@@ -1000,7 +960,6 @@ static struct resource sh_mmcif_resources[] = {
++/* IRQ */
++#define INT2SMSKCR0 IOMEM(0xfe7822a0)
++#define INT2SMSKCR1 IOMEM(0xfe7822a4)
++#define INT2SMSKCR2 IOMEM(0xfe7822a8)
++#define INT2SMSKCR3 IOMEM(0xfe7822ac)
++#define INT2SMSKCR4 IOMEM(0xfe7822b0)
++
++#define INT2NTSR0 IOMEM(0xfe700060)
++#define INT2NTSR1 IOMEM(0xfe700064)
++
++static struct renesas_intc_irqpin_config irqpin0_platform_data __initdata = {
++	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
++	.sense_bitfield_width = 2,
++};
++
++static struct resource irqpin0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
++	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
++	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
++	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
++	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
++	DEFINE_RES_IRQ(gic_spi(27)), /* IRQ0 */
++	DEFINE_RES_IRQ(gic_spi(28)), /* IRQ1 */
++	DEFINE_RES_IRQ(gic_spi(29)), /* IRQ2 */
++	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
++};
++
++void __init r8a7779_init_irq_extpin(int irlm)
++{
++	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
++	u32 tmp;
++
++	if (!icr0) {
++		pr_warn("r8a7779: unable to setup external irq pin mode\n");
++		return;
++	}
++
++	tmp = ioread32(icr0);
++	if (irlm)
++		tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
++	else
++		tmp &= ~(1 << 23); /* IRL mode - not supported */
++	tmp |= (1 << 21); /* LVLMODE = 1 */
++	iowrite32(tmp, icr0);
++	iounmap(icr0);
++
++	if (irlm)
++		platform_device_register_resndata(
++			&platform_bus, "renesas_intc_irqpin", -1,
++			irqpin0_resources, ARRAY_SIZE(irqpin0_resources),
++			&irqpin0_platform_data, sizeof(irqpin0_platform_data));
++}
++
++/* PFC/GPIO */
+ static struct resource r8a7779_pfc_resources[] = {
+ 	DEFINE_RES_MEM(0xfffc0000, 0x023c),
  };
+@@ -641,6 +698,29 @@ void __init r8a7779_init_late(void)
+ }
  
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
--	.set_pwr	= cn12_set_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
+ #ifdef CONFIG_USE_OF
++static int r8a7779_set_wake(struct irq_data *data, unsigned int on)
++{
++	return 0; /* always allow wakeup */
++}
++
++void __init r8a7779_init_irq_dt(void)
++{
++	gic_arch_extn.irq_set_wake = r8a7779_set_wake;
++
++	irqchip_init();
++
++	/* route all interrupts to ARM */
++	__raw_writel(0xffffffff, INT2NTSR0);
++	__raw_writel(0x3fffffff, INT2NTSR1);
++
++	/* unmask all known interrupts in INTCS2 */
++	__raw_writel(0xfffffff0, INT2SMSKCR0);
++	__raw_writel(0xfff7ffff, INT2SMSKCR1);
++	__raw_writel(0xfffbffdf, INT2SMSKCR2);
++	__raw_writel(0xbffffffc, INT2SMSKCR3);
++	__raw_writel(0x003fee3f, INT2SMSKCR4);
++}
++
+ void __init r8a7779_init_delay(void)
+ {
+ 	shmobile_setup_delay(1000, 2, 4); /* Cortex-A9 @ 1000MHz */
 -- 
-1.8.1.5
+1.7.9.5
 
