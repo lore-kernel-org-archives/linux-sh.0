@@ -1,59 +1,46 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 02 Aug 2013 13:03:42 +0000
-Subject: [PATCH] spi: rspi: provide port addresses to dmaengine driver via slave configuration
-Message-Id: <Pine.LNX.4.64.1308021500041.28012@axis700.grange>
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 02 Aug 2013 16:29:07 +0000
+Subject: Re: [PATCH] spi: rspi: provide port addresses to dmaengine driver via slave configuration
+Message-Id: <20130802162907.GQ9858@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="hz7mcsMzb/4kGyFr"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <Pine.LNX.4.64.1308021500041.28012@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1308021500041.28012@axis700.grange>
 To: linux-sh@vger.kernel.org
 
-Don't rely on shdma dhaengine driver getting DMA slave addresses from its
-slave configuration. Instead provide those addresses, using a
-dmaengine_slave_config() call.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
- drivers/spi/spi-rspi.c |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
+--hz7mcsMzb/4kGyFr
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index b44a6ac..5f122d9 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -664,12 +664,13 @@ static irqreturn_t rspi_irq(int irq, void *_sr)
- static int rspi_request_dma(struct rspi_data *rspi,
- 				      struct platform_device *pdev)
- {
-+	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	struct rspi_plat_data *rspi_pd = pdev->dev.platform_data;
- 	dma_cap_mask_t mask;
- 	struct dma_slave_config cfg;
- 	int ret;
- 
--	if (!rspi_pd)
-+	if (!res || !rspi_pd)
- 		return 0;	/* The driver assumes no error. */
- 
- 	rspi->dma_width_16bit = rspi_pd->dma_width_16bit;
-@@ -683,6 +684,8 @@ static int rspi_request_dma(struct rspi_data *rspi,
- 		if (rspi->chan_rx) {
- 			cfg.slave_id = rspi_pd->dma_rx_id;
- 			cfg.direction = DMA_DEV_TO_MEM;
-+			cfg.dst_addr = 0;
-+			cfg.src_addr = res->start + RSPI_SPDR;
- 			ret = dmaengine_slave_config(rspi->chan_rx, &cfg);
- 			if (!ret)
- 				dev_info(&pdev->dev, "Use DMA when rx.\n");
-@@ -698,6 +701,8 @@ static int rspi_request_dma(struct rspi_data *rspi,
- 		if (rspi->chan_tx) {
- 			cfg.slave_id = rspi_pd->dma_tx_id;
- 			cfg.direction = DMA_MEM_TO_DEV;
-+			cfg.dst_addr = res->start + RSPI_SPDR;
-+			cfg.src_addr = 0;
- 			ret = dmaengine_slave_config(rspi->chan_tx, &cfg);
- 			if (!ret)
- 				dev_info(&pdev->dev, "Use DMA when tx\n");
--- 
-1.7.2.5
+On Fri, Aug 02, 2013 at 03:03:42PM +0200, Guennadi Liakhovetski wrote:
+> Don't rely on shdma dhaengine driver getting DMA slave addresses from its
+> slave configuration. Instead provide those addresses, using a
+> dmaengine_slave_config() call.
 
+Applied, thanks.
+
+--hz7mcsMzb/4kGyFr
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.20 (GNU/Linux)
+
+iQIcBAEBAgAGBQJR+95QAAoJELSic+t+oim9lboP/jrW7tELXuPGE4sIibALGNCp
+UG3Lwj4WmCpGehZ6k53IfvHBWK22T+av0oXLNAt1f4riKom3DmhtIleWzLk51Et1
+VRktoo/btPXkYFsr76cv/UeZE4Wr9wqqQX6/0EdQm8FoxGogg16dyBLTNltn7gzP
+o/ttHgqqOsjIlU9PZtXCCuIN5Th65c8O6tYOYzgRabBHxaMJUOzG15lOZgoDnVGt
+gO4rtsv7Xy1pSttHiLXnLVKZdU8RuTMdPnAnNFTzcpApIFW0AoeZF0FkaAWC/EdU
+BYVk0iflePtmBTD+7r7E8ex/vXMuppWyhpaOhyE9YLv8x6qemtO++3wxZL+933AV
+xb8HiUcmTHQWg9F05xNwah6uV4mIFSFRoInYpYSn3XKO7TOPSumev2fmzzHLQAxx
+eT0bBBiEe6n2Kf+gtzd3QO29Phoos0zx2Bqo9zTx2j5gnC/LHoVQTKZVneZFzBdh
+u7dFD7SecCOHNaKNnD721URytwLPgS7X3gBX0Lm3qHqLwIxf/CkIgu7IkI/Lg6tI
+A1x30HoUzUSmbRS8uByaybDmTVV2v59A7ioF3n7Fk86iCyziqq+fo87Kh0mPm8nc
+r7P2LMukZMRnOHW1uF/M7l9JBDldc1uacEokmIK5BkiNyiGwsECu4NR0UBDEC3De
+35xX3xaD6W/Z+sYYtXTs
+=DDJB
+-----END PGP SIGNATURE-----
+
+--hz7mcsMzb/4kGyFr--
