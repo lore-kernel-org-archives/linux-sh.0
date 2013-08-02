@@ -1,29 +1,53 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 02 Aug 2013 09:44:34 +0000
-Subject: Re: [PATCH v5 1/9] media: Add support for circular graph traversal
-Message-Id: <51FB7F82.5070500@xs4all.nl>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 02 Aug 2013 01:03:22 +0000
+Subject: [PATCH v5 3/9] videobuf2: Clarify queue_setup() and buf_prepare() usage documentation
+Message-Id: <1375405408-17134-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1375405408-17134-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375405408-17134-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
+Explain how the two operations must handle formats and validate buffer
+sizes when used with VIDIOC_CREATE_BUFS.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ include/media/videobuf2-core.h | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
-On 08/02/2013 03:03 AM, Laurent Pinchart wrote:
-> The graph traversal API (media_entity_graph_walk_*) doesn't support
-> cyclic graphs and will fail to correctly walk a graph when circular
-> links exist. Support circular graph traversal by checking whether an
-> entity has already been visited before pushing it to the stack.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+diff --git a/include/media/videobuf2-core.h b/include/media/videobuf2-core.h
+index d88a098..6781258 100644
+--- a/include/media/videobuf2-core.h
++++ b/include/media/videobuf2-core.h
+@@ -219,8 +219,9 @@ struct vb2_buffer {
+  *			configured format and *num_buffers is the total number
+  *			of buffers, that are being allocated. When called from
+  *			VIDIOC_CREATE_BUFS, fmt != NULL and it describes the
+- *			target frame format. In this case *num_buffers are being
+- *			allocated additionally to q->num_buffers.
++ *			target frame format (if the format isn't valid the
++ *			callback must return -EINVAL). In this case *num_buffers
++ *			are being allocated additionally to q->num_buffers.
+  * @wait_prepare:	release any locks taken while calling vb2 functions;
+  *			it is called before an ioctl needs to wait for a new
+  *			buffer to arrive; required to avoid a deadlock in
+@@ -236,8 +237,10 @@ struct vb2_buffer {
+  * @buf_prepare:	called every time the buffer is queued from userspace
+  *			and from the VIDIOC_PREPARE_BUF ioctl; drivers may
+  *			perform any initialization required before each hardware
+- *			operation in this callback; if an error is returned, the
+- *			buffer will not be queued in driver; optional
++ *			operation in this callback; drivers that support
++ *			VIDIOC_CREATE_BUFS must also validate the buffer size;
++ *			if an error is returned, the buffer will not be queued
++ *			in driver; optional
+  * @buf_finish:		called before every dequeue of the buffer back to
+  *			userspace; drivers may perform any operations required
+  *			before userspace accesses the buffer; optional
+-- 
+1.8.1.5
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
-
-Regards,
-
-	Hans
