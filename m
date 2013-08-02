@@ -1,63 +1,93 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Aug 2013 07:58:39 +0000
-Subject: Re: [PATCH 5/6] ARM: shmobile: bockw: add SDHI0 support
-Message-Id: <20130801075839.GA32593@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 02 Aug 2013 14:50:41 +0000
+Subject: [PATCH v5 6/7] ARM: shmobile: r8a73a4: add a DT node and a clock alias for the DMAC
+Message-Id: <1375455042-24093-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878v4henwe.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878v4henwe.wl%kuninori.morimoto.gx@renesas.com>
+References: <1375455042-24093-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1375455042-24093-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-On Wed, Jul 31, 2013 at 04:09:13PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 31-07-2013 4:22, Simon Horman wrote:
-> 
-> >>>This patch is directly accessing to PUPR4 register which can
-> >>>control SDHI0 CD/WP pin pull-up setting.
-> >>>It should be replaced in the future.
-> 
-> >>>Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >>>---
-> >>>  arch/arm/mach-shmobile/board-bockw.c |   29 +++++++++++++++++++++++++++++
-> >>>  1 file changed, 29 insertions(+)
-> 
-> >>>diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-> >>>index 4d65715..2b6103e 100644
-> >>>--- a/arch/arm/mach-shmobile/board-bockw.c
-> >>>+++ b/arch/arm/mach-shmobile/board-bockw.c
-> >>[...]
-> >>>  static const struct pinctrl_map bockw_pinctrl_map[] = {
-> >>>  	/* SCIF0 */
-> >>>  	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-> >>>  				  "scif0_data_a", "scif0"),
-> >>>  	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-> >>>  				  "scif0_ctrl", "scif0"),
-> >>>+	/* SDHI0 */
-> >>>+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
-> >>>+				  "sdhi0", "sdhi0"),
-> >>>  };
-> 
-> >>    These SDHI0 data above don't match
-> >>drivers/pinctrl/sh-pfc/pfc-r8a7778.c and cause this message:
-> 
-> >>sh-pfc pfc-r8a7778: invalid group "sdhi0" for function "sdhi0"
-> 
-> >>    I'm not sure but maybe because of this SD card can't be detected.
-> 
-> >Hi,
-> 
-> >is there a resolution for this problem?
-> >I believe that this patch was included in v3.11-rc1.
-> 
->    I posted the patch about an hour after this message:
-> 
-> http://marc.info/?l=linux-sh&m7488241212082
+Add a DT node for the only system DMAC instance on r8a73a4. The RT DMAC
+can be added later under the same multiplexer, because they can serve the
+same slaves and use the same MID-RID values. Configuration data is
+supplied to the driver, using a compatibility match string.
 
-Thanks for the clarification.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi         |   43 ++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a73a4.c |    1 +
+ 2 files changed, 44 insertions(+), 0 deletions(-)
 
-That patch is currently sitting in the
-fixes-for-v3.11 branch which I tagged as renesas-fixes2-for-v3.11
-and send a pull request for recently.
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index e344b10..3c9c7f2 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -78,6 +78,49 @@
+ 				<0 56 4>, <0 57 4>;
+ 	};
+ 
++	dmac: dma-multiplexer@0 {
++		compatible = "renesas,shdma-mux";
++		#dma-cells = <1>;
++		dma-channels = <20>;
++		dma-requests = <256>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		dma0: dma-controller@e6700020 {
++			compatible = "renesas,shdma-r8a73a4";
++			reg = <0 0xe6700020 0 0x89e0>;
++			interrupt-parent = <&gic>;
++			interrupts = <0 220 4
++					0 200 4
++					0 201 4
++					0 202 4
++					0 203 4
++					0 204 4
++					0 205 4
++					0 206 4
++					0 207 4
++					0 208 4
++					0 209 4
++					0 210 4
++					0 211 4
++					0 212 4
++					0 213 4
++					0 214 4
++					0 215 4
++					0 216 4
++					0 217 4
++					0 218 4
++					0 219 4>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14", "ch15",
++					"ch16", "ch17", "ch18", "ch19";
++		};
++	};
++
+ 	thermal@e61f0000 {
+ 		compatible = "renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 357b9bc..74841ed 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -580,6 +580,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]),
++	CLKDEV_DEV_ID("e6700020.dma-controller", &mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+-- 
+1.7.2.5
+
