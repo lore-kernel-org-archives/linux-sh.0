@@ -1,89 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:39:29 +0000
-Subject: [GIT PULL 3/9] ARM: shmobile: Use shared SCU SMP boot code on r8a7779
-Message-Id: <0ca2894b5a9007091ad1a4d82b9f3132d4dd9410.1375841380.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 02 Aug 2013 01:01:59 +0000
+Subject: Re: [PATCH 0/2 v3] ARM: shmobile: r8a7778 USB Func support
+Message-Id: <8738qsaosb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375841380.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-Use shared SCU code on r8a7779 for SMP boot.
+Hi Simon
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Makefile      |  2 +-
- arch/arm/mach-shmobile/smp-r8a7779.c | 23 ++++++++++++-----------
- 2 files changed, 13 insertions(+), 12 deletions(-)
+>  1 - 6 : r8a7778 cleanup patches
+>  7 - 8 : r8a7779 cleanup patches
+>  9     : BockW DT reference
+>  A - B : BockW USB Func support
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index a32dc15..42bbf45 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -18,7 +18,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
- # SMP objects
- smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
--smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
-+smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
- 
- # IRQ objects
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index bb3adae..1963d0d 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -84,33 +84,34 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
- static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
- 	struct r8a7779_pm_ch *ch = NULL;
--	int ret = -EIO;
-+	unsigned int lcpu = cpu_logical_map(cpu);
-+	int ret;
- 
--	cpu = cpu_logical_map(cpu);
-+	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
-+	if (ret)
-+		return ret;
- 
--	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
--		ch = r8a7779_ch_cpu[cpu];
-+	if (lcpu < ARRAY_SIZE(r8a7779_ch_cpu))
-+		ch = r8a7779_ch_cpu[lcpu];
- 
- 	if (ch)
- 		ret = r8a7779_sysc_power_up(ch);
-+	else
-+		ret = -EIO;
- 
- 	return ret;
- }
- 
- static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- {
--
--	/* setup r8a7779 specific SCU base */
--	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
--	scu_enable(shmobile_scu_base);
--
- 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
- 	__raw_writel(__pa(shmobile_boot_vector), AVECR);
- 	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
- 	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
- 
--	/* enable cache coherency on booting CPU */
--	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
-+	/* setup r8a7779 specific SCU bits */
-+	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
-+	shmobile_smp_scu_prepare_cpus(max_cpus);
- 
- 	r8a7779_pm_init();
- 
--- 
-1.8.3.2
+These patches are A-B part v3 patches for r8a7778/BockW
+These are based on renesas-devel-20130801v2
 
+Kuninori Morimoto (3):
+      ARM: shmobile: r8a7778: add usb phy power control function
+      ARM: shmobile: r8a7778: add USB Function clock
+      ARM: shmobile: bockw: add USB Function support
+
+ arch/arm/mach-shmobile/board-bockw.c          |   81 ++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   37 +++++++----
+ 4 files changed, 107 insertions(+), 14 deletions(-)
