@@ -1,51 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 Aug 2013 00:06:42 +0000
-Subject: Re: [PATCH net-next 2/2] sh_eth: Enable Rx descriptor word 0 shift for r8a7790
-Message-Id: <20130829000642.GB10207@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 02 Aug 2013 01:03:23 +0000
+Subject: [PATCH v5 4/9] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
+Message-Id: <1375405408-17134-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377650589-20960-1-git-send-email-horms+renesas@verge.net.au>
- <1377650589-20960-3-git-send-email-horms+renesas@verge.net.au>
- <521E11CA.1020503@cogentembedded.com>
-In-Reply-To: <521E11CA.1020503@cogentembedded.com>
+References: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Kouei Abe <kouei.abe.cp@renesas.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-On Wed, Aug 28, 2013 at 07:05:46PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 08/28/2013 04:43 AM, Simon Horman wrote:
-> 
-> >From: Kouei Abe <kouei.abe.cp@renesas.com>
-> 
-> >This corrects an oversight when r8a7790 support was added to sh_eth.
-> 
->    No wonder it was overseen -- it's undocumented as of version 0.60
-> of the manual.
-> 
-> >Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  drivers/net/ethernet/renesas/sh_eth.c | 1 +
-> >  1 file changed, 1 insertion(+)
-> 
-> >diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-> >index f386a8f..095ca8e 100644
-> >--- a/drivers/net/ethernet/renesas/sh_eth.c
-> >+++ b/drivers/net/ethernet/renesas/sh_eth.c
-> >@@ -416,6 +416,7 @@ static struct sh_eth_cpu_data r8a7790_data = {
-> >  	.tpauser	= 1,
-> >  	.hw_swap	= 1,
-> >  	.rmiimode	= 1,
-> >+	.shift_rd0	= 1,
-> 
->    I've seen the corresponding code in a Renesas BSP but wanted to
-> double check before sending...
+The V4L2_MBUS_FMT_YUV10_1X30 code is documented as being equal to
+0x2014, while the v4l2-mediabus.h header defines it as 0x2016. Fix the
+documentation.
 
-That is entirely reasonable.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+---
+ Documentation/DocBook/media/v4l/subdev-formats.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I think that this email from Abe-san can count as a double-check.
-
+diff --git a/Documentation/DocBook/media/v4l/subdev-formats.xml b/Documentation/DocBook/media/v4l/subdev-formats.xml
+index adc6198..0c2b1f2 100644
+--- a/Documentation/DocBook/media/v4l/subdev-formats.xml
++++ b/Documentation/DocBook/media/v4l/subdev-formats.xml
+@@ -2574,7 +2574,7 @@
+ 	    </row>
+ 	    <row id="V4L2-MBUS-FMT-YUV10-1X30">
+ 	      <entry>V4L2_MBUS_FMT_YUV10_1X30</entry>
+-	      <entry>0x2014</entry>
++	      <entry>0x2016</entry>
+ 	      <entry></entry>
+ 	      <entry>y<subscript>9</subscript></entry>
+ 	      <entry>y<subscript>8</subscript></entry>
+-- 
+1.8.1.5
 
