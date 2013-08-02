@@ -1,67 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Aug 2013 05:32:12 +0000
-Subject: Re: [GIT 00/19 v2] Renesas ARM based SoC pinmux updates for v3.12
-Message-Id: <20130822053211.GD26682@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 02 Aug 2013 01:34:09 +0000
+Subject: [PATCH 3/4] ARM: shmobile: bockw: add missing __initdata
+Message-Id: <87siys98q9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374625203.git.horms+renesas@verge.net.au>
- <20130814072328.GA30577@quad.lixom.net>
- <20130818035557.GB30709@verge.net.au>
- <20130822050315.GC5151@quad.lixom.net>
-In-Reply-To: <20130822050315.GC5151@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 21, 2013 at 10:03:15PM -0700, Olof Johansson wrote:
-> On Sun, Aug 18, 2013 at 01:55:57PM +1000, Simon Horman wrote:
-> > On Wed, Aug 14, 2013 at 12:23:28AM -0700, Olof Johansson wrote:
-> > > On Wed, Jul 24, 2013 at 09:32:14AM +0900, Simon Horman wrote:
-> > > > Hi Olof, Hi Arnd,
-> > > > 
-> > > > please consider the following pinmux updates for v3.12.
-> > > > 
-> > > > Difference with v1 of this pull-request:
-> > > > * Remove bogus i2c portions of the first patch of the series.
-> > > > * Correct addressing mode used in dts of the first patch of the series.
-> > > > * Removal of egg from face: wip
-> > > > 
-> > > > The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
-> > > > 
-> > > >   Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
-> > > > 
-> > > > are available in the git repository at:
-> > > > 
-> > > >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux-for-v3.12
-> > > 
-> > > Pulled, but I noticed this. Can you please follow up with bindings revisit in
-> > > time for 3.12 final (i.e. if we need to take it after merge window that's
-> > > probably OK):
-> > > 
-> > >         pfc: pfc@e6060000 {                                                     
-> > >                 compatible = "renesas,pfc-r8a7790";                             
-> > >                 reg = <0 0xe6060000 0 0x250>;                                   
-> > >                 #gpio-range-cells = <3>;                                        
-> > >         };                                                                      
-> > >                                                                                                                
-> > >         sdhi0: sdhi@ee100000 {                                                  
-> > >                 compatible = "renesas,r8a7790-sdhi"; 
-> > > 
-> > > 
-> > > I.e. different ordering on the compatible values looks a bit uncoordinated.
-> > 
-> > Can I confirm that you are referring to the fact that
-> > assume you mean that "-sdhi" follows "r8a7790" whereas "pfc-" precedes
-> > "r8a7790"?
-> > 
-> > If so, I'll work with Laurent and Guennadi (both CCed, both on vacation),
-> > and Magnus to resolve this inconsistency.
-> 
-> Yes, exactly. Some platforms use <vendor>,<soc>-<ip>, others
-> <vendor>,<ip>-<soc>. I don't care which way is used, but it would be good if
-> everybody used the same convention to make it easier for developers.
-> 
-> Preference for direction is something I leave up to the device tree maintainers
-> to declare. ;-)
+This patch adds missing __initdata to driver data/resource
+which are used from platform_device_register_xxx()
 
-Thanks, got it. I'll get this sorted out.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-bockw.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 8094803..4424058 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -78,14 +78,14 @@ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+ };
+ 
+-static struct smsc911x_platform_config smsc911x_data = {
++static struct smsc911x_platform_config smsc911x_data __initdata = {
+ 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
+ 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
+ 	.flags		= SMSC911X_USE_32BIT,
+ 	.phy_interface	= PHY_INTERFACE_MODE_MII,
+ };
+ 
+-static struct resource smsc911x_resources[] = {
++static struct resource smsc911x_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0x18300000, 0x1000),
+ 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
+ };
+@@ -157,7 +157,7 @@ static struct rcar_phy_platform_data usb_phy_platform_data __initdata  
+ 
+ /* SDHI */
+-static struct sh_mobile_sdhi_info sdhi0_info = {
++static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+@@ -222,7 +222,7 @@ static struct resource mmc_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_iid(0x5d)),
+ };
+ 
+-static struct sh_mmcif_plat_data sh_mmcif_plat = {
++static struct sh_mmcif_plat_data sh_mmcif_plat __initdata = {
+ 	.sup_pclk	= 0,
+ 	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+-- 
+1.7.9.5
+
