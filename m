@@ -1,36 +1,70 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 14 Aug 2013 08:00:45 +0000
-Subject: Re: [GIT] Second Round of Renesas ARM based SoC fixes for v3.12
-Message-Id: <20130814080045.GE30577@quad.lixom.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 02 Aug 2013 22:33:28 +0000
+Subject: [PATCH v2] tmio_mmc_dma: fix PIO fallback on SDHI
+Message-Id: <201308030233.29446.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375345067.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375345067.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org, g.liakhovetski@gmx.de, ian@mnementh.co.uk, cjb@laptop.org
+Cc: linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
 
-On Thu, Aug 01, 2013 at 05:27:15PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider this second round of Renesas ARM based SoC fixes for v3.12.
-> 
-> It is based on the first round of Renesas ARM based SoC fixes for v3.12,
-> /renesas-fixes-for-v3.12, which I have already send a pull-request for.
-> 
-> The following changes since commit 93d8a6fbe69a629a7bb37bb546699a5c49963dc5:
-> 
->   ARM: shmobile: r8a7740: Fix TPU clock name (2013-07-19 11:12:35 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes2-for-v3.12
-> 
-> for you to fetch changes up to ab40900b70dc31a64f23b1b4dbb0917afb039775:
-> 
->   ARM: shmobile: armadillo800eva-reference: fix compiler warning (2013-07-23 10:35:33 +0900)
+I'm testing SH-Mobile SDHI driver in DMA mode with  a new DMA controller  using
+'bonnie++' and getting DMA error after which the tmio_mmc_dma.c code falls back
+to PIO but all commands time out after that.  It turned out that the fallback
+code calls tmio_mmc_enable_dma() with RX/TX channels already freed and pointers
+to them cleared, so that the function bails out early instead  of clearing the
+DMA bit in the CTL_DMA_ENABLE register. The regression was introduced by commit
+162f43e31c5a376ec16336e5d0ac973373d54c89 (mmc: tmio: fix a deadlock).
+Moving tmio_mmc_enable_dma() calls to the top of the PIO fallback code in
+tmio_mmc_start_dma_{rx|tx}() helps.
 
-Pulled.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: stable@vger.kernel.org # 3.1+
 
+---
+The patch is against Chris Ball's 'mmc.git' repo, 'master' branch.
 
--Olof
+Changes in version 2:
+- removed extra check from tmio_mmc_enable_dma();
+- moved tmio_mmc_enable_dma() calls to the top of the PIO fallback code in
+  tmio_mmc_start_dma_{rx|tx}().
+
+ drivers/mmc/host/tmio_mmc_dma.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: renesas/drivers/mmc/host/tmio_mmc_dma.c
+=================================--- renesas.orig/drivers/mmc/host/tmio_mmc_dma.c
++++ renesas/drivers/mmc/host/tmio_mmc_dma.c
+@@ -104,6 +104,7 @@ static void tmio_mmc_start_dma_rx(struct
+ pio:
+ 	if (!desc) {
+ 		/* DMA failed, fall back to PIO */
++		tmio_mmc_enable_dma(host, false);
+ 		if (ret >= 0)
+ 			ret = -EIO;
+ 		host->chan_rx = NULL;
+@@ -116,7 +117,6 @@ pio:
+ 		}
+ 		dev_warn(&host->pdev->dev,
+ 			 "DMA failed: %d, falling back to PIO\n", ret);
+-		tmio_mmc_enable_dma(host, false);
+ 	}
+ 
+ 	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d, sg[%d]\n", __func__,
+@@ -185,6 +185,7 @@ static void tmio_mmc_start_dma_tx(struct
+ pio:
+ 	if (!desc) {
+ 		/* DMA failed, fall back to PIO */
++		tmio_mmc_enable_dma(host, false);
+ 		if (ret >= 0)
+ 			ret = -EIO;
+ 		host->chan_tx = NULL;
+@@ -197,7 +198,6 @@ pio:
+ 		}
+ 		dev_warn(&host->pdev->dev,
+ 			 "DMA failed: %d, falling back to PIO\n", ret);
+-		tmio_mmc_enable_dma(host, false);
+ 	}
+ 
+ 	dev_dbg(&host->pdev->dev, "%s(): desc %p, cookie %d\n", __func__,
