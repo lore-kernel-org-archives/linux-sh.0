@@ -1,32 +1,103 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 30 Aug 2013 07:48:38 +0000
-Subject: Re: [PATCH] emev2: GPIOLIB: Enable support for OF
-Message-Id: <CACRpkdbeCU_WG4xXvoh76RZ-9UtbWJvB4PqYhSpTXSF4Hodf2A@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 02 Aug 2013 01:03:20 +0000
+Subject: [PATCH v5 1/9] media: Add support for circular graph traversal
+Message-Id: <1375405408-17134-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377623069-32678-1-git-send-email-ian.molton@codethink.co.uk>
-	<1377623069-32678-2-git-send-email-ian.molton@codethink.co.uk>
-	<CACRpkdZB+Dm1jhWRu+rdT0V7Q0iwozsd2gQ6M+=55h2SJHQHWw@mail.gmail.com>
-	<20130830034746.GB17800@verge.net.au>
-In-Reply-To: <20130830034746.GB17800@verge.net.au>
+References: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Ian Molton <ian.molton@codethink.co.uk>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-On Fri, Aug 30, 2013 at 5:47 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Thu, Aug 29, 2013 at 07:41:42PM +0200, Linus Walleij wrote:
+The graph traversal API (media_entity_graph_walk_*) doesn't support
+cyclic graphs and will fail to correctly walk a graph when circular
+links exist. Support circular graph traversal by checking whether an
+entity has already been visited before pushing it to the stack.
 
->> Either the statement needs to be inside #ifdef CONFIG_OF_GPIO
->> or the Emma driver need to select OF_GPIO in its Kconfig
->> entry.
->
-> This may be somewhat naieve, but it seems to me that the latter would be a
-> better choice at this stage because AFIK the only in-tree emev2 board is
-> the kzm9d and it uses USE_OF.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+---
+ drivers/media/media-entity.c | 14 +++++++++++---
+ include/media/media-entity.h |  4 ++++
+ 2 files changed, 15 insertions(+), 3 deletions(-)
 
-I think you're right. Ian can you cook a patch that also selects
-OF_GPIO for this controller in Kconfig?
+diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
+index cb30ffb..2c286c3 100644
+--- a/drivers/media/media-entity.c
++++ b/drivers/media/media-entity.c
+@@ -20,6 +20,7 @@
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+ 
++#include <linux/bitmap.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ #include <media/media-entity.h>
+@@ -121,7 +122,6 @@ static struct media_entity *stack_pop(struct media_entity_graph *graph)
+ 	return entity;
+ }
+ 
+-#define stack_peek(en)	((en)->stack[(en)->top - 1].entity)
+ #define link_top(en)	((en)->stack[(en)->top].link)
+ #define stack_top(en)	((en)->stack[(en)->top].entity)
+ 
+@@ -140,6 +140,12 @@ void media_entity_graph_walk_start(struct media_entity_graph *graph,
+ {
+ 	graph->top = 0;
+ 	graph->stack[graph->top].entity = NULL;
++	bitmap_zero(graph->entities, MEDIA_ENTITY_ENUM_MAX_ID);
++
++	if (WARN_ON(entity->id >= MEDIA_ENTITY_ENUM_MAX_ID))
++		return;
++
++	__set_bit(entity->id, graph->entities);
+ 	stack_push(graph, entity);
+ }
+ EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
+@@ -180,9 +186,11 @@ media_entity_graph_walk_next(struct media_entity_graph *graph)
+ 
+ 		/* Get the entity in the other end of the link . */
+ 		next = media_entity_other(entity, link);
++		if (WARN_ON(next->id >= MEDIA_ENTITY_ENUM_MAX_ID))
++			return NULL;
+ 
+-		/* Was it the entity we came here from? */
+-		if (next = stack_peek(graph)) {
++		/* Has the entity already been visited? */
++		if (__test_and_set_bit(next->id, graph->entities)) {
+ 			link_top(graph)++;
+ 			continue;
+ 		}
+diff --git a/include/media/media-entity.h b/include/media/media-entity.h
+index 06bacf9..10df551 100644
+--- a/include/media/media-entity.h
++++ b/include/media/media-entity.h
+@@ -23,6 +23,7 @@
+ #ifndef _MEDIA_ENTITY_H
+ #define _MEDIA_ENTITY_H
+ 
++#include <linux/bitops.h>
+ #include <linux/list.h>
+ #include <linux/media.h>
+ 
+@@ -113,12 +114,15 @@ static inline u32 media_entity_subtype(struct media_entity *entity)
+ }
+ 
+ #define MEDIA_ENTITY_ENUM_MAX_DEPTH	16
++#define MEDIA_ENTITY_ENUM_MAX_ID	64
+ 
+ struct media_entity_graph {
+ 	struct {
+ 		struct media_entity *entity;
+ 		int link;
+ 	} stack[MEDIA_ENTITY_ENUM_MAX_DEPTH];
++
++	DECLARE_BITMAP(entities, MEDIA_ENTITY_ENUM_MAX_ID);
+ 	int top;
+ };
+ 
+-- 
+1.8.1.5
 
-Yours,
-Linus Walleij
