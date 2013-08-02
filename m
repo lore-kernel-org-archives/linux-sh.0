@@ -1,23 +1,59 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 14 Aug 2013 19:09:38 +0000
-Subject: Re: [PATCH 1/2] sh-pfc: r8a7790: Rename DU1_DOTCLKIN to DU_DOTCLKIN1
-Message-Id: <CACRpkdYg=nuk83S0HWnrSaA024b=wgm3K4n9oh12y3VpwFKRhQ@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 02 Aug 2013 13:03:42 +0000
+Subject: [PATCH] spi: rspi: provide port addresses to dmaengine driver via slave configuration
+Message-Id: <Pine.LNX.4.64.1308021500041.28012@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375876943-11824-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375876943-11824-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Aug 7, 2013 at 2:02 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+Don't rely on shdma dhaengine driver getting DMA slave addresses from its
+slave configuration. Instead provide those addresses, using a
+dmaengine_slave_config() call.
 
-> Name the DU clock input 1 consistently with clock inputs 0 and 2.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/spi/spi-rspi.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
-Patch applied.
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index b44a6ac..5f122d9 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -664,12 +664,13 @@ static irqreturn_t rspi_irq(int irq, void *_sr)
+ static int rspi_request_dma(struct rspi_data *rspi,
+ 				      struct platform_device *pdev)
+ {
++	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	struct rspi_plat_data *rspi_pd = pdev->dev.platform_data;
+ 	dma_cap_mask_t mask;
+ 	struct dma_slave_config cfg;
+ 	int ret;
+ 
+-	if (!rspi_pd)
++	if (!res || !rspi_pd)
+ 		return 0;	/* The driver assumes no error. */
+ 
+ 	rspi->dma_width_16bit = rspi_pd->dma_width_16bit;
+@@ -683,6 +684,8 @@ static int rspi_request_dma(struct rspi_data *rspi,
+ 		if (rspi->chan_rx) {
+ 			cfg.slave_id = rspi_pd->dma_rx_id;
+ 			cfg.direction = DMA_DEV_TO_MEM;
++			cfg.dst_addr = 0;
++			cfg.src_addr = res->start + RSPI_SPDR;
+ 			ret = dmaengine_slave_config(rspi->chan_rx, &cfg);
+ 			if (!ret)
+ 				dev_info(&pdev->dev, "Use DMA when rx.\n");
+@@ -698,6 +701,8 @@ static int rspi_request_dma(struct rspi_data *rspi,
+ 		if (rspi->chan_tx) {
+ 			cfg.slave_id = rspi_pd->dma_tx_id;
+ 			cfg.direction = DMA_MEM_TO_DEV;
++			cfg.dst_addr = res->start + RSPI_SPDR;
++			cfg.src_addr = 0;
+ 			ret = dmaengine_slave_config(rspi->chan_tx, &cfg);
+ 			if (!ret)
+ 				dev_info(&pdev->dev, "Use DMA when tx\n");
+-- 
+1.7.2.5
 
-Yours,
-Linus Walleij
