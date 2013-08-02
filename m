@@ -1,83 +1,95 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Fri, 23 Aug 2013 09:24:57 +0000
-Subject: Re: [PATCH] pwm: renesas-tpu: Add DT support
-Message-Id: <20130823092456.GK3535@ulmo>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="HcXnUX77nabWBLF4"
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 02 Aug 2013 14:18:09 +0000
+Subject: [PATCH v2] DMA: shdma: make a pointer const
+Message-Id: <Pine.LNX.4.64.1308021610240.28012@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374791261-9850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20130814094436.GD2084@ulmo>
- <1966878.F7c9U0lHrH@avalon>
-In-Reply-To: <1966878.F7c9U0lHrH@avalon>
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, "Koul, Vinod" <vinod.koul@intel.com>
 
+Platform data shouldn't be changed at run-time, so, pointers to it should
+be const.
 
---HcXnUX77nabWBLF4
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-On Wed, Aug 21, 2013 at 01:36:38PM +0200, Laurent Pinchart wrote:
-> Hi Thierry,
->=20
-> On Wednesday 14 August 2013 11:44:36 Thierry Reding wrote:
-> > On Fri, Jul 26, 2013 at 12:27:41AM +0200, Laurent Pinchart wrote:
-> > > Specify DT bindings for the TPU PWM controller and add OF support to =
-the
-> > > driver.
-> > >=20
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > ---
-> > >=20
-> > >  .../devicetree/bindings/pwm/renesas,tpu-pwm.txt    | 28 ++++++++++++=
-+++
-> > >  drivers/pwm/pwm-renesas-tpu.c                      | 41 ++++++++++++=
-+----
-> > >  2 files changed, 62 insertions(+), 7 deletions(-)
-> > >  create mode 100644
-> > >  Documentation/devicetree/bindings/pwm/renesas,tpu-pwm.txt>=20
-> > > This patch depends on the "[PATCH v2 0/4] Add PWM polarity flag macro=
- for
-> > > DT" series that is scheduled for merge in the PWM tree, and should th=
-us
-> > > go in via the same tree.
-> > >=20
-> > > The code has been tested on an Armadillo800EVA with additional platfo=
-rm
-> > > patches that I'm going to submit next.
-> >=20
-> > Applied, thanks.
->=20
-> Thank you. I can't find the patches in git://gitorious.org/linux-pwm/linu=
-x-
-> pwm.git, have you applied them elsewhere ?
+This is a re-send of a patch, previously submitted as a part of a 
+patch-series, although it isn't really related to its topic:
 
-Sorry, I had applied the patch, but forgotten to push it out. Should be
-there now.
+https://lkml.org/lkml/2013/7/19/605
 
-Thierry
+Should go on top of my other patch series "DMA: shdma: several stylistic 
+improvements and support for new SoCs"
+http://thread.gmane.org/gmane.linux.ports.sh.devel/24826
 
---HcXnUX77nabWBLF4
-Content-Type: application/pgp-signature
+ drivers/dma/sh/shdma.c |   10 +++++-----
+ drivers/dma/sh/shdma.h |    2 +-
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.21 (GNU/Linux)
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index b3f959c..7af64b9 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -177,7 +177,7 @@ static bool dmae_is_busy(struct sh_dmae_chan *sh_chan)
+ static unsigned int calc_xmit_shift(struct sh_dmae_chan *sh_chan, u32 chcr)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+-	struct sh_dmae_pdata *pdata = shdev->pdata;
++	const struct sh_dmae_pdata *pdata = shdev->pdata;
+ 	int cnt = ((chcr & pdata->ts_low_mask) >> pdata->ts_low_shift) |
+ 		((chcr & pdata->ts_high_mask) >> pdata->ts_high_shift);
+ 
+@@ -190,7 +190,7 @@ static unsigned int calc_xmit_shift(struct sh_dmae_chan *sh_chan, u32 chcr)
+ static u32 log2size_to_chcr(struct sh_dmae_chan *sh_chan, int l2size)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+-	struct sh_dmae_pdata *pdata = shdev->pdata;
++	const struct sh_dmae_pdata *pdata = shdev->pdata;
+ 	int i;
+ 
+ 	for (i = 0; i < pdata->ts_shift_num; i++)
+@@ -250,7 +250,7 @@ static int dmae_set_chcr(struct sh_dmae_chan *sh_chan, u32 val)
+ static int dmae_set_dmars(struct sh_dmae_chan *sh_chan, u16 val)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+-	struct sh_dmae_pdata *pdata = shdev->pdata;
++	const struct sh_dmae_pdata *pdata = shdev->pdata;
+ 	const struct sh_dmae_channel *chan_pdata = &pdata->channel[sh_chan->shdma_chan.id];
+ 	void __iomem *addr = shdev->dmars;
+ 	unsigned int shift = chan_pdata->dmars_bit;
+@@ -319,7 +319,7 @@ static const struct sh_dmae_slave_config *dmae_find_slave(
+ 	struct sh_dmae_chan *sh_chan, int match)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+-	struct sh_dmae_pdata *pdata = shdev->pdata;
++	const struct sh_dmae_pdata *pdata = shdev->pdata;
+ 	const struct sh_dmae_slave_config *cfg;
+ 	int i;
+ 
+@@ -665,7 +665,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
+ 
+ static int sh_dmae_probe(struct platform_device *pdev)
+ {
+-	struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
++	const struct sh_dmae_pdata *pdata = pdev->dev.platform_data;
+ 	unsigned long irqflags = IRQF_DISABLED,
+ 		chan_flag[SH_DMAE_MAX_CHANNELS] = {};
+ 	int errirq, chan_irq[SH_DMAE_MAX_CHANNELS];
+diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
+index 06aae6e..3d9dca1 100644
+--- a/drivers/dma/sh/shdma.h
++++ b/drivers/dma/sh/shdma.h
+@@ -36,7 +36,7 @@ struct sh_dmae_chan {
+ struct sh_dmae_device {
+ 	struct shdma_dev shdma_dev;
+ 	struct sh_dmae_chan *chan[SH_DMAE_MAX_CHANNELS];
+-	struct sh_dmae_pdata *pdata;
++	const struct sh_dmae_pdata *pdata;
+ 	struct list_head node;
+ 	void __iomem *chan_reg;
+ 	void __iomem *dmars;
+-- 
+1.7.2.5
 
-iQIcBAEBAgAGBQJSFypoAAoJEN0jrNd/PrOhcUAQAJXiycSNGlm8q7Ba8vv+y22C
-xDG2SV7iudXsH4EZXCJkSyR3OKZRnIJUyU/mZ5AuVnGn+yeDLyigV6Anh17WHHQO
-bX/eLdY+A2YXsZExkpHuM5qx6WVffby2dwET8WsxB9U/25CtoU0nfnh6VKxZ4r+5
-tWee1JyeSrS0RyQYLKKarakwIqr9ia1kL66lzUL4BjU7k1deKt4//jiJ4LttqMej
-392BjF/AVHaHv9YLd7IlL1zXHwpLnu4QYbzKBC0WkLgsNABYtRY++Jyy8ITzFszU
-Jap3GFzV839Lx1ZYI+ausPZ/VQDlJ3HVU3Rvm9RGUpCjfJl2qC5afT6CNi2xecLe
-42vldQrMCAWx4APF2C4bdMKx7RzPx/+X3fEhVA4kOTVl6A6fFyA8Fk0BaRB6yznS
-8SjVCdov4+P7ISyOhsIG+jMJLGp4eW2BrmOsgdn9cuGpaZswVz8Py15GNpGN6Pq5
-WqSytrcLjclo0svfhph6Cn5cEYIWJNdZ6M69EVwxOK6y97E9cch4Oy/iaX7zV1JU
-8CUNW1M/dIpASu8XhTWIhZDFKKdpoSYtPdeZU6/y/FLTjqPP3IBt8fAYiHnZAPJV
-RRKrAhd1NgitASammnSoR54hgMc6hk0BTOgLpHBqetpAesSydLNodqn/SrJdmc/x
-XEXLTv0wG3vTfPrIKg4E
-=iJrV
------END PGP SIGNATURE-----
-
---HcXnUX77nabWBLF4--
