@@ -1,93 +1,73 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 02 Aug 2013 14:50:41 +0000
-Subject: [PATCH v5 6/7] ARM: shmobile: r8a73a4: add a DT node and a clock alias for the DMAC
-Message-Id: <1375455042-24093-7-git-send-email-g.liakhovetski@gmx.de>
+From: Olof Johansson <olof@lixom.net>
+Date: Sun, 04 Aug 2013 18:51:46 +0000
+Subject: Re: [PATCH] ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference
+Message-Id: <20130804185146.GB10876@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375455042-24093-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1375455042-24093-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130709042654.13658.20164.sendpatchset@w520>
+ <51DBF7CD.8040009@cogentembedded.com>
+ <CANqRtoQfkk9KFggw5dadqih-kqNTCGC+kVCKkOUO8G=1w+kh6g@mail.gmail.com>
+ <51DC0BA0.2060306@cogentembedded.com>
+ <20130710010317.GG32603@verge.net.au>
+In-Reply-To: <20130710010317.GG32603@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a DT node for the only system DMAC instance on r8a73a4. The RT DMAC
-can be added later under the same multiplexer, because they can serve the
-same slaves and use the same MID-RID values. Configuration data is
-supplied to the driver, using a compatibility match string.
+On Wed, Jul 10, 2013 at 10:03:17AM +0900, Simon Horman wrote:
+> On Tue, Jul 09, 2013 at 05:09:52PM +0400, Sergei Shtylyov wrote:
+> > Hello.
+> > 
+> > On 09-07-2013 17:03, Magnus Damm wrote:
+> > 
+> > >>>From: Magnus Damm <damm@opensource.se>
+> > 
+> > >>>Add support for the SMSC ethernet controller found
+> > >>>on the KZM9D board to the KZM9D DT Reference code.
+> > 
+> > >>>Signed-off-by: Magnus Damm <damm@opensource.se>
+> > >>>---
+> > 
+> > >>>   Built on top of renesas-next-20130704v2 and
+> > >>>   [PATCH] ARM: shmobile: KZM9D DT reference implementation
+> > 
+> > >>>   arch/arm/boot/dts/emev2-kzm9d-reference.dts |   31
+> > >>>+++++++++++++++++++++++++++
+> > >>>   1 file changed, 31 insertions(+)
+> > 
+> > >>>--- 0002/arch/arm/boot/dts/emev2-kzm9d-reference.dts
+> > >>>+++ work/arch/arm/boot/dts/emev2-kzm9d-reference.dts    2013-07-09
+> > >>>13:06:47.000000000 +0900
+> > >>>@@ -23,4 +23,35 @@
+> > 
+> > >>[...]
+> > 
+> > >>>+       lan9220@20000000 {
+> > 
+> > >>    Shouldn't all the Ethernet nodes be called "ethernet"?
+> > 
+> > >Good question. Grepping in arch/arm/boot/dts shows various ways to
+> > >name the Ethernet nodes. Exactly what is correct or not I can't really
+> > >say.
+> > 
+> >    See "Node Names" section of [1].
+> > 
+> > [1] http://www.devicetree.org/Device_Tree_Usage
+> 
+> I will queue up this patch for v3.12 in the dt branch and
+> it should appear in renesas-next-20130710.
+> 
+> If there is a desire to consistently name nodes as "ethernet" for shmobile
+> then I would appreciate a cleanup patches to fix all the relevant dts and
+> dtsi files. One SoC or board per patch.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
- arch/arm/boot/dts/r8a73a4.dtsi         |   43 ++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a73a4.c |    1 +
- 2 files changed, 44 insertions(+), 0 deletions(-)
+Yes, they should be named ethernet. Rename when you have a chance and/or are
+touching the files for other nearby changes.
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index e344b10..3c9c7f2 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -78,6 +78,49 @@
- 				<0 56 4>, <0 57 4>;
- 	};
- 
-+	dmac: dma-multiplexer@0 {
-+		compatible = "renesas,shdma-mux";
-+		#dma-cells = <1>;
-+		dma-channels = <20>;
-+		dma-requests = <256>;
-+		#address-cells = <2>;
-+		#size-cells = <2>;
-+		ranges;
-+
-+		dma0: dma-controller@e6700020 {
-+			compatible = "renesas,shdma-r8a73a4";
-+			reg = <0 0xe6700020 0 0x89e0>;
-+			interrupt-parent = <&gic>;
-+			interrupts = <0 220 4
-+					0 200 4
-+					0 201 4
-+					0 202 4
-+					0 203 4
-+					0 204 4
-+					0 205 4
-+					0 206 4
-+					0 207 4
-+					0 208 4
-+					0 209 4
-+					0 210 4
-+					0 211 4
-+					0 212 4
-+					0 213 4
-+					0 214 4
-+					0 215 4
-+					0 216 4
-+					0 217 4
-+					0 218 4
-+					0 219 4>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14", "ch15",
-+					"ch16", "ch17", "ch18", "ch19";
-+		};
-+	};
-+
- 	thermal@e61f0000 {
- 		compatible = "renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 357b9bc..74841ed 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -580,6 +580,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
- 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]),
-+	CLKDEV_DEV_ID("e6700020.dma-controller", &mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
--- 
-1.7.2.5
+Also, the 9220 chips are usually located on a general-purpose external parallel
+bus, but they're not modelled that way here. You might want to add proper
+bindings for future devices on said busses (handling chipselects, etc, as
+needed).
 
+
+-Olof
