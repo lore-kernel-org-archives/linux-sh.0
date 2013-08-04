@@ -1,50 +1,43 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 30 Aug 2013 17:35:15 +0000
-Subject: Re: [RFC 08/10] ARM: shmobile: r8a7790: lager: i2c support
-Message-Id: <5220D7D3.8000002@cogentembedded.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Sun, 04 Aug 2013 19:23:12 +0000
+Subject: Re: [PATCH] clocksource: sh_cmt: 32-bit control register support
+Message-Id: <20130804192312.GE10876@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377866264-21110-9-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1377866264-21110-9-git-send-email-ulrich.hecht@gmail.com>
+References: <cover.1374207810.git.horms+renesas@verge.net.au>
+ <2792cc6f22031110f6959c02d42d7b6116105a71.1374207810.git.horms+renesas@verge.net.au>
+ <51ECAF43.80200@linaro.org> <20130724002655.GA532@verge.net.au>
+In-Reply-To: <20130724002655.GA532@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Wed, Jul 24, 2013 at 09:26:55AM +0900, Simon Horman wrote:
+> On Mon, Jul 22, 2013 at 06:04:19AM +0200, Daniel Lezcano wrote:
+> > On 07/19/2013 06:36 AM, Simon Horman wrote:
+> > > From: Magnus Damm <damm@opensource.se>
+> > > 
+> > > Add support for CMT hardware with 32-bit control and counter
+> > > registers, as found on r8a73a4 and r8a7790. To use the CMT
+> > > with 32-bit hardware a second I/O memory resource needs to
+> > > point out the CMSTR register and it needs to be 32 bit wide.
+> > > 
+> > > Signed-off-by: Magnus Damm <damm@opensource.se>
+> > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > > ---
+> > 
+> > In the future, can you Cc drivers/clocksource maintainers please ?
+> 
+> Yes of course, sorry for that oversight.
+> 
+> > Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+> 
+> Olof, Arnd, please let me know if you wish me to re-send the pull
+> request with Daniel's Reviewed-by added to this patch.
 
-On 08/30/2013 04:37 PM, Ulrich Hecht wrote:
+This patch should just go in through Daniel, there's no reason to take it
+through arm-soc at all, unless you have platform code that relies on it for
+bisectability.
 
-> Enables the four i2c busses on the Lager board.
 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-> ---
->   arch/arm/mach-shmobile/board-lager.c | 32 ++++++++++++++++++++++++++++++++
->   1 file changed, 32 insertions(+)
-
-> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-> index 4c3e694..c6b5f21 100644
-> --- a/arch/arm/mach-shmobile/board-lager.c
-> +++ b/arch/arm/mach-shmobile/board-lager.c
-[...]
-> @@ -220,6 +243,15 @@ static void __init lager_add_standard_devices(void)
->   					  &ether_pdata, sizeof(ether_pdata));
->
->   	lager_add_du_device();
-> +
-> +	r8a7790_add_i2c_device(0, &i2c_pdata);
-> +	r8a7790_add_i2c_device(1, &i2c_pdata);
-> +	r8a7790_add_i2c_device(2, &i2c_pdata);
-> +	r8a7790_add_i2c_device(3, &i2c_pdata);
-> +
-> +	/* I2C channels 0 and 3 are wired to external connectors; channel 1
-> +	   has only one device (da9063) for which no driver exists. */
-
-    The preferred kernel multi-line comment style is this:
-
-/*
-  * bla
-  * bla
-  */
-
-WBR, Sergei
-
+-Olof
