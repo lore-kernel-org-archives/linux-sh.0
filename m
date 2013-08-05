@@ -1,43 +1,104 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:36:56 +0000
-Subject: [GIT PULL 2/2] ARM: shmobile: lager: add missing __initdata
-Message-Id: <8c8881b50691e17864cc54e5824b140e62fc2035.1375842006.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 05 Aug 2013 17:53:20 +0000
+Subject: [PATCH v6 01/10] media: Add support for circular graph traversal
+Message-Id: <1375725209-2674-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375842006.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375842006.git.horms+renesas@verge.net.au>
+References: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The graph traversal API (media_entity_graph_walk_*) doesn't support
+cyclic graphs and will fail to correctly walk a graph when circular
+links exist. Support circular graph traversal by checking whether an
+entity has already been visited before pushing it to the stack.
 
-This patch adds missing __initdata to driver data/resource
-which are used from platform_device_register_xxx()
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/media/media-entity.c | 14 +++++++++++---
+ include/media/media-entity.h |  4 ++++
+ 2 files changed, 15 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 3c67b2a..9489314 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -82,11 +82,11 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  };
+diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
+index cb30ffb..2c286c3 100644
+--- a/drivers/media/media-entity.c
++++ b/drivers/media/media-entity.c
+@@ -20,6 +20,7 @@
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
  
- /* MMCIF */
--static struct sh_mmcif_plat_data mmcif1_pdata = {
-+static struct sh_mmcif_plat_data mmcif1_pdata __initdata = {
- 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++#include <linux/bitmap.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ #include <media/media-entity.h>
+@@ -121,7 +122,6 @@ static struct media_entity *stack_pop(struct media_entity_graph *graph)
+ 	return entity;
+ }
+ 
+-#define stack_peek(en)	((en)->stack[(en)->top - 1].entity)
+ #define link_top(en)	((en)->stack[(en)->top].link)
+ #define stack_top(en)	((en)->stack[(en)->top].entity)
+ 
+@@ -140,6 +140,12 @@ void media_entity_graph_walk_start(struct media_entity_graph *graph,
+ {
+ 	graph->top = 0;
+ 	graph->stack[graph->top].entity = NULL;
++	bitmap_zero(graph->entities, MEDIA_ENTITY_ENUM_MAX_ID);
++
++	if (WARN_ON(entity->id >= MEDIA_ENTITY_ENUM_MAX_ID))
++		return;
++
++	__set_bit(entity->id, graph->entities);
+ 	stack_push(graph, entity);
+ }
+ EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
+@@ -180,9 +186,11 @@ media_entity_graph_walk_next(struct media_entity_graph *graph)
+ 
+ 		/* Get the entity in the other end of the link . */
+ 		next = media_entity_other(entity, link);
++		if (WARN_ON(next->id >= MEDIA_ENTITY_ENUM_MAX_ID))
++			return NULL;
+ 
+-		/* Was it the entity we came here from? */
+-		if (next = stack_peek(graph)) {
++		/* Has the entity already been visited? */
++		if (__test_and_set_bit(next->id, graph->entities)) {
+ 			link_top(graph)++;
+ 			continue;
+ 		}
+diff --git a/include/media/media-entity.h b/include/media/media-entity.h
+index 06bacf9..10df551 100644
+--- a/include/media/media-entity.h
++++ b/include/media/media-entity.h
+@@ -23,6 +23,7 @@
+ #ifndef _MEDIA_ENTITY_H
+ #define _MEDIA_ENTITY_H
+ 
++#include <linux/bitops.h>
+ #include <linux/list.h>
+ #include <linux/media.h>
+ 
+@@ -113,12 +114,15 @@ static inline u32 media_entity_subtype(struct media_entity *entity)
+ }
+ 
+ #define MEDIA_ENTITY_ENUM_MAX_DEPTH	16
++#define MEDIA_ENTITY_ENUM_MAX_ID	64
+ 
+ struct media_entity_graph {
+ 	struct {
+ 		struct media_entity *entity;
+ 		int link;
+ 	} stack[MEDIA_ENTITY_ENUM_MAX_DEPTH];
++
++	DECLARE_BITMAP(entities, MEDIA_ENTITY_ENUM_MAX_ID);
+ 	int top;
  };
  
--static struct resource mmcif1_resources[] = {
-+static struct resource mmcif1_resources[] __initdata = {
- 	DEFINE_RES_MEM_NAMED(0xee220000, 0x80, "MMCIF1"),
- 	DEFINE_RES_IRQ(gic_spi(170)),
- };
 -- 
-1.8.3.2
+1.8.1.5
 
