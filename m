@@ -1,48 +1,58 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Mon, 05 Aug 2013 14:32:11 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 05 Aug 2013 15:30:26 +0000
 Subject: Re: [PATCH/RFC] mmc: sh_mmcif: revision-specific configuration from Device Tree
-Message-Id: <8661vkgqdw.fsf@void.printf.net>
+Message-Id: <Pine.LNX.4.64.1308051722490.22479@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1308051514350.22479@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1308051514350.22479@axis700.grange> (Guennadi
-	Liakhovetski's message of "Mon, 5 Aug 2013 16:11:02 +0200 (CEST)")
+ <8661vkgqdw.fsf@void.printf.net>
+In-Reply-To: <8661vkgqdw.fsf@void.printf.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Chris Ball <cjb@laptop.org>
 Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, Daniel Drake <dsd@laptop.org>
 
-Hi Guennadi,
+Hi Chris
 
-On Mon, Aug 05 2013, Guennadi Liakhovetski wrote:
-> Add compatibility strings to configure MMCIF revision-specific features.
-> MMCIF blocks are always integrated into SoCs, so, we use SoC model to
-> distinguish between MMCIF versions.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> ---
->
-> Hi Chris,
-> I marked this as RFC, because having no access to the MMC standard I'm not 
-> certain about VccQ requirements for MMC DDR. On the one hand a comment in 
-> mmc.c says
-> 	 * EXT_CSD_CARD_TYPE_DDR_1_8V means 3.3V or 1.8V vccq.
-> which suggests, that DDR (DDR50?) can be used with VccQ = 3.3V, 1.8V and 
-> 1.2V at least. But in mmc_init_card() DDR50 is only requested from the 
-> driver if either MMC_CAP_1_8V_DDR or MMC_CAP_1_2V_DDR is specified in 
-> host's capabilities. So, I'm actually not sure whether MMC_CAP_UHS_DDR50 
-> alone without 1_8V or 1_2V makes sense. That's also what I implemented in 
-> this patch - DDR50 is only enabled in combination with either 1.2 or 1.8V 
-> capability. Is this correct?
+On Mon, 5 Aug 2013, Chris Ball wrote:
 
-OLPC's using DDR50 at 3.3V in production.  Honestly, I don't know
-whether it's spec compliant (I think the spec claims that 1.8V is
-required) but it happens to work on these parts.  The host controller
-does support 1.8V, there's just no hardware capable of supplying 1.8V
-to MMC on the board.
+> Hi Guennadi,
+> 
+> On Mon, Aug 05 2013, Guennadi Liakhovetski wrote:
+> > Add compatibility strings to configure MMCIF revision-specific features.
+> > MMCIF blocks are always integrated into SoCs, so, we use SoC model to
+> > distinguish between MMCIF versions.
+> >
+> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> > ---
+> >
+> > Hi Chris,
+> > I marked this as RFC, because having no access to the MMC standard I'm not 
+> > certain about VccQ requirements for MMC DDR. On the one hand a comment in 
+> > mmc.c says
+> > 	 * EXT_CSD_CARD_TYPE_DDR_1_8V means 3.3V or 1.8V vccq.
+> > which suggests, that DDR (DDR50?) can be used with VccQ = 3.3V, 1.8V and 
+> > 1.2V at least. But in mmc_init_card() DDR50 is only requested from the 
+> > driver if either MMC_CAP_1_8V_DDR or MMC_CAP_1_2V_DDR is specified in 
+> > host's capabilities. So, I'm actually not sure whether MMC_CAP_UHS_DDR50 
+> > alone without 1_8V or 1_2V makes sense. That's also what I implemented in 
+> > this patch - DDR50 is only enabled in combination with either 1.2 or 1.8V 
+> > capability. Is this correct?
+> 
+> OLPC's using DDR50 at 3.3V in production.  Honestly, I don't know
+> whether it's spec compliant (I think the spec claims that 1.8V is
+> required) but it happens to work on these parts.  The host controller
+> does support 1.8V, there's just no hardware capable of supplying 1.8V
+> to MMC on the board.
 
-Thanks,
+Thanks for the example. So, I think, for now it should be ok to just act 
+in a way, compatible with the mmc core, i.e. always set one of 
+MMC_CAP_1_8V_DDR or MMC_CAP_1_2V_DDR, when aiming at MMC_CAP_UHS_DDR50. 
+So, the patch should be ok then.
 
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>ng
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
