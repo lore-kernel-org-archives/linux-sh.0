@@ -1,152 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:39 +0000
-Subject: [GIT PULL 22/26] ARM: shmobile: r8a7740: move r8a7740_init_irq_of() to setup
-Message-Id: <70e3f3d4f40fe5ecdb351acf33db06df077fb0c1.1375840527.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 05 Aug 2013 17:53:24 +0000
+Subject: [PATCH v6 05/10] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
+Message-Id: <1375725209-2674-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The V4L2_MBUS_FMT_YUV10_1X30 code is documented as being equal to
+0x2014, while the v4l2-mediabus.h header defines it as 0x2016. Fix the
+documentation.
 
-This patch moves r8a7740_init_irq_of() to setup code,
-and remove intc-r8a7740
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- arch/arm/mach-shmobile/Makefile        |  2 +-
- arch/arm/mach-shmobile/intc-r8a7740.c  | 54 ----------------------------------
- arch/arm/mach-shmobile/setup-r8a7740.c | 32 ++++++++++++++++++++
- 3 files changed, 33 insertions(+), 55 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/intc-r8a7740.c
+ Documentation/DocBook/media/v4l/subdev-formats.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index f6881f9..7418131 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -9,7 +9,7 @@ obj-y				:= timer.o console.o clock.o
- obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
- obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
--obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
-+obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o
- obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o clock-r8a7790.o
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-deleted file mode 100644
-index 7519353..0000000
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ /dev/null
-@@ -1,54 +0,0 @@
--/*
-- * R8A7740 processor support
-- *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-- * Copyright (C) 2011  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/init.h>
--#include <linux/io.h>
--#include <linux/irqchip.h>
--#include <linux/irqchip/arm-gic.h>
--
--void __init r8a7740_init_irq_of(void)
--{
--	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
--	void __iomem *intc_msk_base = ioremap_nocache(0xe6900040, 0x10);
--	void __iomem *pfc_inta_ctrl = ioremap_nocache(0xe605807c, 0x4);
--
--	irqchip_init();
--
--	/* route signals to GIC */
--	iowrite32(0x0, pfc_inta_ctrl);
--
--	/*
--	 * To mask the shared interrupt to SPI 149 we must ensure to set
--	 * PRIO *and* MASK. Else we run into IRQ floods when registering
--	 * the intc_irqpin devices
--	 */
--	iowrite32(0x0, intc_prio_base + 0x0);
--	iowrite32(0x0, intc_prio_base + 0x4);
--	iowrite32(0x0, intc_prio_base + 0x8);
--	iowrite32(0x0, intc_prio_base + 0xc);
--	iowrite8(0xff, intc_msk_base + 0x0);
--	iowrite8(0xff, intc_msk_base + 0x4);
--	iowrite8(0xff, intc_msk_base + 0x8);
--	iowrite8(0xff, intc_msk_base + 0xc);
--
--	iounmap(intc_prio_base);
--	iounmap(intc_msk_base);
--	iounmap(pfc_inta_ctrl);
--}
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 21026b3..b7d4b2c 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -22,6 +22,8 @@
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/io.h>
-+#include <linux/irqchip.h>
-+#include <linux/irqchip/arm-gic.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/platform_device.h>
- #include <linux/of_platform.h>
-@@ -1019,6 +1021,36 @@ void __init r8a7740_init_delay(void)
- 	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
- };
- 
-+void __init r8a7740_init_irq_of(void)
-+{
-+	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
-+	void __iomem *intc_msk_base = ioremap_nocache(0xe6900040, 0x10);
-+	void __iomem *pfc_inta_ctrl = ioremap_nocache(0xe605807c, 0x4);
-+
-+	irqchip_init();
-+
-+	/* route signals to GIC */
-+	iowrite32(0x0, pfc_inta_ctrl);
-+
-+	/*
-+	 * To mask the shared interrupt to SPI 149 we must ensure to set
-+	 * PRIO *and* MASK. Else we run into IRQ floods when registering
-+	 * the intc_irqpin devices
-+	 */
-+	iowrite32(0x0, intc_prio_base + 0x0);
-+	iowrite32(0x0, intc_prio_base + 0x4);
-+	iowrite32(0x0, intc_prio_base + 0x8);
-+	iowrite32(0x0, intc_prio_base + 0xc);
-+	iowrite8(0xff, intc_msk_base + 0x0);
-+	iowrite8(0xff, intc_msk_base + 0x4);
-+	iowrite8(0xff, intc_msk_base + 0x8);
-+	iowrite8(0xff, intc_msk_base + 0xc);
-+
-+	iounmap(intc_prio_base);
-+	iounmap(intc_msk_base);
-+	iounmap(pfc_inta_ctrl);
-+}
-+
- static void __init r8a7740_generic_init(void)
- {
- 	r8a7740_clock_init(0);
+diff --git a/Documentation/DocBook/media/v4l/subdev-formats.xml b/Documentation/DocBook/media/v4l/subdev-formats.xml
+index adc6198..0c2b1f2 100644
+--- a/Documentation/DocBook/media/v4l/subdev-formats.xml
++++ b/Documentation/DocBook/media/v4l/subdev-formats.xml
+@@ -2574,7 +2574,7 @@
+ 	    </row>
+ 	    <row id="V4L2-MBUS-FMT-YUV10-1X30">
+ 	      <entry>V4L2_MBUS_FMT_YUV10_1X30</entry>
+-	      <entry>0x2014</entry>
++	      <entry>0x2016</entry>
+ 	      <entry></entry>
+ 	      <entry>y<subscript>9</subscript></entry>
+ 	      <entry>y<subscript>8</subscript></entry>
 -- 
-1.8.3.2
+1.8.1.5
 
