@@ -1,93 +1,60 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 21 Aug 2013 08:50:35 +0000
-Subject: Re: [PATCH 0/5] ARM: shmobile: bockw: add Sound support
-Message-Id: <20130821085034.GG20014@verge.net.au>
+Date: Mon, 05 Aug 2013 01:45:42 +0000
+Subject: Re: [PATCH] clocksource: em_sti: Adjust clock event rating to fix SMP broadcast
+Message-Id: <20130805014541.GD28465@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874nb2jgc4.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874nb2jgc4.wl%kuninori.morimoto.gx@renesas.com>
+References: <1375251940-7809-1-git-send-email-horms+renesas@verge.net.au>
+ <51F94A35.2020907@codeaurora.org>
+ <CANqRtoR0Wwctor1mpM+8nuC0_pZsPHUSShPuZFX4FVtoVKEuNw@mail.gmail.com>
+ <51F9777B.2080500@codeaurora.org>
+In-Reply-To: <51F9777B.2080500@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Subject: Re: [PATCH 1/5] sh-pfc: r8a7778: add SRU/SSI pin support
-Organisation: Horms Solutions Ltd.
+On Wed, Jul 31, 2013 at 01:45:47PM -0700, Stephen Boyd wrote:
+> On 07/31/13 12:17, Magnus Damm wrote:
+> > Hi Stephen,
+> >
+> > On Thu, Aug 1, 2013 at 2:32 AM, Stephen Boyd <sboyd@codeaurora.org> wrote:
+> >> On 07/30/13 23:25, Simon Horman wrote:
+> >>> From: Magnus Damm <damm@opensource.se>
+> >>>
+> >>> Update the STI rating from 200 to 80 to fix SMP operation with
+> >>> the ARM broadcast timer. This breakage was introduced by:
+> >>>
+> >>> f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
+> >>>
+> >>> Without this fix SMP operation is broken on EMEV2 since no
+> >>> broadcast timer interrupts trigger on the secondary CPU cores.
+> >>>
+> >>> Signed-off-by: Magnus Damm <damm@opensource.se>
+> >>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> >>> ---
+> >> This looks suspicious. Are you're purposefully deflating the rating so
+> >> that the STI timer fills in the broadcast position? Why not make the STI
+> >> cpumask be all possible CPUs? Presumably the interrupt can target all
+> >> CPUs since it isn't a per-cpu interrupt and doing this would cause the
+> >> STI to fill in the broadcast slot, leaving the per-cpu dummys in the
+> >> tick position.
+> > While letting the timer broadcast to all CPUs sounds interesting the
+> > STI driver has so far only been used to drive a single CPU core. This
+> > used to work well for us but has since some time unfortunately been
+> > broken. I agree that it may be suboptimal with a single timer like STI
+> > and using IPI for broadcast, but for more efficient SMP we already
+> > have TWD or arch timer.
+> 
+> I think there is some confusion. The mask field says what CPUs the timer
+> can possibly interrupt and for non-percpu interrupts this should be all
+> possible CPUs (unless we're talking clusters, etc. but I don't think we
+> are). Can you please give the output of /proc/timer_list or confirm that
+> the STI is your broadcast source? If so you should probably be marking
+> the cpumask for all possible CPUs so that the clockevent core knows to
+> prefer this clockevent for the broadcast source and not a per-cpu
+> source. Then you can leave the rating as is.
 
-[ CC Laurent and Linus ]
-
-On Tue, Aug 06, 2013 at 09:05:34PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> These patches add R-Car sound support on Bock-W board.
-> It enables PIO transfer only at this point, because
->  1) PIO settings is the most easy basic settings
->  2) HPB-DMAC is still not enabled on r8a7778
-> 
-> R-Car sound driver is already supporting DMA transfer on ASoC (= Mark's) branch.
-> So, it is easy to support DMA transfer if r8a7778 has HPB-DMAC support.
-> 
-> To enable R-Car sound on Bock-W board, ASoC branch mergeing is required
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git
-> :: asoc/topic/ak4554
-> :: asoc/topic/rcar
-> 
-> These patches are based on renesas-devel-20130806v4
-> 
-> Kuninori Morimoto (5):
->       sh-pfc: r8a7778: add SRU/SSI pin support
->       ARM: shmobile: r8a7778: add SSI/SRU clock support
->       ARM: shmobile: bockw: enable global use of FPGA
->       ARM: shmobile: bockw: add R-Car sound support (PIO)
->       ARM: shmobile: bockw defconfig: add Sound support
-> 
->  arch/arm/configs/bockw_defconfig       |    4 +
->  arch/arm/mach-shmobile/Kconfig         |    2 +
->  arch/arm/mach-shmobile/board-bockw.c   |  277 +++++++++++++++++++++++++++++++-
->  arch/arm/mach-shmobile/clock-r8a7778.c |   43 ++++-
->  drivers/pinctrl/sh-pfc/pfc-r8a7778.c   |  163 +++++++++++++++++++
->  5 files changed, 479 insertions(+), 10 deletions(-)
-
-As per my separate email in response to "sh-pfc: r8a7778: add SRU/SSI pin
-support", it seems that patch should be reviewed by Laurent and ideally
-taken through Linus's tree.
-
-With regards to the remaining patches, Magnus, could you cast an eye over them?
-
-
-> 
-> 
-> ---- asoc/topic/ak4554 ---------------------
-> commit b25f77815021ec6e7400a82c4984b9c80699ce80
-> Author: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Date:   Thu Jul 4 19:42:49 2013 -0700
-> 
->     ASoC: ak4554: add DT support
->     
->     Support for loading the ak4554 codec module via devicetree.
->     
->     Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->     Signed-off-by: Mark Brown <broonie@linaro.org>
-> 
-> ---- asoc/topic/rcar ------------------------
-> commit 2460719c79854a3bebe569cbfbfa0b1caa1dc434
-> Author: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Date:   Sun Jul 28 18:59:25 2013 -0700
-> 
->     ASoC: rsnd: scu: cleanup empty functions
->     
->     This patch cleanups empty functions on scu
->     
->     Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->     Signed-off-by: Mark Brown <broonie@linaro.org>
-> 
-> 
-> Best regards
-> ---
-> Kuninori Morimoto
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+From my point of view this seems to be a case of fixing a regression
+by adjusting the code so it has its previous working behaviour.
+I think that any work on altering the behaviour of the code
+through masks should be considered as future work.
