@@ -1,63 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:37 +0000
-Subject: [PATCH v3 07/14] ARM: shmobile: ag5evm: Remove SDHI .set_pwr() callback
-Message-Id: <1375958324-29683-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Aug 2013 00:43:19 +0000
+Subject: [PATCH 2/3 v4] ASoC: shmobile: r8a7778: add USBHS clock
+Message-Id: <877gg1t1az.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The SHDI platform data .set_pwr() callback is used to control the
-vmmc/vqmmc power supplies. As the power supplies already register
-control GPIOs there's no need to perform the operation manually.
-Remove the callback functions.
+This patch adds USBHS clock for renesas_usbhs driver
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c | 23 -----------------------
- 1 file changed, 23 deletions(-)
+v3 -> v4
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index c754071..a8e200f 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -476,33 +476,10 @@ static struct platform_device cn4_power = {
- 	},
- };
- 
--static void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
--{
--	static int power_gpio = -EINVAL;
--
--	if (power_gpio < 0) {
--		int ret = gpio_request_one(114, GPIOF_OUT_INIT_LOW,
--					   "sdhi1_power");
--		if (!ret)
--			power_gpio = 114;
--	}
--
--	/*
--	 * If requesting the GPIO above failed, it means, that the regulator got
--	 * probed and grabbed the GPIO, but we don't know, whether the sdhi
--	 * driver already uses the regulator. If it doesn't, we have to toggle
--	 * the GPIO ourselves, even though it is now owned by the fixed
--	 * regulator driver. We have to live with the race in case the driver
--	 * gets unloaded and the GPIO freed between these two steps.
--	 */
--	gpio_set_value(114, state);
--}
--
- static struct sh_mobile_sdhi_info sh_sdhi1_info = {
- 	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
- 	.tmio_caps	= MMC_CAP_NONREMOVABLE | MMC_CAP_SDIO_IRQ,
- 	.tmio_ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
--	.set_pwr	= ag5evm_sdhi1_set_pwr,
- };
- 
- static struct resource sdhi1_resources[] = {
+ - no change
+
+ arch/arm/mach-shmobile/clock-r8a7778.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index a0e9eb7..1395a2ac 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -148,6 +148,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP100]), /* USB FUNC */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
 -- 
-1.8.1.5
+1.7.9.5
 
