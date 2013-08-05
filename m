@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 01 Aug 2013 00:55:05 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 05 Aug 2013 08:50:16 +0000
 Subject: Re: [PATCH 00/13] ARM: shmobile: Rework ->init_time() / shmobile_timer_init()
-Message-Id: <87hafa2psq.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20130805085013.GD13274@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130731190110.31796.96552.sendpatchset@w520>
 In-Reply-To: <20130731190110.31796.96552.sendpatchset@w520>
@@ -10,9 +10,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi
-
+On Thu, Aug 01, 2013 at 04:01:10AM +0900, Magnus Damm wrote:
+> ARM: shmobile: Rework ->init_time() / shmobile_timer_init()
+> 
 > [PATCH 01/13] ARM: shmobile: Use default ->init_time() on r8a73a4
 > [PATCH 02/13] ARM: shmobile: Use default ->init_time() on r8a7740
 > [PATCH 03/13] ARM: shmobile: Use default ->init_time() on r8a7778
@@ -26,8 +26,12 @@ Hi
 > [PATCH 11/13] ARM: shmobile: Use default ->init_time() on KZM9G DT ref
 > [PATCH 12/13] ARM: shmobile: Use clocksource_of_init() on r8a7790
 > [PATCH 13/13] ARM: shmobile: Remove unused shmobile_init_time()
+> 
+> Set ->init_time() to NULL to use the default ARM behaviour which
+> happens to be clocksource_of_init(). Also, replace the call to
+> shmobile_time_init() with clocksource_of_init(). Finally, remove
+> shmobile_init_time() that now is unused.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-For all patches
-
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
+Thanks, I will queue these up for v3.12 in the cleanup3 branch.
