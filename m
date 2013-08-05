@@ -1,55 +1,31 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Aug 2013 06:23:27 +0000
-Subject: Re: [GIT PULL 0/4] Renesas ARM based SoC multiplatform updates for v3.12
-Message-Id: <20130806062327.GF18246@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 05 Aug 2013 00:41:50 +0000
+Subject: Re: [PATCH 0/3 v4] ARM: shmobile: r8a7778 USB Func support
+Message-Id: <87a9kxt1dg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375161473.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375161473.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-[ Correct subject prefix to "GIT PULL" ]
 
-On Tue, Jul 30, 2013 at 02:24:00PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following Renesas ARM based SoC multiplatform updates
-> for v3.12. This pull-request is based on renesas-dt-for-v3.12, which I have
-> already sent a pull-request for, in order to provide pre-requisite code.
-> 
-> The following changes since commit 66a5cab04d339d02b93a4671eadf8e251dbfdc2c:
-> 
->   ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference (2013-07-17 10:06:47 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-multiplatform-for-v3.12
-> 
-> for you to fetch changes up to fd071b669ee2405e986636e389a3d1b6776e50a0:
-> 
->   ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration (2013-07-23 09:52:44 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM based SoC multiplatform updates for v3.12
-> 
-> Move Renesas ARM based SoCs a little closer to using
-> multiplatform by adding ARCH_SHMOBILE_MULTI and only
-> building clocks when COMMON_CLK=n.
-> 
-> ----------------------------------------------------------------
-> Magnus Damm (4):
->       ARM: shmobile: Only build clocks when COMMON_CLK=n
->       ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
->       ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
->       ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration
-> 
->  arch/arm/Makefile                              |  1 +
->  arch/arm/boot/dts/Makefile                     |  1 +
->  arch/arm/mach-shmobile/Kconfig                 | 52 +++++++++++++++++++++++---
->  arch/arm/mach-shmobile/Makefile                | 33 +++++++++++-----
->  arch/arm/mach-shmobile/board-kzm9d-reference.c |  3 +-
->  arch/arm/mach-shmobile/setup-emev2.c           |  3 +-
->  6 files changed, 77 insertions(+), 16 deletions(-)
-> 
+Hi Simon
+
+>  1 - 6 : r8a7778 cleanup patches
+>  7 - 8 : r8a7779 cleanup patches
+>  9     : BockW DT reference
+>  A - B : BockW USB Func support
+
+These patches are A-B part v4 patches for r8a7778/BockW
+These are based on renesas-devel-20130801v2
+
+Kuninori Morimoto (3):
+      ARM: shmobile: r8a7778: add usb phy power control function
+      ARM: shmobile: r8a7778: add USB Function clock
+      ARM: shmobile: bockw: add USB Function support
+
+ arch/arm/mach-shmobile/board-bockw.c          |   81 ++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 +
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   37 +++++++----
+ 4 files changed, 107 insertions(+), 14 deletions(-)
