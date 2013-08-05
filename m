@@ -1,56 +1,33 @@
-From: Sudeep KarkadaNagesha <Sudeep.KarkadaNagesha@arm.com>
-Date: Thu, 29 Aug 2013 17:20:45 +0000
-Subject: Re: [PATCH v2 00/03] ARM: shmobile: r8a7790 APMU SMP support
-Message-Id: <521F82ED.7020901@arm.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 05 Aug 2013 07:43:50 +0000
+Subject: Re: [PATCH] ARM: shmobile: sh73a0: Remove global GPIO_NR definition
+Message-Id: <20130805074348.GH15796@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130828232148.7321.45739.sendpatchset@w520>
-In-Reply-To: <20130828232148.7321.45739.sendpatchset@w520>
+References: <1375126434-25884-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375126434-25884-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 29/08/13 00:21, Magnus Damm wrote:
-> ARM: shmobile: r8a7790 APMU SMP support
+On Mon, Jul 29, 2013 at 05:52:42PM -0700, Kuninori Morimoto wrote:
 > 
-> [PATCH v2 01/03] ARM: shmobile: Shared APMU SMP support code without DT
-> [PATCH v2 02/03] ARM: shmobile: Add r8a7790 SMP support using APMU code
-> [PATCH v2 03/03] ARM: shmobile: Add r8a7790 CA15 CPU cores
+> Hi
 > 
-> This series adds SMP support to r8a7790 using the included APMU code.
-> The previous version of r8a7790 support depended on the APMU code in 
-> "[PATCH] ARM: shmobile: Shared APMU SMP support code", but in this
-> version the APMU code has been reworked to not use DT.
-You have misunderstood my comments. I clearly said I am not against
-using DT for APMU. I objected only the new property 'cpus' added to the
-APMU node(mainly because it's not needed IMO or it was not documented
-well to explain the need for it)
+> > On Mon, Jul 29, 2013 at 09:33:54PM +0200, Laurent Pinchart wrote:
+> > > The total number of SoC GPIOs is only used to compute the base GPIO
+> > > number of th PCF8575 GPIO extender on the KZM9G board. As GPIO
+> > > allocation became fully dynamic with DT, no other SH73A0 board will use
+> > > the GPIO_NR macro. Move it to the KZM9G board file.
+> > > 
+> > > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> > 
+> > I am happy with this.
+> > But I will wait to give others a chance to review it before
+> > queueing it up.
+> 
+> This patch looks good to me
+> 
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> In the future
-> r8a73a4 and other SoCs may make use of the APMU as well, but the 
-> r8a73a4 code first needs to be adjusted to work with the CCI driver.
-> 
-> With these patches applied r8a7790 CA15 support for SMP boot
-> and CPU Hotplug is known to be working.
-> 
-> Thanks to Sudeep for his feedback.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Written against renesas.git renesas-devel-20130829
-> 
->  arch/arm/boot/dts/r8a7790.dtsi                 |   21 ++
->  arch/arm/mach-shmobile/Makefile                |    1 
->  arch/arm/mach-shmobile/board-lager-reference.c |    1 
->  arch/arm/mach-shmobile/board-lager.c           |    1 
->  arch/arm/mach-shmobile/include/mach/common.h   |    6 
->  arch/arm/mach-shmobile/include/mach/r8a7790.h  |    1 
->  arch/arm/mach-shmobile/platsmp-apmu.c          |  178 ++++++++++++++++++++++++
->  arch/arm/mach-shmobile/setup-r8a7790.c         |    1 
->  arch/arm/mach-shmobile/smp-r8a7790.c           |   67 +++++++++
->  9 files changed, 277 insertions(+)
-> 
-> 
-
-
+Thanks, I have queued this up for v3.12 in the cleanup4 branch.
