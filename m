@@ -1,70 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:42:03 +0000
-Subject: [PATCH 3/5] ARM: shmobile: Remove unused shmobile_smp_init_cpus()
-Message-Id: <4dd806b5b4a226e88060f16e2b508769a1e106f7.1377651075.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 05 Aug 2013 17:53:28 +0000
+Subject: [PATCH v6 09/10] vsp1: Fix lack of the sink entity registration for enabled links
+Message-Id: <1375725209-2674-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377651075.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377651075.git.horms+renesas@verge.net.au>
+References: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+From: Katsuya Matsubara <matsu@igel.co.jp>
 
-Remove shmobile_smp_init_cpus() since all SMP platforms in
-mach-shmobile now rely on DT for CPU core description instead
-of for instance determining number of cores from the SCU.
+Each source entity maintains a pointer to the counterpart sink
+entity while an enabled link connects them. It should be managed by
+the setup_link callback in the media controller framework at runtime.
+However, enabled links which connect RPFs and WPFs that have an
+equivalent index number are created during initialization.
+This registers the pointer to a sink entity from the source entity
+when an enabled link is created.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |  1 -
- arch/arm/mach-shmobile/platsmp.c             | 15 ---------------
- 2 files changed, 16 deletions(-)
+ drivers/media/platform/vsp1/vsp1_drv.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 2eda447..e64515e 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -41,7 +41,6 @@ static inline int shmobile_cpuidle_init(void) { return 0; }
- #endif
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index e58e49c..41dd891 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -101,6 +101,9 @@ static int vsp1_create_links(struct vsp1_device *vsp1, struct vsp1_entity *sink)
+ 						       entity, pad, flags);
+ 			if (ret < 0)
+ 				return ret;
++
++			if (flags & MEDIA_LNK_FL_ENABLED)
++				source->sink = entity;
+ 		}
+ 	}
  
- extern void __iomem *shmobile_scu_base;
--extern void shmobile_smp_init_cpus(unsigned int ncores);
- 
- static inline void __init shmobile_init_late(void)
- {
-diff --git a/arch/arm/mach-shmobile/platsmp.c b/arch/arm/mach-shmobile/platsmp.c
-index 3741562..9ebc246 100644
---- a/arch/arm/mach-shmobile/platsmp.c
-+++ b/arch/arm/mach-shmobile/platsmp.c
-@@ -11,25 +11,10 @@
-  * published by the Free Software Foundation.
-  */
- #include <linux/init.h>
--#include <linux/smp.h>
- #include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <mach/common.h>
- 
--void __init shmobile_smp_init_cpus(unsigned int ncores)
--{
--	unsigned int i;
--
--	if (ncores > nr_cpu_ids) {
--		pr_warn("SMP: %u cores greater than maximum (%u), clipping\n",
--			ncores, nr_cpu_ids);
--		ncores = nr_cpu_ids;
--	}
--
--	for (i = 0; i < ncores; i++)
--		set_cpu_possible(i, true);
--}
--
- extern unsigned long shmobile_smp_fn[];
- extern unsigned long shmobile_smp_arg[];
- extern unsigned long shmobile_smp_mpidr[];
 -- 
-1.8.3.2
+1.8.1.5
 
