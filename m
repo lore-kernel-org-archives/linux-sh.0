@@ -1,34 +1,38 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sun, 04 Aug 2013 20:31:31 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 05 Aug 2013 01:39:16 +0000
 Subject: Re: [PATCH 0/5] Renesas ARM-based SoC board updates for v3.12
-Message-Id: <20130804203131.GD15602@quad.lixom.net>
+Message-Id: <20130805013916.GB28465@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1375174556.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375174556.git.horms+renesas@verge.net.au>
+ <20130804203131.GD15602@quad.lixom.net>
+In-Reply-To: <20130804203131.GD15602@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 30, 2013 at 06:00:41PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
+On Sun, Aug 04, 2013 at 01:31:31PM -0700, Olof Johansson wrote:
+> On Tue, Jul 30, 2013 at 06:00:41PM +0900, Simon Horman wrote:
+> > Hi Olof, Hi Arnd,
+> > 
+> > please consider these Renesas ARM-based SoC board updates for v3.12.
+> > This pull-request is based on renesas-soc-for-v3.12 which I have previously
+> > sent a pull-request for.
+> > 
+> > The following changes since commit 81b9d5351fa96caad4accc6711bc1b9342927d4a:
+> > 
+> >   ARM: shmobile: Setup r8a7790 arch timer based on MD pins (2013-07-17 14:26:56 +0900)
+> > 
+> > are available in the git repository at:
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
 > 
-> please consider these Renesas ARM-based SoC board updates for v3.12.
-> This pull-request is based on renesas-soc-for-v3.12 which I have previously
-> sent a pull-request for.
-> 
-> The following changes since commit 81b9d5351fa96caad4accc6711bc1b9342927d4a:
-> 
->   ARM: shmobile: Setup r8a7790 arch timer based on MD pins (2013-07-17 14:26:56 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
+> Hi, can I get a tag for this please?
 
-Hi, can I get a tag for this please?
+Sorry for not posing that the first time around.
+It is renesas-boards-for-v3.12.
 
-Also, your subject says [PATCH 0/5], which might make me miss it. Please
-label it [GIT PULL] if you don't mind?
+> Also, your subject says [PATCH 0/5], which might make me miss it. Please
+> label it [GIT PULL] if you don't mind?
 
-
--Olof
+Sure, will do.
