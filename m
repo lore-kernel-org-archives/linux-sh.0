@@ -1,88 +1,155 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:37:52 +0000
-Subject: [PATCH 2/5] ARM: shmobile: lager: Constify platform data and resources
-Message-Id: <7db0d5c128bef96df72a33142dc651b39e6c11c2.1377653181.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 05 Aug 2013 08:34:52 +0000
+Subject: Re: [PATCH 01/02] ARM: shmobile: Introduce per-CPU SMP boot / sleep code
+Message-Id: <20130805083451.GB13274@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377653181.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377653181.git.horms+renesas@verge.net.au>
+References: <20130731183808.31551.47235.sendpatchset@w520>
+ <20130731183818.31551.51694.sendpatchset@w520>
+In-Reply-To: <20130731183818.31551.51694.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On Thu, Aug 01, 2013 at 03:38:18AM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Add per-CPU SMP boot / sleep code that can be used by all
+> SoCs included in mach-shmobile.
+> 
+> The boot code reads out the per-CPU MPIDR id value and
+> matches it with the value stored for any CPU number, and
+> if there is a match and the boot function is set as well
+> then the boot function will be executed.
+> 
+> The sleep code simply uses WFI and then jumps back to the
+> boot code to see if anyone has asked to wake up that CPU,
+> if not it will sleep again.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Platform data and resources for Lager devices are kmemdup()ed when the
-corresponding devices are registered and can thus be declared as const.
-Do so.
+Hi Magnus,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-lager.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+I have queued this up for v3.12 in the smp branch
+with the following whitespace changes:
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index b161379..9806ca0 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -55,7 +55,7 @@ static struct gpio_led lager_leds[] = {
- 	},
- };
- 
--static __initdata struct gpio_led_platform_data lager_leds_pdata = {
-+static const struct gpio_led_platform_data lager_leds_pdata __initconst = {
- 	.leds		= lager_leds,
- 	.num_leds	= ARRAY_SIZE(lager_leds),
- };
-@@ -71,7 +71,7 @@ static __initdata struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_1,		RCAR_GP_PIN(1, 14),	"SW2-pin1"),
- };
- 
--static __initdata struct gpio_keys_platform_data lager_keys_pdata = {
-+static const struct gpio_keys_platform_data lager_keys_pdata __initconst = {
- 	.buttons	= gpio_buttons,
- 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
- };
-@@ -83,17 +83,17 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  };
- 
- /* MMCIF */
--static struct sh_mmcif_plat_data mmcif1_pdata __initdata = {
-+static const struct sh_mmcif_plat_data mmcif1_pdata __initconst = {
- 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
- };
- 
--static struct resource mmcif1_resources[] __initdata = {
-+static const struct resource mmcif1_resources[] __initconst = {
- 	DEFINE_RES_MEM_NAMED(0xee220000, 0x80, "MMCIF1"),
- 	DEFINE_RES_IRQ(gic_spi(170)),
- };
- 
- /* Ether */
--static struct sh_eth_plat_data ether_pdata __initdata = {
-+static const struct sh_eth_plat_data ether_pdata __initconst = {
- 	.phy			= 0x1,
- 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
- 	.register_type		= SH_ETH_REG_FAST_RCAR,
-@@ -101,7 +101,7 @@ static struct sh_eth_plat_data ether_pdata __initdata = {
- 	.ether_link_active_low	= 1,
- };
- 
--static struct resource ether_resources[] __initdata = {
-+static const struct resource ether_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xee700000, 0x400),
- 	DEFINE_RES_IRQ(gic_spi(162)),
- };
-@@ -156,7 +156,7 @@ static void __init lager_add_standard_devices(void)
- 					  &ether_pdata, sizeof(ether_pdata));
- }
- 
--static const char *lager_boards_compat_dt[] __initdata = {
-+static const char * const lager_boards_compat_dt[] __initconst = {
- 	"renesas,lager",
- 	NULL,
- };
--- 
-1.8.3.2
+> ---
+> 
+>  arch/arm/mach-shmobile/headsmp.S             |   50 ++++++++++++++++++++++++++
+>  arch/arm/mach-shmobile/include/mach/common.h |    4 ++
+>  arch/arm/mach-shmobile/platsmp.c             |   18 +++++++++
+>  3 files changed, 72 insertions(+)
+> 
+> --- 0001/arch/arm/mach-shmobile/headsmp.S
+> +++ work/arch/arm/mach-shmobile/headsmp.S	2013-07-31 12:23:20.000000000 +0900
+> @@ -40,3 +40,53 @@ shmobile_boot_fn:
+>  	.globl	shmobile_boot_arg
+>  shmobile_boot_arg:
+>  2:	.space	4
+> +
+> +/*
+> + * Per-CPU SMP boot function/argument selection code based on MPIDR
+> + */
+> +
+> +ENTRY(shmobile_smp_boot)
+> +						@ r0 = MPIDR_HWID_BITMASK
+> +	mrc	p15, 0, r1, c0, c0, 5		@ r1 = MPIDR
+> +	and	r0, r1, r0			@ r0 = cpu_logical_map() value
+> +	mov	r1, #0				@ r1 = CPU index
+> +	adr	r5, 1f				@ array of per-cpu mpidr values
+> +	adr	r6, 2f				@ array of per-cpu functions
+> +	adr	r7, 3f				@ array of per-cpu arguments
+> +	
 
+Removed trailing whitespace from line above.
+
+> +shmobile_smp_boot_find_mpidr:
+> +	ldr	r8, [r5, r1, lsl #2]
+> +	cmp	r8, r0
+> +	bne	shmobile_smp_boot_next
+> +
+> +	ldr	r9, [r6, r1, lsl #2]
+> +	cmp	r9, #0
+> +	bne	shmobile_smp_boot_found
+> +	
+
+Removed trailing whitespace from line above.
+
+> +shmobile_smp_boot_next:
+> +	add	r1, r1, #1
+> +	cmp	r1, #CONFIG_NR_CPUS
+> +	blo	shmobile_smp_boot_find_mpidr
+> +
+> +	b	shmobile_smp_sleep
+> +	
+
+Removed trailing whitespace from line above.
+
+> +shmobile_smp_boot_found:
+> +	ldr	r0, [r7, r1, lsl #2]
+> +	mov	pc, r9
+> +ENDPROC(shmobile_smp_boot)
+> +
+> +ENTRY(shmobile_smp_sleep)
+> +	wfi
+> +	b	shmobile_smp_boot
+> +ENDPROC(shmobile_smp_sleep)
+> +
+> +	.globl	shmobile_smp_mpidr
+> +shmobile_smp_mpidr:
+> +1:	.space	CONFIG_NR_CPUS * 4
+> +	.globl	shmobile_smp_fn
+> +shmobile_smp_fn:
+> +2:	.space	CONFIG_NR_CPUS * 4
+> +	.globl	shmobile_smp_arg
+> +shmobile_smp_arg:
+> +3:	.space	CONFIG_NR_CPUS * 4
+> +
+
+Remove trailing blank line from line above.
+
+> --- 0006/arch/arm/mach-shmobile/include/mach/common.h
+> +++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-07-31 12:18:01.000000000 +0900
+> @@ -10,6 +10,10 @@ extern void shmobile_setup_console(void)
+>  extern void shmobile_boot_vector(void);
+>  extern unsigned long shmobile_boot_fn;
+>  extern unsigned long shmobile_boot_arg;
+> +extern void shmobile_smp_boot(void);
+> +extern void shmobile_smp_sleep(void);
+> +extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
+> +			      unsigned long arg);
+>  extern void shmobile_boot_scu(void);
+>  extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+>  extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
+> --- 0001/arch/arm/mach-shmobile/platsmp.c
+> +++ work/arch/arm/mach-shmobile/platsmp.c	2013-07-31 12:18:01.000000000 +0900
+> @@ -12,6 +12,9 @@
+>   */
+>  #include <linux/init.h>
+>  #include <linux/smp.h>
+> +#include <asm/cacheflush.h>
+> +#include <asm/smp_plat.h>
+> +#include <mach/common.h>
+>  
+>  void __init shmobile_smp_init_cpus(unsigned int ncores)
+>  {
+> @@ -26,3 +29,18 @@ void __init shmobile_smp_init_cpus(unsig
+>  	for (i = 0; i < ncores; i++)
+>  		set_cpu_possible(i, true);
+>  }
+> +
+> +extern unsigned long shmobile_smp_fn[];
+> +extern unsigned long shmobile_smp_arg[];
+> +extern unsigned long shmobile_smp_mpidr[];
+> +
+> +void shmobile_smp_hook(unsigned int cpu, unsigned long fn, unsigned long arg)
+> +{
+> +	shmobile_smp_fn[cpu] = 0;
+> +	flush_cache_all();
+> +
+> +	shmobile_smp_mpidr[cpu] = cpu_logical_map(cpu);
+> +	shmobile_smp_fn[cpu] = fn;
+> +	shmobile_smp_arg[cpu] = arg;
+> +	flush_cache_all();
+> +}
+> 
