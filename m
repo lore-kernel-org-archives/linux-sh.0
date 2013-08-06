@@ -1,39 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 06 Aug 2013 08:26:06 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 06 Aug 2013 08:37:55 +0000
 Subject: Re: [PATCH 0/2] ARM: shmobile: remove nfsroot settings
-Message-Id: <uzjsvrzs5.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20130806083753.GA28493@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
- <1375175361-23027-4-git-send-email-horms+renesas@verge.net.au>
- <87bo5h3lb3.wl%kuninori.morimoto.gx@renesas.com>
- <20130801080226.GF15265@verge.net.au> <20130806010736.GA20940@verge.net.au>
+References: <87bo5h3lb3.wl%kuninori.morimoto.gx@renesas.com>
+ <20130801080226.GF15265@verge.net.au>
+ <20130806010736.GA20940@verge.net.au>
  <87r4e7h88z.wl%kuninori.morimoto.gx@renesas.com>
  <20130806022955.GA25114@verge.net.au>
  <87pptrh6f3.wl%kuninori.morimoto.gx@renesas.com>
  <87ob9bh5mt.wl%kuninori.morimoto.gx@renesas.com>
  <87haf3gxg6.wl%kuninori.morimoto.gx@renesas.com>
  <20130806082333.GA10748@verge.net.au>
-In-Reply-To: <20130806082333.GA10748@verge.net.au>
+ <uzjsvrzs5.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <uzjsvrzs5.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Simon
-
-> > > > Yes, I can send patches.
-> > > > But, I can't test emev2-kzm9d board.
-> > > > Do you have it ?
-> > > 
-> > > These patches remove nfsroot settings from kzm9d/armadillo dts file.
-> > > I tested #1 patch on Armadillo board, but I don't have kzm9d board.
-> > 
-> > I could test kzm9d board on Magnus's environment.
-> > It works well without "rsize/wsize"
+On Tue, Aug 06, 2013 at 05:26:06PM +0900, Kuninori Morimoto wrote:
 > 
-> Thanks, I will test Armadillo.
+> Hi Simon
+> 
+> > > > > Yes, I can send patches.
+> > > > > But, I can't test emev2-kzm9d board.
+> > > > > Do you have it ?
+> > > > 
+> > > > These patches remove nfsroot settings from kzm9d/armadillo dts file.
+> > > > I tested #1 patch on Armadillo board, but I don't have kzm9d board.
+> > > 
+> > > I could test kzm9d board on Magnus's environment.
+> > > It works well without "rsize/wsize"
+> > 
+> > Thanks, I will test Armadillo.
+> 
+> Thank you.
+> But I already tested it on Armadillo :)
+> It works well
 
-Thank you.
-But I already tested it on Armadillo :)
-It works well
+Great!
+
+I will queue these changes up for v3.12 in the cleanup3 branch.
