@@ -1,39 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:42:04 +0000
-Subject: [PATCH 4/5] ARM: shmobile: Expose shmobile_invalidate_start()
-Message-Id: <eb2d656152e3e712c8798f7cc2dd99771c969920.1377651075.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 06 Aug 2013 06:23:27 +0000
+Subject: Re: [GIT PULL 0/4] Renesas ARM based SoC multiplatform updates for v3.12
+Message-Id: <20130806062327.GF18246@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377651075.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377651075.git.horms+renesas@verge.net.au>
+References: <cover.1375161473.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375161473.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+[ Correct subject prefix to "GIT PULL" ]
 
-Expose shmobile_invalidate_start() in common.h for
-mach-shmobile. This function will be used for boot of
-secondary processors on future non-SCU SMP platforms.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/common.h | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index e64515e..1ffe39c 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -15,6 +15,7 @@ extern void shmobile_smp_sleep(void);
- extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
- 			      unsigned long arg);
- extern int shmobile_smp_cpu_disable(unsigned int cpu);
-+extern void shmobile_invalidate_start(void);
- extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
- extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
--- 
-1.8.3.2
-
+On Tue, Jul 30, 2013 at 02:24:00PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Arnd,
+> 
+> please consider the following Renesas ARM based SoC multiplatform updates
+> for v3.12. This pull-request is based on renesas-dt-for-v3.12, which I have
+> already sent a pull-request for, in order to provide pre-requisite code.
+> 
+> The following changes since commit 66a5cab04d339d02b93a4671eadf8e251dbfdc2c:
+> 
+>   ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference (2013-07-17 10:06:47 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-multiplatform-for-v3.12
+> 
+> for you to fetch changes up to fd071b669ee2405e986636e389a3d1b6776e50a0:
+> 
+>   ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration (2013-07-23 09:52:44 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas ARM based SoC multiplatform updates for v3.12
+> 
+> Move Renesas ARM based SoCs a little closer to using
+> multiplatform by adding ARCH_SHMOBILE_MULTI and only
+> building clocks when COMMON_CLK=n.
+> 
+> ----------------------------------------------------------------
+> Magnus Damm (4):
+>       ARM: shmobile: Only build clocks when COMMON_CLK=n
+>       ARM: shmobile: Introduce ARCH_SHMOBILE_MULTI
+>       ARM: shmobile: Add EMEV2 and KZM9D to ARCH_SHMOBILE_MULTI
+>       ARM: shmobile: Allow ARCH_SHMOBILE_MULTI timer configuration
+> 
+>  arch/arm/Makefile                              |  1 +
+>  arch/arm/boot/dts/Makefile                     |  1 +
+>  arch/arm/mach-shmobile/Kconfig                 | 52 +++++++++++++++++++++++---
+>  arch/arm/mach-shmobile/Makefile                | 33 +++++++++++-----
+>  arch/arm/mach-shmobile/board-kzm9d-reference.c |  3 +-
+>  arch/arm/mach-shmobile/setup-emev2.c           |  3 +-
+>  6 files changed, 77 insertions(+), 16 deletions(-)
+> 
