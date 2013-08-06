@@ -1,37 +1,48 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:35 +0000
-Subject: [GIT PULL 08/26] ARM: shmobile: Use default ->init_time() on r8a7778
-Message-Id: <0765f48a214af1ea9dd5ac7e3804c00ad6d16e15.1375840527.git.horms+renesas@verge.net.au>
+Date: Tue, 06 Aug 2013 07:50:11 +0000
+Subject: [PATCH v7 3/3] ARM: shmobile: lager: enable nfsroot in DTS
+Message-Id: <1375775411-4545-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <1375775411-4545-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1375775411-4545-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Now that Ether support has been added to the lager board
+it is possible to use nfsroot. This configuration is
+in line with that of other shmobile boards.
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7778.c | 1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 1a154d4..604cf36 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -406,7 +406,6 @@ static const char *r8a7778_compat_dt[] __initdata = {
- DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
--	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a7778_compat_dt,
- 	.init_late      = r8a7778_init_late,
- MACHINE_END
+---
+
+This patch has a run-time dependency on "ARM: shmobile: lager: enable Ether"
+
+v6
+* Do not add rsize and wsize settings.
+  These do not seem to be useful.
+
+v2
+* Split out as a new patch from "ARM: shmobile: lager: enable Ether"
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 631b93b..203bd08 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,lager", "renesas,r8a7790";
+ 
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
++		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+ 
+ 	memory@40000000 {
 -- 
 1.8.3.2
 
