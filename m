@@ -1,195 +1,62 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 02 Aug 2013 14:50:40 +0000
-Subject: [PATCH v5 5/7] ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
-Message-Id: <1375455042-24093-6-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 06 Aug 2013 01:28:56 +0000
+Subject: Re: [PATCH 12/13] ARM: shmobile: Use clocksource_of_init() on r8a7790
+Message-Id: <20130806012855.GB20940@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375455042-24093-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1375455042-24093-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130731190110.31796.96552.sendpatchset@w520>
+ <20130731190300.31796.23926.sendpatchset@w520>
+In-Reply-To: <20130731190300.31796.23926.sendpatchset@w520>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Vinod Koul <vinod.koul@intel.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-arm-kernel@lists.infradead.org
 
-Add a DMAC platform device and clock definitions for it on r8a73a4.
+On Thu, Aug 01, 2013 at 04:03:00AM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Replace the call to shmobile_timer_init() with
+> clocksource_of_init(). This will allow us to
+> get rid of shmobile_timer_init().
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/mach-shmobile/setup-r8a7790.c |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> --- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
+> +++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-08-01 03:17:48.000000000 +0900
+> @@ -263,7 +263,7 @@ void __init r8a7790_timer_init(void)
+>  	iounmap(base);
+>  #endif /* CONFIG_ARM_ARCH_TIMER */
+>  
+> -	shmobile_timer_init();
+> +	clocksource_of_init();
+>  }
+>  
+>  void __init r8a7790_init_delay(void)
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
+I seem to need the following:
 
-Depends on "DMA: shdma: support the new CHCLR register layout"
-https://lkml.org/lkml/2013/7/10/146
-
- arch/arm/mach-shmobile/clock-r8a73a4.c        |    4 +-
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    9 +++
- arch/arm/mach-shmobile/setup-r8a73a4.c        |   91 +++++++++++++++++++++++++
- 3 files changed, 103 insertions(+), 1 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 8ea5ef6..357b9bc 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -504,7 +504,7 @@ static struct clk div6_clks[DIV6_NR] = {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 7301255..d0f5c9f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
- /* MSTP */
- enum {
--	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
-+	MSTP218, MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
- 	MSTP329, MSTP323, MSTP318, MSTP317, MSTP316,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
- 	MSTP411, MSTP410, MSTP409,
-@@ -519,6 +519,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
- 	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
- 	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
-+	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR2, 18, 0), /* DMAC */
- 	[MSTP300] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 0, 0), /* IIC2 */
- 	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1],SMSTPCR3, 5, 0), /* MMCIF1 */
- 	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI2],SMSTPCR3, 12, 0), /* SDHI2 */
-@@ -578,6 +579,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
-+	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a73a4.h b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-index f3a9b70..3a0ea48 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-@@ -1,6 +1,15 @@
- #ifndef __ASM_R8A73A4_H__
- #define __ASM_R8A73A4_H__
- 
-+/* DMA slave IDs */
-+enum {
-+	SHDMA_SLAVE_INVALID,
-+	SHDMA_SLAVE_MMCIF0_TX,
-+	SHDMA_SLAVE_MMCIF0_RX,
-+	SHDMA_SLAVE_MMCIF1_TX,
-+	SHDMA_SLAVE_MMCIF1_RX,
-+};
-+
- void r8a73a4_add_standard_devices(void);
- void r8a73a4_add_dt_devices(void);
- void r8a73a4_clock_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 2ee45d5..ec77059 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -22,8 +22,10 @@
++#include <linux/clocksource.h>
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
  #include <linux/of_platform.h>
- #include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
- #include <mach/common.h>
-+#include <mach/dma-register.h>
- #include <mach/irqs.h>
- #include <mach/r8a73a4.h>
- #include <asm/mach/arch.h>
-@@ -199,12 +201,101 @@ void __init r8a73a4_add_dt_devices(void)
- 	r8a7790_register_cmt(10);
- }
- 
-+/* DMA */
-+static const struct sh_dmae_slave_config dma_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_MMCIF0_TX,
-+		.addr		= 0xee200034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF0_RX,
-+		.addr		= 0xee200034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF1_TX,
-+		.addr		= 0xee220034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xe1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF1_RX,
-+		.addr		= 0xee220034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xe2,
-+	},
-+};
-+
-+#define DMAE_CHANNEL(a, b)				\
-+	{						\
-+		.offset         = (a) - 0x20,		\
-+		.dmars          = (a) - 0x20 + 0x40,	\
-+		.chclr_bit	= (b),			\
-+		.chclr_offset	= 0x80 - 0x20,		\
-+	}
-+
-+static const struct sh_dmae_channel dma_channels[] = {
-+	DMAE_CHANNEL(0x8000, 0),
-+	DMAE_CHANNEL(0x8080, 1),
-+	DMAE_CHANNEL(0x8100, 2),
-+	DMAE_CHANNEL(0x8180, 3),
-+	DMAE_CHANNEL(0x8200, 4),
-+	DMAE_CHANNEL(0x8280, 5),
-+	DMAE_CHANNEL(0x8300, 6),
-+	DMAE_CHANNEL(0x8380, 7),
-+	DMAE_CHANNEL(0x8400, 8),
-+	DMAE_CHANNEL(0x8480, 9),
-+	DMAE_CHANNEL(0x8500, 10),
-+	DMAE_CHANNEL(0x8580, 11),
-+	DMAE_CHANNEL(0x8600, 12),
-+	DMAE_CHANNEL(0x8680, 13),
-+	DMAE_CHANNEL(0x8700, 14),
-+	DMAE_CHANNEL(0x8780, 15),
-+	DMAE_CHANNEL(0x8800, 16),
-+	DMAE_CHANNEL(0x8880, 17),
-+	DMAE_CHANNEL(0x8900, 18),
-+	DMAE_CHANNEL(0x8980, 19),
-+};
-+
-+static const struct sh_dmae_pdata dma_pdata = {
-+	.slave		= dma_slaves,
-+	.slave_num	= ARRAY_SIZE(dma_slaves),
-+	.channel	= dma_channels,
-+	.channel_num	= ARRAY_SIZE(dma_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init     = DMAOR_DME,
-+	.chclr_present	= 1,
-+	.chclr_bitwise	= 1,
-+};
-+
-+static struct resource dma_resources[] = {
-+	DEFINE_RES_MEM(0xe6700020, 0x89e0),
-+	DEFINE_RES_IRQ_NAMED(gic_spi(220), "error_irq"),
-+	{
-+		/* IRQ for channels 0-19 */
-+		.start  = gic_spi(200),
-+		.end    = gic_spi(219),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+#define r8a73a4_register_dmac()							\
-+	platform_device_register_resndata(&platform_bus, "sh-dma-engine", 0,	\
-+				dma_resources, ARRAY_SIZE(dma_resources),	\
-+				&dma_pdata, sizeof(dma_pdata))
-+
- void __init r8a73a4_add_standard_devices(void)
- {
- 	r8a73a4_add_dt_devices();
- 	r8a73a4_register_irqc(0);
- 	r8a73a4_register_irqc(1);
- 	r8a73a4_register_thermal();
-+	r8a73a4_register_dmac();
- }
- 
- void __init r8a73a4_init_delay(void)
--- 
-1.7.2.5
 
+
+To avoid:
+
+...
+  CC      arch/arm/mach-shmobile/setup-r8a7790.o
+arch/arm/mach-shmobile/setup-r8a7790.c: In function ‘r8a7790_timer_init’:
+arch/arm/mach-shmobile/setup-r8a7790.c:266:2: error: implicit declaration of function ‘clocksource_of_init’ [-Werror=implicit-function-declaration]
+cc1: some warnings being treated as errors
+make[1]: *** [arch/arm/mach-shmobile/setup-r8a7790.o] Error 1
