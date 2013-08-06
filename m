@@ -1,111 +1,62 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Fri, 30 Aug 2013 12:37:36 +0000
-Subject: [RFC 02/10] drm: Decouple edid parsing from i2c adapter
-Message-Id: <1377866264-21110-3-git-send-email-ulrich.hecht@gmail.com>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Tue, 06 Aug 2013 15:51:55 +0000
+Subject: [PATCH RFC 0/2] Clock unregistration support in the common clock framework
+Message-Id: <1375804317-10576-1-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
----
- drivers/gpu/drm/drm_edid.c | 18 ++++++++++--------
- include/drm/drm_edid.h     |  3 +++
- 2 files changed, 13 insertions(+), 8 deletions(-)
+Hello,
 
-diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
-index 95d6f4b..94f4d79 100644
---- a/drivers/gpu/drm/drm_edid.c
-+++ b/drivers/gpu/drm/drm_edid.c
-@@ -1059,9 +1059,10 @@ EXPORT_SYMBOL(drm_edid_is_valid);
-  * Try to fetch EDID information by calling i2c driver function.
-  */
- static int
--drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
-+drm_do_probe_ddc_edid(void *data, unsigned char *buf,
- 		      int block, int len)
- {
-+	struct i2c_adapter *adapter = data;
- 	unsigned char start = block * EDID_LENGTH;
- 	unsigned char segment = block >> 1;
- 	unsigned char xfers = segment ? 3 : 2;
-@@ -1117,8 +1118,8 @@ static bool drm_edid_is_zero(u8 *in_edid, int length)
- 	return true;
- }
- 
--static u8 *
--drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
-+struct edid *drm_do_get_edid(struct drm_connector *connector,
-+	int (*get_edid_block)(void *, unsigned char *buf, int, int), void *data)
- {
- 	int i, j = 0, valid_extensions = 0;
- 	u8 *block, *new;
-@@ -1129,7 +1130,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	/* base block fetch */
- 	for (i = 0; i < 4; i++) {
--		if (drm_do_probe_ddc_edid(adapter, block, 0, EDID_LENGTH))
-+		if (get_edid_block(data, block, 0, EDID_LENGTH))
- 			goto out;
- 		if (drm_edid_block_valid(block, 0, print_bad_edid))
- 			break;
-@@ -1143,7 +1144,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	/* if there's no extensions, we're done */
- 	if (block[0x7e] = 0)
--		return block;
-+		return (struct edid *)block;
- 
- 	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);
- 	if (!new)
-@@ -1152,7 +1153,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	for (j = 1; j <= block[0x7e]; j++) {
- 		for (i = 0; i < 4; i++) {
--			if (drm_do_probe_ddc_edid(adapter,
-+			if (get_edid_block(data,
- 				  block + (valid_extensions + 1) * EDID_LENGTH,
- 				  j, EDID_LENGTH))
- 				goto out;
-@@ -1180,7 +1181,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 		block = new;
- 	}
- 
--	return block;
-+	return (struct edid *)block;
- 
- carp:
- 	if (print_bad_edid) {
-@@ -1193,6 +1194,7 @@ out:
- 	kfree(block);
- 	return NULL;
- }
-+EXPORT_SYMBOL_GPL(drm_do_get_edid);
- 
- /**
-  * Probe DDC presence.
-@@ -1225,7 +1227,7 @@ struct edid *drm_get_edid(struct drm_connector *connector,
- 	struct edid *edid = NULL;
- 
- 	if (drm_probe_ddc(adapter))
--		edid = (struct edid *)drm_do_get_edid(connector, adapter);
-+		edid = (struct edid *)drm_do_get_edid(connector, drm_do_probe_ddc_edid, adapter);
- 
- 	return edid;
- }
-diff --git a/include/drm/drm_edid.h b/include/drm/drm_edid.h
-index fc481fc..fff4a48 100644
---- a/include/drm/drm_edid.h
-+++ b/include/drm/drm_edid.h
-@@ -269,4 +269,7 @@ int
- drm_hdmi_avi_infoframe_from_display_mode(struct hdmi_avi_infoframe *frame,
- 					 const struct drm_display_mode *mode);
- 
-+struct edid *drm_do_get_edid(struct drm_connector *connector,
-+	int (*get_edid_block)(void *, unsigned char *buf, int, int), void *data);
-+
- #endif /* __DRM_EDID_H__ */
--- 
-1.8.1.4
+This short patch set aims to fix issues in the common clock framework WRT
+support of the clock suppliers as loadable modules. The thread [1] might
+be a good summary and pre-requisiste reading on what this patch series is
+trying to achieve.
+
+The first patch adds common implementation of the __clk_get(), __clk_put()
+helpers for the common clock framework. Currently these functions are empty
+and the modules that registered clocks are prone to removal and leaving
+invalid clock references.
+
+The second patch adds implementation of the clk_unregister() function and
+is based on patch [2].
+
+I have some doubts whether we need to be taking reference on a module in
+clk_get() _and_ use kref to keep track of references to a clock. Taking
+reference on a module only seems insufficient, since a clock supplier
+driver can be unbound from its device through sysfs, even if the module
+stays in place.
+
+We could be doing only reference counting on the clock, but then there
+are issues as Russell clearly explained in [1]. It is not obvious what
+to do with a clock when it has consumers and its supplier driver is
+being deinitialized/unloaded [3]. IMHO clock suppliers should be normally
+prevented from being removed when resources they provide are in use,
+otherwise it all may get a bit hairy.
+
+Thanks,
+Sylwester
+
+[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2013-July/183302.html
+[2] http://www.spinics.net/lists/arm-kernel/msg247548.html
+[3] http://lists.infradead.org/pipermail/linux-arm-kernel/2013-July/183292.html
+
+
+Sylwester Nawrocki (2):
+  clk: add common __clk_get(), __clk_put() implementations
+  clk: implement clk_unregister
+
+ arch/arm/include/asm/clkdev.h      |    2 +
+ arch/blackfin/include/asm/clkdev.h |    2 +
+ arch/mips/include/asm/clkdev.h     |    2 +
+ arch/sh/include/asm/clkdev.h       |    2 +
+ drivers/clk/clk.c                  |  147 +++++++++++++++++++++++++++++++++++-
+ include/linux/clk-private.h        |    5 ++
+ include/linux/clkdev.h             |    5 ++
+ 7 files changed, 162 insertions(+), 3 deletions(-)
+
+--
+1.7.9.5
 
