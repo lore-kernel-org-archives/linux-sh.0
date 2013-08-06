@@ -1,40 +1,32 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 31 Aug 2013 23:15:48 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7778: add Ether DT support
-Message-Id: <201309010315.49763.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 06 Aug 2013 07:50:08 +0000
+Subject: [PATCH v7 0/3] ARM: shmobile: lager: enable Ether
+Message-Id: <1375775411-4545-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Define the generic R8A777x part of the Ether device node. 
+this short series enables the on-board ethernet
+of the r8a7790 SoC for on lager board.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This series has a run-time dependency on
+"sh_eth: add support for r8a7790 SoC"
 
----
- arch/arm/boot/dts/r8a7778.dtsi |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+This series has been built on top of renesas-next-201300806.
 
-Index: renesas/arch/arm/boot/dts/r8a7778.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7778.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7778.dtsi
-@@ -98,4 +98,15 @@
- 		reg = <0xfffc000 0x118>;
- 		#gpio-range-cells = <3>;
- 	};
-+
-+	ether: ethernet@fde00000 {
-+		device_type = "network";
-+		compatible = "renesas,ether-r8a7779";
-+		reg = <0xfde00000 0x400>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 105 0x4>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
- };
+Changes noted in changelogs of individual patches.
+Simon Horman (3):
+  ARM: shmobile: r8a7790: clocks for Ether support
+  ARM: shmobile: lager: enable Ether
+  ARM: shmobile: lager: enable nfsroot in DTS
+
+ arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
+ arch/arm/mach-shmobile/board-lager.c   | 29 +++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
+ 3 files changed, 34 insertions(+), 1 deletion(-)
+
+-- 
+1.8.3.2
 
