@@ -1,79 +1,61 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Sat, 24 Aug 2013 18:27:02 +0000
-Subject: [PATCH v5 2/5] clkdev: Fix race condition in clock lookup from device tree
-Message-Id: <1377368825-30715-3-git-send-email-s.nawrocki@samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 06 Aug 2013 07:50:09 +0000
+Subject: [PATCH v7 1/3] ARM: shmobile: r8a7790: clocks for Ether support
+Message-Id: <1375775411-4545-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377368825-30715-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377368825-30715-1-git-send-email-s.nawrocki@samsung.com>
+References: <1375775411-4545-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1375775411-4545-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-There is currently a race condition in the device tree part of clk_get()
-function, since the pointer returned from of_clk_get_by_name() may become
-invalid before __clk_get() call. E.g. due to the clock provider driver
-remove() callback being called in between of_clk_get_by_name() and
-__clk_get().
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Fix this by doing both the look up and __clk_get() operations with the
-clock providers list mutex held. This ensures that the clock pointer
-returned from __of_clk_get_from_provider() call and passed to __clk_get()
-is valid, as long as the clock supplier module first removes its clock
-provider instance and then does clk_unregister() on the corresponding
-clocks.
-
-Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
-Reviewed-by: Mike Turquette <mturquette@linaro.org>
-Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
-Changes since v2:
- - none.
 
-Changes since v1:
- - include "clk.h".
+v5
+* Split out from "ARM: shmobile: r8a7790: add Ether support"
 ---
- drivers/clk/clkdev.c |   12 ++++++++++--
- 1 files changed, 10 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
-index 442a313..48f6721 100644
---- a/drivers/clk/clkdev.c
-+++ b/drivers/clk/clkdev.c
-@@ -21,6 +21,8 @@
- #include <linux/clkdev.h>
- #include <linux/of.h>
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 50d96f9..fc36d3d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -51,6 +51,7 @@
+ #define SMSTPCR3 0xe615013c
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
++#define SMSTPCR8 0xe6150990
  
-+#include "clk.h"
-+
- static LIST_HEAD(clocks);
- static DEFINE_MUTEX(clocks_mutex);
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+@@ -180,6 +181,7 @@ static struct clk div6_clks[DIV6_NR] = {
  
-@@ -39,7 +41,13 @@ struct clk *of_clk_get(struct device_node *np, int index)
- 	if (rc)
- 		return ERR_PTR(rc);
+ /* MSTP */
+ enum {
++	MSTP813,
+ 	MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+ 	MSTP522,
+@@ -190,6 +192,7 @@ enum {
+ };
  
--	clk = of_clk_get_from_provider(&clkspec);
-+	of_clk_lock();
-+	clk = __of_clk_get_from_provider(&clkspec);
-+
-+	if (!IS_ERR(clk) && !__clk_get(clk))
-+		clk = ERR_PTR(-ENOENT);
-+
-+	of_clk_unlock();
- 	of_node_put(clkspec.np);
- 	return clk;
- }
-@@ -157,7 +165,7 @@ struct clk *clk_get(struct device *dev, const char *con_id)
- 
- 	if (dev) {
- 		clk = of_clk_get_by_name(dev->of_node, con_id);
--		if (!IS_ERR(clk) && __clk_get(clk))
-+		if (!IS_ERR(clk))
- 			return clk;
- 	}
- 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+@@ -258,6 +261,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
++	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
 -- 
-1.7.4.1
+1.8.3.2
 
