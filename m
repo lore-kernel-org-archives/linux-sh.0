@@ -1,79 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:30:24 +0000
-Subject: [GIT PULL 2/3] ARM: shmobile: ape6evm: Add GPIO LEDs
-Message-Id: <9adad788583c735eb14ddd5cca79a4e2ca2d707c.1375839719.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 06 Aug 2013 03:17:33 +0000
+Subject: [PATCH 2/2] ARM: shmobile: kzm9d: remove nfsroot settings from bootargs
+Message-Id: <87li4fh5it.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375839719.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375839719.git.horms+renesas@verge.net.au>
+References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
+ <1375175361-23027-4-git-send-email-horms+renesas@verge.net.au>
+ <87bo5h3lb3.wl%kuninori.morimoto.gx@renesas.com>
+ <20130801080226.GF15265@verge.net.au>
+ <20130806010736.GA20940@verge.net.au>
+ <87r4e7h88z.wl%kuninori.morimoto.gx@renesas.com>
+ <20130806022955.GA25114@verge.net.au>
+ <87pptrh6f3.wl%kuninori.morimoto.gx@renesas.com>
+ <87ob9bh5mt.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ob9bh5mt.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The board has 6 LEDs connected to GPIOs. Add a led-gpio device to
-support them.
+NFS detail settings like "nfsroot=,rsize@96,wsize@96" are no longer needed
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c | 37 ++++++++++++++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
+ arch/arm/boot/dts/emev2-kzm9d-reference.dts |    2 +-
+ arch/arm/boot/dts/emev2-kzm9d.dts           |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 677752c..db97460 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -39,6 +39,40 @@
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+diff --git a/arch/arm/boot/dts/emev2-kzm9d-reference.dts b/arch/arm/boot/dts/emev2-kzm9d-reference.dts
+index bed676b..cceefda 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d-reference.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d-reference.dts
+@@ -21,7 +21,7 @@
+ 	};
  
-+/* LEDS */
-+static struct gpio_led ape6evm_leds[] = {
-+	{
-+		.name		= "gnss-en",
-+		.gpio		= 28,
-+		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
-+	}, {
-+		.name		= "nfc-nrst",
-+		.gpio		= 126,
-+		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
-+	}, {
-+		.name		= "gnss-nrst",
-+		.gpio		= 132,
-+		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
-+	}, {
-+		.name		= "bt-wakeup",
-+		.gpio		= 232,
-+		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
-+	}, {
-+		.name		= "strobe",
-+		.gpio		= 250,
-+		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
-+	}, {
-+		.name		= "bbresetout",
-+		.gpio		= 288,
-+		.default_state	= LEDS_GPIO_DEFSTATE_OFF,
-+	},
-+};
-+
-+static __initdata struct gpio_led_platform_data ape6evm_leds_pdata = {
-+	.leds		= ape6evm_leds,
-+	.num_leds	= ARRAY_SIZE(ape6evm_leds),
-+};
-+
- /* GPIO KEY */
- #define GPIO_KEY(c, g, d, ...) \
- 	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
-@@ -195,6 +229,9 @@ static void __init ape6evm_add_standard_devices(void)
- 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
- 				      &ape6evm_keys_pdata,
- 				      sizeof(ape6evm_keys_pdata));
-+	platform_device_register_data(&platform_bus, "leds-gpio", -1,
-+				      &ape6evm_leds_pdata,
-+				      sizeof(ape6evm_leds_pdata));
- }
+ 	chosen {
+-		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
++		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+ 	};
  
- static const char *ape6evm_boards_compat_dt[] __initdata = {
+ 	reg_1p8v: regulator@0 {
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index dda13bc..f92e812 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -21,6 +21,6 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
++		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+ 	};
+ };
 -- 
-1.8.3.2
+1.7.9.5
 
