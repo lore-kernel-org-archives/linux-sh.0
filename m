@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 06 Aug 2013 06:11:56 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 06 Aug 2013 08:23:35 +0000
 Subject: Re: [PATCH 0/2] ARM: shmobile: remove nfsroot settings
-Message-Id: <87haf3gxg6.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20130806082333.GA10748@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
  <1375175361-23027-4-git-send-email-horms+renesas@verge.net.au>
@@ -12,25 +12,25 @@ References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
  <20130806022955.GA25114@verge.net.au>
  <87pptrh6f3.wl%kuninori.morimoto.gx@renesas.com>
  <87ob9bh5mt.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ob9bh5mt.wl%kuninori.morimoto.gx@renesas.com>
+ <87haf3gxg6.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87haf3gxg6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Simon again
-
-> > Yes, I can send patches.
-> > But, I can't test emev2-kzm9d board.
-> > Do you have it ?
+On Mon, Aug 05, 2013 at 11:11:56PM -0700, Kuninori Morimoto wrote:
 > 
-> These patches remove nfsroot settings from kzm9d/armadillo dts file.
-> I tested #1 patch on Armadillo board, but I don't have kzm9d board.
+> Hi Simon again
+> 
+> > > Yes, I can send patches.
+> > > But, I can't test emev2-kzm9d board.
+> > > Do you have it ?
+> > 
+> > These patches remove nfsroot settings from kzm9d/armadillo dts file.
+> > I tested #1 patch on Armadillo board, but I don't have kzm9d board.
+> 
+> I could test kzm9d board on Magnus's environment.
+> It works well without "rsize/wsize"
 
-I could test kzm9d board on Magnus's environment.
-It works well without "rsize/wsize"
-
-Best regards
----
-Kuninori Morimoto
+Thanks, I will test Armadillo.
