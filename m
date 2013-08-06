@@ -1,35 +1,38 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 02 Aug 2013 09:55:30 +0000
-Subject: Re: [PATCH v5 8/9] vsp1: Fix lack of the sink entity registration for enabled links
-Message-Id: <51FB8212.1070800@xs4all.nl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 06 Aug 2013 03:15:10 +0000
+Subject: Re: [PATCH 0/2] ARM: shmobile: remove nfsroot settings
+Message-Id: <87ob9bh5mt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1375405408-17134-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375405408-17134-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
+ <1375175361-23027-4-git-send-email-horms+renesas@verge.net.au>
+ <87bo5h3lb3.wl%kuninori.morimoto.gx@renesas.com>
+ <20130801080226.GF15265@verge.net.au>
+ <20130806010736.GA20940@verge.net.au>
+ <87r4e7h88z.wl%kuninori.morimoto.gx@renesas.com>
+ <20130806022955.GA25114@verge.net.au>
+ <87pptrh6f3.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pptrh6f3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
 
+Hi Simon
 
-On 08/02/2013 03:03 AM, Laurent Pinchart wrote:
-> From: Katsuya Matsubara <matsu@igel.co.jp>
-> 
-> Each source entity maintains a pointer to the counterpart sink
-> entity while an enabled link connects them. It should be managed by
-> the setup_link callback in the media controller framework at runtime.
-> However, enabled links which connect RPFs and WPFs that have an
-> equivalent index number are created during initialization.
-> This registers the pointer to a sink entity from the source entity
-> when an enabled link is created.
-> 
-> Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+> Yes, I can send patches.
+> But, I can't test emev2-kzm9d board.
+> Do you have it ?
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+These patches remove nfsroot settings from kzm9d/armadillo dts file.
+I tested #1 patch on Armadillo board, but I don't have kzm9d board.
 
-Regards,
+Kuninori Morimoto (2):
+      ARM: shmobile: armadillo800eva: remove nfsroot settings from bootargs
+      ARM: shmobile: kzm9d: remove nfsroot settings from bootargs
 
-	Hans
+ arch/arm/boot/dts/emev2-kzm9d-reference.dts        |    2 +-
+ arch/arm/boot/dts/emev2-kzm9d.dts                  |    2 +-
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |    2 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |    2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
