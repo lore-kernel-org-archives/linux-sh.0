@@ -1,35 +1,73 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 14 Aug 2013 08:11:18 +0000
-Subject: Re: [GIT PULL 0/3] Second round of Renesas ARM-based SoC board updates for v3.12
-Message-Id: <20130814081118.GI30577@quad.lixom.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 06 Aug 2013 20:10:48 +0000
+Subject: [PATCH v7] media: vb2: Take queue or device lock in mmap-related vb2 ioctl handlers
+Message-Id: <1375819848-2658-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375839719.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375839719.git.horms+renesas@verge.net.au>
+References: <201308061239.27188.hverkuil@xs4all.nl>
+In-Reply-To: <201308061239.27188.hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org
 
-On Wed, Aug 07, 2013 at 01:30:17PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider this second round of Renesas ARM-based SoC board updates
-> for v3.12.
-> 
-> This pull-request is based on renesas-boards-for-v3.12, which I have
-> previously sent a pull-request for.
-> 
-> 
-> The following changes since commit f79d68da510bf1b95beff4d556b78d06801f11dc:
-> 
->   ARM: shmobile: ape6evm: add SDHI interfaces (2013-07-25 14:46:38 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.12
+The vb2_fop_mmap() and vb2_fop_get_unmapped_area() functions are plug-in
+implementation of the mmap() and get_unmapped_area() file operations
+that calls vb2_mmap() and vb2_get_unmapped_area() on the queue
+associated with the video device. Neither the
+vb2_fop_mmap/vb2_fop_get_unmapped_area nor the
+v4l2_mmap/vb2_get_unmapped_area functions in the V4L2 core take any
+lock, leading to race conditions between mmap/get_unmapped_area and
+other buffer-related ioctls such as VIDIOC_REQBUFS.
 
+Fix it by taking the queue or device lock around the vb2_mmap() and
+vb2_get_unmapped_area() calls.
 
-Pulled, thanks.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/v4l2-core/videobuf2-core.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/media/v4l2-core/videobuf2-core.c b/drivers/media/v4l2-core/videobuf2-core.c
+index 9fc4bab..c9b50c7 100644
+--- a/drivers/media/v4l2-core/videobuf2-core.c
++++ b/drivers/media/v4l2-core/videobuf2-core.c
+@@ -2578,8 +2578,15 @@ EXPORT_SYMBOL_GPL(vb2_ioctl_expbuf);
+ int vb2_fop_mmap(struct file *file, struct vm_area_struct *vma)
+ {
+ 	struct video_device *vdev = video_devdata(file);
++	struct mutex *lock = vdev->queue->lock ? vdev->queue->lock : vdev->lock;
++	int err;
+ 
+-	return vb2_mmap(vdev->queue, vma);
++	if (lock && mutex_lock_interruptible(lock))
++		return -ERESTARTSYS;
++	err = vb2_mmap(vdev->queue, vma);
++	if (lock)
++		mutex_unlock(lock);
++	return err;
+ }
+ EXPORT_SYMBOL_GPL(vb2_fop_mmap);
+ 
+@@ -2685,8 +2692,15 @@ unsigned long vb2_fop_get_unmapped_area(struct file *file, unsigned long addr,
+ 		unsigned long len, unsigned long pgoff, unsigned long flags)
+ {
+ 	struct video_device *vdev = video_devdata(file);
++	struct mutex *lock = vdev->queue->lock ? vdev->queue->lock : vdev->lock;
++	int ret;
+ 
+-	return vb2_get_unmapped_area(vdev->queue, addr, len, pgoff, flags);
++	if (lock && mutex_lock_interruptible(lock))
++		return -ERESTARTSYS;
++	ret = vb2_get_unmapped_area(vdev->queue, addr, len, pgoff, flags);
++	if (lock)
++		mutex_unlock(lock);
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(vb2_fop_get_unmapped_area);
+ #endif
+-- 
+Regards,
 
--Olof
+Laurent Pinchart
+
