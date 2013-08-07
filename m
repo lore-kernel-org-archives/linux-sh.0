@@ -1,54 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 30 Aug 2013 00:42:27 +0000
-Subject: Re: [PATCH 0/5 v2] ARM: shmobile: bockw: add Sound support
-Message-Id: <87vc2oqaa7.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 07 Aug 2013 22:56:26 +0000
+Subject: [PATCH v2 3/9] ARM: shmobile: r8a7790: Add DU and LVDS clocks
+Message-Id: <1375916192-22647-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87haecvns0.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87haecvns0.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-Hi Laurent
-
-Could you please check this patches ?
-
-> These are v2 of R-Car sound support on Bock-W board.
-> 
-> It enables PIO transfer only at this point, because
->  1) PIO settings is the most easy basic settings
->  2) HPB-DMAC is still not enabled on r8a7778
-> 
-> R-Car sound driver is already supporting DMA transfer on ASoC (= Mark's) branch.
-> So, it is easy to support DMA transfer if r8a7778 has HPB-DMAC support.
-> 
-> To enable R-Car sound on Bock-W board, ASoC branch mergeing is required
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git :: for-next
-> 
-> These patches are based on renesas-devel-20130823
-> 
-> Kuninori Morimoto (5):
->       sh-pfc: r8a7778: add SRU/SSI pin support
->       ARM: shmobile: r8a7778: add SSI/SRU clock support
->       ARM: shmobile: bockw: enable global use of FPGA
->       ARM: shmobile: bockw: add R-Car sound support (PIO)
->       ARM: shmobile: bockw defconfig: add Sound support
-> 
->  arch/arm/configs/bockw_defconfig       |    4 +
->  arch/arm/mach-shmobile/Kconfig         |    2 +
->  arch/arm/mach-shmobile/board-bockw.c   |  289 +++++++++++++++++++++++++++++++-
->  arch/arm/mach-shmobile/clock-r8a7778.c |   43 ++++-
->  drivers/pinctrl/sh-pfc/pfc-r8a7778.c   |  125 ++++++++++++++
->  5 files changed, 453 insertions(+), 10 deletions(-)
-> 
-> Best regards
-> ---
-> Kuninori Morimoto
-
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/clock-r8a7790.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index fc36d3d..d99b87b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -182,7 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ /* MSTP */
+ enum {
+ 	MSTP813,
+-	MSTP721, MSTP720,
++	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+ 	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+@@ -193,6 +193,11 @@ enum {
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
++	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
++	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
++	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
++	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
++	[MSTP722] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 22, 0), /* DU2 */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+@@ -251,6 +256,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
+ 
+ 	/* MSTP */
++	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
++	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
++	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
++	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
++	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+-- 
+1.8.1.5
+
