@@ -1,41 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Aug 2013 08:38:16 +0000
-Subject: Re: [PATCH v7 0/3] ARM: shmobile: lager: enable Ether
-Message-Id: <20130806083814.GB28493@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 Aug 2013 22:26:38 +0000
+Subject: [PATCH 00/02] ARM: shmobile: Rename to r8a73a4/r8a7790_init_early()
+Message-Id: <20130807222638.22283.78607.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375775411-4545-1-git-send-email-horms+renesas@verge.net.au>
- <87fvungsc4.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fvungsc4.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Aug 06, 2013 at 01:02:23AM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > this short series enables the on-board ethernet
-> > of the r8a7790 SoC for on lager board.
-> > 
-> > This series has a run-time dependency on
-> > "sh_eth: add support for r8a7790 SoC"
-> > 
-> > This series has been built on top of renesas-next-201300806.
-> > 
-> > Changes noted in changelogs of individual patches.
-> > Simon Horman (3):
-> >   ARM: shmobile: r8a7790: clocks for Ether support
-> >   ARM: shmobile: lager: enable Ether
-> >   ARM: shmobile: lager: enable nfsroot in DTS
-> > 
-> >  arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
-> >  arch/arm/mach-shmobile/board-lager.c   | 29 +++++++++++++++++++++++++++++
-> >  arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
-> >  3 files changed, 34 insertions(+), 1 deletion(-)
-> 
-> For all patches
-> 
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ARM: shmobile: Rename to r8a73a4/r8a7790_init_early()
 
-Thanks, I will queue these up for v3.12.
+[PATCH 01/02] ARM: shmobile: Rename to r8a73a4_init_early()
+[PATCH 02/02] ARM: shmobile: Rename to r8a7790_init_early()
+
+This series renames r8a73a4/r8a7790_init_delay() to 
+r8a73a4/r8a7790_init_early(). The reason for this is
+that future SMP code will hook into these functions
+which will make them handle more than just delay setup.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas.git renesas-devel-20130806v4 and
+ [PATCH 00/05] ARM: shmobile: Yet another SMP series
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-ape6evm.c           |    2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c   |    2 +-
+ arch/arm/mach-shmobile/board-lager.c             |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h    |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7790.h    |    2 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |    4 ++--
+ arch/arm/mach-shmobile/setup-r8a7790.c           |    4 ++--
+ 8 files changed, 10 insertions(+), 10 deletions(-)
+
