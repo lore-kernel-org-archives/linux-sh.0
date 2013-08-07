@@ -1,43 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 09 Aug 2013 09:49:05 +0000
-Subject: [PATCH 07/14] ARM: shmobile: Remove r8a7779 ->nr_irqs
-Message-Id: <20130809094905.6530.90685.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:36 +0000
+Subject: [GIT PULL 19/26] ARM: shmobile: r8a7779: add missing __initdata
+Message-Id: <c7537655c6ce1d769bd6d4ec368cdf8c36ebb6ea.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130809094748.6530.16511.sendpatchset@w520>
-In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Remove .nr_irqs for r8a7779 DT cases.
+This patch adds missing __initdata to driver data/resource
+which are used from platform_device_register_xxx()
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/board-marzen-reference.c |    1 -
- arch/arm/mach-shmobile/setup-r8a7779.c          |    1 -
- 2 files changed, 2 deletions(-)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 111e953..f0b6c7d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -537,7 +537,7 @@ static struct platform_device ohci1_device = {
+ };
+ 
+ /* Ether */
+-static struct resource ether_resources[] = {
++static struct resource ether_resources[] __initdata = {
+ 	{
+ 		.start	= 0xfde00000,
+ 		.end	= 0xfde003ff,
+-- 
+1.8.3.2
 
---- 0004/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2013-08-08 16:13:35.000000000 +0900
-@@ -44,7 +44,6 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= r8a7779_init_delay,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
- 	.dt_compat	= marzen_boards_compat_dt,
---- 0004/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2013-08-08 16:13:15.000000000 +0900
-@@ -739,7 +739,6 @@ static const char *r8a7779_compat_dt[] _
- DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= r8a7779_init_delay,
--	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_late	= r8a7779_init_late,
- 	.dt_compat	= r8a7779_compat_dt,
