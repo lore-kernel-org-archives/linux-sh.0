@@ -1,37 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Aug 2013 07:34:53 +0000
-Subject: Re: [PATCH 00/07] ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
-Message-Id: <20130801073452.GD26015@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:28:32 +0000
+Subject: [GIT PULL 11/19] ARM: shmobile: r8a7779: Rely on DT for SMP CPU info
+Message-Id: <afad20105a58c06407ad9ad85c1cd9ca79d99e00.1375838900.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731070702.14444.64961.sendpatchset@w520>
-In-Reply-To: <20130731070702.14444.64961.sendpatchset@w520>
+References: <cover.1375838900.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 31, 2013 at 04:07:02PM +0900, Magnus Damm wrote:
-> ARM: shmobile: sh73a0, r8a7779 and emev2 SMP SCU rework
-> 
-> [PATCH 01/07] ARM: shmobile: Introduce shared SCU SMP boot code
-> [PATCH 02/07] ARM: shmobile: Use shared SCU SMP boot code on sh73a0
-> [PATCH 03/07] ARM: shmobile: Use shared SCU SMP boot code on r8a7779
-> [PATCH 04/07] ARM: shmobile: Use shared SCU SMP boot code on emev2
-> [PATCH 05/07] ARM: shmobile: Add shared SCU CPU Hotplug code
-> [PATCH 06/07] ARM: shmobile: Use shared SCU CPU Hotplug code on sh73a0
-> [PATCH 07/07] ARM: shmobile: Use shared SCU CPU Hotplug code on r8a7779
-> 
-> This series consolidates mach-shmobile SMP code into SCU specific code
-> for SMP boot and CPU Hotplug. The shared SCU code will in the future hook
-> into some low level assembly code that provides SMP boot and sleep
-> functionality, so this is is also preparations for future work.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Written against renesas.git renesas-devel-20130731
->  
->  Requires "[PATCH] ARM: Fix memblock_reserve() to include stext" during
->  run time to allow test of CPU Hotplug with v3.11-rc kernels.
+Remove r8a7779 specific ->smp_init_cpus() callback and
+instead of relying on shmobile_smp_init_cpus() simply
+use DT for CPU core information.
 
-I guess we need to wait for Russell's alternate fix to hit a stable branch.
+Based on work for the sh73a0 by Magnus Damm.
+
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-r8a7779.c | 12 +++---------
+ 1 file changed, 3 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 526cfaa..bb3adae 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -99,6 +99,9 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
+ 
+ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
++
++	/* setup r8a7779 specific SCU base */
++	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
+ 	scu_enable(shmobile_scu_base);
+ 
+ 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
+@@ -117,14 +120,6 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ 	r8a7779_platform_cpu_kill(3);
+ }
+ 
+-static void __init r8a7779_smp_init_cpus(void)
+-{
+-	/* setup r8a7779 specific SCU base */
+-	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
+-
+-	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+-}
+-
+ #ifdef CONFIG_HOTPLUG_CPU
+ static int r8a7779_scu_psr_core_disabled(int cpu)
+ {
+@@ -175,7 +170,6 @@ static int r8a7779_cpu_disable(unsigned int cpu)
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 
+ struct smp_operations r8a7779_smp_ops  __initdata = {
+-	.smp_init_cpus		= r8a7779_smp_init_cpus,
+ 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a7779_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-- 
+1.8.3.2
+
