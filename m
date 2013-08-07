@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:33 +0000
-Subject: [GIT PULL 06/26] ARM: shmobile: Use default ->init_time() on r8a73a4
-Message-Id: <58909ae593e8e6fc7e89d88ffe61effedf09389a.1375840527.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 Aug 2013 22:14:07 +0000
+Subject: [PATCH 05/05] ARM: shmobile: Introduce shmobile_boot_size
+Message-Id: <20130807221407.22251.28821.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <20130807221321.22251.22774.sendpatchset@w520>
+In-Reply-To: <20130807221321.22251.22774.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,26 +12,36 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
+Introduce shmobile_boot_size that can be used by
+future SMP code to determine the size of the boot
+code that needs to be copied to internal SRAM.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 2ee45d5..8949170 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -223,7 +223,6 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ arch/arm/mach-shmobile/headsmp.S             |    3 +++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ 2 files changed, 4 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/headsmp.S
++++ work/arch/arm/mach-shmobile/headsmp.S	2013-08-07 19:11:46.000000000 +0900
+@@ -40,6 +40,9 @@ shmobile_boot_fn:
+ 	.globl	shmobile_boot_arg
+ shmobile_boot_arg:
+ 2:	.space	4
++	.globl	shmobile_boot_size
++shmobile_boot_size:
++	.long	. - shmobile_boot_vector
  
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
- 	.init_early	= r8a73a4_init_delay,
--	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
--- 
-1.8.3.2
-
+ /*
+  * Per-CPU SMP boot function/argument selection code based on MPIDR
+--- 0008/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-08-07 19:11:46.000000000 +0900
+@@ -9,6 +9,7 @@ extern void shmobile_setup_console(void)
+ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
++extern unsigned long shmobile_boot_size;
+ extern void shmobile_smp_boot(void);
+ extern void shmobile_smp_sleep(void);
+ extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
