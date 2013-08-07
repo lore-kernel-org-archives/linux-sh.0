@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:28:31 +0000
-Subject: [GIT PULL 10/19] ARM: shmobile: marzen: Switch to DT_MACHINE_START
-Message-Id: <7ebbb4ae6f2d6242178d332c67ad49772f9fe88d.1375838900.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:39:27 +0000
+Subject: [GIT PULL 1/9] ARM: shmobile: Introduce shared SCU SMP boot code
+Message-Id: <c970d4ef3ac6d56f5fd02902ad2ad80377c0bca1.1375841380.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375838900.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
+References: <cover.1375841380.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,56 +12,73 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Convert the marzen board to use DT_MACHINE_START. With this in
-place all mach-shmobile boards use DT_MACHINE_START. Also, this
-makes it possible for the r8a7779 SMP code to use DT for CPUs.
+Add SMP boot functions for SCU equipped mach-shmobile SoCs.
+
+At this point shmobile_smp_scu_prepare_cpus() controls the SCU and
+installs boot fn and arg, while shmobile_smp_scu_boot_secondary()
+currently does nothing. In the future the boot function and arg
+install code will be reworked, so the empty function is ground
+work for that.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-[horms+renesas@verge.net.au: Select USE_OF in Kconfig]
-[horms+renesas@verge.net.au: Provide dt_compat in DT_MACHINE_START]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig        | 1 +
- arch/arm/mach-shmobile/board-marzen.c | 8 +++++++-
- 2 files changed, 8 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/include/mach/common.h |  3 +++
+ arch/arm/mach-shmobile/platsmp-scu.c         | 31 ++++++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/platsmp-scu.c
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 9e07985..16c3072 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -156,6 +156,7 @@ config MACH_MARZEN
- 	depends on ARCH_R8A7779
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select USE_OF
- 
- config MACH_MARZEN_REFERENCE
- 	bool "MARZEN board - Reference Device Tree Implementation"
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index a7d1010..bcd07c0 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -238,7 +238,12 @@ static void __init marzen_init(void)
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
--MACHINE_START(MARZEN, "marzen")
-+static const char *marzen_boards_compat_dt[] __initdata = {
-+        "renesas,marzen",
-+        NULL,
-+};
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index e818f02..42761f4 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -11,6 +11,9 @@ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
+ extern void shmobile_boot_scu(void);
++extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
++extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
++					   struct task_struct *idle);
+ struct clk;
+ extern int shmobile_clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
+diff --git a/arch/arm/mach-shmobile/platsmp-scu.c b/arch/arm/mach-shmobile/platsmp-scu.c
+new file mode 100644
+index 0000000..8f478e4
+--- /dev/null
++++ b/arch/arm/mach-shmobile/platsmp-scu.c
+@@ -0,0 +1,31 @@
++/*
++ * SMP support for SoCs with SCU covered by mach-shmobile
++ *
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/smp.h>
++#include <asm/smp_plat.h>
++#include <asm/smp_scu.h>
++#include <mach/common.h>
 +
-+DT_MACHINE_START(MARZEN, "marzen")
- 	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= r8a7779_add_early_devices,
-@@ -246,5 +251,6 @@ MACHINE_START(MARZEN, "marzen")
- 	.init_irq	= r8a7779_init_irq,
- 	.init_machine	= marzen_init,
- 	.init_late	= r8a7779_init_late,
-+	.dt_compat	= marzen_boards_compat_dt,
- 	.init_time	= r8a7779_earlytimer_init,
- MACHINE_END
++void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
++{
++	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
++	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
++
++	/* enable SCU and cache coherency on booting CPU */
++	scu_enable(shmobile_scu_base);
++	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
++}
++
++int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
++{
++	/* do nothing for now */
++	return 0;
++}
 -- 
 1.8.3.2
 
