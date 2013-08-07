@@ -1,37 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:29 +0000
-Subject: [GIT PULL 12/26] ARM: shmobile: Use default ->init_time() on Armadillo DT ref
-Message-Id: <70ce77f77ea4d768074ef9a2549a3a6f627d7241.1375840527.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 07 Aug 2013 12:02:21 +0000
+Subject: [PATCH 0/2] R8A7790 PFC DU support
+Message-Id: <1375876943-11824-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hello,
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
+Those two patches add pin groups and functions for the Display Unit in the
+R8A7790 SoC. They're based on the latest pinctrl/for-next branch and can be
+found in my git tree at
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 1 -
- 1 file changed, 1 deletion(-)
+	git://linuxtv.org/pinchartl/fbdev.git pinmux/next/r8a7790
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 03b85fe..5c8cc3c 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -206,7 +206,6 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva-reference")
- 	.init_early	= r8a7740_init_delay,
- 	.init_irq	= r8a7740_init_irq_of,
- 	.init_machine	= eva_init,
--	.init_time	= shmobile_timer_init,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= eva_boards_compat_dt,
- 	.restart	= eva_restart,
+Laurent Pinchart (2):
+  sh-pfc: r8a7790: Rename DU1_DOTCLKIN to DU_DOTCLKIN1
+  sh-pfc: r8a7790: Add DU pin groups and functions
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 142 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 138 insertions(+), 4 deletions(-)
+
 -- 
-1.8.3.2
+Regards,
+
+Laurent Pinchart
 
