@@ -1,52 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 09 Aug 2013 09:48:43 +0000
-Subject: [PATCH 05/14] ARM: shmobile: Remove r8a7740_add_early_devices_dt()
-Message-Id: <20130809094843.6530.94661.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:41 +0000
+Subject: [GIT PULL 24/26] ARM: shmobile: armadillo800eva: remove nfsroot settings from bootargs
+Message-Id: <3d814499ad80d7876d6d484e4d37fae79cb403c6.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130809094748.6530.16511.sendpatchset@w520>
-In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Remove the unused r8a7740_add_early_devices_dt() function.
+NFS detail settings like "nfsroot=,rsize@96,wsize@96" are no longer needed
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts           | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/setup-r8a7740.c |   15 ++-------------
- 1 file changed, 2 insertions(+), 13 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 09ea22c..43abf3a 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,armadillo800eva-reference", "renesas,r8a7740";
+ 
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
++		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
+ 
+ 	memory {
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 93da655..426cd9c 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,armadillo800eva";
+ 
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
++		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
+ 
+ 	memory {
+-- 
+1.8.3.2
 
---- 0005/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2013-08-08 15:40:07.000000000 +0900
-@@ -995,25 +995,14 @@ void __init r8a7740_add_early_devices(vo
- 	shmobile_setup_console();
- }
- 
--#ifdef CONFIG_USE_OF
--
--void __init r8a7740_add_early_devices_dt(void)
--{
--	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
--
--	early_platform_add_devices(r8a7740_early_devices,
--				   ARRAY_SIZE(r8a7740_early_devices));
--
--	/* setup early console here as well */
--	shmobile_setup_console();
--}
--
- void __init r8a7740_add_dt_devices(void)
- {
- 	platform_add_devices(r8a7740_devices_dt,
- 			    ARRAY_SIZE(r8a7740_devices_dt));
- }
- 
-+#ifdef CONFIG_USE_OF
-+
- void __init r8a7740_init_delay(void)
- {
- 	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
