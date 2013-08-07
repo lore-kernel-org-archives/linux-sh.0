@@ -1,64 +1,34 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Fri, 23 Aug 2013 15:03:46 +0000
-Subject: [PATCH v3 4/5] clk: Assign module owner of a clock being registered
-Message-Id: <1377270227-1030-5-git-send-email-s.nawrocki@samsung.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 07 Aug 2013 22:56:32 +0000
+Subject: [PATCH v2 9/9] ARM: shmobile: lager: Select DRM_RCAR_DU in defconfig
+Message-Id: <1375916192-22647-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377270227-1030-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377270227-1030-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Assign module owner of a driver of a device passed to _clk_register()
-and __clk_register() functions so the module_{get,put} calls in
-__clk_get(), __clk_put() can have required effect.
+A R-Car DU DRM device is registered for the Lager board, select the
+corresponding driver in its defconfig.
 
-Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Initially I had an 'owner' field added to struct clk_init_data so it can
-be set explicitly in clock providers.  But this required modifications
-of all users of (devm_)clk_register() as struct clk_init_data instance
-was in most cases an unitialized stack variable.  This would also require
-adding yet another argument to various clk_register_* functions
-registering the standard clocks.  So I went for assigning clk->owner from
-dev->driver->owner.  The disadvantages are that dereferencing dev->driver
-may be potentially unsafe when not holding struct device::mutex.  And
-there might be cases where clk->owner will need to be NULL.  One option
-is to set dev argument of clk_register_*() to NULL for that, but it
-predates devm_*.
+ arch/arm/configs/lager_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Presumably a requirement could be added that callers of clk_register*()
-must ensure dev->driver won't change during a call to these functions ?
----
- drivers/clk/clk.c |    6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index c173f30..272d68d 100644
---- a/drivers/clk/clk.c
-+++ b/drivers/clk/clk.c
-@@ -1692,6 +1692,10 @@ struct clk *__clk_register(struct device *dev, struct clk_hw *hw)
- 	clk->flags = hw->init->flags;
- 	clk->parent_names = hw->init->parent_names;
- 	clk->num_parents = hw->init->num_parents;
-+	if (dev && dev->driver)
-+		clk->owner = dev->driver->owner;
-+	else
-+		clk->owner = NULL;
-
- 	ret = __clk_init(dev, clk);
- 	if (ret)
-@@ -1712,6 +1716,8 @@ static int _clk_register(struct device *dev, struct clk_hw *hw, struct clk *clk)
- 		goto fail_name;
- 	}
- 	clk->ops = hw->init->ops;
-+	if (dev && dev->driver)
-+		clk->owner = dev->driver->owner;
- 	clk->hw = hw;
- 	clk->flags = hw->init->flags;
- 	clk->num_parents = hw->init->num_parents;
---
-1.7.9.5
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index e777ef2..35bff5e 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -89,6 +89,8 @@ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_DRM=y
++CONFIG_DRM_RCAR_DU=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+-- 
+1.8.1.5
 
