@@ -1,147 +1,71 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 01 Aug 2013 08:26:55 +0000
-Subject: [PATCH 13/14] ARM: shmobile: r8a7779: cleanup registration of usb phy
-Message-Id: <fee529df76ffb95ede5020266820f2a0e1f64adc.1375344714.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:28:33 +0000
+Subject: [GIT PULL 09/19] ARM: shmobile: marzen: Add  r8a7779-marzen.dtb
+Message-Id: <d6b51d6b6a33974dfa7b091f61e7a2bedd62f298.1375838900.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375344714.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
+References: <cover.1375838900.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This is in preparation for converting the marzen board to
+use DT_MACHINE_START.
 
-usb phy driver which needs platform data at the time of
-registration is used from Marzen only.
-Now, ARM/shmobile aims to support DT,
-and the C code base board support will be removed
-if DT support is completed.
-Current driver registration method which needs platform data
-and which is not shared complicates codes.
-This means legacy C code cleanup after DT supporting
-will be more complicated
-This patch registers it on board code as cleanup C code
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen.c         | 24 ++++++++++++++++++++++--
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 --
- arch/arm/mach-shmobile/setup-r8a7779.c        | 17 -----------------
- 3 files changed, 22 insertions(+), 21 deletions(-)
+ arch/arm/boot/dts/Makefile           |  1 +
+ arch/arm/boot/dts/r8a7779-marzen.dts | 27 +++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7779-marzen.dts
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 1f57865..7474a60 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -29,6 +29,7 @@
- #include <linux/dma-mapping.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
-+#include <linux/platform_data/usb-rcar-phy.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-@@ -56,7 +57,26 @@ static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
- 
--static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
-+/* USB PHY */
-+static struct resource usb_phy_resources[] = {
-+	[0] = {
-+		.start		= 0xffe70800,
-+		.end		= 0xffe70900 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+};
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index e01d63f..07204ca 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -188,6 +188,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7740-armadillo800eva-reference.dtb \
++	r8a7779-marzen.dtb \
+ 	r8a7779-marzen-reference.dtb \
+ 	r8a7790-lager.dtb \
+ 	r8a7790-lager-reference.dtb \
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+new file mode 100644
+index 0000000..f3f7f79
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -0,0 +1,27 @@
++/*
++ * Device Tree Source for the Marzen board
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Simon Horman
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
-+static struct rcar_phy_platform_data usb_phy_platform_data;
++/dts-v1/;
++/include/ "r8a7779.dtsi"
 +
-+static struct platform_device usb_phy = {
-+	.name		= "rcar_usb_phy",
-+	.id		= -1,
-+	.dev  = {
-+		.platform_data = &usb_phy_platform_data,
-+	},
-+	.resource	= usb_phy_resources,
-+	.num_resources	= ARRAY_SIZE(usb_phy_resources),
++/ {
++	model = "marzen";
++	compatible = "renesas,marzen", "renesas,r8a7779";
++
++	chosen {
++		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x60000000 0x40000000>;
++	};
 +};
- 
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
-@@ -183,6 +203,7 @@ static struct platform_device *marzen_devices[] __initdata = {
- 	&thermal_device,
- 	&hspi_device,
- 	&leds_device,
-+	&usb_phy,
- };
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-@@ -233,7 +254,6 @@ static void __init marzen_init(void)
- 	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
- 
- 	r8a7779_add_standard_devices();
--	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index fc47073..f10727f7 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -4,7 +4,6 @@
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
--#include <linux/platform_data/usb-rcar-phy.h>
- 
- struct platform_device;
- 
-@@ -34,7 +33,6 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
--extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index bb8b967..ddee4aa 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -386,15 +386,6 @@ static struct platform_device sata_device = {
- 	},
- };
- 
--/* USB PHY */
--static struct resource usb_phy_resources[] __initdata = {
--	[0] = {
--		.start		= 0xffe70800,
--		.end		= 0xffe70900 - 1,
--		.flags		= IORESOURCE_MEM,
--	},
--};
--
- /* USB */
- static struct usb_phy *phy;
- 
-@@ -600,14 +591,6 @@ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
- 					  pdata, sizeof(*pdata));
- }
- 
--void __init r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata)
--{
--	platform_device_register_resndata(&platform_bus, "rcar_usb_phy", -1,
--					  usb_phy_resources,
--					  ARRAY_SIZE(usb_phy_resources),
--					  pdata, sizeof(*pdata));
--}
--
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
- 
 -- 
 1.8.3.2
 
