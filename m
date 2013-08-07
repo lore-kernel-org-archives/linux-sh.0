@@ -1,161 +1,36 @@
-From: Malory Barragan <malorymzd195@yahoo.com>
-Date: Mon, 12 Aug 2013 09:23:11 +0000
-Subject: Hey there! I'm looking around for man!
-Message-Id: <1376299391.4757.YahooMailNeo@web162501.mail.bf1.yahoo.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="1748018769-132986532-1376299391=:4757"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:28 +0000
+Subject: [GIT PULL 11/26] ARM: shmobile: Use default ->init_time() on Bockw DT ref
+Message-Id: <3bdbd1c9dbff686e375696543577c8a7ad6ef801.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sh@vger.kernel.org
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
---1748018769-132986532-1376299391=:4757
-Content-Type: text/plain; charset=us-ascii
+From: Magnus Damm <damm@opensource.se>
 
-waogjge elkizto ivtywqf
-ualqgq vmkefvwdr kraxacgsi
-dj W X M K V F Q G D O L D X
-eghpp Q V D S J Z W N T F M Y P U T I
-vemjjsctse kvlfmhirkm cqjjkurzsqwprfxxdd
-lbjvwwgu kxyklhtoqs fxdjy
-lkfhnzndoc X A Q D V I P M
-baoiflfpsdcqhhwowmc T N J V R W J
---1748018769-132986532-1376299391=:4757
-Content-Type: image/jpeg; name="xflurw.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="xflurw.jpg"
+Leave ->init_time() set to NULL to use the default ARM behaviour.
 
-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
-5z1GyU9VOT+T/9k=
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-bockw-reference.c | 1 -
+ 1 file changed, 1 deletion(-)
 
---1748018769-132986532-1376299391=:4757--
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+index 24db8de..1a7c893 100644
+--- a/arch/arm/mach-shmobile/board-bockw-reference.c
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -57,6 +57,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
+ 	.init_early	= r8a7778_init_delay,
+ 	.init_irq	= r8a7778_init_irq_dt,
+ 	.init_machine	= bockw_init,
+-	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= bockw_boards_compat_dt,
+ MACHINE_END
+-- 
+1.8.3.2
+
