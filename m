@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:28:26 +0000
-Subject: [GIT PULL 02/19] ARM: shmobile: ape6evm-reference: add CPUFreq support
-Message-Id: <b88cf6f732946874aaf3e0528459e0f0271dfcec.1375838900.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:28:31 +0000
+Subject: [GIT PULL 10/19] ARM: shmobile: marzen: Switch to DT_MACHINE_START
+Message-Id: <7ebbb4ae6f2d6242178d332c67ad49772f9fe88d.1375838900.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1375838900.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
@@ -10,69 +10,58 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-Add CPUFreq support to ape6evm-reference, using a max8973 regulator, that
-is supplying V_DVFS for the 4 CA15 cores on r8a73a4.
+Convert the marzen board to use DT_MACHINE_START. With this in
+place all mach-shmobile boards use DT_MACHINE_START. Also, this
+makes it possible for the r8a7779 SMP code to use DT for CPUs.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+[horms+renesas@verge.net.au: Select USE_OF in Kconfig]
+[horms+renesas@verge.net.au: Provide dt_compat in DT_MACHINE_START]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts  | 22 ++++++++++++++++++++++
- arch/arm/mach-shmobile/board-ape6evm-reference.c |  2 ++
- 2 files changed, 24 insertions(+)
+ arch/arm/mach-shmobile/Kconfig        | 1 +
+ arch/arm/mach-shmobile/board-marzen.c | 8 +++++++-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index 3251f05..6f4506e 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -31,3 +31,25 @@
- 		ranges = <0 0 0 0x80000000>;
- 	};
- };
-+
-+&i2c5 {
-+	vdd_dvfs: max8973@1b {
-+		compatible = "maxim,max8973";
-+		reg = <0x1b>;
-+
-+		regulator-min-microvolt = <935000>;
-+		regulator-max-microvolt = <1200000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+};
-+
-+&cpu0 {
-+	cpu0-supply = <&vdd_dvfs>;
-+	operating-points = <
-+		/* kHz  uV */
-+		1950000 1115000
-+		1462500  995000
-+	>;
-+	voltage-tolerance = <1>; /* 1% */
-+};
-diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-index c828874..46b41de 100644
---- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
-@@ -22,6 +22,7 @@
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_device.h>
- #include <linux/sh_clk.h>
- #include <mach/common.h>
- #include <mach/r8a73a4.h>
-@@ -56,6 +57,7 @@ static void __init ape6evm_add_standard_devices(void)
- 	r8a73a4_pinmux_init();
- 	r8a73a4_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 9e07985..16c3072 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -156,6 +156,7 @@ config MACH_MARZEN
+ 	depends on ARCH_R8A7779
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select USE_OF
+ 
+ config MACH_MARZEN_REFERENCE
+ 	bool "MARZEN board - Reference Device Tree Implementation"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index a7d1010..bcd07c0 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -238,7 +238,12 @@ static void __init marzen_init(void)
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
  }
  
- static const char *ape6evm_boards_compat_dt[] __initdata = {
+-MACHINE_START(MARZEN, "marzen")
++static const char *marzen_boards_compat_dt[] __initdata = {
++        "renesas,marzen",
++        NULL,
++};
++
++DT_MACHINE_START(MARZEN, "marzen")
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= r8a7779_add_early_devices,
+@@ -246,5 +251,6 @@ MACHINE_START(MARZEN, "marzen")
+ 	.init_irq	= r8a7779_init_irq,
+ 	.init_machine	= marzen_init,
+ 	.init_late	= r8a7779_init_late,
++	.dt_compat	= marzen_boards_compat_dt,
+ 	.init_time	= r8a7779_earlytimer_init,
+ MACHINE_END
 -- 
 1.8.3.2
 
