@@ -1,179 +1,153 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Sat, 24 Aug 2013 15:19:47 +0000
-Subject: [PATCH v4 3/5] clk: Add common __clk_get(), __clk_put() implementations
-Message-Id: <1377357589-13242-4-git-send-email-s.nawrocki@samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:28:36 +0000
+Subject: [GIT PULL 15/19] ARM: shmobile: Mount root file systems in r/w mode for all DT platforms
+Message-Id: <d2f463a66abb1edc3b0ab6cc8252d9fa4e3d30e8.1375838900.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
+References: <cover.1375838900.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch adds common __clk_get(), __clk_put() clkdev helpers which
-replace their platform specific counterparts when the common clock
-API is enabled.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The owner module pointer field is added to struct clk so a reference
-to the clock supplier module can be taken by the clock consumers.
+The shmobile DT files available in the kernel are reference
+implementations intended to be used as sample code, as well as for
+development. As such, it makes sense to mount the root file system in
+read/write mode by default.
 
-Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since v3:
- - dropped exporting of __clk_get(), __clk_put().
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 2 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts           | 2 +-
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts   | 2 +-
+ arch/arm/boot/dts/r8a7778-bockw.dts             | 2 +-
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  | 2 +-
+ arch/arm/boot/dts/r8a7790-lager-reference.dts   | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts             | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g.dts              | 2 +-
+ 9 files changed, 9 insertions(+), 9 deletions(-)
 
-Changes since v2:
- - fixed handling of NULL clock pointers in __clk_get(), __clk_put();
----
- arch/arm/include/asm/clkdev.h      |    2 ++
- arch/blackfin/include/asm/clkdev.h |    2 ++
- arch/mips/include/asm/clkdev.h     |    2 ++
- arch/sh/include/asm/clkdev.h       |    2 ++
- drivers/clk/clk.c                  |   20 ++++++++++++++++++++
- include/linux/clk-private.h        |    3 +++
- include/linux/clk-provider.h       |    2 ++
- include/linux/clkdev.h             |    5 +++++
- 8 files changed, 38 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/include/asm/clkdev.h b/arch/arm/include/asm/clkdev.h
-index 80751c1..4e8a4b2 100644
---- a/arch/arm/include/asm/clkdev.h
-+++ b/arch/arm/include/asm/clkdev.h
-@@ -14,12 +14,14 @@
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index bbd09d8..f444624 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,ape6evm-reference", "renesas,r8a73a4";
  
- #include <linux/slab.h>
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel";
++		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
+ 	};
  
-+#ifndef CONFIG_COMMON_CLK
- #ifdef CONFIG_HAVE_MACH_CLKDEV
- #include <mach/clkdev.h>
- #else
- #define __clk_get(clk)	({ 1; })
- #define __clk_put(clk)	do { } while (0)
- #endif
-+#endif
+ 	memory@40000000 {
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index e657a9d..72f867e 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,ape6evm", "renesas,r8a73a4";
  
- static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
- {
-diff --git a/arch/blackfin/include/asm/clkdev.h b/arch/blackfin/include/asm/clkdev.h
-index 9053bed..7ac2436 100644
---- a/arch/blackfin/include/asm/clkdev.h
-+++ b/arch/blackfin/include/asm/clkdev.h
-@@ -8,7 +8,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
- 	return kzalloc(size, GFP_KERNEL);
- }
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
++		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
  
-+#ifndef CONFIG_COMMON_CLK
- #define __clk_put(clk)
- #define __clk_get(clk) ({ 1; })
-+#endif
+ 	memory@40000000 {
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index f5b8d77..9bb903a 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -22,7 +22,7 @@
+ 	compatible = "renesas,bockw-reference", "renesas,r8a7778";
  
- #endif
-diff --git a/arch/mips/include/asm/clkdev.h b/arch/mips/include/asm/clkdev.h
-index 2624754..1b3ad7b 100644
---- a/arch/mips/include/asm/clkdev.h
-+++ b/arch/mips/include/asm/clkdev.h
-@@ -14,8 +14,10 @@
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel";
++		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
+ 	};
  
- #include <linux/slab.h>
+ 	memory {
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 0076b1e..12bbebc 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -22,7 +22,7 @@
+ 	compatible = "renesas,bockw", "renesas,r8a7778";
  
-+#ifndef CONFIG_COMMON_CLK
- #define __clk_get(clk)	({ 1; })
- #define __clk_put(clk)	do { } while (0)
-+#endif
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs";
++		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
+ 	};
  
- static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
- {
-diff --git a/arch/sh/include/asm/clkdev.h b/arch/sh/include/asm/clkdev.h
-index 6ba9186..c419014 100644
---- a/arch/sh/include/asm/clkdev.h
-+++ b/arch/sh/include/asm/clkdev.h
-@@ -25,7 +25,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
- 		return kzalloc(size, GFP_KERNEL);
- }
+ 	memory {
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 72be4c8..5c22fee 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -17,7 +17,7 @@
+ 	compatible = "renesas,marzen-reference", "renesas,r8a7779";
  
-+#ifndef CONFIG_COMMON_CLK
- #define __clk_put(clk)
- #define __clk_get(clk) ({ 1; })
-+#endif
+ 	chosen {
+-		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
++		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
+ 	};
  
- #endif /* __CLKDEV_H__ */
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index f46444f..8ccc1cd 100644
---- a/drivers/clk/clk.c
-+++ b/drivers/clk/clk.c
-@@ -1959,6 +1959,26 @@ void devm_clk_unregister(struct device *dev, struct clk *clk)
- }
- EXPORT_SYMBOL_GPL(devm_clk_unregister);
+ 	memory {
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index 5ee71cf5..c462ef1 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -17,7 +17,7 @@
+ 	compatible = "renesas,lager-reference", "renesas,r8a7790";
  
-+/*
-+ * clkdev helpers
-+ */
-+int __clk_get(struct clk *clk)
-+{
-+	if (clk && !try_module_get(clk->owner))
-+		return 0;
-+
-+	return 1;
-+}
-+
-+void __clk_put(struct clk *clk)
-+{
-+	if (WARN_ON_ONCE(IS_ERR(clk)))
-+		return;
-+
-+	if (clk)
-+		module_put(clk->owner);
-+}
-+
- /***        clk rate change notifiers        ***/
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel";
++		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
+ 	};
  
- /**
-diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
-index 8138c94..8cb1865 100644
---- a/include/linux/clk-private.h
-+++ b/include/linux/clk-private.h
-@@ -25,10 +25,13 @@
+ 	memory@40000000 {
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 09a84fc..631b93b 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,lager", "renesas,r8a7790";
  
- #ifdef CONFIG_COMMON_CLK
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel";
++		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
+ 	};
  
-+struct module;
-+
- struct clk {
- 	const char		*name;
- 	const struct clk_ops	*ops;
- 	struct clk_hw		*hw;
-+	struct module		*owner;
- 	struct clk		*parent;
- 	const char		**parent_names;
- 	struct clk		**parents;
-diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
-index 1f0285b..6341e79 100644
---- a/include/linux/clk-provider.h
-+++ b/include/linux/clk-provider.h
-@@ -141,6 +141,8 @@ struct clk_ops {
- 	void		(*init)(struct clk_hw *hw);
- };
+ 	memory@40000000 {
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index b6f759e..6d9ece2 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -32,7 +32,7 @@
+ 	};
  
-+struct module;
-+
- /**
-  * struct clk_init_data - holds init data that's common to all clocks and is
-  * shared between the clock provider and the common clock framework.
-diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
-index a6a6f60..94bad77 100644
---- a/include/linux/clkdev.h
-+++ b/include/linux/clkdev.h
-@@ -43,4 +43,9 @@ int clk_add_alias(const char *, const char *, char *, struct device *);
- int clk_register_clkdev(struct clk *, const char *, const char *, ...);
- int clk_register_clkdevs(struct clk *, struct clk_lookup *, size_t);
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
++		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
+ 	};
  
-+#ifdef CONFIG_COMMON_CLK
-+int __clk_get(struct clk *clk);
-+void __clk_put(struct clk *clk);
-+#endif
-+
- #endif
+ 	memory {
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 7c4071e..0f1ca77 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -16,7 +16,7 @@
+ 	compatible = "renesas,kzm9g", "renesas,sh73a0";
+ 
+ 	chosen {
+-		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
++		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
+ 	};
+ 
+ 	memory {
 -- 
-1.7.4.1
+1.8.3.2
 
