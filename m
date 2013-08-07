@@ -1,39 +1,35 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:36 +0000
-Subject: [GIT PULL 19/26] ARM: shmobile: r8a7779: add missing __initdata
-Message-Id: <c7537655c6ce1d769bd6d4ec368cdf8c36ebb6ea.1375840527.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:24:20 +0000
+Subject: [GIT PULL 3/4] ARM: shmobile: ape6evm: Enable gpio-keys in defconfig
+Message-Id: <ab4d2cd1c9543efdf7e9bf942c0199d199abf3e0.1375842392.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <cover.1375842392.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375842392.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch adds missing __initdata to driver data/resource
-which are used from platform_device_register_xxx()
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/configs/ape6evm_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 111e953..f0b6c7d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -537,7 +537,7 @@ static struct platform_device ohci1_device = {
- };
- 
- /* Ether */
--static struct resource ether_resources[] = {
-+static struct resource ether_resources[] __initdata = {
- 	{
- 		.start	= 0xfde00000,
- 		.end	= 0xfde003ff,
+diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
+index dab5a7d..e4359c7 100644
+--- a/arch/arm/configs/ape6evm_defconfig
++++ b/arch/arm/configs/ape6evm_defconfig
+@@ -54,7 +54,8 @@ CONFIG_NETDEVICES=y
+ CONFIG_SMC91X=y
+ CONFIG_SMSC911X=y
+ # CONFIG_INPUT_MOUSEDEV is not set
+-# CONFIG_INPUT_KEYBOARD is not set
++CONFIG_INPUT_EVDEV=y
++CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
+ # CONFIG_SERIO is not set
+ CONFIG_SERIAL_NONSTANDARD=y
 -- 
 1.8.3.2
 
