@@ -1,82 +1,93 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:44 +0000
-Subject: [PATCH v3 14/14] mmc: tmio-mmc: Remove .set_pwr() callback from platform data
-Message-Id: <1375958324-29683-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:39:33 +0000
+Subject: [GIT PULL 7/9] ARM: shmobile: Use shared SCU CPU Hotplug code on r8a7779
+Message-Id: <e9e7c4fbf468e205387b21463dddacfe44da2d9a.1375841380.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1375841380.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The .set_pwr() callback isn't used anymore as all platforms register
-GPIO-controlled regulators. Remove it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Update the r8a7779 specific CPU Hotplug code to make use of
+the recently introduced shared SCU functions. The r8a7779
+power domain hardware requires special power down handling
+at ->kill() time.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/tmio_mmc.h     | 1 -
- drivers/mmc/host/tmio_mmc_pio.c | 7 -------
- include/linux/mfd/tmio.h        | 1 -
- 3 files changed, 9 deletions(-)
+ arch/arm/mach-shmobile/smp-r8a7779.c | 41 ++++--------------------------------
+ 1 file changed, 4 insertions(+), 37 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 86fd21e..39c2f45 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -68,7 +68,6 @@ struct tmio_mmc_host {
- 	enum tmio_mmc_power	power;
- 
- 	/* Callbacks for clock / power control */
--	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
- 
- 	/* pio related stuff */
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b380225..67a3bf1 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -777,9 +777,6 @@ static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
- 
- 	/* .set_ios() is returning void, so, no chance to report an error */
- 
--	if (host->set_pwr)
--		host->set_pwr(host->pdev, 1);
--
- 	if (!IS_ERR(mmc->supply.vmmc)) {
- 		ret = mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, vdd);
- 		/*
-@@ -813,9 +810,6 @@ static void tmio_mmc_power_off(struct tmio_mmc_host *host)
- 
- 	if (!IS_ERR(mmc->supply.vmmc))
- 		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, 0);
--
--	if (host->set_pwr)
--		host->set_pwr(host->pdev, 0);
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 1963d0d..c159964 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -122,47 +122,14 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
  }
  
- /* Set MMC clock / power.
-@@ -1002,7 +996,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	_host->pdev = pdev;
- 	platform_set_drvdata(pdev, mmc);
+ #ifdef CONFIG_HOTPLUG_CPU
+-static int r8a7779_scu_psr_core_disabled(int cpu)
+-{
+-	unsigned long mask = 3 << (cpu * 8);
+-
+-	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
+-		return 1;
+-
+-	return 0;
+-}
+-
+ static int r8a7779_cpu_kill(unsigned int cpu)
+ {
+-	int k;
+-
+-	/* this function is running on another CPU than the offline target,
+-	 * here we need wait for shutdown code in platform_cpu_die() to
+-	 * finish before asking SoC-specific code to power off the CPU core.
+-	 */
+-	for (k = 0; k < 1000; k++) {
+-		if (r8a7779_scu_psr_core_disabled(cpu))
+-			return r8a7779_platform_cpu_kill(cpu);
+-
+-		mdelay(1);
+-	}
++	if (shmobile_smp_scu_cpu_kill(cpu))
++		return r8a7779_platform_cpu_kill(cpu);
  
--	_host->set_pwr = pdata->set_pwr;
- 	_host->set_clk_div = pdata->set_clk_div;
+ 	return 0;
+ }
  
- 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index b22883d..baa2346 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -106,7 +106,6 @@ struct tmio_mmc_data {
- 	struct tmio_mmc_dma		*dma;
- 	struct device			*dev;
- 	unsigned int			cd_gpio;
--	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
- 	/* clock management callbacks */
+-static void r8a7779_cpu_die(unsigned int cpu)
+-{
+-	dsb();
+-	flush_cache_all();
+-
+-	/* disable cache coherency */
+-	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
+-
+-	/* Endless loop until power off from r8a7779_cpu_kill() */
+-	while (1)
+-		cpu_do_idle();
+-}
+-
+ static int r8a7779_cpu_disable(unsigned int cpu)
+ {
+ 	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
+@@ -174,8 +141,8 @@ struct smp_operations r8a7779_smp_ops  __initdata = {
+ 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a7779_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_kill		= r8a7779_cpu_kill,
+-	.cpu_die		= r8a7779_cpu_die,
+ 	.cpu_disable		= r8a7779_cpu_disable,
++	.cpu_die		= shmobile_smp_scu_cpu_die,
++	.cpu_kill		= r8a7779_cpu_kill,
+ #endif
+ };
 -- 
-1.8.1.5
+1.8.3.2
 
