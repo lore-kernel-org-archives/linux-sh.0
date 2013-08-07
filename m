@@ -1,33 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 22 Aug 2013 17:56:55 +0000
-Subject: [PATCH 0/2] Renesas VSP1 fixes
-Message-Id: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:35 +0000
+Subject: [GIT PULL 18/26] ARM: shmobile: Remove unused shmobile_init_time()
+Message-Id: <13eb604665c94d4cd9d7e2aeceef974cf1f30701.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Magnus Damm <damm@opensource.se>
 
-Here's two fixes for the Renesas VSP1 driver. The first one reports the platform
-device name through the media device bus_info field, allowing applications to
-differentiate between VSP1 instances. The second one gets rid of a crash related
-to missing clocks for the VSPR and VSPS instances.
+Remove shmobile_timer_init() since it now is unused.
 
-I'd like to get those patches in v3.12-rc1 if possible.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/common.h | 1 -
+ arch/arm/mach-shmobile/timer.c               | 4 ----
+ 2 files changed, 5 deletions(-)
 
-Laurent Pinchart (2):
-  v4l: vsp1: Initialize media device bus_info field
-  v4l: vsp1: Add support for RT clock
-
- drivers/media/platform/vsp1/vsp1.h     |  1 +
- drivers/media/platform/vsp1/vsp1_drv.c | 42 ++++++++++++++++++++++++++++++----
- 2 files changed, 38 insertions(+), 5 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index e818f02..18a76f9 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -2,7 +2,6 @@
+ #define __ARCH_MACH_COMMON_H
+ 
+ extern void shmobile_earlytimer_init(void);
+-extern void shmobile_timer_init(void);
+ extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+ 			 unsigned int mult, unsigned int div);
+ struct twd_local_timer;
+diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
+index f321dbe..62d7052 100644
+--- a/arch/arm/mach-shmobile/timer.c
++++ b/arch/arm/mach-shmobile/timer.c
+@@ -59,7 +59,3 @@ void __init shmobile_earlytimer_init(void)
+ 	late_time_init = shmobile_late_time_init;
+ }
+ 
+-void __init shmobile_timer_init(void)
+-{
+-	clocksource_of_init();
+-}
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
