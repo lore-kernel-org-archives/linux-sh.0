@@ -1,76 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 23 Aug 2013 00:16:12 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager: Fix Display Unit platform data
-Message-Id: <20130823001612.GF9254@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 07 Aug 2013 12:02:22 +0000
+Subject: [PATCH 1/2] sh-pfc: r8a7790: Rename DU1_DOTCLKIN to DU_DOTCLKIN1
+Message-Id: <1375876943-11824-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377186908-30428-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1377186908-30428-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Aug 22, 2013 at 05:55:08PM +0200, Laurent Pinchart wrote:
-> The DU device erroneously receives the DU resources array as platform
-> data instead of the DU platform data structure. Fix it.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/mach-shmobile/board-lager.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> Hi Simon,
-> 
-> This patch fixes a bug introduced by
-> 
-> commit f631fa0e380a76504bd65545ed094f04b5c6559a
-> Author: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Date:   Tue Apr 16 12:39:11 2013 +0200
-> 
->     ARM: shmobile: lager: Add Display Unit support
->     
->     Only the VGA output is currently supported.
->     
->     Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
->     Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->     Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Can you squash it into the faulty commit, or push it on top and make sure it
-> will got to mainline at the same time ?
+Name the DU clock input 1 consistently with clock inputs 0 and 2.
 
-Hi Laurent,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-I will push the following and include it in the same pull request as
-the patch that introduced the problem.
-
-commit 8034dc4a1d615c84932c74633b7399603f7cc2a4
-Author: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date:   Thu Aug 22 17:55:08 2013 +0200
-
-    ARM: shmobile: lager: Fix Display Unit platform data
-    
-    The DU device erroneously receives the DU resources array as platform
-    data instead of the DU platform data structure. Fix it.
-    
-    This problem was introduced by f631fa0 ("ARM: shmobile: lager: Add Display
-    Unit support").
-    
-    Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-    Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 5facfc9..bfca58b 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -87,8 +87,8 @@ static void __init lager_add_du_device(void)
- 		.id = -1,
- 		.res = du_resources,
- 		.num_res = ARRAY_SIZE(du_resources),
--		.data = &du_resources,
--		.size_data = sizeof(du_resources),
-+		.data = &lager_du_pdata,
-+		.size_data = sizeof(lager_du_pdata),
- 		.dma_mask = DMA_BIT_MASK(32),
- 	};
- 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 763c031..da3aaeb 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -237,7 +237,7 @@ enum {
+ 	FN_GLO_SS_C, FN_PWM1, FN_SCIFA2_TXD_C,
+ 	FN_STP_ISSYNC_1_B, FN_TS_SCK1_C, FN_GLO_RFON_C,
+ 	FN_PCMOE_N, FN_PWM2, FN_PWMFSW0, FN_SCIFA2_RXD_C,
+-	FN_PCMWE_N, FN_IECLK_C, FN_DU1_DOTCLKIN,
++	FN_PCMWE_N, FN_IECLK_C, FN_DU_DOTCLKIN1,
+ 	FN_AUDIO_CLKC, FN_AUDIO_CLKOUT_C, FN_VI0_CLK,
+ 	FN_ATACS00_N, FN_AVB_RXD1,
+ 	FN_VI0_DATA0_VI0_B0, FN_ATACS10_N, FN_AVB_RXD2,
+@@ -609,7 +609,7 @@ enum {
+ 	GLO_SS_C_MARK, PWM1_MARK, SCIFA2_TXD_C_MARK,
+ 	STP_ISSYNC_1_B_MARK, TS_SCK1_C_MARK, GLO_RFON_C_MARK,
+ 	PCMOE_N_MARK, PWM2_MARK, PWMFSW0_MARK, SCIFA2_RXD_C_MARK,
+-	PCMWE_N_MARK, IECLK_C_MARK, DU1_DOTCLKIN_MARK,
++	PCMWE_N_MARK, IECLK_C_MARK, DU_DOTCLKIN1_MARK,
+ 	AUDIO_CLKC_MARK, AUDIO_CLKOUT_C_MARK, VI0_CLK_MARK,
+ 	ATACS00_N_MARK, AVB_RXD1_MARK,
+ 	VI0_DATA0_VI0_B0_MARK, ATACS10_N_MARK, AVB_RXD2_MARK,
+@@ -1214,7 +1214,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP7_24_22, SCIFA2_RXD_C, SEL_SCIFA2_2),
+ 	PINMUX_IPSR_DATA(IP7_24_22, PCMWE_N),
+ 	PINMUX_IPSR_MODSEL_DATA(IP7_24_22, IECLK_C, SEL_IEB_2),
+-	PINMUX_IPSR_DATA(IP7_26_25, DU1_DOTCLKIN),
++	PINMUX_IPSR_DATA(IP7_26_25, DU_DOTCLKIN1),
+ 	PINMUX_IPSR_DATA(IP7_26_25, AUDIO_CLKC),
+ 	PINMUX_IPSR_DATA(IP7_26_25, AUDIO_CLKOUT_C),
+ 	PINMUX_IPSR_MODSEL_DATA(IP7_28_27, VI0_CLK, SEL_VI0_0),
+@@ -3819,7 +3819,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* IP7_28_27 [2] */
+ 		FN_VI0_CLK, FN_ATACS00_N, FN_AVB_RXD1, 0,
+ 		/* IP7_26_25 [2] */
+-		FN_DU1_DOTCLKIN, FN_AUDIO_CLKC, FN_AUDIO_CLKOUT_C, 0,
++		FN_DU_DOTCLKIN1, FN_AUDIO_CLKC, FN_AUDIO_CLKOUT_C, 0,
+ 		/* IP7_24_22 [3] */
+ 		FN_PWM2, FN_PWMFSW0, FN_SCIFA2_RXD_C, FN_PCMWE_N, FN_IECLK_C,
+ 		0, 0, 0,
+-- 
+1.8.1.5
 
