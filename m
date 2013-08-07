@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:28:33 +0000
-Subject: [GIT PULL 12/19] ARM: shmobile: r8a7740: add PMU information to r8a7740.dtsi
-Message-Id: <b21ed4eb948e6c59dea30a7102d9736903bff26e.1375838900.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:34 +0000
+Subject: [GIT PULL 17/26] ARM: shmobile: Use clocksource_of_init() on r8a7790
+Message-Id: <c4a62a5f79f515056d9293ee0e9ce0869a326021.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375838900.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,31 +12,38 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add PMU information to r8a7740.dtsi. With this
-included Armadillo800eva DT reference may use the PMU.
+Replace the call to shmobile_timer_init() with
+clocksource_of_init(). This will allow us to
+get rid of shmobile_timer_init().
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
+[horms+renesas@verge.net.au: include linux/clocksource.h]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 24e9306..4b0728f 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -32,6 +32,11 @@
- 		      <0xc2000000 0x1000>;
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 86cf507..6d4aa04 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
-+	pmu {
-+		compatible = "arm,cortex-a9-pmu";
-+		interrupts = <0 83 4>;
-+	};
-+
- 	/* irqpin0: IRQ0 - IRQ7 */
- 	irqpin0: irqpin@e6900000 {
- 		compatible = "renesas,intc-irqpin";
++#include <linux/clocksource.h>
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+@@ -263,7 +264,7 @@ void __init r8a7790_timer_init(void)
+ 	iounmap(base);
+ #endif /* CONFIG_ARM_ARCH_TIMER */
+ 
+-	shmobile_timer_init();
++	clocksource_of_init();
+ }
+ 
+ void __init r8a7790_init_delay(void)
 -- 
 1.8.3.2
 
