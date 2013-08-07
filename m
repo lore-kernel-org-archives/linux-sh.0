@@ -1,32 +1,87 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sun, 04 Aug 2013 19:38:14 +0000
-Subject: Re: [GIT 00/11] Renesas ARM-based SoC DT updates for v3.12
-Message-Id: <20130804193814.GF10876@quad.lixom.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 07 Aug 2013 22:56:27 +0000
+Subject: [PATCH v2 4/9] ARM: shmobile: r8a7790: Add DU and LVDS support
+Message-Id: <1375916192-22647-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374478037.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1374478037.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jul 22, 2013 at 04:35:47PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following DT updates for v3.12.
-> 
-> This pull request is based on renesas-cleanup-for-v3.12 which I
-> have already sent a pull request for.
-> 
-> The following changes since commit ebd9616f439a8a46b9dca9a272b342f34c5f3614:
-> 
->   ARM: shmobile: Remove unused mach/dma.h (2013-07-17 10:02:30 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.12
+Add a function to register the DU device with board-specific platform
+data.
 
-Pulled, thanks.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        | 27 +++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 788d559..fdd198ed 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -1,8 +1,11 @@
+ #ifndef __ASM_R8A7790_H__
+ #define __ASM_R8A7790_H__
+ 
++struct rcar_du_platform_data;
++
+ void r8a7790_add_standard_devices(void);
+ void r8a7790_add_dt_devices(void);
++void r8a7790_add_du_device(const struct rcar_du_platform_data *pdata);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+ void r8a7790_init_delay(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 988266e..b7248b0 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -19,10 +19,12 @@
+  */
+ 
+ #include <linux/clocksource.h>
++#include <linux/dma-mapping.h>
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_data/irq-renesas-irqc.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+@@ -76,6 +78,31 @@ void __init r8a7790_pinmux_init(void)
+ 	r8a7790_register_gpio(5);
+ }
+ 
++/* DU */
++static const struct resource du_resources[] __initdata = {
++	DEFINE_RES_MEM(0xfeb00000, 0x70000),
++	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
++	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
++	DEFINE_RES_IRQ(gic_spi(256)),
++	DEFINE_RES_IRQ(gic_spi(268)),
++	DEFINE_RES_IRQ(gic_spi(269)),
++};
++
++void __init r8a7790_add_du_device(const struct rcar_du_platform_data *pdata)
++{
++	struct platform_device_info info = {
++		.name = "rcar-du-r8a7790",
++		.id = -1,
++		.res = du_resources,
++		.num_res = ARRAY_SIZE(du_resources),
++		.data = pdata,
++		.size_data = sizeof(*pdata),
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++
++	platform_device_register_full(&info);
++}
++
+ #define SCIF_COMMON(scif_type, baseaddr, irq)			\
+ 	.type		= scif_type,				\
+ 	.mapbase	= baseaddr,				\
+-- 
+1.8.1.5
 
--Olof
