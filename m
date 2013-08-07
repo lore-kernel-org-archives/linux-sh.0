@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 05 Aug 2013 01:56:38 +0000
-Subject: [PATCH 1/2] clocksource: sh_cmt: 32-bit control register support
-Message-Id: <1375667799-6327-2-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 Aug 2013 22:13:49 +0000
+Subject: [PATCH 03/05] ARM: shmobile: Remove unused shmobile_smp_init_cpus()
+Message-Id: <20130807221349.22251.44228.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375667799-6327-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1375667799-6327-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130807221321.22251.22774.sendpatchset@w520>
+In-Reply-To: <20130807221321.22251.22774.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,149 +12,52 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add support for CMT hardware with 32-bit control and counter
-registers, as found on r8a73a4 and r8a7790. To use the CMT
-with 32-bit hardware a second I/O memory resource needs to
-point out the CMSTR register and it needs to be 32 bit wide.
+Remove shmobile_smp_init_cpus() since all SMP platforms in
+mach-shmobile now rely on DT for CPU core description instead
+of for instance determining number of cores from the SCU.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 50 +++++++++++++++++++++++++++++++-------------
- 1 file changed, 36 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 08d0c41..0965e98 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -37,6 +37,7 @@
+ arch/arm/mach-shmobile/include/mach/common.h |    1 -
+ arch/arm/mach-shmobile/platsmp.c             |   15 ---------------
+ 2 files changed, 16 deletions(-)
+
+--- 0003/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-08-07 13:42:20.000000000 +0900
+@@ -40,7 +40,6 @@ static inline int shmobile_cpuidle_init(
+ #endif
  
- struct sh_cmt_priv {
- 	void __iomem *mapbase;
-+	void __iomem *mapbase_str;
- 	struct clk *clk;
- 	unsigned long width; /* 16 or 32 bit version of hardware block */
- 	unsigned long overflow_bit;
-@@ -79,6 +80,12 @@ struct sh_cmt_priv {
-  * CMCSR 0xffca0060 16-bit
-  * CMCNT 0xffca0064 32-bit
-  * CMCOR 0xffca0068 32-bit
-+ *
-+ * "32-bit counter and 32-bit control" as found on r8a73a4 and r8a7790:
-+ * CMSTR 0xffca0500 32-bit
-+ * CMCSR 0xffca0510 32-bit
-+ * CMCNT 0xffca0514 32-bit
-+ * CMCOR 0xffca0518 32-bit
+ extern void __iomem *shmobile_scu_base;
+-extern void shmobile_smp_init_cpus(unsigned int ncores);
+ 
+ static inline void __init shmobile_init_late(void)
+ {
+--- 0003/arch/arm/mach-shmobile/platsmp.c
++++ work/arch/arm/mach-shmobile/platsmp.c	2013-08-07 14:29:34.000000000 +0900
+@@ -11,25 +11,10 @@
+  * published by the Free Software Foundation.
   */
+ #include <linux/init.h>
+-#include <linux/smp.h>
+ #include <asm/cacheflush.h>
+ #include <asm/smp_plat.h>
+ #include <mach/common.h>
  
- static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
-@@ -109,9 +116,7 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
- 
- static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
- {
--	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+-void __init shmobile_smp_init_cpus(unsigned int ncores)
+-{
+-	unsigned int i;
 -
--	return p->read_control(p->mapbase - cfg->channel_offset, 0);
-+	return p->read_control(p->mapbase_str, 0);
- }
- 
- static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
-@@ -127,9 +132,7 @@ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
- static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
- 				      unsigned long value)
- {
--	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+-	if (ncores > nr_cpu_ids) {
+-		pr_warn("SMP: %u cores greater than maximum (%u), clipping\n",
+-			ncores, nr_cpu_ids);
+-		ncores = nr_cpu_ids;
+-	}
 -
--	p->write_control(p->mapbase - cfg->channel_offset, 0, value);
-+	p->write_control(p->mapbase_str, 0, value);
- }
- 
- static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
-@@ -676,7 +679,7 @@ static int sh_cmt_register(struct sh_cmt_priv *p, char *name,
- static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
--	struct resource *res;
-+	struct resource *res, *res2;
- 	int irq, ret;
- 	ret = -ENXIO;
- 
-@@ -694,6 +697,9 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 		goto err0;
- 	}
- 
-+	/* optional resource for the shared timer start/stop register */
-+	res2 = platform_get_resource(p->pdev, IORESOURCE_MEM, 1);
-+
- 	irq = platform_get_irq(p->pdev, 0);
- 	if (irq < 0) {
- 		dev_err(&p->pdev->dev, "failed to get irq\n");
-@@ -707,6 +713,15 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 		goto err0;
- 	}
- 
-+	/* map second resource for CMSTR */
-+	p->mapbase_str = ioremap_nocache(res2 ? res2->start :
-+					 res->start - cfg->channel_offset,
-+					 res2 ? resource_size(res2) : 2);
-+	if (p->mapbase_str = NULL) {
-+		dev_err(&p->pdev->dev, "failed to remap I/O second memory\n");
-+		goto err1;
-+	}
-+
- 	/* request irq using setup_irq() (too early for request_irq()) */
- 	p->irqaction.name = dev_name(&p->pdev->dev);
- 	p->irqaction.handler = sh_cmt_interrupt;
-@@ -719,11 +734,17 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 	if (IS_ERR(p->clk)) {
- 		dev_err(&p->pdev->dev, "cannot get clock\n");
- 		ret = PTR_ERR(p->clk);
--		goto err1;
-+		goto err2;
- 	}
- 
--	p->read_control = sh_cmt_read16;
--	p->write_control = sh_cmt_write16;
-+	if (res2 && (resource_size(res2) = 4)) {
-+		/* assume both CMSTR and CMCSR to be 32-bit */
-+		p->read_control = sh_cmt_read32;
-+		p->write_control = sh_cmt_write32;
-+	} else {
-+		p->read_control = sh_cmt_read16;
-+		p->write_control = sh_cmt_write16;
-+	}
- 
- 	if (resource_size(res) = 6) {
- 		p->width = 16;
-@@ -752,22 +773,23 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 			      cfg->clocksource_rating);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "registration failed\n");
--		goto err2;
-+		goto err3;
- 	}
- 	p->cs_enabled = false;
- 
- 	ret = setup_irq(irq, &p->irqaction);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
--		goto err2;
-+		goto err3;
- 	}
- 
- 	platform_set_drvdata(pdev, p);
- 
- 	return 0;
--err2:
-+err3:
- 	clk_put(p->clk);
+-	for (i = 0; i < ncores; i++)
+-		set_cpu_possible(i, true);
+-}
 -
-+err2:
-+	iounmap(p->mapbase_str);
- err1:
- 	iounmap(p->mapbase);
- err0:
--- 
-1.8.3.2
-
+ extern unsigned long shmobile_smp_fn[];
+ extern unsigned long shmobile_smp_arg[];
+ extern unsigned long shmobile_smp_mpidr[];
