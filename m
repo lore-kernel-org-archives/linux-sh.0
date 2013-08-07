@@ -1,112 +1,275 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 09 Aug 2013 09:47:59 +0000
-Subject: [PATCH 01/14] ARM: shmobile: r8a7779: Remove ->init_machine() special case
-Message-Id: <20130809094759.6530.27408.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:40 +0000
+Subject: [GIT PULL 23/26] ARM: shmobile: r8a7779: move r8a7779_init_irq_xxx() to setup
+Message-Id: <5b3859d7b2c10419e1cc7ce6c456995e757f4390.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130809094748.6530.16511.sendpatchset@w520>
-In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-No need to special case r8a7779 ->init_machine(),
-so get rid of undesired clock setup from the
-generic long term r8a7779 DT support code.
+This patch moves r8a7779_init_irq_xxx() to setup code,
+and remove intc-r8a7779.
 
-Rework the code to let r8a7779_add_dt_devices()
-act like other SoCs and make the board DT
-reference code setup clocks for us.
+Now, r8a7779_init_irq_extpin() uses
+platform_device_register_resndata() instead of
+platform_device_register()
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/Makefile        |   2 +-
+ arch/arm/mach-shmobile/intc-r8a7779.c  | 116 ---------------------------------
+ arch/arm/mach-shmobile/setup-r8a7779.c |  80 +++++++++++++++++++++++
+ 3 files changed, 81 insertions(+), 117 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/intc-r8a7779.c
 
- arch/arm/mach-shmobile/board-marzen-reference.c |    7 ++++++-
- arch/arm/mach-shmobile/include/mach/r8a7779.h   |    2 +-
- arch/arm/mach-shmobile/setup-r8a7779.c          |   18 ++++++------------
- 3 files changed, 13 insertions(+), 14 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2013-08-08 15:02:44.000000000 +0900
-@@ -19,6 +19,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 7418131..969c3a9 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -11,7 +11,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
++obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o clock-r8a7790.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
  
-+#include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -27,7 +28,11 @@
- 
- static void __init marzen_init(void)
- {
--	r8a7779_add_standard_devices_dt();
-+	/* clocks are setup late during boot in the case of DT */
-+	r8a7779_clock_init();
-+
-+	r8a7779_add_dt_devices();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
- static const char *marzen_boards_compat_dt[] __initdata = {
---- 0001/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7779.h	2013-08-08 14:59:50.000000000 +0900
-@@ -30,7 +30,7 @@ extern void r8a7779_map_io(void);
- extern void r8a7779_earlytimer_init(void);
- extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
--extern void r8a7779_add_standard_devices_dt(void);
-+extern void r8a7779_add_dt_devices(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
---- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2013-08-08 15:03:05.000000000 +0900
-@@ -24,7 +24,6 @@
- #include <linux/irq.h>
- #include <linux/irqchip.h>
- #include <linux/irqchip/arm-gic.h>
--#include <linux/of_platform.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/platform_device.h>
-@@ -624,6 +623,12 @@ static struct platform_device *r8a7779_s
- 	&sata_device,
- };
- 
-+void __init r8a7779_add_dt_devices(void)
-+{
-+	platform_add_devices(r8a7779_devices_dt,
-+			     ARRAY_SIZE(r8a7779_devices_dt));
-+}
-+
- void __init r8a7779_add_standard_devices(void)
- {
- #ifdef CONFIG_CACHE_L2X0
-@@ -726,16 +731,6 @@ void __init r8a7779_init_delay(void)
- 	shmobile_setup_delay(1000, 2, 4); /* Cortex-A9 @ 1000MHz */
- }
- 
--void __init r8a7779_add_standard_devices_dt(void)
--{
--	/* clocks are setup late during boot in the case of DT */
--	r8a7779_clock_init();
+diff --git a/arch/arm/mach-shmobile/intc-r8a7779.c b/arch/arm/mach-shmobile/intc-r8a7779.c
+deleted file mode 100644
+index e992a68..0000000
+--- a/arch/arm/mach-shmobile/intc-r8a7779.c
++++ /dev/null
+@@ -1,116 +0,0 @@
+-/*
+- * r8a7779 processor support - INTC hardware block
+- *
+- * Copyright (C) 2011  Renesas Solutions Corp.
+- * Copyright (C) 2011  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/platform_device.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/io.h>
+-#include <linux/irqchip/arm-gic.h>
+-#include <linux/platform_data/irq-renesas-intc-irqpin.h>
+-#include <linux/irqchip.h>
+-#include <mach/common.h>
+-#include <mach/irqs.h>
+-#include <mach/r8a7779.h>
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
 -
--	platform_add_devices(r8a7779_devices_dt,
--			     ARRAY_SIZE(r8a7779_devices_dt));
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-#define INT2SMSKCR0 IOMEM(0xfe7822a0)
+-#define INT2SMSKCR1 IOMEM(0xfe7822a4)
+-#define INT2SMSKCR2 IOMEM(0xfe7822a8)
+-#define INT2SMSKCR3 IOMEM(0xfe7822ac)
+-#define INT2SMSKCR4 IOMEM(0xfe7822b0)
+-
+-#define INT2NTSR0 IOMEM(0xfe700060)
+-#define INT2NTSR1 IOMEM(0xfe700064)
+-
+-static struct renesas_intc_irqpin_config irqpin0_platform_data = {
+-	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+-	.sense_bitfield_width = 2,
+-};
+-
+-static struct resource irqpin0_resources[] = {
+-	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
+-	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
+-	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
+-	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
+-	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
+-	DEFINE_RES_IRQ(gic_spi(27)), /* IRQ0 */
+-	DEFINE_RES_IRQ(gic_spi(28)), /* IRQ1 */
+-	DEFINE_RES_IRQ(gic_spi(29)), /* IRQ2 */
+-	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
+-};
+-
+-static struct platform_device irqpin0_device = {
+-	.name		= "renesas_intc_irqpin",
+-	.id		= 0,
+-	.resource	= irqpin0_resources,
+-	.num_resources	= ARRAY_SIZE(irqpin0_resources),
+-	.dev		= {
+-		.platform_data	= &irqpin0_platform_data,
+-	},
+-};
+-
+-void __init r8a7779_init_irq_extpin(int irlm)
+-{
+-	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
+-	unsigned long tmp;
+-
+-	if (icr0) {
+-		tmp = ioread32(icr0);
+-		if (irlm)
+-			tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
+-		else
+-			tmp &= ~(1 << 23); /* IRL mode - not supported */
+-		tmp |= (1 << 21); /* LVLMODE = 1 */
+-		iowrite32(tmp, icr0);
+-		iounmap(icr0);
+-
+-		if (irlm)
+-			platform_device_register(&irqpin0_device);
+-	} else
+-		pr_warn("r8a7779: unable to setup external irq pin mode\n");
 -}
 -
- static const char *r8a7779_compat_dt[] __initdata = {
- 	"renesas,r8a7779",
- 	NULL,
-@@ -746,7 +741,6 @@ DT_MACHINE_START(R8A7779_DT, "Generic R8
- 	.init_early	= r8a7779_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
--	.init_machine	= r8a7779_add_standard_devices_dt,
- 	.init_late	= r8a7779_init_late,
- 	.dt_compat	= r8a7779_compat_dt,
- MACHINE_END
+-#ifdef CONFIG_OF
+-static int r8a7779_set_wake(struct irq_data *data, unsigned int on)
+-{
+-	return 0; /* always allow wakeup */
+-}
+-
+-void __init r8a7779_init_irq_dt(void)
+-{
+-	gic_arch_extn.irq_set_wake = r8a7779_set_wake;
+-
+-	irqchip_init();
+-
+-	/* route all interrupts to ARM */
+-	__raw_writel(0xffffffff, INT2NTSR0);
+-	__raw_writel(0x3fffffff, INT2NTSR1);
+-
+-	/* unmask all known interrupts in INTCS2 */
+-	__raw_writel(0xfffffff0, INT2SMSKCR0);
+-	__raw_writel(0xfff7ffff, INT2SMSKCR1);
+-	__raw_writel(0xfffbffdf, INT2SMSKCR2);
+-	__raw_writel(0xbffffffc, INT2SMSKCR3);
+-	__raw_writel(0x003fee3f, INT2SMSKCR4);
+-
+-}
+-#endif
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index f0b6c7d..6a99333 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -22,8 +22,11 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/irqchip/arm-gic.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/input.h>
+@@ -67,6 +70,60 @@ void __init r8a7779_map_io(void)
+ 	iotable_init(r8a7779_io_desc, ARRAY_SIZE(r8a7779_io_desc));
+ }
+ 
++/* IRQ */
++#define INT2SMSKCR0 IOMEM(0xfe7822a0)
++#define INT2SMSKCR1 IOMEM(0xfe7822a4)
++#define INT2SMSKCR2 IOMEM(0xfe7822a8)
++#define INT2SMSKCR3 IOMEM(0xfe7822ac)
++#define INT2SMSKCR4 IOMEM(0xfe7822b0)
++
++#define INT2NTSR0 IOMEM(0xfe700060)
++#define INT2NTSR1 IOMEM(0xfe700064)
++
++static struct renesas_intc_irqpin_config irqpin0_platform_data __initdata = {
++	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
++	.sense_bitfield_width = 2,
++};
++
++static struct resource irqpin0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
++	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
++	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
++	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
++	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
++	DEFINE_RES_IRQ(gic_spi(27)), /* IRQ0 */
++	DEFINE_RES_IRQ(gic_spi(28)), /* IRQ1 */
++	DEFINE_RES_IRQ(gic_spi(29)), /* IRQ2 */
++	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
++};
++
++void __init r8a7779_init_irq_extpin(int irlm)
++{
++	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
++	u32 tmp;
++
++	if (!icr0) {
++		pr_warn("r8a7779: unable to setup external irq pin mode\n");
++		return;
++	}
++
++	tmp = ioread32(icr0);
++	if (irlm)
++		tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
++	else
++		tmp &= ~(1 << 23); /* IRL mode - not supported */
++	tmp |= (1 << 21); /* LVLMODE = 1 */
++	iowrite32(tmp, icr0);
++	iounmap(icr0);
++
++	if (irlm)
++		platform_device_register_resndata(
++			&platform_bus, "renesas_intc_irqpin", -1,
++			irqpin0_resources, ARRAY_SIZE(irqpin0_resources),
++			&irqpin0_platform_data, sizeof(irqpin0_platform_data));
++}
++
++/* PFC/GPIO */
+ static struct resource r8a7779_pfc_resources[] = {
+ 	DEFINE_RES_MEM(0xfffc0000, 0x023c),
+ };
+@@ -641,6 +698,29 @@ void __init r8a7779_init_late(void)
+ }
+ 
+ #ifdef CONFIG_USE_OF
++static int r8a7779_set_wake(struct irq_data *data, unsigned int on)
++{
++	return 0; /* always allow wakeup */
++}
++
++void __init r8a7779_init_irq_dt(void)
++{
++	gic_arch_extn.irq_set_wake = r8a7779_set_wake;
++
++	irqchip_init();
++
++	/* route all interrupts to ARM */
++	__raw_writel(0xffffffff, INT2NTSR0);
++	__raw_writel(0x3fffffff, INT2NTSR1);
++
++	/* unmask all known interrupts in INTCS2 */
++	__raw_writel(0xfffffff0, INT2SMSKCR0);
++	__raw_writel(0xfff7ffff, INT2SMSKCR1);
++	__raw_writel(0xfffbffdf, INT2SMSKCR2);
++	__raw_writel(0xbffffffc, INT2SMSKCR3);
++	__raw_writel(0x003fee3f, INT2SMSKCR4);
++}
++
+ void __init r8a7779_init_delay(void)
+ {
+ 	shmobile_setup_delay(1000, 2, 4); /* Cortex-A9 @ 1000MHz */
+-- 
+1.8.3.2
+
