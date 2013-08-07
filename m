@@ -1,229 +1,100 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 28 Aug 2013 23:21:58 +0000
-Subject: [PATCH v2 01/03] ARM: shmobile: Shared APMU SMP support code without DT
-Message-Id: <20130828232158.7321.6048.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:28:37 +0000
+Subject: [GIT PULL 16/19] ARM: shmobile: armadillo800eva: Use DT for GIC
+Message-Id: <15645581a9401cf2370d2c975e2673d289d5e561.1375838900.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130828232148.7321.45739.sendpatchset@w520>
-In-Reply-To: <20130828232148.7321.45739.sendpatchset@w520>
+References: <cover.1375838900.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Introduce shared APMU SMP code for mach-shmobile. Both SMP boot up
-and CPU Hotplug is supported. This version does not use DT but
-if needed this will be added as an incremental feature patch.
+Current Armadillo800eva is using DT booting,
+and r8a7740.dtsi already has GIC settings.
 
-The code is designed around CONFIG_NR_CPUS and should in theory support
-any number of APMUs, however due to the current DT-less static design
-only a single APMU is supported.
- 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+So, we can remove the C version of the GIC setup code,
+instead rely on GIC information provided by DT.
+
+This patch removes r8a7740_init_irq() which has
+no user any more
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7740.h  |  1 -
+ arch/arm/mach-shmobile/intc-r8a7740.c          | 20 +++-----------------
+ 3 files changed, 4 insertions(+), 19 deletions(-)
 
- Changes since V1:
- - Replaced DT bindings with static configuration
- - Removed multi-APMU support
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 66cfd56..6864195 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1265,7 +1265,7 @@ static const char *eva_boards_compat_dt[] __initdata = {
+ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= eva_add_early_devices,
+-	.init_irq	= r8a7740_init_irq,
++	.init_irq	= r8a7740_init_irq_of,
+ 	.init_machine	= eva_init,
+ 	.init_late	= shmobile_init_late,
+ 	.init_time	= eva_earlytimer_init,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 56f3750..d07932f 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -48,7 +48,6 @@ enum {
+ 
+ extern void r8a7740_meram_workaround(void);
+ extern void r8a7740_init_delay(void);
+-extern void r8a7740_init_irq(void);
+ extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
+index 8871f77..7519353 100644
+--- a/arch/arm/mach-shmobile/intc-r8a7740.c
++++ b/arch/arm/mach-shmobile/intc-r8a7740.c
+@@ -23,12 +23,14 @@
+ #include <linux/irqchip.h>
+ #include <linux/irqchip/arm-gic.h>
+ 
+-static void __init r8a7740_init_irq_common(void)
++void __init r8a7740_init_irq_of(void)
+ {
+ 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
+ 	void __iomem *intc_msk_base = ioremap_nocache(0xe6900040, 0x10);
+ 	void __iomem *pfc_inta_ctrl = ioremap_nocache(0xe605807c, 0x4);
+ 
++	irqchip_init();
++
+ 	/* route signals to GIC */
+ 	iowrite32(0x0, pfc_inta_ctrl);
+ 
+@@ -50,19 +52,3 @@ static void __init r8a7740_init_irq_common(void)
+ 	iounmap(intc_msk_base);
+ 	iounmap(pfc_inta_ctrl);
+ }
+-
+-void __init r8a7740_init_irq_of(void)
+-{
+-	irqchip_init();
+-	r8a7740_init_irq_common();
+-}
+-
+-void __init r8a7740_init_irq(void)
+-{
+-	void __iomem *gic_dist_base = ioremap_nocache(0xc2800000, 0x1000);
+-	void __iomem *gic_cpu_base = ioremap_nocache(0xc2000000, 0x1000);
+-
+-	/* initialize the Generic Interrupt Controller PL390 r0p0 */
+-	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+-	r8a7740_init_irq_common();
+-}
+-- 
+1.8.3.2
 
- arch/arm/mach-shmobile/include/mach/common.h |    6 
- arch/arm/mach-shmobile/platsmp-apmu.c        |  178 ++++++++++++++++++++++++++
- 2 files changed, 184 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-08-28 20:59:58.000000000 +0900
-@@ -22,6 +22,12 @@ extern int shmobile_smp_scu_boot_seconda
- 					   struct task_struct *idle);
- extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
- extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
-+extern void shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus);
-+extern int shmobile_smp_apmu_boot_secondary(unsigned int cpu,
-+					    struct task_struct *idle);
-+extern void shmobile_smp_apmu_cpu_die(unsigned int cpu);
-+extern int shmobile_smp_apmu_cpu_kill(unsigned int cpu);
-+extern void shmobile_invalidate_start(void);
- struct clk;
- extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
---- /dev/null
-+++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2013-08-29 08:03:02.000000000 +0900
-@@ -0,0 +1,178 @@
-+/*
-+ * SMP support for SoCs with APMU
-+ *
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+#include <linux/delay.h>
-+#include <linux/init.h>
-+#include <linux/io.h>
-+#include <linux/ioport.h>
-+#include <linux/of_address.h>
-+#include <linux/smp.h>
-+#include <asm/cacheflush.h>
-+#include <asm/cp15.h>
-+#include <asm/smp_plat.h>
-+#include <mach/common.h>
-+
-+static struct {
-+	void __iomem *iomem;
-+	int bit;
-+} apmu_cpus[CONFIG_NR_CPUS];
-+
-+#define WUPCR_OFFS 0x10
-+#define PSTR_OFFS 0x40
-+#define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
-+
-+static int apmu_power_on(void __iomem *p, int bit)
-+{
-+	/* request power on */
-+	writel_relaxed(BIT(bit), p + WUPCR_OFFS);
-+
-+	/* wait for APMU to finish */
-+	while (readl_relaxed(p + WUPCR_OFFS) != 0)
-+		;
-+
-+	return 0;
-+}
-+
-+static int apmu_power_off(void __iomem *p, int bit)
-+{
-+	/* request Core Standby for next WFI */
-+	writel_relaxed(3, p + CPUNCR_OFFS(bit));
-+	return 0;
-+}
-+
-+static int apmu_power_off_poll(void __iomem *p, int bit)
-+{
-+	int k;
-+
-+	for (k = 0; k < 1000; k++) {
-+		if (((readl_relaxed(p + PSTR_OFFS) >> (bit * 4)) & 0x03) = 3)
-+			return 1;
-+
-+		mdelay(1);
-+	}
-+
-+	return 0;
-+}
-+
-+static int apmu_wrap(int cpu, int (*fn)(void __iomem *p, int cpu))
-+{
-+	void __iomem *p = apmu_cpus[cpu].iomem;
-+
-+	return p ? fn(p, apmu_cpus[cpu].bit) : -EINVAL;
-+}
-+
-+static void apmu_init_cpu(struct resource *res, int cpu, int bit)
-+{
-+	if (apmu_cpus[cpu].iomem)
-+		return;
-+
-+	apmu_cpus[cpu].iomem = ioremap_nocache(res->start, resource_size(res));
-+	apmu_cpus[cpu].bit = bit;
-+
-+	pr_debug("apmu ioremap %d %d 0x%08x 0x%08x\n", cpu, bit,
-+		 res->start, resource_size(res));
-+}
-+
-+static struct {
-+	struct resource iomem;
-+	int cpus[4];
-+} apmu_config[] = {
-+	{
-+		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
-+		.cpus = { 0, 1, 2, 3 },
-+	}
-+};
-+
-+static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit))
-+{
-+	u32 id;
-+	int k;
-+	int bit, index;
-+
-+	for (k = 0; k < ARRAY_SIZE(apmu_config); k++) {
-+		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
-+			id = apmu_config[k].cpus[bit];
-+			if (id >= 0) {
-+				index = get_logical_index(id);
-+				if (index >= 0)
-+					fn(&apmu_config[k].iomem, index, bit);
-+			}
-+		}
-+	}
-+}
-+
-+void __init shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus)
-+{
-+	/* install boot code shared by all CPUs */
-+	shmobile_boot_fn = virt_to_phys(shmobile_smp_boot);
-+	shmobile_boot_arg = MPIDR_HWID_BITMASK;
-+
-+	/* perform per-cpu setup */
-+	apmu_parse_cfg(apmu_init_cpu);
-+}
-+
-+int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
-+{
-+	/* For this particular CPU register boot vector */
-+	shmobile_smp_hook(cpu, virt_to_phys(shmobile_invalidate_start), 0);
-+
-+	return apmu_wrap(cpu, apmu_power_on);
-+}
-+
-+#ifdef CONFIG_HOTPLUG_CPU
-+/* nicked from arch/arm/mach-exynos/hotplug.c */
-+static inline void cpu_enter_lowpower_a15(void)
-+{
-+	unsigned int v;
-+
-+	asm volatile(
-+	"       mrc     p15, 0, %0, c1, c0, 0\n"
-+	"       bic     %0, %0, %1\n"
-+	"       mcr     p15, 0, %0, c1, c0, 0\n"
-+		: "=&r" (v)
-+		: "Ir" (CR_C)
-+		: "cc");
-+
-+	flush_cache_louis();
-+
-+	asm volatile(
-+	/*
-+	 * Turn off coherency
-+	 */
-+	"       mrc     p15, 0, %0, c1, c0, 1\n"
-+	"       bic     %0, %0, %1\n"
-+	"       mcr     p15, 0, %0, c1, c0, 1\n"
-+		: "=&r" (v)
-+		: "Ir" (0x40)
-+		: "cc");
-+
-+	isb();
-+	dsb();
-+}
-+
-+void shmobile_smp_apmu_cpu_die(unsigned int cpu)
-+{
-+	/* For this particular CPU deregister boot vector */
-+	shmobile_smp_hook(cpu, 0, 0);
-+
-+	/* Select next sleep mode using the APMU */
-+	apmu_wrap(cpu, apmu_power_off);
-+
-+	/* Do ARM specific CPU shutdown */
-+	cpu_enter_lowpower_a15();
-+
-+	/* jump to shared mach-shmobile sleep / reset code */
-+	shmobile_smp_sleep();
-+}
-+
-+int shmobile_smp_apmu_cpu_kill(unsigned int cpu)
-+{
-+	return apmu_wrap(cpu, apmu_power_off_poll);
-+}
-+#endif
