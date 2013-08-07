@@ -1,58 +1,76 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:41:59 +0000
-Subject: [GIT PULL 0/5] Second Round of Renesas ARM based SoC SMP updates for v3.12
-Message-Id: <cover.1377651075.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:39:35 +0000
+Subject: [GIT PULL 9/9] ARM: shmobile: Per-CPU SMP boot / sleep code for SCU SoCs
+Message-Id: <1d33a354bbb618ba578bb372ebc18fe58457f6f3.1375841380.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375841380.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Kevin, Hi Olof, Hi Arnd,
+From: Magnus Damm <damm@opensource.se>
 
-please consider this second round of Renesas ARM based SoC SMP updates for
-v3.12.
+Hook in the per-CPU boot and sleep code in the shared
+mach-shmobile SCU code. CPUs may be kept in the asm
+routine until ->boot_secondary() when the per-CPU
+boot vector is installed. At the end of ->die() the
+asm sleep routine is invoked.
 
-It is based on renesas-smp-for-v3.12 ("ARM based SoC SMP updates for
-v3.12") which you have previously pulled.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/platsmp-scu.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-I apologise that this and other pull requests that I will send today
-are rather later in the cycle than I would like. This is primarily due
-to a combination of my summer vacation and wanting to let the patches
-sit in next for a while.
+diff --git a/arch/arm/mach-shmobile/platsmp-scu.c b/arch/arm/mach-shmobile/platsmp-scu.c
+index 7a0c066..c96f501 100644
+--- a/arch/arm/mach-shmobile/platsmp-scu.c
++++ b/arch/arm/mach-shmobile/platsmp-scu.c
+@@ -18,8 +18,9 @@
+ 
+ void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
+ {
+-	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
+-	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
++	/* install boot code shared by all CPUs */
++	shmobile_boot_fn = virt_to_phys(shmobile_smp_boot);
++	shmobile_boot_arg = MPIDR_HWID_BITMASK;
+ 
+ 	/* enable SCU and cache coherency on booting CPU */
+ 	scu_enable(shmobile_scu_base);
+@@ -28,22 +29,26 @@ void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
+ 
+ int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+-	/* do nothing for now */
++	/* For this particular CPU register SCU boot vector */
++	shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
++			  (unsigned long)shmobile_scu_base);
+ 	return 0;
+ }
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
+ void shmobile_smp_scu_cpu_die(unsigned int cpu)
+ {
++	/* For this particular CPU deregister boot vector */
++	shmobile_smp_hook(cpu, 0, 0);
++
+ 	dsb();
+ 	flush_cache_all();
+ 
+ 	/* disable cache coherency */
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
+ 
+-	/* Endless loop until reset */
+-	while (1)
+-		cpu_do_idle();
++	/* jump to shared mach-shmobile sleep / reset code */
++	shmobile_smp_sleep();
+ }
+ 
+ static int shmobile_smp_scu_psr_core_disabled(int cpu)
+-- 
+1.8.3.2
 
-
-The following changes since commit 1d33a354bbb618ba578bb372ebc18fe58457f6f3:
-
-  ARM: shmobile: Per-CPU SMP boot / sleep code for SCU SoCs (2013-08-06 18:07:26 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-smp2-for-v3.12
-
-for you to fetch changes up to c46a8cdf3e1ce9a79f58dca178da9e83138c0c01:
-
-  ARM: shmobile: Introduce shmobile_boot_size (2013-08-21 17:53:34 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM based SoC SMP updates for v3.12
-
-A continuation of Magnus's ongoing re-working of SMP on shmobile:
-* Introduce shmobile_boot_size
-* Expose shmobile_invalidate_start()
-* Remove unused shmobile_smp_init_cpus()
-* Introduce shmobile_smp_cpu_disable() and use on sh73a0 SoC
-
-----------------------------------------------------------------
-Magnus Damm (5):
-      ARM: shmobile: Introduce shmobile_smp_cpu_disable()
-      ARM: shmobile: Use shmobile_smp_cpu_disable() on sh73a0
-      ARM: shmobile: Remove unused shmobile_smp_init_cpus()
-      ARM: shmobile: Expose shmobile_invalidate_start()
-      ARM: shmobile: Introduce shmobile_boot_size
-
- arch/arm/mach-shmobile/headsmp.S             |  3 +++
- arch/arm/mach-shmobile/include/mach/common.h |  4 +++-
- arch/arm/mach-shmobile/platsmp.c             | 22 +++++++---------------
- arch/arm/mach-shmobile/smp-sh73a0.c          |  9 +--------
- 4 files changed, 14 insertions(+), 24 deletions(-)
