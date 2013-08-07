@@ -1,269 +1,79 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Fri, 30 Aug 2013 14:53:22 +0000
-Subject: [PATCH v6 5/5] clk: Implement clk_unregister
-Message-Id: <1377874402-2944-6-git-send-email-s.nawrocki@samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:32 +0000
+Subject: [GIT PULL 05/26] ARM: shmobile: r8a7778: cleanup registration of hspi
+Message-Id: <3c7b5362323cd4b5d09a5b21ba8e74b3de05fc73.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-clk_unregister() is currently not implemented and it is required when
-a clock provider module needs to be unloaded.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Normally the clock supplier module is prevented to be unloaded by
-taking reference on the module in clk_get().
+sh-hspi driver which doesn't need platform data at the time of
+registration can be registerd on SoC.
+And, registering these drivers in the SoC code can avoid
+unwanted device numbering issue.
+(ex. the hspi2 device number will be spi.0 if hspi2 only registered)
+This patch registers it on SoC code as cleanup C code
 
-For cases when the clock supplier module deinitializes despite the
-consumers of its clocks holding a reference on the module, e.g. when
-the driver is unbound through "unbind" sysfs attribute, there are
-empty clock ops added. These ops are assigned temporarily to struct
-clk and used until all consumers release the clock, to avoid invoking
-callbacks from the module which just got removed.
-
-Signed-off-by: Jiada Wang <jiada_wang@mentor.com>
-Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since v5:
-- ensure clk->kref is not referenced when the passed clk is NULL.
+ arch/arm/mach-shmobile/board-bockw.c          | 1 -
+ arch/arm/mach-shmobile/include/mach/r8a7778.h | 1 -
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 5 ++++-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
 
-Changes since v4:
- - none.
-
-Changes since v3:
- - Use WARN_ON_ONCE() rather than WARN_ON() in clk_nodrv_disable_unprepare()
-   callback.
-
-Changes since v2:
- - none.
-
-Changes since RFC v1:
- - renamed clk_dummy_* to clk_nodrv_*.
-
-Changes since v3 of the original patch [1]:
- - reparent all children to the orphan list instead of leaving
-   the clock unregistered when it has child clocks,
- - removed unnecessary prerequisite checks in clk_debug_unregister(),
- - struct clk is now being freed only when the last clock consumer
-   calls clk_put(),
- - empty clock ops are used after clk_unregister() has been called
-   until all references to the clock are released and the clock
-   object is freed.
-
-[1] http://www.spinics.net/lists/arm-kernel/msg247548.html
----
- drivers/clk/clk.c           |  134 ++++++++++++++++++++++++++++++++++++++++---
- include/linux/clk-private.h |    2 +
- 2 files changed, 128 insertions(+), 8 deletions(-)
-
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index ac80e13..27f8c42 100644
---- a/drivers/clk/clk.c
-+++ b/drivers/clk/clk.c
-@@ -344,6 +344,21 @@ out:
- 	return ret;
- }
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index d7d3427..b6f3d2f 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -200,7 +200,6 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_ether_device(&ether_platform_data);
+-	r8a7778_add_hspi_device(0);
  
-+ /**
-+ * clk_debug_unregister - remove a clk node from the debugfs clk tree
-+ * @clk: the clk being removed from the debugfs clk tree
-+ *
-+ * Dynamically removes a clk and all it's children clk nodes from the
-+ * debugfs clk tree if clk->dentry points to debugfs created by
-+ * clk_debug_register in __clk_init.
-+ *
-+ * Caller must hold prepare_lock.
-+ */
-+static void clk_debug_unregister(struct clk *clk)
-+{
-+	debugfs_remove_recursive(clk->dentry);
-+}
-+
- /**
-  * clk_debug_reparent - reparent clk node in the debugfs clk tree
-  * @clk: the clk being reparented
-@@ -434,6 +449,9 @@ static inline int clk_debug_register(struct clk *clk) { return 0; }
- static inline void clk_debug_reparent(struct clk *clk, struct clk *new_parent)
- {
- }
-+static inline void clk_debug_unregister(struct clk *clk)
-+{
-+}
- #endif
+ 	i2c_register_board_info(0, i2c0_devices,
+ 				ARRAY_SIZE(i2c0_devices));
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index 9874511..41fd6da 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -23,7 +23,6 @@
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+-extern void r8a7778_add_hspi_device(int id);
+ extern void r8a7778_add_dt_devices(void);
  
- /* caller must hold prepare_lock */
-@@ -1770,6 +1788,7 @@ int __clk_init(struct device *dev, struct clk *clk)
- 
- 	clk_debug_register(clk);
- 
-+	kref_init(&clk->ref);
- out:
- 	clk_prepare_unlock();
- 
-@@ -1905,13 +1924,106 @@ fail_out:
- }
- EXPORT_SYMBOL_GPL(clk_register);
- 
-+/*
-+ * Free memory allocated for a clock.
-+ * Caller must hold prepare_lock.
-+ */
-+static void __clk_release(struct kref *ref)
-+{
-+	struct clk *clk = container_of(ref, struct clk, ref);
-+	int i = clk->num_parents;
-+
-+	kfree(clk->parents);
-+	while (--i >= 0)
-+		kfree(clk->parent_names[i]);
-+
-+	kfree(clk->parent_names);
-+	kfree(clk->name);
-+	kfree(clk);
-+}
-+
-+/*
-+ * Empty clk_ops for unregistered clocks. These are used temporarily
-+ * after clk_unregister() was called on a clock and until last clock
-+ * consumer calls clk_put() and the struct clk object is freed.
-+ */
-+static int clk_nodrv_prepare_enable(struct clk_hw *hw)
-+{
-+	return -ENXIO;
-+}
-+
-+static void clk_nodrv_disable_unprepare(struct clk_hw *hw)
-+{
-+	WARN_ON(1);
-+}
-+
-+static int clk_nodrv_set_rate(struct clk_hw *hw, unsigned long rate,
-+					unsigned long parent_rate)
-+{
-+	return -ENXIO;
-+}
-+
-+static int clk_nodrv_set_parent(struct clk_hw *hw, u8 index)
-+{
-+	return -ENXIO;
-+}
-+
-+static const struct clk_ops clk_nodrv_ops = {
-+	.enable		= clk_nodrv_prepare_enable,
-+	.disable	= clk_nodrv_disable_unprepare,
-+	.prepare	= clk_nodrv_prepare_enable,
-+	.unprepare	= clk_nodrv_disable_unprepare,
-+	.set_rate	= clk_nodrv_set_rate,
-+	.set_parent	= clk_nodrv_set_parent,
-+};
-+
- /**
-  * clk_unregister - unregister a currently registered clock
-  * @clk: clock to unregister
-- *
-- * Currently unimplemented.
-  */
--void clk_unregister(struct clk *clk) {}
-+void clk_unregister(struct clk *clk)
-+{
-+	unsigned long flags;
-+
-+	clk_prepare_lock();
-+
-+	if (!clk || IS_ERR(clk)) {
-+		pr_err("%s: invalid clock: %p\n", __func__, clk);
-+		goto out;
-+	}
-+
-+	if (clk->ops = &clk_nodrv_ops) {
-+		pr_err("%s: unregistered clock: %s\n", __func__, clk->name);
-+		goto out;
-+	}
-+	/*
-+	 * Assign empty clock ops for consumers that might still hold
-+	 * a reference to this clock.
-+	 */
-+	flags = clk_enable_lock();
-+	clk->ops = &clk_nodrv_ops;
-+	clk_enable_unlock(flags);
-+
-+	if (!hlist_empty(&clk->children)) {
-+		struct clk *child;
-+
-+		/* Reparent all children to the orphan list. */
-+		hlist_for_each_entry(child, &clk->children, child_node)
-+			clk_set_parent(child, NULL);
-+	}
-+
-+	clk_debug_unregister(clk);
-+
-+	hlist_del_init(&clk->child_node);
-+
-+	if (clk->prepare_count)
-+		pr_warn("%s: unregistering prepared clock: %s\n",
-+					__func__, clk->name);
-+
-+	kref_put(&clk->ref, __clk_release);
-+out:
-+	clk_prepare_unlock();
-+}
- EXPORT_SYMBOL_GPL(clk_unregister);
- 
- static void devm_clk_release(struct device *dev, void *res)
-@@ -1976,19 +2088,25 @@ EXPORT_SYMBOL_GPL(devm_clk_unregister);
-  */
- int __clk_get(struct clk *clk)
- {
--	if (clk && !try_module_get(clk->owner))
--		return 0;
-+	if (clk) {
-+		if (!try_module_get(clk->owner))
-+			return 0;
- 
-+		kref_get(&clk->ref);
-+	}
- 	return 1;
- }
- 
- void __clk_put(struct clk *clk)
- {
--	if (WARN_ON_ONCE(IS_ERR(clk)))
-+	if (!clk || WARN_ON_ONCE(IS_ERR(clk)))
- 		return;
- 
--	if (clk)
--		module_put(clk->owner);
-+	clk_prepare_lock();
-+	kref_put(&clk->ref, __clk_release);
-+	clk_prepare_unlock();
-+
-+	module_put(clk->owner);
- }
- 
- /***        clk rate change notifiers        ***/
-diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
-index 8cb1865..72c65e0 100644
---- a/include/linux/clk-private.h
-+++ b/include/linux/clk-private.h
-@@ -12,6 +12,7 @@
- #define __LINUX_CLK_PRIVATE_H
- 
- #include <linux/clk-provider.h>
-+#include <linux/kref.h>
- #include <linux/list.h>
- 
- /*
-@@ -50,6 +51,7 @@ struct clk {
- #ifdef CONFIG_COMMON_CLK_DEBUG
- 	struct dentry		*dentry;
- #endif
-+	struct kref		ref;
+ extern void r8a7778_init_late(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index ce3b54d..1a154d4 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -272,7 +272,7 @@ static struct resource hspi_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_iid(0x75)),
  };
  
- /*
+-void __init r8a7778_add_hspi_device(int id)
++void __init r8a7778_register_hspi(int id)
+ {
+ 	BUG_ON(id < 0 || id > 2);
+ 
+@@ -312,6 +312,9 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_i2c(1);
+ 	r8a7778_register_i2c(2);
+ 	r8a7778_register_i2c(3);
++	r8a7778_register_hspi(0);
++	r8a7778_register_hspi(1);
++	r8a7778_register_hspi(2);
+ }
+ 
+ void __init r8a7778_init_late(void)
 -- 
-1.7.9.5
+1.8.3.2
 
