@@ -1,46 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 25 Aug 2013 20:54:06 +0000
-Subject: Re: [PATCH v3 00/14] Remove platform callbacks from mmc_spi, sh_mmcif and sh_mobile_sdhi drivers
-Message-Id: <1591201.avzdVWpxvg@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 Aug 2013 22:55:31 +0000
+Subject: [PATCH 00/02] ARM: shmobile: Initial r8a73a4 APMU SMP code
+Message-Id: <20130807225531.9856.18974.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <87ob8mqv55.fsf@octavius.laptop.org>
-In-Reply-To: <87ob8mqv55.fsf@octavius.laptop.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Chris,
+ARM: shmobile: Initial r8a73a4 APMU SMP code
 
-On Saturday 24 August 2013 23:58:14 Chris Ball wrote:
-> On Thu, Aug 08 2013, Laurent Pinchart wrote:
-> > This patch set replaces callbacks to board code with regulators and GPIOs
-> > in the mmc_spi, sh_mmcif and sh_mobile_sdhi MMC drivers.
-> > 
-> > Most of the required infrastructure is in place already on the drivers
-> > side, except for CD debouncing support in the MMC core and CD/RO GPIOs
-> > support in the mmc_spi driver. The series thus starts with patches 01/14
-> > and 02/14 that add those features to the MMC core and mmc_spi driver.
-> > 
-> > Patches 03/14 to 07/14 remove the board callbacks from the ecovec24 and
-> > vision_ep9307 boards. The code has been compile-tested only as I don't
-> > have
-> > access to those boards.
-> > 
-> > Patches 08/14 to 14/14 then proceed to remove the callbacks from the
-> > drivers themselves and from the platform data structures.
-> 
-> arch/arm/mach-shmobile/board-ag5evm.c has been removed from
-> linux-next, so I've dropped patch 7 ("ARM: shmobile: ag5evm: Remove
-> SDHI .set_pwr() callback") but taken all of the other patches into
-> mmc-next for 3.12.
+[PATCH 01/02] ARM: shmobile: Add r8a73a4 SMP support using APMU code
+[PATCH 02/02] ARM: shmobile: Add r8a73a4 CA15 CPU cores and APMU as DTS
 
-Patch 7 was only meant to avoid bisection breakages if your tree gets merged 
-before the ARM tree. If it gets merged before you can indeed drop it.
+This series adds SMP support to r8a73a4 using the APMU code. With these
+patches applied r8a73a4 CA15 support for SMP boot and CPU Hotplug is
+known to be working.
 
--- 
-Regards,
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Laurent Pinchart
+ Written against renesas.git renesas-devel-20130806v4 and
+ [PATCH 00/05] ARM: shmobile: Yet another SMP series
+ [PATCH 00/02] ARM: shmobile: Rename to r8a73a4/r8a7790_init_early()
+ [PATCH] ARM: shmobile: Shared APMU SMP support code
 
+ arch/arm/boot/dts/r8a73a4.dtsi                |   27 +++++++++
+ arch/arm/mach-shmobile/Makefile               |    1 
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |    3 +
+ arch/arm/mach-shmobile/smp-r8a73a4.c          |   75 +++++++++++++++++++++++++
+ 5 files changed, 107 insertions(+)
