@@ -1,33 +1,72 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 05 Aug 2013 07:43:50 +0000
-Subject: Re: [PATCH] ARM: shmobile: sh73a0: Remove global GPIO_NR definition
-Message-Id: <20130805074348.GH15796@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 07 Aug 2013 04:05:34 +0000
+Subject: [PATCH 0/5] ARM: shmobile: bockw: add Sound support
+Message-Id: <874nb2jgc4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375126434-25884-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375126434-25884-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Jul 29, 2013 at 05:52:42PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi
-> 
-> > On Mon, Jul 29, 2013 at 09:33:54PM +0200, Laurent Pinchart wrote:
-> > > The total number of SoC GPIOs is only used to compute the base GPIO
-> > > number of th PCF8575 GPIO extender on the KZM9G board. As GPIO
-> > > allocation became fully dynamic with DT, no other SH73A0 board will use
-> > > the GPIO_NR macro. Move it to the KZM9G board file.
-> > > 
-> > > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > I am happy with this.
-> > But I will wait to give others a chance to review it before
-> > queueing it up.
-> 
-> This patch looks good to me
-> 
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued this up for v3.12 in the cleanup4 branch.
+Hi Simon
+
+These patches add R-Car sound support on Bock-W board.
+It enables PIO transfer only at this point, because
+ 1) PIO settings is the most easy basic settings
+ 2) HPB-DMAC is still not enabled on r8a7778
+
+R-Car sound driver is already supporting DMA transfer on ASoC (= Mark's) branch.
+So, it is easy to support DMA transfer if r8a7778 has HPB-DMAC support.
+
+To enable R-Car sound on Bock-W board, ASoC branch mergeing is required
+
+git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git
+:: asoc/topic/ak4554
+:: asoc/topic/rcar
+
+These patches are based on renesas-devel-20130806v4
+
+Kuninori Morimoto (5):
+      sh-pfc: r8a7778: add SRU/SSI pin support
+      ARM: shmobile: r8a7778: add SSI/SRU clock support
+      ARM: shmobile: bockw: enable global use of FPGA
+      ARM: shmobile: bockw: add R-Car sound support (PIO)
+      ARM: shmobile: bockw defconfig: add Sound support
+
+ arch/arm/configs/bockw_defconfig       |    4 +
+ arch/arm/mach-shmobile/Kconfig         |    2 +
+ arch/arm/mach-shmobile/board-bockw.c   |  277 +++++++++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/clock-r8a7778.c |   43 ++++-
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c   |  163 +++++++++++++++++++
+ 5 files changed, 479 insertions(+), 10 deletions(-)
+
+
+---- asoc/topic/ak4554 ---------------------
+commit b25f77815021ec6e7400a82c4984b9c80699ce80
+Author: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date:   Thu Jul 4 19:42:49 2013 -0700
+
+    ASoC: ak4554: add DT support
+    
+    Support for loading the ak4554 codec module via devicetree.
+    
+    Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+    Signed-off-by: Mark Brown <broonie@linaro.org>
+
+---- asoc/topic/rcar ------------------------
+commit 2460719c79854a3bebe569cbfbfa0b1caa1dc434
+Author: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date:   Sun Jul 28 18:59:25 2013 -0700
+
+    ASoC: rsnd: scu: cleanup empty functions
+    
+    This patch cleanups empty functions on scu
+    
+    Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+    Signed-off-by: Mark Brown <broonie@linaro.org>
+
+
+Best regards
+---
+Kuninori Morimoto
