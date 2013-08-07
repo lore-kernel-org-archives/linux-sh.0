@@ -1,67 +1,46 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Fri, 23 Aug 2013 14:41:29 +0000
-Subject: Re: [PATCH v2 1/4] clk: add common __clk_get(), __clk_put()	implementations
-Message-Id: <52177499.4020703@samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:30:17 +0000
+Subject: [GIT PULL 0/3] Second round of Renesas ARM-based SoC board updates for v3.12
+Message-Id: <cover.1375839719.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377020063-30213-1-git-send-email-s.nawrocki@samsung.com>
- <1377020063-30213-2-git-send-email-s.nawrocki@samsung.com>
- <20130820203034.GC17845@n2100.arm.linux.org.uk>
-In-Reply-To: <20130820203034.GC17845@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 08/20/2013 10:30 PM, Russell King - ARM Linux wrote:
-> On Tue, Aug 20, 2013 at 07:34:20PM +0200, Sylwester Nawrocki wrote:
->> +int __clk_get(struct clk *clk)
->> +{
->> +	if (WARN_ON((!clk)))
->> +		return 0;
-> 
-> This changes the behaviour of clk_get()
+Hi Olof, Hi Arnd,
 
-My bad, will remove that.
+please consider this second round of Renesas ARM-based SoC board updates
+for v3.12.
 
->> +
->> +	if (!try_module_get(clk->owner))
->> +		return 0;
-> 
-> If you want this to be safe against NULL pointers, just do this:
-> 
-> 	if (clk && !try_module_get(clk->owner))
-> 		return 0;
+This pull-request is based on renesas-boards-for-v3.12, which I have
+previously sent a pull-request for.
 
-Ok, that should work too.
 
->> +
->> +	return 1;
->> +}
->> +EXPORT_SYMBOL(__clk_get);
->> +
->> +void __clk_put(struct clk *clk)
->> +{
->> +	if (!clk || IS_ERR(clk))
->> +		return;
->> +
->> +	module_put(clk->owner);
-> 
-> Calling clk_put() with an error-pointer should be a Bad Thing and something
-> that shouldn't be encouraged, so trapping it is probably unwise.  So, just
-> do here:
-> 
-> 	if (clk)
-> 		module_put(clk->owner);
-> 
-> If we do have some callers of this with ERR pointers, then we could add:
-> 
-> 	if (WARN_ON_ONCE(IS_ERR(clk)))
-> 		return;
-> 
-> and remove it after a full kernel cycle or so.
+The following changes since commit f79d68da510bf1b95beff4d556b78d06801f11dc:
 
-I wouldn't be surprised to see some callers with ERR pointers, since
-clk_put() has been mostly a no op. I'm inclined to leave such a check
-temporarily, let's see if it catches any issues.
+  ARM: shmobile: ape6evm: add SDHI interfaces (2013-07-25 14:46:38 +0900)
 
-Thanks for review of the other patches.
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.12
+
+for you to fetch changes up to 4901e136aa5c35873701156c4c0af5b3c2c8faee:
+
+  ARM: shmobile: lager: enable Ether (2013-08-06 18:18:53 +0900)
+
+----------------------------------------------------------------
+Second round of Renesas ARM-based SoC board updates for v3.12
+
+* Enable ether on lager board
+* Enable GPIO LEDs and switches on ape6evm board
+
+----------------------------------------------------------------
+Simon Horman (3):
+      ARM: shmobile: ape6evm: support GPIO switches
+      ARM: shmobile: ape6evm: Add GPIO LEDs
+      ARM: shmobile: lager: enable Ether
+
+ arch/arm/mach-shmobile/board-ape6evm.c | 60 ++++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-lager.c   | 29 ++++++++++++++++
+ 2 files changed, 89 insertions(+)
