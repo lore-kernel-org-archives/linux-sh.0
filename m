@@ -1,97 +1,37 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:36:55 +0000
-Subject: [GIT PULL 1/2] ARM: shmobile: ape6evm: add "__initconst" annotations where needed
-Message-Id: <23f1751c5fef5c33e6a58ed2448774aeae436a39.1375842006.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:33 +0000
+Subject: [GIT PULL 06/26] ARM: shmobile: Use default ->init_time() on r8a73a4
+Message-Id: <58909ae593e8e6fc7e89d88ffe61effedf09389a.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375842006.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375842006.git.horms+renesas@verge.net.au>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-This patch adds __initconst markers to the platform data and resources,
-used on ape6evm as parameters to platform_device_register_resndata().
-The data is duplicated inside that function, therefore original data
-can be discarded after initialisation is completed.
+Leave ->init_time() set to NULL to use the default ARM behaviour.
 
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index ccf8b04..c5e6cba 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -44,7 +44,7 @@ static struct regulator_consumer_supply dummy_supplies[] = {
- };
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 2ee45d5..8949170 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -223,7 +223,6 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
  
- /* SMSC LAN9220 */
--static const struct resource lan9220_res[] = {
-+static const struct resource lan9220_res[] __initconst = {
- 	DEFINE_RES_MEM(0x08000000, 0x1000),
- 	{
- 		.start	= irq_pin(40), /* IRQ40 */
-@@ -52,7 +52,7 @@ static const struct resource lan9220_res[] = {
- 	},
- };
- 
--static const struct smsc911x_platform_config lan9220_data = {
-+static const struct smsc911x_platform_config lan9220_data __initconst = {
- 	.flags		= SMSC911X_USE_32BIT,
- 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
-@@ -73,39 +73,39 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  };
- 
- /* MMCIF */
--static struct sh_mmcif_plat_data mmcif0_pdata = {
-+static const struct sh_mmcif_plat_data mmcif0_pdata __initconst = {
- 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
- };
- 
--static struct resource mmcif0_resources[] = {
-+static const struct resource mmcif0_resources[] __initconst = {
- 	DEFINE_RES_MEM_NAMED(0xee200000, 0x100, "MMCIF0"),
- 	DEFINE_RES_IRQ(gic_spi(169)),
- };
- 
- /* SDHI0 */
--static struct sh_mobile_sdhi_info sdhi0_pdata = {
-+static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- };
- 
--static struct resource sdhi0_resources[] = {
-+static const struct resource sdhi0_resources[] __initconst = {
- 	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
- 	DEFINE_RES_IRQ(gic_spi(165)),
- };
- 
- /* SDHI1 */
--static struct sh_mobile_sdhi_info sdhi1_pdata = {
-+static const struct sh_mobile_sdhi_info sdhi1_pdata __initconst = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
- };
- 
--static struct resource sdhi1_resources[] = {
-+static const struct resource sdhi1_resources[] __initconst = {
- 	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
- 	DEFINE_RES_IRQ(gic_spi(166)),
- };
- 
--static const struct pinctrl_map ape6evm_pinctrl_map[] = {
-+static const struct pinctrl_map ape6evm_pinctrl_map[] __initconst = {
- 	/* SCIFA0 console */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
- 				  "scifa0_data", "scifa0"),
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+ 	.init_early	= r8a73a4_init_delay,
+-	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
 1.8.3.2
 
