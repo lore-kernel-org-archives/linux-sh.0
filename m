@@ -1,31 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 02 Aug 2013 01:01:59 +0000
-Subject: Re: [PATCH 0/2 v3] ARM: shmobile: r8a7778 USB Func support
-Message-Id: <8738qsaosb.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 Aug 2013 22:13:39 +0000
+Subject: [PATCH 02/05] ARM: shmobile: Use shmobile_smp_cpu_disable() on sh73a0
+Message-Id: <20130807221339.22251.99940.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130807221321.22251.22774.sendpatchset@w520>
+In-Reply-To: <20130807221321.22251.22774.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Simon
+Use shmobile_smp_cpu_disable() on sh73a0 since it
+allows CPU Hotplug of any CPU.
 
->  1 - 6 : r8a7778 cleanup patches
->  7 - 8 : r8a7779 cleanup patches
->  9     : BockW DT reference
->  A - B : BockW USB Func support
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-These patches are A-B part v3 patches for r8a7778/BockW
-These are based on renesas-devel-20130801v2
+ arch/arm/mach-shmobile/smp-sh73a0.c |    9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-Kuninori Morimoto (3):
-      ARM: shmobile: r8a7778: add usb phy power control function
-      ARM: shmobile: r8a7778: add USB Function clock
-      ARM: shmobile: bockw: add USB Function support
-
- arch/arm/mach-shmobile/board-bockw.c          |   81 ++++++++++++++++++++++++-
- arch/arm/mach-shmobile/clock-r8a7778.c        |    1 +
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   37 +++++++----
- 4 files changed, 107 insertions(+), 14 deletions(-)
+--- 0008/arch/arm/mach-shmobile/smp-sh73a0.c
++++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-07-29 22:21:29.000000000 +0900
+@@ -71,18 +71,11 @@ static void __init sh73a0_smp_prepare_cp
+ 	shmobile_smp_scu_prepare_cpus(max_cpus);
+ }
+ 
+-#ifdef CONFIG_HOTPLUG_CPU
+-static int sh73a0_cpu_disable(unsigned int cpu)
+-{
+-	return 0; /* CPU0 and CPU1 supported */
+-}
+-#endif /* CONFIG_HOTPLUG_CPU */
+-
+ struct smp_operations sh73a0_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
+ 	.smp_boot_secondary	= sh73a0_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_disable		= sh73a0_cpu_disable,
++	.cpu_disable		= shmobile_smp_cpu_disable,
+ 	.cpu_die		= shmobile_smp_scu_cpu_die,
+ 	.cpu_kill		= shmobile_smp_scu_cpu_kill,
+ #endif
