@@ -1,33 +1,66 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 07 Aug 2013 04:07:23 +0000
-Subject: [PATCH 5/5] ARM: shmobile: bockw defconfig: add Sound support
-Message-Id: <87wqnyi1oo.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:28:31 +0000
+Subject: [GIT PULL 07/19] ARM: shmobile: sh73a0: Rely on DT for SMP CPU info
+Message-Id: <5489cde560f2b13dc9fb34e2d7dfd09a69fa21b1.1375838900.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375838900.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
+
+Remove sh73a0 specific ->smp_init_cpus() callback and
+instead of relying on shmobile_smp_init_cpus() simply
+use DT for CPU core information.
+
+This assumes that DT_MACHINE_START is used which is
+the case when AG5EVM and Kota2 are removed.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/bockw_defconfig |    4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/smp-sh73a0.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 845f5cd..e9440fe 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -84,6 +84,10 @@ CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_SH_HSPI=y
-+CONFIG_SOUND=y
-+CONFIG_SND=y
-+CONFIG_SND_SOC=y
-+CONFIG_SND_SOC_RCAR=y
- CONFIG_USB=y
- CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
- CONFIG_USB_EHCI_HCD=y
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index d613113..1b3dc7c 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -62,6 +62,8 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
+ 
+ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ {
++	/* setup sh73a0 specific SCU base */
++	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
+ 	scu_enable(shmobile_scu_base);
+ 
+ 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
+@@ -74,14 +76,6 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+ }
+ 
+-static void __init sh73a0_smp_init_cpus(void)
+-{
+-	/* setup sh73a0 specific SCU base */
+-	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
+-
+-	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+-}
+-
+ #ifdef CONFIG_HOTPLUG_CPU
+ static int sh73a0_cpu_kill(unsigned int cpu)
+ {
+@@ -120,7 +114,6 @@ static int sh73a0_cpu_disable(unsigned int cpu)
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 
+ struct smp_operations sh73a0_smp_ops __initdata = {
+-	.smp_init_cpus		= sh73a0_smp_init_cpus,
+ 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
+ 	.smp_boot_secondary	= sh73a0_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
 -- 
-1.7.9.5
+1.8.3.2
 
