@@ -1,66 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:28:31 +0000
-Subject: [GIT PULL 07/19] ARM: shmobile: sh73a0: Rely on DT for SMP CPU info
-Message-Id: <5489cde560f2b13dc9fb34e2d7dfd09a69fa21b1.1375838900.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 07 Aug 2013 04:06:59 +0000
+Subject: [PATCH 3/5] ARM: shmobile: bockw: enable global use of FPGA
+Message-Id: <87zjsui1pb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375838900.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+This patch enables global use of FPGA,
+since it will be used from many devices.
 
-Remove sh73a0 specific ->smp_init_cpus() callback and
-instead of relying on shmobile_smp_init_cpus() simply
-use DT for CPU core information.
-
-This assumes that DT_MACHINE_START is used which is
-the case when AG5EVM and Kota2 are removed.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/smp-sh73a0.c | 11 ++---------
- 1 file changed, 2 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c |   15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index d613113..1b3dc7c 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -62,6 +62,8 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 255e97e..56bc9cc 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -36,6 +36,10 @@
+ #include <mach/r8a7778.h>
+ #include <asm/mach/arch.h>
  
- static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- {
-+	/* setup sh73a0 specific SCU base */
-+	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
- 	scu_enable(shmobile_scu_base);
++#define FPGA	0x18200000
++#define IRQ0MR	0x30
++static void __iomem *fpga;
++
+ /*
+  *	CN9(Upper side) SCIF/RCAN selection
+  *
+@@ -194,8 +198,6 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 				  "sdhi0_wp", "sdhi0"),
+ };
  
- 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
-@@ -74,14 +76,6 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
- }
+-#define FPGA	0x18200000
+-#define IRQ0MR	0x30
+ #define PFC	0xfffc0000
+ #define PUPR4	0x110
+ static void __init bockw_init(void)
+@@ -229,8 +231,8 @@ static void __init bockw_init(void)
  
--static void __init sh73a0_smp_init_cpus(void)
--{
--	/* setup sh73a0 specific SCU base */
--	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
--
--	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
--}
--
- #ifdef CONFIG_HOTPLUG_CPU
- static int sh73a0_cpu_kill(unsigned int cpu)
- {
-@@ -120,7 +114,6 @@ static int sh73a0_cpu_disable(unsigned int cpu)
- #endif /* CONFIG_HOTPLUG_CPU */
  
- struct smp_operations sh73a0_smp_ops __initdata = {
--	.smp_init_cpus		= sh73a0_smp_init_cpus,
- 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
- 	.smp_boot_secondary	= sh73a0_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
+ 	/* for SMSC */
+-	base = ioremap_nocache(FPGA, SZ_1M);
+-	if (base) {
++	fpga = ioremap_nocache(FPGA, SZ_1M);
++	if (fpga) {
+ 		/*
+ 		 * CAUTION
+ 		 *
+@@ -238,10 +240,9 @@ static void __init bockw_init(void)
+ 		 * it should be cared in the future
+ 		 * Now, it is assuming IRQ0 was used only from SMSC.
+ 		 */
+-		u16 val = ioread16(base + IRQ0MR);
++		u16 val = ioread16(fpga + IRQ0MR);
+ 		val &= ~(1 << 4); /* enable SMSC911x */
+-		iowrite16(val, base + IRQ0MR);
+-		iounmap(base);
++		iowrite16(val, fpga + IRQ0MR);
+ 
+ 		regulator_register_fixed(0, dummy_supplies,
+ 					 ARRAY_SIZE(dummy_supplies));
 -- 
-1.8.3.2
+1.7.9.5
 
