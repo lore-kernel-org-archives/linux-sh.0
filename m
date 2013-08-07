@@ -1,44 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 24 Aug 2013 21:36:38 +0000
-Subject: [PATCH v4 2/2] ARM: shmobile: BOCK-W: enable DMA for SDHI0
-Message-Id: <201308250136.38922.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:42 +0000
+Subject: [GIT PULL 25/26] ARM: shmobile: kzm9d: remove nfsroot settings from bootargs
+Message-Id: <6de69131854501dcc9585d44087430584f8ccdf4.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308250133.17530.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308250133.17530.sergei.shtylyov@cogentembedded.com>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Max Filippov <max.filippov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
-driver.
+NFS detail settings like "nfsroot=,rsize@96,wsize@96" are no longer needed
 
-Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-[Sergei: removed #include <mach/dma.h>]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 3:
-- resolved reject.
+ arch/arm/boot/dts/emev2-kzm9d-reference.dts | 2 +-
+ arch/arm/boot/dts/emev2-kzm9d.dts           | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-Changes in version 2:
-- removed #include <mach/dma.h>;
-- refreshed the patch.
-
- arch/arm/mach-shmobile/board-bockw.c |    2 ++
- 1 file changed, 2 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -89,6 +89,8 @@ static struct rcar_phy_platform_data usb
+diff --git a/arch/arm/boot/dts/emev2-kzm9d-reference.dts b/arch/arm/boot/dts/emev2-kzm9d-reference.dts
+index bed676b..cceefda 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d-reference.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d-reference.dts
+@@ -21,7 +21,7 @@
+ 	};
  
- /* SDHI */
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
-+	.dma_slave_tx	= HPBDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= HPBDMA_SLAVE_SDHI0_RX,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ 	chosen {
+-		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
++		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+ 	};
+ 
+ 	reg_1p8v: regulator@0 {
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index dda13bc..f92e812 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -21,6 +21,6 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
++		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+ 	};
+ };
+-- 
+1.8.3.2
+
