@@ -1,166 +1,108 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 Aug 2013 05:14:58 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7779: Update early timer initialisation order
-Message-Id: <20130829051457.GA21792@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 07 Aug 2013 16:19:57 +0000
+Subject: [PATCH 5/5] ARM: shmobile: lager: Add Display Unit support
+Message-Id: <1375892397-5822-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375952357-22938-1-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoSpOWOp3GhsvvwQwyWtPi3wXG0MmECkf90SPBRoPmq4DQ@mail.gmail.com>
- <20130822073904.GB32091@verge.net.au>
- <CANqRtoSionozCqag0nxRbmC19ic5RUb7DOpeaGHThjNoeRpBOg@mail.gmail.com>
- <20130829014627.GD20425@verge.net.au>
- <CANqRtoRsG_4=Gk2myunwVvRY0opmzy9xAy4ZCdpFy5jgeE1RUQ@mail.gmail.com>
- <20130829043603.GB20593@verge.net.au>
-In-Reply-To: <20130829043603.GB20593@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Aug 29, 2013 at 01:36:04PM +0900, Simon Horman wrote:
-> On Thu, Aug 29, 2013 at 01:13:58PM +0900, Magnus Damm wrote:
-> > Hi Simon,
-> > 
-> > On Thu, Aug 29, 2013 at 10:46 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Wed, Aug 28, 2013 at 03:58:39PM +0900, Magnus Damm wrote:
-> > >> Hi Simon,
-> > >>
-> > >> On Thu, Aug 22, 2013 at 4:39 PM, Simon Horman <horms@verge.net.au> wrote:
-> > >> > On Fri, Aug 09, 2013 at 05:37:39PM +0900, Magnus Damm wrote:
-> > >> >> On Thu, Aug 8, 2013 at 5:59 PM, Simon Horman <horms+renesas@verge.net.au> wrote:
-> > >> >> > a894fcc2d01a89e6fe3da0845a4d80a5312e1124 ("ARM: smp_twd: Divorce smp_twd
-> > >> >> > from local timer API") altered twd_local_timer_common_register() so that it
-> > >> >> > may make use of late_timer_init.
-> > >> >> >
-> > >> >> > This is problematic on marzen with Magnus's recent patch "ARM: shmobile:
-> > >> >> > marzen: Switch to DT_MACHINE_START" which switches marzen around to enable
-> > >> >> > USE_OF and thus shmobile_timer_init(), which is registered as
-> > >> >> > late_time_init by shmobile_earlytimer_init() stops being a no-op.
-> > >> >> >
-> > >> >> > As a work-around I have updated r8a7779_earlytimer_init() so that
-> > >> >> > shmobile_earlytimer_init() is called after r8a7779_register_twd().
-> > >> >> > Or in other words, the shmobile_earlytimer_init() setting of
-> > >> >> > late_time_init overwrites that of twd_local_timer_common_register().
-> > >> >> >
-> > >> >> > Cc: Stephen Boyd <sboyd@codeaurora.org>
-> > >> >> > Cc: Magnus Damm <magnus.damm@gmail.com>
-> > >> >> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > >> >> >
-> > >> >> > ---
-> > >> >> >
-> > >> >> > This patch was created on top of a merge of next-20130807 from the
-> > >> >> > linux-next tree and renesas-next-20130807 from my renesas tree.
-> > >> >> >
-> > >> >> > I expect the problem describe above to be present in the
-> > >> >> > next version of linux-next as it will include renesas-next-20130807.
-> > >> >> >
-> > >> >> > I rather suspect that this fix is just papers over the problem
-> > >> >> > at hand rather than fixing it. But it does at least fix the problem
-> > >> >> > to the extent where the marzen board at least boots.
-> > >> >> >
-> > >> >> > For reference the output of /proc/interrupts after such a boot is below.
-> > >> >> >
-> > >> >> >             CPU0       CPU1       CPU2       CPU3
-> > >> >> >   29:          0       9365       9363       9359       GIC   29  twd
-> > >> >> >   59:          0          0          0          0       GIC   59  renesas_intc_irqpin.0
-> > >> >> >   60:          5          0          0          0       GIC   60  renesas_intc_irqpin.0
-> > >> >> >   61:          0          0          0          0       GIC   61  renesas_intc_irqpin.0
-> > >> >> >   62:          0          0          0          0       GIC   62  renesas_intc_irqpin.0
-> > >> >> >   64:        278          0          0          0       GIC   64  sh_tmu.0
-> > >> >> >   76:          1          0          0          0       GIC   76  ehci_hcd:usb1, ohci_hcd:usb3
-> > >> >> >   77:          1          0          0          0       GIC   77  ehci_hcd:usb2, ohci_hcd:usb4
-> > >> >> >  111:          0          0          0          0       GIC  111  i2c-rcar.0
-> > >> >> >  112:          0          0          0          0       GIC  112  i2c-rcar.2
-> > >> >> >  113:          0          0          0          0       GIC  113  i2c-rcar.3
-> > >> >> >  114:          0          0          0          0       GIC  114  i2c-rcar.1
-> > >> >> >  122:         45          0          0          0       GIC  122  sh-sci.2:mux
-> > >> >> >  132:          0          0          0          0       GIC  132  sata_rcar
-> > >> >> >  173:          0          0          0          0       GIC  173  gpio_rcar.0
-> > >> >> >  174:          0          0          0          0       GIC  174  gpio_rcar.1
-> > >> >> >  175:          0          0          0          0       GIC  175  gpio_rcar.2
-> > >> >> >  176:          0          0          0          0       GIC  176  gpio_rcar.3
-> > >> >> >  177:          0          0          0          0       GIC  177  gpio_rcar.4
-> > >> >> >  178:          0          0          0          0       GIC  178  gpio_rcar.5
-> > >> >> >  179:          0          0          0          0       GIC  179  gpio_rcar.6
-> > >> >> > 2001:          5          0          0          0  renesas_intc_irqpin.0    1  eth0
-> > >> >> > IPI0:          0          0          0          0  CPU wakeup interrupts
-> > >> >> > IPI1:          0          0          0          0  Timer broadcast interrupts
-> > >> >> > IPI2:        314        340         58         33  Rescheduling interrupts
-> > >> >> > IPI3:         22         56         34         56  Function call interrupts
-> > >> >> > IPI4:          0          0          0          0  Single function call interrupts
-> > >> >> > IPI5:          0          0          0          0  CPU stop interrupts
-> > >> >> >  Err:          0
-> > >> >> > ---
-> > >> >> >  arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
-> > >> >> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > >> >> >
-> > >> >> > diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-> > >> >> > index ddee4aa..b0f56d6 100644
-> > >> >> > --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> > >> >> > +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> > >> >> > @@ -597,8 +597,8 @@ void __init __weak r8a7779_register_twd(void) { }
-> > >> >> >  void __init r8a7779_earlytimer_init(void)
-> > >> >> >  {
-> > >> >> >         r8a7779_clock_init();
-> > >> >> > -       shmobile_earlytimer_init();
-> > >> >> >         r8a7779_register_twd();
-> > >> >> > +       shmobile_earlytimer_init();
-> > >> >> >  }
-> > >> >> >
-> > >> >> >  void __init r8a7779_add_early_devices(void)
-> > >> >> > --
-> > >> >> > 1.8.3.2
-> > >> >> >
-> > >> >>
-> > >> >> Hi Simon,
-> > >> >>
-> > >> >> Thanks for tracking down this issue. I think your patch looks fine to
-> > >> >> me.
-> > >> >
-> > >> > Thanks, could I get an acked-by ?
-> > >>
-> > >> Yes, of course.
-> > >>
-> > >> Acked-by: Magnus Damm <damm@opensource.se>
-> > >>
-> > >> >> Regarding Marzen DT reference, I don't think TWD is used there yet
-> > >> >> so I doubt that it will have the same problem as the C version of the
-> > >> >> marzen board code.
-> > >> >
-> > >> > Agreed.
-> > >> >
-> > >> >> One related worry is that sh73a0 may have the same
-> > >> >> issue - or rather - judging by the code in sh73a0_earlytimer_init() it
-> > >> >> most certainly is affected by this too. So KZM9G should also fail as
-> > >> >> Marzen which means we need to fix sh73a0 too.
-> > >> >
-> > >> > Curiously I do not seem to see the problem on the kzm9d.
-> > >> > Would you like me to prepare a patch anyway?
-> > >>
-> > >> I meant kzm9g, not kzm9d. =)
-> > >
-> > > I meant kzm9g too.
-> > >
-> > >> I believe emev2 and kzm9d is most likely OK as-is. (except for the STI
-> > >> broadcast issue that still is on my TODO)
-> > >>
-> > >> However sh73a0 and kzm9g probably needs a similar fix as this patch.
-> > >> When you have time, can you please check?
-> > >
-> > > I am not seeing the problem on kzm9g.
-> > 
-> > That's odd. Isn't the early timer init order the same? Is the timer
-> > driver and kernel configuration for timer portion the same when you
-> > compare?
-> 
-> Yes it is odd.
-> 
-> Are there any CONFIG options in particular that I should check.
-> 
-> I am using the defconfigs for my testing.
+Only the VGA output is currently supported.
 
-[ some discussion occurred off-list ]
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/configs/lager_defconfig     |  2 ++
+ arch/arm/mach-shmobile/board-lager.c | 42 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
 
-It seems that the sh73a0 SoC, which is used by the kzm9g, already uses the
-order proposed by this patch which I believe explains why it does not
-exhibit the problem described above. In short, the sh73a0 seems to be in
-order and only the r8a7779 needs fixing.
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index e777ef2..35bff5e 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -89,6 +89,8 @@ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_DRM=y
++CONFIG_DRM_RCAR_DU=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 4872939..357f329 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -28,6 +28,7 @@
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+@@ -38,6 +39,38 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* DU */
++static struct rcar_du_encoder_data lager_du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_VGA,
++		.output = RCAR_DU_OUTPUT_DPAD0,
++	}, {
++		.type = RCAR_DU_ENCODER_NONE,
++		.output = RCAR_DU_OUTPUT_LVDS1,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
++};
++
++static struct rcar_du_platform_data lager_du_pdata = {
++	.encoders = lager_du_encoders,
++	.num_encoders = ARRAY_SIZE(lager_du_encoders),
++};
++
+ /* LEDS */
+ static struct gpio_led lager_leds[] = {
+ 	{
+@@ -107,6 +140,13 @@ static struct resource ether_resources[] __initdata = {
+ };
+ 
+ static const struct pinctrl_map lager_pinctrl_map[] = {
++	/* DU (CN10: ARGB0, CN13: LVDS) */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_rgb666", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_sync_1", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_clk_out_0", "du"),
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+ 				  "scif0_data", "scif0"),
+@@ -138,6 +178,8 @@ static void __init lager_add_standard_devices(void)
+ 	r8a7790_pinmux_init();
+ 
+ 	r8a7790_add_standard_devices();
++	r8a7790_add_du_device(&lager_du_pdata);
++
+ 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
+ 				      &lager_leds_pdata,
+ 				      sizeof(lager_leds_pdata));
+-- 
+1.8.1.5
+
