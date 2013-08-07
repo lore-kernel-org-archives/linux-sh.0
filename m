@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:39:31 +0000
-Subject: [PATCH 2/3] ARM: shmobile: Rename to r8a7790_init_early()
-Message-Id: <d5aa61c56ef4e965a9190eef3d8d8fb6eb6cadd4.1377651687.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 Aug 2013 22:55:50 +0000
+Subject: [PATCH 02/02] ARM: shmobile: Add r8a73a4 CA15 CPU cores and APMU as DTS
+Message-Id: <20130807225550.9856.13251.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377651687.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377651687.git.horms+renesas@verge.net.au>
+References: <20130807225531.9856.18974.sendpatchset@w520>
+In-Reply-To: <20130807225531.9856.18974.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,80 +12,48 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Rename r8a7790_init_delay() into r8a7790_init_early()
-to make the function name show that more than just
-delay setup may happen in the future.
+Add CA15 CPU cores to r8a73a4 for a total of 4 x CA15
+and also add an APMU node for SMP power management.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 2 +-
- arch/arm/mach-shmobile/board-lager.c           | 2 +-
- arch/arm/mach-shmobile/include/mach/r8a7790.h  | 2 +-
- arch/arm/mach-shmobile/setup-r8a7790.c         | 4 ++--
- 4 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 9c316a1..2856f51 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -38,7 +38,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(LAGER_DT, "lager")
--	.init_early	= r8a7790_init_delay,
-+	.init_early	= r8a7790_init_early,
- 	.init_machine	= lager_add_standard_devices,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= lager_boards_compat_dt,
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index d0da052..b56422d 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -102,7 +102,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(LAGER_DT, "lager")
--	.init_early	= r8a7790_init_delay,
-+	.init_early	= r8a7790_init_early,
- 	.init_time	= r8a7790_timer_init,
- 	.init_machine	= lager_add_standard_devices,
- 	.dt_compat	= lager_boards_compat_dt,
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 788d559..177a837 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -5,7 +5,7 @@ void r8a7790_add_standard_devices(void);
- void r8a7790_add_dt_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
--void r8a7790_init_delay(void);
-+void r8a7790_init_early(void);
- void r8a7790_timer_init(void);
- 
- #define MD(nr) BIT(nr)
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index d0f5c9f..a42d1f6 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -267,7 +267,7 @@ void __init r8a7790_timer_init(void)
- 	clocksource_of_init();
- }
- 
--void __init r8a7790_init_delay(void)
-+void __init r8a7790_init_early(void)
- {
- #ifndef CONFIG_ARM_ARCH_TIMER
- 	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
-@@ -282,7 +282,7 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
--	.init_early	= r8a7790_init_delay,
-+	.init_early	= r8a7790_init_early,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= r8a7790_boards_compat_dt,
- MACHINE_END
--- 
-1.8.3.2
+ arch/arm/boot/dts/r8a73a4.dtsi |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
+--- 0001/arch/arm/boot/dts/r8a73a4.dtsi
++++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-08-07 19:20:37.000000000 +0900
+@@ -25,6 +25,33 @@
+ 			reg = <0>;
+ 			clock-frequency = <1500000000>;
+ 		};
++
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <1>;
++			clock-frequency = <1500000000>;
++		};
++
++		cpu2: cpu@2 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <2>;
++			clock-frequency = <1500000000>;
++		};
++
++		cpu3: cpu@3 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <3>;
++			clock-frequency = <1500000000>;
++		};
++	};
++
++	apmu@e6152000 {
++		compatible = "renesas,r8a73a4-apmu", "renesas,apmu";
++		reg = <0 0xe6152000 0 0x88>;
++		cpus = <&cpu0 &cpu1 &cpu2 &cpu3>;
+ 	};
+ 
+ 	gic: interrupt-controller@f1001000 {
