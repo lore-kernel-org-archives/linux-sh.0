@@ -1,59 +1,82 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:39:20 +0000
-Subject: [GIT PULL 0/3] Fourth round of Renesas ARM based SoC cleanups for v3.12
-Message-Id: <cover.1377651687.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:39:30 +0000
+Subject: [GIT PULL 4/9] ARM: shmobile: Use shared SCU SMP boot code on emev2
+Message-Id: <0da60225dee270a4a4b86c08509e772e78961b82.1375841380.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375841380.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Kevin, Hi Olof, Hi Arnd,
+From: Magnus Damm <damm@opensource.se>
 
-please consider this fourth round of Renesas ARM based SoC cleanups for v3.12.
+Use shared SCU code on emev2 for SMP boot.
 
-It is based on renesas-cleanup3-for-v3.12 ("Third round of ARM based SoC SMP updates for v3.12") which you have previously pulled.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Makefile    |  2 +-
+ arch/arm/mach-shmobile/smp-emev2.c | 19 ++++++++++---------
+ 2 files changed, 11 insertions(+), 10 deletions(-)
 
-I apologise that this and other pull requests that I will send today
-are rather later in the cycle than I would like. This is primarily due
-to a combination of my summer vacation and wanting to let the patches
-sit in next for a while.
-
-
-The following changes since commit 282b583f752f996ee5c33b0cdc18adf3b5094ee0:
-
-  ARM: shmobile: sh73a0: Remove global GPIO_NR definition (2013-08-06 18:07:13 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup4-for-v3.12
-
-for you to fetch changes up to 3cf627b06ffc8f89548941e9cb8e8f1e0fe0f5c5:
-
-  ARM: shmobile: r8a7790: Constify platform data and resources (2013-08-22 10:41:56 +0900)
-
-----------------------------------------------------------------
-Fourth round of Renesas ARM based SoC cleanups for v3.12
-
-* Constify platform data for r8a7790 SoC
-* Rename r8a7{790,3a4}_init_delay as r8a7{790,3a4}_init_early
-  to better reflect their usage
-
-----------------------------------------------------------------
-Laurent Pinchart (1):
-      ARM: shmobile: r8a7790: Constify platform data and resources
-
-Magnus Damm (2):
-      ARM: shmobile: Rename to r8a73a4_init_early()
-      ARM: shmobile: Rename to r8a7790_init_early()
-
- arch/arm/mach-shmobile/board-ape6evm-reference.c |  2 +-
- arch/arm/mach-shmobile/board-ape6evm.c           |  2 +-
- arch/arm/mach-shmobile/board-lager-reference.c   |  2 +-
- arch/arm/mach-shmobile/board-lager.c             |  2 +-
- arch/arm/mach-shmobile/include/mach/r8a73a4.h    |  2 +-
- arch/arm/mach-shmobile/include/mach/r8a7790.h    |  2 +-
- arch/arm/mach-shmobile/setup-r8a73a4.c           |  4 ++--
- arch/arm/mach-shmobile/setup-r8a7790.c           | 25 ++++++++++++------------
- 8 files changed, 21 insertions(+), 20 deletions(-)
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 42bbf45..d7b1c71 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -19,7 +19,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+ smp-y				:= platsmp.o headsmp.o
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+-smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
++smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
+ 
+ # IRQ objects
+ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
+index 1bf8bc7..d1c101d 100644
+--- a/arch/arm/mach-shmobile/smp-emev2.c
++++ b/arch/arm/mach-shmobile/smp-emev2.c
+@@ -34,6 +34,12 @@
+ 
+ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
++	int ret;
++
++	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
++	if (ret)
++		return ret;
++
+ 	arch_send_wakeup_ipi_mask(cpumask_of(cpu_logical_map(cpu)));
+ 	return 0;
+ }
+@@ -42,21 +48,16 @@ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	void __iomem *smu;
+ 
+-	/* setup EMEV2 specific SCU base, enable */
+-	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+-	scu_enable(shmobile_scu_base);
+-
+-	/* Tell ROM loader about our vector (in headsmp-scu.S, headsmp.S) */
++	/* Tell ROM loader about our vector (in headsmp.S) */
+ 	smu = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
+ 	if (smu) {
+ 		iowrite32(__pa(shmobile_boot_vector), smu + SMU_GENERAL_REG0);
+ 		iounmap(smu);
+ 	}
+-	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
+-	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
+ 
+-	/* enable cache coherency on booting CPU */
+-	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
++	/* setup EMEV2 specific SCU bits */
++	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
++	shmobile_smp_scu_prepare_cpus(max_cpus);
+ }
+ 
+ struct smp_operations emev2_smp_ops __initdata = {
+-- 
+1.8.3.2
 
