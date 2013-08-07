@@ -1,38 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 31 Aug 2013 23:22:05 +0000
-Subject: [PATCH 3/4] ARM: shmobile: bockw-reference: add Ether DT support
-Message-Id: <201309010322.06135.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:24:18 +0000
+Subject: [GIT PULL 1/4] ARM: shmobile: marzen: Enable ARM_APPENDED_DTB in defconfig
+Message-Id: <8c167a825d56e9946bb54d91017a53efb04ffdaf.1375842392.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
+References: <cover.1375842392.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375842392.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the BOCK-W board dependent part of the Ether device node. 
+"ARM: shmobile: marzen: Switch to DT_MACHINE_START" moves marzen
+over to use DT_MACHINE_START, however, the prevalent boot loader
+does not support booting with a separate dtb. Thus, it makes
+sense to use ARM_APPENDED_DTB by default.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This is consistent with other shmobile defconfigs.
 
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/configs/marzen_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-Index: renesas/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ renesas/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -30,3 +30,14 @@
- 		reg = <0x60000000 0x10000000>;
- 	};
- };
-+
-+&ether {
-+	status = "ok";
-+	phy-mode = "rmii";
-+	phy-handle = <&phy1>;
-+	renesas,no-ether-link;
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+	};
-+};
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 494e70a..82e4040 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -29,6 +29,7 @@ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
++CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
+ CONFIG_CMDLINE_FORCE=y
+ CONFIG_KEXEC=y
+-- 
+1.8.3.2
+
