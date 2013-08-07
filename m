@@ -1,37 +1,80 @@
-From: Chen Gang <gang.chen@asianux.com>
-Date: Thu, 01 Aug 2013 02:52:36 +0000
-Subject: [Suggestion] sh: about the warnings for "overflow in branch to syscall_exit_work"
-Message-Id: <51F9CD74.1000404@asianux.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:31 +0000
+Subject: [GIT PULL 04/26] ARM: shmobile: r8a7778: cleanup registration of i2c
+Message-Id: <1fd4eecd480b82e11900ae6a8f44d92efeb96004.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello Maintainers:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I find some warnings for sh, can they cause real world issue ?
+i2c-rcar driver which doesn't need platform data at the time of
+registration can be registerd on SoC.
+And, registering these drivers in the SoC code can avoid
+unwanted device numbering issue.
+(ex. the i2c3 device number will be i2c.0 if i2c3 only registered)
+This patch registers it on SoC code as cleanup C code
 
-It is also found by Geert Uytterhoeven, please ref:
-http://lkml.indiana.edu/hypermail/linux/kernel/1301.3/02181.html
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-bockw.c          | 1 -
+ arch/arm/mach-shmobile/include/mach/r8a7778.h | 1 -
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 6 +++++-
+ 3 files changed, 5 insertions(+), 3 deletions(-)
 
-The related warnings (with allmodconfig):
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 1c876ab..d7d3427 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -200,7 +200,6 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_ether_device(&ether_platform_data);
+-	r8a7778_add_i2c_device(0);
+ 	r8a7778_add_hspi_device(0);
+ 
+ 	i2c_register_board_info(0, i2c0_devices,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index aaa0544..9874511 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -23,7 +23,6 @@
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+-extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
+ extern void r8a7778_add_dt_devices(void);
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index c585ee0..ce3b54d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -250,7 +250,7 @@ static struct resource i2c_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_iid(0x6d)),
+ };
+ 
+-void __init r8a7778_add_i2c_device(int id)
++static void __init r8a7778_register_i2c(int id)
+ {
+ 	BUG_ON(id < 0 || id > 3);
+ 
+@@ -308,6 +308,10 @@ void __init r8a7778_add_dt_devices(void)
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
++	r8a7778_register_i2c(0);
++	r8a7778_register_i2c(1);
++	r8a7778_register_i2c(2);
++	r8a7778_register_i2c(3);
+ }
+ 
+ void __init r8a7778_init_late(void)
+-- 
+1.8.3.2
 
-    AS      arch/sh/kernel/cpu/sh2/entry.o
-  arch/sh/kernel/cpu/sh2/../../entry-common.S: Assembler messages:
-  arch/sh/kernel/cpu/sh2/../../entry-common.S:89: Warning: overflow in branch to __restore_all; converted into longer instruction sequence
-  arch/sh/kernel/cpu/sh2/../../entry-common.S:210: Warning: overflow in branch to syscall_call; converted into longer instruction sequence
-  arch/sh/kernel/cpu/sh2/../../entry-common.S:349: Warning: overflow in branch to syscall_trace_entry; converted into longer instruction sequence
-  arch/sh/kernel/cpu/sh2/../../entry-common.S:351: Warning: overflow in branch to syscall_trace_entry; converted into longer instruction sequence
-  arch/sh/kernel/cpu/sh2/../../entry-common.S:375: Warning: overflow in branch to syscall_exit_work; converted into longer instruction sequence
-  arch/sh/kernel/cpu/sh2/../../entry-common.S:378: Warning: overflow in branch to syscall_exit_work; converted into longer instruction sequence
-
-For me, I guess it can cause real world issue (and it seems a "long
-time existence" issue)
-
-Welcome any members suggestions or completions.
-
-
-Thanks.
---
-Chen Gang.
