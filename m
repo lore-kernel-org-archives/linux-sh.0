@@ -1,366 +1,72 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 07 Aug 2013 04:07:13 +0000
-Subject: [PATCH 4/5] ARM: shmobile: bockw: add R-Car sound support (PIO)
-Message-Id: <87y58ei1oy.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:30:23 +0000
+Subject: [GIT PULL 1/3] ARM: shmobile: ape6evm: support GPIO switches
+Message-Id: <5c6db1a421c6ceef199a956c7e0c1244ea6dfef7.1375839719.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375839719.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375839719.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch enables R-Car sound,
-AK4643 (CN19) and AK4554 (CN20/CN21) codec chip
-on Bock-W.
+The ape6evm board has switches S16 - S23 wired up to GPIO pins.
+This patch allows access to those pins as gpio-keys.
 
-But, it supports PIO transfer only at this point.
-User can check sound settings (Dip-switch/PFC etc)
-via this patch, but will get under/over flow error
-when playback/capture.
-Because PIO transfer via SSI will be interrupted
-"sampling rate" times per 1 second.
-
-DMA transfer will be supported when HPB-DMAC was
-enabled on r8a7778.
-
-You will notice strange ALSA sound card HW
-numbering on Bock-W board.
-This came from AK4554 strange format on playback/capture.
-The format on playback/capture is same on "normal" codec chip,
-but AK4554 was different.
-Because of that, AK4554 playback/capture are
-registered as a different sound card.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig       |    2 +
- arch/arm/mach-shmobile/board-bockw.c |  262 +++++++++++++++++++++++++++++++++-
- 2 files changed, 263 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-ape6evm.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 1f94c31..f987216 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -162,6 +162,8 @@ config MACH_BOCKW
- 	select RENESAS_INTC_IRQPIN
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select USE_OF
-+	select SND_SOC_AK4554 if SND_SIMPLE_CARD
-+	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 
- config MACH_BOCKW_REFERENCE
- 	bool "BOCK-W  - Reference Device Tree Implementation"
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 56bc9cc..f4af59b 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -35,9 +35,12 @@
- #include <mach/irqs.h>
- #include <mach/r8a7778.h>
- #include <asm/mach/arch.h>
-+#include <sound/rcar_snd.h>
-+#include <sound/simple_card.h>
- 
- #define FPGA	0x18200000
- #define IRQ0MR	0x30
-+#define COMCTLR	0x101c
- static void __iomem *fpga;
- 
- /*
-@@ -65,6 +68,35 @@ static void __iomem *fpga;
-  * SW19	(MMC)	1 pin
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index ccf8b04..677752c 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -19,6 +19,8 @@
   */
  
-+/*
-+ *	SSI settings
-+ *
-+ * SW45: 1-4 side	(SSI5 out, ROUT/LOUT CN19 Mid)
-+ * SW46: 1101		(SSI6 Recorde)
-+ * SW47: 1110		(SSI5 Playback)
-+ * SW48: 11		(Recorde power)
-+ * SW49: 1		(SSI slave mode)
-+ * SW50: 1111		(SSI7, SSI8)
-+ * SW51: 1111		(SSI3, SSI4)
-+ * SW54: 1pin		(ak4554 FPGA control)
-+ * SW55: 1		(CLKB is 24.5760MHz)
-+ * SW60: 1pin		(ak4554 FPGA control)
-+ * SW61: 3pin		(use X11 clock)
-+ * SW78: 3-6		(ak4642 connects I2C0)
-+ *
-+ * You can use sound as
-+ *
-+ * hw0: CN19: SSI56-AK4643
-+ * hw1: CN21: SSI3-AK4554(playback)
-+ * hw2: CN21: SSI4-AK4554(capture)
-+ * hw3: CN20: SSI7-AK4554(playback)
-+ * hw4: CN20: SSI8-AK4554(capture)
-+ *
-+ * this command is required when playback on hw0.
-+ *
-+ * # amixer set "LINEOUT Mixer DACL" on
-+ */
+ #include <linux/gpio.h>
++#include <linux/gpio_keys.h>
++#include <linux/input.h>
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/mfd/tmio.h>
+@@ -37,6 +39,24 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* GPIO KEY */
++#define GPIO_KEY(c, g, d, ...) \
++	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
++
++static struct gpio_keys_button gpio_buttons[] = {
++	GPIO_KEY(KEY_0,			324,	"S16"),
++	GPIO_KEY(KEY_MENU,		325,	"S17"),
++	GPIO_KEY(KEY_HOME,		326,	"S18"),
++	GPIO_KEY(KEY_BACK,		327,	"S19"),
++	GPIO_KEY(KEY_VOLUMEUP,		328,	"S20"),
++	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
++};
++
++static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
++	.buttons	= gpio_buttons,
++	.nbuttons	= ARRAY_SIZE(gpio_buttons),
++};
 +
  /* Dummy supplies, where voltage doesn't matter */
  static struct regulator_consumer_supply dummy_supplies[] = {
  	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-@@ -121,7 +153,9 @@ static struct sh_eth_plat_data ether_platform_data __initdata = {
- static struct i2c_board_info i2c0_devices[] = {
- 	{
- 		I2C_BOARD_INFO("rx8581", 0x51),
--	},
-+	}, {
-+		I2C_BOARD_INFO("ak4643", 0x12),
-+	}
- };
- 
- /* HSPI*/
-@@ -165,7 +199,201 @@ static struct sh_mmcif_plat_data sh_mmcif_plat __initdata = {
- 			  MMC_CAP_NEEDS_POLL,
- };
- 
-+/* Sound */
-+static struct resource rsnd_resources[] __initdata = {
-+	[RSND_GEN1_SRU] = DEFINE_RES_MEM(0xffd90000, 0x1000),
-+	[RSND_GEN1_SSI] = DEFINE_RES_MEM(0xffd91000, 0x1240),
-+	[RSND_GEN1_ADG] = DEFINE_RES_MEM(0xfffe0000, 0x24),
-+};
-+
-+static struct rsnd_ssi_platform_info rsnd_ssi[] = {
-+	RSND_SSI_UNUSED, /* SSI 0 */
-+	RSND_SSI_UNUSED, /* SSI 1 */
-+	RSND_SSI_UNUSED, /* SSI 2 */
-+	RSND_SSI_SET(1, 0, gic_iid(0x85), RSND_SSI_PLAY),
-+	RSND_SSI_SET(2, 0, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE | RSND_SSI_CLK_FROM_ADG),
-+	RSND_SSI_SET(0, 0, gic_iid(0x86), RSND_SSI_PLAY),
-+	RSND_SSI_SET(0, 0, gic_iid(0x86), 0),
-+	RSND_SSI_SET(3, 0, gic_iid(0x86), RSND_SSI_PLAY),
-+	RSND_SSI_SET(4, 0, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE | RSND_SSI_CLK_FROM_ADG),
-+};
-+
-+static struct rsnd_scu_platform_info rsnd_scu[9] = {
-+	/* no member at this point */
-+};
-+
-+enum {
-+	AK4554_34 = 0,
-+	AK4643_56,
-+	AK4554_78,
-+	SOUND_MAX,
-+};
-+
-+static int rsnd_codec_power(int id, int enable)
-+{
-+	static int sound_user[SOUND_MAX] = {0, 0, 0};
-+	int *usr = NULL;
-+	u32 bit;
-+
-+	switch (id) {
-+	case 3:
-+	case 4:
-+		usr = sound_user + AK4554_34;
-+		bit = (1 << 10);
-+		break;
-+	case 5:
-+	case 6:
-+		usr = sound_user + AK4643_56;
-+		bit = (1 << 6);
-+		break;
-+	case 7:
-+	case 8:
-+		usr = sound_user + AK4554_78;
-+		bit = (1 << 7);
-+		break;
-+	}
-+
-+	if (!usr)
-+		return -EIO;
-+
-+	if (enable) {
-+		if (*usr = 0) {
-+			u32 val = ioread16(fpga + COMCTLR);
-+			val &= ~bit;
-+			iowrite16(val, fpga + COMCTLR);
-+		}
-+
-+		(*usr)++;
-+	} else {
-+		if (*usr = 0)
-+			return 0;
-+
-+		(*usr)--;
-+
-+		if (*usr = 0) {
-+			u32 val = ioread16(fpga + COMCTLR);
-+			val |= bit;
-+			iowrite16(val, fpga + COMCTLR);
-+		}
-+	}
-+
-+	return 0;
-+}
-+
-+static int rsnd_start(int id)
-+{
-+	return rsnd_codec_power(id, 1);
-+}
-+
-+static int rsnd_stop(int id)
-+{
-+	return rsnd_codec_power(id, 0);
-+}
-+
-+static struct rcar_snd_info rsnd_info = {
-+	.flags		= RSND_GEN1,
-+	.ssi_info	= rsnd_ssi,
-+	.ssi_info_nr	= ARRAY_SIZE(rsnd_ssi),
-+	.scu_info	= rsnd_scu,
-+	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
-+	.start		= rsnd_start,
-+	.stop		= rsnd_stop,
-+};
-+
-+static struct asoc_simple_card_info rsnd_card_info[] = {
-+	/* SSI5, SSI6 */
-+	{
-+		.name		= "AK4643",
-+		.card		= "SSI56-AK4643",
-+		.codec		= "ak4642-codec.0-0012",
-+		.platform	= "rcar_sound",
-+		.daifmt		= SND_SOC_DAIFMT_LEFT_J,
-+		.cpu_dai = {
-+			.name	= "rsnd-dai.0",
-+			.fmt	= SND_SOC_DAIFMT_CBS_CFS,
-+		},
-+		.codec_dai = {
-+			.name	= "ak4642-hifi",
-+			.fmt	= SND_SOC_DAIFMT_CBM_CFM,
-+			.sysclk	= 11289600,
-+		},
-+	},
-+	/* SSI3 */
-+	{
-+		.name		= "AK4554",
-+		.card		= "SSI3-AK4554(playback)",
-+		.codec		= "ak4554-adc-dac.0",
-+		.platform	= "rcar_sound",
-+		.cpu_dai = {
-+			.name	= "rsnd-dai.1",
-+			.fmt	= SND_SOC_DAIFMT_CBM_CFM |
-+				  SND_SOC_DAIFMT_RIGHT_J,
-+		},
-+		.codec_dai = {
-+			.name	= "ak4554-hifi",
-+		},
-+	},
-+	/* SSI4 */
-+	{
-+		.name		= "AK4554",
-+		.card		= "SSI4-AK4554(capture)",
-+		.codec		= "ak4554-adc-dac.0",
-+		.platform	= "rcar_sound",
-+		.cpu_dai = {
-+			.name	= "rsnd-dai.2",
-+			.fmt	= SND_SOC_DAIFMT_CBM_CFM |
-+				  SND_SOC_DAIFMT_LEFT_J,
-+		},
-+		.codec_dai = {
-+			.name	= "ak4554-hifi",
-+		},
-+	},
-+	/* SSI7 */
-+	{
-+		.name		= "AK4554",
-+		.card		= "SSI7-AK4554(playback)",
-+		.codec		= "ak4554-adc-dac.1",
-+		.platform	= "rcar_sound",
-+		.cpu_dai = {
-+			.name	= "rsnd-dai.3",
-+			.fmt	= SND_SOC_DAIFMT_CBM_CFM |
-+				  SND_SOC_DAIFMT_RIGHT_J,
-+		},
-+		.codec_dai = {
-+			.name	= "ak4554-hifi",
-+		},
-+	},
-+	/* SSI8 */
-+	{
-+		.name		= "AK4554",
-+		.card		= "SSI8-AK4554(capture)",
-+		.codec		= "ak4554-adc-dac.1",
-+		.platform	= "rcar_sound",
-+		.cpu_dai = {
-+			.name	= "rsnd-dai.4",
-+			.fmt	= SND_SOC_DAIFMT_CBM_CFM |
-+				  SND_SOC_DAIFMT_LEFT_J,
-+		},
-+		.codec_dai = {
-+			.name	= "ak4554-hifi",
-+		},
-+	}
-+};
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
-+	/* AUDIO */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7778",
-+				  "audio_clk_a", "audio_clk"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7778",
-+				  "audio_clk_b", "audio_clk"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7778",
-+				  "ssi34", "ssi"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7778",
-+				  "ssi5", "ssi"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7778",
-+				  "ssi6", "ssi"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7778",
-+				  "ssi78", "ssi"),
- 	/* Ether */
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a777x-ether", "pfc-r8a7778",
- 				  "ether_rmii", "ether"),
-@@ -203,6 +431,8 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
- static void __init bockw_init(void)
- {
- 	void __iomem *base;
-+	struct clk *clk;
-+	int i;
- 
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin(1);
-@@ -269,6 +499,36 @@ static void __init bockw_init(void)
- 			sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
- 			&sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
- 	}
-+
-+	/* for Audio */
-+	clk = clk_get(NULL, "audio_clk_b");
-+	clk_set_rate(clk, 24576000);
-+	clk_put(clk);
-+	rsnd_codec_power(5, 1); /* enable ak4642 */
-+
-+	platform_device_register_simple(
-+		"ak4554-adc-dac", 0, NULL, 0);
-+
-+	platform_device_register_simple(
-+		"ak4554-adc-dac", 1, NULL, 0);
-+
-+	platform_device_register_resndata(
-+		&platform_bus, "rcar_sound", -1,
-+		rsnd_resources, ARRAY_SIZE(rsnd_resources),
-+		&rsnd_info, sizeof(rsnd_info));
-+
-+	for (i = 0; i < ARRAY_SIZE(rsnd_card_info); i++) {
-+		struct platform_device_info cardinfo = {
-+			.parent         = &platform_bus,
-+			.name           = "asoc-simple-card",
-+			.id             = i,
-+			.data           = &rsnd_card_info[i],
-+			.size_data      = sizeof(struct asoc_simple_card_info),
-+			.dma_mask       = ~0,
-+		};
-+
-+		platform_device_register_full(&cardinfo);
-+	}
+@@ -172,6 +192,9 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
+ 					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
+ 					  &sdhi1_pdata, sizeof(sdhi1_pdata));
++	platform_device_register_data(&platform_bus, "gpio-keys", -1,
++				      &ape6evm_keys_pdata,
++				      sizeof(ape6evm_keys_pdata));
  }
  
- static const char *bockw_boards_compat_dt[] __initdata = {
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
 -- 
-1.7.9.5
+1.8.3.2
 
