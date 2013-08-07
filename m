@@ -1,133 +1,89 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:34 +0000
-Subject: [PATCH v3 04/14] sh: ecovec24: Use MMC/SDHI CD and RO GPIO
-Message-Id: <1375958324-29683-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:39:29 +0000
+Subject: [GIT PULL 3/9] ARM: shmobile: Use shared SCU SMP boot code on r8a7779
+Message-Id: <0ca2894b5a9007091ad1a4d82b9f3132d4dd9410.1375841380.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1375841380.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Pass the CD and RO GPIO numbers to the MMC SPI and SDHI drivers and
-remove the custom .get_cd() and .get_ro() callback functions.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Use shared SCU code on r8a7779 for SMP boot.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/boards/mach-ecovec24/setup.c | 42 +++++++-----------------------------
- 1 file changed, 8 insertions(+), 34 deletions(-)
+ arch/arm/mach-shmobile/Makefile      |  2 +-
+ arch/arm/mach-shmobile/smp-r8a7779.c | 23 ++++++++++++-----------
+ 2 files changed, 13 insertions(+), 12 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 61fade0..a1557ec 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -617,18 +617,14 @@ static void sdhi0_set_pwr(struct platform_device *pdev, int state)
- 	gpio_set_value(GPIO_PTB6, state);
- }
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index a32dc15..42bbf45 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -18,7 +18,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+ # SMP objects
+ smp-y				:= platsmp.o headsmp.o
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+-smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
++smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
  
--static int sdhi0_get_cd(struct platform_device *pdev)
--{
--	return !gpio_get_value(GPIO_PTY7);
--}
--
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.set_pwr	= sdhi0_set_pwr,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
--	.get_cd		= sdhi0_get_cd,
-+	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
-+	.cd_gpio	= GPIO_PTY7,
- };
- 
- static struct resource sdhi0_resources[] = {
-@@ -675,18 +671,14 @@ static void cn12_set_pwr(struct platform_device *pdev, int state)
- 
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SDHI1 */
--static int sdhi1_get_cd(struct platform_device *pdev)
--{
--	return !gpio_get_value(GPIO_PTW7);
--}
--
- static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
-+	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
-+	.cd_gpio	= GPIO_PTW7,
- 	.set_pwr	= cn12_set_pwr,
--	.get_cd		= sdhi1_get_cd,
- };
- 
- static struct resource sdhi1_resources[] = {
-@@ -716,27 +708,19 @@ static struct platform_device sdhi1_device = {
- #else
- 
- /* MMC SPI */
--static int mmc_spi_get_ro(struct device *dev)
--{
--	return gpio_get_value(GPIO_PTY6);
--}
--
--static int mmc_spi_get_cd(struct device *dev)
--{
--	return !gpio_get_value(GPIO_PTY7);
--}
--
- static void mmc_spi_setpower(struct device *dev, unsigned int maskval)
+ # IRQ objects
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index bb3adae..1963d0d 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -84,33 +84,34 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
+ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct *idle)
  {
- 	gpio_set_value(GPIO_PTB6, maskval ? 1 : 0);
+ 	struct r8a7779_pm_ch *ch = NULL;
+-	int ret = -EIO;
++	unsigned int lcpu = cpu_logical_map(cpu);
++	int ret;
+ 
+-	cpu = cpu_logical_map(cpu);
++	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
++	if (ret)
++		return ret;
+ 
+-	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+-		ch = r8a7779_ch_cpu[cpu];
++	if (lcpu < ARRAY_SIZE(r8a7779_ch_cpu))
++		ch = r8a7779_ch_cpu[lcpu];
+ 
+ 	if (ch)
+ 		ret = r8a7779_sysc_power_up(ch);
++	else
++		ret = -EIO;
+ 
+ 	return ret;
  }
  
- static struct mmc_spi_platform_data mmc_spi_info = {
--	.get_ro = mmc_spi_get_ro,
--	.get_cd = mmc_spi_get_cd,
- 	.caps = MMC_CAP_NEEDS_POLL,
-+	.caps2 = MMC_CAP2_RO_ACTIVE_HIGH,
- 	.ocr_mask = MMC_VDD_32_33 | MMC_VDD_33_34, /* 3.3V only */
- 	.setpower = mmc_spi_setpower,
-+	.flags = MMC_SPI_USE_CD_GPIO | MMC_SPI_USE_RO_GPIO,
-+	.cd_gpio = GPIO_PTY7,
-+	.ro_gpio = GPIO_PTY6,
- };
- 
- static struct spi_board_info spi_bus[] = {
-@@ -1339,10 +1323,6 @@ static int __init arch_setup(void)
- 	gpio_direction_input(GPIO_PTR6);
- 
- 	/* SD-card slot CN11 */
--	/* Card-detect, used on CN11, either with SDHI0 or with SPI */
--	gpio_request(GPIO_PTY7, NULL);
--	gpio_direction_input(GPIO_PTY7);
+ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
 -
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
- 	/* enable SDHI0 on CN11 (needs DS2.4 set to ON) */
- 	gpio_request(GPIO_FN_SDHI0WP,  NULL);
-@@ -1361,8 +1341,6 @@ static int __init arch_setup(void)
- 	gpio_direction_output(GPIO_PTM4, 1); /* active low CS */
- 	gpio_request(GPIO_PTB6, NULL); /* 3.3V power control */
- 	gpio_direction_output(GPIO_PTB6, 0); /* disable power by default */
--	gpio_request(GPIO_PTY6, NULL); /* write protect */
--	gpio_direction_input(GPIO_PTY6);
- 
- 	spi_register_board_info(spi_bus, ARRAY_SIZE(spi_bus));
- #endif
-@@ -1392,10 +1370,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_SDHI1D1,  NULL);
- 	gpio_request(GPIO_FN_SDHI1D0,  NULL);
- 
--	/* Card-detect, used on CN12 with SDHI1 */
--	gpio_request(GPIO_PTW7, NULL);
--	gpio_direction_input(GPIO_PTW7);
+-	/* setup r8a7779 specific SCU base */
+-	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
+-	scu_enable(shmobile_scu_base);
 -
- 	cn12_enabled = true;
- #endif
+ 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
+ 	__raw_writel(__pa(shmobile_boot_vector), AVECR);
+ 	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
+ 	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
+ 
+-	/* enable cache coherency on booting CPU */
+-	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
++	/* setup r8a7779 specific SCU bits */
++	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
++	shmobile_smp_scu_prepare_cpus(max_cpus);
+ 
+ 	r8a7779_pm_init();
  
 -- 
-1.8.1.5
+1.8.3.2
 
