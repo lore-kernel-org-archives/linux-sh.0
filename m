@@ -1,34 +1,69 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 20 Aug 2013 21:52:21 +0000
-Subject: Re: [PATCH v2 4/4] clkdev: Fix race condition in clock lookup from device tree
-Message-Id: <20130820215221.GH17845@n2100.arm.linux.org.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:23:55 +0000
+Subject: [GIT PULL 0/4] Renesas ARM based SoC defconfig updates for v3.12
+Message-Id: <cover.1375842392.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377020063-30213-1-git-send-email-s.nawrocki@samsung.com>
- <1377020063-30213-5-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377020063-30213-5-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Aug 20, 2013 at 07:34:23PM +0200, Sylwester Nawrocki wrote:
-> There is currently a race condition in the device tree part of clk_get()
-> function, since the pointer returned from of_clk_get_by_name() may become
-> invalid before __clk_get() call. I.e. due to the clock provider driver
-> remove() callback being called in between of_clk_get_by_name() and
-> __clk_get().
-> 
-> Fix this by doing both the look up and __clk_get() operations with the
-> clock providers list mutex held. This ensures that the clock pointer
-> returned from __of_clk_get_from_provider() call and passed to __clk_get()
-> is valid, as long as the clock supplier module first removes its clock
-> provider instance and then does clk_unregister() on the corresponding
-> clocks.
-> 
-> Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
-> Reviewed-by: Mike Turquette <mturquette@linaro.org>
+Hi Olof, Hi Arnd,
 
-Thanks.
+please consider these Renesas ARM based SoC defconfig updates for v3.12.
 
-Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
+
+In relation to adding a new defconfig I would like to note that Magnus and
+I are aware of your ongoing requests to reduce the number of shmobile
+defconfigs and that we are making progress on that front in two ways:
+
+* Two boards, and their defconfigs were scheduled for removal in v3.11
+  and a further two boards and their defconfigs are scheduled for removal
+  in v3.12.
+
+  For reference the boards are: ap5evb, bonito, ag5evm and kota2
+
+* More importantly, we are making significant progress towards being
+  able to use multiplatform and thus consolidate most if not all
+  of the shmobile defconfigs into either a single shmobile defconfig
+  or a more generic ARM defconfig.
+
+  The removal of the boards mentioned above helps this process
+  by removing the need to update as much code. In particular code
+  which we have limited or no access to hardware to test.
+
+  The main remaining barrier here is common clocks which I current
+  expect to take a few more release cycles to get in order.
+
+
+The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
+
+  Linux 3.11-rc1 (2013-07-14 15:18:27 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.12
+
+for you to fetch changes up to 461cd47a65f5d8513a983ebd21ef7c23d4b4730f:
+
+  ARM: shmobile: ape6evm: Enable gpio-leds in defconfig (2013-08-06 10:14:09 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC defconfig updates for v3.12
+
+* Enable GPIO LEDs and keys for ape6evm board
+* Enable ARM_APPENDED_DTB for marzen board
+* Add lager defconfig board
+
+----------------------------------------------------------------
+Simon Horman (4):
+      ARM: shmobile: marzen: Enable ARM_APPENDED_DTB in defconfig
+      ARM: shmobile: Add lager defconfig
+      ARM: shmobile: ape6evm: Enable gpio-keys in defconfig
+      ARM: shmobile: ape6evm: Enable gpio-leds in defconfig
+
+ arch/arm/configs/ape6evm_defconfig |   6 +-
+ arch/arm/configs/lager_defconfig   | 120 +++++++++++++++++++++++++++++++++++++
+ arch/arm/configs/marzen_defconfig  |   1 +
+ 3 files changed, 126 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/configs/lager_defconfig
