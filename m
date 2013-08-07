@@ -1,45 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 05 Aug 2013 01:40:55 +0000
-Subject: Re: [PATCH] clocksource: sh_cmt: 32-bit control register support
-Message-Id: <20130805014055.GC28465@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:29:16 +0000
+Subject: [GIT PULL 0/2] Second Round of Renesas ARM based SoC updates for v3.12
+Message-Id: <cover.1375838109.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1374207810.git.horms+renesas@verge.net.au>
- <2792cc6f22031110f6959c02d42d7b6116105a71.1374207810.git.horms+renesas@verge.net.au>
- <51ECAF43.80200@linaro.org> <20130724002655.GA532@verge.net.au>
- <20130804192312.GE10876@quad.lixom.net>
-In-Reply-To: <20130804192312.GE10876@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Aug 04, 2013 at 12:23:12PM -0700, Olof Johansson wrote:
-> On Wed, Jul 24, 2013 at 09:26:55AM +0900, Simon Horman wrote:
-> > On Mon, Jul 22, 2013 at 06:04:19AM +0200, Daniel Lezcano wrote:
-> > > On 07/19/2013 06:36 AM, Simon Horman wrote:
-> > > > From: Magnus Damm <damm@opensource.se>
-> > > > 
-> > > > Add support for CMT hardware with 32-bit control and counter
-> > > > registers, as found on r8a73a4 and r8a7790. To use the CMT
-> > > > with 32-bit hardware a second I/O memory resource needs to
-> > > > point out the CMSTR register and it needs to be 32 bit wide.
-> > > > 
-> > > > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > > > ---
-> > > 
-> > > In the future, can you Cc drivers/clocksource maintainers please ?
-> > 
-> > Yes of course, sorry for that oversight.
-> > 
-> > > Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-> > 
-> > Olof, Arnd, please let me know if you wish me to re-send the pull
-> > request with Daniel's Reviewed-by added to this patch.
-> 
-> This patch should just go in through Daniel, there's no reason to take it
-> through arm-soc at all, unless you have platform code that relies on it for
-> bisectability.
+Hi Olof, Hi Arnd,
 
-I'll double-check but I am reasonably sure that there are no bisection
-issues. If so I'll send it through Daniel as you suggest.
+Please consider this second Round of renesas ARM based SoC updates for v3.12.
+
+This pull-request is based on a merge of renesas-soc-for-v3.12 and
+renesas-fixes-for-v3.12, both of which I have previously sent pull-requests
+for.
+
+
+The following changes since commit 21c7a134051f2f753d359a02923223ad9181da31:
+
+  Merge tag 'renesas-fixes-for-v3.12' into soc2-base (2013-08-06 17:56:43 +0900)
+
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.12
+
+for you to fetch changes up to d687f4d1993fa046171dbb1ca1970a3172ce11b9:
+
+  ARM: shmobile: r8a7740: Add TPU clock entry for DT platforms (2013-08-06 17:57:09 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM based SoC updates for v3.12
+
+* Increased clock coverage for r8a7740 and r8a7790 SoCs
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: r8a7740: Add TPU clock entry for DT platforms
+
+Simon Horman (1):
+      ARM: shmobile: r8a7790: clocks for Ether support
+
+ arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
+ arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
+ 2 files changed, 5 insertions(+)
