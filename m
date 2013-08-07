@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 09 Aug 2013 09:49:58 +0000
-Subject: [PATCH 12/14] ARM: shmobile: Rename to r8a7740_init_early()
-Message-Id: <20130809094958.6530.41120.sendpatchset@w520>
+Date: Wed, 07 Aug 2013 22:26:48 +0000
+Subject: [PATCH 01/02] ARM: shmobile: Rename to r8a73a4_init_early()
+Message-Id: <20130807222648.22283.98436.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130809094748.6530.16511.sendpatchset@w520>
-In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
+References: <20130807222638.22283.78607.sendpatchset@w520>
+In-Reply-To: <20130807222638.22283.78607.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,80 +12,68 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Rename r8a7740_init_delay() into r8a7740_init_early()
+Rename r8a73a4_init_delay() into r8a73a4_init_early()
 to make the function name show that more than just
 delay setup may happen in the future.
-
-Also, make sure shmobile_setup_delay() gets executed for both
-DT and C board code by updating r8a7740_add_early_devices() to
-call r8a7740_init_early().
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    2 +-
- arch/arm/mach-shmobile/include/mach/r8a7740.h            |    2 +-
- arch/arm/mach-shmobile/setup-r8a7740.c                   |   14 ++++++++------
- 3 files changed, 10 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-ape6evm.c           |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h    |    2 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |    4 ++--
+ 4 files changed, 5 insertions(+), 5 deletions(-)
 
---- 0005/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ work/arch/arm/mach-shmobile/board-armadillo800eva-reference.c	2013-08-08 16:37:19.000000000 +0900
-@@ -189,7 +189,7 @@ static const char *eva_boards_compat_dt[
- 
- DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva-reference")
- 	.map_io		= r8a7740_map_io,
--	.init_early	= r8a7740_init_delay,
-+	.init_early	= r8a7740_init_early,
- 	.init_irq	= r8a7740_init_irq_of,
- 	.init_machine	= eva_init,
- 	.init_late	= shmobile_init_late,
---- 0005/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7740.h	2013-08-08 16:37:19.000000000 +0900
-@@ -47,7 +47,7 @@ enum {
+--- 0001/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ work/arch/arm/mach-shmobile/board-ape6evm-reference.c	2013-08-07 14:31:50.000000000 +0900
+@@ -57,7 +57,7 @@ static const char *ape6evm_boards_compat
  };
  
- extern void r8a7740_meram_workaround(void);
--extern void r8a7740_init_delay(void);
-+extern void r8a7740_init_early(void);
- extern void r8a7740_init_irq_of(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
---- 0006/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2013-08-08 16:37:19.000000000 +0900
-@@ -984,8 +984,15 @@ void __init r8a7740_add_standard_devices
- 	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+-	.init_early	= r8a73a4_init_delay,
++	.init_early	= r8a73a4_init_early,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-08-07 14:31:50.000000000 +0900
+@@ -240,7 +240,7 @@ static const char *ape6evm_boards_compat
+ };
+ 
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+-	.init_early	= r8a73a4_init_delay,
++	.init_early	= r8a73a4_init_early,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-08-07 14:31:50.000000000 +0900
+@@ -5,6 +5,6 @@ void r8a73a4_add_standard_devices(void);
+ void r8a73a4_add_dt_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
+-void r8a73a4_init_delay(void);
++void r8a73a4_init_early(void);
+ 
+ #endif /* __ASM_R8A73A4_H__ */
+--- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-08-07 14:32:08.000000000 +0900
+@@ -207,7 +207,7 @@ void __init r8a73a4_add_standard_devices
+ 	r8a73a4_register_thermal();
  }
  
-+void __init r8a7740_init_early(void)
-+{
-+	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
-+};
-+
- void __init r8a7740_add_early_devices(void)
+-void __init r8a73a4_init_delay(void)
++void __init r8a73a4_init_early(void)
  {
-+	r8a7740_init_early();
-+
- 	early_platform_add_devices(r8a7740_early_devices,
- 				   ARRAY_SIZE(r8a7740_early_devices));
- 	early_platform_add_devices(r8a7740_devices_dt,
-@@ -1003,11 +1010,6 @@ void __init r8a7740_add_dt_devices(void)
+ #ifndef CONFIG_ARM_ARCH_TIMER
+ 	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
+@@ -222,7 +222,7 @@ static const char *r8a73a4_boards_compat
+ };
  
- #ifdef CONFIG_USE_OF
- 
--void __init r8a7740_init_delay(void)
--{
--	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
--};
--
- void __init r8a7740_init_irq_of(void)
- {
- 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
-@@ -1045,7 +1047,7 @@ static const char *r8a7740_boards_compat
- 
- DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
- 	.map_io		= r8a7740_map_io,
--	.init_early	= r8a7740_init_delay,
-+	.init_early	= r8a7740_init_early,
- 	.init_irq	= r8a7740_init_irq_of,
- 	.dt_compat	= r8a7740_boards_compat_dt,
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+-	.init_early	= r8a73a4_init_delay,
++	.init_early	= r8a73a4_init_early,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
  MACHINE_END
+ #endif /* CONFIG_USE_OF */
