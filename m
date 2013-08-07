@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:37 +0000
-Subject: [GIT PULL 20/26] ARM: shmobile: r8a7790: add missing __initdata
-Message-Id: <163a2a6cf1fa1d20c6c9e89d358180f409bcc7ce.1375840527.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:34 +0000
+Subject: [GIT PULL 07/26] ARM: shmobile: Use default ->init_time() on r8a7740
+Message-Id: <8adacad26f1db14dd3a5bc08f632e74ba7ed7b8b.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1375840527.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
@@ -10,37 +10,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-This patch adds missing __initdata to driver data/resource
-which are used from platform_device_register_xxx()
+Leave ->init_time() set to NULL to use the default ARM behaviour.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7740.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 6d4aa04..d0f5c9f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -161,13 +161,13 @@ static struct resource thermal_resources[] __initdata = {
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 84c5bb6..21026b3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -1035,7 +1035,6 @@ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.init_early	= r8a7740_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.init_machine	= r8a7740_generic_init,
+-	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= r8a7740_boards_compat_dt,
+ MACHINE_END
  
--static struct sh_timer_config cmt00_platform_data = {
-+static struct sh_timer_config cmt00_platform_data __initdata = {
- 	.name = "CMT00",
- 	.timer_bit = 0,
- 	.clockevent_rating = 80,
- };
- 
--static struct resource cmt00_resources[] = {
-+static struct resource cmt00_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xffca0510, 0x0c),
- 	DEFINE_RES_MEM(0xffca0500, 0x04),
- 	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
 -- 
 1.8.3.2
 
