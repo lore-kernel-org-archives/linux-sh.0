@@ -1,57 +1,46 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Sat, 24 Aug 2013 18:27:00 +0000
-Subject: [PATCH v5 0/5] clk: clock deregistration support
-Message-Id: <1377368825-30715-1-git-send-email-s.nawrocki@samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:38:37 +0000
+Subject: [GIT PULL 20/26] ARM: shmobile: r8a7790: add missing __initdata
+Message-Id: <163a2a6cf1fa1d20c6c9e89d358180f409bcc7ce.1375840527.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375840527.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch series implements clock deregistration in the common clock
-framework.  This is required for proper support of clock suppliers as
-loadable modules.  Previous version of this series can be found at [1].
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Comparing to v4 only a stray struct module forward declaration has been 
-removed from patch 3/5. My apologies for spamming.
+This patch adds missing __initdata to driver data/resource
+which are used from platform_device_register_xxx()
 
-Changes since v3:
- - replaced WARN_ON() with WARN_ON_ONCE() in clk_nodrv_disable_unprepare()
-   callback.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7790.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Changes since v2:
- - reordered the patches so the race condition is fixed before it can
-   actually cause any issues,
- - fixed handling of NULL clock pointers in __clk_get(), __clk_put(),
- - added patch adding actual asignment of clk->owner; more details are
-   discussed in that specific patch.
-
-Changes since v1:
- - moved of_clk_{lock, unlock}, __of_clk_get_from_provider() function
-   declaractions to a local header,
- - renamed clk_dummy_* to clk_nodrv_*.
-
-[1] https://lkml.org/lkml/2013/8/24/43
-
-Sylwester Nawrocki (5):
-  clk: Provide not locked variant of of_clk_get_from_provider()
-  clkdev: Fix race condition in clock lookup from device tree
-  clk: Add common __clk_get(), __clk_put() implementations
-  clk: Assign module owner of a clock being registered
-  clk: Implement clk_unregister
-
- arch/arm/include/asm/clkdev.h      |    2 +
- arch/blackfin/include/asm/clkdev.h |    2 +
- arch/mips/include/asm/clkdev.h     |    2 +
- arch/sh/include/asm/clkdev.h       |    2 +
- drivers/clk/clk.c                  |  187 +++++++++++++++++++++++++++++++++--
- drivers/clk/clk.h                  |   16 +++
- drivers/clk/clkdev.c               |   12 ++-
- include/linux/clk-private.h        |    5 +
- include/linux/clkdev.h             |    5 +
- 9 files changed, 220 insertions(+), 13 deletions(-)
- create mode 100644 drivers/clk/clk.h
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 6d4aa04..d0f5c9f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -161,13 +161,13 @@ static struct resource thermal_resources[] __initdata = {
+ 					thermal_resources,		\
+ 					ARRAY_SIZE(thermal_resources))
+ 
+-static struct sh_timer_config cmt00_platform_data = {
++static struct sh_timer_config cmt00_platform_data __initdata = {
+ 	.name = "CMT00",
+ 	.timer_bit = 0,
+ 	.clockevent_rating = 80,
+ };
+ 
+-static struct resource cmt00_resources[] = {
++static struct resource cmt00_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xffca0510, 0x0c),
+ 	DEFINE_RES_MEM(0xffca0500, 0x04),
+ 	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
 -- 
-1.7.4.1
+1.8.3.2
 
