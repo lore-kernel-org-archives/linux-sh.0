@@ -1,64 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:28:32 +0000
-Subject: [GIT PULL 11/19] ARM: shmobile: r8a7779: Rely on DT for SMP CPU info
-Message-Id: <afad20105a58c06407ad9ad85c1cd9ca79d99e00.1375838900.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Aug 2013 04:36:56 +0000
+Subject: [GIT PULL 2/2] ARM: shmobile: lager: add missing __initdata
+Message-Id: <8c8881b50691e17864cc54e5824b140e62fc2035.1375842006.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375838900.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
+References: <cover.1375842006.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375842006.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Remove r8a7779 specific ->smp_init_cpus() callback and
-instead of relying on shmobile_smp_init_cpus() simply
-use DT for CPU core information.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Based on work for the sh73a0 by Magnus Damm.
+This patch adds missing __initdata to driver data/resource
+which are used from platform_device_register_xxx()
 
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-r8a7779.c | 12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index 526cfaa..bb3adae 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -99,6 +99,9 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 3c67b2a..9489314 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -82,11 +82,11 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  };
  
- static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- {
-+
-+	/* setup r8a7779 specific SCU base */
-+	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
- 	scu_enable(shmobile_scu_base);
+ /* MMCIF */
+-static struct sh_mmcif_plat_data mmcif1_pdata = {
++static struct sh_mmcif_plat_data mmcif1_pdata __initdata = {
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
+ };
  
- 	/* Map the reset vector (in headsmp-scu.S, headsmp.S) */
-@@ -117,14 +120,6 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- 	r8a7779_platform_cpu_kill(3);
- }
- 
--static void __init r8a7779_smp_init_cpus(void)
--{
--	/* setup r8a7779 specific SCU base */
--	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
--
--	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
--}
--
- #ifdef CONFIG_HOTPLUG_CPU
- static int r8a7779_scu_psr_core_disabled(int cpu)
- {
-@@ -175,7 +170,6 @@ static int r8a7779_cpu_disable(unsigned int cpu)
- #endif /* CONFIG_HOTPLUG_CPU */
- 
- struct smp_operations r8a7779_smp_ops  __initdata = {
--	.smp_init_cpus		= r8a7779_smp_init_cpus,
- 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
- 	.smp_boot_secondary	= r8a7779_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
+-static struct resource mmcif1_resources[] = {
++static struct resource mmcif1_resources[] __initdata = {
+ 	DEFINE_RES_MEM_NAMED(0xee220000, 0x80, "MMCIF1"),
+ 	DEFINE_RES_IRQ(gic_spi(170)),
+ };
 -- 
 1.8.3.2
 
