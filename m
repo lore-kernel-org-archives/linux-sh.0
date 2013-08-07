@@ -1,44 +1,55 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Sun, 25 Aug 2013 03:39:35 +0000
-Subject: Re: [PATCH v2] tmio_mmc_dma: fix PIO fallback on SDHI
-Message-Id: <87zjs6qw08.fsf@octavius.laptop.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 07 Aug 2013 16:19:54 +0000
+Subject: [PATCH 2/5] ARM: shmobile: r8a7790: Add DU and LVDS clocks
+Message-Id: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308030233.29446.sergei.shtylyov@cogentembedded.com>
-	<Pine.LNX.4.64.1308040026020.11632@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1308040026020.11632@axis700.grange> (Guennadi
-	Liakhovetski's message of "Sun, 4 Aug 2013 00:36:50 +0200 (CEST)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-mmc@vger.kernel.org, ian@mnementh.co.uk, linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
+To: linux-sh@vger.kernel.org
 
-Hi,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
-On Sat, Aug 03 2013, Guennadi Liakhovetski wrote:
-> On Sat, 3 Aug 2013, Sergei Shtylyov wrote:
->
->> I'm testing SH-Mobile SDHI driver in DMA mode with a new DMA
->> controller using
->> 'bonnie++' and getting DMA error after which the tmio_mmc_dma.c code
->> falls back
->> to PIO but all commands time out after that.  It turned out that the fallback
->> code calls tmio_mmc_enable_dma() with RX/TX channels already freed
->> and pointers
->> to them cleared, so that the function bails out early instead  of clearing the
->> DMA bit in the CTL_DMA_ENABLE register. The regression was
->> introduced by commit
->> 162f43e31c5a376ec16336e5d0ac973373d54c89 (mmc: tmio: fix a deadlock).
->> Moving tmio_mmc_enable_dma() calls to the top of the PIO fallback code in
->> tmio_mmc_start_dma_{rx|tx}() helps.
->> 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->> Cc: stable@vger.kernel.org # 3.1+
->
-> Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-
-Thanks, pushed to mmc-next for 3.12.
-
-- Chris.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index fc36d3d..d99b87b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -182,7 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ /* MSTP */
+ enum {
+ 	MSTP813,
+-	MSTP721, MSTP720,
++	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+ 	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+@@ -193,6 +193,11 @@ enum {
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
++	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
++	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
++	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
++	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
++	[MSTP722] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 22, 0), /* DU2 */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+@@ -251,6 +256,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
+ 
+ 	/* MSTP */
++	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
++	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
++	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
++	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
++	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+1.8.1.5
+
