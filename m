@@ -1,40 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:40:29 +0000
-Subject: [PATCH 1/2] ARM: shmobile: marzen: Select DRM_RCAR_DU in defconfig
-Message-Id: <febedc9c9fe334dbb8810c47a178e6b7ff917d09.1377652426.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:40 +0000
+Subject: [PATCH v3 10/14] mmc: sh_mmcif: Remove .set_pwr() callback from platform data
+Message-Id: <1375958324-29683-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377652426.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377652426.git.horms+renesas@verge.net.au>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-A R-Car DU DRM device is registered for the Marzen board, select the
-corresponding driver in its defconfig.
+The .set_pwr() callback isn't used anymore as all platforms register
+GPIO-controlled regulators. Remove it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/configs/marzen_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/mmc/host/sh_mmcif.c  | 3 ---
+ include/linux/mmc/sh_mmcif.h | 1 -
+ 2 files changed, 4 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 82e4040..26f30be 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -85,6 +85,8 @@ CONFIG_GPIO_RCAR=y
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_SSB=y
-+CONFIG_DRM=y
-+CONFIG_DRM_RCAR_DU=y
- CONFIG_USB=y
- CONFIG_USB_RCAR_PHY=y
- CONFIG_MMC=y
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 35f61cc..ac8e109 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -956,11 +956,8 @@ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
+ 
+ static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
+ {
+-	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
+ 	struct mmc_host *mmc = host->mmc;
+ 
+-	if (pd && pd->set_pwr)
+-		pd->set_pwr(host->pd, ios->power_mode != MMC_POWER_OFF);
+ 	if (!IS_ERR(mmc->supply.vmmc))
+ 		/* Errors ignored... */
+ 		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index 39011eb..767fac5 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -33,7 +33,6 @@
+  */
+ 
+ struct sh_mmcif_plat_data {
+-	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	int (*get_cd)(struct platform_device *pdef);
+ 	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
+ 	unsigned int		slave_id_rx;
 -- 
-1.8.3.2
+1.8.1.5
 
