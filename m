@@ -1,40 +1,48 @@
-From: Richard Weinberger <richard@nod.at>
-Date: Wed, 21 Aug 2013 08:19:31 +0000
-Subject: [PATCH 7/8] unicore32: Do not use SUBARCH
-Message-Id: <1377073172-3662-8-git-send-email-richard@nod.at>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:35 +0000
+Subject: [PATCH v3 05/14] sh: ecovec24: Remove mmcif .down_pwr() callback
+Message-Id: <1375958324-29683-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377073172-3662-1-git-send-email-richard@nod.at>
-In-Reply-To: <1377073172-3662-1-git-send-email-richard@nod.at>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arch@vger.kernel.org
-Cc: mmarek@suse.cz, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, jdike@addtoit.com, gxt@mprc.pku.edu.cn, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, Richard Weinberger <richard@nod.at>
+To: linux-arm-kernel@lists.infradead.org
 
-Forces the user to specify CROSS_COMPILE at compile time instead
-of automatically selecting more or less randomly a cross compiler
+The callback isn't used by the mmcif driver, don't initialize it in
+board code.
 
-Signed-off-by: Richard Weinberger <richard@nod.at>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/unicore32/Makefile | 5 -----
- 1 file changed, 5 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/arch/unicore32/Makefile b/arch/unicore32/Makefile
-index b6f5c4c..fae00c8 100644
---- a/arch/unicore32/Makefile
-+++ b/arch/unicore32/Makefile
-@@ -10,11 +10,6 @@
- #
- # Copyright (C) 2002~2010 by Guan Xue-tao
- #
--ifneq ($(SUBARCH),$(ARCH))
--	ifeq ($(CROSS_COMPILE),)
--		CROSS_COMPILE := $(call cc-cross-prefix, unicore32-linux-)
--	endif
--endif
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index a1557ec..5af40f5 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -980,11 +980,6 @@ static struct platform_device vou_device = {
  
- LDFLAGS_vmlinux		:= -p --no-undefined -X
+ #if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SH_MMCIF */
+-static void mmcif_down_pwr(struct platform_device *pdev)
+-{
+-	cn12_set_pwr(pdev, 0);
+-}
+-
+ static struct resource sh_mmcif_resources[] = {
+ 	[0] = {
+ 		.name	= "SH_MMCIF",
+@@ -1006,7 +1001,6 @@ static struct resource sh_mmcif_resources[] = {
  
+ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.set_pwr	= cn12_set_pwr,
+-	.down_pwr	= mmcif_down_pwr,
+ 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
 -- 
-1.8.1.4
+1.8.1.5
 
