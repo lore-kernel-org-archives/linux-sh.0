@@ -1,134 +1,195 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 22 Aug 2013 17:56:57 +0000
-Subject: [PATCH 2/2] v4l: vsp1: Add support for RT clock
-Message-Id: <1377194217-24235-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:31 +0000
+Subject: [PATCH v3 01/14] mmc: slot-gpio: Add debouncing capability to mmc_gpio_request_cd()
+Message-Id: <1375958324-29683-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The VSPR and VSPS instances use two clocks, the VSP1 system clock and
-the VSP1 realtime clock. Both of them need to be enabled to access the
-VSP1 registers.
-
-Add support for an optional RT clock and enable/disable it along with
-the system clock.
+Add a debounce parameter to the mmc_gpio_request_cd() function that
+enables GPIO debouncing when set to a non-zero value. This can be used
+by MMC host drivers to enable debouncing on the card detect signal.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: H Hartley Sweeten <hsweeten@visionengravers.com>
 ---
- drivers/media/platform/vsp1/vsp1.h     |  1 +
- drivers/media/platform/vsp1/vsp1_drv.c | 40 +++++++++++++++++++++++++++++-----
- 2 files changed, 36 insertions(+), 5 deletions(-)
+ drivers/mmc/core/host.c            |  2 +-
+ drivers/mmc/core/slot-gpio.c       | 14 +++++++++++++-
+ drivers/mmc/host/jz4740_mmc.c      |  2 +-
+ drivers/mmc/host/mvsdio.c          |  3 ++-
+ drivers/mmc/host/sdhci-esdhc-imx.c |  2 +-
+ drivers/mmc/host/sdhci-pxav3.c     |  3 ++-
+ drivers/mmc/host/sdhci-sirf.c      |  2 +-
+ drivers/mmc/host/sh_mmcif.c        |  2 +-
+ drivers/mmc/host/tmio_mmc_pio.c    |  2 +-
+ include/linux/mmc/slot-gpio.h      |  3 ++-
+ 10 files changed, 25 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
-index 11ac94b..d6c6ecd 100644
---- a/drivers/media/platform/vsp1/vsp1.h
-+++ b/drivers/media/platform/vsp1/vsp1.h
-@@ -42,6 +42,7 @@ struct vsp1_device {
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index 6fb6f77..49bc403 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -374,7 +374,7 @@ int mmc_of_parse(struct mmc_host *host)
+ 			if (!(flags & OF_GPIO_ACTIVE_LOW))
+ 				gpio_inv_cd = true;
  
- 	void __iomem *mmio;
- 	struct clk *clock;
-+	struct clk *rt_clock;
+-			ret = mmc_gpio_request_cd(host, gpio);
++			ret = mmc_gpio_request_cd(host, gpio, 0);
+ 			if (ret < 0) {
+ 				dev_err(host->parent,
+ 					"Failed to request CD GPIO #%d: %d!\n",
+diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
+index 3242351..46596b71 100644
+--- a/drivers/mmc/core/slot-gpio.c
++++ b/drivers/mmc/core/slot-gpio.c
+@@ -135,6 +135,7 @@ EXPORT_SYMBOL(mmc_gpio_request_ro);
+  * mmc_gpio_request_cd - request a gpio for card-detection
+  * @host: mmc host
+  * @gpio: gpio number requested
++ * @debounce: debounce time in microseconds
+  *
+  * As devm_* managed functions are used in mmc_gpio_request_cd(), client
+  * drivers do not need to explicitly call mmc_gpio_free_cd() for freeing up,
+@@ -143,9 +144,14 @@ EXPORT_SYMBOL(mmc_gpio_request_ro);
+  * switching for card-detection, they are responsible for calling
+  * mmc_gpio_request_cd() and mmc_gpio_free_cd() as a pair on their own.
+  *
++ * If GPIO debouncing is desired, set the debounce parameter to a non-zero
++ * value. The caller is responsible for ensuring that the GPIO driver associated
++ * with the GPIO supports debouncing, otherwise an error will be returned.
++ *
+  * Returns zero on success, else an error.
+  */
+-int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
++int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio,
++			unsigned int debounce)
+ {
+ 	struct mmc_gpio *ctx;
+ 	int irq = gpio_to_irq(gpio);
+@@ -167,6 +173,12 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ 		 */
+ 		return ret;
  
- 	struct mutex lock;
- 	int ref_count;
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 291d20f..9abe101 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -290,6 +290,33 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
- 	return 0;
- }
- 
-+static int vsp1_clocks_enable(struct vsp1_device *vsp1)
-+{
-+	int ret;
-+
-+	ret = clk_prepare_enable(vsp1->clock);
-+	if (ret < 0)
-+		return ret;
-+
-+	if (IS_ERR(vsp1->rt_clock))
-+		return 0;
-+
-+	ret = clk_prepare_enable(vsp1->rt_clock);
-+	if (ret < 0) {
-+		clk_disable_unprepare(vsp1->clock);
-+		return ret;
++	if (debounce) {
++		ret = gpio_set_debounce(gpio, debounce);
++		if (ret < 0)
++			return ret;
 +	}
 +
-+	return 0;
-+}
-+
-+static void vsp1_clocks_disable(struct vsp1_device *vsp1)
-+{
-+	if (!IS_ERR(vsp1->rt_clock))
-+		clk_disable_unprepare(vsp1->rt_clock);
-+	clk_disable_unprepare(vsp1->clock);
-+}
-+
- /*
-  * vsp1_device_get - Acquire the VSP1 device
-  *
-@@ -307,7 +334,7 @@ struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1)
- 	if (vsp1->ref_count > 0)
- 		goto done;
+ 	/*
+ 	 * Even if gpio_to_irq() returns a valid IRQ number, the platform might
+ 	 * still prefer to poll, e.g., because that IRQ number is already used
+diff --git a/drivers/mmc/host/jz4740_mmc.c b/drivers/mmc/host/jz4740_mmc.c
+index 0308c9f..d868946 100644
+--- a/drivers/mmc/host/jz4740_mmc.c
++++ b/drivers/mmc/host/jz4740_mmc.c
+@@ -713,7 +713,7 @@ static int jz4740_mmc_request_gpios(struct mmc_host *mmc,
+ 		mmc->caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
  
--	ret = clk_prepare_enable(vsp1->clock);
-+	ret = vsp1_clocks_enable(vsp1);
- 	if (ret < 0) {
- 		__vsp1 = NULL;
- 		goto done;
-@@ -315,7 +342,7 @@ struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1)
- 
- 	ret = vsp1_device_init(vsp1);
- 	if (ret < 0) {
--		clk_disable_unprepare(vsp1->clock);
-+		vsp1_clocks_disable(vsp1);
- 		__vsp1 = NULL;
- 		goto done;
+ 	if (gpio_is_valid(pdata->gpio_card_detect)) {
+-		ret = mmc_gpio_request_cd(mmc, pdata->gpio_card_detect);
++		ret = mmc_gpio_request_cd(mmc, pdata->gpio_card_detect, 0);
+ 		if (ret)
+ 			return ret;
  	}
-@@ -339,7 +366,7 @@ void vsp1_device_put(struct vsp1_device *vsp1)
- 	mutex_lock(&vsp1->lock);
+diff --git a/drivers/mmc/host/mvsdio.c b/drivers/mmc/host/mvsdio.c
+index 4ddd83f..06c5b0b 100644
+--- a/drivers/mmc/host/mvsdio.c
++++ b/drivers/mmc/host/mvsdio.c
+@@ -757,7 +757,8 @@ static int __init mvsd_probe(struct platform_device *pdev)
+ 		if (mvsd_data->gpio_card_detect &&
+ 		    gpio_is_valid(mvsd_data->gpio_card_detect)) {
+ 			ret = mmc_gpio_request_cd(mmc,
+-						  mvsd_data->gpio_card_detect);
++						  mvsd_data->gpio_card_detect,
++						  0);
+ 			if (ret)
+ 				goto out;
+ 		} else {
+diff --git a/drivers/mmc/host/sdhci-esdhc-imx.c b/drivers/mmc/host/sdhci-esdhc-imx.c
+index 1dd5ba8..abc8cf0 100644
+--- a/drivers/mmc/host/sdhci-esdhc-imx.c
++++ b/drivers/mmc/host/sdhci-esdhc-imx.c
+@@ -616,7 +616,7 @@ static int sdhci_esdhc_imx_probe(struct platform_device *pdev)
+ 	/* card_detect */
+ 	switch (boarddata->cd_type) {
+ 	case ESDHC_CD_GPIO:
+-		err = mmc_gpio_request_cd(host->mmc, boarddata->cd_gpio);
++		err = mmc_gpio_request_cd(host->mmc, boarddata->cd_gpio, 0);
+ 		if (err) {
+ 			dev_err(mmc_dev(host->mmc),
+ 				"failed to request card-detect gpio!\n");
+diff --git a/drivers/mmc/host/sdhci-pxav3.c b/drivers/mmc/host/sdhci-pxav3.c
+index bf99359..793dacd 100644
+--- a/drivers/mmc/host/sdhci-pxav3.c
++++ b/drivers/mmc/host/sdhci-pxav3.c
+@@ -278,7 +278,8 @@ static int sdhci_pxav3_probe(struct platform_device *pdev)
+ 			host->mmc->pm_caps |= pdata->pm_caps;
  
- 	if (--vsp1->ref_count = 0)
--		clk_disable_unprepare(vsp1->clock);
-+		vsp1_clocks_disable(vsp1);
+ 		if (gpio_is_valid(pdata->ext_cd_gpio)) {
+-			ret = mmc_gpio_request_cd(host->mmc, pdata->ext_cd_gpio);
++			ret = mmc_gpio_request_cd(host->mmc, pdata->ext_cd_gpio,
++						  0);
+ 			if (ret) {
+ 				dev_err(mmc_dev(host->mmc),
+ 					"failed to allocate card detect gpio\n");
+diff --git a/drivers/mmc/host/sdhci-sirf.c b/drivers/mmc/host/sdhci-sirf.c
+index 62a4a83..696122c 100644
+--- a/drivers/mmc/host/sdhci-sirf.c
++++ b/drivers/mmc/host/sdhci-sirf.c
+@@ -84,7 +84,7 @@ static int sdhci_sirf_probe(struct platform_device *pdev)
+ 	 * gets setup in sdhci_add_host() and we oops.
+ 	 */
+ 	if (gpio_is_valid(priv->gpio_cd)) {
+-		ret = mmc_gpio_request_cd(host->mmc, priv->gpio_cd);
++		ret = mmc_gpio_request_cd(host->mmc, priv->gpio_cd, 0);
+ 		if (ret) {
+ 			dev_err(&pdev->dev, "card detect irq request failed: %d\n",
+ 				ret);
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 6706b5e..35f61cc 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1436,7 +1436,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	}
  
- 	mutex_unlock(&vsp1->lock);
- }
-@@ -358,7 +385,7 @@ static int vsp1_pm_suspend(struct device *dev)
- 	if (vsp1->ref_count = 0)
- 		return 0;
+ 	if (pd && pd->use_cd_gpio) {
+-		ret = mmc_gpio_request_cd(mmc, pd->cd_gpio);
++		ret = mmc_gpio_request_cd(mmc, pd->cd_gpio, 0);
+ 		if (ret < 0)
+ 			goto erqcd;
+ 	}
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 718843c..17f7fa9 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1110,7 +1110,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
  
--	clk_disable_unprepare(vsp1->clock);
-+	vsp1_clocks_disable(vsp1);
- 	return 0;
- }
+ 	if (pdata->flags & TMIO_MMC_USE_GPIO_CD) {
+-		ret = mmc_gpio_request_cd(mmc, pdata->cd_gpio);
++		ret = mmc_gpio_request_cd(mmc, pdata->cd_gpio, 0);
+ 		if (ret < 0) {
+ 			tmio_mmc_host_remove(_host);
+ 			return ret;
+diff --git a/include/linux/mmc/slot-gpio.h b/include/linux/mmc/slot-gpio.h
+index 7d88d27..b0c73e4 100644
+--- a/include/linux/mmc/slot-gpio.h
++++ b/include/linux/mmc/slot-gpio.h
+@@ -18,7 +18,8 @@ int mmc_gpio_request_ro(struct mmc_host *host, unsigned int gpio);
+ void mmc_gpio_free_ro(struct mmc_host *host);
  
-@@ -371,7 +398,7 @@ static int vsp1_pm_resume(struct device *dev)
- 	if (vsp1->ref_count)
- 		return 0;
+ int mmc_gpio_get_cd(struct mmc_host *host);
+-int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio);
++int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio,
++			unsigned int debounce);
+ void mmc_gpio_free_cd(struct mmc_host *host);
  
--	return clk_prepare_enable(vsp1->clock);
-+	return vsp1_clocks_enable(vsp1);
- }
  #endif
- 
-@@ -445,6 +472,9 @@ static int vsp1_probe(struct platform_device *pdev)
- 		return PTR_ERR(vsp1->clock);
- 	}
- 
-+	/* The RT clock is optional */
-+	vsp1->rt_clock = devm_clk_get(&pdev->dev, "rt");
-+
- 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
- 	if (!irq) {
- 		dev_err(&pdev->dev, "missing IRQ\n");
 -- 
 1.8.1.5
 
