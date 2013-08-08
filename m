@@ -1,45 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Aug 2013 06:32:01 +0000
-Subject: Re: [PATCH 00/02] ARM: shmobile: Rename to r8a73a4/r8a7790_init_early()
-Message-Id: <20130822063159.GR11086@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 12:03:34 +0000
+Subject: [PATCH v3 8/8] ARM: shmobile: lager: Select DRM_RCAR_DU in defconfig
+Message-Id: <1375963414-31096-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130807222638.22283.78607.sendpatchset@w520>
- <20130821090018.GJ20014@verge.net.au>
-In-Reply-To: <20130821090018.GJ20014@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 21, 2013 at 06:00:18PM +0900, Simon Horman wrote:
-> On Thu, Aug 08, 2013 at 07:26:38AM +0900, Magnus Damm wrote:
-> > ARM: shmobile: Rename to r8a73a4/r8a7790_init_early()
-> > 
-> > [PATCH 01/02] ARM: shmobile: Rename to r8a73a4_init_early()
-> > [PATCH 02/02] ARM: shmobile: Rename to r8a7790_init_early()
-> > 
-> > This series renames r8a73a4/r8a7790_init_delay() to 
-> > r8a73a4/r8a7790_init_early(). The reason for this is
-> > that future SMP code will hook into these functions
-> > which will make them handle more than just delay setup.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > ---
-> > 
-> >  Written against renesas.git renesas-devel-20130806v4 and
-> >  [PATCH 00/05] ARM: shmobile: Yet another SMP series
-> > 
-> >  arch/arm/mach-shmobile/board-ape6evm-reference.c |    2 +-
-> >  arch/arm/mach-shmobile/board-ape6evm.c           |    2 +-
-> >  arch/arm/mach-shmobile/board-lager-reference.c   |    2 +-
-> >  arch/arm/mach-shmobile/board-lager.c             |    2 +-
-> >  arch/arm/mach-shmobile/include/mach/r8a73a4.h    |    2 +-
-> >  arch/arm/mach-shmobile/include/mach/r8a7790.h    |    2 +-
-> >  arch/arm/mach-shmobile/setup-r8a73a4.c           |    4 ++--
-> >  arch/arm/mach-shmobile/setup-r8a7790.c           |    4 ++--
-> >  8 files changed, 10 insertions(+), 10 deletions(-)
-> 
-> Thanks Magnus, I have plan to queue this up in the cleanup4 branch
-> which will most likely happen tomorrow.
+A R-Car DU DRM device is registered for the Lager board, select the
+corresponding driver in its defconfig.
 
-It has now happened.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/configs/lager_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index e777ef2..35bff5e 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -89,6 +89,8 @@ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_DRM=y
++CONFIG_DRM_RCAR_DU=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+-- 
+1.8.1.5
+
