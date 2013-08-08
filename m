@@ -1,37 +1,42 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 02 Aug 2013 13:23:01 +0000
-Subject: [PATCH] DMA: sudmac: fix compiler warning
-Message-Id: <Pine.LNX.4.64.1308021520150.28012@axis700.grange>
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Thu, 08 Aug 2013 13:54:27 +0000
+Subject: [PATCH 31/35] cpufreq: sh: use cpufreq_table_validate_and_show()
+Message-Id: <59aad752560cd39629fa415382ba0fb0e4541ac6.1375964117.git.viresh.kumar@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1375964117.git.viresh.kumar@linaro.org>
+In-Reply-To: <cover.1375964117.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: "Koul, Vinod" <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Fix the following compiler warning:
+Lets use cpufreq_table_validate_and_show() instead of calling
+cpufreq_frequency_table_cpuinfo() and cpufreq_frequency_table_get_attr().
 
-drivers/dma/sh/sudmac.c: In function 'sudmac_chan_remove':
-drivers/dma/sh/sudmac.c:302: warning: unused variable 'sc'
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 ---
- drivers/dma/sh/sudmac.c |    2 --
- 1 files changed, 0 insertions(+), 2 deletions(-)
+ drivers/cpufreq/sh-cpufreq.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-index 2a8e3c2..4600b42 100644
---- a/drivers/dma/sh/sudmac.c
-+++ b/drivers/dma/sh/sudmac.c
-@@ -299,8 +299,6 @@ static void sudmac_chan_remove(struct sudmac_device *su_dev)
- 	int i;
+diff --git a/drivers/cpufreq/sh-cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
+index ffc6d24..1362e88 100644
+--- a/drivers/cpufreq/sh-cpufreq.c
++++ b/drivers/cpufreq/sh-cpufreq.c
+@@ -120,9 +120,9 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
+ 	if (freq_table) {
+ 		int result;
  
- 	shdma_for_each_chan(schan, &su_dev->shdma_dev, i) {
--		struct sudmac_chan *sc = to_chan(schan);
--
- 		BUG_ON(!schan);
- 
- 		shdma_chan_remove(schan);
+-		result = cpufreq_frequency_table_cpuinfo(policy, freq_table);
+-		if (!result)
+-			cpufreq_frequency_table_get_attr(freq_table, cpu);
++		result = cpufreq_table_validate_and_show(policy, freq_table);
++		if (result)
++			return result;
+ 	} else {
+ 		dev_notice(dev, "no frequency table found, falling back "
+ 			   "to rate rounding.\n");
 -- 
-1.7.2.5
+1.7.12.rc2.18.g61b472e
 
