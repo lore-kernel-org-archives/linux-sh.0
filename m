@@ -1,100 +1,83 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:28:37 +0000
-Subject: [GIT PULL 16/19] ARM: shmobile: armadillo800eva: Use DT for GIC
-Message-Id: <15645581a9401cf2370d2c975e2673d289d5e561.1375838900.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:38 +0000
+Subject: [PATCH v3 08/14] mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
+Message-Id: <1375958324-29683-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375838900.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+All platforms now pass the CD and RO GPIOs to the MMC SPI driver, those
+callbacks are not used anymore. Remove them.
 
-Current Armadillo800eva is using DT booting,
-and r8a7740.dtsi already has GIC settings.
-
-So, we can remove the C version of the GIC setup code,
-instead rely on GIC information provided by DT.
-
-This patch removes r8a7740_init_irq() which has
-no user any more
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: H Hartley Sweeten <hsweeten@visionengravers.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |  2 +-
- arch/arm/mach-shmobile/include/mach/r8a7740.h  |  1 -
- arch/arm/mach-shmobile/intc-r8a7740.c          | 20 +++-----------------
- 3 files changed, 4 insertions(+), 19 deletions(-)
+ drivers/mmc/host/mmc_spi.c  | 24 ++----------------------
+ include/linux/spi/mmc_spi.h |  9 ---------
+ 2 files changed, 2 insertions(+), 31 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 66cfd56..6864195 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1265,7 +1265,7 @@ static const char *eva_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= eva_add_early_devices,
--	.init_irq	= r8a7740_init_irq,
-+	.init_irq	= r8a7740_init_irq_of,
- 	.init_machine	= eva_init,
- 	.init_late	= shmobile_init_late,
- 	.init_time	= eva_earlytimer_init,
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 56f3750..d07932f 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -48,7 +48,6 @@ enum {
- 
- extern void r8a7740_meram_workaround(void);
- extern void r8a7740_init_delay(void);
--extern void r8a7740_init_irq(void);
- extern void r8a7740_init_irq_of(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index 8871f77..7519353 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -23,12 +23,14 @@
- #include <linux/irqchip.h>
- #include <linux/irqchip/arm-gic.h>
- 
--static void __init r8a7740_init_irq_common(void)
-+void __init r8a7740_init_irq_of(void)
- {
- 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
- 	void __iomem *intc_msk_base = ioremap_nocache(0xe6900040, 0x10);
- 	void __iomem *pfc_inta_ctrl = ioremap_nocache(0xe605807c, 0x4);
- 
-+	irqchip_init();
-+
- 	/* route signals to GIC */
- 	iowrite32(0x0, pfc_inta_ctrl);
- 
-@@ -50,19 +52,3 @@ static void __init r8a7740_init_irq_common(void)
- 	iounmap(intc_msk_base);
- 	iounmap(pfc_inta_ctrl);
+diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
+index 62fb82d..0a87e56 100644
+--- a/drivers/mmc/host/mmc_spi.c
++++ b/drivers/mmc/host/mmc_spi.c
+@@ -1273,31 +1273,11 @@ static void mmc_spi_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	}
  }
--
--void __init r8a7740_init_irq_of(void)
+ 
+-static int mmc_spi_get_ro(struct mmc_host *mmc)
 -{
--	irqchip_init();
--	r8a7740_init_irq_common();
+-	struct mmc_spi_host *host = mmc_priv(mmc);
+-
+-	if (host->pdata && host->pdata->get_ro)
+-		return !!host->pdata->get_ro(mmc->parent);
+-	else
+-		return mmc_gpio_get_ro(mmc);
 -}
 -
--void __init r8a7740_init_irq(void)
+-static int mmc_spi_get_cd(struct mmc_host *mmc)
 -{
--	void __iomem *gic_dist_base = ioremap_nocache(0xc2800000, 0x1000);
--	void __iomem *gic_cpu_base = ioremap_nocache(0xc2000000, 0x1000);
+-	struct mmc_spi_host *host = mmc_priv(mmc);
 -
--	/* initialize the Generic Interrupt Controller PL390 r0p0 */
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
--	r8a7740_init_irq_common();
+-	if (host->pdata && host->pdata->get_cd)
+-		return !!host->pdata->get_cd(mmc->parent);
+-	else
+-		return mmc_gpio_get_cd(mmc);
 -}
+-
+ static const struct mmc_host_ops mmc_spi_ops = {
+ 	.request	= mmc_spi_request,
+ 	.set_ios	= mmc_spi_set_ios,
+-	.get_ro		= mmc_spi_get_ro,
+-	.get_cd		= mmc_spi_get_cd,
++	.get_ro		= mmc_gpio_get_ro,
++	.get_cd		= mmc_gpio_get_cd,
+ };
+ 
+ 
+diff --git a/include/linux/spi/mmc_spi.h b/include/linux/spi/mmc_spi.h
+index 87cdb35..274bc0f 100644
+--- a/include/linux/spi/mmc_spi.h
++++ b/include/linux/spi/mmc_spi.h
+@@ -26,15 +26,6 @@ struct mmc_spi_platform_data {
+ 		void *);
+ 	void (*exit)(struct device *, void *);
+ 
+-	/* sense switch on sd cards */
+-	int (*get_ro)(struct device *);
+-
+-	/*
+-	 * If board does not use CD interrupts, driver can optimize polling
+-	 * using this function.
+-	 */
+-	int (*get_cd)(struct device *);
+-
+ 	/*
+ 	 * Card Detect and Read Only GPIOs. To enable debouncing on the card
+ 	 * detect GPIO, set the cd_debounce to the debounce time in
 -- 
-1.8.3.2
+1.8.1.5
 
