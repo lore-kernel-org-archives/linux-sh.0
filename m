@@ -1,29 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 30 Aug 2013 00:19:29 +0000
-Subject: Re: [GIT PULL 0/5] Third round of Renesas ARM-based SoC board updates for v3.12
-Message-Id: <20130830001929.GG25167@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 08 Aug 2013 21:44:03 +0000
+Subject: [PATCH 2/2] ARM: shmobile: Marzen: enable DMA for SDHI0
+Message-Id: <201308090144.03912.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377653181.git.horms+renesas@verge.net.au>
- <20130829235958.GI29606@quad.lixom.net>
-In-Reply-To: <20130829235958.GI29606@quad.lixom.net>
+References: <201308090140.14515.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308090140.14515.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 29, 2013 at 04:59:58PM -0700, Olof Johansson wrote:
-> Hi Simon,
-> 
-> On Wed, Aug 28, 2013 at 10:37:40AM +0900, Simon Horman wrote:
-> > please consider this third round of Renesas ARM based SoC board
-> > updates for v3.12.
-> 
-> It's time to start closing down the tree, so please hold these (and the other
-> branches you sent pull requests for on the 28th) for right after -rc1. We'll of
-> course be happy to take fixes to things before then, but cleanups and new code
-> should wait.
-> 
-> That will also simplify a lot of the dependencies on these late branches. :)
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-Understood. I'll hold these requests off for the next cycle and
-only send fixes for the rest of this cycle.
+Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
+driver.
+
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: removed #include <mach/dma.h>]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+ arch/arm/mach-shmobile/board-marzen.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/board-marzen.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
++++ renesas/arch/arm/mach-shmobile/board-marzen.c
+@@ -122,6 +122,8 @@ static struct resource sdhi0_resources[]
+ };
+ 
+ static struct sh_mobile_sdhi_info sdhi0_platform_data = {
++	.dma_slave_tx = HPBDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx = HPBDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
+ };
