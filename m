@@ -1,36 +1,224 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 05 Aug 2013 00:43:19 +0000
-Subject: [PATCH 2/3 v4] ASoC: shmobile: r8a7778: add USBHS clock
-Message-Id: <877gg1t1az.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:32 +0000
+Subject: [PATCH v3 02/14] mmc: mmc_spi: Support CD/RO GPIOs
+Message-Id: <1375958324-29683-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds USBHS clock for renesas_usbhs driver
+Add support for passing CD/RO GPIO numbers directly to the mmc_spi
+driver instead of relying solely on board code callbacks to retrieve the
+CD/RO signals values. The driver will enable debouncing on the card
+detect GPIO if the cd_debounce field is set to a non-zero value.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: H Hartley Sweeten <hsweeten@visionengravers.com>
 ---
-v3 -> v4
+ drivers/mmc/host/mmc_spi.c    | 33 ++++++++++++++++++++++---------
+ drivers/mmc/host/of_mmc_spi.c | 46 +++++++++++--------------------------------
+ include/linux/spi/mmc_spi.h   | 16 +++++++++++++++
+ 3 files changed, 52 insertions(+), 43 deletions(-)
 
- - no change
-
- arch/arm/mach-shmobile/clock-r8a7778.c |    1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index a0e9eb7..1395a2ac 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -148,6 +148,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
-+	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP100]), /* USB FUNC */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
- 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
- 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
+diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
+index 74145d1..62fb82d 100644
+--- a/drivers/mmc/host/mmc_spi.c
++++ b/drivers/mmc/host/mmc_spi.c
+@@ -36,6 +36,7 @@
+ 
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/mmc.h>		/* for R1_SPI_* bit values */
++#include <linux/mmc/slot-gpio.h>
+ 
+ #include <linux/spi/spi.h>
+ #include <linux/spi/mmc_spi.h>
+@@ -1278,11 +1279,8 @@ static int mmc_spi_get_ro(struct mmc_host *mmc)
+ 
+ 	if (host->pdata && host->pdata->get_ro)
+ 		return !!host->pdata->get_ro(mmc->parent);
+-	/*
+-	 * Board doesn't support read only detection; let the mmc core
+-	 * decide what to do.
+-	 */
+-	return -ENOSYS;
++	else
++		return mmc_gpio_get_ro(mmc);
+ }
+ 
+ static int mmc_spi_get_cd(struct mmc_host *mmc)
+@@ -1291,7 +1289,8 @@ static int mmc_spi_get_cd(struct mmc_host *mmc)
+ 
+ 	if (host->pdata && host->pdata->get_cd)
+ 		return !!host->pdata->get_cd(mmc->parent);
+-	return -ENOSYS;
++	else
++		return mmc_gpio_get_cd(mmc);
+ }
+ 
+ static const struct mmc_host_ops mmc_spi_ops = {
+@@ -1324,6 +1323,7 @@ static int mmc_spi_probe(struct spi_device *spi)
+ 	struct mmc_host		*mmc;
+ 	struct mmc_spi_host	*host;
+ 	int			status;
++	bool			has_ro = false;
+ 
+ 	/* We rely on full duplex transfers, mostly to reduce
+ 	 * per-transfer overheads (by making fewer transfers).
+@@ -1448,18 +1448,33 @@ static int mmc_spi_probe(struct spi_device *spi)
+ 	}
+ 
+ 	/* pass platform capabilities, if any */
+-	if (host->pdata)
++	if (host->pdata) {
+ 		mmc->caps |= host->pdata->caps;
++		mmc->caps2 |= host->pdata->caps2;
++	}
+ 
+ 	status = mmc_add_host(mmc);
+ 	if (status != 0)
+ 		goto fail_add_host;
+ 
++	if (host->pdata && host->pdata->flags & MMC_SPI_USE_CD_GPIO) {
++		status = mmc_gpio_request_cd(mmc, host->pdata->cd_gpio,
++					     host->pdata->cd_debounce);
++		if (status != 0)
++			goto fail_add_host;
++	}
++
++	if (host->pdata && host->pdata->flags & MMC_SPI_USE_RO_GPIO) {
++		has_ro = true;
++		status = mmc_gpio_request_ro(mmc, host->pdata->ro_gpio);
++		if (status != 0)
++			goto fail_add_host;
++	}
++
+ 	dev_info(&spi->dev, "SD/MMC host %s%s%s%s%s\n",
+ 			dev_name(&mmc->class_dev),
+ 			host->dma_dev ? "" : ", no DMA",
+-			(host->pdata && host->pdata->get_ro)
+-				? "" : ", no WP",
++			has_ro ? "" : ", no WP",
+ 			(host->pdata && host->pdata->setpower)
+ 				? "" : ", no poweroff",
+ 			(mmc->caps & MMC_CAP_NEEDS_POLL)
+diff --git a/drivers/mmc/host/of_mmc_spi.c b/drivers/mmc/host/of_mmc_spi.c
+index d720b5e..6e218fb 100644
+--- a/drivers/mmc/host/of_mmc_spi.c
++++ b/drivers/mmc/host/of_mmc_spi.c
+@@ -50,25 +50,6 @@ static struct of_mmc_spi *to_of_mmc_spi(struct device *dev)
+ 	return container_of(dev->platform_data, struct of_mmc_spi, pdata);
+ }
+ 
+-static int of_mmc_spi_read_gpio(struct device *dev, int gpio_num)
+-{
+-	struct of_mmc_spi *oms = to_of_mmc_spi(dev);
+-	bool active_low = oms->alow_gpios[gpio_num];
+-	bool value = gpio_get_value(oms->gpios[gpio_num]);
+-
+-	return active_low ^ value;
+-}
+-
+-static int of_mmc_spi_get_cd(struct device *dev)
+-{
+-	return of_mmc_spi_read_gpio(dev, CD_GPIO);
+-}
+-
+-static int of_mmc_spi_get_ro(struct device *dev)
+-{
+-	return of_mmc_spi_read_gpio(dev, WP_GPIO);
+-}
+-
+ static int of_mmc_spi_init(struct device *dev,
+ 			   irqreturn_t (*irqhandler)(int, void *), void *mmc)
+ {
+@@ -130,20 +111,22 @@ struct mmc_spi_platform_data *mmc_spi_get_pdata(struct spi_device *spi)
+ 		if (!gpio_is_valid(oms->gpios[i]))
+ 			continue;
+ 
+-		ret = gpio_request(oms->gpios[i], dev_name(dev));
+-		if (ret < 0) {
+-			oms->gpios[i] = -EINVAL;
+-			continue;
+-		}
+-
+ 		if (gpio_flags & OF_GPIO_ACTIVE_LOW)
+ 			oms->alow_gpios[i] = true;
+ 	}
+ 
+-	if (gpio_is_valid(oms->gpios[CD_GPIO]))
+-		oms->pdata.get_cd = of_mmc_spi_get_cd;
+-	if (gpio_is_valid(oms->gpios[WP_GPIO]))
+-		oms->pdata.get_ro = of_mmc_spi_get_ro;
++	if (gpio_is_valid(oms->gpios[CD_GPIO])) {
++		oms->pdata.cd_gpio = oms->gpios[CD_GPIO];
++		oms->pdata.flags |= MMC_SPI_USE_CD_GPIO;
++		if (!oms->alow_gpios[CD_GPIO])
++			oms->pdata.caps2 |= MMC_CAP2_CD_ACTIVE_HIGH;
++	}
++	if (gpio_is_valid(oms->gpios[WP_GPIO])) {
++		oms->pdata.ro_gpio = oms->gpios[WP_GPIO];
++		oms->pdata.flags |= MMC_SPI_USE_RO_GPIO;
++		if (!oms->alow_gpios[WP_GPIO])
++			oms->pdata.caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
++	}
+ 
+ 	oms->detect_irq = irq_of_parse_and_map(np, 0);
+ 	if (oms->detect_irq != 0) {
+@@ -166,15 +149,10 @@ void mmc_spi_put_pdata(struct spi_device *spi)
+ 	struct device *dev = &spi->dev;
+ 	struct device_node *np = dev->of_node;
+ 	struct of_mmc_spi *oms = to_of_mmc_spi(dev);
+-	int i;
+ 
+ 	if (!dev->platform_data || !np)
+ 		return;
+ 
+-	for (i = 0; i < ARRAY_SIZE(oms->gpios); i++) {
+-		if (gpio_is_valid(oms->gpios[i]))
+-			gpio_free(oms->gpios[i]);
+-	}
+ 	kfree(oms);
+ 	dev->platform_data = NULL;
+ }
+diff --git a/include/linux/spi/mmc_spi.h b/include/linux/spi/mmc_spi.h
+index 32be8db..87cdb35 100644
+--- a/include/linux/spi/mmc_spi.h
++++ b/include/linux/spi/mmc_spi.h
+@@ -7,6 +7,11 @@
+ struct device;
+ struct mmc_host;
+ 
++#define MMC_SPI_USE_CD_GPIO			(1 << 0)
++#define MMC_SPI_USE_RO_GPIO			(1 << 1)
++#define MMC_SPI_CD_GPIO_ACTIVE_LOW		(1 << 2)
++#define MMC_SPI_RO_GPIO_ACTIVE_LOW		(1 << 3)
++
+ /* Put this in platform_data of a device being used to manage an MMC/SD
+  * card slot.  (Modeled after PXA mmc glue; see that for usage examples.)
+  *
+@@ -30,8 +35,19 @@ struct mmc_spi_platform_data {
+ 	 */
+ 	int (*get_cd)(struct device *);
+ 
++	/*
++	 * Card Detect and Read Only GPIOs. To enable debouncing on the card
++	 * detect GPIO, set the cd_debounce to the debounce time in
++	 * microseconds.
++	 */
++	unsigned int flags;
++	unsigned int cd_gpio;
++	unsigned int cd_debounce;
++	unsigned int ro_gpio;
++
+ 	/* Capabilities to pass into mmc core (e.g. MMC_CAP_NEEDS_POLL). */
+ 	unsigned long caps;
++	unsigned long caps2;
+ 
+ 	/* how long to debounce card detect, in msecs */
+ 	u16 detect_delay;
 -- 
-1.7.9.5
+1.8.1.5
 
