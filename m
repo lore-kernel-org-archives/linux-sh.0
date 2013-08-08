@@ -1,31 +1,37 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 02 Aug 2013 09:55:43 +0000
-Subject: Re: [PATCH v5 9/9] vsp1: Use the maximum number of entities defined in platform data
-Message-Id: <51FB821F.4080504@xs4all.nl>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 08 Aug 2013 20:57:34 +0000
+Subject: Re: [PATCH v9] V4L2: soc_camera: Renesas R-Car VIN driver
+Message-Id: <5204063E.7050707@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1375405408-17134-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375405408-17134-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201307260023.11460.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201307260023.11460.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: g.liakhovetski@gmx.de, mchehab@redhat.com, linux-media@vger.kernel.org
+Cc: magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp, vladimir.barinov@cogentembedded.com
 
+Hello.
 
+On 07/26/2013 12:23 AM, Sergei Shtylyov wrote:
 
-On 08/02/2013 03:03 AM, Laurent Pinchart wrote:
-> From: Katsuya Matsubara <matsu@igel.co.jp>
-> 
-> The VSP1 driver allows to define the maximum number of each module
-> such as RPF, WPF, and UDS in a platform data definition.
-> This suppresses operations for nonexistent or unused modules.
-> 
-> Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+> Add Renesas R-Car VIN (Video In) V4L2 driver.
 
-Regards,
+> Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
 
-	Hans
+> Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> [Sergei: removed deprecated IRQF_DISABLED flag, reordered/renamed 'enum chip_id'
+> values, reordered rcar_vin_id_table[] entries,  removed senseless parens from
+> to_buf_list() macro, used ALIGN() macro in rcar_vin_setup(), added {} to the
+> *if* statement  and used 'bool' values instead of 0/1 where necessary, removed
+> unused macros, done some reformatting and clarified some comments.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+    Guennadi, Mauro, if you don't have issues with this version, perhaps we 
+still can merge it to 3.11 using "the new drivers can't cause regressions, so 
+mergeable any time" rule?
+
+WBR, Sergei
+
