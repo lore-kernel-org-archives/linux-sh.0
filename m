@@ -1,61 +1,96 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 01 Aug 2013 08:26:31 +0000
-Subject: [PATCH 09/14] ARM: shmobile: r8a73a4: Remove ->init_machine() special case
-Message-Id: <67fde41ea4251f722b4466597c479fb42fccac2c.1375344714.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:33 +0000
+Subject: [PATCH v3 03/14] ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
+Message-Id: <1375958324-29683-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375344714.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Pass the CD and RO GPIO numbers to the MMC SPI driver and remove the
+custom .get_cd() and .get_ro() callback functions.
 
-No need to special case r8a73a4 ->init_machine(),
-so get rid of undesired cpufreq platform device
-from the generic long term r8a73a4 DT support code.
-
-For short term support on APE6EVM the DT reference
-implementation already adds a "cpufreq-cpu0" platform
-device so that can be used for development.
-
-Regarding more long term cpufreq support, perhaps
-it makes sense to adjust the cpufreq driver to check
-for DT information directly instead of using a
-platform device for software configuration and DT
-for hardware parameters.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: H Hartley Sweeten <hsweeten@visionengravers.com>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/mach-ep93xx/vision_ep9307.c | 57 ++++--------------------------------
+ 1 file changed, 5 insertions(+), 52 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index d533bd2..11c0f63 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -210,11 +210,6 @@ void __init r8a73a4_init_delay(void)
- }
+diff --git a/arch/arm/mach-ep93xx/vision_ep9307.c b/arch/arm/mach-ep93xx/vision_ep9307.c
+index 605956f..5a4c06d 100644
+--- a/arch/arm/mach-ep93xx/vision_ep9307.c
++++ b/arch/arm/mach-ep93xx/vision_ep9307.c
+@@ -224,62 +224,15 @@ static struct ep93xx_spi_chip_ops vision_spi_flash_hw = {
+ #define VISION_SPI_MMC_WP	EP93XX_GPIO_LINE_F(0)
+ #define VISION_SPI_MMC_CD	EP93XX_GPIO_LINE_EGPIO15
  
- #ifdef CONFIG_USE_OF
--void __init r8a73a4_add_standard_devices_dt(void)
+-static struct gpio vision_spi_mmc_gpios[] = {
+-	{ VISION_SPI_MMC_WP, GPIOF_DIR_IN, "mmc_spi:wp" },
+-	{ VISION_SPI_MMC_CD, GPIOF_DIR_IN, "mmc_spi:cd" },
+-};
+-
+-static int vision_spi_mmc_init(struct device *pdev,
+-			irqreturn_t (*func)(int, void *), void *pdata)
 -{
--	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	int err;
+-
+-	err = gpio_request_array(vision_spi_mmc_gpios,
+-				 ARRAY_SIZE(vision_spi_mmc_gpios));
+-	if (err)
+-		return err;
+-
+-	err = gpio_set_debounce(VISION_SPI_MMC_CD, 1);
+-	if (err)
+-		goto exit_err;
+-
+-	err = request_irq(gpio_to_irq(VISION_SPI_MMC_CD), func,
+-			IRQ_TYPE_EDGE_BOTH, "mmc_spi:cd", pdata);
+-	if (err)
+-		goto exit_err;
+-
+-	return 0;
+-
+-exit_err:
+-	gpio_free_array(vision_spi_mmc_gpios, ARRAY_SIZE(vision_spi_mmc_gpios));
+-	return err;
+-
 -}
+-
+-static void vision_spi_mmc_exit(struct device *pdev, void *pdata)
+-{
+-	free_irq(gpio_to_irq(VISION_SPI_MMC_CD), pdata);
+-	gpio_free_array(vision_spi_mmc_gpios, ARRAY_SIZE(vision_spi_mmc_gpios));
+-}
+-
+-static int vision_spi_mmc_get_ro(struct device *pdev)
+-{
+-	return !!gpio_get_value(VISION_SPI_MMC_WP);
+-}
+-
+-static int vision_spi_mmc_get_cd(struct device *pdev)
+-{
+-	return !gpio_get_value(VISION_SPI_MMC_CD);
+-}
+-
+ static struct mmc_spi_platform_data vision_spi_mmc_data = {
+-	.init		= vision_spi_mmc_init,
+-	.exit		= vision_spi_mmc_exit,
+-	.get_ro		= vision_spi_mmc_get_ro,
+-	.get_cd		= vision_spi_mmc_get_cd,
+ 	.detect_delay	= 100,
+ 	.powerup_msecs	= 100,
+ 	.ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
++	.flags		= MMC_SPI_USE_CD_GPIO | MMC_SPI_USE_RO_GPIO,
++	.cd_gpio	= VISION_SPI_MMC_CD,
++	.cd_debounce	= 1,
++	.ro_gpio	= VISION_SPI_MMC_WP,
++	.caps2		= MMC_CAP2_RO_ACTIVE_HIGH,
+ };
  
- static const char *r8a73a4_boards_compat_dt[] __initdata = {
- 	"renesas,r8a73a4",
-@@ -223,7 +218,6 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
- 
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
- 	.init_early	= r8a73a4_init_delay,
--	.init_machine	= r8a73a4_add_standard_devices_dt,
- 	.init_time	= shmobile_timer_init,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
- MACHINE_END
+ static int vision_spi_mmc_hw_setup(struct spi_device *spi)
 -- 
-1.8.3.2
+1.8.1.5
 
