@@ -1,45 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:40:54 +0000
-Subject: [GIT PULL] Third round of Renesas ARM-based SoC DT updates for v3.12
-Message-Id: <cover.1377652718.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:39 +0000
+Subject: [PATCH v3 09/14] mmc: sh_mmcif: Remove .down_pwr() callback from platform data
+Message-Id: <1375958324-29683-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Kevin, Hi Olof, Hi Arnd,
+The callback isn't used by the driver and isn't initialized by board
+code. Remove it.
 
-please consider this third round of Renesas ARM based SoC DT updates for v3.12.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ include/linux/mmc/sh_mmcif.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-It is based on renesas-dt2-for-v3.12 ("Second round of ARM based SoC DT
-updates for v3.12") which you have previously pulled.
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index e7d5dd6..39011eb 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -34,7 +34,6 @@
+ 
+ struct sh_mmcif_plat_data {
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+-	void (*down_pwr)(struct platform_device *pdev);
+ 	int (*get_cd)(struct platform_device *pdef);
+ 	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
+ 	unsigned int		slave_id_rx;
+-- 
+1.8.1.5
 
-I apologise that this and other pull requests that I will send today
-are rather later in the cycle than I would like. This is primarily due
-to a combination of my summer vacation and wanting to let the patches
-sit in next for a while.
-
-The following changes since commit 8b3e32c1fe5dce55e28e76b20361841dc863ec17:
-
-  ARM: shmobile: r8a7740: Add TPU node to the device tree (2013-08-06 18:06:23 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v3.12
-
-for you to fetch changes up to ba6094d6e8f30a538e08e9a892f3e37debd84413:
-
-  ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes (2013-08-22 11:37:53 +0900)
-
-----------------------------------------------------------------
-Third round of Renesas ARM-based SoC DT updates for v3.12
-
-* Add MMCIF and SDHI to reference DT nodes of ape6evm board
-
-----------------------------------------------------------------
-Guennadi Liakhovetski (1):
-      ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
-
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 72 +++++++++++++++++++++++++
- 1 file changed, 72 insertions(+)
