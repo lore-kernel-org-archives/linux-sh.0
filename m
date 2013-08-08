@@ -1,46 +1,102 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 27 Aug 2013 09:31:18 +0000
-Subject: [PATCH] DMA: shdma: fix compiler warning after a bad merge
-Message-Id: <Pine.LNX.4.64.1308271130360.11515@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:36 +0000
+Subject: [PATCH v3 06/14] sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
+Message-Id: <1375958324-29683-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Koul, Vinod" <vinod.koul@intel.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-A recent merge commit
+The MMCIF and SHDI platform data .set_pwr() callbacks are used to
+control the vmmc/vqmmc power supplies. As the power supplies already
+register control GPIOs there's no need to perform the operation
+manually. Remove the callback functions.
 
-commit ba1e06e3dff9a0bb0758d169e50cbb04a67a402c
-Author: Vinod Koul <vinod.koul@intel.com>
-
-    Merge branch 'topic/sh' into next
-
-introduced a compiler warning:
-
-drivers/dma/sh/shdmac.c: In function 'sh_dmae_probe':
-drivers/dma/sh/shdmac.c:697: warning: assignment discards qualifiers from pointer target type
-
-This patch re-adds the dropped "const" qualifier and fixes the warning.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/dma/sh/shdmac.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c | 41 ------------------------------------
+ 1 file changed, 41 deletions(-)
 
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index dcd344e..1069e88 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -684,7 +684,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 5af40f5..0332d25 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -598,29 +598,9 @@ static struct platform_device sdhi0_power = {
+ 	},
+ };
  
- static int sh_dmae_probe(struct platform_device *pdev)
- {
--	struct sh_dmae_pdata *pdata;
-+	const struct sh_dmae_pdata *pdata;
- 	unsigned long irqflags = IRQF_DISABLED,
- 		chan_flag[SH_DMAE_MAX_CHANNELS] = {};
- 	int errirq, chan_irq[SH_DMAE_MAX_CHANNELS];
+-static void sdhi0_set_pwr(struct platform_device *pdev, int state)
+-{
+-	static int power_gpio = -EINVAL;
+-
+-	if (power_gpio < 0) {
+-		int ret = gpio_request(GPIO_PTB6, NULL);
+-		if (!ret) {
+-			power_gpio = GPIO_PTB6;
+-			gpio_direction_output(power_gpio, 0);
+-		}
+-	}
+-
+-	/*
+-	 * Toggle the GPIO regardless, whether we managed to grab it above or
+-	 * the fixed regulator driver did.
+-	 */
+-	gpio_set_value(GPIO_PTB6, state);
+-}
+-
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.set_pwr	= sdhi0_set_pwr,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
+ 			  MMC_CAP_NEEDS_POLL,
+ 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
+@@ -650,25 +630,6 @@ static struct platform_device sdhi0_device = {
+ 	},
+ };
+ 
+-static void cn12_set_pwr(struct platform_device *pdev, int state)
+-{
+-	static int power_gpio = -EINVAL;
+-
+-	if (power_gpio < 0) {
+-		int ret = gpio_request(GPIO_PTB7, NULL);
+-		if (!ret) {
+-			power_gpio = GPIO_PTB7;
+-			gpio_direction_output(power_gpio, 0);
+-		}
+-	}
+-
+-	/*
+-	 * Toggle the GPIO regardless, whether we managed to grab it above or
+-	 * the fixed regulator driver did.
+-	 */
+-	gpio_set_value(GPIO_PTB7, state);
+-}
+-
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SDHI1 */
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+@@ -678,7 +639,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 			  MMC_CAP_NEEDS_POLL,
+ 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
+ 	.cd_gpio	= GPIO_PTW7,
+-	.set_pwr	= cn12_set_pwr,
+ };
+ 
+ static struct resource sdhi1_resources[] = {
+@@ -1000,7 +960,6 @@ static struct resource sh_mmcif_resources[] = {
+ };
+ 
+ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+-	.set_pwr	= cn12_set_pwr,
+ 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
 -- 
-1.7.2.5
+1.8.1.5
 
