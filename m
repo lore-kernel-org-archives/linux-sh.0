@@ -1,50 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:35 +0000
-Subject: [GIT PULL 18/26] ARM: shmobile: Remove unused shmobile_init_time()
-Message-Id: <13eb604665c94d4cd9d7e2aeceef974cf1f30701.1375840527.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:44 +0000
+Subject: [PATCH v3 14/14] mmc: tmio-mmc: Remove .set_pwr() callback from platform data
+Message-Id: <1375958324-29683-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+The .set_pwr() callback isn't used anymore as all platforms register
+GPIO-controlled regulators. Remove it.
 
-Remove shmobile_timer_init() since it now is unused.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/include/mach/common.h | 1 -
- arch/arm/mach-shmobile/timer.c               | 4 ----
- 2 files changed, 5 deletions(-)
+ drivers/mmc/host/tmio_mmc.h     | 1 -
+ drivers/mmc/host/tmio_mmc_pio.c | 7 -------
+ include/linux/mfd/tmio.h        | 1 -
+ 3 files changed, 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index e818f02..18a76f9 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -2,7 +2,6 @@
- #define __ARCH_MACH_COMMON_H
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 86fd21e..39c2f45 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -68,7 +68,6 @@ struct tmio_mmc_host {
+ 	enum tmio_mmc_power	power;
  
- extern void shmobile_earlytimer_init(void);
--extern void shmobile_timer_init(void);
- extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
- 			 unsigned int mult, unsigned int div);
- struct twd_local_timer;
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index f321dbe..62d7052 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -59,7 +59,3 @@ void __init shmobile_earlytimer_init(void)
- 	late_time_init = shmobile_late_time_init;
+ 	/* Callbacks for clock / power control */
+-	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 
+ 	/* pio related stuff */
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b380225..67a3bf1 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -777,9 +777,6 @@ static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
+ 
+ 	/* .set_ios() is returning void, so, no chance to report an error */
+ 
+-	if (host->set_pwr)
+-		host->set_pwr(host->pdev, 1);
+-
+ 	if (!IS_ERR(mmc->supply.vmmc)) {
+ 		ret = mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, vdd);
+ 		/*
+@@ -813,9 +810,6 @@ static void tmio_mmc_power_off(struct tmio_mmc_host *host)
+ 
+ 	if (!IS_ERR(mmc->supply.vmmc))
+ 		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, 0);
+-
+-	if (host->set_pwr)
+-		host->set_pwr(host->pdev, 0);
  }
  
--void __init shmobile_timer_init(void)
--{
--	clocksource_of_init();
--}
+ /* Set MMC clock / power.
+@@ -1002,7 +996,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	_host->pdev = pdev;
+ 	platform_set_drvdata(pdev, mmc);
+ 
+-	_host->set_pwr = pdata->set_pwr;
+ 	_host->set_clk_div = pdata->set_clk_div;
+ 
+ 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index b22883d..baa2346 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -106,7 +106,6 @@ struct tmio_mmc_data {
+ 	struct tmio_mmc_dma		*dma;
+ 	struct device			*dev;
+ 	unsigned int			cd_gpio;
+-	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
+ 	/* clock management callbacks */
 -- 
-1.8.3.2
+1.8.1.5
 
