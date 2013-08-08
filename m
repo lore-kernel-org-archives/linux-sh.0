@@ -1,61 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 06 Aug 2013 07:50:09 +0000
-Subject: [PATCH v7 1/3] ARM: shmobile: r8a7790: clocks for Ether support
-Message-Id: <1375775411-4545-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:41 +0000
+Subject: [PATCH v3 11/14] mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
+Message-Id: <1375958324-29683-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375775411-4545-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1375775411-4545-1-git-send-email-horms+renesas@verge.net.au>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+All platforms pass the CD GPIO number to the driver in the .cd_gpio
+field. The .get_cd() callback isn't used anymore, remove it.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c  | 9 ---------
+ include/linux/mmc/sh_mobile_sdhi.h | 1 -
+ 2 files changed, 10 deletions(-)
 
-v5
-* Split out from "ARM: shmobile: r8a7790: add Ether support"
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 50d96f9..fc36d3d 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -51,6 +51,7 @@
- #define SMSTPCR3 0xe615013c
- #define SMSTPCR5 0xe6150144
- #define SMSTPCR7 0xe615014c
-+#define SMSTPCR8 0xe6150990
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index ebea749..663a672 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -77,13 +77,6 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
+ 	p->set_pwr(pdev, state);
+ }
  
- #define SDCKCR		0xE6150074
- #define SD2CKCR		0xE6150078
-@@ -180,6 +181,7 @@ static struct clk div6_clks[DIV6_NR] = {
+-static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
+-{
+-	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+-
+-	return p->get_cd(pdev);
+-}
+-
+ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+ {
+ 	int timeout = 1000;
+@@ -182,8 +175,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		mmc_data->cd_gpio = p->cd_gpio;
+ 		if (p->set_pwr)
+ 			mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+-		if (p->get_cd)
+-			mmc_data->get_cd = sh_mobile_sdhi_get_cd;
  
- /* MSTP */
- enum {
-+	MSTP813,
- 	MSTP721, MSTP720,
- 	MSTP717, MSTP716,
- 	MSTP522,
-@@ -190,6 +192,7 @@ enum {
- };
+ 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
+ 			/*
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index b76bcf0..f31c692 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -26,7 +26,6 @@ struct sh_mobile_sdhi_info {
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
+ 	unsigned int cd_gpio;
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+-	int (*get_cd)(struct platform_device *pdev);
  
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
- 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
- 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
- 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
-@@ -258,6 +261,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
-+	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+ 	/* callbacks for board specific setup code */
+ 	int (*init)(struct platform_device *pdev,
 -- 
-1.8.3.2
+1.8.1.5
 
