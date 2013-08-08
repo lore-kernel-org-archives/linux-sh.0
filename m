@@ -1,46 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 01 Aug 2013 08:26:52 +0000
-Subject: [PATCH 10/14] ARM: shmobile: Use pm-rmobile on sh7372 and r8a7740 only
-Message-Id: <0173a741e19e072ae34fda4a32d004e52c9da8e7.1375344714.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 08 Aug 2013 10:38:43 +0000
+Subject: [PATCH v3 13/14] mmc: tmio-mmc: Remove .get_cd() callback from platform data
+Message-Id: <1375958324-29683-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375344714.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+All platforms pass the CD GPIO number to the driver in the .cd_gpio
+field. The .get_cd() callback isn't used anymore, remove it
 
-The functions in pm-rmobile.c are only used on sh7372 and
-r8a7740, so adjust the Makefile to only link in that file
-in case those SoCs are selected.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/Makefile | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c | 16 +---------------
+ include/linux/mfd/tmio.h        |  1 -
+ 2 files changed, 1 insertion(+), 16 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 62574c1..3c56de8 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -28,11 +28,10 @@ obj-$(CONFIG_ARCH_R8A7740)	+= entry-intc.o
- # PM objects
- obj-$(CONFIG_SUSPEND)		+= suspend.o
- obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
--obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
--obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
--obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o
--obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
-+obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
-+obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
-+obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 17f7fa9..b380225 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -936,25 +936,11 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ 		 (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
+ }
  
- # Board objects
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+-static int tmio_mmc_get_cd(struct mmc_host *mmc)
+-{
+-	struct tmio_mmc_host *host = mmc_priv(mmc);
+-	struct tmio_mmc_data *pdata = host->pdata;
+-	int ret = mmc_gpio_get_cd(mmc);
+-	if (ret >= 0)
+-		return ret;
+-
+-	if (!pdata->get_cd)
+-		return -ENOSYS;
+-	else
+-		return pdata->get_cd(host->pdev);
+-}
+-
+ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.request	= tmio_mmc_request,
+ 	.set_ios	= tmio_mmc_set_ios,
+ 	.get_ro         = tmio_mmc_get_ro,
+-	.get_cd		= tmio_mmc_get_cd,
++	.get_cd		= mmc_gpio_get_cd,
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
+ };
+ 
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index ce35113..b22883d 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -108,7 +108,6 @@ struct tmio_mmc_data {
+ 	unsigned int			cd_gpio;
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+-	int (*get_cd)(struct platform_device *host);
+ 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
+ 	/* clock management callbacks */
+ 	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
 -- 
-1.8.3.2
+1.8.1.5
 
