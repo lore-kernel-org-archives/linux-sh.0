@@ -1,68 +1,95 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 06 Aug 2013 20:09:57 +0000
-Subject: Re: [PATCH v6 04/10] media: vb2: Take queue or device lock in vb2_fop_mmap()
-Message-Id: <47444631.Heq6Wo9coy@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 09 Aug 2013 09:49:36 +0000
+Subject: [PATCH 10/14] ARM: shmobile: Rename to emev2_init_early(), use smp_set_ops()
+Message-Id: <20130809094936.6530.31840.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1375725209-2674-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <201308061239.27188.hverkuil@xs4all.nl>
-In-Reply-To: <201308061239.27188.hverkuil@xs4all.nl>
+References: <20130809094748.6530.16511.sendpatchset@w520>
+In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil@xs4all.nl>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Hans,
+From: Magnus Damm <damm@opensource.se>
 
-On Tuesday 06 August 2013 12:39:27 Hans Verkuil wrote:
-> On Mon 5 August 2013 19:53:23 Laurent Pinchart wrote:
-> > The vb2_fop_mmap() function is a plug-in implementation of the mmap()
-> > file operation that calls vb2_mmap() on the queue associated with the
-> > video device. Neither the vb2_fop_mmap() function nor the v4l2_mmap()
-> > mmap handler in the V4L2 core take any lock, leading to race conditions
-> > between mmap() and other buffer-related ioctls such as VIDIOC_REQBUFS.
-> > 
-> > Fix it by taking the queue or device lock around the vb2_mmap() call.
-> 
-> Hi Laurent,
-> 
-> Can you do the same for vb2_fop_get_unmapped_area()?
+Rename emev2_init_delay() into emev2_init_early()
+to make the function name show that more than just
+delay setup will happen.
 
-Sure. I'll repost a v7 of this patch that fixes both mmap and 
-get_unmapped_area.
+Also, instead of specifying the smp ops in DT_MACHINE
+convert the EMEV2 SoC code to install the smp ops
+from emev2_init_early().
 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  drivers/media/v4l2-core/videobuf2-core.c | 9 ++++++++-
-> >  1 file changed, 8 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/drivers/media/v4l2-core/videobuf2-core.c
-> > b/drivers/media/v4l2-core/videobuf2-core.c index 9fc4bab..bd4bade 100644
-> > --- a/drivers/media/v4l2-core/videobuf2-core.c
-> > +++ b/drivers/media/v4l2-core/videobuf2-core.c
-> > @@ -2578,8 +2578,15 @@ EXPORT_SYMBOL_GPL(vb2_ioctl_expbuf);
-> > 
-> >  int vb2_fop_mmap(struct file *file, struct vm_area_struct *vma)
-> >  {
-> >  
-> >  	struct video_device *vdev = video_devdata(file);
-> > 
-> > +	struct mutex *lock = vdev->queue->lock ? vdev->queue->lock : vdev-
->lock;
-> > +	int err;
-> > 
-> > -	return vb2_mmap(vdev->queue, vma);
-> > +	if (lock && mutex_lock_interruptible(lock))
-> > +		return -ERESTARTSYS;
-> > +	err = vb2_mmap(vdev->queue, vma);
-> > +	if (lock)
-> > +		mutex_unlock(lock);
-> > +	return err;
-> > 
-> >  }
-> >  EXPORT_SYMBOL_GPL(vb2_fop_mmap);
--- 
-Regards,
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Laurent Pinchart
+ arch/arm/mach-shmobile/board-kzm9d-reference.c |    3 +--
+ arch/arm/mach-shmobile/board-kzm9d.c           |    3 +--
+ arch/arm/mach-shmobile/include/mach/emev2.h    |    2 +-
+ arch/arm/mach-shmobile/setup-emev2.c           |    8 +++++---
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-kzm9d-reference.c
++++ work/arch/arm/mach-shmobile/board-kzm9d-reference.c	2013-08-08 16:18:34.000000000 +0900
+@@ -38,9 +38,8 @@ static const char *kzm9d_boards_compat_d
+ };
+ 
+ DT_MACHINE_START(KZM9D_DT, "kzm9d")
+-	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+-	.init_early	= emev2_init_delay,
++	.init_early	= emev2_init_early,
+ 	.init_machine	= kzm9d_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= kzm9d_boards_compat_dt,
+--- 0001/arch/arm/mach-shmobile/board-kzm9d.c
++++ work/arch/arm/mach-shmobile/board-kzm9d.c	2013-08-08 16:18:17.000000000 +0900
+@@ -83,9 +83,8 @@ static const char *kzm9d_boards_compat_d
+ };
+ 
+ DT_MACHINE_START(KZM9D_DT, "kzm9d")
+-	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+-	.init_early	= emev2_init_delay,
++	.init_early	= emev2_init_early,
+ 	.init_machine	= kzm9d_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= kzm9d_boards_compat_dt,
+--- 0001/arch/arm/mach-shmobile/include/mach/emev2.h
++++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2013-08-08 16:17:57.000000000 +0900
+@@ -2,7 +2,7 @@
+ #define __ASM_EMEV2_H__
+ 
+ extern void emev2_map_io(void);
+-extern void emev2_init_delay(void);
++extern void emev2_init_early(void);
+ extern void emev2_add_standard_devices(void);
+ extern void emev2_clock_init(void);
+ 
+--- 0001/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-08-08 16:17:47.000000000 +0900
+@@ -190,9 +190,12 @@ void __init emev2_add_standard_devices(v
+ 	emev2_register_pmu();
+ }
+ 
+-void __init emev2_init_delay(void)
++void __init emev2_init_early(void)
+ {
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
++#ifdef CONFIG_SMP
++	smp_set_ops(&emev2_smp_ops);
++#endif
+ }
+ 
+ #ifdef CONFIG_USE_OF
+@@ -203,9 +206,8 @@ static const char *emev2_boards_compat_d
+ };
+ 
+ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+-	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+-	.init_early	= emev2_init_delay,
++	.init_early	= emev2_init_early,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
+ 
