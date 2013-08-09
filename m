@@ -1,36 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Aug 2013 07:23:18 +0000
-Subject: Re: [PATCH v6 0/3] ARM: shmobile: lager: enable Ether
-Message-Id: <20130801072318.GA26015@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 09 Aug 2013 09:49:16 +0000
+Subject: [PATCH 08/14] ARM: shmobile: Remove sh73a0 ->nr_irqs
+Message-Id: <20130809094916.6530.67468.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130809094748.6530.16511.sendpatchset@w520>
+In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 30, 2013 at 06:09:18PM +0900, Simon Horman wrote:
-> this short series enables the on-board ethernet
-> of the r8a7790 SoC for on lager board.
-> 
-> It has a run-time dependency on
-> "sh_eth: add support for r8a7790 SoC"
-> 
-> It has been built on top of renesas-next-20130726.
-> 
-> Changes noted in changelogs of individual patches.
-> 
-> Simon Horman (3):
->   ARM: shmobile: r8a7790: clocks for Ether support
->   ARM: shmobile: lager: enable Ether
->   ARM: shmobile: lager: enable nfsroot in DTS
-> 
->  arch/arm/boot/dts/r8a7790-lager.dts    |  2 +-
->  arch/arm/mach-shmobile/board-lager.c   | 30 ++++++++++++++++++++++++++++++
->  arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
->  3 files changed, 35 insertions(+), 1 deletion(-)
+From: Magnus Damm <damm@opensource.se>
 
-Hi Magnus, Hi all,
+Remove .nr_irqs for sh73a0 DT cases.
 
-I would appreciate some review of this, and if appropriate an Ack.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    1 -
+ arch/arm/mach-shmobile/setup-sh73a0.c          |    1 -
+ 2 files changed, 2 deletions(-)
+
+--- 0009/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ work/arch/arm/mach-shmobile/board-kzm9g-reference.c	2013-08-08 16:09:22.000000000 +0900
+@@ -57,7 +57,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-refere
+ 	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+-	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_machine	= kzm_init,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
+--- 0009/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-08-08 16:09:35.000000000 +0900
+@@ -957,7 +957,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH7
+ 	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_init_delay,
+-	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
