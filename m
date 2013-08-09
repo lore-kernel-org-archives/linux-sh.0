@@ -1,124 +1,105 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:37:53 +0000
-Subject: [PATCH 3/5] ARM: shmobile: lager: Add Display Unit support
-Message-Id: <f631fa0e380a76504bd65545ed094f04b5c6559a.1377653181.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 09 Aug 2013 09:48:09 +0000
+Subject: [PATCH 02/14] ARM: shmobile: r8a7740: Remove ->init_machine() special case
+Message-Id: <20130809094809.6530.49246.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377653181.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377653181.git.horms+renesas@verge.net.au>
+References: <20130809094748.6530.16511.sendpatchset@w520>
+In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Only the VGA output is currently supported.
+No need to special case r8a7740 ->init_machine(),
+so get rid of undesired clock setup from the
+generic long term r8a7740 DT support code.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Rework the code to let r8a7740_add_dt_devices()
+act like other SoCs and make the board DT
+reference code setup clocks for us.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-lager.c | 66 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 66 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 9806ca0..5facfc9 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -28,6 +28,7 @@
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
-+#include <linux/platform_data/rcar-du.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -38,6 +39,62 @@
- #include <asm/mach-types.h>
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    4 +++-
+ arch/arm/mach-shmobile/include/mach/r8a7740.h            |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c                   |   11 +----------
+ 3 files changed, 5 insertions(+), 12 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ work/arch/arm/mach-shmobile/board-armadillo800eva-reference.c	2013-08-08 15:37:27.000000000 +0900
+@@ -24,6 +24,7 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
++#include <linux/of_platform.h>
+ #include <mach/common.h>
+ #include <mach/r8a7740.h>
  #include <asm/mach/arch.h>
+@@ -168,7 +169,8 @@ static void __init eva_init(void)
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+ #endif
  
-+/* DU */
-+static struct rcar_du_encoder_data lager_du_encoders[] = {
-+	{
-+		.type = RCAR_DU_ENCODER_VGA,
-+		.output = RCAR_DU_OUTPUT_DPAD0,
-+	}, {
-+		.type = RCAR_DU_ENCODER_NONE,
-+		.output = RCAR_DU_OUTPUT_LVDS1,
-+		.connector.lvds.panel = {
-+			.width_mm = 210,
-+			.height_mm = 158,
-+			.mode = {
-+				.clock = 65000,
-+				.hdisplay = 1024,
-+				.hsync_start = 1048,
-+				.hsync_end = 1184,
-+				.htotal = 1344,
-+				.vdisplay = 768,
-+				.vsync_start = 771,
-+				.vsync_end = 777,
-+				.vtotal = 806,
-+				.flags = 0,
-+			},
-+		},
-+	},
-+};
-+
-+static const struct rcar_du_platform_data lager_du_pdata __initconst = {
-+	.encoders = lager_du_encoders,
-+	.num_encoders = ARRAY_SIZE(lager_du_encoders),
-+};
-+
-+static const struct resource du_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xfeb00000, 0x70000),
-+	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
-+	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
-+	DEFINE_RES_IRQ(gic_spi(256)),
-+	DEFINE_RES_IRQ(gic_spi(268)),
-+	DEFINE_RES_IRQ(gic_spi(269)),
-+};
-+
-+static void __init lager_add_du_device(void)
-+{
-+	struct platform_device_info info = {
-+		.name = "rcar-du-r8a7790",
-+		.id = -1,
-+		.res = du_resources,
-+		.num_res = ARRAY_SIZE(du_resources),
-+		.data = &du_resources,
-+		.size_data = sizeof(du_resources),
-+		.dma_mask = DMA_BIT_MASK(32),
-+	};
-+
-+	platform_device_register_full(&info);
-+}
-+
- /* LEDS */
- static struct gpio_led lager_leds[] = {
- 	{
-@@ -107,6 +164,13 @@ static const struct resource ether_resources[] __initconst = {
- };
+-	r8a7740_add_standard_devices_dt();
++	r8a7740_add_dt_devices();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  
- static const struct pinctrl_map lager_pinctrl_map[] = {
-+	/* DU (CN10: ARGB0, CN13: LVDS) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-+				  "du_rgb666", "du"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-+				  "du_sync_1", "du"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-+				  "du_clk_out_0", "du"),
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
- 				  "scif0_data", "scif0"),
-@@ -154,6 +218,8 @@ static void __init lager_add_standard_devices(void)
- 					  ether_resources,
- 					  ARRAY_SIZE(ether_resources),
- 					  &ether_pdata, sizeof(ether_pdata));
-+
-+	lager_add_du_device();
+ 	r8a7740_pm_init();
+ }
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7740.h	2013-08-08 15:33:40.000000000 +0900
+@@ -52,7 +52,7 @@ extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+ extern void r8a7740_add_standard_devices(void);
+-extern void r8a7740_add_standard_devices_dt(void);
++extern void r8a7740_add_dt_devices(void);
+ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+--- 0001/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2013-08-08 15:37:11.000000000 +0900
+@@ -26,7 +26,6 @@
+ #include <linux/irqchip/arm-gic.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/platform_device.h>
+-#include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+@@ -1009,11 +1008,10 @@ void __init r8a7740_add_early_devices_dt
+ 	shmobile_setup_console();
  }
  
- static const char * const lager_boards_compat_dt[] __initconst = {
--- 
-1.8.3.2
-
+-void __init r8a7740_add_standard_devices_dt(void)
++void __init r8a7740_add_dt_devices(void)
+ {
+ 	platform_add_devices(r8a7740_devices_dt,
+ 			    ARRAY_SIZE(r8a7740_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ void __init r8a7740_init_delay(void)
+@@ -1051,12 +1049,6 @@ void __init r8a7740_init_irq_of(void)
+ 	iounmap(pfc_inta_ctrl);
+ }
+ 
+-static void __init r8a7740_generic_init(void)
+-{
+-	r8a7740_clock_init(0);
+-	r8a7740_add_standard_devices_dt();
+-}
+-
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a7740",
+ 	NULL,
+@@ -1066,7 +1058,6 @@ DT_MACHINE_START(R8A7740_DT, "Generic R8
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= r8a7740_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
+-	.init_machine	= r8a7740_generic_init,
+ 	.dt_compat	= r8a7740_boards_compat_dt,
+ MACHINE_END
+ 
