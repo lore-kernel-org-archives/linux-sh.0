@@ -1,57 +1,38 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 05 Aug 2013 22:37:19 +0000
+Date: Fri, 09 Aug 2013 18:32:12 +0000
 Subject: Re: [PATCH v2] tmio_mmc_dma: fix PIO fallback on SDHI
-Message-Id: <5200291F.2020607@cogentembedded.com>
+Message-Id: <520535AC.6000200@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308030233.29446.sergei.shtylyov@cogentembedded.com> <Pine.LNX.4.64.1308040026020.11632@axis700.grange> <51FE60DF.400@cogentembedded.com>
-In-Reply-To: <51FE60DF.400@cogentembedded.com>
+References: <201308030233.29446.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308030233.29446.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, cjb@laptop.org, linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
+To: linux-mmc@vger.kernel.org, g.liakhovetski@gmx.de, ian@mnementh.co.uk, cjb@laptop.org
+Cc: linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
 
 Hello.
 
-On 08/04/2013 06:10 PM, Sergei Shtylyov wrote:
+On 08/03/2013 02:33 AM, Sergei Shtylyov wrote:
 
->>> I'm testing SH-Mobile SDHI driver in DMA mode with  a new DMA controller
->>> using
->>> 'bonnie++' and getting DMA error after which the tmio_mmc_dma.c code falls
->>> back
->>> to PIO but all commands time out after that.  It turned out that the fallback
->>> code calls tmio_mmc_enable_dma() with RX/TX channels already freed and
->>> pointers
->>> to them cleared, so that the function bails out early instead  of clearing the
->>> DMA bit in the CTL_DMA_ENABLE register. The regression was introduced by
->>> commit
->>> 162f43e31c5a376ec16336e5d0ac973373d54c89 (mmc: tmio: fix a deadlock).
->>> Moving tmio_mmc_enable_dma() calls to the top of the PIO fallback code in
->>> tmio_mmc_start_dma_{rx|tx}() helps.
+> I'm testing SH-Mobile SDHI driver in DMA mode with  a new DMA controller  using
 
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>> Cc: stable@vger.kernel.org # 3.1+
+    The driver for this controller is using drivers/dma/sh/shdma-base.c framework.
 
->> Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> 'bonnie++' and getting DMA error
 
->> Not sure though how far back in stable this really has to go. We don't
->> have any real-life problem reports with older kernels, do we?
+    And I suspect some bug/race in shdma-base.c. The S/G request that fails 
+seems to always consist of 32 segments (maximum for shdma-base.c) and it fails 
+like this:
 
->     If we did, that error would have been fixed earlier, wouldn't it?
+hpb-dma-engine hpb-dma-engine: No free link descriptor available
 
->> I think
->> approach to which patches should get into stable changed recently.
+which is a message that shdma_add_desc() prints when shdma_get-desc() returns 
+NULL. When I turn on all dev_dbg() calls (via #define DEBUG) in shdma-base.c. 
+the error is *gone*...
 
->     Haven't heard about that (or seen any change in the policy). The issue
-> with this bug is its catastrophic consequencies: you can hardly ^C or ^Z out
-> of 'bonnie++' when it happens (in fact, you cannot ^C at all). IIRC you can't
-> even kill it from another shell.
-
-    Yeah, and the filesystem is seriously corrupt after this (I've tested only 
-on VFAT so far).
-
->> Thanks
->> Guennadi
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Cc: stable@vger.kernel.org # 3.1+
 
 WBR, Sergei
 
