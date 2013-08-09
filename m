@@ -1,52 +1,32 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Fri, 30 Aug 2013 14:53:21 +0000
-Subject: [PATCH v6 4/5] clk: Assign module owner of a clock being registered
-Message-Id: <1377874402-2944-5-git-send-email-s.nawrocki@samsung.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 09 Aug 2013 09:48:55 +0000
+Subject: [PATCH 06/14] ARM: shmobile: Remove sh73a0_init_irq_dt()
+Message-Id: <20130809094855.6530.42606.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
+References: <20130809094748.6530.16511.sendpatchset@w520>
+In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Use dev->driver->owner as the owner module of a clock, it ensures
-reference on the module is taken in the __clk_get(), __clk_put()
-helpers.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
----
-Changes since v5:
- - none.
----
- drivers/clk/clk.c |    6 ++++++
- 1 file changed, 6 insertions(+)
+Remove left over function prototype sh73a0_init_irq_dt().
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index dcf061a..ac80e13 100644
---- a/drivers/clk/clk.c
-+++ b/drivers/clk/clk.c
-@@ -1805,6 +1805,10 @@ struct clk *__clk_register(struct device *dev, struct clk_hw *hw)
- 	clk->flags = hw->init->flags;
- 	clk->parent_names = hw->init->parent_names;
- 	clk->num_parents = hw->init->num_parents;
-+	if (dev && dev->driver)
-+		clk->owner = dev->driver->owner;
-+	else
-+		clk->owner = NULL;
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- 0009/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ work/arch/arm/mach-shmobile/include/mach/sh73a0.h	2013-08-08 16:04:29.000000000 +0900
+@@ -73,7 +73,6 @@ enum {
  
- 	ret = __clk_init(dev, clk);
- 	if (ret)
-@@ -1825,6 +1829,8 @@ static int _clk_register(struct device *dev, struct clk_hw *hw, struct clk *clk)
- 		goto fail_name;
- 	}
- 	clk->ops = hw->init->ops;
-+	if (dev && dev->driver)
-+		clk->owner = dev->driver->owner;
- 	clk->hw = hw;
- 	clk->flags = hw->init->flags;
- 	clk->num_parents = hw->init->num_parents;
--- 
-1.7.9.5
-
+ extern void sh73a0_init_delay(void);
+ extern void sh73a0_init_irq(void);
+-extern void sh73a0_init_irq_dt(void);
+ extern void sh73a0_map_io(void);
+ extern void sh73a0_earlytimer_init(void);
+ extern void sh73a0_add_early_devices(void);
