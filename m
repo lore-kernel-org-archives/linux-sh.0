@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:39:35 +0000
-Subject: [GIT PULL 9/9] ARM: shmobile: Per-CPU SMP boot / sleep code for SCU SoCs
-Message-Id: <1d33a354bbb618ba578bb372ebc18fe58457f6f3.1375841380.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 09 Aug 2013 09:48:43 +0000
+Subject: [PATCH 05/14] ARM: shmobile: Remove r8a7740_add_early_devices_dt()
+Message-Id: <20130809094843.6530.94661.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375841380.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
+References: <20130809094748.6530.16511.sendpatchset@w520>
+In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,65 +12,41 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Hook in the per-CPU boot and sleep code in the shared
-mach-shmobile SCU code. CPUs may be kept in the asm
-routine until ->boot_secondary() when the per-CPU
-boot vector is installed. At the end of ->die() the
-asm sleep routine is invoked.
+Remove the unused r8a7740_add_early_devices_dt() function.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/platsmp-scu.c | 17 +++++++++++------
- 1 file changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/platsmp-scu.c b/arch/arm/mach-shmobile/platsmp-scu.c
-index 7a0c066..c96f501 100644
---- a/arch/arm/mach-shmobile/platsmp-scu.c
-+++ b/arch/arm/mach-shmobile/platsmp-scu.c
-@@ -18,8 +18,9 @@
- 
- void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
- {
--	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
--	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
-+	/* install boot code shared by all CPUs */
-+	shmobile_boot_fn = virt_to_phys(shmobile_smp_boot);
-+	shmobile_boot_arg = MPIDR_HWID_BITMASK;
- 
- 	/* enable SCU and cache coherency on booting CPU */
- 	scu_enable(shmobile_scu_base);
-@@ -28,22 +29,26 @@ void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
- 
- int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
--	/* do nothing for now */
-+	/* For this particular CPU register SCU boot vector */
-+	shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
-+			  (unsigned long)shmobile_scu_base);
- 	return 0;
+ arch/arm/mach-shmobile/setup-r8a7740.c |   15 ++-------------
+ 1 file changed, 2 insertions(+), 13 deletions(-)
+
+--- 0005/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2013-08-08 15:40:07.000000000 +0900
+@@ -995,25 +995,14 @@ void __init r8a7740_add_early_devices(vo
+ 	shmobile_setup_console();
  }
  
- #ifdef CONFIG_HOTPLUG_CPU
- void shmobile_smp_scu_cpu_die(unsigned int cpu)
+-#ifdef CONFIG_USE_OF
+-
+-void __init r8a7740_add_early_devices_dt(void)
+-{
+-	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
+-
+-	early_platform_add_devices(r8a7740_early_devices,
+-				   ARRAY_SIZE(r8a7740_early_devices));
+-
+-	/* setup early console here as well */
+-	shmobile_setup_console();
+-}
+-
+ void __init r8a7740_add_dt_devices(void)
  {
-+	/* For this particular CPU deregister boot vector */
-+	shmobile_smp_hook(cpu, 0, 0);
+ 	platform_add_devices(r8a7740_devices_dt,
+ 			    ARRAY_SIZE(r8a7740_devices_dt));
+ }
+ 
++#ifdef CONFIG_USE_OF
 +
- 	dsb();
- 	flush_cache_all();
- 
- 	/* disable cache coherency */
- 	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
- 
--	/* Endless loop until reset */
--	while (1)
--		cpu_do_idle();
-+	/* jump to shared mach-shmobile sleep / reset code */
-+	shmobile_smp_sleep();
- }
- 
- static int shmobile_smp_scu_psr_core_disabled(int cpu)
--- 
-1.8.3.2
-
+ void __init r8a7740_init_delay(void)
+ {
+ 	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
