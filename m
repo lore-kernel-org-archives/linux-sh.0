@@ -1,88 +1,129 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 09 Aug 2013 10:25:11 +0000
-Subject: Re: [PATCH v3 0/8] Enable DU support for Marzen and Lager boards
-Message-Id: <2721876.CaeM0Iyynj@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 09 Aug 2013 10:07:55 +0000
+Subject: [PATCH 01/02] ARM: shmobile: Add r8a7790 SMP support using APMU code
+Message-Id: <20130809100755.10827.10538.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375963414-31096-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375963414-31096-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130809100744.10827.62207.sendpatchset@w520>
+In-Reply-To: <20130809100744.10827.62207.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+From: Magnus Damm <damm@opensource.se>
 
-On Thursday 08 August 2013 18:44:49 Kuninori Morimoto wrote:
-> > This is the third version of a patch set that registers DU devices for the
-> > Marzen and Lager boards. Only platform data registration is supported as
-> > DU DT bindings are work in progress.
-> > 
-> > Compared to v2, this version annotates const platform data and resources
-> > as __initconst, splits the r8a7779 DU clock rename to a patch of its own,
-> > and moves DU device registration from setup-*.c files to board files.
-> > 
-> > The patches depend on both the DU r8a7790 DRM and PFC series available
-> > from
-> > 
-> >         git://linuxtv.org/pinchartl/fbdev.git drm/next/du
-> >         git://linuxtv.org/pinchartl/fbdev.git pinmux/next/r8a7790
-> > 
-> > They are based respectively on the latest drm-next branch from
-> > git://people.freedesktop.org/~airlied/linux and the latest for-next branch
-> > from
-> > git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git.
-> > Both series are scheduled for upstream merge in v3.12.
-> > 
-> > The dependency on pinmux/next/r8a7790 is runtime only, compilation will
-> > not break and the boards won't fail to boot. The only regression will be a
-> > pinmux error message at boot time. The drm/next/du series, however, is a
-> > compile-time dependency. I've asked Dave Airlie to provide a stable
-> > branch with those patches.
-> > 
-> > As a side note, patches 1/8 to 3/8 and 6/8 can be merged first
-> > independently of this series if desired.
-> > 
-> > Laurent Pinchart (8):
-> >   ARM: shmobile: r8a7779: Rename DU device in clock lookups list
-> >   ARM: shmobile: r8a7790: Constify platform data and resources
-> >   ARM: shmobile: r8a7790: Add DU and LVDS clocks
-> >   ARM: shmobile: marzen: Add Display Unit support
-> >   ARM: shmobile: marzen: Select DRM_RCAR_DU in defconfig
-> >   ARM: shmobile: lager: Constify platform data and resources
-> >   ARM: shmobile: lager: Add Display Unit support
-> >   ARM: shmobile: lager: Select DRM_RCAR_DU in defconfig
-> >  
-> >  arch/arm/configs/lager_defconfig       |  2 +
-> >  arch/arm/configs/marzen_defconfig      |  2 +
-> >  arch/arm/mach-shmobile/board-lager.c   | 81 ++++++++++++++++++++++++++---
-> >  arch/arm/mach-shmobile/board-marzen.c  | 72 +++++++++++++++++++++++++++++
-> >  arch/arm/mach-shmobile/clock-r8a7779.c |  2 +-
-> >  arch/arm/mach-shmobile/clock-r8a7790.c | 12 ++++-
-> >  arch/arm/mach-shmobile/setup-r8a7790.c | 21 ++++-----
-> >  7 files changed, 173 insertions(+), 19 deletions(-)
-> 
-> [7/8] has extra blank line.
-> I don't care so much about it,
-> but please remove it if you have chance to send v4 patch ;P
+Add r8a7790 SMP support using the shared APMU code. To enable
+SMP the r8a7790 specific DTS needs to be updated to include
+CPU cores, and this is happening in a separate patch.
 
-Oops, my bad.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Simon, I've pushed all the patches with the blank line removed and the 
-collected Acked-by to
+ arch/arm/mach-shmobile/Makefile               |    1 
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 
+ arch/arm/mach-shmobile/setup-r8a7790.c        |    3 +
+ arch/arm/mach-shmobile/smp-r8a7790.c          |   67 +++++++++++++++++++++++++
+ 4 files changed, 72 insertions(+)
 
-	git://linuxtv.org/pinchartl/fbdev.git drm/du/r8a7790
-
-You will need to cherry-pick them as they're based on a merge of local 
-branches.
-
-> For all patches, from driver registration point of view
-> 
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Thank you.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0011/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-08-07 20:10:54.000000000 +0900
+@@ -35,6 +35,7 @@ smp-y				:= platsmp.o headsmp.o
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A73A4)	+= smp-r8a73a4.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
++smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
+ 
+ # IRQ objects
+--- 0009/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2013-08-07 20:10:54.000000000 +0900
+@@ -7,6 +7,7 @@ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+ void r8a7790_init_early(void);
+ void r8a7790_timer_init(void);
++extern struct smp_operations r8a7790_smp_ops;
+ 
+ #define MD(nr) BIT(nr)
+ u32 r8a7790_read_mode_pins(void);
+--- 0009/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-08-07 20:10:54.000000000 +0900
+@@ -272,6 +272,9 @@ void __init r8a7790_init_early(void)
+ #ifndef CONFIG_ARM_ARCH_TIMER
+ 	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
+ #endif
++#ifdef CONFIG_SMP
++	smp_set_ops(&r8a7790_smp_ops);
++#endif
+ }
+ 
+ #ifdef CONFIG_USE_OF
+--- /dev/null
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2013-08-07 20:10:55.000000000 +0900
+@@ -0,0 +1,67 @@
++/*
++ * SMP support for r8a7790
++ *
++ * Copyright (C) 2012-2013 Renesas Solutions Corp.
++ * Copyright (C) 2012 Takashi Yoshii <takashi.yoshii.ze@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/smp.h>
++#include <linux/io.h>
++#include <asm/smp_plat.h>
++#include <mach/common.h>
++
++#define RST		0xe6160000
++#define CA15BAR		0x0020
++#define CA7BAR		0x0030
++#define CA15RESCNT	0x0040
++#define CA7RESCNT	0x0044
++#define MERAM		0xe8080000
++
++static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
++{
++	void __iomem *p;
++	u32 bar;
++
++	/* let APMU code install data related to shmobile_boot_vector */
++	shmobile_smp_apmu_prepare_cpus(max_cpus);
++
++	/* MERAM for jump stub, because BAR requires 256KB aligned address */
++	p = ioremap_nocache(MERAM, shmobile_boot_size);
++	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
++	iounmap(p);
++
++	/* setup reset vectors */
++	p = ioremap_nocache(RST, 0x63);
++	bar = (MERAM >> 8) & 0xfffffc00;
++	writel_relaxed(bar, p + CA15BAR);
++	writel_relaxed(bar, p + CA7BAR);
++	writel_relaxed(bar | 0x10, p + CA15BAR);
++	writel_relaxed(bar | 0x10, p + CA7BAR);
++
++	/* enable clocks to all CPUs */
++	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
++		       p + CA15RESCNT);
++	writel_relaxed((readl_relaxed(p + CA7RESCNT) & ~0x0f) | 0x5a5a0000,
++		       p + CA7RESCNT);
++	iounmap(p);
++}
++
++struct smp_operations r8a7790_smp_ops __initdata = {
++	.smp_prepare_cpus	= r8a7790_smp_prepare_cpus,
++	.smp_boot_secondary	= shmobile_smp_apmu_boot_secondary,
++#ifdef CONFIG_HOTPLUG_CPU
++	.cpu_disable		= shmobile_smp_cpu_disable,
++	.cpu_die		= shmobile_smp_apmu_cpu_die,
++	.cpu_kill		= shmobile_smp_apmu_cpu_kill,
++#endif
++};
