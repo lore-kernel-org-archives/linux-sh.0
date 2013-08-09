@@ -1,87 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Aug 2013 00:35:05 +0000
-Subject: Re: [PATCH 1/5] ARM: shmobile: r8a7779: Add DU support
-Message-Id: <20130808003504.GC7540@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 09 Aug 2013 09:49:26 +0000
+Subject: [PATCH 09/14] ARM: shmobile: Rename to sh7372_init_early()
+Message-Id: <20130809094926.6530.46771.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375892397-5822-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375892397-5822-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130809094748.6530.16511.sendpatchset@w520>
+In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 08, 2013 at 02:27:34AM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 08 August 2013 09:24:19 Simon Horman wrote:
-> > On Thu, Aug 08, 2013 at 02:42:55AM +0400, Sergei Shtylyov wrote:
-> > > On 08/08/2013 02:19 AM, Laurent Pinchart wrote:
-> > > >>>Add a function to register the DU device with board-specific platform
-> > > >>>data. The DU device is named rcar-du-r8a7779, fix the clock entry
-> > > >>>accordingly.
-> > > >>>
-> > > >>>Signed-off-by: Laurent Pinchart
-> > > >>><laurent.pinchart+renesas@ideasonboard.com>
-> > > >>
-> > > >>[...]
-> > > >>
-> > > >>>diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> > > >>>b/arch/arm/mach-shmobile/include/mach/r8a7779.h index f08d6ec..83c47a2
-> > > >>>100644
-> > > >>>--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> > > >>>+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> > > >>>@@ -6,6 +6,7 @@
-> > > >>>
-> > > >>>   #include <linux/sh_eth.h>
-> > > >>>   
-> > > >>>   struct platform_device;
-> > > >>>
-> > > >>>+struct rcar_du_platform_data;
-> > > >>>
-> > > >>>   struct r8a7779_pm_ch {
-> > > >>>   
-> > > >>>   	unsigned long chan_offs;
-> > > >>>
-> > > >>>@@ -31,6 +32,7 @@ extern void r8a7779_earlytimer_init(void);
-> > > >>>
-> > > >>>   extern void r8a7779_add_early_devices(void);
-> > > >>>   extern void r8a7779_add_standard_devices(void);
-> > > >>>   extern void r8a7779_add_standard_devices_dt(void);
-> > > >>>
-> > > >>>+extern void r8a7779_add_du_device(struct rcar_du_platform_data
-> > > >>>*pdata);
-> > > >>>
-> > > >>>   extern void r8a7779_add_ether_device(struct sh_eth_plat_data
-> > > >>>   *pdata);
-> > > >>>   extern void r8a7779_init_late(void);
-> > > >>>   extern void r8a7779_clock_init(void);
-> > > >>>
-> > > >>>diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c
-> > > >>>b/arch/arm/mach-shmobile/setup-r8a7779.c index 6a99333..c587fc9 100644
-> > > >>>--- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> > > >>>+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> > > >>>@@ -27,6 +27,7 @@
-> > > >>>
-> > > >>>   #include <linux/of_platform.h>
-> > > >>>   #include <linux/platform_data/gpio-rcar.h>
-> > > >>>   #include <linux/platform_data/irq-renesas-intc-irqpin.h>
-> > > >>>
-> > > >>>+#include <linux/platform_data/rcar-du.h>
-> > > >>
-> > > >>Why not just include it in the r8a7779.h?
-> > >>
-> > >> Because not all users of r8a7779.h needs the rcar-du.h header. Including
-> > >> the header only where it is needed speeds up compilation.
-> > >
-> > > I'm afraid the most important users (setup-* and board-*) need
-> > > it. Anyway, Simon/Magnus will most probably ask you to remove the
-> > > header change and rework the patch according to their taste.
-> > 
-> > At the risk of being inconsistent with feedback for previous patches:
-> > I have no strong opinion on this at this time. Though personally I would
-> > have just added the #include in r8a7779.h.
-> 
-> Magnus has asked me to move the setup-*.c code to the board files, I'll do so 
-> and will resubmit the patches.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks. I think that should side-step the #include question quite nicely.
+Rename sh7372_add_early_device_dt() into sh7372_init_early()
+and make it static since we have no sh7372 DT reference board
+code. Also, in case of DT we do not use any early console or
+early timers, so get rid of early platform stuff and early
+console for the DT case.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    1 -
+ arch/arm/mach-shmobile/setup-sh7372.c        |   10 ++--------
+ 2 files changed, 2 insertions(+), 9 deletions(-)
+
+--- 0007/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ work/arch/arm/mach-shmobile/include/mach/sh7372.h	2013-08-08 15:46:38.000000000 +0900
+@@ -63,7 +63,6 @@ extern void sh7372_map_io(void);
+ extern void sh7372_earlytimer_init(void);
+ extern void sh7372_add_early_devices(void);
+ extern void sh7372_add_standard_devices(void);
+-extern void sh7372_add_early_devices_dt(void);
+ extern void sh7372_clock_init(void);
+ extern void sh7372_pinmux_init(void);
+ extern void sh7372_pm_init(void);
+--- 0007/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2013-08-08 15:48:51.000000000 +0900
+@@ -1135,15 +1135,9 @@ void __init sh7372_add_early_devices(voi
+ 
+ #ifdef CONFIG_USE_OF
+ 
+-void __init sh7372_add_early_devices_dt(void)
++static void __init sh7372_init_early(void)
+ {
+ 	shmobile_setup_delay(800, 1, 3); /* Cortex-A8 @ 800MHz */
+-
+-	early_platform_add_devices(sh7372_early_devices,
+-				   ARRAY_SIZE(sh7372_early_devices));
+-
+-	/* setup early console here as well */
+-	shmobile_setup_console();
+ }
+ 
+ static const char *sh7372_boards_compat_dt[] __initdata = {
+@@ -1153,7 +1147,7 @@ static const char *sh7372_boards_compat_
+ 
+ DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
+ 	.map_io		= sh7372_map_io,
+-	.init_early	= sh7372_add_early_devices_dt,
++	.init_early	= sh7372_init_early,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
