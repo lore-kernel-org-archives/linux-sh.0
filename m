@@ -1,84 +1,54 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 02 Aug 2013 09:54:49 +0000
-Subject: Re: [PATCH v5 6/9] v4l: Add V4L2_PIX_FMT_NV16M and V4L2_PIX_FMT_NV61M formats
-Message-Id: <51FB81E9.5090704@xs4all.nl>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sat, 10 Aug 2013 18:19:30 +0000
+Subject: Re: Build regressions/improvements in v3.11-rc4
+Message-Id: <alpine.DEB.2.02.1308102018470.30367@ayla.of.borg>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1375405408-17134-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375405408-17134-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <alpine.DEB.2.02.1308102018140.30352@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.02.1308102018140.30352@ayla.of.borg>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: Linux Kernel Development <linux-kernel@vger.kernel.org>
+Cc: Linux/PPC Development <linuxppc-dev@lists.ozlabs.org>, linux-sh@vger.kernel.org
 
+On Sat, 10 Aug 2013, Geert Uytterhoeven wrote:
+> JFYI, when comparing v3.11-rc4 to v3.11-rc3[3], the summaries are:
+>   - build errors: +20/-35
 
+  + arch/powerpc/kernel/cacheinfo.c: error: 'size_kb' may be used uninitialized in this function [-Werror=uninitialized]:  => 526:16
+  + arch/powerpc/kernel/pci_dn.c: error: 'ret' may be used uninitialized in this function [-Werror=uninitialized]:  => 97:8
+  + arch/powerpc/kvm/book3s_hv.c: error: 'vcpus_to_update[need_vpa_update]' may be used uninitialized in this function [-Werror=uninitialized]:  => 1187:22
+  + arch/powerpc/kvm/book3s_xics.c: error: implicit declaration of function 'get_tb' [-Werror=implicit-function-declaration]:  => 812:3
+  + arch/powerpc/mm/hash_native_64.c: error: 'a_size' may be used uninitialized in this function [-Werror=uninitialized]:  => 578:10
+  + arch/powerpc/platforms/cell/axon_msi.c: error: 'ph' may be used uninitialized in this function [-Werror=uninitialized]:  => 172:2
+  + arch/powerpc/platforms/cell/axon_msi.c: error: 'prop' may be used uninitialized in this function [-Werror=uninitialized]:  => 237:2
+  + arch/powerpc/platforms/cell/beat_iommu.c: error: 'dma_base' may be used uninitialized in this function [-Werror=uninitialized]:  => 69:11
+  + arch/powerpc/platforms/cell/beat_iommu.c: error: 'dma_size' may be used uninitialized in this function [-Werror=uninitialized]:  => 68:2
+  + arch/powerpc/platforms/cell/beat_iommu.c: error: 'io_page_size' may be used uninitialized in this function [-Werror=uninitialized]:  => 68:54
+  + arch/powerpc/platforms/cell/beat_wrapper.h: error: 'io_space_id' may be used uninitialized in this function [-Werror=uninitialized]:  => 249:2
+  + arch/powerpc/platforms/cell/beat_wrapper.h: error: 'ioid' may be used uninitialized in this function [-Werror=uninitialized]:  => 249:2
+  + arch/powerpc/platforms/cell/spufs/inode.c: error: incompatible types when assigning to type 'kgid_t' from type 'int':  => 628:16
+  + arch/powerpc/platforms/cell/spufs/inode.c: error: incompatible types when assigning to type 'kuid_t' from type 'int':  => 623:16
+  + arch/powerpc/platforms/powernv/pci-ioda.c: error: 'hose' may be used uninitialized in this function [-Werror=uninitialized]:  => 1175:74
+  + arch/powerpc/platforms/pseries/pci.c: error: 'pcie_link_speed_stats' may be used uninitialized in this function [-Werror=uninitialized]:  => 150:31
 
-On 08/02/2013 03:03 AM, Laurent Pinchart wrote:
-> NV16M and NV61M are planar YCbCr 4:2:2 and YCrCb 4:2:2 formats with a
-> luma plane followed by an interleaved chroma plane. The planes are not
-> required to be contiguous in memory, and the formats can only be used
-> with the multi-planar formats API.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Reviewed-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-> Reviewed-by: Sakari Ailus <sakari.ailus@iki.fi>
+powerpc-randconfig
 
-Just a few small changes below. Once that is corrected you can add my:
+  + arch/sh/mm/cache-sh4.c: error: 'cached_to_uncached' undeclared (first use in this function):  => 99:17
+  + arch/sh/mm/cache-sh4.c: error: implicit declaration of function 'cpu_context' [-Werror=implicit-function-declaration]:  => 192:2
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+sh-randconfig
 
-Regards,
+> [1] http://kisskb.ellerman.id.au/kisskb/head/6510/ (all 120 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/6490/ (all 120 configs)
 
-	Hans
+Gr{oetje,eeting}s,
 
-> ---
->  Documentation/DocBook/media/v4l/pixfmt-nv16m.xml | 171 +++++++++++++++++++++++
->  Documentation/DocBook/media/v4l/pixfmt.xml       |   1 +
->  include/uapi/linux/videodev2.h                   |   2 +
->  3 files changed, 174 insertions(+)
->  create mode 100644 Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
-> 
-> diff --git a/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml b/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
-> new file mode 100644
-> index 0000000..afec039
-> --- /dev/null
-> +++ b/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
-> @@ -0,0 +1,171 @@
-> +    <refentry>
-> +      <refmeta>
-> +	<refentrytitle>V4L2_PIX_FMT_NV16M ('NM16'), V4L2_PIX_FMT_NV61M ('NM61')</refentrytitle>
-> +	&manvol;
-> +      </refmeta>
-> +      <refnamediv>
-> +	<refname id="V4L2-PIX-FMT-NV16M"><constant>V4L2_PIX_FMT_NV16M</constant></refname>
-> +	<refname id="V4L2-PIX-FMT-NV61M"><constant>V4L2_PIX_FMT_NV61M</constant></refname>
-> +	<refpurpose>Variation of <constant>V4L2_PIX_FMT_NV16</constant> and <constant>V4L2_PIX_FMT_NV61</constant> with planes
-> +	  non contiguous in memory. </refpurpose>
-> +      </refnamediv>
-> +      <refsect1>
-> +	<title>Description</title>
-> +
-> +	<para>This is a multi-planar, two-plane version of the YUV 4:2:0 format.
-> +The three components are separated into two sub-images or planes.
-> +<constant>V4L2_PIX_FMT_NV16M</constant> differs from <constant>V4L2_PIX_FMT_NV16
-> +</constant> in that the two planes are non-contiguous in memory, i.e. the chroma
-> +plane do not necessarily immediately follows the luma plane.
+						Geert
 
-s/do/does/
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> +The luminance data occupies the first plane. The Y plane has one byte per pixel.
-> +In the second plane there is a chrominance data with alternating chroma samples.
-
-s/is a/is/
-
-> +The CbCr plane is the same width and height, in bytes, as the Y plane.
-> +Each CbCr pair belongs to four pixels. For example,
-> +Cb<subscript>0</subscript>/Cr<subscript>0</subscript> belongs to
-> +Y'<subscript>00</subscript>, Y'<subscript>01</subscript>,
-> +Y'<subscript>10</subscript>, Y'<subscript>11</subscript>.
-> +<constant>V4L2_PIX_FMT_NV61M</constant> is the same as <constant>V4L2_PIX_FMT_NV16M</constant>
-> +except the Cb and Cr bytes are swapped, the CrCb plane starts with a Cr byte.</para>
-
-Regards,
-
-	Hans
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
