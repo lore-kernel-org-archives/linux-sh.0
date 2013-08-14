@@ -1,36 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Aug 2013 06:24:58 +0000
-Subject: Re: [PATCH v2 6/9] ARM: shmobile: marzen: Select DRM_RCAR_DU in defconfig
-Message-Id: <20130822062458.GK11086@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 14 Aug 2013 07:26:33 +0000
+Subject: Re: [GIT 00/16] Renesas ARM based SoC updates for v3.12
+Message-Id: <20130814072633.GB30577@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375916192-22647-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375916192-22647-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1374624383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 08, 2013 at 12:56:29AM +0200, Laurent Pinchart wrote:
-> A R-Car DU DRM device is registered for the Marzen board, select the
-> corresponding driver in its defconfig.
+On Wed, Jul 24, 2013 at 09:33:45AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Arnd,
 > 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/configs/marzen_defconfig | 2 ++
->  1 file changed, 2 insertions(+)
+> please consider the following Renesas ARM based SoC updates for v3.12.
 > 
-> diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-> index 82e4040..26f30be 100644
-> --- a/arch/arm/configs/marzen_defconfig
-> +++ b/arch/arm/configs/marzen_defconfig
-> @@ -85,6 +85,8 @@ CONFIG_GPIO_RCAR=y
->  CONFIG_THERMAL=y
->  CONFIG_RCAR_THERMAL=y
->  CONFIG_SSB=y
-> +CONFIG_DRM=y
-> +CONFIG_DRM_RCAR_DU=y
->  CONFIG_USB=y
->  CONFIG_USB_RCAR_PHY=y
->  CONFIG_MMC=y
+> This pull request is based on renesas-dt-for-v3.12 which I have
+> previously sent a pull request for.
+> 
+> The following changes since commit 66a5cab04d339d02b93a4671eadf8e251dbfdc2c:
+> 
+>   ARM: shmobile: Add SMSC ethernet chip to KZM9D DT reference (2013-07-17 10:06:47 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.12
 
-Thanks, I have queued this up in the defconfig branch.
+
+Pulled, thanks.
+
+
+-Olof
