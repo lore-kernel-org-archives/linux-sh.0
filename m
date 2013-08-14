@@ -1,70 +1,78 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:43 +0000
-Subject: [GIT PULL 26/26] ARM: shmobile: sh73a0: Remove global GPIO_NR definition
-Message-Id: <282b583f752f996ee5c33b0cdc18adf3b5094ee0.1375840527.git.horms+renesas@verge.net.au>
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Wed, 14 Aug 2013 13:43:50 +0000
+Subject: [PATCH 01/37] cpufreq: call cpufreq_driver->get() after calling ->init()
+Message-Id: <2345f33fd6215a0754a71b4dc1ca02f8ff874211.1376486713.git.viresh.kumar@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <cover.1376486713.git.viresh.kumar@linaro.org>
+In-Reply-To: <cover.1376486713.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: rjw@sisk.pl
+Cc: linaro-kernel@lists.linaro.org, patches@linaro.org, cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, Viresh Kumar <viresh.kumar@linaro.org>, Andrew Lunn <andrew@lunn.ch>, "David S. Miller" <davem@davemloft.net>, Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>, Eric Miao <eric.y.miao@gmail.com>, Hans-Christian Egtvedt <egtvedt@samfundet.no>, Jesper Nilsson <jesper.nilsson@axis.com>, John Crispin <blogic@openwrt.org>, Kukjin Kim <kgene.kim@samsung.com>, Linus Walleij <linus.walleij@linaro.org>, linux-cris-kernel@axis.com, linux-sh@vger.kernel.org, Mikael Starvik <starvik@axis.com>, Paul Mundt <lethal@linux-sh.org>, Russell King <linux@arm.linux.org.uk>, Santosh Shilimkar <santosh.shilimkar@ti.com>, Sekhar Nori <nsekhar@ti.com>, Shawn Guo <shawn.guo@linaro.org>, spear-devel@list.st.com, Stephen Warren <swarren@nvidia.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Almost all drivers set policy->cur with current cpu frequency in their ->init()
+part. This can be done for all of them at core level and so they wouldn't need
+to do it.
 
-The total number of SoC GPIOs is only used to compute the base GPIO
-number of th PCF8575 GPIO extender on the KZM9G board. As GPIO
-allocation became fully dynamic with DT, no other SH73A0 board will use
-the GPIO_NR macro. Move it to the KZM9G board file.
+This patch adds supporting code in cpufreq core for calling get() after we have
+called init() for a policy.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Andrew Lunn <andrew@lunn.ch>
+Cc: David S. Miller <davem@davemloft.net>
+Cc: Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>
+Cc: Eric Miao <eric.y.miao@gmail.com>
+Cc: Hans-Christian Egtvedt <egtvedt@samfundet.no>
+Cc: Jesper Nilsson <jesper.nilsson@axis.com>
+Cc: John Crispin <blogic@openwrt.org>
+Cc: Kukjin Kim <kgene.kim@samsung.com>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-cris-kernel@axis.com
+Cc: linux-sh@vger.kernel.org
+Cc: Mikael Starvik <starvik@axis.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Russell King <linux@arm.linux.org.uk>
+Cc: Santosh Shilimkar <santosh.shilimkar@ti.com>
+Cc: Sekhar Nori <nsekhar@ti.com>
+Cc: Shawn Guo <shawn.guo@linaro.org>
+Cc: spear-devel@list.st.com
+Cc: Stephen Warren <swarren@nvidia.com>
+Cc: Steven Miao <realmz6@gmail.com>
+Cc: Tony Luck <tony.luck@intel.com>
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c         | 16 ++++++++--------
- arch/arm/mach-shmobile/include/mach/sh73a0.h |  2 --
- 2 files changed, 8 insertions(+), 10 deletions(-)
+ drivers/cpufreq/cpufreq.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 1068120..f199496 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -54,14 +54,14 @@
- /*
-  * external GPIO
-  */
--#define GPIO_PCF8575_BASE	(GPIO_NR)
--#define GPIO_PCF8575_PORT10	(GPIO_NR + 8)
--#define GPIO_PCF8575_PORT11	(GPIO_NR + 9)
--#define GPIO_PCF8575_PORT12	(GPIO_NR + 10)
--#define GPIO_PCF8575_PORT13	(GPIO_NR + 11)
--#define GPIO_PCF8575_PORT14	(GPIO_NR + 12)
--#define GPIO_PCF8575_PORT15	(GPIO_NR + 13)
--#define GPIO_PCF8575_PORT16	(GPIO_NR + 14)
-+#define GPIO_PCF8575_BASE	(310)
-+#define GPIO_PCF8575_PORT10	(GPIO_PCF8575_BASE + 8)
-+#define GPIO_PCF8575_PORT11	(GPIO_PCF8575_BASE + 9)
-+#define GPIO_PCF8575_PORT12	(GPIO_PCF8575_BASE + 10)
-+#define GPIO_PCF8575_PORT13	(GPIO_PCF8575_BASE + 11)
-+#define GPIO_PCF8575_PORT14	(GPIO_PCF8575_BASE + 12)
-+#define GPIO_PCF8575_PORT15	(GPIO_PCF8575_BASE + 13)
-+#define GPIO_PCF8575_PORT16	(GPIO_PCF8575_BASE + 14)
+diff --git a/drivers/cpufreq/cpufreq.c b/drivers/cpufreq/cpufreq.c
+index 4d37306..a7a1d3e 100644
+--- a/drivers/cpufreq/cpufreq.c
++++ b/drivers/cpufreq/cpufreq.c
+@@ -1038,6 +1038,14 @@ static int __cpufreq_add_dev(struct device *dev, struct subsys_interface *sif,
+ 		goto err_set_policy_cpu;
+ 	}
  
- /* Dummy supplies, where voltage doesn't matter */
- static struct regulator_consumer_supply dummy_supplies[] = {
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index 680dc5f..359b582 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -1,8 +1,6 @@
- #ifndef __ASM_SH73A0_H__
- #define __ASM_SH73A0_H__
++	if (cpufreq_driver->get) {
++		policy->cur = cpufreq_driver->get(policy->cpu);
++		if (!policy->cur) {
++			pr_err("%s: ->get() failed\n", __func__);
++			goto err_get_freq;
++		}
++	}
++
+ 	/* related cpus should atleast have policy->cpus */
+ 	cpumask_or(policy->related_cpus, policy->related_cpus, policy->cpus);
  
--#define GPIO_NR			310
--
- /* DMA slave IDs */
- enum {
- 	SHDMA_SLAVE_INVALID,
+@@ -1097,6 +1105,9 @@ err_out_unregister:
+ 	}
+ 	write_unlock_irqrestore(&cpufreq_driver_lock, flags);
+ 
++err_get_freq:
++	if (cpufreq_driver->exit)
++		cpufreq_driver->exit(policy);
+ err_set_policy_cpu:
+ 	per_cpu(cpufreq_policy_cpu, cpu) = -1;
+ 	cpufreq_policy_free(policy);
 -- 
-1.8.3.2
+1.7.12.rc2.18.g61b472e
 
