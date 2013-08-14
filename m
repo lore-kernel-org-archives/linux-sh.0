@@ -1,19 +1,20 @@
 From: Olof Johansson <olof@lixom.net>
-Date: Sun, 04 Aug 2013 20:38:27 +0000
-Subject: Re: [GIT 0/4] Second round of Renesas ARM based SoC fixes for v3.11
-Message-Id: <20130804203827.GG15602@quad.lixom.net>
+Date: Wed, 14 Aug 2013 07:35:07 +0000
+Subject: Re: [GIT 0/4] Renesas TPU PWM support for v3.12
+Message-Id: <20130814073507.GC30577@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375234088.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375234088.git.horms+renesas@verge.net.au>
+References: <cover.1374624997.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1374624997.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 31, 2013 at 10:33:44AM +0900, Simon Horman wrote:
+On Wed, Jul 24, 2013 at 09:34:20AM +0900, Simon Horman wrote:
 > Hi Olof, Hi Arnd,
 > 
-> please consider the following Renesas ARM based SoC fixes for v3.11.
+> please consider this pull request, which adds support for
+> the renesas TPU PWM unit, for v3.12.
 > 
 > The following changes since commit ad81f0545ef01ea651886dddac4bef6cec930092:
 > 
@@ -21,32 +22,10 @@ On Wed, Jul 31, 2013 at 10:33:44AM +0900, Simon Horman wrote:
 > 
 > are available in the git repository at:
 > 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes2-for-v3.11
-> 
-> for you to fetch changes up to a601469386b543df2a4d97ad7d524716945278a3:
-> 
->   ARM: shmobile: lager: do not annotate gpio_buttons as __initdata (2013-07-31 10:11:17 +0900)
-> 
-> ----------------------------------------------------------------
-> Second round of Renesas ARM based SoC fixes for v3.11
-> 
-> * Lager board: do not annotate gpio_buttons as __initdata
->   - This avoids accessing uninitialised memory if keys are pressed
->     after kernel initialisation completes.
->   - Bug introduced in gpio-keys were enabled in v3.11-rc1
-> 
-> * Bock-W board: fix SDHI0 PFC settings
->   - Allow detection of SD card
->   - Bug introduced in SDHI support was added in v3.11-rc1
-> 
-> * shdma: fixup sh_dmae_get_partial() calculation error
->   - Bug introduced in 2.6.34-rc1.
-> 
-> * armadillo800eva board: Don't request GPIO 166 in board code
->   - Allow use of touchscreen
->   - Bug introduced in v3.11-rc1
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-tpu-pwm-for-v3.12
 
-Pulled, thanks for the excellent tag description.
+
+Pulled.
 
 
 -Olof
