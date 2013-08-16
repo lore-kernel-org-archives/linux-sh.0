@@ -1,42 +1,21 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 30 Aug 2013 03:41:08 +0000
-Subject: [PATCH net-next v2 2/2] sh_eth: Enable Rx descriptor word 0 shift for r8a7790
-Message-Id: <1377834068-6978-3-git-send-email-horms+renesas@verge.net.au>
+From: "Roussel, Daniel" <droussel@olhcc.edu>
+Date: Fri, 16 Aug 2013 13:44:41 +0000
+Subject: It is Private
+Message-Id: <5F01BFF2D455C0448CD3A8E018CC7FAFB47E8224@VSP-3.hcc.local>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kouei Abe <kouei.abe.cp@renesas.com>, Simon Horman <horms+renesas@verge.net.au>
+To: @casper.infradead.org
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+It is Private
 
-This corrects an oversight when r8a7790 support was added to sh_eth.
+I am George Daniels, a Banker and credit system programmer (HSBC bank).
+I saw your email address while browsing through  the bank D.T.C Screen in my office yesterday so I decided to use this very chance to know you. I believe we should use every opportunity to know each other better. However, I am contacting you for obvious reason which you will understand.
 
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+I am sending this mail just to know if this email address is OK,
+reply me back so that I will send  more details to you.
+I have a very important thing to discuss with you, I look forward to receiving your response at
+georgedaniels@postino.net<mailto:georgedaniels@postino.net>. Have a pleasant day.
 
----
-v2
-* No change
-
- drivers/net/ethernet/renesas/sh_eth.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 3c0a24a..7aebbe0 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -416,6 +416,7 @@ static struct sh_eth_cpu_data r8a7790_data = {
- 	.tpauser	= 1,
- 	.hw_swap	= 1,
- 	.rmiimode	= 1,
-+	.shift_rd0	= 1,
- };
- 
- static void sh_eth_set_rate_sh7724(struct net_device *ndev)
--- 
-1.8.4.rc4
-
+George Daniels
