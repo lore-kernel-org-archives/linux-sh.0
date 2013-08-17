@@ -1,14 +1,18 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 17 Aug 2013 22:11:45 +0000
+Date: Sat, 17 Aug 2013 22:13:22 +0000
 Subject: [PATCH 0/2] SH: fix platform Ether support
-Message-Id: <201308180211.45840.sergei.shtylyov@cogentembedded.com>
+Message-Id: <201308180213.23296.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201308180211.45840.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308180211.45840.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org, davem@devemloft.net
+To: netdev@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org, davem@davemloft.net
 
 Hello.
+
+   [Resending with correct David's email.]
 
    Here's a couple of patches fixing Ether support on some SH platforms.
 They are against David Miller's 'net.git' (and also apply to 'net-next.git)
