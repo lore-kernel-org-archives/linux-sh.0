@@ -1,52 +1,25 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 01 Aug 2013 08:26:54 +0000
-Subject: [PATCH 12/14] ARM: shmobile: No need to use INTC header on r8a7779
-Message-Id: <d2ef0b9a5192e921490d2f66f4467f26235412bd.1375344714.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 17 Aug 2013 23:08:39 +0000
+Subject: [PATCH 0/2] sh_eth: don't get the register layout from platform data
+Message-Id: <201308180308.39941.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375344714.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, davem@davemloft.net
+Cc: lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hello.
 
-Now when the intc-irqpin driver is used for external
-IRQ pins on r8a7779 it possible to get rid of unused
-INTC headers mach/intc.h and linux/sh_intc.h.
+   Here's a couple of patches making the 'sh_eth' driver get the register
+layout from the internal data structures, not the platform data; this is
+in preparation to adding device tree support to the driver. The patches are
+against David Miller's 'net-next.git' repo and the couple of SH Ether fixes
+I've just posted. David, if you decide to merge those SH patches into the
+'net.git' repo, then a sync of it to 'net-next.git' would be required before
+applying this series. 
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/intc-r8a7779.c  | 1 -
- arch/arm/mach-shmobile/setup-r8a7779.c | 1 -
- 2 files changed, 2 deletions(-)
+[1/2] sh_eth: get register layout from 'struct sh_eth_cpu_data'
+[2/2] sh_eth: remove 'register_type' field from 'struct sh_eth_plat_data'
 
-diff --git a/arch/arm/mach-shmobile/intc-r8a7779.c b/arch/arm/mach-shmobile/intc-r8a7779.c
-index b86dc89..5f9e5dc 100644
---- a/arch/arm/mach-shmobile/intc-r8a7779.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7779.c
-@@ -27,7 +27,6 @@
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/irqchip.h>
- #include <mach/common.h>
--#include <mach/intc.h>
- #include <mach/irqs.h>
- #include <mach/r8a7779.h>
- #include <asm/mach-types.h>
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 6ab7405..bb8b967 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -29,7 +29,6 @@
- #include <linux/input.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
--#include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
- #include <linux/dma-mapping.h>
- #include <linux/usb/otg.h>
--- 
-1.8.3.2
-
+WBR, Sergei
