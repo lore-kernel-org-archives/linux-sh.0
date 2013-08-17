@@ -1,68 +1,47 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Wed, 14 Aug 2013 09:44:36 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 17 Aug 2013 21:53:03 +0000
 Subject: Re: [PATCH] pwm: renesas-tpu: Add DT support
-Message-Id: <20130814094436.GD2084@ulmo>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="+B+y8wtTXqdUj1xM"
+Message-Id: <2528852.ql9DjmTrjK@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374791261-9850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1374791261-9850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+References: <1374791261-9850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <52091EA5.7070000@wwwdotorg.org>
+In-Reply-To: <52091EA5.7070000@wwwdotorg.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Stephen Warren <swarren@wwwdotorg.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Ian Campbell <ian.campbell@citrix.com>, Mark Rutland <Mark.Rutland@arm.com>, Pawel Moll <pawel.moll@arm.com>, Rob Herring <rob.herring@calxeda.com>, Kumar Gala <galak@codeaurora.org>
 
+Hi Stephen,
 
---+B+y8wtTXqdUj1xM
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Monday 12 August 2013 11:43:01 Stephen Warren wrote:
+> On 07/25/2013 04:27 PM, Laurent Pinchart wrote:
+> > Specify DT bindings for the TPU PWM controller and add OF support to the
+> > driver.
+> > 
+> > diff --git a/Documentation/devicetree/bindings/pwm/renesas,tpu-pwm.txt
+> > b/Documentation/devicetree/bindings/pwm/renesas,tpu-pwm.txt
+> > 
+> > +  - compatible: should be one of the following.
+> > +    - "renesas,tpu-r8a73a4": for R8A77A4 (R-Mobile APE6) compatible PWM
+> > controller.
+> > +    - "renesas,tpu-r8a7740": for R8A7740 (R-Mobile A1) compatible PWM
+> > controller.
+>
+> In the bindings I've seen, it's more typical for the compatible value to
+> be ${vendor},${soc}-${unit} than ${vendor},${unit}-${soc}. I guess I
+> don't know how common one format or the other is though.
 
-On Fri, Jul 26, 2013 at 12:27:41AM +0200, Laurent Pinchart wrote:
-> Specify DT bindings for the TPU PWM controller and add OF support to the
-> driver.
->=20
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
-m>
-> ---
->  .../devicetree/bindings/pwm/renesas,tpu-pwm.txt    | 28 +++++++++++++++
->  drivers/pwm/pwm-renesas-tpu.c                      | 41 ++++++++++++++++=
-++----
->  2 files changed, 62 insertions(+), 7 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/pwm/renesas,tpu-pwm=
-=2Etxt
->=20
-> This patch depends on the "[PATCH v2 0/4] Add PWM polarity flag macro for=
- DT"
-> series that is scheduled for merge in the PWM tree, and should thus go in=
- via
-> the same tree.
->=20
-> The code has been tested on an Armadillo800EVA with additional platform p=
-atches
-> that I'm going to submit next.
+I'm personally fine with both. However, when using a version number, the 
+format is ${vendor},${unit}-${version}. As we don't have an IP core version 
+number we use the SoC name instead, so ${vendor},${unit}-${soc} would make 
+sense. We should probably decide on one of the two alternatives and document 
+it. 
 
-Applied, thanks.
+> Other than that, the binding,
+> Acked-by: Stephen Warren <swarren@nvidia.com>
 
-Thierry
+-- 
+Regards,
 
---+B+y8wtTXqdUj1xM
-Content-Type: application/pgp-signature
+Laurent Pinchart
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.20 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSC1GEAAoJEN0jrNd/PrOhoVUP/jAMZQEguJ6Y5JHfI6Vcyhp/
-RDoNpRThkEq4tfze4ecuLI7S2EvpAYoC1i03uCRpzLIa2eaRKCAQilQ5lITdzMJe
-zPaB7qnZcQbCHMmiVI3eglQLSnGAJeFYCqPbe19gDTU+7uW8KScyrXSE0xI6Em1S
-9QQhL14NzkRCIjuiu48xcYf5/Q9Mde6E0dBN2vcV/22fwfKVFfygNZZRJMVsDDsv
-dUoJbmFptSAS3YVwEgl/mpAXkwmTO1KrhwXfGvXoTsL2lrJqxSATwMKzIPBYDVzO
-dkql1KuAg0whl4BJ6LgajeuHP3QqEmSI1mNA4AeadfUyvS94OMiKjZnFBPOPnX/v
-I5iF91uWyv0FDkhPDetX/9eU2fxVNNijXmFowhXZPvWghtn9n/tTFfv0oAOeMLWx
-FiQV2kmQJ0BTXp7UO1p1P8bEdeullEAcNfVj4KqjIitmy92ltZpOtHR01OMmFSaT
-kg/I5uKVYFcNnruxAsVw/tprb2dzzrlDWD6x7DdSz2cbNI3xfvH95XVkBkLXfdUX
-IdCxLet95BOHhdRdxyJHtAP3tvySarv+5W2f86ZEZIjo9mEkhu906ilmpom/pBv7
-3XXWICvK0E5+q3E7FsprnvoBAVm5DRkYJhzH13HaI6AaqTbnoAE6FfpX3o1uAk1y
-2UpFM91SiufbKWjZFr1H
-=kVlt
------END PGP SIGNATURE-----
-
---+B+y8wtTXqdUj1xM--
