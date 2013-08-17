@@ -1,22 +1,22 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Aug 2013 06:27:16 +0000
-Subject: Re: [PATCH v3 7/8] ARM: shmobile: lager: Add Display Unit support
-Message-Id: <20130822062716.GO11086@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 17 Aug 2013 22:11:45 +0000
+Subject: [PATCH 0/2] SH: fix platform Ether support
+Message-Id: <201308180211.45840.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375963414-31096-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375963414-31096-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org, davem@devemloft.net
 
-On Thu, Aug 08, 2013 at 02:03:33PM +0200, Laurent Pinchart wrote:
-> Only the VGA output is currently supported.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/mach-shmobile/board-lager.c | 67 ++++++++++++++++++++++++++++++++++++
->  1 file changed, 67 insertions(+)
+Hello.
 
-Thanks, I have merged this into the boards3 branch which includes a merge
-of git://people.freedesktop.Org/~airlied/linux drm-rcar-for-v3.12
+   Here's a couple of patches fixing Ether support on some SH platforms.
+They are against David Miller's 'net.git' (and also apply to 'net-next.git)
+since they are prerequisite for the 'sh_eth' driver cleanup patchset that will
+be posted a bit later. David, can I ask you to push these patches thru your
+tree for that reason?
+
+[1/2] SH7619: fix Ether support
+[2/2] SolutionEngine7724: fix Ether support
+
+WBR, Sergei
