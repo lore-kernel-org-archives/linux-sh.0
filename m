@@ -1,62 +1,46 @@
-From: Mauro Carvalho Chehab <m.chehab@samsung.com>
-Date: Sun, 18 Aug 2013 14:59:06 +0000
-Subject: Re: [PATCH v9] V4L2: soc_camera: Renesas R-Car VIN driver
-Message-Id: <20130818115906.6010a695@samsung.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 17 Aug 2013 22:19:09 +0000
+Subject: [PATCH 2/2] SolutionEngine7724: fix Ether support
+Message-Id: <201308180219.09528.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201307260023.11460.sergei.shtylyov@cogentembedded.com>
- <5204063E.7050707@cogentembedded.com>
-In-Reply-To: <5204063E.7050707@cogentembedded.com>
+References: <201308180213.23296.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308180213.23296.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: g.liakhovetski@gmx.de, linux-media@vger.kernel.org, magnus.damm@gmail.com, linux-sh@vger.kernel.org, phil.edworthy@renesas.com, matsu@igel.co.jp, vladimir.barinov@cogentembedded.com
+To: netdev@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org, davem@davemloft.net
 
-Em Fri, 09 Aug 2013 00:57:34 +0400
-Sergei Shtylyov <sergei.shtylyov@cogentembedded.com> escreveu:
+The Ether platform data is behind the declaration of 'struct sh_eth_plat_data'
+as it's lacking the initializers for the 'register_type' and 'phy_interface'
+fields -- it means they'll be implicitly and wrongly set to SH_ETH_REG_GIGABIT
+and PHY_INTERFACE_MODE_NA. Initialize the fields explicitly and fix off-by-one
+error in the Ether memory resource end, while at it...
 
-> Hello.
-> 
-> On 07/26/2013 12:23 AM, Sergei Shtylyov wrote:
-> 
-> > From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> 
-> > Add Renesas R-Car VIN (Video In) V4L2 driver.
-> 
-> > Based on the patch by Phil Edworthy <phil.edworthy@renesas.com>.
-> 
-> > Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> > [Sergei: removed deprecated IRQF_DISABLED flag, reordered/renamed 'enum chip_id'
-> > values, reordered rcar_vin_id_table[] entries,  removed senseless parens from
-> > to_buf_list() macro, used ALIGN() macro in rcar_vin_setup(), added {} to the
-> > *if* statement  and used 'bool' values instead of 0/1 where necessary, removed
-> > unused macros, done some reformatting and clarified some comments.]
-> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
->     Guennadi, Mauro, if you don't have issues with this version, perhaps we 
-> still can merge it to 3.11 using "the new drivers can't cause regressions, so 
-> mergeable any time" rule?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: stable@vger.kernel.org
 
-AFAICT, while sometimes that happens, this is not a rule. The rule is to
-merge new drivers during the merge window. What we during -rc is to accept
-fix patches and even some updates for the new drivers merged at the very
-latest merge window, as those won't cause regressions.
+---
+ arch/sh/boards/mach-se/7724/setup.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Anyway, IMO, we're too late at -rc cycle to propose this as an exception.
-
-Regards,
-Mauro
-
-> 
-> WBR, Sergei
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
--- 
-
-Cheers,
-Mauro
+Index: net/arch/sh/boards/mach-se/7724/setup.c
+=================================--- net.orig/arch/sh/boards/mach-se/7724/setup.c
++++ net/arch/sh/boards/mach-se/7724/setup.c
+@@ -365,7 +365,7 @@ static struct platform_device keysc_devi
+ static struct resource sh_eth_resources[] = {
+ 	[0] = {
+ 		.start = SH_ETH_ADDR,
+-		.end   = SH_ETH_ADDR + 0x1FC,
++		.end   = SH_ETH_ADDR + 0x1FC - 1,
+ 		.flags = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+@@ -377,6 +377,8 @@ static struct resource sh_eth_resources[
+ static struct sh_eth_plat_data sh_eth_plat = {
+ 	.phy = 0x1f, /* SMSC LAN8187 */
+ 	.edmac_endian = EDMAC_LITTLE_ENDIAN,
++	.register_type = SH_ETH_REG_FAST_SH4,
++	.phy_interace = PHY_INTERFACE_MODE_MII,
+ };
+ 
+ static struct platform_device sh_eth_device = {
