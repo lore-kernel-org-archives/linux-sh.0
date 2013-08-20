@@ -1,75 +1,34 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Tue, 20 Aug 2013 17:34:23 +0000
-Subject: [PATCH v2 4/4] clkdev: Fix race condition in clock lookup from device tree
-Message-Id: <1377020063-30213-5-git-send-email-s.nawrocki@samsung.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Tue, 20 Aug 2013 21:52:21 +0000
+Subject: Re: [PATCH v2 4/4] clkdev: Fix race condition in clock lookup from device tree
+Message-Id: <20130820215221.GH17845@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1377020063-30213-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377020063-30213-1-git-send-email-s.nawrocki@samsung.com>
+ <1377020063-30213-5-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377020063-30213-5-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-There is currently a race condition in the device tree part of clk_get()
-function, since the pointer returned from of_clk_get_by_name() may become
-invalid before __clk_get() call. I.e. due to the clock provider driver
-remove() callback being called in between of_clk_get_by_name() and
-__clk_get().
+On Tue, Aug 20, 2013 at 07:34:23PM +0200, Sylwester Nawrocki wrote:
+> There is currently a race condition in the device tree part of clk_get()
+> function, since the pointer returned from of_clk_get_by_name() may become
+> invalid before __clk_get() call. I.e. due to the clock provider driver
+> remove() callback being called in between of_clk_get_by_name() and
+> __clk_get().
+> 
+> Fix this by doing both the look up and __clk_get() operations with the
+> clock providers list mutex held. This ensures that the clock pointer
+> returned from __of_clk_get_from_provider() call and passed to __clk_get()
+> is valid, as long as the clock supplier module first removes its clock
+> provider instance and then does clk_unregister() on the corresponding
+> clocks.
+> 
+> Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+> Reviewed-by: Mike Turquette <mturquette@linaro.org>
 
-Fix this by doing both the look up and __clk_get() operations with the
-clock providers list mutex held. This ensures that the clock pointer
-returned from __of_clk_get_from_provider() call and passed to __clk_get()
-is valid, as long as the clock supplier module first removes its clock
-provider instance and then does clk_unregister() on the corresponding
-clocks.
+Thanks.
 
-Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
-Reviewed-by: Mike Turquette <mturquette@linaro.org>
----
-Changes since v1:
- - include "clk.h".
----
- drivers/clk/clkdev.c |   12 ++++++++++--
- 1 file changed, 10 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
-index 442a313..48f6721 100644
---- a/drivers/clk/clkdev.c
-+++ b/drivers/clk/clkdev.c
-@@ -21,6 +21,8 @@
- #include <linux/clkdev.h>
- #include <linux/of.h>
-
-+#include "clk.h"
-+
- static LIST_HEAD(clocks);
- static DEFINE_MUTEX(clocks_mutex);
-
-@@ -39,7 +41,13 @@ struct clk *of_clk_get(struct device_node *np, int index)
- 	if (rc)
- 		return ERR_PTR(rc);
-
--	clk = of_clk_get_from_provider(&clkspec);
-+	of_clk_lock();
-+	clk = __of_clk_get_from_provider(&clkspec);
-+
-+	if (!IS_ERR(clk) && !__clk_get(clk))
-+		clk = ERR_PTR(-ENOENT);
-+
-+	of_clk_unlock();
- 	of_node_put(clkspec.np);
- 	return clk;
- }
-@@ -157,7 +165,7 @@ struct clk *clk_get(struct device *dev, const char *con_id)
-
- 	if (dev) {
- 		clk = of_clk_get_by_name(dev->of_node, con_id);
--		if (!IS_ERR(clk) && __clk_get(clk))
-+		if (!IS_ERR(clk))
- 			return clk;
- 	}
-
---
-1.7.9.5
-
+Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
