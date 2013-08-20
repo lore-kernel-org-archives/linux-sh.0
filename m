@@ -1,96 +1,145 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 02 Aug 2013 06:39:13 +0000
-Subject: [PATCH 1/4] ARM: shmobile: armadillo800eva: Use DT for GIC
-Message-Id: <87haf88ult.wl%kuninori.morimoto.gx@renesas.com>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Tue, 20 Aug 2013 17:34:22 +0000
+Subject: [PATCH v2 3/4] clk: Provide not locked variant of of_clk_get_from_provider()
+Message-Id: <1377020063-30213-4-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <d58226a21a7b84a3f82265821f24ce2aad267f1c.1374624997.git.horms+renesas@verge.net.au>
-In-Reply-To: <d58226a21a7b84a3f82265821f24ce2aad267f1c.1374624997.git.horms+renesas@verge.net.au>
+References: <1377020063-30213-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377020063-30213-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Current Armadillo800eva is using DT booting,
-and r8a7740.dtsi already has GIC settings.
+Add helper functions for the of_clk_providers list locking and
+an unlocked variant of of_clk_get_from_provider().
+These functions are intended to be used in the clkdev to avoid
+race condition in the device tree based clock look up in clk_get().
 
-So, we can remove the C version of the GIC setup code,
-instead rely on GIC information provided by DT.
-
-This patch removes r8a7740_init_irq() which has
-no user any more
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    2 +-
- arch/arm/mach-shmobile/include/mach/r8a7740.h  |    1 -
- arch/arm/mach-shmobile/intc-r8a7740.c          |   20 +++-----------------
- 3 files changed, 4 insertions(+), 19 deletions(-)
+Changes since v1:
+ - moved the function declaractions to a local header.
+---
+ drivers/clk/clk.c |   38 ++++++++++++++++++++++++++++++--------
+ drivers/clk/clk.h |   16 ++++++++++++++++
+ 2 files changed, 46 insertions(+), 8 deletions(-)
+ create mode 100644 drivers/clk/clk.h
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 4cfcbbe..da58332 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1314,7 +1314,7 @@ static const char *eva_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= eva_add_early_devices,
--	.init_irq	= r8a7740_init_irq,
-+	.init_irq	= r8a7740_init_irq_of,
- 	.init_machine	= eva_init,
- 	.init_late	= shmobile_init_late,
- 	.init_time	= eva_earlytimer_init,
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 56f3750..d07932f 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -48,7 +48,6 @@ enum {
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 549fcb7..0a90582 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -21,6 +21,8 @@
+ #include <linux/init.h>
+ #include <linux/sched.h>
  
- extern void r8a7740_meram_workaround(void);
- extern void r8a7740_init_delay(void);
--extern void r8a7740_init_irq(void);
- extern void r8a7740_init_irq_of(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index 8871f77..7519353 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -23,12 +23,14 @@
- #include <linux/irqchip.h>
- #include <linux/irqchip/arm-gic.h>
- 
--static void __init r8a7740_init_irq_common(void)
-+void __init r8a7740_init_irq_of(void)
- {
- 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
- 	void __iomem *intc_msk_base = ioremap_nocache(0xe6900040, 0x10);
- 	void __iomem *pfc_inta_ctrl = ioremap_nocache(0xe605807c, 0x4);
- 
-+	irqchip_init();
++#include "clk.h"
 +
- 	/* route signals to GIC */
- 	iowrite32(0x0, pfc_inta_ctrl);
+ static DEFINE_SPINLOCK(enable_lock);
+ static DEFINE_MUTEX(prepare_lock);
  
-@@ -50,19 +52,3 @@ static void __init r8a7740_init_irq_common(void)
- 	iounmap(intc_msk_base);
- 	iounmap(pfc_inta_ctrl);
+@@ -2132,7 +2134,18 @@ static const struct of_device_id __clk_of_table_sentinel
+ 	__used __section(__clk_of_table_end);
+ 
+ static LIST_HEAD(of_clk_providers);
+-static DEFINE_MUTEX(of_clk_lock);
++static DEFINE_MUTEX(of_clk_mutex);
++
++/* of_clk_provider list locking helpers */
++void of_clk_lock(void)
++{
++	mutex_lock(&of_clk_mutex);
++}
++
++void of_clk_unlock(void)
++{
++	mutex_unlock(&of_clk_mutex);
++}
+ 
+ struct clk *of_clk_src_simple_get(struct of_phandle_args *clkspec,
+ 				     void *data)
+@@ -2176,9 +2189,9 @@ int of_clk_add_provider(struct device_node *np,
+ 	cp->data = data;
+ 	cp->get = clk_src_get;
+ 
+-	mutex_lock(&of_clk_lock);
++	mutex_lock(&of_clk_mutex);
+ 	list_add(&cp->link, &of_clk_providers);
+-	mutex_unlock(&of_clk_lock);
++	mutex_unlock(&of_clk_mutex);
+ 	pr_debug("Added clock from %s\n", np->full_name);
+ 
+ 	return 0;
+@@ -2193,7 +2206,7 @@ void of_clk_del_provider(struct device_node *np)
+ {
+ 	struct of_clk_provider *cp;
+ 
+-	mutex_lock(&of_clk_lock);
++	mutex_lock(&of_clk_mutex);
+ 	list_for_each_entry(cp, &of_clk_providers, link) {
+ 		if (cp->node = np) {
+ 			list_del(&cp->link);
+@@ -2202,24 +2215,33 @@ void of_clk_del_provider(struct device_node *np)
+ 			break;
+ 		}
+ 	}
+-	mutex_unlock(&of_clk_lock);
++	mutex_unlock(&of_clk_mutex);
  }
--
--void __init r8a7740_init_irq_of(void)
--{
--	irqchip_init();
--	r8a7740_init_irq_common();
--}
--
--void __init r8a7740_init_irq(void)
--{
--	void __iomem *gic_dist_base = ioremap_nocache(0xc2800000, 0x1000);
--	void __iomem *gic_cpu_base = ioremap_nocache(0xc2000000, 0x1000);
--
--	/* initialize the Generic Interrupt Controller PL390 r0p0 */
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
--	r8a7740_init_irq_common();
--}
+ EXPORT_SYMBOL_GPL(of_clk_del_provider);
+ 
+-struct clk *of_clk_get_from_provider(struct of_phandle_args *clkspec)
++struct clk *__of_clk_get_from_provider(struct of_phandle_args *clkspec)
+ {
+ 	struct of_clk_provider *provider;
+ 	struct clk *clk = ERR_PTR(-ENOENT);
+ 
+ 	/* Check if we have such a provider in our array */
+-	mutex_lock(&of_clk_lock);
+ 	list_for_each_entry(provider, &of_clk_providers, link) {
+ 		if (provider->node = clkspec->np)
+ 			clk = provider->get(clkspec, provider->data);
+ 		if (!IS_ERR(clk))
+ 			break;
+ 	}
+-	mutex_unlock(&of_clk_lock);
++
++	return clk;
++}
++
++struct clk *of_clk_get_from_provider(struct of_phandle_args *clkspec)
++{
++	struct clk *clk;
++
++	mutex_lock(&of_clk_mutex);
++	clk = __of_clk_get_from_provider(clkspec);
++	mutex_unlock(&of_clk_mutex);
+ 
+ 	return clk;
+ }
+diff --git a/drivers/clk/clk.h b/drivers/clk/clk.h
+new file mode 100644
+index 0000000..4f7d09c
+--- /dev/null
++++ b/drivers/clk/clk.h
+@@ -0,0 +1,16 @@
++/*
++ * linux/drivers/clk/clk.h
++ *
++ * Copyright (C) 2013 Samsung Electroncs Co., Ltd.
++ * Sylwester Nawrocki <s.nawrocki@samsung.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#if defined(CONFIG_OF) && defined(CONFIG_COMMON_CLK)
++struct clk *__of_clk_get_from_provider(struct of_phandle_args *clkspec);
++void of_clk_lock(void);
++void of_clk_unlock(void);
++#endif
 -- 
 1.7.9.5
 
