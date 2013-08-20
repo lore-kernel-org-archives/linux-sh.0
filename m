@@ -1,89 +1,166 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Tue, 06 Aug 2013 10:36:37 +0000
-Subject: Re: [PATCH v6 02/10] Documentation: media: Clarify the VIDIOC_CREATE_BUFS format requirements
-Message-Id: <201308061236.37412.hverkuil@xs4all.nl>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Tue, 20 Aug 2013 17:34:20 +0000
+Subject: [PATCH v2 1/4] clk: add common __clk_get(), __clk_put() implementations
+Message-Id: <1377020063-30213-2-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1375725209-2674-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375725209-2674-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1377020063-30213-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377020063-30213-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon 5 August 2013 19:53:21 Laurent Pinchart wrote:
-> The VIDIOC_CREATE_BUFS ioctl takes a format argument that must contain a
-> valid format supported by the driver. Clarify the documentation.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds common __clk_get(), __clk_put() clkdev helpers which
+replace their platform specific counterparts when the common clock
+API is enabled.
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+The owner module pointer field is added to struct clk so a reference
+to the clock supplier module can be taken by the clock consumers.
 
-Regards,
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+---
 
-	Hans
+No changes since previous version.
 
-> ---
->  .../DocBook/media/v4l/vidioc-create-bufs.xml       | 41 ++++++++++++++--------
->  1 file changed, 26 insertions(+), 15 deletions(-)
-> 
-> diff --git a/Documentation/DocBook/media/v4l/vidioc-create-bufs.xml b/Documentation/DocBook/media/v4l/vidioc-create-bufs.xml
-> index cd99436..9b700a5 100644
-> --- a/Documentation/DocBook/media/v4l/vidioc-create-bufs.xml
-> +++ b/Documentation/DocBook/media/v4l/vidioc-create-bufs.xml
-> @@ -62,18 +62,29 @@ addition to the <constant>VIDIOC_REQBUFS</constant> ioctl, when a tighter
->  control over buffers is required. This ioctl can be called multiple times to
->  create buffers of different sizes.</para>
->  
-> -    <para>To allocate device buffers applications initialize relevant fields of
-> -the <structname>v4l2_create_buffers</structname> structure. They set the
-> -<structfield>type</structfield> field in the
-> -&v4l2-format; structure, embedded in this
-> -structure, to the respective stream or buffer type.
-> -<structfield>count</structfield> must be set to the number of required buffers.
-> -<structfield>memory</structfield> specifies the required I/O method. The
-> -<structfield>format</structfield> field shall typically be filled in using
-> -either the <constant>VIDIOC_TRY_FMT</constant> or
-> -<constant>VIDIOC_G_FMT</constant> ioctl(). Additionally, applications can adjust
-> -<structfield>sizeimage</structfield> fields to fit their specific needs. The
-> -<structfield>reserved</structfield> array must be zeroed.</para>
-> +    <para>To allocate the device buffers applications must initialize the
-> +relevant fields of the <structname>v4l2_create_buffers</structname> structure.
-> +The <structfield>count</structfield> field must be set to the number of
-> +requested buffers, the <structfield>memory</structfield> field specifies the
-> +requested I/O method and the <structfield>reserved</structfield> array must be
-> +zeroed.</para>
-> +
-> +    <para>The <structfield>format</structfield> field specifies the image format
-> +that the buffers must be able to handle. The application has to fill in this
-> +&v4l2-format;. Usually this will be done using the
-> +<constant>VIDIOC_TRY_FMT</constant> or <constant>VIDIOC_G_FMT</constant> ioctl()
-> +to ensure that the requested format is supported by the driver. Unsupported
-> +formats will result in an error.</para>
-> +
-> +    <para>The buffers created by this ioctl will have as minimum size the size
-> +defined by the <structfield>format.pix.sizeimage</structfield> field. If the
-> +<structfield>format.pix.sizeimage</structfield> field is less than the minimum
-> +required for the given format, then <structfield>sizeimage</structfield> will be
-> +increased by the driver to that minimum to allocate the buffers. If it is
-> +larger, then the value will be used as-is. The same applies to the
-> +<structfield>sizeimage</structfield> field of the
-> +<structname>v4l2_plane_pix_format</structname> structure in the case of
-> +multiplanar formats.</para>
->  
->      <para>When the ioctl is called with a pointer to this structure the driver
->  will attempt to allocate up to the requested number of buffers and store the
-> @@ -144,9 +155,9 @@ mapped</link> I/O.</para>
->        <varlistentry>
->  	<term><errorcode>EINVAL</errorcode></term>
->  	<listitem>
-> -	  <para>The buffer type (<structfield>type</structfield> field) or the
-> -requested I/O method (<structfield>memory</structfield>) is not
-> -supported.</para>
-> +	  <para>The buffer type (<structfield>format.type</structfield> field),
-> +requested I/O method (<structfield>memory</structfield>) or format
-> +(<structfield>format</structfield> field) is not valid.</para>
->  	</listitem>
->        </varlistentry>
->      </variablelist>
-> 
+ arch/arm/include/asm/clkdev.h      |    2 ++
+ arch/blackfin/include/asm/clkdev.h |    2 ++
+ arch/mips/include/asm/clkdev.h     |    2 ++
+ arch/sh/include/asm/clkdev.h       |    2 ++
+ drivers/clk/clk.c                  |   24 ++++++++++++++++++++++++
+ include/linux/clk-private.h        |    3 +++
+ include/linux/clkdev.h             |    5 +++++
+ 7 files changed, 40 insertions(+)
+
+diff --git a/arch/arm/include/asm/clkdev.h b/arch/arm/include/asm/clkdev.h
+index 80751c1..4e8a4b2 100644
+--- a/arch/arm/include/asm/clkdev.h
++++ b/arch/arm/include/asm/clkdev.h
+@@ -14,12 +14,14 @@
+
+ #include <linux/slab.h>
+
++#ifndef CONFIG_COMMON_CLK
+ #ifdef CONFIG_HAVE_MACH_CLKDEV
+ #include <mach/clkdev.h>
+ #else
+ #define __clk_get(clk)	({ 1; })
+ #define __clk_put(clk)	do { } while (0)
+ #endif
++#endif
+
+ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ {
+diff --git a/arch/blackfin/include/asm/clkdev.h b/arch/blackfin/include/asm/clkdev.h
+index 9053bed..7ac2436 100644
+--- a/arch/blackfin/include/asm/clkdev.h
++++ b/arch/blackfin/include/asm/clkdev.h
+@@ -8,7 +8,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ 	return kzalloc(size, GFP_KERNEL);
+ }
+
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_put(clk)
+ #define __clk_get(clk) ({ 1; })
++#endif
+
+ #endif
+diff --git a/arch/mips/include/asm/clkdev.h b/arch/mips/include/asm/clkdev.h
+index 2624754..1b3ad7b 100644
+--- a/arch/mips/include/asm/clkdev.h
++++ b/arch/mips/include/asm/clkdev.h
+@@ -14,8 +14,10 @@
+
+ #include <linux/slab.h>
+
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_get(clk)	({ 1; })
+ #define __clk_put(clk)	do { } while (0)
++#endif
+
+ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ {
+diff --git a/arch/sh/include/asm/clkdev.h b/arch/sh/include/asm/clkdev.h
+index 6ba9186..c419014 100644
+--- a/arch/sh/include/asm/clkdev.h
++++ b/arch/sh/include/asm/clkdev.h
+@@ -25,7 +25,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ 		return kzalloc(size, GFP_KERNEL);
+ }
+
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_put(clk)
+ #define __clk_get(clk) ({ 1; })
++#endif
+
+ #endif /* __CLKDEV_H__ */
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 56a00db..0e0eb31 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -1851,6 +1851,30 @@ void devm_clk_unregister(struct device *dev, struct clk *clk)
+ }
+ EXPORT_SYMBOL_GPL(devm_clk_unregister);
+
++/*
++ * clkdev helpers
++ */
++int __clk_get(struct clk *clk)
++{
++	if (WARN_ON((!clk)))
++		return 0;
++
++	if (!try_module_get(clk->owner))
++		return 0;
++
++	return 1;
++}
++EXPORT_SYMBOL(__clk_get);
++
++void __clk_put(struct clk *clk)
++{
++	if (!clk || IS_ERR(clk))
++		return;
++
++	module_put(clk->owner);
++}
++EXPORT_SYMBOL(__clk_put);
++
+ /***        clk rate change notifiers        ***/
+
+ /**
+diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
+index dd7adff..b7c0b58 100644
+--- a/include/linux/clk-private.h
++++ b/include/linux/clk-private.h
+@@ -25,10 +25,13 @@
+
+ #ifdef CONFIG_COMMON_CLK
+
++struct module;
++
+ struct clk {
+ 	const char		*name;
+ 	const struct clk_ops	*ops;
+ 	struct clk_hw		*hw;
++	struct module		*owner;
+ 	struct clk		*parent;
+ 	const char		**parent_names;
+ 	struct clk		**parents;
+diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
+index a6a6f60..94bad77 100644
+--- a/include/linux/clkdev.h
++++ b/include/linux/clkdev.h
+@@ -43,4 +43,9 @@ int clk_add_alias(const char *, const char *, char *, struct device *);
+ int clk_register_clkdev(struct clk *, const char *, const char *, ...);
+ int clk_register_clkdevs(struct clk *, struct clk_lookup *, size_t);
+
++#ifdef CONFIG_COMMON_CLK
++int __clk_get(struct clk *clk);
++void __clk_put(struct clk *clk);
++#endif
++
+ #endif
+--
+1.7.9.5
+
