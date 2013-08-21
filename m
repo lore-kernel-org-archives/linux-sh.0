@@ -1,58 +1,39 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 05 Aug 2013 15:30:26 +0000
-Subject: Re: [PATCH/RFC] mmc: sh_mmcif: revision-specific configuration from Device Tree
-Message-Id: <Pine.LNX.4.64.1308051722490.22479@axis700.grange>
+From: Richard Weinberger <richard@nod.at>
+Date: Wed, 21 Aug 2013 08:19:24 +0000
+Subject: [RFC] Get rid of SUBARCH
+Message-Id: <1377073172-3662-1-git-send-email-richard@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1308051514350.22479@axis700.grange>
- <8661vkgqdw.fsf@void.printf.net>
-In-Reply-To: <8661vkgqdw.fsf@void.printf.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, Daniel Drake <dsd@laptop.org>
+To: linux-arch@vger.kernel.org
+Cc: mmarek@suse.cz, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, jdike@addtoit.com, gxt@mprc.pku.edu.cn, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
 
-Hi Chris
+This series is an attempt to remove the SUBARCH make parameter.
+It as introduced at the times of Linux 2.5 for UML to tell the UML
+build system what the real architecture is.
 
-On Mon, 5 Aug 2013, Chris Ball wrote:
+But we actually don't need SUBARCH, we can store this information
+in the .config file.
+i386_defconfig will produce a kernel for x86, and x86_64_defconfig
+for x86_64. There is no need to specify SUBARCH.
+With this patchset applied you can build UML always with "make linux ARCH=um"
+and it will produce the an image for the architecture specified in your .config.
+Currenlty "make linux ARCH=um" will alter your .config to match the detected SUBARCH
+whith sucks and causes problems on automated build systems.
 
-> Hi Guennadi,
-> 
-> On Mon, Aug 05 2013, Guennadi Liakhovetski wrote:
-> > Add compatibility strings to configure MMCIF revision-specific features.
-> > MMCIF blocks are always integrated into SoCs, so, we use SoC model to
-> > distinguish between MMCIF versions.
-> >
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> >
-> > Hi Chris,
-> > I marked this as RFC, because having no access to the MMC standard I'm not 
-> > certain about VccQ requirements for MMC DDR. On the one hand a comment in 
-> > mmc.c says
-> > 	 * EXT_CSD_CARD_TYPE_DDR_1_8V means 3.3V or 1.8V vccq.
-> > which suggests, that DDR (DDR50?) can be used with VccQ = 3.3V, 1.8V and 
-> > 1.2V at least. But in mmc_init_card() DDR50 is only requested from the 
-> > driver if either MMC_CAP_1_8V_DDR or MMC_CAP_1_2V_DDR is specified in 
-> > host's capabilities. So, I'm actually not sure whether MMC_CAP_UHS_DDR50 
-> > alone without 1_8V or 1_2V makes sense. That's also what I implemented in 
-> > this patch - DDR50 is only enabled in combination with either 1.2 or 1.8V 
-> > capability. Is this correct?
-> 
-> OLPC's using DDR50 at 3.3V in production.  Honestly, I don't know
-> whether it's spec compliant (I think the spec claims that 1.8V is
-> required) but it happens to work on these parts.  The host controller
-> does support 1.8V, there's just no hardware capable of supplying 1.8V
-> to MMC on the board.
+The series touches also m68k, sh, mips and unicore32.
+These architectures magically select a cross compiler if ARCH != SUBARCH.
+Do really need that behavior?
 
-Thanks for the example. So, I think, for now it should be ok to just act 
-in a way, compatible with the mmc core, i.e. always set one of 
-MMC_CAP_1_8V_DDR or MMC_CAP_1_2V_DDR, when aiming at MMC_CAP_UHS_DDR50. 
-So, the patch should be ok then.
+[PATCH 1/8] um: Create defconfigs for i386 and x86_64
+[PATCH 2/8] um: Do not use SUBARCH
+[PATCH 3/8] um: Remove old defconfig
+[PATCH 4/8] m68k: Do not use SUBARCH
+[PATCH 5/8] sh: Do not use SUBARCH
+[PATCH 6/8] mips: Do not use SUBARCH
+[PATCH 7/8] unicore32: Do not use SUBARCH
+[PATCH 8/8] Makefile: Remove SUBARCH
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Thanks,
+//richard
