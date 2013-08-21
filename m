@@ -1,34 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 07 Aug 2013 22:56:32 +0000
-Subject: [PATCH v2 9/9] ARM: shmobile: lager: Select DRM_RCAR_DU in defconfig
-Message-Id: <1375916192-22647-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Richard Weinberger <richard@nod.at>
+Date: Wed, 21 Aug 2013 08:19:31 +0000
+Subject: [PATCH 7/8] unicore32: Do not use SUBARCH
+Message-Id: <1377073172-3662-8-git-send-email-richard@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1377073172-3662-1-git-send-email-richard@nod.at>
+In-Reply-To: <1377073172-3662-1-git-send-email-richard@nod.at>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arch@vger.kernel.org
+Cc: mmarek@suse.cz, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, jdike@addtoit.com, gxt@mprc.pku.edu.cn, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, Richard Weinberger <richard@nod.at>
 
-A R-Car DU DRM device is registered for the Lager board, select the
-corresponding driver in its defconfig.
+Forces the user to specify CROSS_COMPILE at compile time instead
+of automatically selecting more or less randomly a cross compiler
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- arch/arm/configs/lager_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/unicore32/Makefile | 5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index e777ef2..35bff5e 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -89,6 +89,8 @@ CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_REGULATOR=y
- CONFIG_REGULATOR_FIXED_VOLTAGE=y
-+CONFIG_DRM=y
-+CONFIG_DRM_RCAR_DU=y
- # CONFIG_USB_SUPPORT is not set
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
+diff --git a/arch/unicore32/Makefile b/arch/unicore32/Makefile
+index b6f5c4c..fae00c8 100644
+--- a/arch/unicore32/Makefile
++++ b/arch/unicore32/Makefile
+@@ -10,11 +10,6 @@
+ #
+ # Copyright (C) 2002~2010 by Guan Xue-tao
+ #
+-ifneq ($(SUBARCH),$(ARCH))
+-	ifeq ($(CROSS_COMPILE),)
+-		CROSS_COMPILE := $(call cc-cross-prefix, unicore32-linux-)
+-	endif
+-endif
+ 
+ LDFLAGS_vmlinux		:= -p --no-undefined -X
+ 
 -- 
-1.8.1.5
+1.8.1.4
 
