@@ -1,39 +1,51 @@
-From: Richard Weinberger <richard@nod.at>
-Date: Wed, 21 Aug 2013 08:19:24 +0000
-Subject: [RFC] Get rid of SUBARCH
-Message-Id: <1377073172-3662-1-git-send-email-richard@nod.at>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 21 Aug 2013 12:07:33 +0000
+Subject: Re: [RFC] Get rid of SUBARCH
+Message-Id: <CAMuHMdWk-EPTNmPB1O1+F7YVQLjhQsFJznYwA3t6UCGUU1T9PQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1377073172-3662-1-git-send-email-richard@nod.at>
+In-Reply-To: <1377073172-3662-1-git-send-email-richard@nod.at>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arch@vger.kernel.org
-Cc: mmarek@suse.cz, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, jdike@addtoit.com, gxt@mprc.pku.edu.cn, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+To: Richard Weinberger <richard@nod.at>
+Cc: Linux-Arch <linux-arch@vger.kernel.org>, Michal Marek <mmarek@suse.cz>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, Jeff Dike <jdike@addtoit.com>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, the arch/x86 maintainers <x86@kernel.org>, linux-kbuild <linux-kbuild@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, uml-devel <user-mode-linux-devel@lists.sourceforge.net>
 
-This series is an attempt to remove the SUBARCH make parameter.
-It as introduced at the times of Linux 2.5 for UML to tell the UML
-build system what the real architecture is.
+On Wed, Aug 21, 2013 at 10:19 AM, Richard Weinberger <richard@nod.at> wrote:
+> This series is an attempt to remove the SUBARCH make parameter.
+> It as introduced at the times of Linux 2.5 for UML to tell the UML
+> build system what the real architecture is.
+>
+> But we actually don't need SUBARCH, we can store this information
+> in the .config file.
 
-But we actually don't need SUBARCH, we can store this information
-in the .config file.
-i386_defconfig will produce a kernel for x86, and x86_64_defconfig
-for x86_64. There is no need to specify SUBARCH.
-With this patchset applied you can build UML always with "make linux ARCH=um"
-and it will produce the an image for the architecture specified in your .config.
-Currenlty "make linux ARCH=um" will alter your .config to match the detected SUBARCH
-whith sucks and causes problems on automated build systems.
+Haha, now you have OS_ARCH (shouldn't that be called HOST_ARCH?) instead,
+which is available only for UM?
 
-The series touches also m68k, sh, mips and unicore32.
-These architectures magically select a cross compiler if ARCH != SUBARCH.
-Do really need that behavior?
+> The series touches also m68k, sh, mips and unicore32.
+> These architectures magically select a cross compiler if ARCH != SUBARCH.
+> Do really need that behavior?
 
-[PATCH 1/8] um: Create defconfigs for i386 and x86_64
-[PATCH 2/8] um: Do not use SUBARCH
-[PATCH 3/8] um: Remove old defconfig
-[PATCH 4/8] m68k: Do not use SUBARCH
-[PATCH 5/8] sh: Do not use SUBARCH
-[PATCH 6/8] mips: Do not use SUBARCH
-[PATCH 7/8] unicore32: Do not use SUBARCH
-[PATCH 8/8] Makefile: Remove SUBARCH
+This does remove functionality.
+It allows to build a kernel using e.g. "make ARCH=m68k".
 
-Thanks,
-//richard
+Perhaps this can be moved to generic code? Most (not all!) cross-toolchains
+are called $ARCH-{unknown-,}linux{,-gnu}.
+Exceptions are e.g. am33_2.0-linux and bfin-uclinux.
+
+> [PATCH 1/8] um: Create defconfigs for i386 and x86_64
+> [PATCH 3/8] um: Remove old defconfig
+
+Why not merge these two, so git copy/rename detection will show only the real
+changes?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
