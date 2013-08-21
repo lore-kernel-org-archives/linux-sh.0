@@ -1,26 +1,92 @@
-From: David Miller <davem@davemloft.net>
-Date: Wed, 21 Aug 2013 00:05:41 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 21 Aug 2013 00:39:40 +0000
 Subject: Re: [PATCH 2/2] sh_eth: remove 'register_type' field from 'struct sh_eth_plat_data'
-Message-Id: <20130820.170541.1185336752082177256.davem@davemloft.net>
+Message-Id: <20555348.Y63SQY2deS@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308180308.39941.sergei.shtylyov@cogentembedded.com>
-	<201308180313.26607.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308180313.26607.sergei.shtylyov@cogentembedded.com>
+References: <201308180308.39941.sergei.shtylyov@cogentembedded.com> <2784326.CAqkc6T846@avalon> <5213F548.5040103@cogentembedded.com>
+In-Reply-To: <5213F548.5040103@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, davem@davemloft.net, lethal@linux-sh.org, linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 18 Aug 2013 03:13:26 +0400
+Hi Sergei,
 
-> Now that the 'register_type' field of the 'sh_eth' driver's platform data is not
-> used by the driver anymore, it's time to remove it and  its initializers from
-> the SH platform code. Also  move *enum* declaring values for this  field from
-> <linux/sh_eth.h>  to  the  local driver's  header file as they're only needed
-> by the driver itself  now...
+On Wednesday 21 August 2013 03:01:28 Sergei Shtylyov wrote:
+> On 08/21/2013 02:50 AM, Laurent Pinchart wrote:
+> >>>>> Now that the 'register_type' field of the 'sh_eth' driver's platform
+> >>>>> data is not used by the driver anymore, it's time to remove it and 
+> >>>>> its initializers from the SH platform code. Also  move *enum*
+> >>>>> declaring values for this  field from <linux/sh_eth.h>  to  the  local
+> >>>>> driver's header file as they're only needed by the driver itself 
+> >>>>> now...
+> >>>>> 
+> >>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> >> 
+> >> [...]
+> >> 
+> >>>>>    /* Driver's parameters */
+> >>>>>    #if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
+> >>>>>    #define SH4_SKB_RX_ALIGN    32
+> >>>>> 
+> >>>>> Index: net-next/include/linux/sh_eth.h
+> >>>>> =================================> >>>>> --- net-next.orig/include/linux/sh_eth.h
+> >>>>> +++ net-next/include/linux/sh_eth.h
+> >>>>> @@ -5,17 +5,10 @@
+> >>>>> 
+> >>>>>    #include <linux/if_ether.h>
+> >>>>>    
+> >>>>>    enum {EDMAC_LITTLE_ENDIAN, EDMAC_BIG_ENDIAN};
+> >>>>> 
+> >>>>> -enum {
+> >>>>> -    SH_ETH_REG_GIGABIT,
+> >>>>> -    SH_ETH_REG_FAST_RCAR,
+> >>>>> -    SH_ETH_REG_FAST_SH4,
+> >>>>> -    SH_ETH_REG_FAST_SH3_SH2
+> >>>>> -};
+> >>>>> 
+> >>>>>    struct sh_eth_plat_data {
+> >>>>>    
+> >>>>>        int phy;
+> >>>>>        int edmac_endian;
+> >>>> 
+> >>>> Wouldn't it make sense to move the edmac_endian field to
+> >>>> sh_eth_cpu_data as well ?
+> >>> 
+> >>> No, it depends on the SoC endianness which is determined by power-on pin
+> >>> strapping -- which is board specific.
+> > 
+> > Does SoC endianness affect the ARM core endianness, the ethernet registers
+> > endianness, or both ?
+>
+> Both, AFAIK.
+>
+> > If it affects the ARM core endianness only, the kernel needs to be
+> > compiled in little-endian or big-endian mode anyway, and the sh_eth driver
+> > should use cpu_to_le32() unconditionally. If it affects both the ARM core
+> > and the ethernet controller there's not need to care about the endianness,
+> > as it will always be good.
 > 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> No, it won't unless you're using __raw_{readl|writel}() accessors. The
+> driver doesn't do it. {readl|writel}() and io{read|write}32() that use them
+> always assume LE ordering of memory.
+> 
+> > We only need to care about it if it affects the ethernet controller
+> > registers only, which would seem weird to me.
+>
+> Unfortunately, you are wrong.
 
-Applied.
+Care to explain *why* ? There might be bugs in the driver (such as using the 
+wrong I/O accessors), but I don't see why we need to configure the endianness 
+through platform data.
+
+> >> BTW, I don't think the driver works correctly in the BE case since it
+> >> uses io{read|write}32() to access the registers and those functions
+> >> assume LE ordering on MMIO.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
