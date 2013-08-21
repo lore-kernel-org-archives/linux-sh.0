@@ -1,41 +1,34 @@
-From: Richard Weinberger <richard@nod.at>
-Date: Wed, 21 Aug 2013 08:19:30 +0000
-Subject: [PATCH 6/8] mips: Do not use SUBARCH
-Message-Id: <1377073172-3662-7-git-send-email-richard@nod.at>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 21 Aug 2013 22:17:25 +0000
+Subject: [PATCH 1/2] SH7619: fix typo in Ether platform data
+Message-Id: <201308220217.26081.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377073172-3662-1-git-send-email-richard@nod.at>
-In-Reply-To: <1377073172-3662-1-git-send-email-richard@nod.at>
+References: <201308220215.16463.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308220215.16463.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arch@vger.kernel.org
-Cc: mmarek@suse.cz, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, jdike@addtoit.com, gxt@mprc.pku.edu.cn, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, Richard Weinberger <richard@nod.at>
+To: netdev@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org, davem@davemloft.net
 
-Forces the user to specify CROSS_COMPILE at compile time instead
-of automatically selecting more or less randomly a cross compiler.
+Commit 06a64f91da72cb5827e2bedef2ead60a123fd66e (SH7619: fix Ether support)  has
+a typo in the 'phy_interface' field name of the platform data which causes build
+error -- fix it. 
 
-Signed-off-by: Richard Weinberger <richard@nod.at>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/mips/Makefile | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/Makefile b/arch/mips/Makefile
-index 37f9ef3..514fea6 100644
---- a/arch/mips/Makefile
-+++ b/arch/mips/Makefile
-@@ -42,12 +42,6 @@ tool-archpref		= $(64bit-tool-archpref)
- UTS_MACHINE		:= mips64
- endif
+Index: net-next/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+=================================--- net-next.orig/arch/sh/kernel/cpu/sh2/setup-sh7619.c
++++ net-next/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+@@ -114,7 +114,7 @@ static struct platform_device scif2_devi
+ static struct sh_eth_plat_data eth_platform_data = {
+ 	.phy		= 1,
+ 	.edmac_endian	= EDMAC_LITTLE_ENDIAN,
+-	.phy_interace	= PHY_INTERFACE_MODE_MII,
++	.phy_interface	= PHY_INTERFACE_MODE_MII,
+ };
  
--ifneq ($(SUBARCH),$(ARCH))
--  ifeq ($(CROSS_COMPILE),)
--    CROSS_COMPILE := $(call cc-cross-prefix, $(tool-archpref)-linux-  $(tool-archpref)-linux-gnu-  $(tool-archpref)-unknown-linux-gnu-)
--  endif
--endif
--
- ifdef CONFIG_FUNCTION_GRAPH_TRACER
-   ifndef KBUILD_MCOUNT_RA_ADDRESS
-     ifeq ($(call cc-option-yn,-mmcount-ra-address), y)
--- 
-1.8.1.4
-
+ static struct resource eth_resources[] = {
