@@ -1,96 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:33 +0000
-Subject: [PATCH v3 03/14] ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
-Message-Id: <1375958324-29683-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Richard Weinberger <richard@nod.at>
+Date: Wed, 21 Aug 2013 08:19:28 +0000
+Subject: [PATCH 4/8] m68k: Do not use SUBARCH
+Message-Id: <1377073172-3662-5-git-send-email-richard@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1377073172-3662-1-git-send-email-richard@nod.at>
+In-Reply-To: <1377073172-3662-1-git-send-email-richard@nod.at>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-arch@vger.kernel.org
+Cc: mmarek@suse.cz, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, jdike@addtoit.com, gxt@mprc.pku.edu.cn, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, Richard Weinberger <richard@nod.at>
 
-Pass the CD and RO GPIO numbers to the MMC SPI driver and remove the
-custom .get_cd() and .get_ro() callback functions.
+Forces the user to specify CROSS_COMPILE at compile time instead
+of automatically selecting more or less randomly a cross compiler.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: H Hartley Sweeten <hsweeten@visionengravers.com>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- arch/arm/mach-ep93xx/vision_ep9307.c | 57 ++++--------------------------------
- 1 file changed, 5 insertions(+), 52 deletions(-)
+ arch/m68k/Makefile | 7 -------
+ 1 file changed, 7 deletions(-)
 
-diff --git a/arch/arm/mach-ep93xx/vision_ep9307.c b/arch/arm/mach-ep93xx/vision_ep9307.c
-index 605956f..5a4c06d 100644
---- a/arch/arm/mach-ep93xx/vision_ep9307.c
-+++ b/arch/arm/mach-ep93xx/vision_ep9307.c
-@@ -224,62 +224,15 @@ static struct ep93xx_spi_chip_ops vision_spi_flash_hw = {
- #define VISION_SPI_MMC_WP	EP93XX_GPIO_LINE_F(0)
- #define VISION_SPI_MMC_CD	EP93XX_GPIO_LINE_EGPIO15
+diff --git a/arch/m68k/Makefile b/arch/m68k/Makefile
+index 7f7830f..3bd6355 100644
+--- a/arch/m68k/Makefile
++++ b/arch/m68k/Makefile
+@@ -16,13 +16,6 @@
  
--static struct gpio vision_spi_mmc_gpios[] = {
--	{ VISION_SPI_MMC_WP, GPIOF_DIR_IN, "mmc_spi:wp" },
--	{ VISION_SPI_MMC_CD, GPIOF_DIR_IN, "mmc_spi:cd" },
--};
--
--static int vision_spi_mmc_init(struct device *pdev,
--			irqreturn_t (*func)(int, void *), void *pdata)
--{
--	int err;
--
--	err = gpio_request_array(vision_spi_mmc_gpios,
--				 ARRAY_SIZE(vision_spi_mmc_gpios));
--	if (err)
--		return err;
--
--	err = gpio_set_debounce(VISION_SPI_MMC_CD, 1);
--	if (err)
--		goto exit_err;
--
--	err = request_irq(gpio_to_irq(VISION_SPI_MMC_CD), func,
--			IRQ_TYPE_EDGE_BOTH, "mmc_spi:cd", pdata);
--	if (err)
--		goto exit_err;
--
--	return 0;
--
--exit_err:
--	gpio_free_array(vision_spi_mmc_gpios, ARRAY_SIZE(vision_spi_mmc_gpios));
--	return err;
--
--}
--
--static void vision_spi_mmc_exit(struct device *pdev, void *pdata)
--{
--	free_irq(gpio_to_irq(VISION_SPI_MMC_CD), pdata);
--	gpio_free_array(vision_spi_mmc_gpios, ARRAY_SIZE(vision_spi_mmc_gpios));
--}
--
--static int vision_spi_mmc_get_ro(struct device *pdev)
--{
--	return !!gpio_get_value(VISION_SPI_MMC_WP);
--}
--
--static int vision_spi_mmc_get_cd(struct device *pdev)
--{
--	return !gpio_get_value(VISION_SPI_MMC_CD);
--}
--
- static struct mmc_spi_platform_data vision_spi_mmc_data = {
--	.init		= vision_spi_mmc_init,
--	.exit		= vision_spi_mmc_exit,
--	.get_ro		= vision_spi_mmc_get_ro,
--	.get_cd		= vision_spi_mmc_get_cd,
- 	.detect_delay	= 100,
- 	.powerup_msecs	= 100,
- 	.ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
-+	.flags		= MMC_SPI_USE_CD_GPIO | MMC_SPI_USE_RO_GPIO,
-+	.cd_gpio	= VISION_SPI_MMC_CD,
-+	.cd_debounce	= 1,
-+	.ro_gpio	= VISION_SPI_MMC_WP,
-+	.caps2		= MMC_CAP2_RO_ACTIVE_HIGH,
- };
+ KBUILD_DEFCONFIG := multi_defconfig
  
- static int vision_spi_mmc_hw_setup(struct spi_device *spi)
+-ifneq ($(SUBARCH),$(ARCH))
+-	ifeq ($(CROSS_COMPILE),)
+-		CROSS_COMPILE := $(call cc-cross-prefix, \
+-			m68k-linux-gnu- m68k-linux- m68k-unknown-linux-gnu-)
+-	endif
+-endif
+-
+ #
+ #	Enable processor type. Ordering of these is important - we want to
+ #	use the minimum processor type of the range we support. The logic
 -- 
-1.8.1.5
+1.8.1.4
 
