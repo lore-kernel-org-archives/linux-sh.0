@@ -1,104 +1,113 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 01 Aug 2013 07:41:20 +0000
-Subject: [PATCH 2/3] ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct regulators
-Message-Id: <1375342881-2155-3-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 21 Aug 2013 08:39:17 +0000
+Subject: Re: [PATCH 2/3] ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct regulators
+Message-Id: <20130821083917.GB20014@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375342881-2155-3-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1375342881-2155-3-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Currently a dummy fixed always-on regulator is used for all 3 SD/MMC
-interfaces on ape6evm. This patch updates the board to use correct supplies
-for MMC0, SDHI0 and SDHI1 VDD. SDHI0 VccQ supply regulator should be
-implemented in a separate patch.
+On Thu, Aug 01, 2013 at 09:41:20AM +0200, Guennadi Liakhovetski wrote:
+> Currently a dummy fixed always-on regulator is used for all 3 SD/MMC
+> interfaces on ape6evm. This patch updates the board to use correct supplies
+> for MMC0, SDHI0 and SDHI1 VDD. SDHI0 VccQ supply regulator should be
+> implemented in a separate patch.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> ---
+> 
+> v4: make SDHI0 Vcc 3.3V instead of 3.0V
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
+Hi Laurent,
 
-v4: make SDHI0 Vcc 3.3V instead of 3.0V
+as you had a comment on a previous version of this patch could
+you review this version?
 
- arch/arm/mach-shmobile/board-ape6evm.c |   54 +++++++++++++++++++++++++++-----
- 1 files changed, 46 insertions(+), 8 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index c5e6cba..b613b594 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -59,16 +59,49 @@ static const struct smsc911x_platform_config lan9220_data __initconst = {
- };
- 
- /*
-- * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
-- * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use the
-- * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is also
-- * supplied by the same tps80032 regulator and thus can also be adjusted
-- * dynamically.
-+ * MMC0 power supplies:
-+ * Both Vcc and VccQ to eMMC on APE6EVM are supplied by a tps80032 voltage
-+ * regulator. Until support for it is added to this file we simulate the
-+ * Vcc supply by a fixed always-on regulator
-  */
--static struct regulator_consumer_supply fixed3v3_power_consumers[] +static struct regulator_consumer_supply vcc_mmc0_consumers[]  {
- 	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+};
-+
-+/*
-+ * SDHI0 power supplies:
-+ * Vcc to SDHI0 on APE6EVM is supplied by a GPIO-switchable regulator. VccQ is
-+ * provided by the same tps80032 regulator as both MMC0 voltages - see comment
-+ * above
-+ */
-+static struct regulator_consumer_supply vcc_sdhi0_consumers[] +{
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+};
-+
-+static struct regulator_init_data vcc_sdhi0_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
-+	.consumer_supplies      = vcc_sdhi0_consumers,
-+};
-+
-+static const struct fixed_voltage_config vcc_sdhi0_info __initconst = {
-+	.supply_name = "SDHI0 Vcc",
-+	.microvolts = 3300000,
-+	.gpio = 76,
-+	.enable_high = 1,
-+	.init_data = &vcc_sdhi0_init_data,
-+};
-+
-+/*
-+ * SDHI1 power supplies:
-+ * Vcc and VccQ to SDHI1 on APE6EVM are both fixed at 3.3V
-+ */
-+static struct regulator_consumer_supply vcc_sdhi1_consumers[] +{
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
- };
- 
-@@ -161,14 +194,19 @@ static void __init ape6evm_add_standard_devices(void)
- 	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
- 					  lan9220_res, ARRAY_SIZE(lan9220_res),
- 					  &lan9220_data, sizeof(lan9220_data));
--	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
--				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+
-+	regulator_register_always_on(1, "MMC0 Vcc", vcc_mmc0_consumers,
-+				     ARRAY_SIZE(vcc_mmc0_consumers), 2800000);
- 	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
- 					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
- 					  &mmcif0_pdata, sizeof(mmcif0_pdata));
-+	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 2,
-+				      &vcc_sdhi0_info, sizeof(vcc_sdhi0_info));
- 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
- 					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
- 					  &sdhi0_pdata, sizeof(sdhi0_pdata));
-+	regulator_register_always_on(3, "SDHI1 Vcc", vcc_sdhi1_consumers,
-+				     ARRAY_SIZE(vcc_sdhi1_consumers), 3300000);
- 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
- 					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
- 					  &sdhi1_pdata, sizeof(sdhi1_pdata));
--- 
-1.7.2.5
-
+> 
+>  arch/arm/mach-shmobile/board-ape6evm.c |   54 +++++++++++++++++++++++++++-----
+>  1 files changed, 46 insertions(+), 8 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+> index c5e6cba..b613b594 100644
+> --- a/arch/arm/mach-shmobile/board-ape6evm.c
+> +++ b/arch/arm/mach-shmobile/board-ape6evm.c
+> @@ -59,16 +59,49 @@ static const struct smsc911x_platform_config lan9220_data __initconst = {
+>  };
+>  
+>  /*
+> - * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
+> - * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use the
+> - * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is also
+> - * supplied by the same tps80032 regulator and thus can also be adjusted
+> - * dynamically.
+> + * MMC0 power supplies:
+> + * Both Vcc and VccQ to eMMC on APE6EVM are supplied by a tps80032 voltage
+> + * regulator. Until support for it is added to this file we simulate the
+> + * Vcc supply by a fixed always-on regulator
+>   */
+> -static struct regulator_consumer_supply fixed3v3_power_consumers[] > +static struct regulator_consumer_supply vcc_mmc0_consumers[] >  {
+>  	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
+> +};
+> +
+> +/*
+> + * SDHI0 power supplies:
+> + * Vcc to SDHI0 on APE6EVM is supplied by a GPIO-switchable regulator. VccQ is
+> + * provided by the same tps80032 regulator as both MMC0 voltages - see comment
+> + * above
+> + */
+> +static struct regulator_consumer_supply vcc_sdhi0_consumers[] > +{
+>  	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+> +};
+> +
+> +static struct regulator_init_data vcc_sdhi0_init_data = {
+> +	.constraints = {
+> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+> +	},
+> +	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
+> +	.consumer_supplies      = vcc_sdhi0_consumers,
+> +};
+> +
+> +static const struct fixed_voltage_config vcc_sdhi0_info __initconst = {
+> +	.supply_name = "SDHI0 Vcc",
+> +	.microvolts = 3300000,
+> +	.gpio = 76,
+> +	.enable_high = 1,
+> +	.init_data = &vcc_sdhi0_init_data,
+> +};
+> +
+> +/*
+> + * SDHI1 power supplies:
+> + * Vcc and VccQ to SDHI1 on APE6EVM are both fixed at 3.3V
+> + */
+> +static struct regulator_consumer_supply vcc_sdhi1_consumers[] > +{
+>  	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
+>  };
+>  
+> @@ -161,14 +194,19 @@ static void __init ape6evm_add_standard_devices(void)
+>  	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
+>  					  lan9220_res, ARRAY_SIZE(lan9220_res),
+>  					  &lan9220_data, sizeof(lan9220_data));
+> -	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
+> -				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+> +
+> +	regulator_register_always_on(1, "MMC0 Vcc", vcc_mmc0_consumers,
+> +				     ARRAY_SIZE(vcc_mmc0_consumers), 2800000);
+>  	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
+>  					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
+>  					  &mmcif0_pdata, sizeof(mmcif0_pdata));
+> +	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 2,
+> +				      &vcc_sdhi0_info, sizeof(vcc_sdhi0_info));
+>  	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
+>  					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
+>  					  &sdhi0_pdata, sizeof(sdhi0_pdata));
+> +	regulator_register_always_on(3, "SDHI1 Vcc", vcc_sdhi1_consumers,
+> +				     ARRAY_SIZE(vcc_sdhi1_consumers), 3300000);
+>  	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
+>  					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
+>  					  &sdhi1_pdata, sizeof(sdhi1_pdata));
+> -- 
+> 1.7.2.5
+> 
