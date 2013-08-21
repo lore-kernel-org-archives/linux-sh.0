@@ -1,80 +1,76 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:31 +0000
-Subject: [GIT PULL 04/26] ARM: shmobile: r8a7778: cleanup registration of i2c
-Message-Id: <1fd4eecd480b82e11900ae6a8f44d92efeb96004.1375840527.git.horms+renesas@verge.net.au>
+From: Richard Weinberger <richard@nod.at>
+Date: Wed, 21 Aug 2013 08:19:32 +0000
+Subject: [PATCH 8/8] Makefile: Remove SUBARCH
+Message-Id: <1377073172-3662-9-git-send-email-richard@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <1377073172-3662-1-git-send-email-richard@nod.at>
+In-Reply-To: <1377073172-3662-1-git-send-email-richard@nod.at>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-arch@vger.kernel.org
+Cc: mmarek@suse.cz, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, jdike@addtoit.com, gxt@mprc.pku.edu.cn, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, Richard Weinberger <richard@nod.at>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+As all users of SUBARCH have been removed we can finally get
+rid of it.
 
-i2c-rcar driver which doesn't need platform data at the time of
-registration can be registerd on SoC.
-And, registering these drivers in the SoC code can avoid
-unwanted device numbering issue.
-(ex. the i2c3 device number will be i2c.0 if i2c3 only registered)
-This patch registers it on SoC code as cleanup C code
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- arch/arm/mach-shmobile/board-bockw.c          | 1 -
- arch/arm/mach-shmobile/include/mach/r8a7778.h | 1 -
- arch/arm/mach-shmobile/setup-r8a7778.c        | 6 +++++-
- 3 files changed, 5 insertions(+), 3 deletions(-)
+ Makefile         | 15 +++------------
+ arch/um/Makefile |  2 +-
+ 2 files changed, 4 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 1c876ab..d7d3427 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -200,7 +200,6 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
- 	r8a7778_add_ether_device(&ether_platform_data);
--	r8a7778_add_i2c_device(0);
- 	r8a7778_add_hspi_device(0);
+diff --git a/Makefile b/Makefile
+index a5a55f4..48bd8fe 100644
+--- a/Makefile
++++ b/Makefile
+@@ -159,13 +159,7 @@ VPATH		:= $(srctree)$(if $(KBUILD_EXTMOD),:$(KBUILD_EXTMOD))
+ export srctree objtree VPATH
  
- 	i2c_register_board_info(0, i2c0_devices,
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index aaa0544..9874511 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -23,7 +23,6 @@
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
--extern void r8a7778_add_i2c_device(int id);
- extern void r8a7778_add_hspi_device(int id);
- extern void r8a7778_add_dt_devices(void);
  
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index c585ee0..ce3b54d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -250,7 +250,7 @@ static struct resource i2c_resources[] __initdata = {
- 	DEFINE_RES_IRQ(gic_iid(0x6d)),
- };
+-# SUBARCH tells the usermode build what the underlying arch is.  That is set
+-# first, and if a usermode build is happening, the "ARCH=um" on the command
+-# line overrides the setting of ARCH below.  If a native build is happening,
+-# then ARCH is assigned, getting whatever value it gets normally, and 
+-# SUBARCH is subsequently ignored.
+-
+-SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
++ARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ 				  -e s/sun4u/sparc64/ \
+ 				  -e s/arm.*/arm/ -e s/sa110/arm/ \
+ 				  -e s/s390x/s390/ -e s/parisc64/parisc/ \
+@@ -192,7 +186,6 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
+ # "make" in the configured kernel build directory always uses that.
+ # Default value for CROSS_COMPILE is not to prefix executables
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+-ARCH		?= $(SUBARCH)
+ CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
  
--void __init r8a7778_add_i2c_device(int id)
-+static void __init r8a7778_register_i2c(int id)
- {
- 	BUG_ON(id < 0 || id > 3);
+ # Architecture as present in compile.h
+@@ -1314,11 +1307,9 @@ endif #ifeq ($(mixed-targets),1)
+ PHONY += checkstack kernelrelease kernelversion image_name
  
-@@ -308,6 +308,10 @@ void __init r8a7778_add_dt_devices(void)
- void __init r8a7778_add_standard_devices(void)
- {
- 	r8a7778_add_dt_devices();
-+	r8a7778_register_i2c(0);
-+	r8a7778_register_i2c(1);
-+	r8a7778_register_i2c(2);
-+	r8a7778_register_i2c(3);
- }
+ # UML needs a little special treatment here.  It wants to use the host
+-# toolchain, so needs $(SUBARCH) passed to checkstack.pl.  Everyone
+-# else wants $(ARCH), including people doing cross-builds, which means
+-# that $(SUBARCH) doesn't work here.
++# toolchain, so needs $(OS_ARCH) passed to checkstack.pl.
+ ifeq ($(ARCH), um)
+-CHECKSTACK_ARCH := $(SUBARCH)
++CHECKSTACK_ARCH := $(OS_ARCH)
+ else
+ CHECKSTACK_ARCH := $(ARCH)
+ endif
+diff --git a/arch/um/Makefile b/arch/um/Makefile
+index 5bc7892..c1b6a9b 100644
+--- a/arch/um/Makefile
++++ b/arch/um/Makefile
+@@ -156,4 +156,4 @@ endef
+ include/generated/user_constants.h: $(HOST_DIR)/um/user-offsets.s
+ 	$(call filechk,gen-asm-offsets)
  
- void __init r8a7778_init_late(void)
+-export USER_CFLAGS CFLAGS_NO_HARDENING OS DEV_NULL_PATH
++export USER_CFLAGS CFLAGS_NO_HARDENING OS OS_ARCH DEV_NULL_PATH
 -- 
-1.8.3.2
+1.8.1.4
 
