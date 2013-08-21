@@ -1,37 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 26 Aug 2013 08:52:45 +0000
-Subject: [PATCH 5/5 v2] ARM: shmobile: bockw defconfig: add Sound support
-Message-Id: <87a9k4vnom.wl%kuninori.morimoto.gx@renesas.com>
+From: Richard Weinberger <richard@nod.at>
+Date: Wed, 21 Aug 2013 08:19:30 +0000
+Subject: [PATCH 6/8] mips: Do not use SUBARCH
+Message-Id: <1377073172-3662-7-git-send-email-richard@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1377073172-3662-1-git-send-email-richard@nod.at>
+In-Reply-To: <1377073172-3662-1-git-send-email-richard@nod.at>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arch@vger.kernel.org
+Cc: mmarek@suse.cz, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, jdike@addtoit.com, gxt@mprc.pku.edu.cn, tglx@linutronix.de, mingo@redhat.com, hpa@zytor.com, x86@kernel.org, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, Richard Weinberger <richard@nod.at>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Forces the user to specify CROSS_COMPILE at compile time instead
+of automatically selecting more or less randomly a cross compiler.
+
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
-v1 -> v2
+ arch/mips/Makefile | 6 ------
+ 1 file changed, 6 deletions(-)
 
- - no change
-
- arch/arm/configs/bockw_defconfig |    4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 845f5cd..e9440fe 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -84,6 +84,10 @@ CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_SH_HSPI=y
-+CONFIG_SOUND=y
-+CONFIG_SND=y
-+CONFIG_SND_SOC=y
-+CONFIG_SND_SOC_RCAR=y
- CONFIG_USB=y
- CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
- CONFIG_USB_EHCI_HCD=y
+diff --git a/arch/mips/Makefile b/arch/mips/Makefile
+index 37f9ef3..514fea6 100644
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -42,12 +42,6 @@ tool-archpref		= $(64bit-tool-archpref)
+ UTS_MACHINE		:= mips64
+ endif
+ 
+-ifneq ($(SUBARCH),$(ARCH))
+-  ifeq ($(CROSS_COMPILE),)
+-    CROSS_COMPILE := $(call cc-cross-prefix, $(tool-archpref)-linux-  $(tool-archpref)-linux-gnu-  $(tool-archpref)-unknown-linux-gnu-)
+-  endif
+-endif
+-
+ ifdef CONFIG_FUNCTION_GRAPH_TRACER
+   ifndef KBUILD_MCOUNT_RA_ADDRESS
+     ifeq ($(call cc-option-yn,-mmcount-ra-address), y)
 -- 
-1.7.9.5
+1.8.1.4
 
