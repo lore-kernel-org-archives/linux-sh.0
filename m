@@ -1,19 +1,19 @@
-From: David Miller <davem@davemloft.net>
-Date: Wed, 21 Aug 2013 00:05:23 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 21 Aug 2013 14:20:54 +0000
 Subject: Re: [PATCH 1/2] SH7619: fix Ether support
-Message-Id: <20130820.170523.1476358382284760995.davem@davemloft.net>
+Message-Id: <5214CCC6.8090206@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308180213.23296.sergei.shtylyov@cogentembedded.com>
-	<201308180215.43063.sergei.shtylyov@cogentembedded.com>
+References: <201308180213.23296.sergei.shtylyov@cogentembedded.com> <201308180215.43063.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201308180215.43063.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: lethal@linux-sh.org, linux-sh@vger.kernel.org, davem@davemloft.net
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 18 Aug 2013 02:15:42 +0400
+Hello.
+
+On 18-08-2013 2:15, Sergei Shtylyov wrote:
 
 > The 'sh_eth' driver's probe will crash as the platform code is hopelessly behind
 > the platform data -- it passes PHY ID instead of 'struct sh_eth_plat_data *'.
@@ -21,10 +21,33 @@ Date: Sun, 18 Aug 2013 02:15:42 +0400
 > added the platform code and commit 71557a37adb5 ([netdrvr] sh_eth: Add  SH7619
 > support)  were done  in about  the same time, yet the latter one added 'struct
 > sh_eth_plat_data' and the platform code didn't ever get updated...
-> 
+>
 > Add the proper platform data and fix off-by-one memory resource end error, while
 > at it...
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Applied.
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Cc: stable@vger.kernel.org
+
+> ---
+>   arch/sh/kernel/cpu/sh2/setup-sh7619.c |   12 ++++++++++--
+>   1 file changed, 10 insertions(+), 2 deletions(-)
+
+> Index: net/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+> =================================> --- net.orig/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+> +++ net/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+[...]
+> @@ -110,10 +111,17 @@ static struct platform_device scif2_devi
+>   	},
+>   };
+>
+> +static struct sh_eth_plat_data eth_platform_data = {
+> +	.phy		= 1,
+> +	.edmac_endian	= EDMAC_LITTLE_ENDIAN,
+> +	.register_type	= SH_ETH_REG_FAST_SH3_SH2,
+> +	.phy_interace	= PHY_INTERFACE_MODE_MII,
+
+    Grr, I forgot to compile test this patch as the kbuild test robot just 
+told me... s/phy_interace/phy_interface/. I'll send a fix today.
+
+WBR, Sergei
+
