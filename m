@@ -1,48 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 08 Aug 2013 11:22:35 +0000
-Subject: Re: [PATCH v2 2/9] ARM: shmobile: r8a7790: Constify platform data and resources
-Message-Id: <4651000.qf8KFD6VyS@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 22 Aug 2013 05:46:40 +0000
+Subject: SHMobile Compatibility String Inconsistencies
+Message-Id: <20130822054639.GE11086@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375916192-22647-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375916192-22647-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Hi Laurent, Hi Guennadi, Hi All,
 
-On Thursday 08 August 2013 15:11:39 Sergei Shtylyov wrote:
-> On 08-08-2013 2:56, Laurent Pinchart wrote:
-> > Platform data and resources for core devices are kmemdup()ed when the
-> > corresponding devices are registered and can thus be declared as const.
-> > Do so.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >   arch/arm/mach-shmobile/setup-r8a7790.c | 21 +++++++++++----------
-> >   1 file changed, 11 insertions(+), 10 deletions(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c
-> > b/arch/arm/mach-shmobile/setup-r8a7790.c index d0f5c9f..988266e 100644
-> > --- a/arch/arm/mach-shmobile/setup-r8a7790.c
-> > +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-> > @@ -31,17 +31,18 @@
-> > 
-> >   #include <mach/r8a7790.h>
-> >   #include <asm/mach/arch.h>
-> > 
-> > -static struct resource pfc_resources[] __initdata = {
-> > +static const struct resource pfc_resources[] __initdata = {
-> 
-> I think *const* data should be annotated with '__initconst', no?
+Olof has brought to my attention that there is some inconsistency
+in the way that compatibility strings for SHMobile are named and he
+has asked us to clean things up for v3.12.
 
-You're absolutely right.
+Looking through arch/arm/boot/dts/ I see that we have:
 
--- 
-Regards,
+1. {gpio,pfc}-r8aXXXX and;
+2. r8aXXXX-sdhi
 
-Laurent Pinchart
+The inconsistency that Olof has asked us to resolve is that we
+should either use r8aXXXX- or -r8aXXXX. Not both.
 
+It seems to me that neither option is inherently better than the other
+so we should just choose the path of least resistance to make things
+consistent.
+
+Laurent, Guennadi, do you have any opinions on if it would
+be easier to change the GPIO and PFC compatibility strings;
+or to change the SDHI compatibility strings?
+
+Ideally I would like you to come to some sort of consensus and send
+patches.
+
+Thanks
