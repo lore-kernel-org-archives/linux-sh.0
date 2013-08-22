@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 21 Aug 2013 08:40:30 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 22 Aug 2013 00:50:18 +0000
 Subject: Re: [PATCH 3/3] ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
-Message-Id: <20130821084029.GC20014@verge.net.au>
+Message-Id: <1525797.Py7hl74ihm@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1375342881-2155-4-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1375342881-2155-4-git-send-email-g.liakhovetski@gmx.de>
@@ -10,39 +10,42 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Aug 01, 2013 at 09:41:21AM +0200, Guennadi Liakhovetski wrote:
+Hi Guennadi,
+
+Thank you for the patch.
+
+On Thursday 01 August 2013 09:41:21 Guennadi Liakhovetski wrote:
 > This patch adds MMCIF0, SDHI0 and SDHI1 DT nodes and a fixed voltage
 > reglator for them to the ape6evm-reference platform.
 > 
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
 > ---
 > 
 > v4: make SDHI0 Vcc 3.3V instead of 3.0V
-
-Hi Laurent,
-
-could you review this one too?
-
 > 
->  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |   72 +++++++++++++++++++++++
->  1 files changed, 72 insertions(+), 0 deletions(-)
+>  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |   72
+> +++++++++++++++++++++++ 1 files changed, 72 insertions(+), 0 deletions(-)
 > 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-> index bbd09d8..6797fac 100644
+> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+> b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts index bbd09d8..6797fac
+> 100644
 > --- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
 > +++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
 > @@ -10,6 +10,7 @@
->  
+> 
 >  /dts-v1/;
 >  /include/ "r8a73a4.dtsi"
 > +#include <dt-bindings/gpio/gpio.h>
->  
+> 
 >  / {
 >  	model = "APE6EVM";
 > @@ -24,6 +25,34 @@
 >  		reg = <0 0x40000000 0 0x40000000>;
 >  	};
->  
+> 
 > +	vcc_mmc0: regulator@0 {
 > +		compatible = "regulator-fixed";
 > +		regulator-name = "MMC0 Vcc";
@@ -122,6 +125,8 @@ could you review this one too?
 > +	pinctrl-0 = <&sdhi1_pins>;
 > +	status = "okay";
 >  };
-> -- 
-> 1.7.2.5
-> 
+-- 
+Regards,
+
+Laurent Pinchart
+
