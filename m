@@ -1,104 +1,138 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 05 Aug 2013 17:53:20 +0000
-Subject: [PATCH v6 01/10] media: Add support for circular graph traversal
-Message-Id: <1375725209-2674-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 22 Aug 2013 21:36:36 +0000
+Subject: [PATCH v6 1/3] ARM: shmobile: r8a7778: add VIN support
+Message-Id: <201308230136.36947.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-The graph traversal API (media_entity_graph_walk_*) doesn't support
-cyclic graphs and will fail to correctly walk a graph when circular
-links exist. Support circular graph traversal by checking whether an
-entity has already been visited before pushing it to the stack.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+Add VIN clocks and platform devices on R8A7778 SoC; add function to register
+the VIN platform devices.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: added 'id' parameter check to r8a7778_add_vin_device(), used '*pdata'
+in *sizeof* operator, and added an empty line there; renamed some variables,
+annotated 'vin[01]_info' and vin[01]_resources[] as '__initdata'.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/media/media-entity.c | 14 +++++++++++---
- include/media/media-entity.h |  4 ++++
- 2 files changed, 15 insertions(+), 3 deletions(-)
+Changes since version 5:
+- added an empty line in r8a7778_add_vin_device();
+- resolved reject, refreshed the patch.
 
-diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
-index cb30ffb..2c286c3 100644
---- a/drivers/media/media-entity.c
-+++ b/drivers/media/media-entity.c
-@@ -20,6 +20,7 @@
-  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-  */
+Changes since version 4:
+- resolved reject, refreshed the patch.
+
+Changes since version 3:
+- changed the VIN platform device names to be R8A7778 specific; 
+- resolved reject in <mach/r8a7778.h>  due to USB patch rework.
+
+Changes from version 2:
+- annotated 'vin[01]_info' and vin[01]_resources[] as '__initdata' since they're
+  kmemdup()'ed while registering the platform devices anyway;
+- refreshed the patch.
+
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    5 +++
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    3 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   34 ++++++++++++++++++++++++++
+ 3 files changed, 42 insertions(+)
+
+Index: media_tree/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- media_tree.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ media_tree/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -106,6 +106,7 @@ enum {
+ 	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP114,
++	MSTP110, MSTP109,
+ 	MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+@@ -119,6 +120,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
++	[MSTP110] = SH_CLK_MSTP32(&s_clk, MSTPCR1, 10, 0), /* VIN0 */
++	[MSTP109] = SH_CLK_MSTP32(&s_clk, MSTPCR1,  9, 0), /* VIN1 */
+ 	[MSTP100] = SH_CLK_MSTP32(&p_clk, MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
+ 	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
+@@ -146,6 +149,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
++	CLKDEV_DEV_ID("r8a7778-vin.0", &mstp_clks[MSTP110]), /* VIN0 */
++	CLKDEV_DEV_ID("r8a7778-vin.1", &mstp_clks[MSTP109]), /* VIN1 */
+ 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+Index: media_tree/arch/arm/mach-shmobile/include/mach/r8a7778.h
+=================================--- media_tree.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ media_tree/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -22,6 +22,7 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/sh_eth.h>
+ #include <linux/platform_data/usb-rcar-phy.h>
++#include <linux/platform_data/camera-rcar.h>
  
-+#include <linux/bitmap.h>
- #include <linux/module.h>
- #include <linux/slab.h>
- #include <media/media-entity.h>
-@@ -121,7 +122,6 @@ static struct media_entity *stack_pop(struct media_entity_graph *graph)
- 	return entity;
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+@@ -30,6 +31,8 @@ extern void r8a7778_add_usb_phy_device(s
+ extern void r8a7778_add_i2c_device(int id);
+ extern void r8a7778_add_hspi_device(int id);
+ extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
++extern void r8a7778_add_vin_device(int id,
++				   struct rcar_vin_platform_data *pdata);
+ 
+ extern void r8a7778_init_late(void);
+ extern void r8a7778_init_delay(void);
+Index: media_tree/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- media_tree.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ media_tree/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -333,6 +333,40 @@ void __init r8a7778_add_mmc_device(struc
+ 		info, sizeof(*info));
  }
  
--#define stack_peek(en)	((en)->stack[(en)->top - 1].entity)
- #define link_top(en)	((en)->stack[(en)->top].link)
- #define stack_top(en)	((en)->stack[(en)->top].entity)
- 
-@@ -140,6 +140,12 @@ void media_entity_graph_walk_start(struct media_entity_graph *graph,
++/* VIN */
++#define R8A7778_VIN(idx)						\
++static struct resource vin##idx##_resources[] __initdata = {		\
++	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
++	DEFINE_RES_IRQ(gic_iid(0x5a)),					\
++};									\
++									\
++static struct platform_device_info vin##idx##_info __initdata = {	\
++	.parent		= &platform_bus,				\
++	.name		= "r8a7778-vin",				\
++	.id		= idx,						\
++	.res		= vin##idx##_resources,				\
++	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
++	.dma_mask	= DMA_BIT_MASK(32),				\
++}
++
++R8A7778_VIN(0);
++R8A7778_VIN(1);
++
++static struct platform_device_info *vin_info_table[] __initdata = {
++	&vin0_info,
++	&vin1_info,
++};
++
++void __init r8a7778_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
++{
++	BUG_ON(id < 0 || id > 1);
++
++	vin_info_table[id]->data = pdata;
++	vin_info_table[id]->size_data = sizeof(*pdata);
++
++	platform_device_register_full(vin_info_table[id]);
++}
++
+ void __init r8a7778_add_standard_devices(void)
  {
- 	graph->top = 0;
- 	graph->stack[graph->top].entity = NULL;
-+	bitmap_zero(graph->entities, MEDIA_ENTITY_ENUM_MAX_ID);
-+
-+	if (WARN_ON(entity->id >= MEDIA_ENTITY_ENUM_MAX_ID))
-+		return;
-+
-+	__set_bit(entity->id, graph->entities);
- 	stack_push(graph, entity);
- }
- EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
-@@ -180,9 +186,11 @@ media_entity_graph_walk_next(struct media_entity_graph *graph)
- 
- 		/* Get the entity in the other end of the link . */
- 		next = media_entity_other(entity, link);
-+		if (WARN_ON(next->id >= MEDIA_ENTITY_ENUM_MAX_ID))
-+			return NULL;
- 
--		/* Was it the entity we came here from? */
--		if (next = stack_peek(graph)) {
-+		/* Has the entity already been visited? */
-+		if (__test_and_set_bit(next->id, graph->entities)) {
- 			link_top(graph)++;
- 			continue;
- 		}
-diff --git a/include/media/media-entity.h b/include/media/media-entity.h
-index 06bacf9..10df551 100644
---- a/include/media/media-entity.h
-+++ b/include/media/media-entity.h
-@@ -23,6 +23,7 @@
- #ifndef _MEDIA_ENTITY_H
- #define _MEDIA_ENTITY_H
- 
-+#include <linux/bitops.h>
- #include <linux/list.h>
- #include <linux/media.h>
- 
-@@ -113,12 +114,15 @@ static inline u32 media_entity_subtype(struct media_entity *entity)
- }
- 
- #define MEDIA_ENTITY_ENUM_MAX_DEPTH	16
-+#define MEDIA_ENTITY_ENUM_MAX_ID	64
- 
- struct media_entity_graph {
- 	struct {
- 		struct media_entity *entity;
- 		int link;
- 	} stack[MEDIA_ENTITY_ENUM_MAX_DEPTH];
-+
-+	DECLARE_BITMAP(entities, MEDIA_ENTITY_ENUM_MAX_ID);
- 	int top;
- };
- 
--- 
-1.8.1.5
-
+ 	int i;
