@@ -1,37 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 01 Aug 2013 08:26:25 +0000
-Subject: [PATCH 03/14] ARM: shmobile: Remove sh73a0 use of <mach/hardware.h>
-Message-Id: <fb0724805eb7369a75a434873f409b42e33ecb85.1375344714.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 22 Aug 2013 17:56:56 +0000
+Subject: [PATCH 1/2] v4l: vsp1: Initialize media device bus_info field
+Message-Id: <1377194217-24235-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375344714.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
+References: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Fill bus_info with the VSP1 platform device name
 
-Remove unused <mach/hardware.h> on sh73a0.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 1 -
- 1 file changed, 1 deletion(-)
+ drivers/media/platform/vsp1/vsp1_drv.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 516c239..22de174 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -34,7 +34,6 @@
- #include <linux/platform_data/sh_ipmmu.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <mach/dma-register.h>
--#include <mach/hardware.h>
- #include <mach/irqs.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 8700842..291d20f 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -134,6 +134,8 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
+ 
+ 	mdev->dev = vsp1->dev;
+ 	strlcpy(mdev->model, "VSP1", sizeof(mdev->model));
++	snprintf(mdev->bus_info, sizeof(mdev->bus_info), "platform:%s",
++		 dev_name(mdev->dev));
+ 	ret = media_device_register(mdev);
+ 	if (ret < 0) {
+ 		dev_err(vsp1->dev, "media device registration failed (%d)\n",
 -- 
-1.8.3.2
+1.8.1.5
 
