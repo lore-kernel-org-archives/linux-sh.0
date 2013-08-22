@@ -1,40 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 22 Aug 2013 23:27:41 +0000
-Subject: [PATCH] v4l: vsp1: Fix mutex double lock at streamon time
-Message-Id: <1377214061-16484-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 22 Aug 2013 21:40:36 +0000
+Subject: [PATCH v6 3/3] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
+Message-Id: <201308230140.37614.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-A mutex_lock() was left when the driver was converted to use the vb2
-ioctl helpers, resulting in a deadlock at streamon time. Fix it.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add the VIN and ML86V7667 drivers to 'bockw_defconfig'.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/media/platform/vsp1/vsp1_video.c | 2 --
- 1 file changed, 2 deletions(-)
+Changes since version 4:
+- resolved reject.
 
-Yet another v3.12 fix for the VSP1 driver. I'm not sure how I've managed to let
-this bug slip in. This should hopefully be the last one, sorry for the noise :-/
+ arch/arm/configs/bockw_defconfig |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index f51f842..714c53e 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -839,8 +839,6 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
- 	struct vsp1_pipeline *pipe;
- 	int ret;
- 
--	mutex_lock(&video->lock);
--
- 	if (video->queue.owner && video->queue.owner != file->private_data)
- 		return -EBUSY;
- 
--- 
-Regards,
-
-Laurent Pinchart
-
+Index: media_tree/arch/arm/configs/bockw_defconfig
+=================================--- media_tree.orig/arch/arm/configs/bockw_defconfig
++++ media_tree/arch/arm/configs/bockw_defconfig
+@@ -82,6 +82,13 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HWMON is not set
+ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
++CONFIG_MEDIA_SUPPORT=y
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SOC_CAMERA=y
++CONFIG_VIDEO_RCAR_VIN=y
++# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
++CONFIG_VIDEO_ML86V7667=y
+ CONFIG_SPI=y
+ CONFIG_SPI_SH_HSPI=y
+ CONFIG_USB=y
