@@ -1,65 +1,134 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:38 +0000
-Subject: [GIT PULL 21/26] ARM: shmobile: bockw: add missing __initdata
-Message-Id: <8c23c7caeb5750fcf6d7a0258692071b06fdc772.1375840527.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 22 Aug 2013 17:56:57 +0000
+Subject: [PATCH 2/2] v4l: vsp1: Add support for RT clock
+Message-Id: <1377194217-24235-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
+References: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The VSPR and VSPS instances use two clocks, the VSP1 system clock and
+the VSP1 realtime clock. Both of them need to be enabled to access the
+VSP1 registers.
 
-This patch adds missing __initdata to driver data/resource
-which are used from platform_device_register_xxx()
+Add support for an optional RT clock and enable/disable it along with
+the system clock.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/media/platform/vsp1/vsp1.h     |  1 +
+ drivers/media/platform/vsp1/vsp1_drv.c | 40 +++++++++++++++++++++++++++++-----
+ 2 files changed, 36 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index b40885de..0dd2b90 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -67,14 +67,14 @@ static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
+diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
+index 11ac94b..d6c6ecd 100644
+--- a/drivers/media/platform/vsp1/vsp1.h
++++ b/drivers/media/platform/vsp1/vsp1.h
+@@ -42,6 +42,7 @@ struct vsp1_device {
  
--static struct smsc911x_platform_config smsc911x_data = {
-+static struct smsc911x_platform_config smsc911x_data __initdata = {
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
- 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
- 	.flags		= SMSC911X_USE_32BIT,
- 	.phy_interface	= PHY_INTERFACE_MODE_MII,
- };
+ 	void __iomem *mmio;
+ 	struct clk *clock;
++	struct clk *rt_clock;
  
--static struct resource smsc911x_resources[] = {
-+static struct resource smsc911x_resources[] __initdata = {
- 	DEFINE_RES_MEM(0x18300000, 0x1000),
- 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
- };
-@@ -88,7 +88,7 @@ static struct resource usb_phy_resources[] __initdata = {
- static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
+ 	struct mutex lock;
+ 	int ref_count;
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 291d20f..9abe101 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -290,6 +290,33 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
+ 	return 0;
+ }
  
- /* SDHI */
--static struct sh_mobile_sdhi_info sdhi0_info = {
-+static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
-@@ -153,7 +153,7 @@ static struct resource mmc_resources[] __initdata = {
- 	DEFINE_RES_IRQ(gic_iid(0x5d)),
- };
++static int vsp1_clocks_enable(struct vsp1_device *vsp1)
++{
++	int ret;
++
++	ret = clk_prepare_enable(vsp1->clock);
++	if (ret < 0)
++		return ret;
++
++	if (IS_ERR(vsp1->rt_clock))
++		return 0;
++
++	ret = clk_prepare_enable(vsp1->rt_clock);
++	if (ret < 0) {
++		clk_disable_unprepare(vsp1->clock);
++		return ret;
++	}
++
++	return 0;
++}
++
++static void vsp1_clocks_disable(struct vsp1_device *vsp1)
++{
++	if (!IS_ERR(vsp1->rt_clock))
++		clk_disable_unprepare(vsp1->rt_clock);
++	clk_disable_unprepare(vsp1->clock);
++}
++
+ /*
+  * vsp1_device_get - Acquire the VSP1 device
+  *
+@@ -307,7 +334,7 @@ struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1)
+ 	if (vsp1->ref_count > 0)
+ 		goto done;
  
--static struct sh_mmcif_plat_data sh_mmcif_plat = {
-+static struct sh_mmcif_plat_data sh_mmcif_plat __initdata = {
- 	.sup_pclk	= 0,
- 	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.caps		= MMC_CAP_4_BIT_DATA |
+-	ret = clk_prepare_enable(vsp1->clock);
++	ret = vsp1_clocks_enable(vsp1);
+ 	if (ret < 0) {
+ 		__vsp1 = NULL;
+ 		goto done;
+@@ -315,7 +342,7 @@ struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1)
+ 
+ 	ret = vsp1_device_init(vsp1);
+ 	if (ret < 0) {
+-		clk_disable_unprepare(vsp1->clock);
++		vsp1_clocks_disable(vsp1);
+ 		__vsp1 = NULL;
+ 		goto done;
+ 	}
+@@ -339,7 +366,7 @@ void vsp1_device_put(struct vsp1_device *vsp1)
+ 	mutex_lock(&vsp1->lock);
+ 
+ 	if (--vsp1->ref_count = 0)
+-		clk_disable_unprepare(vsp1->clock);
++		vsp1_clocks_disable(vsp1);
+ 
+ 	mutex_unlock(&vsp1->lock);
+ }
+@@ -358,7 +385,7 @@ static int vsp1_pm_suspend(struct device *dev)
+ 	if (vsp1->ref_count = 0)
+ 		return 0;
+ 
+-	clk_disable_unprepare(vsp1->clock);
++	vsp1_clocks_disable(vsp1);
+ 	return 0;
+ }
+ 
+@@ -371,7 +398,7 @@ static int vsp1_pm_resume(struct device *dev)
+ 	if (vsp1->ref_count)
+ 		return 0;
+ 
+-	return clk_prepare_enable(vsp1->clock);
++	return vsp1_clocks_enable(vsp1);
+ }
+ #endif
+ 
+@@ -445,6 +472,9 @@ static int vsp1_probe(struct platform_device *pdev)
+ 		return PTR_ERR(vsp1->clock);
+ 	}
+ 
++	/* The RT clock is optional */
++	vsp1->rt_clock = devm_clk_get(&pdev->dev, "rt");
++
+ 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+ 	if (!irq) {
+ 		dev_err(&pdev->dev, "missing IRQ\n");
 -- 
-1.8.3.2
+1.8.1.5
 
