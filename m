@@ -1,39 +1,42 @@
-From: Ian Molton <ian.molton@codethink.co.uk>
-Date: Thu, 29 Aug 2013 13:35:35 +0000
-Subject: Re: [PATCH] EMMA: Add em i2c driver
-Message-Id: <521F4E27.1070800@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 22 Aug 2013 07:36:38 +0000
+Subject: [PATCH] ARM: shmobile: lager: Do not use register_type field of struct sh_eth_plat_data
+Message-Id: <1377156998-15421-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk> <CANqRtoRK+Ur=87-me7CpP+s9SO5g0ZVZSEOrqwDf4HFfjZZmZA@mail.gmail.com> <521F2156.6040506@codethink.co.uk>
-In-Reply-To: <521F2156.6040506@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-i2c@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 29/08/13 11:24, Ben Dooks wrote:
-> On 29/08/13 06:33, Magnus Damm wrote:
->> Hi Ian,
->>
->> Thanks for submitting this patch. I have one comment only, please see 
->> below.
->>> +#ifdef CONFIG_I2C_EMXX_SMC
->>> +       i2c_dev->flags |= I2C_BIT_SMC0;
->>> +#endif
->>
->> I think CONFIG_I2C_EMXX_SMC probably want to be reworked somehow. I
->> assume it's an old left over in this particular case. But if you need
->> to have some special configuration method then please consider some
->> other way than CONFIG_ variables that are not very compatible with
->> future multi-platform kernel images.
->
-> Is it something that needs to be passed through the device tree binding
-> or something we can detect from the SoC itself?
->
+As of 8d3214c ("sh_eth: remove 'register_type' field from 'struct
+sh_eth_plat_data'") is is no longer necessary or correct to use the
+'register_type' field from 'struct sh_eth_plat_data' and doing so results
+in a build error.
 
-Probably. Its the switch to select between 100 and 400kHz modes.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-I wonder if theres a standard binding for it?
+---
 
+Olof,
 
--Ian
+as discussed, please apply this to for-next and merge it upstream
+after the patch mentioned above lands upstream via net-next.
+---
+ arch/arm/mach-shmobile/board-lager.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index a7e54e5..8f50ed2 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -96,7 +96,6 @@ static struct resource mmcif1_resources[] = {
+ static struct sh_eth_plat_data ether_pdata __initdata = {
+ 	.phy			= 0x1,
+ 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
+-	.register_type		= SH_ETH_REG_FAST_RCAR,
+ 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
+ 	.ether_link_active_low	= 1,
+ };
+-- 
+1.8.3.2
+
