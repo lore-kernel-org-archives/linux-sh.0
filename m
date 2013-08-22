@@ -1,58 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 09 Aug 2013 09:47:48 +0000
-Subject: [PATCH 00/14] ARM: shmobile: Cleanups and machine descriptor rework
-Message-Id: <20130809094748.6530.16511.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 22 Aug 2013 23:27:41 +0000
+Subject: [PATCH] v4l: vsp1: Fix mutex double lock at streamon time
+Message-Id: <1377214061-16484-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-ARM: shmobile: Cleanups and machine descriptor rework
+A mutex_lock() was left when the driver was converted to use the vb2
+ioctl helpers, resulting in a deadlock at streamon time. Fix it.
 
-[PATCH 01/14] ARM: shmobile: r8a7779: Remove ->init_machine() special case
-[PATCH 02/14] ARM: shmobile: r8a7740: Remove ->init_machine() special case
-[PATCH 03/14] ARM: shmobile: sh7372: Remove ->init_machine() special case 
-[PATCH 04/14] ARM: shmobile: sh73a0: Remove ->init_machine() special case 
-[PATCH 05/14] ARM: shmobile: Remove r8a7740_add_early_devices_dt()
-[PATCH 06/14] ARM: shmobile: Remove sh73a0_init_irq_dt()
-[PATCH 07/14] ARM: shmobile: Remove r8a7779 ->nr_irqs
-[PATCH 08/14] ARM: shmobile: Remove sh73a0 ->nr_irqs
-[PATCH 09/14] ARM: shmobile: Rename to sh7372_init_early()
-[PATCH 10/14] ARM: shmobile: Rename to emev2_init_early(), use smp_set_ops()
-[PATCH 11/14] ARM: shmobile: Rename to r8a7779_init_early(), use smp_set_ops()
-[PATCH 12/14] ARM: shmobile: Rename to r8a7740_init_early()
-[PATCH 13/14] ARM: shmobile: Rename to r8a7778_init_early()
-[PATCH 14/14] ARM: shmobile: Rename to sh73a0_init_early(), use smp_set_ops()
-
-This series contains various machine descriptor related cleanups
-and removal of unused code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/media/platform/vsp1/vsp1_video.c | 2 --
+ 1 file changed, 2 deletions(-)
 
- Written against renesas.git renesas-devel-20130807 and
- [PATCH 00/02] ARM: shmobile: Rename to r8a73a4/r8a7790_init_early()
+Yet another v3.12 fix for the VSP1 driver. I'm not sure how I've managed to let
+this bug slip in. This should hopefully be the last one, sorry for the noise :-/
 
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    6 +-
- arch/arm/mach-shmobile/board-bockw-reference.c           |    2 
- arch/arm/mach-shmobile/board-bockw.c                     |    2 
- arch/arm/mach-shmobile/board-kzm9d-reference.c           |    3 -
- arch/arm/mach-shmobile/board-kzm9d.c                     |    3 -
- arch/arm/mach-shmobile/board-kzm9g-reference.c           |   13 +++-
- arch/arm/mach-shmobile/board-kzm9g.c                     |    1 
- arch/arm/mach-shmobile/board-marzen-reference.c          |   11 ++-
- arch/arm/mach-shmobile/board-marzen.c                    |    1 
- arch/arm/mach-shmobile/include/mach/emev2.h              |    2 
- arch/arm/mach-shmobile/include/mach/r8a7740.h            |    4 -
- arch/arm/mach-shmobile/include/mach/r8a7778.h            |    2 
- arch/arm/mach-shmobile/include/mach/r8a7779.h            |    4 -
- arch/arm/mach-shmobile/include/mach/sh7372.h             |    2 
- arch/arm/mach-shmobile/include/mach/sh73a0.h             |    5 -
- arch/arm/mach-shmobile/setup-emev2.c                     |    8 +-
- arch/arm/mach-shmobile/setup-r8a7740.c                   |   40 +++-----------
- arch/arm/mach-shmobile/setup-r8a7778.c                   |    4 -
- arch/arm/mach-shmobile/setup-r8a7779.c                   |   36 +++++-------
- arch/arm/mach-shmobile/setup-sh7372.c                    |   22 -------
- arch/arm/mach-shmobile/setup-sh73a0.c                    |   35 ++++--------
- 21 files changed, 82 insertions(+), 124 deletions(-)
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index f51f842..714c53e 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -839,8 +839,6 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
+ 	struct vsp1_pipeline *pipe;
+ 	int ret;
+ 
+-	mutex_lock(&video->lock);
+-
+ 	if (video->queue.owner && video->queue.owner != file->private_data)
+ 		return -EBUSY;
+ 
+-- 
+Regards,
+
+Laurent Pinchart
+
