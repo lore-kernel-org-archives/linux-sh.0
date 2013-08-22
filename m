@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 21 Aug 2013 08:39:17 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 22 Aug 2013 00:50:04 +0000
 Subject: Re: [PATCH 2/3] ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct regulators
-Message-Id: <20130821083917.GB20014@verge.net.au>
+Message-Id: <10128396.qnb4aYxEz3@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1375342881-2155-3-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1375342881-2155-3-git-send-email-g.liakhovetski@gmx.de>
@@ -10,39 +10,41 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Aug 01, 2013 at 09:41:20AM +0200, Guennadi Liakhovetski wrote:
+Hi Guennadi,
+
+Thank you for the patch.
+
+On Thursday 01 August 2013 09:41:20 Guennadi Liakhovetski wrote:
 > Currently a dummy fixed always-on regulator is used for all 3 SD/MMC
 > interfaces on ape6evm. This patch updates the board to use correct supplies
 > for MMC0, SDHI0 and SDHI1 VDD. SDHI0 VccQ supply regulator should be
 > implemented in a separate patch.
 > 
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
 > ---
 > 
 > v4: make SDHI0 Vcc 3.3V instead of 3.0V
-
-Hi Laurent,
-
-as you had a comment on a previous version of this patch could
-you review this version?
-
 > 
->  arch/arm/mach-shmobile/board-ape6evm.c |   54 +++++++++++++++++++++++++++-----
->  1 files changed, 46 insertions(+), 8 deletions(-)
+>  arch/arm/mach-shmobile/board-ape6evm.c |   54
+> +++++++++++++++++++++++++++----- 1 files changed, 46 insertions(+), 8
+> deletions(-)
 > 
-> diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-> index c5e6cba..b613b594 100644
+> diff --git a/arch/arm/mach-shmobile/board-ape6evm.c
+> b/arch/arm/mach-shmobile/board-ape6evm.c index c5e6cba..b613b594 100644
 > --- a/arch/arm/mach-shmobile/board-ape6evm.c
 > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> @@ -59,16 +59,49 @@ static const struct smsc911x_platform_config lan9220_data __initconst = {
->  };
->  
+> @@ -59,16 +59,49 @@ static const struct smsc911x_platform_config
+> lan9220_data __initconst = { };
+> 
 >  /*
-> - * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
-> - * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use the
-> - * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is also
-> - * supplied by the same tps80032 regulator and thus can also be adjusted
-> - * dynamically.
+> - * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now
+> we - * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use
+> the - * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is
+> also - * supplied by the same tps80032 regulator and thus can also be
+> adjusted - * dynamically.
 > + * MMC0 power supplies:
 > + * Both Vcc and VccQ to eMMC on APE6EVM are supplied by a tps80032 voltage
 > + * regulator. Until support for it is added to this file we simulate the
@@ -54,9 +56,9 @@ you review this version?
 > +
 > +/*
 > + * SDHI0 power supplies:
-> + * Vcc to SDHI0 on APE6EVM is supplied by a GPIO-switchable regulator. VccQ is
-> + * provided by the same tps80032 regulator as both MMC0 voltages - see comment
-> + * above
+> + * Vcc to SDHI0 on APE6EVM is supplied by a GPIO-switchable regulator. VccQ
+> is + * provided by the same tps80032 regulator as both MMC0 voltages - see
+> comment + * above
 > + */
 > +static struct regulator_consumer_supply vcc_sdhi0_consumers[] > +{
 >  	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
@@ -85,7 +87,7 @@ you review this version?
 > +static struct regulator_consumer_supply vcc_sdhi1_consumers[] > +{
 >  	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
 >  };
->  
+> 
 > @@ -161,14 +194,19 @@ static void __init ape6evm_add_standard_devices(void)
 >  	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
 >  					  lan9220_res, ARRAY_SIZE(lan9220_res),
@@ -108,6 +110,8 @@ you review this version?
 >  	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
 >  					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
 >  					  &sdhi1_pdata, sizeof(sdhi1_pdata));
-> -- 
-> 1.7.2.5
-> 
+-- 
+Regards,
+
+Laurent Pinchart
+
