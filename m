@@ -1,27 +1,28 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Aug 2013 07:28:28 +0000
-Subject: Re: [PATCH/RESEND] clocksource: em_sti: Convert to devm_* managed helpers
-Message-Id: <20130801072828.GB26015@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 22 Aug 2013 21:19:13 +0000
+Subject: [PATCH v5 0/3] R8A7779/Marzen R-Car VIN driver support
+Message-Id: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375194277-2850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <51F8D467.1030400@linaro.org>
-In-Reply-To: <51F8D467.1030400@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 31, 2013 at 11:09:59AM +0200, Daniel Lezcano wrote:
-> On 07/30/2013 04:24 PM, Laurent Pinchart wrote:
-> > Replace kzalloc, clk_get, ioremap and request_irq by their managed
-> > counterparts to simplify error paths.
-> > 
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> 
-> Sounds good.
-> 
-> Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Hello.
 
-Thanks, I have queued this up for v3.12 in the clocksource branch
-of my renesas tree on kernel.org.
+   [Resending with a real version #.]
+
+   Here's the set of 3 patches against the Mauro's 'media_tree.git' repo's
+'master' branch. Here we add the VIN driver platform code for the R8A7779/Marzen
+with ADV7180 I2C video decoder.
+
+[1/3] ARM: shmobile: r8a7779: add VIN support
+[2/3] ARM: shmobile: Marzen: add VIN and ADV7180 support
+[3/3] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
+
+    Mauro has kindly agreed to merge this patchset thru his tree to resolve the
+dependency on the driver's platform data header, provided that the maintainer
+ACKs this. Simon, could you ACK the patchset ASAP -- Mauro expects to close his
+tree for 3.12 this weekend or next Monday?
+
+WBR, Sergei
