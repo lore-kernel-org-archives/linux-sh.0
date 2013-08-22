@@ -1,35 +1,26 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 Aug 2013 06:32:11 +0000
-Subject: Re: [PATCH 00/05] ARM: shmobile: Yet another SMP series
-Message-Id: <20130822063210.GS11086@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 22 Aug 2013 21:34:25 +0000
+Subject: [PATCH v6 0/3] R8A7778/BOCK-W R-Car VIN driver support
+Message-Id: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130807221321.22251.22774.sendpatchset@w520>
- <20130821085949.GI20014@verge.net.au>
-In-Reply-To: <20130821085949.GI20014@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Aug 21, 2013 at 05:59:49PM +0900, Simon Horman wrote:
-> On Thu, Aug 08, 2013 at 07:13:21AM +0900, Magnus Damm wrote:
-> > ARM: shmobile: Yet another SMP series
-> > 
-> > [PATCH 01/05] ARM: shmobile: Introduce shmobile_smp_cpu_disable()
-> > [PATCH 02/05] ARM: shmobile: Use shmobile_smp_cpu_disable() on sh73a0
-> > [PATCH 03/05] ARM: shmobile: Remove unused shmobile_smp_init_cpus()
-> > [PATCH 04/05] ARM: shmobile: Expose shmobile_invalidate_start()
-> > [PATCH 05/05] ARM: shmobile: Introduce shmobile_boot_size
-> > 
-> > This series cleans up the existing SMP code and introduces various new SMP
-> > functions for mach-shmobile. The new functions are partially used by existing
-> > SMP support code, but are also consumed by upcoming SMP support patches.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> Thanks Magnus,
-> 
-> I plan to queue this up in the smp branch which will most likely occur
-> tomorrow.
+Hello.
 
-And indeed it did.
+   Here's the set of 3 patches against the Mauro's 'media_tree.git' repo's
+'master' branch. Here we add the VIN platform code working on
+the R8A7778/BOCK-W with ML86V7667 video decoder.
+
+[1/3] ARM: shmobile: r8a7778: add VIN support
+[2/3] ARM: shmobile: BOCK-W: add VIN and ML86V7667 support
+[3/3] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
+
+   Mauro has kindly agreed to merge this patchset thru his tree to resolve the
+dependency on the driver's platform data header, provided that the maintainer
+ACKs this. Simon, could you ACK the patchset ASAP -- Mauro expects to close his
+tree for 3.12 this weekend or next Monday?
+
+WBR, Sergei
