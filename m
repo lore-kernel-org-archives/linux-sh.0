@@ -1,170 +1,127 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 23 Aug 2013 22:46:19 +0000
-Subject: [PATCH v3 1/2] ARM: shmobile: r8a7778: add HPB-DMAC support
-Message-Id: <201308240246.19877.sergei.shtylyov@cogentembedded.com>
+Date: Thu, 22 Aug 2013 21:25:25 +0000
+Subject: [PATCH v5 2/3] ARM: shmobile: Marzen: add VIN and ADV7180 support
+Message-Id: <201308230125.26064.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308240244.38963.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308240244.38963.sergei.shtylyov@cogentembedded.com>
+References: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Max Filippov <max.filippov@cogentembedded.com>
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Add HPB-DMAC platform device on R8A7778 SoC along with its slave and channel
-configurations (only for SDHI0 so far).
+Add ADV7180 platform devices on the Marzen board, configure VIN1/3 pins, and
+register VIN1/3 devices with the ADV7180 specific platform data.
 
-Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-[Sergei: moved *enum* declaring HPB-DMAC slave IDs from now removed <mach/dma.h>
-to <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c, removed
-SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[] and
-hpb_dmae_channels[], moved the comments after the element initializers of
-hpb_dmae_channels[].]
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+[Sergei: removed superfluous tabulation and inserted empty lines in the  macro
+definition, updated the copyrights, annotated VIN platform data as '__initdata']
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Changes in version 3:
-- changed ASYNCMDR_ASMD2[12]_SINGLE to ASYNCMDR_ASMD2[12]_MULTI in the 'mdr'
-  field initializers;
-- moved the comments after the element initializers of hpb_dmae_channels[];
-- resolved rejects, refreshed the patch.
+Changes since version 3:
+- changed the VIN platform device names to be R8A7779 specific.
 
-Changes in version 2:
-- moved *enum* declaring HPB-DMAC slave IDs from the separate header file to
-  <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c;
-- removed SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[]
-  and hpb_dmae_channels[].
+Changes since version 2:
+- annotated 'vin_platform_data' as '__initdata' since they're kmemdup()'ed while
+  registering the platform devices anyway.
 
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    8 ++
- arch/arm/mach-shmobile/setup-r8a7778.c        |   79 ++++++++++++++++++++++++++
- 2 files changed, 87 insertions(+)
+Changes since the original posting:
+- used a macro to define the camera platform devices;
+- updated the copyrights;
+- refreshed the patch.
 
-Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
-=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -1,6 +1,7 @@
+ arch/arm/mach-shmobile/board-marzen.c |   44 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 43 insertions(+), 1 deletion(-)
+
+Index: media_tree/arch/arm/mach-shmobile/board-marzen.c
+=================================--- media_tree.orig/arch/arm/mach-shmobile/board-marzen.c
++++ media_tree/arch/arm/mach-shmobile/board-marzen.c
+@@ -1,8 +1,9 @@
  /*
-  * Copyright (C) 2013  Renesas Solutions Corp.
-  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+  * marzen board support
+  *
+- * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
+  * Copyright (C) 2011  Magnus Damm
 + * Copyright (C) 2013  Cogent Embedded, Inc.
   *
   * This program is free software; you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by
-@@ -20,6 +21,13 @@
+@@ -37,6 +38,7 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
++#include <media/soc_camera.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -178,12 +180,40 @@ static struct platform_device leds_devic
+ 	},
+ };
  
- #include <linux/sh_eth.h>
- 
-+/* HPB-DMA slave IDs */
-+enum {
-+	HPBDMA_SLAVE_DUMMY,
-+	HPBDMA_SLAVE_SDHI0_TX,
-+	HPBDMA_SLAVE_SDHI0_RX,
++static struct rcar_vin_platform_data vin_platform_data __initdata = {
++	.flags	= RCAR_VIN_BT656,
 +};
 +
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -24,6 +24,7 @@
- #include <linux/irqchip/arm-gic.h>
- #include <linux/of.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/dma-rcar-hpbdma.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/platform_device.h>
-@@ -305,6 +306,82 @@ void __init r8a7778_add_dt_devices(void)
- 	r8a7778_register_tmu(1);
++#define MARZEN_CAMERA(idx)					\
++static struct i2c_board_info camera##idx##_info = {		\
++	I2C_BOARD_INFO("adv7180", 0x20 + (idx)),		\
++};								\
++								\
++static struct soc_camera_link iclink##idx##_adv7180 = {		\
++	.bus_id		= 1 + 2 * (idx),			\
++	.i2c_adapter_id	= 0,					\
++	.board_info	= &camera##idx##_info,			\
++};								\
++								\
++static struct platform_device camera##idx##_device = {		\
++	.name	= "soc-camera-pdrv",				\
++	.id	= idx,						\
++	.dev	= {						\
++		.platform_data	= &iclink##idx##_adv7180,	\
++	},							\
++};
++
++MARZEN_CAMERA(0);
++MARZEN_CAMERA(1);
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
+ 	&thermal_device,
+ 	&hspi_device,
+ 	&leds_device,
++	&camera0_device,
++	&camera1_device,
+ };
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
+@@ -219,6 +249,16 @@ static const struct pinctrl_map marzen_p
+ 	/* USB2 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
+ 				  "usb2", "usb2"),
++	/* VIN1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
++				  "vin1_clk", "vin1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
++				  "vin1_data8", "vin1"),
++	/* VIN3 */
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
++				  "vin3_clk", "vin3"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
++				  "vin3_data8", "vin3"),
+ };
+ 
+ static void __init marzen_init(void)
+@@ -235,6 +275,8 @@ static void __init marzen_init(void)
+ 
+ 	r8a7779_add_standard_devices();
+ 	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
++	r8a7779_add_vin_device(1, &vin_platform_data);
++	r8a7779_add_vin_device(3, &vin_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
  }
  
-+/* HPB-DMA */
-+
-+/* Asynchronous mode register (ASYNCMDR) bits */
-+#define	ASYNCMDR_ASMD22_MASK	BIT(2)	/* SDHI0 */
-+#define	ASYNCMDR_ASMD22_SINGLE	BIT(2)	/* SDHI0 */
-+#define	ASYNCMDR_ASMD22_MULTI	0	/* SDHI0 */
-+#define	ASYNCMDR_ASMD21_MASK	BIT(1)	/* SDHI0 */
-+#define	ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
-+#define	ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
-+
-+static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
-+	{
-+		.id	= HPBDMA_SLAVE_SDHI0_TX,
-+		.addr	= 0xffe4c000 + 0x30,
-+		.dcr	= DCR_SPDS_16BIT | DCR_DMDL | DCR_DPDS_16BIT,
-+		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
-+			  ASYNCRSTR_ASRST23,
-+		.mdr	= ASYNCMDR_ASMD21_MULTI,
-+		.mdm	= ASYNCMDR_ASMD21_MASK,
-+		.port	= 0x0D0C,
-+		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
-+		.dma_ch	= 21,
-+	}, {
-+		.id	= HPBDMA_SLAVE_SDHI0_RX,
-+		.addr	= 0xffe4c000 + 0x30,
-+		.dcr	= DCR_SMDL | DCR_SPDS_16BIT | DCR_DPDS_16BIT,
-+		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
-+			  ASYNCRSTR_ASRST23,
-+		.mdr	= ASYNCMDR_ASMD22_MULTI,
-+		.mdm	= ASYNCMDR_ASMD22_MASK,
-+		.port	= 0x0D0C,
-+		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
-+		.dma_ch	= 22,
-+	},
-+};
-+
-+static const struct hpb_dmae_channel hpb_dmae_channels[] = {
-+	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
-+	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
-+};
-+
-+static struct hpb_dmae_pdata dma_platform_data __initdata = {
-+	.slaves			= hpb_dmae_slaves,
-+	.num_slaves		= ARRAY_SIZE(hpb_dmae_slaves),
-+	.channels		= hpb_dmae_channels,
-+	.num_channels		= ARRAY_SIZE(hpb_dmae_channels),
-+	.ts_shift		= {
-+		[XMIT_SZ_8BIT]	= 0,
-+		[XMIT_SZ_16BIT]	= 1,
-+		[XMIT_SZ_32BIT]	= 2,
-+	},
-+	.num_hw_channels	= 39,
-+};
-+
-+static struct resource hpb_dmae_resources[] __initdata = {
-+	/* Channel registers */
-+	DEFINE_RES_MEM(0xffc08000, 0x1000),
-+	/* Common registers */
-+	DEFINE_RES_MEM(0xffc09000, 0x170),
-+	/* Asynchronous reset registers */
-+	DEFINE_RES_MEM(0xffc00300, 4),
-+	/* Asynchronous mode registers */
-+	DEFINE_RES_MEM(0xffc00400, 4),
-+	/* IRQ for DMA channels */
-+	DEFINE_RES_NAMED(gic_iid(0x7b), 5, NULL, IORESOURCE_IRQ),
-+};
-+
-+static void __init r8a7778_register_hpb_dmae(void)
-+{
-+	platform_device_register_resndata(&platform_bus, "hpb-dma-engine", -1,
-+					  hpb_dmae_resources,
-+					  ARRAY_SIZE(hpb_dmae_resources),
-+					  &dma_platform_data,
-+					  sizeof(dma_platform_data));
-+}
-+
- void __init r8a7778_add_standard_devices(void)
- {
- 	r8a7778_add_dt_devices();
-@@ -315,6 +392,8 @@ void __init r8a7778_add_standard_devices
- 	r8a7778_register_hspi(0);
- 	r8a7778_register_hspi(1);
- 	r8a7778_register_hspi(2);
-+
-+	r8a7778_register_hpb_dmae();
- }
- 
- void __init r8a7778_init_late(void)
