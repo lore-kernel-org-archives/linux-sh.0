@@ -1,247 +1,170 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Fri, 23 Aug 2013 15:03:47 +0000
-Subject: [PATCH v3 5/5] clk: Implement clk_unregister
-Message-Id: <1377270227-1030-6-git-send-email-s.nawrocki@samsung.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 23 Aug 2013 22:46:19 +0000
+Subject: [PATCH v3 1/2] ARM: shmobile: r8a7778: add HPB-DMAC support
+Message-Id: <201308240246.19877.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377270227-1030-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377270227-1030-1-git-send-email-s.nawrocki@samsung.com>
+References: <201308240244.38963.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308240244.38963.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-clk_unregister() is currently not implemented and it is required when
-a clock provider module needs to be unloaded.
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-Normally the clock supplier module is prevented to be unloaded by
-taking reference on the module in clk_get().
+Add HPB-DMAC platform device on R8A7778 SoC along with its slave and channel
+configurations (only for SDHI0 so far).
 
-For cases when the clock supplier module deinitializes despite the
-consumers of its clocks holding a reference on the module, e.g. when
-the driver is unbound through "unbind" sysfs attribute, there are
-empty clock ops added. These ops are assigned temporarily to struct
-clk and used until all consumers release the clock, to avoid invoking
-callbacks from the module which just got removed.
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: moved *enum* declaring HPB-DMAC slave IDs from now removed <mach/dma.h>
+to <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c, removed
+SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[] and
+hpb_dmae_channels[], moved the comments after the element initializers of
+hpb_dmae_channels[].]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Jiada Wang <jiada_wang@mentor.com>
-Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
-Changes since v2:
- - none.
+Changes in version 3:
+- changed ASYNCMDR_ASMD2[12]_SINGLE to ASYNCMDR_ASMD2[12]_MULTI in the 'mdr'
+  field initializers;
+- moved the comments after the element initializers of hpb_dmae_channels[];
+- resolved rejects, refreshed the patch.
 
-Changes since RFC v1:
- - renamed clk_dummy_* to clk_nodrv_*.
+Changes in version 2:
+- moved *enum* declaring HPB-DMAC slave IDs from the separate header file to
+  <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c;
+- removed SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[]
+  and hpb_dmae_channels[].
 
-Changes since v3 of the original patch [1]:
- - reparent all children to the orphan list instead of leaving
-   the clock unregistered when it has child clocks,
- - removed unnecessary prerequisite checks in clk_debug_unregister(),
- - struct clk is now being freed only when the last clock consumer
-   calls clk_put(),
- - empty clock ops are used after clk_unregister() has been called
-   until all references to the clock are released and the clock
-   object is freed.
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    8 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   79 ++++++++++++++++++++++++++
+ 2 files changed, 87 insertions(+)
 
-[1] http://www.spinics.net/lists/arm-kernel/msg247548.html
----
- drivers/clk/clk.c           |  123 +++++++++++++++++++++++++++++++++++++++++--
- include/linux/clk-private.h |    2 +
- 2 files changed, 122 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index 272d68d..738c2cc 100644
---- a/drivers/clk/clk.c
-+++ b/drivers/clk/clk.c
-@@ -344,6 +344,21 @@ out:
- 	return ret;
- }
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -20,6 +21,13 @@
  
-+ /**
-+ * clk_debug_unregister - remove a clk node from the debugfs clk tree
-+ * @clk: the clk being removed from the debugfs clk tree
-+ *
-+ * Dynamically removes a clk and all it's children clk nodes from the
-+ * debugfs clk tree if clk->dentry points to debugfs created by
-+ * clk_debug_register in __clk_init.
-+ *
-+ * Caller must hold prepare_lock.
-+ */
-+static void clk_debug_unregister(struct clk *clk)
-+{
-+	debugfs_remove_recursive(clk->dentry);
-+}
-+
- /**
-  * clk_debug_reparent - reparent clk node in the debugfs clk tree
-  * @clk: the clk being reparented
-@@ -434,6 +449,9 @@ static inline int clk_debug_register(struct clk *clk) { return 0; }
- static inline void clk_debug_reparent(struct clk *clk, struct clk *new_parent)
- {
- }
-+static inline void clk_debug_unregister(struct clk *clk)
-+{
-+}
- #endif
+ #include <linux/sh_eth.h>
  
- /* caller must hold prepare_lock */
-@@ -1657,6 +1675,7 @@ int __clk_init(struct device *dev, struct clk *clk)
- 
- 	clk_debug_register(clk);
- 
-+	kref_init(&clk->ref);
- out:
- 	clk_prepare_unlock();
- 
-@@ -1792,13 +1811,106 @@ fail_out:
- }
- EXPORT_SYMBOL_GPL(clk_register);
- 
-+/*
-+ * Free memory allocated for a clock.
-+ * Caller must hold prepare_lock.
-+ */
-+static void __clk_release(struct kref *ref)
-+{
-+	struct clk *clk = container_of(ref, struct clk, ref);
-+	int i = clk->num_parents;
-+
-+	kfree(clk->parents);
-+	while (--i >= 0)
-+		kfree(clk->parent_names[i]);
-+
-+	kfree(clk->parent_names);
-+	kfree(clk->name);
-+	kfree(clk);
-+}
-+
-+/*
-+ * Empty clk_ops for unregistered clocks. These are used temporarily
-+ * after clk_unregister() was called on a clock and until last clock
-+ * consumer calls clk_put() and the struct clk object is freed.
-+ */
-+static int clk_nodrv_prepare_enable(struct clk_hw *hw)
-+{
-+	return -ENXIO;
-+}
-+
-+static void clk_nodrv_disable_unprepare(struct clk_hw *hw)
-+{
-+	WARN_ON(1);
-+}
-+
-+static int clk_nodrv_set_rate(struct clk_hw *hw, unsigned long rate,
-+					unsigned long parent_rate)
-+{
-+	return -ENXIO;
-+}
-+
-+static int clk_nodrv_set_parent(struct clk_hw *hw, u8 index)
-+{
-+	return -ENXIO;
-+}
-+
-+static const struct clk_ops clk_nodrv_ops = {
-+	.enable		= clk_nodrv_prepare_enable,
-+	.disable	= clk_nodrv_disable_unprepare,
-+	.prepare	= clk_nodrv_prepare_enable,
-+	.unprepare	= clk_nodrv_disable_unprepare,
-+	.set_rate	= clk_nodrv_set_rate,
-+	.set_parent	= clk_nodrv_set_parent,
++/* HPB-DMA slave IDs */
++enum {
++	HPBDMA_SLAVE_DUMMY,
++	HPBDMA_SLAVE_SDHI0_TX,
++	HPBDMA_SLAVE_SDHI0_RX,
 +};
 +
- /**
-  * clk_unregister - unregister a currently registered clock
-  * @clk: clock to unregister
-- *
-- * Currently unimplemented.
-  */
--void clk_unregister(struct clk *clk) {}
-+void clk_unregister(struct clk *clk)
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -24,6 +24,7 @@
+ #include <linux/irqchip/arm-gic.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/dma-rcar-hpbdma.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/platform_device.h>
+@@ -305,6 +306,82 @@ void __init r8a7778_add_dt_devices(void)
+ 	r8a7778_register_tmu(1);
+ }
+ 
++/* HPB-DMA */
++
++/* Asynchronous mode register (ASYNCMDR) bits */
++#define	ASYNCMDR_ASMD22_MASK	BIT(2)	/* SDHI0 */
++#define	ASYNCMDR_ASMD22_SINGLE	BIT(2)	/* SDHI0 */
++#define	ASYNCMDR_ASMD22_MULTI	0	/* SDHI0 */
++#define	ASYNCMDR_ASMD21_MASK	BIT(1)	/* SDHI0 */
++#define	ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
++#define	ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
++
++static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
++	{
++		.id	= HPBDMA_SLAVE_SDHI0_TX,
++		.addr	= 0xffe4c000 + 0x30,
++		.dcr	= DCR_SPDS_16BIT | DCR_DMDL | DCR_DPDS_16BIT,
++		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
++			  ASYNCRSTR_ASRST23,
++		.mdr	= ASYNCMDR_ASMD21_MULTI,
++		.mdm	= ASYNCMDR_ASMD21_MASK,
++		.port	= 0x0D0C,
++		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
++		.dma_ch	= 21,
++	}, {
++		.id	= HPBDMA_SLAVE_SDHI0_RX,
++		.addr	= 0xffe4c000 + 0x30,
++		.dcr	= DCR_SMDL | DCR_SPDS_16BIT | DCR_DPDS_16BIT,
++		.rstr	= ASYNCRSTR_ASRST21 | ASYNCRSTR_ASRST22 |
++			  ASYNCRSTR_ASRST23,
++		.mdr	= ASYNCMDR_ASMD22_MULTI,
++		.mdm	= ASYNCMDR_ASMD22_MASK,
++		.port	= 0x0D0C,
++		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
++		.dma_ch	= 22,
++	},
++};
++
++static const struct hpb_dmae_channel hpb_dmae_channels[] = {
++	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
++	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
++};
++
++static struct hpb_dmae_pdata dma_platform_data __initdata = {
++	.slaves			= hpb_dmae_slaves,
++	.num_slaves		= ARRAY_SIZE(hpb_dmae_slaves),
++	.channels		= hpb_dmae_channels,
++	.num_channels		= ARRAY_SIZE(hpb_dmae_channels),
++	.ts_shift		= {
++		[XMIT_SZ_8BIT]	= 0,
++		[XMIT_SZ_16BIT]	= 1,
++		[XMIT_SZ_32BIT]	= 2,
++	},
++	.num_hw_channels	= 39,
++};
++
++static struct resource hpb_dmae_resources[] __initdata = {
++	/* Channel registers */
++	DEFINE_RES_MEM(0xffc08000, 0x1000),
++	/* Common registers */
++	DEFINE_RES_MEM(0xffc09000, 0x170),
++	/* Asynchronous reset registers */
++	DEFINE_RES_MEM(0xffc00300, 4),
++	/* Asynchronous mode registers */
++	DEFINE_RES_MEM(0xffc00400, 4),
++	/* IRQ for DMA channels */
++	DEFINE_RES_NAMED(gic_iid(0x7b), 5, NULL, IORESOURCE_IRQ),
++};
++
++static void __init r8a7778_register_hpb_dmae(void)
 +{
-+	unsigned long flags;
-+
-+	clk_prepare_lock();
-+
-+	if (!clk || IS_ERR(clk)) {
-+		pr_err("%s: invalid clock: %p\n", __func__, clk);
-+		goto out;
-+	}
-+
-+	if (clk->ops = &clk_nodrv_ops) {
-+		pr_err("%s: unregistered clock: %s\n", __func__, clk->name);
-+		goto out;
-+	}
-+	/*
-+	 * Assign empty clock ops for consumers that might still hold
-+	 * a reference to this clock.
-+	 */
-+	flags = clk_enable_lock();
-+	clk->ops = &clk_nodrv_ops;
-+	clk_enable_unlock(flags);
-+
-+	if (!hlist_empty(&clk->children)) {
-+		struct clk *child;
-+
-+		/* Reparent all children to the orphan list. */
-+		hlist_for_each_entry(child, &clk->children, child_node)
-+			clk_set_parent(child, NULL);
-+	}
-+
-+	clk_debug_unregister(clk);
-+
-+	hlist_del_init(&clk->child_node);
-+
-+	if (clk->prepare_count)
-+		pr_warn("%s: unregistering prepared clock: %s\n",
-+					__func__, clk->name);
-+
-+	kref_put(&clk->ref, __clk_release);
-+out:
-+	clk_prepare_unlock();
++	platform_device_register_resndata(&platform_bus, "hpb-dma-engine", -1,
++					  hpb_dmae_resources,
++					  ARRAY_SIZE(hpb_dmae_resources),
++					  &dma_platform_data,
++					  sizeof(dma_platform_data));
 +}
- EXPORT_SYMBOL_GPL(clk_unregister);
- 
- static void devm_clk_release(struct device *dev, void *res)
-@@ -1866,6 +1978,7 @@ int __clk_get(struct clk *clk)
- 	if (clk && !try_module_get(clk->owner))
- 		return 0;
- 
-+	kref_get(&clk->ref);
- 	return 1;
- }
- EXPORT_SYMBOL(__clk_get);
-@@ -1875,6 +1988,10 @@ void __clk_put(struct clk *clk)
- 	if (WARN_ON_ONCE(IS_ERR(clk)))
- 		return;
- 
-+	clk_prepare_lock();
-+	kref_put(&clk->ref, __clk_release);
-+	clk_prepare_unlock();
 +
- 	if (clk)
- 		module_put(clk->owner);
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
+@@ -315,6 +392,8 @@ void __init r8a7778_add_standard_devices
+ 	r8a7778_register_hspi(0);
+ 	r8a7778_register_hspi(1);
+ 	r8a7778_register_hspi(2);
++
++	r8a7778_register_hpb_dmae();
  }
-diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
-index b7c0b58..36c1fc8 100644
---- a/include/linux/clk-private.h
-+++ b/include/linux/clk-private.h
-@@ -12,6 +12,7 @@
- #define __LINUX_CLK_PRIVATE_H
  
- #include <linux/clk-provider.h>
-+#include <linux/kref.h>
- #include <linux/list.h>
- 
- /*
-@@ -47,6 +48,7 @@ struct clk {
- #ifdef CONFIG_COMMON_CLK_DEBUG
- 	struct dentry		*dentry;
- #endif
-+	struct kref		ref;
- };
- 
- /*
--- 
-1.7.9.5
-
+ void __init r8a7778_init_late(void)
