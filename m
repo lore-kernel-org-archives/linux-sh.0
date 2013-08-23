@@ -1,64 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:42 +0000
-Subject: [PATCH v3 12/14] mmc: sh_mobile_sdhi: Remove .set_pwr() callback from platform data
-Message-Id: <1375958324-29683-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 23 Aug 2013 22:48:54 +0000
+Subject: [PATCH v3 2/2] ARM: shmobile: BOCK-W: enable DMA for SDHI0
+Message-Id: <201308240248.54866.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201308240244.38963.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308240244.38963.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The .set_pwr() callback isn't used anymore as all platforms register
-GPIO-controlled regulators. Remove it.
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
+driver.
+
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: removed #include <mach/dma.h>]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/mmc/host/sh_mobile_sdhi.c  | 9 ---------
- include/linux/mmc/sh_mobile_sdhi.h | 1 -
- 2 files changed, 10 deletions(-)
+Changes in version 3:
+- resolved reject.
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 663a672..b3fd2c3 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -70,13 +70,6 @@ static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
- 	clk_disable(priv->clk);
- }
- 
--static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
--{
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--
--	p->set_pwr(pdev, state);
--}
--
- static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
- {
- 	int timeout = 1000;
-@@ -173,8 +166,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->capabilities |= p->tmio_caps;
- 		mmc_data->capabilities2 |= p->tmio_caps2;
- 		mmc_data->cd_gpio = p->cd_gpio;
--		if (p->set_pwr)
--			mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
- 
- 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
- 			/*
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index f31c692..68927ae 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -25,7 +25,6 @@ struct sh_mobile_sdhi_info {
- 	unsigned long tmio_caps2;
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
--	void (*set_pwr)(struct platform_device *pdev, int state);
- 
- 	/* callbacks for board specific setup code */
- 	int (*init)(struct platform_device *pdev,
--- 
-1.8.1.5
+Changes in version 2:
+- removed #include <mach/dma.h>;
+- refreshed the patch.
 
+ arch/arm/mach-shmobile/board-bockw.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -89,6 +89,8 @@ static struct rcar_phy_platform_data usb
+ 
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
++	.dma_slave_tx	= HPBDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= HPBDMA_SLAVE_SDHI0_RX,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
