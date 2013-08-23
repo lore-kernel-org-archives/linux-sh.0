@@ -1,108 +1,178 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Aug 2013 02:07:07 +0000
-Subject: Re: [PATCH 12/13] ARM: shmobile: Use clocksource_of_init() on r8a7790
-Message-Id: <20130806020705.GC20940@verge.net.au>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Fri, 23 Aug 2013 15:03:45 +0000
+Subject: [PATCH v3 3/5] clk: Add common __clk_get(), __clk_put() implementations
+Message-Id: <1377270227-1030-4-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130731190110.31796.96552.sendpatchset@w520>
- <20130731190300.31796.23926.sendpatchset@w520>
- <20130806012855.GB20940@verge.net.au>
-In-Reply-To: <20130806012855.GB20940@verge.net.au>
+References: <1377270227-1030-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377270227-1030-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Aug 06, 2013 at 10:28:56AM +0900, Simon Horman wrote:
-> On Thu, Aug 01, 2013 at 04:03:00AM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> > 
-> > Replace the call to shmobile_timer_init() with
-> > clocksource_of_init(). This will allow us to
-> > get rid of shmobile_timer_init().
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > ---
-> > 
-> >  arch/arm/mach-shmobile/setup-r8a7790.c |    2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > --- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
-> > +++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-08-01 03:17:48.000000000 +0900
-> > @@ -263,7 +263,7 @@ void __init r8a7790_timer_init(void)
-> >  	iounmap(base);
-> >  #endif /* CONFIG_ARM_ARCH_TIMER */
-> >  
-> > -	shmobile_timer_init();
-> > +	clocksource_of_init();
-> >  }
-> >  
-> >  void __init r8a7790_init_delay(void)
-> 
-> I seem to need the following:
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-> index 7301255..d0f5c9f 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-> @@ -18,6 +18,7 @@
->   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->   */
->  
-> +#include <linux/clocksource.h>
->  #include <linux/irq.h>
->  #include <linux/kernel.h>
->  #include <linux/of_platform.h>
-> 
-> 
-> To avoid:
-> 
-> ...
->   CC      arch/arm/mach-shmobile/setup-r8a7790.o
-> arch/arm/mach-shmobile/setup-r8a7790.c: In function ‘r8a7790_timer_init’:
-> arch/arm/mach-shmobile/setup-r8a7790.c:266:2: error: implicit declaration of function ‘clocksource_of_init’ [-Werror=implicit-function-declaration]
-> cc1: some warnings being treated as errors
-> make[1]: *** [arch/arm/mach-shmobile/setup-r8a7790.o] Error 1
+This patch adds common __clk_get(), __clk_put() clkdev helpers which
+replace their platform specific counterparts when the common clock
+API is enabled.
 
-As discussed off-line, I have squashed the above change into your patch.
+The owner module pointer field is added to struct clk so a reference
+to the clock supplier module can be taken by the clock consumers.
 
-The result, which I plan to push shortly, is as follows:
-
-From: Magnus Damm <damm@opensource.se>
-
-ARM: shmobile: Use clocksource_of_init() on r8a7790
-
-Replace the call to shmobile_timer_init() with
-clocksource_of_init(). This will allow us to
-get rid of shmobile_timer_init().
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-[horms+renesas@verge.net.au: include linux/clocksource.h]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Changes since v2:
+ - fixed handling of NULL clock pointers in __clk_get(), __clk_put();
+---
+ arch/arm/include/asm/clkdev.h      |    2 ++
+ arch/blackfin/include/asm/clkdev.h |    2 ++
+ arch/mips/include/asm/clkdev.h     |    2 ++
+ arch/sh/include/asm/clkdev.h       |    2 ++
+ drivers/clk/clk.c                  |   22 ++++++++++++++++++++++
+ include/linux/clk-private.h        |    3 +++
+ include/linux/clk-provider.h       |    2 ++
+ include/linux/clkdev.h             |    5 +++++
+ 8 files changed, 40 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 86cf507..6d4aa04 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/include/asm/clkdev.h b/arch/arm/include/asm/clkdev.h
+index 80751c1..4e8a4b2 100644
+--- a/arch/arm/include/asm/clkdev.h
++++ b/arch/arm/include/asm/clkdev.h
+@@ -14,12 +14,14 @@
  
-+#include <linux/clocksource.h>
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-@@ -263,7 +264,7 @@ void __init r8a7790_timer_init(void)
- 	iounmap(base);
- #endif /* CONFIG_ARM_ARCH_TIMER */
+ #include <linux/slab.h>
  
--	shmobile_timer_init();
-+	clocksource_of_init();
++#ifndef CONFIG_COMMON_CLK
+ #ifdef CONFIG_HAVE_MACH_CLKDEV
+ #include <mach/clkdev.h>
+ #else
+ #define __clk_get(clk)	({ 1; })
+ #define __clk_put(clk)	do { } while (0)
+ #endif
++#endif
+ 
+ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ {
+diff --git a/arch/blackfin/include/asm/clkdev.h b/arch/blackfin/include/asm/clkdev.h
+index 9053bed..7ac2436 100644
+--- a/arch/blackfin/include/asm/clkdev.h
++++ b/arch/blackfin/include/asm/clkdev.h
+@@ -8,7 +8,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ 	return kzalloc(size, GFP_KERNEL);
  }
  
- void __init r8a7790_init_delay(void)
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_put(clk)
+ #define __clk_get(clk) ({ 1; })
++#endif
+ 
+ #endif
+diff --git a/arch/mips/include/asm/clkdev.h b/arch/mips/include/asm/clkdev.h
+index 2624754..1b3ad7b 100644
+--- a/arch/mips/include/asm/clkdev.h
++++ b/arch/mips/include/asm/clkdev.h
+@@ -14,8 +14,10 @@
+ 
+ #include <linux/slab.h>
+ 
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_get(clk)	({ 1; })
+ #define __clk_put(clk)	do { } while (0)
++#endif
+ 
+ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ {
+diff --git a/arch/sh/include/asm/clkdev.h b/arch/sh/include/asm/clkdev.h
+index 6ba9186..c419014 100644
+--- a/arch/sh/include/asm/clkdev.h
++++ b/arch/sh/include/asm/clkdev.h
+@@ -25,7 +25,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ 		return kzalloc(size, GFP_KERNEL);
+ }
+ 
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_put(clk)
+ #define __clk_get(clk) ({ 1; })
++#endif
+ 
+ #endif /* __CLKDEV_H__ */
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index eb3207e..c173f30 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -1852,6 +1852,28 @@ void devm_clk_unregister(struct device *dev, struct clk *clk)
+ }
+ EXPORT_SYMBOL_GPL(devm_clk_unregister);
+ 
++/*
++ * clkdev helpers
++ */
++int __clk_get(struct clk *clk)
++{
++	if (clk && !try_module_get(clk->owner))
++		return 0;
++
++	return 1;
++}
++EXPORT_SYMBOL(__clk_get);
++
++void __clk_put(struct clk *clk)
++{
++	if (WARN_ON_ONCE(IS_ERR(clk)))
++		return;
++
++	if (clk)
++		module_put(clk->owner);
++}
++EXPORT_SYMBOL(__clk_put);
++
+ /***        clk rate change notifiers        ***/
+ 
+ /**
+diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
+index dd7adff..b7c0b58 100644
+--- a/include/linux/clk-private.h
++++ b/include/linux/clk-private.h
+@@ -25,10 +25,13 @@
+ 
+ #ifdef CONFIG_COMMON_CLK
+ 
++struct module;
++
+ struct clk {
+ 	const char		*name;
+ 	const struct clk_ops	*ops;
+ 	struct clk_hw		*hw;
++	struct module		*owner;
+ 	struct clk		*parent;
+ 	const char		**parent_names;
+ 	struct clk		**parents;
+diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
+index 1ec14a7..2c42fde 100644
+--- a/include/linux/clk-provider.h
++++ b/include/linux/clk-provider.h
+@@ -133,6 +133,8 @@ struct clk_ops {
+ 	void		(*init)(struct clk_hw *hw);
+ };
+ 
++struct module;
++
+ /**
+  * struct clk_init_data - holds init data that's common to all clocks and is
+  * shared between the clock provider and the common clock framework.
+diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
+index a6a6f60..94bad77 100644
+--- a/include/linux/clkdev.h
++++ b/include/linux/clkdev.h
+@@ -43,4 +43,9 @@ int clk_add_alias(const char *, const char *, char *, struct device *);
+ int clk_register_clkdev(struct clk *, const char *, const char *, ...);
+ int clk_register_clkdevs(struct clk *, struct clk_lookup *, size_t);
+ 
++#ifdef CONFIG_COMMON_CLK
++int __clk_get(struct clk *clk);
++void __clk_put(struct clk *clk);
++#endif
++
+ #endif
 -- 
-1.8.3.2
+1.7.9.5
 
