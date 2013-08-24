@@ -1,10 +1,10 @@
 From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Sat, 24 Aug 2013 15:19:49 +0000
-Subject: [PATCH v4 5/5] clk: Implement clk_unregister
-Message-Id: <1377357589-13242-6-git-send-email-s.nawrocki@samsung.com>
+Date: Sat, 24 Aug 2013 18:27:05 +0000
+Subject: [PATCH v5 5/5] clk: Implement clk_unregister
+Message-Id: <1377368825-30715-6-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
+References: <1377368825-30715-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377368825-30715-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -27,6 +27,9 @@ Signed-off-by: Jiada Wang <jiada_wang@mentor.com>
 Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
 Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
+Changes since v4:
+ - none.
+
 Changes since v3:
  - Use WARN_ON_ONCE() rather than WARN_ON() in clk_nodrv_disable_unprepare()
    callback.
