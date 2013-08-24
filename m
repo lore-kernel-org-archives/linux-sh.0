@@ -1,160 +1,152 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 22 Aug 2013 21:23:13 +0000
-Subject: [PATCH v5 1/3] ARM: shmobile: r8a7779: add VIN support
-Message-Id: <201308230123.13876.sergei.shtylyov@cogentembedded.com>
+From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Date: Sat, 24 Aug 2013 15:19:45 +0000
+Subject: [PATCH v4 1/5] clk: Provide not locked variant of of_clk_get_from_provider()
+Message-Id: <1377357589-13242-2-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
+References: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Add helper functions for the of_clk_providers list locking and
+an unlocked variant of of_clk_get_from_provider().
+These functions are intended to be used in the clkdev to avoid
+race condition in the device tree based clock look up in clk_get().
 
-Add VIN clocks and platform devices for R8A7779 SoC; add function to register
-the VIN platform devices.
-
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: added 'id' parameter check to r8a7779_add_vin_device(), used '*pdata'
-in *sizeof* operator there, renamed some variables, annotated vin[0-3]_resources
-[] and 'vin[0-3]_info' as '__initdata'.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
-Changes since version 4:
-- resolved reject.
+Changes since v3:
+ - none.
 
-Changes since version 3:
-- changed the VIN platform device name to be R8A7779 specific; 
-- used '*pdata' in *sizeof* operator in r8a7779_add_vin_device();
-- resolved reject in <mach/r8a7779.h> due to USB patch rework.
+Changes since v2:
+ - fixed typo in clk.h.
 
-Changes since version 2:
-- annotated vin[0-3]_resources[] and 'vin[0-3]_info' as '__initdata' since they
-  are kmemdup()'ed while registering the platform devices anyway;
+Changes since v1:
+ - moved the function declaractions to a local header.
+---
+ drivers/clk/clk.c |   38 ++++++++++++++++++++++++++++++--------
+ drivers/clk/clk.h |   16 ++++++++++++++++
+ 2 files changed, 46 insertions(+), 8 deletions(-)
+ create mode 100644 drivers/clk/clk.h
 
-Changes since the original posting:
-- added 'id' parameter check to r8a7779_add_vin_device().
-
- arch/arm/mach-shmobile/clock-r8a7779.c        |   10 +++++++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        |   37 ++++++++++++++++++++++++++
- 3 files changed, 50 insertions(+)
-
-Index: media_tree/arch/arm/mach-shmobile/clock-r8a7779.c
-=================================--- media_tree.orig/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ media_tree/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -112,7 +112,9 @@ static struct clk *main_clks[] = {
- };
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index bc02037..f46444f 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -21,6 +21,8 @@
+ #include <linux/init.h>
+ #include <linux/sched.h>
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP120,
- 	MSTP116, MSTP115, MSTP114,
-+	MSTP110, MSTP109, MSTP108,
- 	MSTP103, MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -125,9 +127,13 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP120] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 20, 0), /* VIN3 */
- 	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
- 	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
- 	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
-+	[MSTP110] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 10, 0), /* VIN0 */
-+	[MSTP109] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  9, 0), /* VIN1 */
-+	[MSTP108] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  8, 0), /* VIN2 */
- 	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
- 	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
- 	[MSTP100] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  0, 0), /* USB0/1 */
-@@ -162,10 +168,14 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&clkp_clk),
- 
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("r8a7779-vin.3", &mstp_clks[MSTP120]), /* VIN3 */
- 	CLKDEV_DEV_ID("rcar-pcie", &mstp_clks[MSTP116]), /* PCIe */
- 	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
- 	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
- 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("r8a7779-vin.0", &mstp_clks[MSTP110]), /* VIN0 */
-+	CLKDEV_DEV_ID("r8a7779-vin.1", &mstp_clks[MSTP109]), /* VIN1 */
-+	CLKDEV_DEV_ID("r8a7779-vin.2", &mstp_clks[MSTP108]), /* VIN2 */
- 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
- 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
-Index: media_tree/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- media_tree.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ media_tree/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -5,6 +5,7 @@
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
- #include <linux/platform_data/usb-rcar-phy.h>
-+#include <linux/platform_data/camera-rcar.h>
- 
- struct platform_device;
- 
-@@ -35,6 +36,8 @@ extern void r8a7779_add_standard_devices
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7779_add_usb_phy_device(struct rcar_phy_platform_data *pdata);
-+extern void r8a7779_add_vin_device(int idx,
-+				   struct rcar_vin_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-Index: media_tree/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- media_tree.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ media_tree/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -559,6 +559,33 @@ static struct resource ether_resources[]
- 	},
- };
- 
-+#define R8A7779_VIN(idx) \
-+static struct resource vin##idx##_resources[] __initdata = {		\
-+	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
-+	DEFINE_RES_IRQ(gic_iid(0x5f + (idx))),				\
-+};									\
-+									\
-+static struct platform_device_info vin##idx##_info __initdata = {	\
-+	.parent		= &platform_bus,				\
-+	.name		= "r8a7779-vin",				\
-+	.id		= idx,						\
-+	.res		= vin##idx##_resources,				\
-+	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
-+	.dma_mask	= DMA_BIT_MASK(32),				\
-+}
++#include "clk.h"
 +
-+R8A7779_VIN(0);
-+R8A7779_VIN(1);
-+R8A7779_VIN(2);
-+R8A7779_VIN(3);
-+
-+static struct platform_device_info *vin_info_table[] __initdata = {
-+	&vin0_info,
-+	&vin1_info,
-+	&vin2_info,
-+	&vin3_info,
-+};
-+
- static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -610,6 +637,16 @@ void __init r8a7779_add_usb_phy_device(s
- 					  pdata, sizeof(*pdata));
- }
+ static DEFINE_SPINLOCK(enable_lock);
+ static DEFINE_MUTEX(prepare_lock);
  
-+void __init r8a7779_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
+@@ -2097,7 +2099,18 @@ static const struct of_device_id __clk_of_table_sentinel
+ 	__used __section(__clk_of_table_end);
+ 
+ static LIST_HEAD(of_clk_providers);
+-static DEFINE_MUTEX(of_clk_lock);
++static DEFINE_MUTEX(of_clk_mutex);
++
++/* of_clk_provider list locking helpers */
++void of_clk_lock(void)
 +{
-+	BUG_ON(id < 0 || id > 3);
-+
-+	vin_info_table[id]->data = pdata;
-+	vin_info_table[id]->size_data = sizeof(*pdata);
-+
-+	platform_device_register_full(vin_info_table[id]);
++	mutex_lock(&of_clk_mutex);
 +}
 +
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
++void of_clk_unlock(void)
++{
++	mutex_unlock(&of_clk_mutex);
++}
  
+ struct clk *of_clk_src_simple_get(struct of_phandle_args *clkspec,
+ 				     void *data)
+@@ -2141,9 +2154,9 @@ int of_clk_add_provider(struct device_node *np,
+ 	cp->data = data;
+ 	cp->get = clk_src_get;
+ 
+-	mutex_lock(&of_clk_lock);
++	mutex_lock(&of_clk_mutex);
+ 	list_add(&cp->link, &of_clk_providers);
+-	mutex_unlock(&of_clk_lock);
++	mutex_unlock(&of_clk_mutex);
+ 	pr_debug("Added clock from %s\n", np->full_name);
+ 
+ 	return 0;
+@@ -2158,7 +2171,7 @@ void of_clk_del_provider(struct device_node *np)
+ {
+ 	struct of_clk_provider *cp;
+ 
+-	mutex_lock(&of_clk_lock);
++	mutex_lock(&of_clk_mutex);
+ 	list_for_each_entry(cp, &of_clk_providers, link) {
+ 		if (cp->node = np) {
+ 			list_del(&cp->link);
+@@ -2167,24 +2180,33 @@ void of_clk_del_provider(struct device_node *np)
+ 			break;
+ 		}
+ 	}
+-	mutex_unlock(&of_clk_lock);
++	mutex_unlock(&of_clk_mutex);
+ }
+ EXPORT_SYMBOL_GPL(of_clk_del_provider);
+ 
+-struct clk *of_clk_get_from_provider(struct of_phandle_args *clkspec)
++struct clk *__of_clk_get_from_provider(struct of_phandle_args *clkspec)
+ {
+ 	struct of_clk_provider *provider;
+ 	struct clk *clk = ERR_PTR(-ENOENT);
+ 
+ 	/* Check if we have such a provider in our array */
+-	mutex_lock(&of_clk_lock);
+ 	list_for_each_entry(provider, &of_clk_providers, link) {
+ 		if (provider->node = clkspec->np)
+ 			clk = provider->get(clkspec, provider->data);
+ 		if (!IS_ERR(clk))
+ 			break;
+ 	}
+-	mutex_unlock(&of_clk_lock);
++
++	return clk;
++}
++
++struct clk *of_clk_get_from_provider(struct of_phandle_args *clkspec)
++{
++	struct clk *clk;
++
++	mutex_lock(&of_clk_mutex);
++	clk = __of_clk_get_from_provider(clkspec);
++	mutex_unlock(&of_clk_mutex);
+ 
+ 	return clk;
+ }
+diff --git a/drivers/clk/clk.h b/drivers/clk/clk.h
+new file mode 100644
+index 0000000..795cc9f
+--- /dev/null
++++ b/drivers/clk/clk.h
+@@ -0,0 +1,16 @@
++/*
++ * linux/drivers/clk/clk.h
++ *
++ * Copyright (C) 2013 Samsung Electronics Co., Ltd.
++ * Sylwester Nawrocki <s.nawrocki@samsung.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#if defined(CONFIG_OF) && defined(CONFIG_COMMON_CLK)
++struct clk *__of_clk_get_from_provider(struct of_phandle_args *clkspec);
++void of_clk_lock(void);
++void of_clk_unlock(void);
++#endif
+-- 
+1.7.4.1
+
