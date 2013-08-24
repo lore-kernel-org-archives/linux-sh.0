@@ -1,83 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 23 Aug 2013 11:31:31 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 24 Aug 2013 02:13:23 +0000
 Subject: Re: SHMobile Compatibility String Inconsistencies
-Message-Id: <1721850.l3ebodSrXr@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart3506900.3hJOejC6db"
+Message-Id: <20130824021323.GC5181@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130822054639.GE11086@verge.net.au>
- <20130823021111.GA2792@voom.redhat.com>
-In-Reply-To: <20130823021111.GA2792@voom.redhat.com>
+ <20130823021111.GA2792@voom.redhat.com> <1721850.l3ebodSrXr@avalon>
+In-Reply-To: <1721850.l3ebodSrXr@avalon>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
---nextPart3506900.3hJOejC6db
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
-
-Hi David,
-
-On Friday 23 August 2013 12:11:11 David Gibson wrote:
-> On Thu, Aug 22, 2013 at 02:46:40PM +0900, Simon Horman wrote:
-> > Hi Laurent, Hi Guennadi, Hi All,
-> > 
-> > Olof has brought to my attention that there is some inconsistency
-> > in the way that compatibility strings for SHMobile are named and he
-> > has asked us to clean things up for v3.12.
-> > 
-> > Looking through arch/arm/boot/dts/ I see that we have:
-> > 
-> > 1. {gpio,pfc}-r8aXXXX and;
-> > 2. r8aXXXX-sdhi
-> > 
-> > The inconsistency that Olof has asked us to resolve is that we
-> > should either use r8aXXXX- or -r8aXXXX. Not both.
-> > 
-> > It seems to me that neither option is inherently better than the other
-> > so we should just choose the path of least resistance to make things
-> > consistent.
-> > 
-> > Laurent, Guennadi, do you have any opinions on if it would
-> > be easier to change the GPIO and PFC compatibility strings;
-> > or to change the SDHI compatibility strings?
-> > 
-> > Ideally I would like you to come to some sort of consensus and send
-> > patches.
+On Fri, Aug 23, 2013 at 01:31:31PM +0200, Laurent Pinchart wrote:
+> Hi David,
 > 
-> So, by all means clean this up in the dts.
+> On Friday 23 August 2013 12:11:11 David Gibson wrote:
+> > On Thu, Aug 22, 2013 at 02:46:40PM +0900, Simon Horman wrote:
+> > > Hi Laurent, Hi Guennadi, Hi All,
+> > > 
+> > > Olof has brought to my attention that there is some inconsistency
+> > > in the way that compatibility strings for SHMobile are named and he
+> > > has asked us to clean things up for v3.12.
+> > > 
+> > > Looking through arch/arm/boot/dts/ I see that we have:
+> > > 
+> > > 1. {gpio,pfc}-r8aXXXX and;
+> > > 2. r8aXXXX-sdhi
+> > > 
+> > > The inconsistency that Olof has asked us to resolve is that we
+> > > should either use r8aXXXX- or -r8aXXXX. Not both.
+> > > 
+> > > It seems to me that neither option is inherently better than the other
+> > > so we should just choose the path of least resistance to make things
+> > > consistent.
+> > > 
+> > > Laurent, Guennadi, do you have any opinions on if it would
+> > > be easier to change the GPIO and PFC compatibility strings;
+> > > or to change the SDHI compatibility strings?
+> > > 
+> > > Ideally I would like you to come to some sort of consensus and send
+> > > patches.
+> > 
+> > So, by all means clean this up in the dts.
+> > 
+> > BUT, in keeping with the recent discussions on improving the DT
+> > process, the corresponding drivers must continue to recognize both
+> > forms, so that old DTs will still work correctly.
 > 
-> BUT, in keeping with the recent discussions on improving the DT
-> process, the corresponding drivers must continue to recognize both
-> forms, so that old DTs will still work correctly.
+> Given the early state of DT support in arm/mach-shmobile, I'm pretty sure we 
+> have no DT-based systems in the wild. The old compatibility string could in my 
+> opinion just be dropped.
 
-Given the early state of DT support in arm/mach-shmobile, I'm pretty sure we 
-have no DT-based systems in the wild. The old compatibility string could in my 
-opinion just be dropped.
+I tend to agree, though I don't mind either way.
 
-> It's probably also worth putting a note about the deprecated form into
-> the binding description, too.
+> > It's probably also worth putting a note about the deprecated form into
+> > the binding description, too.
+> 
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
 
--- 
-Regards,
-
-Laurent Pinchart
-
---nextPart3506900.3hJOejC6db
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.20 (GNU/Linux)
-
-iQEcBAABAgAGBQJSF0geAAoJEIkPb2GL7hl19OUH/jg4jYurrM135cX1igMkXdVS
-jjff5vkjkTU+81pNx9iB5BX3GDa8r6VqZqDsZCmU7cutiGQB/NP04XoYdz6cIuwL
-RrZbkT066FzOpSiGwez48PBYMsdqc2bs1NNkN+TrwNASIqKZHdTUiwMN2c2FEMzz
-1mBtw9oNpRC+jNMo+6b2xa/nXX/ST3zLccoTdTnViaJWUUtfKw7qNO/lTTW4TmBr
-I+MUUlWr60ewAL3iCK9J68+P0y5uFS5Ynuq9ok4h1hbF57Im0F7DmTiLmILLzIyc
-3UL/s4M0krjSnhYnpTCajxirylC0cGhezPaEg2ERPYYCmxEzhb/rLsqPvuDt0zA=
-=K2EO
------END PGP SIGNATURE-----
-
---nextPart3506900.3hJOejC6db--
 
