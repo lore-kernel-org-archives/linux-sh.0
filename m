@@ -1,84 +1,57 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Fri, 30 Aug 2013 12:37:39 +0000
-Subject: [RFC 05/10] ARM: shmobile: r8a7790: add I2C setup
-Message-Id: <1377866264-21110-6-git-send-email-ulrich.hecht@gmail.com>
+From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Date: Sat, 24 Aug 2013 18:27:00 +0000
+Subject: [PATCH v5 0/5] clk: clock deregistration support
+Message-Id: <1377368825-30715-1-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+This patch series implements clock deregistration in the common clock
+framework.  This is required for proper support of clock suppliers as
+loadable modules.  Previous version of this series can be found at [1].
 
-This patch add setup for I2C bus.
+Comparing to v4 only a stray struct module forward declaration has been 
+removed from patch 3/5. My apologies for spamming.
 
-Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
----
- arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
- arch/arm/mach-shmobile/setup-r8a7790.c        | 28 +++++++++++++++++++++++++++
- 2 files changed, 31 insertions(+)
+Changes since v3:
+ - replaced WARN_ON() with WARN_ON_ONCE() in clk_nodrv_disable_unprepare()
+   callback.
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 177a837..ad8b502 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -1,7 +1,10 @@
- #ifndef __ASM_R8A7790_H__
- #define __ASM_R8A7790_H__
- 
-+#include <linux/i2c/i2c-rcar.h>
-+
- void r8a7790_add_standard_devices(void);
-+void r8a7790_add_i2c_device(int idx, struct i2c_rcar_platform_data *pdata);
- void r8a7790_add_dt_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index e0d29a2..969fdf2 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -19,6 +19,7 @@
-  */
- 
- #include <linux/clocksource.h>
-+#include <linux/i2c/i2c-rcar.h>
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-@@ -196,6 +197,33 @@ void __init r8a7790_add_dt_devices(void)
- 	r8a7790_register_cmt(00);
- }
- 
-+/* I2C */
-+static struct resource rcar_i2c_res[] __initdata = {
-+	/* I2C0 */
-+	DEFINE_RES_MEM(0xe6508000, 0x10000),
-+	DEFINE_RES_IRQ(gic_spi(287)),
-+	/* I2C1 */
-+	DEFINE_RES_MEM(0xe6518000, 0x10000),
-+	DEFINE_RES_IRQ(gic_spi(288)),
-+	/* I2C2 */
-+	DEFINE_RES_MEM(0xe6530000, 0x10000),
-+	DEFINE_RES_IRQ(gic_spi(286)),
-+	/* I2C3 */
-+	DEFINE_RES_MEM(0xe6540000, 0x10000),
-+	DEFINE_RES_IRQ(gic_spi(290)),
-+};
-+
-+void __init r8a7790_add_i2c_device(int idx,
-+				   struct i2c_rcar_platform_data *pdata)
-+{
-+	BUG_ON(idx < 0 || idx > 3);
-+
-+	platform_device_register_resndata(
-+			&platform_bus, "i2c-rcar", idx,
-+			rcar_i2c_res + (2*idx), 2,
-+			pdata, sizeof(*pdata));
-+}
-+
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_add_dt_devices();
+Changes since v2:
+ - reordered the patches so the race condition is fixed before it can
+   actually cause any issues,
+ - fixed handling of NULL clock pointers in __clk_get(), __clk_put(),
+ - added patch adding actual asignment of clk->owner; more details are
+   discussed in that specific patch.
+
+Changes since v1:
+ - moved of_clk_{lock, unlock}, __of_clk_get_from_provider() function
+   declaractions to a local header,
+ - renamed clk_dummy_* to clk_nodrv_*.
+
+[1] https://lkml.org/lkml/2013/8/24/43
+
+Sylwester Nawrocki (5):
+  clk: Provide not locked variant of of_clk_get_from_provider()
+  clkdev: Fix race condition in clock lookup from device tree
+  clk: Add common __clk_get(), __clk_put() implementations
+  clk: Assign module owner of a clock being registered
+  clk: Implement clk_unregister
+
+ arch/arm/include/asm/clkdev.h      |    2 +
+ arch/blackfin/include/asm/clkdev.h |    2 +
+ arch/mips/include/asm/clkdev.h     |    2 +
+ arch/sh/include/asm/clkdev.h       |    2 +
+ drivers/clk/clk.c                  |  187 +++++++++++++++++++++++++++++++++--
+ drivers/clk/clk.h                  |   16 +++
+ drivers/clk/clkdev.c               |   12 ++-
+ include/linux/clk-private.h        |    5 +
+ include/linux/clkdev.h             |    5 +
+ 9 files changed, 220 insertions(+), 13 deletions(-)
+ create mode 100644 drivers/clk/clk.h
+
 -- 
-1.8.1.4
+1.7.4.1
 
