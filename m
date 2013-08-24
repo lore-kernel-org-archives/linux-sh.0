@@ -1,21 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Aug 2013 07:30:27 +0000
-Subject: Re: [PATCH v4] ARM: shmobile: Add lager defconfig
-Message-Id: <20130801073027.GC26015@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 24 Aug 2013 21:36:38 +0000
+Subject: [PATCH v4 2/2] ARM: shmobile: BOCK-W: enable DMA for SDHI0
+Message-Id: <201308250136.38922.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375252165-9019-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1375252165-9019-1-git-send-email-horms+renesas@verge.net.au>
+References: <201308250133.17530.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308250133.17530.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 31, 2013 at 03:29:25PM +0900, Simon Horman wrote:
-> This is intended to be used until multi-arch is able to be
-> used for the lager board at which time a more generic configuration
-> will be used in place of this one.
-> 
-> Acked-by: Magnus Damm <magnus.damm@gmail.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-I have queued this up for v3.12 in the defconfig branch.
+Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
+driver.
+
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: removed #include <mach/dma.h>]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 3:
+- resolved reject.
+
+Changes in version 2:
+- removed #include <mach/dma.h>;
+- refreshed the patch.
+
+ arch/arm/mach-shmobile/board-bockw.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -89,6 +89,8 @@ static struct rcar_phy_platform_data usb
+ 
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
++	.dma_slave_tx	= HPBDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= HPBDMA_SLAVE_SDHI0_RX,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
