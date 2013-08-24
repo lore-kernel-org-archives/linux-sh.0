@@ -1,25 +1,80 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 24 Aug 2013 21:33:16 +0000
-Subject: [PATCH v4 0/2] R8A7778/BOCK-W: HPB-DMAC support for SDHI0
-Message-Id: <201308250133.17530.sergei.shtylyov@cogentembedded.com>
+From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Date: Sat, 24 Aug 2013 15:19:46 +0000
+Subject: [PATCH v4 2/5] clkdev: Fix race condition in clock lookup from device tree
+Message-Id: <1377357589-13242-3-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+There is currently a race condition in the device tree part of clk_get()
+function, since the pointer returned from of_clk_get_by_name() may become
+invalid before __clk_get() call. E.g. due to the clock provider driver
+remove() callback being called in between of_clk_get_by_name() and
+__clk_get().
 
-   Here's the set of 2 patches against the Simon Horman's 'renesas.git' repo,
-'renesas-next-20130823' tag. Here we add the HPB-DMAC platform code working on
-the R8A7778 and enable DMA for SDHI0 on BOCK-W (Max has fixed the wrong settings
-that led to the SDHI0 DMA working incorrectly). The patchset depends on the
-R-Car HPB-DMAC driver patch posted earlier.
+Fix this by doing both the look up and __clk_get() operations with the
+clock providers list mutex held. This ensures that the clock pointer
+returned from __of_clk_get_from_provider() call and passed to __clk_get()
+is valid, as long as the clock supplier module first removes its clock
+provider instance and then does clk_unregister() on the corresponding
+clocks.
 
-[1/2] ARM: shmobile: r8a7778: add HPB-DMAC support
-[2/2] ARM: shmobile: BOCK-W: enable DMA for SDHI0
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Reviewed-by: Mike Turquette <mturquette@linaro.org>
+Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
 
-   The former patch #1 has been merged to the next patch moving the data from
-the now removed <mach/dma.h> to <mach/r8a7778.h>.
+Changes since v2:
+ - none.
 
-WBR, Sergei
+Changes since v1:
+ - include "clk.h".
+---
+ drivers/clk/clkdev.c |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
+index 442a313..48f6721 100644
+--- a/drivers/clk/clkdev.c
++++ b/drivers/clk/clkdev.c
+@@ -21,6 +21,8 @@
+ #include <linux/clkdev.h>
+ #include <linux/of.h>
+ 
++#include "clk.h"
++
+ static LIST_HEAD(clocks);
+ static DEFINE_MUTEX(clocks_mutex);
+ 
+@@ -39,7 +41,13 @@ struct clk *of_clk_get(struct device_node *np, int index)
+ 	if (rc)
+ 		return ERR_PTR(rc);
+ 
+-	clk = of_clk_get_from_provider(&clkspec);
++	of_clk_lock();
++	clk = __of_clk_get_from_provider(&clkspec);
++
++	if (!IS_ERR(clk) && !__clk_get(clk))
++		clk = ERR_PTR(-ENOENT);
++
++	of_clk_unlock();
+ 	of_node_put(clkspec.np);
+ 	return clk;
+ }
+@@ -157,7 +165,7 @@ struct clk *clk_get(struct device *dev, const char *con_id)
+ 
+ 	if (dev) {
+ 		clk = of_clk_get_by_name(dev->of_node, con_id);
+-		if (!IS_ERR(clk) && __clk_get(clk))
++		if (!IS_ERR(clk))
+ 			return clk;
+ 	}
+ 
+-- 
+1.7.4.1
+
