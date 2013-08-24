@@ -1,84 +1,143 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:30 +0000
-Subject: [PATCH v3 00/14] Remove platform callbacks from mmc_spi, sh_mmcif and sh_mobile_sdhi drivers
-Message-Id: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 24 Aug 2013 01:28:30 +0000
+Subject: Re: [PATCH v3 00/14] Remove platform callbacks from mmc_spi, sh_mmcif and sh_mobile_sdhi drivers
+Message-Id: <1379845.qhfya0zTYh@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+Hi Chris,
 
-This patch set replaces callbacks to board code with regulators and GPIOs in
-the mmc_spi, sh_mmcif and sh_mobile_sdhi MMC drivers.
+On Thursday 08 August 2013 12:38:30 Laurent Pinchart wrote:
+> Hello,
+> 
+> This patch set replaces callbacks to board code with regulators and GPIOs in
+> the mmc_spi, sh_mmcif and sh_mobile_sdhi MMC drivers.
+> 
+> Most of the required infrastructure is in place already on the drivers side,
+> except for CD debouncing support in the MMC core and CD/RO GPIOs support in
+> the mmc_spi driver. The series thus starts with patches 01/14 and 02/14
+> that add those features to the MMC core and mmc_spi driver.
+> 
+> Patches 03/14 to 07/14 remove the board callbacks from the ecovec24 and
+> vision_ep9307 boards. The code has been compile-tested only as I don't have
+> access to those boards.
+> 
+> Patches 08/14 to 14/14 then proceed to remove the callbacks from the drivers
+> themselves and from the platform data structures.
+> 
+> Compared to v2, the patches have been rebased on the mmc-next branch from
+> git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git. I've also added
+> patch 07/14 that removes the .set_pwr() callback from the ag5evm board to
+> avoid compilation breakage during bisection.
+> 
+> The series interleaves patches for drivers and board files. The ep93xx and
+> ecovec24 patches have been acked, and the respective ARM subtree maintainers
+> have indicated that they are fine with the patches going through the MMC
+> tree. The ag5evm patch is new, but as the ag5evm board is going to be
+> removed in v3.12, it shouldn't cause any issue.
+> 
+> Chris, could you take the patches in your tree ? I've pushed them to
+> 
+> 	git://linuxtv.org/pinchartl/fbdev.git mmc/devel
 
-Most of the required infrastructure is in place already on the drivers side,
-except for CD debouncing support in the MMC core and CD/RO GPIOs support in
-the mmc_spi driver. The series thus starts with patches 01/14 and 02/14 that
-add those features to the MMC core and mmc_spi driver.
+Ping ?
 
-Patches 03/14 to 07/14 remove the board callbacks from the ecovec24 and
-vision_ep9307 boards. The code has been compile-tested only as I don't have
-access to those boards.
+The following changes since commit 6d1d6b4759112acf4c079eb3a0dd296bdbf61cf5:
 
-Patches 08/14 to 14/14 then proceed to remove the callbacks from the drivers
-themselves and from the platform data structures.
+  mmc: tmio: fix compiler warning (2013-07-23 15:06:47 -0400)
 
-Compared to v2, the patches have been rebased on the mmc-next branch from
-git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git. I've also added
-patch 07/14 that removes the .set_pwr() callback from the ag5evm board to avoid
-compilation breakage during bisection.
+are available in the git repository at:
 
-The series interleaves patches for drivers and board files. The ep93xx and
-ecovec24 patches have been acked, and the respective ARM subtree maintainers
-have indicated that they are fine with the patches going through the MMC tree.
-The ag5evm patch is new, but as the ag5evm board is going to be removed in
-v3.12, it shouldn't cause any issue.
+  git://linuxtv.org/pinchartl/fbdev.git mmc/devel
 
-Chris, could you take the patches in your tree ? I've pushed them to
+for you to fetch changes up to a3424b35fdfd2d0fe507ef204d4ddebadd1e1157:
 
-	git://linuxtv.org/pinchartl/fbdev.git mmc/devel
+  mmc: tmio-mmc: Remove .set_pwr() callback from platform data (2013-08-08 
+12:34:33 +0200)
 
+----------------------------------------------------------------
 Laurent Pinchart (14):
-  mmc: slot-gpio: Add debouncing capability to mmc_gpio_request_cd()
-  mmc: mmc_spi: Support CD/RO GPIOs
-  ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
-  sh: ecovec24: Use MMC/SDHI CD and RO GPIO
-  sh: ecovec24: Remove mmcif .down_pwr() callback
-  sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
-  ARM: shmobile: ag5evm: Remove SDHI .set_pwr() callback
-  mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
-  mmc: sh_mmcif: Remove .down_pwr() callback from platform data
-  mmc: sh_mmcif: Remove .set_pwr() callback from platform data
-  mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
-  mmc: sh_mobile_sdhi: Remove .set_pwr() callback from platform data
-  mmc: tmio-mmc: Remove .get_cd() callback from platform data
-  mmc: tmio-mmc: Remove .set_pwr() callback from platform data
+      mmc: slot-gpio: Add debouncing capability to mmc_gpio_request_cd()
+      mmc: mmc_spi: Support CD/RO GPIOs
+      ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
+      sh: ecovec24: Use MMC/SDHI CD and RO GPIO
+      sh: ecovec24: Remove mmcif .down_pwr() callback
+      sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
+      ARM: shmobile: ag5evm: Remove SDHI .set_pwr() callback
+      mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
+      mmc: sh_mmcif: Remove .down_pwr() callback from platform data
+      mmc: sh_mmcif: Remove .set_pwr() callback from platform data
+      mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
+      mmc: sh_mobile_sdhi: Remove .set_pwr() callback from platform data
+      mmc: tmio-mmc: Remove .get_cd() callback from platform data
+      mmc: tmio-mmc: Remove .set_pwr() callback from platform data
 
- arch/arm/mach-ep93xx/vision_ep9307.c  | 57 ++--------------------
- arch/arm/mach-shmobile/board-ag5evm.c | 23 ---------
- arch/sh/boards/mach-ecovec24/setup.c  | 89 ++++-------------------------------
+ arch/arm/mach-ep93xx/vision_ep9307.c  | 57 +++------------------------
+ arch/arm/mach-shmobile/board-ag5evm.c | 23 -----------
+ arch/sh/boards/mach-ecovec24/setup.c  | 89 +++-------------------------------
  drivers/mmc/core/host.c               |  2 +-
- drivers/mmc/core/slot-gpio.c          | 14 +++++-
+ drivers/mmc/core/slot-gpio.c          | 14 ++++++-
  drivers/mmc/host/jz4740_mmc.c         |  2 +-
- drivers/mmc/host/mmc_spi.c            | 49 +++++++++----------
+ drivers/mmc/host/mmc_spi.c            | 49 +++++++++++-------------
  drivers/mmc/host/mvsdio.c             |  3 +-
- drivers/mmc/host/of_mmc_spi.c         | 46 +++++-------------
+ drivers/mmc/host/of_mmc_spi.c         | 46 ++++++----------------
  drivers/mmc/host/sdhci-esdhc-imx.c    |  2 +-
  drivers/mmc/host/sdhci-pxav3.c        |  3 +-
  drivers/mmc/host/sdhci-sirf.c         |  2 +-
- drivers/mmc/host/sh_mmcif.c           |  5 +-
- drivers/mmc/host/sh_mobile_sdhi.c     | 18 -------
+ drivers/mmc/host/sh_mmcif.c           |  5 +--
+ drivers/mmc/host/sh_mobile_sdhi.c     | 18 ---------
  drivers/mmc/host/tmio_mmc.h           |  1 -
- drivers/mmc/host/tmio_mmc_pio.c       | 25 +---------
+ drivers/mmc/host/tmio_mmc_pio.c       | 25 +-----------
  include/linux/mfd/tmio.h              |  2 -
  include/linux/mmc/sh_mmcif.h          |  2 -
  include/linux/mmc/sh_mobile_sdhi.h    |  2 -
  include/linux/mmc/slot-gpio.h         |  3 +-
- include/linux/spi/mmc_spi.h           | 19 +++++---
+ include/linux/spi/mmc_spi.h           | 19 ++++++---
  21 files changed, 86 insertions(+), 283 deletions(-)
 
+> Laurent Pinchart (14):
+>   mmc: slot-gpio: Add debouncing capability to mmc_gpio_request_cd()
+>   mmc: mmc_spi: Support CD/RO GPIOs
+>   ARM: ep93xx: vision_ep9307: Use MMC CD and RO GPIO
+>   sh: ecovec24: Use MMC/SDHI CD and RO GPIO
+>   sh: ecovec24: Remove mmcif .down_pwr() callback
+>   sh: ecovec24: Remove MMCIF and SDHI .set_pwr() callbacks
+>   ARM: shmobile: ag5evm: Remove SDHI .set_pwr() callback
+>   mmc: mmc_spi: Remove platform data .get_cd() and .get_ro() callbacks
+>   mmc: sh_mmcif: Remove .down_pwr() callback from platform data
+>   mmc: sh_mmcif: Remove .set_pwr() callback from platform data
+>   mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
+>   mmc: sh_mobile_sdhi: Remove .set_pwr() callback from platform data
+>   mmc: tmio-mmc: Remove .get_cd() callback from platform data
+>   mmc: tmio-mmc: Remove .set_pwr() callback from platform data
+> 
+>  arch/arm/mach-ep93xx/vision_ep9307.c  | 57 ++--------------------
+>  arch/arm/mach-shmobile/board-ag5evm.c | 23 ---------
+>  arch/sh/boards/mach-ecovec24/setup.c  | 89 ++++----------------------------
+>  drivers/mmc/core/host.c               |  2 +-
+>  drivers/mmc/core/slot-gpio.c          | 14 +++++-
+>  drivers/mmc/host/jz4740_mmc.c         |  2 +-
+>  drivers/mmc/host/mmc_spi.c            | 49 +++++++++----------
+>  drivers/mmc/host/mvsdio.c             |  3 +-
+>  drivers/mmc/host/of_mmc_spi.c         | 46 +++++-------------
+>  drivers/mmc/host/sdhci-esdhc-imx.c    |  2 +-
+>  drivers/mmc/host/sdhci-pxav3.c        |  3 +-
+>  drivers/mmc/host/sdhci-sirf.c         |  2 +-
+>  drivers/mmc/host/sh_mmcif.c           |  5 +-
+>  drivers/mmc/host/sh_mobile_sdhi.c     | 18 -------
+>  drivers/mmc/host/tmio_mmc.h           |  1 -
+>  drivers/mmc/host/tmio_mmc_pio.c       | 25 +---------
+>  include/linux/mfd/tmio.h              |  2 -
+>  include/linux/mmc/sh_mmcif.h          |  2 -
+>  include/linux/mmc/sh_mobile_sdhi.h    |  2 -
+>  include/linux/mmc/slot-gpio.h         |  3 +-
+>  include/linux/spi/mmc_spi.h           | 19 +++++---
+>  21 files changed, 86 insertions(+), 283 deletions(-)
 -- 
 Regards,
 
