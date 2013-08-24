@@ -1,72 +1,169 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:30:23 +0000
-Subject: [GIT PULL 1/3] ARM: shmobile: ape6evm: support GPIO switches
-Message-Id: <5c6db1a421c6ceef199a956c7e0c1244ea6dfef7.1375839719.git.horms+renesas@verge.net.au>
+From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Date: Sat, 24 Aug 2013 18:27:03 +0000
+Subject: [PATCH v5 3/5] clk: Add common __clk_get(), __clk_put() implementations
+Message-Id: <1377368825-30715-4-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375839719.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375839719.git.horms+renesas@verge.net.au>
+References: <1377368825-30715-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377368825-30715-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The ape6evm board has switches S16 - S23 wired up to GPIO pins.
-This patch allows access to those pins as gpio-keys.
+This patch adds common __clk_get(), __clk_put() clkdev helpers which
+replace their platform specific counterparts when the common clock
+API is enabled.
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The owner module pointer field is added to struct clk so a reference
+to the clock supplier module can be taken by the clock consumers.
+
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+Changes since v4:
+ - dropped unnecessary struct module forward declaration from
+   clk-provider.h
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index ccf8b04..677752c 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -19,6 +19,8 @@
-  */
+Changes since v3:
+ - dropped exporting of __clk_get(), __clk_put().
+
+Changes since v2:
+ - fixed handling of NULL clock pointers in __clk_get(), __clk_put();
+---
+ arch/arm/include/asm/clkdev.h      |    2 ++
+ arch/blackfin/include/asm/clkdev.h |    2 ++
+ arch/mips/include/asm/clkdev.h     |    2 ++
+ arch/sh/include/asm/clkdev.h       |    2 ++
+ drivers/clk/clk.c                  |   20 ++++++++++++++++++++
+ include/linux/clk-private.h        |    3 +++
+ include/linux/clkdev.h             |    5 +++++
+ 7 files changed, 36 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/include/asm/clkdev.h b/arch/arm/include/asm/clkdev.h
+index 80751c1..4e8a4b2 100644
+--- a/arch/arm/include/asm/clkdev.h
++++ b/arch/arm/include/asm/clkdev.h
+@@ -14,12 +14,14 @@
  
- #include <linux/gpio.h>
-+#include <linux/gpio_keys.h>
-+#include <linux/input.h>
- #include <linux/interrupt.h>
- #include <linux/kernel.h>
- #include <linux/mfd/tmio.h>
-@@ -37,6 +39,24 @@
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+ #include <linux/slab.h>
  
-+/* GPIO KEY */
-+#define GPIO_KEY(c, g, d, ...) \
-+	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
-+
-+static struct gpio_keys_button gpio_buttons[] = {
-+	GPIO_KEY(KEY_0,			324,	"S16"),
-+	GPIO_KEY(KEY_MENU,		325,	"S17"),
-+	GPIO_KEY(KEY_HOME,		326,	"S18"),
-+	GPIO_KEY(KEY_BACK,		327,	"S19"),
-+	GPIO_KEY(KEY_VOLUMEUP,		328,	"S20"),
-+	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
-+};
-+
-+static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
-+	.buttons	= gpio_buttons,
-+	.nbuttons	= ARRAY_SIZE(gpio_buttons),
-+};
-+
- /* Dummy supplies, where voltage doesn't matter */
- static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-@@ -172,6 +192,9 @@ static void __init ape6evm_add_standard_devices(void)
- 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
- 					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
- 					  &sdhi1_pdata, sizeof(sdhi1_pdata));
-+	platform_device_register_data(&platform_bus, "gpio-keys", -1,
-+				      &ape6evm_keys_pdata,
-+				      sizeof(ape6evm_keys_pdata));
++#ifndef CONFIG_COMMON_CLK
+ #ifdef CONFIG_HAVE_MACH_CLKDEV
+ #include <mach/clkdev.h>
+ #else
+ #define __clk_get(clk)	({ 1; })
+ #define __clk_put(clk)	do { } while (0)
+ #endif
++#endif
+ 
+ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ {
+diff --git a/arch/blackfin/include/asm/clkdev.h b/arch/blackfin/include/asm/clkdev.h
+index 9053bed..7ac2436 100644
+--- a/arch/blackfin/include/asm/clkdev.h
++++ b/arch/blackfin/include/asm/clkdev.h
+@@ -8,7 +8,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ 	return kzalloc(size, GFP_KERNEL);
  }
  
- static const char *ape6evm_boards_compat_dt[] __initdata = {
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_put(clk)
+ #define __clk_get(clk) ({ 1; })
++#endif
+ 
+ #endif
+diff --git a/arch/mips/include/asm/clkdev.h b/arch/mips/include/asm/clkdev.h
+index 2624754..1b3ad7b 100644
+--- a/arch/mips/include/asm/clkdev.h
++++ b/arch/mips/include/asm/clkdev.h
+@@ -14,8 +14,10 @@
+ 
+ #include <linux/slab.h>
+ 
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_get(clk)	({ 1; })
+ #define __clk_put(clk)	do { } while (0)
++#endif
+ 
+ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ {
+diff --git a/arch/sh/include/asm/clkdev.h b/arch/sh/include/asm/clkdev.h
+index 6ba9186..c419014 100644
+--- a/arch/sh/include/asm/clkdev.h
++++ b/arch/sh/include/asm/clkdev.h
+@@ -25,7 +25,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ 		return kzalloc(size, GFP_KERNEL);
+ }
+ 
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_put(clk)
+ #define __clk_get(clk) ({ 1; })
++#endif
+ 
+ #endif /* __CLKDEV_H__ */
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index f46444f..8ccc1cd 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -1959,6 +1959,26 @@ void devm_clk_unregister(struct device *dev, struct clk *clk)
+ }
+ EXPORT_SYMBOL_GPL(devm_clk_unregister);
+ 
++/*
++ * clkdev helpers
++ */
++int __clk_get(struct clk *clk)
++{
++	if (clk && !try_module_get(clk->owner))
++		return 0;
++
++	return 1;
++}
++
++void __clk_put(struct clk *clk)
++{
++	if (WARN_ON_ONCE(IS_ERR(clk)))
++		return;
++
++	if (clk)
++		module_put(clk->owner);
++}
++
+ /***        clk rate change notifiers        ***/
+ 
+ /**
+diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
+index 8138c94..8cb1865 100644
+--- a/include/linux/clk-private.h
++++ b/include/linux/clk-private.h
+@@ -25,10 +25,13 @@
+ 
+ #ifdef CONFIG_COMMON_CLK
+ 
++struct module;
++
+ struct clk {
+ 	const char		*name;
+ 	const struct clk_ops	*ops;
+ 	struct clk_hw		*hw;
++	struct module		*owner;
+ 	struct clk		*parent;
+ 	const char		**parent_names;
+ 	struct clk		**parents;
+diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
+index a6a6f60..94bad77 100644
+--- a/include/linux/clkdev.h
++++ b/include/linux/clkdev.h
+@@ -43,4 +43,9 @@ int clk_add_alias(const char *, const char *, char *, struct device *);
+ int clk_register_clkdev(struct clk *, const char *, const char *, ...);
+ int clk_register_clkdevs(struct clk *, struct clk_lookup *, size_t);
+ 
++#ifdef CONFIG_COMMON_CLK
++int __clk_get(struct clk *clk);
++void __clk_put(struct clk *clk);
++#endif
++
+ #endif
 -- 
-1.8.3.2
+1.7.4.1
 
