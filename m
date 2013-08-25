@@ -1,154 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 27 Aug 2013 06:41:48 +0000
-Subject: Re: [PATCH 2/2] sh_eth: remove 'register_type' field from 'struct sh_eth_plat_data'
-Message-Id: <9844233.YJQHWPv5fc@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 25 Aug 2013 17:47:26 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: Marzen: enable DMA for SDHI0
+Message-Id: <201308252147.27210.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308180308.39941.sergei.shtylyov@cogentembedded.com> <2054715.7J5PzTuKLW@avalon> <521BC8DA.3010308@cogentembedded.com>
-In-Reply-To: <521BC8DA.3010308@cogentembedded.com>
+References: <201308252143.33458.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308252143.33458.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, davem@davemloft.net, lethal@linux-sh.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-On Tuesday 27 August 2013 01:30:02 Sergei Shtylyov wrote:
-> On 08/21/2013 04:58 PM, Laurent Pinchart wrote:
-> 
-> Sorry for the belated reply.
+Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
+driver.
 
-No worries.
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: removed #include <mach/dma.h>]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> >>>>>>>>> Now that the 'register_type' field of the 'sh_eth' driver's
-> >>>>>>>>> platform
-> >>>>>>>>> data is not used by the driver anymore, it's time to remove it and
-> >>>>>>>>> its initializers from the SH platform code. Also  move *enum*
-> >>>>>>>>> declaring values for this  field from <linux/sh_eth.h>  to  the
-> >>>>>>>>> local driver's header file as they're only needed by the driver
-> >>>>>>>>> itself now...
-> >>>>>>>>> 
-> >>>>>>>>> Signed-off-by: Sergei Shtylyov
-> >>>>>>>>> <sergei.shtylyov@cogentembedded.com>
-> >>>>>> 
-> >>>>>> [...]
-> >>>>>> 
-> >>>>>>>>>      /* Driver's parameters */
-> >>>>>>>>>      #if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-> >>>>>>>>>      #define SH4_SKB_RX_ALIGN    32
-> >>>>>>>>> 
-> >>>>>>>>> Index: net-next/include/linux/sh_eth.h
-> >>>>>>>>> =================================
-> >>>>>>>>> > >>>>>>>>> --- net-next.orig/include/linux/sh_eth.h
-> >>>>>>>>> +++ net-next/include/linux/sh_eth.h
-> >>>>>>>>> @@ -5,17 +5,10 @@
-> >>>>>>>>> 
-> >>>>>>>>>      #include <linux/if_ether.h>
-> >>>>>>>>>      
-> >>>>>>>>>      enum {EDMAC_LITTLE_ENDIAN, EDMAC_BIG_ENDIAN};
-> >>>>>>>>> 
-> >>>>>>>>> -enum {
-> >>>>>>>>> -    SH_ETH_REG_GIGABIT,
-> >>>>>>>>> -    SH_ETH_REG_FAST_RCAR,
-> >>>>>>>>> -    SH_ETH_REG_FAST_SH4,
-> >>>>>>>>> -    SH_ETH_REG_FAST_SH3_SH2
-> >>>>>>>>> -};
-> >>>>>>>>> 
-> >>>>>>>>>      struct sh_eth_plat_data {
-> >>>>>>>>>      
-> >>>>>>>>>          int phy;
-> >>>>>>>>>          int edmac_endian;
-> >>>>>>>> 
-> >>>>>>>> Wouldn't it make sense to move the edmac_endian field to
-> >>>>>>>> sh_eth_cpu_data as well ?
-> >>>>>>> 
-> >>>>>>> No, it depends on the SoC endianness which is determined by power-on
-> >>>>>>> pin strapping -- which is board specific.
-> >>>>> 
-> >>>>> Does SoC endianness affect the ARM core endianness, the ethernet
-> >>>>> registers endianness, or both ?
-> >>>> 
-> >>>> Both, AFAIK.
-> >>>> 
-> >>>>> If it affects the ARM core endianness only, the kernel needs to be
-> >>>>> compiled in little-endian or big-endian mode anyway, and the sh_eth
-> >>>>> driver should use cpu_to_le32() unconditionally. If it affects both
-> >>>>> the ARM core and the ethernet controller there's not need to care
-> >>>>> about the endianness, as it will always be good.
-> >>>> 
-> >>>> No, it won't unless you're using __raw_{readl|writel}() accessors. The
-> >>>> driver doesn't do it. {readl|writel}() and io{read|write}32() that use
-> >>>> them always assume LE ordering of memory.
-> >>>> 
-> >>>>> We only need to care about it if it affects the ethernet controller
-> >>>>> registers only, which would seem weird to me.
-> >>>> 
-> >>>> Unfortunately, you are wrong.
-> >>> 
-> >>> Care to explain *why* ? There might be bugs in the driver (such as using
-> >>> the wrong I/O accessors), but I don't see why we need to configure the
-> >>> endianness through platform data.
-> >> 
-> >> Re-read my reply about the power-on pin strapping please. The SoC
-> >> endianness setting gets read from the external source to the SoC, i.e.
-> >> it's determined by the board.
-> > 
-> > Unless that pin doesn't affect the CPU core (in which case I wonder what
-> > it's used for),
-> 
-> The thing is I don't have the necessary information about SH SoCs for which
-> the 'edmac_endian' field was first added. I'm basing my assumptions on the
-> R-Car manuals which claim that both register and DMA descriptor endianness
-> depend on the SoC endianness (which is selected by the MD8 pin at power-on).
-> So I don't even understand why it's called 'edmac_endian' based on this
-> info, as it apparently determines only DMA descriptor endianness.
+---
+Changes in version 2:
+- refreshed the patch.
 
-Neither do I. Reading the documentation I just had doubts, hence my questions. 
-I doubt that the MD8 pin modifies the endianness of all registers, as that 
-would probably be very costly from a silicon point of view, but everything is 
-possible.
+ arch/arm/mach-shmobile/board-marzen.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-> > the kernel will need to be compiled for the specified endianness
-> > anyway. Endianness conversion can thus be performed with cpu_to_* (if the
-> > registers endianness is fixed) or skipped completely (if the registers
-> > endianness is also configured by the bootstrap pin) by using raw I/O
-> > accessors.
-> 
-> Unfortunately, the raw accessors also miss the barriers which might be
-> necessary.
-
-But it would be pretty trivial if needed to create and use in the driver 
-accessors with barriers based on the raw accessors.
-
-> > Modifications will be need in the sh_eth driver, but I don't see
-> > why the driver would need to receive endianness information from platform
-> > data or DT.
-> 
-> So you suggest that we use __LITTLE_ENDIAN/__BIG_ENDIAN pre-defined macros
-> as when we're programing the EDMR.EL bit to enable automatic data swapping
-> feature (it doesn't swap register or descriptors, only the raw data)?
-
-Based on my understanding, I believe that we either
-
-- don't need different register access codes paths for little and big endian 
-(for a variety of reasons, as explained in the previous e-mails in this 
-thread)
-
-- need different code paths, but can make the decision at compile time instead 
-of runtime because the CPU core endianness changes as well, which forces a 
-recompilation anyway
-
-I would thus suggest to use the right combination of cpu_to_[bl]e*, raw 
-accessors (with added barriers), #ifdef __LITTLE_ENDIAN/__BIG_ENDIAN and 
-EDMR.EL settings to remove the edmac_endian field.
-
-What the right combination is isn't know yet, we can experiment later when 
-we'll get a big-endian system. I'm fine with keeping the field in the platform 
-data structure for reference until then, but let's not add it to the DT 
-bindings.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Index: renesas/arch/arm/mach-shmobile/board-marzen.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-marzen.c
++++ renesas/arch/arm/mach-shmobile/board-marzen.c
+@@ -123,6 +123,8 @@ static struct resource sdhi0_resources[]
+ };
+ 
+ static struct sh_mobile_sdhi_info sdhi0_platform_data = {
++	.dma_slave_tx = HPBDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx = HPBDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
+ };
