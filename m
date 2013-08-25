@@ -1,42 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 30 Aug 2013 03:41:07 +0000
-Subject: [PATCH net-next v2 1/2] sh_eth: Fix cache invalidation omission of receive buffer
-Message-Id: <1377834068-6978-2-git-send-email-horms+renesas@verge.net.au>
+From: Chris Ball <cjb@laptop.org>
+Date: Sun, 25 Aug 2013 04:12:00 +0000
+Subject: Re: [PATCH 0/6] mmc: sh_mmcif: revision-specific CCS and CLK_CTRL2 handling
+Message-Id: <8738pyqui7.fsf@octavius.laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
+References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
+	(Guennadi Liakhovetski's message of "Wed, 10 Jul 2013 21:21:11 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kouei Abe <kouei.abe.cp@renesas.com>, Simon Horman <horms+renesas@verge.net.au>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-From: Kouei Abe <kouei.abe.cp@renesas.com>
+Hi Guennadi,
 
-Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On Wed, Jul 10 2013, Guennadi Liakhovetski wrote:
+> This patch series adds version-specific support for Command Completion 
+> Signal and the CE_CLK_CTRL2 register. Presumably, the first two patches 
+> will go via the MMC tree, the rest should be applied after them.
+>
+> Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+>
+> Guennadi Liakhovetski (6):
+>   mmc: sh_mmcif: revision-specific Command Completion Signal handling
+>   mmc: sh_mmcif: revision-specific CLK_CTRL2 handling
 
----
-v2 [Simon Horman]
-* Correct indentation
+Thanks, I've pushed these two patches to mmc-next for 3.12.
 
- drivers/net/ethernet/renesas/sh_eth.c | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 4b47300..3c0a24a 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1342,6 +1342,9 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
- 			mdp->rx_skbuff[entry] = NULL;
- 			if (mdp->cd->rpadir)
- 				skb_reserve(skb, NET_IP_ALIGN);
-+			dma_sync_single_for_cpu(&ndev->dev, rxdesc->addr,
-+						mdp->rx_buf_sz,
-+						DMA_FROM_DEVICE);
- 			skb_put(skb, pkt_len);
- 			skb->protocol = eth_type_trans(skb, ndev);
- 			netif_rx(skb);
+- Chris.
 -- 
-1.8.4.rc4
-
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
