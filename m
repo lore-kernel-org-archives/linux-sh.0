@@ -1,53 +1,21 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 09 Aug 2013 15:31:04 +0000
-Subject: Re: [PATCH 00/02] ARM: shmobile: Initial r8a73a4 APMU SMP code
-Message-Id: <Pine.LNX.4.64.1308091730260.937@axis700.grange>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 25 Aug 2013 17:43:32 +0000
+Subject: [PATCH v2 0/2] R8A7779/Marzen: HPB-DMAC support for SDHI0
+Message-Id: <201308252143.33458.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130807225531.9856.18974.sendpatchset@w520>
-In-Reply-To: <20130807225531.9856.18974.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, 8 Aug 2013, Magnus Damm wrote:
+Hello.
 
-> ARM: shmobile: Initial r8a73a4 APMU SMP code
-> 
-> [PATCH 01/02] ARM: shmobile: Add r8a73a4 SMP support using APMU code
-> [PATCH 02/02] ARM: shmobile: Add r8a73a4 CA15 CPU cores and APMU as DTS
-> 
-> This series adds SMP support to r8a73a4 using the APMU code. With these
-> patches applied r8a73a4 CA15 support for SMP boot and CPU Hotplug is
-> known to be working.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+   Here's the set of 2 patches against the Simon Horman's 'renesas.git' repo,
+'renesas-devel-20130823' tag. Here we add the HPB-DMAC platform code working on
+R8A7779 and enable DMA for SDHI0 on Marzen. The patchset depends on the R-Car
+HPB-DMAC driver patch posted earlier.
 
-Tested-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+[1/2] ARM: shmobile: r8a7779: add HPB-DMAC support
+[2/2] ARM: shmobile: Marzen: enable DMA for SDHI0
 
-Thanks
-Guennadi
-
-> ---
-> 
->  Written against renesas.git renesas-devel-20130806v4 and
->  [PATCH 00/05] ARM: shmobile: Yet another SMP series
->  [PATCH 00/02] ARM: shmobile: Rename to r8a73a4/r8a7790_init_early()
->  [PATCH] ARM: shmobile: Shared APMU SMP support code
-> 
->  arch/arm/boot/dts/r8a73a4.dtsi                |   27 +++++++++
->  arch/arm/mach-shmobile/Makefile               |    1 
->  arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 
->  arch/arm/mach-shmobile/setup-r8a73a4.c        |    3 +
->  arch/arm/mach-shmobile/smp-r8a73a4.c          |   75 +++++++++++++++++++++++++
->  5 files changed, 107 insertions(+)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+WBR, Sergei
