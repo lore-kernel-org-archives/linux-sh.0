@@ -1,131 +1,234 @@
-From: Chen Gang <gang.chen@asianux.com>
-Date: Thu, 01 Aug 2013 05:58:54 +0000
-Subject: Re: [Suggestion] sh64: kernel: about the warning: "unexpected non-allocatable section".
-Message-Id: <51F9F91E.4060704@asianux.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 25 Aug 2013 17:46:23 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7779: add HPB-DMAC support
+Message-Id: <201308252146.24500.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <51F721CD.3010006@asianux.com>
-In-Reply-To: <51F721CD.3010006@asianux.com>
+References: <201308252143.33458.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308252143.33458.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 07/31/2013 03:38 PM, Chen Gang wrote:
-> On 07/30/2013 02:11 PM, Chen Gang wrote:
->> On 07/30/2013 02:09 PM, Chen Gang wrote:
->>>
->>> For sh, it will report error below:
->>>
->>>   [root@dhcp122 linux-next]# make ARCH=sh CROSS_COMPILE=sh-linux-gnu-
->>>   CC      scripts/mod/empty.o
->>>   as: unrecognized option '-little'
->>>   make[2]: *** [scripts/mod/empty.o] Error 2
->>>   make[1]: *** [scripts/mod] Error 2
->>>   make: *** [scripts] Error 2
->>>
->>> The related binutils information:
->>>
->>>   [root@dhcp122 build-binutils-or32]# rpm -qf /usr/bin/sh-linux-gnu-ld
->>>   binutils-sh-linux-gnu-2.23.51.0.3-1.fc17.x86_64
->>>   [root@dhcp122 build-binutils-or32]# rpm -qf /usr/bin/sh-linux-gnu-as
->>>   binutils-sh-linux-gnu-2.23.51.0.3-1.fc17.x86_64
->>>
->>
-> 
-> It is really the original sh-linux-gnu- compiler's issue (not only for
-> allmodconfig, but also for sh own config files).
-> 
-> With my new build cross-compiler, It can work for sh architecture own
-> config files, but can not work with allmodconfig (I will analyze it).
-> 
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-after delete "-m32" in "scripts/recordmcount.pl", it will be OK.
+Add HPB-DMAC platform device on R8A7779 SoC along with its slave and channel
+configurations (only for SDHI0 so far).
 
-The related patch which I have sent:
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: moved *enum* declaring HPB-DMAC slave IDs from now removed <mach/dma.h>
+to <mach/r8a7779.h>, removed #include <mach/dma.h> from setup-r8a7779.c, removed
+SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[] and
+hpb_dmae_channels[], added ASYNCMDR.ASBTMD{20|24|43} and ASYNCMDR.ASMD{20|24|43}
+fields/values, fixed comments to ASYNCMDR.ASBTMD2[123] and ASYNCMDR.ASMD2[123]
+fields/values, renamed all the bit/field/value #define's to include 'HBP_DMAE_'
+prefix to match the driver, moved comments after the element initializers of
+hpb_dmae_channels[].]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-----------------------------patch begin----------------------------------
+---
+Changes in version 2:
+- renamed all the bit/field/value #define's to include 'HBP_DMAE_' prefix to
+  match the driver;
+- added #define's for MMC[01] related fields of the ASYNCMDR register.
 
-diff --git a/scripts/recordmcount.pl b/scripts/recordmcount.pl
-index 858966a..679218b 100755
---- a/scripts/recordmcount.pl
-+++ b/scripts/recordmcount.pl
-@@ -262,7 +262,6 @@ if ($arch eq "x86_64") {
-     # force flags for this arch
-     $ld .= " -m shlelf_linux";
-     $objcopy .= " -O elf32-sh-linux";
--    $cc .= " -m32";
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    7 +
+ arch/arm/mach-shmobile/setup-r8a7779.c        |  154 ++++++++++++++++++++++++++
+ 2 files changed, 161 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- renesas.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ renesas/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -5,6 +5,13 @@
+ #include <linux/pm_domain.h>
+ #include <linux/sh_eth.h>
  
- } elsif ($arch eq "powerpc") {
-     $local_regex = "^[0-9a-fA-F]+\\s+t\\s+(\\.?\\S+)";
--- 
-1.7.7.6
++/* HPB-DMA slave IDs */
++enum {
++	HPBDMA_SLAVE_DUMMY,
++	HPBDMA_SLAVE_SDHI0_TX,
++	HPBDMA_SLAVE_SDHI0_RX,
++};
++
+ struct platform_device;
+ 
+ struct r8a7779_pm_ch {
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -25,6 +25,7 @@
+ #include <linux/irqchip.h>
+ #include <linux/irqchip/arm-gic.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/dma-rcar-hpbdma.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/platform_device.h>
+@@ -605,6 +606,158 @@ static struct resource ether_resources[]
+ 	},
+ };
+ 
++/* HPB-DMA */
++
++/* Asynchronous mode register bits */
++#define HPB_DMAE_ASYNCMDR_ASMD43_MASK		BIT(23)	/* MMC1 */
++#define HPB_DMAE_ASYNCMDR_ASMD43_SINGLE		BIT(23)	/* MMC1 */
++#define HPB_DMAE_ASYNCMDR_ASMD43_MULTI		0	/* MMC1 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD43_MASK		BIT(22)	/* MMC1 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD43_BURST	BIT(22)	/* MMC1 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD43_NBURST	0	/* MMC1 */
++#define HPB_DMAE_ASYNCMDR_ASMD24_MASK		BIT(21)	/* MMC0 */
++#define HPB_DMAE_ASYNCMDR_ASMD24_SINGLE		BIT(21)	/* MMC0 */
++#define HPB_DMAE_ASYNCMDR_ASMD24_MULTI		0	/* MMC0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD24_MASK		BIT(20)	/* MMC0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD24_BURST	BIT(20)	/* MMC0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD24_NBURST	0	/* MMC0 */
++#define HPB_DMAE_ASYNCMDR_ASMD41_MASK		BIT(19)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD41_SINGLE		BIT(19)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD41_MULTI		0	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD41_MASK		BIT(18)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD41_BURST	BIT(18)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD41_NBURST	0	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD40_MASK		BIT(17)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD40_SINGLE		BIT(17)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD40_MULTI		0	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD40_MASK		BIT(16)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD40_BURST	BIT(16)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD40_NBURST	0	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD39_MASK		BIT(15)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD39_SINGLE		BIT(15)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD39_MULTI		0	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD39_MASK		BIT(14)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD39_BURST	BIT(14)	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD39_NBURST	0	/* SDHI3 */
++#define HPB_DMAE_ASYNCMDR_ASMD27_MASK		BIT(13)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD27_SINGLE		BIT(13)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD27_MULTI		0	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD27_MASK		BIT(12)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD27_BURST	BIT(12)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD27_NBURST	0	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD26_MASK		BIT(11)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD26_SINGLE		BIT(11)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD26_MULTI		0	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD26_MASK		BIT(10)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD26_BURST	BIT(10)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD26_NBURST	0	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD25_MASK		BIT(9)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD25_SINGLE		BIT(9)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD25_MULTI		0	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD25_MASK		BIT(8)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD25_BURST	BIT(8)	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD25_NBURST	0	/* SDHI2 */
++#define HPB_DMAE_ASYNCMDR_ASMD23_MASK		BIT(7)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD23_SINGLE		BIT(7)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD23_MULTI		0	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD23_MASK		BIT(6)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD23_BURST	BIT(6)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD23_NBURST	0	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD22_MASK		BIT(5)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD22_SINGLE		BIT(5)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD22_MULTI		0	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD22_MASK		BIT(4)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD22_BURST	BIT(4)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD22_NBURST	0	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD21_MASK		BIT(3)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD21_SINGLE		BIT(3)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD21_MULTI		0	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD21_MASK		BIT(2)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD21_BURST	BIT(2)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD21_NBURST	0	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD20_MASK		BIT(1)	/* SDHI1 */
++#define HPB_DMAE_ASYNCMDR_ASMD20_SINGLE		BIT(1)	/* SDHI1 */
++#define HPB_DMAE_ASYNCMDR_ASMD20_MULTI		0	/* SDHI1 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD20_MASK		BIT(0)	/* SDHI1 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD20_BURST	BIT(0)	/* SDHI1 */
++#define HPB_DMAE_ASYNCMDR_ASBTMD20_NBURST	0	/* SDHI1 */
++
++static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
++	{
++		.id	= HPBDMA_SLAVE_SDHI0_TX,
++		.addr	= 0xffe4c000 + 0x30,
++		.dcr	= HPB_DMAE_DCR_SPDS_16BIT |
++			  HPB_DMAE_DCR_DMDL |
++			  HPB_DMAE_DCR_DPDS_16BIT,
++		.rstr	= HPB_DMAE_ASYNCRSTR_ASRST21 |
++			  HPB_DMAE_ASYNCRSTR_ASRST22 |
++			  HPB_DMAE_ASYNCRSTR_ASRST23,
++		.mdr	= HPB_DMAE_ASYNCMDR_ASMD21_SINGLE |
++			  HPB_DMAE_ASYNCMDR_ASBTMD21_NBURST,
++		.mdm	= HPB_DMAE_ASYNCMDR_ASMD21_MASK |
++			  HPB_DMAE_ASYNCMDR_ASBTMD21_MASK,
++		.port	= 0x0D0C,
++		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
++		.dma_ch	= 21,
++	}, {
++		.id	= HPBDMA_SLAVE_SDHI0_RX,
++		.addr	= 0xffe4c000 + 0x30,
++		.dcr	= HPB_DMAE_DCR_SMDL |
++			  HPB_DMAE_DCR_SPDS_16BIT |
++			  HPB_DMAE_DCR_DPDS_16BIT,
++		.rstr	= HPB_DMAE_ASYNCRSTR_ASRST21 |
++			  HPB_DMAE_ASYNCRSTR_ASRST22 |
++			  HPB_DMAE_ASYNCRSTR_ASRST23,
++		.mdr	= HPB_DMAE_ASYNCMDR_ASMD22_SINGLE |
++			  HPB_DMAE_ASYNCMDR_ASBTMD22_NBURST,
++		.mdm	= HPB_DMAE_ASYNCMDR_ASMD22_MASK |
++			  HPB_DMAE_ASYNCMDR_ASBTMD22_MASK,
++		.port	= 0x0D0C,
++		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
++		.dma_ch	= 22,
++	},
++};
++
++static const struct hpb_dmae_channel hpb_dmae_channels[] = {
++	HPB_DMAE_CHANNEL(0x93, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
++	HPB_DMAE_CHANNEL(0x93, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
++};
++
++static struct hpb_dmae_pdata dma_platform_data __initdata = {
++	.slaves			= hpb_dmae_slaves,
++	.num_slaves		= ARRAY_SIZE(hpb_dmae_slaves),
++	.channels		= hpb_dmae_channels,
++	.num_channels		= ARRAY_SIZE(hpb_dmae_channels),
++	.ts_shift		= {
++		[XMIT_SZ_8BIT]	= 0,
++		[XMIT_SZ_16BIT]	= 1,
++		[XMIT_SZ_32BIT]	= 2,
++	},
++	.num_hw_channels	= 44,
++};
++
++static struct resource hpb_dmae_resources[] __initdata = {
++	/* Channel registers */
++	DEFINE_RES_MEM(0xffc08000, 0x1000),
++	/* Common registers */
++	DEFINE_RES_MEM(0xffc09000, 0x170),
++	/* Asynchronous reset registers */
++	DEFINE_RES_MEM(0xffc00300, 4),
++	/* Asynchronous mode registers */
++	DEFINE_RES_MEM(0xffc00400, 4),
++	/* IRQ for DMA channels */
++	DEFINE_RES_NAMED(gic_iid(0x8e), 12, NULL, IORESOURCE_IRQ),
++};
++
++static void __init r8a7779_register_hpb_dmae(void)
++{
++	platform_device_register_resndata(&platform_bus, "hpb-dma-engine", -1,
++					  hpb_dmae_resources,
++					  ARRAY_SIZE(hpb_dmae_resources),
++					  &dma_platform_data,
++					  sizeof(dma_platform_data));
++}
++
+ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -638,6 +791,7 @@ void __init r8a7779_add_standard_devices
+ 			    ARRAY_SIZE(r8a7779_devices_dt));
+ 	platform_add_devices(r8a7779_standard_devices,
+ 			    ARRAY_SIZE(r8a7779_standard_devices));
++	r8a7779_register_hpb_dmae();
+ }
+ 
+ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
 
-----------------------------patch end------------------------------------
-
-...
-> 
-> Next, I will make a confirmation for sh64 compiler whether is OK or not.
-> 
-> Welcome any members' suggestions or completions.
-> 
-> Thanks.
-> 
-...
->>>
->>> On 07/30/2013 10:15 AM, Chen Gang wrote:
->>>> Hello Maintainers:
->>>>
->>>> When I build sh64 with allmodconfig (without "EXTRA_CFLAGS=-W"), it
->>>> report the warnings below:
->>>>
->>>>     LD      arch/sh/kernel/cpu/sh5/built-in.o
->>>>   WARNING: arch/sh/kernel/cpu/sh5/built-in.o (.cranges): unexpected non-allocatable section.
->>>>   Did you forget to use "ax"/"aw" in a .S file?
->>>>   Note that for example <linux/init.h> contains
->>>>   section definitions for use in .S files.
->>>>
->>>> Can it cause real world issue ?
->>>>
->>>> Welcome any members suggestions or completions.
->>>>
->>>>
-
-I have built sh64 cross compiler, it also reports the related warning.
-
-It is not cross compiler's issue, need permit ".cranges' section for
-sh64 architecture in "scripts/mod/modpost.c".
-
-The related patch which I have sent:
-
-----------------------------patch begin----------------------------------
-
-diff --git a/scripts/mod/modpost.c b/scripts/mod/modpost.c
-index 6216434..8247979 100644
---- a/scripts/mod/modpost.c
-+++ b/scripts/mod/modpost.c
-@@ -821,6 +821,7 @@ static const char *section_white_list[]  {
- 	".comment*",
- 	".debug*",
-+	".cranges",		/* sh64 */
- 	".zdebug*",		/* Compressed debug sections. */
- 	".GCC-command-line",	/* mn10300 */
- 	".GCC.command.line",	/* record-gcc-switches, non mn10300 */
--- 
-1.7.7.6
-
-----------------------------patch end------------------------------------
-
->>>> Thanks.
->>>> --
->>>> Chen Gang.
->>>>
->>>
->>>
->>
->>
-> 
-> 
-
-Thanks.
--- 
-Chen Gang
