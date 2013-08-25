@@ -1,103 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 09 Aug 2013 01:33:47 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7779: add HPB-DMAC support
-Message-Id: <874nazodfr.wl%kuninori.morimoto.gx@renesas.com>
+From: Chris Ball <cjb@laptop.org>
+Date: Sun, 25 Aug 2013 04:09:14 +0000
+Subject: Re: [PATCH v4 5/7] mmc: SDHI: add DT compatibility strings for further SoCs
+Message-Id: <87fvtyqumt.fsf@octavius.laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308090140.14515.sergei.shtylyov@cogentembedded.com>
- <201308090142.08148.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308090142.08148.sergei.shtylyov@cogentembedded.com>
+References: <Pine.LNX.4.64.1307090940310.28812@axis700.grange>
+	<CANqRtoQY7hwEhN5XMXG5V234aXDFZ_kfei8ZQL+VMKaaxW=0DQ@mail.gmail.com>
+	<20130710011834.GA27240@verge.net.au> <20130717012247.GA2797@verge.net.au>
+In-Reply-To: <20130717012247.GA2797@verge.net.au> (Simon Horman's message of
+	"Wed, 17 Jul 2013 10:22:50 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, SH-Linux <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+Hi Simon,
 
-Hi
+On Tue, Jul 16 2013, Simon Horman wrote:
+>> Thanks, I have queued this up for v3.12 in the dt branch.
+>> It should appear in renesas-next-20130710
+>
+> Reviewing this, I now think that it should got through the MMC tree.
+> Chris, could you consider the patch below?
+>
+> From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+>
+> mmc: SDHI: add DT compatibility strings for further SoCs
+>
+> Add further OF compatibility strings to the SDHI driver to be able to
+> precisely control driver's behaviour on each of them.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> Acked-by: Magnus Damm <damm@opensource.se>
+> Acked-by: Simon Horman <horms@verge.net.au>
 
-> From: Max Filippov <max.filippov@cogentembedded.com>
-> 
-> Add HPB-DMAC platform device on R8A7779 SoC along with its slave and channel
-> configurations.
-> 
-> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-> [Sergei: moved *enum* declaring HPB-DMAC slave IDs from now removed <mach/dma.h>
-> to <mach/r8a7779.h>, removed #include <mach/dma.h> from setup-r8a7779.c, removed
-> SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[] and
-> hpb_dmae_channels[], added ASYNCMDR.ASBTMD20 and ASYNCMDR.ASMD20 fields/values,
-> fixed comments to ASYNCMDR.ASBTMD2[123]  and ASYNCMDR.ASMD2[123] fields/values,
-> moved comments after the element initializers of hpb_dmae_channels[].]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-(snip)
-> +/* HPB-DMA */
-> +
-> +/* Asynchronous mode register bits */
-> +#define	ASYNCMDR_ASMD41_MASK		BIT(19)	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD41_SINGLE		BIT(19)	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD41_MULTI		0	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD41_MASK		BIT(18)	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD41_BURST		BIT(18)	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD41_NBURST	0	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD40_MASK		BIT(17)	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD40_SINGLE		BIT(17)	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD40_MULTI		0	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD40_MASK		BIT(16)	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD40_BURST		BIT(16)	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD40_NBURST	0	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD39_MASK		BIT(15)	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD39_SINGLE		BIT(15)	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD39_MULTI		0	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD39_MASK		BIT(14)	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD39_BURST		BIT(14)	/* SDHI3 */
-> +#define	ASYNCMDR_ASBTMD39_NBURST	0	/* SDHI3 */
-> +#define	ASYNCMDR_ASMD27_MASK		BIT(13)	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD27_SINGLE		BIT(13)	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD27_MULTI		0	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD27_MASK		BIT(12)	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD27_BURST		BIT(12)	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD27_NBURST	0	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD26_MASK		BIT(11)	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD26_SINGLE		BIT(11)	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD26_MULTI		0	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD26_MASK		BIT(10)	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD26_BURST		BIT(10)	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD26_NBURST	0	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD25_MASK		BIT(9)	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD25_SINGLE		BIT(9)	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD25_MULTI		0	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD25_MASK		BIT(8)	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD25_BURST		BIT(8)	/* SDHI2 */
-> +#define	ASYNCMDR_ASBTMD25_NBURST	0	/* SDHI2 */
-> +#define	ASYNCMDR_ASMD23_MASK		BIT(7)	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD23_SINGLE		BIT(7)	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD23_MULTI		0	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD23_MASK		BIT(6)	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD23_BURST		BIT(6)	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD23_NBURST	0	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD22_MASK		BIT(5)	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD22_SINGLE		BIT(5)	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD22_MULTI		0	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD22_MASK		BIT(4)	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD22_BURST		BIT(4)	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD22_NBURST	0	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD21_MASK		BIT(3)	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD21_SINGLE		BIT(3)	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD21_MULTI		0	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD21_MASK		BIT(2)	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD21_BURST		BIT(2)	/* SDHI0 */
-> +#define	ASYNCMDR_ASBTMD21_NBURST	0	/* SDHI0 */
-> +#define	ASYNCMDR_ASMD20_MASK		BIT(1)	/* SDHI1 */
-> +#define	ASYNCMDR_ASMD20_SINGLE		BIT(1)	/* SDHI1 */
-> +#define	ASYNCMDR_ASMD20_MULTI		0	/* SDHI1 */
-> +#define	ASYNCMDR_ASBTMD20_MASK		BIT(0)	/* SDHI1 */
-> +#define	ASYNCMDR_ASBTMD20_BURST		BIT(0)	/* SDHI1 */
-> +#define	ASYNCMDR_ASBTMD20_NBURST	0	/* SDHI1 */
+Sorry for the delay -- this is in mmc-next for 3.12 now.  Thanks,
 
-Your "r8a7778"'s HPB-DMAC patch had "used" ASYNCMDR_xxx only,
-and here, r8a7779 seems have "all" ASYNCMDR_xxx.
-I don't care about it,
-but, above "all" settings seems doesn't have 
-channel 43 (= 23/22 bit) and channel 24 (= 21/20 bit).
-
-Best regards
----
-Kuninori Morimoto
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
