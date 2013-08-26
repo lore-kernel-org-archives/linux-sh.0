@@ -1,138 +1,308 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 22 Aug 2013 21:36:36 +0000
-Subject: [PATCH v6 1/3] ARM: shmobile: r8a7778: add VIN support
-Message-Id: <201308230136.36947.sergei.shtylyov@cogentembedded.com>
+From: Christoph Lameter <cl@linux.com>
+Date: Mon, 26 Aug 2013 21:56:18 +0000
+Subject: [guv v2 27/31] sh: Replace __get_cpu_var uses throughout the kernel
+Message-Id: <00000140bca09c50-26aada97-96a9-423b-936b-15a296842a76-000000@email.amazonses.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
+References: <20130826204351.725357339@linux.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Tejun Heo <tj@kernel.org>
+Cc: akpm@linuxfoundation.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, Steven Rostedt <srostedt@redhat.com>, linux-kernel@vger.kernel.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+__get_cpu_var() is used for multiple purposes in the kernel source. One of them is
+address calculation via the form &__get_cpu_var(x). This calculates the address for
+the instance of the percpu variable of the current processor based on an offset.
 
-Add VIN clocks and platform devices on R8A7778 SoC; add function to register
-the VIN platform devices.
+Others usage cases are for storing and retrieving data from the current processors percpu area.
+__get_cpu_var() can be used as an lvalue when writing data or on the right side of an assignment.
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: added 'id' parameter check to r8a7778_add_vin_device(), used '*pdata'
-in *sizeof* operator, and added an empty line there; renamed some variables,
-annotated 'vin[01]_info' and vin[01]_resources[] as '__initdata'.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+__get_cpu_var() is defined as :
 
----
-Changes since version 5:
-- added an empty line in r8a7778_add_vin_device();
-- resolved reject, refreshed the patch.
 
-Changes since version 4:
-- resolved reject, refreshed the patch.
+#define __get_cpu_var(var) (*this_cpu_ptr(&(var)))
 
-Changes since version 3:
-- changed the VIN platform device names to be R8A7778 specific; 
-- resolved reject in <mach/r8a7778.h>  due to USB patch rework.
 
-Changes from version 2:
-- annotated 'vin[01]_info' and vin[01]_resources[] as '__initdata' since they're
-  kmemdup()'ed while registering the platform devices anyway;
-- refreshed the patch.
 
- arch/arm/mach-shmobile/clock-r8a7778.c        |    5 +++
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    3 ++
- arch/arm/mach-shmobile/setup-r8a7778.c        |   34 ++++++++++++++++++++++++++
- 3 files changed, 42 insertions(+)
+__get_cpu_var() always only does a address determination. However, store and retrieve operations
+could use a segment prefix (or global register on other platforms) to avoid the address calculation.
 
-Index: media_tree/arch/arm/mach-shmobile/clock-r8a7778.c
-=================================--- media_tree.orig/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ media_tree/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -106,6 +106,7 @@ enum {
- 	MSTP331,
- 	MSTP323, MSTP322, MSTP321,
- 	MSTP114,
-+	MSTP110, MSTP109,
- 	MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -119,6 +120,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP114] = SH_CLK_MSTP32(&p_clk, MSTPCR1, 14, 0), /* Ether */
-+	[MSTP110] = SH_CLK_MSTP32(&s_clk, MSTPCR1, 10, 0), /* VIN0 */
-+	[MSTP109] = SH_CLK_MSTP32(&s_clk, MSTPCR1,  9, 0), /* VIN1 */
- 	[MSTP100] = SH_CLK_MSTP32(&p_clk, MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP030] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 30, 0), /* I2C0 */
- 	[MSTP029] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 29, 0), /* I2C1 */
-@@ -146,6 +149,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("r8a7778-vin.0", &mstp_clks[MSTP110]), /* VIN0 */
-+	CLKDEV_DEV_ID("r8a7778-vin.1", &mstp_clks[MSTP109]), /* VIN1 */
- 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-Index: media_tree/arch/arm/mach-shmobile/include/mach/r8a7778.h
-=================================--- media_tree.orig/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ media_tree/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -22,6 +22,7 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/sh_eth.h>
- #include <linux/platform_data/usb-rcar-phy.h>
-+#include <linux/platform_data/camera-rcar.h>
+this_cpu_write() and this_cpu_read() can directly take an offset into a percpu area and use
+optimized assembly code to read and write per cpu variables.
+
+
+This patch converts __get_cpu_var into either and explicit address calculation using this_cpu_ptr()
+or into a use of this_cpu operations that use the offset. Thereby address calcualtions are avoided
+and less registers are used when code is generated.
+
+At the end of the patchset all uses of __get_cpu_var have been removed so the macro is removed too.
+
+The patchset includes passes over all arches as well. Once these operations are used throughout then
+specialized macros can be defined in non -x86 arches as well in order to optimize per cpu access by
+f.e. using a global register that may be set to the per cpu base.
+
+
+
+
+Transformations done to __get_cpu_var()
+
+
+1. Determine the address of the percpu instance of the current processor.
+
+	DEFINE_PER_CPU(int, y);
+	int *x = &__get_cpu_var(y);
+
+    Converts to
+
+	int *x = this_cpu_ptr(&y);
+
+
+2. Same as #1 but this time an array structure is involved.
+
+	DEFINE_PER_CPU(int, y[20]);
+	int *x = __get_cpu_var(y);
+
+    Converts to
+
+	int *x = this_cpu_ptr(y);
+
+
+3. Retrieve the content of the current processors instance of a per cpu variable.
+
+	DEFINE_PER_CPU(int, u);
+	int x = __get_cpu_var(y)
+
+   Converts to
+
+	int x = __this_cpu_read(y);
+
+
+4. Retrieve the content of a percpu struct
+
+	DEFINE_PER_CPU(struct mystruct, y);
+	struct mystruct x = __get_cpu_var(y);
+
+   Converts to
+
+	memcpy(this_cpu_ptr(&y), x, sizeof(x));
+
+
+5. Assignment to a per cpu variable
+
+	DEFINE_PER_CPU(int, y)
+	__get_cpu_var(y) = x;
+
+   Converts to
+
+	this_cpu_write(y, x);
+
+
+6. Increment/Decrement etc of a per cpu variable
+
+	DEFINE_PER_CPU(int, y);
+	__get_cpu_var(y)++
+
+   Converts to
+
+	this_cpu_inc(y)
+
+
+
+
+
+Index: linux/arch/sh/kernel/hw_breakpoint.c
+=================================--- linux.orig/arch/sh/kernel/hw_breakpoint.c	2013-08-26 13:25:18.000000000 -0500
++++ linux/arch/sh/kernel/hw_breakpoint.c	2013-08-26 13:28:32.265604741 -0500
+@@ -52,7 +52,7 @@ int arch_install_hw_breakpoint(struct pe
+ 	int i;
  
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
-@@ -30,6 +31,8 @@ extern void r8a7778_add_usb_phy_device(s
- extern void r8a7778_add_i2c_device(int id);
- extern void r8a7778_add_hspi_device(int id);
- extern void r8a7778_add_mmc_device(struct sh_mmcif_plat_data *info);
-+extern void r8a7778_add_vin_device(int id,
-+				   struct rcar_vin_platform_data *pdata);
+ 	for (i = 0; i < sh_ubc->num_events; i++) {
+-		struct perf_event **slot = &__get_cpu_var(bp_per_reg[i]);
++		struct perf_event **slot = this_cpu_ptr(&bp_per_reg[i]);
  
- extern void r8a7778_init_late(void);
- extern void r8a7778_init_delay(void);
-Index: media_tree/arch/arm/mach-shmobile/setup-r8a7778.c
-=================================--- media_tree.orig/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ media_tree/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -333,6 +333,40 @@ void __init r8a7778_add_mmc_device(struc
- 		info, sizeof(*info));
+ 		if (!*slot) {
+ 			*slot = bp;
+@@ -84,7 +84,7 @@ void arch_uninstall_hw_breakpoint(struct
+ 	int i;
+ 
+ 	for (i = 0; i < sh_ubc->num_events; i++) {
+-		struct perf_event **slot = &__get_cpu_var(bp_per_reg[i]);
++		struct perf_event **slot = this_cpu_ptr(&bp_per_reg[i]);
+ 
+ 		if (*slot = bp) {
+ 			*slot = NULL;
+Index: linux/arch/sh/kernel/kprobes.c
+=================================--- linux.orig/arch/sh/kernel/kprobes.c	2013-08-26 13:25:18.000000000 -0500
++++ linux/arch/sh/kernel/kprobes.c	2013-08-26 13:28:32.265604741 -0500
+@@ -102,7 +102,7 @@ int __kprobes kprobe_handle_illslot(unsi
+ 
+ void __kprobes arch_remove_kprobe(struct kprobe *p)
+ {
+-	struct kprobe *saved = &__get_cpu_var(saved_next_opcode);
++	struct kprobe *saved = this_cpu_ptr(&saved_next_opcode);
+ 
+ 	if (saved->addr) {
+ 		arch_disarm_kprobe(p);
+@@ -111,7 +111,7 @@ void __kprobes arch_remove_kprobe(struct
+ 		saved->addr = NULL;
+ 		saved->opcode = 0;
+ 
+-		saved = &__get_cpu_var(saved_next_opcode2);
++		saved = this_cpu_ptr(&saved_next_opcode2);
+ 		if (saved->addr) {
+ 			arch_disarm_kprobe(saved);
+ 
+@@ -129,14 +129,14 @@ static void __kprobes save_previous_kpro
+ 
+ static void __kprobes restore_previous_kprobe(struct kprobe_ctlblk *kcb)
+ {
+-	__get_cpu_var(current_kprobe) = kcb->prev_kprobe.kp;
++	__this_cpu_write(current_kprobe, kcb->prev_kprobe.kp);
+ 	kcb->kprobe_status = kcb->prev_kprobe.status;
  }
  
-+/* VIN */
-+#define R8A7778_VIN(idx)						\
-+static struct resource vin##idx##_resources[] __initdata = {		\
-+	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
-+	DEFINE_RES_IRQ(gic_iid(0x5a)),					\
-+};									\
-+									\
-+static struct platform_device_info vin##idx##_info __initdata = {	\
-+	.parent		= &platform_bus,				\
-+	.name		= "r8a7778-vin",				\
-+	.id		= idx,						\
-+	.res		= vin##idx##_resources,				\
-+	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
-+	.dma_mask	= DMA_BIT_MASK(32),				\
-+}
-+
-+R8A7778_VIN(0);
-+R8A7778_VIN(1);
-+
-+static struct platform_device_info *vin_info_table[] __initdata = {
-+	&vin0_info,
-+	&vin1_info,
-+};
-+
-+void __init r8a7778_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
-+{
-+	BUG_ON(id < 0 || id > 1);
-+
-+	vin_info_table[id]->data = pdata;
-+	vin_info_table[id]->size_data = sizeof(*pdata);
-+
-+	platform_device_register_full(vin_info_table[id]);
-+}
-+
- void __init r8a7778_add_standard_devices(void)
+ static void __kprobes set_current_kprobe(struct kprobe *p, struct pt_regs *regs,
+ 					 struct kprobe_ctlblk *kcb)
  {
- 	int i;
+-	__get_cpu_var(current_kprobe) = p;
++	__this_cpu_write(current_kprobe, p);
+ }
+ 
+ /*
+@@ -146,15 +146,15 @@ static void __kprobes set_current_kprobe
+  */
+ static void __kprobes prepare_singlestep(struct kprobe *p, struct pt_regs *regs)
+ {
+-	__get_cpu_var(saved_current_opcode).addr = (kprobe_opcode_t *)regs->pc;
++	__this_cpu_write(saved_current_opcode.addr, (kprobe_opcode_t *)regs->pc);
+ 
+ 	if (p != NULL) {
+ 		struct kprobe *op1, *op2;
+ 
+ 		arch_disarm_kprobe(p);
+ 
+-		op1 = &__get_cpu_var(saved_next_opcode);
+-		op2 = &__get_cpu_var(saved_next_opcode2);
++		op1 = this_cpu_ptr(&saved_next_opcode);
++		op2 = this_cpu_ptr(&saved_next_opcode2);
+ 
+ 		if (OPCODE_JSR(p->opcode) || OPCODE_JMP(p->opcode)) {
+ 			unsigned int reg_nr = ((p->opcode >> 8) & 0x000F);
+@@ -249,7 +249,7 @@ static int __kprobes kprobe_handler(stru
+ 			kcb->kprobe_status = KPROBE_REENTER;
+ 			return 1;
+ 		} else {
+-			p = __get_cpu_var(current_kprobe);
++			p = __this_cpu_read(current_kprobe);
+ 			if (p->break_handler && p->break_handler(p, regs)) {
+ 				goto ss_probe;
+ 			}
+@@ -336,9 +336,9 @@ int __kprobes trampoline_probe_handler(s
+ 			continue;
+ 
+ 		if (ri->rp && ri->rp->handler) {
+-			__get_cpu_var(current_kprobe) = &ri->rp->kp;
++			__this_cpu_write(current_kprobe, &ri->rp->kp);
+ 			ri->rp->handler(ri, regs);
+-			__get_cpu_var(current_kprobe) = NULL;
++			__this_cpu_write(current_kprobe, NULL);
+ 		}
+ 
+ 		orig_ret_address = (unsigned long)ri->ret_addr;
+@@ -383,19 +383,19 @@ static int __kprobes post_kprobe_handler
+ 		cur->post_handler(cur, regs, 0);
+ 	}
+ 
+-	p = &__get_cpu_var(saved_next_opcode);
++	p = this_cpu_ptr(&saved_next_opcode);
+ 	if (p->addr) {
+ 		arch_disarm_kprobe(p);
+ 		p->addr = NULL;
+ 		p->opcode = 0;
+ 
+-		addr = __get_cpu_var(saved_current_opcode).addr;
+-		__get_cpu_var(saved_current_opcode).addr = NULL;
++		addr = __this_cpu_read(saved_current_opcode).addr;
++		__this_cpu_write(saved_current_opcode.addr, NULL);
+ 
+ 		p = get_kprobe(addr);
+ 		arch_arm_kprobe(p);
+ 
+-		p = &__get_cpu_var(saved_next_opcode2);
++		p = this_cpu_ptr(&saved_next_opcode2);
+ 		if (p->addr) {
+ 			arch_disarm_kprobe(p);
+ 			p->addr = NULL;
+@@ -511,7 +511,7 @@ int __kprobes kprobe_exceptions_notify(s
+ 				if (kprobe_handler(args->regs)) {
+ 					ret = NOTIFY_STOP;
+ 				} else {
+-					p = __get_cpu_var(current_kprobe);
++					p = __this_cpu_read(current_kprobe);
+ 					if (p->break_handler &&
+ 					    p->break_handler(p, args->regs))
+ 						ret = NOTIFY_STOP;
+Index: linux/arch/sh/kernel/localtimer.c
+=================================--- linux.orig/arch/sh/kernel/localtimer.c	2013-08-26 13:25:18.000000000 -0500
++++ linux/arch/sh/kernel/localtimer.c	2013-08-26 13:28:32.265604741 -0500
+@@ -32,7 +32,7 @@ static DEFINE_PER_CPU(struct clock_event
+  */
+ void local_timer_interrupt(void)
+ {
+-	struct clock_event_device *clk = &__get_cpu_var(local_clockevent);
++	struct clock_event_device *clk = this_cpu_ptr(&local_clockevent);
+ 
+ 	irq_enter();
+ 	clk->event_handler(clk);
+Index: linux/arch/sh/kernel/perf_event.c
+=================================--- linux.orig/arch/sh/kernel/perf_event.c	2013-08-26 13:25:18.000000000 -0500
++++ linux/arch/sh/kernel/perf_event.c	2013-08-26 13:28:32.265604741 -0500
+@@ -227,7 +227,7 @@ again:
+ 
+ static void sh_pmu_stop(struct perf_event *event, int flags)
+ {
+-	struct cpu_hw_events *cpuc = &__get_cpu_var(cpu_hw_events);
++	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
+ 	struct hw_perf_event *hwc = &event->hw;
+ 	int idx = hwc->idx;
+ 
+@@ -245,7 +245,7 @@ static void sh_pmu_stop(struct perf_even
+ 
+ static void sh_pmu_start(struct perf_event *event, int flags)
+ {
+-	struct cpu_hw_events *cpuc = &__get_cpu_var(cpu_hw_events);
++	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
+ 	struct hw_perf_event *hwc = &event->hw;
+ 	int idx = hwc->idx;
+ 
+@@ -262,7 +262,7 @@ static void sh_pmu_start(struct perf_eve
+ 
+ static void sh_pmu_del(struct perf_event *event, int flags)
+ {
+-	struct cpu_hw_events *cpuc = &__get_cpu_var(cpu_hw_events);
++	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
+ 
+ 	sh_pmu_stop(event, PERF_EF_UPDATE);
+ 	__clear_bit(event->hw.idx, cpuc->used_mask);
+@@ -272,7 +272,7 @@ static void sh_pmu_del(struct perf_event
+ 
+ static int sh_pmu_add(struct perf_event *event, int flags)
+ {
+-	struct cpu_hw_events *cpuc = &__get_cpu_var(cpu_hw_events);
++	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
+ 	struct hw_perf_event *hwc = &event->hw;
+ 	int idx = hwc->idx;
+ 	int ret = -EAGAIN;
+Index: linux/arch/sh/kernel/smp.c
+=================================--- linux.orig/arch/sh/kernel/smp.c	2013-08-26 13:25:18.000000000 -0500
++++ linux/arch/sh/kernel/smp.c	2013-08-26 13:28:32.265604741 -0500
+@@ -111,7 +111,7 @@ void play_dead_common(void)
+ 	irq_ctx_exit(raw_smp_processor_id());
+ 	mb();
+ 
+-	__get_cpu_var(cpu_state) = CPU_DEAD;
++	__this_cpu_write(cpu_state, CPU_DEAD);
+ 	local_irq_disable();
+ }
+ 
+
