@@ -1,64 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:41 +0000
-Subject: [PATCH v3 11/14] mmc: sh_mobile_sdhi: Remove .get_cd() callback from platform data
-Message-Id: <1375958324-29683-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 27 Aug 2013 09:31:18 +0000
+Subject: [PATCH] DMA: shdma: fix compiler warning after a bad merge
+Message-Id: <Pine.LNX.4.64.1308271130360.11515@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "Koul, Vinod" <vinod.koul@intel.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-All platforms pass the CD GPIO number to the driver in the .cd_gpio
-field. The .get_cd() callback isn't used anymore, remove it.
+A recent merge commit
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+commit ba1e06e3dff9a0bb0758d169e50cbb04a67a402c
+Author: Vinod Koul <vinod.koul@intel.com>
+
+    Merge branch 'topic/sh' into next
+
+introduced a compiler warning:
+
+drivers/dma/sh/shdmac.c: In function 'sh_dmae_probe':
+drivers/dma/sh/shdmac.c:697: warning: assignment discards qualifiers from pointer target type
+
+This patch re-adds the dropped "const" qualifier and fixes the warning.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c  | 9 ---------
- include/linux/mmc/sh_mobile_sdhi.h | 1 -
- 2 files changed, 10 deletions(-)
+ drivers/dma/sh/shdmac.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index ebea749..663a672 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -77,13 +77,6 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
- 	p->set_pwr(pdev, state);
- }
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index dcd344e..1069e88 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -684,7 +684,7 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
  
--static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
--{
--	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--
--	return p->get_cd(pdev);
--}
--
- static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+ static int sh_dmae_probe(struct platform_device *pdev)
  {
- 	int timeout = 1000;
-@@ -182,8 +175,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->cd_gpio = p->cd_gpio;
- 		if (p->set_pwr)
- 			mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
--		if (p->get_cd)
--			mmc_data->get_cd = sh_mobile_sdhi_get_cd;
- 
- 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
- 			/*
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index b76bcf0..f31c692 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -26,7 +26,6 @@ struct sh_mobile_sdhi_info {
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
- 	void (*set_pwr)(struct platform_device *pdev, int state);
--	int (*get_cd)(struct platform_device *pdev);
- 
- 	/* callbacks for board specific setup code */
- 	int (*init)(struct platform_device *pdev,
+-	struct sh_dmae_pdata *pdata;
++	const struct sh_dmae_pdata *pdata;
+ 	unsigned long irqflags = IRQF_DISABLED,
+ 		chan_flag[SH_DMAE_MAX_CHANNELS] = {};
+ 	int errirq, chan_irq[SH_DMAE_MAX_CHANNELS];
 -- 
-1.8.1.5
+1.7.2.5
 
