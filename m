@@ -1,89 +1,126 @@
-From: Sudeep KarkadaNagesha <Sudeep.KarkadaNagesha@arm.com>
-Date: Wed, 28 Aug 2013 13:12:46 +0000
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 28 Aug 2013 18:16:31 +0000
 Subject: Re: [PATCH 01/02] ARM: shmobile: Add r8a73a4 SMP support using APMU code
-Message-Id: <521DF74E.6090902@arm.com>
+Message-Id: <20130828181631.GE8607@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130807225531.9856.18974.sendpatchset@w520>
- <20130807225540.9856.67383.sendpatchset@w520>	<52162638.5080107@arm.com>
- <CANqRtoQaSJN+DSv9Uj=Dxv6RutS4aYVY8AM9J=6LqUQjyo3STw@mail.gmail.com>
-In-Reply-To: <CANqRtoQaSJN+DSv9Uj=Dxv6RutS4aYVY8AM9J=6LqUQjyo3STw@mail.gmail.com>
+ <20130807225540.9856.67383.sendpatchset@w520>
+ <CANqRtoQmoOWwTyed4-KnWPJfWV8rLMHLCSiN1a5v6=4Bmj7Z6A@mail.gmail.com>
+ <20130821085714.GH20014@verge.net.au>
+ <20130822054834.GG5151@quad.lixom.net>
+ <CANqRtoTCiRzJFjHX2xvyPdz4EnJspMTfRt_a9tL3qszfFFzpRw@mail.gmail.com>
+In-Reply-To: <CANqRtoTCiRzJFjHX2xvyPdz4EnJspMTfRt_a9tL3qszfFFzpRw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 28/08/13 07:13, Magnus Damm wrote:
-> Hi again Sudeep,
+On Wed, Aug 28, 2013 at 03:26:56PM +0900, Magnus Damm wrote:
+> Hi Olof,
 > 
-> On Thu, Aug 22, 2013 at 11:54 PM, Sudeep KarkadaNagesha
-> <Sudeep.KarkadaNagesha@arm.com> wrote:
->> On 07/08/13 23:55, Magnus Damm wrote:
->>> From: Magnus Damm <damm@opensource.se>
->>>
->>> Add r8a73a4 SMP support using the shared APMU code. To enable
->>> SMP the r8a73a4 specific DTS needs to be updated to include
->>> CPU cores, and this is happening in a separate patch.
->>>
->>> Signed-off-by: Magnus Damm <damm@opensource.se>
->>> ---
->>>
->>>  arch/arm/mach-shmobile/Makefile               |    1
->>>  arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1
->>>  arch/arm/mach-shmobile/setup-r8a73a4.c        |    3 +
->>>  arch/arm/mach-shmobile/smp-r8a73a4.c          |   75 +++++++++++++++++++++++++
->>>  4 files changed, 80 insertions(+)
->>>
->>> --- 0001/arch/arm/mach-shmobile/Makefile
->>> +++ work/arch/arm/mach-shmobile/Makefile      2013-08-07 20:07:31.000000000 +0900
->>> @@ -33,6 +33,7 @@ endif
->>>  # SMP objects
->>>  smp-y                                := platsmp.o headsmp.o
->>>  smp-$(CONFIG_ARCH_SH73A0)    += smp-sh73a0.o headsmp-scu.o platsmp-scu.o
->>> +smp-$(CONFIG_ARCH_R8A73A4)   += smp-r8a73a4.o platsmp-apmu.o
->> platsmp-apmu.c is introducing new bindings which IMO is not required.
+> On Thu, Aug 22, 2013 at 2:48 PM, Olof Johansson <olof@lixom.net> wrote:
+> > [+khilman]
+> >
+> > Hi,
+> >
+> > On Wed, Aug 21, 2013 at 05:57:15PM +0900, Simon Horman wrote:
+> >> On Thu, Aug 08, 2013 at 02:52:32PM +0900, Magnus Damm wrote:
+> >> > Hi Arnd and Olof,
+> >> >
+> >> > On Thu, Aug 8, 2013 at 7:55 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> >> > > From: Magnus Damm <damm@opensource.se>
+> >> > >
+> >> > > Add r8a73a4 SMP support using the shared APMU code. To enable
+> >> > > SMP the r8a73a4 specific DTS needs to be updated to include
+> >> > > CPU cores, and this is happening in a separate patch.
+> >> > >
+> >> > > Signed-off-by: Magnus Damm <damm@opensource.se>
+> >> > > ---
+> >> > >
+> >> > >  arch/arm/mach-shmobile/Makefile               |    1
+> >> > >  arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1
+> >> > >  arch/arm/mach-shmobile/setup-r8a73a4.c        |    3 +
+> >> > >  arch/arm/mach-shmobile/smp-r8a73a4.c          |   75 +++++++++++++++++++++++++
+> >> > >  4 files changed, 80 insertions(+)
+> >> > >
+> >> > > --- 0001/arch/arm/mach-shmobile/Makefile
+> >> > > +++ work/arch/arm/mach-shmobile/Makefile        2013-08-07 20:07:31.000000000 +0900
+> >> > > @@ -33,6 +33,7 @@ endif
+> >> > >  # SMP objects
+> >> > >  smp-y                          := platsmp.o headsmp.o
+> >> > >  smp-$(CONFIG_ARCH_SH73A0)      += smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+> >> > > +smp-$(CONFIG_ARCH_R8A73A4)     += smp-r8a73a4.o platsmp-apmu.o
+> >> > >  smp-$(CONFIG_ARCH_R8A7779)     += smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+> >> > >  smp-$(CONFIG_ARCH_EMEV2)       += smp-emev2.o headsmp-scu.o platsmp-scu.o
+> >> > >
+> >> > > --- 0008/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+> >> > > +++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h  2013-08-07 20:08:02.000000000 +0900
+> >> > > @@ -6,5 +6,6 @@ void r8a73a4_add_dt_devices(void);
+> >> > >  void r8a73a4_clock_init(void);
+> >> > >  void r8a73a4_pinmux_init(void);
+> >> > >  void r8a73a4_init_early(void);
+> >> > > +extern struct smp_operations r8a73a4_smp_ops;
+> >> > >
+> >> > >  #endif /* __ASM_R8A73A4_H__ */
+> >> > > --- 0008/arch/arm/mach-shmobile/setup-r8a73a4.c
+> >> > > +++ work/arch/arm/mach-shmobile/setup-r8a73a4.c 2013-08-07 20:07:48.000000000 +0900
+> >> > > @@ -212,6 +212,9 @@ void __init r8a73a4_init_early(void)
+> >> > >  #ifndef CONFIG_ARM_ARCH_TIMER
+> >> > >         shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
+> >> > >  #endif
+> >> > > +#ifdef CONFIG_SMP
+> >> > > +       smp_set_ops(&r8a73a4_smp_ops);
+> >> > > +#endif
+> >> > >  }
+> >> >
+> >> > Arnd or Olof, may I ask for your advice here?
+> >> >
+> >> > I think it's quite nice to use smp_set_ops() in ->init_early() to
+> >> > install the per-SoC SMP operations. I prefer that over using the
+> >> > smp_ops directly in the per-board DT_MACHINE_START. Which way do you
+> >> > prefer?
+> >>
+> >> Olof, Arnd, Ping.
+> >
+> >
+> > Sorry, missed the original question when it was posted.
+> >
+> > I guess I don't see the benefit of doing it in code vs smp_init? You
+> > already have a DT_MACHINE section for r8a73a4 in this case.
 > 
-> I guess we will have to discuss a bit more how to support the APMU
-> hardware. Regarding using DT or static configuration, I believe
-> starting out with static and incrementally adding DT binding support
-> is the easiest way forward.
+> The benefit would be to reduce the number of callbacks used in
+> DT_MACHINE. Today on mach-shmobile we are already using ->init_early()
+> for delay and timer setup, and if we also can invoke smp_set_ops()
+> there then we would have per-SoC SMP support hooked in without having
+> to use either ->smp or ->smp_init() for every board.
 > 
-As I mentioned in the other email, you need use APMU as part of MCPM
-platform ops. You still need APMU DT node and all the necessary
-functions to access it. I said only 'cpus' property in DT node is
-unnecessary and the way its used.
+> As you may have seen we have quite a few DT_MACHINE entires in
+> mach-shmobile, and I'd like to keep them as small and consistent as
+> ever possible. I can't really see how a board specific DT_MACHINE has
+> anything to do with state of SMP on a particular SoC, so for any given
+> board I'd prefer to keep the board code without any SMP dependencies
+> and simply use ->init_early() to setup delay, timers and SMP.
+> 
+> > If you use .smp_init = smp_init_ops(r8a73a4_smp_ops) then there's no
+> > ifdef needed down in the DT_MACHINE section either.
+> 
+> It's nice to not use the #ifdefs, I agree. I'd like to have a dummy
+> stub for smp_set_ops() too in the case of CONFIG_SMP=n, that would
+> make the above code a bit prettier.
+> 
+> I hope this clarifies the reasons behind my question!
+> 
+> If I understand you correctly then I guess you prefer keeping the code
+> as is with DT_MACHINE ->smp = smp_ops(foo) over using smp_set_ops() in
+> ->init_early()?
 
->> I have responded to that patch, but it would be nice to combine that
->> patch in a single series for easier review for at least one platform
->> using it.
-> 
-> Good idea. I will resend a the next version as a single series to make
-> future review easier.
-> 
-Good.
+Yes, that was my initial preference. However, that was based on the assumption
+that you would keep the current setup with several DT_MACHINE entries.
 
-[...]
->>> +}
->>> +
->>> +struct smp_operations r8a73a4_smp_ops __initdata = {
->>> +     .smp_prepare_cpus       = r8a73a4_smp_prepare_cpus,
->>> +     .smp_boot_secondary     = shmobile_smp_apmu_boot_secondary,
->>> +#ifdef CONFIG_HOTPLUG_CPU
->>> +     .cpu_disable            = shmobile_smp_cpu_disable,
->>> +     .cpu_die                = shmobile_smp_apmu_cpu_die,
->>> +     .cpu_kill               = shmobile_smp_apmu_cpu_kill,
->>> +#endif
->>> +};
->> If you are running Linux in secure mode, you can reuse mcpm_smp_ops and
->> define these as part of mcpm_platform_ops
-> 
-> Thanks for pointing that out, but we're not running in secure more.
-> 
-Again I am not sure if you want to avoid supporting PSCI. I understand
-it needs secure firmware but that's unavoidable if any of the CPU PM
-functionality on that hardware is accessible only in secure mode and you
-are running Linux in non-secure mode.
-
-Regards,
-Sudeep
+If you think you will shortly start to distill down and only keep a couple of
+DT_MACHINE structures (and start sharing them between SoCs), then doing this in
+code makes sense. However, if that is further out than a release or two then
+I think doing it in DT_MACHINE makes more sense.
 
 
+-Olof
