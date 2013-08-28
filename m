@@ -1,127 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 22 Aug 2013 21:25:25 +0000
-Subject: [PATCH v5 2/3] ARM: shmobile: Marzen: add VIN and ADV7180 support
-Message-Id: <201308230125.26064.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:39:20 +0000
+Subject: [GIT PULL 0/3] Fourth round of Renesas ARM based SoC cleanups for v3.12
+Message-Id: <cover.1377651687.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308230119.13783.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Hi Kevin, Hi Olof, Hi Arnd,
 
-Add ADV7180 platform devices on the Marzen board, configure VIN1/3 pins, and
-register VIN1/3 devices with the ADV7180 specific platform data.
+please consider this fourth round of Renesas ARM based SoC cleanups for v3.12.
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-[Sergei: removed superfluous tabulation and inserted empty lines in the  macro
-definition, updated the copyrights, annotated VIN platform data as '__initdata']
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+It is based on renesas-cleanup3-for-v3.12 ("Third round of ARM based SoC SMP updates for v3.12") which you have previously pulled.
 
----
-Changes since version 3:
-- changed the VIN platform device names to be R8A7779 specific.
+I apologise that this and other pull requests that I will send today
+are rather later in the cycle than I would like. This is primarily due
+to a combination of my summer vacation and wanting to let the patches
+sit in next for a while.
 
-Changes since version 2:
-- annotated 'vin_platform_data' as '__initdata' since they're kmemdup()'ed while
-  registering the platform devices anyway.
 
-Changes since the original posting:
-- used a macro to define the camera platform devices;
-- updated the copyrights;
-- refreshed the patch.
+The following changes since commit 282b583f752f996ee5c33b0cdc18adf3b5094ee0:
 
- arch/arm/mach-shmobile/board-marzen.c |   44 +++++++++++++++++++++++++++++++++-
- 1 file changed, 43 insertions(+), 1 deletion(-)
+  ARM: shmobile: sh73a0: Remove global GPIO_NR definition (2013-08-06 18:07:13 +0900)
 
-Index: media_tree/arch/arm/mach-shmobile/board-marzen.c
-=================================--- media_tree.orig/arch/arm/mach-shmobile/board-marzen.c
-+++ media_tree/arch/arm/mach-shmobile/board-marzen.c
-@@ -1,8 +1,9 @@
- /*
-  * marzen board support
-  *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011, 2013  Renesas Solutions Corp.
-  * Copyright (C) 2011  Magnus Damm
-+ * Copyright (C) 2013  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -37,6 +38,7 @@
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <media/soc_camera.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -178,12 +180,40 @@ static struct platform_device leds_devic
- 	},
- };
- 
-+static struct rcar_vin_platform_data vin_platform_data __initdata = {
-+	.flags	= RCAR_VIN_BT656,
-+};
-+
-+#define MARZEN_CAMERA(idx)					\
-+static struct i2c_board_info camera##idx##_info = {		\
-+	I2C_BOARD_INFO("adv7180", 0x20 + (idx)),		\
-+};								\
-+								\
-+static struct soc_camera_link iclink##idx##_adv7180 = {		\
-+	.bus_id		= 1 + 2 * (idx),			\
-+	.i2c_adapter_id	= 0,					\
-+	.board_info	= &camera##idx##_info,			\
-+};								\
-+								\
-+static struct platform_device camera##idx##_device = {		\
-+	.name	= "soc-camera-pdrv",				\
-+	.id	= idx,						\
-+	.dev	= {						\
-+		.platform_data	= &iclink##idx##_adv7180,	\
-+	},							\
-+};
-+
-+MARZEN_CAMERA(0);
-+MARZEN_CAMERA(1);
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
- 	&hspi_device,
- 	&leds_device,
-+	&camera0_device,
-+	&camera1_device,
- };
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-@@ -219,6 +249,16 @@ static const struct pinctrl_map marzen_p
- 	/* USB2 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
- 				  "usb2", "usb2"),
-+	/* VIN1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
-+				  "vin1_clk", "vin1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
-+				  "vin1_data8", "vin1"),
-+	/* VIN3 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
-+				  "vin3_clk", "vin3"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
-+				  "vin3_data8", "vin3"),
- };
- 
- static void __init marzen_init(void)
-@@ -235,6 +275,8 @@ static void __init marzen_init(void)
- 
- 	r8a7779_add_standard_devices();
- 	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
-+	r8a7779_add_vin_device(1, &vin_platform_data);
-+	r8a7779_add_vin_device(3, &vin_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
- 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup4-for-v3.12
+
+for you to fetch changes up to 3cf627b06ffc8f89548941e9cb8e8f1e0fe0f5c5:
+
+  ARM: shmobile: r8a7790: Constify platform data and resources (2013-08-22 10:41:56 +0900)
+
+----------------------------------------------------------------
+Fourth round of Renesas ARM based SoC cleanups for v3.12
+
+* Constify platform data for r8a7790 SoC
+* Rename r8a7{790,3a4}_init_delay as r8a7{790,3a4}_init_early
+  to better reflect their usage
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: r8a7790: Constify platform data and resources
+
+Magnus Damm (2):
+      ARM: shmobile: Rename to r8a73a4_init_early()
+      ARM: shmobile: Rename to r8a7790_init_early()
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |  2 +-
+ arch/arm/mach-shmobile/board-ape6evm.c           |  2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c   |  2 +-
+ arch/arm/mach-shmobile/board-lager.c             |  2 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h    |  2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7790.h    |  2 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |  4 ++--
+ arch/arm/mach-shmobile/setup-r8a7790.c           | 25 ++++++++++++------------
+ 8 files changed, 21 insertions(+), 20 deletions(-)
+
