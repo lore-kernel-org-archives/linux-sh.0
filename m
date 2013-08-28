@@ -1,53 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 08 Aug 2013 10:38:40 +0000
-Subject: [PATCH v3 10/14] mmc: sh_mmcif: Remove .set_pwr() callback from platform data
-Message-Id: <1375958324-29683-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:42:04 +0000
+Subject: [PATCH 4/5] ARM: shmobile: Expose shmobile_invalidate_start()
+Message-Id: <eb2d656152e3e712c8798f7cc2dd99771c969920.1377651075.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375958324-29683-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1377651075.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1377651075.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The .set_pwr() callback isn't used anymore as all platforms register
-GPIO-controlled regulators. Remove it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Expose shmobile_invalidate_start() in common.h for
+mach-shmobile. This function will be used for boot of
+secondary processors on future non-SCU SMP platforms.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mmcif.c  | 3 ---
- include/linux/mmc/sh_mmcif.h | 1 -
- 2 files changed, 4 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 35f61cc..ac8e109 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -956,11 +956,8 @@ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
- 
- static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
- {
--	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
- 	struct mmc_host *mmc = host->mmc;
- 
--	if (pd && pd->set_pwr)
--		pd->set_pwr(host->pd, ios->power_mode != MMC_POWER_OFF);
- 	if (!IS_ERR(mmc->supply.vmmc))
- 		/* Errors ignored... */
- 		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index 39011eb..767fac5 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -33,7 +33,6 @@
-  */
- 
- struct sh_mmcif_plat_data {
--	void (*set_pwr)(struct platform_device *pdev, int state);
- 	int (*get_cd)(struct platform_device *pdef);
- 	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
- 	unsigned int		slave_id_rx;
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index e64515e..1ffe39c 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -15,6 +15,7 @@ extern void shmobile_smp_sleep(void);
+ extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
+ 			      unsigned long arg);
+ extern int shmobile_smp_cpu_disable(unsigned int cpu);
++extern void shmobile_invalidate_start(void);
+ extern void shmobile_boot_scu(void);
+ extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+ extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
 -- 
-1.8.1.5
+1.8.3.2
 
