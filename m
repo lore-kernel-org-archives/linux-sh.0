@@ -1,76 +1,124 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 07 Aug 2013 22:56:23 +0000
-Subject: [PATCH v2 0/9] Enable DU support to Marzen and Lager boards
-Message-Id: <1375916192-22647-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:37:53 +0000
+Subject: [PATCH 3/5] ARM: shmobile: lager: Add Display Unit support
+Message-Id: <f631fa0e380a76504bd65545ed094f04b5c6559a.1377653181.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1377653181.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1377653181.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This is the second version of a patch set that adds DU support to the r8a7779
-and r8a7790 SoCs and registers DU devices for the Marzen and Lager boards. Only
-platform data registration is supported as DU DT bindings are work under
-progress.
+Only the VGA output is currently supported.
 
-Compared to v1 (thanks to Sergei for his quick review), this version annotates
-platform data and resources as __initdata, splits defconfig changes from board
-code changes, and constifies existing r8a7790 and Lager platform data and
-resources. This last change is required to avoid a section type conflict at
-link time, similar to
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-lager.c | 66 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
 
-arch/arm/mach-shmobile/board-marzen.c: In function ‘marzen_init’:
-arch/arm/mach-shmobile/board-marzen.c:202:43: error: du_pdata causes a section
-	type conflict with marzen_devices
-arch/arm/mach-shmobile/board-marzen.c:237:32: note: ‘marzen_devices’ was
-	declared here
-make[1]: *** [arch/arm/mach-shmobile/board-marzen.o] Error 1
-
-The patches depend on both the DU r8a7790 DRM and PFC series available from
-
-	git://linuxtv.org/pinchartl/fbdev.git drm/next/du
-	git://linuxtv.org/pinchartl/fbdev.git pinmux/next/r8a7790
-
-They are based respectively on the latest drm-next branch from
-git://people.freedesktop.org/~airlied/linux and the latest for-next branch from
-git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git. Both
-series are scheduled for upstream merge in v3.12.
-
-The dependency on pinmux/next/r8a7790 is runtime only, compilation will not
-break and the boards won't fail to boot. The only regression will be a pinmux
-error message at boot time. The drm/next/du series, however, is a compile-time
-dependency. Simon, how would you like to handle that ?
-
-As a side note, patches 2/9 and 7/9 can be merged first independently of this
-series if desired.
-
-Laurent Pinchart (9):
-  ARM: shmobile: r8a7779: Add DU support
-  ARM: shmobile: r8a7790: Constify platform data and resources
-  ARM: shmobile: r8a7790: Add DU and LVDS clocks
-  ARM: shmobile: r8a7790: Add DU and LVDS support
-  ARM: shmobile: marzen: Add Display Unit support
-  ARM: shmobile: marzen: Select DRM_RCAR_DU in defconfig
-  ARM: shmobile: lager: Constify platform data and resources
-  ARM: shmobile: lager: Add Display Unit support
-  ARM: shmobile: lager: Select DRM_RCAR_DU in defconfig
-
- arch/arm/configs/lager_defconfig              |  2 +
- arch/arm/configs/marzen_defconfig             |  2 +
- arch/arm/mach-shmobile/board-lager.c          | 56 +++++++++++++++++++++++----
- arch/arm/mach-shmobile/board-marzen.c         | 51 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7779.c        |  2 +-
- arch/arm/mach-shmobile/clock-r8a7790.c        | 12 +++++-
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 +
- arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 ++
- arch/arm/mach-shmobile/setup-r8a7779.c        | 22 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7790.c        | 48 ++++++++++++++++++-----
- 10 files changed, 181 insertions(+), 19 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 9806ca0..5facfc9 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -28,6 +28,7 @@
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+@@ -38,6 +39,62 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* DU */
++static struct rcar_du_encoder_data lager_du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_VGA,
++		.output = RCAR_DU_OUTPUT_DPAD0,
++	}, {
++		.type = RCAR_DU_ENCODER_NONE,
++		.output = RCAR_DU_OUTPUT_LVDS1,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
++};
++
++static const struct rcar_du_platform_data lager_du_pdata __initconst = {
++	.encoders = lager_du_encoders,
++	.num_encoders = ARRAY_SIZE(lager_du_encoders),
++};
++
++static const struct resource du_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfeb00000, 0x70000),
++	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
++	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
++	DEFINE_RES_IRQ(gic_spi(256)),
++	DEFINE_RES_IRQ(gic_spi(268)),
++	DEFINE_RES_IRQ(gic_spi(269)),
++};
++
++static void __init lager_add_du_device(void)
++{
++	struct platform_device_info info = {
++		.name = "rcar-du-r8a7790",
++		.id = -1,
++		.res = du_resources,
++		.num_res = ARRAY_SIZE(du_resources),
++		.data = &du_resources,
++		.size_data = sizeof(du_resources),
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++
++	platform_device_register_full(&info);
++}
++
+ /* LEDS */
+ static struct gpio_led lager_leds[] = {
+ 	{
+@@ -107,6 +164,13 @@ static const struct resource ether_resources[] __initconst = {
+ };
+ 
+ static const struct pinctrl_map lager_pinctrl_map[] = {
++	/* DU (CN10: ARGB0, CN13: LVDS) */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_rgb666", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_sync_1", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_clk_out_0", "du"),
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+ 				  "scif0_data", "scif0"),
+@@ -154,6 +218,8 @@ static void __init lager_add_standard_devices(void)
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
+ 					  &ether_pdata, sizeof(ether_pdata));
++
++	lager_add_du_device();
+ }
+ 
+ static const char * const lager_boards_compat_dt[] __initconst = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
