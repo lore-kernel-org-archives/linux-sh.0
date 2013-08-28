@@ -1,36 +1,27 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:28 +0000
-Subject: [GIT PULL 11/26] ARM: shmobile: Use default ->init_time() on Bockw DT ref
-Message-Id: <3bdbd1c9dbff686e375696543577c8a7ad6ef801.1375840527.git.horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 00:43:07 +0000
+Subject: [PATCH net-next 0/2] sh_eth Updates
+Message-Id: <1377650589-20960-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kouei Abe <kouei.abe.cp@renesas.com>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Magnus Damm <damm@opensource.se>
+Hi,
 
-Leave ->init_time() set to NULL to use the default ARM behaviour.
+please consider the following updates to the sh_eth driver
+by Abe-san. They were developed during his testing of the
+driver on the r8a7790/lager board.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-bockw-reference.c | 1 -
- 1 file changed, 1 deletion(-)
+Kouei Abe (2):
+  sh_eth: Fix cache invalidation omission of receive buffer
+  sh_eth: Enable Rx descriptor word 0 shift for r8a7790
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index 24db8de..1a7c893 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -57,6 +57,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.init_machine	= bockw_init,
--	.init_time	= shmobile_timer_init,
- 	.dt_compat	= bockw_boards_compat_dt,
- MACHINE_END
+ drivers/net/ethernet/renesas/sh_eth.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
 -- 
 1.8.3.2
 
