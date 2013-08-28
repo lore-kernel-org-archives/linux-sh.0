@@ -1,36 +1,131 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 22 Aug 2013 17:56:56 +0000
-Subject: [PATCH 1/2] v4l: vsp1: Initialize media device bus_info field
-Message-Id: <1377194217-24235-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:37:51 +0000
+Subject: [PATCH 1/5] ARM: shmobile: marzen: Add Display Unit support
+Message-Id: <10fb3616fdff6d4a79bd1360627d07eb223df56f.1377653181.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1377194217-24235-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1377653181.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1377653181.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Fill bus_info with the VSP1 platform device name
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Support the DU0 VGA and DU1 LVDS outputs. DU1 is connected to a
+Mitsubishi AA104XD12 panel (10.4" XGA).
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_drv.c | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/board-marzen.c | 72 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 8700842..291d20f 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -134,6 +134,8 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index a7d1010..4fa32cc 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -29,6 +29,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -148,6 +149,63 @@ static struct platform_device hspi_device = {
+ 	.num_resources	= ARRAY_SIZE(hspi_resources),
+ };
  
- 	mdev->dev = vsp1->dev;
- 	strlcpy(mdev->model, "VSP1", sizeof(mdev->model));
-+	snprintf(mdev->bus_info, sizeof(mdev->bus_info), "platform:%s",
-+		 dev_name(mdev->dev));
- 	ret = media_device_register(mdev);
- 	if (ret < 0) {
- 		dev_err(vsp1->dev, "media device registration failed (%d)\n",
++/*
++ * DU
++ *
++ * The panel only specifies the [hv]display and [hv]total values. The position
++ * and width of the sync pulses don't matter, they're copied from VESA timings.
++ */
++static struct rcar_du_encoder_data du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_VGA,
++		.output = RCAR_DU_OUTPUT_DPAD0,
++	}, {
++		.type = RCAR_DU_ENCODER_LVDS,
++		.output = RCAR_DU_OUTPUT_DPAD1,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
++};
++
++static const struct rcar_du_platform_data du_pdata __initconst = {
++	.encoders = du_encoders,
++	.num_encoders = ARRAY_SIZE(du_encoders),
++};
++
++static const struct resource du_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfff80000, 0x40000),
++	DEFINE_RES_IRQ(gic_iid(0x3f)),
++};
++
++static void __init marzen_add_du_device(void)
++{
++	struct platform_device_info info = {
++		.name = "rcar-du-r8a7779",
++		.id = -1,
++		.res = du_resources,
++		.num_res = ARRAY_SIZE(du_resources),
++		.data = &du_pdata,
++		.size_data = sizeof(du_pdata),
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++
++	platform_device_register_full(&info);
++}
++
+ /* LEDS */
+ static struct gpio_led marzen_leds[] = {
+ 	{
+@@ -187,6 +245,19 @@ static struct platform_device *marzen_devices[] __initdata = {
+ };
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
++	/* DU (CN10: ARGB0, CN13: LVDS) */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
++				  "du0_rgb888", "du0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
++				  "du0_sync_1", "du0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
++				  "du0_clk_out_0", "du0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
++				  "du1_rgb666", "du1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
++				  "du1_sync_1", "du1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
++				  "du1_clk_out", "du1"),
+ 	/* HSPI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7779",
+ 				  "hspi0", "hspi0"),
+@@ -236,6 +307,7 @@ static void __init marzen_init(void)
+ 	r8a7779_add_standard_devices();
+ 	r8a7779_add_usb_phy_device(&usb_phy_platform_data);
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
++	marzen_add_du_device();
+ }
+ 
+ MACHINE_START(MARZEN, "marzen")
 -- 
-1.8.1.5
+1.8.3.2
 
