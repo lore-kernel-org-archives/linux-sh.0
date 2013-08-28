@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:39:31 +0000
-Subject: [GIT PULL 5/9] ARM: shmobile: Add shared SCU CPU Hotplug code
-Message-Id: <e7b1c96384181d690950530f5a64167965226744.1375841380.git.horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:39:31 +0000
+Subject: [PATCH 2/3] ARM: shmobile: Rename to r8a7790_init_early()
+Message-Id: <d5aa61c56ef4e965a9190eef3d8d8fb6eb6cadd4.1377651687.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375841380.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
+References: <cover.1377651687.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1377651687.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,96 +12,80 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add CPU Hotplug functions for SCU equipped mach-shmobile SoCs.
-
-The functions shmobile_smp_scu_cpu_die() together with
-shmobile_smp_scu_cpu_kill() perform basic shutdown and
-allows checking of shutdown status. These are written
-to work together with SMP boot code in  headsmp-scu.S.
+Rename r8a7790_init_delay() into r8a7790_init_early()
+to make the function name show that more than just
+delay setup may happen in the future.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |  2 ++
- arch/arm/mach-shmobile/platsmp-scu.c         | 45 ++++++++++++++++++++++++++++
- 2 files changed, 47 insertions(+)
+ arch/arm/mach-shmobile/board-lager-reference.c | 2 +-
+ arch/arm/mach-shmobile/board-lager.c           | 2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7790.h  | 2 +-
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 4 ++--
+ 4 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 42761f4..04209d5 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -14,6 +14,8 @@ extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
- extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
- 					   struct task_struct *idle);
-+extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
-+extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
- struct clk;
- extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
-diff --git a/arch/arm/mach-shmobile/platsmp-scu.c b/arch/arm/mach-shmobile/platsmp-scu.c
-index 8f478e4..7a0c066 100644
---- a/arch/arm/mach-shmobile/platsmp-scu.c
-+++ b/arch/arm/mach-shmobile/platsmp-scu.c
-@@ -7,9 +7,11 @@
-  * it under the terms of the GNU General Public License version 2 as
-  * published by the Free Software Foundation.
-  */
-+#include <linux/delay.h>
- #include <linux/init.h>
- #include <linux/io.h>
- #include <linux/smp.h>
-+#include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
- #include <mach/common.h>
-@@ -29,3 +31,46 @@ int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
- 	/* do nothing for now */
- 	return 0;
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 9c316a1..2856f51 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -38,7 +38,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(LAGER_DT, "lager")
+-	.init_early	= r8a7790_init_delay,
++	.init_early	= r8a7790_init_early,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= lager_boards_compat_dt,
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index d0da052..b56422d 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -102,7 +102,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(LAGER_DT, "lager")
+-	.init_early	= r8a7790_init_delay,
++	.init_early	= r8a7790_init_early,
+ 	.init_time	= r8a7790_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.dt_compat	= lager_boards_compat_dt,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 788d559..177a837 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -5,7 +5,7 @@ void r8a7790_add_standard_devices(void);
+ void r8a7790_add_dt_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+-void r8a7790_init_delay(void);
++void r8a7790_init_early(void);
+ void r8a7790_timer_init(void);
+ 
+ #define MD(nr) BIT(nr)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index d0f5c9f..a42d1f6 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -267,7 +267,7 @@ void __init r8a7790_timer_init(void)
+ 	clocksource_of_init();
  }
-+
-+#ifdef CONFIG_HOTPLUG_CPU
-+void shmobile_smp_scu_cpu_die(unsigned int cpu)
-+{
-+	dsb();
-+	flush_cache_all();
-+
-+	/* disable cache coherency */
-+	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
-+
-+	/* Endless loop until reset */
-+	while (1)
-+		cpu_do_idle();
-+}
-+
-+static int shmobile_smp_scu_psr_core_disabled(int cpu)
-+{
-+	unsigned long mask = SCU_PM_POWEROFF << (cpu * 8);
-+
-+	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
-+		return 1;
-+
-+	return 0;
-+}
-+
-+int shmobile_smp_scu_cpu_kill(unsigned int cpu)
-+{
-+	int k;
-+
-+	/* this function is running on another CPU than the offline target,
-+	 * here we need wait for shutdown code in platform_cpu_die() to
-+	 * finish before asking SoC-specific code to power off the CPU core.
-+	 */
-+	for (k = 0; k < 1000; k++) {
-+		if (shmobile_smp_scu_psr_core_disabled(cpu))
-+			return 1;
-+
-+		mdelay(1);
-+	}
-+
-+	return 0;
-+}
-+#endif
+ 
+-void __init r8a7790_init_delay(void)
++void __init r8a7790_init_early(void)
+ {
+ #ifndef CONFIG_ARM_ARCH_TIMER
+ 	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
+@@ -282,7 +282,7 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+-	.init_early	= r8a7790_init_delay,
++	.init_early	= r8a7790_init_early,
+ 	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+ MACHINE_END
 -- 
 1.8.3.2
 
