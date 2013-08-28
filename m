@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 01 Aug 2013 08:26:28 +0000
-Subject: [PATCH 06/14] ARM: shmobile: Remove r8a7779 use of <mach/hardware.h>
-Message-Id: <603e45827b4a565506417fbdc3400eedf8846c3d.1375344714.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 28 Aug 2013 23:22:17 +0000
+Subject: [PATCH v2 03/03] ARM: shmobile: Add r8a7790 CA15 CPU cores
+Message-Id: <20130828232217.7321.62854.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375344714.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
+References: <20130828232148.7321.45739.sendpatchset@w520>
+In-Reply-To: <20130828232148.7321.45739.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,26 +12,44 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Remove unused <mach/hardware.h> on r8a7779.
+Add CA15 CPU cores to r8a7790 for a total of 4 x CA15.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 66d3826..6ab7405 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -37,7 +37,6 @@
- #include <linux/usb/ehci_pdriver.h>
- #include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
--#include <mach/hardware.h>
- #include <mach/irqs.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
--- 
-1.8.3.2
+ Changes since V1:
+ - Got rid of APMU DT node
 
+ arch/arm/boot/dts/r8a7790.dtsi |   21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7790.dtsi
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-08-28 21:00:55.000000000 +0900
+@@ -24,6 +24,27 @@
+ 			reg = <0>;
+ 			clock-frequency = <1300000000>;
+ 		};
++
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <1>;
++			clock-frequency = <1300000000>;
++		};
++
++		cpu2: cpu@2 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <2>;
++			clock-frequency = <1300000000>;
++		};
++
++		cpu3: cpu@3 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <3>;
++			clock-frequency = <1300000000>;
++		};
+ 	};
+ 
+ 	gic: interrupt-controller@f1001000 {
