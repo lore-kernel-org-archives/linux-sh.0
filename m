@@ -1,80 +1,107 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 09 Aug 2013 09:50:10 +0000
-Subject: [PATCH 13/14] ARM: shmobile: Rename to r8a7778_init_early()
-Message-Id: <20130809095010.6530.87879.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:37:54 +0000
+Subject: [PATCH 4/5] ARM: shmobile: ape6evm: update MMC0, SDHI0 and SDHI1 with correct regulators
+Message-Id: <02823096d2d5f38b7d6c7badc1215a38e1113f3d.1377653181.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130809094748.6530.16511.sendpatchset@w520>
-In-Reply-To: <20130809094748.6530.16511.sendpatchset@w520>
+References: <cover.1377653181.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1377653181.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Rename r8a7778_init_delay() into r8a7778_init_early()
-to make the function name show that more than just
-delay setup may happen in the future.
+Currently a dummy fixed always-on regulator is used for all 3 SD/MMC
+interfaces on ape6evm. This patch updates the board to use correct supplies
+for MMC0, SDHI0 and SDHI1 VDD. SDHI0 VccQ supply regulator should be
+implemented in a separate patch.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-ape6evm.c | 54 +++++++++++++++++++++++++++++-----
+ 1 file changed, 46 insertions(+), 8 deletions(-)
 
- arch/arm/mach-shmobile/board-bockw-reference.c |    2 +-
- arch/arm/mach-shmobile/board-bockw.c           |    2 +-
- arch/arm/mach-shmobile/include/mach/r8a7778.h  |    2 +-
- arch/arm/mach-shmobile/setup-r8a7778.c         |    4 ++--
- 4 files changed, 5 insertions(+), 5 deletions(-)
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 38c6c73..cc951b1 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -113,16 +113,49 @@ static const struct smsc911x_platform_config lan9220_data __initconst = {
+ };
+ 
+ /*
+- * On APE6EVM power is supplied to MMCIF by a tps80032 regulator. For now we
+- * model a VDD supply to MMCIF, using a fixed 3.3V regulator. Also use the
+- * static power supply for SDHI0 and SDHI1, whereas SDHI0's VccQ is also
+- * supplied by the same tps80032 regulator and thus can also be adjusted
+- * dynamically.
++ * MMC0 power supplies:
++ * Both Vcc and VccQ to eMMC on APE6EVM are supplied by a tps80032 voltage
++ * regulator. Until support for it is added to this file we simulate the
++ * Vcc supply by a fixed always-on regulator
+  */
+-static struct regulator_consumer_supply fixed3v3_power_consumers[] +static struct regulator_consumer_supply vcc_mmc0_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++};
++
++/*
++ * SDHI0 power supplies:
++ * Vcc to SDHI0 on APE6EVM is supplied by a GPIO-switchable regulator. VccQ is
++ * provided by the same tps80032 regulator as both MMC0 voltages - see comment
++ * above
++ */
++static struct regulator_consumer_supply vcc_sdhi0_consumers[] +{
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++};
++
++static struct regulator_init_data vcc_sdhi0_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
++	.consumer_supplies      = vcc_sdhi0_consumers,
++};
++
++static const struct fixed_voltage_config vcc_sdhi0_info __initconst = {
++	.supply_name = "SDHI0 Vcc",
++	.microvolts = 3300000,
++	.gpio = 76,
++	.enable_high = 1,
++	.init_data = &vcc_sdhi0_init_data,
++};
++
++/*
++ * SDHI1 power supplies:
++ * Vcc and VccQ to SDHI1 on APE6EVM are both fixed at 3.3V
++ */
++static struct regulator_consumer_supply vcc_sdhi1_consumers[] +{
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
+ };
+ 
+@@ -215,14 +248,19 @@ static void __init ape6evm_add_standard_devices(void)
+ 	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
+ 					  lan9220_res, ARRAY_SIZE(lan9220_res),
+ 					  &lan9220_data, sizeof(lan9220_data));
+-	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
+-				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++
++	regulator_register_always_on(1, "MMC0 Vcc", vcc_mmc0_consumers,
++				     ARRAY_SIZE(vcc_mmc0_consumers), 2800000);
+ 	platform_device_register_resndata(&platform_bus, "sh_mmcif", 0,
+ 					  mmcif0_resources, ARRAY_SIZE(mmcif0_resources),
+ 					  &mmcif0_pdata, sizeof(mmcif0_pdata));
++	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 2,
++				      &vcc_sdhi0_info, sizeof(vcc_sdhi0_info));
+ 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
+ 					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
+ 					  &sdhi0_pdata, sizeof(sdhi0_pdata));
++	regulator_register_always_on(3, "SDHI1 Vcc", vcc_sdhi1_consumers,
++				     ARRAY_SIZE(vcc_sdhi1_consumers), 3300000);
+ 	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
+ 					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
+ 					  &sdhi1_pdata, sizeof(sdhi1_pdata));
+-- 
+1.8.3.2
 
---- 0001/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ work/arch/arm/mach-shmobile/board-bockw-reference.c	2013-08-09 17:21:15.000000000 +0900
-@@ -54,7 +54,7 @@ static const char *bockw_boards_compat_d
- };
- 
- DT_MACHINE_START(BOCKW_DT, "bockw")
--	.init_early	= r8a7778_init_delay,
-+	.init_early	= r8a7778_init_early,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.init_machine	= bockw_init,
- 	.dt_compat	= bockw_boards_compat_dt,
---- 0001/arch/arm/mach-shmobile/board-bockw.c
-+++ work/arch/arm/mach-shmobile/board-bockw.c	2013-08-09 17:21:01.000000000 +0900
-@@ -276,7 +276,7 @@ static const char *bockw_boards_compat_d
- };
- 
- DT_MACHINE_START(BOCKW_DT, "bockw")
--	.init_early	= r8a7778_init_delay,
-+	.init_early	= r8a7778_init_early,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.init_machine	= bockw_init,
- 	.dt_compat	= bockw_boards_compat_dt,
---- 0001/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7778.h	2013-08-09 17:21:43.000000000 +0900
-@@ -26,7 +26,7 @@ extern void r8a7778_add_ether_device(str
- extern void r8a7778_add_dt_devices(void);
- 
- extern void r8a7778_init_late(void);
--extern void r8a7778_init_delay(void);
-+extern void r8a7778_init_early(void);
- extern void r8a7778_init_irq_dt(void);
- extern void r8a7778_clock_init(void);
- extern void r8a7778_init_irq_extpin(int irlm);
---- 0001/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7778.c	2013-08-09 17:20:46.000000000 +0900
-@@ -368,7 +368,7 @@ void __init r8a7778_init_irq_extpin(int
- 			&irqpin_platform_data, sizeof(irqpin_platform_data));
- }
- 
--void __init r8a7778_init_delay(void)
-+void __init r8a7778_init_early(void)
- {
- 	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
- }
-@@ -404,7 +404,7 @@ static const char *r8a7778_compat_dt[] _
- };
- 
- DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
--	.init_early	= r8a7778_init_delay,
-+	.init_early	= r8a7778_init_early,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.dt_compat	= r8a7778_compat_dt,
- 	.init_late      = r8a7778_init_late,
