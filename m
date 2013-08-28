@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 01 Aug 2013 08:26:26 +0000
-Subject: [PATCH 04/14] ARM: shmobile: Remove sh7372 use of <mach/hardware.h>
-Message-Id: <3a8e257f2464870cff1c4257838af2698b9e23fd.1375344714.git.horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:42:02 +0000
+Subject: [PATCH 2/5] ARM: shmobile: Use shmobile_smp_cpu_disable() on sh73a0
+Message-Id: <49ccded47badece7b1551a8bae83c1e4a0170b9b.1377651075.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375344714.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375344714.git.horms+renesas@verge.net.au>
+References: <cover.1377651075.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1377651075.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,26 +12,39 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Remove unused <mach/hardware.h> on sh7372.
+Use shmobile_smp_cpu_disable() on sh73a0 since it
+allows CPU Hotplug of any CPU.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/smp-sh73a0.c | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 13e6fdb..3118783 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -35,7 +35,6 @@
- #include <linux/dma-mapping.h>
- #include <linux/platform_data/sh_ipmmu.h>
- #include <mach/dma-register.h>
--#include <mach/hardware.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
- #include <mach/common.h>
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 8b3b977..25ddffc 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -71,18 +71,11 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ 	shmobile_smp_scu_prepare_cpus(max_cpus);
+ }
+ 
+-#ifdef CONFIG_HOTPLUG_CPU
+-static int sh73a0_cpu_disable(unsigned int cpu)
+-{
+-	return 0; /* CPU0 and CPU1 supported */
+-}
+-#endif /* CONFIG_HOTPLUG_CPU */
+-
+ struct smp_operations sh73a0_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
+ 	.smp_boot_secondary	= sh73a0_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_disable		= sh73a0_cpu_disable,
++	.cpu_disable		= shmobile_smp_cpu_disable,
+ 	.cpu_die		= shmobile_smp_scu_cpu_die,
+ 	.cpu_kill		= shmobile_smp_scu_cpu_kill,
+ #endif
 -- 
 1.8.3.2
 
