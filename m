@@ -1,44 +1,45 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Aug 2013 01:37:55 +0000
-Subject: [PATCH 5/5] ARM: shmobile: lager: Fix Display Unit platform data
-Message-Id: <8034dc4a1d615c84932c74633b7399603f7cc2a4.1377653181.git.horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:40:54 +0000
+Subject: [GIT PULL] Third round of Renesas ARM-based SoC DT updates for v3.12
+Message-Id: <cover.1377652718.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1377653181.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1377653181.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi Kevin, Hi Olof, Hi Arnd,
 
-The DU device erroneously receives the DU resources array as platform
-data instead of the DU platform data structure. Fix it.
+please consider this third round of Renesas ARM based SoC DT updates for v3.12.
 
-This problem was introduced by f631fa0 ("ARM: shmobile: lager: Add Display
-Unit support").
+It is based on renesas-dt2-for-v3.12 ("Second round of ARM based SoC DT
+updates for v3.12") which you have previously pulled.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-lager.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+I apologise that this and other pull requests that I will send today
+are rather later in the cycle than I would like. This is primarily due
+to a combination of my summer vacation and wanting to let the patches
+sit in next for a while.
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 5facfc9..bfca58b 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -87,8 +87,8 @@ static void __init lager_add_du_device(void)
- 		.id = -1,
- 		.res = du_resources,
- 		.num_res = ARRAY_SIZE(du_resources),
--		.data = &du_resources,
--		.size_data = sizeof(du_resources),
-+		.data = &lager_du_pdata,
-+		.size_data = sizeof(lager_du_pdata),
- 		.dma_mask = DMA_BIT_MASK(32),
- 	};
- 
--- 
-1.8.3.2
+The following changes since commit 8b3e32c1fe5dce55e28e76b20361841dc863ec17:
 
+  ARM: shmobile: r8a7740: Add TPU node to the device tree (2013-08-06 18:06:23 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v3.12
+
+for you to fetch changes up to ba6094d6e8f30a538e08e9a892f3e37debd84413:
+
+  ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes (2013-08-22 11:37:53 +0900)
+
+----------------------------------------------------------------
+Third round of Renesas ARM-based SoC DT updates for v3.12
+
+* Add MMCIF and SDHI to reference DT nodes of ape6evm board
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
+
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 72 +++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
