@@ -1,71 +1,122 @@
-From: Sakari Ailus <sakari.ailus@iki.fi>
-Date: Thu, 01 Aug 2013 13:04:37 +0000
-Subject: Re: [PATCH v4 6/7] vsp1: Fix lack of the sink entity registration for enabled links
-Message-Id: <20130801130437.GU12281@valkosipuli.retiisi.org.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:41:09 +0000
+Subject: [PATCH] ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
+Message-Id: <ba6094d6e8f30a538e08e9a892f3e37debd84413.1377652718.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375285954-32153-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1375285954-32153-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20130731212921.GT12281@valkosipuli.retiisi.org.uk>
- <2125039.UCGXb8RZgO@avalon>
-In-Reply-To: <2125039.UCGXb8RZgO@avalon>
+References: <cover.1377652718.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1377652718.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-On Thu, Aug 01, 2013 at 12:48:39AM +0200, Laurent Pinchart wrote:
-> Hi Sakari,
-> 
-> On Thursday 01 August 2013 00:29:21 Sakari Ailus wrote:
-> > On Wed, Jul 31, 2013 at 05:52:33PM +0200, Laurent Pinchart wrote:
-> > > From: Katsuya Matsubara <matsu@igel.co.jp>
-> > > 
-> > > Each source entity maintains a pointer to the counterpart sink
-> > > entity while an enabled link connects them. It should be managed by
-> > > the setup_link callback in the media controller framework at runtime.
-> > > However, enabled links which connect RPFs and WPFs that have an
-> > > equivalent index number are created during initialization.
-> > > This registers the pointer to a sink entity from the source entity
-> > > when an enabled link is created.
-> > > 
-> > > Signed-off-by: Katsuya Matsubara <matsu@igel.co.jp>
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > ---
-> > > 
-> > >  drivers/media/platform/vsp1/vsp1_drv.c | 3 +++
-> > >  1 file changed, 3 insertions(+)
-> > > 
-> > > diff --git a/drivers/media/platform/vsp1/vsp1_drv.c
-> > > b/drivers/media/platform/vsp1/vsp1_drv.c index b05aee1..4d338ce 100644
-> > > --- a/drivers/media/platform/vsp1/vsp1_drv.c
-> > > +++ b/drivers/media/platform/vsp1/vsp1_drv.c
-> > > @@ -101,6 +101,9 @@ static int vsp1_create_links(struct vsp1_device *vsp1,
-> > > struct vsp1_entity *sink)> 
-> > >  						       entity, pad, flags);
-> > >  			
-> > >  			if (ret < 0)
-> > >  				return ret;
-> > > +
-> > > +			if (flags & MEDIA_LNK_FL_ENABLED)
-> > > +				source->sink = entity;
-> > 
-> > "entity" here is in fact an entity which is a sink. It could have a more
-> > descriptive name. Up to you; should be changed in the 5th patch first.
-> 
-> There's already a local variable called sink that points to the sink 
-> vsp1_entity. entity points to the media_entity contained in the vsp1_entity. 
-> Feel free to propose different names, otherwise I'll keep it as-is.
+This patch adds MMCIF0, SDHI0 and SDHI1 DT nodes and a fixed voltage
+reglator for them to the ape6evm-reference platform.
 
-How about sink_entity, for instance?
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 72 +++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
 
-But I'm fine with "entity", too.
-
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index f444624..2b49b05 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -10,6 +10,7 @@
+ 
+ /dts-v1/;
+ /include/ "r8a73a4.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "APE6EVM";
+@@ -24,6 +25,34 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
+ 
++	vcc_mmc0: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "MMC0 Vcc";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		regulator-always-on;
++	};
++
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&pfc 76 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	/* Common 3.3V rail, used by several devices on APE6EVM */
++	ape6evm_fixed_3v3: regulator@2 {
++		compatible = "regulator-fixed";
++		regulator-name = "3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
+ 	lbsc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+@@ -62,4 +91,47 @@
+ 		renesas,groups = "scifa0_data";
+ 		renesas,function = "scifa0";
+ 	};
++
++	mmc0_pins: mmcif {
++		renesas,groups = "mmc0_data8", "mmc0_ctrl";
++		renesas,function = "mmc0";
++	};
++
++	sdhi0_pins: sdhi0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi1_pins: sdhi1 {
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,function = "sdhi1";
++	};
++};
++
++&mmcif0 {
++	vmmc-supply = <&vcc_mmc0>;
++	bus-width = <8>;
++	non-removable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_pins>;
++	status = "okay";
++};
++
++&sdhi0 {
++	vmmc-supply = <&vcc_sdhi0>;
++	bus-width = <4>;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi0_pins>;
++	status = "okay";
++};
++
++&sdhi1 {
++	vmmc-supply = <&ape6evm_fixed_3v3>;
++	bus-width = <4>;
++	broken-cd;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi1_pins>;
++	status = "okay";
+ };
 -- 
-Cheers,
+1.8.3.2
 
-Sakari Ailus
-e-mail: sakari.ailus@iki.fi	XMPP: sailus@retiisi.org.uk
