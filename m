@@ -1,10 +1,10 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 07 Aug 2013 22:55:50 +0000
-Subject: [PATCH 02/02] ARM: shmobile: Add r8a73a4 CA15 CPU cores and APMU as DTS
-Message-Id: <20130807225550.9856.13251.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 01:42:01 +0000
+Subject: [PATCH 1/5] ARM: shmobile: Introduce shmobile_smp_cpu_disable()
+Message-Id: <90b7ba85d6d3e7ccb6b73b9c334e34637e928ab0.1377651075.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130807225531.9856.18974.sendpatchset@w520>
-In-Reply-To: <20130807225531.9856.18974.sendpatchset@w520>
+References: <cover.1377651075.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1377651075.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,48 +12,44 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add CA15 CPU cores to r8a73a4 for a total of 4 x CA15
-and also add an APMU node for SMP power management.
+Introduce the shared CPU Hotplug function shmobile_smp_cpu_disable()
+for mach-shmobile. It is useful for the case when all CPUs may be
+hotplugged, including CPU 0.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/include/mach/common.h | 1 +
+ arch/arm/mach-shmobile/platsmp.c             | 7 +++++++
+ 2 files changed, 8 insertions(+)
 
- arch/arm/boot/dts/r8a73a4.dtsi |   27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 3880cf5..2eda447 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -14,6 +14,7 @@ extern void shmobile_smp_boot(void);
+ extern void shmobile_smp_sleep(void);
+ extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
+ 			      unsigned long arg);
++extern int shmobile_smp_cpu_disable(unsigned int cpu);
+ extern void shmobile_boot_scu(void);
+ extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+ extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
+diff --git a/arch/arm/mach-shmobile/platsmp.c b/arch/arm/mach-shmobile/platsmp.c
+index d4ae616..3741562 100644
+--- a/arch/arm/mach-shmobile/platsmp.c
++++ b/arch/arm/mach-shmobile/platsmp.c
+@@ -44,3 +44,10 @@ void shmobile_smp_hook(unsigned int cpu, unsigned long fn, unsigned long arg)
+ 	shmobile_smp_arg[cpu] = arg;
+ 	flush_cache_all();
+ }
++
++#ifdef CONFIG_HOTPLUG_CPU
++int shmobile_smp_cpu_disable(unsigned int cpu)
++{
++	return 0; /* Hotplug of any CPU is supported */
++}
++#endif
+-- 
+1.8.3.2
 
---- 0001/arch/arm/boot/dts/r8a73a4.dtsi
-+++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-08-07 19:20:37.000000000 +0900
-@@ -25,6 +25,33 @@
- 			reg = <0>;
- 			clock-frequency = <1500000000>;
- 		};
-+
-+		cpu1: cpu@1 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <1>;
-+			clock-frequency = <1500000000>;
-+		};
-+
-+		cpu2: cpu@2 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <2>;
-+			clock-frequency = <1500000000>;
-+		};
-+
-+		cpu3: cpu@3 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <3>;
-+			clock-frequency = <1500000000>;
-+		};
-+	};
-+
-+	apmu@e6152000 {
-+		compatible = "renesas,r8a73a4-apmu", "renesas,apmu";
-+		reg = <0 0xe6152000 0 0x88>;
-+		cpus = <&cpu0 &cpu1 &cpu2 &cpu3>;
- 	};
- 
- 	gic: interrupt-controller@f1001000 {
