@@ -1,34 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Aug 2013 02:39:15 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: Use DT for GIC
-Message-Id: <20130806023913.GD20940@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 28 Aug 2013 00:43:08 +0000
+Subject: [PATCH net-next 1/2] sh_eth: Fix cache invalidation omission of receive buffer
+Message-Id: <1377650589-20960-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87iozo8umw.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87iozo8umw.wl%kuninori.morimoto.gx@renesas.com>
+References: <1377650589-20960-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1377650589-20960-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kouei Abe <kouei.abe.cp@renesas.com>, Simon Horman <horms+renesas@verge.net.au>
 
-On Thu, Aug 01, 2013 at 11:42:36PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi
-> 
-> The Subject was wrong
-> 
-> - [PATCH 0/2] ARM: shmobile: Use DT for GIC
-> + [PATCH 0/4] ARM: shmobile: Use DT for GIC
-> 
-> And, I didn't indicate base branch.
-> These are based on renesas-devel-20130801v2 tag
-> 
-> > Kuninori Morimoto (4):
-> >       1) ARM: shmobile: armadillo800eva: Use DT for GIC
-> >       2) ARM: shmobile: marzen: Use DT for GIC
-> >       3) ARM: shmobile: r8a7740: move r8a7740_init_irq_of() to setup
-> >       4) ARM: shmobile: r8a7779: move r8a7779_init_irq_xxx() to setup
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-Thanks, I have queued these up for v3.12 with Magnus's Ack.
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-I have queued-up the first two patches in the dt2 branch.
-And the second two patches in the cleanup3 branch.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index c357076..f386a8f 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1342,6 +1342,8 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 			mdp->rx_skbuff[entry] = NULL;
+ 			if (mdp->cd->rpadir)
+ 				skb_reserve(skb, NET_IP_ALIGN);
++			dma_sync_single_for_cpu(&ndev->dev, rxdesc->addr,
++				mdp->rx_buf_sz,	DMA_FROM_DEVICE);
+ 			skb_put(skb, pkt_len);
+ 			skb->protocol = eth_type_trans(skb, ndev);
+ 			netif_rx(skb);
+-- 
+1.8.3.2
+
