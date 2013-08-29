@@ -1,55 +1,48 @@
-From: Ingo Molnar <mingo@kernel.org>
-Date: Wed, 21 Aug 2013 07:26:40 +0000
-Subject: Re: [PATCH] Kconfig: Remove hotplug enable hints in CONFIG_KEXEC help texts
-Message-Id: <20130821072640.GA27495@gmail.com>
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Thu, 29 Aug 2013 10:27:58 +0000
+Subject: [Query] CPUFreq: Does these machines have separate clock domains for CPUs?
+Message-Id: <CAKohponWn-RN7-6sdhghd6RGCOd357G+TKLsxHfqnSCuMD7xxw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377027483-17025-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1377027483-17025-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi,
 
-* Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+I have been doing some CPUFreq cleanup work and
+wanted to know if the below mentioned machines have separate
+clock domains for their CPUs or all share the same domain?
 
-> commit 40b313608ad4ea655addd2ec6cdd106477ae8e15 ("Finally eradicate
-> CONFIG_HOTPLUG") removed remaining references to CONFIG_HOTPLUG, but missed
-> a few plain English references in the CONFIG_KEXEC help texts.
-> 
-> Remove them, too.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> ---
->  arch/arm/Kconfig     |    3 +--
->  arch/ia64/Kconfig    |    6 +++---
->  arch/mips/Kconfig    |    6 +++---
->  arch/powerpc/Kconfig |    6 +++---
->  arch/sh/Kconfig      |    6 +++---
->  arch/x86/Kconfig     |    6 +++---
->  6 files changed, 16 insertions(+), 17 deletions(-)
-[...]
->  	bool "kernel crash dumps (EXPERIMENTAL)"
-> diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-> index b32ebf9..6ace5de 100644
-> --- a/arch/x86/Kconfig
-> +++ b/arch/x86/Kconfig
-> @@ -1627,9 +1627,9 @@ config KEXEC
->  
->  	  It is an ongoing process to be certain the hardware in a machine
->  	  is properly shutdown, so do not be surprised if this code does not
-> -	  initially work for you.  It may help to enable device hotplugging
-> -	  support.  As of this writing the exact hardware interface is
-> -	  strongly in flux, so no good recommendation can be made.
-> +	  initially work for you.  As of this writing the exact hardware
-> +	  interface is strongly in flux, so no good recommendation can be
-> +	  made.
->  
->  config CRASH_DUMP
->  	bool "kernel crash dumps"
+So, that we can use some generic routines for these drivers which
+would eventually do:
 
-Acked-by: Ingo Molnar <mingo@kernel.org>
+cpumask_setall(policy->cpus);
 
-Thanks,
+And I wanted to make sure that this doesn't break them.. :)
 
-	Ingo
+......
+
+The drivers are:
+
+drivers/cpufreq/at32ap-cpufreq.c
+drivers/cpufreq/blackfin-cpufreq.c
+drivers/cpufreq/cris-artpec3-cpufreq.c
+drivers/cpufreq/cris-etraxfs-cpufreq.c
+drivers/cpufreq/davinci-cpufreq.c
+drivers/cpufreq/e_powersaver.c
+drivers/cpufreq/elanfreq.c
+drivers/cpufreq/longhaul.c
+drivers/cpufreq/loongson2_cpufreq.c
+drivers/cpufreq/pmac32-cpufreq.c
+drivers/cpufreq/powernow-k6.c
+drivers/cpufreq/powernow-k7.c
+drivers/cpufreq/pxa2xx-cpufreq.c
+drivers/cpufreq/pxa3xx-cpufreq.c
+drivers/cpufreq/sc520_freq.c
+drivers/cpufreq/sh-cpufreq.c
+drivers/cpufreq/sparc-us2e-cpufreq.c
+drivers/cpufreq/sparc-us3-cpufreq.c
+
+--
+Viresh
