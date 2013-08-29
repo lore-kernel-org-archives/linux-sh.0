@@ -1,58 +1,33 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Fri, 30 Aug 2013 14:53:17 +0000
-Subject: [PATCH v6 0/5] clk: clock deregistration support
-Message-Id: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 29 Aug 2013 08:43:11 +0000
+Subject: Re: linux-next: manual merge of the arm-soc tree with the v4l-dvb tree
+Message-Id: <87y57k99b8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch series implements clock deregistration in the common clock
-framework. Comparing to v5 it only includes further corrections of NULL
-clock handling.
 
-Changes since v5:
- - fixed NULL clock handling in __clk_get(), __clk_put (patch 5/5).
+Hi Simon
 
-Changes since v4:
- - removed stray struct module forward declaration in patch 3/5.
+# I dropped some mail address
 
-Changes since v3:
- - replaced WARN_ON() with WARN_ON_ONCE() in clk_nodrv_disable_unprepare()
-   callback.
+> Today's linux-next merge of the arm-soc tree got a conflict in
+> arch/arm/mach-shmobile/setup-r8a7778.c between commit 803c2df21752
+> ("[media] ARM: shmobile: r8a7778: add VIN support") from the v4l-dvb tree
+> and commits cfa66a81621d ("ARM: shmobile: bockw: add DT reference") and
+> a66c9744574c ("ARM: shmobile: r8a7778: cleanup registration of mmcif")
+> from the arm-soc tree.
+(snip)
+>  +void __init r8a7778_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
+>  +{
+>  +	BUG_ON(id < 0 || id > 1);
+>  +
+>  +	vin_info_table[id]->data = pdata;
+>  +	vin_info_table[id]->size_data = sizeof(*pdata);
+>  +
+>  +	platform_device_register_full(vin_info_table[id]);
+>  +}
 
-Changes since v2:
- - reordered the patches so the race condition is fixed before it can
-   actually cause any issues,
- - fixed handling of NULL clock pointers in __clk_get(), __clk_put(),
- - added patch adding actual asignment of clk->owner; more details are
-   discussed in that specific patch.
-
-Changes since v1:
- - moved of_clk_{lock, unlock}, __of_clk_get_from_provider() function
-   declaractions to a local header,
- - renamed clk_dummy_* to clk_nodrv_*.
-
-Sylwester Nawrocki (5):
-  clk: Provide not locked variant of of_clk_get_from_provider()
-  clkdev: Fix race condition in clock lookup from device tree
-  clk: Add common __clk_get(), __clk_put() implementations
-  clk: Assign module owner of a clock being registered
-  clk: Implement clk_unregister
-
- arch/arm/include/asm/clkdev.h      |    2 +
- arch/blackfin/include/asm/clkdev.h |    2 +
- arch/mips/include/asm/clkdev.h     |    2 +
- arch/sh/include/asm/clkdev.h       |    2 +
- drivers/clk/clk.c                  |  188 +++++++++++++++++++++++++++++++++---
- drivers/clk/clk.h                  |   16 +++
- drivers/clk/clkdev.c               |   12 ++-
- include/linux/clk-private.h        |    5 +
- include/linux/clkdev.h             |    5 +
- 9 files changed, 221 insertions(+), 13 deletions(-)
- create mode 100644 drivers/clk/clk.h
-
---
-1.7.9.5
-
+We need to cleanup above style again after merging.
