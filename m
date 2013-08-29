@@ -1,57 +1,34 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 06 Aug 2013 03:17:06 +0000
-Subject: [PATCH 1/2] ARM: shmobile: armadillo800eva: remove nfsroot settings from bootargs
-Message-Id: <87mwovh5jl.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 29 Aug 2013 20:24:47 +0000
+Subject: [PATCH] sh_eth: no need to call ether_setup()
+Message-Id: <201308300024.48415.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375175361-23027-1-git-send-email-horms+renesas@verge.net.au>
- <1375175361-23027-4-git-send-email-horms+renesas@verge.net.au>
- <87bo5h3lb3.wl%kuninori.morimoto.gx@renesas.com>
- <20130801080226.GF15265@verge.net.au>
- <20130806010736.GA20940@verge.net.au>
- <87r4e7h88z.wl%kuninori.morimoto.gx@renesas.com>
- <20130806022955.GA25114@verge.net.au>
- <87pptrh6f3.wl%kuninori.morimoto.gx@renesas.com>
- <87ob9bh5mt.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ob9bh5mt.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-NFS detail settings like "nfsroot=,rsize@96,wsize@96" are no longer needed
+There's no need to call ether_setup() in the driver since prior alloc_etherdev()
+call already arranges for it.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Suggested-by: Denis Kirjanov <kda@linux-powerpc.org>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |    2 +-
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c |    3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 366f729..c638e4a 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -17,7 +17,7 @@
- 	compatible = "renesas,armadillo800eva-reference", "renesas,r8a7740";
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2639,9 +2639,6 @@ static int sh_eth_drv_probe(struct platf
  
- 	chosen {
--		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
-+		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 	};
+ 	SET_NETDEV_DEV(ndev, &pdev->dev);
  
- 	memory {
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index 93da655..426cd9c 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -16,7 +16,7 @@
- 	compatible = "renesas,armadillo800eva";
- 
- 	chosen {
--		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw";
-+		bootargs = "console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 	};
- 
- 	memory {
--- 
-1.7.9.5
-
+-	/* Fill in the fields of the device structure with ethernet values. */
+-	ether_setup(ndev);
+-
+ 	mdp = netdev_priv(ndev);
+ 	mdp->num_tx_ring = TX_RING_SIZE;
+ 	mdp->num_rx_ring = RX_RING_SIZE;
