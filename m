@@ -1,57 +1,172 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Sat, 24 Aug 2013 15:19:44 +0000
-Subject: [PATCH v4 0/5] clk: clock deregistration support
-Message-Id: <1377357589-13242-1-git-send-email-s.nawrocki@samsung.com>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Fri, 30 Aug 2013 14:53:20 +0000
+Subject: [PATCH v6 3/5] clk: Add common __clk_get(), __clk_put() implementations
+Message-Id: <1377874402-2944-4-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch series implements clock deregistration in the common clock
-framework. This is required for proper support of clock suppliers as
-loadable modules.  Previous version of this series can be found at [1].
+This patch adds common __clk_get(), __clk_put() clkdev helpers which
+replace their platform specific counterparts when the common clock
+API is enabled.
+
+The owner module pointer field is added to struct clk so a reference
+to the clock supplier module can be taken by the clock consumers.
+
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+---
+Changes since v5:
+ - none.
+
+Changes since v4:
+ - dropped unnecessary struct module forward declaration from
+   clk-provider.h
 
 Changes since v3:
- - dropped exporting of __clk_get(), __clk_put(),
- - replaced WARN_ON() with WARN_ON_ONCE() in clk_nodrv_disable_unprepare()
-   callback.
+ - dropped exporting of __clk_get(), __clk_put().
 
 Changes since v2:
- - reordered the patches so the race condition is fixed before it can
-   actually cause any issues,
- - fixed handling of NULL clock pointers in __clk_get(), __clk_put(),
- - added patch adding actual asignment of clk->owner; more details are
-   discussed in that specific patch.
+ - fixed handling of NULL clock pointers in __clk_get(), __clk_put();
+---
+ arch/arm/include/asm/clkdev.h      |    2 ++
+ arch/blackfin/include/asm/clkdev.h |    2 ++
+ arch/mips/include/asm/clkdev.h     |    2 ++
+ arch/sh/include/asm/clkdev.h       |    2 ++
+ drivers/clk/clk.c                  |   20 ++++++++++++++++++++
+ include/linux/clk-private.h        |    3 +++
+ include/linux/clkdev.h             |    5 +++++
+ 7 files changed, 36 insertions(+)
 
-Changes since v1:
- - moved of_clk_{lock, unlock}, __of_clk_get_from_provider() function
-   declaractions to a local header,
- - renamed clk_dummy_* to clk_nodrv_*.
-
-
-[1] https://lkml.org/lkml/2013/8/23/289
-
-Sylwester Nawrocki (5):
-  clk: Provide not locked variant of of_clk_get_from_provider()
-  clkdev: Fix race condition in clock lookup from device tree
-  clk: Add common __clk_get(), __clk_put() implementations
-  clk: Assign module owner of a clock being registered
-  clk: Implement clk_unregister
-
- arch/arm/include/asm/clkdev.h      |    2 +
- arch/blackfin/include/asm/clkdev.h |    2 +
- arch/mips/include/asm/clkdev.h     |    2 +
- arch/sh/include/asm/clkdev.h       |    2 +
- drivers/clk/clk.c                  |  187 +++++++++++++++++++++++++++++++++--
- drivers/clk/clk.h                  |   16 +++
- drivers/clk/clkdev.c               |   12 ++-
- include/linux/clk-private.h        |    5 +
- include/linux/clk-provider.h       |    2 +
- include/linux/clkdev.h             |    5 +
- 10 files changed, 222 insertions(+), 13 deletions(-)
- create mode 100644 drivers/clk/clk.h
-
---
-1.7.4.1
+diff --git a/arch/arm/include/asm/clkdev.h b/arch/arm/include/asm/clkdev.h
+index 80751c1..4e8a4b2 100644
+--- a/arch/arm/include/asm/clkdev.h
++++ b/arch/arm/include/asm/clkdev.h
+@@ -14,12 +14,14 @@
+ 
+ #include <linux/slab.h>
+ 
++#ifndef CONFIG_COMMON_CLK
+ #ifdef CONFIG_HAVE_MACH_CLKDEV
+ #include <mach/clkdev.h>
+ #else
+ #define __clk_get(clk)	({ 1; })
+ #define __clk_put(clk)	do { } while (0)
+ #endif
++#endif
+ 
+ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ {
+diff --git a/arch/blackfin/include/asm/clkdev.h b/arch/blackfin/include/asm/clkdev.h
+index 9053bed..7ac2436 100644
+--- a/arch/blackfin/include/asm/clkdev.h
++++ b/arch/blackfin/include/asm/clkdev.h
+@@ -8,7 +8,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ 	return kzalloc(size, GFP_KERNEL);
+ }
+ 
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_put(clk)
+ #define __clk_get(clk) ({ 1; })
++#endif
+ 
+ #endif
+diff --git a/arch/mips/include/asm/clkdev.h b/arch/mips/include/asm/clkdev.h
+index 2624754..1b3ad7b 100644
+--- a/arch/mips/include/asm/clkdev.h
++++ b/arch/mips/include/asm/clkdev.h
+@@ -14,8 +14,10 @@
+ 
+ #include <linux/slab.h>
+ 
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_get(clk)	({ 1; })
+ #define __clk_put(clk)	do { } while (0)
++#endif
+ 
+ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ {
+diff --git a/arch/sh/include/asm/clkdev.h b/arch/sh/include/asm/clkdev.h
+index 6ba9186..c419014 100644
+--- a/arch/sh/include/asm/clkdev.h
++++ b/arch/sh/include/asm/clkdev.h
+@@ -25,7 +25,9 @@ static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
+ 		return kzalloc(size, GFP_KERNEL);
+ }
+ 
++#ifndef CONFIG_COMMON_CLK
+ #define __clk_put(clk)
+ #define __clk_get(clk) ({ 1; })
++#endif
+ 
+ #endif /* __CLKDEV_H__ */
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 8f18564..dcf061a 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -1965,6 +1965,26 @@ void devm_clk_unregister(struct device *dev, struct clk *clk)
+ }
+ EXPORT_SYMBOL_GPL(devm_clk_unregister);
+ 
++/*
++ * clkdev helpers
++ */
++int __clk_get(struct clk *clk)
++{
++	if (clk && !try_module_get(clk->owner))
++		return 0;
++
++	return 1;
++}
++
++void __clk_put(struct clk *clk)
++{
++	if (WARN_ON_ONCE(IS_ERR(clk)))
++		return;
++
++	if (clk)
++		module_put(clk->owner);
++}
++
+ /***        clk rate change notifiers        ***/
+ 
+ /**
+diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
+index 8138c94..8cb1865 100644
+--- a/include/linux/clk-private.h
++++ b/include/linux/clk-private.h
+@@ -25,10 +25,13 @@
+ 
+ #ifdef CONFIG_COMMON_CLK
+ 
++struct module;
++
+ struct clk {
+ 	const char		*name;
+ 	const struct clk_ops	*ops;
+ 	struct clk_hw		*hw;
++	struct module		*owner;
+ 	struct clk		*parent;
+ 	const char		**parent_names;
+ 	struct clk		**parents;
+diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
+index a6a6f60..94bad77 100644
+--- a/include/linux/clkdev.h
++++ b/include/linux/clkdev.h
+@@ -43,4 +43,9 @@ int clk_add_alias(const char *, const char *, char *, struct device *);
+ int clk_register_clkdev(struct clk *, const char *, const char *, ...);
+ int clk_register_clkdevs(struct clk *, struct clk_lookup *, size_t);
+ 
++#ifdef CONFIG_COMMON_CLK
++int __clk_get(struct clk *clk);
++void __clk_put(struct clk *clk);
++#endif
++
+ #endif
+-- 
+1.7.9.5
 
