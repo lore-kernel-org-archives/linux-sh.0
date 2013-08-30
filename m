@@ -1,234 +1,84 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 05 Aug 2013 17:53:26 +0000
-Subject: [PATCH v6 07/10] v4l: Add V4L2_PIX_FMT_NV16M and V4L2_PIX_FMT_NV61M formats
-Message-Id: <1375725209-2674-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Fri, 30 Aug 2013 12:37:39 +0000
+Subject: [RFC 05/10] ARM: shmobile: r8a7790: add I2C setup
+Message-Id: <1377866264-21110-6-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-sh@vger.kernel.org
 
-NV16M and NV61M are planar YCbCr 4:2:2 and YCrCb 4:2:2 formats with a
-luma plane followed by an interleaved chroma plane. The planes are not
-required to be contiguous in memory, and the formats can only be used
-with the multi-planar formats API.
+From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Reviewed-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Reviewed-by: Sakari Ailus <sakari.ailus@iki.fi>
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+This patch add setup for I2C bus.
+
+Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
 ---
- Documentation/DocBook/media/v4l/pixfmt-nv16m.xml | 171 +++++++++++++++++++++++
- Documentation/DocBook/media/v4l/pixfmt.xml       |   1 +
- include/uapi/linux/videodev2.h                   |   2 +
- 3 files changed, 174 insertions(+)
- create mode 100644 Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
+ arch/arm/mach-shmobile/setup-r8a7790.c        | 28 +++++++++++++++++++++++++++
+ 2 files changed, 31 insertions(+)
 
-diff --git a/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml b/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
-new file mode 100644
-index 0000000..c51d5a4
---- /dev/null
-+++ b/Documentation/DocBook/media/v4l/pixfmt-nv16m.xml
-@@ -0,0 +1,171 @@
-+    <refentry>
-+      <refmeta>
-+	<refentrytitle>V4L2_PIX_FMT_NV16M ('NM16'), V4L2_PIX_FMT_NV61M ('NM61')</refentrytitle>
-+	&manvol;
-+      </refmeta>
-+      <refnamediv>
-+	<refname id="V4L2-PIX-FMT-NV16M"><constant>V4L2_PIX_FMT_NV16M</constant></refname>
-+	<refname id="V4L2-PIX-FMT-NV61M"><constant>V4L2_PIX_FMT_NV61M</constant></refname>
-+	<refpurpose>Variation of <constant>V4L2_PIX_FMT_NV16</constant> and <constant>V4L2_PIX_FMT_NV61</constant> with planes
-+	  non contiguous in memory. </refpurpose>
-+      </refnamediv>
-+      <refsect1>
-+	<title>Description</title>
-+
-+	<para>This is a multi-planar, two-plane version of the YUV 4:2:0 format.
-+The three components are separated into two sub-images or planes.
-+<constant>V4L2_PIX_FMT_NV16M</constant> differs from <constant>V4L2_PIX_FMT_NV16
-+</constant> in that the two planes are non-contiguous in memory, i.e. the chroma
-+plane does not necessarily immediately follows the luma plane.
-+The luminance data occupies the first plane. The Y plane has one byte per pixel.
-+In the second plane there is chrominance data with alternating chroma samples.
-+The CbCr plane is the same width and height, in bytes, as the Y plane.
-+Each CbCr pair belongs to four pixels. For example,
-+Cb<subscript>0</subscript>/Cr<subscript>0</subscript> belongs to
-+Y'<subscript>00</subscript>, Y'<subscript>01</subscript>,
-+Y'<subscript>10</subscript>, Y'<subscript>11</subscript>.
-+<constant>V4L2_PIX_FMT_NV61M</constant> is the same as <constant>V4L2_PIX_FMT_NV16M</constant>
-+except the Cb and Cr bytes are swapped, the CrCb plane starts with a Cr byte.</para>
-+
-+	<para><constant>V4L2_PIX_FMT_NV16M</constant> and
-+<constant>V4L2_PIX_FMT_NV61M</constant> are intended to be used only in drivers
-+and applications that support the multi-planar API, described in
-+<xref linkend="planar-apis"/>. </para>
-+
-+	<example>
-+	  <title><constant>V4L2_PIX_FMT_NV16M</constant> 4 &times; 4 pixel image</title>
-+
-+	  <formalpara>
-+	    <title>Byte Order.</title>
-+	    <para>Each cell is one byte.
-+		<informaltable frame="none">
-+		<tgroup cols="5" align="center">
-+		  <colspec align="left" colwidth="2*" />
-+		  <tbody valign="top">
-+		    <row>
-+		      <entry>start0&nbsp;+&nbsp;0:</entry>
-+		      <entry>Y'<subscript>00</subscript></entry>
-+		      <entry>Y'<subscript>01</subscript></entry>
-+		      <entry>Y'<subscript>02</subscript></entry>
-+		      <entry>Y'<subscript>03</subscript></entry>
-+		    </row>
-+		    <row>
-+		      <entry>start0&nbsp;+&nbsp;4:</entry>
-+		      <entry>Y'<subscript>10</subscript></entry>
-+		      <entry>Y'<subscript>11</subscript></entry>
-+		      <entry>Y'<subscript>12</subscript></entry>
-+		      <entry>Y'<subscript>13</subscript></entry>
-+		    </row>
-+		    <row>
-+		      <entry>start0&nbsp;+&nbsp;8:</entry>
-+		      <entry>Y'<subscript>20</subscript></entry>
-+		      <entry>Y'<subscript>21</subscript></entry>
-+		      <entry>Y'<subscript>22</subscript></entry>
-+		      <entry>Y'<subscript>23</subscript></entry>
-+		    </row>
-+		    <row>
-+		      <entry>start0&nbsp;+&nbsp;12:</entry>
-+		      <entry>Y'<subscript>30</subscript></entry>
-+		      <entry>Y'<subscript>31</subscript></entry>
-+		      <entry>Y'<subscript>32</subscript></entry>
-+		      <entry>Y'<subscript>33</subscript></entry>
-+		    </row>
-+		    <row>
-+		      <entry></entry>
-+		    </row>
-+		    <row>
-+		      <entry>start1&nbsp;+&nbsp;0:</entry>
-+		      <entry>Cb<subscript>00</subscript></entry>
-+		      <entry>Cr<subscript>00</subscript></entry>
-+		      <entry>Cb<subscript>02</subscript></entry>
-+		      <entry>Cr<subscript>02</subscript></entry>
-+		    </row>
-+		    <row>
-+		      <entry>start1&nbsp;+&nbsp;4:</entry>
-+		      <entry>Cb<subscript>10</subscript></entry>
-+		      <entry>Cr<subscript>10</subscript></entry>
-+		      <entry>Cb<subscript>12</subscript></entry>
-+		      <entry>Cr<subscript>12</subscript></entry>
-+		    </row>
-+		    <row>
-+		      <entry>start1&nbsp;+&nbsp;8:</entry>
-+		      <entry>Cb<subscript>20</subscript></entry>
-+		      <entry>Cr<subscript>20</subscript></entry>
-+		      <entry>Cb<subscript>22</subscript></entry>
-+		      <entry>Cr<subscript>22</subscript></entry>
-+		    </row>
-+		    <row>
-+		      <entry>start1&nbsp;+&nbsp;12:</entry>
-+		      <entry>Cb<subscript>30</subscript></entry>
-+		      <entry>Cr<subscript>30</subscript></entry>
-+		      <entry>Cb<subscript>32</subscript></entry>
-+		      <entry>Cr<subscript>32</subscript></entry>
-+		    </row>
-+		  </tbody>
-+		</tgroup>
-+		</informaltable>
-+	      </para>
-+	  </formalpara>
-+
-+	  <formalpara>
-+	    <title>Color Sample Location.</title>
-+	    <para>
-+		<informaltable frame="none">
-+		<tgroup cols="7" align="center">
-+		  <tbody valign="top">
-+		    <row>
-+		      <entry></entry>
-+		      <entry>0</entry><entry></entry><entry>1</entry><entry></entry>
-+		      <entry>2</entry><entry></entry><entry>3</entry>
-+		    </row>
-+		    <row>
-+		      <entry>0</entry>
-+		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
-+		      <entry>Y</entry><entry></entry><entry>Y</entry>
-+		    </row>
-+		    <row>
-+		      <entry></entry>
-+		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
-+		      <entry></entry><entry>C</entry><entry></entry>
-+		    </row>
-+		    <row>
-+		      <entry>1</entry>
-+		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
-+		      <entry>Y</entry><entry></entry><entry>Y</entry>
-+		    </row>
-+		    <row>
-+		      <entry></entry>
-+		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
-+		      <entry></entry><entry>C</entry><entry></entry>
-+		    </row>
-+		    <row>
-+		      <entry></entry>
-+		    </row>
-+		    <row>
-+		      <entry>2</entry>
-+		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
-+		      <entry>Y</entry><entry></entry><entry>Y</entry>
-+		    </row>
-+		    <row>
-+		      <entry></entry>
-+		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
-+		      <entry></entry><entry>C</entry><entry></entry>
-+		    </row>
-+		    <row>
-+		      <entry>3</entry>
-+		      <entry>Y</entry><entry></entry><entry>Y</entry><entry></entry>
-+		      <entry>Y</entry><entry></entry><entry>Y</entry>
-+		    </row>
-+		    <row>
-+		      <entry></entry>
-+		      <entry></entry><entry>C</entry><entry></entry><entry></entry>
-+		      <entry></entry><entry>C</entry><entry></entry>
-+		    </row>
-+		  </tbody>
-+		</tgroup>
-+		</informaltable>
-+	      </para>
-+	  </formalpara>
-+	</example>
-+      </refsect1>
-+    </refentry>
-diff --git a/Documentation/DocBook/media/v4l/pixfmt.xml b/Documentation/DocBook/media/v4l/pixfmt.xml
-index 99b8d2a..16db350 100644
---- a/Documentation/DocBook/media/v4l/pixfmt.xml
-+++ b/Documentation/DocBook/media/v4l/pixfmt.xml
-@@ -718,6 +718,7 @@ information.</para>
-     &sub-nv12m;
-     &sub-nv12mt;
-     &sub-nv16;
-+    &sub-nv16m;
-     &sub-nv24;
-     &sub-m420;
-   </section>
-diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
-index 95ef455..fec0c20 100644
---- a/include/uapi/linux/videodev2.h
-+++ b/include/uapi/linux/videodev2.h
-@@ -348,6 +348,8 @@ struct v4l2_pix_format {
- /* two non contiguous planes - one Y, one Cr + Cb interleaved  */
- #define V4L2_PIX_FMT_NV12M   v4l2_fourcc('N', 'M', '1', '2') /* 12  Y/CbCr 4:2:0  */
- #define V4L2_PIX_FMT_NV21M   v4l2_fourcc('N', 'M', '2', '1') /* 21  Y/CrCb 4:2:0  */
-+#define V4L2_PIX_FMT_NV16M   v4l2_fourcc('N', 'M', '1', '6') /* 16  Y/CbCr 4:2:2  */
-+#define V4L2_PIX_FMT_NV61M   v4l2_fourcc('N', 'M', '6', '1') /* 16  Y/CrCb 4:2:2  */
- #define V4L2_PIX_FMT_NV12MT  v4l2_fourcc('T', 'M', '1', '2') /* 12  Y/CbCr 4:2:0 64x32 macroblocks */
- #define V4L2_PIX_FMT_NV12MT_16X16 v4l2_fourcc('V', 'M', '1', '2') /* 12  Y/CbCr 4:2:0 16x16 macroblocks */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 177a837..ad8b502 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -1,7 +1,10 @@
+ #ifndef __ASM_R8A7790_H__
+ #define __ASM_R8A7790_H__
  
++#include <linux/i2c/i2c-rcar.h>
++
+ void r8a7790_add_standard_devices(void);
++void r8a7790_add_i2c_device(int idx, struct i2c_rcar_platform_data *pdata);
+ void r8a7790_add_dt_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index e0d29a2..969fdf2 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -19,6 +19,7 @@
+  */
+ 
+ #include <linux/clocksource.h>
++#include <linux/i2c/i2c-rcar.h>
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+@@ -196,6 +197,33 @@ void __init r8a7790_add_dt_devices(void)
+ 	r8a7790_register_cmt(00);
+ }
+ 
++/* I2C */
++static struct resource rcar_i2c_res[] __initdata = {
++	/* I2C0 */
++	DEFINE_RES_MEM(0xe6508000, 0x10000),
++	DEFINE_RES_IRQ(gic_spi(287)),
++	/* I2C1 */
++	DEFINE_RES_MEM(0xe6518000, 0x10000),
++	DEFINE_RES_IRQ(gic_spi(288)),
++	/* I2C2 */
++	DEFINE_RES_MEM(0xe6530000, 0x10000),
++	DEFINE_RES_IRQ(gic_spi(286)),
++	/* I2C3 */
++	DEFINE_RES_MEM(0xe6540000, 0x10000),
++	DEFINE_RES_IRQ(gic_spi(290)),
++};
++
++void __init r8a7790_add_i2c_device(int idx,
++				   struct i2c_rcar_platform_data *pdata)
++{
++	BUG_ON(idx < 0 || idx > 3);
++
++	platform_device_register_resndata(
++			&platform_bus, "i2c-rcar", idx,
++			rcar_i2c_res + (2*idx), 2,
++			pdata, sizeof(*pdata));
++}
++
+ void __init r8a7790_add_standard_devices(void)
+ {
+ 	r8a7790_add_dt_devices();
 -- 
-1.8.1.5
+1.8.1.4
 
