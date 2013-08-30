@@ -1,79 +1,111 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:38:32 +0000
-Subject: [GIT PULL 05/26] ARM: shmobile: r8a7778: cleanup registration of hspi
-Message-Id: <3c7b5362323cd4b5d09a5b21ba8e74b3de05fc73.1375840527.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Fri, 30 Aug 2013 12:37:36 +0000
+Subject: [RFC 02/10] drm: Decouple edid parsing from i2c adapter
+Message-Id: <1377866264-21110-3-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375840527.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375840527.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-sh-hspi driver which doesn't need platform data at the time of
-registration can be registerd on SoC.
-And, registering these drivers in the SoC code can avoid
-unwanted device numbering issue.
-(ex. the hspi2 device number will be spi.0 if hspi2 only registered)
-This patch registers it on SoC code as cleanup C code
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 ---
- arch/arm/mach-shmobile/board-bockw.c          | 1 -
- arch/arm/mach-shmobile/include/mach/r8a7778.h | 1 -
- arch/arm/mach-shmobile/setup-r8a7778.c        | 5 ++++-
- 3 files changed, 4 insertions(+), 3 deletions(-)
+ drivers/gpu/drm/drm_edid.c | 18 ++++++++++--------
+ include/drm/drm_edid.h     |  3 +++
+ 2 files changed, 13 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index d7d3427..b6f3d2f 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -200,7 +200,6 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
- 	r8a7778_add_ether_device(&ether_platform_data);
--	r8a7778_add_hspi_device(0);
- 
- 	i2c_register_board_info(0, i2c0_devices,
- 				ARRAY_SIZE(i2c0_devices));
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index 9874511..41fd6da 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -23,7 +23,6 @@
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
--extern void r8a7778_add_hspi_device(int id);
- extern void r8a7778_add_dt_devices(void);
- 
- extern void r8a7778_init_late(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index ce3b54d..1a154d4 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -272,7 +272,7 @@ static struct resource hspi_resources[] __initdata = {
- 	DEFINE_RES_IRQ(gic_iid(0x75)),
- };
- 
--void __init r8a7778_add_hspi_device(int id)
-+void __init r8a7778_register_hspi(int id)
+diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
+index 95d6f4b..94f4d79 100644
+--- a/drivers/gpu/drm/drm_edid.c
++++ b/drivers/gpu/drm/drm_edid.c
+@@ -1059,9 +1059,10 @@ EXPORT_SYMBOL(drm_edid_is_valid);
+  * Try to fetch EDID information by calling i2c driver function.
+  */
+ static int
+-drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
++drm_do_probe_ddc_edid(void *data, unsigned char *buf,
+ 		      int block, int len)
  {
- 	BUG_ON(id < 0 || id > 2);
- 
-@@ -312,6 +312,9 @@ void __init r8a7778_add_standard_devices(void)
- 	r8a7778_register_i2c(1);
- 	r8a7778_register_i2c(2);
- 	r8a7778_register_i2c(3);
-+	r8a7778_register_hspi(0);
-+	r8a7778_register_hspi(1);
-+	r8a7778_register_hspi(2);
++	struct i2c_adapter *adapter = data;
+ 	unsigned char start = block * EDID_LENGTH;
+ 	unsigned char segment = block >> 1;
+ 	unsigned char xfers = segment ? 3 : 2;
+@@ -1117,8 +1118,8 @@ static bool drm_edid_is_zero(u8 *in_edid, int length)
+ 	return true;
  }
  
- void __init r8a7778_init_late(void)
+-static u8 *
+-drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
++struct edid *drm_do_get_edid(struct drm_connector *connector,
++	int (*get_edid_block)(void *, unsigned char *buf, int, int), void *data)
+ {
+ 	int i, j = 0, valid_extensions = 0;
+ 	u8 *block, *new;
+@@ -1129,7 +1130,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	/* base block fetch */
+ 	for (i = 0; i < 4; i++) {
+-		if (drm_do_probe_ddc_edid(adapter, block, 0, EDID_LENGTH))
++		if (get_edid_block(data, block, 0, EDID_LENGTH))
+ 			goto out;
+ 		if (drm_edid_block_valid(block, 0, print_bad_edid))
+ 			break;
+@@ -1143,7 +1144,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	/* if there's no extensions, we're done */
+ 	if (block[0x7e] = 0)
+-		return block;
++		return (struct edid *)block;
+ 
+ 	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);
+ 	if (!new)
+@@ -1152,7 +1153,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	for (j = 1; j <= block[0x7e]; j++) {
+ 		for (i = 0; i < 4; i++) {
+-			if (drm_do_probe_ddc_edid(adapter,
++			if (get_edid_block(data,
+ 				  block + (valid_extensions + 1) * EDID_LENGTH,
+ 				  j, EDID_LENGTH))
+ 				goto out;
+@@ -1180,7 +1181,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 		block = new;
+ 	}
+ 
+-	return block;
++	return (struct edid *)block;
+ 
+ carp:
+ 	if (print_bad_edid) {
+@@ -1193,6 +1194,7 @@ out:
+ 	kfree(block);
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(drm_do_get_edid);
+ 
+ /**
+  * Probe DDC presence.
+@@ -1225,7 +1227,7 @@ struct edid *drm_get_edid(struct drm_connector *connector,
+ 	struct edid *edid = NULL;
+ 
+ 	if (drm_probe_ddc(adapter))
+-		edid = (struct edid *)drm_do_get_edid(connector, adapter);
++		edid = (struct edid *)drm_do_get_edid(connector, drm_do_probe_ddc_edid, adapter);
+ 
+ 	return edid;
+ }
+diff --git a/include/drm/drm_edid.h b/include/drm/drm_edid.h
+index fc481fc..fff4a48 100644
+--- a/include/drm/drm_edid.h
++++ b/include/drm/drm_edid.h
+@@ -269,4 +269,7 @@ int
+ drm_hdmi_avi_infoframe_from_display_mode(struct hdmi_avi_infoframe *frame,
+ 					 const struct drm_display_mode *mode);
+ 
++struct edid *drm_do_get_edid(struct drm_connector *connector,
++	int (*get_edid_block)(void *, unsigned char *buf, int, int), void *data);
++
+ #endif /* __DRM_EDID_H__ */
 -- 
-1.8.3.2
+1.8.1.4
 
