@@ -1,82 +1,269 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:39:30 +0000
-Subject: [GIT PULL 4/9] ARM: shmobile: Use shared SCU SMP boot code on emev2
-Message-Id: <0da60225dee270a4a4b86c08509e772e78961b82.1375841380.git.horms+renesas@verge.net.au>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Fri, 30 Aug 2013 14:53:22 +0000
+Subject: [PATCH v6 5/5] clk: Implement clk_unregister
+Message-Id: <1377874402-2944-6-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375841380.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375841380.git.horms+renesas@verge.net.au>
+References: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+clk_unregister() is currently not implemented and it is required when
+a clock provider module needs to be unloaded.
 
-Use shared SCU code on emev2 for SMP boot.
+Normally the clock supplier module is prevented to be unloaded by
+taking reference on the module in clk_get().
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+For cases when the clock supplier module deinitializes despite the
+consumers of its clocks holding a reference on the module, e.g. when
+the driver is unbound through "unbind" sysfs attribute, there are
+empty clock ops added. These ops are assigned temporarily to struct
+clk and used until all consumers release the clock, to avoid invoking
+callbacks from the module which just got removed.
+
+Signed-off-by: Jiada Wang <jiada_wang@mentor.com>
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 ---
- arch/arm/mach-shmobile/Makefile    |  2 +-
- arch/arm/mach-shmobile/smp-emev2.c | 19 ++++++++++---------
- 2 files changed, 11 insertions(+), 10 deletions(-)
+Changes since v5:
+- ensure clk->kref is not referenced when the passed clk is NULL.
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 42bbf45..d7b1c71 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -19,7 +19,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
- smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
--smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
-+smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
- 
- # IRQ objects
- obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
-diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
-index 1bf8bc7..d1c101d 100644
---- a/arch/arm/mach-shmobile/smp-emev2.c
-+++ b/arch/arm/mach-shmobile/smp-emev2.c
-@@ -34,6 +34,12 @@
- 
- static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
-+	int ret;
-+
-+	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
-+	if (ret)
-+		return ret;
-+
- 	arch_send_wakeup_ipi_mask(cpumask_of(cpu_logical_map(cpu)));
- 	return 0;
- }
-@@ -42,21 +48,16 @@ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
- {
- 	void __iomem *smu;
- 
--	/* setup EMEV2 specific SCU base, enable */
--	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
--	scu_enable(shmobile_scu_base);
--
--	/* Tell ROM loader about our vector (in headsmp-scu.S, headsmp.S) */
-+	/* Tell ROM loader about our vector (in headsmp.S) */
- 	smu = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
- 	if (smu) {
- 		iowrite32(__pa(shmobile_boot_vector), smu + SMU_GENERAL_REG0);
- 		iounmap(smu);
- 	}
--	shmobile_boot_fn = virt_to_phys(shmobile_boot_scu);
--	shmobile_boot_arg = (unsigned long)shmobile_scu_base;
- 
--	/* enable cache coherency on booting CPU */
--	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
-+	/* setup EMEV2 specific SCU bits */
-+	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
-+	shmobile_smp_scu_prepare_cpus(max_cpus);
+Changes since v4:
+ - none.
+
+Changes since v3:
+ - Use WARN_ON_ONCE() rather than WARN_ON() in clk_nodrv_disable_unprepare()
+   callback.
+
+Changes since v2:
+ - none.
+
+Changes since RFC v1:
+ - renamed clk_dummy_* to clk_nodrv_*.
+
+Changes since v3 of the original patch [1]:
+ - reparent all children to the orphan list instead of leaving
+   the clock unregistered when it has child clocks,
+ - removed unnecessary prerequisite checks in clk_debug_unregister(),
+ - struct clk is now being freed only when the last clock consumer
+   calls clk_put(),
+ - empty clock ops are used after clk_unregister() has been called
+   until all references to the clock are released and the clock
+   object is freed.
+
+[1] http://www.spinics.net/lists/arm-kernel/msg247548.html
+---
+ drivers/clk/clk.c           |  134 ++++++++++++++++++++++++++++++++++++++++---
+ include/linux/clk-private.h |    2 +
+ 2 files changed, 128 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index ac80e13..27f8c42 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -344,6 +344,21 @@ out:
+ 	return ret;
  }
  
- struct smp_operations emev2_smp_ops __initdata = {
++ /**
++ * clk_debug_unregister - remove a clk node from the debugfs clk tree
++ * @clk: the clk being removed from the debugfs clk tree
++ *
++ * Dynamically removes a clk and all it's children clk nodes from the
++ * debugfs clk tree if clk->dentry points to debugfs created by
++ * clk_debug_register in __clk_init.
++ *
++ * Caller must hold prepare_lock.
++ */
++static void clk_debug_unregister(struct clk *clk)
++{
++	debugfs_remove_recursive(clk->dentry);
++}
++
+ /**
+  * clk_debug_reparent - reparent clk node in the debugfs clk tree
+  * @clk: the clk being reparented
+@@ -434,6 +449,9 @@ static inline int clk_debug_register(struct clk *clk) { return 0; }
+ static inline void clk_debug_reparent(struct clk *clk, struct clk *new_parent)
+ {
+ }
++static inline void clk_debug_unregister(struct clk *clk)
++{
++}
+ #endif
+ 
+ /* caller must hold prepare_lock */
+@@ -1770,6 +1788,7 @@ int __clk_init(struct device *dev, struct clk *clk)
+ 
+ 	clk_debug_register(clk);
+ 
++	kref_init(&clk->ref);
+ out:
+ 	clk_prepare_unlock();
+ 
+@@ -1905,13 +1924,106 @@ fail_out:
+ }
+ EXPORT_SYMBOL_GPL(clk_register);
+ 
++/*
++ * Free memory allocated for a clock.
++ * Caller must hold prepare_lock.
++ */
++static void __clk_release(struct kref *ref)
++{
++	struct clk *clk = container_of(ref, struct clk, ref);
++	int i = clk->num_parents;
++
++	kfree(clk->parents);
++	while (--i >= 0)
++		kfree(clk->parent_names[i]);
++
++	kfree(clk->parent_names);
++	kfree(clk->name);
++	kfree(clk);
++}
++
++/*
++ * Empty clk_ops for unregistered clocks. These are used temporarily
++ * after clk_unregister() was called on a clock and until last clock
++ * consumer calls clk_put() and the struct clk object is freed.
++ */
++static int clk_nodrv_prepare_enable(struct clk_hw *hw)
++{
++	return -ENXIO;
++}
++
++static void clk_nodrv_disable_unprepare(struct clk_hw *hw)
++{
++	WARN_ON(1);
++}
++
++static int clk_nodrv_set_rate(struct clk_hw *hw, unsigned long rate,
++					unsigned long parent_rate)
++{
++	return -ENXIO;
++}
++
++static int clk_nodrv_set_parent(struct clk_hw *hw, u8 index)
++{
++	return -ENXIO;
++}
++
++static const struct clk_ops clk_nodrv_ops = {
++	.enable		= clk_nodrv_prepare_enable,
++	.disable	= clk_nodrv_disable_unprepare,
++	.prepare	= clk_nodrv_prepare_enable,
++	.unprepare	= clk_nodrv_disable_unprepare,
++	.set_rate	= clk_nodrv_set_rate,
++	.set_parent	= clk_nodrv_set_parent,
++};
++
+ /**
+  * clk_unregister - unregister a currently registered clock
+  * @clk: clock to unregister
+- *
+- * Currently unimplemented.
+  */
+-void clk_unregister(struct clk *clk) {}
++void clk_unregister(struct clk *clk)
++{
++	unsigned long flags;
++
++	clk_prepare_lock();
++
++	if (!clk || IS_ERR(clk)) {
++		pr_err("%s: invalid clock: %p\n", __func__, clk);
++		goto out;
++	}
++
++	if (clk->ops = &clk_nodrv_ops) {
++		pr_err("%s: unregistered clock: %s\n", __func__, clk->name);
++		goto out;
++	}
++	/*
++	 * Assign empty clock ops for consumers that might still hold
++	 * a reference to this clock.
++	 */
++	flags = clk_enable_lock();
++	clk->ops = &clk_nodrv_ops;
++	clk_enable_unlock(flags);
++
++	if (!hlist_empty(&clk->children)) {
++		struct clk *child;
++
++		/* Reparent all children to the orphan list. */
++		hlist_for_each_entry(child, &clk->children, child_node)
++			clk_set_parent(child, NULL);
++	}
++
++	clk_debug_unregister(clk);
++
++	hlist_del_init(&clk->child_node);
++
++	if (clk->prepare_count)
++		pr_warn("%s: unregistering prepared clock: %s\n",
++					__func__, clk->name);
++
++	kref_put(&clk->ref, __clk_release);
++out:
++	clk_prepare_unlock();
++}
+ EXPORT_SYMBOL_GPL(clk_unregister);
+ 
+ static void devm_clk_release(struct device *dev, void *res)
+@@ -1976,19 +2088,25 @@ EXPORT_SYMBOL_GPL(devm_clk_unregister);
+  */
+ int __clk_get(struct clk *clk)
+ {
+-	if (clk && !try_module_get(clk->owner))
+-		return 0;
++	if (clk) {
++		if (!try_module_get(clk->owner))
++			return 0;
+ 
++		kref_get(&clk->ref);
++	}
+ 	return 1;
+ }
+ 
+ void __clk_put(struct clk *clk)
+ {
+-	if (WARN_ON_ONCE(IS_ERR(clk)))
++	if (!clk || WARN_ON_ONCE(IS_ERR(clk)))
+ 		return;
+ 
+-	if (clk)
+-		module_put(clk->owner);
++	clk_prepare_lock();
++	kref_put(&clk->ref, __clk_release);
++	clk_prepare_unlock();
++
++	module_put(clk->owner);
+ }
+ 
+ /***        clk rate change notifiers        ***/
+diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
+index 8cb1865..72c65e0 100644
+--- a/include/linux/clk-private.h
++++ b/include/linux/clk-private.h
+@@ -12,6 +12,7 @@
+ #define __LINUX_CLK_PRIVATE_H
+ 
+ #include <linux/clk-provider.h>
++#include <linux/kref.h>
+ #include <linux/list.h>
+ 
+ /*
+@@ -50,6 +51,7 @@ struct clk {
+ #ifdef CONFIG_COMMON_CLK_DEBUG
+ 	struct dentry		*dentry;
+ #endif
++	struct kref		ref;
+ };
+ 
+ /*
 -- 
-1.8.3.2
+1.7.9.5
 
