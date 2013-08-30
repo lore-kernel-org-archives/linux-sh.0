@@ -1,47 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 01 Aug 2013 08:27:23 +0000
-Subject: [PATCH] ARM: shmobile: armadillo800eva-reference: fix compiler warning
-Message-Id: <ab40900b70dc31a64f23b1b4dbb0917afb039775.1375345067.git.horms+renesas@verge.net.au>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Fri, 30 Aug 2013 14:53:17 +0000
+Subject: [PATCH v6 0/5] clk: clock deregistration support
+Message-Id: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375345067.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375345067.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch series implements clock deregistration in the common clock
+framework. Comparing to v5 it only includes further corrections of NULL
+clock handling.
 
-Fix the compiler warning:
+Changes since v5:
+ - fixed NULL clock handling in __clk_get(), __clk_put (patch 5/5).
 
-arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: initialization from incompatible pointer type [enabled by default]
-arch/arm/mach-shmobile/board-armadillo800eva-reference.c:196:2: warning: (near initialization for '__mach_desc_ARMADILLO800EVA_DT.restart') [enabled by default]
+Changes since v4:
+ - removed stray struct module forward declaration in patch 3/5.
 
-While at it also remove superfluous parenthesis.
+Changes since v3:
+ - replaced WARN_ON() with WARN_ON_ONCE() in clk_nodrv_disable_unprepare()
+   callback.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Changes since v2:
+ - reordered the patches so the race condition is fixed before it can
+   actually cause any issues,
+ - fixed handling of NULL clock pointers in __clk_get(), __clk_put(),
+ - added patch adding actual asignment of clk->owner; more details are
+   discussed in that specific patch.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 03b85fe..8f677df 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -190,10 +190,10 @@ static void __init eva_init(void)
- }
- 
- #define RESCNT2 IOMEM(0xe6188020)
--static void eva_restart(char mode, const char *cmd)
-+static void eva_restart(enum reboot_mode mode, const char *cmd)
- {
- 	/* Do soft power on reset */
--	writel((1 << 31), RESCNT2);
-+	writel(1 << 31, RESCNT2);
- }
- 
- static const char *eva_boards_compat_dt[] __initdata = {
--- 
-1.8.3.2
+Changes since v1:
+ - moved of_clk_{lock, unlock}, __of_clk_get_from_provider() function
+   declaractions to a local header,
+ - renamed clk_dummy_* to clk_nodrv_*.
+
+Sylwester Nawrocki (5):
+  clk: Provide not locked variant of of_clk_get_from_provider()
+  clkdev: Fix race condition in clock lookup from device tree
+  clk: Add common __clk_get(), __clk_put() implementations
+  clk: Assign module owner of a clock being registered
+  clk: Implement clk_unregister
+
+ arch/arm/include/asm/clkdev.h      |    2 +
+ arch/blackfin/include/asm/clkdev.h |    2 +
+ arch/mips/include/asm/clkdev.h     |    2 +
+ arch/sh/include/asm/clkdev.h       |    2 +
+ drivers/clk/clk.c                  |  188 +++++++++++++++++++++++++++++++++---
+ drivers/clk/clk.h                  |   16 +++
+ drivers/clk/clkdev.c               |   12 ++-
+ include/linux/clk-private.h        |    5 +
+ include/linux/clkdev.h             |    5 +
+ 9 files changed, 221 insertions(+), 13 deletions(-)
+ create mode 100644 drivers/clk/clk.h
+
+--
+1.7.9.5
 
