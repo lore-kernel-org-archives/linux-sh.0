@@ -1,79 +1,32 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 07 Aug 2013 22:26:48 +0000
-Subject: [PATCH 01/02] ARM: shmobile: Rename to r8a73a4_init_early()
-Message-Id: <20130807222648.22283.98436.sendpatchset@w520>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Fri, 30 Aug 2013 12:37:37 +0000
+Subject: [RFC 03/10] ASoC: Add SPDIF DAI format
+Message-Id: <1377866264-21110-4-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130807222638.22283.78607.sendpatchset@w520>
-In-Reply-To: <20130807222638.22283.78607.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Lars-Peter Clausen <lars@metafoo.de>
 
-Rename r8a73a4_init_delay() into r8a73a4_init_early()
-to make the function name show that more than just
-delay setup may happen in the future.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 ---
+ include/sound/soc-dai.h | 1 +
+ 1 file changed, 1 insertion(+)
 
- arch/arm/mach-shmobile/board-ape6evm-reference.c |    2 +-
- arch/arm/mach-shmobile/board-ape6evm.c           |    2 +-
- arch/arm/mach-shmobile/include/mach/r8a73a4.h    |    2 +-
- arch/arm/mach-shmobile/setup-r8a73a4.c           |    4 ++--
- 4 files changed, 5 insertions(+), 5 deletions(-)
+diff --git a/include/sound/soc-dai.h b/include/sound/soc-dai.h
+index ae9a227..eea0501 100644
+--- a/include/sound/soc-dai.h
++++ b/include/sound/soc-dai.h
+@@ -33,6 +33,7 @@ struct snd_compr_stream;
+ #define SND_SOC_DAIFMT_DSP_B		5 /* L data MSB during FRM LRC */
+ #define SND_SOC_DAIFMT_AC97		6 /* AC97 */
+ #define SND_SOC_DAIFMT_PDM		7 /* Pulse density modulation */
++#define SND_SOC_DAIFMT_SPDIF		8 /* SPDIF */
+ 
+ /* left and right justified also known as MSB and LSB respectively */
+ #define SND_SOC_DAIFMT_MSB		SND_SOC_DAIFMT_LEFT_J
+-- 
+1.8.1.4
 
---- 0001/arch/arm/mach-shmobile/board-ape6evm-reference.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm-reference.c	2013-08-07 14:31:50.000000000 +0900
-@@ -57,7 +57,7 @@ static const char *ape6evm_boards_compat
- };
- 
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
--	.init_early	= r8a73a4_init_delay,
-+	.init_early	= r8a73a4_init_early,
- 	.init_machine	= ape6evm_add_standard_devices,
- 	.dt_compat	= ape6evm_boards_compat_dt,
- MACHINE_END
---- 0001/arch/arm/mach-shmobile/board-ape6evm.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-08-07 14:31:50.000000000 +0900
-@@ -240,7 +240,7 @@ static const char *ape6evm_boards_compat
- };
- 
- DT_MACHINE_START(APE6EVM_DT, "ape6evm")
--	.init_early	= r8a73a4_init_delay,
-+	.init_early	= r8a73a4_init_early,
- 	.init_machine	= ape6evm_add_standard_devices,
- 	.dt_compat	= ape6evm_boards_compat_dt,
- MACHINE_END
---- 0001/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-08-07 14:31:50.000000000 +0900
-@@ -5,6 +5,6 @@ void r8a73a4_add_standard_devices(void);
- void r8a73a4_add_dt_devices(void);
- void r8a73a4_clock_init(void);
- void r8a73a4_pinmux_init(void);
--void r8a73a4_init_delay(void);
-+void r8a73a4_init_early(void);
- 
- #endif /* __ASM_R8A73A4_H__ */
---- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-08-07 14:32:08.000000000 +0900
-@@ -207,7 +207,7 @@ void __init r8a73a4_add_standard_devices
- 	r8a73a4_register_thermal();
- }
- 
--void __init r8a73a4_init_delay(void)
-+void __init r8a73a4_init_early(void)
- {
- #ifndef CONFIG_ARM_ARCH_TIMER
- 	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
-@@ -222,7 +222,7 @@ static const char *r8a73a4_boards_compat
- };
- 
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
--	.init_early	= r8a73a4_init_delay,
-+	.init_early	= r8a73a4_init_early,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
