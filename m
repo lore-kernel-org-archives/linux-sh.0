@@ -1,28 +1,72 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 22 Aug 2013 21:17:48 +0000
-Subject: [PATCH v4 0/3] R8A7779/Marzen R-Car VIN driver support
-Message-Id: <201308230117.49681.sergei.shtylyov@cogentembedded.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Fri, 30 Aug 2013 12:37:40 +0000
+Subject: [RFC 06/10] ARM: shmobile: r8a7790: add I2C clock
+Message-Id: <1377866264-21110-7-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201305160153.29827.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201305160153.29827.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
 
-   Here's the set of 3 patches against the Mauro's 'media_tree.git' repo's
-'master' branch. Here we add the VIN driver platform code for the R8A7779/Marzen
-with ADV7180 I2C video decoder.
+This patch add clock for I2C bus.
 
-[1/3] ARM: shmobile: r8a7779: add VIN support
-[2/3] ARM: shmobile: Marzen: add VIN and ADV7180 support
-[3/3] ARM: shmobile: Marzen: enable VIN and ADV7180 in defconfig
+Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-    Mauro has kindly agreed to merge this patchset thru his tree to resolve the
-dependency on the driver's platform data header, provided that the maintainer
-ACKs this. Simon, could you ACK the patchset ASAP -- Mauro expects to close his
-tree for 3.12 this weekend or next Monday?
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index d99b87b..05cd34b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -52,6 +52,7 @@
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
+ #define SMSTPCR8 0xe6150990
++#define SMSTPCR9 0xe6150994
+ 
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+@@ -181,6 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ 
+ /* MSTP */
+ enum {
++	MSTP931, MSTP930, MSTP929, MSTP928,
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+@@ -192,6 +194,10 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP931] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 31, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+ 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
+@@ -247,6 +253,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("mp",		&mp_clk),
+ 	CLKDEV_CON_ID("qspi",		&qspi_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
++	CLKDEV_CON_ID("peripheral_clk",	&hp_clk),
+ 
+ 	/* DIV4 */
+ 	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
+@@ -286,6 +293,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
+ };
+ 
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-- 
+1.8.1.4
 
-WBR, Sergei
