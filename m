@@ -1,54 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 05 Aug 2013 17:53:22 +0000
-Subject: [PATCH v6 03/10] media: vb2: Clarify queue_setup() and buf_prepare() usage documentation
-Message-Id: <1375725209-2674-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 30 Aug 2013 03:41:07 +0000
+Subject: [PATCH net-next v2 1/2] sh_eth: Fix cache invalidation omission of receive buffer
+Message-Id: <1377834068-6978-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375725209-2674-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kouei Abe <kouei.abe.cp@renesas.com>, Simon Horman <horms+renesas@verge.net.au>
 
-Explain how the two operations must handle formats and validate buffer
-sizes when used with VIDIOC_CREATE_BUFS.
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- include/media/videobuf2-core.h | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+v2 [Simon Horman]
+* Correct indentation
 
-diff --git a/include/media/videobuf2-core.h b/include/media/videobuf2-core.h
-index d88a098..6781258 100644
---- a/include/media/videobuf2-core.h
-+++ b/include/media/videobuf2-core.h
-@@ -219,8 +219,9 @@ struct vb2_buffer {
-  *			configured format and *num_buffers is the total number
-  *			of buffers, that are being allocated. When called from
-  *			VIDIOC_CREATE_BUFS, fmt != NULL and it describes the
-- *			target frame format. In this case *num_buffers are being
-- *			allocated additionally to q->num_buffers.
-+ *			target frame format (if the format isn't valid the
-+ *			callback must return -EINVAL). In this case *num_buffers
-+ *			are being allocated additionally to q->num_buffers.
-  * @wait_prepare:	release any locks taken while calling vb2 functions;
-  *			it is called before an ioctl needs to wait for a new
-  *			buffer to arrive; required to avoid a deadlock in
-@@ -236,8 +237,10 @@ struct vb2_buffer {
-  * @buf_prepare:	called every time the buffer is queued from userspace
-  *			and from the VIDIOC_PREPARE_BUF ioctl; drivers may
-  *			perform any initialization required before each hardware
-- *			operation in this callback; if an error is returned, the
-- *			buffer will not be queued in driver; optional
-+ *			operation in this callback; drivers that support
-+ *			VIDIOC_CREATE_BUFS must also validate the buffer size;
-+ *			if an error is returned, the buffer will not be queued
-+ *			in driver; optional
-  * @buf_finish:		called before every dequeue of the buffer back to
-  *			userspace; drivers may perform any operations required
-  *			before userspace accesses the buffer; optional
+ drivers/net/ethernet/renesas/sh_eth.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 4b47300..3c0a24a 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1342,6 +1342,9 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 			mdp->rx_skbuff[entry] = NULL;
+ 			if (mdp->cd->rpadir)
+ 				skb_reserve(skb, NET_IP_ALIGN);
++			dma_sync_single_for_cpu(&ndev->dev, rxdesc->addr,
++						mdp->rx_buf_sz,
++						DMA_FROM_DEVICE);
+ 			skb_put(skb, pkt_len);
+ 			skb->protocol = eth_type_trans(skb, ndev);
+ 			netif_rx(skb);
 -- 
-1.8.1.5
+1.8.4.rc4
 
