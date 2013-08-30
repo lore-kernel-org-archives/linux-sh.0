@@ -1,208 +1,31 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 26 Aug 2013 08:51:22 +0000
-Subject: [PATCH 1/5 v2] sh-pfc: r8a7778: add SRU/SSI pin support
-Message-Id: <87fvtwvnqy.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 30 Aug 2013 11:16:47 +0000
+Subject: Re: [PATCH 1/5 v2] sh-pfc: r8a7778: add SRU/SSI pin support
+Message-Id: <2831877.45k5mG7Qo8@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87fvtwvnqy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fvtwvnqy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+Hi Morimoto-san,
 
- - alphabetical order
- - separate into _ctrl and _data set
+Thank you for the patch.
 
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  125 ++++++++++++++++++++++++++++++++++
- 1 file changed, 125 insertions(+)
+On Monday 26 August 2013 01:51:22 Kuninori Morimoto wrote:
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index 428d2a6..20b1d0d 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -1288,6 +1288,22 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 						     arg5##_MARK, arg6##_MARK, \
- 						     arg7##_MARK, arg8##_MARK, }
- 
-+/* - AUDIO macro -------------------------------------------------------------*/
-+#define AUDIO_PFC_PIN(name, pin)	SH_PFC_PINS(name, pin)
-+#define AUDIO_PFC_DAT(name, pin)	SH_PFC_MUX1(name, pin)
-+
-+/* - AUDIO clock -------------------------------------------------------------*/
-+AUDIO_PFC_PIN(audio_clk_a,	RCAR_GP_PIN(2, 22));
-+AUDIO_PFC_DAT(audio_clk_a,	AUDIO_CLKA);
-+AUDIO_PFC_PIN(audio_clk_b,	RCAR_GP_PIN(2, 23));
-+AUDIO_PFC_DAT(audio_clk_b,	AUDIO_CLKB);
-+AUDIO_PFC_PIN(audio_clk_c,	RCAR_GP_PIN(2, 7));
-+AUDIO_PFC_DAT(audio_clk_c,	AUDIO_CLKC);
-+AUDIO_PFC_PIN(audio_clkout_a,	RCAR_GP_PIN(2, 16));
-+AUDIO_PFC_DAT(audio_clkout_a,	AUDIO_CLKOUT_A);
-+AUDIO_PFC_PIN(audio_clkout_b,	RCAR_GP_PIN(1, 16));
-+AUDIO_PFC_DAT(audio_clkout_b,	AUDIO_CLKOUT_B);
-+
- /* - Ether ------------------------------------------------------------------ */
- SH_PFC_PINS(ether_rmii,		RCAR_GP_PIN(4, 10),	RCAR_GP_PIN(4, 11),
- 				RCAR_GP_PIN(4, 13),	RCAR_GP_PIN(4, 9),
-@@ -1577,6 +1593,59 @@ SDHI_PFC_WPPN(sdhi2_wp_a,	SD2_WP_A);
- SDHI_PFC_PINS(sdhi2_wp_b,	RCAR_GP_PIN(3, 28));
- SDHI_PFC_WPPN(sdhi2_wp_b,	SD2_WP_B);
- 
-+/* - SSI macro -------------------------------------------------------------- */
-+#define SSI_PFC_PINS(name, args...)		SH_PFC_PINS(name, args)
-+#define SSI_PFC_CTRL(name, sck, ws)		SH_PFC_MUX2(name, sck, ws)
-+#define SSI_PFC_DATA(name, d)			SH_PFC_MUX1(name, d)
-+
-+/* - SSI 0/1/2 -------------------------------------------------------------- */
-+SSI_PFC_PINS(ssi012_ctrl,	RCAR_GP_PIN(3, 6),	RCAR_GP_PIN(3, 7));
-+SSI_PFC_CTRL(ssi012_ctrl,	SSI_SCK012,		SSI_WS012);
-+SSI_PFC_PINS(ssi0_data,		RCAR_GP_PIN(3, 10));
-+SSI_PFC_DATA(ssi0_data,		SSI_SDATA0);
-+SSI_PFC_PINS(ssi1_a_ctrl,	RCAR_GP_PIN(2, 20),	RCAR_GP_PIN(2, 21));
-+SSI_PFC_CTRL(ssi1_a_ctrl,	SSI_SCK1_A,		SSI_WS1_A);
-+SSI_PFC_PINS(ssi1_b_ctrl,	PIN_NUMBER(3, 20),	RCAR_GP_PIN(1, 3));
-+SSI_PFC_CTRL(ssi1_b_ctrl,	SSI_SCK1_B,		SSI_WS1_B);
-+SSI_PFC_PINS(ssi1_data,		RCAR_GP_PIN(3, 9));
-+SSI_PFC_DATA(ssi1_data,		SSI_SDATA1);
-+SSI_PFC_PINS(ssi2_a_ctrl,	RCAR_GP_PIN(2, 26),	RCAR_GP_PIN(3, 4));
-+SSI_PFC_CTRL(ssi2_a_ctrl,	SSI_SCK2_A,		SSI_WS2_A);
-+SSI_PFC_PINS(ssi2_b_ctrl,	RCAR_GP_PIN(2, 6),	RCAR_GP_PIN(2, 17));
-+SSI_PFC_CTRL(ssi2_b_ctrl,	SSI_SCK2_B,		SSI_WS2_B);
-+SSI_PFC_PINS(ssi2_data,		RCAR_GP_PIN(3, 8));
-+SSI_PFC_DATA(ssi2_data,		SSI_SDATA2);
-+
-+/* - SSI 3/4 ---------------------------------------------------------------- */
-+SSI_PFC_PINS(ssi34_ctrl,	RCAR_GP_PIN(3, 2),	RCAR_GP_PIN(3, 3));
-+SSI_PFC_CTRL(ssi34_ctrl,	SSI_SCK34,		SSI_WS34);
-+SSI_PFC_PINS(ssi3_data,		RCAR_GP_PIN(3, 5));
-+SSI_PFC_DATA(ssi3_data,		SSI_SDATA3);
-+SSI_PFC_PINS(ssi4_ctrl,		RCAR_GP_PIN(1, 22),     RCAR_GP_PIN(1, 23));
-+SSI_PFC_CTRL(ssi4_ctrl,		SSI_SCK4,               SSI_WS4);
-+SSI_PFC_PINS(ssi4_data,		RCAR_GP_PIN(3, 4));
-+SSI_PFC_DATA(ssi4_data,		SSI_SDATA4);
-+
-+/* - SSI 5 ------------------------------------------------------------------ */
-+SSI_PFC_PINS(ssi5_ctrl,		RCAR_GP_PIN(2, 31),	RCAR_GP_PIN(3, 0));
-+SSI_PFC_CTRL(ssi5_ctrl,		SSI_SCK5,		SSI_WS5);
-+SSI_PFC_PINS(ssi5_data,		RCAR_GP_PIN(3, 1));
-+SSI_PFC_DATA(ssi5_data,		SSI_SDATA5);
-+
-+/* - SSI 6 ------------------------------------------------------------------ */
-+SSI_PFC_PINS(ssi6_ctrl,		RCAR_GP_PIN(2, 28),	RCAR_GP_PIN(2, 29));
-+SSI_PFC_CTRL(ssi6_ctrl,		SSI_SCK6,		SSI_WS6);
-+SSI_PFC_PINS(ssi6_data,		RCAR_GP_PIN(2, 30));
-+SSI_PFC_DATA(ssi6_data,		SSI_SDATA6);
-+
-+/* - SSI 7/8  --------------------------------------------------------------- */
-+SSI_PFC_PINS(ssi78_ctrl,	RCAR_GP_PIN(2, 24),	RCAR_GP_PIN(2, 25));
-+SSI_PFC_CTRL(ssi78_ctrl,	SSI_SCK78,		SSI_WS78);
-+SSI_PFC_PINS(ssi7_data,		RCAR_GP_PIN(2, 27));
-+SSI_PFC_DATA(ssi7_data,		SSI_SDATA7);
-+SSI_PFC_PINS(ssi8_data,		RCAR_GP_PIN(2, 26));
-+SSI_PFC_DATA(ssi8_data,		SSI_SDATA8);
-+
- /* - USB0 ------------------------------------------------------------------- */
- SH_PFC_PINS(usb0,		RCAR_GP_PIN(0, 1));
- SH_PFC_MUX1(usb0,		PENC0);
-@@ -1624,6 +1693,11 @@ VIN_PFC_PINS(vin1_sync,		RCAR_GP_PIN(3, 21),	RCAR_GP_PIN(3, 22));
- VIN_PFC_SYNC(vin1_sync,		VI1_HSYNC,		VI1_VSYNC);
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(audio_clk_a),
-+	SH_PFC_PIN_GROUP(audio_clk_b),
-+	SH_PFC_PIN_GROUP(audio_clk_c),
-+	SH_PFC_PIN_GROUP(audio_clkout_a),
-+	SH_PFC_PIN_GROUP(audio_clkout_b),
- 	SH_PFC_PIN_GROUP(ether_rmii),
- 	SH_PFC_PIN_GROUP(ether_link),
- 	SH_PFC_PIN_GROUP(ether_magic),
-@@ -1713,6 +1787,25 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_data4_b),
- 	SH_PFC_PIN_GROUP(sdhi2_wp_a),
- 	SH_PFC_PIN_GROUP(sdhi2_wp_b),
-+	SH_PFC_PIN_GROUP(ssi012_ctrl),
-+	SH_PFC_PIN_GROUP(ssi0_data),
-+	SH_PFC_PIN_GROUP(ssi1_a_ctrl),
-+	SH_PFC_PIN_GROUP(ssi1_b_ctrl),
-+	SH_PFC_PIN_GROUP(ssi1_data),
-+	SH_PFC_PIN_GROUP(ssi2_a_ctrl),
-+	SH_PFC_PIN_GROUP(ssi2_b_ctrl),
-+	SH_PFC_PIN_GROUP(ssi2_data),
-+	SH_PFC_PIN_GROUP(ssi34_ctrl),
-+	SH_PFC_PIN_GROUP(ssi3_data),
-+	SH_PFC_PIN_GROUP(ssi4_ctrl),
-+	SH_PFC_PIN_GROUP(ssi4_data),
-+	SH_PFC_PIN_GROUP(ssi5_ctrl),
-+	SH_PFC_PIN_GROUP(ssi5_data),
-+	SH_PFC_PIN_GROUP(ssi6_ctrl),
-+	SH_PFC_PIN_GROUP(ssi6_data),
-+	SH_PFC_PIN_GROUP(ssi78_ctrl),
-+	SH_PFC_PIN_GROUP(ssi7_data),
-+	SH_PFC_PIN_GROUP(ssi8_data),
- 	SH_PFC_PIN_GROUP(usb0),
- 	SH_PFC_PIN_GROUP(usb0_ovc),
- 	SH_PFC_PIN_GROUP(usb1),
-@@ -1725,6 +1818,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(vin1_sync),
- };
- 
-+static const char * const audio_clk_groups[] = {
-+	"audio_clk_a",
-+	"audio_clk_b",
-+	"audio_clk_c",
-+	"audio_clkout_a",
-+	"audio_clkout_b",
-+};
-+
- static const char * const ether_groups[] = {
- 	"ether_rmii",
- 	"ether_link",
-@@ -1875,6 +1976,28 @@ static const char * const sdhi2_groups[] = {
- 	"sdhi2_wp_b",
- };
- 
-+static const char * const ssi_groups[] = {
-+	"ssi012_ctrl",
-+	"ssi0_data",
-+	"ssi1_a_ctrl",
-+	"ssi1_b_ctrl",
-+	"ssi1_data",
-+	"ssi2_a_ctrl",
-+	"ssi2_b_ctrl",
-+	"ssi2_data",
-+	"ssi34_ctrl",
-+	"ssi3_data",
-+	"ssi4_ctrl",
-+	"ssi4_data",
-+	"ssi5_ctrl",
-+	"ssi5_data",
-+	"ssi6_ctrl",
-+	"ssi6_data",
-+	"ssi78_ctrl",
-+	"ssi7_data",
-+	"ssi8_data",
-+};
-+
- static const char * const usb0_groups[] = {
- 	"usb0",
- 	"usb0_ovc",
-@@ -1898,6 +2021,7 @@ static const char * const vin1_groups[] = {
- };
- 
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(audio_clk),
- 	SH_PFC_FUNCTION(ether),
- 	SH_PFC_FUNCTION(hscif0),
- 	SH_PFC_FUNCTION(hscif1),
-@@ -1918,6 +2042,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(sdhi0),
- 	SH_PFC_FUNCTION(sdhi1),
- 	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(ssi),
- 	SH_PFC_FUNCTION(usb0),
- 	SH_PFC_FUNCTION(usb1),
- 	SH_PFC_FUNCTION(vin0),
+Great work, no comment :-)
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+I've taken the patch in my tree. Unless there's an urgency, I and will push it 
+to v3.13, as the v3.12 merge window is about to open.
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
