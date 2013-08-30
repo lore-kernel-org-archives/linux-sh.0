@@ -1,74 +1,89 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 02 Aug 2013 18:10:21 +0000
-Subject: Re: [PATCH] tmio_mmc_dma: fix PIO fallback on SDHI
-Message-Id: <51FBF60D.1040309@cogentembedded.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Fri, 30 Aug 2013 12:37:38 +0000
+Subject: [RFC 04/10] i2c: rcar: modify I2C driver
+Message-Id: <1377866264-21110-5-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308020117.17897.sergei.shtylyov@cogentembedded.com> <Pine.LNX.4.64.1308021332260.28012@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1308021332260.28012@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, ian@mnementh.co.uk, cjb@laptop.org, linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
+To: linux-sh@vger.kernel.org
 
-On 08/02/2013 03:35 PM, Guennadi Liakhovetski wrote:
+From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
 
->> I'm testing SH-Mobile SDHI driver in DMA mode with a  new DMA controller  using
->> 'bonnie++' and getting DMA error after which the tmio_mmc_dma.c code falls back
->> to PIO but all commands time out after that.  It turned out that the fallback
->> code calls tmio_mmc_enable_dma() with RX/TX channels already freed and pointers
->> to them cleared, so that the function bails out early instead  of clearing the
->> DMA bit in the CTL_DMA_ENABLE register.  Fixing the RX/TX channel check so that
->> it takes place only when enabling DMA helps with the PIO fallback.
+This patch modify calculate for clock in I2C driver.
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+---
+ drivers/i2c/busses/i2c-rcar.c | 17 +++++++++++++++--
+ include/linux/i2c/i2c-rcar.h  |  4 ++++
+ 2 files changed, 19 insertions(+), 2 deletions(-)
 
->> ---
->> The patch is against Chris Ball's 'mmc.git' repo, 'master' branch.
-
->>   drivers/mmc/host/tmio_mmc_dma.c |    2 +-
->>   1 file changed, 1 insertion(+), 1 deletion(-)
-
->> Index: mmc/drivers/mmc/host/tmio_mmc_dma.c
->> =================================>> --- mmc.orig/drivers/mmc/host/tmio_mmc_dma.c
->> +++ mmc/drivers/mmc/host/tmio_mmc_dma.c
->> @@ -25,7 +25,7 @@
->>
->>   void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
->>   {
->> -	if (!host->chan_tx || !host->chan_rx)
->> +	if (enable && !(host->chan_tx && host->chan_rx))
->>   		return;
-
-> Ok, I see the problem and this does fix it. But it adds complexity to the
-> driver - one more condition to an if.
-
-    So what?
-
-> Whereas, I think, it can be avoided if we just move calls to
-
-> tmio_mmc_enable_dma(host, false);
-
-> in tmio_mmc_start_dma_rx() and tmio_mmc_start_dma_tx() a couple of lines
-
-    Well, not couple. :-P
-
-> up - before clearing ->chan_rx and ->chan_tx pointers? That should work
-> too at no cost.
-
-    Well, it was my first variant. However, not knowing the hardware well, I 
-deemed it not quite safe to clear the DMA bit before shutting down the DMA 
-channels, so came up with the second version (which I consider more logically 
-correct).
-
-> I think that would be a better fix, could you, please, try?
-
-    I tried it but mystically fixing the PIO fallback makes DMA error less 
-frequent. IIRC, I didn't see DMA error with the first variant of the fix, so 
-I'll have to retry it...
-
-> Thanks
-> Guennadi
-
-WBR, Sergei
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 0fc5858..c4fb69c 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -221,15 +221,28 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 				    struct device *dev)
+ {
+ 	struct clk *clkp = clk_get(NULL, "peripheral_clk");
++	struct i2c_rcar_platform_data *pdata = dev->platform_data;
+ 	u32 scgd, cdf;
+ 	u32 round, ick;
+ 	u32 scl;
++	u32 cdf_width;
++	u32 flags = pdata ? pdata->flags : 0;
+ 
+ 	if (!clkp) {
+ 		dev_err(dev, "there is no peripheral_clk\n");
+ 		return -EIO;
+ 	}
+ 
++	switch (flags & I2C_RCAR_FLAGS_ICCCR_MASK) {
++	default:
++	case I2C_RCAR_FLAGS_ICCCR_IS_2BIT:
++		cdf_width = 2;
++		break;
++	case I2C_RCAR_FLAGS_ICCCR_IS_3BIT:
++		cdf_width = 3;
++		break;
++	}
++
+ 	/*
+ 	 * calculate SCL clock
+ 	 * see
+@@ -245,7 +258,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	 * clkp : peripheral_clk
+ 	 * F[]  : integer up-valuation
+ 	 */
+-	for (cdf = 0; cdf < 4; cdf++) {
++	for (cdf = 0; cdf < (1 << cdf_width); cdf++) {
+ 		ick = clk_get_rate(clkp) / (1 + cdf);
+ 		if (ick < 20000000)
+ 			goto ick_find;
+@@ -287,7 +300,7 @@ scgd_find:
+ 	/*
+ 	 * keep icccr value
+ 	 */
+-	priv->icccr = (scgd << 2 | cdf);
++	priv->icccr = (scgd << (cdf_width) | cdf);
+ 
+ 	return 0;
+ }
+diff --git a/include/linux/i2c/i2c-rcar.h b/include/linux/i2c/i2c-rcar.h
+index 496f5c2..572a6e5 100644
+--- a/include/linux/i2c/i2c-rcar.h
++++ b/include/linux/i2c/i2c-rcar.h
+@@ -5,6 +5,10 @@
+ 
+ struct i2c_rcar_platform_data {
+ 	u32 bus_speed;
++	u32 flags;
++#define I2C_RCAR_FLAGS_ICCCR_MASK	(0xF << 0)
++#define I2C_RCAR_FLAGS_ICCCR_IS_2BIT	(0 << 0) /* default */
++#define I2C_RCAR_FLAGS_ICCCR_IS_3BIT	(1 << 0)
+ };
+ 
+ #endif /* __I2C_R_CAR_H__ */
+-- 
+1.8.1.4
 
