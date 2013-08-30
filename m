@@ -1,44 +1,32 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 23 Aug 2013 22:48:54 +0000
-Subject: [PATCH v3 2/2] ARM: shmobile: BOCK-W: enable DMA for SDHI0
-Message-Id: <201308240248.54866.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 30 Aug 2013 03:41:06 +0000
+Subject: [PATCH net-next v2 0/2] sh_eth Updates
+Message-Id: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308240244.38963.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308240244.38963.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kouei Abe <kouei.abe.cp@renesas.com>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Max Filippov <max.filippov@cogentembedded.com>
+Hi,
 
-Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
-driver.
+please consider the following updates to the sh_eth driver
+by Abe-san. They were developed during his testing of the
+driver on the r8a7790/lager board.
 
-Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-[Sergei: removed #include <mach/dma.h>]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Changes between v1 and v2:
 
----
-Changes in version 3:
-- resolved reject.
+* Correct indentation used in
+  "sh_eth: Fix cache invalidation omission of receive buffer"
 
-Changes in version 2:
-- removed #include <mach/dma.h>;
-- refreshed the patch.
+Kouei Abe (2):
+  sh_eth: Fix cache invalidation omission of receive buffer
+  sh_eth: Enable Rx descriptor word 0 shift for r8a7790
 
- arch/arm/mach-shmobile/board-bockw.c |    2 ++
- 1 file changed, 2 insertions(+)
+ drivers/net/ethernet/renesas/sh_eth.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-Index: renesas/arch/arm/mach-shmobile/board-bockw.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw.c
-@@ -89,6 +89,8 @@ static struct rcar_phy_platform_data usb
- 
- /* SDHI */
- static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
-+	.dma_slave_tx	= HPBDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= HPBDMA_SLAVE_SDHI0_RX,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+-- 
+1.8.4.rc4
+
