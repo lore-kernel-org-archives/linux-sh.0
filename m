@@ -1,43 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 22 Aug 2013 21:40:36 +0000
-Subject: [PATCH v6 3/3] ARM: shmobile: BOCK-W: enable VIN and ML86V7667 in defconfig
-Message-Id: <201308230140.37614.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 30 Aug 2013 03:41:08 +0000
+Subject: [PATCH net-next v2 2/2] sh_eth: Enable Rx descriptor word 0 shift for r8a7790
+Message-Id: <1377834068-6978-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308230134.26092.sergei.shtylyov@cogentembedded.com>
+References: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1377834068-6978-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kouei Abe <kouei.abe.cp@renesas.com>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-Add the VIN and ML86V7667 drivers to 'bockw_defconfig'.
+This corrects an oversight when r8a7790 support was added to sh_eth.
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
 ---
-Changes since version 4:
-- resolved reject.
+v2
+* No change
 
- arch/arm/configs/bockw_defconfig |    7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/net/ethernet/renesas/sh_eth.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Index: media_tree/arch/arm/configs/bockw_defconfig
-=================================--- media_tree.orig/arch/arm/configs/bockw_defconfig
-+++ media_tree/arch/arm/configs/bockw_defconfig
-@@ -82,6 +82,13 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HWMON is not set
- CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
-+CONFIG_MEDIA_SUPPORT=y
-+CONFIG_MEDIA_CAMERA_SUPPORT=y
-+CONFIG_V4L_PLATFORM_DRIVERS=y
-+CONFIG_SOC_CAMERA=y
-+CONFIG_VIDEO_RCAR_VIN=y
-+# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
-+CONFIG_VIDEO_ML86V7667=y
- CONFIG_SPI=y
- CONFIG_SPI_SH_HSPI=y
- CONFIG_USB=y
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 3c0a24a..7aebbe0 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -416,6 +416,7 @@ static struct sh_eth_cpu_data r8a7790_data = {
+ 	.tpauser	= 1,
+ 	.hw_swap	= 1,
+ 	.rmiimode	= 1,
++	.shift_rd0	= 1,
+ };
+ 
+ static void sh_eth_set_rate_sh7724(struct net_device *ndev)
+-- 
+1.8.4.rc4
+
