@@ -1,33 +1,23 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 31 Aug 2013 23:24:49 +0000
-Subject: [PATCH 4/4] ARM: shmobile: BOCK-W reference: add Ether PFC settings
-Message-Id: <201309010324.50159.sergei.shtylyov@cogentembedded.com>
+Date: Sat, 31 Aug 2013 23:11:04 +0000
+Subject: [PATCH 0/4] Add Ether DT support for R8A7778/BOCK-W reference board
+Message-Id: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add the Ether pin group to bockw_pinctrl_map[].
+Hello.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+   Here's the set of 4 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-20130830' tag. Here we add the Ether device tree support working
+on the R8A7778/BOCK-W reference board. The patchset requires the 'sh_eth' driver
+device tree support posted earlier in order to work.
 
----
- arch/arm/mach-shmobile/board-bockw-reference.c |    3 +++
- 1 file changed, 3 insertions(+)
+[1/4] ARM: shmobile: r8a7778: add Ether DT support
+[2/4] ARM: shmobile: r8a7778: add Ether clock for DT case
+[3/4] ARM: shmobile: bockw-reference: add Ether DT support
+[4/4] ARM: shmobile: BOCK-W reference: add Ether PFC settings
 
-Index: renesas/arch/arm/mach-shmobile/board-bockw-reference.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ renesas/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -29,6 +29,9 @@
-  */
- 
- static const struct pinctrl_map bockw_pinctrl_map[] = {
-+	/* Ether */
-+	PIN_MAP_MUX_GROUP_DEFAULT("fde00000.ethernet", "pfc-r8a7778",
-+				  "ether_rmii", "ether"),
- 	/* SCIF0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
- 				  "scif0_data_a", "scif0"),
+WBR, Sergei
