@@ -1,28 +1,31 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 02 Aug 2013 09:45:38 +0000
-Subject: Re: [PATCH v5 4/9] v4l: Fix V4L2_MBUS_FMT_YUV10_1X30 media bus pixel code value
-Message-Id: <51FB7FC2.2000607@xs4all.nl>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 31 Aug 2013 23:18:09 +0000
+Subject: [PATCH 2/4] ARM: shmobile: r8a7778: add Ether clock for DT case
+Message-Id: <201309010318.10337.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375405408-17134-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1375405408-17134-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375405408-17134-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Sakari Ailus <sakari.ailus@iki.fi>, Katsuya MATSUBARA <matsu@igel.co.jp>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
+Add extra Ether clock lookup entry in the device tree case.
 
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On 08/02/2013 03:03 AM, Laurent Pinchart wrote:
-> The V4L2_MBUS_FMT_YUV10_1X30 code is documented as being equal to
-> 0x2014, while the v4l2-mediabus.h header defines it as 0x2016. Fix the
-> documentation.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Sakari Ailus <sakari.ailus@iki.fi>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
-
-Regards,
-
-	Hans
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -146,6 +146,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
++	CLKDEV_DEV_ID("fde00000.ethernet", &mstp_clks[MSTP114]), /* Ether w/DT */
+ 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
