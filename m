@@ -1,21 +1,41 @@
-From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Date: Fri, 30 Aug 2013 08:49:24 +0000
-Subject: Re: [Query] CPUFreq: Does these machines have separate clock domains for CPUs?
-Message-Id: <1377852564.3978.0.camel@pasglop>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 31 Aug 2013 00:23:29 +0000
+Subject: [PATCH 1/2] sh_eth: check platform data pointer
+Message-Id: <201308310423.30322.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAKohponWn-RN7-6sdhghd6RGCOd357G+TKLsxHfqnSCuMD7xxw@mail.gmail.com>
-In-Reply-To: <CAKohponWn-RN7-6sdhghd6RGCOd357G+TKLsxHfqnSCuMD7xxw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-On Thu, 2013-08-29 at 15:45 +0530, Viresh Kumar wrote:
-> drivers/cpufreq/pmac32-cpufreq.c
+Check the platform data pointer before dereferencing it and error out of the
+probe() method if it's NULL.
 
-This is always UP.
+This has additional effect of preventing kernel oops with outdated platform data
+containing zero PHY address instead (such as on SolutionEngine7710).
 
-Cheers,
-Ben.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+---
+This patch is against Dave's 'net-next.git' repo.
 
+ drivers/net/ethernet/renesas/sh_eth.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2653,6 +2653,12 @@ static int sh_eth_drv_probe(struct platf
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_resume(&pdev->dev);
+ 
++	if (!pd) {
++		dev_err(&pdev->dev, "no platform data\n");
++		ret = -EINVAL;
++		goto out_release;
++	}
++
+ 	/* get PHY ID */
+ 	mdp->phy_id = pd->phy;
+ 	mdp->phy_interface = pd->phy_interface;
