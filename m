@@ -1,39 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Aug 2013 04:28:40 +0000
-Subject: [GIT PULL 19/19] ARM: shmobile: r8a7740: Add TPU node to the device tree
-Message-Id: <8b3e32c1fe5dce55e28e76b20361841dc863ec17.1375838900.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 31 Aug 2013 23:22:05 +0000
+Subject: [PATCH 3/4] ARM: shmobile: bockw-reference: add Ether DT support
+Message-Id: <201309010322.06135.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375838900.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1375838900.git.horms+renesas@verge.net.au>
+References: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201309010311.05466.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Define the BOCK-W board dependent part of the Ether device node. 
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 4b0728f..27f014f 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -144,4 +144,11 @@
- 			      0 72 0x4
- 			      0 73 0x4>;
+Index: renesas/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ renesas/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -30,3 +30,14 @@
+ 		reg = <0x60000000 0x10000000>;
  	};
-+
-+	tpu: pwm@e6600000 {
-+		compatible = "renesas,tpu-r8a7740", "renesas,tpu";
-+		reg = <0xe6600000 0x100>;
-+		status = "disabled";
-+		#pwm-cells = <3>;
-+	};
  };
--- 
-1.8.3.2
-
++
++&ether {
++	status = "ok";
++	phy-mode = "rmii";
++	phy-handle = <&phy1>;
++	renesas,no-ether-link;
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++	};
++};
