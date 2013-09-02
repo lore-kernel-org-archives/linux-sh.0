@@ -1,46 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 12 Sep 2013 19:45:05 +0000
-Subject: Re: [PATCH] sh_eth: r8a7790: Handle the RFE (Receive FIFO overflow Error) interrupt
-Message-Id: <523219C1.1020300@cogentembedded.com>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Mon, 02 Sep 2013 10:42:00 +0000
+Subject: Re: [PATCH v3] dma: add driver for R-Car HPB-DMAC
+Message-Id: <20130902103000.GL7376@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375142928-17769-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <51F7CADE.5070801@cogentembedded.com> <4760883.hI1JN8gopV@avalon>
-In-Reply-To: <4760883.hI1JN8gopV@avalon>
+References: <201308250033.24936.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308250033.24936.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: djbw@fb.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
 
-Hello.
+On Sun, Aug 25, 2013 at 12:33:24AM +0400, Sergei Shtylyov wrote:
+> From: Max Filippov <max.filippov@cogentembedded.com>
+> 
+> Add support for HPB-DMAC found in Renesas R-Car SoCs, using 'shdma-base' DMA 
+> driver framework.
+> 
+> Based on the original patch by Phil Edworthy <phil.edworthy@renesas.com>.
+> 
+> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+> [Sergei: removed useless #include, sorted #include's, fixed HPB_DMA_TCR_MAX,
+> fixed formats and removed line breaks in the dev_dbg() calls, rephrased and
+> added IRQ # to the shdma_request_irq() failure message, added MODULE_AUTHOR(),
+> removed '__init'/'__exit' annotations from the probe()/remove() methods, removed
+> '__initdata' annotation from 'hpb_dmae_driver', fixed guard macro name in the
+> header file, fixed #define ASYNCRSTR_ASRST20, added #define ASYNCRSTR_ASRST24,
+> added the necessary runtime PM calls to the probe() and remove() methods,
+> handled errors returned by dma_async_device_register(), beautified comments
+> and #define's.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Applied, thanks
 
-On 07/30/2013 06:20 PM, Laurent Pinchart wrote:
-
->>> The RFE interrupt is enabled for the r8a7790 but isn't handled,
->>> resulting in the interrupts core noticing unhandled interrupts, and
->>> eventually disabling the ethernet IRQ.
-
->>> Fix it by adding RFE to the bitmask of error interrupts to be handled
->>> for r8a7790.
-
->> So, Simon hasn't synced his patch to my late bug fix in 3.10... Did this
->> patch help you with your NFS boot issue, Laurent?
-
-> Yes, it fixes the "disabling interrupt, nobody cared" problem. I still have
-> intermittent NFS issues, but at least I can now boot.
-
-    Looks like the reason for them is the same I had to fix up for the BOCK-W: 
-the bouncing LINK signal. The PHY used is the same as on BOCK-W, however, its 
-LED seems to be configured differently: for LINK and ACTIVE LEDs, this is 
-non-default PHY configuration which AFAIK gets reset to default when the PHY 
-gets reset. What I saw when I added orintk() for the interrupt enable/mask 
-tracing was the LINK signal behaving normally at first but after some time ECI 
-(M-Port in the manuals) interrupts started to behave the way well known from 
-BOCK-W, i.e. bouncing on and off after each packet; I was also getting endless 
-RFE (Rx FIFO overflow) interrupts and NFS was unable to mount at all in this 
-traced mode. The fix was the same as for BOCK-W: to set 'no_ether_link' field 
-of the platfrom data to 1. After that I've no more seen NFS timeouts and RFE 
-interrupts. I'm going to continue testing but thought I let everybody know of 
-my currct findings and the remedy for the NFS issue.
-
-WBR, Sergei
-
+~Vinod
