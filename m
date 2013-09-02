@@ -1,79 +1,101 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Sep 2013 18:40:08 +0000
-Subject: Re: [PATCH 3/6] sh: clkfwk: Select sh-/common- clkfwk alternatively
-Message-Id: <1663688.MHxO4ng5PY@avalon>
+Date: Mon, 02 Sep 2013 13:22:16 +0000
+Subject: Re: [RFC 04/10] i2c: rcar: modify I2C driver
+Message-Id: <1559648.EAilCrTWtP@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52410F86.4040301@renesas.com> <20130924131206.d57d07f5faa5cb0773fc328c@ops.dti.ne.jp>
-In-Reply-To: <20130924131206.d57d07f5faa5cb0773fc328c@ops.dti.ne.jp>
+References: <1377866264-21110-5-git-send-email-ulrich.hecht@gmail.com>
+In-Reply-To: <1377866264-21110-5-git-send-email-ulrich.hecht@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: takasi-y@ops.dti.ne.jp
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, ben.dooks@codethink.co.uk, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>, devicetree@vger.kernel.org, linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Mike Turquette <mturquette@linaro.org>, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Yoshii-san,
+Hello,
 
 Thank you for the patch.
 
-On Tuesday 24 September 2013 13:12:06 takasi-y@ops.dti.ne.jp wrote:
-> Make sh clock framework core depend on HAVE_MACH_CLKDEV, and
-> set it
-> - y on sh for backward compatibility
-> - !CONFIG_COMMON_CLK on sh-mobile
-> This is a preparation for migration to common clock framework
-> from sh clock framework on sh-mobile.
-
-While I agree with this patch, I believe the use of the HAVE_MACH_CLKDEV 
-configuration option to select whether to compile core.o in is a bit of an 
-abuse. I would have created a new configuration option (SH_CLK_CORE in 
-drivers/sh/Kconfig for instance) as 'def_bool y' that depends on SH || (ARM && 
-!COMMON_CLK).
-
-However, as all ARCH_SHMOBILE platforms should be converted to the common 
-clock framework, this is only temporary and could be revisited later, so I'm 
-fine with keeping the patch as-is.
-
-> Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-> ---
->  arch/arm/Kconfig        | 2 +-
->  arch/sh/Kconfig         | 1 +
->  drivers/sh/clk/Makefile | 3 +--
->  3 files changed, 3 insertions(+), 3 deletions(-)
+On Friday 30 August 2013 14:37:38 Ulrich Hecht wrote:
+> From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
 > 
-> diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-> index 3f7714d..53044ca 100644
-> --- a/arch/arm/Kconfig
-> +++ b/arch/arm/Kconfig
-> @@ -650,7 +650,7 @@ config ARCH_SHMOBILE
->  	select HAVE_ARM_SCU if SMP
->  	select HAVE_ARM_TWD if SMP
->  	select HAVE_CLK
-> -	select HAVE_MACH_CLKDEV
-> +	select HAVE_MACH_CLKDEV if !COMMON_CLK
->  	select HAVE_SMP
->  	select MIGHT_HAVE_CACHE_L2X0
->  	select MULTI_IRQ_HANDLER
-> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-> index 224f4bc..f57e47f 100644
-> --- a/arch/sh/Kconfig
-> +++ b/arch/sh/Kconfig
-> @@ -41,6 +41,7 @@ config SUPERH
->  	select MODULES_USE_ELF_RELA
->  	select OLD_SIGSUSPEND
->  	select OLD_SIGACTION
-> +	select HAVE_MACH_CLKDEV
->  	help
->  	  The SuperH is a RISC processor targeted for use in embedded systems
->  	  and consumer electronics; it was also used in the Sega Dreamcast
-> diff --git a/drivers/sh/clk/Makefile b/drivers/sh/clk/Makefile
-> index 5d15ebf..e73b031 100644
-> --- a/drivers/sh/clk/Makefile
-> +++ b/drivers/sh/clk/Makefile
-> @@ -1,3 +1,2 @@
-> -obj-y	:= core.o
-> -
-> +obj-$(CONFIG_HAVE_MACH_CLKDEV)	+= core.o
->  obj-$(CONFIG_SH_CLK_CPG)	+= cpg.o
+> This patch modify calculate for clock in I2C driver.
+> 
+> Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+> ---
+>  drivers/i2c/busses/i2c-rcar.c | 17 +++++++++++++++--
+>  include/linux/i2c/i2c-rcar.h  |  4 ++++
+>  2 files changed, 19 insertions(+), 2 deletions(-)
+> 
+> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+> index 0fc5858..c4fb69c 100644
+> --- a/drivers/i2c/busses/i2c-rcar.c
+> +++ b/drivers/i2c/busses/i2c-rcar.c
+> @@ -221,15 +221,28 @@ static int rcar_i2c_clock_calculate(struct
+> rcar_i2c_priv *priv, struct device *dev)
+>  {
+>  	struct clk *clkp = clk_get(NULL, "peripheral_clk");
+> +	struct i2c_rcar_platform_data *pdata = dev->platform_data;
+>  	u32 scgd, cdf;
+>  	u32 round, ick;
+>  	u32 scl;
+> +	u32 cdf_width;
+> +	u32 flags = pdata ? pdata->flags : 0;
+> 
+>  	if (!clkp) {
+>  		dev_err(dev, "there is no peripheral_clk\n");
+>  		return -EIO;
+>  	}
+> 
+> +	switch (flags & I2C_RCAR_FLAGS_ICCCR_MASK) {
+> +	default:
+> +	case I2C_RCAR_FLAGS_ICCCR_IS_2BIT:
+> +		cdf_width = 2;
+> +		break;
+> +	case I2C_RCAR_FLAGS_ICCCR_IS_3BIT:
+> +		cdf_width = 3;
+> +		break;
+> +	}
+> +
+>  	/*
+>  	 * calculate SCL clock
+>  	 * see
+> @@ -245,7 +258,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv
+> *priv, * clkp : peripheral_clk
+>  	 * F[]  : integer up-valuation
+>  	 */
+> -	for (cdf = 0; cdf < 4; cdf++) {
+> +	for (cdf = 0; cdf < (1 << cdf_width); cdf++) {
+>  		ick = clk_get_rate(clkp) / (1 + cdf);
+>  		if (ick < 20000000)
+>  			goto ick_find;
+> @@ -287,7 +300,7 @@ scgd_find:
+>  	/*
+>  	 * keep icccr value
+>  	 */
+> -	priv->icccr = (scgd << 2 | cdf);
+> +	priv->icccr = (scgd << (cdf_width) | cdf);
+> 
+>  	return 0;
+>  }
+> diff --git a/include/linux/i2c/i2c-rcar.h b/include/linux/i2c/i2c-rcar.h
+> index 496f5c2..572a6e5 100644
+> --- a/include/linux/i2c/i2c-rcar.h
+> +++ b/include/linux/i2c/i2c-rcar.h
+> @@ -5,6 +5,10 @@
+> 
+>  struct i2c_rcar_platform_data {
+>  	u32 bus_speed;
+> +	u32 flags;
+> +#define I2C_RCAR_FLAGS_ICCCR_MASK	(0xF << 0)
+> +#define I2C_RCAR_FLAGS_ICCCR_IS_2BIT	(0 << 0) /* default */
+> +#define I2C_RCAR_FLAGS_ICCCR_IS_3BIT	(1 << 0)
+
+That looks like an IP core property to me, not a platform property. Shouldn't 
+it be added to a platform_device_id table in the driver instead of being 
+passed through platform data ?
+
+>  };
+> 
+>  #endif /* __I2C_R_CAR_H__ */
 -- 
 Regards,
 
