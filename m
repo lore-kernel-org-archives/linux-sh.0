@@ -1,43 +1,153 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Sep 2013 05:29:39 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791 SMP support
-Message-Id: <20130925052938.GB1916@verge.net.au>
+From: Mark Rutland <mark.rutland@arm.com>
+Date: Mon, 02 Sep 2013 08:52:25 +0000
+Subject: Re: [PATCH 2/2] sh_eth: add device tree support
+Message-Id: <20130902085225.GF27891@e106331-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130912005007.24692.14749.sendpatchset@w520>
-In-Reply-To: <20130912005007.24692.14749.sendpatchset@w520>
+References: <201308310429.34856.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308310429.34856.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, "rob.herring@calxeda.com" <rob.herring@calxeda.com>, Pawel Moll <Pawel.Moll@arm.com>, "swarren@wwwdotorg.org" <swarren@wwwdotorg.org>, "ian.campbell@citrix.com" <ian.campbell@citrix.com>, "grant.likely@linaro.org" <grant.likely@linaro.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "nobuhiro.iwamatsu.yj@renesas.com" <nobuhiro.iwamatsu.yj@renesas.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "rob@landley.net" <rob@landley.net>, "linux-doc@vger.kernel.org" <linux-doc@vger.kernel.org>
 
-On Thu, Sep 12, 2013 at 09:50:07AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
+On Sat, Aug 31, 2013 at 01:29:33AM +0100, Sergei Shtylyov wrote:
+> Add support of the device tree probing for the Renesas SH-Mobile SoCs.
 > 
-> Add r8a7791 SMP support using the shared APMU code. This patch
-> also includes DTS modifications to enable the secondary CA15
-> CPU core to fully support the single cluster dual core r8a7791.
+> This work is loosely based on an original patch by Nobuhiro Iwamatsu
+> <nobuhiro.iwamatsu.yj@renesas.com>.
 > 
-> SMP boot and CPU Hotplug are known to be working.
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 > 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
 > ---
+> This patch is against Dave's 'net-next.git' repo.
 > 
->  Written against renesas-devel-20130906, depends on
->  [PATCH v2 01/03] ARM: shmobile: Shared APMU SMP support code without DT
+>  Documentation/devicetree/bindings/net/sh_eth.txt |   40 +++++++++++++
+>  drivers/net/ethernet/renesas/sh_eth.c            |   66 ++++++++++++++++++++++-
+>  2 files changed, 105 insertions(+), 1 deletion(-)
 > 
->  arch/arm/boot/dts/r8a7791.dtsi                |    7 ++
->  arch/arm/mach-shmobile/Makefile               |    1 
->  arch/arm/mach-shmobile/board-koelsch.c        |    1 
->  arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 
->  arch/arm/mach-shmobile/setup-r8a7791.c        |    1 
->  arch/arm/mach-shmobile/smp-r8a7791.c          |   62 +++++++++++++++++++++++++
->  6 files changed, 73 insertions(+)
+> Index: net-next/Documentation/devicetree/bindings/net/sh_eth.txt
+> =================================> --- /dev/null
+> +++ net-next/Documentation/devicetree/bindings/net/sh_eth.txt
+> @@ -0,0 +1,40 @@
+> +* Renesas Electronics SH EtherMAC
+> +
+> +This file provides information on what the device node for the SH EtherMAC
+> +interface contains.
+> +
+> +Required properties:
+> +- compatible: "renesas,gether-r8a7740" if the device is a part of R8A7740 SoC.
+> +	      "renesas,ether-r8a7779" if the device is a part of R8A7778/9 SoCs.
+> +	      "renesas,ether-r8a7790" if the device is a part of R8A7790/1 SoCs.
 
-Hi Magnus,
+What are the functional differences between the blocks in these devices
+that mean they have different compatible strings?
 
-please split this into three patches.
+> +- reg: offset and length of the register set for the device; if the device has
+> +       TSU registers, you need to specify two register sets here.
 
-1. An SoC patch: The *r8a7791.[ch] and Makefile changes
-2. A board patch: The board-koelsh.c change
-3. A dt patch: The .dtsi change
+This doesn't explicitly state ordering, and doesn't describe what the
+first register set is (control registers?). If possible, it would be
+nice to refer to the set of registers by the name given in
+documentation; is there any available?
 
+I think we should have something like the below to ensure it's explicit.
+In general we need more consistency in the the way bindings describe reg
+properties.
+
+	- reg: offset and length of:
+	     [1] the control registers of the device (required)
+	     [2] the TSU registers for the device (optional)
+
+> +- interrupt-parent: the phandle for the interrupt controller that services
+> +		    interrupts for this device.
+
+Why is that required?
+
+> +- interrupts: interrupt mapping for the interrupt source.
+
+Interrupts are defined in terms of interrupt-specifiers. How about:
+
+	- interrupts: an interrupt-specifier for the sole interrupt
+	              generated by the device.
+
+> +- phy-mode: string, operation mode of the PHY interface (a string that
+> +	    of_get_phy_mode() can understand).
+
+That looks suspicious. Bindings should *not* refer to Linux internals.
+Instead, we should document the phy-handle and phy-mode properties and
+how they are meant to be used in a generic binding document (I couldn't
+see a generic document doing this so far...).
+
+> +- phy-handle: phandle of the PHY device.
+> +
+> +Optional properties:
+> +- local-mac-address: 6 bytes, MAC address.
+> +- renesas,no-ether-link: specify when a board does not provide a proper LINK
+> +			 signal.
+> +- renesas,ether-link-active-low: specify when the LINK signal is active-low.
+
+What types are these? I know local-mac-address is a byte-string by
+ePAPR, presumably the last two are empty (boolean)?
+
+> +
+> +Example (Armadillo800EVA board):
+> +
+> +	ethernet@e9a00000 {
+> +		compatible = "renesas,gether-r8a7740";
+> +		reg = <0xe9a00000 0x800>, <0xe9a01800 0x800>;
+> +		interrupt-parent = <&gic>;
+> +		interrupts = <0 142 0x4>;
+> +		phy-mode = "mii";
+> +		phy-handle = <&phy0>;
+> +		#address-cells = <1>;
+> +		#size-cells = <0>;
+> +
+> +		phy0: ethernet-phy@0 {
+> +			reg = <0>;
+> +		};
+
+The binding didn't state anything about sub-nodes. Is it a general
+property of phy bindings that they may be embedded within a consumer's
+node?
+
+> +	};
+> Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+> =================================> --- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
+> +++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+> @@ -32,6 +32,9 @@
+>  #include <linux/platform_device.h>
+>  #include <linux/mdio-bitbang.h>
+>  #include <linux/netdevice.h>
+> +#include <linux/of.h>
+> +#include <linux/of_device.h>
+> +#include <linux/of_net.h>
+>  #include <linux/phy.h>
+>  #include <linux/cache.h>
+>  #include <linux/io.h>
+> @@ -2600,6 +2603,52 @@ static const struct net_device_ops sh_et
+>  	.ndo_change_mtu		= eth_change_mtu,
+>  };
+>  
+> +#ifdef CONFIG_OF
+> +static struct sh_eth_plat_data *sh_eth_parse_dt(struct device *dev)
+> +{
+> +	struct device_node *np = dev->of_node;
+> +	struct sh_eth_plat_data *pdata;
+> +	struct device_node *phy;
+> +	const char *mac_addr;
+> +
+> +	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+> +	if (!pdata)
+> +		return NULL;
+> +
+> +	pdata->phy_interface = of_get_phy_mode(np);
+> +
+> +	phy = of_parse_phandle(np, "phy-handle", 0);
+> +	if (!phy || of_property_read_u32(phy, "reg", &pdata->phy)) {
+
+NAK. You didn't describe the format of the phy node, yet you are reading
+values from it from a logically separate driver.
+
+Thanks,
+Mark.
