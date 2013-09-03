@@ -1,113 +1,17 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 18 Sep 2013 20:11:20 +0000
-Subject: [PATCH 02/03] ARM: shmobile: r7s72100 SCIF support
-Message-Id: <20130918201120.6319.59533.sendpatchset@w520>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Tue, 03 Sep 2013 11:30:31 +0000
+Subject: EMMA I2C driver
+Message-Id: <1378207832-3412-1-git-send-email-ian.molton@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130918201101.6319.97667.sendpatchset@w520>
-In-Reply-To: <20130918201101.6319.97667.sendpatchset@w520>
+References: <CANqRtoRK+Ur=87-me7CpP+s9SO5g0ZVZSEOrqwDf4HFfjZZmZA@mail.gmail.com>
+In-Reply-To: <CANqRtoRK+Ur=87-me7CpP+s9SO5g0ZVZSEOrqwDf4HFfjZZmZA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Magnus Damm <damm@opensource.se>
+EMMA I2C bus driver, addressing the comments regarding the #defined constant.
 
-Add SCIF serial port support to the r7s72100 SoC by
-adding platform devices for SCIF0 -> SCIF7 together with
-clock bindings. DT device description is excluded at
-this point since such bindings are still under
-development.
+-Ian
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/clock-r7s72100.c        |    8 ++++
- arch/arm/mach-shmobile/include/mach/r7s72100.h |    1 
- arch/arm/mach-shmobile/setup-r7s72100.c        |   45 ++++++++++++++++++++++++
- 3 files changed, 54 insertions(+)
-
---- 0002/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ work/arch/arm/mach-shmobile/clock-r7s72100.c	2013-09-19 03:47:24.000000000 +0900
-@@ -170,6 +170,14 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
- 
- 	/* MSTP clocks */
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[MSTP46]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[MSTP45]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.3", &mstp_clks[MSTP44]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.4", &mstp_clks[MSTP43]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
- };
- 
- void __init r7s72100_clock_init(void)
---- 0002/arch/arm/mach-shmobile/include/mach/r7s72100.h
-+++ work/arch/arm/mach-shmobile/include/mach/r7s72100.h	2013-09-19 03:47:24.000000000 +0900
-@@ -1,6 +1,7 @@
- #ifndef __ASM_R7S72100_H__
- #define __ASM_R7S72100_H__
- 
-+void r7s72100_add_dt_devices(void);
- void r7s72100_clock_init(void);
- void r7s72100_init_early(void);
- 
---- 0002/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ work/arch/arm/mach-shmobile/setup-r7s72100.c	2013-09-19 04:11:07.000000000 +0900
-@@ -21,10 +21,55 @@
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <linux/serial_sci.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach/arch.h>
- 
-+#define SCIF_DATA(index, baseaddr, irq)					\
-+[index] = {								\
-+	.type		= PORT_SCIF,					\
-+	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
-+	.scbrr_algo_id	= SCBRR_ALGO_2,					\
-+	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
-+			  SCSCR_REIE,					\
-+	.mapbase	= baseaddr,					\
-+	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
-+}
-+
-+enum { SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7 };
-+
-+static const struct plat_sci_port scif[] __initconst = {
-+	SCIF_DATA(SCIF0, 0xe8007000, gic_iid(221)), /* SCIF0 */
-+	SCIF_DATA(SCIF1, 0xe8007800, gic_iid(225)), /* SCIF1 */
-+	SCIF_DATA(SCIF2, 0xe8008000, gic_iid(229)), /* SCIF2 */
-+	SCIF_DATA(SCIF3, 0xe8008800, gic_iid(233)), /* SCIF3 */
-+	SCIF_DATA(SCIF4, 0xe8009000, gic_iid(237)), /* SCIF4 */
-+	SCIF_DATA(SCIF5, 0xe8009800, gic_iid(241)), /* SCIF5 */
-+	SCIF_DATA(SCIF6, 0xe800a000, gic_iid(245)), /* SCIF6 */
-+	SCIF_DATA(SCIF7, 0xe800a800, gic_iid(249)), /* SCIF7 */
-+};
-+
-+static inline void r7s72100_register_scif(int idx)
-+{
-+	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
-+				      sizeof(struct plat_sci_port));
-+}
-+
-+void __init r7s72100_add_dt_devices(void)
-+{
-+	r7s72100_register_scif(SCIF0);
-+	r7s72100_register_scif(SCIF1);
-+	r7s72100_register_scif(SCIF2);
-+	r7s72100_register_scif(SCIF3);
-+	r7s72100_register_scif(SCIF4);
-+	r7s72100_register_scif(SCIF5);
-+	r7s72100_register_scif(SCIF6);
-+	r7s72100_register_scif(SCIF7);
-+}
-+
- void __init r7s72100_init_early(void)
- {
- 	shmobile_setup_delay(400, 1, 3); /* Cortex-A9 @ 400MHz */
