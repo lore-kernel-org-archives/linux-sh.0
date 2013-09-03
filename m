@@ -1,64 +1,44 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 25 Sep 2013 23:40:03 +0000
-Subject: Re: [PATCH] ARM: shmobile: Allow build of the MTU2 timer driver
-Message-Id: <CANqRtoQCLLvxE5tiHaRLWU3cDTfBfA2D79xsRRKHTSk3U-50bA@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 03 Sep 2013 07:21:36 +0000
+Subject: Re: [RFC 06/10] ARM: shmobile: r8a7790: add I2C clock
+Message-Id: <CAO3366wKmdwSguHzYWkQfgHch57t-iiW3tM0O9hvL4XsADY50g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130918195000.6075.25025.sendpatchset@w520>
- <CAOesGMhJmFQwcmUzwoVvA3yBjZVLYj0x9fwCpr_kvTWoWc2qew@mail.gmail.com>
- <20130925050647.GG24243@verge.net.au>
-In-Reply-To: <20130925050647.GG24243@verge.net.au>
+References: <1377866264-21110-7-git-send-email-ulrich.hecht@gmail.com>
+In-Reply-To: <1377866264-21110-7-git-send-email-ulrich.hecht@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Sep 25, 2013 at 2:06 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Sep 18, 2013 at 01:53:48PM -0700, Olof Johansson wrote:
->> Hi,
+Thanks for the review.
+
+On Fri, Aug 30, 2013 at 7:31 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> On 08/30/2013 04:37 PM, Ulrich Hecht wrote:
+>> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
+>> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+>> @@ -181,6 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
 >>
->>
->> On Wed, Sep 18, 2013 at 12:50 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> > From: Magnus Damm <damm@opensource.se>
->> >
->> > Include MTU2 in the list of timer drivers that may
->> > be used on mach-shmobile. This driver has previously
->> > only been used by the SH architecture. With this patch
->> > the MTU2 joins TMU and CMT as timer drivers that may be
->> > used on ARM or SH.
->> >
->> > Signed-off-by: Magnus Damm <damm@opensource.se>
->> > ---
->> >
->> >  arch/arm/mach-shmobile/Kconfig |    6 ++++++
->> >  1 file changed, 6 insertions(+)
->> >
->> > --- 0004/arch/arm/mach-shmobile/Kconfig
->> > +++ work/arch/arm/mach-shmobile/Kconfig 2013-09-19 04:17:55.000000000 +0900
->> > @@ -314,6 +314,12 @@ config SH_TIMER_CMT
->> >         help
->> >           This enables build of the CMT timer driver.
->> >
->> > +config SH_TIMER_MTU2
->> > +       bool "MTU2 timer driver"
->> > +       default y
->> > +       help
->> > +         This enables build of the MTU2 timer driver.
->>
->> It's odd to have the config entry in arch/arm/ when the driver is in
->> drivers/clocksource. I think this entry should be moved to
->> drivers/clocksource/Kconfig for that reason (with appropriate
->> dependencies).
+>>   /* MSTP */
+>>   enum {
+>> +       MSTP931, MSTP930, MSTP929, MSTP928,
 >
-> This sounds logical to me.
-> Magnus, how do you feel about this?
+>    Please break the line after "MSTP930,".
 
-Keeping it in a single location sounds good to me, but I worry a bit
-about how to merge it without any conflicts.
+Could you explain what the system behind this is?
 
-A little while ago did I send out a first rough patch for this:
+>> @@ -286,6 +293,10 @@ static struct clk_lookup lookups[] = {
+>>         CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+>>         CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+>>         CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+>> +       CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
+>> +       CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
+>> +       CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
+>> +       CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
+>
+>    These should be sorted downwards by MSTPxxx index, no?
 
-[PATCH/RFC] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
+OK.
 
-Cheers,
-
-/ magnus
+CU
+Uli
