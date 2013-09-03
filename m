@@ -1,37 +1,15 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 12 Sep 2013 12:28:33 +0000
-Subject: [PATCH v2 0/2] regulator: da9210: support Device Tree initialisation
-Message-Id: <1378988915-10539-1-git-send-email-g.liakhovetski@gmx.de>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Tue, 03 Sep 2013 16:49:28 +0000
+Subject: [Patch v3]EMMA I2C driver
+Message-Id: <1378226969-18722-1-git-send-email-ian.molton@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk>
+In-Reply-To: <1377688911-10911-1-git-send-email-ian.molton-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@kernel.org>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org
 
-The first patch just adds a vendor prefix for Dialog Semiconductor PLC, the
-second one actually implements DT support in da9210.
+All comments fixed up, version 3.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-
-v2: add DT documentation
-
-Guennadi Liakhovetski (2):
-  DT: add a vendor prefix for Dialog Semiconductor
-  regulator: da9210: add Device Tree support
-
- .../devicetree/bindings/regulator/da9210.txt       |   21 ++++++++++++++++++++
- .../devicetree/bindings/vendor-prefixes.txt        |    1 +
- drivers/regulator/da9210-regulator.c               |    9 +++++--
- 3 files changed, 28 insertions(+), 3 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/regulator/da9210.txt
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
