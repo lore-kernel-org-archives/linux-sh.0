@@ -1,46 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Sep 2013 18:31:05 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: ape6evm: fix incorrect placement of __initdata tag
-Message-Id: <27072275.6rIbiFzHY2@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 03 Sep 2013 22:41:27 +0000
+Subject: [PATCH] sh_eth: fix napi_{en|dis}able() calls racing against interrupts
+Message-Id: <201309040241.27834.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1959578.PFsrHiTtYY@amdc1032>
-In-Reply-To: <1959578.PFsrHiTtYY@amdc1032>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-On Monday 30 September 2013 17:34:36 Bartlomiej Zolnierkiewicz wrote:
-> __initdata tag should be placed between the variable name and equal
-> sign for the variable to be placed in the intended .init.data section.
-> 
-> Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+While implementing NAPI for the driver, I overlooked the race conditions where
+interrupt  handler might have called napi_schedule_prep() before napi_enable()
+was called or after napi_disable() was called. If RX interrupt happens, this
+would cause the endless interrupts and messages like:
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+sh-eth eth0: ignoring interrupt, status 0x00040000, mask 0x01ff009f.
 
-> ---
-> v2:
-> - use __initdata as it is OK to do it
-> 
->  arch/arm/mach-shmobile/board-ape6evm.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-ape6evm.c
-> b/arch/arm/mach-shmobile/board-ape6evm.c index 7627385..8954f55 100644
-> --- a/arch/arm/mach-shmobile/board-ape6evm.c
-> +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> @@ -86,7 +86,7 @@ static struct gpio_keys_button gpio_buttons[] = {
->  	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
->  };
-> 
-> -static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
-> +static struct gpio_keys_platform_data ape6evm_keys_pdata __initdata = {
->  	.buttons	= gpio_buttons,
->  	.nbuttons	= ARRAY_SIZE(gpio_buttons),
->  };
--- 
-Regards,
+The interrupt wouldn't even be masked by the kernel eventually since the handler
+would return IRQ_HANDLED all the time.
 
-Laurent Pinchart
+As a fix, move napi_enable() call before request_irq() call and napi_disable()
+call after free_irq() call.
 
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against Dave's 'net.git' repo.  It should be applied to 3.11.y too.
+
+ drivers/net/ethernet/renesas/sh_eth.c |   12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1857,11 +1857,13 @@ static int sh_eth_open(struct net_device
+ 
+ 	pm_runtime_get_sync(&mdp->pdev->dev);
+ 
++	napi_enable(&mdp->napi);
++
+ 	ret = request_irq(ndev->irq, sh_eth_interrupt,
+ 			  mdp->cd->irq_flags, ndev->name, ndev);
+ 	if (ret) {
+ 		dev_err(&ndev->dev, "Can not assign IRQ number\n");
+-		return ret;
++		goto out_napi_off;
+ 	}
+ 
+ 	/* Descriptor set */
+@@ -1879,12 +1881,12 @@ static int sh_eth_open(struct net_device
+ 	if (ret)
+ 		goto out_free_irq;
+ 
+-	napi_enable(&mdp->napi);
+-
+ 	return ret;
+ 
+ out_free_irq:
+ 	free_irq(ndev->irq, ndev);
++out_napi_off:
++	napi_disable(&mdp->napi);
+ 	pm_runtime_put_sync(&mdp->pdev->dev);
+ 	return ret;
+ }
+@@ -1976,8 +1978,6 @@ static int sh_eth_close(struct net_devic
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+-	napi_disable(&mdp->napi);
+-
+ 	netif_stop_queue(ndev);
+ 
+ 	/* Disable interrupts by clearing the interrupt mask. */
+@@ -1995,6 +1995,8 @@ static int sh_eth_close(struct net_devic
+ 
+ 	free_irq(ndev->irq, ndev);
+ 
++	napi_disable(&mdp->napi);
++
+ 	/* Free all the skbuffs in the Rx queue. */
+ 	sh_eth_ring_free(ndev);
+ 
