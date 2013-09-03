@@ -1,38 +1,48 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 03 Sep 2013 13:53:13 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 03 Sep 2013 15:17:44 +0000
 Subject: Re: [PATCH 1/4] ARM: shmobile: r8a7778: add Ether DT support
-Message-Id: <5225E9C9.2060906@cogentembedded.com>
+Message-Id: <CANqRtoQFYFva9msdoEWdU2Z7_=jOtZwvXgL7OqUKhVMO3NOPzg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+On Sun, Sep 1, 2013 at 8:15 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Define the generic R8A777x part of the Ether device node.
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+> ---
+>  arch/arm/boot/dts/r8a7778.dtsi |   11 +++++++++++
+>  1 file changed, 11 insertions(+)
+>
+> Index: renesas/arch/arm/boot/dts/r8a7778.dtsi
+> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7778.dtsi
+> +++ renesas/arch/arm/boot/dts/r8a7778.dtsi
+> @@ -98,4 +98,15 @@
+>                 reg = <0xfffc000 0x118>;
+>                 #gpio-range-cells = <3>;
+>         };
+> +
+> +       ether: ethernet@fde00000 {
+> +               device_type = "network";
+> +               compatible = "renesas,ether-r8a7779";
 
-On 03-09-2013 16:11, Laurent Pinchart wrote:
+Hi Sergei,
 
->>> Documentation/devicetree/booting-without-of.txt mentions it, as well as a
->>> couple of other DT bindings document, but there's no clear documentation
->>> of what device_type should be for network device, and whether the property
->>> is mandatory or optional. Clarifying the documentation would be great.
+Thanks for your patch. What's the reason behind the r8a7778 SoC using
+a compatible string for r8a7779 like "renesas,ether-r8a7779"?
 
->> It's documented in the ePAPR spec:
+It seems that you assume that the r8a7778 ethernet controller is 100%
+compatible with r8a7779. Is that really true? For earlier versions the
+sh_eth hardware documentation was anything but accurate, so it seems
+to me that it must be more safe that r8a7778 would be using
+"renesas,ether-r8a7778". What do you think?
 
->> "The device_type property was used in IEEE 1275 to describe the device’s
->> FCode programming model. Because ePAPR does not have FCode, new use of
->> the property is deprecated, and it should be included only on cpu and
->> memory nodes for compatibility with IEEE 1275–derived device trees."
+Thanks,
 
-> Thank you for the clarification.
-
->> The bottom line is - don't use it, unless you've good good reasons?
-
-> I'll let Sergei share his opinion on whether we've got good reasons :-)
-
-    No, we don't, I'll remove the prop.
-
-WBR, Sergei
-
+/ magnus
