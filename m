@@ -1,47 +1,146 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 18 Sep 2013 20:01:15 +0000
-Subject: [PATCH] Renesas clocksource fixes for v3.12
-Message-Id: <1379534476-10901-1-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 04 Sep 2013 03:46:17 +0000
+Subject: [PATCH 03/04] ARM: shmobile: r8a7791 CMT support
+Message-Id: <20130904034617.12546.91307.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130904034525.12546.24775.sendpatchset@w520>
+In-Reply-To: <20130904034525.12546.24775.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Daniel,
+From: Magnus Damm <damm@opensource.se>
 
-please consider this clocksource fix for v3.12.
+Add r8a7791 CMT support via channel 0 of CMT0. At this
+point the CMT is used for clock event operation, but in
+the future the arch timer will be the main timer and the
+CMT will be used for deep sleep wake up only.
 
-This pull request is based on renesas-clocksource-for-v3.12
-which I believe you have previously pulled.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
+ arch/arm/mach-shmobile/clock-r8a7791.c        |    7 +++++-
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 
+ arch/arm/mach-shmobile/setup-r8a7791.c        |   29 +++++++++++++++++++++++++
+ 3 files changed, 36 insertions(+), 1 deletion(-)
 
-The following changes since commit 172705f8a40b6e72c53f8cceda079504ed71c4e0:
-
-  clocksource: em_sti: Convert to devm_* managed helpers (2013-08-05 10:47:10 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clocksource-fixes-for-v3.12
-
-for you to fetch changes up to 7b096b40c9d3d2abb6bb747dd148c50c076c2e89:
-
-  clocksource: em_sti: Set cpu_possible_mask to fix SMP broadcast (2013-09-05 14:47:53 +0900)
-
-----------------------------------------------------------------
-Renesas clocksource fixes for v3.12
-
-* em_sti: Set cpu_possible_mask to fix SMP broadcast
-
-  This resolves a regression introduced by
-  f7db706 ("ARM: 7674/1: smp: Avoid dummy clockevent being preferred over
-  real hardware clock-event").
-
-  This problem has been present since v3.9-rc4.
-
-----------------------------------------------------------------
-Magnus Damm (1):
-      clocksource: em_sti: Set cpu_possible_mask to fix SMP broadcast
-
- drivers/clocksource/em_sti.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--- 0004/arch/arm/mach-shmobile/clock-r8a7791.c
++++ work/arch/arm/mach-shmobile/clock-r8a7791.c	2013-09-03 21:02:44.000000000 +0900
+@@ -101,7 +101,7 @@ SH_FIXED_RATIO_CLK_SET(cp_clk,			extal_c
+ SH_FIXED_RATIO_CLK_SET(pll1_div2_clk,		pll1_clk,	1, 2);
+ SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
+ SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
+-
++SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
+ SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
+ 
+ static struct clk *main_clks[] = {
+@@ -113,6 +113,7 @@ static struct clk *main_clks[] = {
+ 	&pll3_clk,
+ 	&hp_clk,
+ 	&p_clk,
++	&rclk_clk,
+ 	&mp_clk,
+ 	&cp_clk,
+ };
+@@ -123,6 +124,7 @@ enum {
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
++	MSTP124,
+ 	MSTP_NR
+ };
+ 
+@@ -142,6 +144,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP1105] = SH_CLK_MSTP32(&mp_clk, SMSTPCR11, 5, 0), /* SCIFA3 */
+ 	[MSTP1106] = SH_CLK_MSTP32(&mp_clk, SMSTPCR11, 6, 0), /* SCIFA4 */
+ 	[MSTP1107] = SH_CLK_MSTP32(&mp_clk, SMSTPCR11, 7, 0), /* SCIFA5 */
++	[MSTP124] = SH_CLK_MSTP32(&rclk_clk, SMSTPCR1, 24, 0), /* CMT0 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+@@ -155,6 +158,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pll3",		&pll3_clk),
+ 	CLKDEV_CON_ID("hp",		&hp_clk),
+ 	CLKDEV_CON_ID("p",		&p_clk),
++	CLKDEV_CON_ID("rclk",		&rclk_clk),
+ 	CLKDEV_CON_ID("mp",		&mp_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
+ 	CLKDEV_CON_ID("peripheral_clk", &hp_clk),
+@@ -175,6 +179,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.12", &mstp_clks[MSTP1105]), /* SCIFA3 */
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
++	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ };
+ 
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+--- 0004/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7791.h	2013-09-03 20:56:52.000000000 +0900
+@@ -3,5 +3,6 @@
+ 
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
++void r8a7791_init_early(void);
+ 
+ #endif /* __ASM_R8A7791_H__ */
+--- 0004/arch/arm/mach-shmobile/setup-r8a7791.c
++++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2013-09-03 20:57:19.000000000 +0900
+@@ -23,6 +23,7 @@
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
++#include <linux/sh_timer.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+@@ -89,6 +90,25 @@ static inline void r8a7791_register_scif
+ 				      sizeof(struct plat_sci_port));
+ }
+ 
++static const struct sh_timer_config cmt00_platform_data __initconst = {
++	.name = "CMT00",
++	.timer_bit = 0,
++	.clockevent_rating = 80,
++};
++
++static const struct resource cmt00_resources[] __initconst = {
++	DEFINE_RES_MEM(0xffca0510, 0x0c),
++	DEFINE_RES_MEM(0xffca0500, 0x04),
++	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
++};
++
++#define r8a7791_register_cmt(idx)					\
++	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++					  idx, cmt##idx##_resources,	\
++					  ARRAY_SIZE(cmt##idx##_resources), \
++					  &cmt##idx##_platform_data,	\
++					  sizeof(struct sh_timer_config))
++
+ void __init r8a7791_add_dt_devices(void)
+ {
+ 	r8a7791_register_scif(SCIFA0);
+@@ -106,6 +126,14 @@ void __init r8a7791_add_dt_devices(void)
+ 	r8a7791_register_scif(SCIFA3);
+ 	r8a7791_register_scif(SCIFA4);
+ 	r8a7791_register_scif(SCIFA5);
++	r8a7791_register_cmt(00);
++}
++
++void __init r8a7791_init_early(void)
++{
++#ifndef CONFIG_ARM_ARCH_TIMER
++	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
++#endif
+ }
+ 
+ #ifdef CONFIG_USE_OF
+@@ -115,6 +143,7 @@ static const char *r8a7791_boards_compat
+ };
+ 
+ DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
++	.init_early	= r8a7791_init_early,
+ 	.dt_compat	= r8a7791_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
