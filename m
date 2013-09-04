@@ -1,29 +1,54 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Sep 2013 04:55:06 +0000
-Subject: Re: [PATCH v2 2/2] ARM: shmobile: Marzen: enable DMA for SDHI0
-Message-Id: <20130927045506.GB23732@verge.net.au>
+Date: Wed, 04 Sep 2013 08:39:35 +0000
+Subject: Re: [PATCH v2 00/03] ARM: shmobile: r8a7790 APMU SMP support
+Message-Id: <20130904083934.GG17329@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308252143.33458.sergei.shtylyov@cogentembedded.com>
- <201308252147.27210.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308252147.27210.sergei.shtylyov@cogentembedded.com>
+References: <20130828232148.7321.45739.sendpatchset@w520>
+ <20130829001834.GD10207@verge.net.au>
+ <CANqRtoTq=w-dsK-fkfWTO+B+VoOMRkuFjCpY=+5qjBZGxDxd+Q@mail.gmail.com>
+ <20130829043424.GA20593@verge.net.au>
+In-Reply-To: <20130829043424.GA20593@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Aug 25, 2013 at 09:47:26PM +0400, Sergei Shtylyov wrote:
-> From: Max Filippov <max.filippov@cogentembedded.com>
+On Thu, Aug 29, 2013 at 01:34:28PM +0900, Simon Horman wrote:
+> On Thu, Aug 29, 2013 at 01:11:37PM +0900, Magnus Damm wrote:
+> > On Thu, Aug 29, 2013 at 9:18 AM, Simon Horman <horms@verge.net.au> wrote:
+> > > On Thu, Aug 29, 2013 at 08:21:48AM +0900, Magnus Damm wrote:
+> > >> ARM: shmobile: r8a7790 APMU SMP support
+> > >>
+> > >> [PATCH v2 01/03] ARM: shmobile: Shared APMU SMP support code without DT
+> > >> [PATCH v2 02/03] ARM: shmobile: Add r8a7790 SMP support using APMU code
+> > >> [PATCH v2 03/03] ARM: shmobile: Add r8a7790 CA15 CPU cores
+> > >>
+> > >> This series adds SMP support to r8a7790 using the included APMU code.
+> > >> The previous version of r8a7790 support depended on the APMU code in
+> > >> "[PATCH] ARM: shmobile: Shared APMU SMP support code", but in this
+> > >> version the APMU code has been reworked to not use DT. In the future
+> > >> r8a73a4 and other SoCs may make use of the APMU as well, but the
+> > >> r8a73a4 code first needs to be adjusted to work with the CCI driver.
+> > >>
+> > >> With these patches applied r8a7790 CA15 support for SMP boot
+> > >> and CPU Hotplug is known to be working.
+> > >>
+> > >> Thanks to Sudeep for his feedback.
+> > >>
+> > >> Signed-off-by: Magnus Damm <damm@opensource.se>
+> > >
+> > > Hi Magnus,
+> > >
+> > > can I clarify that these patches are targeted at mainline?
+> > 
+> > Hi Simon, yes, that's correct. It's possible to back port too if needed.
 > 
-> Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
-> driver.
+> Thanks for the clarification.
 > 
-> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-> [Sergei: removed #include <mach/dma.h>]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> > Actual merge is not rushing though, so please don't interpret this as
+> > any last minute v3.12 merge attempt.
+> 
+> No problem, I didn't interpret it that way.
 
-Thanks, queued up for v3.13.
-
-Please send along a defconfig update as you mentioned you would yesterday.
-
-Thanks.
-
+I have queued these up for v3.13 and they are present
+in the freshly baked renesas-devel-20130904 tag.
