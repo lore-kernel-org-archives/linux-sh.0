@@ -1,80 +1,364 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Sep 2013 06:03:05 +0000
-Subject: Re: [PATCH 1/4] ARM: shmobile: r8a7778: add Ether DT support
-Message-Id: <20130905060304.GI14960@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 04 Sep 2013 03:45:57 +0000
+Subject: [PATCH 01/04] ARM: shmobile: Initial r8a7791 SoC support
+Message-Id: <20130904034557.12546.97503.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
+References: <20130904034525.12546.24775.sendpatchset@w520>
+In-Reply-To: <20130904034525.12546.24775.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 04, 2013 at 11:39:59AM +0200, Laurent Pinchart wrote:
-> On Wednesday 04 September 2013 14:35:14 Magnus Damm wrote:
-> > On Wed, Sep 4, 2013 at 3:27 AM, Sergei Shtylyov wrote:
-> > > On 09/03/2013 07:17 PM, Magnus Damm wrote:
-> > >>> Define the generic R8A777x part of the Ether device node.
-> > >>> 
-> > >>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> > >>> 
-> > >>> ---
-> > >>> 
-> > >>>   arch/arm/boot/dts/r8a7778.dtsi |   11 +++++++++++
-> > >>>   1 file changed, 11 insertions(+)
-> > >>> 
-> > >>> Index: renesas/arch/arm/boot/dts/r8a7778.dtsi
-> > >>> =================================> > >>> --- renesas.orig/arch/arm/boot/dts/r8a7778.dtsi
-> > >>> +++ renesas/arch/arm/boot/dts/r8a7778.dtsi
-> > >>> @@ -98,4 +98,15 @@
-> > >>>                  reg = <0xfffc000 0x118>;
-> > >>>                  #gpio-range-cells = <3>;
-> > >>>          };
-> > >>> +
-> > >>> +       ether: ethernet@fde00000 {
-> > >>> +               device_type = "network";
-> > >>> +               compatible = "renesas,ether-r8a7779";
-> > >> 
-> > >> Hi Sergei,
-> > >> 
-> > >> Thanks for your patch. What's the reason behind the r8a7778 SoC using
-> > >> a compatible string for r8a7779 like "renesas,ether-r8a7779"?
-> > >
-> > > R8A7779 support has appeared first in Linux and as R8A7778 Ether is
-> > > identical to R8A7779 and no wildcards are allowed in the device tree, I
-> > > decided to use this "compatible" prop.
-> > 
-> > Thanks for your reply, I see.
-> > 
-> > >> It seems that you assume that the r8a7778 ethernet controller is 100%
-> > >> compatible with r8a7779. Is that really true? For earlier versions the
-> > >> sh_eth hardware documentation was anything but accurate, so it seems
-> > >> to me that it must be more safe that r8a7778 would be using
-> > >> "renesas,ether-r8a7778". What do you think?
-> > >
-> > > I think R8A7778 and R8A7779 EtherMACs are identical. I've cross checked
-> > > the documentation at the start of the development and the registers
-> > > appeared to be the same.
-> > 
-> > But even if the current version of the documentation happens to be
-> > similar in it still doesn't guarantee that the IP is the same. And
-> > using the "correct" SoC compatible value doesn't really hurt in any
-> > way, does it?
-> > 
-> > My feeling is that using the identical SoC as compatible value must be
-> > the best option - unless we know for sure they are identical that is.
-> > 
-> > So unless we're 100% certain about IP compatibility I'm trying to
-> > enforce that we either use a strict matching for exactly the same SoC
-> > version or IP block. Using a different maybe-compatible SoC string
-> > seems to be begging for future trouble IMO.
-> > 
-> > Laurent, any opinion?
-> 
-> I agree. If we had access to IP version information we could use that to 
-> construct the compatible name. As we don't, the SoC name is the best option, 
-> and to ensure future compatibility we should use the exact SoC version.
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Using the SoC name is in keeping with recent discussions that
-we have had about compat string names for shmobile. So I agree
-with both Magnus and Laurent here (no surprise!).
+Add initial support for the r8a7791 SoC including:
+ - Single Cortex-A15 CPU Core
+ - GIC
+
+No static virtual mappings are used, all the components
+make use of ioremap(). DT_MACHINE_START is still wrapped
+in CONFIG_USE_OF to match other mach-shmobile code.
+
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+[damm@opensource.se: Forward ported to upstream, dropped not-yet-ready code]
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/r8a7791.dtsi                |   41 +++++
+ arch/arm/mach-shmobile/Kconfig                |    6 
+ arch/arm/mach-shmobile/Makefile               |    2 
+ arch/arm/mach-shmobile/clock-r8a7791.c        |  198 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |    6 
+ arch/arm/mach-shmobile/setup-r8a7791.c        |   38 ++++
+ 6 files changed, 291 insertions(+)
+
+--- /dev/null
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-09-03 20:44:56.000000000 +0900
+@@ -0,0 +1,41 @@
++/*
++ * Device Tree Source for the r8a7791 SoC
++ *
++ * Copyright (C) 2013 Renesas Electronics Corporation
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/ {
++	compatible = "renesas,r8a7791";
++	interrupt-parent = <&gic>;
++	#address-cells = <2>;
++	#size-cells = <2>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <0>;
++			clock-frequency = <1300000000>;
++		};
++	};
++
++	gic: interrupt-controller@f1001000 {
++		compatible = "arm,cortex-a15-gic";
++		#interrupt-cells = <3>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0 0xf1001000 0 0x1000>,
++			<0 0xf1002000 0 0x1000>,
++			<0 0xf1004000 0 0x2000>,
++			<0 0xf1006000 0 0x2000>;
++		interrupts = <1 9 0xf04>;
++	};
++};
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-09-03 20:44:32.000000000 +0900
+@@ -101,6 +101,12 @@ config ARCH_R8A7790
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 
++config ARCH_R8A7791
++	bool "R-Car M2 (R8A77910)"
++	select ARM_GIC
++	select CPU_V7
++	select SH_CLK_CPG
++
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-09-03 20:44:32.000000000 +0900
+@@ -15,6 +15,7 @@ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
++obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ 
+ # Clock objects
+@@ -27,6 +28,7 @@ obj-$(CONFIG_ARCH_R8A7740)	+= clock-r8a7
+ obj-$(CONFIG_ARCH_R8A7778)	+= clock-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= clock-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= clock-r8a7790.o
++obj-$(CONFIG_ARCH_R8A7791)	+= clock-r8a7791.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= clock-emev2.o
+ endif
+ 
+--- /dev/null
++++ work/arch/arm/mach-shmobile/clock-r8a7791.c	2013-09-03 20:44:33.000000000 +0900
+@@ -0,0 +1,198 @@
++/*
++ * r8a7791 clock framework support
++ *
++ * Copyright (C) 2013  Renesas Electronics Corporation
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/sh_clk.h>
++#include <linux/clkdev.h>
++#include <mach/clock.h>
++#include <mach/common.h>
++
++/*
++ *   MD		EXTAL		PLL0	PLL1	PLL3
++ * 14 13 19	(MHz)		*1	*1
++ *---------------------------------------------------
++ * 0  0  0	15 x 1		x172/2	x208/2	x106
++ * 0  0  1	15 x 1		x172/2	x208/2	x88
++ * 0  1  0	20 x 1		x130/2	x156/2	x80
++ * 0  1  1	20 x 1		x130/2	x156/2	x66
++ * 1  0  0	26 / 2		x200/2	x240/2	x122
++ * 1  0  1	26 / 2		x200/2	x240/2	x102
++ * 1  1  0	30 / 2		x172/2	x208/2	x106
++ * 1  1  1	30 / 2		x172/2	x208/2	x88
++ *
++ * *1 :	Table 7.6 indicates VCO ouput (PLLx = VCO/2)
++ *	see "p1 / 2" on R8A7791_CLOCK_ROOT() below
++ */
++
++#define MD(nr)	(1 << nr)
++
++#define CPG_BASE 0xe6150000
++#define CPG_LEN 0x1000
++
++#define SMSTPCR1	0xE6150134
++#define SMSTPCR2	0xe6150138
++#define SMSTPCR3	0xE615013C
++#define SMSTPCR5	0xE6150144
++#define SMSTPCR7	0xe615014c
++#define SMSTPCR8	0xE6150990
++#define SMSTPCR9	0xE6150994
++#define SMSTPCR10	0xE6150998
++
++#define MODEMR		0xE6160060
++#define SDCKCR		0xE6150074
++#define SD2CKCR		0xE6150078
++#define SD3CKCR		0xE615007C
++#define MMC0CKCR	0xE6150240
++#define MMC1CKCR	0xE6150244
++#define SSPCKCR		0xE6150248
++#define SSPRSCKCR	0xE615024C
++
++static struct clk_mapping cpg_mapping = {
++	.phys   = CPG_BASE,
++	.len    = CPG_LEN,
++};
++
++static struct clk extal_clk = {
++	/* .rate will be updated on r8a7791_clock_init() */
++	.mapping	= &cpg_mapping,
++};
++
++static struct sh_clk_ops followparent_clk_ops = {
++	.recalc	= followparent_recalc,
++};
++
++static struct clk main_clk = {
++	/* .parent will be set r8a73a4_clock_init */
++	.ops	= &followparent_clk_ops,
++};
++
++/*
++ * clock ratio of these clock will be updated
++ * on r8a7791_clock_init()
++ */
++SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
++SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
++
++/* fixed ratio clock */
++SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
++SH_FIXED_RATIO_CLK_SET(cp_clk,			extal_clk,	1, 2);
++
++SH_FIXED_RATIO_CLK_SET(pll1_div2_clk,		pll1_clk,	1, 2);
++SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
++SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
++
++SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
++
++static struct clk *main_clks[] = {
++	&extal_clk,
++	&extal_div2_clk,
++	&main_clk,
++	&pll1_clk,
++	&pll1_div2_clk,
++	&pll3_clk,
++	&hp_clk,
++	&p_clk,
++	&mp_clk,
++	&cp_clk,
++};
++
++/* MSTP */
++enum {
++	MSTP721, MSTP720,
++/*	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,*/
++	MSTP_NR
++};
++
++static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
++	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
++};
++
++static struct clk_lookup lookups[] = {
++
++	/* main clocks */
++	CLKDEV_CON_ID("extal",		&extal_clk),
++	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
++	CLKDEV_CON_ID("main",		&main_clk),
++	CLKDEV_CON_ID("pll1",		&pll1_clk),
++	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
++	CLKDEV_CON_ID("pll3",		&pll3_clk),
++	CLKDEV_CON_ID("hp",		&hp_clk),
++	CLKDEV_CON_ID("p",		&p_clk),
++	CLKDEV_CON_ID("mp",		&mp_clk),
++	CLKDEV_CON_ID("cp",		&cp_clk),
++	CLKDEV_CON_ID("peripheral_clk", &hp_clk),
++};
++
++#define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
++	extal_clk.rate	= e * 1000 * 1000;			\
++	main_clk.parent	= m;					\
++	SH_CLK_SET_RATIO(&pll1_clk_ratio, p1 / 2, 1);		\
++	if (mode & MD(19))					\
++		SH_CLK_SET_RATIO(&pll3_clk_ratio, p31, 1);	\
++	else							\
++		SH_CLK_SET_RATIO(&pll3_clk_ratio, p30, 1)
++
++
++void __init r8a7791_clock_init(void)
++{
++	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++	u32 mode;
++	int k, ret = 0;
++
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	switch (mode & (MD(14) | MD(13))) {
++	case 0:
++		R8A7791_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
++		break;
++	case MD(13):
++		R8A7791_CLOCK_ROOT(20, &extal_clk, 130, 156, 80, 66);
++		break;
++	case MD(14):
++		R8A7791_CLOCK_ROOT(26, &extal_div2_clk, 200, 240, 122, 102);
++		break;
++	case MD(13) | MD(14):
++		R8A7791_CLOCK_ROOT(30, &extal_div2_clk, 172, 208, 106, 88);
++		break;
++	}
++
++	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
++		ret = clk_register(main_clks[k]);
++
++	if (!ret)
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++
++	if (!ret)
++		shmobile_clk_init();
++	else
++		goto epanic;
++
++	return;
++
++epanic:
++	panic("failed to setup r8a7791 clocks\n");
++}
+--- /dev/null
++++ work/arch/arm/mach-shmobile/include/mach/r8a7791.h	2013-09-03 20:44:33.000000000 +0900
+@@ -0,0 +1,6 @@
++#ifndef __ASM_R8A7791_H__
++#define __ASM_R8A7791_H__
++
++void r8a7791_clock_init(void);
++
++#endif /* __ASM_R8A7791_H__ */
+--- /dev/null
++++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2013-09-03 20:44:33.000000000 +0900
+@@ -0,0 +1,38 @@
++/*
++ * r8a7791 processor support
++ *
++ * Copyright (C) 2013  Renesas Electronics Corporation
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/irq.h>
++#include <linux/kernel.h>
++#include <linux/of_platform.h>
++#include <mach/common.h>
++#include <mach/r8a7791.h>
++#include <asm/mach/arch.h>
++
++#ifdef CONFIG_USE_OF
++static const char *r8a7791_boards_compat_dt[] __initdata = {
++	"renesas,r8a7791",
++	NULL,
++};
++
++DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
++	.dt_compat	= r8a7791_boards_compat_dt,
++MACHINE_END
++#endif /* CONFIG_USE_OF */
