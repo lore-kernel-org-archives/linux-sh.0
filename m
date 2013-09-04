@@ -1,39 +1,93 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 14 Sep 2013 13:46:43 +0000
-Subject: [PATCH 03/05] ARM: shmobile: Let EMEV2 rely on SCU CPU notifier
-Message-Id: <20130914134643.19258.63415.sendpatchset@w520>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Wed, 04 Sep 2013 15:43:19 +0000
+Subject: Re: [PATCH v6 5/5] clk: Implement clk_unregister
+Message-Id: <52275517.2090906@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130914134616.19258.27110.sendpatchset@w520>
-In-Reply-To: <20130914134616.19258.27110.sendpatchset@w520>
+References: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
+ <1377874402-2944-6-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1377874402-2944-6-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On 08/30/2013 04:53 PM, Sylwester Nawrocki wrote:
+> clk_unregister() is currently not implemented and it is required when
+> a clock provider module needs to be unloaded.
+> 
+> Normally the clock supplier module is prevented to be unloaded by
+> taking reference on the module in clk_get().
+> 
+> For cases when the clock supplier module deinitializes despite the
+> consumers of its clocks holding a reference on the module, e.g. when
+> the driver is unbound through "unbind" sysfs attribute, there are
+> empty clock ops added. These ops are assigned temporarily to struct
+> clk and used until all consumers release the clock, to avoid invoking
+> callbacks from the module which just got removed.
+> 
+> Signed-off-by: Jiada Wang <jiada_wang@mentor.com>
+> Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+> ---
+[...]
+>  /**
+>   * clk_unregister - unregister a currently registered clock
+>   * @clk: clock to unregister
+> - *
+> - * Currently unimplemented.
+>   */
+> -void clk_unregister(struct clk *clk) {}
+> +void clk_unregister(struct clk *clk)
+> +{
+> +	unsigned long flags;
+> +
+> +	clk_prepare_lock();
+> +
+> +	if (!clk || IS_ERR(clk)) {
+> +		pr_err("%s: invalid clock: %p\n", __func__, clk);
+> +		goto out;
+> +	}
 
-Now when CPU notifiers are used for SCU boot vector
-setup shmobile_smp_scu_boot_secondary() is no longer
-needed.
+Actually this check could be done before taking the mutex. And to handle
+NULL clocks properly it should be something like:
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+       if (!clk || WARN_ON_ONCE(IS_ERR(clk)))
+               return;
 
- arch/arm/mach-shmobile/smp-emev2.c |    6 ------
- 1 file changed, 6 deletions(-)
+I will hold on with posting a corrected version until there are any
+further comments.
 
---- 0001/arch/arm/mach-shmobile/smp-emev2.c
-+++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-09-14 19:34:45.000000000 +0900
-@@ -34,12 +34,6 @@
- 
- static int emev2_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
--	int ret;
--
--	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
--	if (ret)
--		return ret;
--
- 	arch_send_wakeup_ipi_mask(cpumask_of(cpu_logical_map(cpu)));
- 	return 0;
- }
+> +	if (clk->ops = &clk_nodrv_ops) {
+> +		pr_err("%s: unregistered clock: %s\n", __func__, clk->name);
+> +		goto out;
+> +	}
+> +	/*
+> +	 * Assign empty clock ops for consumers that might still hold
+> +	 * a reference to this clock.
+> +	 */
+> +	flags = clk_enable_lock();
+> +	clk->ops = &clk_nodrv_ops;
+> +	clk_enable_unlock(flags);
+> +
+> +	if (!hlist_empty(&clk->children)) {
+> +		struct clk *child;
+> +
+> +		/* Reparent all children to the orphan list. */
+> +		hlist_for_each_entry(child, &clk->children, child_node)
+> +			clk_set_parent(child, NULL);
+> +	}
+> +
+> +	clk_debug_unregister(clk);
+> +
+> +	hlist_del_init(&clk->child_node);
+> +
+> +	if (clk->prepare_count)
+> +		pr_warn("%s: unregistering prepared clock: %s\n",
+> +					__func__, clk->name);
+> +
+> +	kref_put(&clk->ref, __clk_release);
+> +out:
+> +	clk_prepare_unlock();
+> +}
+>  EXPORT_SYMBOL_GPL(clk_unregister);
+
