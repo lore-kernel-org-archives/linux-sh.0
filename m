@@ -1,62 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 04 Sep 2013 07:27:37 +0000
-Subject: Re: [Query] CPUFreq: Does these machines have separate clock domains for CPUs?
-Message-Id: <CANqRtoQF8-W=EFcV+LEPGbJf=h_yfyjVg=+0F5Sif15jB8XjBg@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 04 Sep 2013 06:48:34 +0000
+Subject: Re: [PATCH 1/2] sh_eth: check platform data pointer
+Message-Id: <20130904064833.GB7233@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAKohponWn-RN7-6sdhghd6RGCOd357G+TKLsxHfqnSCuMD7xxw@mail.gmail.com>
- <CANqRtoTSO2yyP35naDe4y6a7rL99=cSs4-bJAWOxR5HL2gbpuw@mail.gmail.com>
- <CAKohpom06N4DNZxrQcey-73o1jpQkNpCce2=-Wn+mDHLG9r-3g@mail.gmail.com>
-In-Reply-To: <CAKohpom06N4DNZxrQcey-73o1jpQkNpCce2=-Wn+mDHLG9r-3g@mail.gmail.com>
+References: <201308310423.30322.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308310423.30322.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-Hi Viresh,
+On Sat, Aug 31, 2013 at 04:23:29AM +0400, Sergei Shtylyov wrote:
+> Check the platform data pointer before dereferencing it and error out of the
+> probe() method if it's NULL.
+> 
+> This has additional effect of preventing kernel oops with outdated platform data
+> containing zero PHY address instead (such as on SolutionEngine7710).
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Fri, Aug 30, 2013 at 4:33 PM, Viresh Kumar <viresh.kumar@linaro.org> wrote:
-> On 30 August 2013 12:18, Magnus Damm <magnus.damm@gmail.com> wrote:
->> Hi Viresh,
->>
->> On Thu, Aug 29, 2013 at 7:15 PM, Viresh Kumar <viresh.kumar@linaro.org> wrote:
->>> Hi,
->>>
->>> I have been doing some CPUFreq cleanup work and
->>> wanted to know if the below mentioned machines have separate
->>> clock domains for their CPUs or all share the same domain?
->>>
->>> So, that we can use some generic routines for these drivers which
->>> would eventually do:
->>>
->>> cpumask_setall(policy->cpus);
->>>
->>> And I wanted to make sure that this doesn't break them.. :)
->>>
->>> ......
->>>
->>> The drivers are:
->> ...
->>> drivers/cpufreq/sh-cpufreq.c
->> ...
->>
->> The above SH cpufreq driver seems to be written with SMP in mind, but
->> I would say SMP is a very rare case for SH. So I believe it can be
->> considered as UP-only at this point. If Paul disagrees I'm quite sure
->> he will tell us.
->
-> Okay.. The problem isn't really SMP but different clock domains for CPUs
-> in a SMP system..
->
-> So, even if we have a SMP SH machine, will it have same clock line for
-> all CPUs?
 
-Yeah, I understand your question but I'm afraid that I don't know the
-answer myself.
+Reviewed-by: Simon Horman <horms@verge.net.au>
 
-> I will go with the change anyway..
-
-Good plan. Thanks for cleaning up the cpufreq bits.
-
-Cheers,
-
-/ magnus
+> 
+> ---
+> This patch is against Dave's 'net-next.git' repo.
+> 
+>  drivers/net/ethernet/renesas/sh_eth.c |    6 ++++++
+>  1 file changed, 6 insertions(+)
+> 
+> Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+> =================================> --- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
+> +++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+> @@ -2653,6 +2653,12 @@ static int sh_eth_drv_probe(struct platf
+>  	pm_runtime_enable(&pdev->dev);
+>  	pm_runtime_resume(&pdev->dev);
+>  
+> +	if (!pd) {
+> +		dev_err(&pdev->dev, "no platform data\n");
+> +		ret = -EINVAL;
+> +		goto out_release;
+> +	}
+> +
+>  	/* get PHY ID */
+>  	mdp->phy_id = pd->phy;
+>  	mdp->phy_interface = pd->phy_interface;
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
