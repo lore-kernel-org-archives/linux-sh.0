@@ -1,35 +1,22 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 02 Sep 2013 23:03:10 +0000
-Subject: [PATCH] sh_eth: NAPI requires netif_receive_skb()
-Message-Id: <201309030303.11381.sergei.shtylyov@cogentembedded.com>
+From: David Miller <davem@davemloft.net>
+Date: Wed, 04 Sep 2013 18:12:52 +0000
+Subject: Re: [PATCH] sh_eth: NAPI requires netif_receive_skb()
+Message-Id: <20130904.141252.532474080722830977.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201309030303.11381.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201309030303.11381.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-Driver supporting NAPI should use NAPI-specific function for receiving packets,
-so netif_rx() should be changed to netif_receive_skb().
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 3 Sep 2013 03:03:10 +0400
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Driver supporting NAPI should use NAPI-specific function for receiving packets,
+> so netif_rx() should be changed to netif_receive_skb().
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
----
-This patch is against Dave's 'net-next.git' repo (it also applies to 'net.git'
-with offset). Perhaps it should  be backported to 3.11 once it is out...
-
- drivers/net/ethernet/renesas/sh_eth.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1347,7 +1347,7 @@ static int sh_eth_rx(struct net_device *
- 				skb_reserve(skb, NET_IP_ALIGN);
- 			skb_put(skb, pkt_len);
- 			skb->protocol = eth_type_trans(skb, ndev);
--			netif_rx(skb);
-+			netif_receive_skb(skb);
- 			ndev->stats.rx_packets++;
- 			ndev->stats.rx_bytes += pkt_len;
- 		}
+Applied.
