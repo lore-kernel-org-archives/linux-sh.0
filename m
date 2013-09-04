@@ -1,28 +1,36 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Tue, 17 Sep 2013 08:25:56 +0000
-Subject: Re: [RFC PATCH REBASED 1/3] sh: Move fpu_counter into ARCH specific thread_struct
-Message-Id: <20130917082556.GD12926@twins.programming.kicks-ass.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 04 Sep 2013 18:38:18 +0000
+Subject: Re: [PATCH 4/5 v2] ARM: shmobile: bockw: add R-Car sound support (PIO)
+Message-Id: <52277E1A.6060803@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1379398639-27403-1-git-send-email-vgupta@synopsys.com>
- <1379398639-27403-2-git-send-email-vgupta@synopsys.com>
- <20130917080017.GC12926@twins.programming.kicks-ass.net>
- <C2D7FE5348E1B147BCA15975FBA2307514C36B@IN01WEMBXA.internal.synopsys.com>
-In-Reply-To: <C2D7FE5348E1B147BCA15975FBA2307514C36B@IN01WEMBXA.internal.synopsys.com>
+References: <87bo4kvnow.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87bo4kvnow.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vineet Gupta <Vineet.Gupta1@synopsys.com>
-Cc: Ingo Molnar <mingo@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Sep 17, 2013 at 08:14:34AM +0000, Vineet Gupta wrote:
-> For some reason the email to Paul bounced last time as well
-> 
-> --------------->8-----------------------
-> lethal@linux-sh.org<mailto:lethal@linux-sh.org>>: host mail.linux-sh.org[111.68.239.195] said: 550 5.7.1
->     <lethal@linux-sh.org><mailto:lethal@linux-sh.org>... Relaying denied. Proper authentication required.
->     (in reply to RCPT TO command)
-> --------------->8-----------------------
-> 
-> Did you get that too after sending this CCed email to him.
+Hello.
 
-Yep.. :/ 
+On 08/26/2013 12:52 PM, Kuninori Morimoto wrote:
+
+> This patch enables R-Car sound,
+> AK4643 (CN19) and AK4554 (CN20/CN21) codec chip
+> on Bock-W.
+
+> But, it supports PIO transfer only at this point.
+> User can check sound settings (Dip-switch/PFC etc)
+> via this patch, but will get under/over flow error
+> when playback/capture.
+> Because PIO transfer via SSI will be interrupted
+> "sampling rate" times per 1 second.
+
+> DMA transfer will be supported when HPB-DMAC was
+> enabled on r8a7778.
+
+    Looks like Vinod Koul has queued HPP-DMAC for 3.12-rc1 in his 'next' 
+branch, so you can start looking at addign DMA for 3.13. I'll submit the 
+patches enabling HPB-DMAC in {marzen|bockw}_defconfig later...
+
+WBR, Sergei
+
