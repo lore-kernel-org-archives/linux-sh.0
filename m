@@ -1,60 +1,39 @@
-From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-Date: Mon, 30 Sep 2013 15:31:08 +0000
-Subject: Re: [PATCH] ARM: shmobile: ape6evm: fix incorrect placement of __initdata tag
-Message-Id: <1556252.bjXjV3hKBt@amdc1032>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 04 Sep 2013 08:31:41 +0000
+Subject: Re: [PATCH] clocksource: em_sti: Set cpu_possible_mask to fix SMP broadcast
+Message-Id: <20130904083139.GD17329@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <26068642.Hn7T63a6ac@amdc1032> <1800955.Mbr9gmJOD4@avalon>
-In-Reply-To: <1800955.Mbr9gmJOD4@avalon>
+References: <20130904080151.24562.91334.sendpatchset@w520>
+In-Reply-To: <20130904080151.24562.91334.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-kernel@vger.kernel.org, johnstultz@linaro.org, linux@arm.linux.org.uk, arnd@arndb.de, linux-sh@vger.kernel.org, sboyd@codeaurora.org, rob.herring@calxeda.com, olof@lixom.net, santosh.shilimkar@ti.com, grant.likely@linaro.org, tglx@linutronix.de
 
-
-Hi,
-
-On Monday, September 30, 2013 05:05:37 PM Laurent Pinchart wrote:
-> Hi Bartlomiej,
+On Wed, Sep 04, 2013 at 05:01:51PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
 > 
-> Thank you for the patch.
+> Update the STI driver by setting cpu_possible_mask to make EMEV2
+> SMP work as expected together with the ARM broadcast timer.
 > 
-> On Monday 30 September 2013 15:07:47 Bartlomiej Zolnierkiewicz wrote:
-> > __initdata tag should be placed between the variable name and equal
-> > sign for the variable to be placed in the intended .init.data section.
-> > 
-> > In this particular case __initdata is incorrect as ape6evm_keys_pdata
-> > can be used as a platform data for gpio-keys driver which can be
-> > compiled as module.
+> This breakage was introduced by:
 > 
-> A pointer to the ape6evm_keys_pdata structure is passed to the 
-> platform_device_register_data() function, which makes a copy of the structure. 
-> Marking it as __initdata is thus correct.
+> f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
+> 
+> Without this fix SMP operation is broken on EMEV2 since no
+> broadcast timer interrupts trigger on the secondary CPU cores.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Thanks to feedback from Stephen Boyd this is is a reworked version of:
+>  [PATCH] clocksource: em_sti: Adjust clock event rating to fix SMP broadcast
+> 
+>  drivers/clocksource/em_sti.c |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks for catching this. I'll fix the patch and post v2.
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 
-Best regards,
---
-Bartlomiej Zolnierkiewicz
-Samsung R&D Institute Poland
-Samsung Electronics
-
-> > Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-> > Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
-> > ---
-> >  arch/arm/mach-shmobile/board-ape6evm.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-ape6evm.c
-> > b/arch/arm/mach-shmobile/board-ape6evm.c index 7627385..8954f55 100644
-> > --- a/arch/arm/mach-shmobile/board-ape6evm.c
-> > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> > @@ -86,7 +86,7 @@ static struct gpio_keys_button gpio_buttons[] = {
-> >  	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
-> >  };
-> > 
-> > -static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
-> > +static struct gpio_keys_platform_data ape6evm_keys_pdata = {
-> >  	.buttons	= gpio_buttons,
-> >  	.nbuttons	= ARRAY_SIZE(gpio_buttons),
-> >  };
+I will let this sit for a few days to see if there is any further feedback.
 
