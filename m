@@ -1,60 +1,231 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 11 Sep 2013 07:03:27 +0000
-Subject: Re: [PATCH 2/5] i2c: rcar: get clock rate only once and simplify calculation
-Message-Id: <Pine.LNX.4.64.1309110854200.26942@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 05 Sep 2013 06:01:03 +0000
+Subject: Re: [PATCH] ARM: shmobile: update SDHI DT compatibility string to the <unit>-<soc> format
+Message-Id: <20130905060102.GH14960@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378742120-11135-1-git-send-email-g.liakhovetski@gmx.de>
- <1378742120-11135-3-git-send-email-g.liakhovetski@gmx.de>
- <CANqRtoRF8CD4hO4m23dqAtNCKvAqHo-+JhZud43SYePB4w5Ong@mail.gmail.com>
-In-Reply-To: <CANqRtoRF8CD4hO4m23dqAtNCKvAqHo-+JhZud43SYePB4w5Ong-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <Pine.LNX.4.64.1308291650120.3786@axis700.grange>
+ <1621893.Re68yLczyK@avalon>
+In-Reply-To: <1621893.Re68yLczyK@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus
-
-Thanks for your comments
-
-On Wed, 11 Sep 2013, Magnus Damm wrote:
-
+On Fri, Aug 30, 2013 at 01:47:21AM +0200, Laurent Pinchart wrote:
 > Hi Guennadi,
 > 
-> On Tue, Sep 10, 2013 at 12:55 AM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > There is no need to repeatedly query clock frequency, where it is not
-> > expected to change. The complete loop can also trivially be replaced with
-> > a simple division. A further loop below the one, being simplified, could
-> > also be replaced, but that would get more complicated.
-> >
+> Thank you for the patch.
+> 
+> On Thursday 29 August 2013 17:14:49 Guennadi Liakhovetski wrote:
+> > Currently DT compatibility strings of both types can be found in the kernel
+> > sources: <unit>-<soc> and <soc>-<unit>, whereas a unique format should be
+> > followed and the former one is preferred. This patch converts the SDHI
+> > MMC driver and its users to the common standard. This is safe for now, since
+> > ATM no real products are using this driver with DT.
+> > 
 > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 > 
-> Thanks for your efforts. What makes you think that you should assume
-> that the clock frequency doesn't change?
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> 
+> > ---
+> > 
+> > Ok, the "no real products" is an assumption, that Laurent and Simon kind
+> > of agreed upon, so, I'm using it here to avoid having to carry old
+> > compatibility strings with us around. If anyone has other information -
+> > please shout. Otherwise, I think, it would be the easiest for Chris to ack
+> > this and for Simon to pull this via the ARM tree for late 3.12 (possibly,
+> > post -rc1) inclusion.
 
-Sorry, maybe I didn't explain well enough in the patch description. 
-Please, have a look at the patch. It removes repeated clock rate readings 
-inside a tight loop. I'm aware that the clock rate can change, but there 
-should be a way to make sure, that beginning now and until a certain later 
-point of time the rate doesn't change. Presumably this should be done by 
-locking the clock. I'm not sure this is currently supported by the clock 
-API. Neither clk_get(), nor clk_prepare() nor clk_enable() seem to have 
-the semantics of locking the clock's frequency. Maybe the one who actually 
-prepared the clock should become its owner, but I don't think this is 
-currently the expected behaviour. In either case, I don't think calling 
-clk_get_rate() repeatedly inside _that_ loop makes sense - the rate can 
-anyway be changed after the loop, so, it doesn't add any security.
+Thanks, I believe that is a good plan.
 
-Thanks
-Guennadi
+Chris, could we get an Ack?
 
-> As you already know, we want drivers to be reusable across multiple
-> SoCs. Assuming it that it would be fixed based on one particular SoC
-> doesn't guarantee that that's the case on other SoCs. Which SoCs did
-> you take into consideration?
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+> > 
+> >  Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   17 ++++++++++-------
+> > arch/arm/boot/dts/r8a73a4.dtsi                     |    6 +++---
+> >  arch/arm/boot/dts/r8a7740.dtsi                     |    4 ++--
+> >  arch/arm/boot/dts/r8a7790.dtsi                     |    8 ++++----
+> >  arch/arm/boot/dts/sh73a0.dtsi                      |    6 +++---
+> >  drivers/mmc/host/sh_mobile_sdhi.c                  |   16 ++++++++--------
+> >  6 files changed, 30 insertions(+), 27 deletions(-)
+> > 
+> > diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+> > b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt index df204e1..6a2a116
+> > 100644
+> > --- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+> > +++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+> > @@ -9,12 +9,15 @@ compulsory and any optional properties, common to all
+> > SD/MMC drivers, as described in mmc.txt, can be used. Additionally the
+> > following tmio_mmc-specific optional bindings can be used.
+> > 
+> > +Required properties:
+> > +- compatible:	"renesas,sdhi-shmobile" - a generic sh-mobile SDHI unit
+> > +		"renesas,sdhi-sh7372" - SDHI IP on SH7372 SoC
+> > +		"renesas,sdhi-sh73a0" - SDHI IP on SH73A0 SoC
+> > +		"renesas,sdhi-r8a73a4" - SDHI IP on R8A73A4 SoC
+> > +		"renesas,sdhi-r8a7740" - SDHI IP on R8A7740 SoC
+> > +		"renesas,sdhi-r8a7778" - SDHI IP on R8A7778 SoC
+> > +		"renesas,sdhi-r8a7779" - SDHI IP on R8A7779 SoC
+> > +		"renesas,sdhi-r8a7790" - SDHI IP on R8A7790 SoC
+> > +
+> >  Optional properties:
+> >  - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
+> > -
+> > -When used with Renesas SDHI hardware, the following compatibility strings
+> > -configure various model-specific properties:
+> > -
+> > -"renesas,sh7372-sdhi":	(default) compatible with SH7372
+> > -"renesas,r8a7740-sdhi":	compatible with R8A7740: certain MMC/SD commands
+> > have to -			wait for the interface to become idle.
+> > diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+> > index b0511b1..cc7211b 100644
+> > --- a/arch/arm/boot/dts/r8a73a4.dtsi
+> > +++ b/arch/arm/boot/dts/r8a73a4.dtsi
+> > @@ -236,7 +236,7 @@
+> >  	};
+> > 
+> >  	sdhi0: sdhi@ee100000 {
+> > -		compatible = "renesas,r8a73a4-sdhi";
+> > +		compatible = "renesas,sdhi-r8a73a4";
+> >  		reg = <0 0xee100000 0 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 165 4>;
+> > @@ -245,7 +245,7 @@
+> >  	};
+> > 
+> >  	sdhi1: sdhi@ee120000 {
+> > -		compatible = "renesas,r8a73a4-sdhi";
+> > +		compatible = "renesas,sdhi-r8a73a4";
+> >  		reg = <0 0xee120000 0 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 166 4>;
+> > @@ -254,7 +254,7 @@
+> >  	};
+> > 
+> >  	sdhi2: sdhi@ee140000 {
+> > -		compatible = "renesas,r8a73a4-sdhi";
+> > +		compatible = "renesas,sdhi-r8a73a4";
+> >  		reg = <0 0xee140000 0 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 167 4>;
+> > diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+> > index 8fc4a5d..c4992b5 100644
+> > --- a/arch/arm/boot/dts/r8a7740.dtsi
+> > +++ b/arch/arm/boot/dts/r8a7740.dtsi
+> > @@ -155,7 +155,7 @@
+> >  	};
+> > 
+> >  	sdhi0: sdhi@e6850000 {
+> > -		compatible = "renesas,r8a7740-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7740";
+> >  		reg = <0xe6850000 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 117 4
+> > @@ -167,7 +167,7 @@
+> >  	};
+> > 
+> >  	sdhi1: sdhi@e6860000 {
+> > -		compatible = "renesas,r8a7740-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7740";
+> >  		reg = <0xe6860000 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 121 4
+> > diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> > index 3b879e7..885f9f4 100644
+> > --- a/arch/arm/boot/dts/r8a7790.dtsi
+> > +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> > @@ -152,7 +152,7 @@
+> >  	};
+> > 
+> >  	sdhi0: sdhi@ee100000 {
+> > -		compatible = "renesas,r8a7790-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7790";
+> >  		reg = <0 0xee100000 0 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 165 4>;
+> > @@ -161,7 +161,7 @@
+> >  	};
+> > 
+> >  	sdhi1: sdhi@ee120000 {
+> > -		compatible = "renesas,r8a7790-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7790";
+> >  		reg = <0 0xee120000 0 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 166 4>;
+> > @@ -170,7 +170,7 @@
+> >  	};
+> > 
+> >  	sdhi2: sdhi@ee140000 {
+> > -		compatible = "renesas,r8a7790-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7790";
+> >  		reg = <0 0xee140000 0 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 167 4>;
+> > @@ -179,7 +179,7 @@
+> >  	};
+> > 
+> >  	sdhi3: sdhi@ee160000 {
+> > -		compatible = "renesas,r8a7790-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7790";
+> >  		reg = <0 0xee160000 0 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 168 4>;
+> > diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+> > index ba59a58..3955c76 100644
+> > --- a/arch/arm/boot/dts/sh73a0.dtsi
+> > +++ b/arch/arm/boot/dts/sh73a0.dtsi
+> > @@ -196,7 +196,7 @@
+> >  	};
+> > 
+> >  	sdhi0: sdhi@ee100000 {
+> > -		compatible = "renesas,r8a7740-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7740";
+> >  		reg = <0xee100000 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 83 4
+> > @@ -208,7 +208,7 @@
+> > 
+> >  	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
+> >  	sdhi1: sdhi@ee120000 {
+> > -		compatible = "renesas,r8a7740-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7740";
+> >  		reg = <0xee120000 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 88 4
+> > @@ -219,7 +219,7 @@
+> >  	};
+> > 
+> >  	sdhi2: sdhi@ee140000 {
+> > -		compatible = "renesas,r8a7740-sdhi";
+> > +		compatible = "renesas,sdhi-r8a7740";
+> >  		reg = <0xee140000 0x100>;
+> >  		interrupt-parent = <&gic>;
+> >  		interrupts = <0 104 4
+> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c
+> > b/drivers/mmc/host/sh_mobile_sdhi.c index 87ed3fb..f344659 100644
+> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
+> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
+> > @@ -113,14 +113,14 @@ static const struct sh_mobile_sdhi_ops sdhi_ops = {
+> >  };
+> > 
+> >  static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+> > -	{ .compatible = "renesas,shmobile-sdhi" },
+> > -	{ .compatible = "renesas,sh7372-sdhi" },
+> > -	{ .compatible = "renesas,sh73a0-sdhi", .data = &sh_mobile_sdhi_of_cfg[0],
+> > }, -	{ .compatible = "renesas,r8a73a4-sdhi", .data > > &sh_mobile_sdhi_of_cfg[0], }, -	{ .compatible = "renesas,r8a7740-sdhi",
+> > .data = &sh_mobile_sdhi_of_cfg[0], }, -	{ .compatible > > "renesas,r8a7778-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], }, -	{
+> > .compatible = "renesas,r8a7779-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
+> > -	{ .compatible = "renesas,r8a7790-sdhi", .data > > &sh_mobile_sdhi_of_cfg[0], }, +	{ .compatible = "renesas,sdhi-shmobile" },
+> > +	{ .compatible = "renesas,sdhi-sh7372" },
+> > +	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0],
+> > }, +	{ .compatible = "renesas,sdhi-r8a73a4", .data > > &sh_mobile_sdhi_of_cfg[0], }, +	{ .compatible = "renesas,sdhi-r8a7740",
+> > .data = &sh_mobile_sdhi_of_cfg[0], }, +	{ .compatible > > "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], }, +	{
+> > .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
+> > +	{ .compatible = "renesas,sdhi-r8a7790", .data > > &sh_mobile_sdhi_of_cfg[0], }, {},
+> >  };
+> >  MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
