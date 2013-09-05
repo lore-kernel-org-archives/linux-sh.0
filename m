@@ -1,23 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Sep 2013 07:09:00 +0000
-Subject: Re: [PATCH 2/3 v4] ASoC: shmobile: r8a7778: add USBHS clock
-Message-Id: <20130906070858.GA1025@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 05 Sep 2013 06:23:31 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779: Update early timer initialisation order
+Message-Id: <7658ea2fb57831c6836ffcfb20bcb84f3ff55dfb.1378362045.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Aug 04, 2013 at 05:43:19PM -0700, Kuninori Morimoto wrote:
-> This patch adds USBHS clock for renesas_usbhs driver
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v3 -> v4
-> 
->  - no change
-> 
->  arch/arm/mach-shmobile/clock-r8a7778.c |    1 +
->  1 file changed, 1 insertion(+)
+a894fcc2d01a89e6fe3da0845a4d80a5312e1124 ("ARM: smp_twd: Divorce smp_twd
+from local timer API") altered twd_local_timer_common_register() so that it
+may make use of late_timer_init.
 
-Thanks, I will queue this up for v3.13.
+This is problematic on marzen with Magnus's recent patch "ARM: shmobile:
+marzen: Switch to DT_MACHINE_START" which switches marzen around to enable
+USE_OF and thus shmobile_timer_init(), which is registered as
+late_time_init by shmobile_earlytimer_init() stops being a no-op.
+
+As a work-around I have updated r8a7779_earlytimer_init() so that
+shmobile_earlytimer_init() is called after r8a7779_register_twd().
+Or in other words, the shmobile_earlytimer_init() setting of
+late_time_init overwrites that of twd_local_timer_common_register().
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Magnus Damm <damm@opensource.se>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 3986877..3c5fae5 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -616,8 +616,8 @@ void __init __weak r8a7779_register_twd(void) { }
+ void __init r8a7779_earlytimer_init(void)
+ {
+ 	r8a7779_clock_init();
+-	shmobile_earlytimer_init();
+ 	r8a7779_register_twd();
++	shmobile_earlytimer_init();
+ }
+ 
+ void __init r8a7779_add_early_devices(void)
+-- 
+1.8.4
+
