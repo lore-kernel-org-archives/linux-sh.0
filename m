@@ -1,19 +1,21 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 04 Sep 2013 19:42:02 +0000
+Date: Fri, 06 Sep 2013 19:10:07 +0000
 Subject: Re: [PATCH 2/2] sh_eth: add device tree support
-Message-Id: <52278D0A.6010901@cogentembedded.com>
+Message-Id: <522A288F.1040000@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308310429.34856.sergei.shtylyov@cogentembedded.com> <E4C90BAA-A89F-4C7C-B186-12C2DF7E6F31@codeaurora.org>
-In-Reply-To: <E4C90BAA-A89F-4C7C-B186-12C2DF7E6F31@codeaurora.org>
+References: <201308310429.34856.sergei.shtylyov@cogentembedded.com> <20130902085225.GF27891@e106331-lin.cambridge.arm.com>
+In-Reply-To: <20130902085225.GF27891@e106331-lin.cambridge.arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kumar Gala <galak@codeaurora.org>
-Cc: netdev@vger.kernel.org, rob.herring@calxeda.com, pawel.moll@arm.com, mark.rutland@arm.com, swarren@wwwdotorg.org, ian.campbell@citrix.com, grant.likely@linaro.org, devicetree@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org, rob@landley.net, linux-doc@vger.kernel.org
+To: Mark Rutland <mark.rutland@arm.com>
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, "rob.herring@calxeda.com" <rob.herring@calxeda.com>, Pawel Moll <Pawel.Moll@arm.com>, "swarren@wwwdotorg.org" <swarren@wwwdotorg.org>, "ian.campbell@citrix.com" <ian.campbell@citrix.com>, "grant.likely@linaro.org" <grant.likely@linaro.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "nobuhiro.iwamatsu.yj@renesas.com" <nobuhiro.iwamatsu.yj@renesas.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "rob@landley.net" <rob@landley.net>, "linux-doc@vger.kernel.org" <linux-doc@vger.kernel.org>
 
 Hello.
 
-On 09/04/2013 02:08 AM, Kumar Gala wrote:
+On 09/02/2013 12:52 PM, Mark Rutland wrote:
+
+    Don't know why I haven't noticed your mail before...
 
 >> Add support of the device tree probing for the Renesas SH-Mobile SoCs.
 
@@ -25,9 +27,9 @@ On 09/04/2013 02:08 AM, Kumar Gala wrote:
 >> ---
 >> This patch is against Dave's 'net-next.git' repo.
 
->> Documentation/devicetree/bindings/net/sh_eth.txt |   40 +++++++++++++
->> drivers/net/ethernet/renesas/sh_eth.c            |   66 ++++++++++++++++++++++-
->> 2 files changed, 105 insertions(+), 1 deletion(-)
+>>   Documentation/devicetree/bindings/net/sh_eth.txt |   40 +++++++++++++
+>>   drivers/net/ethernet/renesas/sh_eth.c            |   66 ++++++++++++++++++++++-
+>>   2 files changed, 105 insertions(+), 1 deletion(-)
 
 >> Index: net-next/Documentation/devicetree/bindings/net/sh_eth.txt
 >> =================================>> --- /dev/null
@@ -43,50 +45,80 @@ On 09/04/2013 02:08 AM, Kumar Gala wrote:
 >> +	      "renesas,ether-r8a7779" if the device is a part of R8A7778/9 SoCs.
 >> +	      "renesas,ether-r8a7790" if the device is a part of R8A7790/1 SoCs.
 
-> Curious, 7779 (vs 7778) but 7790 (vs 7791).
+> What are the functional differences between the blocks in these devices
+> that mean they have different compatible strings?
 
-    Support for R8A7779 appeared in Linux before support for R8A7778 (probably 
-the chips appeared on the market in the same order). The same can be said 
-about R8A7790 -- it appeared first; R8A7791 isn't yet supported by Linux (it 
-should be in 3.13). R8A7779/90 are high end chips, R8A7778/91 are middle class 
-chips. Anyway, by request of Magnus Damm, I'll have to use the individual 
-"compatible" properties.
+     RA87740 has Gigabit Ether (GEther) with TSU block (I don't know what TSU 
+stands for) and the register layout completely different from the other SoCs. 
+R8A777x and R8A7790 are 100 Mbit/s Ether without TSU block differing in some 
+minor but vital register details between them; they use so called "R-Car" 
+register layout contrasted to the "Gigabit" layout of R8A7740.
 
 >> +- reg: offset and length of the register set for the device; if the device has
 >> +       TSU registers, you need to specify two register sets here.
->> +- interrupt-parent: the phandle for the interrupt controller that services
->> +		    interrupts for this device.
->> +- interrupts: interrupt mapping for the interrupt source.
->> +- phy-mode: string, operation mode of the PHY interface (a string that
->> +	    of_get_phy_mode() can understand).
->> +- phy-handle: phandle of the PHY device.
->> +
 
-> Should add something about requiring a phy subnode
+> This doesn't explicitly state ordering, and doesn't describe what the
+> first register set is (control registers?). If possible, it would be
+> nice to refer to the set of registers by the name given in
+> documentation; is there any available?
+
+    No, there's not common name (and I only have R8A777x and R8A7790 docs).
+There are two subranges for those SoCs: HDMAC and feLic registers at offsets 
+0x200 and 0x300 from the "reg" prop start.
+
+> I think we should have something like the below to ensure it's explicit.
+> In general we need more consistency in the the way bindings describe reg
+> properties.
+
+> 	- reg: offset and length of:
+> 	     [1] the control registers of the device (required)
+> 	     [2] the TSU registers for the device (optional)
 
     OK.
 
+>> +- interrupt-parent: the phandle for the interrupt controller that services
+>> +		    interrupts for this device.
+
+> Why is that required?
+
+    I'm not sure, maybe it's not.
+
+>> +- interrupts: interrupt mapping for the interrupt source.
+
+> Interrupts are defined in terms of interrupt-specifiers. How about:
+
+> 	- interrupts: an interrupt-specifier for the sole interrupt
+> 	              generated by the device.
+
+    OK.
+
+>> +- phy-mode: string, operation mode of the PHY interface (a string that
+>> +	    of_get_phy_mode() can understand).
+
+> That looks suspicious. Bindings should *not* refer to Linux internals.
+> Instead, we should document the phy-handle and phy-mode properties and
+
+    There's also "phy" variant in use now in addition to the older 
+"phy-handle". Sigh...
+
+> how they are meant to be used in a generic binding document (I couldn't
+> see a generic document doing this so far...).
+
+    So you want me to create one?
+
+>> +- phy-handle: phandle of the PHY device.
+>> +
 >> +Optional properties:
 >> +- local-mac-address: 6 bytes, MAC address.
-
-> What's the assumption if local-mac-address is not specified?
-
-    The driver will try to read the chip's MAC address registers hoping to 
-find an address left there programmed by U-Boot. If no valid address is found 
-(usual case on R8A7778/9 development boards which have an extra network chip), 
-the random one will be used.
-
 >> +- renesas,no-ether-link: specify when a board does not provide a proper LINK
 >> +			 signal.
-
-> How is this different from the fixed link concept we have?
-
-    Here the chip-specific LINK signal is meant which is supposed to go from a 
-PHY to the SoC. Sometimes it's wired from the PHY's link/active LED output or 
-just absent on the board, so we aren't able to use it for the link detection.
-In this case, phylib's notification is used.
-
 >> +- renesas,ether-link-active-low: specify when the LINK signal is active-low.
+
+> What types are these? I know local-mac-address is a byte-string by
+> ePAPR, presumably the last two are empty (boolean)?
+
+    Exactly.
+
 >> +
 >> +Example (Armadillo800EVA board):
 >> +
@@ -103,9 +135,49 @@ In this case, phylib's notification is used.
 >> +		phy0: ethernet-phy@0 {
 >> +			reg = <0>;
 >> +		};
->> +	};
 
-> - k
+> The binding didn't state anything about sub-nodes. Is it a general
+> property of phy bindings that they may be embedded within a consumer's
+> node?
+
+    Considering Ethernet PHY subnodes, yes. They hang off MDIO bus controlled 
+by the Ethernet MAC registers.
+
+>> +	};
+>> Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+>> =================================>> --- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
+>> +++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+[...]
+>> @@ -2600,6 +2603,52 @@ static const struct net_device_ops sh_et
+>>   	.ndo_change_mtu		= eth_change_mtu,
+>>   };
+>>
+>> +#ifdef CONFIG_OF
+>> +static struct sh_eth_plat_data *sh_eth_parse_dt(struct device *dev)
+>> +{
+>> +	struct device_node *np = dev->of_node;
+>> +	struct sh_eth_plat_data *pdata;
+>> +	struct device_node *phy;
+>> +	const char *mac_addr;
+>> +
+>> +	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+>> +	if (!pdata)
+>> +		return NULL;
+>> +
+>> +	pdata->phy_interface = of_get_phy_mode(np);
+>> +
+>> +	phy = of_parse_phandle(np, "phy-handle", 0);
+>> +	if (!phy || of_property_read_u32(phy, "reg", &pdata->phy)) {
+
+> NAK. You didn't describe the format of the phy node, yet you are reading
+> values from it from a logically separate driver.
+
+    See Documentation/devicetree/bindings/net/phy.txt. Although I really 
+didn't follow it closely (and it looks pretty obsolete, requiring 
+"device_type" and "linux,phandle" props).
+
+> Thanks,
+> Mark.
 
 WBR, Sergei
 
