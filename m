@@ -1,102 +1,187 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 04 Sep 2013 06:46:05 +0000
-Subject: Re: [RFC 04/10] i2c: rcar: modify I2C driver
-Message-Id: <20130904064602.GA7233@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 06 Sep 2013 23:43:24 +0000
+Subject: [PATCH v2 2/2] sh_eth: add device tree support
+Message-Id: <201309070343.25640.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377866264-21110-5-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1377866264-21110-5-git-send-email-ulrich.hecht@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: rob.herring@calxeda.com, pawel.moll@arm.com, mark.rutland@arm.com, swarren@wwwdotorg.org, ian.campbell@citrix.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, rob@landley.net, linux-doc@vger.kernel.org
 
-On Fri, Aug 30, 2013 at 02:37:38PM +0200, Ulrich Hecht wrote:
-> From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-> 
-> This patch modify calculate for clock in I2C driver.
+Add support of the device tree probing for the Renesas SH-Mobile SoCs
+documenting the device tree binding as necessary.
 
-Hi,
+This work is loosely based on an original patch by Nobuhiro Iwamatsu
+<nobuhiro.iwamatsu.yj@renesas.com>.
 
-could we have a slightly clearer subject for this patch.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> 
-> Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-> ---
->  drivers/i2c/busses/i2c-rcar.c | 17 +++++++++++++++--
->  include/linux/i2c/i2c-rcar.h  |  4 ++++
->  2 files changed, 19 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-> index 0fc5858..c4fb69c 100644
-> --- a/drivers/i2c/busses/i2c-rcar.c
-> +++ b/drivers/i2c/busses/i2c-rcar.c
-> @@ -221,15 +221,28 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
->  				    struct device *dev)
->  {
->  	struct clk *clkp = clk_get(NULL, "peripheral_clk");
-> +	struct i2c_rcar_platform_data *pdata = dev->platform_data;
->  	u32 scgd, cdf;
->  	u32 round, ick;
->  	u32 scl;
-> +	u32 cdf_width;
-> +	u32 flags = pdata ? pdata->flags : 0;
->  
->  	if (!clkp) {
->  		dev_err(dev, "there is no peripheral_clk\n");
->  		return -EIO;
->  	}
->  
-> +	switch (flags & I2C_RCAR_FLAGS_ICCCR_MASK) {
-> +	default:
-> +	case I2C_RCAR_FLAGS_ICCCR_IS_2BIT:
-> +		cdf_width = 2;
-> +		break;
-> +	case I2C_RCAR_FLAGS_ICCCR_IS_3BIT:
-> +		cdf_width = 3;
-> +		break;
-> +	}
-> +
->  	/*
->  	 * calculate SCL clock
->  	 * see
-> @@ -245,7 +258,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
->  	 * clkp : peripheral_clk
->  	 * F[]  : integer up-valuation
->  	 */
-> -	for (cdf = 0; cdf < 4; cdf++) {
-> +	for (cdf = 0; cdf < (1 << cdf_width); cdf++) {
->  		ick = clk_get_rate(clkp) / (1 + cdf);
->  		if (ick < 20000000)
->  			goto ick_find;
-> @@ -287,7 +300,7 @@ scgd_find:
->  	/*
->  	 * keep icccr value
->  	 */
-> -	priv->icccr = (scgd << 2 | cdf);
-> +	priv->icccr = (scgd << (cdf_width) | cdf);
->  
->  	return 0;
->  }
-> diff --git a/include/linux/i2c/i2c-rcar.h b/include/linux/i2c/i2c-rcar.h
-> index 496f5c2..572a6e5 100644
-> --- a/include/linux/i2c/i2c-rcar.h
-> +++ b/include/linux/i2c/i2c-rcar.h
-> @@ -5,6 +5,10 @@
->  
->  struct i2c_rcar_platform_data {
->  	u32 bus_speed;
-> +	u32 flags;
-> +#define I2C_RCAR_FLAGS_ICCCR_MASK	(0xF << 0)
-> +#define I2C_RCAR_FLAGS_ICCCR_IS_2BIT	(0 << 0) /* default */
-> +#define I2C_RCAR_FLAGS_ICCCR_IS_3BIT	(1 << 0)
->  };
->  
->  #endif /* __I2C_R_CAR_H__ */
-> -- 
-> 1.8.1.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+---
+This patch is against Dave's 'net-next.git' repo.
+Not posting it to netdev@vger.kernel.org this time, or Dave will scold me. :-)
+
+Changes in version 2:
+- added sh_eth_match_table[] entry for "renesas,ether-r8a7778", documented it;
+- clarified descriptions of the "reg" and "interrupt" properties;
+- moved "interrupt-parent" from required properties to optional;
+- mentioned the necessary PHY subnode to the "phy-handle" property description,
+  documented the requered "#address-cells" and "#size-cells" properties;
+- clarified the types/descriptions of the Renesas specific properties;
+- refreshed the patch.
+
+ Documentation/devicetree/bindings/net/sh_eth.txt |   44 +++++++++++++++
+ drivers/net/ethernet/renesas/sh_eth.c            |   67 ++++++++++++++++++++++-
+ 2 files changed, 110 insertions(+), 1 deletion(-)
+
+Index: net-next/Documentation/devicetree/bindings/net/sh_eth.txt
+=================================--- /dev/null
++++ net-next/Documentation/devicetree/bindings/net/sh_eth.txt
+@@ -0,0 +1,44 @@
++* Renesas Electronics SH EtherMAC
++
++This file provides information on what the device node for the SH EtherMAC
++interface contains.
++
++Required properties:
++- compatible: "renesas,gether-r8a7740" if the device is a part of R8A7740 SoC.
++	      "renesas,ether-r8a7778"  if the device is a part of R8A7778 SoC.
++	      "renesas,ether-r8a7779"  if the device is a part of R8A7779 SoC.
++	      "renesas,ether-r8a7790"  if the device is a part of R8A7790 SoC.
++- reg: offset and length of (1) the E-DMAC/feLic register block (required),
++       (2) the TSU register block (optional).
++- interrupts: interrupt specifier for the sole interrupt.
++- phy-mode: string, operation mode of the PHY interface (a string that
++	    of_get_phy_mode() can understand).
++- phy-handle: phandle of the PHY device (there should be a PHY device subnode).
++- #address-cells: number of address cells for the MDIO bus, must be equal to 1.
++- #size-cells: number of size cells on the MDIO bus, must be equal to 0.
++
++Optional properties:
++- interrupt-parent: the phandle for the interrupt controller that services
++		    interrupts for this device.
++- local-mac-address: 6 bytes, MAC address.
++- renesas,no-ether-link: boolean, specify when a board does not provide a proper
++			 Ether LINK signal.
++- renesas,ether-link-active-low: boolean, specify when the Ether LINK signal is
++  				 active-low instead of normal active-high.
++
++Example (Armadillo800EVA board):
++
++	ethernet@e9a00000 {
++		compatible = "renesas,gether-r8a7740";
++		reg = <0xe9a00000 0x800>, <0xe9a01800 0x800>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 142 0x4>;
++		phy-mode = "mii";
++		phy-handle = <&phy0>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		phy0: ethernet-phy@0 {
++			reg = <0>;
++		};
++	};
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -32,6 +32,9 @@
+ #include <linux/platform_device.h>
+ #include <linux/mdio-bitbang.h>
+ #include <linux/netdevice.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/of_net.h>
+ #include <linux/phy.h>
+ #include <linux/cache.h>
+ #include <linux/io.h>
+@@ -2606,6 +2609,53 @@ static const struct net_device_ops sh_et
+ 	.ndo_change_mtu		= eth_change_mtu,
+ };
+ 
++#ifdef CONFIG_OF
++static struct sh_eth_plat_data *sh_eth_parse_dt(struct device *dev)
++{
++	struct device_node *np = dev->of_node;
++	struct sh_eth_plat_data *pdata;
++	struct device_node *phy;
++	const char *mac_addr;
++
++	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
++	if (!pdata)
++		return NULL;
++
++	pdata->phy_interface = of_get_phy_mode(np);
++
++	phy = of_parse_phandle(np, "phy-handle", 0);
++	if (!phy || of_property_read_u32(phy, "reg", &pdata->phy)) {
++		devm_kfree(dev, pdata);
++		return NULL;
++	}
++
++	mac_addr = of_get_mac_address(np);
++	if (mac_addr)
++		memcpy(pdata->mac_addr, mac_addr, ETH_ALEN);
++
++	pdata->no_ether_link +		of_property_read_bool(np, "renesas,no-ether-link");
++	pdata->ether_link_active_low +		of_property_read_bool(np, "renesas,ether-link-active-low");
++
++	return pdata;
++}
++
++static const struct of_device_id sh_eth_match_table[] = {
++	{ .compatible = "renesas,gether-r8a7740", .data = &r8a7740_data },
++	{ .compatible = "renesas,ether-r8a7778", .data = &r8a777x_data },
++	{ .compatible = "renesas,ether-r8a7779", .data = &r8a777x_data },
++	{ .compatible = "renesas,ether-r8a7790", .data = &r8a7790_data },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, sh_eth_match_table);
++#else
++static inline struct sh_eth_plat_data *sh_eth_parse_dt(struct device *dev)
++{
++	return NULL;
++}
++#endif
++
+ static int sh_eth_drv_probe(struct platform_device *pdev)
+ {
+ 	int ret, devno = 0;
+@@ -2659,6 +2709,8 @@ static int sh_eth_drv_probe(struct platf
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_resume(&pdev->dev);
+ 
++	if (pdev->dev.of_node)
++		pd = sh_eth_parse_dt(&pdev->dev);
+ 	if (!pd) {
+ 		dev_err(&pdev->dev, "no platform data\n");
+ 		ret = -EINVAL;
+@@ -2674,7 +2726,19 @@ static int sh_eth_drv_probe(struct platf
+ 	mdp->ether_link_active_low = pd->ether_link_active_low;
+ 
+ 	/* set cpu data */
+-	mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
++	if (id) {
++		mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
++	} else	{
++		const struct of_device_id *match;
++
++		match = of_match_device(of_match_ptr(sh_eth_match_table),
++					&pdev->dev);
++		if (!match) {
++			ret = -EINVAL;
++			goto out_release;
++		}
++		mdp->cd = (struct sh_eth_cpu_data *)match->data;
++	}
+ 	mdp->reg_offset = sh_eth_get_register_offset(mdp->cd->register_type);
+ 	sh_eth_set_default_cpu_data(mdp->cd);
+ 
+@@ -2815,6 +2879,7 @@ static struct platform_driver sh_eth_dri
+ 	.driver = {
+ 		   .name = CARDNAME,
+ 		   .pm = SH_ETH_PM_OPS,
++		   .of_match_table = of_match_ptr(sh_eth_match_table),
+ 	},
+ };
+ 
