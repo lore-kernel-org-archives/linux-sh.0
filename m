@@ -1,112 +1,171 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 26 Sep 2013 09:32:53 +0000
-Subject: Re: [PATCH 2/4] ARM: shmobile: r8a7790: add I2C support in Device Tree mode
-Message-Id: <CANqRtoST2BDVc2uOQUYbeYFp+ME6_GE6XLOVSAXo4_w+jkimjA@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 06 Sep 2013 07:09:08 +0000
+Subject: Re: [PATCH 3/3 v4] ARM: shmobile: bockw: add USB Function support
+Message-Id: <20130906070906.GB1025@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378742636-11215-1-git-send-email-g.liakhovetski@gmx.de>
-	<1378742636-11215-3-git-send-email-g.liakhovetski@gmx.de>
-	<1681594.NCMRR5Vty1@avalon>
-	<Pine.LNX.4.64.1309260004450.7439@axis700.grange>
-	<CANqRtoQRqYEL1QV_i08nFZrXggxvTBfi3tDRWhw7GW1ZgOWrZA@mail.gmail.com>
-	<Pine.LNX.4.64.1309260902060.11968@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1309260902060.11968@axis700.grange>
+References: <878v2g6psd.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878v2g6psd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Linus Walleij <linus.walleij@linaro.org>
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+On Sun, Aug 04, 2013 at 05:43:37PM -0700, Kuninori Morimoto wrote:
+> Bock-W USB1 (CN29) can be USB Host/Func by SW98/SW99 settings.
+> USB Func will be enabled if CONFIG_USB_RENESAS_USBHS_UDC[_MODULE]
+> was selected on this patch
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Thu, Sep 26, 2013 at 12:07 AM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> Hi Magnus
->
-> On Thu, 26 Sep 2013, Magnus Damm wrote:
->
->> Hi Guennadi,
->>
->> On Thu, Sep 26, 2013 at 7:10 AM, Guennadi Liakhovetski
->> <g.liakhovetski@gmx.de> wrote:
->> > Hi Laurent
->> >
->> > On Wed, 25 Sep 2013, Laurent Pinchart wrote:
->> >
->> >> Hi Guennadi,
->> >>
->> >> Thank you for the patch.
->> >>
->> >> On Monday 09 September 2013 18:03:54 Guennadi Liakhovetski wrote:
->> >> > This patch adds clocks and clock lookup entries for the four I2C
->> >> > controllers on r8a7790 and respective Device Tree nodes.
->> >> >
->> >> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
->> >> > ---
->> >> >  arch/arm/boot/dts/r8a7790.dtsi         |   36 +++++++++++++++++++++++++++++
->> >> >  arch/arm/mach-shmobile/clock-r8a7790.c |   10 ++++++++
->> >> >  2 files changed, 46 insertions(+), 0 deletions(-)
->> >> >
->> >> > diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
->> >> > index 885f9f4..a5021112 100644
->> >> > --- a/arch/arm/boot/dts/r8a7790.dtsi
->> >> > +++ b/arch/arm/boot/dts/r8a7790.dtsi
->> >> > @@ -127,6 +127,42 @@
->> >> >             interrupts = <0 0 4>, <0 1 4>, <0 2 4>, <0 3 4>;
->> >> >     };
->> >> >
->> >> > +   i2c0: i2c@e6508000 {
->> >> > +           #address-cells = <1>;
->> >> > +           #size-cells = <0>;
->> >> > +           compatible = "renesas,i2c-rcar-h2";
->> >> > +           reg = <0 0xe6508000 0 0x40>;
->> >> > +           interrupt-parent = <&gic>;
->> >> > +           interrupts = <0 287 0x4>;
->> >>
->> >> Shouldn't you add state = "disabled" to all I2C controllers in order not to
->> >> enable the unused controllers by default ?
->> >
->> > It would be logical, yes, and I seem to remember having discussed this
->> > earlier with someone (with Magnus, IIRC), and the outcome was, that all
->> > Renesas .dtsi files so far define all I2C directly in enabled mode and
->> > that it's intentional, so, I just followed this pattern here. You can
->> > indeed check in other .dtsi files - all seem to do exactly the same.
->>
->> Uhm, I think you mix up platform device use case and DT use case.
->
-> I'm sure I don't.
+Thanks, I have queued this up for v3.13.
 
-Ok, but it sure sounds like that.
+There was a bit of fuzz so could you please check that the following is
+correct?
 
->> In
->> the platform device case we define all devices by default, but that's
->> not how it should be for the DT case. In the case of DT then default
->> should most likely be "disabled". Please follow the direction of
->> Laurent.
->
-> To put the record straight - originally I suggested to use status
-> "disabled" for mmc devices in .dtsi, before that the status property
-> wasn't used in Renesas .dts(i) files, and that's when all I2C nodes were
-> already present in .dtsi in enabled state.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Regarding "disabled", using that in a coherent way probably makes
-sense. As for MMC, despite my efforts the DT binding development
-turned out far from perfect. So during that time the good ideas
-proposed may have accidentally been shot down together with the rest,
-my apologies for that.
+ARM: shmobile: bockw: add USB Function support
 
-Now, would it be possible to make sure that all mach-shmobile I2C
-descriptions follow the same style? I would like the SoCs to be
-supported in the same way, not randomly - both then it comes to
-compatbile string format and if "disabled" is used or not.
+Bock-W USB1 (CN29) can be USB Host/Func by SW98/SW99 settings.
+USB Func will be enabled if CONFIG_USB_RENESAS_USBHS_UDC[_MODULE]
+was selected on this patch
 
->> Also, I mentioned this 25 times before already so once more cannot
->> hurt: "renesas,i2c-rcar-h2" needs to be replaced with something more
->> standard.
->
-> I didn't count, but yes, it has been discussed and that's been fixed in v2
-> of my i2c patches. Now that I've got comments to the ARM patches I can
-> also update them with a correct compatibility string.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-bockw.c | 81 ++++++++++++++++++++++++++++++++++--
+ 1 file changed, 78 insertions(+), 3 deletions(-)
 
-Good, thanks.
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index a835393..de621ed 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -31,6 +31,7 @@
+ #include <linux/smsc911x.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/flash.h>
++#include <linux/usb/renesas_usbhs.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+@@ -97,6 +98,16 @@ static void __iomem *fpga;
+  * # amixer set "LINEOUT Mixer DACL" on
+  */
+ 
++/*
++ * USB
++ *
++ * USB1 (CN29) can be Host/Function
++ *
++ *		Host	Func
++ * SW98		1	2
++ * SW99		1	3
++ */
++
+ /* Dummy supplies, where voltage doesn't matter */
+ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+@@ -115,13 +126,71 @@ static struct resource smsc911x_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
+ };
+ 
++#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
++/*
++ * When USB1 is Func
++ */
++static int usbhsf_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++#define SUSPMODE	0x102
++static int usbhsf_power_ctrl(struct platform_device *pdev,
++			     void __iomem *base, int enable)
++{
++	enable = !!enable;
++
++	r8a7778_usb_phy_power(enable);
++
++	iowrite16(enable << 14, base + SUSPMODE);
++
++	return 0;
++}
++
++static struct resource usbhsf_resources[] __initdata = {
++	DEFINE_RES_MEM(0xffe60000, 0x110),
++	DEFINE_RES_IRQ(gic_iid(0x4f)),
++};
++
++static struct renesas_usbhs_platform_info usbhs_info __initdata = {
++	.platform_callback = {
++		.get_id		= usbhsf_get_id,
++		.power_ctrl	= usbhsf_power_ctrl,
++	},
++	.driver_param = {
++		.buswait_bwait	= 4,
++	},
++};
++
++#define USB_PHY_SETTING {.port1_func = 1, .ovc_pin[1].active_high = 1,}
++#define USB1_DEVICE	"renesas_usbhs"
++#define ADD_USB_FUNC_DEVICE_IF_POSSIBLE()			\
++	platform_device_register_resndata(			\
++		&platform_bus, "renesas_usbhs", -1,		\
++		usbhsf_resources,				\
++		ARRAY_SIZE(usbhsf_resources),			\
++		&usbhs_info, sizeof(struct renesas_usbhs_platform_info))
++
++#else
++/*
++ * When USB1 is Host
++ */
++#define USB_PHY_SETTING { }
++#define USB1_DEVICE	"ehci-platform"
++#define ADD_USB_FUNC_DEVICE_IF_POSSIBLE()
++
++#endif
++
+ /* USB */
+ static struct resource usb_phy_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xffe70800, 0x100),
+ 	DEFINE_RES_MEM(0xffe76000, 0x100),
+ };
+ 
+-static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
++static struct rcar_phy_platform_data usb_phy_platform_data __initdata +	USB_PHY_SETTING;
++
+ 
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+@@ -425,7 +494,7 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* USB */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
+ 				  "usb0", "usb0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
++	PIN_MAP_MUX_GROUP_DEFAULT(USB1_DEVICE, "pfc-r8a7778",
+ 				  "usb1", "usb1"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
+@@ -537,6 +606,12 @@ static void __init bockw_init(void)
+ 	}
+ }
+ 
++static void __init bockw_init_late(void)
++{
++	r8a7778_init_late();
++	ADD_USB_FUNC_DEVICE_IF_POSSIBLE();
++}
++
+ static const char *bockw_boards_compat_dt[] __initdata = {
+ 	"renesas,bockw",
+ 	NULL,
+@@ -547,5 +622,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
+ 	.init_irq	= r8a7778_init_irq_dt,
+ 	.init_machine	= bockw_init,
+ 	.dt_compat	= bockw_boards_compat_dt,
+-	.init_late      = r8a7778_init_late,
++	.init_late      = bockw_init_late,
+ MACHINE_END
+-- 
+1.8.4
 
-/ magnus
