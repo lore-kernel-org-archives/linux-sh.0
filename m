@@ -1,37 +1,34 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 09 Sep 2013 15:55:16 +0000
-Subject: [PATCH 1/5] i2c: rcar: (cosmetic) remove superfluous parenthesis
-Message-Id: <1378742120-11135-2-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 07 Sep 2013 00:27:57 +0000
+Subject: [PATCH v2 2/4] ARM: shmobile: r8a7778: add Ether clock for DT case
+Message-Id: <201309070427.57660.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378742120-11135-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1378742120-11135-1-git-send-email-g.liakhovetski@gmx.de>
+References: <201309070423.30672.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201309070423.30672.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-A recent patch added even more superfluous parenthesis to those, which
-already were there. Remove them again.
+Add extra Ether clock lookup entry in the device tree case.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/i2c/busses/i2c-rcar.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Changes in version 2:
+- refreshed the patch.
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index d2fe11d..15eef94 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -306,7 +306,7 @@ scgd_find:
- 	/*
- 	 * keep icccr value
- 	 */
--	priv->icccr = (scgd << (cdf_width) | cdf);
-+	priv->icccr = scgd << cdf_width | cdf;
- 
- 	return 0;
- }
--- 
-1.7.2.5
+ arch/arm/mach-shmobile/clock-r8a7778.c |    1 +
+ 1 file changed, 1 insertion(+)
 
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -174,6 +174,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
++	CLKDEV_DEV_ID("fde00000.ethernet", &mstp_clks[MSTP114]), /* Ether w/DT */
+ 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP100]), /* USB FUNC */
