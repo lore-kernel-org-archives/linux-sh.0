@@ -1,26 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Sep 2013 04:46:49 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: only enable used I2C interfaces in DT on all Renesas boards
-Message-Id: <20130927044647.GA19749@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 09 Sep 2013 15:11:10 +0000
+Subject: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
+Message-Id: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1309261259490.11968@axis700.grange>
- <CANqRtoRNMOsRxN9qERungFxmw=e4v83Uy4JFxSMBj9Ldu8WNOQ@mail.gmail.com>
-In-Reply-To: <CANqRtoRNMOsRxN9qERungFxmw=e4v83Uy4JFxSMBj9Ldu8WNOQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, SH-Linux <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Sep 26, 2013 at 05:10:58PM -0700, Magnus Damm wrote:
-> On Thu, Sep 26, 2013 at 4:06 AM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > Currently all I2C interfaces in all *.dtsi files for various Renesas SoCs
-> > are enabled by default. Switch them all off and only enable populated I2C
-> > interfaces in board-specific *.dts files.
-> >
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> 
-> Excellent, thank you!
+Sorry guys, I'm trying my best to stop this patch from propagating to 
+stable and to get it fixed asap, so, the CC list might be a bit excessive. 
+Also trying to fix the originally spare cc list, which makes it impossible 
+for me to reply to the original thread, instead have to start a new one.
 
-Thanks, I will queue this up with supplied Acks for v3.13.
+Commit
+
+commit dceff5ce18801dddc220d6238628619c93bc3cb6
+Author: Viresh Kumar <viresh.kumar@linaro.org>
+Date:   Sun Sep 1 22:19:37 2013 +0530
+
+    cpufreq: fix serialization issues with freq change notifiers
+
+breaks .transition_ongoing counting. This leads to cpufreq-cpu0 not 
+working any more. In particular switching the governor from performance to 
+powersave directly after boot doesn't result in a frequency switch any 
+more. Reverting this patch fixes the problem again. Tested with today's 
+-next.
+
+Please, refrain from including into "stable" until clarified!
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
