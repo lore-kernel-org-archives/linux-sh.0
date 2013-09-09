@@ -1,98 +1,96 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 02 Sep 2013 13:24:27 +0000
-Subject: Re: [RFC 05/10] ARM: shmobile: r8a7790: add I2C setup
-Message-Id: <1484300.FYhBxyDjcp@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 09 Sep 2013 16:03:56 +0000
+Subject: [PATCH/RFC 4/4] ARM: shmobile: lager: add CPUFreq support
+Message-Id: <1378742636-11215-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1378742636-11215-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378742636-11215-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Hello,
+The Lager board uses a DA9210 voltage regulator to supply DVFS power to the
+CA15 cores on the r8a7790 SoC. This patch adds CPUFreq support for that
+board using the cpufreq-cpu0 driver.
 
-Thank you for the patch.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-On Friday 30 August 2013 14:37:39 Ulrich Hecht wrote:
-> From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-> 
-> This patch add setup for I2C bus.
-> 
-> Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-> ---
->  arch/arm/mach-shmobile/include/mach/r8a7790.h |  3 +++
->  arch/arm/mach-shmobile/setup-r8a7790.c        | 28 ++++++++++++++++++++++++
->  2 files changed, 31 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-> b/arch/arm/mach-shmobile/include/mach/r8a7790.h index 177a837..ad8b502
-> 100644
-> --- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-> +++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-> @@ -1,7 +1,10 @@
->  #ifndef __ASM_R8A7790_H__
->  #define __ASM_R8A7790_H__
-> 
-> +#include <linux/i2c/i2c-rcar.h>
-> +
->  void r8a7790_add_standard_devices(void);
-> +void r8a7790_add_i2c_device(int idx, struct i2c_rcar_platform_data *pdata);
-> void r8a7790_add_dt_devices(void);
->  void r8a7790_clock_init(void);
->  void r8a7790_pinmux_init(void);
+This patch is marked as RFC, because so far I don't have data about r8a7790
+valid OPPs. The Lager system boots with 1.3GHz, supplying 1.0V to SoC's
+DVFS. Apart from that I don't have information what voltage is required for
+other clock frequencies. Here I'm using a "safe guess" of 0.95V for 700MHz,
+but we might either wait with this patch until exact data is available, or
+actually commit these values - this can be decided.
 
-If I'm not mistaken (Magnus can probably confirm) this is discouraged. 
-Platform device setup should be added directly to the board files instead of 
-the setup-*.c files in order to avoid filling setup-*.c with legacy platform 
-devices.
+ arch/arm/boot/dts/r8a7790-lager-reference.dts  |   32 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-lager-reference.c |    4 ++-
+ 2 files changed, 35 insertions(+), 1 deletions(-)
 
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c
-> b/arch/arm/mach-shmobile/setup-r8a7790.c index e0d29a2..969fdf2 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-> @@ -19,6 +19,7 @@
->   */
-> 
->  #include <linux/clocksource.h>
-> +#include <linux/i2c/i2c-rcar.h>
->  #include <linux/irq.h>
->  #include <linux/kernel.h>
->  #include <linux/of_platform.h>
-> @@ -196,6 +197,33 @@ void __init r8a7790_add_dt_devices(void)
->  	r8a7790_register_cmt(00);
->  }
-> 
-> +/* I2C */
-> +static struct resource rcar_i2c_res[] __initdata = {
-> +	/* I2C0 */
-> +	DEFINE_RES_MEM(0xe6508000, 0x10000),
-> +	DEFINE_RES_IRQ(gic_spi(287)),
-> +	/* I2C1 */
-> +	DEFINE_RES_MEM(0xe6518000, 0x10000),
-> +	DEFINE_RES_IRQ(gic_spi(288)),
-> +	/* I2C2 */
-> +	DEFINE_RES_MEM(0xe6530000, 0x10000),
-> +	DEFINE_RES_IRQ(gic_spi(286)),
-> +	/* I2C3 */
-> +	DEFINE_RES_MEM(0xe6540000, 0x10000),
-> +	DEFINE_RES_IRQ(gic_spi(290)),
-> +};
-> +
-> +void __init r8a7790_add_i2c_device(int idx,
-> +				   struct i2c_rcar_platform_data *pdata)
-> +{
-> +	BUG_ON(idx < 0 || idx > 3);
-> +
-> +	platform_device_register_resndata(
-> +			&platform_bus, "i2c-rcar", idx,
-> +			rcar_i2c_res + (2*idx), 2,
-> +			pdata, sizeof(*pdata));
-> +}
-> +
->  void __init r8a7790_add_standard_devices(void)
->  {
->  	r8a7790_add_dt_devices();
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index c462ef1..7a41419 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -43,3 +43,35 @@
+ 		};
+ 	};
+ };
++
++&i2c3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c3_pins>;
++
++	vdd_dvfs: da9210@68 {
++		compatible = "diasemi,da9210";
++		reg = <0x68>;
++
++		regulator-min-microvolt = <900000>;
++		regulator-max-microvolt = <1000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++	operating-points = <
++		/* kHz  uV - OPs unknown yet */
++		1300000 1000000
++		 700000  950000
++	>;
++	voltage-tolerance = <1>; /* 1% */
++};
++
++&pfc {
++	i2c3_pins: i2c3 {
++		renesas,groups = "i2c3";
++		renesas,function = "i2c3";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 9c316a1..442d854 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -20,6 +20,7 @@
+ 
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_device.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
+@@ -29,7 +30,8 @@ static void __init lager_add_standard_devices(void)
+ 	r8a7790_clock_init();
+ 
+ 	r8a7790_add_dt_devices();
+-        of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+ }
+ 
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.2.5
 
