@@ -1,66 +1,73 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 09 Sep 2013 07:28:55 +0000
-Subject: Re: [PATCH 02/04] ARM: shmobile: r8a7791 SCIF support
-Message-Id: <CANqRtoRksgU7B-80GnfFRymgke13=Er4SpHV-ehGJST2vZAD5w@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 09 Sep 2013 15:55:17 +0000
+Subject: [PATCH 2/5] i2c: rcar: get clock rate only once and simplify calculation
+Message-Id: <1378742120-11135-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130904034525.12546.24775.sendpatchset@w520>
- <20130904034608.12546.79411.sendpatchset@w520>
- <CACRpkdY=j_XRPd9-CV-wj9ajSDZMA1H=k8uK1T2040rmfY=R_A@mail.gmail.com>
- <20130909001524.GD21921@verge.net.au>
- <CACRpkdYwA0ADogtB8RfkZt2bmdbr-PmjvV1=xBKam15DXi9F8A@mail.gmail.com>
- <20130909070941.GA27194@verge.net.au>
-In-Reply-To: <20130909070941.GA27194@verge.net.au>
+References: <1378742120-11135-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378742120-11135-1-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Hi Simon,
+There is no need to repeatedly query clock frequency, where it is not
+expected to change. The complete loop can also trivially be replaced with
+a simple division. A further loop below the one, being simplified, could
+also be replaced, but that would get more complicated.
 
-On Mon, Sep 9, 2013 at 4:09 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Sep 09, 2013 at 08:54:59AM +0200, Linus Walleij wrote:
->> On Mon, Sep 9, 2013 at 2:15 AM, Simon Horman <horms@verge.net.au> wrote:
->> > On Fri, Sep 06, 2013 at 06:27:22PM +0200, Linus Walleij wrote:
->>
->> >> Again this looks like it is piling up more legacy clk
->> >> code instead of moving to the new frameworks.
->> >>
->> >> Please include Mike Turquette on future postings of the
->> >> clk code, he's definately our best clock code reviewer.
->> >
->> > Perhaps I was a bit hasty, but I have already queued up these changes.
->> > And moreover I believe they are useful in their current form for
->> > back-porting to LTSI-3.4, which I have also already done.
->>
->> That sounds like you're a bit too trigger-happy ;-)
->
-> Perhaps.
->
->> > So on those two counts my preference would be for any enhancements
->> > to be done as incremental patches on top of this series.
->>
->> Hm hm. I am worried that it is taken as an OK to proceed
->> extending old cruft for new SoCs rather than moving to new
->> frameworks. I would agree if such migration patches were
->> floating the lists but I am not aware of any patches starting
->> to create drivers/clk/sh*, are you?
->
-> I am not aware of such patches.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/i2c/busses/i2c-rcar.c |   20 +++++++++++++-------
+ 1 files changed, 13 insertions(+), 7 deletions(-)
 
-Several people have spent time on common clocks, the most recent
-efforts have been for the EMEV2 SoC. Nothing is upstream yet though,
-but if all goes according to our plan then we will start seeing common
-clock patches in october-november some time.
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 15eef94..9325db4 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -231,6 +231,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	u32 round, ick;
+ 	u32 scl;
+ 	u32 cdf_width;
++	unsigned long rate;
+ 
+ 	if (!clkp) {
+ 		dev_err(dev, "there is no peripheral_clk\n");
+@@ -264,15 +265,14 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	 * clkp : peripheral_clk
+ 	 * F[]  : integer up-valuation
+ 	 */
+-	for (cdf = 0; cdf < (1 << cdf_width); cdf++) {
+-		ick = clk_get_rate(clkp) / (1 + cdf);
+-		if (ick < 20000000)
+-			goto ick_find;
++	rate = clk_get_rate(clkp);
++	cdf = rate / 20000000;
++	if (cdf >= 1 << cdf_width) {
++		dev_err(dev, "Input clock %lu too high\n", rate);
++		return -EIO;
+ 	}
+-	dev_err(dev, "there is no best CDF\n");
+-	return -EIO;
++	ick = rate / (cdf + 1);
+ 
+-ick_find:
+ 	/*
+ 	 * it is impossible to calculate large scale
+ 	 * number on u32. separate it
+@@ -290,6 +290,12 @@ ick_find:
+ 	 *
+ 	 * Calculation result (= SCL) should be less than
+ 	 * bus_speed for hardware safety
++	 *
++	 * We could use something along the lines of
++	 *	div = ick / (bus_speed + 1) + 1;
++	 *	scgd = (div - 20 - round + 7) / 8;
++	 *	scl = ick / (20 + (scgd * 8) + round);
++	 * (not fully verified) but that would get pretty involved
+ 	 */
+ 	for (scgd = 0; scgd < 0x40; scgd++) {
+ 		scl = ick / (20 + (scgd * 8) + round);
+-- 
+1.7.2.5
 
-> I will defer this to Magnus who is both the author of this series
-> and I believe the person who knows the most about the plans for
-> drivers/clk/sh*.
-
-I'm actually only the author of some portions of this series, but sure. =)
-
-If there is anything special you'd like to know about common clocks on
-mach-shmobile then please let me know.
-
-Cheers,
-
-/ magnus
