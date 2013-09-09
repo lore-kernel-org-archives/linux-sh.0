@@ -1,74 +1,110 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Sep 2013 04:55:36 +0000
-Subject: Re: [PATCH 6/6] ARM: shmobile: kzm9d-reference: Use common clock framework
-Message-Id: <20130924045536.GF3619@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 09 Sep 2013 16:03:53 +0000
+Subject: [PATCH 1/4] pinctrl: sh-pfc: r8a7790: add pin definitions for the I2C3 interface
+Message-Id: <1378742636-11215-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52410F86.4040301@renesas.com>
- <20130924131703.4834a055892285858338003c@ops.dti.ne.jp>
-In-Reply-To: <20130924131703.4834a055892285858338003c@ops.dti.ne.jp>
+References: <1378742636-11215-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378742636-11215-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: takasi-y@ops.dti.ne.jp
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, ben.dooks@codethink.co.uk, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>, devicetree@vger.kernel.org, linux-serial@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Mike Turquette <mturquette@linaro.org>, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-On Tue, Sep 24, 2013 at 01:17:03PM +0900, takasi-y@ops.dti.ne.jp wrote:
-> Use common clock framework version of clock
->  drivers/clk/shmobile/clk-emev2.c
-> instead of sh-clkfwk version
->  arch/arm/mach-shmobile/clock-emev2.c
-> 
-> kzm9d(without -reference) still uses sh-clkfwk version.
-> 
-> Because two of that framework can not live in one kernel binary,
-> there will be SoCs and Boards that can not be in one binary as
-> multiplatform binary or so.
-> For example, kzm9d and kzm9d-reference is now exclusive.
-> 
-> Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+There are four I2C interfaces on r8a7790, each of them can be connected to
+one of the two respective I2C controllers, e.g. interface #0 can be
+configured to work with I2C0 or with IIC0. Additionally some of those
+interfaces can also use one of several pin sets. Interface #3 is special,
+because it can be used in automatic mode for DVFS. It only has one set
+of pins available and those pins cannot be used for anything else, they
+also lack the GPIO function.
 
-Magnus, could you confirm whether or not you would like
-common clocks to be mandatory for -reference in the near-term?
+This patch uses the sh-pfc ability to configure pins, not associated with
+GPIOs and adds support for I2C3 to the r8a7790 PFC set up.
 
-> ---
->  arch/arm/mach-shmobile/Kconfig                 | 1 +
->  arch/arm/mach-shmobile/board-kzm9d-reference.c | 5 ++---
->  2 files changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index 50bab8d..d20d4ce 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -237,6 +237,7 @@ config MACH_KZM9D_REFERENCE
->  	depends on ARCH_EMEV2
->  	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  	select USE_OF
-> +	select COMMON_CLK
->  	---help---
->  	   Use reference implementation of KZM9D board support
->  	   which makes a greater use of device tree at the expense
-> diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> index 8f8bb2f..e0b8317 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> @@ -20,15 +20,14 @@
->  
->  #include <linux/init.h>
->  #include <linux/of_platform.h>
-> +#include <linux/clk-provider.h>
->  #include <mach/emev2.h>
->  #include <mach/common.h>
->  #include <asm/mach/arch.h>
->  
->  static void __init kzm9d_add_standard_devices(void)
->  {
-> -	if (!IS_ENABLED(CONFIG_COMMON_CLK))
-> -		emev2_clock_init();
-> -
-> +	of_clk_init(NULL);
->  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->  }
->  
-> -- 
-> 1.8.1.5
-> 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   28 ++++++++++++++++++++++++++++
+ 1 files changed, 28 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 64fcc006..c3c4d9b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -781,6 +781,8 @@ enum {
+ 	ADICS_SAMP_MARK, DU2_CDE_MARK, QPOLB_MARK, SCIFA2_RXD_B_MARK,
+ 	USB1_PWEN_MARK, AUDIO_CLKOUT_D_MARK, USB1_OVC_MARK,
+ 	TCLK1_B_MARK,
++
++	I2C3_SCL_MARK, I2C3_SDA_MARK,
+ 	PINMUX_MARK_END,
+ };
+ 
+@@ -1719,10 +1721,22 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP16_6, AUDIO_CLKOUT_D),
+ 	PINMUX_IPSR_DATA(IP16_7, USB1_OVC),
+ 	PINMUX_IPSR_MODSEL_DATA(IP16_7, TCLK1_B, SEL_TMU1_1),
++
++	PINMUX_DATA(I2C3_SCL_MARK, FN_SEL_IICDVFS_1),
++	PINMUX_DATA(I2C3_SDA_MARK, FN_SEL_IICDVFS_1),
+ };
+ 
++/* R8A7790 has 6 banks with 32 GPIOs in each = 192 GPIOs */
++#define ROW_GROUP_A(r) ('Z' - 'A' + 1 + (r))
++#define PIN_NUMBER(r, c) (((r) - 'A') * 16 + (c) + 200)
++#define PIN_A_NUMBER(r, c) PIN_NUMBER(ROW_GROUP_A(r), c)
++
+ static struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
++
++	/* Pins not associated with a GPIO port */
++	SH_PFC_PIN_NAMED(ROW_GROUP_A('J'), 15, AJ15),
++	SH_PFC_PIN_NAMED(ROW_GROUP_A('H'), 15, AH15),
+ };
+ 
+ /* - DU RGB ----------------------------------------------------------------- */
+@@ -1990,6 +2004,14 @@ static const unsigned int hscif1_ctrl_b_pins[] = {
+ static const unsigned int hscif1_ctrl_b_mux[] = {
+ 	HRTS1_N_B_MARK, HCTS1_N_B_MARK,
+ };
++/* - I2C3 ------------------------------------------------------------------- */
++static const unsigned int i2c3_pins[] = {
++	/* SCL, SDA */
++	PIN_A_NUMBER('J', 15), PIN_A_NUMBER('H', 15),
++};
++static const unsigned int i2c3_mux[] = {
++	I2C3_SCL_MARK, I2C3_SDA_MARK,
++};
+ /* - INTC ------------------------------------------------------------------- */
+ static const unsigned int intc_irq0_pins[] = {
+ 	/* IRQ */
+@@ -3047,6 +3069,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hscif1_data_b),
+ 	SH_PFC_PIN_GROUP(hscif1_clk_b),
+ 	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
++	SH_PFC_PIN_GROUP(i2c3),
+ 	SH_PFC_PIN_GROUP(intc_irq0),
+ 	SH_PFC_PIN_GROUP(intc_irq1),
+ 	SH_PFC_PIN_GROUP(intc_irq2),
+@@ -3243,6 +3266,10 @@ static const char * const hscif1_groups[] = {
+ 	"hscif1_ctrl_b",
+ };
+ 
++static const char * const i2c3_groups[] = {
++	"i2c3",
++};
++
+ static const char * const intc_groups[] = {
+ 	"intc_irq0",
+ 	"intc_irq1",
+@@ -3469,6 +3496,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(eth),
+ 	SH_PFC_FUNCTION(hscif0),
+ 	SH_PFC_FUNCTION(hscif1),
++	SH_PFC_FUNCTION(i2c3),
+ 	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(mmc1),
+-- 
+1.7.2.5
+
