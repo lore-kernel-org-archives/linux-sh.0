@@ -1,187 +1,69 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 06 Sep 2013 23:43:24 +0000
-Subject: [PATCH v2 2/2] sh_eth: add device tree support
-Message-Id: <201309070343.25640.sergei.shtylyov@cogentembedded.com>
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Mon, 09 Sep 2013 21:02:40 +0000
+Subject: Re: [PATCH v2 2/2] sh_eth: add device tree support
+Message-Id: <522E3770.9020305@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201309070343.25640.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201309070343.25640.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rob.herring@calxeda.com, pawel.moll@arm.com, mark.rutland@arm.com, swarren@wwwdotorg.org, ian.campbell@citrix.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, rob@landley.net, linux-doc@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: rob.herring@calxeda.com, pawel.moll@arm.com, mark.rutland@arm.com, ian.campbell@citrix.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, rob@landley.net, linux-doc@vger.kernel.org
 
-Add support of the device tree probing for the Renesas SH-Mobile SoCs
-documenting the device tree binding as necessary.
+On 09/06/2013 05:43 PM, Sergei Shtylyov wrote:
+> Add support of the device tree probing for the Renesas SH-Mobile SoCs
+> documenting the device tree binding as necessary.
+> 
+> This work is loosely based on an original patch by Nobuhiro Iwamatsu
+> <nobuhiro.iwamatsu.yj@renesas.com>.
 
-This work is loosely based on an original patch by Nobuhiro Iwamatsu
-<nobuhiro.iwamatsu.yj@renesas.com>.
+> Index: net-next/Documentation/devicetree/bindings/net/sh_eth.txt
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> +- reg: offset and length of (1) the E-DMAC/feLic register block (required),
+> +       (2) the TSU register block (optional).
 
----
-This patch is against Dave's 'net-next.git' repo.
-Not posting it to netdev@vger.kernel.org this time, or Dave will scold me. :-)
+There's an argument that you should specify reg-names entries to allow
+arbitrary ordering or entries within reg, if there's more than one
+entry. But, I don't think it's mandatory, just something to consider at
+present.
 
-Changes in version 2:
-- added sh_eth_match_table[] entry for "renesas,ether-r8a7778", documented it;
-- clarified descriptions of the "reg" and "interrupt" properties;
-- moved "interrupt-parent" from required properties to optional;
-- mentioned the necessary PHY subnode to the "phy-handle" property description,
-  documented the requered "#address-cells" and "#size-cells" properties;
-- clarified the types/descriptions of the Renesas specific properties;
-- refreshed the patch.
+> +- interrupts: interrupt specifier for the sole interrupt.
+> +- phy-mode: string, operation mode of the PHY interface (a string that
+> +	    of_get_phy_mode() can understand).
 
- Documentation/devicetree/bindings/net/sh_eth.txt |   44 +++++++++++++++
- drivers/net/ethernet/renesas/sh_eth.c            |   67 ++++++++++++++++++++++-
- 2 files changed, 110 insertions(+), 1 deletion(-)
+DT bindings should be OS-agnostic. of_get_phy_mode() is Linux-specific.
+Please spell out the complete list of supported values here, without
+reference to Linux-specific code or documentation.
 
-Index: net-next/Documentation/devicetree/bindings/net/sh_eth.txt
-=================================--- /dev/null
-+++ net-next/Documentation/devicetree/bindings/net/sh_eth.txt
-@@ -0,0 +1,44 @@
-+* Renesas Electronics SH EtherMAC
-+
-+This file provides information on what the device node for the SH EtherMAC
-+interface contains.
-+
-+Required properties:
-+- compatible: "renesas,gether-r8a7740" if the device is a part of R8A7740 SoC.
-+	      "renesas,ether-r8a7778"  if the device is a part of R8A7778 SoC.
-+	      "renesas,ether-r8a7779"  if the device is a part of R8A7779 SoC.
-+	      "renesas,ether-r8a7790"  if the device is a part of R8A7790 SoC.
-+- reg: offset and length of (1) the E-DMAC/feLic register block (required),
-+       (2) the TSU register block (optional).
-+- interrupts: interrupt specifier for the sole interrupt.
-+- phy-mode: string, operation mode of the PHY interface (a string that
-+	    of_get_phy_mode() can understand).
-+- phy-handle: phandle of the PHY device (there should be a PHY device subnode).
-+- #address-cells: number of address cells for the MDIO bus, must be equal to 1.
-+- #size-cells: number of size cells on the MDIO bus, must be equal to 0.
-+
-+Optional properties:
-+- interrupt-parent: the phandle for the interrupt controller that services
-+		    interrupts for this device.
-+- local-mac-address: 6 bytes, MAC address.
-+- renesas,no-ether-link: boolean, specify when a board does not provide a proper
-+			 Ether LINK signal.
-+- renesas,ether-link-active-low: boolean, specify when the Ether LINK signal is
-+  				 active-low instead of normal active-high.
-+
-+Example (Armadillo800EVA board):
-+
-+	ethernet@e9a00000 {
-+		compatible = "renesas,gether-r8a7740";
-+		reg = <0xe9a00000 0x800>, <0xe9a01800 0x800>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 0x4>;
-+		phy-mode = "mii";
-+		phy-handle = <&phy0>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		phy0: ethernet-phy@0 {
-+			reg = <0>;
-+		};
-+	};
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -32,6 +32,9 @@
- #include <linux/platform_device.h>
- #include <linux/mdio-bitbang.h>
- #include <linux/netdevice.h>
-+#include <linux/of.h>
-+#include <linux/of_device.h>
-+#include <linux/of_net.h>
- #include <linux/phy.h>
- #include <linux/cache.h>
- #include <linux/io.h>
-@@ -2606,6 +2609,53 @@ static const struct net_device_ops sh_et
- 	.ndo_change_mtu		= eth_change_mtu,
- };
- 
-+#ifdef CONFIG_OF
-+static struct sh_eth_plat_data *sh_eth_parse_dt(struct device *dev)
-+{
-+	struct device_node *np = dev->of_node;
-+	struct sh_eth_plat_data *pdata;
-+	struct device_node *phy;
-+	const char *mac_addr;
-+
-+	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
-+	if (!pdata)
-+		return NULL;
-+
-+	pdata->phy_interface = of_get_phy_mode(np);
-+
-+	phy = of_parse_phandle(np, "phy-handle", 0);
-+	if (!phy || of_property_read_u32(phy, "reg", &pdata->phy)) {
-+		devm_kfree(dev, pdata);
-+		return NULL;
-+	}
-+
-+	mac_addr = of_get_mac_address(np);
-+	if (mac_addr)
-+		memcpy(pdata->mac_addr, mac_addr, ETH_ALEN);
-+
-+	pdata->no_ether_link +		of_property_read_bool(np, "renesas,no-ether-link");
-+	pdata->ether_link_active_low +		of_property_read_bool(np, "renesas,ether-link-active-low");
-+
-+	return pdata;
-+}
-+
-+static const struct of_device_id sh_eth_match_table[] = {
-+	{ .compatible = "renesas,gether-r8a7740", .data = &r8a7740_data },
-+	{ .compatible = "renesas,ether-r8a7778", .data = &r8a777x_data },
-+	{ .compatible = "renesas,ether-r8a7779", .data = &r8a777x_data },
-+	{ .compatible = "renesas,ether-r8a7790", .data = &r8a7790_data },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, sh_eth_match_table);
-+#else
-+static inline struct sh_eth_plat_data *sh_eth_parse_dt(struct device *dev)
-+{
-+	return NULL;
-+}
-+#endif
-+
- static int sh_eth_drv_probe(struct platform_device *pdev)
- {
- 	int ret, devno = 0;
-@@ -2659,6 +2709,8 @@ static int sh_eth_drv_probe(struct platf
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_resume(&pdev->dev);
- 
-+	if (pdev->dev.of_node)
-+		pd = sh_eth_parse_dt(&pdev->dev);
- 	if (!pd) {
- 		dev_err(&pdev->dev, "no platform data\n");
- 		ret = -EINVAL;
-@@ -2674,7 +2726,19 @@ static int sh_eth_drv_probe(struct platf
- 	mdp->ether_link_active_low = pd->ether_link_active_low;
- 
- 	/* set cpu data */
--	mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
-+	if (id) {
-+		mdp->cd = (struct sh_eth_cpu_data *)id->driver_data;
-+	} else	{
-+		const struct of_device_id *match;
-+
-+		match = of_match_device(of_match_ptr(sh_eth_match_table),
-+					&pdev->dev);
-+		if (!match) {
-+			ret = -EINVAL;
-+			goto out_release;
-+		}
-+		mdp->cd = (struct sh_eth_cpu_data *)match->data;
-+	}
- 	mdp->reg_offset = sh_eth_get_register_offset(mdp->cd->register_type);
- 	sh_eth_set_default_cpu_data(mdp->cd);
- 
-@@ -2815,6 +2879,7 @@ static struct platform_driver sh_eth_dri
- 	.driver = {
- 		   .name = CARDNAME,
- 		   .pm = SH_ETH_PM_OPS,
-+		   .of_match_table = of_match_ptr(sh_eth_match_table),
- 	},
- };
- 
+> +- phy-handle: phandle of the PHY device (there should be a PHY device subnode).
+
+Is this a custom property, or part of some generic PHY subsystem
+binding? If the latter, please reference the DT binding document for
+that subsystem. If it's custom, what kinds of nodes can this phandle
+point at; what kind of interface must the referenced DT node provide (is
+a #phy-cells property required, must its compatible value be one of a
+specific set of values).
+
+> +- #address-cells: number of address cells for the MDIO bus, must be equal to 1.
+> +- #size-cells: number of size cells on the MDIO bus, must be equal to 0.
+
+If this node is expected to contain child nodes, you need to specify
+details of those child nodes. Can you reference the filename of a
+generic MDIO binding? What do the address values mean (perhaps that'd be
+covered by the MDIO binding already, if it's applicable).
+
+> +Optional properties:
+> +- interrupt-parent: the phandle for the interrupt controller that services
+> +		    interrupts for this device.
+> +- local-mac-address: 6 bytes, MAC address.
+> +- renesas,no-ether-link: boolean, specify when a board does not provide a proper
+> +			 Ether LINK signal.
+> +- renesas,ether-link-active-low: boolean, specify when the Ether LINK signal is
+> +  				 active-low instead of normal active-high.
+
+Presumably the link signal is some dedicated signal in the Ethernet MAC
+HW block, and not a generic GPIO? If it's a GPIO, there should be a flag
+in the GPIO property/binding you can use for active low.
+
+Do you need any clocks properties, IP block reset signals, power domains?
