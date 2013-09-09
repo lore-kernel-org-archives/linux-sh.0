@@ -1,28 +1,34 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 06 Sep 2013 16:21:23 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 09 Sep 2013 00:16:11 +0000
 Subject: Re: [PATCH 01/04] ARM: shmobile: Initial r8a7791 SoC support
-Message-Id: <CACRpkdb7QkqCmTMua1yJNJxSAWff=0f6a2SWkf6K9SqbW0BOVg@mail.gmail.com>
+Message-Id: <20130909001611.GE21921@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130904034525.12546.24775.sendpatchset@w520>
  <20130904034557.12546.97503.sendpatchset@w520>
-In-Reply-To: <20130904034557.12546.97503.sendpatchset@w520>
+ <CACRpkdb7QkqCmTMua1yJNJxSAWff=0f6a2SWkf6K9SqbW0BOVg@mail.gmail.com>
+In-Reply-To: <CACRpkdb7QkqCmTMua1yJNJxSAWff=0f6a2SWkf6K9SqbW0BOVg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 4, 2013 at 5:45 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+On Fri, Sep 06, 2013 at 06:21:23PM +0200, Linus Walleij wrote:
+> On Wed, Sep 4, 2013 at 5:45 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> 
+> > From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> (...)
+> >  arch/arm/mach-shmobile/clock-r8a7791.c        |  198 +++++++++++++++++++++++++
+> 
+> So what about starting afresh by letting this new SoC use the
+> generic clk framework in drivers/clk from day one instead of
+> adding another chunk of custom clk code to the kernel?
+> 
+> (There may be reasons for this, but I have to ask the
+> inevitable question.)
 
-> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-(...)
->  arch/arm/mach-shmobile/clock-r8a7791.c        |  198 +++++++++++++++++++++++++
+Perhaps I was a bit hasty, but I have already queued up these changes.
+And moreover I believe they are useful in their current form for
+back-porting to LTSI-3.4, which I have also already done.
 
-So what about starting afresh by letting this new SoC use the
-generic clk framework in drivers/clk from day one instead of
-adding another chunk of custom clk code to the kernel?
-
-(There may be reasons for this, but I have to ask the
-inevitable question.)
-
-Yours,
-Linus Walleij
+So on those two counts my preference would be for any enhancements
+to be done as incremental patches on top of this series.
