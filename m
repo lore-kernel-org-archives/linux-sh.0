@@ -1,56 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 26 Sep 2013 02:14:17 +0000
-Subject: Re: [PATCH 1/2] rcar-hpbdma: remove shdma_free_irq() calls
-Message-Id: <20130926021417.GC18396@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 09 Sep 2013 15:55:20 +0000
+Subject: [PATCH 5/5] i2c: rcar: use per-device clock
+Message-Id: <1378742120-11135-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309260228.37765.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309260228.37765.sergei.shtylyov@cogentembedded.com>
+References: <1378742120-11135-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378742120-11135-1-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-On Thu, Sep 26, 2013 at 02:28:37AM +0400, Sergei Shtylyov wrote:
-> Commit c1c63a14f4f2419d093acd7164eccdff315baa86 (DMA: shdma: switch to managed
-> resource allocation) got rid of shdma_free_irq() but  unfortunately got merged
-> later than commit c4f6c41ba790bbbfcebb4c47a709ac8ff1fe1af9 (dma: add driver for
-> R-Car HPB-DMAC), so that the HPB-DMAC driver retained the calls and got broken:
-> 
-> drivers/dma/sh/rcar-hpbdma.c: In function `hpb_dmae_alloc_chan_resources':
-> drivers/dma/sh/rcar-hpbdma.c:435: error: implicit declaration of function
-> `shdma_free_irq'
-> 
-> Fix this compilation error by removing the remaining shdma_free_irq() calls.
+Using the same clock for all device instances is non-portable and obtaining
+clock references by an ID without using a device pointer is discouraged.
+This is also not needed, because on platforms, where this driver is used,
+suitable clocks are available for the I2C controllers, that are children of
+the peripheral clock and just pass its rate 1-to-1 to controllers. This
+patch switches the driver to obtain references to correct clocks.
 
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/i2c/busses/i2c-rcar.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-> Reported-by: Simon Horman <horms@verge.net.au>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
-> The patch is against 'fixes-3.12' branch of Vinod Koul's 'slave-dma.git' repo.
-> 
->  drivers/dma/sh/rcar-hpbdma.c |    2 --
->  1 file changed, 2 deletions(-)
-> 
-> Index: slave-dma/drivers/dma/sh/rcar-hpbdma.c
-> =================================> --- slave-dma.orig/drivers/dma/sh/rcar-hpbdma.c
-> +++ slave-dma/drivers/dma/sh/rcar-hpbdma.c
-> @@ -432,7 +432,6 @@ hpb_dmae_alloc_chan_resources(struct hpb
->  		hpb_chan->xfer_mode = XFER_DOUBLE;
->  	} else {
->  		dev_err(hpb_chan->shdma_chan.dev, "DCR setting error");
-> -		shdma_free_irq(&hpb_chan->shdma_chan);
->  		return -EINVAL;
->  	}
->  
-> @@ -614,7 +613,6 @@ static void hpb_dmae_chan_remove(struct 
->  	shdma_for_each_chan(schan, &hpbdev->shdma_dev, i) {
->  		BUG_ON(!schan);
->  
-> -		shdma_free_irq(schan);
->  		shdma_chan_remove(schan);
->  	}
->  	dma_dev->chancnt = 0;
-> 
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 7e71cf4..7b986cb 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -227,7 +227,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 				    u32 bus_speed,
+ 				    struct device *dev)
+ {
+-	struct clk *clkp = clk_get(NULL, "peripheral_clk");
++	struct clk *clkp = clk_get(dev, NULL);
+ 	u32 scgd, cdf;
+ 	u32 round, ick;
+ 	u32 scl;
+-- 
+1.7.2.5
+
