@@ -1,12 +1,14 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 09 Sep 2013 07:21:01 +0000
+Date: Mon, 09 Sep 2013 07:37:34 +0000
 Subject: Re: [PATCH 01/04] ARM: shmobile: Initial r8a7791 SoC support
-Message-Id: <CANqRtoQzLKk3EKcm=EiZCg73fgDBZ1xjPi_6fH_PsGdkr6w5sA@mail.gmail.com>
+Message-Id: <CANqRtoQirDKYS-vGH-pbrXH52WWDe8q77XzdLBGApbf5XRkH=w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130904034525.12546.24775.sendpatchset@w520>
  <20130904034557.12546.97503.sendpatchset@w520>
  <CACRpkdb7QkqCmTMua1yJNJxSAWff=0f6a2SWkf6K9SqbW0BOVg@mail.gmail.com>
-In-Reply-To: <CACRpkdb7QkqCmTMua1yJNJxSAWff=0f6a2SWkf6K9SqbW0BOVg@mail.gmail.com>
+ <20130909001611.GE21921@verge.net.au>
+ <CACRpkdacYC-CKbr-=pzN=nLWgBqk4CCQS3rG8LDASKjg3uBP=Q@mail.gmail.com>
+In-Reply-To: <CACRpkdacYC-CKbr-=pzN=nLWgBqk4CCQS3rG8LDASKjg3uBP=Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,44 +16,31 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Linus,
 
-On Sat, Sep 7, 2013 at 1:21 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Wed, Sep 4, 2013 at 5:45 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+On Mon, Sep 9, 2013 at 3:55 PM, Linus Walleij <linus.walleij@linaro.org> wrote:
+> On Mon, Sep 9, 2013 at 2:16 AM, Simon Horman <horms@verge.net.au> wrote:
 >
->> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> (...)
->>  arch/arm/mach-shmobile/clock-r8a7791.c        |  198 +++++++++++++++++++++++++
+>> So on those two counts my preference would be for any enhancements
+>> to be done as incremental patches on top of this series.
 >
-> So what about starting afresh by letting this new SoC use the
-> generic clk framework in drivers/clk from day one instead of
-> adding another chunk of custom clk code to the kernel?
+> Again: do such enhancements even exist?
 
-I agree that we should use common clocks as soon as ever possible, but
-as you can see in the actual patch, Nakamura-san has already written
-code using the old framework. So unless you have a time machine... =)
+There are several incremental patches available for r8a7791, but since
+this is a new and rare platform it won't be the first SoC we convert
+to common clocks. So CCF development will happen on r8a7791, but it
+won't be the first platform.
 
-The use of legacy clocks has happened because we so far haven't done
-enough upfront development of Renesas-specific clock hardware drivers
-for CCF. So it's understandable that SoC-specific code is written
-towards already existing code. At the same time I agree that blindly
-sticking to legacy code can't work, so yes, we need to work on CCF.
+To be able to start using common clocks we first need to break out the
+basic building blocks and then tie them in on one SoC at a time. These
+basic building blocks of course need to use already-existing CCF bits
+for gating, dividers and plls. We will also need some special handling
+like for instance polling of registers to wait for rate change.
 
-Fortunately there are plans to convert several mach-shmobile SoCs to
-common clocks over the next 6 months. As you know, we spent much time
-and efforts converting to pinctrl last two 6 month periods, and now we
-will be targeting common clocks.
+So the issue in my opinion is not so much the SoC specific bits.
+Instead it's the shared CCF bits that need work. The real question is
+probably if new SoC support needs to block on framework support. I'm
+all about incremental changes. If there is something special that
+needs extra focus then of course we will work on that.
 
-> (There may be reasons for this, but I have to ask the
-> inevitable question.)
-
-The reason why you see a new SoC with legacy clock code is that we
-have to add support for the new hardware when it is being released.
-The hardware development schedule does unfortunately not follow the
-upstream release schedule. =) (yet) So when a new SoW needs software
-support we write support towards whichever latest frameworks that we
-support. In parallel with this we consolidate and move over to new
-frameworks. It is all happening in public and we use source control we
-can track history if things fail.
-
-Hope this clarifies!
+Cheers,
 
 / magnus
