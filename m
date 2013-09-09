@@ -1,55 +1,88 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 09 Sep 2013 20:57:32 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 09 Sep 2013 21:42:41 +0000
 Subject: Re: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
-Message-Id: <1883706.eFcILAzoo8@vostro.rjw.lan>
+Message-Id: <Pine.LNX.4.64.1309092330560.12376@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
+ <1883706.eFcILAzoo8@vostro.rjw.lan>
+In-Reply-To: <1883706.eFcILAzoo8@vostro.rjw.lan>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Hi Rafael
 
-On Monday, September 09, 2013 05:11:10 PM Guennadi Liakhovetski wrote:
-> Sorry guys, I'm trying my best to stop this patch from propagating to 
-> stable and to get it fixed asap, so, the CC list might be a bit excessive. 
-> Also trying to fix the originally spare cc list, which makes it impossible 
-> for me to reply to the original thread, instead have to start a new one.
+On Mon, 9 Sep 2013, Rafael J. Wysocki wrote:
 
-I'm not sure what you're talking about.  What exactly was wrong with the
-original CC list in particular?
-
-> Commit
+> Hi,
 > 
-> commit dceff5ce18801dddc220d6238628619c93bc3cb6
-> Author: Viresh Kumar <viresh.kumar@linaro.org>
-> Date:   Sun Sep 1 22:19:37 2013 +0530
+> On Monday, September 09, 2013 05:11:10 PM Guennadi Liakhovetski wrote:
+> > Sorry guys, I'm trying my best to stop this patch from propagating to 
+> > stable and to get it fixed asap, so, the CC list might be a bit excessive. 
+> > Also trying to fix the originally spare cc list, which makes it impossible 
+> > for me to reply to the original thread, instead have to start a new one.
 > 
->     cpufreq: fix serialization issues with freq change notifiers
+> I'm not sure what you're talking about.  What exactly was wrong with the
+> original CC list in particular?
+
+I think you advised once to cc cpufreq related mails to linux-pm too at 
+least. I haven't found this patch in my pm archive, have I missed it 
+there?
+
+> > Commit
+> > 
+> > commit dceff5ce18801dddc220d6238628619c93bc3cb6
+> > Author: Viresh Kumar <viresh.kumar@linaro.org>
+> > Date:   Sun Sep 1 22:19:37 2013 +0530
+> > 
+> >     cpufreq: fix serialization issues with freq change notifiers
+> > 
+> > breaks .transition_ongoing counting.
 > 
-> breaks .transition_ongoing counting.
+> Do you know how exactly it breaks that?  If so, care to share that knowledge?
 
-Do you know how exactly it breaks that?  If so, care to share that knowledge?
+No, I don't. I only know that in __cpufreq_driver_target() the check for
 
-> This leads to cpufreq-cpu0 not working any more. In particular switching the
-> governor from performance to powersave directly after boot doesn't result in
-> a frequency switch any more. Reverting this patch fixes the problem again.
+	if (policy->transition_ongoing) {
+		write_unlock_irqrestore(&cpufreq_driver_lock, flags);
+		return -EBUSY;
+	}
 
-However, this is a regression fix, so I'd prefer to fix the problem on top of
-it instead of reverting this commit entirely.
+is failing with this patch and cpufreq-cpu0.
 
-> Tested with today's 
-> -next.
+> > This leads to cpufreq-cpu0 not working any more. In particular switching the
+> > governor from performance to powersave directly after boot doesn't result in
+> > a frequency switch any more. Reverting this patch fixes the problem again.
 > 
-> Please, refrain from including into "stable" until clarified!
+> However, this is a regression fix, so I'd prefer to fix the problem on top of
+> it instead of reverting this commit entirely.
 
-Well, dropping the commit altogether and dropping the "CC stable" tag are
-equally disruptive at this point, so I think I'll just defer all of the
-cpufreq fixes I wanted to push for 3.12 before the ending of the merge
-window.
+If I understood correctly, this patch fixed some warnings, that, however, 
+didn't disrupt functionality, is this right? Whereas the patch really 
+seems to break working set ups.
 
-Thanks,
-Rafael
+Anyway, we know about the problem now and I believe it'll get fixed one 
+way or another.
 
+Thanks
+Guennadi
+
+> > Tested with today's 
+> > -next.
+> > 
+> > Please, refrain from including into "stable" until clarified!
+> 
+> Well, dropping the commit altogether and dropping the "CC stable" tag are
+> equally disruptive at this point, so I think I'll just defer all of the
+> cpufreq fixes I wanted to push for 3.12 before the ending of the merge
+> window.
+> 
+> Thanks,
+> Rafael
+> 
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
