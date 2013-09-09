@@ -1,34 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 07 Sep 2013 00:27:57 +0000
-Subject: [PATCH v2 2/4] ARM: shmobile: r8a7778: add Ether clock for DT case
-Message-Id: <201309070427.57660.sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 09 Sep 2013 15:51:59 +0000
+Subject: [PATCH 1/2] DT: add a vendor prefix for Dialog Semiconductor
+Message-Id: <1378741920-11085-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309070423.30672.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309070423.30672.sergei.shtylyov@cogentembedded.com>
+References: <1378741920-11085-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378741920-11085-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@kernel.org>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Add extra Ether clock lookup entry in the device tree case.
+Add a commonly used "diasemi" prefix for Dialog Semiconductor PLC.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
-Changes in version 2:
-- refreshed the patch.
+ .../devicetree/bindings/vendor-prefixes.txt        |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a7778.c |    1 +
- 1 file changed, 1 insertion(+)
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 2956800..f8d5a75 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -22,6 +22,7 @@ cortina	Cortina Systems, Inc.
+ dallas	Maxim Integrated Products (formerly Dallas Semiconductor)
+ davicom	DAVICOM Semiconductor, Inc.
+ denx	Denx Software Engineering
++diasemi	Dialog Semiconductor
+ emmicro	EM Microelectronic
+ epson	Seiko Epson Corp.
+ est	ESTeem Wireless Modems
+-- 
+1.7.2.5
 
-Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -174,6 +174,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
-+	CLKDEV_DEV_ID("fde00000.ethernet", &mstp_clks[MSTP114]), /* Ether w/DT */
- 	CLKDEV_DEV_ID("ehci-platform", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP100]), /* USB FUNC */
