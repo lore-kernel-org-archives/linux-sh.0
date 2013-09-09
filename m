@@ -1,37 +1,55 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 09 Sep 2013 15:11:10 +0000
-Subject: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
-Message-Id: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 09 Sep 2013 20:57:32 +0000
+Subject: Re: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
+Message-Id: <1883706.eFcILAzoo8@vostro.rjw.lan>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Sorry guys, I'm trying my best to stop this patch from propagating to 
-stable and to get it fixed asap, so, the CC list might be a bit excessive. 
-Also trying to fix the originally spare cc list, which makes it impossible 
-for me to reply to the original thread, instead have to start a new one.
+Hi,
 
-Commit
+On Monday, September 09, 2013 05:11:10 PM Guennadi Liakhovetski wrote:
+> Sorry guys, I'm trying my best to stop this patch from propagating to 
+> stable and to get it fixed asap, so, the CC list might be a bit excessive. 
+> Also trying to fix the originally spare cc list, which makes it impossible 
+> for me to reply to the original thread, instead have to start a new one.
 
-commit dceff5ce18801dddc220d6238628619c93bc3cb6
-Author: Viresh Kumar <viresh.kumar@linaro.org>
-Date:   Sun Sep 1 22:19:37 2013 +0530
+I'm not sure what you're talking about.  What exactly was wrong with the
+original CC list in particular?
 
-    cpufreq: fix serialization issues with freq change notifiers
+> Commit
+> 
+> commit dceff5ce18801dddc220d6238628619c93bc3cb6
+> Author: Viresh Kumar <viresh.kumar@linaro.org>
+> Date:   Sun Sep 1 22:19:37 2013 +0530
+> 
+>     cpufreq: fix serialization issues with freq change notifiers
+> 
+> breaks .transition_ongoing counting.
 
-breaks .transition_ongoing counting. This leads to cpufreq-cpu0 not 
-working any more. In particular switching the governor from performance to 
-powersave directly after boot doesn't result in a frequency switch any 
-more. Reverting this patch fixes the problem again. Tested with today's 
--next.
+Do you know how exactly it breaks that?  If so, care to share that knowledge?
 
-Please, refrain from including into "stable" until clarified!
+> This leads to cpufreq-cpu0 not working any more. In particular switching the
+> governor from performance to powersave directly after boot doesn't result in
+> a frequency switch any more. Reverting this patch fixes the problem again.
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+However, this is a regression fix, so I'd prefer to fix the problem on top of
+it instead of reverting this commit entirely.
+
+> Tested with today's 
+> -next.
+> 
+> Please, refrain from including into "stable" until clarified!
+
+Well, dropping the commit altogether and dropping the "CC stable" tag are
+equally disruptive at this point, so I think I'll just defer all of the
+cpufreq fixes I wanted to push for 3.12 before the ending of the merge
+window.
+
+Thanks,
+Rafael
+
