@@ -1,43 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 09 Sep 2013 00:15:24 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Mon, 09 Sep 2013 06:54:59 +0000
 Subject: Re: [PATCH 02/04] ARM: shmobile: r8a7791 SCIF support
-Message-Id: <20130909001524.GD21921@verge.net.au>
+Message-Id: <CACRpkdYwA0ADogtB8RfkZt2bmdbr-PmjvV1=xBKam15DXi9F8A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130904034525.12546.24775.sendpatchset@w520>
  <20130904034608.12546.79411.sendpatchset@w520>
  <CACRpkdY=j_XRPd9-CV-wj9ajSDZMA1H=k8uK1T2040rmfY=R_A@mail.gmail.com>
-In-Reply-To: <CACRpkdY=j_XRPd9-CV-wj9ajSDZMA1H=k8uK1T2040rmfY=R_A@mail.gmail.com>
+ <20130909001524.GD21921@verge.net.au>
+In-Reply-To: <20130909001524.GD21921@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 06, 2013 at 06:27:22PM +0200, Linus Walleij wrote:
-> On Wed, Sep 4, 2013 at 5:46 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> 
-> > From: Yoshikazu Fujikawa <yoshikazu.fujikawa.ue@renesas.com>
-> >
-> > Add SCIF serial port support to the r8a7791 SoC by
-> > adding platform devices for SCIFA0 -> SCIFA5 as well
-> > as SCIFB0 -> SCIFB2 and SCIF0 -> SCIF5 together with
-> > clock bindings. DT device description is excluded at
-> > this point since such bindings are still under
-> > development.
-> 
-> A good way to get started with clock bindings may be to
-> move the clocks to drivers/clk because in the neighboring
-> drivers over there are many good examples of how to do
-> this.
-> 
-> Again this looks like it is piling up more legacy clk
-> code instead of moving to the new frameworks.
-> 
-> Please include Mike Turquette on future postings of the
-> clk code, he's definately our best clock code reviewer.
+On Mon, Sep 9, 2013 at 2:15 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Fri, Sep 06, 2013 at 06:27:22PM +0200, Linus Walleij wrote:
 
-Perhaps I was a bit hasty, but I have already queued up these changes.
-And moreover I believe they are useful in their current form for
-back-porting to LTSI-3.4, which I have also already done.
+>> Again this looks like it is piling up more legacy clk
+>> code instead of moving to the new frameworks.
+>>
+>> Please include Mike Turquette on future postings of the
+>> clk code, he's definately our best clock code reviewer.
+>
+> Perhaps I was a bit hasty, but I have already queued up these changes.
+> And moreover I believe they are useful in their current form for
+> back-porting to LTSI-3.4, which I have also already done.
 
-So on those two counts my preference would be for any enhancements
-to be done as incremental patches on top of this series.
+That sounds like you're a bit too trigger-happy ;-)
+
+> So on those two counts my preference would be for any enhancements
+> to be done as incremental patches on top of this series.
+
+Hm hm. I am worried that it is taken as an OK to proceed
+extending old cruft for new SoCs rather than moving to new
+frameworks. I would agree if such migration patches were
+floating the lists but I am not aware of any patches starting
+to create drivers/clk/sh*, are you?
+
+Yours,
+Linus Walleij
