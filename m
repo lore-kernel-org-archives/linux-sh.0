@@ -1,27 +1,61 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 18 Sep 2013 00:34:54 +0000
-Subject: Re: [PATCH 00/05] ARM: shmobile: Use CPU notifiers for SCU boot vector code
-Message-Id: <20130918003453.GA4330@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 09 Sep 2013 15:52:00 +0000
+Subject: [PATCH 2/2] regulator: da9210: add Device Tree support
+Message-Id: <1378741920-11085-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130914134616.19258.27110.sendpatchset@w520>
-In-Reply-To: <20130914134616.19258.27110.sendpatchset@w520>
+References: <1378741920-11085-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378741920-11085-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@kernel.org>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-On Sat, Sep 14, 2013 at 10:46:16PM +0900, Magnus Damm wrote:
-> ARM: shmobile: Use CPU notifiers for SCU boot vector code
-> 
-> [PATCH 01/05] ARM: shmobile: Add CPU notifier based SCU boot vector code
-> [PATCH 02/05] ARM: shmobile: Let sh73a0 rely on SCU CPU notifier
-> [PATCH 03/05] ARM: shmobile: Let EMEV2 rely on SCU CPU notifier
-> [PATCH 04/05] ARM: shmobile: Let r8a7779 rely on SCU CPU notifier
-> [PATCH 05/05] ARM: shmobile: Remove shmobile_smp_scu_boot_secondary()
-> 
-> This series converts mach-shmobile to use CPU notifiers for boot vector
-> setup for SCU based SoCs such as sh73a0, EMEV2 and r8a7779. This
-> allows us to remove the shmobile_smp_scu_boot_secondary() function,
-> and it is also ground work for the CPUIdle resume path.
+This patch adds basic Device Tree support to the da9210 regulator driver -
+with no special properties, since also driver's platform data only contains
+standard regulator initialisation parameters.
 
-Thanks Magnus, I have queued these up for v3.12.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/regulator/da9210-regulator.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/regulator/da9210-regulator.c b/drivers/regulator/da9210-regulator.c
+index f0fe54b..f7ccff14 100644
+--- a/drivers/regulator/da9210-regulator.c
++++ b/drivers/regulator/da9210-regulator.c
+@@ -25,6 +25,7 @@
+ #include <linux/slab.h>
+ #include <linux/regulator/driver.h>
+ #include <linux/regulator/machine.h>
++#include <linux/regulator/of_regulator.h>
+ #include <linux/regmap.h>
+ 
+ #include "da9210-regulator.h"
+@@ -126,7 +127,8 @@ static int da9210_i2c_probe(struct i2c_client *i2c,
+ 			    const struct i2c_device_id *id)
+ {
+ 	struct da9210 *chip;
+-	struct da9210_pdata *pdata = i2c->dev.platform_data;
++	struct device *dev = &i2c->dev;
++	struct da9210_pdata *pdata = dev_get_platdata(dev);
+ 	struct regulator_dev *rdev = NULL;
+ 	struct regulator_config config = { };
+ 	int error;
+@@ -147,10 +149,11 @@ static int da9210_i2c_probe(struct i2c_client *i2c,
+ 	}
+ 
+ 	config.dev = &i2c->dev;
+-	if (pdata)
+-		config.init_data = &pdata->da9210_constraints;
++	config.init_data = pdata ? &pdata->da9210_constraints :
++		of_get_regulator_init_data(dev, dev->of_node);
+ 	config.driver_data = chip;
+ 	config.regmap = chip->regmap;
++	config.of_node = dev->of_node;
+ 
+ 	rdev = regulator_register(&da9210_reg, &config);
+ 	if (IS_ERR(rdev)) {
+-- 
+1.7.2.5
+
