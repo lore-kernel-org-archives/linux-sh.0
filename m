@@ -1,47 +1,55 @@
 From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Tue, 10 Sep 2013 15:26:18 +0000
+Date: Tue, 10 Sep 2013 15:38:31 +0000
 Subject: Re: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
-Message-Id: <CAKohponUdE0LCciPb+nf3t_vfNqAy3MeWQO8gTOdEDvQJeWcgg@mail.gmail.com>
+Message-Id: <CAKohpomBBKLhNemVUpUHAftGhPJJe+ZB7T_9UYLD7LwpR1nK0g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
  <CAKohponZ+FnzqXYMbBzbun0-1iQMi2fS4syrEBC_MdF41vLCeA@mail.gmail.com>
- <4292924.3iHJT5nzNS@vostro.rjw.lan>
-In-Reply-To: <4292924.3iHJT5nzNS@vostro.rjw.lan>
+ <Pine.LNX.4.64.1309101656150.16010@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1309101656150.16010@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 10 September 2013 17:19, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
-> That said I'm actually unsure what problems *exactly* are fixed by commit
-> 7c30ed5.  The commit log only says that PRECHANGE or POSTCHAGE shouldn't be
-> called twice in a row, but it doesn't say why.  As the fallout indicates,
-> that actually happened before commit 7c30ed5 and nothing visibly broke, so
-> the benefit from having that commit is questionable to me.  On the other hand,
-> the commit itself is evidently broken, so what exactly is the reason for
-> keeping it?
+On 10 September 2013 20:42, Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
+> 4. reverted that commit, resolving a trivial conflict. Added a debug
+> output in __cpufreq_driver_target() of
+>
+>
+>         if (cpufreq_disabled())
+>                 return -ENODEV;
+> +       pr_info("%s() %d\n", __func__, policy->transition_ongoing);
+>         if (policy->transition_ongoing)
+>                 return -EBUSY;
 
-Okay, so the first question is can we have multiple PRECHANGE notfication
-done without any POSTCHANGE inbetween?
-- Scenario: One reading value of cpuinfo_cur_freq, which will call
-__cpufreq_cpu_get()->cpufreq_out_of_sync()->cpufreq_notify_transition()..
+Are you sure this diff is on linux-next and not after the revert that
+you mentioned later in the mail? There is some locking introduced
+by my patch which I can't see in you diff..
 
-And ondemand governor trying to change freq of cpu and so doing notification..
+> Built and booted, got
+>
+> cpufreq: __cpufreq_driver_target(): 1
+>
+> printed out 4 times from the beginning.
+>
+> 5. tried
+>
+> echo powersave > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+>
+> the above output appeared 2 more times - no frequency change resulted.
+>
+> 6. reverted commit dceff5ce18801dddc220d6238628619c93bc3cb6, built booted
+> - cpufreq works again.
+>
+>> I am afraid you need to give us some more information on how it broke
+>> your stuff.. :)
+>
+> Hope the above is enough.
 
-There can be more similar scenarios possible..
+A bit more would be helpful.. Can you add these debug prints to all the places
+where transition_ongoing is getting modified? with %s, __func__ to distinguish
+them better? That will make it a bit easy for me...
 
-
-Now Second question, is this fine to have multiple PRECHANGE notfications
-before any POSTCHANGE notification?
-
-Logically it looks obvious to me that these must be serialized..
-Otherwise this is what we are broadcasting:
-- We are changing for freq X, please prepare and let us know if you are
-okay with it..
-- Oh.. So sorry, we are changing to freq Y instead, please adjust accordingly.
-
-- Yes we have changed to freq Y...
-- Yes we have changed to freq X...
-
-This looks stupid, isn't it? I don't know how the drivers would behave when
-they see such notifications and so got to this patch initially..
+Also, what's the configuration of your system? How many CPUs? And are all
+of them sharing clock? (I believe yes, as you are using cpufreq-cpu0)..
