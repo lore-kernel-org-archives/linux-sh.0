@@ -1,151 +1,123 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 18 Sep 2013 20:11:29 +0000
-Subject: [PATCH 03/03] ARM: shmobile: Genmai support
-Message-Id: <20130918201129.6319.80740.sendpatchset@w520>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 10 Sep 2013 11:39:53 +0000
+Subject: [PATCH 2/3] i2c: rcar: support R-Car H2 in i2c bus driver
+Message-Id: <1378813194-19493-3-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130918201101.6319.97667.sendpatchset@w520>
-In-Reply-To: <20130918201101.6319.97667.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
 
-Genmai base board support making use of 128 MiB of memory,
-the r7s7211 SoC with the SCIF2 serial port and CA9 core.
+This patch modifies the I2C bus driver to be usable on both R-Car H1 and H2.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
 ---
+ drivers/i2c/busses/i2c-rcar.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
 
- arch/arm/boot/dts/Makefile            |    1 
- arch/arm/boot/dts/r7s72100-genmai.dts |   31 +++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig        |    5 +++
- arch/arm/mach-shmobile/Makefile       |    1 
- arch/arm/mach-shmobile/Makefile.boot  |    1 
- arch/arm/mach-shmobile/board-genmai.c |   43 +++++++++++++++++++++++++++++++++
- 6 files changed, 82 insertions(+)
-
---- 0001/arch/arm/boot/dts/Makefile
-+++ work/arch/arm/boot/dts/Makefile	2013-09-19 03:47:59.000000000 +0900
-@@ -184,6 +184,7 @@ dtb-$(CONFIG_ARCH_U8500) += snowball.dtb
- dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	emev2-kzm9d-reference.dtb \
-+	r7s72100-genmai.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
---- /dev/null
-+++ work/arch/arm/boot/dts/r7s72100-genmai.dts	2013-09-19 03:47:59.000000000 +0900
-@@ -0,0 +1,31 @@
-+/*
-+ * Device Tree Source for the Genmai board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r7s72100.dtsi"
-+
-+/ {
-+	model = "Genmai";
-+	compatible = "renesas,genmai", "renesas,r7s72100";
-+
-+	chosen {
-+		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+	};
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x08000000 0x08000000>;
-+	};
-+
-+	lbsc {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+	};
-+};
---- 0002/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-09-19 03:47:59.000000000 +0900
-@@ -189,6 +189,11 @@ config MACH_BOCKW_REFERENCE
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 0fc5858..883897f 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -101,6 +101,11 @@ enum {
+ #define ID_ARBLOST	(1 << 3)
+ #define ID_NACK		(1 << 4)
  
- 	   This is intended to aid developers
- 
-+config MACH_GENMAI
-+	bool "Genmai board"
-+	depends on ARCH_R7S72100
-+	select USE_OF
-+
- config MACH_MARZEN
- 	bool "MARZEN board"
- 	depends on ARCH_R8A7779
---- 0002/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-09-19 03:47:59.000000000 +0900
-@@ -58,6 +58,7 @@ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
-+obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
---- 0001/arch/arm/mach-shmobile/Makefile.boot
-+++ work/arch/arm/mach-shmobile/Makefile.boot	2013-09-19 03:47:59.000000000 +0900
-@@ -6,6 +6,7 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA)
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
-+loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
- loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9D_REFERENCE) += 0x40008000
---- /dev/null
-+++ work/arch/arm/mach-shmobile/board-genmai.c	2013-09-19 03:47:59.000000000 +0900
-@@ -0,0 +1,43 @@
-+/*
-+ * Genmai board support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include <mach/common.h>
-+#include <mach/r7s72100.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+
-+static void __init genmai_add_standard_devices(void)
-+{
-+	r7s72100_clock_init();
-+	r7s72100_add_dt_devices();
-+}
-+
-+static const char * const genmai_boards_compat_dt[] __initconst = {
-+	"renesas,genmai",
-+	NULL,
++enum rcar_i2c_type {
++	I2C_RCAR_H1,
++	I2C_RCAR_H2,
 +};
 +
-+DT_MACHINE_START(GENMAI_DT, "genmai")
-+	.init_early	= r7s72100_init_early,
-+	.init_machine	= genmai_add_standard_devices,
-+	.dt_compat	= genmai_boards_compat_dt,
-+MACHINE_END
+ struct rcar_i2c_priv {
+ 	void __iomem *io;
+ 	struct i2c_adapter adap;
+@@ -113,6 +118,7 @@ struct rcar_i2c_priv {
+ 	int irq;
+ 	u32 icccr;
+ 	u32 flags;
++	enum rcar_i2c_type	devtype;
+ };
+ 
+ #define rcar_i2c_priv_to_dev(p)		((p)->adap.dev.parent)
+@@ -224,12 +230,25 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	u32 scgd, cdf;
+ 	u32 round, ick;
+ 	u32 scl;
++	u32 cdf_width;
+ 
+ 	if (!clkp) {
+ 		dev_err(dev, "there is no peripheral_clk\n");
+ 		return -EIO;
+ 	}
+ 
++	switch (priv->devtype) {
++	case I2C_RCAR_H1:
++		cdf_width = 2;
++		break;
++	case I2C_RCAR_H2:
++		cdf_width = 3;
++		break;
++	default:
++		dev_err(dev, "device type error\n");
++		return -EIO;
++	}
++
+ 	/*
+ 	 * calculate SCL clock
+ 	 * see
+@@ -245,7 +264,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	 * clkp : peripheral_clk
+ 	 * F[]  : integer up-valuation
+ 	 */
+-	for (cdf = 0; cdf < 4; cdf++) {
++	for (cdf = 0; cdf < (1 << cdf_width); cdf++) {
+ 		ick = clk_get_rate(clkp) / (1 + cdf);
+ 		if (ick < 20000000)
+ 			goto ick_find;
+@@ -287,7 +306,7 @@ scgd_find:
+ 	/*
+ 	 * keep icccr value
+ 	 */
+-	priv->icccr = (scgd << 2 | cdf);
++	priv->icccr = (scgd << cdf_width) | cdf;
+ 
+ 	return 0;
+ }
+@@ -632,6 +651,9 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	bus_speed = 100000; /* default 100 kHz */
+ 	if (pdata && pdata->bus_speed)
+ 		bus_speed = pdata->bus_speed;
++
++	priv->devtype = platform_get_device_id(pdev)->driver_data;
++
+ 	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
+ 	if (ret < 0)
+ 		return ret;
+@@ -686,6 +708,14 @@ static int rcar_i2c_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static struct platform_device_id rcar_i2c_id_table[] = {
++	{ "i2c-rcar",		I2C_RCAR_H1 },
++	{ "i2c-rcar_h1",	I2C_RCAR_H1 },
++	{ "i2c-rcar_h2",	I2C_RCAR_H2 },
++	{},
++};
++MODULE_DEVICE_TABLE(platform, rcar_i2c_id_table);
++
+ static struct platform_driver rcar_i2c_driver = {
+ 	.driver	= {
+ 		.name	= "i2c-rcar",
+@@ -693,6 +723,7 @@ static struct platform_driver rcar_i2c_driver = {
+ 	},
+ 	.probe		= rcar_i2c_probe,
+ 	.remove		= rcar_i2c_remove,
++	.id_table	= rcar_i2c_id_table,
+ };
+ 
+ module_platform_driver(rcar_i2c_driver);
+-- 
+1.8.1.4
+
