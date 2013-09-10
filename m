@@ -1,37 +1,24 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Sep 2013 04:39:14 +0000
-Subject: Re: [PATCH 00/03] ARM: shmobile: Initial r7s72100 SoC and Genmai board support
-Message-Id: <20130925043913.GA23347@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 10 Sep 2013 00:26:00 +0000
+Subject: Re: [PATCH] ARM: shmobile: lager: Do not use register_type field of struct sh_eth_plat_data
+Message-Id: <20130910002600.GA30656@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130918201101.6319.97667.sendpatchset@w520>
-In-Reply-To: <20130918201101.6319.97667.sendpatchset@w520>
+References: <1377156998-15421-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1377156998-15421-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Sep 19, 2013 at 05:11:01AM +0900, Magnus Damm wrote:
-> ARM: shmobile: Initial r7s72100 SoC and Genmai board support
+On Thu, Aug 22, 2013 at 04:36:38PM +0900, Simon Horman wrote:
+> As of 8d3214c ("sh_eth: remove 'register_type' field from 'struct
+> sh_eth_plat_data'") is is no longer necessary or correct to use the
+> 'register_type' field from 'struct sh_eth_plat_data' and doing so results
+> in a build error.
 > 
-> [PATCH 01/03] ARM: shmobile: Initial r7s72100 SoC support
-> [PATCH 02/03] ARM: shmobile: r7s72100 SCIF support
-> [PATCH 03/03] ARM: shmobile: Genmai support
-> 
-> This series adds initial support for r7s72100 and Genmai. The SoC
-> is known as r7s72100 which is based on a single core Cortex-A9
-> and makes use of SCIF for serial. Many other on-chip I/O devices
-> are available, and support for those will be added by incremental
-> feature patches.
-> 
-> This initial SoC and board support is providing limited DT-only
-> support and a very basic C-version of board support. In the future
-> improved PINCTRL and common clock framework support will be added.
-> 
-> Implemented in same style as r8a7790 and r8a7791.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Hi Magnus,
+Applied to fixes.
 
-please provide a defconfig if you would like this series merged.
-Otherwise this seems reasonable to me.
+
+-Olof
