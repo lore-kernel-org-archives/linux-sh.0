@@ -1,42 +1,34 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 07 Sep 2013 00:26:12 +0000
-Subject: [PATCH v2 1/4] ARM: shmobile: r8a7778: add Ether DT support
-Message-Id: <201309070426.13099.sergei.shtylyov@cogentembedded.com>
+From: "Administrator:: Account Warning." <sudhakar@tulip.net>
+Date: Tue, 10 Sep 2013 11:06:09 +0000
+Subject: Webmail Account Warning.
+Message-Id: <33032.192.168.90.10.1378810449.squirrel@mail.tulipit.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309070423.30672.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309070423.30672.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Define the generic R8A7778 part of the Ether device node. 
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
----
-Changes in version 2:
-- changed the "compatible" property to "renesas,ether-r8a7778".
 
- arch/arm/boot/dts/r8a7778.dtsi |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+Administrator Webmail Account Warning.
 
-Index: renesas/arch/arm/boot/dts/r8a7778.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7778.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7778.dtsi
-@@ -98,4 +98,15 @@
- 		reg = <0xfffc000 0x118>;
- 		#gpio-range-cells = <3>;
- 	};
-+
-+	ether: ethernet@fde00000 {
-+		device_type = "network";
-+		compatible = "renesas,ether-r8a7778";
-+		reg = <0xfde00000 0x400>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 105 0x4>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
- };
+This mail is from All Administrator Webmail Account; we wish to bring to
+your notice the Condition of your email account.
+
+We have just noticed that you have exceeded your email Database limit of
+500 MB quota and your email IP is causing conflict because it is been
+accessed in different server location. You need to Upgrade and expand your
+email quota limit before you can continue to use your email.
+
+Update your email quota limit to 2.6 GB, use the below web link:
+
+http://accountwarning.yolasite.com/contact-us.php
+
+Failure to do this will result to email deactivation within 24 hours
+
+Thank you for your understanding.
+
+Copyright 2013 Help Desk
+Administrator Webmail Support.
+
