@@ -1,7 +1,7 @@
-From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Date: Tue, 10 Sep 2013 11:49:24 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 10 Sep 2013 15:12:14 +0000
 Subject: Re: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
-Message-Id: <4292924.3iHJT5nzNS@vostro.rjw.lan>
+Message-Id: <Pine.LNX.4.64.1309101656150.16010@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
  <CAKohponZ+FnzqXYMbBzbun0-1iQMi2fS4syrEBC_MdF41vLCeA@mail.gmail.com>
@@ -11,7 +11,8 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday, September 10, 2013 04:59:29 PM Viresh Kumar wrote:
+On Tue, 10 Sep 2013, Viresh Kumar wrote:
+
 > On 9 September 2013 20:41, Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
 > > Sorry guys, I'm trying my best to stop this patch from propagating to
 > > stable and to get it fixed asap, so, the CC list might be a bit excessive.
@@ -34,19 +35,67 @@ On Tuesday, September 10, 2013 04:59:29 PM Viresh Kumar wrote:
 > 
 > I have tested it again on my exynos and intel machines and couldn't see
 > a single problem with this patch..
-> 
+
+Ok, here's what I've just done.
+
+1. checkout -next tag next-20130909
+
+commit 98926a8004b453089368fda456b8c869240e9953
+Author: Stephen Rothwell <sfr@canb.auug.org.au>
+Date:   Mon Sep 9 16:05:53 2013 +1000
+
+    Add linux-next specific files for 20130909
+
+2. built and booted a kernel for kzm9g (.config available on request)
+
+3. cpufreq failed to initialise:
+
+cpufreq_cpu0: failed to find cpu0 node
+cpufreq-cpu0: probe of cpufreq-cpu0 failed with error -2
+
+due to commit f837a9b5ab05c52a07108c6f09ca66f2e0aee757 - as reported in 
+another thread.
+
+4. reverted that commit, resolving a trivial conflict. Added a debug 
+output in __cpufreq_driver_target() of
+
+ 
+ 	if (cpufreq_disabled())
+ 		return -ENODEV;
++	pr_info("%s() %d\n", __func__, policy->transition_ongoing);
+ 	if (policy->transition_ongoing)
+ 		return -EBUSY;
+ 
+
+Built and booted, got
+
+cpufreq: __cpufreq_driver_target(): 1
+
+printed out 4 times from the beginning.
+
+5. tried
+
+echo powersave > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+the above output appeared 2 more times - no frequency change resulted.
+
+6. reverted commit dceff5ce18801dddc220d6238628619c93bc3cb6, built booted 
+- cpufreq works again.
+
 > I am afraid you need to give us some more information on how it broke
 > your stuff.. :)
-> 
+
+Hope the above is enough.
+
+Thanks
+Guennadi
+
 > And I am also not sure cpufreq-cpu0 is different then any other driver..
+> 
+> --
+> viresh
 
-That said I'm actually unsure what problems *exactly* are fixed by commit
-7c30ed5.  The commit log only says that PRECHANGE or POSTCHAGE shouldn't be
-called twice in a row, but it doesn't say why.  As the fallout indicates,
-that actually happened before commit 7c30ed5 and nothing visibly broke, so
-the benefit from having that commit is questionable to me.  On the other hand,
-the commit itself is evidently broken, so what exactly is the reason for
-keeping it?
-
-Rafael
-
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
