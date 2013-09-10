@@ -1,74 +1,72 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 18 Sep 2013 17:20:00 +0000
-Subject: Re: [PATCH 01/04] ARM: shmobile: Initial r8a7791 SoC support
-Message-Id: <20130918172000.GA27340@quad.lixom.net>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 10 Sep 2013 11:39:54 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7790: add the I2C bus clock
+Message-Id: <1378813194-19493-4-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130904034525.12546.24775.sendpatchset@w520>
- <20130904034557.12546.97503.sendpatchset@w520>
- <CACRpkdb7QkqCmTMua1yJNJxSAWff=0f6a2SWkf6K9SqbW0BOVg@mail.gmail.com>
- <CANqRtoQzLKk3EKcm=EiZCg73fgDBZ1xjPi_6fH_PsGdkr6w5sA@mail.gmail.com>
- <CACRpkdZGLR3=UZ7f-9r02Gea2hTomp+6+bz0BDQOvk9zRHTxxw@mail.gmail.com>
- <CANqRtoQ0dnG6HwjJSrK8+Qt8wvJhqsJHxgj-LGvnJvS0KT81nw@mail.gmail.com>
-In-Reply-To: <CANqRtoQ0dnG6HwjJSrK8+Qt8wvJhqsJHxgj-LGvnJvS0KT81nw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
 
-Coming across this somewhat old email thread, apologies for the delay in
-response.
+This patch adds the I2C bus clock.
 
-On Mon, Sep 09, 2013 at 05:05:18PM +0900, Magnus Damm wrote:
-> On Mon, Sep 9, 2013 at 4:45 PM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> > On Mon, Sep 9, 2013 at 9:21 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >
-> >> Fortunately there are plans to convert several mach-shmobile SoCs to
-> >> common clocks over the next 6 months. As you know, we spent much time
-> >> and efforts converting to pinctrl last two 6 month periods, and now we
-> >> will be targeting common clocks.
-> >
-> > I trust you on this, it's not for me to decide but for the ARM SoC
-> > maintainers. I think Arnd basically said at one point that it is OK
-> > to add some new cruft as long as you remove more old cruft at
-> > the same time, so I guess you will have to make an argument that
-> > this is happening.
-> 
-> Yeah, I agree. I hope to discuss this in person later this Autumn.
-> 
-> >> There are several incremental patches available for r8a7791, but since
-> >> this is a new and rare platform it won't be the first SoC we convert
-> >> to common clocks. So CCF development will happen on r8a7791, but it
-> >> won't be the first platform.
-> >
-> > This is pretty much the inverse argument of the usual stance of
-> > the ARM SoC tree - usually we ask that new platforms should use
-> > new frameworks. I do understand it from a practical point of view,
-> > that new SoCs only exist in few prototypes.
-> 
-> I suppose negotiation has to happen on some level, and I appreciate
-> the higher level give-and-take approach that Arnd has been taking. At
-> this time though, apart from common clocks, extended DT support and
-> multiplatform I'm not so sure what desired cleanup-wise.
+Signed-off-by: Nguyen Viet Dung <nv-dung@jinso.co.jp>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-We have definitely been OK with new code going in together with cleanups,
-but I think we're reaching a point where there's a lot of new code going
-in on shmobile platforms now, and we've had some growing pains on the
-platform for it -- conflicts with other maintainer trees because they have
-picked up board file changes, etc.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index d99b87b..654d922 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -52,6 +52,7 @@
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
+ #define SMSTPCR8 0xe6150990
++#define SMSTPCR9 0xe6150994
+ 
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+@@ -181,6 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ 
+ /* MSTP */
+ enum {
++	MSTP931, MSTP930, MSTP929, MSTP928,
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+@@ -192,6 +194,10 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP931] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 31, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+ 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
+@@ -247,6 +253,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("mp",		&mp_clk),
+ 	CLKDEV_CON_ID("qspi",		&qspi_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
++	CLKDEV_CON_ID("peripheral_clk",	&hp_clk),
+ 
+ 	/* DIV4 */
+ 	CLKDEV_CON_ID("sdh",		&div4_clks[DIV4_SDH]),
+@@ -286,6 +293,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("i2c-rcar_h2.0", &mstp_clks[MSTP931]),
++	CLKDEV_DEV_ID("i2c-rcar_h2.1", &mstp_clks[MSTP930]),
++	CLKDEV_DEV_ID("i2c-rcar_h2.2", &mstp_clks[MSTP929]),
++	CLKDEV_DEV_ID("i2c-rcar_h2.3", &mstp_clks[MSTP928]),
+ };
+ 
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-- 
+1.8.1.4
 
-I think much of this wouldn't be a problem if the conversions to
-DT/multiplatform was completed, so it would be great if the conversion
-could be given priority on the Renesas side, especially given the rate
-of new additions as of late -- I think we're seeing new SoCs almost
-every release cycle as of late.
-
-So, bottom line: I'm not going to refuse taking this new platform,
-but you're close to the limits and please try to prioritize finishing
-conversion.  In particular since all this "new legacy code" you're adding
-will all have to be converted soon -- in some cases it might be better
-to wait with adding it until after conversion.
-
-
--Olof
