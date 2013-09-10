@@ -1,134 +1,67 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 10 Sep 2013 17:07:39 +0000
+From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Date: Tue, 10 Sep 2013 19:46:19 +0000
 Subject: Re: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
-Message-Id: <Pine.LNX.4.64.1309101853170.16010@axis700.grange>
+Message-Id: <2703632.ul5ekQh5oq@vostro.rjw.lan>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
- <CAKohponZ+FnzqXYMbBzbun0-1iQMi2fS4syrEBC_MdF41vLCeA@mail.gmail.com>
- <Pine.LNX.4.64.1309101656150.16010@axis700.grange>
- <CAKohpomBBKLhNemVUpUHAftGhPJJe+ZB7T_9UYLD7LwpR1nK0g@mail.gmail.com>
- <Pine.LNX.4.64.1309101740120.16010@axis700.grange>
- <CAKohpomK7Y_6aLMA3B+hZrtgYq9U89ihgkbvYWA3BsKN3gJD3g@mail.gmail.com>
-In-Reply-To: <CAKohpomK7Y_6aLMA3B+hZrtgYq9U89ihgkbvYWA3BsKN3gJD3g@mail.gmail.com>
+ <4292924.3iHJT5nzNS@vostro.rjw.lan>
+ <CAKohponUdE0LCciPb+nf3t_vfNqAy3MeWQO8gTOdEDvQJeWcgg@mail.gmail.com>
+In-Reply-To: <CAKohponUdE0LCciPb+nf3t_vfNqAy3MeWQO8gTOdEDvQJeWcgg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 10 Sep 2013, Viresh Kumar wrote:
-
-> On 10 September 2013 21:52, Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> > Of course, isn't that what I've written above? reverted a commit and added
-> > debug - in that order.
+On Tuesday, September 10, 2013 08:44:18 PM Viresh Kumar wrote:
+> On 10 September 2013 17:19, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
+> > That said I'm actually unsure what problems *exactly* are fixed by commit
+> > 7c30ed5.  The commit log only says that PRECHANGE or POSTCHAGE shouldn't be
+> > called twice in a row, but it doesn't say why.  As the fallout indicates,
+> > that actually happened before commit 7c30ed5 and nothing visibly broke, so
+> > the benefit from having that commit is questionable to me.  On the other hand,
+> > the commit itself is evidently broken, so what exactly is the reason for
+> > keeping it?
 > 
-> Ok, I misread it then :(
+> Okay, so the first question is can we have multiple PRECHANGE notfication
+> done without any POSTCHANGE inbetween?
+> - Scenario: One reading value of cpuinfo_cur_freq, which will call
+> __cpufreq_cpu_get()->cpufreq_out_of_sync()->cpufreq_notify_transition()..
 > 
-> > Sure, I can... So, with the performance governor I get
-> >
-> > [    1.290000] cpufreq-cpu0 cpufreq-cpu0: Looking up cpu0-supply from device tree
-> > [    1.290000] cpufreq: trying to register driver generic_cpu0
-> > [    1.290000] cpufreq: adding CPU 0
-> > [    1.290000] cpufreq: Adding link for CPU: 1
-> > [    1.290000] cpufreq: setting new policy for CPU 0: 398667 - 1196000 kHz
-> > [    1.290000] cpufreq: new min and max freqs are 398667 - 1196000 kHz
-> > [    1.290000] cpufreq: governor switch
-> > [    1.290000] cpufreq: __cpufreq_governor for CPU 0, event 4
-> > [    1.290000] cpufreq: __cpufreq_governor for CPU 0, event 1
-> > [    1.290000] cpufreq_performance: setting to 1196000 kHz because of event 1
-> > [    1.290000] cpufreq: __cpufreq_driver_target().1665 1
-> >
-> > This is my debug - .transition_ongoing is incremented ^^^^^^^^
-> >
-> > [    1.300000] cpufreq: target for CPU 0: 1196000 kHz, relation 1, requested 1196000 kHz
+> And ondemand governor trying to change freq of cpu and so doing notification..
 > 
-> Quite straight forward actually..
+> There can be more similar scenarios possible..
 
-Apparently, not quite.
+OK, and what exactly does break here?  What's the exact race you're concerned
+about?
 
-> Please try attached patch and see if it fixes
-> your problem.. Which it should if I am not wrong.. I will send it
-> separately then..
+What field is corrupted in which object, for example, or what incorrect
+behavior of the hardware results from this?
 
-It helps only once. The first switching works, the second one doesn't. 
-Below debug
+> Now Second question, is this fine to have multiple PRECHANGE notfications
+> before any POSTCHANGE notification?
+> 
+> Logically it looks obvious to me that these must be serialized..
+> Otherwise this is what we are broadcasting:
+> - We are changing for freq X, please prepare and let us know if you are
+> okay with it..
+> - Oh.. So sorry, we are changing to freq Y instead, please adjust accordingly.
+> 
+> - Yes we have changed to freq Y...
+> - Yes we have changed to freq X...
+> 
+> This looks stupid, isn't it? I don't know how the drivers would behave when
+> they see such notifications and so got to this patch initially..
 
-[   12.010000] cpufreq: setting new policy for CPU 0: 398667 - 1196000 kHz
-[   12.010000] cpufreq: new min and max freqs are 398667 - 1196000 kHz
-[   12.010000] cpufreq: governor switch
-[   12.010000] cpufreq: __cpufreq_governor for CPU 0, event 2
-[   12.010000] cpufreq: __cpufreq_governor for CPU 0, event 5
-[   12.010000] ondemand governor failed, too long transition latency of HW, fallback to performance governor
-[   12.020000] cpufreq: __cpufreq_governor for CPU 0, event 4
-[   12.020000] cpufreq: __cpufreq_governor for CPU 0, event 1
-[   12.020000] cpufreq_performance: setting to 1196000 kHz because of event 1
-[   12.020000] cpufreq: target for CPU 0: 1196000 kHz, relation 1, requested 1196000 kHz
-[   12.020000] cpufreq: governor: change or update limits
-[   12.020000] cpufreq: __cpufreq_governor for CPU 0, event 3
-[   12.020000] cpufreq_performance: setting to 1196000 kHz because of event 3
-[   12.020000] cpufreq: target for CPU 0: 1196000 kHz, relation 1, requested 1196000 kHz
-[   12.030000] cpufreq: setting new policy for CPU 0: 398667 - 1196000 kHz
-[   12.030000] cpufreq: new min and max freqs are 398667 - 1196000 kHz
-[   12.030000] cpufreq: governor switch
-[   12.030000] cpufreq: __cpufreq_governor for CPU 0, event 2
-[   12.030000] cpufreq: __cpufreq_governor for CPU 0, event 5
-[   12.030000] ondemand governor failed, too long transition latency of HW, fallback to performance governor
-[   12.040000] cpufreq: __cpufreq_governor for CPU 0, event 4
-[   12.040000] cpufreq: __cpufreq_governor for CPU 0, event 1
-[   12.040000] cpufreq_performance: setting to 1196000 kHz because of event 1
-[   12.040000] cpufreq: target for CPU 0: 1196000 kHz, relation 1, requested 1196000 kHz
-[   12.040000] cpufreq: governor: change or update limits
-[   12.040000] cpufreq: __cpufreq_governor for CPU 0, event 3
-[   12.040000] cpufreq_performance: setting to 1196000 kHz because of event 3
-[   12.040000] cpufreq: target for CPU 0: 1196000 kHz, relation 1, requested 1196000 kHz
+Well, precisely, you don't know.
 
-echo powersave > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+Can you please look for specific problems and address those instead of trying
+to address potential issues that may or may not happen and may or may not really
+be issues even if they actually happen?
 
-[   66.490000] cpufreq: setting new policy for CPU 0: 398667 - 1196000 kHz
-[   66.490000] cpufreq: new min and max freqs are 398667 - 1196000 kHz
-[   66.490000] cpufreq: governor switch
-[   66.490000] cpufreq: __cpufreq_governor for CPU 0, event 2
-[   66.490000] cpufreq: __cpufreq_governor for CPU 0, event 5
-[   66.490000] cpufreq: __cpufreq_governor for CPU 0, event 4
-[   66.490000] cpufreq: __cpufreq_governor for CPU 0, event 1
-[   66.490000] cpufreq: target for CPU 0: 398667 kHz, relation 0, requested 398667 kHz
-[   66.490000] cpufreq: __cpufreq_driver_target().1677 1
-[   66.500000] cpufreq: notification 0 of frequency transition to 398666 kHz
-[   66.500000] cpufreq: __cpufreq_notify_transition().297 2
-[   66.500000] cpufreq: notification 0 of frequency transition to 398666 kHz
-[   66.500000] cpufreq: __cpufreq_notify_transition().297 3
-[   66.510000] cpufreq: notification 1 of frequency transition to 398666 kHz
-[   66.510000] cpufreq: __cpufreq_notify_transition().327 2
-[   66.520000] cpufreq: FREQ: 398666 - CPU: 0
-[   66.520000] cpufreq: notification 1 of frequency transition to 398666 kHz
-[   66.520000] cpufreq: __cpufreq_notify_transition().327 1
-[   66.520000] cpufreq: FREQ: 398666 - CPU: 1
-[   66.520000] cpufreq: cpufreq_notify_transition().366 0
-[   66.530000] cpufreq: governor: change or update limits
-[   66.530000] cpufreq: __cpufreq_governor for CPU 0, event 3
-[   66.530000] cpufreq: target for CPU 0: 398667 kHz, relation 0, requested 398667 kHz
-[   66.530000] cpufreq: __cpufreq_driver_target().1677 1
+And broken patches that try to fix such things definitely don't help.
 
-echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+For now I'm reverting the commit in question and everything on top of it.
 
-[   72.470000] cpufreq: setting new policy for CPU 0: 398667 - 1196000 kHz
-[   72.470000] cpufreq: new min and max freqs are 398667 - 1196000 kHz
-[   72.470000] cpufreq: governor switch
-[   72.470000] cpufreq: __cpufreq_governor for CPU 0, event 2
-[   72.470000] cpufreq: __cpufreq_governor for CPU 0, event 5
-[   72.470000] cpufreq: __cpufreq_governor for CPU 0, event 4
-[   72.470000] cpufreq: __cpufreq_governor for CPU 0, event 1
-[   72.470000] cpufreq_performance: setting to 1196000 kHz because of event 1
-[   72.470000] cpufreq: target for CPU 0: 1196000 kHz, relation 1, requested 1196000 kHz
-[   72.470000] cpufreq: governor: change or update limits
-[   72.470000] cpufreq: __cpufreq_governor for CPU 0, event 3
-[   72.470000] cpufreq_performance: setting to 1196000 kHz because of event 3
-[   72.470000] cpufreq: target for CPU 0: 1196000 kHz, relation 1, requested 1196000 kHz
+Thanks,
+Rafael
 
-> Thanks for your time..
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
