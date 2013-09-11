@@ -1,59 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Sep 2013 07:55:21 +0000
-Subject: Re: [PATCH 1/6] ARM: shmobile: ape6evm: add DMA support to MMCIF
-Message-Id: <20130925075518.GA16708@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Sep 2013 13:51:01 +0000
+Subject: [PATCH/RESEND 1/2] gpio: rcar: Remove #gpio-range-cells DT property usage
+Message-Id: <1378907462-19247-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1374498981-5263-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1374498981-5263-2-git-send-email-g.liakhovetski@gmx.de>
+References: <1378907462-19247-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1378907462-19247-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 25, 2013 at 09:32:38AM +0200, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> On Wed, 25 Sep 2013, Simon Horman wrote:
-> 
-> > On Wed, Sep 25, 2013 at 09:03:29AM +0200, Guennadi Liakhovetski wrote:
-> > > Hi Simon
-> > > 
-> > > On Wed, 25 Sep 2013, Simon Horman wrote:
-> > > 
-> > > > On Mon, Jul 22, 2013 at 03:16:16PM +0200, Guennadi Liakhovetski wrote:
-> > > > > Add DMA support for MMCIF on APE6EVM, using the shdma dmaengine driver.
-> > > > > 
-> > > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > > > > ---
-> > > > >  arch/arm/mach-shmobile/board-ape6evm.c |    2 ++
-> > > > >  1 files changed, 2 insertions(+), 0 deletions(-)
-> > > > > 
-> > > > > diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-> > > > > index 97c0dad..96a6994 100644
-> > > > > --- a/arch/arm/mach-shmobile/board-ape6evm.c
-> > > > > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> > > > > @@ -75,6 +75,8 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[] > > > > >  /* MMCIF */
-> > > > >  static struct sh_mmcif_plat_data mmcif0_pdata = {
-> > > > >  	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
-> > > > > +	.slave_id_tx	= SHDMA_SLAVE_MMCIF0_TX,
-> > > > > +	.slave_id_rx	= SHDMA_SLAVE_MMCIF0_RX,
-> > > > >  	.ccs_unsupported = true,
-> > > > >  };
-> > > > 
-> > > > Thanks, I have queued this up for v3.13.
-> > > > Please let me know if any other patches in this series are relevant for v3.13.
-> > > 
-> > > I don't think so, no. Other patches in this series (apart from 2, which 
-> > > you already included from the earlier one today) require DMA DT support 
-> > > for other SoCs, which we dropped for the time being.
-> > 
-> > I have dropped this patch as I don't see SHDMA_SLAVE_MMCIF0_TX
-> > anywhere in the renesas tree. Perhaps I need a dependency?
-> 
-> They are added in
-> 
-> [PATCH v5 5/7] ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
-> 
-> which you also presumably just applied.
+Commit a1bc260bb5f5d95da854be7898202d788e94448d ("gpio: clean up
+gpio-ranges documentation") deprecated the #gpio-range-cells property.
+Replace its usage with a hardcoded value in the gpio-rcar driver.
 
-Thanks, silly me. I will re-queue this up.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpio/gpio-rcar.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index e3745eb..6038966 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -293,10 +293,9 @@ static void gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
+ 	if (pdata) {
+ 		p->config = *pdata;
+ 	} else if (IS_ENABLED(CONFIG_OF) && np) {
+-		ret = of_parse_phandle_with_args(np, "gpio-ranges",
+-				"#gpio-range-cells", 0, &args);
+-		p->config.number_of_pins = ret = 0 && args.args_count = 3
+-					 ? args.args[2]
++		ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0,
++						       &args);
++		p->config.number_of_pins = ret = 0 ? args.args[2]
+ 					 : RCAR_MAX_GPIO_PER_BANK;
+ 		p->config.gpio_base = -1;
+ 	}
+-- 
+1.8.1.5
+
