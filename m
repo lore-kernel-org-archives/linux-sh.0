@@ -1,169 +1,90 @@
 From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Wed, 11 Sep 2013 08:18:58 +0000
+Date: Wed, 11 Sep 2013 08:50:44 +0000
 Subject: Re: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
-Message-Id: <CAKohpokaHU0V86DPB7nEQ8ndwu_mJ_x_Uz47XPHZeyAW3hcP_w@mail.gmail.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="089e01182678039c6604e6171b3b"
+Message-Id: <CAKohpo=RKB-_EO=cjaOorAfN=y_cMgJg-j6=xtX71a-TwujgsA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
- <CAKohponZ+FnzqXYMbBzbun0-1iQMi2fS4syrEBC_MdF41vLCeA@mail.gmail.com>
- <Pine.LNX.4.64.1309101656150.16010@axis700.grange>
- <CAKohpomBBKLhNemVUpUHAftGhPJJe+ZB7T_9UYLD7LwpR1nK0g@mail.gmail.com>
- <Pine.LNX.4.64.1309101740120.16010@axis700.grange>
- <CAKohpomK7Y_6aLMA3B+hZrtgYq9U89ihgkbvYWA3BsKN3gJD3g@mail.gmail.com>
- <Pine.LNX.4.64.1309101853170.16010@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1309101853170.16010@axis700.grange>
+ <4292924.3iHJT5nzNS@vostro.rjw.lan>
+ <CAKohponUdE0LCciPb+nf3t_vfNqAy3MeWQO8gTOdEDvQJeWcgg@mail.gmail.com>
+ <2703632.ul5ekQh5oq@vostro.rjw.lan>
+In-Reply-To: <2703632.ul5ekQh5oq@vostro.rjw.lan>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
---089e01182678039c6604e6171b3b
-Content-Type: text/plain; charset=ISO-8859-1
+On 11 September 2013 01:16, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
+> On Tuesday, September 10, 2013 08:44:18 PM Viresh Kumar wrote:
 
-On 10 September 2013 22:37, Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> On Tue, 10 Sep 2013, Viresh Kumar wrote:
->> Quite straight forward actually..
+>> Now Second question, is this fine to have multiple PRECHANGE notfications
+>> before any POSTCHANGE notification?
+>>
+>> Logically it looks obvious to me that these must be serialized..
+>> Otherwise this is what we are broadcasting:
+>> - We are changing for freq X, please prepare and let us know if you are
+>> okay with it..
+>> - Oh.. So sorry, we are changing to freq Y instead, please adjust accordingly.
+>>
+>> - Yes we have changed to freq Y...
+>> - Yes we have changed to freq X...
+>>
+>> This looks stupid, isn't it? I don't know how the drivers would behave when
+>> they see such notifications and so got to this patch initially..
 >
-> Apparently, not quite.
+> Well, precisely, you don't know.
+>
+> Can you please look for specific problems and address those instead of trying
+> to address potential issues that may or may not happen and may or may not really
+> be issues even if they actually happen?
 
-I overlooked the situation where we return early from ->target() routines.. :(
+That looked like a straight forward issue/bug to me and so I haven't
+gotten deep into it..
 
-Please try attached patches, I will repost them later (once I am able to
-convince Rafael that these are really important :) )
+Scenario 1:
+--------------
+Notifiers are not serialized and suppose this is what happened
+- PRECHANGE Notification for freq A (from cpuinfo_cur_freq)
+- PRECHANGE Notification for freq B (from target())
+- Freq changed by target() to B
+- POSTCHANGE Notification for freq B
+- POSTCHANGE Notification for freq A
 
---
-viresh
+Now the last POSTCHANGE Notification happened for freq A and
+hardware is currently running at freq B :)
 
---089e01182678039c6604e6171b3b
-Content-Type: application/octet-stream; 
-	name="0001-cpufreq-distinguish-drivers-that-do-asynchronous-not.patch"
-Content-Disposition: attachment; 
-	filename="0001-cpufreq-distinguish-drivers-that-do-asynchronous-not.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hlg93iqy0
+Where would we break then?: adjust_jiffies() in cpufreq.c,
+cpufreq_callback() in arch/arm/kernel/smp.c (which is also adjusting
+jiffies)..
 
-RnJvbSBhMTUzNzUyNzE5Nzc0NzYzZjllZGQ4ZjQ2MjkxZjFiYWI3MjJmN2Q2IE1vbiBTZXAgMTcg
-MDA6MDA6MDAgMjAwMQpNZXNzYWdlLUlkOiA8YTE1Mzc1MjcxOTc3NDc2M2Y5ZWRkOGY0NjI5MWYx
-YmFiNzIyZjdkNi4xMzc4ODg1NjY4LmdpdC52aXJlc2gua3VtYXJAbGluYXJvLm9yZz4KRnJvbTog
-VmlyZXNoIEt1bWFyIDx2aXJlc2gua3VtYXJAbGluYXJvLm9yZz4KRGF0ZTogV2VkLCAxNCBBdWcg
-MjAxMyAxOTozODoyNCArMDUzMApTdWJqZWN0OiBbUEFUQ0ggMS8yXSBjcHVmcmVxOiBkaXN0aW5n
-dWlzaCBkcml2ZXJzIHRoYXQgZG8gYXN5bmNocm9ub3VzCiBub3RpZmljYXRpb25zCgpUaGVyZSBh
-cmUgZmV3IHNwZWNpYWwgY2FzZXMgbGlrZSBleHlub3M1NDQwIHdoaWNoIGRvZXNuJ3Qgc2VuZCBQ
-T1NUQ0hBTkdFCm5vdGlmaWNhdGlvbiBmcm9tIHRoZWlyIC0+dGFyZ2V0KCkgcm91dGluZSBhbmQg
-Y2FsbCBzb21lIGtpbmQgb2YgYm90dG9tIGhhbHZlcwpmb3IgZG9pbmcgdGhpcyB3b3JrLCB3b3Jr
-L3Rhc2tsZXQvZXRjLi4gRnJvbSB3aGljaCB0aGV5IGZpbmFsbHkgc2VuZCBQT1NUQ0hBTkdFCm5v
-dGlmaWNhdGlvbi4KCkl0cyBiZXR0ZXIgaWYgd2UgZGlzdGluZ3Vpc2ggdGhlbSBmcm9tIG90aGVy
-IGNwdWZyZXEgZHJpdmVycyBpbiBzb21lIHdheSBzbyB0aGF0CmNvcmUgY2FuIGhhbmRsZSB0aGVt
-IHNwZWNpYWxseS4gU28gdGhpcyBwYXRjaCBpbnRyb2R1Y2VzIGFub3RoZXIgZmxhZzoKQ1BVRlJF
-UV9BU1lOQ19OT1RJRklDQVRJT04sIHdoaWNoIHdpbGwgYmUgc2V0IGJ5IHN1Y2ggZHJpdmVycy4K
-ClRoaXMgYWxzbyBjaGFuZ2VzIGV4eW5vczU0NDAtY3B1ZnJlcS5jIGluIG9yZGVyIHRvIHNldCB0
-aGlzIGZsYWcuCgpTaWduZWQtb2ZmLWJ5OiBWaXJlc2ggS3VtYXIgPHZpcmVzaC5rdW1hckBsaW5h
-cm8ub3JnPgotLS0KIGRyaXZlcnMvY3B1ZnJlcS9leHlub3M1NDQwLWNwdWZyZXEuYyB8IDIgKy0K
-IGluY2x1ZGUvbGludXgvY3B1ZnJlcS5oICAgICAgICAgICAgICB8IDYgKysrKysrCiAyIGZpbGVz
-IGNoYW5nZWQsIDcgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbigtKQoKZGlmZiAtLWdpdCBhL2Ry
-aXZlcnMvY3B1ZnJlcS9leHlub3M1NDQwLWNwdWZyZXEuYyBiL2RyaXZlcnMvY3B1ZnJlcS9leHlu
-b3M1NDQwLWNwdWZyZXEuYwppbmRleCBkNTE0YzE1Li5mNDQ2NjRhIDEwMDY0NAotLS0gYS9kcml2
-ZXJzL2NwdWZyZXEvZXh5bm9zNTQ0MC1jcHVmcmVxLmMKKysrIGIvZHJpdmVycy9jcHVmcmVxL2V4
-eW5vczU0NDAtY3B1ZnJlcS5jCkBAIC0zNDIsNyArMzQyLDcgQEAgc3RhdGljIGludCBleHlub3Nf
-Y3B1ZnJlcV9jcHVfaW5pdChzdHJ1Y3QgY3B1ZnJlcV9wb2xpY3kgKnBvbGljeSkKIH0KIAogc3Rh
-dGljIHN0cnVjdCBjcHVmcmVxX2RyaXZlciBleHlub3NfZHJpdmVyID0gewotCS5mbGFncwkJPSBD
-UFVGUkVRX1NUSUNLWSwKKwkuZmxhZ3MJCT0gQ1BVRlJFUV9TVElDS1kgfCBDUFVGUkVRX0FTWU5D
-X05PVElGSUNBVElPTiwKIAkudmVyaWZ5CQk9IGV4eW5vc192ZXJpZnlfc3BlZWQsCiAJLnRhcmdl
-dAkJPSBleHlub3NfdGFyZ2V0LAogCS5nZXQJCT0gZXh5bm9zX2dldHNwZWVkLApkaWZmIC0tZ2l0
-IGEvaW5jbHVkZS9saW51eC9jcHVmcmVxLmggYi9pbmNsdWRlL2xpbnV4L2NwdWZyZXEuaAppbmRl
-eCBkNTY4ZjM5Li5jNzcwYmMwIDEwMDY0NAotLS0gYS9pbmNsdWRlL2xpbnV4L2NwdWZyZXEuaAor
-KysgYi9pbmNsdWRlL2xpbnV4L2NwdWZyZXEuaApAQCAtMjE5LDYgKzIxOSwxMiBAQCBzdHJ1Y3Qg
-Y3B1ZnJlcV9kcml2ZXIgewogCQkJCQkgKiBmcmVxdWVuY3kgdHJhbnNpdGlvbnMgKi8KICNkZWZp
-bmUgQ1BVRlJFUV9QTV9OT19XQVJOCTB4MDQJLyogZG9uJ3Qgd2FybiBvbiBzdXNwZW5kL3Jlc3Vt
-ZSBzcGVlZAogCQkJCQkgKiBtaXNtYXRjaGVzICovCisvKgorICogRHJpdmVyIHdpbGwgZG8gUE9T
-VENIQU5HRSBub3RpZmljYXRpb25zIGZyb20gb3V0c2lkZSBvZiB0aGVpciAtPnRhcmdldCgpCisg
-KiByb3V0aW5lIGFuZCBzbyBtdXN0IHNldCBjcHVmcmVxX2RyaXZlci0+ZmxhZ3Mgd2l0aCB0aGlz
-IGZsYWcsIHNvIHRoYXQgY29yZQorICogY2FuIGhhbmRsZSB0aGVtIHNwZWNpYWxseS4KKyAqLwor
-I2RlZmluZSBDUFVGUkVRX0FTWU5DX05PVElGSUNBVElPTiAweDA4CiAKIGludCBjcHVmcmVxX3Jl
-Z2lzdGVyX2RyaXZlcihzdHJ1Y3QgY3B1ZnJlcV9kcml2ZXIgKmRyaXZlcl9kYXRhKTsKIGludCBj
-cHVmcmVxX3VucmVnaXN0ZXJfZHJpdmVyKHN0cnVjdCBjcHVmcmVxX2RyaXZlciAqZHJpdmVyX2Rh
-dGEpOwotLSAKMS43LjEyLnJjMi4xOC5nNjFiNDcyZQoK
---089e01182678039c6604e6171b3b
-Content-Type: application/octet-stream; 
-	name="0002-cpufreq-fix-notification-serialization-issues.patch"
-Content-Disposition: attachment; 
-	filename="0002-cpufreq-fix-notification-serialization-issues.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hlg93izp1
+Now, all loops_per_jiffy based stuff is broken.. Have I missed
+something?
 
-RnJvbSA0Mjg1MWUzYzJmYzRhOGU3MDQ2ODNjMzA5YzAzZDVhZjQyYThmMzk4IE1vbiBTZXAgMTcg
-MDA6MDA6MDAgMjAwMQpNZXNzYWdlLUlkOiA8NDI4NTFlM2MyZmM0YThlNzA0NjgzYzMwOWMwM2Q1
-YWY0MmE4ZjM5OC4xMzc4ODg1NjY4LmdpdC52aXJlc2gua3VtYXJAbGluYXJvLm9yZz4KSW4tUmVw
-bHktVG86IDxhMTUzNzUyNzE5Nzc0NzYzZjllZGQ4ZjQ2MjkxZjFiYWI3MjJmN2Q2LjEzNzg4ODU2
-NjguZ2l0LnZpcmVzaC5rdW1hckBsaW5hcm8ub3JnPgpSZWZlcmVuY2VzOiA8YTE1Mzc1MjcxOTc3
-NDc2M2Y5ZWRkOGY0NjI5MWYxYmFiNzIyZjdkNi4xMzc4ODg1NjY4LmdpdC52aXJlc2gua3VtYXJA
-bGluYXJvLm9yZz4KRnJvbTogVmlyZXNoIEt1bWFyIDx2aXJlc2gua3VtYXJAbGluYXJvLm9yZz4K
-RGF0ZTogV2VkLCAxMSBTZXAgMjAxMyAxMTo0MjoxOCArMDUzMApTdWJqZWN0OiBbUEFUQ0ggMi8y
-XSBjcHVmcmVxOiBmaXggbm90aWZpY2F0aW9uIHNlcmlhbGl6YXRpb24gaXNzdWVzCgpTb21ldGlt
-ZXMgLT50YXJnZXQoKSByZXR1cm5zIGVhcmxpZXIgdGhhbiBleHBlY3RlZCwgZXZlbiB3aXRob3V0
-IGRvaW5nIGFueQpQUkVDSEFOR0Ugbm90aWZpY2F0aW9ucywgaW4gc3VjaCBjYXNlcyB3ZSBhcmVu
-J3QgZGVjcmVtZW50aW5nIG91cgp0cmFuc2l0aW9uX29uZ29pbmcgY291bnRlciBhbmQgdGhhdCBt
-YWtlcyBpdCBnbyBjcmF6eSBmb3IgdGhvc2UgY2FzZXMuCgpUaGlzIHBhdGNoIGZpeGVzIHRoaXMg
-aXNzdWUgYnkgdGFraW5nIGNhcmUgb2YgdHJhbnNpdGlvbl9vbmdvaW5nIGNvdW50IGF0CnNldmVy
-YWwgcGxhY2VzLiBOb3cgd2Ugc2ltcGx5IGRlY3JlbWVudCByZWZjb3VudCBhdCB0aGUgZW5kIG9m
-CmNwdWZyZXFfb3V0X29mX3N5bmMoKSAmIF9fY3B1ZnJlcV9kcml2ZXJfdGFyZ2V0KCkgZm9yIGRy
-aXZlcnMgdGhhdCBkb24ndCBkbwpBU1lOQyBub3RpZmljYXRpb25zLCBmb3Igb3RoZXJzIHdlIGRv
-IHRoYXQgZnJvbSBQT1NUQ0hBTkdFIG5vdGlmaWVyLgoKVGhlc2UgZHJpdmVycyBhbHNvIHJldHVy
-biAtRUlOUFJPR1JFU1MgZnJvbSB0aGVpciB0YXJnZXQoKSByb3V0aW5lcyB0byBtYXJrIHRoYXQK
-dHJhbnN0aW9uIHdpbGwgYmUgY29tcGxldGVkIGxhdGVyLgoKU2lnbmVkLW9mZi1ieTogVmlyZXNo
-IEt1bWFyIDx2aXJlc2gua3VtYXJAbGluYXJvLm9yZz4KLS0tCiBkcml2ZXJzL2NwdWZyZXEvY3B1
-ZnJlcS5jICAgICAgICAgICAgfCA0MiArKysrKysrKysrKysrKysrKysrKysrKysrKysrLS0tLS0t
-LS0KIGRyaXZlcnMvY3B1ZnJlcS9leHlub3M1NDQwLWNwdWZyZXEuYyB8ICAzICsrKwogMiBmaWxl
-cyBjaGFuZ2VkLCAzNiBpbnNlcnRpb25zKCspLCA5IGRlbGV0aW9ucygtKQoKZGlmZiAtLWdpdCBh
-L2RyaXZlcnMvY3B1ZnJlcS9jcHVmcmVxLmMgYi9kcml2ZXJzL2NwdWZyZXEvY3B1ZnJlcS5jCmlu
-ZGV4IDljYzU2MDkuLjk2NDQxNTAgMTAwNjQ0Ci0tLSBhL2RyaXZlcnMvY3B1ZnJlcS9jcHVmcmVx
-LmMKKysrIGIvZHJpdmVycy9jcHVmcmVxL2NwdWZyZXEuYwpAQCAtMzQ4LDcgKzM0OCw4IEBAIHZv
-aWQgY3B1ZnJlcV9ub3RpZnlfdHJhbnNpdGlvbihzdHJ1Y3QgY3B1ZnJlcV9wb2xpY3kgKnBvbGlj
-eSwKIAlmb3JfZWFjaF9jcHUoZnJlcXMtPmNwdSwgcG9saWN5LT5jcHVzKQogCQlfX2NwdWZyZXFf
-bm90aWZ5X3RyYW5zaXRpb24ocG9saWN5LCBmcmVxcywgc3RhdGUpOwogCi0JaWYgKHN0YXRlID09
-IENQVUZSRVFfUE9TVENIQU5HRSkgeworCWlmICgoY3B1ZnJlcV9kcml2ZXItPmZsYWdzICYgQ1BV
-RlJFUV9BU1lOQ19OT1RJRklDQVRJT04pCisJCQkmJiAoc3RhdGUgPT0gQ1BVRlJFUV9QT1NUQ0hB
-TkdFKSkgewogCQl1bnNpZ25lZCBsb25nIGZsYWdzOwogCiAJCS8qCkBAIC0xNDA2LDYgKzE0MDcs
-MTcgQEAgc3RhdGljIHZvaWQgY3B1ZnJlcV9vdXRfb2Zfc3luYyh1bnNpZ25lZCBpbnQgY3B1LCB1
-bnNpZ25lZCBpbnQgb2xkX2ZyZXEsCiAKIAljcHVmcmVxX25vdGlmeV90cmFuc2l0aW9uKHBvbGlj
-eSwgJmZyZXFzLCBDUFVGUkVRX1BSRUNIQU5HRSk7CiAJY3B1ZnJlcV9ub3RpZnlfdHJhbnNpdGlv
-bihwb2xpY3ksICZmcmVxcywgQ1BVRlJFUV9QT1NUQ0hBTkdFKTsKKworCS8qCisJICogRm9yIGRy
-aXZlcnMgd2l0aCBDUFVGUkVRX0FTWU5DX05PVElGSUNBVElPTiBmbGFnIHNldCwgd2UgZGVjcmVt
-ZW50CisJICogdHJhbnNpdGlvbl9vbmdvaW5nIGZyb20gUE9TVENIQU5HRSBub3RpZmllcnMuCisJ
-ICovCisJaWYgKGNwdWZyZXFfZHJpdmVyLT5mbGFncyAmIENQVUZSRVFfQVNZTkNfTk9USUZJQ0FU
-SU9OKQorCQlyZXR1cm47CisKKwl3cml0ZV9sb2NrX2lycXNhdmUoJmNwdWZyZXFfZHJpdmVyX2xv
-Y2ssIGZsYWdzKTsKKwlwb2xpY3ktPnRyYW5zaXRpb25fb25nb2luZy0tOworCXdyaXRlX3VubG9j
-a19pcnFyZXN0b3JlKCZjcHVmcmVxX2RyaXZlcl9sb2NrLCBmbGFncyk7CiB9CiAKIC8qKgpAQCAt
-MTY5NiwxNCArMTcwOCw2IEBAIGludCBfX2NwdWZyZXFfZHJpdmVyX3RhcmdldChzdHJ1Y3QgY3B1
-ZnJlcV9wb2xpY3kgKnBvbGljeSwKIAlpZiAoY3B1ZnJlcV9kaXNhYmxlZCgpKQogCQlyZXR1cm4g
-LUVOT0RFVjsKIAotCXdyaXRlX2xvY2tfaXJxc2F2ZSgmY3B1ZnJlcV9kcml2ZXJfbG9jaywgZmxh
-Z3MpOwotCWlmIChwb2xpY3ktPnRyYW5zaXRpb25fb25nb2luZykgewotCQl3cml0ZV91bmxvY2tf
-aXJxcmVzdG9yZSgmY3B1ZnJlcV9kcml2ZXJfbG9jaywgZmxhZ3MpOwotCQlyZXR1cm4gLUVCVVNZ
-OwotCX0KLQlwb2xpY3ktPnRyYW5zaXRpb25fb25nb2luZysrOwotCXdyaXRlX3VubG9ja19pcnFy
-ZXN0b3JlKCZjcHVmcmVxX2RyaXZlcl9sb2NrLCBmbGFncyk7Ci0KIAkvKiBNYWtlIHN1cmUgdGhh
-dCB0YXJnZXRfZnJlcSBpcyB3aXRoaW4gc3VwcG9ydGVkIHJhbmdlICovCiAJaWYgKHRhcmdldF9m
-cmVxID4gcG9saWN5LT5tYXgpCiAJCXRhcmdldF9mcmVxID0gcG9saWN5LT5tYXg7CkBAIC0xNzE2
-LDkgKzE3MjAsMjkgQEAgaW50IF9fY3B1ZnJlcV9kcml2ZXJfdGFyZ2V0KHN0cnVjdCBjcHVmcmVx
-X3BvbGljeSAqcG9saWN5LAogCWlmICh0YXJnZXRfZnJlcSA9PSBwb2xpY3ktPmN1cikKIAkJcmV0
-dXJuIDA7CiAKKwl3cml0ZV9sb2NrX2lycXNhdmUoJmNwdWZyZXFfZHJpdmVyX2xvY2ssIGZsYWdz
-KTsKKwlpZiAocG9saWN5LT50cmFuc2l0aW9uX29uZ29pbmcpIHsKKwkJd3JpdGVfdW5sb2NrX2ly
-cXJlc3RvcmUoJmNwdWZyZXFfZHJpdmVyX2xvY2ssIGZsYWdzKTsKKwkJcmV0dXJuIC1FQlVTWTsK
-Kwl9CisJcG9saWN5LT50cmFuc2l0aW9uX29uZ29pbmcrKzsKKwl3cml0ZV91bmxvY2tfaXJxcmVz
-dG9yZSgmY3B1ZnJlcV9kcml2ZXJfbG9jaywgZmxhZ3MpOworCiAJaWYgKGNwdWZyZXFfZHJpdmVy
-LT50YXJnZXQpCiAJCXJldHZhbCA9IGNwdWZyZXFfZHJpdmVyLT50YXJnZXQocG9saWN5LCB0YXJn
-ZXRfZnJlcSwgcmVsYXRpb24pOwogCisJLyoKKwkgKiBGb3IgZHJpdmVycyB3aXRoIENQVUZSRVFf
-QVNZTkNfTk9USUZJQ0FUSU9OIGZsYWcgc2V0LCB3ZSBkZWNyZW1lbnQKKwkgKiB0cmFuc2l0aW9u
-X29uZ29pbmcgZnJvbSBQT1NUQ0hBTkdFIG5vdGlmaWVycy4KKwkgKi8KKwlpZiAoKGNwdWZyZXFf
-ZHJpdmVyLT5mbGFncyAmIENQVUZSRVFfQVNZTkNfTk9USUZJQ0FUSU9OKQorCQkJJiYgKHJldHZh
-bCA9PSAtRUlOUFJPR1JFU1MpKQorCQlyZXR1cm4gcmV0dmFsOworCisJd3JpdGVfbG9ja19pcnFz
-YXZlKCZjcHVmcmVxX2RyaXZlcl9sb2NrLCBmbGFncyk7CisJcG9saWN5LT50cmFuc2l0aW9uX29u
-Z29pbmctLTsKKwl3cml0ZV91bmxvY2tfaXJxcmVzdG9yZSgmY3B1ZnJlcV9kcml2ZXJfbG9jaywg
-ZmxhZ3MpOworCiAJcmV0dXJuIHJldHZhbDsKIH0KIEVYUE9SVF9TWU1CT0xfR1BMKF9fY3B1ZnJl
-cV9kcml2ZXJfdGFyZ2V0KTsKZGlmZiAtLWdpdCBhL2RyaXZlcnMvY3B1ZnJlcS9leHlub3M1NDQw
-LWNwdWZyZXEuYyBiL2RyaXZlcnMvY3B1ZnJlcS9leHlub3M1NDQwLWNwdWZyZXEuYwppbmRleCBm
-NDQ2NjRhLi4xZTM5MWFjIDEwMDY0NAotLS0gYS9kcml2ZXJzL2NwdWZyZXEvZXh5bm9zNTQ0MC1j
-cHVmcmVxLmMKKysrIGIvZHJpdmVycy9jcHVmcmVxL2V4eW5vczU0NDAtY3B1ZnJlcS5jCkBAIC0y
-NTEsNiArMjUxLDkgQEAgc3RhdGljIGludCBleHlub3NfdGFyZ2V0KHN0cnVjdCBjcHVmcmVxX3Bv
-bGljeSAqcG9saWN5LAogCiAJCV9fcmF3X3dyaXRlbCh0bXAsIGR2ZnNfaW5mby0+YmFzZSArIFhN
-VV9DMF8zX1BTVEFURSArIGkgKiA0KTsKIAl9CisKKwkvKiBNYXJrIHRyYW5zaXRpb24gYXMgSW4t
-cHJvZ3Jlc3MgKi8KKwlyZXQgPSAtRUlOUFJPR1JFU1M7CiBvdXQ6CiAJbXV0ZXhfdW5sb2NrKCZj
-cHVmcmVxX2xvY2spOwogCXJldHVybiByZXQ7Ci0tIAoxLjcuMTIucmMyLjE4Lmc2MWI0NzJlCgo=
---089e01182678039c6604e6171b3b--
+Similarly there are numerous places where we may break.. As we
+have broken expectations of receivers of these notifications..
+
+Scenario 2:
+--------------
+Governor is changing freq and has called __cpufreq_driver_target().
+At the same time we are changing scaling_{min|max}_freq from
+sysfs, which would eventually end up calling governors:
+CPUFREQ_GOV_LIMITS notification, that will also call:
+__cpufreq_driver_target()..
+
+So, we eventually have two concurrent calls to ->target() and we
+don't really know how hardware will behave in this case.. Most of
+the implementations of ->target() routines just go and change
+freq/voltage without checking if we are already in progress of doing
+that (i.e. based on expectation that this call is not re entrant)..
+
+Now anything can happen at hardware level, which I don't have
+all insight of :(
+
+> And broken patches that try to fix such things definitely don't help.
+
+Yeah, that's my fault but I honestly try to produce bug-less patches..
+But being a normal human being, there are always some chances
+that my patches are eventually broken :)
+
+> For now I'm reverting the commit in question and everything on top of it.
+
+Its okay..
