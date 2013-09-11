@@ -1,67 +1,40 @@
-From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Date: Tue, 10 Sep 2013 19:46:19 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 11 Sep 2013 08:15:53 +0000
 Subject: Re: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
-Message-Id: <2703632.ul5ekQh5oq@vostro.rjw.lan>
+Message-Id: <Pine.LNX.4.64.1309111015190.26942@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
- <4292924.3iHJT5nzNS@vostro.rjw.lan>
- <CAKohponUdE0LCciPb+nf3t_vfNqAy3MeWQO8gTOdEDvQJeWcgg@mail.gmail.com>
-In-Reply-To: <CAKohponUdE0LCciPb+nf3t_vfNqAy3MeWQO8gTOdEDvQJeWcgg@mail.gmail.com>
+ <CAKohponZ+FnzqXYMbBzbun0-1iQMi2fS4syrEBC_MdF41vLCeA@mail.gmail.com>
+ <Pine.LNX.4.64.1309101656150.16010@axis700.grange>
+ <CAKohpomBBKLhNemVUpUHAftGhPJJe+ZB7T_9UYLD7LwpR1nK0g@mail.gmail.com>
+ <Pine.LNX.4.64.1309101740120.16010@axis700.grange>
+ <CAKohpomK7Y_6aLMA3B+hZrtgYq9U89ihgkbvYWA3BsKN3gJD3g@mail.gmail.com>
+ <Pine.LNX.4.64.1309101853170.16010@axis700.grange>
+ <CAKohpokaHU0V86DPB7nEQ8ndwu_mJ_x_Uz47XPHZeyAW3hcP_w@mail.gmail.com>
+In-Reply-To: <CAKohpokaHU0V86DPB7nEQ8ndwu_mJ_x_Uz47XPHZeyAW3hcP_w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday, September 10, 2013 08:44:18 PM Viresh Kumar wrote:
-> On 10 September 2013 17:19, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
-> > That said I'm actually unsure what problems *exactly* are fixed by commit
-> > 7c30ed5.  The commit log only says that PRECHANGE or POSTCHAGE shouldn't be
-> > called twice in a row, but it doesn't say why.  As the fallout indicates,
-> > that actually happened before commit 7c30ed5 and nothing visibly broke, so
-> > the benefit from having that commit is questionable to me.  On the other hand,
-> > the commit itself is evidently broken, so what exactly is the reason for
-> > keeping it?
+On Wed, 11 Sep 2013, Viresh Kumar wrote:
+
+> On 10 September 2013 22:37, Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
+> > On Tue, 10 Sep 2013, Viresh Kumar wrote:
+> >> Quite straight forward actually..
+> >
+> > Apparently, not quite.
 > 
-> Okay, so the first question is can we have multiple PRECHANGE notfication
-> done without any POSTCHANGE inbetween?
-> - Scenario: One reading value of cpuinfo_cur_freq, which will call
-> __cpufreq_cpu_get()->cpufreq_out_of_sync()->cpufreq_notify_transition()..
+> I overlooked the situation where we return early from ->target() routines.. :(
 > 
-> And ondemand governor trying to change freq of cpu and so doing notification..
-> 
-> There can be more similar scenarios possible..
+> Please try attached patches, I will repost them later (once I am able to
+> convince Rafael that these are really important :) )
 
-OK, and what exactly does break here?  What's the exact race you're concerned
-about?
+I'd rather wait until Rafael is convinced, then we'll see.
 
-What field is corrupted in which object, for example, or what incorrect
-behavior of the hardware results from this?
-
-> Now Second question, is this fine to have multiple PRECHANGE notfications
-> before any POSTCHANGE notification?
-> 
-> Logically it looks obvious to me that these must be serialized..
-> Otherwise this is what we are broadcasting:
-> - We are changing for freq X, please prepare and let us know if you are
-> okay with it..
-> - Oh.. So sorry, we are changing to freq Y instead, please adjust accordingly.
-> 
-> - Yes we have changed to freq Y...
-> - Yes we have changed to freq X...
-> 
-> This looks stupid, isn't it? I don't know how the drivers would behave when
-> they see such notifications and so got to this patch initially..
-
-Well, precisely, you don't know.
-
-Can you please look for specific problems and address those instead of trying
-to address potential issues that may or may not happen and may or may not really
-be issues even if they actually happen?
-
-And broken patches that try to fix such things definitely don't help.
-
-For now I'm reverting the commit in question and everything on top of it.
-
-Thanks,
-Rafael
-
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
