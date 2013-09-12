@@ -1,75 +1,52 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 12 Sep 2013 10:57:20 +0000
-Subject: [PATCH] regulator: da9210: add Device Tree binding documentation
-Message-Id: <Pine.LNX.4.64.1309121254330.4632@axis700.grange>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 12 Sep 2013 11:17:09 +0000
+Subject: Re: [PATCH] regulator: da9210: add Device Tree binding documentation
+Message-Id: <20130912111708.GJ29403@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="LkPui+4YGLu0bCC3"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1378741920-11085-1-git-send-email-g.liakhovetski@gmx.de>
  <1378741920-11085-3-git-send-email-g.liakhovetski@gmx.de>
  <20130909160406.GS29403@sirena.org.uk>
-In-Reply-To: <20130909160406.GS29403@sirena.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <Pine.LNX.4.64.1309121254330.4632@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1309121254330.4632@axis700.grange>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>
 
-DA9210 Device Tree support currently only handles standard regulator DT
-bindings. This patch adds compulsory minimal documentation to describe
-this.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
+--LkPui+4YGLu0bCC3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Mon, 9 Sep 2013, Mark Brown wrote:
+On Thu, Sep 12, 2013 at 12:57:20PM +0200, Guennadi Liakhovetski wrote:
 
-> On Mon, Sep 09, 2013 at 05:52:00PM +0200, Guennadi Liakhovetski wrote:
-> > This patch adds basic Device Tree support to the da9210 regulator driver -
-> > with no special properties, since also driver's platform data only contains
-> > standard regulator initialisation parameters.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> >  drivers/regulator/da9210-regulator.c |    9 ++++++---
-> 
-> I'd expect to see a binding document, even if it is just a very brief
-> one documenting the prefix and pointing to the standard regulator
-> properties.
+> Is a separate patch like this one ok or you'd prefer me to re-post the=20
+> original series and merge this with the DT implementation?
 
-Hi Mark,
-Is a separate patch like this one ok or you'd prefer me to re-post the 
-original series and merge this with the DT implementation?
+Please repost, the bindings and the code really ought to be reviewed
+together.
 
- .../devicetree/bindings/regulator/da9210.txt       |   21 ++++++++++++++++++++
- 1 files changed, 21 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/regulator/da9210.txt
+--LkPui+4YGLu0bCC3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/Documentation/devicetree/bindings/regulator/da9210.txt b/Documentation/devicetree/bindings/regulator/da9210.txt
-new file mode 100644
-index 0000000..f120f22
---- /dev/null
-+++ b/Documentation/devicetree/bindings/regulator/da9210.txt
-@@ -0,0 +1,21 @@
-+* Dialog Semiconductor DA9210 Voltage Regulator
-+
-+Required properties:
-+
-+- compatible:	must be "diasemi,da9210"
-+- reg:		the i2c slave address of the regulator. It should be 0x68.
-+
-+Any standard regulator properties can be used to configure the single da9210
-+DCDC.
-+
-+Example:
-+
-+	da9210@68 {
-+		compatible = "diasemi,da9210";
-+		reg = <0x68>;
-+
-+		regulator-min-microvolt = <900000>;
-+		regulator-max-microvolt = <1000000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
--- 
-1.7.2.5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.21 (GNU/Linux)
 
+iQIcBAEBAgAGBQJSMaKxAAoJELSic+t+oim9hgoQAJFYvwFsKugB2z02tJRlorAX
+PK0aKgiUcNfgce0jQq93rVfTICRnHWLweMpXP2bkxTujhFu6nH1zUuG3va4Gs/a7
+i32kZQx9DQ4lbE9kcDQZfTic4g/0knGNChXEMKDiTbqVke9G+JWiilsW6by/jCpa
+/fM/UucnYIa5Mixtrs5Gv4J00NBQRDXnxdXdLFcxVrBdsDo2EsV9gCB8DOYZDZ+J
+Kpj+YxjyoK9L+lmHoGrrLp6IJsQmw5GghjbTQgyoiZoE5/Si8+6psNqmlQQDuDq3
+aaOlJhzGHyxsWIXzF58N6itWapV/9WYClzYvMnxlO2hbmnpi0EHMvXA/uC6fYN+t
+KfUCMzxoYvpyV784wOzD91r6tNqsJKmwuS8Lrva4vqo4uhcA5qdUOrCWttZGn8Rg
+TNl48UyiRHTLi2D2c2ltRZMfvdieO64QAVmNWpcvtHk7kHDr2RmR4t/gYOeg0wkh
++1/M+wSkAD3L220LDLbFFyjOcoi4mZVHSUyiLffj1rZNzqrSLKqGaXJdiQ/jjdA5
+zSZ4hE0eRurHE1fIXMkxqxBwEd3lMzxUe2aDQ7BY+kjKOlzcHdgTWtDmtQQQJl5y
+6a2ZFKUxHzzq8OahJUqPGDl5TVzotrAwk8v1DCkdQJGVQc/AAiJVtRKsKUaCRCxK
+pCR9763oT1rwzTEDKsBn
+=Es+0
+-----END PGP SIGNATURE-----
+
+--LkPui+4YGLu0bCC3--
