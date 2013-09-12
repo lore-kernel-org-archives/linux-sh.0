@@ -1,41 +1,37 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Fri, 13 Sep 2013 13:13:08 +0000
-Subject: [PATCH 122/228] cpufreq: sh: don't initialize part of policy that is set by core too
-Message-Id: <b7aefeb7f7e756d9608039d58a11ab907096e6e6.1379063063.git.viresh.kumar@linaro.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 12 Sep 2013 12:28:33 +0000
+Subject: [PATCH v2 0/2] regulator: da9210: support Device Tree initialisation
+Message-Id: <1378988915-10539-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1379063063.git.viresh.kumar@linaro.org>
-In-Reply-To: <cover.1379063063.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@kernel.org>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Many common initializations of struct policy are moved to core now and hence
-this driver doesn't need to do it. This patch removes such code.
+The first patch just adds a vendor prefix for Dialog Semiconductor PLC, the
+second one actually implements DT support in da9210.
 
-Most recent of those changes is to call ->get() in the core after calling
-->init().
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
----
- drivers/cpufreq/sh-cpufreq.c | 2 --
- 1 file changed, 2 deletions(-)
+v2: add DT documentation
 
-diff --git a/drivers/cpufreq/sh-cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
-index c681b86..387af12 100644
---- a/drivers/cpufreq/sh-cpufreq.c
-+++ b/drivers/cpufreq/sh-cpufreq.c
-@@ -111,8 +111,6 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
- 		return PTR_ERR(cpuclk);
- 	}
- 
--	policy->cur = sh_cpufreq_get(cpu);
--
- 	freq_table = cpuclk->nr_freqs ? cpuclk->freq_table : NULL;
- 	if (freq_table) {
- 		int result;
+Guennadi Liakhovetski (2):
+  DT: add a vendor prefix for Dialog Semiconductor
+  regulator: da9210: add Device Tree support
+
+ .../devicetree/bindings/regulator/da9210.txt       |   21 ++++++++++++++++++++
+ .../devicetree/bindings/vendor-prefixes.txt        |    1 +
+ drivers/regulator/da9210-regulator.c               |    9 +++++--
+ 3 files changed, 28 insertions(+), 3 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/regulator/da9210.txt
+
 -- 
-1.7.12.rc2.18.g61b472e
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
