@@ -1,40 +1,41 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 09 Sep 2013 15:55:15 +0000
-Subject: [PATCH 0/5] i2c: rcar: Device Tree support and clock improvements
-Message-Id: <1378742120-11135-1-git-send-email-g.liakhovetski@gmx.de>
+Date: Thu, 12 Sep 2013 12:36:48 +0000
+Subject: [PATCH v2 5/5] i2c: rcar: use per-device clock
+Message-Id: <1378989408-10618-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378989408-10618-1-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Device Tree support for i2c-rcar isn't too complex, only usual or standard
-properties are used. Apart from it several clock handling improvements are
-included in this patch series.
+Using the same clock for all device instances is non-portable and obtaining
+clock references by an ID without using a device pointer is discouraged.
+This is also not needed, because on platforms, where this driver is used,
+suitable clocks are available for the I2C controllers, that are children of
+the peripheral clock and just pass its rate 1-to-1 to controllers. This
+patch switches the driver to obtain references to correct clocks.
 
-Developed on top of -next of 09.09.2013
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/i2c/busses/i2c-rcar.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-
-Guennadi Liakhovetski (5):
-  i2c: rcar: (cosmetic) remove superfluous parenthesis
-  i2c: rcar: get clock rate only once and simplify calculation
-  i2c: rcar: add Device Tree support
-  i2c: rcar: fix clk_get() error handling
-  i2c: rcar: use per-device clock
-
- Documentation/devicetree/bindings/i2c/i2c-rcar.txt |   22 +++++++++
- drivers/i2c/busses/i2c-rcar.c                      |   50 ++++++++++++++------
- 2 files changed, 58 insertions(+), 14 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 98276eb..8603f5e 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -227,7 +227,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 				    u32 bus_speed,
+ 				    struct device *dev)
+ {
+-	struct clk *clkp = clk_get(NULL, "peripheral_clk");
++	struct clk *clkp = clk_get(dev, NULL);
+ 	u32 scgd, cdf;
+ 	u32 round, ick;
+ 	u32 scl;
 -- 
 1.7.2.5
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
