@@ -1,14 +1,37 @@
-From: Winning Notifications <ereiss2@washcoll.edu>
-Date: Fri, 20 Sep 2013 11:06:51 +0000
-Subject: Congratulations!
-Message-Id: <629455686.6368324.1379675211429.JavaMail.zimbra@washcoll.edu>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 12 Sep 2013 12:36:44 +0000
+Subject: [PATCH v2 1/5] i2c: rcar: (cosmetic) remove superfluous parenthesis
+Message-Id: <1378989408-10618-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Your email address have won =C2=A3750,000.00. in the just concluded Google =
-lottery.Contact Dr. Louis Moore (claim's Agent) via this email: googleverif=
-icationcenter@outlook.com with your Name,Country,Occupation,Telephone,Age,S=
-ex,for more information.
+A recent patch added even more superfluous parenthesis to those, which
+already were there. Remove them again.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/i2c/busses/i2c-rcar.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index d2fe11d..15eef94 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -306,7 +306,7 @@ scgd_find:
+ 	/*
+ 	 * keep icccr value
+ 	 */
+-	priv->icccr = (scgd << (cdf_width) | cdf);
++	priv->icccr = scgd << cdf_width | cdf;
+ 
+ 	return 0;
+ }
+-- 
+1.7.2.5
+
