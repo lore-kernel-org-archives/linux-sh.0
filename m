@@ -1,85 +1,73 @@
-From: Ramkumar Ramachandra <artagnon@gmail.com>
-Date: Thu, 26 Sep 2013 10:32:15 +0000
-Subject: Re: [PATCH 1/8] um: Create defconfigs for i386 and x86_64
-Message-Id: <CALkWK0=W38JpZoGVkPYD4qd=+Pt1G7oYPEK_R=c8TAW6W=wxyg@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 12 Sep 2013 12:36:45 +0000
+Subject: [PATCH v2 2/5] i2c: rcar: get clock rate only once and simplify calculation
+Message-Id: <1378989408-10618-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377073172-3662-1-git-send-email-richard@nod.at> <1377073172-3662-2-git-send-email-richard@nod.at>
-In-Reply-To: <1377073172-3662-2-git-send-email-richard@nod.at>
+References: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Richard Weinberger <richard@nod.at>
-Cc: linux-arch@vger.kernel.org, Michal Marek <mmarek@suse.cz>, geert@linux-m68k.org, ralf@linux-mips.org, lethal@linux-sh.org, Jeff Dike <jdike@addtoit.com>, gxt@mprc.pku.edu.cn, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, linux-kbuild@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, linux-m68k@lists.linux-m68k.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net
+To: linux-i2c@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Richard Weinberger wrote:
-> This patch is based on: https://lkml.org/lkml/2013/7/4/396
->
-> Cc: Ramkumar Ramachandra <artagnon@gmail.com>
-> Signed-off-by: Richard Weinberger <richard@nod.at>
-> ---
->  arch/um/configs/i386_defconfig   | 954 +++++++++++++++++++++++++++++++++++++++
->  arch/um/configs/x86_64_defconfig | 943 ++++++++++++++++++++++++++++++++++++++
->  2 files changed, 1897 insertions(+)
->  create mode 100644 arch/um/configs/i386_defconfig
->  create mode 100644 arch/um/configs/x86_64_defconfig
+There is no need to repeatedly query clock frequency, where it is not
+expected to change. The complete loop can also trivially be replaced with
+a simple division. A further loop below the one, being simplified, could
+also be replaced, but that would get more complicated.
 
-First, I'm pissed that the upstream tree doesn't build and run out of
-the box months after I submitted a fix in July (and it's September
-now). Fact that you dropped my sane patches aside and decided to write
-a much larger series aside, user-mode Linux in upstream is broken.
-This means that any user who does:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
+ drivers/i2c/busses/i2c-rcar.c |   20 +++++++++++++-------
+ 1 files changed, 13 insertions(+), 7 deletions(-)
 
-$ ARCH=um make defconfig
-$ ARCH=um make
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 15eef94..9325db4 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -231,6 +231,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	u32 round, ick;
+ 	u32 scl;
+ 	u32 cdf_width;
++	unsigned long rate;
+ 
+ 	if (!clkp) {
+ 		dev_err(dev, "there is no peripheral_clk\n");
+@@ -264,15 +265,14 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	 * clkp : peripheral_clk
+ 	 * F[]  : integer up-valuation
+ 	 */
+-	for (cdf = 0; cdf < (1 << cdf_width); cdf++) {
+-		ick = clk_get_rate(clkp) / (1 + cdf);
+-		if (ick < 20000000)
+-			goto ick_find;
++	rate = clk_get_rate(clkp);
++	cdf = rate / 20000000;
++	if (cdf >= 1 << cdf_width) {
++		dev_err(dev, "Input clock %lu too high\n", rate);
++		return -EIO;
+ 	}
+-	dev_err(dev, "there is no best CDF\n");
+-	return -EIO;
++	ick = rate / (cdf + 1);
+ 
+-ick_find:
+ 	/*
+ 	 * it is impossible to calculate large scale
+ 	 * number on u32. separate it
+@@ -290,6 +290,12 @@ ick_find:
+ 	 *
+ 	 * Calculation result (= SCL) should be less than
+ 	 * bus_speed for hardware safety
++	 *
++	 * We could use something along the lines of
++	 *	div = ick / (bus_speed + 1) + 1;
++	 *	scgd = (div - 20 - round + 7) / 8;
++	 *	scl = ick / (20 + (scgd * 8) + round);
++	 * (not fully verified) but that would get pretty involved
+ 	 */
+ 	for (scgd = 0; scgd < 0x40; scgd++) {
+ 		scl = ick / (20 + (scgd * 8) + round);
+-- 
+1.7.2.5
 
-will end up with a *broken* Linux _today_. Unless the user is living
-in the Stone Age with a 32-bit computer, this is what she will see
-when she attempts to boot up Linux:
-
-$ file linux
-linux: ELF 32-bit LSB  executable, Intel 80386, version 1 (SYSV),
-dynamically linked (uses shared libs), for GNU/Linux 2.6.32, not
-stripped
-$ ./linux ubd0=busybox-rootfs
-[...]
-Kernel panic - not syncing: No init found.  Try passing init= option
-to kernel. See Linux Documentation/init.txt for guidance.
-CPU: 0 PID: 1 Comm: swapper Not tainted 3.12.0-rc2-00083-g4b97280 #1
-0b869fbc 08272f87 0b869fdc 0820c5cd 00000001 00000000 00000000 00000000
-       0b869fe8 0820c126 08252593 0b869ff8 08059317 00000000 00000001 00000000
-       00000000 0b869f94:  [<0805a11c>] show_stack+0x54/0x8c
-0b869fb4:  [<0820e3c8>] dump_stack+0x16/0x1b
-0b869fc8:  [<0820c5cd>] panic+0x67/0x149
-0b869fe0:  [<0820c126>] kernel_init+0xab/0xaf
-0b869fec:  [<08059317>] new_thread_handler+0x63/0x7c
-0b869ffc:  [<00000000>] 0x0
-
-
-EIP: 0023:[<f7717430>] CPU: 0 Not tainted ESP: 002b:ffc386dc EFLAGS: 00000296
-    Not tainted
-EAX: 00000000 EBX: 000063ba ECX: 00000013 EDX: 000063ba
-ESI: 000063b6 EDI: 00000002 EBP: ffc38708 DS: 002b ES: 002b
-0b869f44:  [<0806aff4>] show_regs+0xb4/0xbc
-0b869f70:  [<0805b23b>] panic_exit+0x20/0x36
-0b869f84:  [<0808521b>] notifier_call_chain+0x28/0x4b
-0b869fac:  [<0808526c>] atomic_notifier_call_chain+0x15/0x17
-0b869fbc:  [<0820c5de>] panic+0x78/0x149
-0b869fe0:  [<0820c126>] kernel_init+0xab/0xaf
-0b869fec:  [<08059317>] new_thread_handler+0x63/0x7c
-0b869ffc:  [<00000000>] 0x0
-
-[1]    25526 abort (core dumped)  linux ubd0=busybox-rootfs
-                                                           %
-
-Rubbish.
-
-When I rebase my original patches (exactly 2 small independent
-patches) onto the new upstream, stuff works as usual. If you're not
-convinced, try the um-build branch from
-https://github.com/artagnon/linux for yourself.
-
-Are you against accepting good patches and stalling work? What is your
-plan exactly?
-
-Annoyed,
-Ram
