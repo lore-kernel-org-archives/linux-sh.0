@@ -1,111 +1,41 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 27 Sep 2013 08:37:37 +0000
-Subject: Re: [PATCH v2 5/5] ARM: shmobile: lager: (DEVEL) add CPUFreq support
-Message-Id: <Pine.LNX.4.64.1309271033270.23205@axis700.grange>
+Date: Thu, 12 Sep 2013 12:36:43 +0000
+Subject: [PATCH v2 0/5] i2c: rcar: Device Tree support and clock improvements
+Message-Id: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1380216060-14506-1-git-send-email-g.liakhovetski@gmx.de>
- <1380216060-14506-6-git-send-email-g.liakhovetski@gmx.de>
- <52447B9A.5090805@cogentembedded.com>
-In-Reply-To: <52447B9A.5090805@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon Horman <horms@verge.net.au>
+To: linux-i2c@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Hi Sergei
+Device Tree support for i2c-rcar isn't too complex, only usual or standard
+properties are used. Apart from it several clock handling improvements are
+included in this patch series.
 
-On Thu, 26 Sep 2013, Sergei Shtylyov wrote:
+Developed on top of -next of 12.09.2013
 
-> Hello.
-> 
-> On 09/26/2013 09:21 PM, Guennadi Liakhovetski wrote:
-> 
-> > The Lager board uses a DA9210 voltage regulator to supply DVFS power to the
-> > CA15 cores on the r8a7790 SoC. This patch adds CPUFreq support for that
-> > board using the cpufreq-cpu0 driver.
-> 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> 
-> > v2: added 'status = "okay";' to the i2c bus
-> 
-> >   arch/arm/boot/dts/r8a7790-lager-reference.dts  |   33
-> > ++++++++++++++++++++++++
-> >   arch/arm/mach-shmobile/board-lager-reference.c |    4 ++-
-> >   2 files changed, 36 insertions(+), 1 deletions(-)
-> 
-> > diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-> > b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-> > index c462ef1..1ce0a97 100644
-> > --- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-> > +++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-> > @@ -43,3 +43,36 @@
-> >   		};
-> >   	};
-> >   };
-> > +
-> > +&i2c3 {
-> > +	status = "okay";
-> > +	pinctrl-names = "default";
-> > +	pinctrl-0 = <&i2c3_pins>;
-> > +
-> > +	vdd_dvfs: da9210@68 {
-> 
->   ePAPR spec [1] says: "The name of a node should be somewhat generic,
-> reflecting the function of the device and not its precise programming model."
+v2: only DT compatibility strings have been changed.
 
-Sure, but I think it is common in Linux .dts files for I2C devices to use 
-"<model>@<i2c addr>" as a name.
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-> So I suggest "regulator" instead of "da9210".
-> 
-> > +		compatible = "diasemi,da9210";
-> > +		reg = <0x68>;
-> > +
-> > +		regulator-min-microvolt = <900000>;
-> > +		regulator-max-microvolt = <1000000>;
-> > +		regulator-boot-on;
-> > +		regulator-always-on;
-> > +	};
-> > +};
-> [...]
-> > diff --git a/arch/arm/mach-shmobile/board-lager-reference.c
-> > b/arch/arm/mach-shmobile/board-lager-reference.c
-> > index 1a1a4a8..2bc8bae 100644
-> > --- a/arch/arm/mach-shmobile/board-lager-reference.c
-> > +++ b/arch/arm/mach-shmobile/board-lager-reference.c
-> [...]
-> > @@ -29,7 +30,8 @@ static void __init lager_add_standard_devices(void)
-> >   	r8a7790_clock_init();
-> > 
-> >   	r8a7790_add_dt_devices();
-> > -        of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-> > +	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-> 
->    Hm, "drove-by" cleanup?
+Guennadi Liakhovetski (5):
+  i2c: rcar: (cosmetic) remove superfluous parenthesis
+  i2c: rcar: get clock rate only once and simplify calculation
+  i2c: rcar: add Device Tree support
+  i2c: rcar: fix clk_get() error handling
+  i2c: rcar: use per-device clock
 
-This should be avoided in general, but this kind of stuff really doesn't 
-deserve neither a separate patch nor a mention. Don't waste your precious 
-brain cycles.
+ Documentation/devicetree/bindings/i2c/i2c-rcar.txt |   23 +++++++++
+ drivers/i2c/busses/i2c-rcar.c                      |   51 ++++++++++++++-----
+ 2 files changed, 60 insertions(+), 14 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-rcar.txt
 
-> > +	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
-> >   }
-> > 
-> >   static const char *lager_boards_compat_dt[] __initdata = {
-> 
->    Shouldn't the patch be split into .dts and .c parts, I wonder?
-
-Simon didn't complain, but perhaps it should, yes. I think I'll resubmit 
-this as 2 patches with no changes.
+-- 
+1.7.2.5
 
 Thanks
 Guennadi
-
-> [1] http://www.power.org/resources/downloads/Power_ePAPR_APPROVED_v1.0.pdf
-> 
-> WBR, Sergei
-
 ---
 Guennadi Liakhovetski, Ph.D.
 Freelance Open-Source Software Developer
