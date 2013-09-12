@@ -1,30 +1,45 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Thu, 12 Sep 2013 05:48:14 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 12 Sep 2013 07:47:08 +0000
 Subject: Re: "cpufreq: fix serialization issues with freq change notifiers" breaks cpufreq too
-Message-Id: <CAKohpomuJNQmk5fg5en5usPgipj7hzXUVNMhz1MjAS-47X4Ggg@mail.gmail.com>
+Message-Id: <Pine.LNX.4.64.1309120938240.4632@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1309091656200.6602@axis700.grange>
- <2703632.ul5ekQh5oq@vostro.rjw.lan>
- <CAKohpo=RKB-_EO=cjaOorAfN=y_cMgJg-j6=xtX71a-TwujgsA@mail.gmail.com>
- <2013615.oHjWkmedue@vostro.rjw.lan>
- <CAKohpokEZcwF-zL6rTXYyC_x=SJzGFvdvxqvmvyhJHa8nPXogQ@mail.gmail.com>
- <52310E43.1090808@intel.com>
-In-Reply-To: <52310E43.1090808@intel.com>
+ <CAKohponZ+FnzqXYMbBzbun0-1iQMi2fS4syrEBC_MdF41vLCeA@mail.gmail.com>
+ <Pine.LNX.4.64.1309101656150.16010@axis700.grange>
+ <CAKohpomBBKLhNemVUpUHAftGhPJJe+ZB7T_9UYLD7LwpR1nK0g@mail.gmail.com>
+ <Pine.LNX.4.64.1309101740120.16010@axis700.grange>
+ <CAKohpomK7Y_6aLMA3B+hZrtgYq9U89ihgkbvYWA3BsKN3gJD3g@mail.gmail.com>
+ <Pine.LNX.4.64.1309101853170.16010@axis700.grange>
+ <CAKohpokaHU0V86DPB7nEQ8ndwu_mJ_x_Uz47XPHZeyAW3hcP_w@mail.gmail.com>
+In-Reply-To: <CAKohpokaHU0V86DPB7nEQ8ndwu_mJ_x_Uz47XPHZeyAW3hcP_w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 12 September 2013 06:13, Rafael J. Wysocki
-<rafael.j.wysocki@intel.com> wrote:
-> Yes, if you can point to a specific driver having this problem.
+Hi Viresh
 
-There are so many of those (I know it because I went through almost all drivers
-recently with my cleanup series): cpufreq-cpu0, omap-cpufreq,
-exynos-cpufreq, etc..
+On Wed, 11 Sep 2013, Viresh Kumar wrote:
 
-They all do this:
+> On 10 September 2013 22:37, Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
+> > On Tue, 10 Sep 2013, Viresh Kumar wrote:
+> >> Quite straight forward actually..
+> >
+> > Apparently, not quite.
+> 
+> I overlooked the situation where we return early from ->target() routines.. :(
+> 
+> Please try attached patches, I will repost them later (once I am able to
+> convince Rafael that these are really important :) )
 
-A. If new freq is more than old: Increase voltage
-B. Change freq
-C. If new freq is less than old: decrease voltage
+Yes, they seem to fix my issues. You probably aren't going to submit them 
+in this form, instead, merge them with the original serialisation fix 
+patch, right? So, you don't need my tested-by here. But feel free to cc me 
+when you submit a fixed version.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
