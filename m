@@ -1,37 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 14 Sep 2013 15:29:16 +0000
-Subject: [PATCH 03/03] ARM: shmobile: Include CA7 cores in APMU table
-Message-Id: <20130914152916.12327.39849.sendpatchset@w520>
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Fri, 13 Sep 2013 13:12:31 +0000
+Subject: [PATCH 085/228] cpufreq: sh: Use generic cpufreq routines
+Message-Id: <74417e54eb4b55ce4c54f24c3c39c2ea1cfde3f1.1379063063.git.viresh.kumar@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1379063063.git.viresh.kumar@linaro.org>
+In-Reply-To: <cover.1379063063.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Most of the CPUFreq drivers do similar things in .exit() and .verify() routines
+and .attr. So its better if we have generic routines for them which can be used
+by cpufreq drivers then.
 
-Add information to the shared APMU code regarding
-the APMU instance used to control the CA7 cores.
+This patch uses these generic routines for this driver.
 
-This can be used on r8a7790 and r8a73a4, but should
-most likely be converted to DT in the future.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 ---
+ drivers/cpufreq/sh-cpufreq.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
- arch/arm/mach-shmobile/platsmp-apmu.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
---- 0004/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2013-09-14 23:54:05.000000000 +0900
-@@ -86,6 +86,10 @@ static struct {
- 	{
- 		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
- 		.cpus = { 0, 1, 2, 3 },
-+	},
-+	{
-+		.iomem = DEFINE_RES_MEM(0xe6151000, 0x88),
-+		.cpus = { 0x100, 0x101, 0x102, 0x103 },
- 	}
+diff --git a/drivers/cpufreq/sh-cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
+index f1fb944..c681b86 100644
+--- a/drivers/cpufreq/sh-cpufreq.c
++++ b/drivers/cpufreq/sh-cpufreq.c
+@@ -151,11 +151,6 @@ static int sh_cpufreq_cpu_exit(struct cpufreq_policy *policy)
+ 	return 0;
+ }
+ 
+-static struct freq_attr *sh_freq_attr[] = {
+-	&cpufreq_freq_attr_scaling_available_freqs,
+-	NULL,
+-};
+-
+ static struct cpufreq_driver sh_cpufreq_driver = {
+ 	.name		= "sh",
+ 	.get		= sh_cpufreq_get,
+@@ -163,7 +158,7 @@ static struct cpufreq_driver sh_cpufreq_driver = {
+ 	.verify		= sh_cpufreq_verify,
+ 	.init		= sh_cpufreq_cpu_init,
+ 	.exit		= sh_cpufreq_cpu_exit,
+-	.attr		= sh_freq_attr,
++	.attr		= cpufreq_generic_attr,
  };
  
+ static int __init sh_cpufreq_module_init(void)
+-- 
+1.7.12.rc2.18.g61b472e
+
