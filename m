@@ -1,59 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Sep 2013 13:51:02 +0000
-Subject: [PATCH/RESEND 2/2] ARM: shmobile: Remove #gpio-ranges-cells DT property
-Message-Id: <1378907462-19247-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Fri, 13 Sep 2013 13:11:47 +0000
+Subject: [PATCH 041/228] cpufreq: sh: use cpufreq_table_validate_and_show()
+Message-Id: <04eded57c208c65caa64ac44cea9a1eee8507f0d.1379063063.git.viresh.kumar@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378907462-19247-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1378907462-19247-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1379063063.git.viresh.kumar@linaro.org>
+In-Reply-To: <cover.1379063063.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This property is no longer required by the GPIO binding. Remove it.
+Lets use cpufreq_table_validate_and_show() instead of calling
+cpufreq_frequency_table_cpuinfo() and cpufreq_frequency_table_get_attr().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 1 -
- arch/arm/boot/dts/r8a7779.dtsi | 1 -
- arch/arm/boot/dts/r8a7790.dtsi | 1 -
- 3 files changed, 3 deletions(-)
+ drivers/cpufreq/sh-cpufreq.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 45ac404..3577aba 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -96,6 +96,5 @@
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7778";
- 		reg = <0xfffc000 0x118>;
--		#gpio-range-cells = <3>;
- 	};
- };
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 23a6244..ebbe507 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -188,7 +188,6 @@
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7779";
- 		reg = <0xfffc0000 0x23c>;
--		#gpio-range-cells = <3>;
- 	};
+diff --git a/drivers/cpufreq/sh-cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
+index f671aa1..f1fb944 100644
+--- a/drivers/cpufreq/sh-cpufreq.c
++++ b/drivers/cpufreq/sh-cpufreq.c
+@@ -117,9 +117,9 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
+ 	if (freq_table) {
+ 		int result;
  
- 	thermal@ffc48000 {
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3b879e7..9851398 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -148,7 +148,6 @@
- 	pfc: pfc@e6060000 {
- 		compatible = "renesas,pfc-r8a7790";
- 		reg = <0 0xe6060000 0 0x250>;
--		#gpio-range-cells = <3>;
- 	};
- 
- 	sdhi0: sdhi@ee100000 {
+-		result = cpufreq_frequency_table_cpuinfo(policy, freq_table);
+-		if (!result)
+-			cpufreq_frequency_table_get_attr(freq_table, cpu);
++		result = cpufreq_table_validate_and_show(policy, freq_table);
++		if (result)
++			return result;
+ 	} else {
+ 		dev_notice(dev, "no frequency table found, falling back "
+ 			   "to rate rounding.\n");
 -- 
-1.8.1.5
+1.7.12.rc2.18.g61b472e
 
