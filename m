@@ -1,7 +1,7 @@
 From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Fri, 13 Sep 2013 13:11:47 +0000
-Subject: [PATCH 041/228] cpufreq: sh: use cpufreq_table_validate_and_show()
-Message-Id: <04eded57c208c65caa64ac44cea9a1eee8507f0d.1379063063.git.viresh.kumar@linaro.org>
+Date: Fri, 13 Sep 2013 13:13:08 +0000
+Subject: [PATCH 122/228] cpufreq: sh: don't initialize part of policy that is set by core too
+Message-Id: <b7aefeb7f7e756d9608039d58a11ab907096e6e6.1379063063.git.viresh.kumar@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1379063063.git.viresh.kumar@linaro.org>
 In-Reply-To: <cover.1379063063.git.viresh.kumar@linaro.org>
@@ -10,33 +10,32 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Lets use cpufreq_table_validate_and_show() instead of calling
-cpufreq_frequency_table_cpuinfo() and cpufreq_frequency_table_get_attr().
+Many common initializations of struct policy are moved to core now and hence
+this driver doesn't need to do it. This patch removes such code.
+
+Most recent of those changes is to call ->get() in the core after calling
+->init().
 
 Cc: Paul Mundt <lethal@linux-sh.org>
 Cc: linux-sh@vger.kernel.org
 Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 ---
- drivers/cpufreq/sh-cpufreq.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/cpufreq/sh-cpufreq.c | 2 --
+ 1 file changed, 2 deletions(-)
 
 diff --git a/drivers/cpufreq/sh-cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
-index f671aa1..f1fb944 100644
+index c681b86..387af12 100644
 --- a/drivers/cpufreq/sh-cpufreq.c
 +++ b/drivers/cpufreq/sh-cpufreq.c
-@@ -117,9 +117,9 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
+@@ -111,8 +111,6 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
+ 		return PTR_ERR(cpuclk);
+ 	}
+ 
+-	policy->cur = sh_cpufreq_get(cpu);
+-
+ 	freq_table = cpuclk->nr_freqs ? cpuclk->freq_table : NULL;
  	if (freq_table) {
  		int result;
- 
--		result = cpufreq_frequency_table_cpuinfo(policy, freq_table);
--		if (!result)
--			cpufreq_frequency_table_get_attr(freq_table, cpu);
-+		result = cpufreq_table_validate_and_show(policy, freq_table);
-+		if (result)
-+			return result;
- 	} else {
- 		dev_notice(dev, "no frequency table found, falling back "
- 			   "to rate rounding.\n");
 -- 
 1.7.12.rc2.18.g61b472e
 
