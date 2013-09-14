@@ -1,37 +1,28 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Sep 2013 05:23:37 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791 IRQC support
-Message-Id: <20130925052336.GI24243@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 14 Sep 2013 15:28:48 +0000
+Subject: [PATCH 00/03] ARM: shmobile: r8a7790 CA7 boot mode support
+Message-Id: <20130914152848.12327.55620.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130912003806.24022.63355.sendpatchset@w520>
-In-Reply-To: <20130912003806.24022.63355.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Sep 12, 2013 at 09:38:06AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add support for r8a7791 IRQ pins IRQ0 -> IRQ9 via
-> the IRQC driver in drivers/irqchip/irq-renesas-irqc.c
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Written against renesas-devel-20130906
-> 
->  arch/arm/boot/dts/r8a7791.dtsi                |   18 ++++++++++++++
->  arch/arm/mach-shmobile/Kconfig                |    1 
->  arch/arm/mach-shmobile/board-koelsch.c        |    2 -
->  arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 
->  arch/arm/mach-shmobile/setup-r8a7791.c        |   32 +++++++++++++++++++++++++
->  5 files changed, 53 insertions(+), 1 deletion(-)
+ARM: shmobile: r8a7790 CA7 boot mode support
 
-Hi Magnus,
+[PATCH 01/03] ARM: shmobile: Add r8a7790 CA7 CPU cores to DTSI
+[PATCH 02/03] ARM: shmobile: Extend APMU code to allow single cluster only
+[PATCH 03/03] ARM: shmobile: Include CA7 cores in APMU table
 
-please split this into three patches.
+This series enables the CA7 boot mode on r8a7790. Earlier this was
+included in the r8a7790 SMP patch, but it was removed from the shared
+APMU SMP code during adjustment to r8a7791 single cluster support.
 
-1. An SoC patch: The r8a7791.[ch] and Kconfig changes
-2. A board patch: The board-koelsh.c change
-3. A dt patch: The .dtsi change
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas.git tag renesas-devel-20130906
+
+ arch/arm/boot/dts/r8a7790.dtsi        |   28 ++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/platsmp-apmu.c |   17 +++++++++++++++++
+ 2 files changed, 45 insertions(+)
