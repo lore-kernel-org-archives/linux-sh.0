@@ -1,191 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 30 Sep 2013 04:00:20 +0000
-Subject: [PATCH 1/5] ARM: shmobile: update SDHI DT compatibility string to the <unit>-<soc> format
-Message-Id: <df1d0584b2292df5b9d576d7e5246e94616220a1.1380513421.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 14 Sep 2013 13:46:52 +0000
+Subject: [PATCH 04/05] ARM: shmobile: Let r8a7779 rely on SCU CPU notifier
+Message-Id: <20130914134652.19258.20535.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380513421.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380513421.git.horms+renesas@verge.net.au>
+References: <20130914134616.19258.27110.sendpatchset@w520>
+In-Reply-To: <20130914134616.19258.27110.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-Currently DT compatibility strings of both types can be found in the kernel
-sources: <unit>-<soc> and <soc>-<unit>, whereas a unique format should be
-followed and the former one is preferred. This patch converts the SDHI
-MMC driver and its users to the common standard. This is safe for now, since
-ATM no real products are using this driver with DT.
+Now when CPU notifiers are used for SCU boot vector
+setup shmobile_smp_scu_boot_secondary() is no longer
+needed.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Acked-by: Chris Ball <cjb@laptop.org>
-[Removed r8a7740.dtsi portion as it is not applicable]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- Documentation/devicetree/bindings/mmc/tmio_mmc.txt | 17 ++++++++++-------
- arch/arm/boot/dts/r8a73a4.dtsi                     |  6 +++---
- arch/arm/boot/dts/r8a7790.dtsi                     |  8 ++++----
- arch/arm/boot/dts/sh73a0.dtsi                      |  6 +++---
- drivers/mmc/host/sh_mobile_sdhi.c                  | 16 ++++++++--------
- 5 files changed, 28 insertions(+), 25 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-index df204e1..6a2a116 100644
---- a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-+++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-@@ -9,12 +9,15 @@ compulsory and any optional properties, common to all SD/MMC drivers, as
- described in mmc.txt, can be used. Additionally the following tmio_mmc-specific
- optional bindings can be used.
- 
-+Required properties:
-+- compatible:	"renesas,sdhi-shmobile" - a generic sh-mobile SDHI unit
-+		"renesas,sdhi-sh7372" - SDHI IP on SH7372 SoC
-+		"renesas,sdhi-sh73a0" - SDHI IP on SH73A0 SoC
-+		"renesas,sdhi-r8a73a4" - SDHI IP on R8A73A4 SoC
-+		"renesas,sdhi-r8a7740" - SDHI IP on R8A7740 SoC
-+		"renesas,sdhi-r8a7778" - SDHI IP on R8A7778 SoC
-+		"renesas,sdhi-r8a7779" - SDHI IP on R8A7779 SoC
-+		"renesas,sdhi-r8a7790" - SDHI IP on R8A7790 SoC
-+
- Optional properties:
- - toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
--
--When used with Renesas SDHI hardware, the following compatibility strings
--configure various model-specific properties:
--
--"renesas,sh7372-sdhi":	(default) compatible with SH7372
--"renesas,r8a7740-sdhi":	compatible with R8A7740: certain MMC/SD commands have to
--			wait for the interface to become idle.
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 6c26caa..658fcc5 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -193,7 +193,7 @@
- 	};
- 
- 	sdhi0: sdhi@ee100000 {
--		compatible = "renesas,r8a73a4-sdhi";
-+		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee100000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 4>;
-@@ -202,7 +202,7 @@
- 	};
- 
- 	sdhi1: sdhi@ee120000 {
--		compatible = "renesas,r8a73a4-sdhi";
-+		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee120000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 4>;
-@@ -211,7 +211,7 @@
- 	};
- 
- 	sdhi2: sdhi@ee140000 {
--		compatible = "renesas,r8a73a4-sdhi";
-+		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 167 4>;
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3b879e7..885f9f4 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -152,7 +152,7 @@
- 	};
- 
- 	sdhi0: sdhi@ee100000 {
--		compatible = "renesas,r8a7790-sdhi";
-+		compatible = "renesas,sdhi-r8a7790";
- 		reg = <0 0xee100000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 4>;
-@@ -161,7 +161,7 @@
- 	};
- 
- 	sdhi1: sdhi@ee120000 {
--		compatible = "renesas,r8a7790-sdhi";
-+		compatible = "renesas,sdhi-r8a7790";
- 		reg = <0 0xee120000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 4>;
-@@ -170,7 +170,7 @@
- 	};
- 
- 	sdhi2: sdhi@ee140000 {
--		compatible = "renesas,r8a7790-sdhi";
-+		compatible = "renesas,sdhi-r8a7790";
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 167 4>;
-@@ -179,7 +179,7 @@
- 	};
- 
- 	sdhi3: sdhi@ee160000 {
--		compatible = "renesas,r8a7790-sdhi";
-+		compatible = "renesas,sdhi-r8a7790";
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 168 4>;
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index ba59a58..3955c76 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -196,7 +196,7 @@
- 	};
- 
- 	sdhi0: sdhi@ee100000 {
--		compatible = "renesas,r8a7740-sdhi";
-+		compatible = "renesas,sdhi-r8a7740";
- 		reg = <0xee100000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 83 4
-@@ -208,7 +208,7 @@
- 
- 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
- 	sdhi1: sdhi@ee120000 {
--		compatible = "renesas,r8a7740-sdhi";
-+		compatible = "renesas,sdhi-r8a7740";
- 		reg = <0xee120000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 88 4
-@@ -219,7 +219,7 @@
- 	};
- 
- 	sdhi2: sdhi@ee140000 {
--		compatible = "renesas,r8a7740-sdhi";
-+		compatible = "renesas,sdhi-r8a7740";
- 		reg = <0xee140000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 104 4
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 87ed3fb..f344659 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -113,14 +113,14 @@ static const struct sh_mobile_sdhi_ops sdhi_ops = {
- };
- 
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
--	{ .compatible = "renesas,shmobile-sdhi" },
--	{ .compatible = "renesas,sh7372-sdhi" },
--	{ .compatible = "renesas,sh73a0-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,r8a73a4-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,r8a7740-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,r8a7778-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,r8a7779-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,r8a7790-sdhi", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-shmobile" },
-+	{ .compatible = "renesas,sdhi-sh7372" },
-+	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
--- 
-1.8.4
+ arch/arm/mach-shmobile/smp-r8a7779.c |    4 ----
+ 1 file changed, 4 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-09-14 19:36:57.000000000 +0900
+@@ -87,10 +87,6 @@ static int r8a7779_boot_secondary(unsign
+ 	unsigned int lcpu = cpu_logical_map(cpu);
+ 	int ret;
+ 
+-	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
+-	if (ret)
+-		return ret;
+-
+ 	if (lcpu < ARRAY_SIZE(r8a7779_ch_cpu))
+ 		ch = r8a7779_ch_cpu[lcpu];
+ 
