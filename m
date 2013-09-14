@@ -1,34 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Sep 2013 08:05:55 +0000
-Subject: Re: [PATCH] ARM: shmobile: bockw: tidyup select SND_SOC_xxx on Kconfig
-Message-Id: <87ppryr6e8.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 14 Sep 2013 13:46:16 +0000
+Subject: [PATCH 00/05] ARM: shmobile: Use CPU notifiers for SCU boot vector code
+Message-Id: <20130914134616.19258.27110.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8761tqsqs7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8761tqsqs7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+ARM: shmobile: Use CPU notifiers for SCU boot vector code
 
-Hi Simon
+[PATCH 01/05] ARM: shmobile: Add CPU notifier based SCU boot vector code
+[PATCH 02/05] ARM: shmobile: Let sh73a0 rely on SCU CPU notifier
+[PATCH 03/05] ARM: shmobile: Let EMEV2 rely on SCU CPU notifier
+[PATCH 04/05] ARM: shmobile: Let r8a7779 rely on SCU CPU notifier
+[PATCH 05/05] ARM: shmobile: Remove shmobile_smp_scu_boot_secondary()
 
-> > > is this a fix for v3.12?
-> > 
-> > Yes, Bock-W can't use sound without this patch
-> 
-> Hi Morimoto-san,
-> 
-> I looked a little closer and it seems that
-> bf622b33d6fd40f720430ec2fe3c62a8aee19ee8 is queued up for v3.13
-> rather than v3.12. (i.e. its not present in v3.12-rc1).
-> 
-> With this in mind I will queue up this patch for v3.13.
-> This will most likely occur tomorrow.
+This series converts mach-shmobile to use CPU notifiers for boot vector
+setup for SCU based SoCs such as sh73a0, EMEV2 and r8a7779. This
+allows us to remove the shmobile_smp_scu_boot_secondary() function,
+and it is also ground work for the CPUIdle resume path.
 
-Oops, sorry, yes, it was v3.13 fixup
-Thank you for your help
-
-Best regards
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Kuninori Morimoto
+
+ Written against renesas.git tag renesas-devel-20130906
+
+ arch/arm/mach-shmobile/include/mach/common.h |    2 -
+ arch/arm/mach-shmobile/platsmp-scu.c         |   32 +++++++++++++++++++-------
+ arch/arm/mach-shmobile/smp-emev2.c           |    6 ----
+ arch/arm/mach-shmobile/smp-r8a7779.c         |    4 ---
+ arch/arm/mach-shmobile/smp-sh73a0.c          |    5 ----
+ 5 files changed, 24 insertions(+), 25 deletions(-)
+
+
