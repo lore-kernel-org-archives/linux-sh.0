@@ -1,53 +1,56 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Fri, 13 Sep 2013 13:12:31 +0000
-Subject: [PATCH 085/228] cpufreq: sh: Use generic cpufreq routines
-Message-Id: <74417e54eb4b55ce4c54f24c3c39c2ea1cfde3f1.1379063063.git.viresh.kumar@linaro.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 14 Sep 2013 15:29:07 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Extend APMU code to allow single cluster only
+Message-Id: <20130914152907.12327.14175.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1379063063.git.viresh.kumar@linaro.org>
-In-Reply-To: <cover.1379063063.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Most of the CPUFreq drivers do similar things in .exit() and .verify() routines
-and .attr. So its better if we have generic routines for them which can be used
-by cpufreq drivers then.
+From: Magnus Damm <damm@opensource.se>
 
-This patch uses these generic routines for this driver.
+Extend the APMU code with a check to only allow boot
+of CPU cores that sit in the same cluster as CPU0.
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+This makes it possible for people to use the r8a790
+CA7 boot mode with CA7-cores only. The default CA15
+boot mode will enable CA15 cores only. This is an
+intentional software limitation to cope with lacking
+scheduler support.
+
+By removing this patch it is possible to run all 8 cores
+in parallel, but this is not recommended without out of tree
+scheduler modfications or custom user space code to control
+the CPU affinitiy.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/cpufreq/sh-cpufreq.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/drivers/cpufreq/sh-cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
-index f1fb944..c681b86 100644
---- a/drivers/cpufreq/sh-cpufreq.c
-+++ b/drivers/cpufreq/sh-cpufreq.c
-@@ -151,11 +151,6 @@ static int sh_cpufreq_cpu_exit(struct cpufreq_policy *policy)
- 	return 0;
- }
- 
--static struct freq_attr *sh_freq_attr[] = {
--	&cpufreq_freq_attr_scaling_available_freqs,
--	NULL,
--};
--
- static struct cpufreq_driver sh_cpufreq_driver = {
- 	.name		= "sh",
- 	.get		= sh_cpufreq_get,
-@@ -163,7 +158,7 @@ static struct cpufreq_driver sh_cpufreq_driver = {
- 	.verify		= sh_cpufreq_verify,
- 	.init		= sh_cpufreq_cpu_init,
- 	.exit		= sh_cpufreq_cpu_exit,
--	.attr		= sh_freq_attr,
-+	.attr		= cpufreq_generic_attr,
- };
- 
- static int __init sh_cpufreq_module_init(void)
--- 
-1.7.12.rc2.18.g61b472e
+ arch/arm/mach-shmobile/platsmp-apmu.c |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
+--- 0001/arch/arm/mach-shmobile/platsmp-apmu.c
++++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2013-09-15 00:11:23.000000000 +0900
+@@ -94,8 +94,21 @@ static void apmu_parse_cfg(void (*fn)(st
+ 	u32 id;
+ 	int k;
+ 	int bit, index;
++	bool is_allowed;
+ 
+ 	for (k = 0; k < ARRAY_SIZE(apmu_config); k++) {
++		/* only enable the cluster that includes the boot CPU */
++		is_allowed = false;
++		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
++			id = apmu_config[k].cpus[bit];
++			if (id >= 0) {
++				if (id = cpu_logical_map(0))
++					is_allowed = true;
++			}
++		}
++		if (!is_allowed)
++			continue;
++
+ 		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
+ 			id = apmu_config[k].cpus[bit];
+ 			if (id >= 0) {
