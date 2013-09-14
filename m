@@ -1,48 +1,73 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 24 Sep 2013 13:38:35 +0000
-Subject: [PATCH 2/3] media: rcar_vin: Add preliminary r8a7790 H2 support
-Message-Id: <1380029916-10331-3-git-send-email-valentine.barshak@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 14 Sep 2013 13:46:25 +0000
+Subject: [PATCH 01/05] ARM: shmobile: Add CPU notifier based SCU boot vector code
+Message-Id: <20130914134625.19258.10925.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130914134616.19258.27110.sendpatchset@w520>
+In-Reply-To: <20130914134616.19258.27110.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Magnus Damm <damm@opensource.se>
+
+Add CPU notifiers for the shared mach-shmobile SCU code
+to allow removal of the shared SCU boot_secondary code.
+
+Regarding notifiers, at CPU_UP_PREPARE time the SMP boot
+vector is initialized so secondary CPU cores can boot.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/media/platform/soc_camera/rcar_vin.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index d02a7e0..cf81e02 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -105,6 +105,7 @@
- #define VIN_MAX_HEIGHT		2048
- 
- enum chip_id {
-+	RCAR_H2,
- 	RCAR_H1,
- 	RCAR_M1,
- 	RCAR_E1,
-@@ -300,7 +301,8 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 		dmr = 0;
- 		break;
- 	case V4L2_PIX_FMT_RGB32:
--		if (priv->chip = RCAR_H1 || priv->chip = RCAR_E1) {
-+		if (priv->chip = RCAR_H2 || priv->chip = RCAR_H1 ||
-+						priv->chip = RCAR_E1) {
- 			dmr = VNDMR_EXRGB;
- 			break;
- 		}
-@@ -1381,6 +1383,7 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
- };
- 
- static struct platform_device_id rcar_vin_id_table[] = {
-+	{ "r8a7790-vin",  RCAR_H2 },
- 	{ "r8a7779-vin",  RCAR_H1 },
- 	{ "r8a7778-vin",  RCAR_M1 },
- 	{ "uPD35004-vin", RCAR_E1 },
--- 
-1.8.3.1
+ arch/arm/mach-shmobile/platsmp-scu.c |   24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
+--- 0001/arch/arm/mach-shmobile/platsmp-scu.c
++++ work/arch/arm/mach-shmobile/platsmp-scu.c	2013-09-14 22:15:07.000000000 +0900
+@@ -7,6 +7,7 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
++#include <linux/cpu.h>
+ #include <linux/delay.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+@@ -16,6 +17,26 @@
+ #include <asm/smp_scu.h>
+ #include <mach/common.h>
+ 
++static int shmobile_smp_scu_notifier_call(struct notifier_block *nfb,
++					  unsigned long action, void *hcpu)
++{
++	unsigned int cpu = (long)hcpu;
++
++	switch (action) {
++	case CPU_UP_PREPARE:
++		/* For this particular CPU register SCU SMP boot vector */
++		shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
++				  (unsigned long)shmobile_scu_base);
++		break;
++	};
++
++	return NOTIFY_OK;
++}
++
++static struct notifier_block shmobile_smp_scu_notifier = {
++	.notifier_call = shmobile_smp_scu_notifier_call,
++};
++
+ void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
+ {
+ 	/* install boot code shared by all CPUs */
+@@ -25,6 +46,9 @@ void __init shmobile_smp_scu_prepare_cpu
+ 	/* enable SCU and cache coherency on booting CPU */
+ 	scu_enable(shmobile_scu_base);
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
++
++	/* Use CPU notifier for reset vector control */
++	register_cpu_notifier(&shmobile_smp_scu_notifier);
+ }
+ 
+ int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
