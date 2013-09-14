@@ -1,7 +1,7 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 02 Sep 2013 10:42:00 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sat, 14 Sep 2013 18:33:19 +0000
 Subject: Re: [PATCH v3] dma: add driver for R-Car HPB-DMAC
-Message-Id: <20130902103000.GL7376@intel.com>
+Message-Id: <Pine.LNX.4.64.1309142017040.28905@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201308250033.24936.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201308250033.24936.sergei.shtylyov@cogentembedded.com>
@@ -9,9 +9,10 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: djbw@fb.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
+Cc: djbw@fb.com, vinod.koul@intel.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, max.filippov@cogentembedded.com
 
-On Sun, Aug 25, 2013 at 12:33:24AM +0400, Sergei Shtylyov wrote:
+On Sun, 25 Aug 2013, Sergei Shtylyov wrote:
+
 > From: Max Filippov <max.filippov@cogentembedded.com>
 > 
 > Add support for HPB-DMAC found in Renesas R-Car SoCs, using 'shdma-base' DMA 
@@ -30,6 +31,60 @@ On Sun, Aug 25, 2013 at 12:33:24AM +0400, Sergei Shtylyov wrote:
 > handled errors returned by dma_async_device_register(), beautified comments
 > and #define's.]
 > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Applied, thanks
+> 
+> ---
 
-~Vinod
+[snip]
+
+> Index: slave-dma/drivers/dma/sh/rcar-hpbdma.c
+> =================================> --- /dev/null
+> +++ slave-dma/drivers/dma/sh/rcar-hpbdma.c
+> @@ -0,0 +1,655 @@
+
+[snip]
+
+> +static int hpb_dmae_chan_probe(struct hpb_dmae_device *hpbdev, int id)
+> +{
+> +	struct shdma_dev *sdev = &hpbdev->shdma_dev;
+> +	struct platform_device *pdev > +		to_platform_device(hpbdev->shdma_dev.dma_dev.dev);
+> +	struct hpb_dmae_chan *new_hpb_chan;
+> +	struct shdma_chan *schan;
+> +
+> +	/* Alloc channel */
+> +	new_hpb_chan = devm_kzalloc(&pdev->dev,
+> +				    sizeof(struct hpb_dmae_chan), GFP_KERNEL);
+> +	if (!new_hpb_chan) {
+> +		dev_err(hpbdev->shdma_dev.dma_dev.dev,
+> +			"No free memory for allocating DMA channels!\n");
+> +		return -ENOMEM;
+> +	}
+> +
+> +	schan = &new_hpb_chan->shdma_chan;
+
+A suggestion for an incremental patch - you might want to initialise the
+max_xfer_len field like
+
+	schan->max_xfer_len = 64 * 1024 * 1024 - 1;
+
+because if it isn't initialised your max transfer length will be 4k,
+which will hurt your performance. I think you should get a better
+throughput after that
+
+> +	shdma_chan_probe(sdev, schan, id);
+> +
+> +	if (pdev->id >= 0)
+> +		snprintf(new_hpb_chan->dev_id, sizeof(new_hpb_chan->dev_id),
+> +			 "hpb-dmae%d.%d", pdev->id, id);
+> +	else
+> +		snprintf(new_hpb_chan->dev_id, sizeof(new_hpb_chan->dev_id),
+> +			 "hpb-dma.%d", id);
+> +
+> +	return 0;
+> +}
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
