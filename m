@@ -1,58 +1,143 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 26 Sep 2013 21:40:11 +0000
-Subject: Re: [PATCH v2 1/2] ARM: shmobile: r8a7790: implement CPU clock scaling for CPUFreq
-Message-Id: <20130926214008.GA19788@verge.net.au>
+From: Vineet Gupta <Vineet.Gupta1@synopsys.com>
+Date: Tue, 17 Sep 2013 06:29:17 +0000
+Subject: [RFC PATCH REBASED 1/3] sh: Move fpu_counter into ARCH specific thread_struct
+Message-Id: <1379398639-27403-2-git-send-email-vgupta@synopsys.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1305211601180.2863@axis700.grange>
- <20130525013445.GE24005@verge.net.au>
- <20130925045007.GC24243@verge.net.au>
- <Pine.LNX.4.64.1309261052580.11968@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1309261052580.11968@axis700.grange>
+References: <1379398639-27403-1-git-send-email-vgupta@synopsys.com>
+In-Reply-To: <1379398639-27403-1-git-send-email-vgupta@synopsys.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-arch@vger.kernel.org
 
-On Thu, Sep 26, 2013 at 10:56:02AM +0200, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> Thanks for following on this.
-> 
-> On Wed, 25 Sep 2013, Simon Horman wrote:
-> 
-> > On Sat, May 25, 2013 at 10:34:45AM +0900, Simon Horman wrote:
-> > > On Tue, May 21, 2013 at 04:07:46PM +0200, Guennadi Liakhovetski wrote:
-> > > > This patch adds support for the Z-clock on r8a7790 SoCs, which is driving
-> > > > the Cortex A15 core, and a "cpufreq-cpu0" platform device. Adding an
-> > > > "operating-points" property to the CPU0 DT node and a regulator, this
-> > > > patch allows platforms to use the generic cpufreq-cpu0 driver to use
-> > > > SoC's DVFS capabilities.
-> > > > 
-> > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > > > ---
-> > > > 
-> > > > v2:
-> > > > 1. a typo in the r8a7790 datasheet confused me to implement kick-bit 
-> > > > handling wrongly, this is fixed in this version
-> > > > 2. patch 3 merged with this one
-> > > > 
-> > > > Same comments, as to v1 of this series, apply.
-> > > 
-> > > Magnus,
-> > > 
-> > > could you please review this series?
-> > 
-> > I have marked this patch as deferred in the patch tracker
-> > as it has been rotting there for several months now.
-> > 
-> > I will need the following before taking it into the tree:
-> > 1. Repost, rebased if needed.
-> > 2. An ack from Magnus or indication from him that someone else should
-> >    review it.
-> 
-> This patch is superseded by my recent patches
-> 
-> [PATCH 3/4] ARM: shmobile: r8a7790: add CPUFreq clock support
-> [PATCH/RFC 4/4] ARM: shmobile: lager: add CPUFreq support
+Only a couple of arches (sh/x86) use fpu_counter in task_struct so it
+can be moved out into ARCH specific thread_struct, reducing the size of
+task_struct for other arches.
 
-Thanks, noted.
+Compile tested sh defconfig + sh4-linux-gcc (4.6.3)
+
+Signed-off-by: Vineet Gupta <vgupta@synopsys.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Michel Lespinasse <walken@google.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Jesper Nilsson <jesper.nilsson@axis.com>
+Cc: Chris Metcalf <cmetcalf@tilera.com>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/include/asm/fpu.h          |  2 +-
+ arch/sh/include/asm/processor_32.h | 10 ++++++++++
+ arch/sh/include/asm/processor_64.h | 10 ++++++++++
+ arch/sh/kernel/cpu/fpu.c           |  2 +-
+ arch/sh/kernel/process_32.c        |  6 +++---
+ 5 files changed, 25 insertions(+), 5 deletions(-)
+
+diff --git a/arch/sh/include/asm/fpu.h b/arch/sh/include/asm/fpu.h
+index 06c4281..09fc2bc 100644
+--- a/arch/sh/include/asm/fpu.h
++++ b/arch/sh/include/asm/fpu.h
+@@ -46,7 +46,7 @@ static inline void __unlazy_fpu(struct task_struct *tsk, struct pt_regs *regs)
+ 		save_fpu(tsk);
+ 		release_fpu(regs);
+ 	} else
+-		tsk->fpu_counter = 0;
++		tsk->thread.fpu_counter = 0;
+ }
+ 
+ static inline void unlazy_fpu(struct task_struct *tsk, struct pt_regs *regs)
+diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
+index e699a12..18e0377 100644
+--- a/arch/sh/include/asm/processor_32.h
++++ b/arch/sh/include/asm/processor_32.h
+@@ -111,6 +111,16 @@ struct thread_struct {
+ 
+ 	/* Extended processor state */
+ 	union thread_xstate *xstate;
++
++	/*
++	 * fpu_counter contains the number of consecutive context switches
++	 * that the FPU is used. If this is over a threshold, the lazy fpu
++	 * saving becomes unlazy to save the trap. This is an unsigned char
++	 * so that after 256 times the counter wraps and the behavior turns
++	 * lazy again; this to deal with bursty apps that only use FPU for
++	 * a short time
++	 */
++	unsigned char fpu_counter;
+ };
+ 
+ #define INIT_THREAD  {						\
+diff --git a/arch/sh/include/asm/processor_64.h b/arch/sh/include/asm/processor_64.h
+index 1cc7d31..eedd4f6 100644
+--- a/arch/sh/include/asm/processor_64.h
++++ b/arch/sh/include/asm/processor_64.h
+@@ -126,6 +126,16 @@ struct thread_struct {
+ 
+ 	/* floating point info */
+ 	union thread_xstate *xstate;
++
++	/*
++	 * fpu_counter contains the number of consecutive context switches
++	 * that the FPU is used. If this is over a threshold, the lazy fpu
++	 * saving becomes unlazy to save the trap. This is an unsigned char
++	 * so that after 256 times the counter wraps and the behavior turns
++	 * lazy again; this to deal with bursty apps that only use FPU for
++	 * a short time
++	 */
++	unsigned char fpu_counter;
+ };
+ 
+ #define INIT_MMAP \
+diff --git a/arch/sh/kernel/cpu/fpu.c b/arch/sh/kernel/cpu/fpu.c
+index f8f7af5..4e33224 100644
+--- a/arch/sh/kernel/cpu/fpu.c
++++ b/arch/sh/kernel/cpu/fpu.c
+@@ -44,7 +44,7 @@ void __fpu_state_restore(void)
+ 	restore_fpu(tsk);
+ 
+ 	task_thread_info(tsk)->status |= TS_USEDFPU;
+-	tsk->fpu_counter++;
++	tsk->thread.fpu_counter++;
+ }
+ 
+ void fpu_state_restore(struct pt_regs *regs)
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index ebd3933..2885fc9 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -156,7 +156,7 @@ int copy_thread(unsigned long clone_flags, unsigned long usp,
+ #endif
+ 		ti->addr_limit = KERNEL_DS;
+ 		ti->status &= ~TS_USEDFPU;
+-		p->fpu_counter = 0;
++		p->thread.fpu_counter = 0;
+ 		return 0;
+ 	}
+ 	*childregs = *current_pt_regs();
+@@ -189,7 +189,7 @@ __switch_to(struct task_struct *prev, struct task_struct *next)
+ 	unlazy_fpu(prev, task_pt_regs(prev));
+ 
+ 	/* we're going to use this soon, after a few expensive things */
+-	if (next->fpu_counter > 5)
++	if (next->thread.fpu_counter > 5)
+ 		prefetch(next_t->xstate);
+ 
+ #ifdef CONFIG_MMU
+@@ -207,7 +207,7 @@ __switch_to(struct task_struct *prev, struct task_struct *next)
+ 	 * restore of the math state immediately to avoid the trap; the
+ 	 * chances of needing FPU soon are obviously high now
+ 	 */
+-	if (next->fpu_counter > 5)
++	if (next->thread.fpu_counter > 5)
+ 		__fpu_state_restore();
+ 
+ 	return prev;
+-- 
+1.8.1.2
+
