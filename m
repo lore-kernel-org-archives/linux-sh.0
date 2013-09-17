@@ -1,43 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 14 Sep 2013 00:10:37 +0000
-Subject: [PATCH] sh_eth: call phy_scan_fixups() after PHY reset
-Message-Id: <201309140410.38396.sergei.shtylyov@cogentembedded.com>
+From: David Miller <davem@davemloft.net>
+Date: Tue, 17 Sep 2013 19:44:46 +0000
+Subject: Re: [PATCH] sh_eth: call phy_scan_fixups() after PHY reset
+Message-Id: <20130917.154446.554384673039269498.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201309140410.38396.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201309140410.38396.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com
 
-Sometimes the PHY reset that sh_eth_phy_start() does effects the PHY registers
-registers values of which are vital for the correct functioning of the driver.
-Unfortunately, the existing PHY platform fixup mechanism doesn't help  here as
-it only hooks PHY resets done by ioctl() calls. Calling phy_scan_fixups() from
-the driver helps here. With a proper platform fixup, this fixes NFS timeouts on
-the SH-Mobile Lager board. 
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 14 Sep 2013 04:10:37 +0400
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Sometimes the PHY reset that sh_eth_phy_start() does effects the PHY registers
+> registers values of which are vital for the correct functioning of the driver.
+> Unfortunately, the existing PHY platform fixup mechanism doesn't help  here as
+> it only hooks PHY resets done by ioctl() calls. Calling phy_scan_fixups() from
+> the driver helps here. With a proper platform fixup, this fixes NFS timeouts on
+> the SH-Mobile Lager board. 
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
----
-This patch is against Dave Miller's 'net.git' tree.
-If desired, I can merge it with the Lager platform patch I'll post next, altho
-there's only runtime interdependency between them...
+The PHY layer is designed to naturally already take care of this kind of
+thing.  I think that part of the problem is that you're fighting the
+natural control flow the PHY layer provides.
 
- drivers/net/ethernet/renesas/sh_eth.c |    5 +++++
- 1 file changed, 5 insertions(+)
+When the phy_connect() is performed, what we end up doing is calling
+phy_attach_direct() which invokes the ->probe() method of the driver
+and then afterwards we do phy_init_hw() which takes care of doing
+the fixup calls.
 
-Index: net/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1701,6 +1701,11 @@ static int sh_eth_phy_start(struct net_d
- 
- 	/* reset phy - this also wakes it from PDOWN */
- 	phy_write(mdp->phydev, MII_BMCR, BMCR_RESET);
-+	/* some boards need their registers set to non-default state */
-+	ret = phy_scan_fixups(mdp->phydev);
-+	if (ret)
-+		return ret;
-+
- 	phy_start(mdp->phydev);
- 
- 	return 0;
+So if you really need to do a BMCR reset then run the fixups I'd like
+you to look into making that happen within the provided control
+flow rather than with an exceptional explicit call to run the fixups.
+
+I'm willing to be convinced that this is a better or necessary approach
+but you'll need to explain it to me.
+
+Thanks.
