@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 09 Sep 2013 10:32:00 +0000
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 18 Sep 2013 17:20:00 +0000
 Subject: Re: [PATCH 01/04] ARM: shmobile: Initial r8a7791 SoC support
-Message-Id: <CANqRtoT9TsDadKX1XgmANGcBhXp8sOgcY=6b7+0nPheKPpHduw@mail.gmail.com>
+Message-Id: <20130918172000.GA27340@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130904034525.12546.24775.sendpatchset@w520>
  <20130904034557.12546.97503.sendpatchset@w520>
@@ -9,92 +9,66 @@ References: <20130904034525.12546.24775.sendpatchset@w520>
  <CANqRtoQzLKk3EKcm=EiZCg73fgDBZ1xjPi_6fH_PsGdkr6w5sA@mail.gmail.com>
  <CACRpkdZGLR3=UZ7f-9r02Gea2hTomp+6+bz0BDQOvk9zRHTxxw@mail.gmail.com>
  <CANqRtoQ0dnG6HwjJSrK8+Qt8wvJhqsJHxgj-LGvnJvS0KT81nw@mail.gmail.com>
- <CACRpkdY44c_qzQ6XVjCs86axta-0VBqL8ygH5j+q3z294YXjLA@mail.gmail.com>
-In-Reply-To: <CACRpkdY44c_qzQ6XVjCs86axta-0VBqL8ygH5j+q3z294YXjLA@mail.gmail.com>
+In-Reply-To: <CANqRtoQ0dnG6HwjJSrK8+Qt8wvJhqsJHxgj-LGvnJvS0KT81nw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+Hi,
 
-On Mon, Sep 9, 2013 at 6:15 PM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Mon, Sep 9, 2013 at 10:05 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->
->> At
->> this time though, apart from common clocks, extended DT support and
->> multiplatform I'm not so sure what desired cleanup-wise.
->
-> It'd be nice to switch shmobile to use AUTO_ZRELADDR, as it is
-> the other criteria (apart from common clock) standing in the way
-> for multiplatform. (Maybe this just works if you turn it on?)
+Coming across this somewhat old email thread, apologies for the delay in
+response.
 
-This works already for the majority of the boards. My gut feeling is
-that it should be the default for multiplatform.
+On Mon, Sep 09, 2013 at 05:05:18PM +0900, Magnus Damm wrote:
+> On Mon, Sep 9, 2013 at 4:45 PM, Linus Walleij <linus.walleij@linaro.org> wrote:
+> > On Mon, Sep 9, 2013 at 9:21 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> >
+> >> Fortunately there are plans to convert several mach-shmobile SoCs to
+> >> common clocks over the next 6 months. As you know, we spent much time
+> >> and efforts converting to pinctrl last two 6 month periods, and now we
+> >> will be targeting common clocks.
+> >
+> > I trust you on this, it's not for me to decide but for the ARM SoC
+> > maintainers. I think Arnd basically said at one point that it is OK
+> > to add some new cruft as long as you remove more old cruft at
+> > the same time, so I guess you will have to make an argument that
+> > this is happening.
+> 
+> Yeah, I agree. I hope to discuss this in person later this Autumn.
+> 
+> >> There are several incremental patches available for r8a7791, but since
+> >> this is a new and rare platform it won't be the first SoC we convert
+> >> to common clocks. So CCF development will happen on r8a7791, but it
+> >> won't be the first platform.
+> >
+> > This is pretty much the inverse argument of the usual stance of
+> > the ARM SoC tree - usually we ask that new platforms should use
+> > new frameworks. I do understand it from a practical point of view,
+> > that new SoCs only exist in few prototypes.
+> 
+> I suppose negotiation has to happen on some level, and I appreciate
+> the higher level give-and-take approach that Arnd has been taking. At
+> this time though, apart from common clocks, extended DT support and
+> multiplatform I'm not so sure what desired cleanup-wise.
 
-There is one special case when AUTO_ZRELADDR is not working today -
-both Laurent and I spent a bit of time trying to figure it out - but
-it is currently not moving anywhere due to focus elsewhere. It is
-however only triggering on one board - KZM9G - and that board is not
-yet supported by neither common clocks nor multiplatform yet anyway,
-so it's a problem pretty far away in the future.
+We have definitely been OK with new code going in together with cleanups,
+but I think we're reaching a point where there's a lot of new code going
+in on shmobile platforms now, and we've had some growing pains on the
+platform for it -- conflicts with other maintainer trees because they have
+picked up board file changes, etc.
 
-> For multiplatform you also have to depopulate <mach/*>
-> completely, either move stuff down into the mach-folder
-> or to <linux/platform_data/*> if absolutely necessary.
-> This will be quite some work, especially if the <mach/*>
-> path is used in a lot of drivers...
+I think much of this wouldn't be a problem if the conversions to
+DT/multiplatform was completed, so it would be great if the conversion
+could be given priority on the Renesas side, especially given the rate
+of new additions as of late -- I think we're seeing new SoCs almost
+every release cycle as of late.
 
-Fortunately we don't use mach/ in our drivers, so that shouldn't be
-any issue. At least that used to be the case. See it as a nice side
-effect of doing both SH and ARM. =)
+So, bottom line: I'm not going to refuse taking this new platform,
+but you're close to the limits and please try to prioritize finishing
+conversion.  In particular since all this "new legacy code" you're adding
+will all have to be converted soon -- in some cases it might be better
+to wait with adding it until after conversion.
 
-> Then we have a quite broad consensus to depopulate arch/arm/*
-> of drivers, so for shmobile:
->
-> clock* -> drivers/clk
 
-Sure, here we have quite a bit to do, no doubt about that!
-
-> cpuidle.c -> drivers/cpuidle (or was this just fixed?)
-
-I don't know the latest state here. For me it would make sense that
-arch/arm actually contained some shared sleep mode support, but if
-that should be in drivers/ instead then that's really no biggie for
-me. We have some cpuidle code that wants to be moved.
-
-> intc* -> drivers/irqchips
-
-We have some legacy SoCs using INTC tables under mach-shmobile/, but
-it is likely that those SoCs will be phased out before we have working
-generic INTC DT binding support. Everything modern is using GIC plus
-drivers under drivers/irqchips already.
-
-> sh-gpio.c -> drivers/pinctrl/gpio
->
-> The last one I know you will soon finish.
-
-I believe Laurent has this under control. Actually, from the top of my
-head I don't even know which IP sh-gpio.c is tied to. I know we have a
-couple of drivers in drivers/gpio and also stuff in drivers/pinctrl/,
-but apart from that..
-
-> Then deleteing all board file stuff that is not using DT.
-
-As you noticed, we sort of have a flow of code coming in that is
-written for currently-existing frameworks. Then we have the upstream
-rework and DT support going on in parallel. To aid this we have
-something called DT reference board support, which is basically board
-support code where we add DT bit by bit. Those DT reference boards can
-also be used together with common clocks and multiplatform kernels.
-KZM9D and EMEV2 are multiplatform ready, but lack CCF at this point.
-
-So the idea is that we move individual SoCs and boards over to
-multiplatform and then remove the old board code bit by bit. In
-parallel with this we may phase out old boards and old SoCs.
-
-> After all that it's top-notch I think :-)
-
-Thanks for your suggestions!!
-
-/ magnus
+-Olof
