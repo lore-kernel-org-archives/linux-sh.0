@@ -1,42 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Sep 2013 07:33:07 +0000
-Subject: Re: [PATCH] clocksource: em_sti: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <20130905073307.GE8334@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 18 Sep 2013 20:01:16 +0000
+Subject: [PATCH] clocksource: em_sti: Set cpu_possible_mask to fix SMP broadcast
+Message-Id: <1379534476-10901-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130904080151.24562.91334.sendpatchset@w520>
- <20130904083727.GE17329@verge.net.au>
- <5226F2E2.3070202@linaro.org>
- <52276001.8070801@codeaurora.org>
-In-Reply-To: <52276001.8070801@codeaurora.org>
+References: <1379534476-10901-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1379534476-10901-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stephen Boyd <sboyd@codeaurora.org>
-Cc: Daniel Lezcano <daniel.lezcano@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, linux@arm.linux.org.uk, arnd@arndb.de, linux-sh@vger.kernel.org, rob.herring@calxeda.com, olof@lixom.net, santosh.shilimkar@ti.com, grant.likely@linaro.org, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 04, 2013 at 09:29:53AM -0700, Stephen Boyd wrote:
-> On 09/04/13 01:44, Daniel Lezcano wrote:
-> >
-> >> On Wed, Sep 04, 2013 at 05:01:51PM +0900, Magnus Damm wrote:
-> >>> From: Magnus Damm <damm@opensource.se>
-> >>>
-> >>> Update the STI driver by setting cpu_possible_mask to make EMEV2
-> >>> SMP work as expected together with the ARM broadcast timer.
-> >>>
-> >>> This breakage was introduced by:
-> >>>
-> >>> f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
-> >>>
-> >>> Without this fix SMP operation is broken on EMEV2 since no
-> >>> broadcast timer interrupts trigger on the secondary CPU cores.
-> >>>
-> >>> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> Tested-by: Simon Horman <horms+renesas@verge.net.au>
-> >>
-> >> I will let this sit for a few days to see if there is any further feedback.
-> 
-> Reviewed-by: Stephen Boyd <sboyd@codeaurora.org>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queue this up.
-I will let it sit in next for a little bit
-and then forward it on to Daniel.
+Update the STI driver by setting cpu_possible_mask to make EMEV2
+SMP work as expected together with the ARM broadcast timer.
+
+This breakage was introduced by:
+
+f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
+
+Without this fix SMP operation is broken on EMEV2 since no
+broadcast timer interrupts trigger on the secondary CPU cores.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Reviewed-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/clocksource/em_sti.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
+index b9c81b7..3a5909c 100644
+--- a/drivers/clocksource/em_sti.c
++++ b/drivers/clocksource/em_sti.c
+@@ -301,7 +301,7 @@ static void em_sti_register_clockevent(struct em_sti_priv *p)
+ 	ced->name = dev_name(&p->pdev->dev);
+ 	ced->features = CLOCK_EVT_FEAT_ONESHOT;
+ 	ced->rating = 200;
+-	ced->cpumask = cpumask_of(0);
++	ced->cpumask = cpu_possible_mask;
+ 	ced->set_next_event = em_sti_clock_event_next;
+ 	ced->set_mode = em_sti_clock_event_mode;
+ 
+-- 
+1.8.4
+
