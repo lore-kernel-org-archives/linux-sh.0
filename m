@@ -1,42 +1,45 @@
-From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Wed, 04 Sep 2013 12:06:13 +0000
-Subject: Re: [PATCH] EMMA: Add em i2c driver
-Message-Id: <20130904140613.2b47e4a7@skate>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 18 Sep 2013 20:11:01 +0000
+Subject: [PATCH 00/03] ARM: shmobile: Initial r7s72100 SoC and Genmai board support
+Message-Id: <20130918201101.6319.97667.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CANqRtoRK+Ur=87-me7CpP+s9SO5g0ZVZSEOrqwDf4HFfjZZmZA@mail.gmail.com>
-	<1378207832-3412-1-git-send-email-ian.molton@codethink.co.uk>
-	<1378207832-3412-2-git-send-email-ian.molton@codethink.co.uk>
-	<5225DC8E.7070001@codethink.co.uk>
-In-Reply-To: <5225DC8E.7070001-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
-Cc: Ian Molton <ian.molton-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Dear Ben Dooks,
+ARM: shmobile: Initial r7s72100 SoC and Genmai board support
 
-On Tue, 03 Sep 2013 13:56:46 +0100, Ben Dooks wrote:
+[PATCH 01/03] ARM: shmobile: Initial r7s72100 SoC support
+[PATCH 02/03] ARM: shmobile: r7s72100 SCIF support
+[PATCH 03/03] ARM: shmobile: Genmai support
 
-> > +static int em_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
-> > +	int num)
-> > +{
-> > +	struct em_i2c_device *i2c_dev > > +		(struct em_i2c_device *)(i2c_get_adapdata(adap));
-> 
-> if this is used enough it may have been easier to add an to_em_i2c()
-> macro.
+This series adds initial support for r7s72100 and Genmai. The SoC
+is known as r7s72100 which is based on a single core Cortex-A9
+and makes use of SCIF for serial. Many other on-chip I/O devices
+are available, and support for those will be added by incremental
+feature patches.
 
-Or simply realize that i2c_get_adapdata() returns a 'void *' and that
-therefore the cast is unnecessary, which makes a to_em_i2c() macro
-useless, no?
+This initial SoC and board support is providing limited DT-only
+support and a very basic C-version of board support. In the future
+improved PINCTRL and common clock framework support will be added.
 
-I.e, you should be able to write:
+Implemented in same style as r8a7790 and r8a7791.
 
-	struct em_i2c_device *i2c_dev = i2c_get_adapdata(adap);
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Thomas
--- 
-Thomas Petazzoni, Free Electrons
-Kernel, drivers, real-time and embedded Linux
-development, consulting, training and support.
-http://free-electrons.com
+ Written against renesas.git tag renesas-devel-20130906
+
+ arch/arm/boot/dts/Makefile                     |    1 
+ arch/arm/boot/dts/r7s72100-genmai.dts          |   31 +++
+ arch/arm/boot/dts/r7s72100.dtsi                |   36 ++++
+ arch/arm/mach-shmobile/Kconfig                 |   11 +
+ arch/arm/mach-shmobile/Makefile                |    3 
+ arch/arm/mach-shmobile/Makefile.boot           |    1 
+ arch/arm/mach-shmobile/board-genmai.c          |   43 +++++
+ arch/arm/mach-shmobile/clock-r7s72100.c        |  202 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r7s72100.h |    8 
+ arch/arm/mach-shmobile/setup-r7s72100.c        |   88 ++++++++++
+ 10 files changed, 424 insertions(+)
+
