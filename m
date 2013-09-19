@@ -1,20 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Sep 2013 07:09:17 +0000
-Subject: Re: [PATCH 1/3 v4] ARM: shmobile: r8a7778: add usb phy power control function
-Message-Id: <20130906070915.GC1025@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Thu, 19 Sep 2013 12:01:48 +0000
+Subject: [PATCH] KVM: ARM: enable Cortex A7 hosts
+Message-Id: <1379592108-28584-1-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878v0ht1bh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878v0ht1bh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: kvm@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht@gmail.com>
 
-On Sun, Aug 04, 2013 at 05:43:01PM -0700, Kuninori Morimoto wrote:
-> USB phy initialisation function is needed from not only
-> USB Host but also USB Function too.
-> This patch adds usb phy common control function.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+KVM runs fine on Cortex A7 cores, so they should be enabled. Tested on an
+APE6EVM board (r8a73a4 SoC).
 
-Thanks, I have queue this up for v3.13.
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+---
+ arch/arm/kvm/guest.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/kvm/guest.c b/arch/arm/kvm/guest.c
+index 152d036..05c62d5 100644
+--- a/arch/arm/kvm/guest.c
++++ b/arch/arm/kvm/guest.c
+@@ -192,6 +192,8 @@ int __attribute_const__ kvm_target_cpu(void)
+ 	switch (part_number) {
+ 	case ARM_CPU_PART_CORTEX_A15:
+ 		return KVM_ARM_TARGET_CORTEX_A15;
++	case ARM_CPU_PART_CORTEX_A7:
++		return KVM_ARM_TARGET_CORTEX_A15;
+ 	default:
+ 		return -EINVAL;
+ 	}
+-- 
+1.8.3.1
+
