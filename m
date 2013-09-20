@@ -1,42 +1,28 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Sep 2013 13:51:01 +0000
-Subject: [PATCH/RESEND 1/2] gpio: rcar: Remove #gpio-range-cells DT property usage
-Message-Id: <1378907462-19247-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 20 Sep 2013 18:36:57 +0000
+Subject: Re: [PATCH/RESEND 1/2] gpio: rcar: Remove #gpio-range-cells DT property usage
+Message-Id: <CACRpkdZ4EaUVgYoMP6VMefZgE1T--5hh18RzupQLnbd0KpveAA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1378907462-19247-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1378907462-19247-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1378907462-19247-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1378907462-19247-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Commit a1bc260bb5f5d95da854be7898202d788e94448d ("gpio: clean up
-gpio-ranges documentation") deprecated the #gpio-range-cells property.
-Replace its usage with a hardcoded value in the gpio-rcar driver.
+On Wed, Sep 11, 2013 at 3:51 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpio/gpio-rcar.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+> Commit a1bc260bb5f5d95da854be7898202d788e94448d ("gpio: clean up
+> gpio-ranges documentation") deprecated the #gpio-range-cells property.
+> Replace its usage with a hardcoded value in the gpio-rcar driver.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-index e3745eb..6038966 100644
---- a/drivers/gpio/gpio-rcar.c
-+++ b/drivers/gpio/gpio-rcar.c
-@@ -293,10 +293,9 @@ static void gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
- 	if (pdata) {
- 		p->config = *pdata;
- 	} else if (IS_ENABLED(CONFIG_OF) && np) {
--		ret = of_parse_phandle_with_args(np, "gpio-ranges",
--				"#gpio-range-cells", 0, &args);
--		p->config.number_of_pins = ret = 0 && args.args_count = 3
--					 ? args.args[2]
-+		ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0,
-+						       &args);
-+		p->config.number_of_pins = ret = 0 ? args.args[2]
- 					 : RCAR_MAX_GPIO_PER_BANK;
- 		p->config.gpio_base = -1;
- 	}
--- 
-1.8.1.5
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
+Simon please take the whole set into the SH tree.
+
+Yours,
+Linus Walleij
