@@ -1,42 +1,75 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 17 Sep 2013 19:44:46 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 21 Sep 2013 00:39:46 +0000
 Subject: Re: [PATCH] sh_eth: call phy_scan_fixups() after PHY reset
-Message-Id: <20130917.154446.554384673039269498.davem@davemloft.net>
+Message-Id: <523CEAD2.7030706@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309140410.38396.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309140410.38396.sergei.shtylyov@cogentembedded.com>
+References: <201309140410.38396.sergei.shtylyov@cogentembedded.com> <20130917.154446.554384673039269498.davem@davemloft.net>
+In-Reply-To: <20130917.154446.554384673039269498.davem@davemloft.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com
+To: David Miller <davem@davemloft.net>, nobuhiro.iwamatsu.yj@renesas.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 14 Sep 2013 04:10:37 +0400
+Hello.
 
-> Sometimes the PHY reset that sh_eth_phy_start() does effects the PHY registers
-> registers values of which are vital for the correct functioning of the driver.
-> Unfortunately, the existing PHY platform fixup mechanism doesn't help  here as
-> it only hooks PHY resets done by ioctl() calls. Calling phy_scan_fixups() from
-> the driver helps here. With a proper platform fixup, this fixes NFS timeouts on
-> the SH-Mobile Lager board. 
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On 09/17/2013 11:44 PM, David Miller wrote:
 
-The PHY layer is designed to naturally already take care of this kind of
-thing.  I think that part of the problem is that you're fighting the
-natural control flow the PHY layer provides.
+>> Sometimes the PHY reset that sh_eth_phy_start() does effects the PHY registers
+>> registers values of which are vital for the correct functioning of the driver.
+>> Unfortunately, the existing PHY platform fixup mechanism doesn't help  here as
+>> it only hooks PHY resets done by ioctl() calls. Calling phy_scan_fixups() from
+>> the driver helps here. With a proper platform fixup, this fixes NFS timeouts on
+>> the SH-Mobile Lager board.
 
-When the phy_connect() is performed, what we end up doing is calling
-phy_attach_direct() which invokes the ->probe() method of the driver
-and then afterwards we do phy_init_hw() which takes care of doing
-the fixup calls.
+    "And sets the PHY LED pins to the desired mode", I should have added.
 
-So if you really need to do a BMCR reset then run the fixups I'd like
-you to look into making that happen within the provided control
-flow rather than with an exceptional explicit call to run the fixups.
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-I'm willing to be convinced that this is a better or necessary approach
-but you'll need to explain it to me.
+> The PHY layer is designed to naturally already take care of this kind of
+> thing.  I think that part of the problem is that you're fighting the
+> natural control flow the PHY layer provides.
 
-Thanks.
+> When the phy_connect() is performed, what we end up doing is calling
+> phy_attach_direct() which invokes the ->probe() method of the driver
+> and then afterwards we do phy_init_hw() which takes care of doing
+> the fixup calls.
+
+    Yes, I have studied the code paths beforehand.
+
+> So if you really need to do a BMCR reset then run the fixups I'd like
+> you to look into making that happen within the provided control
+> flow rather than with an exceptional explicit call to run the fixups.
+
+    That could change the behavior of many Ethernet drivers in sometimes 
+unpredictable ways I think (due to extended registers the PHYs sometimes have, 
+like in this case) if you meant including the PHY reset into phylib control 
+flows. Anyway, that would have required more complex patches only good for 
+merging at the merge window time while I aimed at a quick fix for a problem at 
+hand (which is NFS timeout/slowdown and LED mode mismatch to what was designed 
+for the board).
+    Some other drivers also do reset the PHYs but usually that's accompanied 
+by a loop polling for reset completion, so a naive code like that one on the 
+phylib's ioctl() path couldn't have helped if I wanted to hook reset writes in 
+the same fashion in phy_write(). In my case reset seems just quick enough for 
+the extended PHY register reads/writes to work correctly without polling the 
+reset bit first...
+    That's why I took an easy way and used already exported phy_scan_fixups() 
+to undo what the PHY reset did to some of the PHY's registers. The question is 
+why it was exported in the first place? It doesn't seem to be used by anything 
+but phylib internally...
+
+> I'm willing to be convinced that this is a better or necessary approach
+> but you'll need to explain it to me.
+
+    Well, I didn't write this driver, so I'm probably not the best person to 
+be asked about its design (maybe Iwamatsu-san could add something here). I 
+don't know about the purpose of the explicit PHY reset in the driver more than 
+the accompanying comment says (and it doesn't say much other than that it 
+takes the PHY out of power-down). Perhaps we could just painlessly remove it, 
+who knows?
+
+> Thanks.
+
+WBR, Sergei
+
