@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Sun, 22 Sep 2013 12:05:23 +0000
+Date: Sun, 22 Sep 2013 12:18:34 +0000
 Subject: Re: [GIT PULL FOR v3.12] Board code pinctrl fixes
-Message-Id: <20130922120522.GC8941@verge.net.au>
+Message-Id: <20130922121833.GH11731@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <3835624.v1lX7NF2qx@avalon>
 In-Reply-To: <3835624.v1lX7NF2qx@avalon>
@@ -10,28 +10,31 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sat, Sep 21, 2013 at 06:54:47PM +0200, Laurent Pinchart wrote:
-> Hi Simon,
+On Sun, Sep 22, 2013 at 09:05:23PM +0900, Simon Horman wrote:
+> On Sat, Sep 21, 2013 at 06:54:47PM +0200, Laurent Pinchart wrote:
+> > Hi Simon,
+> > 
+> > The following changes since commit 7658ea2fb57831c6836ffcfb20bcb84f3ff55dfb:
+> > 
+> >   ARM: shmobile: r8a7779: Update early timer initialisation order (2013-08-30 
+> > 09:31:39 +0900)
+> > 
+> > are available in the git repository at:
+> > 
+> >   git://linuxtv.org/pinchartl/fbdev.git pinmux/fixes
+> > 
+> > for you to fetch changes up to 88ecd8ba6344a68c8514818c2b9397f8dbb679fa:
+> > 
+> >   ARM: shmobile: armadillo: fixup ether pinctrl naming (2013-09-11 14:11:42 
+> > +0200)
+> > 
+> > ----------------------------------------------------------------
+> > Kuninori Morimoto (1):
+> >       ARM: shmobile: armadillo: fixup ether pinctrl naming
+> > 
+> >  arch/arm/mach-shmobile/board-armadillo800eva.c | 4 ++--
+> >  1 file changed, 2 insertions(+), 2 deletions(-)
 > 
-> The following changes since commit 7658ea2fb57831c6836ffcfb20bcb84f3ff55dfb:
-> 
->   ARM: shmobile: r8a7779: Update early timer initialisation order (2013-08-30 
-> 09:31:39 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://linuxtv.org/pinchartl/fbdev.git pinmux/fixes
-> 
-> for you to fetch changes up to 88ecd8ba6344a68c8514818c2b9397f8dbb679fa:
-> 
->   ARM: shmobile: armadillo: fixup ether pinctrl naming (2013-09-11 14:11:42 
-> +0200)
-> 
-> ----------------------------------------------------------------
-> Kuninori Morimoto (1):
->       ARM: shmobile: armadillo: fixup ether pinctrl naming
-> 
->  arch/arm/mach-shmobile/board-armadillo800eva.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
+> Thanks, I have this and I will deal with it in the next day or so.
 
-Thanks, I have this and I will deal with it in the next day or so.
+Thanks, I have queued this up.
