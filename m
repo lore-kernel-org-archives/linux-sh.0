@@ -1,83 +1,176 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 26 Sep 2013 09:39:03 +0000
-Subject: Re: [PATCH 1/3] media: i2c: Add ADV761X support
-Message-Id: <1421795.fKC3Sze3ao@avalon>
+From: Thierry Reding <thierry.reding@gmail.com>
+Date: Mon, 23 Sep 2013 21:41:02 +0000
+Subject: [PATCH 05/10] ARM: SAMSUNG: Initialize PWM backlight enable_gpio field
+Message-Id: <1379972467-11243-6-git-send-email-treding@nvidia.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1380029916-10331-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1380029916-10331-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
+In-Reply-To: <1379972467-11243-1-git-send-email-treding@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Hans,
+The GPIO API defines 0 as being a valid GPIO number, so this field needs
+to be initialized explicitly.
 
-On Thursday 26 September 2013 08:31:58 Hans Verkuil wrote:
-> On 09/26/2013 12:57 AM, Laurent Pinchart wrote:
-> > On Wednesday 25 September 2013 18:31:51 Guennadi Liakhovetski wrote:
-> >> On Wed, 25 Sep 2013, Valentine wrote:
-> >>> On 09/25/2013 06:08 PM, Guennadi Liakhovetski wrote:
-> > [snip]
-> > 
-> >>>>>>> +/* I2C I/O operations */
-> >>>>>>> +static s32 adv_smbus_read_byte_data(struct i2c_client *client, u8
-> >>>>>>> command)
-> >>>>>>> +{
-> >>>>>>> +	s32 ret, i;
-> >>>>>>> +
-> >>>>>>> +	for (i = 0; i < 3; i++) {
-> >>>>>>> +		ret = i2c_smbus_read_byte_data(client, command);
-> >>>>>> 
-> >>>>>> Uhm, why do you need to do this 3 times?... I see adv7842 does that
-> >>>>>> too... but e.g. adv7604 dies this only for writing and not for
-> >>>>>> reading...
-> >>>>> 
-> >>>>> Just thought it would be safe to retry in case of a failure.
-> >>>>> Other drivers seem to retry I2C I/O as well. This is probably related
-> >>>>> to the possible cable issues. Not sure. Anyways, retrying doesn't seem
-> >>>>> to hurt, does it?
-> >>>> 
-> >>>> It does, because it means there's something we don't understand. IMHO
-> >>>> it should either work from the first time, or there should be an error,
-> >>>> that we understand with a following error processing, that _might_
-> >>>> include re-trying. Re-trying just in case isn't good. Especially if no
-> >>>> error has been observed.
-> >>> 
-> >>> I have observed very rare errors when reading HDMI status. Just a couple
-> >>> of times during this week. I'm not sure of the nature of those errors.
-> >>> Just thought it would be OK to retry since other decoder drivers do so
-> >>> as well.
-> >> 
-> >> Ok, understand. As I said, I personally don't like that, but, I think,
-> >> Laurent will have a final word on this.
-> > 
-> > I don't like the idea of blindly retrying, especially for write
-> > operations. If a read fails due to a flaky cable, there's equal chances
-> > that a write would fail as well, which could result in writing random
-> > values to random registers. Given the side effects that this could have,
-> > I'd much rather not retry I/O operations and have the users fix
-> > electrical issues. Hiding something this serious could be dangerous.
-> 
-> For a ubiquitous and relatively slow-speed bus the i2c bus is surprisingly
-> flaky in my experience. I've seen surprisingly many cases where a retry was
-> useful or even necessary. There can be many causes: electrical issues is
-> one, and while that shouldn't happen, in practice it does. Interference by
-> other devices on the bus is another. And sometimes the device itself is
-> flaky: in the case of the adv7511 trying to enable/disable an interrupt
-> just fails every so often.
+Signed-off-by: Thierry Reding <treding@nvidia.com>
+---
+ arch/arm/mach-s3c24xx/mach-h1940.c    | 1 +
+ arch/arm/mach-s3c24xx/mach-rx1950.c   | 1 +
+ arch/arm/mach-s3c64xx/mach-crag6410.c | 1 +
+ arch/arm/mach-s3c64xx/mach-hmt.c      | 1 +
+ arch/arm/mach-s3c64xx/mach-smartq.c   | 1 +
+ arch/arm/mach-s3c64xx/mach-smdk6410.c | 1 +
+ arch/arm/mach-s5p64x0/mach-smdk6440.c | 1 +
+ arch/arm/mach-s5p64x0/mach-smdk6450.c | 1 +
+ arch/arm/mach-s5pc100/mach-smdkc100.c | 1 +
+ arch/arm/mach-s5pv210/mach-smdkv210.c | 1 +
+ arch/arm/plat-samsung/dev-backlight.c | 5 +++++
+ 11 files changed, 15 insertions(+)
 
-If we enable retries by default, what could happen is that new boards subject 
-to electrical issues on their I2C bus will not be seen as broken until much 
-later in the development, and possibly too late, after going to production. I 
-don't want to blindly hide the problem, if an electrical issue is present it 
-should be seen. Now, if we need to support an existing broken board, I'm fine 
-with enabling retries, but it shouldn't be enabled by default.
-
-> I have yet to see a product bringup where the i2c bringup 'just works'.
-> There are always problems there.
-
+diff --git a/arch/arm/mach-s3c24xx/mach-h1940.c b/arch/arm/mach-s3c24xx/mach-h1940.c
+index 74dd479..952b6a0 100644
+--- a/arch/arm/mach-s3c24xx/mach-h1940.c
++++ b/arch/arm/mach-s3c24xx/mach-h1940.c
+@@ -504,6 +504,7 @@ static struct platform_pwm_backlight_data backlight_data = {
+ 	.dft_brightness = 50,
+ 	/* tcnt = 0x31 */
+ 	.pwm_period_ns  = 36296,
++	.enable_gpio    = -1,
+ 	.init           = h1940_backlight_init,
+ 	.notify		= h1940_backlight_notify,
+ 	.exit           = h1940_backlight_exit,
+diff --git a/arch/arm/mach-s3c24xx/mach-rx1950.c b/arch/arm/mach-s3c24xx/mach-rx1950.c
+index 206b1f7..034b7fe 100644
+--- a/arch/arm/mach-s3c24xx/mach-rx1950.c
++++ b/arch/arm/mach-s3c24xx/mach-rx1950.c
+@@ -522,6 +522,7 @@ static struct platform_pwm_backlight_data rx1950_backlight_data = {
+ 	.max_brightness = 24,
+ 	.dft_brightness = 4,
+ 	.pwm_period_ns = 48000,
++	.enable_gpio = -1,
+ 	.init = rx1950_backlight_init,
+ 	.notify = rx1950_backlight_notify,
+ 	.exit = rx1950_backlight_exit,
+diff --git a/arch/arm/mach-s3c64xx/mach-crag6410.c b/arch/arm/mach-s3c64xx/mach-crag6410.c
+index 1a911df..b319bf9 100644
+--- a/arch/arm/mach-s3c64xx/mach-crag6410.c
++++ b/arch/arm/mach-s3c64xx/mach-crag6410.c
+@@ -114,6 +114,7 @@ static struct platform_pwm_backlight_data crag6410_backlight_data = {
+ 	.max_brightness	= 1000,
+ 	.dft_brightness	= 600,
+ 	.pwm_period_ns	= 100000,	/* about 1kHz */
++	.enable_gpio	= -1,
+ };
+ 
+ static struct platform_device crag6410_backlight_device = {
+diff --git a/arch/arm/mach-s3c64xx/mach-hmt.c b/arch/arm/mach-s3c64xx/mach-hmt.c
+index e806404..614a03a 100644
+--- a/arch/arm/mach-s3c64xx/mach-hmt.c
++++ b/arch/arm/mach-s3c64xx/mach-hmt.c
+@@ -114,6 +114,7 @@ static struct platform_pwm_backlight_data hmt_backlight_data = {
+ 	.max_brightness	= 100 * 256,
+ 	.dft_brightness	= 40 * 256,
+ 	.pwm_period_ns	= 1000000000 / (100 * 256 * 20),
++	.enable_gpio	= -1,
+ 	.init		= hmt_bl_init,
+ 	.notify		= hmt_bl_notify,
+ 	.exit		= hmt_bl_exit,
+diff --git a/arch/arm/mach-s3c64xx/mach-smartq.c b/arch/arm/mach-s3c64xx/mach-smartq.c
+index 0f47237..a6b338f 100644
+--- a/arch/arm/mach-s3c64xx/mach-smartq.c
++++ b/arch/arm/mach-s3c64xx/mach-smartq.c
+@@ -151,6 +151,7 @@ static struct platform_pwm_backlight_data smartq_backlight_data = {
+ 	.max_brightness	= 1000,
+ 	.dft_brightness	= 600,
+ 	.pwm_period_ns	= 1000000000 / (1000 * 20),
++	.enable_gpio	= -1,
+ 	.init		= smartq_bl_init,
+ };
+ 
+diff --git a/arch/arm/mach-s3c64xx/mach-smdk6410.c b/arch/arm/mach-s3c64xx/mach-smdk6410.c
+index 2a7b32c..d5ea938 100644
+--- a/arch/arm/mach-s3c64xx/mach-smdk6410.c
++++ b/arch/arm/mach-s3c64xx/mach-smdk6410.c
+@@ -625,6 +625,7 @@ static struct samsung_bl_gpio_info smdk6410_bl_gpio_info = {
+ 
+ static struct platform_pwm_backlight_data smdk6410_bl_data = {
+ 	.pwm_id = 1,
++	.enable_gpio = -1,
+ };
+ 
+ static struct s3c_hsotg_plat smdk6410_hsotg_pdata;
+diff --git a/arch/arm/mach-s5p64x0/mach-smdk6440.c b/arch/arm/mach-s5p64x0/mach-smdk6440.c
+index 0b00304..9efdcc0 100644
+--- a/arch/arm/mach-s5p64x0/mach-smdk6440.c
++++ b/arch/arm/mach-s5p64x0/mach-smdk6440.c
+@@ -223,6 +223,7 @@ static struct samsung_bl_gpio_info smdk6440_bl_gpio_info = {
+ 
+ static struct platform_pwm_backlight_data smdk6440_bl_data = {
+ 	.pwm_id = 1,
++	.enable_gpio = -1,
+ };
+ 
+ static void __init smdk6440_map_io(void)
+diff --git a/arch/arm/mach-s5p64x0/mach-smdk6450.c b/arch/arm/mach-s5p64x0/mach-smdk6450.c
+index 5949296..c3cacc0 100644
+--- a/arch/arm/mach-s5p64x0/mach-smdk6450.c
++++ b/arch/arm/mach-s5p64x0/mach-smdk6450.c
+@@ -242,6 +242,7 @@ static struct samsung_bl_gpio_info smdk6450_bl_gpio_info = {
+ 
+ static struct platform_pwm_backlight_data smdk6450_bl_data = {
+ 	.pwm_id = 1,
++	.enable_gpio = -1,
+ };
+ 
+ static void __init smdk6450_map_io(void)
+diff --git a/arch/arm/mach-s5pc100/mach-smdkc100.c b/arch/arm/mach-s5pc100/mach-smdkc100.c
+index 7c57a22..9e256b9 100644
+--- a/arch/arm/mach-s5pc100/mach-smdkc100.c
++++ b/arch/arm/mach-s5pc100/mach-smdkc100.c
+@@ -216,6 +216,7 @@ static struct samsung_bl_gpio_info smdkc100_bl_gpio_info = {
+ 
+ static struct platform_pwm_backlight_data smdkc100_bl_data = {
+ 	.pwm_id = 0,
++	.enable_gpio = -1,
+ };
+ 
+ static void __init smdkc100_map_io(void)
+diff --git a/arch/arm/mach-s5pv210/mach-smdkv210.c b/arch/arm/mach-s5pv210/mach-smdkv210.c
+index 6d72bb99..f52cc15 100644
+--- a/arch/arm/mach-s5pv210/mach-smdkv210.c
++++ b/arch/arm/mach-s5pv210/mach-smdkv210.c
+@@ -279,6 +279,7 @@ static struct samsung_bl_gpio_info smdkv210_bl_gpio_info = {
+ static struct platform_pwm_backlight_data smdkv210_bl_data = {
+ 	.pwm_id = 3,
+ 	.pwm_period_ns = 1000,
++	.enable_gpio = -1,
+ };
+ 
+ static void __init smdkv210_map_io(void)
+diff --git a/arch/arm/plat-samsung/dev-backlight.c b/arch/arm/plat-samsung/dev-backlight.c
+index d51f956..80e7450 100644
+--- a/arch/arm/plat-samsung/dev-backlight.c
++++ b/arch/arm/plat-samsung/dev-backlight.c
+@@ -70,6 +70,7 @@ static struct samsung_bl_drvdata samsung_dfl_bl_data __initdata = {
+ 		.max_brightness = 255,
+ 		.dft_brightness = 255,
+ 		.pwm_period_ns  = 78770,
++		.enable_gpio    = -1,
+ 		.init           = samsung_bl_init,
+ 		.exit           = samsung_bl_exit,
+ 	},
+@@ -121,6 +122,10 @@ void __init samsung_bl_set(struct samsung_bl_gpio_info *gpio_info,
+ 		samsung_bl_data->lth_brightness = bl_data->lth_brightness;
+ 	if (bl_data->pwm_period_ns)
+ 		samsung_bl_data->pwm_period_ns = bl_data->pwm_period_ns;
++	if (bl_data->enable_gpio)
++		samsung_bl_data->enable_gpio = bl_data->enable_gpio;
++	if (bl_data->enable_gpio_flags)
++		samsung_bl_data->enable_gpio_flags = bl_data->enable_gpio_flags;
+ 	if (bl_data->init)
+ 		samsung_bl_data->init = bl_data->init;
+ 	if (bl_data->notify)
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
