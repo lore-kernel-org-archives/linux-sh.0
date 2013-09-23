@@ -1,71 +1,130 @@
-From: Stephen Warren <swarren@wwwdotorg.org>
-Date: Tue, 10 Sep 2013 22:21:25 +0000
-Subject: Re: [PATCH v2 2/2] sh_eth: add device tree support
-Message-Id: <522F9B65.1020606@wwwdotorg.org>
+From: Thierry Reding <thierry.reding@gmail.com>
+Date: Mon, 23 Sep 2013 21:40:58 +0000
+Subject: [PATCH 01/10] pwm-backlight: Refactor backlight power on/off
+Message-Id: <1379972467-11243-2-git-send-email-treding@nvidia.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309070343.25640.sergei.shtylyov@cogentembedded.com> <522E3770.9020305@wwwdotorg.org> <522F2F3A.5070406@cogentembedded.com> <522F37A7.90804@wwwdotorg.org> <522F5E67.8070006@cogentembedded.com> <522F7BF1.80100@wwwdotorg.org> <522F93A5.6010709@cogentembedded.com>
-In-Reply-To: <522F93A5.6010709@cogentembedded.com>
+References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
+In-Reply-To: <1379972467-11243-1-git-send-email-treding@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: rob.herring@calxeda.com, pawel.moll@arm.com, mark.rutland@arm.com, ian.campbell@citrix.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, rob@landley.net, linux-doc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 09/10/2013 03:48 PM, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 09/11/2013 12:07 AM, Stephen Warren wrote:
-> 
->>>>>> Do you need any clocks properties, IP block reset signals, power
->>>>>> domains?
-> 
->>>>>      Currently not.
-> 
->>>> What does "currently" mean? Does that mean that the Linux driver simply
->>>> doesn't touch those entities at present?
-> 
->>>     There's Ether clock but the driver doesn't manipulate it directly,
->>> assumingly it does this thru the runtime PM interface. As for the
->>> others, I simply don't know.
-> 
->> If there's a clock, it should be represented in DT, even if the kernel
->> somehow gets access to the clock through some means other than parsing
->> DT.
-> 
->    Frankly speaking, I don't see the point.
+In preparation for adding an optional regulator and enable GPIO to the
+driver, split the power on and power off sequences into separate
+functions to reduce code duplication at the multiple call sites.
 
-To be honest, that doesn't exactly make me care about reviewing the
-binding then.
+Signed-off-by: Thierry Reding <treding@nvidia.com>
+---
+ drivers/video/backlight/pwm_bl.c | 59 ++++++++++++++++++++++++----------------
+ 1 file changed, 36 insertions(+), 23 deletions(-)
 
->>>> If so, that's not enough to say
->>>> that those entities should not be described in the DT binding. We
->>>> should
->>>> strive to make the binding completely describe all aspects of the HW,
->>>> irrespective of whether a particular driver happens to use that
->>>> information at present.
-> 
->>> There's no DT representation for the clocks in SH-Mobile subarch yet.
->>> The same applies to the other entities you mentioned.
-> 
->> You can still write the binding to say that the appropriate clock
->> property must be present; the overall format of this property won't be
->> affected by the representation chosen for the SH-Mobile clocks.
-> 
->    Where can I find an example of such property, independent of the
-> parent clock node? All I could find with quick search refers with a
-> phandle to a clock node (we don't have now).
+diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
+index 36db5d9..8a49b30 100644
+--- a/drivers/video/backlight/pwm_bl.c
++++ b/drivers/video/backlight/pwm_bl.c
+@@ -35,6 +35,30 @@ struct pwm_bl_data {
+ 	void			(*exit)(struct device *);
+ };
+ 
++static void pwm_backlight_power_on(struct pwm_bl_data *pb, int brightness,
++				   int max)
++{
++	int duty_cycle, err;
++
++	if (pb->levels) {
++		duty_cycle = pb->levels[brightness];
++		max = pb->levels[max];
++	} else {
++		duty_cycle = brightness;
++	}
++
++	duty_cycle = (duty_cycle * (pb->period - pb->lth_brightness) / max) +
++		     pb->lth_brightness;
++
++	pwm_config(pb->pwm, duty_cycle, pb->period);
++	pwm_enable(pb->pwm);
++}
++
++static void pwm_backlight_power_off(struct pwm_bl_data *pb)
++{
++	pwm_disable(pb->pwm);
++}
++
+ static int pwm_backlight_update_status(struct backlight_device *bl)
+ {
+ 	struct pwm_bl_data *pb = bl_get_data(bl);
+@@ -49,24 +73,10 @@ static int pwm_backlight_update_status(struct backlight_device *bl)
+ 	if (pb->notify)
+ 		brightness = pb->notify(pb->dev, brightness);
+ 
+-	if (brightness = 0) {
+-		pwm_config(pb->pwm, 0, pb->period);
+-		pwm_disable(pb->pwm);
+-	} else {
+-		int duty_cycle;
+-
+-		if (pb->levels) {
+-			duty_cycle = pb->levels[brightness];
+-			max = pb->levels[max];
+-		} else {
+-			duty_cycle = brightness;
+-		}
+-
+-		duty_cycle = pb->lth_brightness +
+-		     (duty_cycle * (pb->period - pb->lth_brightness) / max);
+-		pwm_config(pb->pwm, duty_cycle, pb->period);
+-		pwm_enable(pb->pwm);
+-	}
++	if (brightness > 0)
++		pwm_backlight_power_on(pb, brightness, max);
++	else
++		pwm_backlight_power_off(pb);
+ 
+ 	if (pb->notify_after)
+ 		pb->notify_after(pb->dev, brightness);
+@@ -267,10 +277,11 @@ static int pwm_backlight_remove(struct platform_device *pdev)
+ 	struct pwm_bl_data *pb = bl_get_data(bl);
+ 
+ 	backlight_device_unregister(bl);
+-	pwm_config(pb->pwm, 0, pb->period);
+-	pwm_disable(pb->pwm);
++	pwm_backlight_power_off(pb);
++
+ 	if (pb->exit)
+ 		pb->exit(&pdev->dev);
++
+ 	return 0;
+ }
+ 
+@@ -282,10 +293,12 @@ static int pwm_backlight_suspend(struct device *dev)
+ 
+ 	if (pb->notify)
+ 		pb->notify(pb->dev, 0);
+-	pwm_config(pb->pwm, 0, pb->period);
+-	pwm_disable(pb->pwm);
++
++	pwm_backlight_power_off(pb);
++
+ 	if (pb->notify_after)
+ 		pb->notify_after(pb->dev, 0);
++
+ 	return 0;
+ }
+ 
+@@ -294,6 +307,7 @@ static int pwm_backlight_resume(struct device *dev)
+ 	struct backlight_device *bl = dev_get_drvdata(dev);
+ 
+ 	backlight_update_status(bl);
++
+ 	return 0;
+ }
+ #endif
+@@ -317,4 +331,3 @@ module_platform_driver(pwm_backlight_driver);
+ MODULE_DESCRIPTION("PWM based Backlight Driver");
+ MODULE_LICENSE("GPL");
+ MODULE_ALIAS("platform:pwm-backlight");
+-
+-- 
+1.8.4
 
-All clock property definitions are independent of the source of the clock.
-
-Now the actual value you put in the DT file is dependent on which source
-it's describing.
-
->> It seems like it'd be best to get the basic resources (like clocks)
->> represented in DT before trying to build blocks that use them.
-> 
->    We don't use them directly. And we need the Ether device tree support *now*, while clock-related work will probably take months (there are plans to switch Sh-Mobile to CCF in like 6 months). 
-
-What/who is "we". If it's just a matter of the driver-vs-runtime-pm
-code, then it's not relevant.
-
-I don't think needing something now is a good excuse.
