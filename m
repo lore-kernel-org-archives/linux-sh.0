@@ -1,103 +1,77 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 26 Sep 2013 09:30:57 +0000
-Subject: Re: [PATCH 1/4] pinctrl: sh-pfc: r8a7790: add pin definitions for the I2C3 interface
-Message-Id: <1424693.p1P0XFCq6l@avalon>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 24 Sep 2013 13:38:36 +0000
+Subject: [PATCH 3/3] media: rcar_vin: Add RGB888_1X24 input format support
+Message-Id: <1380029916-10331-4-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378742636-11215-1-git-send-email-g.liakhovetski@gmx.de> <1736434.JorZUzD5Dk@avalon> <Pine.LNX.4.64.1309261117510.11968@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1309261117510.11968@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+This adds V4L2_MBUS_FMT_RGB888_1X24 input format support
+which is used by the ADV7612 chip.
 
-On Thursday 26 September 2013 11:24:26 Guennadi Liakhovetski wrote:
-> On Wed, 25 Sep 2013, Laurent Pinchart wrote:
-> > On Monday 09 September 2013 18:03:53 Guennadi Liakhovetski wrote:
-> > > There are four I2C interfaces on r8a7790, each of them can be connected
-> > > to one of the two respective I2C controllers, e.g. interface #0 can be
-> > > configured to work with I2C0 or with IIC0. Additionally some of those
-> > > interfaces can also use one of several pin sets. Interface #3 is
-> > > special, because it can be used in automatic mode for DVFS. It only has
-> > > one set of pins available and those pins cannot be used for anything
-> > > else, they also lack the GPIO function.
-> > > 
-> > > This patch uses the sh-pfc ability to configure pins, not associated
-> > > with GPIOs and adds support for I2C3 to the r8a7790 PFC set up.
-> > 
-> > Ulrich Hecht sent a patch titled "sh-pfc: r8a7790: Add I2C pin groups and
-> > functions" that added pin groups for I2C1 and I2C2. The patch is available
-> > from
-> > 
-> > 	git://linuxtv.org/pinchartl/fbdev.git pinmux/next
-> > 
-> > If you need to resubmit this patch due to my comments below, could you
-> > please rebase it on top of that branch ?
-> > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > > ---
-> > > 
-> > >  drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   28
-> > >  ++++++++++++++++++++++++++++
-> > >  1 files changed, 28 insertions(+), 0 deletions(-)
-> > > 
-> > > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> > > b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c index 64fcc006..c3c4d9b 100644
-> > > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> > > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> > > @@ -781,6 +781,8 @@ enum {
-> > >  	ADICS_SAMP_MARK, DU2_CDE_MARK, QPOLB_MARK, SCIFA2_RXD_B_MARK,
-> > >  	USB1_PWEN_MARK, AUDIO_CLKOUT_D_MARK, USB1_OVC_MARK,
-> > >  	TCLK1_B_MARK,
-> > > +
-> > > +	I2C3_SCL_MARK, I2C3_SDA_MARK,
-> > > 
-> > >  	PINMUX_MARK_END,
-> > >  };
-> > > @@ -1719,10 +1721,22 @@ static const u16 pinmux_data[] = {
-> > >  	PINMUX_IPSR_DATA(IP16_6, AUDIO_CLKOUT_D),
-> > >  	PINMUX_IPSR_DATA(IP16_7, USB1_OVC),
-> > >  	PINMUX_IPSR_MODSEL_DATA(IP16_7, TCLK1_B, SEL_TMU1_1),
-> > > +
-> > > +	PINMUX_DATA(I2C3_SCL_MARK, FN_SEL_IICDVFS_1),
-> > > +	PINMUX_DATA(I2C3_SDA_MARK, FN_SEL_IICDVFS_1),
-> > 
-> > You introduce a way to mux the I2C3 function on those two pins, but no way
-> > to select the IICDVFS back. I don't think it's an issue, we can always
-> > add that later when (if) needed. Linus, is that fine with you ?
-> 
-> I did it on purpose, since I didn't have a use case for IICDVFS. I prefer
-> not to add too many things, that cannot be tested.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/media/platform/soc_camera/rcar_vin.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
 
-Just for the record, I'm fine with that.
-
-> > >  };
-> > > 
-> > > +/* R8A7790 has 6 banks with 32 GPIOs in each = 192 GPIOs */
-> > > +#define ROW_GROUP_A(r) ('Z' - 'A' + 1 + (r))
-> > > +#define PIN_NUMBER(r, c) (((r) - 'A') * 16 + (c) + 200)
-> > 
-> > The BGA package has 31 columns, shouldn't you multiply the row number by
-> > 31 instead of 16 ?
-> 
-> Oops, you're right - the pin table is continued on the second page...
-
-Could you then submit a v2 based on git://linuxtv.org/pinchartl/fbdev.git 
-pinmux/next ?
-
-> > As we have 192 GPIOs, shouldn't you use an offset of 192 instead of 200 ?
-> > This doesn't matter too much I guess.
-> 
-> On one of Renesas SoCs I've seen an offset of 2000 used. I thought it
-> would be an exaggeration in this case ;) but I followed the pattern of
-> using a round number for the offset, is this ok?
-
-I suppose that's fine, yes.
-
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index cf81e02..0f04cff 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -68,6 +68,7 @@
+ #define VNMC_INF_YUV8_BT656	(0 << 16)
+ #define VNMC_INF_YUV8_BT601	(1 << 16)
+ #define VNMC_INF_YUV16		(5 << 16)
++#define VNMC_INF_RGB888		(6 << 16)
+ #define VNMC_VUP		(1 << 10)
+ #define VNMC_IM_ODD		(0 << 3)
+ #define VNMC_IM_ODD_EVEN	(1 << 3)
+@@ -235,7 +236,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	struct soc_camera_device *icd = priv->ici.icd;
+ 	struct rcar_vin_cam *cam = icd->host_priv;
+ 	u32 vnmc, dmr, interrupts;
+-	bool progressive = false, output_is_yuv = false;
++	bool progressive = false, output_is_yuv = false, input_is_yuv = false;
+ 
+ 	switch (priv->field) {
+ 	case V4L2_FIELD_TOP:
+@@ -269,11 +270,17 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 		/* BT.601/BT.1358 16bit YCbCr422 */
+ 		vnmc |= VNMC_INF_YUV16;
++		input_is_yuv = true;
+ 		break;
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
+ 		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
+ 		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
+ 			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
++		input_is_yuv = true;
++		break;
++	case V4L2_MBUS_FMT_RGB888_1X24:
++		vnmc |= VNMC_INF_RGB888;
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -316,7 +323,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 	vnmc |= VNMC_VUP;
+ 
+ 	/* If input and output use the same colorspace, use bypass mode */
+-	if (output_is_yuv)
++	if (input_is_yuv = output_is_yuv)
+ 		vnmc |= VNMC_BPS;
+ 
+ 	/* progressive or interlaced mode */
+@@ -1002,6 +1009,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+ 	switch (code) {
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
++	case V4L2_MBUS_FMT_RGB888_1X24:
+ 		if (cam->extra_fmt)
+ 			break;
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.1
 
