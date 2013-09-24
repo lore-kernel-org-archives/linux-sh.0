@@ -1,28 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 18 Sep 2013 00:44:37 +0000
-Subject: Re: [PATCH 00/03] ARM: shmobile: r8a7790 CA7 boot mode support
-Message-Id: <20130918004436.GB4330@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 24 Sep 2013 13:38:33 +0000
+Subject: [PATCH 0/3] media: Add SH-Mobile RCAR-H2 Lager board support
+Message-Id: <1380029916-10331-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130914152848.12327.55620.sendpatchset@w520>
-In-Reply-To: <20130914152848.12327.55620.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Sep 15, 2013 at 12:28:48AM +0900, Magnus Damm wrote:
-> ARM: shmobile: r8a7790 CA7 boot mode support
-> 
-> [PATCH 01/03] ARM: shmobile: Add r8a7790 CA7 CPU cores to DTSI
-> [PATCH 02/03] ARM: shmobile: Extend APMU code to allow single cluster only
-> [PATCH 03/03] ARM: shmobile: Include CA7 cores in APMU table
-> 
-> This series enables the CA7 boot mode on r8a7790. Earlier this was
-> included in the r8a7790 SMP patch, but it was removed from the shared
-> APMU SMP code during adjustment to r8a7791 single cluster support.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+The following patches add ADV7611/ADV7612 HDMI receiver I2C driver
+and add RCAR H2 SOC support along with ADV761x output format support
+to rcar_vin soc_camera driver.
 
-Thanks Magnus,
+These changes are needed for SH-Mobile R8A7790 Lager board
+video input support.
 
-I have queued these up for v3.13.
+Valentine Barshak (3):
+  media: i2c: Add ADV761X support
+  media: rcar_vin: Add preliminary r8a7790 H2 support
+  media: rcar_vin: Add RGB888_1X24 input format support
+
+ drivers/media/i2c/Kconfig                    |   11 +
+ drivers/media/i2c/Makefile                   |    1 +
+ drivers/media/i2c/adv761x.c                  | 1060 ++++++++++++++++++++++++++
+ drivers/media/platform/soc_camera/rcar_vin.c |   17 +-
+ include/media/adv761x.h                      |   28 +
+ 5 files changed, 1114 insertions(+), 3 deletions(-)
+ create mode 100644 drivers/media/i2c/adv761x.c
+ create mode 100644 include/media/adv761x.h
+
+-- 
+1.8.3.1
+
