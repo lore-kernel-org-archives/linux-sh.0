@@ -1,43 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 26 Sep 2013 21:44:07 +0000
-Subject: Re: [PATCH] ARM: shmobile: Lager: add Micrel KSZ8041 PHY fixup
-Message-Id: <20130926214406.GB19788@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 24 Sep 2013 10:34:03 +0000
+Subject: [GIT PULL FOR v3.13] SH PFC pin definitions for I2C and SRU/SSI
+Message-Id: <1527335.Z2uP9kBimX@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309140429.23474.sergei.shtylyov@cogentembedded.com>
- <CANqRtoTiHQ3EVDZ8POCkyN2ga95rF=u5ERfYsdZbX+toqAWmaQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTiHQ3EVDZ8POCkyN2ga95rF=u5ERfYsdZbX+toqAWmaQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Sep 25, 2013 at 11:50:45PM -0700, Magnus Damm wrote:
-> On Fri, Sep 13, 2013 at 5:29 PM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
-> > Currently on the Lager board NFS timeouts/delays are seen when booting.  That
-> > turned out to happen because the SoC's ETH_LINK signal turns on and off after
-> > each packet.  It is connected to Micrel KSZ8041 PHY's LED0 signal. Ether LEDs
-> > on the Lager board are named LINK and ACTIVE which corresponds to non-default
-> > 01 setting of the PHY control register 1 bits 14-15. The 'sh_eth' driver resets
-> > the PHY when opening the network device, so we have to set the mentioned bits
-> > back to 01 from the default 00 value which causes bouncing of ETH_LINK.  That
-> > can be achieved using the PHY platform fixup mechanism if we also modify the
-> > driver to use it..
-> >
-> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> Hi Sergei,
-> 
-> Thanks for your efforts on this. Nice to see that Ethernet for Lager
-> board support is improving.
-> 
-> Can you please share with us with link speeds you tested? I suspect
-> that this patch is only needed for some case, like for instance 100
-> MBit Full Duplex. Fixing the PHY settings makes sense even though only
-> a single mode needs it, but knowing which link speeds that are known
-> to work would help a lot.
+Hi Linus,
 
-Magnus,
+Here are two patches that add pin definitions to the sh-pfc driver. If you 
+believe they can go to v3.12 please feel free to include them in your next 
+fixes pull request. Otherwise please pull them in your for-next branch.
 
-I currently have this queued up as a fix for v3.12.
-Let me know if you would like me to drop it for now.
+The following changes since commit cfa8b3f54e00b2300a2562c00d4d0cac48379ddb:
+
+  Merge branch 'devel' into for-next (2013-09-23 11:26:59 +0200)
+
+are available in the git repository at:
+
+
+  git://linuxtv.org/pinchartl/fbdev.git pinmux/next
+
+for you to fetch changes up to 70702bfc13c4f96f2f05d4ce2eb110cd1735fef5:
+
+  sh-pfc: r8a7790: Add I2C pin groups and functions (2013-09-24 12:23:42 
++0200)
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      sh-pfc: r8a7778: Add SRU/SSI pin support
+
+Ulrich Hecht (1):
+      sh-pfc: r8a7790: Add I2C pin groups and functions
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 125 ++++++++++++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  82 ++++++++++++++++++++++++++++
+ 2 files changed, 207 insertions(+)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
