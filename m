@@ -1,68 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Sep 2013 15:25:40 +0000
-Subject: Re: [PATCH 2/6] serial8250-em: convert to clk_prepare/unprepare
-Message-Id: <4895580.Leadr2OAf1@avalon>
+From: takasi-y@ops.dti.ne.jp
+Date: Tue, 24 Sep 2013 04:17:03 +0000
+Subject: [PATCH 6/6] ARM: shmobile: kzm9d-reference: Use common clock framework
+Message-Id: <20130924131703.4834a055892285858338003c@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52410F86.4040301@renesas.com> <20130924131039.3c871cad7acb2a068a988d0f@ops.dti.ne.jp>
-In-Reply-To: <20130924131039.3c871cad7acb2a068a988d0f@ops.dti.ne.jp>
+References: <52410F86.4040301@renesas.com>
+In-Reply-To: <52410F86.4040301-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: takasi-y@ops.dti.ne.jp
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, ben.dooks@codethink.co.uk, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>, devicetree@vger.kernel.org, linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Mike Turquette <mturquette@linaro.org>, linux-kernel@vger.kernel.org
+To: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org, Shinya Kuribayashi <shinya.kuribayashi.px-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>, Mike Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Yoshii-san,
+Use common clock framework version of clock
+ drivers/clk/shmobile/clk-emev2.c
+instead of sh-clkfwk version
+ arch/arm/mach-shmobile/clock-emev2.c
 
-Thank you for the patch.
+kzm9d(without -reference) still uses sh-clkfwk version.
 
-On Tuesday 24 September 2013 13:10:39 takasi-y@ops.dti.ne.jp wrote:
-> From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> 
-> Add calls to clk_prepare and unprepare so that EMMA Mobile EV2 can
-> migrate to the common clock framework.
-> 
-> Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> [takashi.yoshii.ze@renesas.com: edited for conflicts]
-> Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Because two of that framework can not live in one kernel binary,
+there will be SoCs and Boards that can not be in one binary as
+multiplatform binary or so.
+For example, kzm9d and kzm9d-reference is now exclusive.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+---
+ arch/arm/mach-shmobile/Kconfig                 | 1 +
+ arch/arm/mach-shmobile/board-kzm9d-reference.c | 5 ++---
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-> ---
->  drivers/tty/serial/8250/8250_em.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/drivers/tty/serial/8250/8250_em.c
-> b/drivers/tty/serial/8250/8250_em.c index 5f3bba1..d1a9078 100644
-> --- a/drivers/tty/serial/8250/8250_em.c
-> +++ b/drivers/tty/serial/8250/8250_em.c
-> @@ -122,7 +122,7 @@ static int serial8250_em_probe(struct platform_device
-> *pdev) up.port.dev = &pdev->dev;
->  	up.port.private_data = priv;
-> 
-> -	clk_enable(priv->sclk);
-> +	clk_prepare_enable(priv->sclk);
->  	up.port.uartclk = clk_get_rate(priv->sclk);
-> 
->  	up.port.iotype = UPIO_MEM32;
-> @@ -134,7 +134,7 @@ static int serial8250_em_probe(struct platform_device
-> *pdev) ret = serial8250_register_8250_port(&up);
->  	if (ret < 0) {
->  		dev_err(&pdev->dev, "unable to register 8250 port\n");
-> -		clk_disable(priv->sclk);
-> +		clk_disable_unprepare(priv->sclk);
->  		return ret;
->  	}
-> 
-> @@ -148,7 +148,7 @@ static int serial8250_em_remove(struct platform_device
-> *pdev) struct serial8250_em_priv *priv = platform_get_drvdata(pdev);
-> 
->  	serial8250_unregister_port(priv->line);
-> -	clk_disable(priv->sclk);
-> +	clk_disable_unprepare(priv->sclk);
->  	return 0;
->  }
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 50bab8d..d20d4ce 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -237,6 +237,7 @@ config MACH_KZM9D_REFERENCE
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select USE_OF
++	select COMMON_CLK
+ 	---help---
+ 	   Use reference implementation of KZM9D board support
+ 	   which makes a greater use of device tree at the expense
+diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+index 8f8bb2f..e0b8317 100644
+--- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+@@ -20,15 +20,14 @@
+ 
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/clk-provider.h>
+ #include <mach/emev2.h>
+ #include <mach/common.h>
+ #include <asm/mach/arch.h>
+ 
+ static void __init kzm9d_add_standard_devices(void)
+ {
+-	if (!IS_ENABLED(CONFIG_COMMON_CLK))
+-		emev2_clock_init();
+-
++	of_clk_init(NULL);
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.1.5
 
