@@ -1,48 +1,44 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 26 Sep 2013 10:18:12 +0000
-Subject: Re: [PATCH v2 2/2] regulator: da9210: add Device Tree support
-Message-Id: <20130926101812.GD19304@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="wLAMOaPNJ0fu1fTG"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Sep 2013 01:55:22 +0000
+Subject: [PATCH][resend] sh: ecovec: fixup compile error on sdhi
+Message-Id: <87zjr1ll6g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378988915-10539-1-git-send-email-g.liakhovetski@gmx.de>
- <1378988915-10539-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1378988915-10539-3-git-send-email-g.liakhovetski@gmx.de>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+afa2c9407f8908e2269b243773cbb0997c553804
+(sh: ecovec24: Use MMC/SDHI CD and RO GPIO)
+added .tmio_flags = TMIO_MMC_USE_GPIO_CD
+on sh_mobile_sdhi_info, but it needs
+<linux/mfd/tmio.h> header.
+This patch adds it
 
---wLAMOaPNJ0fu1fTG
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reviewed-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+change
 
-On Thu, Sep 12, 2013 at 02:28:35PM +0200, Guennadi Liakhovetski wrote:
-> This patch adds basic Device Tree support to the da9210 regulator driver -
-> with no special properties, since also driver's platform data only contains
-> standard regulator initialisation parameters.
+ - add Laurent's ACK
+ - To Chris
 
-Applied, thanks.
+ arch/sh/boards/mach-ecovec24/setup.c |    1 +
+ 1 file changed, 1 insertion(+)
 
---wLAMOaPNJ0fu1fTG
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 1fa8be4..122f737 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -15,6 +15,7 @@
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+-- 
+1.7.9.5
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.21 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSRAnhAAoJELSic+t+oim9xI0QAIZTkEKWBSXKdxZRQ0wO1pCV
-cQPdYaIUKx+qbsjHt/yRW3iH9WRM2R0BWuJfEmUkXV87q4Ptw9saXmwPimXWNsIH
-53TXGyxie04MGSvPla9d5VjJbE/k8IAdFGqtiMgL2OUCwKwjZU6DCdx9AEtOUaeJ
-fZt7SqMEpWN6PC2wixke6EmUuUQj+eBSU5Y0cUZDs3QM1/qFbvkViKGdRwfOnZFU
-2m7jHDLYSIc722yu4ZN4OcFj87PGaD6Yj3/8d7f+g5nVtGUCg/3Tib7hm8k/KSq6
-x+XQ/O7yu4w12uuypnV3vXTMyjyRWz0Gk3dgtgbdt+bpAwj5xd/KkbYpKhUTSh/R
-BWnng+d56JQ7WoqZuC9W/bSz9WGerztzGYwxmjQUKAefy4RGVtM3Zm5RJnCOfc3b
-SYBsjgT4nO683yReM/ASSHIZ/QdEOcvKoWIxfj9ly1C1Bi5MH6bmtageggcip8qi
-ChgzGixOqOUp+XGIcpaCk/BMW+eM5DnngRhVwFsfnMsvenJTN1Sro6Try12LGHsH
-XL1ILtmp4ZAs9NzshNPGBeDXF92/6mpy0pjSVUeaIFWlobb14IHjZiAxsdFsqi0o
-PsXWBYbt4cQtJ81frCbdAE+84d9ykgHk0Qg7YLlWynPKZyBb9w3xoTlYGhsYkbya
-wOOjpCa6exmj2/SkaasS
-=v/ZT
------END PGP SIGNATURE-----
-
---wLAMOaPNJ0fu1fTG--
