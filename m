@@ -1,48 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 18 Sep 2013 20:01:16 +0000
-Subject: [PATCH] clocksource: em_sti: Set cpu_possible_mask to fix SMP broadcast
-Message-Id: <1379534476-10901-2-git-send-email-horms+renesas@verge.net.au>
+From: Daniel Lezcano <daniel.lezcano@linaro.org>
+Date: Wed, 25 Sep 2013 21:19:04 +0000
+Subject: Re: [PATCH] clocksource: em_sti: Set cpu_possible_mask to fix SMP broadcast
+Message-Id: <52435348.30008@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1379534476-10901-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1379534476-10901-1-git-send-email-horms+renesas@verge.net.au>
+ <1379534476-10901-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1379534476-10901-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On 09/18/2013 10:01 PM, Simon Horman wrote:
+> From: Magnus Damm <damm@opensource.se>
+>=20
+> Update the STI driver by setting cpu_possible_mask to make EMEV2
+> SMP work as expected together with the ARM broadcast timer.
+>=20
+> This breakage was introduced by:
+>=20
+> f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over rea=
+l hardware clock-event
+>=20
+> Without this fix SMP operation is broken on EMEV2 since no
+> broadcast timer interrupts trigger on the secondary CPU cores.
+>=20
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> Tested-by: Simon Horman <horms+renesas@verge.net.au>
+> Reviewed-by: Stephen Boyd <sboyd@codeaurora.org>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
 
-Update the STI driver by setting cpu_possible_mask to make EMEV2
-SMP work as expected together with the ARM broadcast timer.
+Thanks ! Applied to my tree as 3.12 fix.
 
-This breakage was introduced by:
+--=20
+ <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for ARM=
+ SoCs
 
-f7db706 ARM: 7674/1: smp: Avoid dummy clockevent being preferred over real hardware clock-event
-
-Without this fix SMP operation is broken on EMEV2 since no
-broadcast timer interrupts trigger on the secondary CPU cores.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
-Reviewed-by: Stephen Boyd <sboyd@codeaurora.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/clocksource/em_sti.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
-index b9c81b7..3a5909c 100644
---- a/drivers/clocksource/em_sti.c
-+++ b/drivers/clocksource/em_sti.c
-@@ -301,7 +301,7 @@ static void em_sti_register_clockevent(struct em_sti_priv *p)
- 	ced->name = dev_name(&p->pdev->dev);
- 	ced->features = CLOCK_EVT_FEAT_ONESHOT;
- 	ced->rating = 200;
--	ced->cpumask = cpumask_of(0);
-+	ced->cpumask = cpu_possible_mask;
- 	ced->set_next_event = em_sti_clock_event_next;
- 	ced->set_mode = em_sti_clock_event_mode;
- 
--- 
-1.8.4
+Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
+<http://twitter.com/#!/linaroorg> Twitter |
+<http://www.linaro.org/linaro-blog/> Blog
 
