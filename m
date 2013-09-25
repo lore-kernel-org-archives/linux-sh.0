@@ -1,51 +1,68 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 25 Sep 2013 23:11:19 +0000
-Subject: [PATCH] ARM: shmobile: Add r8a7790 thermal sensor DT device
-Message-Id: <20130925231119.16473.31647.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 25 Sep 2013 23:35:57 +0000
+Subject: Re: [PATCH] ARM: shmobile: Add r8a7790 thermal sensor DT device
+Message-Id: <20130925233552.GA20882@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130925231119.16473.31647.sendpatchset@w520>
+In-Reply-To: <20130925231119.16473.31647.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thu, Sep 26, 2013 at 08:11:19AM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Hook up the single channel thermal sensor via DT
+> on r8a7790. The information used by the platform
+> device has been verified against the data sheet.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Hook up the single channel thermal sensor via DT
-on r8a7790. The information used by the platform
-device has been verified against the data sheet.
+Hi Magnus,
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+I would prefer if this was split into two patches.
+An SoC patch that updates clock-r8a7790.c.
+And a DT patch which updates r8a7790.dtsi.
 
- Written against renesas-devel-20130925
+Thanks
 
- arch/arm/boot/dts/r8a7790.dtsi         |    7 +++++++
- arch/arm/mach-shmobile/clock-r8a7790.c |    1 +
- 2 files changed, 8 insertions(+)
-
---- 0001/arch/arm/boot/dts/r8a7790.dtsi
-+++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-09-26 07:23:04.000000000 +0900
-@@ -87,6 +87,13 @@
- 		interrupts = <1 9 0xf04>;
- 	};
- 
-+	thermal@e61f0000 {
-+		compatible = "renesas,rcar-thermal";
-+		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 69 4>;
-+	};
-+
- 	gpio0: gpio@ffc40000 {
- 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
- 		reg = <0 0xffc40000 0 0x2c>;
---- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-09-26 07:24:37.000000000 +0900
-@@ -272,6 +272,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
-+	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+> ---
+> 
+>  Written against renesas-devel-20130925
+> 
+>  arch/arm/boot/dts/r8a7790.dtsi         |    7 +++++++
+>  arch/arm/mach-shmobile/clock-r8a7790.c |    1 +
+>  2 files changed, 8 insertions(+)
+> 
+> --- 0001/arch/arm/boot/dts/r8a7790.dtsi
+> +++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-09-26 07:23:04.000000000 +0900
+> @@ -87,6 +87,13 @@
+>  		interrupts = <1 9 0xf04>;
+>  	};
+>  
+> +	thermal@e61f0000 {
+> +		compatible = "renesas,rcar-thermal";
+> +		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+> +		interrupt-parent = <&gic>;
+> +		interrupts = <0 69 4>;
+> +	};
+> +
+>  	gpio0: gpio@ffc40000 {
+>  		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+>  		reg = <0 0xffc40000 0 0x2c>;
+> --- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
+> +++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-09-26 07:24:37.000000000 +0900
+> @@ -272,6 +272,7 @@ static struct clk_lookup lookups[] = {
+>  	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+>  	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+>  	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+> +	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+>  	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+>  	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+>  	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
