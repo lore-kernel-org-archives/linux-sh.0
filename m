@@ -1,41 +1,70 @@
-From: Richard Weinberger <richard@nod.at>
-Date: Thu, 26 Sep 2013 17:10:33 +0000
-Subject: Re: [PATCH 2/8] um: Do not use SUBARCH
-Message-Id: <52446A89.1080409@nod.at>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 25 Sep 2013 22:31:37 +0000
+Subject: [PATCH 2/2] rcar-hpbdma: add parameter to set_slave() method
+Message-Id: <201309260231.37773.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377073172-3662-1-git-send-email-richard@nod.at> <1377073172-3662-3-git-send-email-richard@nod.at> <CALkWK0kCrQ9hPABD_XQ9QFG-vByP+xZWZs+RkVK77+cX7Odz7g@mail.gmail.com> <52441025.9030308@nod.at> <CALkWK0k5neR50h+AWEF5AgnpbgWMitZUnbv_caVzt6HiUA6mXg@mail.gmail.com> <52441407.9010603@nod.at> <CALkWK0=FG4COEjv5+mu1JRiiFQ2k6vop1mhFPmAT4bjtYeK6nA@mail.gmail.com> <52442108.1020304@nod.at> <CALkWK0nm=9n7DiV0MaGKVLMs=vxAiiQUx=OFuOg-DinkdMej5A@mail.gmail.com> <CALkWK0ndMtyQxE0uK4H-Ly6oy+tRn-SFc=_1WoC2QAp2uy0dtw@mail.gmail.com> <CAMuHMdU3LdDhbp_AKjD7b8Wytbqfp29DrPwTdtwQa2hUNdcy3Q@mail.gmail.com> <524443AC.3040409@nod.at> <CALkWK0kcd03t9W4O24wiVBQ8SZQ8ZcrbvQaUkcCm+y5n=d1wPw@mail.gmail.com> <52444CED.40401@nod.at> <CALkWK0=u8CdtmbaOtA5=jxuWsei2ZQhxDwSsnhAR=ZRBNyoH6Q@mail.gmail.com>
-In-Reply-To: <CALkWK0=u8CdtmbaOtA5=jxuWsei2ZQhxDwSsnhAR=ZRBNyoH6Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ramkumar Ramachandra <artagnon@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-Arch <linux-arch@vger.kernel.org>, Michal Marek <mmarek@suse.cz>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, Jeff Dike <jdike@addtoit.com>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, the arch/x86 maintainers <x86@kernel.org>, linux-kbuild <linux-kbuild@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, uml-devel <user-mode-linux-devel@lists.sourceforge.net>
+To: vinod.koul@intel.com, dan.j.williams@intel.com
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Am 26.09.2013 18:06, schrieb Ramkumar Ramachandra:
-> Richard Weinberger wrote:
->> And, of course, this makes your patch valid.
->> Can you also please ensure that your new defconfigs are minimal?
-> 
-> Yeah, it's close to a minimal configuration for the 3.10 kernel
-> (latest at the time of patch submission). I was aiming to minimize the
-> diff between the current defconfig and the two new defconfigs in
-> configs/. The slim diffstat does the talking:
-> 
->  arch/um/Kconfig.common                          |   5 -
->  arch/um/Makefile                                |  11 ++
->  arch/um/{defconfig => configs/i386_defconfig}   | 209 +++++++++++++-------
->  arch/um/{defconfig => configs/x86_64_defconfig} | 250 +++++++++++++++---------
->  arch/x86/um/Kconfig                             |   5 +
->  5 files changed, 306 insertions(+), 174 deletions(-)
->  copy arch/um/{defconfig => configs/i386_defconfig} (86%)
->  rename arch/um/{defconfig => configs/x86_64_defconfig} (83%)
-> 
-> If we find some deficiencies, we can always update it. For now, please
-> commit these two patches.
+Commit 4981c4dc194efb18f0e9a02f1b43e926f2f0d2bb (DMA: shdma: switch DT mode to
+use configuration data from a match table) added a new parameter to set_slave()
+method but unfortunately got merged later than commit c4f6c41ba790bbbfcebb4c47a
+(dma: add driver for R-Car HPB-DMAC), so that the HPB-DMAC driver retained the
+old prototype which caused this warning:
 
-Please resend them with savedefconfig applied.
-There is no need to have three commits for that.
+drivers/dma/sh/rcar-hpbdma.c:485: warning: initialization from incompatible
+pointer type
 
-Thanks,
-//richard
+The newly added parameter  is used to override DMA slave address from 'struct
+hpb_dmae_slave_config', so we have to add the 'slave_addr' field to 'struct
+hpb_dmae_chan', conditionally assign it in set_slave() method, and return in
+slave_addr() method.
 
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against 'fixes-3.12' branch of Vinod Koul's 'slave-dma.git' repo.
+ 
+ drivers/dma/sh/rcar-hpbdma.c |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+Index: slave-dma/drivers/dma/sh/rcar-hpbdma.c
+=================================--- slave-dma.orig/drivers/dma/sh/rcar-hpbdma.c
++++ slave-dma/drivers/dma/sh/rcar-hpbdma.c
+@@ -93,6 +93,7 @@ struct hpb_dmae_chan {
+ 	void __iomem *base;
+ 	const struct hpb_dmae_slave_config *cfg;
+ 	char dev_id[16];		/* unique name per DMAC of channel */
++	dma_addr_t slave_addr;
+ };
+ 
+ struct hpb_dmae_device {
+@@ -445,7 +446,8 @@ hpb_dmae_alloc_chan_resources(struct hpb
+ 	return 0;
+ }
+ 
+-static int hpb_dmae_set_slave(struct shdma_chan *schan, int slave_id, bool try)
++static int hpb_dmae_set_slave(struct shdma_chan *schan, int slave_id,
++			      dma_addr_t slave_addr, bool try)
+ {
+ 	struct hpb_dmae_chan *chan = to_chan(schan);
+ 	const struct hpb_dmae_slave_config *sc @@ -456,6 +458,7 @@ static int hpb_dmae_set_slave(struct shd
+ 	if (try)
+ 		return 0;
+ 	chan->cfg = sc;
++	chan->slave_addr = slave_addr ? : sc->addr;
+ 	return hpb_dmae_alloc_chan_resources(chan, sc);
+ }
+ 
+@@ -467,7 +470,7 @@ static dma_addr_t hpb_dmae_slave_addr(st
+ {
+ 	struct hpb_dmae_chan *chan = to_chan(schan);
+ 
+-	return chan->cfg->addr;
++	return chan->slave_addr;
+ }
+ 
+ static struct shdma_desc *hpb_dmae_embedded_desc(void *buf, int i)
