@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 25 Sep 2013 22:04:49 +0000
+Date: Wed, 25 Sep 2013 22:57:38 +0000
 Subject: Re: [PATCH 1/3] media: i2c: Add ADV761X support
-Message-Id: <1554521.JFkDCxSPn1@avalon>
+Message-Id: <1393674.bXtORIkseQ@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1380029916-10331-2-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1380029916-10331-2-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,68 +10,50 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wednesday 25 September 2013 12:21:04 Laurent Pinchart wrote:
-> Hi Valentine,
-> 
-> Thank you for the patch.
-> 
-> Please see below for a couple of comments (in addition to Hans' and
-> Guennadi's comments).
-> 
-> On Tuesday 24 September 2013 17:38:34 Valentine Barshak wrote:
-> > This adds ADV7611/ADV7612 Dual Port Xpressview
-> > 225 MHz HDMI Receiver support.
-> > 
-> > The code is based on the ADV7604 driver, and ADV7612 patch
-> > by Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> > 
-> > Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> > ---
+On Wednesday 25 September 2013 18:31:51 Guennadi Liakhovetski wrote:
+> On Wed, 25 Sep 2013, Valentine wrote:
+> > On 09/25/2013 06:08 PM, Guennadi Liakhovetski wrote:
 
 [snip]
 
-> > +static int adv761x_set_edid(struct v4l2_subdev *sd,
-> > +				struct v4l2_subdev_edid *edid)
-> > +{
-> > +	struct adv761x_state *state = to_state(sd);
-> > +	int ret;
-> > +
-> > +	if (edid->pad != 0)
-> > +		return -EINVAL;
-> > +
-> > +	if (edid->start_block != 0)
-> > +		return -EINVAL;
-> > +
-> > +	if (edid->blocks = 0) {
-> > +		/* Pull down the hotplug pin */
-> > +		v4l2_subdev_notify(sd, ADV761X_HOTPLUG, (void *)0);
-> > +		/* Disables I2C access to internal EDID ram from DDC port */
-> > +		rep_write(sd, 0x74, 0x0);
-> > +		state->edid_blocks = 0;
-> > +		return 0;
-> > +	}
-> > +
-> > +	if (edid->blocks > 2)
-> > +		return -E2BIG;
-> > +
-> > +	if (!edid->edid)
-> > +		return -EINVAL;
-> > +
-> > +	memcpy(state->edid, edid->edid, 128 * edid->blocks);
-> > +	state->edid_blocks = edid->blocks;
-> > +
-> > +	ret = edid_write_block(sd, 128 * edid->blocks, state->edid);
-> > +	if (ret < 0)
-> > +		v4l2_err(sd, "error %d writing edid\n", ret);
+> > > > > > +/* I2C I/O operations */
+> > > > > > +static s32 adv_smbus_read_byte_data(struct i2c_client *client, u8
+> > > > > > command)
+> > > > > > +{
+> > > > > > +	s32 ret, i;
+> > > > > > +
+> > > > > > +	for (i = 0; i < 3; i++) {
+> > > > > > +		ret = i2c_smbus_read_byte_data(client, command);
+> > > > > 
+> > > > > Uhm, why do you need to do this 3 times?... I see adv7842 does that
+> > > > > too...
+> > > > > but e.g. adv7604 dies this only for writing and not for reading...
+> > > > 
+> > > > Just thought it would be safe to retry in case of a failure.
+> > > > Other drivers seem to retry I2C I/O as well. This is probably related
+> > > > to the possible cable issues. Not sure. Anyways, retrying doesn't seem
+> > > > to hurt, does it?
+> > > 
+> > > It does, because it means there's something we don't understand. IMHO it
+> > > should either work from the first time, or there should be an error,
+> > > that we understand with a following error processing, that _might_
+> > > include re-trying. Re-trying just in case isn't good. Especially if no
+> > > error has been observed.
+> > 
+> > I have observed very rare errors when reading HDMI status. Just a couple
+> > of times during this week. I'm not sure of the nature of those errors.
+> > Just thought it would be OK to retry since other decoder drivers do so as
+> > well.
 > 
-> Stupid question, what are the use cases for setting EDID on an HDMI receiver
-> ? Isn't that something that should just be read from the device ?
+> Ok, understand. As I said, I personally don't like that, but, I think,
+> Laurent will have a final word on this.
 
-My bad, scratch this, I got the chip mixed with an HDMI transmitter.
-
-> > +
-> > +	return ret;
-> > +}
+I don't like the idea of blindly retrying, especially for write operations. If 
+a read fails due to a flaky cable, there's equal chances that a write would 
+fail as well, which could result in writing random values to random registers. 
+Given the side effects that this could have, I'd much rather not retry I/O 
+operations and have the users fix electrical issues. Hiding something this 
+serious could be dangerous.
 
 -- 
 Regards,
