@@ -1,130 +1,50 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Mon, 23 Sep 2013 21:40:58 +0000
-Subject: [PATCH 01/10] pwm-backlight: Refactor backlight power on/off
-Message-Id: <1379972467-11243-2-git-send-email-treding@nvidia.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 25 Sep 2013 22:28:37 +0000
+Subject: [PATCH 1/2] rcar-hpbdma: remove shdma_free_irq() calls
+Message-Id: <201309260228.37765.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
-In-Reply-To: <1379972467-11243-1-git-send-email-treding@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: vinod.koul@intel.com, dan.j.williams@intel.com
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, horms@verge.net.au
 
-In preparation for adding an optional regulator and enable GPIO to the
-driver, split the power on and power off sequences into separate
-functions to reduce code duplication at the multiple call sites.
+Commit c1c63a14f4f2419d093acd7164eccdff315baa86 (DMA: shdma: switch to managed
+resource allocation) got rid of shdma_free_irq() but  unfortunately got merged
+later than commit c4f6c41ba790bbbfcebb4c47a709ac8ff1fe1af9 (dma: add driver for
+R-Car HPB-DMAC), so that the HPB-DMAC driver retained the calls and got broken:
 
-Signed-off-by: Thierry Reding <treding@nvidia.com>
+drivers/dma/sh/rcar-hpbdma.c: In function `hpb_dmae_alloc_chan_resources':
+drivers/dma/sh/rcar-hpbdma.c:435: error: implicit declaration of function
+`shdma_free_irq'
+
+Fix this compilation error by removing the remaining shdma_free_irq() calls.
+
+Reported-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/video/backlight/pwm_bl.c | 59 ++++++++++++++++++++++++----------------
- 1 file changed, 36 insertions(+), 23 deletions(-)
+The patch is against 'fixes-3.12' branch of Vinod Koul's 'slave-dma.git' repo.
 
-diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
-index 36db5d9..8a49b30 100644
---- a/drivers/video/backlight/pwm_bl.c
-+++ b/drivers/video/backlight/pwm_bl.c
-@@ -35,6 +35,30 @@ struct pwm_bl_data {
- 	void			(*exit)(struct device *);
- };
- 
-+static void pwm_backlight_power_on(struct pwm_bl_data *pb, int brightness,
-+				   int max)
-+{
-+	int duty_cycle, err;
-+
-+	if (pb->levels) {
-+		duty_cycle = pb->levels[brightness];
-+		max = pb->levels[max];
-+	} else {
-+		duty_cycle = brightness;
-+	}
-+
-+	duty_cycle = (duty_cycle * (pb->period - pb->lth_brightness) / max) +
-+		     pb->lth_brightness;
-+
-+	pwm_config(pb->pwm, duty_cycle, pb->period);
-+	pwm_enable(pb->pwm);
-+}
-+
-+static void pwm_backlight_power_off(struct pwm_bl_data *pb)
-+{
-+	pwm_disable(pb->pwm);
-+}
-+
- static int pwm_backlight_update_status(struct backlight_device *bl)
- {
- 	struct pwm_bl_data *pb = bl_get_data(bl);
-@@ -49,24 +73,10 @@ static int pwm_backlight_update_status(struct backlight_device *bl)
- 	if (pb->notify)
- 		brightness = pb->notify(pb->dev, brightness);
- 
--	if (brightness = 0) {
--		pwm_config(pb->pwm, 0, pb->period);
--		pwm_disable(pb->pwm);
--	} else {
--		int duty_cycle;
--
--		if (pb->levels) {
--			duty_cycle = pb->levels[brightness];
--			max = pb->levels[max];
--		} else {
--			duty_cycle = brightness;
--		}
--
--		duty_cycle = pb->lth_brightness +
--		     (duty_cycle * (pb->period - pb->lth_brightness) / max);
--		pwm_config(pb->pwm, duty_cycle, pb->period);
--		pwm_enable(pb->pwm);
--	}
-+	if (brightness > 0)
-+		pwm_backlight_power_on(pb, brightness, max);
-+	else
-+		pwm_backlight_power_off(pb);
- 
- 	if (pb->notify_after)
- 		pb->notify_after(pb->dev, brightness);
-@@ -267,10 +277,11 @@ static int pwm_backlight_remove(struct platform_device *pdev)
- 	struct pwm_bl_data *pb = bl_get_data(bl);
- 
- 	backlight_device_unregister(bl);
--	pwm_config(pb->pwm, 0, pb->period);
--	pwm_disable(pb->pwm);
-+	pwm_backlight_power_off(pb);
-+
- 	if (pb->exit)
- 		pb->exit(&pdev->dev);
-+
- 	return 0;
- }
- 
-@@ -282,10 +293,12 @@ static int pwm_backlight_suspend(struct device *dev)
- 
- 	if (pb->notify)
- 		pb->notify(pb->dev, 0);
--	pwm_config(pb->pwm, 0, pb->period);
--	pwm_disable(pb->pwm);
-+
-+	pwm_backlight_power_off(pb);
-+
- 	if (pb->notify_after)
- 		pb->notify_after(pb->dev, 0);
-+
- 	return 0;
- }
- 
-@@ -294,6 +307,7 @@ static int pwm_backlight_resume(struct device *dev)
- 	struct backlight_device *bl = dev_get_drvdata(dev);
- 
- 	backlight_update_status(bl);
-+
- 	return 0;
- }
- #endif
-@@ -317,4 +331,3 @@ module_platform_driver(pwm_backlight_driver);
- MODULE_DESCRIPTION("PWM based Backlight Driver");
- MODULE_LICENSE("GPL");
- MODULE_ALIAS("platform:pwm-backlight");
--
--- 
-1.8.4
+ drivers/dma/sh/rcar-hpbdma.c |    2 --
+ 1 file changed, 2 deletions(-)
 
+Index: slave-dma/drivers/dma/sh/rcar-hpbdma.c
+=================================--- slave-dma.orig/drivers/dma/sh/rcar-hpbdma.c
++++ slave-dma/drivers/dma/sh/rcar-hpbdma.c
+@@ -432,7 +432,6 @@ hpb_dmae_alloc_chan_resources(struct hpb
+ 		hpb_chan->xfer_mode = XFER_DOUBLE;
+ 	} else {
+ 		dev_err(hpb_chan->shdma_chan.dev, "DCR setting error");
+-		shdma_free_irq(&hpb_chan->shdma_chan);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -614,7 +613,6 @@ static void hpb_dmae_chan_remove(struct 
+ 	shdma_for_each_chan(schan, &hpbdev->shdma_dev, i) {
+ 		BUG_ON(!schan);
+ 
+-		shdma_free_irq(schan);
+ 		shdma_chan_remove(schan);
+ 	}
+ 	dma_dev->chancnt = 0;
