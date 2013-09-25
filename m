@@ -1,76 +1,34 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Sep 2013 04:38:36 +0000
-Subject: Re: [PATCH v2 4/4] ARM: shmobile: BOCK-W reference: add Ether PFC settings
-Message-Id: <20130927043836.GB16541@verge.net.au>
+Date: Wed, 25 Sep 2013 06:09:30 +0000
+Subject: Re: [PATCH 1/6] ARM: shmobile: ape6evm: add DMA support to MMCIF
+Message-Id: <20130925060930.GD6663@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309070423.30672.sergei.shtylyov@cogentembedded.com>
- <201309070431.35908.sergei.shtylyov@cogentembedded.com>
- <CANqRtoRKFoS9tehteDGaTUYJ8fSBqAYJJDiLxZmoNB9W0N+Mpg@mail.gmail.com>
- <52305EA4.1060902@cogentembedded.com>
- <20130925044720.GB24243@verge.net.au>
- <5243073C.8070402@cogentembedded.com>
- <20130926015142.GB18396@verge.net.au>
- <52449CA2.8040509@cogentembedded.com>
-In-Reply-To: <52449CA2.8040509@cogentembedded.com>
+References: <1374498981-5263-2-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1374498981-5263-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Sep 27, 2013 at 12:44:18AM +0400, Sergei Shtylyov wrote:
-> Hello.
+On Mon, Jul 22, 2013 at 03:16:16PM +0200, Guennadi Liakhovetski wrote:
+> Add DMA support for MMCIF on APE6EVM, using the shdma dmaengine driver.
 > 
-> On 09/26/2013 05:51 AM, Simon Horman wrote:
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> ---
+>  arch/arm/mach-shmobile/board-ape6evm.c |    2 ++
+>  1 files changed, 2 insertions(+), 0 deletions(-)
 > 
-> >>>>>>Add the Ether pin group to bockw_pinctrl_map[].
-> 
-> >>>>>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>>>>>---
-> >>>>>>  arch/arm/mach-shmobile/board-bockw-reference.c |    3 +++
-> >>>>>>  1 file changed, 3 insertions(+)
-> 
-> >>>>>>Index: renesas/arch/arm/mach-shmobile/board-bockw-reference.c
-> >>>>>>=================================> >>>>>>--- renesas.orig/arch/arm/mach-shmobile/board-bockw-reference.c
-> >>>>>>+++ renesas/arch/arm/mach-shmobile/board-bockw-reference.c
-> >>>>>>@@ -29,6 +29,9 @@
-> >>>>>>   */
-> >>>>>>
-> >>>>>>  static const struct pinctrl_map bockw_pinctrl_map[] = {
-> >>>>>>+       /* Ether */
-> >>>>>>+       PIN_MAP_MUX_GROUP_DEFAULT("fde00000.ethernet", "pfc-r8a7778",
-> >>>>>>+                                 "ether_rmii", "ether"),
-> >>>>>>         /* SCIF0 */
-> >>>>>>         PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-> >>>>>>                                   "scif0_data_a", "scif0"),
-> 
-> >>>>>Hi Sergei,
-> 
-> >>>>>Thanks for your patches. In general I think your series looks fine. I
-> >>>>>have a single comment, and that's about the pinctrl-related hunk
-> >>>>>above. I can see that this patch is for DT reference for Bock-W, so I
-> >>>>>expect the code to be in DT. Do you have any plans to use DT to
-> >>>>>describe the pinmux bits? Perhaps you have some incremental patch
-> >>>>>planned?
-> 
-> >>>>    No, I just repeated what I saw mechanically. Now I'm seeing some
-> >>>>evidence that PFC driver supports the device tree, so I probably
-> >>>>need to redo the patchset... let me study this question better.
-> 
-> >>>Ping.
-> 
-> >>    Sorry, I got distracted by other work and didn't advance much here.
-> >>Will try to respin the patchset before my vacation (next Monday).
-> >>Although the driver DT support patch have seemingly stalemated due
-> >>to the most recent comments...
-> 
-> >Thanks for the update.
-> 
-> >I guess the key is to move forward on the driver side, somehow.
-> 
->    Do you mean we should grant Stephen's requests concerning clock
-> DT support before we add the DT support to the driver?
+> diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+> index 97c0dad..96a6994 100644
+> --- a/arch/arm/mach-shmobile/board-ape6evm.c
+> +++ b/arch/arm/mach-shmobile/board-ape6evm.c
+> @@ -75,6 +75,8 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[] >  /* MMCIF */
+>  static struct sh_mmcif_plat_data mmcif0_pdata = {
+>  	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
+> +	.slave_id_tx	= SHDMA_SLAVE_MMCIF0_TX,
+> +	.slave_id_rx	= SHDMA_SLAVE_MMCIF0_RX,
+>  	.ccs_unsupported = true,
+>  };
 
-That seems like the most logical way forwards to me.
-
-Is the main issue that the clocks aren't accessible via DT at this time?
+Thanks, I have queued this up for v3.13.
+Please let me know if any other patches in this series are relevant for v3.13.
