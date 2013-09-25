@@ -1,41 +1,22 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 12 Sep 2013 12:36:48 +0000
-Subject: [PATCH v2 5/5] i2c: rcar: use per-device clock
-Message-Id: <1378989408-10618-6-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 25 Sep 2013 07:12:29 +0000
+Subject: Re: [PATCH 6/6] ARM: shmobile: lager: disable MMCIF Command Completion Signal, add CLK_CTRL2
+Message-Id: <20130925071229.GQ6663@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1378989408-10618-1-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
+References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
+ <1373484077-10460-7-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373484077-10460-7-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Using the same clock for all device instances is non-portable and obtaining
-clock references by an ID without using a device pointer is discouraged.
-This is also not needed, because on platforms, where this driver is used,
-suitable clocks are available for the I2C controllers, that are children of
-the peripheral clock and just pass its rate 1-to-1 to controllers. This
-patch switches the driver to obtain references to correct clocks.
+On Wed, Jul 10, 2013 at 09:21:17PM +0200, Guennadi Liakhovetski wrote:
+> MMCIF on r8a7790 doesn't support Command Completion Signal, but it does
+> implement a CE_CLK_CTRL2 register. Platform parameters have to be added to
+> account for these features on lager.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
----
- drivers/i2c/busses/i2c-rcar.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 98276eb..8603f5e 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -227,7 +227,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
- 				    u32 bus_speed,
- 				    struct device *dev)
- {
--	struct clk *clkp = clk_get(NULL, "peripheral_clk");
-+	struct clk *clkp = clk_get(dev, NULL);
- 	u32 scgd, cdf;
- 	u32 round, ick;
- 	u32 scl;
--- 
-1.7.2.5
-
+Thanks, I have queued this up for v3.13.
