@@ -1,70 +1,41 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 11 Sep 2013 07:20:21 +0000
-Subject: Re: [PATCH 5/5] i2c: rcar: use per-device clock
-Message-Id: <Pine.LNX.4.64.1309110908570.26942@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 25 Sep 2013 07:12:08 +0000
+Subject: Re: [PATCH 3/6] ARM: shmobile: armadillo800eva: disable MMCIF Command Completion Signal
+Message-Id: <20130925071208.GM6663@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378742120-11135-1-git-send-email-g.liakhovetski@gmx.de>
- <1378742120-11135-6-git-send-email-g.liakhovetski@gmx.de>
- <CANqRtoSKOOLs1KiOx1gYU9LAH=K9hzZP8xTkgCF8s1=R0Vm3Yg@mail.gmail.com>
-In-Reply-To: <CANqRtoSKOOLs1KiOx1gYU9LAH=K9hzZP8xTkgCF8s1=R0Vm3Yg@mail.gmail.com>
+References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
+ <1373484077-10460-4-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1373484077-10460-4-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-i2c@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Hi Magnus,
-
-On Wed, 11 Sep 2013, Magnus Damm wrote:
-
-> Hi Guennadi,
+On Wed, Jul 10, 2013 at 09:21:14PM +0200, Guennadi Liakhovetski wrote:
+> MMCIF on r8a7740 doesn't support Command Completion Signal, a platform
+> parameter has to be added to disable it on armadillo800eva.
 > 
-> On Tue, Sep 10, 2013 at 12:55 AM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > Using the same clock for all device instances is non-portable and obtaining
-> > clock references by an ID without using a device pointer is discouraged.
-> > This is also not needed, because on platforms, where this driver is used,
-> > suitable clocks are available for the I2C controllers, that are children of
-> > the peripheral clock and just pass its rate 1-to-1 to controllers. This
-> > patch switches the driver to obtain references to correct clocks.
-> >
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > ---
-> >  drivers/i2c/busses/i2c-rcar.c |    2 +-
-> >  1 files changed, 1 insertions(+), 1 deletions(-)
-> >
-> > diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-> > index 7e71cf4..7b986cb 100644
-> > --- a/drivers/i2c/busses/i2c-rcar.c
-> > +++ b/drivers/i2c/busses/i2c-rcar.c
-> > @@ -227,7 +227,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
-> >                                     u32 bus_speed,
-> >                                     struct device *dev)
-> >  {
-> > -       struct clk *clkp = clk_get(NULL, "peripheral_clk");
-> > +       struct clk *clkp = clk_get(dev, NULL);
-> >         u32 scgd, cdf;
-> >         u32 round, ick;
-> >         u32 scl;
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+
+Thanks, I have queued this up for v3.13.
+
+> ---
+>  arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
+>  1 files changed, 1 insertions(+), 0 deletions(-)
 > 
-> I agree that passing struct device to clk_get() is a good idea. Thanks
-> for spotting this.
+> diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+> index 41ff7d65..3cb006b 100644
+> --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
+> +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+> @@ -778,6 +778,7 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+>  	.caps		= MMC_CAP_4_BIT_DATA |
+>  			  MMC_CAP_8_BIT_DATA |
+>  			  MMC_CAP_NONREMOVABLE,
+> +	.ccs_unsupported = true,
+>  	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
+>  	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
+>  };
+> -- 
+> 1.7.2.5
 > 
-> What are the run-time dependencies for this patch? Do all affected I2C
-> controllers have MSTP bits with proper parents already, or will this
-> patch cause breakage for some SoCs?
-
-Currently (Simon's devel branch of 5 days ago as of commit 5cbe867) I only 
-see r8a7778 and r8a7779 using i2c-rcar. They both define clocks like
-
-	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-
-and similarly for I2C1 - I2C3. So, it looks like it should work, but would 
-be nice to test.
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
