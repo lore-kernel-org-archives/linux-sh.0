@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Sep 2013 05:53:04 +0000
+Date: Wed, 25 Sep 2013 08:01:29 +0000
 Subject: Re: [PATCH v5 6/7] ARM: shmobile: r8a73a4: add a DT node and a clock alias for the DMAC
-Message-Id: <20130925055304.GB6663@verge.net.au>
+Message-Id: <20130925080129.GB3747@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1375455042-24093-1-git-send-email-g.liakhovetski@gmx.de>
  <1375455042-24093-7-git-send-email-g.liakhovetski@gmx.de>
@@ -17,16 +17,21 @@ On Fri, Aug 02, 2013 at 04:50:41PM +0200, Guennadi Liakhovetski wrote:
 > can be added later under the same multiplexer, because they can serve the
 > same slaves and use the same MID-RID values. Configuration data is
 > supplied to the driver, using a compatibility match string.
+
+Hi Guennadi,
+
+please split this up into two patches.
+A DT patch that modifies r8a73a4.dtsi and an SoC patch that modifies
+clock-r8a73a4.c.
+
+Thanks.
+
 > 
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 > ---
 >  arch/arm/boot/dts/r8a73a4.dtsi         |   43 ++++++++++++++++++++++++++++++++
 >  arch/arm/mach-shmobile/clock-r8a73a4.c |    1 +
 >  2 files changed, 44 insertions(+), 0 deletions(-)
-
-Other than patch 5 of this series, which adds the relevant clock,
-does this patch depend on any other patches in this series?
-
 > 
 > diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
 > index e344b10..3c9c7f2 100644
