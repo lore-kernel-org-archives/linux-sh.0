@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Sep 2013 07:12:08 +0000
+Date: Wed, 25 Sep 2013 07:12:17 +0000
 Subject: Re: [PATCH 3/6] ARM: shmobile: armadillo800eva: disable MMCIF Command Completion Signal
-Message-Id: <20130925071208.GM6663@verge.net.au>
+Message-Id: <20130925071217.GN6663@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1373484077-10460-1-git-send-email-g.liakhovetski@gmx.de>
  <1373484077-10460-4-git-send-email-g.liakhovetski@gmx.de>
@@ -17,9 +17,6 @@ On Wed, Jul 10, 2013 at 09:21:14PM +0200, Guennadi Liakhovetski wrote:
 > parameter has to be added to disable it on armadillo800eva.
 > 
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-
-Thanks, I have queued this up for v3.13.
-
 > ---
 >  arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
 >  1 files changed, 1 insertions(+), 0 deletions(-)
@@ -36,6 +33,5 @@ Thanks, I have queued this up for v3.13.
 >  	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
 >  	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
 >  };
-> -- 
-> 1.7.2.5
-> 
+
+Thanks, I have queued this up for v3.13.
