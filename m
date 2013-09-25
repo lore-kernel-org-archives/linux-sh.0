@@ -1,12 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Sep 2013 06:04:10 +0000
-Subject: [PATCH 1/3] ARM: shmobile: r8a7778: cleanup registration of vin
-Message-Id: <8738ousqlk.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 25 Sep 2013 07:11:51 +0000
+Subject: Re: [PATCH 1/3] ARM: shmobile: r8a7778: cleanup registration of vin
+Message-Id: <20130925071149.GJ6663@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <8738ousqlk.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8738ousqlk.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+
+On Mon, Sep 23, 2013 at 11:04:10PM -0700, Kuninori Morimoto wrote:
+> vin driver which needs platform data at the time of
+> registration is used from BockW only.
+> Now, ARM/shmobile aims to support DT,
+> and the C code base board support will be removed
+> if DT support is completed.
+> Current driver registration method which needs platform data
+> and which is not shared complicates codes.
+> This means legacy C code cleanup after DT supporting
+> will be more complicated
+> This patch registers it on board code as cleanup C code
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+I have manually applied the following.
+Please verify it is correct.
+
+
+From 7e22e7b2d34c28d4dc4b7df812e10c05dd6bd7f5 Mon Sep 17 00:00:00 2001
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 23 Sep 2013 23:04:10 -0700
+Subject: [PATCH] ARM: shmobile: r8a7778: cleanup registration of vin
 
 vin driver which needs platform data at the time of
 registration is used from BockW only.
@@ -20,17 +45,18 @@ will be more complicated
 This patch registers it on board code as cleanup C code
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw.c          |   32 ++++++++++++++++++-----
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 --
- arch/arm/mach-shmobile/setup-r8a7778.c        |   34 -------------------------
+ arch/arm/mach-shmobile/board-bockw.c          | 32 ++++++++++++++++++++-----
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |  2 --
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 34 ---------------------------
  3 files changed, 26 insertions(+), 42 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 330e84c..450ac3d 100644
+index 6b9faf3..4b696ce 100644
 --- a/arch/arm/mach-shmobile/board-bockw.c
 +++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -269,10 +269,6 @@ static struct sh_mmcif_plat_data sh_mmcif_plat __initdata = {
+@@ -162,10 +162,6 @@ static struct sh_mmcif_plat_data sh_mmcif_plat __initdata = {
  			  MMC_CAP_NEEDS_POLL,
  };
  
@@ -41,9 +67,9 @@ index 330e84c..450ac3d 100644
  /* In the default configuration both decoders reside on I2C bus 0 */
  #define BOCKW_CAMERA(idx)						\
  static struct i2c_board_info camera##idx##_info = {			\
-@@ -469,6 +465,30 @@ static struct asoc_simple_card_info rsnd_card_info[] = {
- 	}
- };
+@@ -181,6 +177,30 @@ static struct soc_camera_link iclink##idx##_ml86v7667 __initdata = {	\
+ BOCKW_CAMERA(0);
+ BOCKW_CAMERA(1);
  
 +/* VIN */
 +static struct rcar_vin_platform_data vin_platform_data __initdata = {
@@ -70,9 +96,9 @@ index 330e84c..450ac3d 100644
 +R8A7778_VIN(1);
 +
  static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* AUDIO */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7778",
-@@ -549,10 +569,10 @@ static void __init bockw_init(void)
+ 	/* Ether */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("r8a777x-ether", "pfc-r8a7778",
+@@ -236,10 +256,10 @@ static void __init bockw_init(void)
  	r8a7778_init_irq_extpin(1);
  	r8a7778_add_standard_devices();
  	r8a7778_add_ether_device(&ether_platform_data);
@@ -86,7 +112,7 @@ index 330e84c..450ac3d 100644
  				      &iclink0_ml86v7667,
  				      sizeof(iclink0_ml86v7667));
 diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index ea1dca6..cb99721 100644
+index adfcf51..9838608 100644
 --- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
 +++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
 @@ -24,8 +24,6 @@
@@ -99,10 +125,10 @@ index ea1dca6..cb99721 100644
  
  extern void r8a7778_init_late(void);
 diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index e484d14..e5d97dd 100644
+index 6a2657e..604cf36 100644
 --- a/arch/arm/mach-shmobile/setup-r8a7778.c
 +++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -298,40 +298,6 @@ void __init r8a7778_register_hspi(int id)
+@@ -281,40 +281,6 @@ void __init r8a7778_register_hspi(int id)
  		hspi_resources + (2 * id), 2);
  }
  
@@ -144,5 +170,5 @@ index e484d14..e5d97dd 100644
  {
  	int i;
 -- 
-1.7.9.5
+1.8.4
 
