@@ -1,98 +1,286 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Mon, 23 Sep 2013 21:41:07 +0000
-Subject: [PATCH 10/10] pwm-backlight: Allow backlight to remain disabled on boot
-Message-Id: <1379972467-11243-11-git-send-email-treding@nvidia.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 25 Sep 2013 23:37:09 +0000
+Subject: [PATCH/RFC] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
+Message-Id: <20130925233709.16540.66903.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
-In-Reply-To: <1379972467-11243-1-git-send-email-treding@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, daniel.lezcano@linaro.org, linux-kernel@vger.kernel.org, horms@verge.net.au, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-The default for backlight devices is to be enabled immediately when
-registering with the backlight core. This can be useful for setups that
-use a simple framebuffer device and where the backlight cannot otherwise
-be hooked up to the panel.
+From: Magnus Damm <damm@opensource.se>
 
-However, when dealing with more complex setups, such as those of recent
-ARM SoCs, this can be problematic. Since the backlight is usually setup
-separately from the display controller, the probe order is not usually
-deterministic. That can lead to situations where the backlight will be
-powered up and the panel will show an uninitialized framebuffer.
+Based on request from Olof Johansson, move ARM mach-shmobile
+clocksource entries to drivers/clocksource/Kconfig, and at
+the same time make the SH architecture use these entries.
 
-Furthermore, subsystems such as DRM have advanced functionality to set
-the power mode of a panel. In order to allow such setups to power up the
-panel at exactly the right moment, a way is needed to prevent the
-backlight core from powering the backlight up automatically when it is
-registered.
+Kconfig entries for CMT, MTU2, TMU and STI are with this patch
+now kept in one place. The SH SYS_SUPPORTS_nnn bits are dropped
+to simplye let the user select the appropriate ones using Kconfig
+instead of trying to filter available timers based on SoC.
 
-This commit introduces a new boot_off field in the platform data (and
-also implements getting the same information from device tree). When set
-the initial backlight power mode will be set to "off".
+Known issues:
+ 1) Not yet wrappend in menu/endmenu, populates the root driver menu
+ -> proposal: Create separate patch to wrap all the clocksource entries?
 
-Signed-off-by: Thierry Reding <treding@nvidia.com>
+ 2) Should the entries be sorted?
+ -> proposal: Ignore cosmetic bits
+
+ 3) What is correct dependency for multiplatform and single platform?
+ -> proposal: Perhaps we should simply default to no?
+
+ 4) Is single patch across 2 architectures and drivers/clocksource OK?
+ -> proposal: Keep it like this if possible
+
+Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Note: Perhaps it would be more useful to make this the default behaviour
-in the backlight core? Many other subsystems and frameworks assume that
-a resource is off unless explicitly enabled.
----
- .../devicetree/bindings/video/backlight/pwm-backlight.txt         | 1 +
- drivers/video/backlight/pwm_bl.c                                  | 8 ++++++++
- include/linux/pwm_backlight.h                                     | 2 ++
- 3 files changed, 11 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/video/backlight/pwm-backlight.txt b/Documentation/devicetree/bindings/video/backlight/pwm-backlight.txt
-index 3898f26..1271886 100644
---- a/Documentation/devicetree/bindings/video/backlight/pwm-backlight.txt
-+++ b/Documentation/devicetree/bindings/video/backlight/pwm-backlight.txt
-@@ -16,6 +16,7 @@ Optional properties:
-                "pwms" property (see PWM binding[0])
-   - enable-gpios: a list of GPIOs to enable and disable the backlight
-   - power-supply: regulator for supply voltage
-+  - backlight-boot-off: keep the backlight disabled on boot
- 
- [0]: Documentation/devicetree/bindings/pwm/pwm.txt
- 
-diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
-index a2b3876..3b2d9cf 100644
---- a/drivers/video/backlight/pwm_bl.c
-+++ b/drivers/video/backlight/pwm_bl.c
-@@ -184,6 +184,8 @@ static int pwm_backlight_parse_dt(struct device *dev,
- 	if (gpio_is_valid(data->enable_gpio) && (flags & OF_GPIO_ACTIVE_LOW))
- 		data->enable_gpio_flags |= PWM_BACKLIGHT_GPIO_ACTIVE_LOW;
- 
-+	data->boot_off = of_property_read_bool(node, "backlight-boot-off");
-+
- 	return 0;
- }
- 
-@@ -318,6 +320,12 @@ static int pwm_backlight_probe(struct platform_device *pdev)
- 	}
- 
- 	bl->props.brightness = data->dft_brightness;
-+
-+	if (data->boot_off)
-+		bl->props.power = FB_BLANK_POWERDOWN;
-+	else
-+		bl->props.power = FB_BLANK_UNBLANK;
-+
- 	backlight_update_status(bl);
- 
- 	platform_set_drvdata(pdev, bl);
-diff --git a/include/linux/pwm_backlight.h b/include/linux/pwm_backlight.h
-index 2de2e27..ea4a239 100644
---- a/include/linux/pwm_backlight.h
-+++ b/include/linux/pwm_backlight.h
-@@ -18,6 +18,8 @@ struct platform_pwm_backlight_data {
- 	unsigned int *levels;
- 	int enable_gpio;
- 	unsigned long enable_gpio_flags;
-+	bool boot_off;
-+
- 	int (*init)(struct device *dev);
- 	int (*notify)(struct device *dev, int brightness);
- 	void (*notify_after)(struct device *dev, int brightness);
--- 
-1.8.4
+ arch/arm/mach-shmobile/Kconfig |   19 --------------
+ arch/sh/Kconfig                |   53 ----------------------------------------
+ drivers/clocksource/Kconfig    |   25 ++++++++++++++++++
+ 3 files changed, 25 insertions(+), 72 deletions(-)
 
+--- 0004/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-09-26 07:51:06.000000000 +0900
+@@ -307,25 +307,6 @@ config SHMOBILE_TIMER_HZ
+ 	  SH-Mobile systems using a 32768 Hz RCLK for clock events may want
+ 	  to select a HZ value such as 128 that can evenly divide RCLK.
+ 	  A HZ value that does not divide evenly may cause timer drift.
+-
+-config SH_TIMER_CMT
+-	bool "CMT timer driver"
+-	default y
+-	help
+-	  This enables build of the CMT timer driver.
+-
+-config SH_TIMER_TMU
+-	bool "TMU timer driver"
+-	default y
+-	help
+-	  This enables build of the TMU timer driver.
+-
+-config EM_TIMER_STI
+-	bool "STI timer driver"
+-	default y
+-	help
+-	  This enables build of the STI timer driver.
+-
+ endmenu
+ 
+ endif
+--- 0001/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2013-09-26 08:00:49.000000000 +0900
+@@ -121,15 +121,6 @@ config SYS_SUPPORTS_NUMA
+ config SYS_SUPPORTS_PCI
+ 	bool
+ 
+-config SYS_SUPPORTS_CMT
+-	bool
+-
+-config SYS_SUPPORTS_MTU2
+-	bool
+-
+-config SYS_SUPPORTS_TMU
+-	bool
+-
+ config STACKTRACE_SUPPORT
+ 	def_bool y
+ 
+@@ -189,14 +180,12 @@ config CPU_SH3
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+-	select SYS_SUPPORTS_TMU
+ 
+ config CPU_SH4
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+ 	select CPU_HAS_FPU if !CPU_SH4AL_DSP
+-	select SYS_SUPPORTS_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+ config CPU_SH4A
+@@ -211,7 +200,6 @@ config CPU_SH4AL_DSP
+ config CPU_SH5
+ 	bool
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+ config CPU_SHX2
+@@ -248,7 +236,6 @@ choice
+ config CPU_SUBTYPE_SH7619
+ 	bool "Support SH7619 processor"
+ 	select CPU_SH2
+-	select SYS_SUPPORTS_CMT
+ 
+ # SH-2A Processor Support
+ 
+@@ -256,50 +243,38 @@ config CPU_SUBTYPE_SH7201
+ 	bool "Support SH7201 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_MTU2
+  
+ config CPU_SUBTYPE_SH7203
+ 	bool "Support SH7203 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7206
+ 	bool "Support SH7206 processor"
+ 	select CPU_SH2A
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
+ 
+ config CPU_SUBTYPE_SH7263
+ 	bool "Support SH7263 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
+ 
+ config CPU_SUBTYPE_SH7264
+ 	bool "Support SH7264 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7269
+ 	bool "Support SH7269 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_MXG
+ 	bool "Support MX-G processor"
+ 	select CPU_SH2A
+-	select SYS_SUPPORTS_MTU2
+ 	help
+ 	  Select MX-G if running on an R8A03022BG part.
+ 
+@@ -352,7 +327,6 @@ config CPU_SUBTYPE_SH7720
+ 	bool "Support SH7720 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select SYS_SUPPORTS_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
+@@ -364,7 +338,6 @@ config CPU_SUBTYPE_SH7721
+ 	bool "Support SH7721 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select SYS_SUPPORTS_CMT
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
+ 	help
+@@ -420,7 +393,6 @@ config CPU_SUBTYPE_SH7723
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 	help
+@@ -432,7 +404,6 @@ config CPU_SUBTYPE_SH7724
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 	help
+@@ -512,7 +483,6 @@ config CPU_SUBTYPE_SH7343
+ 	bool "Support SH7343 processor"
+ 	select CPU_SH4AL_DSP
+ 	select ARCH_SHMOBILE
+-	select SYS_SUPPORTS_CMT
+ 
+ config CPU_SUBTYPE_SH7722
+ 	bool "Support SH7722 processor"
+@@ -521,7 +491,6 @@ config CPU_SUBTYPE_SH7722
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+-	select SYS_SUPPORTS_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 
+@@ -532,7 +501,6 @@ config CPU_SUBTYPE_SH7366
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+-	select SYS_SUPPORTS_CMT
+ 
+ endchoice
+ 
+@@ -565,27 +533,6 @@ source "arch/sh/boards/Kconfig"
+ 
+ menu "Timer and clock configuration"
+ 
+-config SH_TIMER_TMU
+-	bool "TMU timer driver"
+-	depends on SYS_SUPPORTS_TMU
+-	default y
+-	help
+-	  This enables the build of the TMU timer driver.
+-
+-config SH_TIMER_CMT
+-	bool "CMT timer driver"
+-	depends on SYS_SUPPORTS_CMT
+-	default y
+-	help
+-	  This enables build of the CMT timer driver.
+-
+-config SH_TIMER_MTU2
+-	bool "MTU2 timer driver"
+-	depends on SYS_SUPPORTS_MTU2
+-	default y
+-	help
+-	  This enables build of the MTU2 timer driver.
+-
+ config SH_PCLK_FREQ
+ 	int "Peripheral clock frequency (in Hz)"
+ 	depends on SH_CLK_CPG_LEGACY
+--- 0001/drivers/clocksource/Kconfig
++++ work/drivers/clocksource/Kconfig	2013-09-26 07:59:19.000000000 +0900
+@@ -109,3 +109,28 @@ config VF_PIT_TIMER
+ 	bool
+ 	help
+ 	  Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
++
++config SH_TIMER_CMT
++	bool "CMT timer driver"
++	default y
++	help
++	  This enables build of the CMT timer driver.
++
++config SH_TIMER_MTU2
++	bool "MTU2 timer driver"
++	default y
++	help
++	  This enables build of the MTU2 timer driver.
++
++config SH_TIMER_TMU
++	bool "TMU timer driver"
++	default y
++	help
++	  This enables build of the TMU timer driver.
++
++config EM_TIMER_STI
++	bool "STI timer driver"
++	default y
++	help
++	  This enables build of the STI timer driver.
++
