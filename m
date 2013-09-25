@@ -1,58 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Sep 2013 15:25:41 +0000
-Subject: Re: [PATCH 1/6] clocksource: em_sti: convert to clk_prepare/unprepare
-Message-Id: <1504961.3u9y73MgII@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 25 Sep 2013 23:11:19 +0000
+Subject: [PATCH] ARM: shmobile: Add r8a7790 thermal sensor DT device
+Message-Id: <20130925231119.16473.31647.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52410F86.4040301@renesas.com> <20130924130924.61d4ecedf3d4fca5952d55fc@ops.dti.ne.jp>
-In-Reply-To: <20130924130924.61d4ecedf3d4fca5952d55fc-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org
-Cc: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org, Shinya Kuribayashi <shinya.kuribayashi.px-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>, Mike Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Yoshii-san,
+From: Magnus Damm <damm@opensource.se>
 
-Thank you for the patch.
+Hook up the single channel thermal sensor via DT
+on r8a7790. The information used by the platform
+device has been verified against the data sheet.
 
-On Tuesday 24 September 2013 13:09:24 takasi-y@ops.dti.ne.jp wrote:
-> From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> 
-> Add calls to clk_prepare and unprepare so that EMMA Mobile EV2 can
-> migrate to the common clock framework.
-> 
-> Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ Written against renesas-devel-20130925
 
-> ---
->  drivers/clocksource/em_sti.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
-> index 3a5909c..9d17083 100644
-> --- a/drivers/clocksource/em_sti.c
-> +++ b/drivers/clocksource/em_sti.c
-> @@ -78,7 +78,7 @@ static int em_sti_enable(struct em_sti_priv *p)
->  	int ret;
-> 
->  	/* enable clock */
-> -	ret = clk_enable(p->clk);
-> +	ret = clk_prepare_enable(p->clk);
->  	if (ret) {
->  		dev_err(&p->pdev->dev, "cannot enable clock\n");
->  		return ret;
-> @@ -107,7 +107,7 @@ static void em_sti_disable(struct em_sti_priv *p)
->  	em_sti_write(p, STI_INTENCLR, 3);
-> 
->  	/* stop clock */
-> -	clk_disable(p->clk);
-> +	clk_disable_unprepare(p->clk);
->  }
-> 
->  static cycle_t em_sti_count(struct em_sti_priv *p)
--- 
-Regards,
+ arch/arm/boot/dts/r8a7790.dtsi         |    7 +++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c |    1 +
+ 2 files changed, 8 insertions(+)
 
-Laurent Pinchart
-
+--- 0001/arch/arm/boot/dts/r8a7790.dtsi
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-09-26 07:23:04.000000000 +0900
+@@ -87,6 +87,13 @@
+ 		interrupts = <1 9 0xf04>;
+ 	};
+ 
++	thermal@e61f0000 {
++		compatible = "renesas,rcar-thermal";
++		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 69 4>;
++	};
++
+ 	gpio0: gpio@ffc40000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+ 		reg = <0 0xffc40000 0 0x2c>;
+--- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-09-26 07:24:37.000000000 +0900
+@@ -272,6 +272,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
++	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
