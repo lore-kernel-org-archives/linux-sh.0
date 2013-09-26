@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 26 Sep 2013 09:36:19 +0000
+Date: Thu, 26 Sep 2013 09:39:03 +0000
 Subject: Re: [PATCH 1/3] media: i2c: Add ADV761X support
-Message-Id: <7160350.b3VDEo9zXc@avalon>
+Message-Id: <1421795.fKC3Sze3ao@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1380029916-10331-2-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1380029916-10331-2-git-send-email-valentine.barshak@cogentembedded.com>
@@ -12,133 +12,69 @@ To: linux-sh@vger.kernel.org
 
 Hi Hans,
 
-On Thursday 26 September 2013 08:57:43 Hans Verkuil wrote:
-> On 09/25/2013 12:21 PM, Laurent Pinchart wrote:
-> > Hi Valentine,
-> > 
-> > Thank you for the patch.
-> > 
-> > Please see below for a couple of comments (in addition to Hans' and
-> > Guennadi's comments).
-> > 
-> > On Tuesday 24 September 2013 17:38:34 Valentine Barshak wrote:
-> >> This adds ADV7611/ADV7612 Dual Port Xpressview
-> >> 225 MHz HDMI Receiver support.
-> >> 
-> >> The code is based on the ADV7604 driver, and ADV7612 patch
-> >> by Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> >> 
-> >> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> >> ---
-> >> 
-> >>  drivers/media/i2c/Kconfig   |   11 +
-> >>  drivers/media/i2c/Makefile  |    1 +
-> >>  drivers/media/i2c/adv761x.c | 1060
-> >>  ++++++++++++++++++++++++++++++++++++++++
-> >>  include/media/adv761x.h     |   28 ++
-> >>  4 files changed, 1100 insertions(+)
-> >>  create mode 100644 drivers/media/i2c/adv761x.c
-> >>  create mode 100644 include/media/adv761x.h
-> > 
+On Thursday 26 September 2013 08:31:58 Hans Verkuil wrote:
+> On 09/26/2013 12:57 AM, Laurent Pinchart wrote:
+> > On Wednesday 25 September 2013 18:31:51 Guennadi Liakhovetski wrote:
+> >> On Wed, 25 Sep 2013, Valentine wrote:
+> >>> On 09/25/2013 06:08 PM, Guennadi Liakhovetski wrote:
 > > [snip]
 > > 
-> >> diff --git a/drivers/media/i2c/adv761x.c b/drivers/media/i2c/adv761x.c
-> >> new file mode 100644
-> >> index 0000000..bc3dfc3
-> >> --- /dev/null
-> >> +++ b/drivers/media/i2c/adv761x.c
+> >>>>>>> +/* I2C I/O operations */
+> >>>>>>> +static s32 adv_smbus_read_byte_data(struct i2c_client *client, u8
+> >>>>>>> command)
+> >>>>>>> +{
+> >>>>>>> +	s32 ret, i;
+> >>>>>>> +
+> >>>>>>> +	for (i = 0; i < 3; i++) {
+> >>>>>>> +		ret = i2c_smbus_read_byte_data(client, command);
+> >>>>>> 
+> >>>>>> Uhm, why do you need to do this 3 times?... I see adv7842 does that
+> >>>>>> too... but e.g. adv7604 dies this only for writing and not for
+> >>>>>> reading...
+> >>>>> 
+> >>>>> Just thought it would be safe to retry in case of a failure.
+> >>>>> Other drivers seem to retry I2C I/O as well. This is probably related
+> >>>>> to the possible cable issues. Not sure. Anyways, retrying doesn't seem
+> >>>>> to hurt, does it?
+> >>>> 
+> >>>> It does, because it means there's something we don't understand. IMHO
+> >>>> it should either work from the first time, or there should be an error,
+> >>>> that we understand with a following error processing, that _might_
+> >>>> include re-trying. Re-trying just in case isn't good. Especially if no
+> >>>> error has been observed.
+> >>> 
+> >>> I have observed very rare errors when reading HDMI status. Just a couple
+> >>> of times during this week. I'm not sure of the nature of those errors.
+> >>> Just thought it would be OK to retry since other decoder drivers do so
+> >>> as well.
+> >> 
+> >> Ok, understand. As I said, I personally don't like that, but, I think,
+> >> Laurent will have a final word on this.
 > > 
-> > [snip]
-> > 
-> >> +/* Supported color format list */
-> >> +static const struct adv761x_color_format adv761x_cfmts[] = {
-> >> +	{
-> >> +		.code		= V4L2_MBUS_FMT_RGB888_1X24,
-> >> +		.colorspace	= V4L2_COLORSPACE_SRGB,
-> >> +	},
-> >> +};
-> > 
-> > Do you plan to add support for more formats later ?
-> > 
-> > [snip]
-> > 
-> >> +static inline int edid_write_block(struct v4l2_subdev *sd,
-> >> +					unsigned len, const u8 *val)
-> > 
-> > I would pass a pointer to adv761x_state to the internal functions instead
-> > of getting it from the subdev pointer each time, but that's up to you.
-> >
-> >> +{
-> >> +	struct i2c_client *client = v4l2_get_subdevdata(sd);
-> >> +	struct adv761x_state *state = to_state(sd);
-> >> +	int ret = 0;
-> >> +	int i;
-> > 
-> > i is used as an unsigned number, please make it unsigned int. Same comment
-> > for all the locations below where i is used as unsigned.
-> > 
-> >> +
-> >> +	v4l2_dbg(2, debug, sd, "writing EDID block (%d bytes)\n", len);
-> >> +
-> >> +	v4l2_subdev_notify(sd, ADV761X_HOTPLUG, (void *)0);
-> > 
-> > This means that the master V4L2 driver will need to handle
-> > ADV761x-specific
-> > events, which doesn't sound very good. What do you use the event for ?
-> > Could you create a standard interface for this ?
-> > 
-> >> +	/* Disable I2C access to internal EDID ram from DDC port */
-> >> +	rep_write(sd, 0x74, 0x0);
-> > 
-> > Could you #define constants for register addresses and values instead of
-> > hardcoding them ?
+> > I don't like the idea of blindly retrying, especially for write
+> > operations. If a read fails due to a flaky cable, there's equal chances
+> > that a write would fail as well, which could result in writing random
+> > values to random registers. Given the side effects that this could have,
+> > I'd much rather not retry I/O operations and have the users fix
+> > electrical issues. Hiding something this serious could be dangerous.
 > 
-> These days I would probably use the regmap API instead.
+> For a ubiquitous and relatively slow-speed bus the i2c bus is surprisingly
+> flaky in my experience. I've seen surprisingly many cases where a retry was
+> useful or even necessary. There can be many causes: electrical issues is
+> one, and while that shouldn't happen, in practice it does. Interference by
+> other devices on the bus is another. And sometimes the device itself is
+> flaky: in the case of the adv7511 trying to enable/disable an interrupt
+> just fails every so often.
 
-That's a good idea.
+If we enable retries by default, what could happen is that new boards subject 
+to electrical issues on their I2C bus will not be seen as broken until much 
+later in the development, and possibly too late, after going to production. I 
+don't want to blindly hide the problem, if an electrical issue is present it 
+should be seen. Now, if we need to support an existing broken board, I'm fine 
+with enabling retries, but it shouldn't be enabled by default.
 
-> That said, I've always hated using defines for register addresses since all
-> the datasheets are always organized around addresses, not names. Using
-> defines means I need to do a double-lookup: from define to address, from
-> address to the right database page that documents it.
-
-Using #defines usually saves you from looking up the register completely in 
-the datasheet, and is especially important when the datasheet is not publicly 
-available. When reasonably familiar with the chip, proper #defines will tell 
-you what register is modified and how. Hardcoded values are never readable.
-
-> I'd rather see a useful comment.
-> 
-> >> +	for (i = 0; !ret && i < len; i += I2C_SMBUS_BLOCK_MAX)
-> >> +		ret = adv_smbus_write_i2c_block_data(state->i2c_edid, i,
-> >> +				I2C_SMBUS_BLOCK_MAX, val + i);
-> >> +	if (ret)
-> >> +		return ret;
-> >> +
-> >> +	/* adv761x calculates the checksums and enables I2C access
-> >> +	 * to internal EDID ram from DDC port.
-> >> +	 */
-> >> +	rep_write(sd, 0x74, 0x01);
-> >> +
-> >> +	for (i = 0; i < 1000; i++) {
-> >> +		if (rep_read(sd, 0x76) & 0x1) {
-> >> +			/* enable hotplug after 100 ms */
-> >> +			queue_delayed_work(state->work_queue,
-> >> +				&state->enable_hotplug, HZ / 10);
-> >> +			return 0;
-> >> +		}
-> >> +		schedule();
-> > 
-> > I haven't checked the datasheet, but can't the chip generate an interrupt
-> > that could replace the busy-loop ?
-> 
-> There isn't one in the adv7604, so I assume it's the same for this chip.
-> 
-> >> +	}
-> >> +
-> >> +	v4l_err(client, "error enabling edid\n");
-> >> +	return -EIO;
-> >> +}
+> I have yet to see a product bringup where the i2c bringup 'just works'.
+> There are always problems there.
 
 -- 
 Regards,
