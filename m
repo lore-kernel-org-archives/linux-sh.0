@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 21 Sep 2013 17:14:05 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 26 Sep 2013 06:50:45 +0000
 Subject: Re: [PATCH] ARM: shmobile: Lager: add Micrel KSZ8041 PHY fixup
-Message-Id: <20130921171400.GA3181@verge.net.au>
+Message-Id: <CANqRtoTiHQ3EVDZ8POCkyN2ga95rF=u5ERfYsdZbX+toqAWmaQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201309140429.23474.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201309140429.23474.sergei.shtylyov@cogentembedded.com>
@@ -10,7 +10,8 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Sep 14, 2013 at 04:29:22AM +0400, Sergei Shtylyov wrote:
+On Fri, Sep 13, 2013 at 5:29 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
 > Currently on the Lager board NFS timeouts/delays are seen when booting.  That
 > turned out to happen because the SoC's ETH_LINK signal turns on and off after
 > each packet.  It is connected to Micrel KSZ8041 PHY's LED0 signal. Ether LEDs
@@ -20,21 +21,20 @@ On Sat, Sep 14, 2013 at 04:29:22AM +0400, Sergei Shtylyov wrote:
 > back to 01 from the default 00 value which causes bouncing of ETH_LINK.  That
 > can be achieved using the PHY platform fixup mechanism if we also modify the
 > driver to use it..
-> 
+>
 > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
-> This patch is against the recent Linus' tree. Its effect on NFS issue depends
-> on the 'sh_eth' driver patch I've posted earlier. 
-> Simon, please update your 'master' and/or 'fixes' branches since currently it's
-> impossible to apply fixes to your tree.
-> 
->  arch/arm/mach-shmobile/board-lager.c |   27 ++++++++++++++++++++++++++-
->  1 file changed, 26 insertions(+), 1 deletion(-)
 
-Thanks, I have rebased my tree and applied this change to
-the fixes-for-v3.12 branch.
+Hi Sergei,
 
-And I will push the new tree either in the next
-half hour or some time next week - I have to jump on a plane shortly.
+Thanks for your efforts on this. Nice to see that Ethernet for Lager
+board support is improving.
 
+Can you please share with us with link speeds you tested? I suspect
+that this patch is only needed for some case, like for instance 100
+MBit Full Duplex. Fixing the PHY settings makes sense even though only
+a single mode needs it, but knowing which link speeds that are known
+to work would help a lot.
+
+Cheers,
+
+/ magnus
