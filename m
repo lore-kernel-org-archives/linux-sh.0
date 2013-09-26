@@ -1,72 +1,92 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Sep 2013 14:38:37 +0000
-Subject: Re: [PATCH/RFC v4] ARM: shmobile: armadillo800eva-reference: add SDHI and MMCIF interfaces
-Message-Id: <4930291.CjfDWjixe7@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 26 Sep 2013 17:21:00 +0000
+Subject: [PATCH v2 5/5] ARM: shmobile: lager: (DEVEL) add CPUFreq support
+Message-Id: <1380216060-14506-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1309231651230.11505@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1309231651230.11505@axis700.grange>
+References: <1380216060-14506-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1380216060-14506-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Hi Grant,
+The Lager board uses a DA9210 voltage regulator to supply DVFS power to the
+CA15 cores on the r8a7790 SoC. This patch adds CPUFreq support for that
+board using the cpufreq-cpu0 driver.
 
-On Monday 30 September 2013 14:15:15 Grant Likely wrote:
-> On Thu, Sep 26, 2013 at 8:46 AM, Linus Walleij wrote:
-> > On Wed, Sep 25, 2013 at 11:05 AM, Laurent Pinchart wrote:
-> >>> > 3. RFC because I don't know how to enable choosing between CON14 and
-> >>> > CON8. In .c version this is done by reading GPIO 6. To do the same in
-> >>> > DT mode we'd probably have to use some run-time DT patching, which
-> >>> > isn't possible yet, AFAICS.
-> >>> 
-> >>> I agree with your reasoning there, though perhaps Laurent or Magnus
-> >>> have a more enlightened view of things.
-> >> 
-> >> I'm tempted to say this should be handled by the boot loader, which
-> >> should then patch the DT accordingly. This is probably just a poor
-> >> attempt not to solve the problem in Linux though :-)
-> > 
-> > This is not the first time we have come to the conclusion that Linux
-> > need to modify the device tree.
-> > 
-> > And I clearly remember Grant stating that it is in principle a living
-> > datastructure, it's not like it's read-only.
-> 
-> You still don't want the kernel modifying the DT. The DT is primarily
-> a communication mechanism from the firmware/platform to the kernel. If
-> the platform is responsible for describing the correct configuration
-> then it belongs in the DT. If however the kernel needs to do the work
-> of figuring out which configuration to use at runtime, then it would
-> be better for the DT to describe the possible configurations and let
-> the kernel choose the appropriate one.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-Could you please elaborate a bit on how you envision this being implemented ?
+v2: added 'status = "okay";' to the i2c bus
 
-> > The actual restrictions seem to be more about things like if you
-> > need to read this GPIO to figure out how to set up the device tree
-> > you already need the base system initialized to access the GPIO
-> > so it becomes a chicken-and-egg problem.
-> > 
-> >> Linus, do you have an opinion on this ? The board has two connectors
-> >> (MMC/SD 1 and wifi module) that are not usable concurrently. The user
-> >> can select which connector to use through a hardware switch that
-> >> existing board code reads at init time to determine which platform
-> >> devices to register and how to configure pin muxing. Are you aware of a
-> >> similar problem on other boards that would have been solved already ?
-> > 
-> > Just because the pin control tables *can* be initialized from the device
-> > tree doesn't mean all of them *have to*.
-> 
-> Right. Also, there are patches floating about that allow additional device
-> tree fragments to be loaded after the rest of the system is booted. It was
-> specifically designed for the beaglebone expansion connectors. That might be
-> the way to solve your problem here. (I really want to get that feature
-> merged, but I sheepishly admit that I haven't been able to spend any time on
-> it)  :-(
+ arch/arm/boot/dts/r8a7790-lager-reference.dts  |   33 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-lager-reference.c |    4 ++-
+ 2 files changed, 36 insertions(+), 1 deletions(-)
 
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index c462ef1..1ce0a97 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -43,3 +43,36 @@
+ 		};
+ 	};
+ };
++
++&i2c3 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c3_pins>;
++
++	vdd_dvfs: da9210@68 {
++		compatible = "diasemi,da9210";
++		reg = <0x68>;
++
++		regulator-min-microvolt = <900000>;
++		regulator-max-microvolt = <1000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++	operating-points = <
++		/* kHz  uV - OPs unknown yet */
++		1300000 1000000
++		1000000  900000
++	>;
++	voltage-tolerance = <1>; /* 1% */
++};
++
++&pfc {
++	i2c3_pins: i2c3 {
++		renesas,groups = "i2c3";
++		renesas,function = "i2c3";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 1a1a4a8..2bc8bae 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -20,6 +20,7 @@
+ 
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_device.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
+@@ -29,7 +30,8 @@ static void __init lager_add_standard_devices(void)
+ 	r8a7790_clock_init();
+ 
+ 	r8a7790_add_dt_devices();
+-        of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+ }
+ 
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.2.5
 
