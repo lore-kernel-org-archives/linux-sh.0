@@ -1,7 +1,7 @@
 From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Thu, 26 Sep 2013 06:45:14 +0000
+Date: Thu, 26 Sep 2013 06:57:43 +0000
 Subject: Re: [PATCH 1/3] media: i2c: Add ADV761X support
-Message-Id: <5243D7FA.8060702@xs4all.nl>
+Message-Id: <5243DAE7.4080503@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1380029916-10331-2-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1380029916-10331-2-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,248 +10,126 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 09/25/2013 10:36 PM, Valentine wrote:
-> On 09/25/2013 10:33 PM, Guennadi Liakhovetski wrote:
->> Hi Valentine,
->>
->> On Wed, 25 Sep 2013, Valentine wrote:
->>
->>> On 09/25/2013 08:31 PM, Guennadi Liakhovetski wrote:
->>>> On Wed, 25 Sep 2013, Valentine wrote:
->>>>
->>>>> On 09/25/2013 06:08 PM, Guennadi Liakhovetski wrote:
->>>>
->>>> [snip]
->>>>
->>>>>>>> Using module parameters has a disadvantage, that all instances of
->>>>>>>> this
->>>>>>>> driver will get the same values, and it is quite possible to have
->>>>>>>> several
->>>>>>>> HDMI receivers in a system, I believe? Wouldn't it be better to pass
->>>>>>>> these
->>>>>>>> addresses from the platform data / DT?
->>>>>>>
->>>>>>> Yes, that doesn't look quite right, but I couldn't find a better
->>>>>>> solution
->>>>>>> ATM.
->>>>>>>
->>>>>>> The problem is that this subdevice is going to be used by a soc_camera
->>>>>>> driver,
->>>>>>> and the soc_camera interface uses its own platform data for all I2C
->>>>>>> subdevices.
->>>>>>> Thus, if I pass the I2C addresses in client->dev.platform_data here
->>>>>>> (as in
->>>>>>> adv7604), it's doing to be overwritten by the soc_camera_i2c_init()
->>>>>>> function
->>>>>>> with a soc_camera_subdev_desc data.
->>>>>>>
->>>>>>> Not sure what the correct solution should be. Any suggestions are
->>>>>>> greatly
->>>>>>> appreciated.
->>>>>>
->>>>>> You don't think, that soc-camera makes it impossible to pass
->>>>>> device-specific platform data to subdevices, right? For an example have
->>>>>> a
->>>>>> look e.g. at mt9v022 and arch/arm/mach-pxa/pcm990-baseboard.c or at
->>>>>> mt9t111 and arch/arm/mach-shmobile/board-armadillo800eva.c.
->>>>>
->>>>> Yes, but in this case adv761x.c has to be a soc_camera i2c subdevice
->>>>> driver.
->>>>> Which means it will get its platform data from ssdd->drv_priv like mt9v022
->>>>> AOT
->>>>> client->dev.platform_data, like adv7604 does.
->>>>>
->>>>> What if a non-soc_camera needs to use the adv7612 decoder?
->>>>> IMHO, Looks like there's a conflict in the soc/non-soc camera driver
->>>>> subdevice
->>>>> usage.
->>>>
->>>> I don't think, that just using soc-camera platform data struct will make
->>>> it impossible for non-soc-camera bridge / video input drivers to use this
->>>> subdevice driver.
->>>
->>> This is the only problem I can see at the moment.
->>> Do you see any other issues?
->>>
->>> As I've said earlier the driver is based much on the adv7604 which is used for
->>> non-soc cameras.
->>> I guess, implementing dv_timings and ISR for adv7612 will make it look even
->>> closer.
->>> Other subdevice drivers (like 7180) seem to work with both soc/non-soc
->>> cameras.
->>> Are you proposing to make it soc-cam-specific, move it to i2c/soc_camera/ and
->>> deal with a non-soc variant later if needed?
->>
->> I wouldn't call it soc-camera specific. It would just include an
->> soc-camera header and use one soc-camera struct. It wouldn't even require
->> loading the soc-camera core module, let alone using soc-camera driver
->> binding schemes. So, it would be a very mild dependency.
-
-Guennadi, I still think this really, really sucks. And it would be great if
-soc-camera would just be able to use regular subdev drivers that no longer
-need to use anything from soc-camera. The dependencies have weakened a lot
-in recent times, so if a final push could be made to remove them completely,
-then that would be very helpful.
-
-> As for where you
->> put it - I don't care that much either.
+On 09/25/2013 12:21 PM, Laurent Pinchart wrote:
+> Hi Valentine,
 > 
-> OK, thanks.
+> Thank you for the patch.
+> 
+> Please see below for a couple of comments (in addition to Hans' and Guennadi's 
+> comments).
+> 
+> On Tuesday 24 September 2013 17:38:34 Valentine Barshak wrote:
+>> This adds ADV7611/ADV7612 Dual Port Xpressview
+>> 225 MHz HDMI Receiver support.
+>>
+>> The code is based on the ADV7604 driver, and ADV7612 patch
+>> by Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+>>
+>> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+>> ---
+>>  drivers/media/i2c/Kconfig   |   11 +
+>>  drivers/media/i2c/Makefile  |    1 +
+>>  drivers/media/i2c/adv761x.c | 1060 ++++++++++++++++++++++++++++++++++++++++
+>>  include/media/adv761x.h     |   28 ++
+>>  4 files changed, 1100 insertions(+)
+>>  create mode 100644 drivers/media/i2c/adv761x.c
+>>  create mode 100644 include/media/adv761x.h
+> 
+> [snip]
+> 
+>> diff --git a/drivers/media/i2c/adv761x.c b/drivers/media/i2c/adv761x.c
+>> new file mode 100644
+>> index 0000000..bc3dfc3
+>> --- /dev/null
+>> +++ b/drivers/media/i2c/adv761x.c
+> 
+> [snip]
+> 
+>> +/* Supported color format list */
+>> +static const struct adv761x_color_format adv761x_cfmts[] = {
+>> +	{
+>> +		.code		= V4L2_MBUS_FMT_RGB888_1X24,
+>> +		.colorspace	= V4L2_COLORSPACE_SRGB,
+>> +	},
+>> +};
+> 
+> Do you plan to add support for more formats later ?
+> 
+> [snip]
+> 
+>> +static inline int edid_write_block(struct v4l2_subdev *sd,
+>> +					unsigned len, const u8 *val)
+> 
+> I would pass a pointer to adv761x_state to the internal functions instead of 
+> getting it from the subdev pointer each time, but that's up to you.
+> 
+>> +{
+>> +	struct i2c_client *client = v4l2_get_subdevdata(sd);
+>> +	struct adv761x_state *state = to_state(sd);
+>> +	int ret = 0;
+>> +	int i;
+> 
+> i is used as an unsigned number, please make it unsigned int. Same comment for 
+> all the locations below where i is used as unsigned.
+> 
+>> +
+>> +	v4l2_dbg(2, debug, sd, "writing EDID block (%d bytes)\n", len);
+>> +
+>> +	v4l2_subdev_notify(sd, ADV761X_HOTPLUG, (void *)0);
+> 
+> This means that the master V4L2 driver will need to handle ADV761x-specific 
+> events, which doesn't sound very good. What do you use the event for ? Could 
+> you create a standard interface for this ?
+> 
+>> +	/* Disable I2C access to internal EDID ram from DDC port */
+>> +	rep_write(sd, 0x74, 0x0);
+> 
+> Could you #define constants for register addresses and values instead of 
+> hardcoding them ?
 
-Please put it in media/i2c. There where all the other receivers/transmitters
-live.
+These days I would probably use the regmap API instead.
+
+That said, I've always hated using defines for register addresses since all the
+datasheets are always organized around addresses, not names. Using defines means
+I need to do a double-lookup: from define to address, from address to the right
+database page that documents it.
+
+I'd rather see a useful comment.
 
 > 
->>
->>>> In fact, looking a bit more at the driver, I've got a couple more
->>>> questions.
->>>>
->>>> 1. Hotplug handling: you've got comments like "Pull down the hotplug pin,"
->>>> but I don't see any code that would actually pull the pin? Am I missing it
->>>> or is it permanently low?
->>>
->>> It is supposed to be done by the camera driver that receives the hotplug
->>> notification.
->>
->> Hm, seems strange to me - that pin belongs to the HDMI interface AFAICS
->> and the camera host / bridge driver knows nothing about HDMI... E.g.
->> adv7842_delayed_work_enable_hotplug(), IIUC, does enable the hotplug
->> detection pin itself. The adv7604 handling looks suspicious to me...
->>
->> BTW, the free ADV7612 "datasheet" with no register information and just a
->> general description does mention hotplug control pins, so, I really think
->> it should be a task of the HDMI decoder driver to control those.
+>> +	for (i = 0; !ret && i < len; i += I2C_SMBUS_BLOCK_MAX)
+>> +		ret = adv_smbus_write_i2c_block_data(state->i2c_edid, i,
+>> +				I2C_SMBUS_BLOCK_MAX, val + i);
+>> +	if (ret)
+>> +		return ret;
+>> +
+>> +	/* adv761x calculates the checksums and enables I2C access
+>> +	 * to internal EDID ram from DDC port.
+>> +	 */
+>> +	rep_write(sd, 0x74, 0x01);
+>> +
+>> +	for (i = 0; i < 1000; i++) {
+>> +		if (rep_read(sd, 0x76) & 0x1) {
+>> +			/* enable hotplug after 100 ms */
+>> +			queue_delayed_work(state->work_queue,
+>> +				&state->enable_hotplug, HZ / 10);
+>> +			return 0;
+>> +		}
+>> +		schedule();
 > 
-> IIUC, these pins are supposed to be controlled by the camera or SOC-GPIO.
+> I haven't checked the datasheet, but can't the chip generate an interrupt that 
+> could replace the busy-loop ?
 
-The adv7604 does not control the hotplug pin, so that's why the notify is
-there: only the bridge driver knows how it is hooked up. The adv7842 on the
-other hand controls the hotplug pin directly, so that one has no hotplug
-notify. So it depends on the adv761x hardware whether or not a notify is
-needed.
-
-How can you use this with soc-camera, BTW? soc-camera has no notifier, so
-cannot control the hotplug pin for you. And if you cannot control the hotplug
-pin, then you cannot set the EDID. And if you cannot set the EDID you cannot
-receive HDMI. Which makes it pretty pointless.
+There isn't one in the adv7604, so I assume it's the same for this chip.
 
 > 
->>
->>>> 2. You're using an own work queue just to queue a work to notify users
->>>> about the event. Wouldn't it suffice to just use the scheduler work queue?
->>>
->>> It probably would. I just didn't want to deviate much from the code that is
->>> already there (adv7604/adv7842/ad9389b/adv7511/cx25840).
->>>
->>>>
->>>>>>>>> diff --git a/include/media/adv761x.h b/include/media/adv761x.h
->>>>>>>>> new file mode 100644
->>>>>>>>> index 0000000..e6e6aea
->>>>>>>>> --- /dev/null
->>>>>>>>> +++ b/include/media/adv761x.h
->>>>>>>>> @@ -0,0 +1,28 @@
->>>>>>>>> +/*
->>>>>>>>> + * adv761x Analog Devices ADV761X HDMI receiver driver
->>>>>>>>> + *
->>>>>>>>> + * Copyright (C) 2013 Cogent Embedded, Inc.
->>>>>>>>> + * Copyright (C) 2013 Renesas Electronics Corporation
->>>>>>>>> + *
->>>>>>>>> + * This program is free software; you may redistribute it and/or
->>>>>>>>> modify
->>>>>>>>> + * it under the terms of the GNU General Public License as
->>>>>>>>> published
->>>>>>>>> by
->>>>>>>>> + * the Free Software Foundation; version 2 of the License.
->>>>>>>>> + *
->>>>>>>>> + * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
->>>>>>>>> KIND,
->>>>>>>>> + * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
->>>>>>>>> WARRANTIES OF
->>>>>>>>> + * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
->>>>>>>>> + * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
->>>>>>>>> HOLDERS
->>>>>>>>> + * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
->>>>>>>>> IN AN
->>>>>>>>> + * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
->>>>>>>>> IN
->>>>>>>>> + * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
->>>>>>>>> THE
->>>>>>>>> + * SOFTWARE.
->>>>>>>>> + *
->>>>>>>>> + */
->>>>>>>>> +
->>>>>>>>> +#ifndef _ADV761X_H_
->>>>>>>>> +#define _ADV761X_H_
->>>>>>>>> +
->>>>>>>>> +/* notify events */
->>>>>>>>> +#define ADV761X_HOTPLUG		1
->>>>>>>>
->>>>>>>> Is this header needed at all and - if so - does it have to be
->>>>>>>> exported
->>>>>>>> under include/ or would it be enough to put it under drivers/media/?
->>>>>>>
->>>>>>> Well, the ADV761X_HOTPLUG is supposed to be used by a camera driver
->>>>>>> for
->>>>>>> hotplug notification events (as in adv7604). If we find a way to use
->>>>>>> platform
->>>>>>> data with soc_camera, it should go into this header as well.
->>>>>>
->>>>>> As well or instead? Do you really need to export ADV761X_HOTPLUG? And
->>>>>> for
->>>>>> platform data it's now preferable to use the
->>>>>> include/linux/platform_data/
->>>>>> directory, I think.
-
-All other i2c receivers/transmitters use include/media. Let's keep it like that
-for now for consistency within the media drivers.
-
-We might move all those headers to include/linux/platform_data at some point in
-the future.
+>> +	}
+>> +
+>> +	v4l_err(client, "error enabling edid\n");
+>> +	return -EIO;
+>> +}
 
 Regards,
 
 	Hans
-
->>>>>
->>>>> As well.
->>>>> This code is based on the ADV7604 driver. The define is for other drivers
->>>>> to
->>>>> use (the ones that need to be notified of the EDID change, for example).
->>>>> As it
->>>>> is not used with rcar_vin, I have no problem with dropping the EDID
->>>>> handling
->>>>> altogether.
->>>>
->>>> Uhm, so, that code is untested? Then yes, personally, I'd rather drop it
->>>> for now.
->>>
->>> OK.
->>> BTW, the EDID read/write code *is* tested. It is just not used for the
->>> soc_camera.
->>> (It is impossible to use it for a soc_camera, as it doesn't support subdev
->>> user-space API)
->>
->> Ok, if it's been tested, it's good to keep it.
-> 
-> OK, thanks.
-> 
->>
->>>
->>>>
->>>> Thanks
->>>> Guennadi
->>>> ---
->>>> Guennadi Liakhovetski, Ph.D.
->>>> Freelance Open-Source Software Developer
->>>> http://www.open-technology.de/
->>>>
-> 
-> Thanks,
-> Val.
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
 
