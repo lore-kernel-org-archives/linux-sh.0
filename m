@@ -1,53 +1,69 @@
-From: Eric Dumazet <eric.dumazet@gmail.com>
-Date: Thu, 26 Sep 2013 16:59:19 +0000
-Subject: Re: [PATCH] sh_eth: NAPI requires netif_receive_skb()
-Message-Id: <1380214759.3165.201.camel@edumazet-glaptop>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 26 Sep 2013 17:20:57 +0000
+Subject: [PATCH v2 2/5] ARM: shmobile: r8a7790: add I2C clocks and aliases for the DT mode
+Message-Id: <1380216060-14506-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309030303.11381.sergei.shtylyov@cogentembedded.com>
-	 <20130904.141252.532474080722830977.davem@davemloft.net>
-	 <Pine.LNX.4.64.1309261751200.11968@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1309261751200.11968@axis700.grange>
+References: <1380216060-14506-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1380216060-14506-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: David Miller <davem@davemloft.net>, sergei.shtylyov@cogentembedded.com, netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-On Thu, 2013-09-26 at 18:12 +0200, Guennadi Liakhovetski wrote:
-> Hi
-> 
-> On Wed, 4 Sep 2013, David Miller wrote:
-> 
-> > From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> > Date: Tue, 3 Sep 2013 03:03:10 +0400
-> > 
-> > > Driver supporting NAPI should use NAPI-specific function for receiving packets,
-> > > so netif_rx() should be changed to netif_receive_skb().
-> > > 
-> > > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> This patch breaks NFS boot on Armadillo800eva for me. Network 
-> communication slows down to a crawl with
-> 
-> net eth0: Receive FIFO Overflow
-> nfs: server 192.168.x.y not responding, still trying
-> 
-> With this patch reverted (e.g. in today's Linus tree snapshot) boot is 
-> restored.
+This patch adds clock definitions for the 4 I2C interfaces on r8a7790 and
+clock aliases, suitable for the DT mode.
 
-RX_RING_SIZE is 64
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-This driver refills the Rx ring buffers only _after_ the loop to drain
-ready buffers. This was OK with the previous behavior (netif_rx() is
-damn fast)
+v2: part one of former [PATCH 2/4]
 
-With this low amount of buffers, underrun can happen with the new code,
-as netif_receive_skb() adds delay during the drain.
+ arch/arm/mach-shmobile/clock-r8a7790.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
-Most likely driver needs to refill buffers one by one (or small batches)
-instead of in one go after the drain.
-
-
-
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index af088c0..a64f965 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -52,6 +52,7 @@
+ #define SMSTPCR5 0xe6150144
+ #define SMSTPCR7 0xe615014c
+ #define SMSTPCR8 0xe6150990
++#define SMSTPCR9 0xe6150994
+ 
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+@@ -181,6 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ 
+ /* MSTP */
+ enum {
++	MSTP931, MSTP930, MSTP929, MSTP928,
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+@@ -192,6 +194,10 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP931] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 31, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+ 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
+@@ -271,6 +277,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
++	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
++	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
++	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
++	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+-- 
+1.7.2.5
 
