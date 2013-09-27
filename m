@@ -1,80 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 26 Sep 2013 02:14:46 +0000
-Subject: Re: [PATCH 2/2] rcar-hpbdma: add parameter to set_slave() method
-Message-Id: <20130926021446.GD18396@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 27 Sep 2013 00:10:55 +0000
+Subject: [GIT PULL v2 FOR v3.13] SH PFC pin definitions for I2C and SRU/SSI
+Message-Id: <5568164.3mozjzet5g@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309260231.37773.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309260231.37773.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Sep 26, 2013 at 02:31:37AM +0400, Sergei Shtylyov wrote:
-> Commit 4981c4dc194efb18f0e9a02f1b43e926f2f0d2bb (DMA: shdma: switch DT mode to
-> use configuration data from a match table) added a new parameter to set_slave()
-> method but unfortunately got merged later than commit c4f6c41ba790bbbfcebb4c47a
-> (dma: add driver for R-Car HPB-DMAC), so that the HPB-DMAC driver retained the
-> old prototype which caused this warning:
-> 
-> drivers/dma/sh/rcar-hpbdma.c:485: warning: initialization from incompatible
-> pointer type
-> 
-> The newly added parameter  is used to override DMA slave address from 'struct
-> hpb_dmae_slave_config', so we have to add the 'slave_addr' field to 'struct
-> hpb_dmae_chan', conditionally assign it in set_slave() method, and return in
-> slave_addr() method.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Hi Linus,
 
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+If you haven't merged my previous pull request yet, here's an update with a 
+third patch that adds support for the I2C3 controller's pins on R8A7790.
 
-> ---
-> The patch is against 'fixes-3.12' branch of Vinod Koul's 'slave-dma.git' repo.
->  
->  drivers/dma/sh/rcar-hpbdma.c |    7 +++++--
->  1 file changed, 5 insertions(+), 2 deletions(-)
-> 
-> Index: slave-dma/drivers/dma/sh/rcar-hpbdma.c
-> =================================> --- slave-dma.orig/drivers/dma/sh/rcar-hpbdma.c
-> +++ slave-dma/drivers/dma/sh/rcar-hpbdma.c
-> @@ -93,6 +93,7 @@ struct hpb_dmae_chan {
->  	void __iomem *base;
->  	const struct hpb_dmae_slave_config *cfg;
->  	char dev_id[16];		/* unique name per DMAC of channel */
-> +	dma_addr_t slave_addr;
->  };
->  
->  struct hpb_dmae_device {
-> @@ -445,7 +446,8 @@ hpb_dmae_alloc_chan_resources(struct hpb
->  	return 0;
->  }
->  
-> -static int hpb_dmae_set_slave(struct shdma_chan *schan, int slave_id, bool try)
-> +static int hpb_dmae_set_slave(struct shdma_chan *schan, int slave_id,
-> +			      dma_addr_t slave_addr, bool try)
->  {
->  	struct hpb_dmae_chan *chan = to_chan(schan);
->  	const struct hpb_dmae_slave_config *sc > @@ -456,6 +458,7 @@ static int hpb_dmae_set_slave(struct shd
->  	if (try)
->  		return 0;
->  	chan->cfg = sc;
-> +	chan->slave_addr = slave_addr ? : sc->addr;
->  	return hpb_dmae_alloc_chan_resources(chan, sc);
->  }
->  
-> @@ -467,7 +470,7 @@ static dma_addr_t hpb_dmae_slave_addr(st
->  {
->  	struct hpb_dmae_chan *chan = to_chan(schan);
->  
-> -	return chan->cfg->addr;
-> +	return chan->slave_addr;
->  }
->  
->  static struct shdma_desc *hpb_dmae_embedded_desc(void *buf, int i)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+As before, if you believe the patches can go to v3.12 in the -rc phase please 
+feel free to include them in your next fixes pull request, otherwise please 
+pull them in your for-next branch.
+
+The following changes since commit cfa8b3f54e00b2300a2562c00d4d0cac48379ddb:
+
+  Merge branch 'devel' into for-next (2013-09-23 11:26:59 +0200)
+
+are available in the git repository at:
+
+
+  git://linuxtv.org/pinchartl/fbdev.git pinmux/next
+
+for you to fetch changes up to f6aaaac9995084e496d4ff800d092a8c0cb12641:
+
+  sh-pfc: r8a7790: add pin definitions for the I2C3 interface (2013-09-27 
+02:03:52 +0200)
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      sh-pfc: r8a7790: add pin definitions for the I2C3 interface
+
+Kuninori Morimoto (1):
+      sh-pfc: r8a7778: Add SRU/SSI pin support
+
+Ulrich Hecht (1):
+      sh-pfc: r8a7790: Add I2C pin groups and functions
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 125 ++++++++++++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 110 +++++++++++++++++++++++++++++++++
+ 2 files changed, 235 insertions(+)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
