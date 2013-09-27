@@ -1,109 +1,148 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 09 Sep 2013 00:09:15 +0000
-Subject: Re: [GIT PULL 3/3] ARM: shmobile: lager: enable Ether
-Message-Id: <20130909000915.GB21921@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 27 Sep 2013 08:02:57 +0000
+Subject: [PATCH v6] ARM: shmobile: armadillo800eva-reference: add SDHI and MMCIF interfaces
+Message-Id: <Pine.LNX.4.64.1309270957470.23205@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1375839719.git.horms+renesas@verge.net.au>
- <4901e136aa5c35873701156c4c0af5b3c2c8faee.1375839719.git.horms+renesas@verge.net.au>
- <87siy3owxj.fsf@linaro.org> <5215115A.1010400@cogentembedded.com>
- <20130822001647.GA6902@verge.net.au>
- <20130822065325.GA6615@quad.lixom.net>
- <20130822070109.GA26589@verge.net.au>
- <CAOesGMjZ+a6EiDa2p3y-_kkQ0uwSHU6zdcTxuphJxNcr7QhDhw@mail.gmail.com>
- <20130822073706.GA32091@verge.net.au>
- <CAOesGMg=Nq+2bWr3tW5+t5zJi-YH35DWjE=Sr7aeo_6FtKt1Tg@mail.gmail.com>
-In-Reply-To: <CAOesGMg=Nq+2bWr3tW5+t5zJi-YH35DWjE=Sr7aeo_6FtKt1Tg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, devicetree@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-On Fri, Sep 06, 2013 at 02:32:16PM -0700, Olof Johansson wrote:
-> On Thu, Aug 22, 2013 at 12:37 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Aug 22, 2013 at 12:04:59AM -0700, Olof Johansson wrote:
-> >> On Thu, Aug 22, 2013 at 12:01 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> > On Wed, Aug 21, 2013 at 11:53:25PM -0700, Olof Johansson wrote:
-> >> >> On Thu, Aug 22, 2013 at 09:16:49AM +0900, Simon Horman wrote:
-> >> >> > On Wed, Aug 21, 2013 at 11:13:30PM +0400, Sergei Shtylyov wrote:
-> >> >> > > Hello.
-> >> >> > >
-> >> >> > > On 08/21/2013 08:01 PM, Kevin Hilman wrote:
-> >> >> > >
-> >> >> > > >>Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >> >> > > >>Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >> >> > >
-> >> >> > > >This one is triggering a new build failure in -next:
-> >> >> > >
-> >> >> > > >arch/arm/mach-shmobile/board-lager.c:99:2: error: unknown field 'register_type' specified in initializer
-> >> >> > > >arch/arm/mach-shmobile/board-lager.c:99:19: error: 'SH_ETH_REG_FAST_RCAR' undeclared here (not in a function)
-> >> >> > >
-> >> >> > > >>+/* Ether */
-> >> >> > > >>+static struct sh_eth_plat_data ether_pdata __initdata = {
-> >> >> > > >>+       .phy                    = 0x1,
-> >> >> > > >>+       .edmac_endian           = EDMAC_LITTLE_ENDIAN,
-> >> >> > > >>+       .register_type          = SH_ETH_REG_FAST_RCAR,
-> >> >> > >
-> >> >> > > >and it looks to be because this board is trying to use the register_type
-> >> >> > > >field which was removed by:
-> >> >> > >
-> >> >> > > >commit 8d3214c4e8c8be6efd8ec7a172239ebbd4deb04b
-> >> >> > > >Author: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >> >> > > >Date:   Sun Aug 18 03:13:26 2013 +0400
-> >> >> > > >
-> >> >> > > >     sh_eth: remove 'register_type' field from 'struct sh_eth_plat_data'
-> >> >> > > >
-> >> >> > > >     Now that the 'register_type' field of the 'sh_eth' driver's platform data is not
-> >> >> > > >     used by the driver anymore, it's time to remove it and  its initializers from
-> >> >> > > >     the SH platform code. Also  move *enum* declaring values for this  field from
-> >> >> > > >     <linux/sh_eth.h>  to  the  local driver's  header file as they're only needed
-> >> >> > > >     by the driver itself  now...
-> >> >> > > >
-> >> >> > > >     Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >> >> > > >     Signed-off-by: David S. Miller <davem@davemloft.net>
-> >> >> > >
-> >> >> > >    Looks like in this case I had no choice since R8A7790 support for
-> >> >> > > the 'sh_eth' driver will be added in 3.12 only, so if I merged these
-> >> >> > > patches thru the shmobile tree, we'd have gotten an error in the
-> >> >> > > driver...
-> >> >> > >    I guess it's too early to fix this in any particular tree except
-> >> >> > > for linux-next itself... let me know what I can do.
-> >> >> >
-> >> >> > This patch ("ARM: shmobile: lager: enable Ether") is also targeted at v3.12.
-> >> >> > So it seems to me that a fix for this could go through the shmobile tree
-> >> >> > if it is acceptable to merge net-next into the base of a pull-request.
-> >> >> >
-> >> >> > Kevin, Olof, could you give some guidance here.
-> >> >>
-> >> >> I don't think we want to pull in net-next here just for this -- that is a
-> >> >> massive branch.
-> >> >>
-> >> >> There's no great solution to any of this, unfortunately.
-> >> >>
-> >> >> I think easiest would be if we add a patch that fixes this up _only_ in
-> >> >> for-next, and merge the same patch upstream as soon as net-next lands
-> >> >> (if it lands after arm-soc, otherwise we include it in our branch),
-> >> >> that might be the least painful way to do this.
-> >> >>
-> >> >> That patch would just remove the assignment to register_type in the
-> >> >> board file.
-> >> >
-> >> > That is fine by me.
-> >> >
-> >> > I think it would be easiest to supply the patch to you as
-> >> > a patch in email rather than a pull request.
-> >> >
-> >> > Does that work for you?
-> >>
-> >> Yes, definitely.
-> >
-> > Thanks, I have posted it as
-> > "[PATCH] ARM: shmobile: lager: Do not use register_type field of struct".
-> 
-> Ok, I forgot to include this when sending the code up today, so lager
-> is currently broken in mainline. I'll include it in the next branch we
-> send up.
+Add SDHI0 and MMCIF interfaces to armadillo800eva-reference with
+regulators and pin configurations. SDHI1 is not added yet, because the
+switch, that connects the interface either to an SD slot or to a WiFi
+SDIO card cannot be described in DT yet.
 
-Thanks Olof,
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+---
 
-please let me know if there are any problems and you need me
-to help out.
+v6: specify a CD GPIO for SDHI0
+
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   58 ++++++++++++++++++++
+ arch/arm/boot/dts/r8a7740.dtsi                     |   33 +++++++++++
+ 2 files changed, 91 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 8b2aab5..1c56c5e 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -35,6 +35,33 @@
+ 		regulator-boot-on;
+ 	};
+ 
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&pfc 75 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi0: regulator@2 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc_sdhi0>;
++
++		enable-gpio = <&pfc 74 GPIO_ACTIVE_HIGH>;
++		gpios = <&pfc 17 GPIO_ACTIVE_HIGH>;
++		states = <3300000 0
++			  1800000 1>;
++
++		enable-active-high;
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+@@ -92,8 +119,39 @@
+ 		renesas,groups = "tpu0_to2_1";
+ 		renesas,function = "tpu0";
+ 	};
++
++	mmc0_pins: mmc0 {
++		renesas,groups = "mmc0_data8_1", "mmc0_ctrl_1";
++		renesas,function = "mmc0";
++	};
++
++	sdhi0_pins: sdhi0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_wp";
++		renesas,function = "sdhi0";
++	};
+ };
+ 
+ &tpu {
+ 	status = "okay";
+ };
++
++&mmcif0 {
++	pinctrl-0 = <&mmc0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&reg_3p3v>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi0>;
++	vqmmc-supply = <&vccq_sdhi0>;
++	bus-width = <4>;
++	cd-gpios = <&pfc 167 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 868bdde..ae1e230 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -161,4 +161,37 @@
+ 		status = "disabled";
+ 		#pwm-cells = <3>;
+ 	};
++
++	mmcif0: mmcif@e6bd0000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0xe6bd0000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 56 4
++				0 57 4>;
++		status = "disabled";
++	};
++
++	sdhi0: sdhi@e6850000 {
++		compatible = "renesas,sdhi-r8a7740";
++		reg = <0xe6850000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 117 4
++				0 118 4
++				0 119 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
++
++	sdhi1: sdhi@e6860000 {
++		compatible = "renesas,sdhi-r8a7740";
++		reg = <0xe6860000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 121 4
++				0 122 4
++				0 123 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
+ };
+-- 
+1.7.2.5
+
