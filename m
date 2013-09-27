@@ -1,33 +1,30 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 09 Sep 2013 15:51:58 +0000
-Subject: [PATCH 0/2] regulator: da9210: support Device Tree initialisation
-Message-Id: <1378741920-11085-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 27 Sep 2013 04:54:13 +0000
+Subject: Re: [PATCH v4 2/2] ARM: shmobile: BOCK-W: enable DMA for SDHI0
+Message-Id: <20130927045413.GA23732@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201308250133.17530.sergei.shtylyov@cogentembedded.com>
+ <201308250136.38922.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308250136.38922.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@kernel.org>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-The first patch just adds a vendor prefix for Dialog Semiconductor PLC, the
-second one actually implements DT support in da9210.
+On Sun, Aug 25, 2013 at 01:36:38AM +0400, Sergei Shtylyov wrote:
+> From: Max Filippov <max.filippov@cogentembedded.com>
+> 
+> Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
+> driver.
+> 
+> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+> [Sergei: removed #include <mach/dma.h>]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Thanks, queued up for v3.13.
 
-Guennadi Liakhovetski (2):
-  DT: add a vendor prefix for Dialog Semiconductor
-  regulator: da9210: add Device Tree support
+I believe that a defconfig update is required in order
+for this feature to be used when compiling with the defconfig.
+If so please provide a defconfig patch.
 
- .../devicetree/bindings/vendor-prefixes.txt        |    1 +
- drivers/regulator/da9210-regulator.c               |    9 ++++++---
- 2 files changed, 7 insertions(+), 3 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Thanks.
