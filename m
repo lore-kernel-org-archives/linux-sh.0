@@ -1,23 +1,49 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Sep 2013 05:53:09 +0000
-Subject: Re: [PATCH 2/5 v2] ARM: shmobile: r8a7778: add SSI/SRU clock support
-Message-Id: <20130905055307.GD14960@verge.net.au>
+Date: Fri, 27 Sep 2013 04:52:31 +0000
+Subject: Re: [PATCH v4 1/2] ARM: shmobile: r8a7778: add HPB-DMAC support
+Message-Id: <20130927045231.GE16541@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201308250133.17530.sergei.shtylyov@cogentembedded.com>
+ <201308250135.14393.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308250135.14393.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Aug 26, 2013 at 01:51:37AM -0700, Kuninori Morimoto wrote:
-> Add a platform clock for the r8a7778 SRU/SSI sound.
+On Sun, Aug 25, 2013 at 01:35:13AM +0400, Sergei Shtylyov wrote:
+> From: Max Filippov <max.filippov@cogentembedded.com>
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Add HPB-DMAC platform device on R8A7778 SoC along with its slave and channel
+> configurations (only for SDHI0 so far).
+> 
+> Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+> [Sergei: moved *enum* declaring HPB-DMAC slave IDs from now removed <mach/dma.h>
+> to <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c, removed
+> SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[] and
+> hpb_dmae_channels[], moved the comments after the element initializers of
+> hpb_dmae_channels[].]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
 > ---
->  v1 -> v2
+> Changes in version 4:
+> - renamed all the bit/field #define's to include 'HBP_DMAE_' prefix to match
+>   the driver.
 > 
->  - no change
+> Changes in version 3:
+> - changed ASYNCMDR_ASMD2[12]_SINGLE to ASYNCMDR_ASMD2[12]_MULTI in the 'mdr'
+>   field initializers;
+> - moved the comments after the element initializers of hpb_dmae_channels[];
+> - resolved rejects, refreshed the patch.
 > 
->  arch/arm/mach-shmobile/clock-r8a7778.c |   43 ++++++++++++++++++++++++++++++--
->  1 file changed, 41 insertions(+), 2 deletions(-)
+> Changes in version 2:
+> - moved *enum* declaring HPB-DMAC slave IDs from the separate header file to
+>   <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c;
+> - removed SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[]
+>   and hpb_dmae_channels[].
+> 
+>  arch/arm/mach-shmobile/include/mach/r8a7778.h |    8 ++
+>  arch/arm/mach-shmobile/setup-r8a7778.c        |   85 ++++++++++++++++++++++++++
+>  2 files changed, 93 insertions(+)
 
-Thanks, I have queued this up for v3.13.
+Thanks, queued up for v3.13.
