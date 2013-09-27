@@ -1,42 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 12 Sep 2013 12:36:43 +0000
-Subject: [PATCH v2 0/5] i2c: rcar: Device Tree support and clock improvements
-Message-Id: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 27 Sep 2013 16:42:14 +0000
+Subject: Re: [PATCH v2 0/5] i2c: rcar: Device Tree support and clock improvements
+Message-Id: <20130927164214.GC3094@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="bKyqfOwhbdpXa4YI"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <rob.herring@calxeda.com>, Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+References: <1378989408-10618-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1378989408-10618-1-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
+To: Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Device Tree support for i2c-rcar isn't too complex, only usual or standard
-properties are used. Apart from it several clock handling improvements are
-included in this patch series.
 
-Developed on top of -next of 12.09.2013
+--bKyqfOwhbdpXa4YI
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-v2: only DT compatibility strings have been changed.
+On Thu, Sep 12, 2013 at 02:36:43PM +0200, Guennadi Liakhovetski wrote:
+> Device Tree support for i2c-rcar isn't too complex, only usual or standard
+> properties are used. Apart from it several clock handling improvements are
+> included in this patch series.
+>=20
+> Developed on top of -next of 12.09.2013
+>=20
+> v2: only DT compatibility strings have been changed.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Applied to for-next, thanks!
 
-Guennadi Liakhovetski (5):
-  i2c: rcar: (cosmetic) remove superfluous parenthesis
-  i2c: rcar: get clock rate only once and simplify calculation
-  i2c: rcar: add Device Tree support
-  i2c: rcar: fix clk_get() error handling
-  i2c: rcar: use per-device clock
 
- Documentation/devicetree/bindings/i2c/i2c-rcar.txt |   23 +++++++++
- drivers/i2c/busses/i2c-rcar.c                      |   51 ++++++++++++++-----
- 2 files changed, 60 insertions(+), 14 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+--bKyqfOwhbdpXa4YI
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
--- 
-1.7.2.5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+iQIcBAEBAgAGBQJSRbVmAAoJEBQN5MwUoCm2ejEP/RassIuK50Y+aqIIUY8xxqF+
+fKQhVUm4SVuzrd2muvx+U7xRfNOZ//w2wYyOJpgIBW+CYTDDq5TvLVw3ZhtfE0VU
+1Oby/NuBfLO7coEqtCP7tLqhYyR20M66rOUP4Ar90eCIKOq1TIavdobk7IaeahbR
+/OYl7Tu0KBnS42mERXO5lxPN3ODw0zxjrucpJC8ntkGsMmzUcF7NaQwuELTa23QY
+0d6+7StwkNpj9ZXEM1979qDqtHyatx4uaXa6iiXSu8MUgozryqzABbJesRmb8vHL
+GlwogyeHVEFYhPYp3mNuio5bpgzzOLOue3OWtkB1qTDgA4IOB51Lc7KCg20OtxiE
+81QKIhDEtfDALYUWeIYd1FVChjJGD1anOlex+P2bYB2PKvh1/3EoJCjQIeWKjcJ7
+p/1oeaAZZPKUG23OYxSRk1r51rUf8BVcrskrqIjUn+m5fGxvz539gor9/EyM4v4+
+pbhmdZSwL9KE0sGdbZGvMQ6BAPTta9HxMlrA2wsJjbtQGJfJpx6Used0LZjBJIvv
+8kzU2RHlGfJ92fiIKxCNkJRKMZqK/iu2U39IAmLNK9QuklAF2MgreaPKI37ClYN5
+xwKt4OcsqmHI6E6zMxz3R3H63UovJkhMNHIRsRqOusPkbLkqkjyyuSWR4DVqBEnL
+4HlhIibGZ2E3pg6N/tbk
+=PBwo
+-----END PGP SIGNATURE-----
+
+--bKyqfOwhbdpXa4YI--
