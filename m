@@ -1,44 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 30 Sep 2013 04:00:22 +0000
-Subject: [PATCH 3/5] ARM: shmobile: armadillo: fixup ether pinctrl naming
-Message-Id: <7cd402b30a701c2b4d38a98281a00fc5e3680b13.1380513421.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 28 Sep 2013 00:44:09 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7778: add CAN clock support
+Message-Id: <201309280444.09539.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380513421.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380513421.git.horms+renesas@verge.net.au>
+References: <201309280441.52414.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201309280441.52414.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add support for R8A7778 CAN0/1 clocks.
 
-e5c9b4cd665106d9b5397114ea81a53059410b6a ("sh_eth: get R8A7740 support
-out of #ifdef") exchanged sh-eth driver name to r8a7740-gether, but,
-eva_pinctrl_map[] didn't follow it. Fixes it.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 5bd1479..7f8f607 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1108,9 +1108,9 @@ static const struct pinctrl_map eva_pinctrl_map[] = {
- 	PIN_MAP_MUX_GROUP_DEFAULT("asoc-simple-card.1", "pfc-r8a7740",
- 				  "fsib_mclk_in", "fsib"),
- 	/* GETHER */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7740-gether", "pfc-r8a7740",
- 				  "gether_mii", "gether"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-eth", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7740-gether", "pfc-r8a7740",
- 				  "gether_int", "gether"),
- 	/* HDMI */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-mobile-hdmi", "pfc-r8a7740",
--- 
-1.8.4
-
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -117,6 +117,7 @@ static struct clk *main_clks[] = {
+ enum {
+ 	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
++	MSTP316, MSTP315,
+ 	MSTP311, MSTP310,
+ 	MSTP309, MSTP308, MSTP307,
+ 	MSTP114,
+@@ -133,6 +134,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
++	[MSTP316] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 16, 0), /* CAN0 */
++	[MSTP315] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 15, 0), /* CAN1 */
+ 	[MSTP311] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 11, 0), /* SSI4 */
+ 	[MSTP310] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 10, 0), /* SSI5 */
+ 	[MSTP309] = SH_CLK_MSTP32(&p_clk, MSTPCR3,  9, 0), /* SSI6 */
+@@ -176,6 +179,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
++	CLKDEV_DEV_ID("rcar_can.0", &mstp_clks[MSTP316]), /* CAN0 */
++	CLKDEV_DEV_ID("rcar_can.1", &mstp_clks[MSTP315]), /* CAN1 */
+ 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("r8a7778-vin.0", &mstp_clks[MSTP110]), /* VIN0 */
+ 	CLKDEV_DEV_ID("r8a7778-vin.1", &mstp_clks[MSTP109]), /* VIN1 */
