@@ -1,32 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 22 Sep 2013 12:19:43 +0000
-Subject: Re: [PATCH v2 00/27] sh-pfc: Support pins with no associated GPIO port
-Message-Id: <20130922121942.GI11731@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 28 Sep 2013 20:12:33 +0000
+Subject: [PATCH 2/2] ARM: shmobile: marzen: enable HPB-DMAC in defconfig
+Message-Id: <201309290012.34072.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1373933479-17727-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20130921004335.GA26271@verge.net.au>
- <CACRpkdYFWJbHkwffrFes4o4btCGaZdXJxmxgxxMb_Mpc__5eQA@mail.gmail.com>
- <1635782.W0dvDAedis@avalon>
-In-Reply-To: <1635782.W0dvDAedis@avalon>
+References: <201308090144.03912.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308090144.03912.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Sep 21, 2013 at 08:56:07PM +0200, Laurent Pinchart wrote:
-> Hi Linus and Simon,
-> 
-> On Saturday 21 September 2013 10:59:20 Linus Walleij wrote:
-> > On Sat, Sep 21, 2013 at 2:43 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > Hi Laurent,
-> > > 
-> > > I am currently rebasing the renesas tree on v3.12-rc1 in preparation
-> > > for preparing pull-requests for v3.13. Should I continue to carry
-> > > sh-pfc/pins-with-no-gpio-port in devel?
-> > 
-> > Sounds like something I should carry in the pinctrl tree?
-> 
-> The series has been merged in v3.12-rc1, no action is thus needed.
+Enable HPB-DMAC driver in 'marzen_defconfig'.
 
-Thanks, got it.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against 'renesas-devel-20130927v2' tag of the 'renesas.git' repo.
+
+ arch/arm/configs/marzen_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: renesas/arch/arm/configs/marzen_defconfig
+=================================--- renesas.orig/arch/arm/configs/marzen_defconfig
++++ renesas/arch/arm/configs/marzen_defconfig
+@@ -106,6 +106,8 @@ CONFIG_USB_STORAGE=y
+ CONFIG_NEW_LEDS=y
+ CONFIG_LEDS_CLASS=y
+ CONFIG_LEDS_GPIO=y
++CONFIG_DMADEVICES=y
++CONFIG_RCAR_HPB_DMAE=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
