@@ -1,35 +1,43 @@
-From: Stephen Hemminger <stephen@networkplumber.org>
-Date: Sat, 28 Sep 2013 00:45:18 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 28 Sep 2013 00:52:59 +0000
 Subject: Re: [PATCH] can: add Renesas R-Car CAN driver
-Message-Id: <20130927174518.2ee83214@nehalam.linuxnetplumber.net>
+Message-Id: <5246286B.6020905@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309280211.39068.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309280211.39068.sergei.shtylyov@cogentembedded.com>
+References: <201309280211.39068.sergei.shtylyov@cogentembedded.com> <20130927174518.2ee83214@nehalam.linuxnetplumber.net>
+In-Reply-To: <20130927174518.2ee83214@nehalam.linuxnetplumber.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: Stephen Hemminger <stephen@networkplumber.org>
 Cc: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Sat, 28 Sep 2013 02:11:38 +0400
-Sergei Shtylyov <sergei.shtylyov@cogentembedded.com> wrote:
+Hello.
 
-> +	stats->rx_bytes += cf->can_dlc;
-> +}
-> +
-> +static irqreturn_t rcar_can_interrupt(int irq, void *dev_id)
-> +{
-> +	struct net_device *ndev = (struct net_device *)dev_id;
-> +	struct rcar_can_priv *priv = netdev_priv(ndev);
-> +	struct net_device_stats *stats = &ndev->stats;
-> +	u8 isr;
-> +
-> +	isr = rcar_can_readb(priv, RCAR_CAN_ISR);
-> +	if (isr & ISR_ERSF)
-> +		rcar_can_error(ndev);
+On 09/28/2013 04:45 AM, Stephen Hemminger wrote:
 
-IRQ handler should return IRQ_NONE if not for this device.
-Most devices this is true if isr is 0.
-Also should check for hot-plug case where device interrupt occurs
-but see's all-ones on the bus.
+>> +	stats->rx_bytes += cf->can_dlc;
+>> +}
+>> +
+>> +static irqreturn_t rcar_can_interrupt(int irq, void *dev_id)
+>> +{
+>> +	struct net_device *ndev = (struct net_device *)dev_id;
+>> +	struct rcar_can_priv *priv = netdev_priv(ndev);
+>> +	struct net_device_stats *stats = &ndev->stats;
+>> +	u8 isr;
+>> +
+>> +	isr = rcar_can_readb(priv, RCAR_CAN_ISR);
+>> +	if (isr & ISR_ERSF)
+>> +		rcar_can_error(ndev);
+
+> IRQ handler should return IRQ_NONE if not for this device.
+> Most devices this is true if isr is 0.
+
+    Hm, totally overlooked that... :-/
+
+> Also should check for hot-plug case where device interrupt occurs
+> but see's all-ones on the bus.
+
+    Hotplug is not possible with this SoC device.
+
+WBR, Sergei
 
