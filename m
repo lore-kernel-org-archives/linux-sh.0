@@ -1,40 +1,52 @@
-From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-Date: Mon, 30 Sep 2013 13:07:47 +0000
-Subject: [PATCH] ARM: shmobile: ape6evm: fix incorrect placement of __initdata tag
-Message-Id: <26068642.Hn7T63a6ac@amdc1032>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 30 Sep 2013 15:05:37 +0000
+Subject: Re: [PATCH] ARM: shmobile: ape6evm: fix incorrect placement of __initdata tag
+Message-Id: <1800955.Mbr9gmJOD4@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <26068642.Hn7T63a6ac@amdc1032>
+In-Reply-To: <26068642.Hn7T63a6ac@amdc1032>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-__initdata tag should be placed between the variable name and equal
-sign for the variable to be placed in the intended .init.data section.
+Hi Bartlomiej,
 
-In this particular case __initdata is incorrect as ape6evm_keys_pdata
-can be used as a platform data for gpio-keys driver which can be
-compiled as module.
+Thank you for the patch.
 
-Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
----
- arch/arm/mach-shmobile/board-ape6evm.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Monday 30 September 2013 15:07:47 Bartlomiej Zolnierkiewicz wrote:
+> __initdata tag should be placed between the variable name and equal
+> sign for the variable to be placed in the intended .init.data section.
+> 
+> In this particular case __initdata is incorrect as ape6evm_keys_pdata
+> can be used as a platform data for gpio-keys driver which can be
+> compiled as module.
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 7627385..8954f55 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -86,7 +86,7 @@ static struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
- };
- 
--static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
-+static struct gpio_keys_platform_data ape6evm_keys_pdata = {
- 	.buttons	= gpio_buttons,
- 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
- };
+A pointer to the ape6evm_keys_pdata structure is passed to the 
+platform_device_register_data() function, which makes a copy of the structure. 
+Marking it as __initdata is thus correct.
+
+> Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+> ---
+>  arch/arm/mach-shmobile/board-ape6evm.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/board-ape6evm.c
+> b/arch/arm/mach-shmobile/board-ape6evm.c index 7627385..8954f55 100644
+> --- a/arch/arm/mach-shmobile/board-ape6evm.c
+> +++ b/arch/arm/mach-shmobile/board-ape6evm.c
+> @@ -86,7 +86,7 @@ static struct gpio_keys_button gpio_buttons[] = {
+>  	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
+>  };
+> 
+> -static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
+> +static struct gpio_keys_platform_data ape6evm_keys_pdata = {
+>  	.buttons	= gpio_buttons,
+>  	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+>  };
 -- 
-1.8.2.3
+Regards,
 
+Laurent Pinchart
 
