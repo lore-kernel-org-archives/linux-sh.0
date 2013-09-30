@@ -1,50 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Sep 2013 11:10:34 +0000
+From: Grant Likely <grant.likely@linaro.org>
+Date: Mon, 30 Sep 2013 13:15:15 +0000
 Subject: Re: [PATCH/RFC v4] ARM: shmobile: armadillo800eva-reference: add SDHI and MMCIF interfaces
-Message-Id: <138071238.VjAY8SX7B8@avalon>
+Message-Id: <CACxGe6v_OtVVq0MPKtMMh5FNjViDiKcAD49SeWkwH+ca6mWOOQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1309231651230.11505@axis700.grange> <2318676.bdc47MCX2p@avalon> <CACRpkdbtQy16waQnp2Os0bx5f0AGigHJysMcJnga+FsMEN27iA@mail.gmail.com>
-In-Reply-To: <CACRpkdbtQy16waQnp2Os0bx5f0AGigHJysMcJnga+FsMEN27iA@mail.gmail.com>
+References: <Pine.LNX.4.64.1309231651230.11505@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1309231651230.11505@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Rob Herring <rob.herring@calxeda.com>, Grant Likely <grant.likely@linaro.org>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi Linus,
+On Thu, Sep 26, 2013 at 8:46 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
+> On Wed, Sep 25, 2013 at 11:05 AM, Laurent Pinchart
+> <laurent.pinchart@ideasonboard.com> wrote:
+>
+>>> > 3. RFC because I don't know how to enable choosing between CON14 and CON8.
+>>> > In .c version this is done by reading GPIO 6. To do the same in DT mode
+>>> > we'd probably have to use some run-time DT patching, which isn't possible
+>>> > yet, AFAICS.
+>>>
+>>> I agree with your reasoning there, though perhaps Laurent or Magnus
+>>> have a more enlightened view of things.
+>>
+>> I'm tempted to say this should be handled by the boot loader, which should
+>> then patch the DT accordingly. This is probably just a poor attempt not to
+>> solve the problem in Linux though :-)
+>
+> This is not the first time we have come to the conclusion that Linux
+> need to modify the device tree.
+>
+> And I clearly remember Grant stating that it is in principle a living
+> datastructure, it's not like it's read-only.
 
-[Updated the devicetree mailing list e-mail address]
+You still don't want the kernel modifying the DT. The DT is primarily
+a communication mechanism from the firmware/platform to the kernel. If
+the platform is responsible for describing the correct configuration
+then it belongs in the DT. If however the kernel needs to do the work
+of figuring out which configuration to use at runtime, then it would
+be better for the DT to describe the possible configurations and let
+the kernel choose the appropriate one.
 
-On Monday 30 September 2013 01:20:46 Linus Walleij wrote:
-> On Sun, Sep 29, 2013 at 8:49 AM, Laurent Pinchart wrote:
-> > On Friday 27 September 2013 16:08:31 Linus Walleij wrote:
-> >> Can't you just locate the node using of_find_node_by_path()
-> >> or whatever and then use this:
-> >> int of_update_property(struct device_node *np, struct property *newprop)?
-> > 
-> > Where can I do that ? I need the PFC/GPIO devices to have been probed, so
-> > board init isn't an option, but I also need the device to be enabled not
-> > to have been probed yet.
-> > 
-> > One option would be to use a bus notifier to find out when the PFC/GPIO
-> > devices are available, and extend of_update_property() with a notification
-> > mechanism (either generic, or specific to the enabled propery) to detect
-> > when a device gets enabled and probe it.
-> 
-> Argh that sounds awfully complicated...
-> 
-> I would consider doing this right inside the PCF/GPIO driver right at the
-> end of its probe function. As it is related to pins anyway... or is that too
-> ugly?
+> The actual restrictions seem to be more about things like if you
+> need to read this GPIO to figure out how to set up the device tree
+> you already need the base system initialized to access the GPIO
+> so it becomes a chicken-and-egg problem.
 
-As a reminder, we need to decide whether to register an SDHI (SD controller) 
-device or a WiFi module device, and thus configure pinmuxing appropriately, 
-based on the state of a GPIO connected to a user-accessible switch. This 
-behaviour is board-specific, not SoC-specific. That's why I believe the code 
-should be in board code.
+>> Linus, do you have an opinion on this ? The board has two connectors (MMC/SD 1
+>> and wifi module) that are not usable concurrently. The user can select which
+>> connector to use through a hardware switch that existing board code reads at
+>> init time to determine which platform devices to register and how to configure
+>> pin muxing. Are you aware of a similar problem on other boards that would have
+>> been solved already ?
+>
+> Just because the pin control tables *can* be initialized from the device
+> tree doesn't mean all of them *have to*.
 
--- 
-Regards,
+Right. Also, there are patches floating about that allow additional
+device tree fragments to be loaded after the rest of the system is
+booted. It was specifically designed for the beaglebone expansion
+connectors. That might be the way to solve your problem here. (I
+really want to get that feature merged, but I sheepishly admit that I
+haven't been able to spend any time on it)  :-(
 
-Laurent Pinchart
-
+g.
