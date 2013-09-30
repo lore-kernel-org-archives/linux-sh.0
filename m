@@ -1,53 +1,62 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 14 Sep 2013 13:47:02 +0000
-Subject: [PATCH 05/05] ARM: shmobile: Remove shmobile_smp_scu_boot_secondary()
-Message-Id: <20130914134702.19258.11610.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 30 Sep 2013 04:00:24 +0000
+Subject: [PATCH 5/5] ARM: shmobile: Remove #gpio-ranges-cells DT property
+Message-Id: <3786f86b60833f32e3eeb016fcf8c324f8147e00.1380513421.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130914134616.19258.27110.sendpatchset@w520>
-In-Reply-To: <20130914134616.19258.27110.sendpatchset@w520>
+References: <cover.1380513421.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380513421.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Remove shmobile_smp_scu_boot_secondary() since
-it is no longer used. CPU boot vector setup is
-instead handled by CPU notifiers.
+This property is no longer required by the GPIO binding. Remove it.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7778.dtsi | 1 -
+ arch/arm/boot/dts/r8a7779.dtsi | 1 -
+ arch/arm/boot/dts/r8a7790.dtsi | 1 -
+ 3 files changed, 3 deletions(-)
 
- arch/arm/mach-shmobile/include/mach/common.h |    2 --
- arch/arm/mach-shmobile/platsmp-scu.c         |    8 --------
- 2 files changed, 10 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-09-14 19:38:47.000000000 +0900
-@@ -18,8 +18,6 @@ extern int shmobile_smp_cpu_disable(unsi
- extern void shmobile_invalidate_start(void);
- extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
--extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
--					   struct task_struct *idle);
- extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
- extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
- extern void shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus);
---- 0004/arch/arm/mach-shmobile/platsmp-scu.c
-+++ work/arch/arm/mach-shmobile/platsmp-scu.c	2013-09-14 19:39:01.000000000 +0900
-@@ -59,14 +59,6 @@ void __init shmobile_smp_scu_prepare_cpu
- 	register_cpu_notifier(&shmobile_smp_scu_notifier);
- }
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 45ac404..3577aba 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -96,6 +96,5 @@
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7778";
+ 		reg = <0xfffc000 0x118>;
+-		#gpio-range-cells = <3>;
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 23a6244..ebbe507 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -188,7 +188,6 @@
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7779";
+ 		reg = <0xfffc0000 0x23c>;
+-		#gpio-range-cells = <3>;
+ 	};
  
--int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
--{
--	/* For this particular CPU register SCU boot vector */
--	shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
--			  (unsigned long)shmobile_scu_base);
--	return 0;
--}
--
- #ifdef CONFIG_HOTPLUG_CPU
- void shmobile_smp_scu_cpu_die(unsigned int cpu)
- {
+ 	thermal@ffc48000 {
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 885f9f4..413b4c2 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -148,7 +148,6 @@
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7790";
+ 		reg = <0 0xe6060000 0 0x250>;
+-		#gpio-range-cells = <3>;
+ 	};
+ 
+ 	sdhi0: sdhi@ee100000 {
+-- 
+1.8.4
+
