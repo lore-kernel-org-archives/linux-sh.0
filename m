@@ -1,36 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 17:13:52 +0000
-Subject: [PATCH 0/2] ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
-Message-Id: <1383066834-25956-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:34:12 +0000
+Subject: [PATCH 1/8] ARM: shmobile: r8a7779: Rename DU device in clock lookups list
+Message-Id: <acf47ee741c4a5eb8a17438e8858f1cffa1e073a.1380530437.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380530437.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380530437.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch set implements a busy loop to ensure that enabling an MSTP clock
-will not return before the clock is actually enabled. The first patch has been
-previously posted by Guennadi on the linux-sh mailing list, and the second
-patch is new. They have been successfully tested on the Lager board and fix
-random crashes with the VSP1.
+The DU device will be called rcar-du-r8a7779. Rename the clock lookup
+entry accordingly.
 
-The series is based on Simon's renesas-devel-20131016 tag.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Guennadi Liakhovetski (1):
-  ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
-
-Shinya Kuribayashi (1):
-  ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
-
- arch/arm/mach-shmobile/clock-r8a7790.c | 86 +++++++++++++++++++---------------
- drivers/sh/clk/cpg.c                   | 38 +++++++++++++++
- include/linux/sh_clk.h                 | 19 +++++---
- 3 files changed, 97 insertions(+), 46 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index bd6ad92..1f7080f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -200,7 +200,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
+-	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
++	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
+ };
+ 
+ void __init r8a7779_clock_init(void)
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
