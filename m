@@ -1,41 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 28 Oct 2013 23:47:06 +0000
-Subject: [PATCH 18/19] thermal: rcar-thermal: Enable the driver on all ARM platforms
-Message-Id: <1383004027-25036-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:34 +0000
+Subject: [PATCH 02/14] ARM: shmobile: Use shmobile_smp_cpu_disable() on sh73a0
+Message-Id: <a3b142a1a08af543473ae726e5d96a969c5b02b5.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI and increase build testing coverage.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Zhang Rui <rui.zhang@intel.com>
-Cc: Eduardo Valentin <eduardo.valentin@ti.com>
-Cc: linux-pm@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Use shmobile_smp_cpu_disable() on sh73a0 since it
+allows CPU Hotplug of any CPU.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/thermal/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/smp-sh73a0.c | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-diff --git a/drivers/thermal/Kconfig b/drivers/thermal/Kconfig
-index dbfc390..a243bc0 100644
---- a/drivers/thermal/Kconfig
-+++ b/drivers/thermal/Kconfig
-@@ -121,7 +121,7 @@ config SPEAR_THERMAL
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 0baa244..9a30a3f 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -71,18 +71,11 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ 	shmobile_smp_scu_prepare_cpus(max_cpus);
+ }
  
- config RCAR_THERMAL
- 	tristate "Renesas R-Car thermal driver"
--	depends on ARCH_SHMOBILE
-+	depends on ARM
- 	help
- 	  Enable this to plug the R-Car thermal sensor driver into the Linux
- 	  thermal framework
+-#ifdef CONFIG_HOTPLUG_CPU
+-static int sh73a0_cpu_disable(unsigned int cpu)
+-{
+-	return 0; /* CPU0 and CPU1 supported */
+-}
+-#endif /* CONFIG_HOTPLUG_CPU */
+-
+ struct smp_operations sh73a0_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
+ 	.smp_boot_secondary	= sh73a0_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_disable		= sh73a0_cpu_disable,
++	.cpu_disable		= shmobile_smp_cpu_disable,
+ 	.cpu_die		= shmobile_smp_scu_cpu_die,
+ 	.cpu_kill		= shmobile_smp_scu_cpu_kill,
+ #endif
 -- 
-1.8.1.5
+1.8.4
 
