@@ -1,58 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 31 Oct 2013 12:21:23 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: Lager reference serial port support
-Message-Id: <3965826.mx1T873Bg9@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 10:33:15 +0000
+Subject: [PATCH 02/05] ARM: shmobile: Use KZM9D without reference for multiplatform
+Message-Id: <20131001103315.813.80581.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131031053144.GP1603@verge.net.au>
-In-Reply-To: <20131031053144.GP1603@verge.net.au>
+References: <20131001103255.813.65710.sendpatchset@w520>
+In-Reply-To: <20131001103255.813.65710.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+From: Magnus Damm <damm@opensource.se>
 
-On Thursday 31 October 2013 14:31:44 Simon Horman wrote:
-> On Tue, Oct 29, 2013 at 04:23:10PM +0100, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > This patch set implements serial port support for the Lager reference
-> > board, and adds early debugging support for the r8a7790 SoC.
-> > 
-> > The code is available in my git tree at
-> > 
-> >         git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial-lager
-> > 
-> > The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
-> > multiarch drivers, clk-prepare, r8a7790 CCF and sh-sci OF patches I've
-> > posted earlier today.
-> > 
-> > Laurent Pinchart (3):
-> >   ARM: shmobile: r8a7790: Add early debugging support
-> 
-> The patch above could be applied now, right?
+Change the multiplatform kconfig bits for KZM9D from
+CONFIG_MACH_KZM9D_REFERENCE into CONFIG_MACH_KZM9D
+to match the non-multiplatform case.
 
-That's correct. It will be useless though, as DEBUG_LL can only be used on 
-multiarch.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Given that the SCIF/SCIFA/SCIFB port operate similarly, I wonder whether it 
-wouldn't make more sense to add a generic DEBUG_SHMOBILE_SCIF implementation 
-instead. We could then have sub-options to select the exact SoC type and port 
-number, and compute the base address from that.
+ arch/arm/mach-shmobile/Kconfig  |   10 ++--------
+ arch/arm/mach-shmobile/Makefile |    4 ++++
+ 2 files changed, 6 insertions(+), 8 deletions(-)
 
-> If so, Magnus, could you review it?
-> 
-> >   ARM: shmobile: r8a7790: Add serial ports to the device tree
-> >   ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
-> 
-> I would like to ask you to repost these patches once their
-> pre-requisites have been merged.
-
-Sure, no problem.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-09-27 11:22:20.000000000 +0900
+@@ -22,16 +22,10 @@ config ARCH_EMEV2
+ 
+ comment "SH-Mobile Board Type"
+ 
+-config MACH_KZM9D_REFERENCE
+-	bool "KZM9D board - Reference Device Tree Implementation"
++config MACH_KZM9D
++	bool "KZM9D board"
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	---help---
+-	   Use reference implementation of KZM9D board support
+-	   which makes a greater use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
+ 
+ comment "SH-Mobile System Configuration"
+ endif
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-09-27 11:23:32.000000000 +0900
+@@ -52,6 +52,9 @@ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ 
+ # Board objects
++ifdef CONFIG_ARCH_SHMOBILE_MULTI
++obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
++else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+@@ -68,6 +71,7 @@ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.
+ obj-$(CONFIG_MACH_KZM9D_REFERENCE)	+= board-kzm9d-reference.o
+ obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
+ obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
++endif
+ 
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
