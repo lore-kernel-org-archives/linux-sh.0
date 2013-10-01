@@ -1,106 +1,122 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 01 Oct 2013 09:23:38 +0000
-Subject: Re: [PATCH 6/6] ARM: shmobile: kzm9d-reference: Use common clock framework
-Message-Id: <CANqRtoQdwyjX8Mr8+NRah_F=yUM81xZmPQJ_1Z-xdzVqedbMGQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:39:19 +0000
+Subject: [PATCH 1/3] ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
+Message-Id: <dbffb5a1525dc88f1c871c48574634f14845b43d.1380530263.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52410F86.4040301@renesas.com>
-	<20130924131703.4834a055892285858338003c@ops.dti.ne.jp>
-In-Reply-To: <20130924131703.4834a055892285858338003c@ops.dti.ne.jp>
+References: <cover.1380530263.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380530263.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: takasi-y@ops.dti.ne.jp
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Ben Dooks <ben.dooks@codethink.co.uk>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>, devicetree@vger.kernel.org, linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Mike Turquette <mturquette@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Sep 24, 2013 at 1:17 PM,  <takasi-y@ops.dti.ne.jp> wrote:
-> Use common clock framework version of clock
->  drivers/clk/shmobile/clk-emev2.c
-> instead of sh-clkfwk version
->  arch/arm/mach-shmobile/clock-emev2.c
->
-> kzm9d(without -reference) still uses sh-clkfwk version.
->
-> Because two of that framework can not live in one kernel binary,
-> there will be SoCs and Boards that can not be in one binary as
-> multiplatform binary or so.
-> For example, kzm9d and kzm9d-reference is now exclusive.
->
-> Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-> ---
->  arch/arm/mach-shmobile/Kconfig                 | 1 +
->  arch/arm/mach-shmobile/board-kzm9d-reference.c | 5 ++---
->  2 files changed, 3 insertions(+), 3 deletions(-)
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Hi Yoshii-san,
+This patch adds MMCIF0, SDHI0 and SDHI1 DT nodes and a fixed voltage
+reglator for them to the ape6evm-reference platform.
 
-Thanks for your patch. I have some comments on this portion to try to
-simplify things, please see below.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 72 +++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
 
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index 50bab8d..d20d4ce 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -237,6 +237,7 @@ config MACH_KZM9D_REFERENCE
->         depends on ARCH_EMEV2
->         select REGULATOR_FIXED_VOLTAGE if REGULATOR
->         select USE_OF
-> +       select COMMON_CLK
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index f444624..2b49b05 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -10,6 +10,7 @@
+ 
+ /dts-v1/;
+ /include/ "r8a73a4.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "APE6EVM";
+@@ -24,6 +25,34 @@
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
+ 
++	vcc_mmc0: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "MMC0 Vcc";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		regulator-always-on;
++	};
++
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&pfc 76 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	/* Common 3.3V rail, used by several devices on APE6EVM */
++	ape6evm_fixed_3v3: regulator@2 {
++		compatible = "regulator-fixed";
++		regulator-name = "3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
+ 	lbsc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+@@ -62,4 +91,47 @@
+ 		renesas,groups = "scifa0_data";
+ 		renesas,function = "scifa0";
+ 	};
++
++	mmc0_pins: mmcif {
++		renesas,groups = "mmc0_data8", "mmc0_ctrl";
++		renesas,function = "mmc0";
++	};
++
++	sdhi0_pins: sdhi0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi1_pins: sdhi1 {
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,function = "sdhi1";
++	};
++};
++
++&mmcif0 {
++	vmmc-supply = <&vcc_mmc0>;
++	bus-width = <8>;
++	non-removable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_pins>;
++	status = "okay";
++};
++
++&sdhi0 {
++	vmmc-supply = <&vcc_sdhi0>;
++	bus-width = <4>;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi0_pins>;
++	status = "okay";
++};
++
++&sdhi1 {
++	vmmc-supply = <&ape6evm_fixed_3v3>;
++	bus-width = <4>;
++	broken-cd;
++	toshiba,mmc-wrprotect-disable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdhi1_pins>;
++	status = "okay";
+ };
+-- 
+1.8.4
 
-I don't think this hunk is needed. This is probably the
-ARCH_SHMOBILE_MULTI case, and if so then ARCH_MULTIPLATFORM in
-arch/arm/Kconfig already selects COMMON_CLK. And if it's the
-ARCH_SHMOBILE case you're aiming at then I recommend you to only focus
-on ARCH_SHMOBILE_MULTI instead.
-
-> diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> index 8f8bb2f..e0b8317 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> @@ -20,15 +20,14 @@
->
->  #include <linux/init.h>
->  #include <linux/of_platform.h>
-> +#include <linux/clk-provider.h>
->  #include <mach/emev2.h>
->  #include <mach/common.h>
->  #include <asm/mach/arch.h>
->
->  static void __init kzm9d_add_standard_devices(void)
->  {
-> -       if (!IS_ENABLED(CONFIG_COMMON_CLK))
-> -               emev2_clock_init();
-> -
-> +       of_clk_init(NULL);
->         of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->  }
-
-To keep on allowing build of board-kzm9d-reference.c for both
-ARCH_SHMOBILE_MULTI and ARCH_SHMOBILE I recommend you to adjust your
-code into something liket this instead:
-
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-
-+#include <linux/clk-provider.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
- #include <mach/emev2.h>
-@@ -26,9 +27,11 @@
-
- static void __init kzm9d_add_standard_devices(void)
- {
--       if (!IS_ENABLED(CONFIG_COMMON_CLK))
--               emev2_clock_init();
--
-+#ifdef CONFIG_COMMON_CLK
-+       of_clk_init(NULL);
-+#else
-+       emev2_clock_init();
-+#endif
-        of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
-
-Cheers,
-
-/ magnus
