@@ -1,164 +1,175 @@
-From: Wolfgang Grandegger <wg@grandegger.com>
-Date: Mon, 21 Oct 2013 19:12:33 +0000
-Subject: Re: [PATCH] can: add Renesas R-Car CAN driver
-Message-Id: <52657CA1.2040708@grandegger.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 01 Oct 2013 11:36:33 +0000
+Subject: Re: [PATCH 4/6] ARM: shmobile: emev2: Define SMU clock DT bindings
+Message-Id: <21574726.tiJa6Opb1k@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309280211.39068.sergei.shtylyov@cogentembedded.com> <524BB883.2040400@grandegger.com> <526061BE.7060204@cogentembedded.com>
-In-Reply-To: <526061BE.7060204@cogentembedded.com>
+References: <52410F86.4040301@renesas.com> <20130924131331.0e9a5f830f531655b2ea0ebe@ops.dti.ne.jp> <20130924045215.GE3619@verge.net.au>
+In-Reply-To: <20130924045215.GE3619-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, mkl@pengutronix.de, linux-can@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org, Shinya Kuribayashi <shinya.kuribayashi.px-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>, Mike Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Sergei,
+Hi Yoshii-san and Simon,
 
-On 10/18/2013 12:16 AM, Sergei Shtylyov wrote:
-> Hello.
+On Tuesday 24 September 2013 13:52:15 Simon Horman wrote:
+> [ Cc Laurent ]
 > 
-> On 10/02/2013 10:09 AM, Wolfgang Grandegger wrote:
+> On Tue, Sep 24, 2013 at 01:13:31PM +0900, takasi-y@ops.dti.ne.jp wrote:
+> > Device tree clock binding document for EMMA Mobile EV2 SMU.
+> > Following nodes are defined to describe clock tree.
+> > - renesas,emev2-smu
+> > - renesas,emev2-smu-clkdiv
+> > - renesas,emev2-smu-gclk
 > 
->    Sorry for the belated reply -- was on vacations.
+> I realise this has been entirely consistent in the past and
+> even as recently as Linus' pre v3.12-rc2 master branch.
+> However, after some recent discussion we are now trying to make our
+> compatibility strings consistently of the form renesas,<unit>-<soc>.
 > 
->> thanks for your contribution. The patch looks already quite good. Before
->> I find time for a detailed review could you please check error handling
->> and bus-off recovery by reporting the output of "$ candump -td -e
->> any,0:0,#FFFFFFFF" while sending messages to the device ...
+> With this in mind I believe the strings should be:
 > 
->> 1. ... without cable connected
+> - renesas,smu-emev2
+> - renesas,smu-clkdiv-emev2
+> - renesas,smu-gclk-emev2
 > 
-> Terminal 1:
+> To be honest I am not quite sure about the "-clkdiv" and "-gclk"
+> bits and I would appreciate some review from others.
+
+I don't have access to the EMEV2 datasheet so my ability to comment on this is 
+somehow limited. However, given that the clock hardware is very SoC-specific, 
+it might make sense to keep the names proposed by Yoshii-san. This would be 
+consistent with the other clock bindings.
+
+> I have CCed Laurent as he may have some advice to offer here.
 > 
-> root@10.0.0.101:/opt/can-utils# ./cangen -n 1 -g 1 can0
-> root@10.0.0.101:/opt/can-utils#
-> 
-> Terminal 2:
-> 
-> root@10.0.0.101:/opt/can-utils# ./candump -td -e any,0:0,#FFFFFFFF
-> (000.000000) can0 200000AC [8] 00 08 00 19 00 00 00 00 ERRORFRAME
-> controller-problem{tx-error-warning}
-> protocol-violation{{}{acknowledge-slot}}
-> no-acknowledgement-on-tx
-> bus-error
-> (000.004496) can0 20000004 [8] 00 20 00 00 00 00 00 00 ERRORFRAME
-> controller-problem{tx-error-passive}
-> 
-> So we get and stay in error- passive state:
+> > These bindings are designed manually based on
+> > 
+> >  19UH0037EJ1000_SMU : System Management Unit User's Manual
+> > 
+> > Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+> > ---
+> > 
+> >  .../devicetree/bindings/clock/emev2-clock.txt      | 99 +++++++++++++++++
+> >  1 file changed, 99 insertions(+)
+> >  create mode 100644
+> >  Documentation/devicetree/bindings/clock/emev2-clock.txt
+> > 
+> > diff --git a/Documentation/devicetree/bindings/clock/emev2-clock.txt
+> > b/Documentation/devicetree/bindings/clock/emev2-clock.txt new file mode
+> > 100644
+> > index 0000000..f8649eb
+> > --- /dev/null
+> > +++ b/Documentation/devicetree/bindings/clock/emev2-clock.txt
+> > @@ -0,0 +1,99 @@
+> > +Device tree Clock bindings for Renesas EMMA Mobile EV2
+> > +
+> > +This binding uses the common clock binding.
+> > +
+> > +* SMU
+> > +System Management Unit described in user's manual R19UH0037EJ1000_SMU.
+> > +This is not a clock provider, but clocks under SMU depend on it.
+> > +
+> > +Required properties:
+> > +- compatible: Should be "renesas,emev2-smu"
+> > +- reg: Address and Size of SMU registers
+> > +
+> > +* SMU_CLKDIV
+> > +Function block with an input mux and a divider, which corresponds to
+> > +"Serial clock generator" in fig."Clock System Overview" of the manual,
+> > +and "xxx frequency division setting register" (XXXCLKDIV) registers.
+> > +This makes internal (neither input nor output) clock that is provided
+> > +to input of xxxGCLK block.
+> > +
+> > +Required properties:
+> > +- compatible: Should be "renesas,emev2-smu-clkdiv"
+> > +- reg: Byte offset from SMU base and Bit position in the register
+> > +- clocks: Parent clocks. Input clocks as described in clock-bindings.txt
+> > +- #clock-cells: Should be <0>
+> > +
+> > +* SMU_GCLK
+> > +Clock gating node shown as "Clock stop processing block" in the
+> > +fig."Clock System Overview" of the manual.
+> > +Registers are "xxx clock gate control register" (XXXGCLKCTRL).
+> > +
+> > +Required properties:
+> > +- compatible: Should be "renesas,emev2-smu-gclk"
+> > +- reg: Byte offset from SMU base and Bit position in the register
+> > +- clocks: Input clock as described in clock-bindings.txt
+> > +- #clock-cells: Should be <0>
+> > +
+> > +Example of provider:
+> > +
+> > +usia_u0_sclkdiv: usia_u0_sclkdiv {
+> > +	compatible = "renesas,emev2-smu-clkdiv";
+> > +	reg = <0x610 0>;
 
-Looks good.
+Is the registers space really 0 bytes long ?
 
-> 
-> root@10.0.0.101:/opt/can-utils# ip -details link show can0
-> 2: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UNKNOWN
-> qlen 10 link/can
-> can state ERROR-PASSIVE (berr-counter tx 128 rx 0) restart-ms 0
-> bitrate 297619 sample-point 0.714
+> > +	clocks = <&pll3_fo>, <&pll4_fo>, <&pll1_fo>, <&osc1_fo>;
+> > +	#clock-cells = <0>;
+> > +};
+> > +
+> > +usia_u0_sclk: usia_u0_sclk {
+> > +	compatible = "renesas,emev2-smu-gclk";
+> > +	reg = <0x4a0 1>;
+> > +	clocks = <&usia_u0_sclkdiv>;
+> > +	#clock-cells = <0>;
+> > +};
+> > +
+> > +Example of consumer:
+> > +
+> > +uart@e1020000 {
+> > +	compatible = "renesas,em-uart";
+> > +	reg = <0xe1020000 0x38>;
+> > +	interrupts = <0 8 0>;
+> > +	clocks = <&usia_u0_sclk>;
+> > +	clock-names = "sclk";
+> > +};
+> > +
+> > +Example of clock-tree description:
+> > +
+> > + This describes a clock path in the clock tree
+> > +  c32ki -> pll3_fo -> usia_u0_sclkdiv -> usia_u0_sclk
+> > +
+> > +smu {
+> > +	compatible = "renesas,emev2-smu";
+> > +	reg = <0xe0110000 0x10000>;
+> > +	#address-cells = <2>;
+> > +	#size-cells = <0>;
+> > +
+> > +	c32ki: c32ki {
+> > +		compatible = "fixed-clock";
+> > +		clock-frequency = <32768>;
+> > +		#clock-cells = <0>;
+> > +	};
+> > +	pll3_fo: pll3_fo {
+> > +		compatible = "fixed-factor-clock";
+> > +		clocks = <&c32ki>;
+> > +		clock-div = <1>;
+> > +		clock-mult = <7000>;
+> > +		#clock-cells = <0>;
+> > +	};
+> > +	usia_u0_sclkdiv: usia_u0_sclkdiv {
+> > +		compatible = "renesas,emev2-smu-clkdiv";
+> > +		reg = <0x610 0>;
+> > +		clocks = <&pll3_fo>;
+> > +		#clock-cells = <0>;
+> > +	};
+> > +	usia_u0_sclk: usia_u0_sclk {
+> > +		compatible = "renesas,emev2-smu-gclk";
+> > +		reg = <0x4a0 1>;
+> > +		clocks = <&usia_u0_sclkdiv>;
+> > +		#clock-cells = <0>;
+> > +	};
+> > +};
+> > +
 
-Strange, what bitrate did you configure?
+There's an extra blank line at the end of the file.
 
-> tq 480 prop-seg 2 phase-seg1 2 phase-seg2 2 sjw 1
-> rcar_can: tseg1 4..16 tseg2 2..8 sjw 1..4 brp 1..1024 brp-inc 1
-> clock 49999999
+-- 
+Regards,
 
-Could you please try if the algorithm works better with 50000000.
+Laurent Pinchart
 
-> root@10.0.0.101:/opt/can-utils#
-> 
-> dmesg:
-> rcar_can rcar_can.0 can0: bitrate error 0.7%
-> rcar_can rcar_can.0 can0: Error warning interrupt
-> rcar_can rcar_can.0 can0: Bus error interrupt:
-> rcar_can rcar_can.0 can0: ACK Error
-> rcar_can rcar_can.0 can0: Error passive interrupt
-> 
->> 2. ... with short-circuited CAN high and low and doing some time later
->>         a manual recovery with "ip link set can0 type can restart"
-> 
->    Now we have auto recovery only. Manual recovery was tested with the
-> first driver version and worked.
-
-What do you mean with "auto recovery"? Auto recovery by the hardware or
-via "restart-ms <ms>"? How do you choose between "manual" and "auto"
-recovery?
-
-> Terminal 1:
-> 
-> root@10.0.0.104:/opt/can-utils# ./cangen -n 1 -g 1 can0
-> root@10.0.0.104:/opt/can-utils# ./cangen -n 1 -g 1 can0
-> root@10.0.0.104:/opt/can-utils# ./cangen -n 1 -g 1 can0
-> root@10.0.0.104:/opt/can-utils#
-> 
-> Terminal 2:
-> 
-> root@10.0.0.104:/opt/can-utils# ./candump -td -e any,0:0,#FFFFFFFF
-> (000.000000) can0 2000008C [8] 00 00 08 00 00 00 00 00 ERRORFRAME
-> controller-problem{}
-> protocol-violation{{tx-dominant-bit-error}{}}
-> bus-error
-> (000.021147) can0 20000144 [8] 00 00 00 00 00 00 00 00 ERRORFRAME
-> controller-problem{}
-> bus-off
-> restarted-after-bus-off
-
-Why does it get "restarted" directly after the bus-off?
-
-> (011.738522) can0 2000008C [8] 00 00 08 00 00 00 00 00 ERRORFRAME
-> controller-problem{}
-
-What controller problem? data[1] is not set for some reasom.
-
-> protocol-violation{{tx-dominant-bit-error}{}}
-> bus-error
-> (000.021163) can0 20000144 [8] 00 00 00 00 00 00 00 00 ERRORFRAME
-> controller-problem{}
-> bus-off
-> restarted-after-bus-off
-> (001.666625) can0 2000008C [8] 00 00 08 00 00 00 00 00 ERRORFRAME
-> controller-problem{}
-> protocol-violation{{tx-dominant-bit-error}{}}
-> bus-error
-> (000.021157) can0 20000144 [8] 00 00 00 00 00 00 00 00 ERRORFRAME
-> controller-problem{}
-> bus-off
-> restarted-after-bus-off
-> 
-> dmesg:
-> rcar_can rcar_can.0 can0: Error warning interrupt
-> rcar_can rcar_can.0 can0: Error passive interrupt
-> rcar_can rcar_can.0 can0: Bus error interrupt:
-> rcar_can rcar_can.0 can0: Bit Error (dominant)
-> rcar_can rcar_can.0 can0: Error warning interrupt
-> rcar_can rcar_can.0 can0: Error passive interrupt
-
-Why are they reported again. You are already in error passive.
-
-> rcar_can rcar_can.0 can0: Bus-off entry interrupt
-> rcar_can rcar_can.0 can0: bus-off
-> rcar_can rcar_can.0 can0: Bus-off recovery interrupt
-> rcar_can rcar_can.0 can0: Error warning interrupt
-> rcar_can rcar_can.0 can0: Error passive interrupt
-> rcar_can rcar_can.0 can0: Bus error interrupt:
-> rcar_can rcar_can.0 can0: Bit Error (dominant)
-> rcar_can rcar_can.0 can0: Error warning interrupt
-> rcar_can rcar_can.0 can0: Error passive interrupt
-> rcar_can rcar_can.0 can0: Bus-off entry interrupt
-> rcar_can rcar_can.0 can0: bus-off
-> rcar_can rcar_can.0 can0: Bus-off recovery interrupt
-> rcar_can rcar_can.0 can0: Error warning interrupt
-> rcar_can rcar_can.0 can0: Error passive interrupt
-> rcar_can rcar_can.0 can0: Bus error interrupt:
-> rcar_can rcar_can.0 can0: Bit Error (dominant)
-> rcar_can rcar_can.0 can0: Error warning interrupt
-> rcar_can rcar_can.0 can0: Error passive interrupt
-> rcar_can rcar_can.0 can0: Bus-off entry interrupt
-> rcar_can rcar_can.0 can0: bus-off
-> rcar_can rcar_can.0 can0: Bus-off recovery interrupt
-
->> I also wonder if the messages are always sent in order. You could use
->> the program "canfdtest" [1] from the can-utils for validation.
-> 
->    This program is PITA. With the driver workaroung it works:
-
-What workaround?
-
-Wolfgang.
