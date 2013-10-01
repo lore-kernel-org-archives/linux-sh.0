@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:56 +0000
-Subject: [PATCH 08/14] ARM: shmobile: Use KZM9D without reference for multiplatform
-Message-Id: <3ae970a688f8f8a74d1b489b8646733a830c904b.1381299817.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:40 +0000
+Subject: [PATCH 08/14] ARM: shmobile: Add CPU notifier based SCU boot vector code
+Message-Id: <916d6121b5947f162979595cc1c0396192a9aa86.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381299817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,63 +12,67 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Change the multiplatform kconfig bits for KZM9D from
-CONFIG_MACH_KZM9D_REFERENCE into CONFIG_MACH_KZM9D
-to match the non-multiplatform case.
+Add CPU notifiers for the shared mach-shmobile SCU code
+to allow removal of the shared SCU boot_secondary code.
+
+Regarding notifiers, at CPU_UP_PREPARE time the SMP boot
+vector is initialized so secondary CPU cores can boot.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig  | 10 ++--------
- arch/arm/mach-shmobile/Makefile |  4 ++++
- 2 files changed, 6 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/platsmp-scu.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 6a684ff..c9c4f15 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -22,16 +22,10 @@ config ARCH_EMEV2
+diff --git a/arch/arm/mach-shmobile/platsmp-scu.c b/arch/arm/mach-shmobile/platsmp-scu.c
+index c96f501..49ae8df 100644
+--- a/arch/arm/mach-shmobile/platsmp-scu.c
++++ b/arch/arm/mach-shmobile/platsmp-scu.c
+@@ -7,6 +7,7 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
++#include <linux/cpu.h>
+ #include <linux/delay.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+@@ -16,6 +17,26 @@
+ #include <asm/smp_scu.h>
+ #include <mach/common.h>
  
- comment "SH-Mobile Board Type"
++static int shmobile_smp_scu_notifier_call(struct notifier_block *nfb,
++					  unsigned long action, void *hcpu)
++{
++	unsigned int cpu = (long)hcpu;
++
++	switch (action) {
++	case CPU_UP_PREPARE:
++		/* For this particular CPU register SCU SMP boot vector */
++		shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
++				  (unsigned long)shmobile_scu_base);
++		break;
++	};
++
++	return NOTIFY_OK;
++}
++
++static struct notifier_block shmobile_smp_scu_notifier = {
++	.notifier_call = shmobile_smp_scu_notifier_call,
++};
++
+ void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
+ {
+ 	/* install boot code shared by all CPUs */
+@@ -25,6 +46,9 @@ void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
+ 	/* enable SCU and cache coherency on booting CPU */
+ 	scu_enable(shmobile_scu_base);
+ 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
++
++	/* Use CPU notifier for reset vector control */
++	register_cpu_notifier(&shmobile_smp_scu_notifier);
+ }
  
--config MACH_KZM9D_REFERENCE
--	bool "KZM9D board - Reference Device Tree Implementation"
-+config MACH_KZM9D
-+	bool "KZM9D board"
- 	depends on ARCH_EMEV2
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	---help---
--	   Use reference implementation of KZM9D board support
--	   which makes a greater use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
- 
- comment "SH-Mobile System Configuration"
- endif
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index b3840ba..b11466d 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -55,6 +55,9 @@ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
- 
- # Board objects
-+ifdef CONFIG_ARCH_SHMOBILE_MULTI
-+obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
-+else
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
- obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
-@@ -72,6 +75,7 @@ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- obj-$(CONFIG_MACH_KZM9D_REFERENCE)	+= board-kzm9d-reference.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
-+endif
- 
- # Framework support
- obj-$(CONFIG_SMP)		+= $(smp-y)
+ int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
 -- 
 1.8.4
 
