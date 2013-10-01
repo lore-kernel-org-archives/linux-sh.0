@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:55 +0000
-Subject: [PATCH 11/14] ARM: shmobile: r7s72100 SCIF support
-Message-Id: <f6ca6f11c921b227e33c5e91084be5ef30c32771.1381293239.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:39 +0000
+Subject: [PATCH 07/14] ARM: shmobile: Add r8a7790 SMP support using APMU code
+Message-Id: <ad09cb83811b228eb6f98230d307bb837e6a758f.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,111 +12,155 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add SCIF serial port support to the r7s72100 SoC by
-adding platform devices for SCIF0 -> SCIF7 together with
-clock bindings. DT device description is excluded at
-this point since such bindings are still under
-development.
+Add r8a7790 SMP support using the shared APMU code. To enable
+SMP the r8a7790 specific DTS needs to be updated to include
+CPU cores, and this is happening in a separate patch.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c        |  8 +++++
- arch/arm/mach-shmobile/include/mach/r7s72100.h |  1 +
- arch/arm/mach-shmobile/setup-r7s72100.c        | 45 ++++++++++++++++++++++++++
- 3 files changed, 54 insertions(+)
+ arch/arm/mach-shmobile/Makefile                |  1 +
+ arch/arm/mach-shmobile/board-lager-reference.c |  1 +
+ arch/arm/mach-shmobile/board-lager.c           |  1 +
+ arch/arm/mach-shmobile/include/mach/r8a7790.h  |  1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c         |  1 +
+ arch/arm/mach-shmobile/smp-r8a7790.c           | 67 ++++++++++++++++++++++++++
+ 6 files changed, 72 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/smp-r8a7790.c
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 1e71094..4aba20c 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -170,6 +170,14 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 2705bfa..381fc97 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -34,6 +34,7 @@ endif
+ smp-y				:= platsmp.o headsmp.o
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
++smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
  
- 	/* MSTP clocks */
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[MSTP46]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[MSTP45]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.3", &mstp_clks[MSTP44]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.4", &mstp_clks[MSTP43]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
-+	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
+ # IRQ objects
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 2856f51..d39a91b 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -38,6 +38,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
  };
  
- void __init r7s72100_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/include/mach/r7s72100.h b/arch/arm/mach-shmobile/include/mach/r7s72100.h
-index f78062e..5f34b20 100644
---- a/arch/arm/mach-shmobile/include/mach/r7s72100.h
-+++ b/arch/arm/mach-shmobile/include/mach/r7s72100.h
-@@ -1,6 +1,7 @@
- #ifndef __ASM_R7S72100_H__
- #define __ASM_R7S72100_H__
+ DT_MACHINE_START(LAGER_DT, "lager")
++	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= r8a7790_init_early,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.init_time	= r8a7790_timer_init,
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 4047fac..ef3baaa 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -161,6 +161,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
+ };
  
-+void r7s72100_add_dt_devices(void);
- void r7s72100_clock_init(void);
- void r7s72100_init_early(void);
+ DT_MACHINE_START(LAGER_DT, "lager")
++	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= r8a7790_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 177a837..79e731c 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -7,6 +7,7 @@ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+ void r8a7790_init_early(void);
+ void r8a7790_timer_init(void);
++extern struct smp_operations r8a7790_smp_ops;
  
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index c1aded0..d4eb509 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -21,10 +21,55 @@
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <linux/serial_sci.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach/arch.h>
+ #define MD(nr) BIT(nr)
+ u32 r8a7790_read_mode_pins(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index e0d29a2..c7e24ef 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -283,6 +283,7 @@ static const char * const r8a7790_boards_compat_dt[] __initconst = {
+ };
  
-+#define SCIF_DATA(index, baseaddr, irq)					\
-+[index] = {								\
-+	.type		= PORT_SCIF,					\
-+	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
-+	.scbrr_algo_id	= SCBRR_ALGO_2,					\
-+	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
-+			  SCSCR_REIE,					\
-+	.mapbase	= baseaddr,					\
-+	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
++	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= r8a7790_timer_init,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+new file mode 100644
+index 0000000..015e275
+--- /dev/null
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -0,0 +1,67 @@
++/*
++ * SMP support for r8a7790
++ *
++ * Copyright (C) 2012-2013 Renesas Solutions Corp.
++ * Copyright (C) 2012 Takashi Yoshii <takashi.yoshii.ze@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/smp.h>
++#include <linux/io.h>
++#include <asm/smp_plat.h>
++#include <mach/common.h>
++
++#define RST		0xe6160000
++#define CA15BAR		0x0020
++#define CA7BAR		0x0030
++#define CA15RESCNT	0x0040
++#define CA7RESCNT	0x0044
++#define MERAM		0xe8080000
++
++static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
++{
++	void __iomem *p;
++	u32 bar;
++
++	/* let APMU code install data related to shmobile_boot_vector */
++	shmobile_smp_apmu_prepare_cpus(max_cpus);
++
++	/* MERAM for jump stub, because BAR requires 256KB aligned address */
++	p = ioremap_nocache(MERAM, shmobile_boot_size);
++	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
++	iounmap(p);
++
++	/* setup reset vectors */
++	p = ioremap_nocache(RST, 0x63);
++	bar = (MERAM >> 8) & 0xfffffc00;
++	writel_relaxed(bar, p + CA15BAR);
++	writel_relaxed(bar, p + CA7BAR);
++	writel_relaxed(bar | 0x10, p + CA15BAR);
++	writel_relaxed(bar | 0x10, p + CA7BAR);
++
++	/* enable clocks to all CPUs */
++	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
++		       p + CA15RESCNT);
++	writel_relaxed((readl_relaxed(p + CA7RESCNT) & ~0x0f) | 0x5a5a0000,
++		       p + CA7RESCNT);
++	iounmap(p);
 +}
 +
-+enum { SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7 };
-+
-+static const struct plat_sci_port scif[] __initconst = {
-+	SCIF_DATA(SCIF0, 0xe8007000, gic_iid(221)), /* SCIF0 */
-+	SCIF_DATA(SCIF1, 0xe8007800, gic_iid(225)), /* SCIF1 */
-+	SCIF_DATA(SCIF2, 0xe8008000, gic_iid(229)), /* SCIF2 */
-+	SCIF_DATA(SCIF3, 0xe8008800, gic_iid(233)), /* SCIF3 */
-+	SCIF_DATA(SCIF4, 0xe8009000, gic_iid(237)), /* SCIF4 */
-+	SCIF_DATA(SCIF5, 0xe8009800, gic_iid(241)), /* SCIF5 */
-+	SCIF_DATA(SCIF6, 0xe800a000, gic_iid(245)), /* SCIF6 */
-+	SCIF_DATA(SCIF7, 0xe800a800, gic_iid(249)), /* SCIF7 */
++struct smp_operations r8a7790_smp_ops __initdata = {
++	.smp_prepare_cpus	= r8a7790_smp_prepare_cpus,
++	.smp_boot_secondary	= shmobile_smp_apmu_boot_secondary,
++#ifdef CONFIG_HOTPLUG_CPU
++	.cpu_disable		= shmobile_smp_cpu_disable,
++	.cpu_die		= shmobile_smp_apmu_cpu_die,
++	.cpu_kill		= shmobile_smp_apmu_cpu_kill,
++#endif
 +};
-+
-+static inline void r7s72100_register_scif(int idx)
-+{
-+	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
-+				      sizeof(struct plat_sci_port));
-+}
-+
-+void __init r7s72100_add_dt_devices(void)
-+{
-+	r7s72100_register_scif(SCIF0);
-+	r7s72100_register_scif(SCIF1);
-+	r7s72100_register_scif(SCIF2);
-+	r7s72100_register_scif(SCIF3);
-+	r7s72100_register_scif(SCIF4);
-+	r7s72100_register_scif(SCIF5);
-+	r7s72100_register_scif(SCIF6);
-+	r7s72100_register_scif(SCIF7);
-+}
-+
- void __init r7s72100_init_early(void)
- {
- 	shmobile_setup_delay(400, 1, 3); /* Cortex-A9 @ 400MHz */
 -- 
 1.8.4
 
