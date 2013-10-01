@@ -1,22 +1,56 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Oct 2013 01:50:08 +0000
-Subject: Re: [PATCH 4/4] ARM: shmobile: r8a7779: add I2C clock for DT
-Message-Id: <20131008015006.GB16625@verge.net.au>
+Date: Tue, 01 Oct 2013 03:48:35 +0000
+Subject: Re: [PATCH v2] ARM: shmobile: ape6evm: fix incorrect placement of __initdata tag
+Message-Id: <20131001034831.GA3083@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352277298-23312-5-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352277298-23312-5-git-send-email-horms@verge.net.au>
+References: <1959578.PFsrHiTtYY@amdc1032>
+ <27072275.6rIbiFzHY2@avalon>
+In-Reply-To: <27072275.6rIbiFzHY2@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 03, 2013 at 11:45:03PM -0700, Kuninori Morimoto wrote:
-> 10e8d4f6dddb0f9dc408c2f2bde8399b243a42ca
-> (ARM: mach-shmobile: r8a7779: Minimal setup using DT)
-> added I2C driver for DT, but it didn't add clock.
-> This patch adds missing clock for I2C
+On Mon, Sep 30, 2013 at 08:31:05PM +0200, Laurent Pinchart wrote:
+> On Monday 30 September 2013 17:34:36 Bartlomiej Zolnierkiewicz wrote:
+> > __initdata tag should be placed between the variable name and equal
+> > sign for the variable to be placed in the intended .init.data section.
+> > 
+> > Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+> > Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Thanks, I have queued this up but I am unsure if it will
-end up in v3.13 or v3.14.
+Thanks, I will queue this up.
+
+> 
+> > ---
+> > v2:
+> > - use __initdata as it is OK to do it
+> > 
+> >  arch/arm/mach-shmobile/board-ape6evm.c | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > diff --git a/arch/arm/mach-shmobile/board-ape6evm.c
+> > b/arch/arm/mach-shmobile/board-ape6evm.c index 7627385..8954f55 100644
+> > --- a/arch/arm/mach-shmobile/board-ape6evm.c
+> > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
+> > @@ -86,7 +86,7 @@ static struct gpio_keys_button gpio_buttons[] = {
+> >  	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
+> >  };
+> > 
+> > -static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
+> > +static struct gpio_keys_platform_data ape6evm_keys_pdata __initdata = {
+> >  	.buttons	= gpio_buttons,
+> >  	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+> >  };
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
