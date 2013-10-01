@@ -1,80 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:49 +0000
-Subject: [PATCH 08/14] ARM: shmobile: r8a7791 IRQC platform device support
-Message-Id: <454d320c80fa07c30267711fea08da0d24f28224.1381293239.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:37:15 +0000
+Subject: [PATCH 10/12] ARM: shmobile: armadillo800eva: disable MMCIF Command Completion Signal
+Message-Id: <fbf3264c046a6cce4cefec6e069fc86c0175f7d3.1380530519.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
+References: <cover.1380530519.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380530519.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Add a platform device for the r8a7791 IRQC hardware
-driving IRQ pins IRQ0 to IRQ9. The Linux interrupt
-number is statically assigned to allow board code
-written in C to make use of static interrupt numbers.
+MMCIF on r8a7740 doesn't support Command Completion Signal, a platform
+parameter has to be added to disable it on armadillo800eva.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7791.c | 27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 350dfc4..ba4fa3e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -22,6 +22,7 @@
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <mach/common.h>
-@@ -109,6 +110,31 @@ static const struct resource cmt00_resources[] __initconst = {
- 					  &cmt##idx##_platform_data,	\
- 					  sizeof(struct sh_timer_config))
- 
-+static struct renesas_irqc_config irqc0_data = {
-+	.irq_base = irq_pin(0), /* IRQ0 -> IRQ9 */
-+};
-+
-+static struct resource irqc0_resources[] = {
-+	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
-+	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
-+	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
-+	DEFINE_RES_IRQ(gic_spi(2)), /* IRQ2 */
-+	DEFINE_RES_IRQ(gic_spi(3)), /* IRQ3 */
-+	DEFINE_RES_IRQ(gic_spi(12)), /* IRQ4 */
-+	DEFINE_RES_IRQ(gic_spi(13)), /* IRQ5 */
-+	DEFINE_RES_IRQ(gic_spi(14)), /* IRQ6 */
-+	DEFINE_RES_IRQ(gic_spi(15)), /* IRQ7 */
-+	DEFINE_RES_IRQ(gic_spi(16)), /* IRQ8 */
-+	DEFINE_RES_IRQ(gic_spi(17)), /* IRQ9 */
-+};
-+
-+#define r8a7791_register_irqc(idx)					\
-+	platform_device_register_resndata(&platform_bus, "renesas_irqc", \
-+					  idx, irqc##idx##_resources,	\
-+					  ARRAY_SIZE(irqc##idx##_resources), \
-+					  &irqc##idx##_data,		\
-+					  sizeof(struct renesas_irqc_config))
-+
- void __init r8a7791_add_dt_devices(void)
- {
- 	r8a7791_register_scif(SCIFA0);
-@@ -132,6 +158,7 @@ void __init r8a7791_add_dt_devices(void)
- void __init r8a7791_add_standard_devices(void)
- {
- 	r8a7791_add_dt_devices();
-+	r8a7791_register_irqc(0);
- }
- 
- void __init r8a7791_init_early(void)
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 5bd1479..fc8f9f8 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -823,6 +823,7 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NONREMOVABLE,
++	.ccs_unsupported = true,
+ 	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
+ 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
+ };
 -- 
 1.8.4
 
