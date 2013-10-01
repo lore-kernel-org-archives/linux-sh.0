@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:39:21 +0000
+Date: Tue, 01 Oct 2013 04:11:39 +0000
 Subject: [PATCH 3/3] ARM: shmobile: Add r8a7790 CA7 CPU cores to DTSI
-Message-Id: <2007e74ca3769fd353fe87a7a105c14102d7980c.1380530263.git.horms+renesas@verge.net.au>
+Message-Id: <2007e74ca3769fd353fe87a7a105c14102d7980c.1380600579.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380530263.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380530263.git.horms+renesas@verge.net.au>
+References: <cover.1380600579.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380600579.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
