@@ -1,57 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 14:55:08 +0000
-Subject: [PATCH 0/3] Renesas R8A7790 Common Clock Framework support
-Message-Id: <1383058511-26046-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:52 +0000
+Subject: [PATCH 13/14] ARM: shmobile: Extend APMU code to allow single cluster only
+Message-Id: <ee490bcc4f2d456c40df93236cf6a1bce2d5ddd0.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Magnus Damm <damm@opensource.se>
 
-This patch set adds CCF drivers for the clocks found in the Renesas R-Car
-R8A7790 (H2) SoC.
+Extend the APMU code with a check to only allow boot
+of CPU cores that sit in the same cluster as CPU0.
 
-The patches are pretty self-explanatory and described in their respective
-commit message. The R8A7790 datasheet is unfortunately not publicly available.
+This makes it possible for people to use the r8a790
+CA7 boot mode with CA7-cores only. The default CA15
+boot mode will enable CA15 cores only. This is an
+intentional software limitation to cope with lacking
+scheduler support.
 
-The code is available in my git tree at
+By removing this patch it is possible to run all 8 cores
+in parallel, but this is not recommended without out of tree
+scheduler modfications or custom user space code to control
+the CPU affinitiy.
 
-	git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/r8a7790
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/platsmp-apmu.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
-multiarch drivers and clk-prepare patches I've posted earlier today. A full
-DT description of the R8A7790 clocks is available in the clocks/ccf/lager
-branch of the same repository (see "ARM: shmobile: r8a7790: Add clocks" and
-"ARM: shmobile: r8a7790: Reference clocks" patches).
-
-Laurent Pinchart (3):
-  clk: shmobile: Add DIV6 clock support
-  clk: shmobile: Add MSTP clock support
-  clk: shmobile: Add R8A7790 clocks support
-
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |  27 +++
- .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  47 +++++
- .../bindings/clock/renesas,r8a7790-cpg-clocks.txt  |  26 +++
- drivers/clk/shmobile/Makefile                      |   6 +-
- drivers/clk/shmobile/clk-div6.c                    | 185 +++++++++++++++++
- drivers/clk/shmobile/clk-mstp.c                    | 229 +++++++++++++++++++++
- drivers/clk/shmobile/clk-r8a7790.c                 | 176 ++++++++++++++++
- include/dt-bindings/clock/r8a7790-clock.h          |  66 ++++++
- include/linux/clk/shmobile.h                       |  19 ++
- 9 files changed, 780 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7790-cpg-clocks.txt
- create mode 100644 drivers/clk/shmobile/clk-div6.c
- create mode 100644 drivers/clk/shmobile/clk-mstp.c
- create mode 100644 drivers/clk/shmobile/clk-r8a7790.c
- create mode 100644 include/dt-bindings/clock/r8a7790-clock.h
- create mode 100644 include/linux/clk/shmobile.h
-
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index 34dc40d..caaaa35 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -94,8 +94,21 @@ static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit))
+ 	u32 id;
+ 	int k;
+ 	int bit, index;
++	bool is_allowed;
+ 
+ 	for (k = 0; k < ARRAY_SIZE(apmu_config); k++) {
++		/* only enable the cluster that includes the boot CPU */
++		is_allowed = false;
++		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
++			id = apmu_config[k].cpus[bit];
++			if (id >= 0) {
++				if (id = cpu_logical_map(0))
++					is_allowed = true;
++			}
++		}
++		if (!is_allowed)
++			continue;
++
+ 		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
+ 			id = apmu_config[k].cpus[bit];
+ 			if (id >= 0) {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
