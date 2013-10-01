@@ -1,49 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Oct 2013 07:46:12 +0000
-Subject: [PATCH 14/17] ARM: shmobile: r8a7779: fixup DT node naming for SCIF
-Message-Id: <87y55vc6yn.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:36 +0000
+Subject: [PATCH 04/14] ARM: shmobile: Expose shmobile_invalidate_start()
+Message-Id: <87a08ca0f7f99b3136c763377c547a89cf6d0996.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-According to ePAPR spec,
-this patch exchanges SCIF DT node from "scif" to "serial".
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Expose shmobile_invalidate_start() in common.h for
+mach-shmobile. This function will be used for boot of
+secondary processors on future non-SCU SMP platforms.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index cb9ff29..3acf852 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -68,7 +68,7 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&scif2_pins &scif4_pins>;
-+	pinctrl-0 = <&serial2_pins &serial4_pins>;
- 	pinctrl-names = "default";
- 
- 	lan0_pins: lan0 {
-@@ -82,12 +82,12 @@
- 		};
- 	};
- 
--	scif2_pins: scif2 {
-+	serial2_pins: serial2 {
- 		renesas,groups = "scif2_data_c";
- 		renesas,function = "scif2";
- 	};
- 
--	scif4_pins: scif4 {
-+	serial4_pins: serial4 {
- 		renesas,groups = "scif4_data";
- 		renesas,function = "scif4";
- 	};
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 26eaff1..a9df8f3 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -14,6 +14,7 @@ extern void shmobile_smp_sleep(void);
+ extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
+ 			      unsigned long arg);
+ extern int shmobile_smp_cpu_disable(unsigned int cpu);
++extern void shmobile_invalidate_start(void);
+ extern void shmobile_boot_scu(void);
+ extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+ extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
 -- 
-1.7.9.5
+1.8.4
 
