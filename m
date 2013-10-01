@@ -1,52 +1,87 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 10 Oct 2013 11:33:16 +0000
-Subject: Re: [PATCH 0/7] ARM: shmobile: bockw: MMCIF support on DT
-Message-Id: <20131010113312.GA18723@verge.net.au>
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Tue, 01 Oct 2013 18:50:51 +0000
+Subject: Re: [PATCH 10/10] pwm-backlight: Allow backlight to remain disabled on boot
+Message-Id: <524B198B.3010609@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878uy9259u.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878uy9259u.wl%kuninori.morimoto.gx@renesas.com>
+References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
+ <1379972467-11243-11-git-send-email-treding@nvidia.com>
+In-Reply-To: <1379972467-11243-11-git-send-email-treding@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 09, 2013 at 10:20:46PM +0200, Laurent Pinchart wrote:
-> Hi Morimoto-san and Simon,
+On 09/23/2013 03:41 PM, Thierry Reding wrote:
+> The default for backlight devices is to be enabled immediately when
+> registering with the backlight core. This can be useful for setups that
+> use a simple framebuffer device and where the backlight cannot otherwise
+> be hooked up to the panel.
 > 
-> On Tuesday 08 October 2013 17:11:10 Kuninori Morimoto wrote:
-> > Hi Simon, Laurent
-> > 
-> > > > Laurent, could you let me know if you have a branch available with "ARM:
-> > > > shmobile: r8a7778: Fix pin control device address in DT". If not I'm
-> > > > happy
-> > > > to wait.
-> > > 
-> > > I don't have one. The bug got introduced in v3.12-rc1, without any serious
-> > > consequence as the DT node wasn't used. The fix might even break the
-> > > bockw-
-> > > reference board if Morimoto-san's patch 4 isn't applied, as the PFC device
-> > > seems to be registered twice then (I haven't tested this).
-> > > 
-> > > Morimoto-san, could you please test my fix on bockw-reference without your
-> > > patch series ? If it doesn't break anything then we could push it to
-> > > v3.12.
-> > > Otherwise we can include it with this series. Simon, would that be fine
-> > > with you ?
-> > 
-> > I tested Laurent's fixup patch on
-> > 
-> >  - latest linus/master    + fixup patch
-> >  - renesas-devel-20131008 + fixup patch
-> > 
-> > both works well
+> However, when dealing with more complex setups, such as those of recent
+> ARM SoCs, this can be problematic. Since the backlight is usually setup
+> separately from the display controller, the probe order is not usually
+> deterministic. That can lead to situations where the backlight will be
+> powered up and the panel will show an uninitialized framebuffer.
 > 
-> Thank you for testing this.
+> Furthermore, subsystems such as DRM have advanced functionality to set
+> the power mode of a panel. In order to allow such setups to power up the
+> panel at exactly the right moment, a way is needed to prevent the
+> backlight core from powering the backlight up automatically when it is
+> registered.
 > 
-> Simon, would you like to pick up the patch for v3.12 ?
+> This commit introduces a new boot_off field in the platform data (and
+> also implements getting the same information from device tree). When set
+> the initial backlight power mode will be set to "off".
 
-Hi Laurent, Hi Morimoto,
+> diff --git a/Documentation/devicetree/bindings/video/backlight/pwm-backlight.txt b/Documentation/devicetree/bindings/video/backlight/pwm-backlight.txt
 
-sorry for the confusion and delay.
+> +  - backlight-boot-off: keep the backlight disabled on boot
 
-Yes I can take that patch but as its not urgent I would prefer
-to queue it up for v3.13 or at this stage more likely the distant v3.14.
+A few thoughts:
+
+1) Does this property indicate that:
+
+a) The current state of the backlight at boot. In which case, this will
+need bootloader involvement to modify the value in the DT at boot time
+based on whether the bootloader turned on the backlight:-(
+
+b) That the driver should not turn on the backlight immediately? That
+seems to describe driver behaviour more than HW. Is it appropriate to
+put that into DT?
+
+Your suggestion to make the backlight not turn on by default might be a
+better fix?
+
+2) Should the driver instead attempt to read the current state of the
+GPIO output to determine whether the backlight is on? This may not be
+possible on all HW.
+
+3) Doesn't the following code in probe() (added in a previous patch)
+need to be updated?
+
+> +	if (gpio_is_valid(pb->enable_gpio)) {
+> +		if (pb->enable_gpio_flags & PWM_BACKLIGHT_GPIO_ACTIVE_LOW)
+> +			gpio_set_value(pb->enable_gpio, 0);
+> +		else
+> +			gpio_set_value(pb->enable_gpio, 1);
+> +	}
+
+... That assumes that the backlight is on at boot, and hence presumably
+after this patch still always turns on the backlight, only to turn it
+off very quickly once the following code in this patch executes:
+
+(and perhaps we also need to avoid turning the backlight off then on if
+it was already on at boot)
+
+> diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
+
+> @@ -318,6 +320,12 @@ static int pwm_backlight_probe(struct platform_device *pdev)
+>  	}
+>  
+>  	bl->props.brightness = data->dft_brightness;
+> +
+> +	if (data->boot_off)
+> +		bl->props.power = FB_BLANK_POWERDOWN;
+> +	else
+> +		bl->props.power = FB_BLANK_UNBLANK;
+
