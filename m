@@ -1,63 +1,40 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 29 Oct 2013 08:09:37 +0000
-Subject: Re: [PATCH 08/12] mmc: sh_mobile_sdhi: Convert to clk_prepare/unprepare
-Message-Id: <Pine.LNX.4.64.1310290907520.8404@axis700.grange>
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Tue, 01 Oct 2013 18:31:04 +0000
+Subject: Re: [PATCH 05/10] ARM: SAMSUNG: Initialize PWM backlight enable_gpio field
+Message-Id: <524B14E8.5040302@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383000569-8916-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383000569-8916-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
+ <1379972467-11243-6-git-send-email-treding@nvidia.com>
+In-Reply-To: <1379972467-11243-6-git-send-email-treding@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 28 Oct 2013, Laurent Pinchart wrote:
+On 09/23/2013 03:41 PM, Thierry Reding wrote:
+> The GPIO API defines 0 as being a valid GPIO number, so this field needs
+> to be initialized explicitly.
 
-> Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
-> clk_disable_unprepare() to get ready for the migration to the common
-> clock framework.
-> 
-> Cc: Chris Ball <cjb@laptop.org>
-> Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> Cc: linux-mmc@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+>  static void __init smdkv210_map_io(void)
 
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> @@ -70,6 +70,7 @@ static struct samsung_bl_drvdata samsung_dfl_bl_data __initdata = {
+>  		.max_brightness = 255,
+>  		.dft_brightness = 255,
+>  		.pwm_period_ns  = 78770,
+> +		.enable_gpio    = -1,
+>  		.init           = samsung_bl_init,
+>  		.exit           = samsung_bl_exit,
+>  	},
+> @@ -121,6 +122,10 @@ void __init samsung_bl_set(struct samsung_bl_gpio_info *gpio_info,
+>  		samsung_bl_data->lth_brightness = bl_data->lth_brightness;
+>  	if (bl_data->pwm_period_ns)
+>  		samsung_bl_data->pwm_period_ns = bl_data->pwm_period_ns;
+> +	if (bl_data->enable_gpio)
+> +		samsung_bl_data->enable_gpio = bl_data->enable_gpio;
+> +	if (bl_data->enable_gpio_flags)
+> +		samsung_bl_data->enable_gpio_flags = bl_data->enable_gpio_flags;
 
-Thanks
-Guennadi
-
-> ---
->  drivers/mmc/host/sh_mobile_sdhi.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index f344659..ed1718a 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -54,7 +54,7 @@ static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int
->  	struct mmc_host *mmc = platform_get_drvdata(pdev);
->  	struct tmio_mmc_host *host = mmc_priv(mmc);
->  	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-> -	int ret = clk_enable(priv->clk);
-> +	int ret = clk_prepare_enable(priv->clk);
->  	if (ret < 0)
->  		return ret;
->  
-> @@ -67,7 +67,7 @@ static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
->  	struct mmc_host *mmc = platform_get_drvdata(pdev);
->  	struct tmio_mmc_host *host = mmc_priv(mmc);
->  	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-> -	clk_disable(priv->clk);
-> +	clk_disable_unprepare(priv->clk);
->  }
->  
->  static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
-> -- 
-> 1.8.1.5
-> 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Won't this cause the core pwm_bl driver to request/manipulate the GPIO,
+whereas this driver already does that inside the samsung_bl_init/exit
+callbacks? I think you either need to adjust those callbacks, or not set
+the new standard GPIO property in samsung_bl_data.
