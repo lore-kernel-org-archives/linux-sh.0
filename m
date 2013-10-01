@@ -1,54 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:35:37 +0000
-Subject: [PATCH 05/14] ARM: shmobile: Introduce shmobile_boot_size
-Message-Id: <a84a5ab73f77a5dd4f09f0af33f09d8d751d0cc7.1380532277.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 08:11:43 +0000
+Subject: [PATCH 00/10] ARM: shmobile: r8a7791 SoC and Koelsch update V2
+Message-Id: <20131001081143.4136.46925.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380532277.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+ARM: shmobile: r8a7791 SoC and Koelsch update V2
 
-Introduce shmobile_boot_size that can be used by
-future SMP code to determine the size of the boot
-code that needs to be copied to internal SRAM.
+[PATCH 01/10] ARM: shmobile: Introduce r8a7791_add_standard_devices()
+[PATCH 02/10] ARM: shmobile: Use r8a7791_add_standard_devices() on Koelsch
+[PATCH 03/10] ARM: shmobile: r8a7791 IRQC platform device support
+[PATCH 04/10] ARM: shmobile: r8a7791 IRQC device tree node
+[PATCH 05/10] ARM: shmobile: r8a7791 Arch timer device tree node
+[PATCH 06/10] ARM: shmobile: r8a7791 Arch timer workaround
+[PATCH 07/10] ARM: shmobile: Use arch timer on Koelsch
+[PATCH 08/10] ARM: shmobile: r8a7791 SMP device tree node
+[PATCH 09/10] ARM: shmobile: r8a7791 SMP support
+[PATCH 10/10] ARM: shmobile: Use SMP on Koelsch
+
+This series includes updated and more broken out versions of patches
+implementing r8a7791 and Koelsch support for IRQC, Arch timer and SMP.
+
+Koelsch DT reference support needs to be rebuilt on top of this
+in the near future. After that will PFC and GPIO be layered on top.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/headsmp.S             | 3 +++
- arch/arm/mach-shmobile/include/mach/common.h | 1 +
- 2 files changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/headsmp.S b/arch/arm/mach-shmobile/headsmp.S
-index f93751c..e5be5c8 100644
---- a/arch/arm/mach-shmobile/headsmp.S
-+++ b/arch/arm/mach-shmobile/headsmp.S
-@@ -40,6 +40,9 @@ shmobile_boot_fn:
- 	.globl	shmobile_boot_arg
- shmobile_boot_arg:
- 2:	.space	4
-+	.globl	shmobile_boot_size
-+shmobile_boot_size:
-+	.long	. - shmobile_boot_vector
- 
- /*
-  * Per-CPU SMP boot function/argument selection code based on MPIDR
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index a9df8f3..cfe3977 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -9,6 +9,7 @@ extern void shmobile_setup_console(void);
- extern void shmobile_boot_vector(void);
- extern unsigned long shmobile_boot_fn;
- extern unsigned long shmobile_boot_arg;
-+extern unsigned long shmobile_boot_size;
- extern void shmobile_smp_boot(void);
- extern void shmobile_smp_sleep(void);
- extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
--- 
-1.8.4
+ Written against renesas.git tag renesas-devel-20131001
+
+ arch/arm/boot/dts/r8a7791.dtsi                |   33 +++++++++++++
+ arch/arm/mach-shmobile/Makefile               |    3 -
+ arch/arm/mach-shmobile/board-koelsch.c        |    5 +-
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |    2 
+ arch/arm/mach-shmobile/setup-r8a7791.c        |   35 ++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7791.c          |   62 +++++++++++++++++++++++++
+ 6 files changed, 138 insertions(+), 2 deletions(-)
+
 
