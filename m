@@ -1,8 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:39:20 +0000
+Date: Tue, 01 Oct 2013 04:11:38 +0000
 Subject: [PATCH 2/3] ARM: shmobile: Add r8a7790 CA15 CPU cores
-Message-Id: <c1f95979baa9c33c5e6c280d7a8742fad0d20326.1380530263.git.horms+renesas@verge.net.au>
+Message-Id: <c1f95979baa9c33c5e6c280d7a8742fad0d20326.1380600579.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <c1f95979baa9c33c5e6c280d7a8742fad0d20326.1380530263.git.horms+renesas@verge.net.au>
+In-Reply-To: <c1f95979baa9c33c5e6c280d7a8742fad0d20326.1380530263.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
