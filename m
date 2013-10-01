@@ -1,87 +1,55 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:38:45 +0000
-Subject: [PATCH 4/4] ARM: shmobile: Add koelsch defconfig
-Message-Id: <6bb2e347899b297eea26f2658eac8fdcd633fba5.1380514316.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:33 +0000
+Subject: [PATCH 01/14] ARM: shmobile: Introduce shmobile_smp_cpu_disable()
+Message-Id: <5c4dfcd663b6e96cc20f02dc2c7c315749ea1bc1.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380514316.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380514316.git.horms+renesas@verge.net.au>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is intended to be used until multi-arch is able to be
-used for the koelsch board at which time a more generic configuration
-will be used in place of this one.
+From: Magnus Damm <damm@opensource.se>
 
-This is based on the lager defconfig.
+Introduce the shared CPU Hotplug function shmobile_smp_cpu_disable()
+for mach-shmobile. It is useful for the case when all CPUs may be
+hotplugged, including CPU 0.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/koelsch_defconfig | 54 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
- create mode 100644 arch/arm/configs/koelsch_defconfig
+ arch/arm/mach-shmobile/include/mach/common.h | 1 +
+ arch/arm/mach-shmobile/platsmp.c             | 7 +++++++
+ 2 files changed, 8 insertions(+)
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-new file mode 100644
-index 0000000..825c16d
---- /dev/null
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -0,0 +1,54 @@
-+CONFIG_SYSVIPC=y
-+CONFIG_NO_HZ=y
-+CONFIG_IKCONFIG=y
-+CONFIG_IKCONFIG_PROC=y
-+CONFIG_LOG_BUF_SHIFT
-+CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-+CONFIG_SYSCTL_SYSCALL=y
-+CONFIG_EMBEDDED=y
-+CONFIG_PERF_EVENTS=y
-+CONFIG_SLAB=y
-+# CONFIG_BLOCK is not set
-+CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_R8A7791=y
-+CONFIG_MACH_KOELSCH=y
-+# CONFIG_SWP_EMULATE is not set
-+CONFIG_CPU_BPREDICT_DISABLE=y
-+CONFIG_PL310_ERRATA_588369=y
-+CONFIG_ARM_ERRATA_754322=y
-+CONFIG_SMP=y
-+CONFIG_SCHED_MC=y
-+CONFIG_NR_CPUS=8
-+CONFIG_AEABI=y
-+CONFIG_ZBOOT_ROM_TEXT=0x0
-+CONFIG_ZBOOT_ROM_BSS=0x0
-+CONFIG_ARM_APPENDED_DTB=y
-+CONFIG_KEXEC=y
-+CONFIG_AUTO_ZRELADDR=y
-+CONFIG_VFP=y
-+CONFIG_NEON=y
-+# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
-+CONFIG_PM_RUNTIME=y
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
-+# CONFIG_INPUT_MOUSE is not set
-+# CONFIG_LEGACY_PTYS is not set
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS 
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+# CONFIG_HWMON is not set
-+CONFIG_THERMAL=y
-+CONFIG_RCAR_THERMAL=y
-+# CONFIG_HID is not set
-+# CONFIG_USB_SUPPORT is not set
-+CONFIG_NEW_LEDS=y
-+CONFIG_LEDS_CLASS=y
-+# CONFIG_IOMMU_SUPPORT is not set
-+# CONFIG_DNOTIFY is not set
-+# CONFIG_INOTIFY_USER is not set
-+CONFIG_TMPFS=y
-+CONFIG_CONFIGFS_FS=y
-+# CONFIG_MISC_FILESYSTEMS is not set
-+# CONFIG_ENABLE_WARN_DEPRECATED is not set
-+# CONFIG_ENABLE_MUST_CHECK is not set
-+# CONFIG_ARM_UNWIND is not set
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 7b93868..1ed155e 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -13,6 +13,7 @@ extern void shmobile_smp_boot(void);
+ extern void shmobile_smp_sleep(void);
+ extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
+ 			      unsigned long arg);
++extern int shmobile_smp_cpu_disable(unsigned int cpu);
+ extern void shmobile_boot_scu(void);
+ extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+ extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
+diff --git a/arch/arm/mach-shmobile/platsmp.c b/arch/arm/mach-shmobile/platsmp.c
+index d4ae616..3741562 100644
+--- a/arch/arm/mach-shmobile/platsmp.c
++++ b/arch/arm/mach-shmobile/platsmp.c
+@@ -44,3 +44,10 @@ void shmobile_smp_hook(unsigned int cpu, unsigned long fn, unsigned long arg)
+ 	shmobile_smp_arg[cpu] = arg;
+ 	flush_cache_all();
+ }
++
++#ifdef CONFIG_HOTPLUG_CPU
++int shmobile_smp_cpu_disable(unsigned int cpu)
++{
++	return 0; /* Hotplug of any CPU is supported */
++}
++#endif
 -- 
 1.8.4
 
