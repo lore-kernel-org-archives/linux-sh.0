@@ -1,36 +1,74 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Oct 2013 01:05:33 +0000
-Subject: Re: [GIT PULL] Fifth Round of Renesas ARM based SoC fixes for v3.12
-Message-Id: <20131008010533.GA8395@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 10:33:24 +0000
+Subject: [PATCH 03/05] ARM: shmobile: Remove non-multiplatform KZM9D reference support
+Message-Id: <20131001103324.813.82210.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380874512.git.horms+renesas@verge.net.au>
- <20131007174902.GB17592@quad.lixom.net>
-In-Reply-To: <20131007174902.GB17592@quad.lixom.net>
+References: <20131001103255.813.65710.sendpatchset@w520>
+In-Reply-To: <20131001103255.813.65710.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Oct 07, 2013 at 10:49:02AM -0700, Olof Johansson wrote:
-> On Fri, Oct 04, 2013 at 05:19:40PM +0900, Simon Horman wrote:
-> > Hi Kevin, Olof and Arnd,
-> > 
-> > please consider this fifth Round of Renesas ARM based SoC fixes for v3.12.
-> > 
-> > This pull request is based on renesas-fixes4-for-v3.12 which you have
-> > already pulled.
-> > 
-> > 
-> > The following changes since commit 3786f86b60833f32e3eeb016fcf8c324f8147e00:
-> > 
-> >   ARM: shmobile: Remove #gpio-ranges-cells DT property (2013-09-22 21:28:18 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes5-for-v3.12
-> 
-> This doesn't look like a functional regression to me so I've pulled this
-> into next/cleanup for 3.13. Let me know if I've misunderstood and if it
-> causes issues on 3.12.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I think that should be fine.
+Now when CCF is supported remove the legacy KZM9D reference
+Kconfig bits CONFIG_MACH_KZM9D_REFERENCE for the non-multiplatform
+case.
+
+Starting from this commit KZM9D board support is always enabled
+via CONFIG_MACH_KZM9D, and CONFIG_ARCH_MULTIPLATFORM is used
+to select between board-kzm9d.c and board-kzm9d-reference.c
+
+The file board-kzm9d-reference.c can no longer be used together
+with the legacy sh-clk clock framework, instead CCF is used.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/Kconfig       |   12 ------------
+ arch/arm/mach-shmobile/Makefile      |    1 -
+ arch/arm/mach-shmobile/Makefile.boot |    1 -
+ 3 files changed, 14 deletions(-)
+
+--- 0003/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-09-27 11:25:58.000000000 +0900
+@@ -226,18 +226,6 @@ config MACH_KZM9D
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select USE_OF
+ 
+-config MACH_KZM9D_REFERENCE
+-	bool "KZM9D board - Reference Device Tree Implementation"
+-	depends on ARCH_EMEV2
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select USE_OF
+-	---help---
+-	   Use reference implementation of KZM9D board support
+-	   which makes a greater use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
+-
+ config MACH_KZM9G
+ 	bool "KZM-A9-GT board"
+ 	depends on ARCH_SH73A0
+--- 0003/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-09-27 11:26:08.000000000 +0900
+@@ -68,7 +68,6 @@ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= bo
+ obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
+ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
+-obj-$(CONFIG_MACH_KZM9D_REFERENCE)	+= board-kzm9d-reference.o
+ obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
+ obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
+ endif
+--- 0001/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-09-27 11:26:16.000000000 +0900
+@@ -8,7 +8,6 @@ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+ loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
+-loadaddr-$(CONFIG_MACH_KZM9D_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+ loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
