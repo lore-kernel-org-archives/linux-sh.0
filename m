@@ -1,43 +1,90 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Oct 2013 07:45:28 +0000
-Subject: [PATCH 09/17] ARM: shmobile: sh73a0: fixup DT node naming for SCIFA
-Message-Id: <8761szdlkc.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:28:21 +0000
+Subject: [PATCH 1/3] ARM: shmobile: Rename to r8a73a4_init_early()
+Message-Id: <0750a54592a2daff70771a1c170f9859d5901d3d.1380523393.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380523393.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380523393.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-According to ePAPR spec,
-this patch exchanges SCIFA DT node from "scifa" to "serial".
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Rename r8a73a4_init_delay() into r8a73a4_init_early()
+to make the function name show that more than just
+delay setup may happen in the future.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 2 +-
+ arch/arm/mach-shmobile/board-ape6evm.c           | 2 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h    | 2 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c           | 4 ++--
+ 4 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 2e28afd..4548bbb 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -197,7 +197,7 @@
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index a23fa71..3276afc 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -57,7 +57,7 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
  };
  
- &pfc {
--	pinctrl-0 = <&scifa4_pins>;
-+	pinctrl-0 = <&serial4_pins>;
- 	pinctrl-names = "default";
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+-	.init_early	= r8a73a4_init_delay,
++	.init_early	= r8a73a4_init_early,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 24b87eea..d36e23f 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -240,7 +240,7 @@ static const char *ape6evm_boards_compat_dt[] __initdata = {
+ };
  
- 	i2c3_pins: i2c3 {
-@@ -217,7 +217,7 @@
- 		};
- 	};
+ DT_MACHINE_START(APE6EVM_DT, "ape6evm")
+-	.init_early	= r8a73a4_init_delay,
++	.init_early	= r8a73a4_init_early,
+ 	.init_machine	= ape6evm_add_standard_devices,
+ 	.dt_compat	= ape6evm_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a73a4.h b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+index f3a9b70..5214338 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+@@ -5,6 +5,6 @@ void r8a73a4_add_standard_devices(void);
+ void r8a73a4_add_dt_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
+-void r8a73a4_init_delay(void);
++void r8a73a4_init_early(void);
  
--	scifa4_pins: scifa4 {
-+	serial4_pins: serial4 {
- 		renesas,groups = "scifa4_data", "scifa4_ctrl";
- 		renesas,function = "scifa4";
- 	};
+ #endif /* __ASM_R8A73A4_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index 8949170..53a8962 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -207,7 +207,7 @@ void __init r8a73a4_add_standard_devices(void)
+ 	r8a73a4_register_thermal();
+ }
+ 
+-void __init r8a73a4_init_delay(void)
++void __init r8a73a4_init_early(void)
+ {
+ #ifndef CONFIG_ARM_ARCH_TIMER
+ 	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
+@@ -222,7 +222,7 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+-	.init_early	= r8a73a4_init_delay,
++	.init_early	= r8a73a4_init_early,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
-1.7.9.5
+1.8.4
 
