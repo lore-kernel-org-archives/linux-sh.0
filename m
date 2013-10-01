@@ -1,69 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 31 Oct 2013 12:30:12 +0000
-Subject: Re: [PATCH 0/5] Add OF support to the sh-sci serial port driver
-Message-Id: <2472479.KWXlO4kKsi@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:38:36 +0000
+Subject: [GIT PULL 0/4] Renesas ARM based SoC defconfig updates for v3.13
+Message-Id: <cover.1380514316.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20131031052116.GJ1603@verge.net.au>
-In-Reply-To: <20131031052116.GJ1603@verge.net.au>
+References: <cover.1375842392.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375842392.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+Hi Kevin, Olof and Arnd,
 
-On Thursday 31 October 2013 14:21:16 Simon Horman wrote:
-> [ CCed Greg KH. It is my assumption that he will take this series
->   once it is ready ]
-> 
-> On Tue, Oct 29, 2013 at 11:29:54AM +0100, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > This patch set adds device tree bindings for the sh sci serial port
-> > devices and adds OF parsing to the sh-sci driver.
-> > 
-> > The bindings are based on Bastian Hecht's proposal (see
-> > http://www.spinics.net/lists/arm-kernel/msg228129.html). The approach
-> > taken here is more minimalistic: instead of describing all hardware
-> > characteristics that vary between the SCI device revisions in DT (such as
-> > registers layout), that information is stored in the driver and selected
-> > based on the compatible property value. Only SCI revisions used on ARM
-> > devices are supported through DT, as DT support for SuperH is nowhere
-> > down the line.
-> > 
-> > The first three patches clean up the sh-sci driver. They're not strictly
-> > required for OF support but make sense nonetheless. The last two patches
-> > add OF parsing to the sh-sci driver and create DT bindings documentation.
-> > 
-> > The patches have been test on a Lager board (r8a7790-based). Support for
-> > other SoCs will be added as needed. Note that all current Renesas ARM
-> > SoCs seem to be compatible with the generic (H)SCI(F)(AB) devices, but
-> > the plan is for their DT bindings to list the SoC-specific version in
-> > case incompatibilities are found later.
-> > 
-> > Cc: devicetree@vger.kernel.org
-> > 
-> > Bastian Hecht (1):
-> >   serial: sh-sci: Add OF support
-> > 
-> > Laurent Pinchart (4):
-> >   serial: sh-sci: Sort headers alphabetically
-> >   serial: sh-sci: Remove baud rate calculation algorithm 5
-> >   serial: sh-sci: Simplify baud rate calculation algorithms
-> >   serial: sh-sci: Add device tree bindings documentation
-> 
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Laurent, is this series waiting on anything other than a review of the
-> bindings from the Device-Tree people?
+please consider these Renesas ARM based SoC defconfig updates for v3.13.
 
-It's only waiting for review of the DT bindings and their implementation 
-(patches 4/5 and 5/5). As I've modified Bastian's patch in 4/5 I'd like to 
-give him an opportunity to review it as well.
+This pull request is based on v3.12-rc1.
 
--- 
-Regards,
 
-Laurent Pinchart
+As I discussed with Olof recently, we are making solid progress towards
+multi-platform with common-clocks being the last major hurdle. I do expect
+to be able to start booting some shmobile boards using multi-platform
+within the next few release cycles. However, we are not there yet and in
+the mean time I would like to keep the defconfigs in good shape.
 
+
+The following changes since commit 272b98c6455f00884f0350f775c5342358ebb73f:
+
+  Linux 3.12-rc1 (2013-09-16 16:17:51 -0400)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.13
+
+for you to fetch changes up to 6bb2e347899b297eea26f2658eac8fdcd633fba5:
+
+  ARM: shmobile: Add koelsch defconfig (2013-09-20 17:46:15 -0700)
+
+----------------------------------------------------------------
+Renesas ARM based SoC defconfig updates for v3.13
+
+* Add defconfig for koelsch board
+* Enable sound in defconfig for bockw board
+* Enable R-Car DU DRM in defconfig for lager and marzen boards
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      ARM: shmobile: bockw defconfig: add Sound support
+
+Laurent Pinchart (2):
+      ARM: shmobile: marzen: Select DRM_RCAR_DU in defconfig
+      ARM: shmobile: lager: Select DRM_RCAR_DU in defconfig
+
+Simon Horman (1):
+      ARM: shmobile: Add koelsch defconfig
+
+ arch/arm/configs/bockw_defconfig   |  4 +++
+ arch/arm/configs/koelsch_defconfig | 54 ++++++++++++++++++++++++++++++++++++++
+ arch/arm/configs/lager_defconfig   |  2 ++
+ arch/arm/configs/marzen_defconfig  |  2 ++
+ 4 files changed, 62 insertions(+)
+ create mode 100644 arch/arm/configs/koelsch_defconfig
