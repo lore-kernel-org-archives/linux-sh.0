@@ -1,47 +1,38 @@
-From: =?UTF-8?B?44Kr44Kq44CA44Of44Oz44CA44OS44Kn44OD44OX?=  <cm-hiep@jinso.co.jp>
-Date: Fri, 18 Oct 2013 01:06:35 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790: add QSPI support
-Message-Id: <5260899B.3040903@jinso.co.jp>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 08:13:07 +0000
+Subject: [PATCH 08/10] ARM: shmobile: r8a7791 SMP device tree node
+Message-Id: <20131001081307.4136.88788.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
+References: <20131001081143.4136.46925.sendpatchset@w520>
+In-Reply-To: <20131001081143.4136.46925.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Good morning Morimoto-san
+From: Magnus Damm <damm@opensource.se>
 
-Thanks for your replying!
->>>>>> +void __init r8a7790_add_qspi_device(struct rspi_plat_data *pdata)
->>>>>> +{
->>>>>> +	platform_device_register_resndata(
->>>>>> +		&platform_bus, "qspi", 0,
->>>>>> +		qspi_resources, ARRAY_SIZE(qspi_resources),
->>>>>> +		pdata, sizeof(*pdata));
->>>>>> +}
->>>>> Please use -1 ID, and use just "qspi", instead of "qspi.0"
->>>> I have tried to use -1 ID instead of 0, and then I saw that QSPI did not
->>>> contact to Flash Memory.
->>>> I found that in QSPI driver, ID is assigned to bus number:
->>>> master->bus_num = pdev->id.
->>>> So I wonder how to modify it.
->>> According to spi_register_master(), bus_num = -1 seems not problem.
->>> Did you exchanged clock name ?
->> I saw that in "struct spi_board_info" has defined bus_num is u16
->> so I'm afraid if is -1 ID, master->bus_num did not match to bus_num in
->> board_info.
-> Hmm...
-> spi master seems use dynamic value
-> as bus_num if ID was -1 (in spi_register_master())
-> So, using ID = 0 seems reasonable here
-Thanks, so I'll use ID = 0 as you pointed out to me!
+Add a device node for the r8a7791 secondary CPU core.
 
-Hi Simon-san, Magnus-san
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-I will update my patch according to the feedback from Morimoto-san, 
-Magnus-san and you today.
+ arch/arm/boot/dts/r8a7791.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Best Regards,
-Hiep.
-
+--- 0006/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-10-01 16:37:38.000000000 +0900
+@@ -25,6 +25,13 @@
+ 			reg = <0>;
+ 			clock-frequency = <1300000000>;
+ 		};
++
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <1>;
++			clock-frequency = <1300000000>;
++		};
+ 	};
+ 
+ 	gic: interrupt-controller@f1001000 {
