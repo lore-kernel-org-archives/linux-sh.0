@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:39:19 +0000
+Date: Tue, 01 Oct 2013 04:11:37 +0000
 Subject: [PATCH 1/3] ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
-Message-Id: <dbffb5a1525dc88f1c871c48574634f14845b43d.1380530263.git.horms+renesas@verge.net.au>
+Message-Id: <dbffb5a1525dc88f1c871c48574634f14845b43d.1380600579.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380530263.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380530263.git.horms+renesas@verge.net.au>
+References: <cover.1380600579.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380600579.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
