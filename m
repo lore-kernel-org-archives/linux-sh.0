@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:19 +0000
-Subject: [PATCH 09/13] ARM: shmobile: r8a7778: add renesas_intc_irqpin support on DTSI
-Message-Id: <87f1ba80179a75ae1e2e783b890adb39949c7c03.1381298964.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:38:44 +0000
+Subject: [PATCH 3/4] ARM: shmobile: bockw defconfig: add Sound support
+Message-Id: <dca778f1e470494019e41e9eef073eb981a64380.1380514316.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381298964.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
+References: <cover.1380514316.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380514316.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,39 +15,24 @@ From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ arch/arm/configs/bockw_defconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 45ac404..5d08f116 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -33,6 +33,25 @@
- 		      <0xfe430000 0x100>;
- 	};
- 
-+	/* irqpin: IRQ0 - IRQ3 */
-+	irqpin: irqpin@fe78001c {
-+		compatible = "renesas,intc-irqpin";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		status = "disabled"; /* default off */
-+		reg =	<0xfe78001c 4>,
-+			<0xfe780010 4>,
-+			<0xfe780024 4>,
-+			<0xfe780044 4>,
-+			<0xfe780064 4>;
-+		interrupt-parent = <&gic>;
-+		interrupts =   <0 27 0x4
-+				0 28 0x4
-+				0 29 0x4
-+				0 30 0x4>;
-+		sense-bitfield-width = <2>;
-+	};
-+
- 	gpio0: gpio@ffc40000 {
- 		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
- 		reg = <0xffc40000 0x2c>;
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index e7e9494..b38cd10 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -91,6 +91,10 @@ CONFIG_VIDEO_RCAR_VIN=y
+ CONFIG_VIDEO_ML86V7667=y
+ CONFIG_SPI=y
+ CONFIG_SPI_SH_HSPI=y
++CONFIG_SOUND=y
++CONFIG_SND=y
++CONFIG_SND_SOC=y
++CONFIG_SND_SOC_RCAR=y
+ CONFIG_USB=y
+ CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
+ CONFIG_USB_EHCI_HCD=y
 -- 
 1.8.4
 
