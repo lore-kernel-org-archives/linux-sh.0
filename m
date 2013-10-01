@@ -1,37 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Oct 2013 08:39:48 +0000
-Subject: [PATCH 3/4 v2] ARM: shmobile: marzen: enable INTC IRQ
-Message-Id: <877gdwyskv.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:51 +0000
+Subject: [PATCH 12/14] ARM: shmobile: Remove shmobile_smp_scu_boot_secondary()
+Message-Id: <e4550216ef8245b1c9892239a2121a7b15ac2e91.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds missing INTC IRQ settings
-which is required from SMSC.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Remove shmobile_smp_scu_boot_secondary() since
+it is no longer used. CPU boot vector setup is
+instead handled by CPU notifiers.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/include/mach/common.h | 2 --
+ arch/arm/mach-shmobile/platsmp-scu.c         | 8 --------
+ 2 files changed, 10 deletions(-)
 
- - patch was splited, only reference.c
-
- arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 3f4250a..2773936 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -28,6 +28,7 @@
- static void __init marzen_init(void)
- {
- 	r8a7779_add_standard_devices_dt();
-+	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 3460bb1..e319805 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -18,8 +18,6 @@ extern int shmobile_smp_cpu_disable(unsigned int cpu);
+ extern void shmobile_invalidate_start(void);
+ extern void shmobile_boot_scu(void);
+ extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+-extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
+-					   struct task_struct *idle);
+ extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
+ extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
+ extern void shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus);
+diff --git a/arch/arm/mach-shmobile/platsmp-scu.c b/arch/arm/mach-shmobile/platsmp-scu.c
+index 49ae8df..673ad6e 100644
+--- a/arch/arm/mach-shmobile/platsmp-scu.c
++++ b/arch/arm/mach-shmobile/platsmp-scu.c
+@@ -51,14 +51,6 @@ void __init shmobile_smp_scu_prepare_cpus(unsigned int max_cpus)
+ 	register_cpu_notifier(&shmobile_smp_scu_notifier);
  }
  
- static const char *marzen_boards_compat_dt[] __initdata = {
+-int shmobile_smp_scu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+-{
+-	/* For this particular CPU register SCU boot vector */
+-	shmobile_smp_hook(cpu, virt_to_phys(shmobile_boot_scu),
+-			  (unsigned long)shmobile_scu_base);
+-	return 0;
+-}
+-
+ #ifdef CONFIG_HOTPLUG_CPU
+ void shmobile_smp_scu_cpu_die(unsigned int cpu)
+ {
 -- 
-1.7.9.5
+1.8.4
 
