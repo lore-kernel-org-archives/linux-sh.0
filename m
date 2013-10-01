@@ -1,45 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 22:37:41 +0000
-Subject: [PATCH v2 06/19] i2c: rcar: Enable the driver on all ARM platforms
-Message-Id: <1383086274-11049-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:41 +0000
+Subject: [PATCH 09/14] ARM: shmobile: Let sh73a0 rely on SCU CPU notifier
+Message-Id: <344bc8b0c85a63cd2d946376a391e74f4ea0ae46.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
-COMPILE_TEST.
+From: Magnus Damm <damm@opensource.se>
 
-Remove the explicit I2C dependency as the configuration option is
-already unavailable when I2C support is disabled.
+Now when CPU notifiers are used for SCU boot vector
+setup shmobile_smp_scu_boot_secondary() is no longer
+needed.
 
-Cc: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-i2c@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa@the-dreams.de>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/smp-sh73a0.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index c50f092..7c4bb071 100644
---- a/drivers/i2c/busses/Kconfig
-+++ b/drivers/i2c/busses/Kconfig
-@@ -768,7 +768,7 @@ config I2C_XLR
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 9a30a3f..13ba36a 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -46,11 +46,6 @@ void __init sh73a0_register_twd(void)
+ static int sh73a0_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+ 	unsigned int lcpu = cpu_logical_map(cpu);
+-	int ret;
+-
+-	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
+-	if (ret)
+-		return ret;
  
- config I2C_RCAR
- 	tristate "Renesas R-Car I2C Controller"
--	depends on ARCH_SHMOBILE && I2C
-+	depends on ARM || COMPILE_TEST
- 	help
- 	  If you say yes to this option, support will be included for the
- 	  R-Car I2C controller.
+ 	if (((__raw_readl(PSTR) >> (4 * lcpu)) & 3) = 3)
+ 		__raw_writel(1 << lcpu, WUPCR);	/* wake up */
 -- 
-1.8.1.5
+1.8.4
 
