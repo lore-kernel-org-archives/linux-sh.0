@@ -1,61 +1,79 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 29 Oct 2013 11:17:01 +0000
-Subject: Re: [PATCH 03/12] clocksource: sh_tmu: Add clk_prepare/unprepare support
-Message-Id: <526F992D.2000309@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:35 +0000
+Subject: [GIT PULL 00/14] Renesas ARM based SoC SMP updates for v3.13
+Message-Id: <cover.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383000569-8916-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383000569-8916-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 29-10-2013 2:49, Laurent Pinchart wrote:
+Hi Kevin, Olof and Arnd,
 
-> Prepare the clock at probe time, as there is no other appropriate place
-> in the driver where we're allowed to sleep.
+please consider these Renesas ARM based SoC SMP updates for v3.13.
 
-> Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->   drivers/clocksource/sh_tmu.c | 20 +++++++++++++++++---
->   1 file changed, 17 insertions(+), 3 deletions(-)
+This pull-request is based on renesas-cleanups-v3.13 which
+I has also sent a pull-request for today. The reason for choosing
+that base is to reduce conflicts.
 
-> diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-> index 78b8dae..63557cd 100644
-> --- a/drivers/clocksource/sh_tmu.c
-> +++ b/drivers/clocksource/sh_tmu.c
-> @@ -472,12 +472,26 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
->   		ret = PTR_ERR(p->clk);
->   		goto err1;
->   	}
-> +
-> +	ret = clk_prepare(p->clk);
-> +	if (ret < 0)
-> +		goto err2;
-> +
->   	p->cs_enabled = false;
->   	p->enable_count = 0;
->
-> -	return sh_tmu_register(p, (char *)dev_name(&p->pdev->dev),
-> -			       cfg->clockevent_rating,
-> -			       cfg->clocksource_rating);
-> +	ret = sh_tmu_register(p, (char *)dev_name(&p->pdev->dev),
-> +			      cfg->clockevent_rating,
-> +			      cfg->clocksource_rating);
-> +	if (ret < 0)
-> +		goto err3;
-> +
-> +	return 0;
-> +
-> + err3:
-> +	clk_unprepare(p->clk);
-> + err2:
-> +	clk_put(p->clk);
 
-    This one seems to be a fix, and should be done separately.
+The following changes since commit cde214a890f81797a5eee94fffc89c1de21ed991:
 
-WBR, Sergei
+  ARM: shmobile: r8a7790: Constify platform data and resources (2013-09-19 14:33:44 -0700)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-smp-for-v3.13
+
+for you to fetch changes up to 43651b15de94d6a5e188ea032311e9661ec708d2:
+
+  ARM: shmobile: Include CA7 cores in APMU table (2013-09-30 17:56:11 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC SMP updates for v3.13
+
+* Add CPU notifier based SCU boot vector code
+  - Use on emev2, r8a7779 and sh73a0 SoCs
+  - Remove now unused shmobile_smp_scu_boot_secondary()
+* Add shared APMU SMP support code
+  - Use to add SMP support for r8a7790 SoC
+* Introduce shmobile_boot_size
+* Expose shmobile_invalidate_start()
+* Introduce shmobile_smp_cpu_disable()
+  - Use on sh73a0 SoC
+  - Remove now unused shmobile_smp_init_cpus()
+
+----------------------------------------------------------------
+Magnus Damm (14):
+      ARM: shmobile: Introduce shmobile_smp_cpu_disable()
+      ARM: shmobile: Use shmobile_smp_cpu_disable() on sh73a0
+      ARM: shmobile: Remove unused shmobile_smp_init_cpus()
+      ARM: shmobile: Expose shmobile_invalidate_start()
+      ARM: shmobile: Introduce shmobile_boot_size
+      ARM: shmobile: Shared APMU SMP support code without DT
+      ARM: shmobile: Add r8a7790 SMP support using APMU code
+      ARM: shmobile: Add CPU notifier based SCU boot vector code
+      ARM: shmobile: Let sh73a0 rely on SCU CPU notifier
+      ARM: shmobile: Let EMEV2 rely on SCU CPU notifier
+      ARM: shmobile: Let r8a7779 rely on SCU CPU notifier
+      ARM: shmobile: Remove shmobile_smp_scu_boot_secondary()
+      ARM: shmobile: Extend APMU code to allow single cluster only
+      ARM: shmobile: Include CA7 cores in APMU table
+
+ arch/arm/mach-shmobile/Makefile                |   1 +
+ arch/arm/mach-shmobile/board-lager-reference.c |   1 +
+ arch/arm/mach-shmobile/board-lager.c           |   1 +
+ arch/arm/mach-shmobile/headsmp.S               |   3 +
+ arch/arm/mach-shmobile/include/mach/common.h   |  12 +-
+ arch/arm/mach-shmobile/include/mach/r8a7790.h  |   1 +
+ arch/arm/mach-shmobile/platsmp-apmu.c          | 195 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/platsmp-scu.c           |  30 +++-
+ arch/arm/mach-shmobile/platsmp.c               |  22 +--
+ arch/arm/mach-shmobile/setup-r8a7790.c         |   1 +
+ arch/arm/mach-shmobile/smp-emev2.c             |   6 -
+ arch/arm/mach-shmobile/smp-r8a7779.c           |   4 -
+ arch/arm/mach-shmobile/smp-r8a7790.c           |  67 +++++++++
+ arch/arm/mach-shmobile/smp-sh73a0.c            |  14 +-
+ 14 files changed, 310 insertions(+), 48 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/platsmp-apmu.c
+ create mode 100644 arch/arm/mach-shmobile/smp-r8a7790.c
