@@ -1,59 +1,104 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 07 Oct 2013 16:37:26 +0000
-Subject: Re: [PATCH/RFC] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
-Message-Id: <20131007163726.GC15413@quad.lixom.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 10:33:43 +0000
+Subject: [PATCH 05/05] ARM: shmobile: Remove KDM9D reference DTS
+Message-Id: <20131001103343.813.54921.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130925233709.16540.66903.sendpatchset@w520>
- <20130927044323.GC16541@verge.net.au>
-In-Reply-To: <20130927044323.GC16541@verge.net.au>
+References: <20131001103255.813.65710.sendpatchset@w520>
+In-Reply-To: <20131001103255.813.65710.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, khilman@linaro.org, arnd@arndb.de, daniel.lezcano@linaro.org, linux-kernel@vger.kernel.org, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 27, 2013 at 01:43:25PM +0900, Simon Horman wrote:
-> On Thu, Sep 26, 2013 at 08:37:09AM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> > 
-> > Based on request from Olof Johansson, move ARM mach-shmobile
-> > clocksource entries to drivers/clocksource/Kconfig, and at
-> > the same time make the SH architecture use these entries.
-> > 
-> > Kconfig entries for CMT, MTU2, TMU and STI are with this patch
-> > now kept in one place. The SH SYS_SUPPORTS_nnn bits are dropped
-> > to simplye let the user select the appropriate ones using Kconfig
-> > instead of trying to filter available timers based on SoC.
-> > 
-> > Known issues:
-> >  1) Not yet wrappend in menu/endmenu, populates the root driver menu
-> >  -> proposal: Create separate patch to wrap all the clocksource entries?
-> 
-> That seems reasonable to me.
-> 
-> >  2) Should the entries be sorted?
-> >  -> proposal: Ignore cosmetic bits
-> 
-> I propose that you sort the entries are adding
-> but leave the rest of the entries as is.
-> 
-> >  3) What is correct dependency for multiplatform and single platform?
-> >  -> proposal: Perhaps we should simply default to no?
-> 
-> I'm not sure that I understand the issue here.
-> 
-> >  4) Is single patch across 2 architectures and drivers/clocksource OK?
-> >  -> proposal: Keep it like this if possible
-> 
-> Olof, I would like your opinion on this but from my pov this seems
-> reasonable. Especially as one of the architectures (sh) is seeing very little
-> change at this time.
+From: Magnus Damm <damm@opensource.se>
 
-(Sorry for the delayed response, the renesas volume email can be large and
-I don't always read it when it comes in).
+Now when the legacy DTS file emev2-kzm9d.dts can be
+used with board-kzm9d.c and board-kzm9d-reference.c
+proceed with removing emev-kzm9d-reference.dts.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Yeah, as long as you have appropriate acks and don't expect conflicts.
+ arch/arm/boot/dts/Makefile                  |    3 -
+ arch/arm/boot/dts/emev2-kzm9d-reference.dts |   57 ---------------------------
+ 2 files changed, 1 insertion(+), 59 deletions(-)
 
-
--Olof
+--- 0001/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2013-10-01 18:53:19.000000000 +0900
+@@ -195,7 +195,6 @@ dtb-$(CONFIG_ARCH_U8500) += ste-snowball
+ 	ste-ccu9540.dtb
+ dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
+-	emev2-kzm9d-reference.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+@@ -210,7 +209,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm
+ 	r8a73a4-ape6evm.dtb \
+ 	r8a73a4-ape6evm-reference.dtb \
+ 	sh7372-mackerel.dtb
+-dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d-reference.dtb
++dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
+ 	socfpga_vt.dtb
+ dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
+--- 0001/arch/arm/boot/dts/emev2-kzm9d-reference.dts
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,57 +0,0 @@
+-/*
+- * Device Tree Source for the KZM9D board
+- *
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-/dts-v1/;
+-
+-/include/ "emev2.dtsi"
+-
+-/ {
+-	model = "EMEV2 KZM9D Board";
+-	compatible = "renesas,kzm9d-reference", "renesas,emev2";
+-
+-	memory {
+-		device_type = "memory";
+-		reg = <0x40000000 0x8000000>;
+-	};
+-
+-	chosen {
+-		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+-	};
+-
+-	reg_1p8v: regulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-1.8V";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <1800000>;
+-		regulator-always-on;
+-		regulator-boot-on;
+-	};
+-
+-	reg_3p3v: regulator@1 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-3.3V";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-always-on;
+-		regulator-boot-on;
+-	};
+-
+-	lan9220@20000000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x20000000 0x10000>;
+-		phy-mode = "mii";
+-		interrupt-parent = <&gpio0>;
+-		interrupts = <1 1>;	/* active high */
+-		reg-io-width = <4>;
+-		smsc,irq-active-high;
+-		smsc,irq-push-pull;
+-		vddvario-supply = <&reg_1p8v>;
+-		vdd33a-supply = <&reg_3p3v>;
+-	};
+-};
