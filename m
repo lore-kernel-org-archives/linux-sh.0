@@ -1,49 +1,106 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 02:30:42 +0000
-Subject: Re: [PATCH 2/6] serial8250-em: convert to clk_prepare/unprepare
-Message-Id: <20131003023042.GB27371@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 09:23:38 +0000
+Subject: Re: [PATCH 6/6] ARM: shmobile: kzm9d-reference: Use common clock framework
+Message-Id: <CANqRtoQdwyjX8Mr8+NRah_F=yUM81xZmPQJ_1Z-xdzVqedbMGQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4895580.Leadr2OAf1@avalon>
-In-Reply-To: <4895580.Leadr2OAf1@avalon>
- <20130924134113.GA7246-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
+References: <52410F86.4040301@renesas.com>
+	<20130924131703.4834a055892285858338003c@ops.dti.ne.jp>
+In-Reply-To: <20130924131703.4834a055892285858338003c@ops.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org, Shinya Kuribayashi <shinya.kuribayashi.px-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>, Mike Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: takasi-y@ops.dti.ne.jp
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Ben Dooks <ben.dooks@codethink.co.uk>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>, devicetree@vger.kernel.org, linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Mike Turquette <mturquette@linaro.org>, linux-kernel <linux-kernel@vger.kernel.org>
 
-On Tue, Sep 24, 2013 at 06:41:13AM -0700, Greg Kroah-Hartman wrote:
-> On Tue, Sep 24, 2013 at 01:44:32PM +0900, Simon Horman wrote:
-> > [ CCed Greg Kroah-Hartman, the serial maintainer for his review ]
-> > 
-> > On Tue, Sep 24, 2013 at 01:10:39PM +0900, takasi-y@ops.dti.ne.jp wrote:
-> > > From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> > > 
-> > > Add calls to clk_prepare and unprepare so that EMMA Mobile EV2 can
-> > > migrate to the common clock framework.
-> > > 
-> > > Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> > > [takashi.yoshii.ze@renesas.com: edited for conflicts]
-> > > Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-> 
-> Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> 
+On Tue, Sep 24, 2013 at 1:17 PM,  <takasi-y@ops.dti.ne.jp> wrote:
+> Use common clock framework version of clock
+>  drivers/clk/shmobile/clk-emev2.c
+> instead of sh-clkfwk version
+>  arch/arm/mach-shmobile/clock-emev2.c
+>
+> kzm9d(without -reference) still uses sh-clkfwk version.
+>
+> Because two of that framework can not live in one kernel binary,
+> there will be SoCs and Boards that can not be in one binary as
+> multiplatform binary or so.
+> For example, kzm9d and kzm9d-reference is now exclusive.
+>
+> Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+> ---
+>  arch/arm/mach-shmobile/Kconfig                 | 1 +
+>  arch/arm/mach-shmobile/board-kzm9d-reference.c | 5 ++---
+>  2 files changed, 3 insertions(+), 3 deletions(-)
 
-On Mon, Sep 30, 2013 at 05:25:40PM +0200, Laurent Pinchart wrote:
-> Hi Yoshii-san,
-> 
-> Thank you for the patch.
-> 
-> On Tuesday 24 September 2013 13:10:39 takasi-y@ops.dti.ne.jp wrote:
-> > From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> > 
-> > Add calls to clk_prepare and unprepare so that EMMA Mobile EV2 can
-> > migrate to the common clock framework.
-> > 
-> > Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> > [takashi.yoshii.ze@renesas.com: edited for conflicts]
-> > Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Hi Yoshii-san,
 
-Thanks, I have queued this up in the serial branch of the renesas tree.
+Thanks for your patch. I have some comments on this portion to try to
+simplify things, please see below.
+
+> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+> index 50bab8d..d20d4ce 100644
+> --- a/arch/arm/mach-shmobile/Kconfig
+> +++ b/arch/arm/mach-shmobile/Kconfig
+> @@ -237,6 +237,7 @@ config MACH_KZM9D_REFERENCE
+>         depends on ARCH_EMEV2
+>         select REGULATOR_FIXED_VOLTAGE if REGULATOR
+>         select USE_OF
+> +       select COMMON_CLK
+
+I don't think this hunk is needed. This is probably the
+ARCH_SHMOBILE_MULTI case, and if so then ARCH_MULTIPLATFORM in
+arch/arm/Kconfig already selects COMMON_CLK. And if it's the
+ARCH_SHMOBILE case you're aiming at then I recommend you to only focus
+on ARCH_SHMOBILE_MULTI instead.
+
+> diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+> index 8f8bb2f..e0b8317 100644
+> --- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
+> +++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+> @@ -20,15 +20,14 @@
+>
+>  #include <linux/init.h>
+>  #include <linux/of_platform.h>
+> +#include <linux/clk-provider.h>
+>  #include <mach/emev2.h>
+>  #include <mach/common.h>
+>  #include <asm/mach/arch.h>
+>
+>  static void __init kzm9d_add_standard_devices(void)
+>  {
+> -       if (!IS_ENABLED(CONFIG_COMMON_CLK))
+> -               emev2_clock_init();
+> -
+> +       of_clk_init(NULL);
+>         of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+>  }
+
+To keep on allowing build of board-kzm9d-reference.c for both
+ARCH_SHMOBILE_MULTI and ARCH_SHMOBILE I recommend you to adjust your
+code into something liket this instead:
+
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+
++#include <linux/clk-provider.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <mach/emev2.h>
+@@ -26,9 +27,11 @@
+
+ static void __init kzm9d_add_standard_devices(void)
+ {
+-       if (!IS_ENABLED(CONFIG_COMMON_CLK))
+-               emev2_clock_init();
+-
++#ifdef CONFIG_COMMON_CLK
++       of_clk_init(NULL);
++#else
++       emev2_clock_init();
++#endif
+        of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+
+Cheers,
+
+/ magnus
