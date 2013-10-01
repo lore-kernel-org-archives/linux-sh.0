@@ -1,56 +1,80 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 29 Oct 2013 20:40:40 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7791 PFC support V2
-Message-Id: <52702B57.50701@cogentembedded.com>
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Tue, 01 Oct 2013 18:39:36 +0000
+Subject: Re: [PATCH 08/10] pwm-backlight: Use new enable_gpio field
+Message-Id: <524B16E8.5080506@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131016214605.3868.54890.sendpatchset@w520>
- <1428789.AD4dgYWceb@avalon> <52702A14.7020005@cogentembedded.com>
-In-Reply-To: <52702A14.7020005@cogentembedded.com>
+References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
+ <1379972467-11243-9-git-send-email-treding@nvidia.com>
+In-Reply-To: <1379972467-11243-9-git-send-email-treding@nvidia.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 10/30/2013 12:35 AM, Sergei Shtylyov wrote:
+On 09/23/2013 03:41 PM, Thierry Reding wrote:
+> Make use of the new enable_gpio field and allow it to be set from DT as
+> well. Now that all legacy users of platform data have been converted to
+> initialize this field to an invalid value, it is safe to use the field
+> from the driver.
 
->>> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> diff --git a/Documentation/devicetree/bindings/video/backlight/pwm-backlight.txt b/Documentation/devicetree/bindings/video/backlight/pwm-backlight.txt
 
->>> Add PFC support for the r8a7791 SoC V2 including pin groups for
->>> on-chip devices such as MSIOF, SCIF, USB, MMC, SDHI, DU.
+>  Optional properties:
 
->>> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
->>> Signed-off-by: Kunihito Higashiyama <kunihito.higashiyama.ur@renesas.com>
->>> Signed-off-by: Yoshikazu Fujikawa <yoshikazu.fujikawa.ue@renesas.com>
->>> Signed-off-by: Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>
->>> Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
->>> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->>> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
->>> [damm@opensource.se: Forward ported to upstream, minor fixes]
->>> Signed-off-by: Magnus Damm <damm@opensource.se>
-> [...]
+> +  - enable-gpios: a list of GPIOs to enable and disable the backlight
 
->>> --- /dev/null
->>> +++ work/drivers/pinctrl/sh-pfc/pfc-r8a7791.c    2013-10-17
->> 06:35:00.000000000
+That seems to imply that multiple GPIOs are legal. Was that intended? If
+not, I would suggest:
 
-> [...]
+- enable-gpios: contains a single GPIO specifier for the GPIO which
+		enables/disables the backlight. See [1] for the format.
 
->> I'm still a bit unsure about the DU pin groups. Would it be possible to get
->> access to the SoC datasheet ?
+>  
+>  [0]: Documentation/devicetree/bindings/pwm/pwm.txt
++ [1]: Documentation/devicetree/bindings/gpio/gpio.txt
 
->> In the worst case I can take the patch as-is and fix any issue later, as the
->> DU driver doesn't support the r8a7791 yet anyway. So,
+> diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
 
->> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> @@ -51,12 +55,27 @@ static void pwm_backlight_power_on(struct pwm_bl_data *pb, int brightness,
+>  		     pb->lth_brightness;
+>  
+>  	pwm_config(pb->pwm, duty_cycle, pb->period);
+> +
+> +	if (gpio_is_valid(pb->enable_gpio)) {
+> +		if (pb->enable_gpio_flags & PWM_BACKLIGHT_GPIO_ACTIVE_LOW)
+> +			gpio_set_value(pb->enable_gpio, 0);
+> +		else
+> +			gpio_set_value(pb->enable_gpio, 1);
+> +	}
 
->> I've taken the patch to my tree and will push it as-is, or with modifications
->> to the DU pin groups as needed if I can get access to the documentation before
->> the next merge window.
+Feel completely free to ignore this, but when the difference in two
+code-paths is solely in function parameters, I prefer to calculate the
+parameter inside the if statement, then call the function outside the
+conditional code, to highlight the common/different parts:
 
->     Looks like it got stuck in your tree? I have my Ether work run-time
-> dependent on this patch...
+int value;
 
-    Ah, seeing your pull request now but it looks like Linus hasn't pulled yet...
+/* or an if statement for the next 1 line, if you don't like ?: */
+value = (pb->enable_gpio_flags & PWM_BACKLIGHT_GPIO_ACTIVE_LOW) ? 0 : 1;
+gpio_set_value((pb->enable_gpio, value);
 
-WBR, Sergei
+> @@ -148,11 +168,10 @@ static int pwm_backlight_parse_dt(struct device *dev,
 
+> +	data->enable_gpio = of_get_named_gpio_flags(node, "enable-gpios", 0,
+> +						    &flags);
+> +	if (gpio_is_valid(data->enable_gpio) && (flags & OF_GPIO_ACTIVE_LOW))
+> +		data->enable_gpio_flags |= PWM_BACKLIGHT_GPIO_ACTIVE_LOW;
+
+This doesn't seem to handle deferred probe correctly; I would expect
+something more like:
+
+	data->enable_gpio = of_get_named_gpio_flags(...);
+	if (data->enable_gpio = -EPROBE_DEFERRED)
+		return data->enable_gpio;
+	if (gpio_is_valid(...))
+		...
+	return 0;
+
+I suppose it's possible that the value filters down to
+gpio_request_one() and this actually does work out OK, but that feels
+very accidental/implicit to me.
