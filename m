@@ -1,76 +1,74 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:12 +0000
-Subject: [PATCH 02/13] ARM: shmobile: r8a7790: add I2C DT nodes
-Message-Id: <edd2b9f4e6ed39032ffe9793e262c8a4b62c2152.1381298964.git.horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:37:05 +0000
+Subject: [PATCH 05/12] ARM: shmobile: bockw: enable global use of FPGA
+Message-Id: <71d7472f63385f4f6fb7c8548450b2e4665dc542.1380530519.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381298964.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
+References: <cover.1380530519.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380530519.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add DT nodes for the four I2C interfacces on r8a7790.
+This patch enables global use of FPGA,
+since it will be used from many devices.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 40 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+ arch/arm/mach-shmobile/board-bockw.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a0cfb661..47bc1cb 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -176,6 +176,46 @@
- 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
- 	};
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 6b9faf3..b998c6b 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -38,6 +38,10 @@
+ #include <mach/r8a7778.h>
+ #include <asm/mach/arch.h>
  
-+	i2c0: i2c@e6508000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,i2c-r8a7790";
-+		reg = <0 0xe6508000 0 0x40>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 287 0x4>;
-+		status = "disabled";
-+	};
++#define FPGA	0x18200000
++#define IRQ0MR	0x30
++static void __iomem *fpga;
 +
-+	i2c1: i2c@e6518000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,i2c-r8a7790";
-+		reg = <0 0xe6518000 0 0x40>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 288 0x4>;
-+		status = "disabled";
-+	};
-+
-+	i2c2: i2c@e6530000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,i2c-r8a7790";
-+		reg = <0 0xe6530000 0 0x40>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 286 0x4>;
-+		status = "disabled";
-+	};
-+
-+	i2c3: i2c@e6540000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,i2c-r8a7790";
-+		reg = <0 0xe6540000 0 0x40>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 290 0x4>;
-+		status = "disabled";
-+	};
-+
- 	mmcif0: mmcif@ee200000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
+ /*
+  *	CN9(Upper side) SCIF/RCAN selection
+  *
+@@ -224,8 +228,6 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 				  "vin1_data8", "vin1"),
+ };
+ 
+-#define FPGA	0x18200000
+-#define IRQ0MR	0x30
+ #define PFC	0xfffc0000
+ #define PUPR4	0x110
+ static void __init bockw_init(void)
+@@ -269,8 +271,8 @@ static void __init bockw_init(void)
+ 
+ 
+ 	/* for SMSC */
+-	base = ioremap_nocache(FPGA, SZ_1M);
+-	if (base) {
++	fpga = ioremap_nocache(FPGA, SZ_1M);
++	if (fpga) {
+ 		/*
+ 		 * CAUTION
+ 		 *
+@@ -278,10 +280,9 @@ static void __init bockw_init(void)
+ 		 * it should be cared in the future
+ 		 * Now, it is assuming IRQ0 was used only from SMSC.
+ 		 */
+-		u16 val = ioread16(base + IRQ0MR);
++		u16 val = ioread16(fpga + IRQ0MR);
+ 		val &= ~(1 << 4); /* enable SMSC911x */
+-		iowrite16(val, base + IRQ0MR);
+-		iounmap(base);
++		iowrite16(val, fpga + IRQ0MR);
+ 
+ 		regulator_register_fixed(0, dummy_supplies,
+ 					 ARRAY_SIZE(dummy_supplies));
 -- 
 1.8.4
 
