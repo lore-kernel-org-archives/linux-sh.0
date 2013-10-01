@@ -1,19 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Oct 2013 01:29:34 +0000
-Subject: Re: [PATCH 5/7] ARM: shmobile: r8a7778: add MMCIF clock support for DT
-Message-Id: <20131011012932.GD17597@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 08:12:38 +0000
+Subject: [PATCH 05/10] ARM: shmobile: r8a7791 Arch timer device tree node
+Message-Id: <20131001081238.4136.38665.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wqltzuqw.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wqltzuqw.wl%kuninori.morimoto.gx@renesas.com>
+References: <20131001081143.4136.46925.sendpatchset@w520>
+In-Reply-To: <20131001081143.4136.46925.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 03, 2013 at 06:32:10PM -0700, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/clock-r8a7778.c |    1 +
->  1 file changed, 1 insertion(+)
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up.
+Add r8a7791 arch timer device tree information.
+
+This needs to be used together with r8a7791 support
+code that ties in the R-Car Gen2 arch timer workarounds.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/r8a7791.dtsi |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- 0005/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-10-01 16:30:54.000000000 +0900
+@@ -39,6 +39,14 @@
+ 		interrupts = <1 9 0xf04>;
+ 	};
+ 
++	timer {
++		compatible = "arm,armv7-timer";
++		interrupts = <1 13 0xf08>,
++				<1 14 0xf08>,
++				<1 11 0xf08>,
++				<1 10 0xf08>;
++	};
++
+ 	irqc0: interrupt-controller@e61c0000 {
+ 		compatible = "renesas,irqc";
+ 		#interrupt-cells = <2>;
