@@ -1,155 +1,157 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 30 Oct 2013 11:34:51 +0000
-Subject: [PATCH v3 1/3] mmc: sh_mmcif: Factorize DMA channel request and configuration code
-Message-Id: <1383132893-27008-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:37:08 +0000
+Subject: [PATCH 08/12] ARM: shmobile: bockw: add USB Function support
+Message-Id: <81a0d9062d5c93490b215d2440bbd7deb3918707.1380530519.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1380530519.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380530519.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The channel request and configuration code is duplicated for the rx and
-tx channels. Create a function that requests a single channel and call
-it twice instead.
+Bock-W USB1 (CN29) can be USB Host/Func by SW98/SW99 settings.
+USB Func will be enabled if CONFIG_USB_RENESAS_USBHS_UDC[_MODULE]
+was selected on this patch
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mmcif.c | 100 ++++++++++++++++++++++----------------------
- 1 file changed, 51 insertions(+), 49 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c | 81 ++++++++++++++++++++++++++++++++++--
+ 1 file changed, 78 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 36629a0..92b9273 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -381,73 +381,75 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
- 		desc, cookie);
- }
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 7ad868d..330e84c 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -32,6 +32,7 @@
+ #include <linux/smsc911x.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/flash.h>
++#include <linux/usb/renesas_usbhs.h>
+ #include <media/soc_camera.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -99,6 +100,16 @@ static void __iomem *fpga;
+  * # amixer set "LINEOUT Mixer DACL" on
+  */
  
--static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
--				 struct sh_mmcif_plat_data *pdata)
-+static struct dma_chan *
-+sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
-+			 struct sh_mmcif_plat_data *pdata,
-+			 enum dma_transfer_direction direction)
- {
--	struct resource *res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
- 	struct dma_slave_config cfg;
-+	struct dma_chan *chan;
-+	unsigned int slave_id;
-+	struct resource *res;
- 	dma_cap_mask_t mask;
- 	int ret;
- 
--	host->dma_active = false;
--
--	if (pdata) {
--		if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
--			return;
--	} else if (!host->pd->dev.of_node) {
--		return;
--	}
--
--	/* We can only either use DMA for both Tx and Rx or not use it at all */
- 	dma_cap_zero(mask);
- 	dma_cap_set(DMA_SLAVE, mask);
- 
--	host->chan_tx = dma_request_slave_channel_compat(mask, shdma_chan_filter,
--				pdata ? (void *)pdata->slave_id_tx : NULL,
--				&host->pd->dev, "tx");
--	dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
--		host->chan_tx);
-+	if (pdata)
-+		slave_id = direction = DMA_MEM_TO_DEV
-+			 ? pdata->slave_id_tx : pdata->slave_id_rx;
-+	else
-+		slave_id = 0;
- 
--	if (!host->chan_tx)
--		return;
-+	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
-+				(void *)slave_id, &host->pd->dev,
-+				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
++/*
++ * USB
++ *
++ * USB1 (CN29) can be Host/Function
++ *
++ *		Host	Func
++ * SW98		1	2
++ * SW99		1	3
++ */
 +
-+	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
-+		direction = DMA_MEM_TO_DEV ? "TX" : "RX", chan);
-+
-+	if (!chan)
-+		return NULL;
-+
-+	res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
+ /* Dummy supplies, where voltage doesn't matter */
+ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+@@ -117,13 +128,71 @@ static struct resource smsc911x_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
+ };
  
- 	/* In the OF case the driver will get the slave ID from the DT */
--	if (pdata)
--		cfg.slave_id = pdata->slave_id_tx;
--	cfg.direction = DMA_MEM_TO_DEV;
-+	cfg.slave_id = slave_id;
-+	cfg.direction = direction;
- 	cfg.dst_addr = res->start + MMCIF_CE_DATA;
- 	cfg.src_addr = 0;
--	ret = dmaengine_slave_config(host->chan_tx, &cfg);
--	if (ret < 0)
--		goto ecfgtx;
-+	ret = dmaengine_slave_config(chan, &cfg);
-+	if (ret < 0) {
-+		dma_release_channel(chan);
-+		return NULL;
-+	}
- 
--	host->chan_rx = dma_request_slave_channel_compat(mask, shdma_chan_filter,
--				pdata ? (void *)pdata->slave_id_rx : NULL,
--				&host->pd->dev, "rx");
--	dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
--		host->chan_rx);
-+	return chan;
-+}
- 
--	if (!host->chan_rx)
--		goto erqrx;
-+static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
-+				 struct sh_mmcif_plat_data *pdata)
++#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
++/*
++ * When USB1 is Func
++ */
++static int usbhsf_get_id(struct platform_device *pdev)
 +{
-+	host->dma_active = false;
++	return USBHS_GADGET;
++}
++
++#define SUSPMODE	0x102
++static int usbhsf_power_ctrl(struct platform_device *pdev,
++			     void __iomem *base, int enable)
++{
++	enable = !!enable;
++
++	r8a7778_usb_phy_power(enable);
++
++	iowrite16(enable << 14, base + SUSPMODE);
++
++	return 0;
++}
++
++static struct resource usbhsf_resources[] __initdata = {
++	DEFINE_RES_MEM(0xffe60000, 0x110),
++	DEFINE_RES_IRQ(gic_iid(0x4f)),
++};
++
++static struct renesas_usbhs_platform_info usbhs_info __initdata = {
++	.platform_callback = {
++		.get_id		= usbhsf_get_id,
++		.power_ctrl	= usbhsf_power_ctrl,
++	},
++	.driver_param = {
++		.buswait_bwait	= 4,
++	},
++};
++
++#define USB_PHY_SETTING {.port1_func = 1, .ovc_pin[1].active_high = 1,}
++#define USB1_DEVICE	"renesas_usbhs"
++#define ADD_USB_FUNC_DEVICE_IF_POSSIBLE()			\
++	platform_device_register_resndata(			\
++		&platform_bus, "renesas_usbhs", -1,		\
++		usbhsf_resources,				\
++		ARRAY_SIZE(usbhsf_resources),			\
++		&usbhs_info, sizeof(struct renesas_usbhs_platform_info))
++
++#else
++/*
++ * When USB1 is Host
++ */
++#define USB_PHY_SETTING { }
++#define USB1_DEVICE	"ehci-platform"
++#define ADD_USB_FUNC_DEVICE_IF_POSSIBLE()
++
++#endif
++
+ /* USB */
+ static struct resource usb_phy_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xffe70800, 0x100),
+ 	DEFINE_RES_MEM(0xffe76000, 0x100),
+ };
  
--	if (pdata)
--		cfg.slave_id = pdata->slave_id_rx;
--	cfg.direction = DMA_DEV_TO_MEM;
--	cfg.dst_addr = 0;
--	cfg.src_addr = res->start + MMCIF_CE_DATA;
--	ret = dmaengine_slave_config(host->chan_rx, &cfg);
--	if (ret < 0)
--		goto ecfgrx;
-+	if (pdata) {
-+		if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
-+			return;
-+	} else if (!host->pd->dev.of_node) {
-+		return;
-+	}
+-static struct rcar_phy_platform_data usb_phy_platform_data __initdata;
++static struct rcar_phy_platform_data usb_phy_platform_data __initdata +	USB_PHY_SETTING;
++
  
--	return;
-+	/* We can only either use DMA for both Tx and Rx or not use it at all */
-+	host->chan_tx = sh_mmcif_request_dma_one(host, pdata, DMA_MEM_TO_DEV);
-+	if (!host->chan_tx)
-+		return;
- 
--ecfgrx:
--	dma_release_channel(host->chan_rx);
--	host->chan_rx = NULL;
--erqrx:
--ecfgtx:
--	dma_release_channel(host->chan_tx);
--	host->chan_tx = NULL;
-+	host->chan_rx = sh_mmcif_request_dma_one(host, pdata, DMA_DEV_TO_MEM);
-+	if (!host->chan_rx) {
-+		dma_release_channel(host->chan_tx);
-+		host->chan_tx = NULL;
-+	}
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+@@ -445,7 +514,7 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* USB */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
+ 				  "usb0", "usb0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform", "pfc-r8a7778",
++	PIN_MAP_MUX_GROUP_DEFAULT(USB1_DEVICE, "pfc-r8a7778",
+ 				  "usb1", "usb1"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7778",
+@@ -583,6 +652,12 @@ static void __init bockw_init(void)
+ 	}
  }
  
- static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
++static void __init bockw_init_late(void)
++{
++	r8a7778_init_late();
++	ADD_USB_FUNC_DEVICE_IF_POSSIBLE();
++}
++
+ static const char *bockw_boards_compat_dt[] __initdata = {
+ 	"renesas,bockw",
+ 	NULL,
+@@ -593,5 +668,5 @@ DT_MACHINE_START(BOCKW_DT, "bockw")
+ 	.init_irq	= r8a7778_init_irq_dt,
+ 	.init_machine	= bockw_init,
+ 	.dt_compat	= bockw_boards_compat_dt,
+-	.init_late      = r8a7778_init_late,
++	.init_late      = bockw_init_late,
+ MACHINE_END
 -- 
-1.8.1.5
+1.8.4
 
