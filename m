@@ -1,27 +1,46 @@
-From: David Miller <davem@davemloft.net>
-Date: Wed, 30 Oct 2013 19:16:02 +0000
-Subject: Re: [PATCH 1/2] sh_eth: check platform data pointer
-Message-Id: <20131030.151602.2034358719733053721.davem@davemloft.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 04:11:27 +0000
+Subject: [GIT PULL v2 0/3] Renesas ARM-based SoC DT updates for v3.13
+Message-Id: <cover.1380600579.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308310423.30322.sergei.shtylyov@cogentembedded.com>
-	<52716421.9080807@cogentembedded.com>
-In-Reply-To: <52716421.9080807@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 30 Oct 2013 22:55:13 +0300
+Hi Kevin, Olof and Arnd,
 
->    David, could you please merge this patch? It has a value of its own,
->    regardless of the device tree support in patch 2 (which got bloked).
+please consider these Renesas ARM-based SoC DT updates for v3.13.
 
-Then it needs to be resubmitted.
+This pull-request is based on v3.12-rc1.
 
-Any time a part of series is rejected or needs changes, it is entirely
-dropped and no longer will I refer to it in patchwork.
 
-To avoid any ambiguity, the submitted must then resubmit anythign he
-wishes to be applied.
+The following changes since commit 272b98c6455f00884f0350f775c5342358ebb73f:
+
+  Linux 3.12-rc1 (2013-09-16 16:17:51 -0400)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.13
+
+for you to fetch changes up to 2007e74ca3769fd353fe87a7a105c14102d7980c:
+
+  ARM: shmobile: Add r8a7790 CA7 CPU cores to DTSI (2013-09-30 16:10:00 +0900)
+
+----------------------------------------------------------------
+Renesas ARM-based SoC DT updates for v3.13
+
+* Add CPU cores to DTSI of r8a7790 SoC
+* Add MMCIF and SDHI DT nodes for reference DTS of ape6evm board
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      ARM: shmobile: ape6evm-reference: add MMCIF and SDHI DT nodes
+
+Magnus Damm (2):
+      ARM: shmobile: Add r8a7790 CA15 CPU cores
+      ARM: shmobile: Add r8a7790 CA7 CPU cores to DTSI
+
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts | 72 +++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                  | 49 +++++++++++++++++
+ 2 files changed, 121 insertions(+)
