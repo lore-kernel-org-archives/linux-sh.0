@@ -1,19 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Oct 2013 01:29:22 +0000
-Subject: Re: [PATCH 4/7] ARM: shmobile: bockw: remove manual PFC settings on reference
-Message-Id: <20131011012920.GC17597@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 08:12:29 +0000
+Subject: [PATCH 04/10] ARM: shmobile: r8a7791 IRQC device tree node
+Message-Id: <20131001081229.4136.10506.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y569zur5.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y569zur5.wl%kuninori.morimoto.gx@renesas.com>
+References: <20131001081143.4136.46925.sendpatchset@w520>
+In-Reply-To: <20131001081143.4136.46925.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 03, 2013 at 06:32:01PM -0700, Kuninori Morimoto wrote:
-> Current Bock-W reference is calling PFC initializer manually,
-> but now, it can use DTS PFC.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up.
+Enable a r8a7791 IRQC block by adding a device tree
+node for the IRQC hardware and pins IRQ0 to IRQ9.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/r8a7791.dtsi |   18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-10-01 16:29:00.000000000 +0900
+@@ -38,4 +38,22 @@
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 0xf04>;
+ 	};
++
++	irqc0: interrupt-controller@e61c0000 {
++		compatible = "renesas,irqc";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0 0xe61c0000 0 0x200>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 0 4>,
++			      <0 1 4>,
++			      <0 2 4>,
++			      <0 3 4>,
++			      <0 12 4>,
++			      <0 13 4>,
++			      <0 14 4>,
++			      <0 15 4>,
++			      <0 16 4>,
++			      <0 17 4>;
++	};
+ };
