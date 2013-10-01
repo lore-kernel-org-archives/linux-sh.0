@@ -1,55 +1,75 @@
-From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
-Date: Thu, 31 Oct 2013 10:47:40 +0000
-Subject: Re: [PATCH 12/12] fbdev: shmobile-lcdcfb: Convert to clk_prepare/unprepare
-Message-Id: <20131031104740.GA18477@ns203013.ovh.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 08:12:19 +0000
+Subject: [PATCH 03/10] ARM: shmobile: r8a7791 IRQC platform device support
+Message-Id: <20131001081219.4136.26850.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383000569-8916-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383000569-8916-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20131001081143.4136.46925.sendpatchset@w520>
+In-Reply-To: <20131001081143.4136.46925.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 23:49 Mon 28 Oct     , Laurent Pinchart wrote:
-> Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
-> clk_disable_unprepare() to get ready for the migration to the common
-> clock framework.
-> 
-> Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
-Acked-by: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+From: Magnus Damm <damm@opensource.se>
 
-Best Regards,
-J.
-> Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
-> Cc: linux-fbdev@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  drivers/video/sh_mobile_lcdcfb.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-> index 0264704..eaeae0f 100644
-> --- a/drivers/video/sh_mobile_lcdcfb.c
-> +++ b/drivers/video/sh_mobile_lcdcfb.c
-> @@ -344,7 +344,7 @@ static void sh_mobile_lcdc_clk_on(struct sh_mobile_lcdc_priv *priv)
->  {
->  	if (atomic_inc_and_test(&priv->hw_usecnt)) {
->  		if (priv->dot_clk)
-> -			clk_enable(priv->dot_clk);
-> +			clk_prepare_enable(priv->dot_clk);
->  		pm_runtime_get_sync(priv->dev);
->  		if (priv->meram_dev && priv->meram_dev->pdev)
->  			pm_runtime_get_sync(&priv->meram_dev->pdev->dev);
-> @@ -358,7 +358,7 @@ static void sh_mobile_lcdc_clk_off(struct sh_mobile_lcdc_priv *priv)
->  			pm_runtime_put_sync(&priv->meram_dev->pdev->dev);
->  		pm_runtime_put(priv->dev);
->  		if (priv->dot_clk)
-> -			clk_disable(priv->dot_clk);
-> +			clk_disable_unprepare(priv->dot_clk);
->  	}
->  }
->  
-> -- 
-> 1.8.1.5
-> 
+Add a platform device for the r8a7791 IRQC hardware
+driving IRQ pins IRQ0 to IRQ9. The Linux interrupt
+number is statically assigned to allow board code
+written in C to make use of static interrupt numbers.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/setup-r8a7791.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- 0002/arch/arm/mach-shmobile/setup-r8a7791.c
++++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2013-10-01 16:45:32.000000000 +0900
+@@ -22,6 +22,7 @@
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/irq-renesas-irqc.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+@@ -109,6 +110,31 @@ static const struct resource cmt00_resou
+ 					  &cmt##idx##_platform_data,	\
+ 					  sizeof(struct sh_timer_config))
+ 
++static struct renesas_irqc_config irqc0_data = {
++	.irq_base = irq_pin(0), /* IRQ0 -> IRQ9 */
++};
++
++static struct resource irqc0_resources[] = {
++	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
++	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
++	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
++	DEFINE_RES_IRQ(gic_spi(2)), /* IRQ2 */
++	DEFINE_RES_IRQ(gic_spi(3)), /* IRQ3 */
++	DEFINE_RES_IRQ(gic_spi(12)), /* IRQ4 */
++	DEFINE_RES_IRQ(gic_spi(13)), /* IRQ5 */
++	DEFINE_RES_IRQ(gic_spi(14)), /* IRQ6 */
++	DEFINE_RES_IRQ(gic_spi(15)), /* IRQ7 */
++	DEFINE_RES_IRQ(gic_spi(16)), /* IRQ8 */
++	DEFINE_RES_IRQ(gic_spi(17)), /* IRQ9 */
++};
++
++#define r8a7791_register_irqc(idx)					\
++	platform_device_register_resndata(&platform_bus, "renesas_irqc", \
++					  idx, irqc##idx##_resources,	\
++					  ARRAY_SIZE(irqc##idx##_resources), \
++					  &irqc##idx##_data,		\
++					  sizeof(struct renesas_irqc_config))
++
+ void __init r8a7791_add_dt_devices(void)
+ {
+ 	r8a7791_register_scif(SCIFA0);
+@@ -132,6 +158,7 @@ void __init r8a7791_add_dt_devices(void)
+ void __init r8a7791_add_standard_devices(void)
+ {
+ 	r8a7791_add_dt_devices();
++	r8a7791_register_irqc(0);
+ }
+ 
+ void __init r8a7791_init_early(void)
