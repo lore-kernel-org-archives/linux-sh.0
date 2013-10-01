@@ -1,41 +1,55 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 28 Oct 2013 19:31:45 +0000
-Subject: Re: Build regressions/improvements in v3.12-rc7
-Message-Id: <alpine.DEB.2.02.1310282029140.14406@ayla.of.borg>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:28:01 +0000
+Subject: [GIT PULL 0/3] Renesas ARM based SoC cleanups for v3.13
+Message-Id: <cover.1380523393.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.02.1310282028510.14364@ayla.of.borg>
-In-Reply-To: <alpine.DEB.2.02.1310282028510.14364@ayla.of.borg>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Kernel Development <linux-kernel@vger.kernel.org>
-Cc: Linux/PPC Development <linuxppc-dev@lists.ozlabs.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 28 Oct 2013, Geert Uytterhoeven wrote:
-> JFYI, when comparing v3.12-rc7 to v3.12-rc6[3], the summaries are:
->   - build errors: +9/-10
+Hi Kevin, Olof and Arnd,
 
-  + /scratch/kisskb/src/arch/powerpc/kernel/cacheinfo.c: error: 'associativity' may be used uninitialized in this function [-Werror=uninitialized]:  => 575:2
-  + /scratch/kisskb/src/arch/powerpc/kernel/cacheinfo.c: error: 'size_kb' may be used uninitialized in this function [-Werror=uninitialized]:  => 526:2
-  + /scratch/kisskb/src/drivers/tty/serial/nwpserial.c: error: implicit declaration of function 'udelay' [-Werror=implicit-function-declaration]:  => 53:3
+please consider these Renesas ARM based SoC cleanups for v3.13.
 
-powerpc-randconfig
+This pull request is based on v3.12-rc1.
 
-  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error: implicit declaration of function 'dma_alloc_writecombine' [-Werror=implicit-function-declaration]:  => 91:2
-  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error: implicit declaration of function 'dma_free_writecombine' [-Werror=implicit-function-declaration]:  => 176:3
 
-sh-randconfig
+The following changes since commit 272b98c6455f00884f0350f775c5342358ebb73f:
 
-> [1] http://kisskb.ellerman.id.au/kisskb/head/6819/ (119 out of 120 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/head/6796/ (all 120 configs)
+  Linux 3.12-rc1 (2013-09-16 16:17:51 -0400)
 
-Gr{oetje,eeting}s,
+are available in the git repository at:
 
-						Geert
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.13
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+for you to fetch changes up to cde214a890f81797a5eee94fffc89c1de21ed991:
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+  ARM: shmobile: r8a7790: Constify platform data and resources (2013-09-19 14:33:44 -0700)
+
+----------------------------------------------------------------
+Renesas ARM based SoC cleanups for v3.13
+
+* Constify platform data and resources of r8a7790 SoC
+* Rename to r8a7790_init_delay() as r8a7790_init_early()
+  - This is in preparation for doing more than just initialising the delay
+* Rename r8a73a4_init_delay() as r8a73a4_init_early()
+  - This is in preparation for doing more than just initialising the delay
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: r8a7790: Constify platform data and resources
+
+Magnus Damm (2):
+      ARM: shmobile: Rename to r8a73a4_init_early()
+      ARM: shmobile: Rename to r8a7790_init_early()
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c |  2 +-
+ arch/arm/mach-shmobile/board-ape6evm.c           |  2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c   |  2 +-
+ arch/arm/mach-shmobile/board-lager.c             |  2 +-
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h    |  2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7790.h    |  2 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |  4 ++--
+ arch/arm/mach-shmobile/setup-r8a7790.c           | 25 ++++++++++++------------
+ 8 files changed, 21 insertions(+), 20 deletions(-)
