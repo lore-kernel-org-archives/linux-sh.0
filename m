@@ -1,36 +1,234 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Oct 2013 06:36:10 +0000
-Subject: [PATCH 08/10] ARM: shmobile: r8a7779: add SDHI clock support for DT
-Message-Id: <87a9ig1fhl.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:38 +0000
+Subject: [PATCH 06/14] ARM: shmobile: Shared APMU SMP support code without DT
+Message-Id: <a112de8c7ae231f396e28160e84d0eab3a79dffc.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
+
+Introduce shared APMU SMP code for mach-shmobile. Both SMP boot up
+and CPU Hotplug is supported. This version does not use DT but
+if needed this will be added as an incremental feature patch.
+
+The code is designed around CONFIG_NR_CPUS and should in theory support
+any number of APMUs, however due to the current DT-less static design
+only a single APMU is supported.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/include/mach/common.h |   6 +
+ arch/arm/mach-shmobile/platsmp-apmu.c        | 178 +++++++++++++++++++++++++++
+ 2 files changed, 184 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/platsmp-apmu.c
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index badb8b7..5c83259 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -201,9 +201,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
- 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
-+	CLKDEV_DEV_ID("ffe4c000.sdhi", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
-+	CLKDEV_DEV_ID("ffe4d000.sdhi", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
-+	CLKDEV_DEV_ID("ffe4e000.sdhi", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
-+	CLKDEV_DEV_ID("ffe4f000.sdhi", &mstp_clks[MSTP320]), /* SDHI3 */
- 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
- };
- 
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index cfe3977..3460bb1 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -22,6 +22,12 @@ extern int shmobile_smp_scu_boot_secondary(unsigned int cpu,
+ 					   struct task_struct *idle);
+ extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
+ extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
++extern void shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus);
++extern int shmobile_smp_apmu_boot_secondary(unsigned int cpu,
++					    struct task_struct *idle);
++extern void shmobile_smp_apmu_cpu_die(unsigned int cpu);
++extern int shmobile_smp_apmu_cpu_kill(unsigned int cpu);
++extern void shmobile_invalidate_start(void);
+ struct clk;
+ extern int shmobile_clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+new file mode 100644
+index 0000000..34dc40d
+--- /dev/null
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -0,0 +1,178 @@
++/*
++ * SMP support for SoCs with APMU
++ *
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#include <linux/delay.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/ioport.h>
++#include <linux/of_address.h>
++#include <linux/smp.h>
++#include <asm/cacheflush.h>
++#include <asm/cp15.h>
++#include <asm/smp_plat.h>
++#include <mach/common.h>
++
++static struct {
++	void __iomem *iomem;
++	int bit;
++} apmu_cpus[CONFIG_NR_CPUS];
++
++#define WUPCR_OFFS 0x10
++#define PSTR_OFFS 0x40
++#define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
++
++static int apmu_power_on(void __iomem *p, int bit)
++{
++	/* request power on */
++	writel_relaxed(BIT(bit), p + WUPCR_OFFS);
++
++	/* wait for APMU to finish */
++	while (readl_relaxed(p + WUPCR_OFFS) != 0)
++		;
++
++	return 0;
++}
++
++static int apmu_power_off(void __iomem *p, int bit)
++{
++	/* request Core Standby for next WFI */
++	writel_relaxed(3, p + CPUNCR_OFFS(bit));
++	return 0;
++}
++
++static int apmu_power_off_poll(void __iomem *p, int bit)
++{
++	int k;
++
++	for (k = 0; k < 1000; k++) {
++		if (((readl_relaxed(p + PSTR_OFFS) >> (bit * 4)) & 0x03) = 3)
++			return 1;
++
++		mdelay(1);
++	}
++
++	return 0;
++}
++
++static int apmu_wrap(int cpu, int (*fn)(void __iomem *p, int cpu))
++{
++	void __iomem *p = apmu_cpus[cpu].iomem;
++
++	return p ? fn(p, apmu_cpus[cpu].bit) : -EINVAL;
++}
++
++static void apmu_init_cpu(struct resource *res, int cpu, int bit)
++{
++	if (apmu_cpus[cpu].iomem)
++		return;
++
++	apmu_cpus[cpu].iomem = ioremap_nocache(res->start, resource_size(res));
++	apmu_cpus[cpu].bit = bit;
++
++	pr_debug("apmu ioremap %d %d 0x%08x 0x%08x\n", cpu, bit,
++		 res->start, resource_size(res));
++}
++
++static struct {
++	struct resource iomem;
++	int cpus[4];
++} apmu_config[] = {
++	{
++		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
++		.cpus = { 0, 1, 2, 3 },
++	}
++};
++
++static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit))
++{
++	u32 id;
++	int k;
++	int bit, index;
++
++	for (k = 0; k < ARRAY_SIZE(apmu_config); k++) {
++		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
++			id = apmu_config[k].cpus[bit];
++			if (id >= 0) {
++				index = get_logical_index(id);
++				if (index >= 0)
++					fn(&apmu_config[k].iomem, index, bit);
++			}
++		}
++	}
++}
++
++void __init shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus)
++{
++	/* install boot code shared by all CPUs */
++	shmobile_boot_fn = virt_to_phys(shmobile_smp_boot);
++	shmobile_boot_arg = MPIDR_HWID_BITMASK;
++
++	/* perform per-cpu setup */
++	apmu_parse_cfg(apmu_init_cpu);
++}
++
++int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
++{
++	/* For this particular CPU register boot vector */
++	shmobile_smp_hook(cpu, virt_to_phys(shmobile_invalidate_start), 0);
++
++	return apmu_wrap(cpu, apmu_power_on);
++}
++
++#ifdef CONFIG_HOTPLUG_CPU
++/* nicked from arch/arm/mach-exynos/hotplug.c */
++static inline void cpu_enter_lowpower_a15(void)
++{
++	unsigned int v;
++
++	asm volatile(
++	"       mrc     p15, 0, %0, c1, c0, 0\n"
++	"       bic     %0, %0, %1\n"
++	"       mcr     p15, 0, %0, c1, c0, 0\n"
++		: "=&r" (v)
++		: "Ir" (CR_C)
++		: "cc");
++
++	flush_cache_louis();
++
++	asm volatile(
++	/*
++	 * Turn off coherency
++	 */
++	"       mrc     p15, 0, %0, c1, c0, 1\n"
++	"       bic     %0, %0, %1\n"
++	"       mcr     p15, 0, %0, c1, c0, 1\n"
++		: "=&r" (v)
++		: "Ir" (0x40)
++		: "cc");
++
++	isb();
++	dsb();
++}
++
++void shmobile_smp_apmu_cpu_die(unsigned int cpu)
++{
++	/* For this particular CPU deregister boot vector */
++	shmobile_smp_hook(cpu, 0, 0);
++
++	/* Select next sleep mode using the APMU */
++	apmu_wrap(cpu, apmu_power_off);
++
++	/* Do ARM specific CPU shutdown */
++	cpu_enter_lowpower_a15();
++
++	/* jump to shared mach-shmobile sleep / reset code */
++	shmobile_smp_sleep();
++}
++
++int shmobile_smp_apmu_cpu_kill(unsigned int cpu)
++{
++	return apmu_wrap(cpu, apmu_power_off_poll);
++}
++#endif
 -- 
-1.7.9.5
+1.8.4
 
