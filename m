@@ -1,50 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 04:21:34 +0000
-Subject: Re: [PATCH 07/10] ARM: shmobile: Use arch timer on Koelsch
-Message-Id: <20131003042133.GL7925@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 10:33:05 +0000
+Subject: [PATCH 01/05] ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
+Message-Id: <20131001103305.813.70296.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131001081143.4136.46925.sendpatchset@w520>
- <20131001081257.4136.80053.sendpatchset@w520>
-In-Reply-To: <20131001081257.4136.80053.sendpatchset@w520>
+References: <20131001103255.813.65710.sendpatchset@w520>
+In-Reply-To: <20131001103255.813.65710.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 01, 2013 at 05:12:57PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Make use of the R-Car Gen2 arch timer workaround on Koelsch.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/board-koelsch.c |    2 ++
->  1 file changed, 2 insertions(+)
-> 
-> --- 0003/arch/arm/mach-shmobile/board-koelsch.c
-> +++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-10-01 16:35:52.000000000 +0900
-> @@ -23,6 +23,7 @@
->  #include <linux/platform_device.h>
->  #include <mach/common.h>
->  #include <mach/r8a7791.h>
-> +#include <mach/rcar-gen2.h>
->  #include <asm/mach-types.h>
->  #include <asm/mach/arch.h>
->  
-> @@ -40,5 +41,6 @@ static const char * const koelsch_boards
->  DT_MACHINE_START(KOELSCH_DT, "koelsch")
->  	.init_early	= r8a7791_init_early,
->  	.init_machine	= koelsch_add_standard_devices,
-> +	.init_time	= rcar_gen2_timer_init,
->  	.dt_compat	= koelsch_boards_compat_dt,
->  MACHINE_END
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up in the boards3 branch.
-It should make it into v3.13 but if not I'll rename the branch
-soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+Copy the device nodes from KZM9D reference into the KZM9D
+device tree file. This will allow us to use a single DTS
+file regarless of kernel configuration. In case of legacy
+C board code the device nodes may or may not be used, but
+in the multiplatform case all the DT device nodes are used.
 
-The boards3 branch includes boards code previously queued up for v3.13
-and a merge with soc changes previously queued up for v3.13. The reason
-for the merge is to provide various build and run-time dependencies
-including the rcar_gen2_timer_init code which this patch uses.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/emev2-kzm9d.dts |   33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/dts/emev2-kzm9d.dts
++++ work/arch/arm/boot/dts/emev2-kzm9d.dts	2013-09-26 19:42:16.000000000 +0900
+@@ -1,7 +1,7 @@
+ /*
+  * Device Tree Source for the KZM9D board
+  *
+- * Copyright (C) 2012 Renesas Solutions Corp.
++ * Copyright (C) 2013 Renesas Solutions Corp.
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -23,4 +23,35 @@
+ 	chosen {
+ 		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+ 	};
++
++	reg_1p8v: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-1.8V";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	reg_3p3v: regulator@1 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	lan9220@20000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x20000000 0x10000>;
++		phy-mode = "mii";
++		interrupt-parent = <&gpio0>;
++		interrupts = <1 1>;	/* active high */
++		reg-io-width = <4>;
++		smsc,irq-active-high;
++		smsc,irq-push-pull;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
++	};
+ };
