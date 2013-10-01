@@ -1,84 +1,124 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Oct 2013 02:35:42 +0000
-Subject: [PATCH 03/12] ARM: shmobile: r8a7778: tidyup DT node naming
-Message-Id: <8738num3r8.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:37:02 +0000
+Subject: [PATCH 02/12] ARM: shmobile: lager: Add Display Unit support
+Message-Id: <c75a5afa44e71c99e1793824121608f0db48f014.1380530519.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380530519.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380530519.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-According to ePAPR spec,
-this patch tidies up DT node name and related clock.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Only the VGA output is currently supported.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi         |    8 ++++----
- arch/arm/mach-shmobile/clock-r8a7778.c |    8 ++++----
- 2 files changed, 8 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c | 66 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 873eeb9..ca88b3b 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -157,7 +157,7 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index ffb6f0a..caec99e 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -28,6 +28,7 @@
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+@@ -38,6 +39,62 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
--	mmcif: mmcif@ffe4e000 {
-+	mmcif: mmc@ffe4e000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0xffe4e000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -165,7 +165,7 @@
- 		status = "disabled";
- 	};
++/* DU */
++static struct rcar_du_encoder_data lager_du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_VGA,
++		.output = RCAR_DU_OUTPUT_DPAD0,
++	}, {
++		.type = RCAR_DU_ENCODER_NONE,
++		.output = RCAR_DU_OUTPUT_LVDS1,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
++};
++
++static const struct rcar_du_platform_data lager_du_pdata __initconst = {
++	.encoders = lager_du_encoders,
++	.num_encoders = ARRAY_SIZE(lager_du_encoders),
++};
++
++static const struct resource du_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfeb00000, 0x70000),
++	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
++	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
++	DEFINE_RES_IRQ(gic_spi(256)),
++	DEFINE_RES_IRQ(gic_spi(268)),
++	DEFINE_RES_IRQ(gic_spi(269)),
++};
++
++static void __init lager_add_du_device(void)
++{
++	struct platform_device_info info = {
++		.name = "rcar-du-r8a7790",
++		.id = -1,
++		.res = du_resources,
++		.num_res = ARRAY_SIZE(du_resources),
++		.data = &du_resources,
++		.size_data = sizeof(du_resources),
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++
++	platform_device_register_full(&info);
++}
++
+ /* LEDS */
+ static struct gpio_led lager_leds[] = {
+ 	{
+@@ -106,6 +163,13 @@ static struct resource ether_resources[] __initdata = {
+ };
  
--	sdhi0: sdhi@ffe4c000 {
-+	sdhi0: sd@ffe4c000 {
- 		compatible = "renesas,sdhi-r8a7778";
- 		reg = <0xffe4c000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -175,7 +175,7 @@
- 		status = "disabled";
- 	};
+ static const struct pinctrl_map lager_pinctrl_map[] = {
++	/* DU (CN10: ARGB0, CN13: LVDS) */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_rgb666", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_sync_1", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
++				  "du_clk_out_0", "du"),
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+ 				  "scif0_data", "scif0"),
+@@ -153,6 +217,8 @@ static void __init lager_add_standard_devices(void)
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
+ 					  &ether_pdata, sizeof(ether_pdata));
++
++	lager_add_du_device();
+ }
  
--	sdhi1: sdhi@ffe4d000 {
-+	sdhi1: sd@ffe4d000 {
- 		compatible = "renesas,sdhi-r8a7778";
- 		reg = <0xffe4d000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -185,7 +185,7 @@
- 		status = "disabled";
- 	};
- 
--	sdhi2: sdhi@ffe4f000 {
-+	sdhi2: sd@ffe4f000 {
- 		compatible = "renesas,sdhi-r8a7778";
- 		reg = <0xffe4f000 0x100>;
- 		interrupt-parent = <&gic>;
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 011564f..3c25282 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -173,13 +173,13 @@ static struct clk_lookup lookups[] = {
- 
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sh_mmcif", &mstp_clks[MSTP331]), /* MMC */
--	CLKDEV_DEV_ID("ffe4e000.mmcif", &mstp_clks[MSTP331]), /* MMC */
-+	CLKDEV_DEV_ID("ffe4e000.mmc", &mstp_clks[MSTP331]), /* MMC */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
--	CLKDEV_DEV_ID("ffe4c000.sdhi", &mstp_clks[MSTP323]), /* SDHI0 */
-+	CLKDEV_DEV_ID("ffe4c000.sd", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
--	CLKDEV_DEV_ID("ffe4d000.sdhi", &mstp_clks[MSTP322]), /* SDHI1 */
-+	CLKDEV_DEV_ID("ffe4d000.sd", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
--	CLKDEV_DEV_ID("ffe4f000.sdhi", &mstp_clks[MSTP321]), /* SDHI2 */
-+	CLKDEV_DEV_ID("ffe4f000.sd", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("r8a7778-vin.0", &mstp_clks[MSTP110]), /* VIN0 */
- 	CLKDEV_DEV_ID("r8a7778-vin.1", &mstp_clks[MSTP109]), /* VIN1 */
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-1.7.9.5
+1.8.4
 
