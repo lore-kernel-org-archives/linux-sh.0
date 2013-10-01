@@ -1,112 +1,70 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Mon, 21 Oct 2013 03:27:00 +0000
-Subject: [PATCH 2/2 v3] ARM: shmobile: Lager:add SPI FLASH support on QSPI
-Message-Id: <1382326020-10558-3-git-send-email-cm-hiep@jinso.co.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 01 Oct 2013 02:35:35 +0000
+Subject: [PATCH 03/14] ARM: shmobile: Remove unused shmobile_smp_init_cpus()
+Message-Id: <c4e1e64d2b6a921a57629ede635f81f5d2882543.1380532277.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380532277.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+From: Magnus Damm <damm@opensource.se>
 
-This patch enables Spansion S25FL512SAGMFIG11 chip on QSPI,
-Add support for the QSPI interface on Lager.
+Remove shmobile_smp_init_cpus() since all SMP platforms in
+mach-shmobile now rely on DT for CPU core description instead
+of for instance determining number of cores from the SCU.
 
-Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+ arch/arm/mach-shmobile/include/mach/common.h |  1 -
+ arch/arm/mach-shmobile/platsmp.c             | 15 ---------------
+ 2 files changed, 16 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 78a31b6..af81991 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -39,6 +39,11 @@
- #include <mach/r8a7790.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-+#include <linux/mtd/partitions.h>
-+#include <linux/mtd/mtd.h>
-+#include <linux/spi/flash.h>
-+#include <linux/spi/rspi.h>
-+#include <linux/spi/spi.h>
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 1ed155e..26eaff1 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -40,7 +40,6 @@ static inline int shmobile_cpuidle_init(void) { return 0; }
+ #endif
  
- /* DU */
- static struct rcar_du_encoder_data lager_du_encoders[] = {
-@@ -165,6 +170,59 @@ static const struct resource ether_resources[] __initconst = {
- 	DEFINE_RES_IRQ(gic_spi(162)),
- };
+ extern void __iomem *shmobile_scu_base;
+-extern void shmobile_smp_init_cpus(unsigned int ncores);
  
-+/* SPI Flash memory (Spansion S25FL512SAGMFIG11 64Mb) */
-+static struct mtd_partition spi_flash_part[] = {
-+	/* Reserved for user loader program, read-only */
-+	{
-+		.name = "loader",
-+		.offset = 0,
-+		.size = SZ_256K,
-+		.mask_flags = MTD_WRITEABLE,
-+	},
-+	/* Reserved for user program, read-only */
-+	{
-+		.name = "user",
-+		.offset = MTDPART_OFS_APPEND,
-+		.size = SZ_4M,
-+		.mask_flags = MTD_WRITEABLE,
-+	},
-+	/* All else is writable (e.g. JFFS2) */
-+	{
-+		.name = "flash",
-+		.offset = MTDPART_OFS_APPEND,
-+		.size = MTDPART_SIZ_FULL,
-+		.mask_flags = 0,
-+	},
-+};
-+
-+static struct flash_platform_data spi_flash_data = {
-+	.name           = "m25p80",
-+	.parts          = spi_flash_part,
-+	.nr_parts       = ARRAY_SIZE(spi_flash_part),
-+	.type           = "s25fl512s",
-+};
-+
-+static const struct rspi_plat_data qspi_pdata __initconst = {
-+	.num_chipselect	= 1,
-+};
-+
-+static const struct spi_board_info spi_info[] __initconst = {
-+	{
-+		.modalias               = "m25p80",
-+		.platform_data          = &spi_flash_data,
-+		.mode                   = SPI_MODE_0,
-+		.max_speed_hz           = 30000000,
-+		.bus_num                = 0,
-+		.chip_select            = 0,
-+	},
-+};
-+
-+/* QSPI resource */
-+static const struct resource qspi_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6b10000, 0x1000),
-+	DEFINE_RES_IRQ(gic_spi(184)),
-+};
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* DU (CN10: ARGB0, CN13: LVDS) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-@@ -222,6 +280,12 @@ static void __init lager_add_standard_devices(void)
- 					  &ether_pdata, sizeof(ether_pdata));
+ static inline void __init shmobile_init_late(void)
+ {
+diff --git a/arch/arm/mach-shmobile/platsmp.c b/arch/arm/mach-shmobile/platsmp.c
+index 3741562..9ebc246 100644
+--- a/arch/arm/mach-shmobile/platsmp.c
++++ b/arch/arm/mach-shmobile/platsmp.c
+@@ -11,25 +11,10 @@
+  * published by the Free Software Foundation.
+  */
+ #include <linux/init.h>
+-#include <linux/smp.h>
+ #include <asm/cacheflush.h>
+ #include <asm/smp_plat.h>
+ #include <mach/common.h>
  
- 	lager_add_du_device();
-+
-+	platform_device_register_resndata(&platform_bus, "qspi", 0,
-+					  qspi_resources,
-+					  ARRAY_SIZE(qspi_resources),
-+					  &qspi_pdata, sizeof(qspi_pdata));
-+	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
- }
- 
- /*
+-void __init shmobile_smp_init_cpus(unsigned int ncores)
+-{
+-	unsigned int i;
+-
+-	if (ncores > nr_cpu_ids) {
+-		pr_warn("SMP: %u cores greater than maximum (%u), clipping\n",
+-			ncores, nr_cpu_ids);
+-		ncores = nr_cpu_ids;
+-	}
+-
+-	for (i = 0; i < ncores; i++)
+-		set_cpu_possible(i, true);
+-}
+-
+ extern unsigned long shmobile_smp_fn[];
+ extern unsigned long shmobile_smp_arg[];
+ extern unsigned long shmobile_smp_mpidr[];
 -- 
-1.7.9.5
+1.8.4
 
