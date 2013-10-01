@@ -1,43 +1,62 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 08 Oct 2013 20:53:37 +0000
-Subject: Re: [PATCH] sh_eth: NAPI requires netif_receive_skb()
-Message-Id: <52547E8D.3080101@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 10:32:55 +0000
+Subject: [PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
+Message-Id: <20131001103255.813.65710.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309030303.11381.sergei.shtylyov@cogentembedded.com> <20130904.141252.532474080722830977.davem@davemloft.net> <Pine.LNX.4.64.1309261751200.11968@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1309261751200.11968@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+ARM: shmobile: KZM9D Multiplatform update
 
-On 26-09-2013 18:12, Guennadi Liakhovetski wrote:
+[PATCH 01/05] ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
+[PATCH 02/05] ARM: shmobile: Use KZM9D without reference for multiplatform
+[PATCH 03/05] ARM: shmobile: Remove non-multiplatform KZM9D reference support
+[PATCH 04/05] ARM: shmobile: Let KZM9D multiplatform boot with KZM9D DTB
+[PATCH 05/05] ARM: shmobile: Remove KDM9D reference DTS
 
->> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->> Date: Tue, 3 Sep 2013 03:03:10 +0400
+This series updates mach-shmobile and the KZM9D board code to propose
+a way forward for future CCF-enabled multiplatform board support.
 
->>> Driver supporting NAPI should use NAPI-specific function for receiving packets,
->>> so netif_rx() should be changed to netif_receive_skb().
+With this series applied the following rules apply:
 
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+ - CONFIG_ARCH_MULTIPLATFORM=y is used to enable multiplatform
+   - CONFIG_ARCH_SHMOBILE_MULTI=y is used in case of multiplatform build
+ - CONFIG_ARCH SHMOBILE=y is used in case of legacy non-multiplatform build
+ - CONFIG_MACH_KZM9D=y enables KZM9D board support regardless of multiplatform
+   - In case of multiplatform build board-kzm9d-reference.c is used
+   - In case of legacy non-multiplatform build board-kzm9d.c is used
+ - KZM9D reference can no longer be built for non-multiplatform
+ - CONFIG_MACH_KZM9D_REFERENCE actually no longer exists
+ - emev2-kzm9d-reference.dts has been removed, use emev2-kzm9d.dts instead
+ - The same emev2-kzm9d.dts is used regardless of kernel configuration
+  - emev2-kzm9d.dtb can be used with legacy non-multiplatform
+  - emev2-kzm9d.dtb can be used with multiplatform
 
-> This patch breaks NFS boot on Armadillo800eva for me. Network
-> communication slows down to a crawl with
+In practice the above means that legacy board code users can keep on using
+existing emev2-kzm9d.dtb as-is, but when updating to multiplatform kernel
+the DTB needs to be updated as well and from that point the DTB needs to
+be updated whenever new hardware is added.
 
-> net eth0: Receive FIFO Overflow
-> nfs: server 192.168.x.y not responding, still trying
+The above seems pretty straight forward from my point of view, so I
+propose that we follow the same style for future multiplatform board
+support.
 
-> With this patch reverted (e.g. in today's Linus tree snapshot) boot is
-> restored.
+Before merging this series I'd like to see Yoshii-san's CCF patches
+for KZM9D and EMEV2 to be finalized and picked up.
 
-    Guennadi, are you expecting some actions (like looking into what Eric have 
-suggested) from me? If so, I'm still on vacation, should be back next Tuesday.
-    I don't think reverting the patch is a Right Thing to do.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> Thanks
-> Guennadi
+ Written against renesas.git tag renesas-devel-20131001 and
+ [PATCH 00/10] ARM: shmobile: r8a7791 SoC and Koelsch update V2
+ plus selected CCF patches from Yoshii-san.
 
-WBR, Sergei
-
+ arch/arm/boot/dts/Makefile                     |    3 -
+ arch/arm/boot/dts/emev2-kzm9d-reference.dts    |   57 ------------------------
+ arch/arm/boot/dts/emev2-kzm9d.dts              |   33 +++++++++++++
+ arch/arm/mach-shmobile/Kconfig                 |   22 ---------
+ arch/arm/mach-shmobile/Makefile                |    5 +-
+ arch/arm/mach-shmobile/Makefile.boot           |    1 
+ arch/arm/mach-shmobile/board-kzm9d-reference.c |    1 
