@@ -1,64 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 29 Oct 2013 09:43:56 +0000
-Subject: Re: [PATCH 03/19] i2c: sh_mobile: Enable the driver on all ARM platforms
-Message-Id: <2015733.JNqH7MboLG@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart2262444.VxEEmQHS6F"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 01 Oct 2013 08:11:53 +0000
+Subject: [PATCH 01/10] ARM: shmobile: Introduce r8a7791_add_standard_devices()
+Message-Id: <20131001081153.4136.72073.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383004027-25036-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131029050337.GB2643@katana>
-In-Reply-To: <20131029050337.GB2643@katana>
+References: <20131001081143.4136.46925.sendpatchset@w520>
+In-Reply-To: <20131001081143.4136.46925.sendpatchset@w520>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
---nextPart2262444.VxEEmQHS6F
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+Introduce the function r8a7791_add_standard_devices() that
+follows the same style as other mach-shmobile SoC code and
+allows C version of board code to add on-chip devices.
 
-Hi Wolfram,
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-On Tuesday 29 October 2013 06:03:37 Wolfram Sang wrote:
-> On Tue, Oct 29, 2013 at 12:46:51AM +0100, Laurent Pinchart wrote:
-> > Renesas ARM platforms are transitioning from single-platform to
-> > multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-> > driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-> > and ARCH_SHMOBILE_MULTI and increase build testing coverage.
-> > 
-> > Cc: Wolfram Sang <wsa@the-dreams.de>
-> > Cc: linux-i2c@vger.kernel.org
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> I wonder if those two Kconfig patches couldn't be squashed, but other
-> than that:
-> 
-> Acked-by: Wolfram Sang <wsa@the-dreams.de>
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7791.c        |    5 +++++
+ 2 files changed, 6 insertions(+)
 
-Thank you. Please feel free to squash the patches together when applying if 
-needed.
-
--- 
-Regards,
-
-Laurent Pinchart
-
---nextPart2262444.VxEEmQHS6F
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJSb4NcAAoJEIkPb2GL7hl1UyAH/28uKvrf5Mt6qVWkpO/jzfDw
-SWYHRdiGk6rf5L4aQw1E8wFHCCBXfQJrhidBEmr4BwtJjCfafZypSATQhpoZBmNb
-ATxWQB2kzsGDlWR7yri5DDWVfsOUiKo2zHwIsAutVsvxWWKBWWuLKq7eAVctPRAX
-uZbejuJC4JIqlEXLTcgUmgvDkVFPZXt1q8WxeNMtoVTkXfAYrN568GrMEa0FGNpx
-rgB4TacNzYdChrFamZcYWdcNwn2XNGsNSwPIPnGoSN9IuqWPgVBh+G0uPaMVuPlx
-ozIogWsXulK8KaHkjJqXkO6fw2uzCIHNpNdCCeFqFGiTPNc0Um+UBTF7neyWi3M=
-=VHgb
------END PGP SIGNATURE-----
-
---nextPart2262444.VxEEmQHS6F--
-
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7791.h	2013-10-01 16:23:46.000000000 +0900
+@@ -1,6 +1,7 @@
+ #ifndef __ASM_R8A7791_H__
+ #define __ASM_R8A7791_H__
+ 
++void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_init_early(void);
+--- 0001/arch/arm/mach-shmobile/setup-r8a7791.c
++++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2013-10-01 16:24:35.000000000 +0900
+@@ -129,6 +129,11 @@ void __init r8a7791_add_dt_devices(void)
+ 	r8a7791_register_cmt(00);
+ }
+ 
++void __init r8a7791_add_standard_devices(void)
++{
++	r8a7791_add_dt_devices();
++}
++
+ void __init r8a7791_init_early(void)
+ {
+ #ifndef CONFIG_ARM_ARCH_TIMER
