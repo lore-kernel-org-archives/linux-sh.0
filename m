@@ -1,43 +1,27 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:35:41 +0000
-Subject: [PATCH 09/14] ARM: shmobile: Let sh73a0 rely on SCU CPU notifier
-Message-Id: <344bc8b0c85a63cd2d946376a391e74f4ea0ae46.1380532277.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 02 Oct 2013 08:37:02 +0000
+Subject: Re: [PATCH 0/4 v2] ARM: shmobile: marzen: fixup SMSC IRQ
+Message-Id: <87bo38yspg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380532277.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Simon
 
-Now when CPU notifiers are used for SCU boot vector
-setup shmobile_smp_scu_boot_secondary() is no longer
-needed.
+These patches are v2 of fixup Marzen board SMSC IRQ miss settings.
+These are based on renesas-devel-20131001 tag
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/smp-sh73a0.c | 5 -----
- 1 file changed, 5 deletions(-)
+Kuninori Morimoto (4):
+      ARM: shmobile: r8a7779: split r8a7779_init_irq_extpin() for DT
+      ARM: shmobile: r8a7779: add default status on irqpin
+      ARM: shmobile: marzen: enable INTC IRQ
+      ARM: shmobile: marzen: fixup SMSC IRQ number on DTS
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 9a30a3f..13ba36a 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -46,11 +46,6 @@ void __init sh73a0_register_twd(void)
- static int sh73a0_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
- 	unsigned int lcpu = cpu_logical_map(cpu);
--	int ret;
--
--	ret = shmobile_smp_scu_boot_secondary(cpu, idle);
--	if (ret)
--		return ret;
- 
- 	if (((__raw_readl(PSTR) >> (4 * lcpu)) & 3) = 3)
- 		__raw_writel(1 << lcpu, WUPCR);	/* wake up */
--- 
-1.8.4
-
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  |    8 ++++++--
+ arch/arm/boot/dts/r8a7779.dtsi                  |    1 +
+ arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7779.h   |    1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c          |    6 +++++-
+ 5 files changed, 14 insertions(+), 3 deletions(-)
