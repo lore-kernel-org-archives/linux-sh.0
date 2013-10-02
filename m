@@ -1,41 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Oct 2013 02:29:28 +0000
-Subject: Re: [PATCH 0/7] ARM: shmobile: don't use named resource
-Message-Id: <20131009022927.GI15065@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 02 Oct 2013 08:39:13 +0000
+Subject: [PATCH 2/4 v2] ARM: shmobile: r8a7779: add irqpin default status on DTSI
+Message-Id: <878uycyslu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877gdoxq2d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <877gdoxq2d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Oct 08, 2013 at 03:05:12PM +0900, Magnus Damm wrote:
-> On Tue, Oct 8, 2013 at 2:57 PM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > These patches cleanup named resource/irq which are not needed.
-> > Indeed some driver needs named resource/irq,
-> > but these are just excess.
-> >
-> > Kuninori Morimoto (7):
-> >       ARM: shmobile: ape6evm: don't use named resource for MMCIF
-> >       ARM: shmobile: ape6evm: don't use named resource for SDHI
-> >       ARM: shmobile: lager: don't use named resource for MMCIF
-> >       ARM: shmobile: sh73a0: don't use named resource for TMU
-> >       ARM: shmobile: sh73a0: don't use named resource for I2C
-> >       ARM: shmobile: sh73a0: don't use named resource for IPMMU
-> >       ARM: shmobile: r8a73a4: don't use named irq for DMAEngine
-> >
-> >  arch/arm/mach-shmobile/board-ape6evm.c |    6 +++---
-> >  arch/arm/mach-shmobile/board-lager.c   |    2 +-
-> >  arch/arm/mach-shmobile/setup-r8a73a4.c |    2 +-
-> >  arch/arm/mach-shmobile/setup-sh73a0.c  |   16 ++++++++--------
-> >  4 files changed, 13 insertions(+), 13 deletions(-)
-> 
-> Hi Morimoto-san,
-> 
-> These look good to me, thanks for your help!
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+r8a7779 INTC needs IRL pin mode settings to determine
+behavior of IRQ0 - IRQ3. But it depends on platform.
+This patch adds status = "disabled" on r8a7779.dtsi as default
 
-Thanks, I have queued all of these up.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
+
+ - patch was splited, only dtsi
+
+ arch/arm/boot/dts/r8a7779.dtsi |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 912b3a0..19faeac 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -135,6 +135,7 @@
+ 	irqpin0: irqpin@fe780010 {
+ 		compatible = "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
++		status = "disabled";
+ 		interrupt-controller;
+ 		reg = <0xfe78001c 4>,
+ 			<0xfe780010 4>,
+-- 
+1.7.9.5
+
