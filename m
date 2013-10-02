@@ -1,55 +1,62 @@
-From: Kevin Hilman <khilman@linaro.org>
-Date: Mon, 14 Oct 2013 20:55:06 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM-based SoC DT updates for v3.13
-Message-Id: <878uxv609h.fsf@linaro.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 02 Oct 2013 06:20:01 +0000
+Subject: [PATCH 2/2] ARM: shmobile: marzen: enable INTC IRQ and fixup SMSC IRQ number
+Message-Id: <87pproyz1t.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381298964.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au> (Simon Horman's
- message of "Wed, 9 Oct 2013 15:50:12 +0900")
+References: <201308090144.03912.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201308090144.03912.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Simon Horman <horms+renesas@verge.net.au> writes:
+This patch adds missing INTC IRQ settings,
+and fixup miss-setting of SMSC IRQ number.
 
-> Hi Olof, Kevin and Arnd,
->
-> please consider this second round of Renesas ARM-based SoC DT updates for v3.13.
->
-> This pull request is based on a merge of renesas-soc-for-v3.13
-> into renesas-dt-for-v3.13, both of which you have previously pulled.
-> The reason for the merge is to eliminate conflicts.
->
->
-> The following changes since commit 50128df2c0164a3510da2af9d2dfed2da3987bd3:
->
->   Merge tag 'renesas-soc-for-v3.13' into dt2-base (2013-10-08 09:24:24 +0900)
->
-> are available in the git repository at:
->
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v3.13
->
-> for you to fetch changes up to 73c79afa61cdee2553461ee714bb4716372bdd55:
->
->   ARM: shmobile: bockw: fixup ether node naming (2013-10-08 10:37:49 +0900)
->
-> ----------------------------------------------------------------
-> Second Round of Renesas ARM-based SoC DT updates for v3.13
->
-> * Correct SMSC ethernet IRQ number on marzen board
-> * Add SMSC ethernet node to bockw board
-> * Add SDHI, MMCIF and PWM backlight  nodes to armadillo800eva-reference board
-> * Add irqpin default status to r8a7779 SoC
-> * Add irqpin node to r8a7778 SoC
-> * Add SMP, Arch timer and IRQC nodes to r8a7791 SoC
-> * Add DMAC node to r8a73a4 SoC
-> * Add I2C nodes to r8a7790 SoC
-> * Only enable used I2C interfaces in DT on all Renesas boards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  |    8 ++++++--
+ arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
+ 2 files changed, 7 insertions(+), 2 deletions(-)
 
-Pulled into next/dt.
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 6d55083..ab4110a 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -42,8 +42,8 @@
+ 		pinctrl-names = "default";
+ 
+ 		phy-mode = "mii";
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 28 0x4>;
++		interrupt-parent = <&irqpin0>;
++		interrupts = <1 0>; /* IRQ1: hwirq 1 on irqpin0 */
+ 		reg-io-width = <4>;
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+@@ -63,6 +63,10 @@
+ 	};
+ };
+ 
++&irqpin0 {
++	status = "okay";
++};
++
+ &pfc {
+ 	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 3f4250a..2773936 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -28,6 +28,7 @@
+ static void __init marzen_init(void)
+ {
+ 	r8a7779_add_standard_devices_dt();
++	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+ }
+ 
+ static const char *marzen_boards_compat_dt[] __initdata = {
+-- 
+1.7.9.5
 
-Thanks,
-
-Kevin
