@@ -1,73 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 28 Oct 2013 23:46:50 +0000
-Subject: [PATCH 02/19] DMA: shdma: Enable the driver on all ARM platforms
-Message-Id: <1383004027-25036-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 02 Oct 2013 08:39:48 +0000
+Subject: [PATCH 3/4 v2] ARM: shmobile: marzen: enable INTC IRQ
+Message-Id: <877gdwyskv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI and increase build testing coverage.
+This patch adds missing INTC IRQ settings
+which is required from SMSC.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Vinod Koul <vinod.koul@intel.com>
-Cc: dmaengine@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/dma/sh/Kconfig  | 2 +-
- drivers/dma/sh/shdmac.c | 6 +++---
- 2 files changed, 4 insertions(+), 4 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index dadd9e01..4aab56d 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -4,7 +4,7 @@
+ - patch was splited, only reference.c
+
+ arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 3f4250a..2773936 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -28,6 +28,7 @@
+ static void __init marzen_init(void)
+ {
+ 	r8a7779_add_standard_devices_dt();
++	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+ }
  
- config SH_DMAE_BASE
- 	bool "Renesas SuperH DMA Engine support"
--	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
-+	depends on (SUPERH && SH_DMA) || ARM
- 	depends on !SH_DMA_API
- 	default y
- 	select DMA_ENGINE
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 1069e88..3625078 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -787,7 +787,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 	if (err)
- 		goto rst_err;
- 
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- 	chanirq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
- 
- 	if (!chanirq_res)
-@@ -812,7 +812,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 
- #else
- 	chanirq_res = errirq_res;
--#endif /* CONFIG_CPU_SH4 || CONFIG_ARCH_SHMOBILE */
-+#endif /* CONFIG_CPU_SH4 || CONFIG_ARM */
- 
- 	if (chanirq_res->start = chanirq_res->end &&
- 	    !platform_get_resource(pdev, IORESOURCE_IRQ, 1)) {
-@@ -879,7 +879,7 @@ edmadevreg:
- chan_probe_err:
- 	sh_dmae_chan_remove(shdev);
- 
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- eirq_err:
- #endif
- rst_err:
+ static const char *marzen_boards_compat_dt[] __initdata = {
 -- 
-1.8.1.5
+1.7.9.5
 
