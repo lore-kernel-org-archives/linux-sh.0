@@ -1,46 +1,69 @@
-From: Kevin Hilman <khilman@linaro.org>
-Date: Tue, 15 Oct 2013 14:13:52 +0000
-Subject: Re: [PATCH] ARM: shmobile: Genmai defconfig
-Message-Id: <87siw239lr.fsf@linaro.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 02 Oct 2013 08:38:23 +0000
+Subject: [PATCH 1/4 v2] ARM: shmobile: r8a7779: split r8a7779_init_irq_extpin() for DT
+Message-Id: <87a9isysn8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381300141.git.horms+renesas@verge.net.au>
- <bb416e1d7416861bece0335f543c590d9af09c79.1381300141.git.horms+renesas@verge.net.au>
- <87vc0z4i8j.fsf@linaro.org>
- <CANqRtoTWSb_MkVGbUpSQ1vtaF+ojsUKBzkyUCt5CTGAnerTsUQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTWSb_MkVGbUpSQ1vtaF+ojsUKBzkyUCt5CTGAnerTsUQ@mail.gmail.com>
- (Magnus Damm's message of "Tue, 15 Oct 2013 11:00:02 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Magnus Damm <magnus.damm@gmail.com> writes:
+r8a7779 INTC needs IRL pin mode settings to determine
+behavior of IRQ0 - IRQ3, and r8a7779_init_irq_extpin()
+is controlling it via irlm parameter.
+But this function registers renesas_intc_irqpin driver
+if irlm was set, and this value depends on platform.
+This is not good for DT.
+This patch splits r8a7779_init_irq_extpin() function
+into "mode settings" and "funtion register" parts
 
-> On Tue, Oct 15, 2013 at 7:09 AM, Kevin Hilman <khilman@linaro.org> wrote:
->> Simon Horman <horms+renesas@verge.net.au> writes:
->>
->>> From: Magnus Damm <damm@opensource.se>
->>>
->>> Add a defconfig for the Genmai board. In the future this board will
->>> use a shared defconfig for multiplatform, but until CCF is implemented
->>> this will be used.
->>
->> How far in the future are we talking about?
->
-> My plan is to implement and upstream CCF for r7s72100 now in Q4 of 2013.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Great, thanks for the update.
+ - patch was splited, only SoC file
 
->> There's already 9 defconfigs for SH-mobile.  Is this *really* the last
->> one before multi-platform support?
->
-> Yes, it is! From this time all the mach-shmobile boards have to be
-> multi-platform from the start.
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c        |    6 +++++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
 
-OK, then we'll take this as the last one.
-
-Thanks,
-
-Kevin
-
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 31e87b9..17af34e 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -33,6 +33,7 @@ static inline struct r8a7779_pm_ch *to_r8a7779_ch(struct generic_pm_domain *d)
+ 
+ extern void r8a7779_init_delay(void);
+ extern void r8a7779_init_irq_extpin(int irlm);
++extern void r8a7779_init_irq_extpin_dt(int irlm);
+ extern void r8a7779_init_irq_dt(void);
+ extern void r8a7779_map_io(void);
+ extern void r8a7779_earlytimer_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index eacb2f7..13049e9 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -98,7 +98,7 @@ static struct resource irqpin0_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
+ };
+ 
+-void __init r8a7779_init_irq_extpin(int irlm)
++void __init r8a7779_init_irq_extpin_dt(int irlm)
+ {
+ 	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
+ 	u32 tmp;
+@@ -116,7 +116,11 @@ void __init r8a7779_init_irq_extpin(int irlm)
+ 	tmp |= (1 << 21); /* LVLMODE = 1 */
+ 	iowrite32(tmp, icr0);
+ 	iounmap(icr0);
++}
+ 
++void __init r8a7779_init_irq_extpin(int irlm)
++{
++	r8a7779_init_irq_extpin_dt(irlm);
+ 	if (irlm)
+ 		platform_device_register_resndata(
+ 			&platform_bus, "renesas_intc_irqpin", -1,
+-- 
+1.7.9.5
 
