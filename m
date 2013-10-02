@@ -1,43 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 04:22:09 +0000
-Subject: Re: [PATCH 10/10] ARM: shmobile: Use SMP on Koelsch
-Message-Id: <20131003042208.GM7925@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 02 Oct 2013 08:32:12 +0000
+Subject: [PATCH 2/4 v2] ARM: shmobile: r8a7778: add renesas_intc_irqpin support on DTSI
+Message-Id: <87fvskysxj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131001081143.4136.46925.sendpatchset@w520>
- <20131001081326.4136.95868.sendpatchset@w520>
-In-Reply-To: <20131001081326.4136.95868.sendpatchset@w520>
+References: <87txk3up0q.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87txk3up0q.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Oct 01, 2013 at 05:13:26PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Enable r8a7791 SMP support code on the Koelsch board.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/board-koelsch.c |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> --- 0008/arch/arm/mach-shmobile/board-koelsch.c
-> +++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-10-01 16:40:07.000000000 +0900
-> @@ -39,6 +39,7 @@ static const char * const koelsch_boards
->  };
->  
->  DT_MACHINE_START(KOELSCH_DT, "koelsch")
-> +	.smp		= smp_ops(r8a7791_smp_ops),
->  	.init_early	= r8a7791_init_early,
->  	.init_machine	= koelsch_add_standard_devices,
->  	.init_time	= rcar_gen2_timer_init,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Thanks, I have queued this up in the boards3 branch.
-It should make it into v3.13 but if not I'll rename the branch
-soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+ - no change
 
-The boards3 branch includes boards code previously queued up for v3.13
-and a merge with soc changes previously queued up for v3.13. The reason
-for the merge is to provide various build and run-time dependencies
-including the r8a7791 SoC code which this patch uses.
+ arch/arm/boot/dts/r8a7778.dtsi |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 3577aba..a6308a3 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -33,6 +33,25 @@
+ 		      <0xfe430000 0x100>;
+ 	};
+ 
++	/* irqpin: IRQ0 - IRQ3 */
++	irqpin: irqpin@fe78001c {
++		compatible = "renesas,intc-irqpin";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		status = "disabled"; /* default off */
++		reg =	<0xfe78001c 4>,
++			<0xfe780010 4>,
++			<0xfe780024 4>,
++			<0xfe780044 4>,
++			<0xfe780064 4>;
++		interrupt-parent = <&gic>;
++		interrupts =   <0 27 0x4
++				0 28 0x4
++				0 29 0x4
++				0 30 0x4>;
++		sense-bitfield-width = <2>;
++	};
++
+ 	gpio0: gpio@ffc40000 {
+ 		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
+ 		reg = <0xffc40000 0x2c>;
+-- 
+1.7.9.5
+
