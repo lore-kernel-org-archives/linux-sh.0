@@ -1,22 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 04:16:06 +0000
-Subject: Re: [PATCH 2/4 v2] ARM: shmobile: r8a7779: add irqpin default status on DTSI
-Message-Id: <20131003041605.GI7925@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 Oct 2013 06:07:41 +0000
+Subject: Re: [PATCH 00/03] ARM: shmobile: Initial r7s72100 SoC and Genmai board support
+Message-Id: <CANqRtoRmNxDYxTz=onmuRK2qhqwn+gb0Cb+-Ot+EB9FervCJ6A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878uycyslu.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878uycyslu.wl%kuninori.morimoto.gx@renesas.com>
+References: <20130918201101.6319.97667.sendpatchset@w520>
+ <20130925043913.GA23347@verge.net.au>
+In-Reply-To: <20130925043913.GA23347@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 02, 2013 at 01:39:13AM -0700, Kuninori Morimoto wrote:
-> r8a7779 INTC needs IRL pin mode settings to determine
-> behavior of IRQ0 - IRQ3. But it depends on platform.
-> This patch adds status = "disabled" on r8a7779.dtsi as default
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Simon,
 
-Thanks, I have queued this up in the dt3 branch.
-It should make it into v3.13 but if not I'll rename the branch
-dt after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+On Wed, Sep 25, 2013 at 1:39 PM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Sep 19, 2013 at 05:11:01AM +0900, Magnus Damm wrote:
+>> ARM: shmobile: Initial r7s72100 SoC and Genmai board support
+>>
+>> [PATCH 01/03] ARM: shmobile: Initial r7s72100 SoC support
+>> [PATCH 02/03] ARM: shmobile: r7s72100 SCIF support
+>> [PATCH 03/03] ARM: shmobile: Genmai support
+>>
+>> This series adds initial support for r7s72100 and Genmai. The SoC
+>> is known as r7s72100 which is based on a single core Cortex-A9
+>> and makes use of SCIF for serial. Many other on-chip I/O devices
+>> are available, and support for those will be added by incremental
+>> feature patches.
+>>
+>> This initial SoC and board support is providing limited DT-only
+>> support and a very basic C-version of board support. In the future
+>> improved PINCTRL and common clock framework support will be added.
+>>
+>> Implemented in same style as r8a7790 and r8a7791.
+>>
+>> Signed-off-by: Magnus Damm <damm@opensource.se>
+>
+> Hi Magnus,
+>
+> please provide a defconfig if you would like this series merged.
+> Otherwise this seems reasonable to me.
+
+Thanks, yes, I'd like to see this series merged.
+
+Please use the recently posted defconfig in:
+
+[PATCH] ARM: shmobile: Genmai defconfig
+
+Cheers,
+
+/ magnus
