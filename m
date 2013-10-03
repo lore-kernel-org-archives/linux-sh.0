@@ -1,70 +1,27 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:35:35 +0000
-Subject: [PATCH 03/14] ARM: shmobile: Remove unused shmobile_smp_init_cpus()
-Message-Id: <c4e1e64d2b6a921a57629ede635f81f5d2882543.1380532277.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 03 Oct 2013 04:11:05 +0000
+Subject: Re: [PATCH 02/03] ARM: shmobile: r7s72100 SCIF support
+Message-Id: <20131003041104.GD7925@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380532277.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
+References: <20130918201101.6319.97667.sendpatchset@w520>
+ <20130918201120.6319.59533.sendpatchset@w520>
+In-Reply-To: <20130918201120.6319.59533.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thu, Sep 19, 2013 at 05:11:20AM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Add SCIF serial port support to the r7s72100 SoC by
+> adding platform devices for SCIF0 -> SCIF7 together with
+> clock bindings. DT device description is excluded at
+> this point since such bindings are still under
+> development.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Remove shmobile_smp_init_cpus() since all SMP platforms in
-mach-shmobile now rely on DT for CPU core description instead
-of for instance determining number of cores from the SCU.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/common.h |  1 -
- arch/arm/mach-shmobile/platsmp.c             | 15 ---------------
- 2 files changed, 16 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 1ed155e..26eaff1 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -40,7 +40,6 @@ static inline int shmobile_cpuidle_init(void) { return 0; }
- #endif
- 
- extern void __iomem *shmobile_scu_base;
--extern void shmobile_smp_init_cpus(unsigned int ncores);
- 
- static inline void __init shmobile_init_late(void)
- {
-diff --git a/arch/arm/mach-shmobile/platsmp.c b/arch/arm/mach-shmobile/platsmp.c
-index 3741562..9ebc246 100644
---- a/arch/arm/mach-shmobile/platsmp.c
-+++ b/arch/arm/mach-shmobile/platsmp.c
-@@ -11,25 +11,10 @@
-  * published by the Free Software Foundation.
-  */
- #include <linux/init.h>
--#include <linux/smp.h>
- #include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <mach/common.h>
- 
--void __init shmobile_smp_init_cpus(unsigned int ncores)
--{
--	unsigned int i;
--
--	if (ncores > nr_cpu_ids) {
--		pr_warn("SMP: %u cores greater than maximum (%u), clipping\n",
--			ncores, nr_cpu_ids);
--		ncores = nr_cpu_ids;
--	}
--
--	for (i = 0; i < ncores; i++)
--		set_cpu_possible(i, true);
--}
--
- extern unsigned long shmobile_smp_fn[];
- extern unsigned long shmobile_smp_arg[];
- extern unsigned long shmobile_smp_mpidr[];
--- 
-1.8.4
-
+Thanks, I have queued this up in the soc3 branch.
+It should make it into v3.13 but if not I'll rename the branch
+soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
