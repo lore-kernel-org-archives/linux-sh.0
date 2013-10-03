@@ -1,52 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 01 Oct 2013 08:12:48 +0000
-Subject: [PATCH 06/10] ARM: shmobile: r8a7791 Arch timer workaround
-Message-Id: <20131001081248.4136.41380.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 03 Oct 2013 03:45:10 +0000
+Subject: Re: [PATCH 06/10] ARM: shmobile: r8a7791 Arch timer workaround
+Message-Id: <20131003034506.GE28463@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131001081143.4136.46925.sendpatchset@w520>
-In-Reply-To: <20131001081143.4136.46925.sendpatchset@w520>
+ <20131001081248.4136.41380.sendpatchset@w520>
+In-Reply-To: <20131001081248.4136.41380.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Oct 01, 2013 at 05:12:48PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Make use of the R-Car Gen2 arch timer workaround on r8a7791.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Make use of the R-Car Gen2 arch timer workaround on r8a7791.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Thanks, I have queued this up in the soc3 branch.
+It should make it into v3.13 but if not I'll rename the branch
+soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
 
- arch/arm/mach-shmobile/Makefile        |    2 +-
- arch/arm/mach-shmobile/setup-r8a7791.c |    2 ++
- 2 files changed, 3 insertions(+), 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-10-01 16:32:25.000000000 +0900
-@@ -16,7 +16,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
--obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- 
- # Clock objects
---- 0004/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2013-10-01 16:34:15.000000000 +0900
-@@ -27,6 +27,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7791.h>
-+#include <mach/rcar-gen2.h>
- #include <asm/mach/arch.h>
- 
- #define SCIF_COMMON(scif_type, baseaddr, irq)			\
-@@ -175,6 +176,7 @@ static const char *r8a7791_boards_compat
- 
- DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
- 	.init_early	= r8a7791_init_early,
-+	.init_time	= rcar_gen2_timer_init,
- 	.dt_compat	= r8a7791_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
+The soc3 branch includes soc code previously queued up for v3.13
+and a merge with renesas-smp-for-v3.13 which I sent a pull request for
+a few days ago. The reason for the merge is to reduce conflicts.
