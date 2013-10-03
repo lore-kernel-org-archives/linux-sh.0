@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 03 Oct 2013 04:53:26 +0000
+Date: Thu, 03 Oct 2013 05:03:25 +0000
 Subject: Re: [PATCH 2/6] arm: shmobile: lager: Add USBHS support
-Message-Id: <87bo37nef7.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87a9irndye.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1380652251-8143-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1380652251-8143-3-git-send-email-valentine.barshak@cogentembedded.com>
@@ -11,60 +11,66 @@ Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi Valentine
+Hi Magnus, Valentine
 
-> >> +static int usbhs_hardware_init(struct platform_device *pdev)
+> >> +static int usbhs_power_on(void __iomem *base)
 > >> +{
-> >> +	struct usbhs_private *priv = usbhs_get_priv(pdev);
-> >> +	struct clk *clk;
+> >> +       u32 val;
 > >> +
-> >> +	clk = clk_get(NULL, "hsusb");
-> >> +	if (IS_ERR(clk))
-> >> +		return -ENODEV;
+> >> +       val = ioread32(base + USBHS_UGCTRL_REG) & ~USBHS_UGCTRL_PLLRESET;
+> >> +       iowrite32(val, base + USBHS_UGCTRL_REG);
+> >> +
+> >> +       val = ioread16(base + USBHS_LPSTS_REG) | USBHS_LPSTS_SUSPM;
+> >> +       iowrite16(val, base + USBHS_LPSTS_REG);
+> >> +
+> >> +       /*
+> >> +        * The manual suggests to check PLL lock status in the UGSTS
+> >> +        * register before enabling connect, however, it is always 0.
+> >> +        */
+> >> +       val = ioread32(base + USBHS_UGCTRL_REG) | USBHS_UGCTRL_CONNECT;
+> >> +       iowrite32(val, base + USBHS_UGCTRL_REG);
+> >> +       return 0;
+> >> +}
+> >> +
+> >> +static int usbhs_power_off(void __iomem *base)
+> >> +{
+> >> +       u32 val;
+> >> +
+> >> +       val = ioread32(base + USBHS_UGCTRL_REG) & ~USBHS_UGCTRL_CONNECT;
+> >> +       iowrite32(val, base + USBHS_UGCTRL_REG);
+> >> +
+> >> +       val = ioread16(base + USBHS_LPSTS_REG) & ~USBHS_LPSTS_SUSPM;
+> >> +       iowrite16(val, base + USBHS_LPSTS_REG);
+> >> +
+> >> +       val = ioread32(base + USBHS_UGCTRL_REG) | USBHS_UGCTRL_PLLRESET;
+> >> +       iowrite32(val, base + USBHS_UGCTRL_REG);
+> >> +       return 0;
+> >> +}
+> >> +
+> >> +static int usbhs_power_ctrl(struct platform_device *pdev,
+> >> +                               void __iomem *base, int enable)
+> >> +{
+> >> +       if (enable)
+> >> +               return usbhs_power_on(base);
+> >> +
+> >> +       return usbhs_power_off(base);
+> >> +}
 > >
-> > It is automatically enable/disabled by driver
-> > if MSTP704 clock name was "renesas_usbhs".
+> > ... to here it looks like this is USBHS support code for the r8a7790
+> > SoC, not the lager board.
+> >
+> > Have you considered putting these SoC specific bits into drivers/usb/...
+> >
 > 
-> The reason I did not bind usbhs clock to renesas_usbhs device is because
-> the same clock is also used by the lager_add_usb_devices() function in 
-> the next patches. We need that since the global USB settings that affect 
-> USBHS/USBSS and PCI USB host channel sharing are done in the USBHS 
-> UGCTRL2 register. So we need this clock even if the renesas_usbhs driver 
-> is disabled. IIUC, biding it to "renesas_usbhs" device would make it 
-> impossible to use the clock if renesas_usbhs device is not registered.
+> I'll try to add device id table and move it to renesas_usbhs driver.
+> Hope the "renesas_usbhs_rcar_h2" device name is not too long.
 
-I understand your situation, but you can use renesas_usbhs binded clock anyway ?
-As Laurent mentioned, pci-rcar-gen2 care about it in driver ?
-Maybe callback function is nice solution in this situation ?
-Like this
+Unfortunately, I can't agree this idea.
+Renesas USB sometimes has this kind of "SoC specific special initialization",
+not only r8a7790, but other SoC have it too, and, these doesn't have compatibility.
+Some SoC need special GPIO setting, some SoC need special clock setting etc...
 
---- clock --------------
-  CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-  CLKDEV_ICK_ID("hsusb", "pci-rcar-gen2", &mstp_clks[MSTP704]),
-
---- platform -----------
-int rcar_pci_hw_init(struct platform_device *pdev)
-{
-        clk = clk_get("hsusb", pdev->dev);
-        if (IS_ERR(clk))
-                 return -EIO;
-
-        clk_enable(clk);
-        clk_put(clk);
-
-        ...
-
-        return 0;
-}
-
---- driver ---
-static int __init rcar_pci_probe(struct platform_device *pdev)
-{
-        ...
-        if (info->hw_init)
-             ret = info->hw_init(pdev);
-        ...
-}
+This is the main reason why renesas_usbhs driver has callback functions.
 
 Best regards
 ---
