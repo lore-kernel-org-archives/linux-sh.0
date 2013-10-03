@@ -1,42 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Oct 2013 05:58:42 +0000
-Subject: [PATCH 4/7] ARM: shmobile: sh73a0: don't use named resource for TMU
-Message-Id: <871u3wxq0h.wl%kuninori.morimoto.gx@renesas.com>
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Thu, 03 Oct 2013 15:11:02 +0000
+Subject: [PATCH V2 Resend 68/92] cpufreq: sh: don't initialize part of policy that is set by core too
+Message-Id: <b7c0951e58cf6aa9895d23c496a7db2ca266b73a.1380783079.git.viresh.kumar@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1380783079.git.viresh.kumar@linaro.org>
+In-Reply-To: <cover.1380783079.git.viresh.kumar@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: rjw@sisk.pl
+Cc: cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, Viresh Kumar <viresh.kumar@linaro.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-sh_tmu driver doesn't care resource name.
+Many common initializations of struct policy are moved to core now and hence
+this driver doesn't need to do it. This patch removes such code.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Most recent of those changes is to call ->get() in the core after calling
+->init().
+
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/cpufreq/sh-cpufreq.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 22de174..b7ce68e 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -273,7 +273,7 @@ static struct sh_timer_config tmu00_platform_data = {
- };
+diff --git a/drivers/cpufreq/sh-cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
+index 91c6446..018348b 100644
+--- a/drivers/cpufreq/sh-cpufreq.c
++++ b/drivers/cpufreq/sh-cpufreq.c
+@@ -114,8 +114,6 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
+ 		return PTR_ERR(cpuclk);
+ 	}
  
- static struct resource tmu00_resources[] = {
--	[0] = DEFINE_RES_MEM_NAMED(0xfff60008, 0xc, "TMU00"),
-+	[0] = DEFINE_RES_MEM(0xfff60008, 0xc),
- 	[1] = {
- 		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
- 		.flags	= IORESOURCE_IRQ,
-@@ -298,7 +298,7 @@ static struct sh_timer_config tmu01_platform_data = {
- };
- 
- static struct resource tmu01_resources[] = {
--	[0] = DEFINE_RES_MEM_NAMED(0xfff60014, 0xc, "TMU00"),
-+	[0] = DEFINE_RES_MEM(0xfff60014, 0xc),
- 	[1] = {
- 		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
- 		.flags	= IORESOURCE_IRQ,
+-	policy->cur = sh_cpufreq_get(cpu);
+-
+ 	freq_table = cpuclk->nr_freqs ? cpuclk->freq_table : NULL;
+ 	if (freq_table) {
+ 		int result;
 -- 
-1.7.9.5
+1.7.12.rc2.18.g61b472e
 
