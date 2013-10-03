@@ -1,45 +1,20 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 29 Oct 2013 08:57:30 +0000
-Subject: [PATCH 1/2] ARM: shmobile: lager: set .debounce_interval
-Message-Id: <1383037051-21427-2-git-send-email-horms+renesas@verge.net.au>
+From: Aijaz Lending <yin01@aijaz527.onmicrosoft.com>
+Date: Thu, 03 Oct 2013 20:16:20 +0000
+Subject: looking for loan
+Message-Id: <4f3bb785-6618-4e83-960b-88ee5ed0668c@HKXPR02MB213.apcprd02.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383037051-21427-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1383037051-21427-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Do you have a firm or company that need loan to start up a business or need,personal loan, Debt consolidation? For more information,Contact us now for a guarantee loan with low interest rate. We will provide you with loan to meet your needs. For more information contact us with the following information's.
+Full name:
+country:
+Address:
+Phone Number:
+Amount needed:
+Duration of loan:
 
-In R-Car GPIO hardware block, 'chattering removal' feature can be
-enabled on GPIO-n-[3:0] pins, but it's not supported on rest of pins
-GPIO-n-[31:4].
-
-Set an appropriate debounce interval, instead.  We could confirm that
-spurious/unnecessary GPIO interrupts are prevented by this settings.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-lager.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 78a31b6..fcf06fd 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -120,7 +120,8 @@ static const struct gpio_led_platform_data lager_leds_pdata __initconst = {
- 
- /* GPIO KEY */
- #define GPIO_KEY(c, g, d, ...) \
--	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
-+	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
-+	  .debounce_interval = 20 }
- 
- static struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
--- 
-1.8.4
-
+sg.loan.sg@outlook.com
+Kind regards
