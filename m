@@ -1,7 +1,7 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 03 Oct 2013 09:42:26 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 03 Oct 2013 09:47:04 +0000
 Subject: Re: [PATCH 2/6] arm: shmobile: lager: Add USBHS support
-Message-Id: <524D3C02.30201@cogentembedded.com>
+Message-Id: <6394987.Uanypf6pjs@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1380652251-8143-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1380652251-8143-3-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,48 +10,69 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 10/03/2013 01:01 PM, Magnus Damm wrote:
-> Hi Valentine,
->
-> On Thu, Oct 3, 2013 at 7:52 AM, Valentine
-> <valentine.barshak@cogentembedded.com> wrote:
->> On 10/02/2013 04:18 AM, Magnus Damm wrote:
->>> Have you considered putting these SoC specific bits into drivers/usb/...
->>
->> I'll try to add device id table and move it to renesas_usbhs driver.
->
-> Sounds good, thank you!
+Hi Morimoto-san,
 
-Looks like Morimoto-san doesn't agree with that.
+On Wednesday 02 October 2013 21:53:26 Kuninori Morimoto wrote:
+> Hi Valentine
+> 
+> > >> +static int usbhs_hardware_init(struct platform_device *pdev)
+> > >> +{
+> > >> +	struct usbhs_private *priv = usbhs_get_priv(pdev);
+> > >> +	struct clk *clk;
+> > >> +
+> > >> +	clk = clk_get(NULL, "hsusb");
+> > >> +	if (IS_ERR(clk))
+> > >> +		return -ENODEV;
+> > > 
+> > > It is automatically enable/disabled by driver
+> > > if MSTP704 clock name was "renesas_usbhs".
+> > 
+> > The reason I did not bind usbhs clock to renesas_usbhs device is because
+> > the same clock is also used by the lager_add_usb_devices() function in
+> > the next patches. We need that since the global USB settings that affect
+> > USBHS/USBSS and PCI USB host channel sharing are done in the USBHS
+> > UGCTRL2 register. So we need this clock even if the renesas_usbhs driver
+> > is disabled. IIUC, biding it to "renesas_usbhs" device would make it
+> > impossible to use the clock if renesas_usbhs device is not registered.
+> 
+> I understand your situation, but you can use renesas_usbhs binded clock
+> anyway ? As Laurent mentioned, pci-rcar-gen2 care about it in driver ?
+> Maybe callback function is nice solution in this situation ?
+> Like this
+> 
+> --- clock --------------
+>   CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+>   CLKDEV_ICK_ID("hsusb", "pci-rcar-gen2", &mstp_clks[MSTP704]),
+> 
+> --- platform -----------
+> int rcar_pci_hw_init(struct platform_device *pdev)
+> {
+>         clk = clk_get("hsusb", pdev->dev);
+>         if (IS_ERR(clk))
+>                  return -EIO;
+> 
+>         clk_enable(clk);
+>         clk_put(clk);
+> 
+>         ...
+> 
+>         return 0;
+> }
+> 
+> --- driver ---
+> static int __init rcar_pci_probe(struct platform_device *pdev)
+> {
+>         ...
+>         if (info->hw_init)
+>              ret = info->hw_init(pdev);
+>         ...
+> }
 
->
->> Hope the "renesas_usbhs_rcar_h2" device name is not too long.
->
-> Please use SoC model string "r8a7790" for DT like other drivers, as an
-> example see the following commit:
+The problem with such a mechanism is that it only works with platform data, as 
+we don't have callback functions in DT.
 
-OK, but I wasn't going to make renesas_usbhs a DT driver at least for now.
-IIUC, it's going to involve a rework of USBHS bindings for other boards.
-which have different platform code for PHY setup.
-I thought this had to be a separate work.
+-- 
+Regards,
 
-Do you want me to make it DT-compatible only for r8a7790?
+Laurent Pinchart
 
-I planned to add a platform device id table for now. Something like
-"usbhs-rcar_h2" for r8a7790 and "renesas_usbhs" for other SoCs.
-
->
-> commit df1d0584b2292df5b9d576d7e5246e94616220a1
-> Author: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Date:   Thu Aug 29 17:14:49 2013 +0200
->
->      ARM: shmobile: update SDHI DT compatibility string to the
-> <unit>-<soc> format
->
-> Cheers,
->
-> / magnus
->
-
-Thanks,
-Val.
