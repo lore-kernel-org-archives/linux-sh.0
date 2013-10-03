@@ -1,122 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 01 Oct 2013 08:13:16 +0000
-Subject: [PATCH 09/10] ARM: shmobile: r8a7791 SMP support
-Message-Id: <20131001081316.4136.4137.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 03 Oct 2013 03:47:13 +0000
+Subject: Re: [PATCH 09/10] ARM: shmobile: r8a7791 SMP support
+Message-Id: <20131003034712.GG28463@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131001081143.4136.46925.sendpatchset@w520>
-In-Reply-To: <20131001081143.4136.46925.sendpatchset@w520>
+ <20131001081316.4136.4137.sendpatchset@w520>
+In-Reply-To: <20131001081316.4136.4137.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Oct 01, 2013 at 05:13:16PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Tie in the APMU SMP code on r8a7791. When used together
+> with the secondary CPU device node and smp_ops in the
+> board specific code then this will allow use of the
+> two Cortex-A15 cores in the r8a7791 SoC.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/mach-shmobile/Makefile               |    1 
+>  arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 
+>  arch/arm/mach-shmobile/setup-r8a7791.c        |    1 
+>  arch/arm/mach-shmobile/smp-r8a7791.c          |   62 +++++++++++++++++++++++++
+>  4 files changed, 65 insertions(+)
 
-Tie in the APMU SMP code on r8a7791. When used together
-with the secondary CPU device node and smp_ops in the
-board specific code then this will allow use of the
-two Cortex-A15 cores in the r8a7791 SoC.
+Thanks, I have queued this up in the soc3 branch.
+It should make it into v3.13 but if not I'll rename the branch
+soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 
- arch/arm/mach-shmobile/setup-r8a7791.c        |    1 
- arch/arm/mach-shmobile/smp-r8a7791.c          |   62 +++++++++++++++++++++++++
- 4 files changed, 65 insertions(+)
-
---- 0007/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-10-01 16:38:50.000000000 +0900
-@@ -38,6 +38,7 @@ smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
-+smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
- 
- # IRQ objects
---- 0002/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7791.h	2013-10-01 16:38:50.000000000 +0900
-@@ -5,5 +5,6 @@ void r8a7791_add_standard_devices(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_init_early(void);
-+extern struct smp_operations r8a7791_smp_ops;
- 
- #endif /* __ASM_R8A7791_H__ */
---- 0007/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2013-10-01 16:38:50.000000000 +0900
-@@ -175,6 +175,7 @@ static const char *r8a7791_boards_compat
- };
- 
- DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
-+	.smp		= smp_ops(r8a7791_smp_ops),
- 	.init_early	= r8a7791_init_early,
- 	.init_time	= rcar_gen2_timer_init,
- 	.dt_compat	= r8a7791_boards_compat_dt,
---- /dev/null
-+++ work/arch/arm/mach-shmobile/smp-r8a7791.c	2013-10-01 16:38:50.000000000 +0900
-@@ -0,0 +1,62 @@
-+/*
-+ * SMP support for r8a7791
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/smp.h>
-+#include <linux/io.h>
-+#include <asm/smp_plat.h>
-+#include <mach/common.h>
-+#include <mach/r8a7791.h>
-+
-+#define RST		0xe6160000
-+#define CA15BAR		0x0020
-+#define CA15RESCNT	0x0040
-+#define RAM		0xe6300000
-+
-+static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
-+{
-+	void __iomem *p;
-+	u32 bar;
-+
-+	/* let APMU code install data related to shmobile_boot_vector */
-+	shmobile_smp_apmu_prepare_cpus(max_cpus);
-+
-+	/* RAM for jump stub, because BAR requires 256KB aligned address */
-+	p = ioremap_nocache(RAM, shmobile_boot_size);
-+	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
-+	iounmap(p);
-+
-+	/* setup reset vectors */
-+	p = ioremap_nocache(RST, 0x63);
-+	bar = (RAM >> 8) & 0xfffffc00;
-+	writel_relaxed(bar, p + CA15BAR);
-+	writel_relaxed(bar | 0x10, p + CA15BAR);
-+
-+	/* enable clocks to all CPUs */
-+	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
-+		       p + CA15RESCNT);
-+	iounmap(p);
-+}
-+
-+struct smp_operations r8a7791_smp_ops __initdata = {
-+	.smp_prepare_cpus	= r8a7791_smp_prepare_cpus,
-+	.smp_boot_secondary	= shmobile_smp_apmu_boot_secondary,
-+#ifdef CONFIG_HOTPLUG_CPU
-+	.cpu_disable		= shmobile_smp_cpu_disable,
-+	.cpu_die		= shmobile_smp_apmu_cpu_die,
-+	.cpu_kill		= shmobile_smp_apmu_cpu_kill,
-+#endif
-+};
+The soc3 branch includes soc code previously queued up for v3.13
+and a merge with renesas-smp-for-v3.13 which I sent a pull request for
+a few days ago. The reason for the merge is to reduce conflicts.
