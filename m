@@ -1,77 +1,34 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Tue, 01 Oct 2013 20:34:34 +0000
-Subject: Re: [PATCH 01/10] pwm-backlight: Refactor backlight power on/off
-Message-Id: <20131001203430.GA9201@ulmo.nvidia.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="DocE+STaALJfprDB"
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 03 Oct 2013 04:00:31 +0000
+Subject: Re: [PATCH 1/2] rcar-hpbdma: remove shdma_free_irq() calls
+Message-Id: <20131003040031.GA7925@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
- <1379972467-11243-2-git-send-email-treding@nvidia.com>
- <524B13BF.7080902@wwwdotorg.org>
-In-Reply-To: <524B13BF.7080902@wwwdotorg.org>
-To: linux-arm-kernel@lists.infradead.org
+References: <201309260228.37765.sergei.shtylyov@cogentembedded.com>
+ <20130926021417.GC18396@verge.net.au>
+In-Reply-To: <20130926021417.GC18396@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
+On Thu, Sep 26, 2013 at 11:14:17AM +0900, Simon Horman wrote:
+> On Thu, Sep 26, 2013 at 02:28:37AM +0400, Sergei Shtylyov wrote:
+> > Commit c1c63a14f4f2419d093acd7164eccdff315baa86 (DMA: shdma: switch to managed
+> > resource allocation) got rid of shdma_free_irq() but  unfortunately got merged
+> > later than commit c4f6c41ba790bbbfcebb4c47a709ac8ff1fe1af9 (dma: add driver for
+> > R-Car HPB-DMAC), so that the HPB-DMAC driver retained the calls and got broken:
+> > 
+> > drivers/dma/sh/rcar-hpbdma.c: In function `hpb_dmae_alloc_chan_resources':
+> > drivers/dma/sh/rcar-hpbdma.c:435: error: implicit declaration of function
+> > `shdma_free_irq'
+> > 
+> > Fix this compilation error by removing the remaining shdma_free_irq() calls.
+> 
+> Tested-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> > Reported-by: Simon Horman <horms@verge.net.au>
+> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
---DocE+STaALJfprDB
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Tue, Oct 01, 2013 at 12:26:07PM -0600, Stephen Warren wrote:
-> On 09/23/2013 03:40 PM, Thierry Reding wrote:
-> > In preparation for adding an optional regulator and enable GPIO to the
-> > driver, split the power on and power off sequences into separate
-> > functions to reduce code duplication at the multiple call sites.
->=20
-> > diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight=
-/pwm_bl.c
->=20
-> > +static void pwm_backlight_power_off(struct pwm_bl_data *pb)
-> > +{
-> > +	pwm_disable(pb->pwm);
->=20
-> Both the call-sites you're replacing do the following before pwm_disable(=
-):
->=20
-> 		pwm_config(pb->pwm, 0, pb->period);
->=20
-> While I agree that probably shouldn't be necessary, I think it's at
-> least worth mentioning that in the commit description just to make it
-> obvious that it was a deliberate change. Splitting that change into a
-> separate patch might be reasonable in order to keep refactoring and
-> functional changes separate, although perhaps it's not worth it.
-
-Actually I'll add that back. I'm not sure exactly why I dropped it (it
-may just have been oversight) and there have been reports that some HW
-actually requires pwm_config(..., 0, ...) before pwm_disable() to turn
-off properly.
-
-> There are also a couple unrelated whitespace changes thrown in here.
-
-I think they increase readability, but I can certainly move them into a
-separate patch.
-
-Thierry
-
---DocE+STaALJfprDB
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.21 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSSzHWAAoJEN0jrNd/PrOhc4IP/A/8tzxD8ELDkkCzKhqGuLAZ
-TkfYFhVRUEccTBx1sn/ROmqYx5jcMwEeTuKb1QvrTozzwLW6dW7tVvz2QWr0Nxpk
-eFx99F2kmNvWNrf2in0wtmGRxBFJUydUWwKcagiVO+C4wl36tCWUaP5hMrlDbEte
-j7k6ydMQDZDxZuVcN/qZ+vOeIN5zdI7KeQtS/CbLAXpJtLCJr6W8dIm/+sJmt+MU
-VpkF/DxnK2VhEwNbxRS/irOnoIs9Kgh1PRPQFciNUq2ab7uy9ADUSlosUEp2Jhvw
-ZLNGsDeUm1zD4XYgBDVMJuU9hSeMneEUkdEQmJwih5gEDUs3NhyDzxZ00pM6IwQf
-g/Dw2ewFx9l7+qHEvxxnOYWdeSfal+M+rjfAkSz7jriypXDJgvYIToSQMj3rRxVV
-6G8AFe/+VaH/oKsKixk0d3aPhZQtNHVjQaShbJ8C7EvpowhkLFVQQ7MVMTQ7lWpS
-Rm3MVeP7tN39RtIC0svt66Vuq/OjxOW8xQEKS68USzWZVcSrgYSL6AEOc5e/nf73
-/IUabT+3ng/s9MmWcYNx01OEKAdDhegt5vcfAweX4ntcezcXgxkTXXHIH4emuymb
-ZS+0RIZ5QFWS0aUeAQ3CxjoEp4a660oA46LbG13viblpQw0ZB0xL17chLUwRCeYj
-UIuGk6yoOioDeG8g0A2J
-=zpgL
------END PGP SIGNATURE-----
-
---DocE+STaALJfprDB--
+Vinod, could you consider taking this and the following patch
+as a fix for v3.12?
