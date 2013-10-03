@@ -1,40 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 28 Oct 2013 23:46:58 +0000
-Subject: [PATCH 10/19] mtd: sh_flctl: Enable the driver on all ARM platforms
-Message-Id: <1383004027-25036-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 03 Oct 2013 04:19:30 +0000
+Subject: Re: [PATCH 03/03] ARM: shmobile: Genmai support
+Message-Id: <20131003041929.GJ7925@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20130918201101.6319.97667.sendpatchset@w520>
+ <20130918201129.6319.80740.sendpatchset@w520>
+In-Reply-To: <20130918201129.6319.80740.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI and increase build testing coverage.
+On Thu, Sep 19, 2013 at 05:11:29AM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Genmai base board support making use of 128 MiB of memory,
+> the r7s7211 SoC with the SCIF2 serial port and CA9 core.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/boot/dts/Makefile            |    1 
+>  arch/arm/boot/dts/r7s72100-genmai.dts |   31 +++++++++++++++++++++++
 
-Cc: David Woodhouse <dwmw2@infradead.org>
-Cc: linux-mtd@lists.infradead.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/mtd/nand/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Please consider adding the dts file in a separate patch next time.
 
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index d885298..f491f5b 100644
---- a/drivers/mtd/nand/Kconfig
-+++ b/drivers/mtd/nand/Kconfig
-@@ -486,7 +486,7 @@ config MTD_NAND_MXC
- 
- config MTD_NAND_SH_FLCTL
- 	tristate "Support for NAND on Renesas SuperH FLCTL"
--	depends on SUPERH || ARCH_SHMOBILE
-+	depends on SUPERH || ARM
- 	help
- 	  Several Renesas SuperH CPU has FLCTL. This option enables support
- 	  for NAND Flash using FLCTL.
--- 
-1.8.1.5
+>  arch/arm/mach-shmobile/Kconfig        |    5 +++
+>  arch/arm/mach-shmobile/Makefile       |    1 
+>  arch/arm/mach-shmobile/Makefile.boot  |    1 
+>  arch/arm/mach-shmobile/board-genmai.c |   43 +++++++++++++++++++++++++++++++++
+>  6 files changed, 82 insertions(+)
 
+Thanks, I have queued this up in the boards3 branch.
+It should make it into v3.13 but if not I'll rename the branch
+soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+
+The boards3 branch includes boards code previously queued up for v3.13
+and a merge with soc changes previously queued up for v3.13. The reason
+for the merge is to provide various build and run-time dependencies
+including the r7s72100 SoC code which this board code uses.
