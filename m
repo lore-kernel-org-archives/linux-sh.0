@@ -1,50 +1,21 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Oct 2013 08:40:20 +0000
-Subject: [PATCH 4/4 v2] ARM: shmobile: marzen: fixup SMSC IRQ number on DTS
-Message-Id: <8761tgysjy.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 03 Oct 2013 04:15:25 +0000
+Subject: Re: [PATCH 4/4 v2] ARM: shmobile: marzen: fixup SMSC IRQ number on DTS
+Message-Id: <20131003041523.GH7925@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <8761tgysjy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8761tgysjy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch fixup miss-setting of SMSC IRQ number.
+On Wed, Oct 02, 2013 at 01:40:20AM -0700, Kuninori Morimoto wrote:
+> This patch fixup miss-setting of SMSC IRQ number.
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
 
- - patch was splited, only dts
-
- arch/arm/boot/dts/r8a7779-marzen-reference.dts |    8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 6d55083..ab4110a 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -42,8 +42,8 @@
- 		pinctrl-names = "default";
- 
- 		phy-mode = "mii";
--		interrupt-parent = <&gic>;
--		interrupts = <0 28 0x4>;
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <1 0>; /* IRQ1: hwirq 1 on irqpin0 */
- 		reg-io-width = <4>;
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
-@@ -63,6 +63,10 @@
- 	};
- };
- 
-+&irqpin0 {
-+	status = "okay";
-+};
-+
- &pfc {
- 	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
- 	pinctrl-names = "default";
--- 
-1.7.9.5
-
+Thanks, I have queued this up in the dt3 branch.
+It should make it into v3.13 but if not I'll rename the branch
+dt after rebasing it on v3.13-rcX which will then be targeted at v3.14.
