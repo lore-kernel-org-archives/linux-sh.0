@@ -1,43 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 31 Oct 2013 12:35:07 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
-Message-Id: <1742342.FabnQNQ2BC@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Oct 2013 06:44:15 +0000
+Subject: [PATCH 2/4] ARM: shmobile: r8a7778: add I2C support on DTSI
+Message-Id: <87hacxzgar.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383066834-25956-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383066834-25956-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87d2qsth2z.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d2qsth2z.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
-On Thursday 31 October 2013 14:36:06 Simon Horman wrote:
-> On Tue, Oct 29, 2013 at 06:13:54PM +0100, Laurent Pinchart wrote:
-> > From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> > 
-> > When enabling a module clock by clearing its bit in the MSTP control
-> > register, the CPG requires waiting for the status register to signal
-> > that the clock has started. Failure to do so will result in returning
-> > from the clk_enable() call with the clock potientially still disabled,
-> > leading to various race conditions and difficult to debug errors.
-> > 
-> > Enable status wait for all MSTP clocks on the r8a7790.
-> 
-> Is this patch independent of patch 1 of this series?
-
-Yes it is. The SH_CLK_MSTP32_STS macro is defined in patch 1/2.
-
-> > Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  arch/arm/mach-shmobile/clock-r8a7790.c | 86 ++++++++++++++++-------------
-> >  1 file changed, 47 insertions(+), 39 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 02f82282..573ec83 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -124,4 +124,44 @@
+ 		interrupts = <0 61 4>;
+ 		status = "disabled";
+ 	};
++
++	i2c0: i2c@ffc70000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7778";
++		reg = <0xffc70000 0x1000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 67 0x4>;
++		status = "disabled";
++	};
++
++	i2c1: i2c@ffc71000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7778";
++		reg = <0xffc71000 0x1000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 78 0x4>;
++		status = "disabled";
++	};
++
++	i2c2: i2c@ffc72000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7778";
++		reg = <0xffc72000 0x1000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 76 0x4>;
++		status = "disabled";
++	};
++
++	i2c3: i2c@ffc73000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7778";
++		reg = <0xffc73000 0x1000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 77 0x4>;
++		status = "disabled";
++	};
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
