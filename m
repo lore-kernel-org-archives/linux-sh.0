@@ -1,74 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 02 Oct 2013 08:06:06 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: marzen: enable INTC IRQ and fixup SMSC IRQ number
-Message-Id: <20131002080604.GD28462@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Oct 2013 06:43:54 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7778: add I2C clock for DT
+Message-Id: <87ioxdzgbc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201308090144.03912.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201308090144.03912.sergei.shtylyov@cogentembedded.com>
+References: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ehb8th3c.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Oct 01, 2013 at 11:20:01PM -0700, Kuninori Morimoto wrote:
-> This patch adds missing INTC IRQ settings,
-> and fixup miss-setting of SMSC IRQ number.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-Please split this into two patches.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 3590cd5..e043715 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -184,9 +184,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP100]), /* USB FUNC */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("ffc70000.i2c", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("ffc71000.i2c", &mstp_clks[MSTP029]), /* I2C1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("ffc72000.i2c", &mstp_clks[MSTP028]), /* I2C2 */
+ 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
++	CLKDEV_DEV_ID("ffc73000.i2c", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+-- 
+1.7.9.5
 
-1. A DT patch that modifies r8a7779-marzen-reference.dts
-2. A board patch that modifies board-marzen-reference.c
-
-> ---
->  arch/arm/boot/dts/r8a7779-marzen-reference.dts  |    8 ++++++--
->  arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
->  2 files changed, 7 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> index 6d55083..ab4110a 100644
-> --- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> @@ -42,8 +42,8 @@
->  		pinctrl-names = "default";
->  
->  		phy-mode = "mii";
-> -		interrupt-parent = <&gic>;
-> -		interrupts = <0 28 0x4>;
-> +		interrupt-parent = <&irqpin0>;
-> +		interrupts = <1 0>; /* IRQ1: hwirq 1 on irqpin0 */
->  		reg-io-width = <4>;
->  		vddvario-supply = <&fixedregulator3v3>;
->  		vdd33a-supply = <&fixedregulator3v3>;
-> @@ -63,6 +63,10 @@
->  	};
->  };
->  
-> +&irqpin0 {
-> +	status = "okay";
-> +};
-> +
->  &pfc {
->  	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
->  	pinctrl-names = "default";
-> diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-> index 3f4250a..2773936 100644
-> --- a/arch/arm/mach-shmobile/board-marzen-reference.c
-> +++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-> @@ -28,6 +28,7 @@
->  static void __init marzen_init(void)
->  {
->  	r8a7779_add_standard_devices_dt();
-> +	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
->  }
->  
->  static const char *marzen_boards_compat_dt[] __initdata = {
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
