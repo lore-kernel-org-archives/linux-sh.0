@@ -1,40 +1,49 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 29 Oct 2013 06:52:21 +0000
-Subject: [PATCH 2/3] rcar-hpbdma: initialise plane information when halted
-Message-Id: <87bo287en9.wl%kuninori.morimoto.gx@renesas.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 04 Oct 2013 14:20:52 +0000
+Subject: [PATCH] media: rcar_vin: Add preliminary r8a7790 support
+Message-Id: <1380896452-10687-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87k3hc189h.wl%kuninori.morimoto.gx@renesas.com>
-	<87eh747eoj.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87eh747eoj.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Koul, Vinod" <vinod.koul@intel.com>
-Cc: Simon <horms@verge.net.au>, Max Filippov <max.filippov@cogentembedded.com>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-kernel@vger.kernel.org
+To: linux-media@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org
 
-Plane information should be initialized when halted.
-It may restart from the wrong plane without this patch.
-
-Reviewed-by: Max Filippov <max.filippov@cogentembedded.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- drivers/dma/sh/rcar-hpbdma.c |    3 +++
- 1 file changed, 3 insertions(+)
+ drivers/media/platform/soc_camera/rcar_vin.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
-index 496180a..19af32d 100644
---- a/drivers/dma/sh/rcar-hpbdma.c
-+++ b/drivers/dma/sh/rcar-hpbdma.c
-@@ -286,6 +286,9 @@ static void hpb_dmae_halt(struct shdma_chan *schan)
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index d02a7e0..b21f777 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -105,6 +105,7 @@
+ #define VIN_MAX_HEIGHT		2048
  
- 	ch_reg_write(chan, HPB_DMAE_DCMDR_DQEND, HPB_DMAE_DCMDR);
- 	ch_reg_write(chan, HPB_DMAE_DSTPR_DMSTP, HPB_DMAE_DSTPR);
-+
-+	chan->plane_idx = 0;
-+	chan->first_desc = true;
- }
+ enum chip_id {
++	RCAR_H2,
+ 	RCAR_H1,
+ 	RCAR_M1,
+ 	RCAR_E1,
+@@ -300,7 +301,8 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		dmr = 0;
+ 		break;
+ 	case V4L2_PIX_FMT_RGB32:
+-		if (priv->chip = RCAR_H1 || priv->chip = RCAR_E1) {
++		if (priv->chip = RCAR_H2 || priv->chip = RCAR_H1 ||
++		    priv->chip = RCAR_E1) {
+ 			dmr = VNDMR_EXRGB;
+ 			break;
+ 		}
+@@ -1381,6 +1383,7 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
+ };
  
- static const struct hpb_dmae_slave_config *
+ static struct platform_device_id rcar_vin_id_table[] = {
++	{ "r8a7790-vin",  RCAR_H2 },
+ 	{ "r8a7779-vin",  RCAR_H1 },
+ 	{ "r8a7778-vin",  RCAR_M1 },
+ 	{ "uPD35004-vin", RCAR_E1 },
 -- 
-1.7.9.5
+1.8.3.1
 
