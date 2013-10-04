@@ -1,30 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 04:22:57 +0000
-Subject: Re: [PATCH 02/05] ARM: shmobile: Use KZM9D without reference for multiplatform
-Message-Id: <20131003042255.GN7925@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 04 Oct 2013 08:19:40 +0000
+Subject: [GIT PULL] Fifth Round of Renesas ARM based SoC fixes for v3.12
+Message-Id: <cover.1380874512.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131001103255.813.65710.sendpatchset@w520>
- <20131001103315.813.80581.sendpatchset@w520>
-In-Reply-To: <20131001103315.813.80581.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 01, 2013 at 07:33:15PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Change the multiplatform kconfig bits for KZM9D from
-> CONFIG_MACH_KZM9D_REFERENCE into CONFIG_MACH_KZM9D
-> to match the non-multiplatform case.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/Kconfig  |   10 ++--------
->  arch/arm/mach-shmobile/Makefile |    4 ++++
->  2 files changed, 6 insertions(+), 8 deletions(-)
+Hi Kevin, Olof and Arnd,
 
-Thanks, I have queued this up in the boards3 branch.
-It should make it into v3.13 but if not I'll rename the branch
-soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+please consider this fifth Round of Renesas ARM based SoC fixes for v3.12.
+
+This pull request is based on renesas-fixes4-for-v3.12 which you have
+already pulled.
+
+
+The following changes since commit 3786f86b60833f32e3eeb016fcf8c324f8147e00:
+
+  ARM: shmobile: Remove #gpio-ranges-cells DT property (2013-09-22 21:28:18 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes5-for-v3.12
+
+for you to fetch changes up to 40fca03cae59cfd9b87142ca327abb8a4d386908:
+
+  ARM: shmobile: ape6evm: fix incorrect placement of __initdata tag (2013-10-01 12:53:19 +0900)
+
+----------------------------------------------------------------
+Fifth Round of Renesas ARM based SoC fixes for v3.12
+
+* Correct incorrect placement of __initdata tag in ape6evm board code
+
+----------------------------------------------------------------
+Bartlomiej Zolnierkiewicz (1):
+      ARM: shmobile: ape6evm: fix incorrect placement of __initdata tag
+
+ arch/arm/mach-shmobile/board-ape6evm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
