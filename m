@@ -1,69 +1,35 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Wed, 30 Oct 2013 19:42:52 +0000
-Subject: Re: [PATCH v7 0/5] clk: clock deregistration support
-Message-Id: <20131030194252.11662.92657@quantum>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Oct 2013 01:32:22 +0000
+Subject: [PATCH 6/7] ARM: shmobile: r8a7778: add MMCIF support on DTSI
+Message-Id: <87vc1dzuqk.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Quoting Sylwester Nawrocki (2013-10-29 12:51:03)
-> This patch series implements clock deregistration in the common clock
-> framework. Detailed changes are listed at each patch. I have included
-> an additional patch in this series for the omap3isp driver, required 
-> to avoid regressions.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-Taken into clk-next. Thanks for the fine rework!
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index a6308a3..02be72e 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -116,4 +116,12 @@
+ 		compatible = "renesas,pfc-r8a7778";
+ 		reg = <0xfffc000 0x118>;
+ 	};
++
++	mmcif: mmcif@ffe4e000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0xffe4e000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 61 4>;
++		status = "disabled";
++	};
+ };
+-- 
+1.7.9.5
 
-Regards,
-Mike
-
-> 
-> Changes since v5:
->  - fixed NULL clock handling in __clk_get(), __clk_put (patch 5/5).
-> 
-> Changes since v4:
->  - removed stray struct module forward declaration in patch 3/5.
-> 
-> Changes since v3:
->  - replaced WARN_ON() with WARN_ON_ONCE() in clk_nodrv_disable_unprepare()
->    callback.
-> 
-> Changes since v2:
->  - reordered the patches so the race condition is fixed before it can
->    actually cause any issues,
->  - fixed handling of NULL clock pointers in __clk_get(), __clk_put(),
->  - added patch adding actual asignment of clk->owner; more details are
->    discussed in that specific patch.
-> 
-> Changes since v1:
->  - moved of_clk_{lock, unlock}, __of_clk_get_from_provider() function
->    declaractions to a local header,
->  - renamed clk_dummy_* to clk_nodrv_*.
-> 
-> Sylwester Nawrocki (5):
->   omap3isp: Modify clocks registration to avoid circular references
->   clk: Provide not locked variant of of_clk_get_from_provider()
->   clkdev: Fix race condition in clock lookup from device tree
->   clk: Add common __clk_get(), __clk_put() implementations
->   clk: Implement clk_unregister()
-> 
->  arch/arm/include/asm/clkdev.h         |    2 +
->  arch/blackfin/include/asm/clkdev.h    |    2 +
->  arch/mips/include/asm/clkdev.h        |    2 +
->  arch/sh/include/asm/clkdev.h          |    2 +
->  drivers/clk/clk.c                     |  185 +++++++++++++++++++++++++++++++--
->  drivers/clk/clk.h                     |   16 +++
->  drivers/clk/clkdev.c                  |   12 ++-
->  drivers/media/platform/omap3isp/isp.c |   22 ++--
->  drivers/media/platform/omap3isp/isp.h |    1 +
->  include/linux/clk-private.h           |    5 +
->  include/linux/clkdev.h                |    5 +
->  11 files changed, 235 insertions(+), 19 deletions(-)
->  create mode 100644 drivers/clk/clk.h
-> 
-> -- 
-> 1.7.9.5
