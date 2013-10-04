@@ -1,109 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 04 Oct 2013 07:47:34 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 04 Oct 2013 08:25:42 +0000
 Subject: Re: [PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
-Message-Id: <19181221.pjTBb56TDE@avalon>
+Message-Id: <20131004082541.GA9988@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131001103255.813.65710.sendpatchset@w520>
-In-Reply-To: <20131001103255.813.65710.sendpatchset@w520>
+ <19181221.pjTBb56TDE@avalon>
+In-Reply-To: <19181221.pjTBb56TDE@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
-
-Thank you for the patches.
-
-On Tuesday 01 October 2013 19:32:55 Magnus Damm wrote:
-> ARM: shmobile: KZM9D Multiplatform update
+On Fri, Oct 04, 2013 at 09:47:34AM +0200, Laurent Pinchart wrote:
+> Hi Magnus,
 > 
-> [PATCH 01/05] ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
-> [PATCH 02/05] ARM: shmobile: Use KZM9D without reference for multiplatform
-> [PATCH 03/05] ARM: shmobile: Remove non-multiplatform KZM9D reference
-> support
-> [PATCH 04/05] ARM: shmobile: Let KZM9D multiplatform boot with KZM9D DTB
-> [PATCH 05/05] ARM: shmobile: Remove KDM9D reference DTS
-
-I've reviewed the patches and they look fine to me.
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-Does this call for the following patch on top of 05/05 ?
-
-From b167bcd3182f0310b91e502672547e58addf17ef Mon Sep 17 00:00:00 2001
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 4 Oct 2013 09:44:34 +0200
-Subject: [PATCH] ARM: shmobile: kzm9d-reference: Drop -reference compatible
- string
-
-The only system compatible string used for the KZM9D board is
-"renesas,kzm9d". Drop support for the old "renesas,kzm9d-reference"
-compatible string.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-kzm9d-reference.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-index 054d8d5..d2c6466 100644
---- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-@@ -34,7 +34,6 @@ static void __init kzm9d_add_standard_devices(void)
- 
- static const char *kzm9d_boards_compat_dt[] __initdata = {
- 	"renesas,kzm9d",
--	"renesas,kzm9d-reference",
- 	NULL,
- };
- 
-> This series updates mach-shmobile and the KZM9D board code to propose
-> a way forward for future CCF-enabled multiplatform board support.
+> Thank you for the patches.
 > 
-> With this series applied the following rules apply:
+> On Tuesday 01 October 2013 19:32:55 Magnus Damm wrote:
+> > ARM: shmobile: KZM9D Multiplatform update
+> > 
+> > [PATCH 01/05] ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
+> > [PATCH 02/05] ARM: shmobile: Use KZM9D without reference for multiplatform
+> > [PATCH 03/05] ARM: shmobile: Remove non-multiplatform KZM9D reference
+> > support
+> > [PATCH 04/05] ARM: shmobile: Let KZM9D multiplatform boot with KZM9D DTB
+> > [PATCH 05/05] ARM: shmobile: Remove KDM9D reference DTS
 > 
->  - CONFIG_ARCH_MULTIPLATFORM=y is used to enable multiplatform
->    - CONFIG_ARCH_SHMOBILE_MULTI=y is used in case of multiplatform build
->  - CONFIG_ARCH SHMOBILE=y is used in case of legacy non-multiplatform build
->  - CONFIG_MACH_KZM9D=y enables KZM9D board support regardless of
-> multiplatform
->   - In case of multiplatform build board-kzm9d-reference.c is used
->   - In case of legacy non-multiplatform build board-kzm9d.c is used
-> - KZM9D reference can no longer be built for non-multiplatform
-> - CONFIG_MACH_KZM9D_REFERENCE actually no longer exists
-> - emev2-kzm9d-reference.dts has been removed, use emev2-kzm9d.dts instead
-> - The same emev2-kzm9d.dts is used regardless of kernel configuration
->   - emev2-kzm9d.dtb can be used with legacy non-multiplatform
->   - emev2-kzm9d.dtb can be used with multiplatform
+> I've reviewed the patches and they look fine to me.
 > 
-> In practice the above means that legacy board code users can keep on using
-> existing emev2-kzm9d.dtb as-is, but when updating to multiplatform kernel
-> the DTB needs to be updated as well and from that point the DTB needs to
-> be updated whenever new hardware is added.
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 > 
-> The above seems pretty straight forward from my point of view, so I
-> propose that we follow the same style for future multiplatform board
-> support.
+> Does this call for the following patch on top of 05/05 ?
 > 
-> Before merging this series I'd like to see Yoshii-san's CCF patches
-> for KZM9D and EMEV2 to be finalized and picked up.
+> >From b167bcd3182f0310b91e502672547e58addf17ef Mon Sep 17 00:00:00 2001
+> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Date: Fri, 4 Oct 2013 09:44:34 +0200
+> Subject: [PATCH] ARM: shmobile: kzm9d-reference: Drop -reference compatible
+>  string
 > 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+> The only system compatible string used for the KZM9D board is
+> "renesas,kzm9d". Drop support for the old "renesas,kzm9d-reference"
+> compatible string.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 > ---
+>  arch/arm/mach-shmobile/board-kzm9d-reference.c | 1 -
+>  1 file changed, 1 deletion(-)
 > 
->  Written against renesas.git tag renesas-devel-20131001 and
->  [PATCH 00/10] ARM: shmobile: r8a7791 SoC and Koelsch update V2
->  plus selected CCF patches from Yoshii-san.
-> 
->  arch/arm/boot/dts/Makefile                     |    3 -
->  arch/arm/boot/dts/emev2-kzm9d-reference.dts    |   57 ---------------------
->  arch/arm/boot/dts/emev2-kzm9d.dts              |   33 +++++++++++++
->  arch/arm/mach-shmobile/Kconfig                 |   22 ---------
->  arch/arm/mach-shmobile/Makefile                |    5 +-
->  arch/arm/mach-shmobile/Makefile.boot           |    1
->  arch/arm/mach-shmobile/board-kzm9d-reference.c |    1
--- 
-Regards,
+> diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+> index 054d8d5..d2c6466 100644
+> --- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
+> +++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+> @@ -34,7 +34,6 @@ static void __init kzm9d_add_standard_devices(void)
+>  
+>  static const char *kzm9d_boards_compat_dt[] __initdata = {
+>  	"renesas,kzm9d",
+> -	"renesas,kzm9d-reference",
+>  	NULL,
+>  };
 
-Laurent Pinchart
-
+In theory no because someone might be using a DTS with
+renesas,kzm9d-reference in the wild. In practice I don't think
+that is the case so I feel ok about this patch. Magnus, what
+do you think?
