@@ -1,55 +1,51 @@
-From: Kevin Hilman <khilman@linaro.org>
-Date: Mon, 14 Oct 2013 22:02:44 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM based SoC board updates for v3.13
-Message-Id: <874n8j5x4r.fsf@linaro.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Oct 2013 01:32:01 +0000
+Subject: [PATCH 4/7] ARM: shmobile: bockw: remove manual PFC settings on reference
+Message-Id: <87y569zur5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381299817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au> (Simon Horman's
- message of "Wed, 9 Oct 2013 15:50:43 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Simon Horman <horms+renesas@verge.net.au> writes:
+Current Bock-W reference is calling PFC initializer manually,
+but now, it can use DTS PFC.
 
-> Hi Kevin, Olof and Arnd,
->
-> please consider this second round of Renesas ARM based SoC board updates
-> for v3.13.
->
-> This pull request is based on a merge of renesas-soc2-for-v3.13 into
-> renesas-boards-for-v3.13. You have already pulled renesas-boards-for-v3.13
-> and I am sending a pull request for renesas-soc2-for-v3.13 today. The
-> reason for this merge is to supply SoC code that is needed by board code in
-> this series. In particular the r7s72100 SoC code for the Genmai board.
->
->
-> The following changes since commit 661a7335c4e47726df1e7264580209847509569a:
->
->   Merge branch 'heads/soc2' into boards2-base (2013-10-08 10:01:47 +0900)
->
-> are available in the git repository at:
->
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.13
->
-> for you to fetch changes up to 7d4bde88e1135c4a3106b79650d3b85335f35717:
->
->   ARM: shmobile: marzen: enable INTC IRQ (2013-10-08 10:02:22 +0900)
->
-> ----------------------------------------------------------------
-> Second Round of Renesas ARM based SoC board updates for v3.13
->
-> * Enable INTC IRQ on marzen board
-> * Enable SMSC ethernet on reference board code for bockw
-> * Enable DMA for SDHI0 on marzen and bockw boards
-> * Enable DMA for MMCIF on ape6evm board
-> * Enable SMP and arch timers on Koelsh board
-> * Rework kzm9d make reference board code multiplatform
-> * Use a common DTB for kzm9d reference and non-reference
-> * Add Genmai board
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-bockw-reference.c |   12 ------------
+ 1 file changed, 12 deletions(-)
 
-Thanks, pulled into next/boards.
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+index ae88fda..972f951 100644
+--- a/arch/arm/mach-shmobile/board-bockw-reference.c
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -28,14 +28,6 @@
+  *	see board-bock.c for checking detail of dip-switch
+  */
+ 
+-static const struct pinctrl_map bockw_pinctrl_map[] = {
+-	/* SCIF0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+-				  "scif0_data_a", "scif0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+-				  "scif0_ctrl", "scif0"),
+-};
+-
+ #define FPGA	0x18200000
+ #define IRQ0MR	0x30
+ #define COMCTLR	0x101c
+@@ -45,10 +37,6 @@ static void __init bockw_init(void)
+ 
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin_dt(1);
+-
+-	pinctrl_register_mappings(bockw_pinctrl_map,
+-				  ARRAY_SIZE(bockw_pinctrl_map));
+-	r8a7778_pinmux_init();
+ 	r8a7778_add_dt_devices();
+ 
+ 	fpga = ioremap_nocache(FPGA, SZ_1M);
+-- 
+1.7.9.5
 
-Kevin
