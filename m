@@ -1,57 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 04:11:38 +0000
-Subject: [PATCH 2/3] ARM: shmobile: Add r8a7790 CA15 CPU cores
-Message-Id: <c1f95979baa9c33c5e6c280d7a8742fad0d20326.1380600579.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Oct 2013 01:31:16 +0000
+Subject: [PATCH 3/7] ARM: shmobile: bockw: add default PFC settings on DTS
+Message-Id: <8738oh255q.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <c1f95979baa9c33c5e6c280d7a8742fad0d20326.1380530263.git.horms+renesas@verge.net.au>
-In-Reply-To: <c1f95979baa9c33c5e6c280d7a8742fad0d20326.1380530263.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+SCIF0 PFC setting is needed as default
 
-Add CA15 CPU cores to r8a7790 for a total of 4 x CA15.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3b879e7..388f49f 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -24,6 +24,27 @@
- 			reg = <0>;
- 			clock-frequency = <1300000000>;
- 		};
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 969e386..3c1d1f0 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -55,3 +55,13 @@
+ &irqpin {
+ 	status = "okay";
+ };
 +
-+		cpu1: cpu@1 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <1>;
-+			clock-frequency = <1300000000>;
-+		};
++&pfc {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
 +
-+		cpu2: cpu@2 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <2>;
-+			clock-frequency = <1300000000>;
-+		};
-+
-+		cpu3: cpu@3 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <3>;
-+			clock-frequency = <1300000000>;
-+		};
- 	};
- 
- 	gic: interrupt-controller@f1001000 {
++	scif0_pins: scif0 {
++		renesas,groups = "scif0_data_a", "scif0_ctrl";
++		renesas,function = "scif0";
++	};
++};
 -- 
-1.8.4
+1.7.9.5
 
