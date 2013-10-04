@@ -1,51 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:27 +0000
-Subject: [PATCH 11/13] ARM: shmobile: marzen: fixup SMSC IRQ number on DTS
-Message-Id: <bffdd7d1a4249dddf1ded81e412cf3c78d139e38.1381298964.git.horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 04 Oct 2013 07:20:29 +0000
+Subject: [PATCH v3 0/3] ARM: shmobile: CPUFreq support on Lager
+Message-Id: <1380871232-31896-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381298964.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This is v3 of CPUFreq support on Lager, when booting on a CA15 core. Only
+compile tested due to lacking hardware access. But changes since v2 are
+minimal, so, there's a good chance this still works. In fact there's only
+one change, explained in patch 1. Patches 2 and 3 are simply former patc
+5, trivially split into 2.
 
-This patch fixup miss-setting of SMSC IRQ number.
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+Guennadi Liakhovetski (3):
+  ARM: shmobile: r8a7790: add CPUFreq clock support
+  ARM: shmobile: lager: add Device Tree entries for CA15 CPUFreq
+    support
+  ARM: shmobile: lager: add CPUFreq support
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 6d55083..ab4110a 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -42,8 +42,8 @@
- 		pinctrl-names = "default";
- 
- 		phy-mode = "mii";
--		interrupt-parent = <&gic>;
--		interrupts = <0 28 0x4>;
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <1 0>; /* IRQ1: hwirq 1 on irqpin0 */
- 		reg-io-width = <4>;
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
-@@ -63,6 +63,10 @@
- 	};
- };
- 
-+&irqpin0 {
-+	status = "okay";
-+};
-+
- &pfc {
- 	pinctrl-0 = <&scif2_pins &scif4_pins &sdhi0_pins>;
- 	pinctrl-names = "default";
+ arch/arm/boot/dts/r8a7790-lager-reference.dts  |   33 +++++
+ arch/arm/mach-shmobile/Kconfig                 |    2 +
+ arch/arm/mach-shmobile/board-lager-reference.c |    4 +-
+ arch/arm/mach-shmobile/clock-r8a7790.c         |  152 ++++++++++++++++++++++++
+ 4 files changed, 190 insertions(+), 1 deletions(-)
+
 -- 
-1.8.4
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
