@@ -1,74 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 15:04:38 +0000
-Subject: [PATCH 06/10] ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
-Message-Id: <1383059082-26315-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Oct 2013 06:43:15 +0000
+Subject: [PATCH 0/4] ARM: shmobile: r8a7778/r8a7779: add I2C support on DT
+Message-Id: <87k3htzgcf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Now that the common clock framework is supported, the clock lookup
-entries in clock-r8a7790.c are not registered anymore. Devices must
-instead reference their clocks in the device tree. However, SCIF and CMT
-devices are still instantiated through platform code, and thus need a
-clock lookup entry.
 
-Retrieve the SCIF and CMT clock entries by name and register clkdevs for
-the corresponding devices. This will be removed when the SCIF and CMT
-devices will be instantiated from the device tree.
+Hi Simon
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+These patches add I2C support on r8a7778,
+and tidyup missing I2C on r8a7779
+These are based on
+ 1) my previous DT patches.
+ 2) git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git :: for-next branch
+
+These is no compile error without 2)..
+
+Kuninori Morimoto (4):
+      ARM: shmobile: r8a7778: add I2C clock for DT
+      ARM: shmobile: r8a7778: add I2C support on DTSI
+      ARM: shmobile: r8a7779: tidyup I2C driver name on DTSI
+      ARM: shmobile: r8a7779: add I2C clock for DT
+
+ arch/arm/boot/dts/r8a7778.dtsi         |   40 ++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi         |    8 +++----
+ arch/arm/mach-shmobile/clock-r8a7778.c |    4 ++++
+ arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++++
+ 4 files changed, 52 insertions(+), 4 deletions(-)
+
+Best regards
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 28 ++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index e436d06..4d11c0a 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -18,6 +18,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk.h>
-+#include <linux/clkdev.h>
- #include <linux/clk/shmobile.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
-@@ -33,6 +35,32 @@ static void __init lager_init_time(void)
- 
- static void __init lager_add_standard_devices(void)
- {
-+	/*
-+	 * This is a really crude hack to provide clkdev support to the SCIF
-+	 * and CMT devices until they get moved to DT.
-+	 */
-+	static const char * const scif_names[] = {
-+		"scifa0", "scifa1", "scifb0", "scifb1",
-+		"scifb2", "scifa2", "scif0", "scif1",
-+		"hscif0", "hscif1",
-+	};
-+	struct clk *clk;
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
-+		clk = clk_get(NULL, scif_names[i]);
-+		if (clk) {
-+			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
-+			clk_put(clk);
-+		}
-+	}
-+
-+	clk = clk_get(NULL, "cmt0");
-+	if (clk) {
-+		clk_register_clkdev(clk, NULL, "sh_cmt.0");
-+		clk_put(clk);
-+	}
-+
- 	r8a7790_add_dt_devices();
-         of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
--- 
-1.8.1.5
-
+Kuninori Morimoto
