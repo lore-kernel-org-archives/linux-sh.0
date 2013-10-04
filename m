@@ -1,42 +1,46 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Oct 2013 06:35:06 +0000
-Subject: [PATCH 03/10] ARM: shmobile: bockw: fixup FPGA ioremap area
-Message-Id: <87haco1fjc.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 04 Oct 2013 07:20:32 +0000
+Subject: [PATCH v3 3/3] ARM: shmobile: lager: add CPUFreq support
+Message-Id: <1380871232-31896-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Don't keep FPGA ioremap area.
+Add a cpufreq-cpu0 platform device on Lager to instantiate the cpufreq-cpu0
+CPUFreq driver for the CA15 boot-mode.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index 875cf3f..fac95a4 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -32,7 +32,7 @@
- #define COMCTLR	0x101c
- static void __init bockw_init(void)
- {
--	static void __iomem *fpga;
-+	void __iomem *fpga;
+v3: board part of former patch 5/5
+
+ arch/arm/mach-shmobile/board-lager-reference.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 1a1a4a8..2bc8bae 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -20,6 +20,7 @@
  
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin_dt(1);
-@@ -50,6 +50,8 @@ static void __init bockw_init(void)
- 		u16 val = ioread16(fpga + IRQ0MR);
- 		val &= ~(1 << 4); /* enable SMSC911x */
- 		iowrite16(val, fpga + IRQ0MR);
-+
-+		iounmap(fpga);
- 	}
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_device.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
  
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+@@ -29,7 +30,8 @@ static void __init lager_add_standard_devices(void)
+ 	r8a7790_clock_init();
+ 
+ 	r8a7790_add_dt_devices();
+-        of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
+ }
+ 
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-1.7.9.5
+1.7.2.5
 
