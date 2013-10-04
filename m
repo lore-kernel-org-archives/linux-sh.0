@@ -1,142 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 15:04:35 +0000
-Subject: [PATCH 03/10] ARM: shmobile: r8a7790: Reference clocks
-Message-Id: <1383059082-26315-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 04 Oct 2013 01:20:19 +0000
+Subject: [PATCH] ARM: shmobile: bockw: fixup ether node naming
+Message-Id: <87a9ip25nz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Reference clocks using a "clocks" property in all nodes corresponding to
-devices that require a clock.
+According to the ePAPR spec,
+the node name should be "ethernet", not "lan0".
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790-lager-reference.dts |  2 +-
- arch/arm/boot/dts/r8a7790-lager.dts           |  2 +-
- arch/arm/boot/dts/r8a7790.dtsi                | 12 ++++++++++++
- 3 files changed, 14 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-index 75730f5..68711ce 100644
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7790.dtsi"
-+#include "r8a7790.dtsi"
- #include <dt-bindings/gpio/gpio.h>
- 
- / {
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 65ffd87..310fa63 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7790.dtsi"
-+#include "r8a7790.dtsi"
- #include <dt-bindings/gpio/gpio.h>
- 
- / {
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 423500d..94c8373 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -8,6 +8,8 @@
-  * kind, whether express or implied.
-  */
- 
-+#include <dt-bindings/clock/r8a7790-clock.h>
-+
- / {
- 	compatible = "renesas,r8a7790";
- 	interrupt-parent = <&gic>;
-@@ -183,6 +185,7 @@
- 		reg = <0 0xe6508000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 287 0x4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 4425fd2..969e386 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -39,7 +39,7 @@
+ 		regulator-always-on;
  	};
  
-@@ -193,6 +196,7 @@
- 		reg = <0 0xe6518000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 288 0x4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
- 		status = "disabled";
- 	};
+-	lan0@18300000 {
++	ethernet@18300000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x18300000 0x1000>;
  
-@@ -203,6 +207,7 @@
- 		reg = <0 0xe6530000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 286 0x4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
- 		status = "disabled";
- 	};
- 
-@@ -213,6 +218,7 @@
- 		reg = <0 0xe6540000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 290 0x4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
- 		status = "disabled";
- 	};
- 
-@@ -221,6 +227,7 @@
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 169 0x4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -230,6 +237,7 @@
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 170 0x4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -244,6 +252,7 @@
- 		reg = <0 0xee100000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -253,6 +262,7 @@
- 		reg = <0 0xee120000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -262,6 +272,7 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 167 4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -271,6 +282,7 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 168 4>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
 -- 
-1.8.1.5
+1.7.9.5
 
