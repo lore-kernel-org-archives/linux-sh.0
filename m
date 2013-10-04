@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Oct 2013 01:30:00 +0000
+Date: Fri, 04 Oct 2013 01:35:32 +0000
 Subject: Re: [PATCH 0/7] ARM: shmobile: bockw: MMCIF support on DT
-Message-Id: <877gdt257u.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87siwhzula.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <878uy9259u.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <878uy9259u.wl%kuninori.morimoto.gx@renesas.com>
@@ -11,7 +11,7 @@ Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi Simon
+Hi Simon again
 
 > Kuninori Morimoto (7):
 >       1) ARM: shmobile: bockw: enable CONFIG_REGULATOR
@@ -30,8 +30,8 @@ Hi Simon
 >  arch/arm/mach-shmobile/clock-r8a7778.c         |    1 +
 >  6 files changed, 44 insertions(+), 16 deletions(-)
 
-These are based on renesas-devel-20131003 tag
+And, these dpends on today's Laurent's
 
-Best regards
----
-Kuninori Morimoto
+Subject: [PATCH] ARM: shmobile: r8a7778: Fix pin control device address in DT
+Date:	Thu,  3 Oct 2013 19:35:41 +0200
+
