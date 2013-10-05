@@ -1,7 +1,7 @@
 From: Wolfgang Grandegger <wg@grandegger.com>
-Date: Wed, 02 Oct 2013 06:09:07 +0000
+Date: Sat, 05 Oct 2013 17:57:35 +0000
 Subject: Re: [PATCH] can: add Renesas R-Car CAN driver
-Message-Id: <524BB883.2040400@grandegger.com>
+Message-Id: <5250530F.6090901@grandegger.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201309280211.39068.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201309280211.39068.sergei.shtylyov@cogentembedded.com>
@@ -10,34 +10,6 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, mkl@pengutronix.de, linux-can@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
-
-Hallo Sergei,
-
-thanks for your contribution. The patch looks already quite good. Before
-I find time for a detailed review could you please check error handling
-and bus-off recovery by reporting the output of "$ candump -td -e
-any,0:0,#FFFFFFFF" while sending messages to the device ...
-
-1. ... without cable connected
-2. ... with short-circuited CAN high and low and doing some time later
-       a manual recovery with "ip link set can0 type can restart"
-
-I also wonder if the messages are always sent in order. You could use
-the program "canfdtest" [1] from the can-utils for validation.
-
-Support for CAN_CTRLMODE_BERR_REPORTING would also be nice, especially
-if the bus errors reporting can easily be switched off (via interrupt mask).
-
-There is also the RCAN-TL1 (Renesas CAN Time Trigger Level 1) module
-e.g. available on the SH7203 Group of processors. Is this CAN controller
-compatible to some extend with the R-Car CAN or a completely different
-implementation?
-
-
-[1] https://gitorious.org/linux-can/can-utils/source/canfdtest.c
-
-
-Wolfgang.
 
 On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > Add support for the CAN controller found in Renesas R-Car SoCs. 
@@ -133,12 +105,18 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +#define RCAR_CAN_TCR	0x858	/* CANi Test Control Register */
 > +#define RCAR_CAN_IER	0x860	/* CANi Interrupt Enable Register */
 > +#define RCAR_CAN_ISR	0x861	/* CANi Interrupt Status Register */
-> +
+
+CANi on each line!? I would drop it.
+
 > +/* Offsets of RCAR_CAN Mailbox Registers */
 > +#define MBX_HDR_OFFSET	0x0
 > +#define MBX_DLC_OFFSET	0x5
 > +#define MBX_DATA_OFFSET	0x6
-> +
+
+I see some advantages in using structs to describe the register layout
+here. Better readability, type checking and the macros below will be
+obsolete.
+
 > +#define RCAR_CAN_MBX_SIZE 0x10
 > +
 > +/* Control Register bits */
@@ -314,7 +292,12 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +{
 > +	rcar_can_writeb(priv, RCAR_CAN_MBX_SIZE * mbxno + offset, val);
 > +}
-> +
+
+See my comment above. Reading the DLC from the mailbox could then be
+done with:
+
+	writeb(val, &priv->regs.mb[mbxno].dlc]);
+
 > +static void rcar_can_error(struct net_device *ndev)
 > +{
 > +	struct rcar_can_priv *priv = netdev_priv(ndev);
@@ -332,7 +315,10 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +				   __func__);
 > +		return;
 > +	}
-> +
+
+IIRC, the policy is to return silently here. I only see the ti_hecc
+driver is using printk_ratelimit(). Marc?
+
 > +	eifr = rcar_can_readb(priv, RCAR_CAN_EIFR);
 > +	if (eifr & EIFR_EWIF) {
 > +		netdev_dbg(priv->ndev, "Error warning interrupt\n");
@@ -345,6 +331,9 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +			cf->data[1] |= CAN_ERR_CRTL_RX_WARNING;
 > +		/* Clear interrupt condition */
 > +		rcar_can_writeb(priv, RCAR_CAN_EIFR, (u8)~EIFR_EWIF);
+
+Please avoid casts. I think they are not needed anyway (here and below).
+
 > +	}
 > +	if (eifr & EIFR_EPIF) {
 > +		netdev_dbg(priv->ndev, "Error passive interrupt\n");
@@ -376,6 +365,11 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +		netdev_dbg(priv->ndev, "Bus error interrupt:\n");
 > +		cf->can_id |= CAN_ERR_BUSERROR | CAN_ERR_PROT;
 > +		cf->data[2] = CAN_ERR_PROT_UNSPEC;
+
+I think you can increment bus errors here for all types.:
+
+		bus_errors++;
+
 > +
 > +		ecsr = rcar_can_readb(priv, RCAR_CAN_ECSR);
 > +		if (ecsr & ECSR_ADEF) {
@@ -409,6 +403,11 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +		if (ecsr & ECSR_AEF) {
 > +			netdev_dbg(priv->ndev, "ACK Error\n");
 > +			cf->data[3] |= CAN_ERR_PROT_LOC_ACK;
+
+Please add here:
+
+		        cf->can_id |= CAN_ERR_ACK;
+
 > +			bus_errors++;
 > +			tx_errors++;
 > +			rcar_can_writeb(priv, RCAR_CAN_ECSR, (u8)~ECSR_AEF);
@@ -491,6 +490,10 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +			ie_mask |= BIT(mbx - FIRST_TX_MB);
 > +			stats->tx_bytes += can_get_echo_skb(ndev,
 > +							    mbx - FIRST_TX_MB);
+
+can_get_echo_skb() may return 0 because local loopback can be disabled
+by the user.
+
 > +			stats->tx_packets++;
 > +			can_led_event(ndev, CAN_LED_EVENT_TX);
 > +		}
@@ -542,6 +545,9 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +	rcar_can_writel(priv, RCAR_CAN_BCR, bcr);
 > +	rcar_can_writeb(priv, RCAR_CAN_CLKR, clkr);
 > +	return 0;
+
+What about support for CAN_CTRLMODE_3_SAMPLES?
+
 > +}
 > +
 > +static void rcar_can_start(struct net_device *ndev)
@@ -584,6 +590,19 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +	rcar_can_writeb(priv, RCAR_CAN_EIER,
 > +			EIER_EWIE | EIER_EPIE | EIER_BOEIE | EIER_BEIE |
 > +			EIER_ORIE | EIER_OLIE);
+
+Bus error reporting might result in heavy system load, especially
+because they are handled in the irq context. For this purpose we have
+the CAN_CTRLMODE_BERR_REPORTING flag. Shoudl not be a big deal to
+support it here (if the hardware is working properly):
+
+
+	rcar_can_writeb(priv, RCAR_CAN_EIER,
+			EIER_EWIE | EIER_EPIE | EIER_BOEIE |
+			(priv->can.ctrlmode &
+			 CAN_CTRLMODE_BERR_REPORTING ? EIER_BEIE : 0) |
+			EIER_ORIE | EIER_OLIE);
+
 > +	/* Enable interrupts for RX mailboxes */
 > +	rcar_can_writel(priv, RCAR_CAN_MIER0, RX_MBX_MASK);
 > +	priv->can.state = CAN_STATE_ERROR_ACTIVE;
@@ -683,9 +702,17 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +		netif_stop_queue(ndev);
 > +		return NETDEV_TX_BUSY;
 > +	}
+
+I think it is possible the avoid the "return NETDEV_TX_BUSY" here in
+most cases if you stop the queue at the end of the previous message.
+
 > +	rcar_can_writel(priv, RCAR_CAN_MIER1, mier1 | (mier1 + 1));
 > +	spin_unlock_irqrestore(&priv->mier_lock, flags);
 > +	mbxno = ffz(mier1) + FIRST_TX_MB;
+
+How to you handle "mbxno" wrap around. Are messages then still send out
+in order?
+
 > +
 > +	if (cf->can_id & CAN_EFF_FLAG) {
 > +		/* Extended frame format */
@@ -744,7 +771,9 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +				   "%s: alloc_can_skb() failed\n", __func__);
 > +		return;
 > +	}
-> +
+
+Same comment as for alloc_can_err_skb().
+
 > +	data = rcar_can_mbx_readl(priv, mbx, MBX_HDR_OFFSET);
 > +	if (data & RCAR_CAN_IDE)
 > +		cf->can_id = (data & CAN_EFF_MASK) | CAN_EFF_FLAG;
@@ -752,6 +781,21 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +		cf->can_id = (data >> RCAR_CAN_SID_SHIFT) & CAN_SFF_MASK;
 > +	if (data & RCAR_CAN_RTR)
 > +		cf->can_id |= CAN_RTR_FLAG;
+
+IIRC, we should not copy data for RTR frames. At least for the SJA1000
+we fixed:
+
+  commit 87e9af6cc67d842cd92b52b81f3f14e665e7ab05
+  Author: Kurt Van Dijck <kurt.van.dijck@eia.be>
+  Date:   Mon May 2 04:50:48 2011 +0000
+
+    can: fix SJA1000 dlc for RTR packets
+
+    RTR frames do have a valid data length code on CAN.
+    The driver for SJA1000 did not handle that situation properly.
+
+But I see that not all drivers do respect that rule.
+
 > +
 > +	dlc = rcar_can_mbx_readb(priv, mbx, MBX_DLC_OFFSET);
 > +	cf->can_dlc = get_can_dlc(dlc);
@@ -875,138 +919,8 @@ On 09/28/2013 12:11 AM, Sergei Shtylyov wrote:
 > +	priv->can.clock.freq = clk_get_rate(priv->clk);
 > +	priv->can.bittiming_const = &rcar_can_bittiming_const;
 > +	priv->can.do_set_bittiming = rcar_can_set_bittiming;
-> +	priv->can.do_set_mode = rcar_can_do_set_mode;
-> +	priv->can.do_get_berr_counter = rcar_can_get_berr_counter;
-> +	priv->can.ctrlmode_supported = CAN_CTRLMODE_3_SAMPLES |
-> +				       CAN_CTRLMODE_ONE_SHOT;
-> +	platform_set_drvdata(pdev, ndev);
-> +	SET_NETDEV_DEV(ndev, &pdev->dev);
-> +	spin_lock_init(&priv->mier_lock);
-> +
-> +	netif_napi_add(ndev, &priv->napi, rcar_can_rx_poll,
-> +		       RCAR_CAN_NAPI_WEIGHT);
-> +	err = register_candev(ndev);
-> +	if (err) {
-> +		dev_err(&pdev->dev, "register_candev() failed\n");
-> +		goto fail_candev;
-> +	}
-> +
-> +	devm_can_led_init(ndev);
-> +
-> +	dev_info(&pdev->dev, "device registered (reg_base=%p, irq=%u)\n",
-> +		 priv->reg_base, ndev->irq);
-> +
-> +	return 0;
-> +fail_candev:
-> +	netif_napi_del(&priv->napi);
-> +fail_clk:
-> +	free_candev(ndev);
-> +fail:
-> +	return err;
-> +}
-> +
-> +static int rcar_can_remove(struct platform_device *pdev)
-> +{
-> +	struct net_device *ndev = platform_get_drvdata(pdev);
-> +	struct rcar_can_priv *priv = netdev_priv(ndev);
-> +	u16 ctlr;
-> +
-> +	unregister_candev(ndev);
-> +	netif_napi_del(&priv->napi);
-> +	/* Go to sleep mode */
-> +	ctlr = rcar_can_readw(priv, RCAR_CAN_CTLR);
-> +	rcar_can_writew(priv, RCAR_CAN_CTLR, ctlr | CTLR_SLPM);
-> +	clk_disable(priv->clk);
-> +	free_candev(ndev);
-> +	return 0;
-> +}
-> +
-> +#ifdef CONFIG_PM_SLEEP
-> +static int rcar_can_suspend(struct device *dev)
-> +{
-> +	struct net_device *ndev = dev_get_drvdata(dev);
-> +	struct rcar_can_priv *priv = netdev_priv(ndev);
-> +	u16 ctlr;
-> +
-> +	if (netif_running(ndev)) {
-> +		netif_stop_queue(ndev);
-> +		netif_device_detach(ndev);
-> +	}
-> +	ctlr = rcar_can_readw(priv, RCAR_CAN_CTLR);
-> +	ctlr |= CTLR_HALT;
-> +	rcar_can_writew(priv, RCAR_CAN_CTLR, ctlr);
-> +	ctlr |= CTLR_SLPM;
-> +	rcar_can_writew(priv, RCAR_CAN_CTLR, ctlr);
-> +	priv->can.state = CAN_STATE_SLEEPING;
-> +
-> +	clk_disable(priv->clk);
-> +	return 0;
-> +}
-> +
-> +static int rcar_can_resume(struct device *dev)
-> +{
-> +	struct net_device *ndev = dev_get_drvdata(dev);
-> +	struct rcar_can_priv *priv = netdev_priv(ndev);
-> +	u16 ctlr;
-> +
-> +	clk_enable(priv->clk);
-> +
-> +	ctlr = rcar_can_readw(priv, RCAR_CAN_CTLR);
-> +	ctlr &= ~CTLR_SLPM;
-> +	rcar_can_writew(priv, RCAR_CAN_CTLR, ctlr);
-> +	ctlr &= ~CTLR_FORCE_RESET;
-> +	rcar_can_writew(priv, RCAR_CAN_CTLR, ctlr);
-> +	priv->can.state = CAN_STATE_ERROR_ACTIVE;
-> +
-> +	if (netif_running(ndev)) {
-> +		netif_device_attach(ndev);
-> +		netif_start_queue(ndev);
-> +	}
-> +	return 0;
-> +}
-> +#endif
-> +
-> +static SIMPLE_DEV_PM_OPS(rcar_can_pm_ops, rcar_can_suspend, rcar_can_resume);
-> +
-> +static struct platform_driver rcar_can_driver = {
-> +	.driver = {
-> +		.name = DRV_NAME,
-> +		.owner = THIS_MODULE,
-> +		.pm = &rcar_can_pm_ops,
-> +	},
-> +	.probe = rcar_can_probe,
-> +	.remove = rcar_can_remove,
-> +};
-> +
-> +module_platform_driver(rcar_can_driver);
-> +
-> +MODULE_AUTHOR("Cogent Embedded, Inc.");
-> +MODULE_LICENSE("GPL");
-> +MODULE_DESCRIPTION("CAN driver for Renesas R-Car SoC");
-> +MODULE_ALIAS("platform:" DRV_NAME);
-> Index: linux-can-next/include/linux/can/platform/rcar_can.h
-> =================================> --- /dev/null
-> +++ linux-can-next/include/linux/can/platform/rcar_can.h
-> @@ -0,0 +1,15 @@
-> +#ifndef _CAN_PLATFORM_RCAR_CAN_H_
-> +#define _CAN_PLATFORM_RCAR_CAN_H_
-> +
-> +#include <linux/types.h>
-> +
-> +/* Clock Select Register settings */
-> +#define CLKR_CLKEXT	3	/* Externally input clock */
-> +#define CLKR_CLKP2	1	/* Peripheral clock (clkp2) */
-> +#define CLKR_CLKP1	0	/* Peripheral clock (clkp1) */
-> +
-> +struct rcar_can_platform_data {
-> +	u8 clock_select;	/* Clock source select */
-> +};
-> +
-> +#endif	/* !_CAN_PLATFORM_RCAR_CAN_H_ */
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-can" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
 
+rcar_can_set_bittiming() is already called in the open function. Is this
+intended?
+
+Wolfgang.
