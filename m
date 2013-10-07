@@ -1,79 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:55 +0000
-Subject: [PATCH 07/14] ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
-Message-Id: <9e8b48b61aeb2eb9a02e81021bfb8d89ea4645a4.1381299817.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 07 Oct 2013 04:23:48 +0000
+Subject: [PATCH 0/2] ARM: shmobile: lager: add MMCIF support on DT
+Message-Id: <87fvsdbtf3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381299817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-Copy the device nodes from KZM9D reference into the KZM9D
-device tree file. This will allow us to use a single DTS
-file regarless of kernel configuration. In case of legacy
-C board code the device nodes may or may not be used, but
-in the multiplatform case all the DT device nodes are used.
+Hi Simon
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+These patches add MMCIF support on Lager board with DT.
+I tested these patches on Initramfs environment
+since current Lager DT doesn't support sh_eth on DT.
+
+These are based on renesas-devel-20131004 tag
+
+Kuninori Morimoto (2):
+      ARM: shmobile: lager: add default PFC settings on DTS
+      ARM: shmobile: lager: add MMCIF support on DTS
+
+ arch/arm/boot/dts/r8a7790-lager-reference.dts |   39 +++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+
+Best regards
 ---
- arch/arm/boot/dts/emev2-kzm9d.dts | 33 ++++++++++++++++++++++++++++++++-
- 1 file changed, 32 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-index f92e812..861aa7d 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -1,7 +1,7 @@
- /*
-  * Device Tree Source for the KZM9D board
-  *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-@@ -23,4 +23,35 @@
- 	chosen {
- 		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
- 	};
-+
-+	reg_1p8v: regulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-1.8V";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <1800000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
-+
-+	reg_3p3v: regulator@1 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
-+
-+	lan9220@20000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x20000000 0x10000>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&gpio0>;
-+		interrupts = <1 1>;	/* active high */
-+		reg-io-width = <4>;
-+		smsc,irq-active-high;
-+		smsc,irq-push-pull;
-+		vddvario-supply = <&reg_1p8v>;
-+		vdd33a-supply = <&reg_3p3v>;
-+	};
- };
--- 
-1.8.4
-
+Kuninori Morimoto
