@@ -1,24 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 04:25:19 +0000
-Subject: Re: [PATCH 04/05] ARM: shmobile: Let KZM9D multiplatform boot with KZM9D DTB
-Message-Id: <20131003042517.GP7925@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Mon, 07 Oct 2013 23:27:00 +0000
+Subject: [PATCH 0/3] Add USBHS support to Lager
+Message-Id: <1381188423-1867-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131001103255.813.65710.sendpatchset@w520>
- <20131001103334.813.45590.sendpatchset@w520>
-In-Reply-To: <20131001103334.813.45590.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Oct 01, 2013 at 07:33:34PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Let the multiplatform KZM9D support boot with the
-> legacy DTS for KZM9D as well as the KZM9D reference DTS.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+This patch set adds internal USB PHY support to RCAR Gen2 SoC, and
+also enables USBHS for the Lager board.
 
-Thanks, I have queued this up in the boards3 branch.
-It should make it into v3.13 but if not I'll rename the branch
-soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+The patches apply fine to the renesas-devel-20131004 tag of the renesas.git.
+
+The first patch also applies fine to the usb.git at kernel.org.
+It adds RCAR Gen2 phy driver, which is used to configure the shared USB
+channels 0/2 and to control USBHS internal PHY.
+All the drivers that use the shared USB channels (USBHS/USBSS/PCI USB host)
+should acquire the USB phy first to set proper channel configuration.
+
+The other two patches add USBHS support to Lager board, which requires
+RCAR Gen2 phy driver.
+
+Valentine Barshak (3):
+  usb: phy: Add RCAR Gen2 USB phy
+  arm: shmobile: r8a7790: Add USBHS clock support
+  arm: shmobile: lager: Add USBHS support
+
+ arch/arm/mach-shmobile/board-lager.c            | 106 +++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c          |   4 +
+ drivers/usb/phy/Kconfig                         |  14 ++
+ drivers/usb/phy/Makefile                        |   1 +
+ drivers/usb/phy/phy-rcar-gen2-usb.c             | 271 ++++++++++++++++++++++++
+ include/linux/platform_data/usb-rcar-gen2-phy.h |  22 ++
+ 6 files changed, 418 insertions(+)
+ create mode 100644 drivers/usb/phy/phy-rcar-gen2-usb.c
+ create mode 100644 include/linux/platform_data/usb-rcar-gen2-phy.h
+
+-- 
+1.8.3.1
+
