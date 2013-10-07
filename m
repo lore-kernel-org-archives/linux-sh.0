@@ -1,40 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Oct 2013 05:21:57 +0000
-Subject: Re: [GIT PULL 0/8] Renesas ARM based SoC updates for v3.13
-Message-Id: <20131008052154.GA1891@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Mon, 07 Oct 2013 23:27:02 +0000
+Subject: [PATCH 2/3] arm: shmobile: r8a7790: Add USBHS clock support
+Message-Id: <1381188423-1867-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380530437.git.horms+renesas@verge.net.au>
- <20131007182245.GE17592@quad.lixom.net>
-In-Reply-To: <20131007182245.GE17592@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Oct 07, 2013 at 11:22:45AM -0700, Olof Johansson wrote:
-> On Tue, Oct 01, 2013 at 11:34:09AM +0900, Simon Horman wrote:
-> > Hi Kevin, Olof and Arnd,
-> > 
-> > please consider these Renesas ARM based SoC updates for v3.13.
-> > 
-> > This pull-request is based on v3.12-rc1.
-> > 
-> > 
-> > The following changes since commit 272b98c6455f00884f0350f775c5342358ebb73f:
-> > 
-> >   Linux 3.12-rc1 (2013-09-16 16:17:51 -0400)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
-> 
-> Pulled. As discussed earlier, the new platforms for 3.13 should be
-> the last ones of the legacy kind; from here on out we should see
-> multi-platform enabled new platforms from day one (i.e. once CCF and
-> other pieces land).
+This adds USBHS clock support.
 
-Thanks.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-We have one more new platform queued up for v3.13,
-the r7s72100 SoC / Genmai board. I plan to send a pull requests
-which includes code for that platform in the next day or so.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a64f965..7bb2796 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -186,6 +186,7 @@ enum {
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
++	MSTP704,
+ 	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+@@ -208,6 +209,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+ 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
++	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
+ 	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -296,6 +298,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+ };
+ 
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-- 
+1.8.3.1
+
