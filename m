@@ -1,87 +1,59 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Wed, 02 Oct 2013 17:45:51 +0000
-Subject: Re: [PATCH 10/10] pwm-backlight: Allow backlight to remain disabled on boot
-Message-Id: <20131002174550.GA29973@ulmo.nvidia.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="2oS5YaxWCcQjTEyO"
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 07 Oct 2013 16:37:26 +0000
+Subject: Re: [PATCH/RFC] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
+Message-Id: <20131007163726.GC15413@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1379972467-11243-1-git-send-email-treding@nvidia.com>
- <1379972467-11243-11-git-send-email-treding@nvidia.com>
- <524B198B.3010609@wwwdotorg.org>
-In-Reply-To: <524B198B.3010609@wwwdotorg.org>
-To: linux-arm-kernel@lists.infradead.org
+References: <20130925233709.16540.66903.sendpatchset@w520>
+ <20130927044323.GC16541@verge.net.au>
+In-Reply-To: <20130927044323.GC16541@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, khilman@linaro.org, arnd@arndb.de, daniel.lezcano@linaro.org, linux-kernel@vger.kernel.org, tglx@linutronix.de
+
+On Fri, Sep 27, 2013 at 01:43:25PM +0900, Simon Horman wrote:
+> On Thu, Sep 26, 2013 at 08:37:09AM +0900, Magnus Damm wrote:
+> > From: Magnus Damm <damm@opensource.se>
+> > 
+> > Based on request from Olof Johansson, move ARM mach-shmobile
+> > clocksource entries to drivers/clocksource/Kconfig, and at
+> > the same time make the SH architecture use these entries.
+> > 
+> > Kconfig entries for CMT, MTU2, TMU and STI are with this patch
+> > now kept in one place. The SH SYS_SUPPORTS_nnn bits are dropped
+> > to simplye let the user select the appropriate ones using Kconfig
+> > instead of trying to filter available timers based on SoC.
+> > 
+> > Known issues:
+> >  1) Not yet wrappend in menu/endmenu, populates the root driver menu
+> >  -> proposal: Create separate patch to wrap all the clocksource entries?
+> 
+> That seems reasonable to me.
+> 
+> >  2) Should the entries be sorted?
+> >  -> proposal: Ignore cosmetic bits
+> 
+> I propose that you sort the entries are adding
+> but leave the rest of the entries as is.
+> 
+> >  3) What is correct dependency for multiplatform and single platform?
+> >  -> proposal: Perhaps we should simply default to no?
+> 
+> I'm not sure that I understand the issue here.
+> 
+> >  4) Is single patch across 2 architectures and drivers/clocksource OK?
+> >  -> proposal: Keep it like this if possible
+> 
+> Olof, I would like your opinion on this but from my pov this seems
+> reasonable. Especially as one of the architectures (sh) is seeing very little
+> change at this time.
+
+(Sorry for the delayed response, the renesas volume email can be large and
+I don't always read it when it comes in).
 
 
---2oS5YaxWCcQjTEyO
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Yeah, as long as you have appropriate acks and don't expect conflicts.
 
-On Tue, Oct 01, 2013 at 12:50:51PM -0600, Stephen Warren wrote:
-> On 09/23/2013 03:41 PM, Thierry Reding wrote:
-[...]
-> > +	if (gpio_is_valid(pb->enable_gpio)) {
-> > +		if (pb->enable_gpio_flags & PWM_BACKLIGHT_GPIO_ACTIVE_LOW)
-> > +			gpio_set_value(pb->enable_gpio, 0);
-> > +		else
-> > +			gpio_set_value(pb->enable_gpio, 1);
-> > +	}
->=20
-> ... That assumes that the backlight is on at boot, and hence presumably
-> after this patch still always turns on the backlight, only to turn it
-> off very quickly once the following code in this patch executes:
 
-I was just going to fix this, but then saw that the code in .probe() is
-actually this:
-
-	if (gpio_is_valid(pb->enable_gpio)) {
-		unsigned long flags;
-
-		if (pb->enable_gpio_flags & PWM_BACKLIGHT_GPIO_ACTIVE_LOW)
-			flags =3D GPIOF_OUT_INIT_HIGH;
-		else
-			flags =3D GPIOF_OUT_INIT_LOW;
-
-		ret =3D gpio_request_one(pb->enable_gpio, flags, "enable");
-		...
-	}
-
-Which sets the backlight up to be disabled by default and is consistent
-with the PWM and regulator setup. Only later, depending on the value of
-boot_off it gets enabled (or stays disabled).
-
-> (and perhaps we also need to avoid turning the backlight off then on if
-> it was already on at boot)
-
-That's true. Although I'm not sure if that's even possible. I think the
-pinctrl driver doesn't touch the registers, but what about the GPIO and
-PWM drivers. It might be impossible to always query the boot status and
-set the internal state based on that. The easiest would probably be if
-both the bootloader and the kernel use the same DT, in which case the
-bootloader could set the backlight-boot-on property, in which case we
-wouldn't need to do anything at .probe() time really.
-
-Thierry
-
---2oS5YaxWCcQjTEyO
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.21 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSTFvOAAoJEN0jrNd/PrOhoSYQAIn7plVDrw1cFYwX7Iqq9EP9
-yJgz+asuveyXcB9yI5iWL48qDoeedWQmGvKQD7JaNiECeQb5f4k+WmwG02V4JqCz
-Om45A5/p8+AbmBz36rdKnZgiU8Bfzef41B7vgdudqTuW+cc0PRLIx/IJMiMK7OCJ
-1hfLc46mkINYH/0YQaUHg/k0u4QyR/zMB5Tt4lglPZdRWea1esvYK4lVwcsWCHHl
-Wo5SfLd1i40dIp7hlpeW7sGqhLrU05iTNGGINh8FCphb1zbhFqA2D/5arCoya9uy
-tzjloVqLzysYP63EfplbvmP15N/c3Uecc1ihIi3cC9gO8WJgVI/qe594WA/+q447
-BCvcCgjrISwfr9Muqkort0ycqnNbELiX/BSInNih9UNESMiTpMaXQAQQI/BtHYy4
-wZB7ShUQOEF4G8OssLGGvRzin0mm46RygoGnICTUorkzonRXo4SZhsDNoPti62eU
-/w816Jv5NN/Ww/vE9f9buPTcPGr/UtcA4M9E8mrGAd3JVr6G7dc9Z4XIjSEyzxf0
-ABuYe/inVterHWR2HT7G769RC/HcnpV5xZnV92kZoaMglfpwhlibFv/FMrzf/r3r
-3vAgiTx+2eD18cj60ntzc8eqf+hXJRd4CFHR8zPwymauLp/r37NGFb+MQOng+Lmm
-T8aCSBJ65TUJWQwNRU//
-=yMQc
------END PGP SIGNATURE-----
-
---2oS5YaxWCcQjTEyO--
+-Olof
