@@ -1,27 +1,33 @@
-From: Ralf Baechle <ralf@linux-mips.org>
-Date: Tue, 08 Oct 2013 07:00:54 +0000
-Subject: Re: [PATCH v2 14/14] Kconfig cleanup (PARPORT_PC dependencies)
-Message-Id: <20131008070054.GE1615@linux-mips.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 08 Oct 2013 05:59:23 +0000
+Subject: [PATCH 7/7] ARM: shmobile: r8a73a4: don't use named irq for DMAEngine
+Message-Id: <87wqlowbf1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381209030-351-1-git-send-email-msalter@redhat.com>
- <1381209030-351-15-git-send-email-msalter@redhat.com>
-In-Reply-To: <1381209030-351-15-git-send-email-msalter@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Oct 08, 2013 at 01:10:30AM -0400, Mark Salter wrote:
+sh-dma-engine driver doesn't care irq name.
 
-> Remove messy dependencies from PARPORT_PC by having it depend on one
-> Kconfig symbol (ARCH_MAY_HAVE_PC_PARPORT) and having architectures
-> which need it, select ARCH_MAY_HAVE_PC_PARPORT in arch/*/Kconfig.
-> New architectures are unlikely to need PARPORT_PC, so this avoids
-> having an ever growing list of architectures to exclude. Those
-> architectures which do select ARCH_MAY_HAVE_PC_PARPORT in this
-> patch are the ones which have an asm/parport.h (or use the generic
-> version).
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a73a4.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Acked-by: Ralf Baechle <ralf@linux-mips.org>
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index b0f2749..cc94b64 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -275,7 +275,7 @@ static const struct sh_dmae_pdata dma_pdata = {
+ 
+ static struct resource dma_resources[] = {
+ 	DEFINE_RES_MEM(0xe6700020, 0x89e0),
+-	DEFINE_RES_IRQ_NAMED(gic_spi(220), "error_irq"),
++	DEFINE_RES_IRQ(gic_spi(220)),
+ 	{
+ 		/* IRQ for channels 0-19 */
+ 		.start  = gic_spi(200),
+-- 
+1.7.9.5
 
-  Ralf
