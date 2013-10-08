@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Oct 2013 06:44:15 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7778: add I2C support on DTSI
-Message-Id: <87hacxzgar.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 08 Oct 2013 01:52:19 +0000
+Subject: Re: [PATCH 2/4] ARM: shmobile: r8a7778: add I2C support on DTSI
+Message-Id: <20131008015217.GC16625@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87d2qsth2z.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87d2qsth2z.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,18 +10,32 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Thu, Oct 03, 2013 at 11:44:15PM -0700, Kuninori Morimoto wrote:
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Thanks, I have queued this up however I am unsure if it will
+appear in v3.13 or v3.14.
+
+There was some minor fuzz when applying this change.
+What I have queued up is below, please check that it is correct.
+
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+[PATCH] ARM: shmobile: r8a7778: add I2C support on DTSI
+
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi |   40 ++++++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7778.dtsi | 40 ++++++++++++++++++++++++++++++++++++++++
  1 file changed, 40 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 02f82282..573ec83 100644
+index 5d08f116..0ee6e86 100644
 --- a/arch/arm/boot/dts/r8a7778.dtsi
 +++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -124,4 +124,44 @@
- 		interrupts = <0 61 4>;
- 		status = "disabled";
+@@ -117,4 +117,44 @@
+ 		reg = <0xfffc000 0x118>;
+ 		#gpio-range-cells = <3>;
  	};
 +
 +	i2c0: i2c@ffc70000 {
@@ -65,5 +79,5 @@ index 02f82282..573ec83 100644
 +	};
  };
 -- 
-1.7.9.5
+1.8.4
 
