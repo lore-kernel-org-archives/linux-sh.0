@@ -1,43 +1,32 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Wed, 16 Oct 2013 12:05:59 +0000
-Subject: [PATCH 0/2] sata_rcar: Adjust DT bindings and add R-Car Gen2 PHY support (take 3)
-Message-Id: <1381925161-16729-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 Oct 2013 03:39:20 +0000
+Subject: [PATCH 03/08] ARM: shmobile: Select GPIO in case of the r8a7791 SoC
+Message-Id: <20131008033920.20455.61245.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
+References: <20131008033851.20455.68845.sendpatchset@w520>
+In-Reply-To: <20131008033851.20455.68845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Tejun Heo <tj@kernel.org>, Mark Rutland <mark.rutland@arm.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This modifies and documents R-Car SATA device tree (DT) bindings.
-The "sata-<SoC>" format is now used for the "compatible" property.
-Also, a platform device id table is introduced for non-DT support.
-The device id naming is consistent with the "compatible" DT
-property format.
+From: Magnus Damm <damm@opensource.se>
 
-R-Car Gen2 SATA PHY support is added. PHY initialization method
-is chosen, based on the device id.
+Make it possible to build GPIO on r8a7791.
 
-Changes from version 1:
-* Kept old DT bindings for compatibility
-* Amended DT bindings documentation
-Changes from version 2:
-* Dropped r8a7779.dtsi changes
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Valentine Barshak (2):
-  sata_rcar: Adjust and document device tree bindings
-  sata_rcar: Add R-Car Gen2 SATA support
+ arch/arm/mach-shmobile/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
- .../devicetree/bindings/ata/sata_rcar.txt          |  19 ++++
- arch/arm/boot/dts/r8a7779.dtsi                     |   2 +-
- arch/arm/mach-shmobile/clock-r8a7779.c             |   2 +-
- arch/arm/mach-shmobile/setup-r8a7779.c             |   2 +-
- drivers/ata/sata_rcar.c                            | 112 ++++++++++++++++++---
- 5 files changed, 118 insertions(+), 19 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
-
--- 
-1.8.3.1
-
+--- 0010/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-10-07 13:35:19.000000000 +0900
+@@ -97,6 +97,7 @@ config ARCH_R8A7790
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
