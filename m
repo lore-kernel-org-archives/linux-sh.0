@@ -1,42 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 22:37:42 +0000
-Subject: [PATCH v2 07/19] v4l: sh_vou: Enable the driver on all ARM platforms
-Message-Id: <1383086274-11049-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 08 Oct 2013 09:05:42 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7778: r8a7778_register_hspi() become static
+Message-Id: <117378e58365a44b568655e5aa49b3f6daf900c4.1381222967.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
-COMPILE_TEST.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
-Cc: linux-media@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+r8a7778_register_hspi() used only from setup-r8a7778.c
+it can be static
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/Kconfig | 2 +-
+ arch/arm/mach-shmobile/setup-r8a7778.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
-index c7caf94..399ef1c 100644
---- a/drivers/media/platform/Kconfig
-+++ b/drivers/media/platform/Kconfig
-@@ -36,7 +36,7 @@ source "drivers/media/platform/blackfin/Kconfig"
- config VIDEO_SH_VOU
- 	tristate "SuperH VOU video output driver"
- 	depends on MEDIA_CAMERA_SUPPORT
--	depends on VIDEO_DEV && ARCH_SHMOBILE && I2C
-+	depends on VIDEO_DEV && (ARM || COMPILE_TEST) && I2C
- 	select VIDEOBUF_DMA_CONTIG
- 	help
- 	  Support for the Video Output Unit (VOU) on SuperH SoCs.
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index f5e15c9..468ee65 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -258,7 +258,7 @@ static struct resource hspi_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_iid(0x75)),
+ };
+ 
+-void __init r8a7778_register_hspi(int id)
++static void __init r8a7778_register_hspi(int id)
+ {
+ 	BUG_ON(id < 0 || id > 2);
+ 
 -- 
-1.8.1.5
+1.8.4
 
