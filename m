@@ -1,46 +1,43 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Fri, 04 Oct 2013 00:30:43 +0000
-Subject: Re: [PATCH 2/6] arm: shmobile: lager: Add USBHS support
-Message-Id: <524E0C33.4090606@cogentembedded.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 08 Oct 2013 20:53:37 +0000
+Subject: Re: [PATCH] sh_eth: NAPI requires netif_receive_skb()
+Message-Id: <52547E8D.3080101@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1380652251-8143-3-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1380652251-8143-3-git-send-email-valentine.barshak@cogentembedded.com>
+References: <201309030303.11381.sergei.shtylyov@cogentembedded.com> <20130904.141252.532474080722830977.davem@davemloft.net> <Pine.LNX.4.64.1309261751200.11968@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1309261751200.11968@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
-On 10/04/2013 04:21 AM, Kuninori Morimoto wrote:
->
-> Hi Laurent
->
-> Thank you for your response
->
->> The problem with such a mechanism is that it only works with platform data, as
->> we don't have callback functions in DT.
->
-> Yes, I agree.
->
-> But in renesas_usbh case, almost all Renesas USBHS chip needs
-> its own special initializing method.
-> And somechip depends on SoC, somechip depends on platform.
->
-> I'm not sure formal/correct DT solution in this case,
-> but, I thought we can add data table on of_platform_populate().
->
-> # BTW, I need to know how to solve FPGA special settings on DT...
->
-> Best regards
-> ---
-> Kuninori Morimoto
->
+Hello.
 
-I think we need a USB phy driver here.
-The one that should be acquired by both renesas_usbhs and PCI USB.
-I'm currently experimenting with it.
+On 26-09-2013 18:12, Guennadi Liakhovetski wrote:
 
-I believe that all the phy handling should be moved to the phy drivers 
-eventually when we switch to using DT,
+>> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>> Date: Tue, 3 Sep 2013 03:03:10 +0400
 
-Thanks,
-Val.
+>>> Driver supporting NAPI should use NAPI-specific function for receiving packets,
+>>> so netif_rx() should be changed to netif_receive_skb().
+
+>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+> This patch breaks NFS boot on Armadillo800eva for me. Network
+> communication slows down to a crawl with
+
+> net eth0: Receive FIFO Overflow
+> nfs: server 192.168.x.y not responding, still trying
+
+> With this patch reverted (e.g. in today's Linus tree snapshot) boot is
+> restored.
+
+    Guennadi, are you expecting some actions (like looking into what Eric have 
+suggested) from me? If so, I'm still on vacation, should be back next Tuesday.
+    I don't think reverting the patch is a Right Thing to do.
+
+> Thanks
+> Guennadi
+
+WBR, Sergei
+
