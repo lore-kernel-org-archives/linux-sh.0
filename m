@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Oct 2013 06:45:03 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7779: add I2C clock for DT
-Message-Id: <87eh81zg9f.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 08 Oct 2013 01:50:08 +0000
+Subject: Re: [PATCH 4/4] ARM: shmobile: r8a7779: add I2C clock for DT
+Message-Id: <20131008015006.GB16625@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1352277298-23312-5-git-send-email-horms@verge.net.au>
 In-Reply-To: <1352277298-23312-5-git-send-email-horms@verge.net.au>
@@ -10,34 +10,13 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-10e8d4f6dddb0f9dc408c2f2bde8399b243a42ca
-(ARM: mach-shmobile: r8a7779: Minimal setup using DT)
-added I2C driver for DT, but it didn't add clock.
-This patch adds missing clock for I2C
+On Thu, Oct 03, 2013 at 11:45:03PM -0700, Kuninori Morimoto wrote:
+> 10e8d4f6dddb0f9dc408c2f2bde8399b243a42ca
+> (ARM: mach-shmobile: r8a7779: Minimal setup using DT)
+> added I2C driver for DT, but it didn't add clock.
+> This patch adds missing clock for I2C
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 1f7080f..badb8b7 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -184,9 +184,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP016]), /* TMU02 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-+	CLKDEV_DEV_ID("ffc70000.i2c", &mstp_clks[MSTP030]), /* I2C0 */
- 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
-+	CLKDEV_DEV_ID("ffc71000.i2c", &mstp_clks[MSTP029]), /* I2C1 */
- 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
-+	CLKDEV_DEV_ID("ffc72000.i2c", &mstp_clks[MSTP028]), /* I2C2 */
- 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
-+	CLKDEV_DEV_ID("ffc73000.i2c", &mstp_clks[MSTP027]), /* I2C3 */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
--- 
-1.7.9.5
-
+Thanks, I have queued this up but I am unsure if it will
+end up in v3.13 or v3.14.
