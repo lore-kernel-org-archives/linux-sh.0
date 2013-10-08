@@ -1,44 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:37:04 +0000
-Subject: [PATCH 04/12] ARM: shmobile: lager: Fix Display Unit platform data
-Message-Id: <37bf8103c51a1508d6323de19a7ae1c13c3ed3f5.1380530519.git.horms+renesas@verge.net.au>
+From: takasi-y@ops.dti.ne.jp
+Date: Tue, 08 Oct 2013 05:30:40 +0000
+Subject: [PATCH v2 0/3] ARM: shmobile: kzm9d: migrate to common clock framework with DT
+Message-Id: <20131008143040.52f36df8edb7ab63224d8433@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380530519.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380530519.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch series makes kzm9d to move to new clk implementation
+ based on the common clock framework and device tree, when configured
+ as a part of multi-platform.
 
-The DU device erroneously receives the DU resources array as platform
-data instead of the DU platform data structure. Fix it.
+These patches do not remove sh-clkfwk version, even on emev2.
+Non multi-platform configuration still uses sh-clkfwk.
 
-This problem was introduced by f631fa0 ("ARM: shmobile: lager: Add Display
-Unit support").
+Should be applied and compiled on
+ kernel/git/horms/renesas.git tag:renesas-devel-20131008
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-lager.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Confirmed for boot up to command prompt.
+- kzm9d board / multi-platform + kzm9d configuration
+- kzm9d board / kzm9d configuration for regression
+for compilation
+- ape6evm(non-multi-platform) configuration for regression.
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index caec99e..9fbbf23 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -87,8 +87,8 @@ static void __init lager_add_du_device(void)
- 		.id = -1,
- 		.res = du_resources,
- 		.num_res = ARRAY_SIZE(du_resources),
--		.data = &du_resources,
--		.size_data = sizeof(du_resources),
-+		.data = &lager_du_pdata,
-+		.size_data = sizeof(lager_du_pdata),
- 		.dma_mask = DMA_BIT_MASK(32),
- 	};
- 
--- 
-1.8.4
+Changes since v1:
 
+Generally, simplified, depending on
+ [PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
+series posted recently by Magnus.
+
+[PATCH 1/6] clocksource: em_sti: convert to clk_prepare/unprepare
+[PATCH 2/6] serial8250-em: convert to clk_prepare/unprepare
+Removed because the new base includes it.
+Thank you for your review, Daniel, Greg, Laurent, and Magnus.
+
+[PATCH 3/6] sh: clkfwk: Select sh-/common- clkfwk alternatively
+Removed because "KZM9D Multiplatform update" had made this not needed.
+
+[PATCH v2 1/3] clk: emev2: Add support for emev2 SMU clocks with DT
+[PATCH v2 2/3] ARM: shmobile: emev2: Add clock tree description in DT
+(was 3/6, 4/6)
+Add @unit-address to smu in dts.
+Reassemble patches to (.txt + .c) + .dts from .txt + (.c + .dts).
+Only used when multi-platform configuration.
+Extra blank line removed.
+
+[PATCH v2 3/3] ARM: shmobile: kzm9d: Use common clock framework
+(was 6/6)
+No Kconfig modification because of "KZM9D Multiplatform update".
+
+
+Takashi YOSHII (3):
+  clk: emev2: Add support for emev2 SMU clocks with DT
+  ARM: shmobile: emev2: Add clock tree description in DT
+  ARM: shmobile: kzm9d: Use common clock framework
+
+ .../devicetree/bindings/clock/emev2-clock.txt      |  98 +++++++++++++++++++
+ arch/arm/boot/dts/emev2.dtsi                       |  84 +++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9d-reference.c     |   5 +-
