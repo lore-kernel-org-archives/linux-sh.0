@@ -1,253 +1,274 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 31 Oct 2013 10:35:23 +0000
-Subject: Re: [PATCH V4] sata_rcar: Add R-Car Gen2 SATA PHY support
-Message-Id: <5272326B.3050500@cogentembedded.com>
+From: takasi-y@ops.dti.ne.jp
+Date: Tue, 08 Oct 2013 05:32:17 +0000
+Subject: [PATCH v2 1/3] clk: emev2: Add support for emev2 SMU clocks with DT
+Message-Id: <20131008143217.0611fba0c0d27d9c622759f3@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383153261-17383-1-git-send-email-valentine.barshak@cogentembedded.com> <20131031060141.GT1603@verge.net.au>
-In-Reply-To: <20131031060141.GT1603@verge.net.au>
+References: <20131008143040.52f36df8edb7ab63224d8433@ops.dti.ne.jp>
+In-Reply-To: <20131008143040.52f36df8edb7ab63224d8433@ops.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On 10/31/2013 10:01 AM, Simon Horman wrote:
-> On Wed, Oct 30, 2013 at 09:14:21PM +0400, Valentine Barshak wrote:
->> R-Car Gen2 SoCs have a different PHY which is not compatible
->> with the older R-Car H1 (R8A7779) version.
->> This adds OF/platform device id tables and PHY initialization
->> callbacks for the following Gen2 SoCs:
->>    * R-Car H2: R8A7790;
->>    * R-Car M2: R8A7791.
->>
->> PHY initialization method is chosen based on the device id.
->> Default PHY settings are applied for Gen2 SoCs, which should
->> suit the Gen2 boards available.
->>
->> While at it, this also adds "sata-r8a7779" compatibility string
->> for R-Car H1 SATA, while keeping the old one for compatibility.
->>
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->
-> I know we are going around and around in circles regarding the bindings.
-> But I think you need to submit that patch which documents the bindings
-> that exist after this patch in order for the bindings, as they are
-> used here, to be reviewed by the device tree people.
+Device tree clock binding document for EMMA Mobile EV2 SMU,
+And Common clock framework based implementation of it.
+Following nodes are defined to describe clock tree.
+- renesas,emev2-smu
+- renesas,emev2-smu-clkdiv
+- renesas,emev2-smu-gclk
 
-OK, I'll resend.
+These bindings are designed manually based on
+ 19UH0037EJ1000_SMU : System Management Unit User's Manual
 
->
-> Also, I think I found a typo which I have noted below.
+So far, reparent is not implemented, and is fixed to index #0.
+Clock tree description is not included, and should be provided
+by device-tree.
 
-There's no typo. I'm using "sata_rcar" device name for compatibility with the current r8a7779 code
-that uses the driver and registers "sata_rcar" device.
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+---
+ .../devicetree/bindings/clock/emev2-clock.txt      |  98 +++++++++++++++++++
+ drivers/clk/Makefile                               |   1 +
+ drivers/clk/shmobile/Makefile                      |   3 +
+ drivers/clk/shmobile/clk-emev2.c                   | 104 +++++++++++++++++++++
+ 4 files changed, 206 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/emev2-clock.txt
+ create mode 100644 drivers/clk/shmobile/Makefile
+ create mode 100644 drivers/clk/shmobile/clk-emev2.c
 
->
->> ---
->>   drivers/ata/sata_rcar.c | 118 +++++++++++++++++++++++++++++++++++++++++-------
->>   1 file changed, 102 insertions(+), 16 deletions(-)
->>
->> diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
->> index c2d95e9..c9ea1bd 100644
->> --- a/drivers/ata/sata_rcar.c
->> +++ b/drivers/ata/sata_rcar.c
->> @@ -15,6 +15,7 @@
->>   #include <linux/module.h>
->>   #include <linux/ata.h>
->>   #include <linux/libata.h>
->> +#include <linux/of_device.h>
->>   #include <linux/platform_device.h>
->>   #include <linux/clk.h>
->>   #include <linux/err.h>
->> @@ -123,12 +124,37 @@
->>
->>   #define SATA_RCAR_DMA_BOUNDARY		0x1FFFFFFEUL
->>
->> +/* Gen2 Physical Layer Control Registers */
->> +#define RCAR_GEN2_PHY_CTL1_REG		0x1704
->> +#define RCAR_GEN2_PHY_CTL1		0x34180002
->> +#define RCAR_GEN2_PHY_CTL1_SS		0xC180	/* Spread Spectrum */
->> +
->> +#define RCAR_GEN2_PHY_CTL2_REG		0x170C
->> +#define RCAR_GEN2_PHY_CTL2		0x00002303
->> +
->> +#define RCAR_GEN2_PHY_CTL3_REG		0x171C
->> +#define RCAR_GEN2_PHY_CTL3		0x000B0194
->> +
->> +#define RCAR_GEN2_PHY_CTL4_REG		0x1724
->> +#define RCAR_GEN2_PHY_CTL4		0x00030994
->> +
->> +#define RCAR_GEN2_PHY_CTL5_REG		0x1740
->> +#define RCAR_GEN2_PHY_CTL5		0x03004001
->> +#define RCAR_GEN2_PHY_CTL5_DC		BIT(1)	/* DC connection */
->> +#define RCAR_GEN2_PHY_CTL5_TR		BIT(2)	/* Termination Resistor */
->> +
->> +enum sata_rcar_type {
->> +	RCAR_GEN1_SATA,
->> +	RCAR_GEN2_SATA,
->> +};
->> +
->>   struct sata_rcar_priv {
->>   	void __iomem *base;
->>   	struct clk *clk;
->> +	enum sata_rcar_type type;
->>   };
->>
->> -static void sata_rcar_phy_initialize(struct sata_rcar_priv *priv)
->> +static void sata_rcar_gen1_phy_preinit(struct sata_rcar_priv *priv)
->>   {
->>   	void __iomem *base = priv->base;
->>
->> @@ -141,8 +167,8 @@ static void sata_rcar_phy_initialize(struct sata_rcar_priv *priv)
->>   	iowrite32(0, base + SATAPHYRESET_REG);
->>   }
->>
->> -static void sata_rcar_phy_write(struct sata_rcar_priv *priv, u16 reg, u32 val,
->> -				int group)
->> +static void sata_rcar_gen1_phy_write(struct sata_rcar_priv *priv, u16 reg,
->> +				     u32 val, int group)
->>   {
->>   	void __iomem *base = priv->base;
->>   	int timeout;
->> @@ -170,6 +196,29 @@ static void sata_rcar_phy_write(struct sata_rcar_priv *priv, u16 reg, u32 val,
->>   	iowrite32(0, base + SATAPHYADDR_REG);
->>   }
->>
->> +static void sata_rcar_gen1_phy_init(struct sata_rcar_priv *priv)
->> +{
->> +	sata_rcar_gen1_phy_preinit(priv);
->> +	sata_rcar_gen1_phy_write(priv, SATAPCTLR1_REG, 0x00200188, 0);
->> +	sata_rcar_gen1_phy_write(priv, SATAPCTLR1_REG, 0x00200188, 1);
->> +	sata_rcar_gen1_phy_write(priv, SATAPCTLR3_REG, 0x0000A061, 0);
->> +	sata_rcar_gen1_phy_write(priv, SATAPCTLR2_REG, 0x20000000, 0);
->> +	sata_rcar_gen1_phy_write(priv, SATAPCTLR2_REG, 0x20000000, 1);
->> +	sata_rcar_gen1_phy_write(priv, SATAPCTLR4_REG, 0x28E80000, 0);
->> +}
->> +
->> +static void sata_rcar_gen2_phy_init(struct sata_rcar_priv *priv)
->> +{
->> +	void __iomem *base = priv->base;
->> +
->> +	iowrite32(RCAR_GEN2_PHY_CTL1, base + RCAR_GEN2_PHY_CTL1_REG);
->> +	iowrite32(RCAR_GEN2_PHY_CTL2, base + RCAR_GEN2_PHY_CTL2_REG);
->> +	iowrite32(RCAR_GEN2_PHY_CTL3, base + RCAR_GEN2_PHY_CTL3_REG);
->> +	iowrite32(RCAR_GEN2_PHY_CTL4, base + RCAR_GEN2_PHY_CTL4_REG);
->> +	iowrite32(RCAR_GEN2_PHY_CTL5 | RCAR_GEN2_PHY_CTL5_DC |
->> +		  RCAR_GEN2_PHY_CTL5_TR, base + RCAR_GEN2_PHY_CTL5_REG);
->> +}
->> +
->>   static void sata_rcar_freeze(struct ata_port *ap)
->>   {
->>   	struct sata_rcar_priv *priv = ap->host->private_data;
->> @@ -738,13 +787,17 @@ static void sata_rcar_init_controller(struct ata_host *host)
->>   	u32 val;
->>
->>   	/* reset and setup phy */
->> -	sata_rcar_phy_initialize(priv);
->> -	sata_rcar_phy_write(priv, SATAPCTLR1_REG, 0x00200188, 0);
->> -	sata_rcar_phy_write(priv, SATAPCTLR1_REG, 0x00200188, 1);
->> -	sata_rcar_phy_write(priv, SATAPCTLR3_REG, 0x0000A061, 0);
->> -	sata_rcar_phy_write(priv, SATAPCTLR2_REG, 0x20000000, 0);
->> -	sata_rcar_phy_write(priv, SATAPCTLR2_REG, 0x20000000, 1);
->> -	sata_rcar_phy_write(priv, SATAPCTLR4_REG, 0x28E80000, 0);
->> +	switch (priv->type) {
->> +	case RCAR_GEN1_SATA:
->> +		sata_rcar_gen1_phy_init(priv);
->> +		break;
->> +	case RCAR_GEN2_SATA:
->> +		sata_rcar_gen2_phy_init(priv);
->> +		break;
->> +	default:
->> +		dev_warn(host->dev, "SATA phy is not initialized\n");
->> +		break;
->> +	}
->>
->>   	/* SATA-IP reset state */
->>   	val = ioread32(base + ATAPI_CONTROL1_REG);
->> @@ -770,8 +823,40 @@ static void sata_rcar_init_controller(struct ata_host *host)
->>   	iowrite32(ATAPI_INT_ENABLE_SATAINT, base + ATAPI_INT_ENABLE_REG);
->>   }
->>
->> +static struct of_device_id sata_rcar_match[] = {
->> +	{
->> +		/* Deprecated by "renesas,sata-r8a7779" */
->> +		.compatible = "renesas,rcar-sata",
->> +		.data = (void *)RCAR_GEN1_SATA,
->> +	},
->> +	{
->> +		.compatible = "renesas,sata-r8a7779",
->> +		.data = (void *)RCAR_GEN1_SATA,
->> +	},
->> +	{
->> +		.compatible = "renesas,sata-r8a7790",
->> +		.data = (void *)RCAR_GEN2_SATA
->> +	},
->> +	{
->> +		.compatible = "renesas,sata-r8a7791",
->> +		.data = (void *)RCAR_GEN2_SATA
->> +	},
->> +	{},
->> +};
->> +MODULE_DEVICE_TABLE(of, sata_rcar_match);
->> +
->> +static const struct platform_device_id sata_rcar_id_table[] = {
->> +	{ "sata_rcar", RCAR_GEN1_SATA }, /* Deprecated by "sata-r8a7779" */
->
-> s/sata_rcar/sata-rcar/ ?
-
-No, thanks.
-
->
->
->> +	{ "sata-r8a7779", RCAR_GEN1_SATA },
->> +	{ "sata-r8a7790", RCAR_GEN2_SATA },
->> +	{ "sata-r8a7791", RCAR_GEN2_SATA },
->> +	{ },
->> +};
->> +MODULE_DEVICE_TABLE(platform, sata_rcar_id_table);
->> +
->>   static int sata_rcar_probe(struct platform_device *pdev)
->>   {
->> +	const struct of_device_id *of_id;
->>   	struct ata_host *host;
->>   	struct sata_rcar_priv *priv;
->>   	struct resource *mem;
->> @@ -787,6 +872,12 @@ static int sata_rcar_probe(struct platform_device *pdev)
->>   	if (!priv)
->>   		return -ENOMEM;
->>
->> +	of_id = of_match_device(sata_rcar_match, &pdev->dev);
->> +	if (of_id)
->> +		priv->type = (enum sata_rcar_type)of_id->data;
->> +	else
->> +		priv->type = platform_get_device_id(pdev)->driver_data;
->> +
->>   	priv->clk = devm_clk_get(&pdev->dev, NULL);
->>   	if (IS_ERR(priv->clk)) {
->>   		dev_err(&pdev->dev, "failed to get access to sata clock\n");
->> @@ -892,15 +983,10 @@ static const struct dev_pm_ops sata_rcar_pm_ops = {
->>   };
->>   #endif
->>
->> -static struct of_device_id sata_rcar_match[] = {
->> -	{ .compatible = "renesas,rcar-sata", },
->> -	{},
->> -};
->> -MODULE_DEVICE_TABLE(of, sata_rcar_match);
->> -
->>   static struct platform_driver sata_rcar_driver = {
->>   	.probe		= sata_rcar_probe,
->>   	.remove		= sata_rcar_remove,
->> +	.id_table	= sata_rcar_id_table,
->>   	.driver = {
->>   		.name		= DRV_NAME,
->>   		.owner		= THIS_MODULE,
->> --
->> 1.8.3.1
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-
+diff --git a/Documentation/devicetree/bindings/clock/emev2-clock.txt b/Documentation/devicetree/bindings/clock/emev2-clock.txt
+new file mode 100644
+index 0000000..60bbb1a
+--- /dev/null
++++ b/Documentation/devicetree/bindings/clock/emev2-clock.txt
+@@ -0,0 +1,98 @@
++Device tree Clock bindings for Renesas EMMA Mobile EV2
++
++This binding uses the common clock binding.
++
++* SMU
++System Management Unit described in user's manual R19UH0037EJ1000_SMU.
++This is not a clock provider, but clocks under SMU depend on it.
++
++Required properties:
++- compatible: Should be "renesas,emev2-smu"
++- reg: Address and Size of SMU registers
++
++* SMU_CLKDIV
++Function block with an input mux and a divider, which corresponds to
++"Serial clock generator" in fig."Clock System Overview" of the manual,
++and "xxx frequency division setting register" (XXXCLKDIV) registers.
++This makes internal (neither input nor output) clock that is provided
++to input of xxxGCLK block.
++
++Required properties:
++- compatible: Should be "renesas,emev2-smu-clkdiv"
++- reg: Byte offset from SMU base and Bit position in the register
++- clocks: Parent clocks. Input clocks as described in clock-bindings.txt
++- #clock-cells: Should be <0>
++
++* SMU_GCLK
++Clock gating node shown as "Clock stop processing block" in the
++fig."Clock System Overview" of the manual.
++Registers are "xxx clock gate control register" (XXXGCLKCTRL).
++
++Required properties:
++- compatible: Should be "renesas,emev2-smu-gclk"
++- reg: Byte offset from SMU base and Bit position in the register
++- clocks: Input clock as described in clock-bindings.txt
++- #clock-cells: Should be <0>
++
++Example of provider:
++
++usia_u0_sclkdiv: usia_u0_sclkdiv {
++	compatible = "renesas,emev2-smu-clkdiv";
++	reg = <0x610 0>;
++	clocks = <&pll3_fo>, <&pll4_fo>, <&pll1_fo>, <&osc1_fo>;
++	#clock-cells = <0>;
++};
++
++usia_u0_sclk: usia_u0_sclk {
++	compatible = "renesas,emev2-smu-gclk";
++	reg = <0x4a0 1>;
++	clocks = <&usia_u0_sclkdiv>;
++	#clock-cells = <0>;
++};
++
++Example of consumer:
++
++uart@e1020000 {
++	compatible = "renesas,em-uart";
++	reg = <0xe1020000 0x38>;
++	interrupts = <0 8 0>;
++	clocks = <&usia_u0_sclk>;
++	clock-names = "sclk";
++};
++
++Example of clock-tree description:
++
++ This describes a clock path in the clock tree
++  c32ki -> pll3_fo -> usia_u0_sclkdiv -> usia_u0_sclk
++
++smu@e0110000 {
++	compatible = "renesas,emev2-smu";
++	reg = <0xe0110000 0x10000>;
++	#address-cells = <2>;
++	#size-cells = <0>;
++
++	c32ki: c32ki {
++		compatible = "fixed-clock";
++		clock-frequency = <32768>;
++		#clock-cells = <0>;
++	};
++	pll3_fo: pll3_fo {
++		compatible = "fixed-factor-clock";
++		clocks = <&c32ki>;
++		clock-div = <1>;
++		clock-mult = <7000>;
++		#clock-cells = <0>;
++	};
++	usia_u0_sclkdiv: usia_u0_sclkdiv {
++		compatible = "renesas,emev2-smu-clkdiv";
++		reg = <0x610 0>;
++		clocks = <&pll3_fo>;
++		#clock-cells = <0>;
++	};
++	usia_u0_sclk: usia_u0_sclk {
++		compatible = "renesas,emev2-smu-gclk";
++		reg = <0x4a0 1>;
++		clocks = <&usia_u0_sclkdiv>;
++		#clock-cells = <0>;
++	};
++};
+diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
+index 7b11106..d25da26 100644
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -32,6 +32,7 @@ obj-$(CONFIG_ARCH_VT8500)	+= clk-vt8500.o
+ obj-$(CONFIG_ARCH_ZYNQ)		+= zynq/
+ obj-$(CONFIG_ARCH_TEGRA)	+= tegra/
+ obj-$(CONFIG_PLAT_SAMSUNG)	+= samsung/
++obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= shmobile/
+ 
+ obj-$(CONFIG_X86)		+= x86/
+ 
+diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
+new file mode 100644
+index 0000000..2240730
+--- /dev/null
++++ b/drivers/clk/shmobile/Makefile
+@@ -0,0 +1,3 @@
++obj-$(CONFIG_ARCH_EMEV2)	+= clk-emev2.o
++# for emply built-in.o
++obj-n	:= dummy
+diff --git a/drivers/clk/shmobile/clk-emev2.c b/drivers/clk/shmobile/clk-emev2.c
+new file mode 100644
+index 0000000..6c7c929
+--- /dev/null
++++ b/drivers/clk/shmobile/clk-emev2.c
+@@ -0,0 +1,104 @@
++/*
++ * EMMA Mobile EV2 common clock framework support
++ *
++ * Copyright (C) 2013 Takashi Yoshii <takashi.yoshii.ze@renesas.com>
++ * Copyright (C) 2012 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/clk-provider.h>
++#include <linux/clkdev.h>
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++
++/* EMEV2 SMU registers */
++#define USIAU0_RSTCTRL 0x094
++#define USIBU1_RSTCTRL 0x0ac
++#define USIBU2_RSTCTRL 0x0b0
++#define USIBU3_RSTCTRL 0x0b4
++#define STI_RSTCTRL 0x124
++#define STI_CLKSEL 0x688
++
++static DEFINE_SPINLOCK(lock);
++
++/* not pretty, but hey */
++void __iomem *smu_base;
++
++static void __init emev2_smu_write(unsigned long value, int offs)
++{
++	BUG_ON(!smu_base || (offs >= PAGE_SIZE));
++	writel_relaxed(value, smu_base + offs);
++}
++
++static const struct of_device_id smu_id[] __initconst = {
++	{ .compatible = "renesas,emev2-smu", },
++	{},
++};
++
++static void __init emev2_smu_init(void)
++{
++	struct device_node *np;
++
++	np = of_find_matching_node(NULL, smu_id);
++	BUG_ON(!np);
++	smu_base = of_iomap(np, 0);
++	BUG_ON(!smu_base);
++	of_node_put(np);
++
++	/* setup STI timer to run on 32.768 kHz and deassert reset */
++	emev2_smu_write(0, STI_CLKSEL);
++	emev2_smu_write(1, STI_RSTCTRL);
++
++	/* deassert reset for UART0->UART3 */
++	emev2_smu_write(2, USIAU0_RSTCTRL);
++	emev2_smu_write(2, USIBU1_RSTCTRL);
++	emev2_smu_write(2, USIBU2_RSTCTRL);
++	emev2_smu_write(2, USIBU3_RSTCTRL);
++}
++
++static void __init emev2_smu_clkdiv_init(struct device_node *np)
++{
++	u32 reg[2];
++	struct clk *clk;
++	const char *parent_name = of_clk_get_parent_name(np, 0);
++	if (WARN_ON(of_property_read_u32_array(np, "reg", reg, 2)))
++		return;
++	if (!smu_base)
++		emev2_smu_init();
++	clk = clk_register_divider(NULL, np->name, parent_name, 0,
++				   smu_base + reg[0], reg[1], 8, 0, &lock);
++	of_clk_add_provider(np, of_clk_src_simple_get, clk);
++	clk_register_clkdev(clk, np->name, NULL);
++	pr_debug("## %s %s %p\n", __func__, np->name, clk);
++}
++CLK_OF_DECLARE(emev2_smu_clkdiv, "renesas,emev2-smu-clkdiv",
++		emev2_smu_clkdiv_init);
++
++static void __init emev2_smu_gclk_init(struct device_node *np)
++{
++	u32 reg[2];
++	struct clk *clk;
++	const char *parent_name = of_clk_get_parent_name(np, 0);
++	if (WARN_ON(of_property_read_u32_array(np, "reg", reg, 2)))
++		return;
++	if (!smu_base)
++		emev2_smu_init();
++	clk = clk_register_gate(NULL, np->name, parent_name, 0,
++				smu_base + reg[0], reg[1], 0, &lock);
++	of_clk_add_provider(np, of_clk_src_simple_get, clk);
++	clk_register_clkdev(clk, np->name, NULL);
++	pr_debug("## %s %s %p\n", __func__, np->name, clk);
++}
++CLK_OF_DECLARE(emev2_smu_gclk, "renesas,emev2-smu-gclk", emev2_smu_gclk_init);
+-- 
+1.8.1.5
