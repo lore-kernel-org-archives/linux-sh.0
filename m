@@ -1,56 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 01 Oct 2013 03:48:35 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: ape6evm: fix incorrect placement of __initdata tag
-Message-Id: <20131001034831.GA3083@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 08 Oct 2013 09:01:27 +0000
+Subject: [GIT PULL] Renesas ARM based SoC clocksource updates for v3.13
+Message-Id: <1381222888-4199-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1959578.PFsrHiTtYY@amdc1032>
- <27072275.6rIbiFzHY2@avalon>
-In-Reply-To: <27072275.6rIbiFzHY2@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Sep 30, 2013 at 08:31:05PM +0200, Laurent Pinchart wrote:
-> On Monday 30 September 2013 17:34:36 Bartlomiej Zolnierkiewicz wrote:
-> > __initdata tag should be placed between the variable name and equal
-> > sign for the variable to be placed in the intended .init.data section.
-> > 
-> > Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-> > Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Hi Daniel,
 
-Thanks, I will queue this up.
+please consider the following Renesas ARM based SoC clocksource updates
+for v3.13.
 
-> 
-> > ---
-> > v2:
-> > - use __initdata as it is OK to do it
-> > 
-> >  arch/arm/mach-shmobile/board-ape6evm.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-ape6evm.c
-> > b/arch/arm/mach-shmobile/board-ape6evm.c index 7627385..8954f55 100644
-> > --- a/arch/arm/mach-shmobile/board-ape6evm.c
-> > +++ b/arch/arm/mach-shmobile/board-ape6evm.c
-> > @@ -86,7 +86,7 @@ static struct gpio_keys_button gpio_buttons[] = {
-> >  	GPIO_KEY(KEY_VOLUMEDOWN,	329,	"S21"),
-> >  };
-> > 
-> > -static struct __initdata gpio_keys_platform_data ape6evm_keys_pdata = {
-> > +static struct gpio_keys_platform_data ape6evm_keys_pdata __initdata = {
-> >  	.buttons	= gpio_buttons,
-> >  	.nbuttons	= ARRAY_SIZE(gpio_buttons),
-> >  };
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+The following changes since commit 272b98c6455f00884f0350f775c5342358ebb73f:
+
+  Linux 3.12-rc1 (2013-09-16 16:17:51 -0400)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clocksource-for-v3.13
+
+for you to fetch changes up to c93031270dfb9b60dba1fc63073406e31acfc7b4:
+
+  clocksource: em_sti: convert to clk_prepare/unprepare (2013-10-08 09:37:24 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC clocksource updates for v3.13
+
+* Convert em_sti to clk_prepare/unprepare
+
+----------------------------------------------------------------
+Shinya Kuribayashi (1):
+      clocksource: em_sti: convert to clk_prepare/unprepare
+
+ drivers/clocksource/em_sti.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
