@@ -1,39 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 08 Oct 2013 09:01:27 +0000
-Subject: [GIT PULL] Renesas ARM based SoC clocksource updates for v3.13
-Message-Id: <1381222888-4199-1-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 Oct 2013 06:30:00 +0000
+Subject: [PATCH 00/02] ARM: shmobile: r8a7791 Koelsch DT reference support V2
+Message-Id: <20131008063000.24789.7845.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Daniel,
+ARM: shmobile: r8a7791 Koelsch DT reference support V2
 
-please consider the following Renesas ARM based SoC clocksource updates
-for v3.13.
+[PATCH 01/02] ARM: shmobile: r8a7791 Koelsch DT reference DTS bits
+[PATCH 02/02] ARM: shmobile: r8a7791 Koelsch DT reference C bits
 
+This series is V2 of Koelsch DT reference support. At this point the
+board file is separated from the legacy Koelsch board support, and in
+the not so distant future this DT reference board file will be converted
+into MULTIPLATFORM only. This can only happen after r8a7791 CCF support
+has been added.
 
-The following changes since commit 272b98c6455f00884f0350f775c5342358ebb73f:
+After CCF and MULTIPLATFORM are done for r8a7791 the board support code
+will be converted into same style as EMEV2, for more details please
+see the following series:
 
-  Linux 3.12-rc1 (2013-09-16 16:17:51 -0400)
+[PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
 
-are available in the git repository at:
+Changes since V1 are DT_MACHINE update to sync with legacy board
+code and patch splitting to simplify merge dependencies.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clocksource-for-v3.13
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-for you to fetch changes up to c93031270dfb9b60dba1fc63073406e31acfc7b4:
+ Written against renesas.git tag renesas-devel-20131008
 
-  clocksource: em_sti: convert to clk_prepare/unprepare (2013-10-08 09:37:24 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based SoC clocksource updates for v3.13
-
-* Convert em_sti to clk_prepare/unprepare
-
-----------------------------------------------------------------
-Shinya Kuribayashi (1):
-      clocksource: em_sti: convert to clk_prepare/unprepare
-
- drivers/clocksource/em_sti.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/Makefile                       |    1 
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts  |   32 +++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                   |   11 +++++
+ arch/arm/mach-shmobile/Makefile                  |    1 
+ arch/arm/mach-shmobile/Makefile.boot             |    1 
+ arch/arm/mach-shmobile/board-koelsch-reference.c |   46 ++++++++++++++++++++++
+ 6 files changed, 92 insertions(+)
