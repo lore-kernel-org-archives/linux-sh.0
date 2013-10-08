@@ -1,65 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 29 Oct 2013 13:24:57 +0000
-Subject: Re: [PATCH 02/12] clocksource: sh_mtu2: Add clk_prepare/unprepare support
-Message-Id: <12808622.W4bQC68mNI@avalon>
+From: takasi-y@ops.dti.ne.jp
+Date: Tue, 08 Oct 2013 05:34:03 +0000
+Subject: [PATCH v2 3/3] ARM: shmobile: kzm9d: Use common clock framework
+Message-Id: <20131008143403.c11f294c8a1701a2ab3bc5fd@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383000569-8916-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <526F98BD.9000904@cogentembedded.com>
-In-Reply-To: <526F98BD.9000904@cogentembedded.com>
+References: <20131008143040.52f36df8edb7ab63224d8433@ops.dti.ne.jp>
+In-Reply-To: <20131008143040.52f36df8edb7ab63224d8433@ops.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Use common clock framework version of clock
+ drivers/clk/shmobile/clk-emev2.c
+instead of sh-clkfwk version
+ arch/arm/mach-shmobile/clock-emev2.c
+when it is configured as a part of multi-platform.
 
-On Tuesday 29 October 2013 15:15:09 Sergei Shtylyov wrote:
-> On 29-10-2013 2:49, Laurent Pinchart wrote:
-> > Prepare the clock at probe time, as there is no other appropriate place
-> > in the driver where we're allowed to sleep.
-> > 
-> > Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
-> > Cc: linux-kernel@vger.kernel.org
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >   drivers/clocksource/sh_mtu2.c | 16 ++++++++++++++--
-> >   1 file changed, 14 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-> > index 4aac9ee..3cf1283 100644
-> > --- a/drivers/clocksource/sh_mtu2.c
-> > +++ b/drivers/clocksource/sh_mtu2.c
-> > @@ -313,8 +313,20 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p,
-> > struct platform_device *pdev)> 
-> >   		goto err1;
-> >   	}
-> > 
-> > -	return sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
-> > -				cfg->clockevent_rating);
-> > +	ret = clk_prepare(p->clk);
-> > +	if (ret < 0)
-> > +		goto err2;
-> > +
-> > +	ret = sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
-> > +			       cfg->clockevent_rating);
-> > +	if (ret < 0)
-> > +		goto err3;
-> > +
-> > +	return 0;
-> > + err3:
-> > +	clk_unprepare(p->clk);
-> > + err2:
-> > +	clk_put(p->clk);
-> 
->     This one seems to be a fix and so needs to be in a separate patch...
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+---
+ arch/arm/mach-shmobile/board-kzm9d-reference.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-I'll split the patch and repost (same for 03/12)
-
+diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+index 054d8d5..853003c 100644
+--- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+@@ -20,15 +20,14 @@
+ 
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/clk-provider.h>
+ #include <mach/emev2.h>
+ #include <mach/common.h>
+ #include <asm/mach/arch.h>
+ 
+ static void __init kzm9d_add_standard_devices(void)
+ {
+-	if (!IS_ENABLED(CONFIG_COMMON_CLK))
+-		emev2_clock_init();
+-
++	of_clk_init(NULL);
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
 -- 
-Regards,
-
-Laurent Pinchart
-
+1.8.1.5
