@@ -1,93 +1,27 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 15:04:33 +0000
-Subject: [PATCH 01/10] ARM: shmobile: Sync Lager DTS with Lager reference DTS
-Message-Id: <1383059082-26315-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Tue, 08 Oct 2013 07:00:54 +0000
+Subject: Re: [PATCH v2 14/14] Kconfig cleanup (PARPORT_PC dependencies)
+Message-Id: <20131008070054.GE1615@linux-mips.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1381209030-351-1-git-send-email-msalter@redhat.com>
+ <1381209030-351-15-git-send-email-msalter@redhat.com>
+In-Reply-To: <1381209030-351-15-git-send-email-msalter@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Copy the device nodes from Lager reference into the Lager device tree
-file. This will allow us to use a single DTS file regarless of kernel
-configuration. In case of legacy C board code the device nodes may or
-may not be used, but in the multiplatform case all the DT device nodes
-are used.
+On Tue, Oct 08, 2013 at 01:10:30AM -0400, Mark Salter wrote:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 53 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 53 insertions(+)
+> Remove messy dependencies from PARPORT_PC by having it depend on one
+> Kconfig symbol (ARCH_MAY_HAVE_PC_PARPORT) and having architectures
+> which need it, select ARCH_MAY_HAVE_PC_PARPORT in arch/*/Kconfig.
+> New architectures are unlikely to need PARPORT_PC, so this avoids
+> having an ever growing list of architectures to exclude. Those
+> architectures which do select ARCH_MAY_HAVE_PC_PARPORT in this
+> patch are the ones which have an asm/parport.h (or use the generic
+> version).
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 203bd08..65ffd87 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -10,6 +10,7 @@
- 
- /dts-v1/;
- /include/ "r8a7790.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "Lager";
-@@ -28,4 +29,56 @@
- 		#address-cells = <1>;
- 		#size-cells = <1>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led6 {
-+			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
-+		};
-+		led7 {
-+			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
-+		};
-+		led8 {
-+			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+};
-+
-+&pfc {
-+	pinctrl-0 = <&scif0_pins &scif1_pins>;
-+	pinctrl-names = "default";
-+
-+	scif0_pins: scif0 {
-+		renesas,groups = "scif0_data";
-+		renesas,function = "scif0";
-+	};
-+
-+	scif1_pins: scif1 {
-+		renesas,groups = "scif1_data";
-+		renesas,function = "scif1";
-+	};
-+
-+	mmc1_pins: mmc1 {
-+		renesas,groups = "mmc1_data8", "mmc1_ctrl";
-+		renesas,function = "mmc1";
-+	};
-+};
-+
-+&mmcif1 {
-+	pinctrl-0 = <&mmc1_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <8>;
-+	non-removable;
-+	status = "okay";
- };
--- 
-1.8.1.5
+Acked-by: Ralf Baechle <ralf@linux-mips.org>
 
+  Ralf
