@@ -1,88 +1,51 @@
-From: Kumar Gala <galak@codeaurora.org>
-Date: Tue, 29 Oct 2013 23:56:42 +0000
-Subject: Re: [PATCH 3/3] clk: shmobile: Add R8A7790 clocks support
-Message-Id: <A519A094-2E76-43C7-99D8-763122413ECD@codeaurora.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 08 Oct 2013 09:01:28 +0000
+Subject: [PATCH] clocksource: em_sti: convert to clk_prepare/unprepare
+Message-Id: <1381222888-4199-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383058511-26046-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383058511-26046-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383058511-26046-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1381222888-4199-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1381222888-4199-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-On Oct 29, 2013, at 9:55 AM, Laurent Pinchart wrote:
+Add calls to clk_prepare and unprepare so that EMMA Mobile EV2 can
+migrate to the common clock framework.
 
-> The R8A7790 has several clocks that are too custom to be supported in a
-> generic driver. Those clocks can be divided in two categories:
-> 
-> - Fixed rate clocks with multiplier and divisor set according to boot
->  mode configuration
-> 
-> - Custom divider clocks with SoC-specific divider values
-> 
-> This driver supports both.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
-> .../bindings/clock/renesas,r8a7790-cpg-clocks.txt  |  26 +++
-> drivers/clk/shmobile/Makefile                      |   1 +
-> drivers/clk/shmobile/clk-r8a7790.c                 | 176 +++++++++++++++++++++
-> include/dt-bindings/clock/r8a7790-clock.h          |  10 ++
-> include/linux/clk/shmobile.h                       |  19 +++
-> 5 files changed, 232 insertions(+)
-> create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7790-cpg-clocks.txt
-> create mode 100644 drivers/clk/shmobile/clk-r8a7790.c
-> create mode 100644 include/linux/clk/shmobile.h
-> 
-> diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7790-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7790-cpg-clocks.txt
-> new file mode 100644
-> index 0000000..d889917
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/clock/renesas,r8a7790-cpg-clocks.txt
-> @@ -0,0 +1,26 @@
-> +* Renesas R8A7790 Clock Pulse Generator (CPG)
-> +
-> +The CPG generates core clocks for the R8A7790. It includes three PLLs and
-> +several fixed ratio dividers.
-> +
-> +Required Properties:
-> +
-> +  - compatible: Must be "renesas,r8a7790-cpg-clocks"
-> +  - reg: Base address and length of the memory resource used by the CPG
-> +  - clocks: Reference to the parent clock
-> +  - #clock-cells: Must be 1
-> +  - clock-output-names: The name of the clocks, must be "main", "pll1",
-> +    "pll3", "lb", "qspi", "sdh", "sd0", "sd1".
-> +
-> +
-> +Example
-> +-------
-> +
-> +	cpg_clocks: cpg_clocks {
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/clocksource/em_sti.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-cpg_clocks@e6150000
-
-> +		compatible = "renesas,r8a7790-cpg-clocks";
-> +		reg = <0 0xe6150000 0 0x1000>;
-> +		clocks = <&extal_clk>;
-> +		#clock-cells = <1>;
-> +		clock-output-names = "main", "pll1", "pll3", "lb",
-> +				     "qspi", "sdh", "sd0", "sd1";
-> +	};
-
-Other than minor nit, ack.
-
-For the DT-Binding portion:
-
-Acked-by: Kumar Gala <galak@codeaurora.org>
-
-- k
-
-
-
+diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
+index b9c81b7..a71907c 100644
+--- a/drivers/clocksource/em_sti.c
++++ b/drivers/clocksource/em_sti.c
+@@ -78,7 +78,7 @@ static int em_sti_enable(struct em_sti_priv *p)
+ 	int ret;
+ 
+ 	/* enable clock */
+-	ret = clk_enable(p->clk);
++	ret = clk_prepare_enable(p->clk);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "cannot enable clock\n");
+ 		return ret;
+@@ -107,7 +107,7 @@ static void em_sti_disable(struct em_sti_priv *p)
+ 	em_sti_write(p, STI_INTENCLR, 3);
+ 
+ 	/* stop clock */
+-	clk_disable(p->clk);
++	clk_disable_unprepare(p->clk);
+ }
+ 
+ static cycle_t em_sti_count(struct em_sti_priv *p)
 -- 
-Employee of Qualcomm Innovation Center, Inc.
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum, hosted by The Linux Foundation
+1.8.4
 
