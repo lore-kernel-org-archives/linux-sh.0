@@ -1,94 +1,153 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 16 Oct 2013 22:41:59 +0000
-Subject: Re: [PATCH v2 2/2] sh_eth: add device tree support
-Message-Id: <525F1637.3040709@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 08 Oct 2013 09:05:40 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7778: cleanup registration of vin
+Message-Id: <fd131d0d4024a39259c41290451e728515ed7300.1381222967.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309070343.25640.sergei.shtylyov@cogentembedded.com> <522E3770.9020305@wwwdotorg.org> <522F2F3A.5070406@cogentembedded.com> <522F37A7.90804@wwwdotorg.org> <522F5E67.8070006@cogentembedded.com> <522F7BF1.80100@wwwdotorg.org> <522F93A5.6010709@cogentembedded.com> <522F9B65.1020606@wwwdotorg.org>
-In-Reply-To: <522F9B65.1020606@wwwdotorg.org>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stephen Warren <swarren@wwwdotorg.org>, Magnus Damm <magnus.damm@gmail.com>
-Cc: rob.herring@calxeda.com, pawel.moll@arm.com, mark.rutland@arm.com, ian.campbell@citrix.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, rob@landley.net, linux-doc@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 09/11/2013 02:21 AM, Stephen Warren wrote:
+vin driver which needs platform data at the time of
+registration is used from BockW only.
+Now, ARM/shmobile aims to support DT,
+and the C code base board support will be removed
+if DT support is completed.
+Current driver registration method which needs platform data
+and which is not shared complicates codes.
+This means legacy C code cleanup after DT supporting
+will be more complicated
+This patch registers it on board code as cleanup C code
 
->>>>>>> Do you need any clocks properties, IP block reset signals, power
->>>>>>> domains?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-bockw.c          | 32 ++++++++++++++++++++-----
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |  2 --
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 34 ---------------------------
+ 3 files changed, 26 insertions(+), 42 deletions(-)
 
->>>>>>       Currently not.
-
->>>>> What does "currently" mean? Does that mean that the Linux driver simply
->>>>> doesn't touch those entities at present?
-
->>>>      There's Ether clock but the driver doesn't manipulate it directly,
->>>> assumingly it does this thru the runtime PM interface. As for the
->>>> others, I simply don't know.
-
->>> If there's a clock, it should be represented in DT, even if the kernel
->>> somehow gets access to the clock through some means other than parsing
->>> DT.
-
->>     Frankly speaking, I don't see the point.
-
-> To be honest, that doesn't exactly make me care about reviewing the
-> binding then.
-
-    Well, that would seem to make my task easier unless you mean that you'd 
-just NAK my further attempts of pushing this patch. :-)
-    It seems somewhat unfair to require clock DT support for the Ethernet 
-driver (which doesn't even use clocks directly), while R-Car I2C driver DT 
-support has been queued successfully at the same time (this driver uses clock 
-API directly).
-
->>>>> If so, that's not enough to say
->>>>> that those entities should not be described in the DT binding. We
->>>>> should
->>>>> strive to make the binding completely describe all aspects of the HW,
->>>>> irrespective of whether a particular driver happens to use that
->>>>> information at present.
-
->>>> There's no DT representation for the clocks in SH-Mobile subarch yet.
->>>> The same applies to the other entities you mentioned.
-
->>> You can still write the binding to say that the appropriate clock
->>> property must be present; the overall format of this property won't be
->>> affected by the representation chosen for the SH-Mobile clocks.
-
->>     Where can I find an example of such property, independent of the
->> parent clock node? All I could find with quick search refers with a
->> phandle to a clock node (we don't have now).
-
-> All clock property definitions are independent of the source of the clock.
-
-> Now the actual value you put in the DT file is dependent on which source
-> it's describing.
-
-    AFAIU, we'd need the "root" clock node still to which the clock properties 
-would refer via phandle.
-
->>> It seems like it'd be best to get the basic resources (like clocks)
->>> represented in DT before trying to build blocks that use them.
-
->>     We don't use them directly. And we need the Ether device tree support *now*,
->> while clock-related work will probably take months (there are plans to switch Sh-Mobile to CCF in like 6 months).
-
-> What/who is "we".
-
-    Our customer Renesas, and therefore we, Cogent Embedded. Note that clock 
-DT support is not the part of our tasks.
-
-> If it's just a matter of the driver-vs-runtime-pm
-> code, then it's not relevant.
-
-> I don't think needing something now is a good excuse.
-
-    Hm, perhaps we still can do things in the planned order? Magnus, could you 
-clarify again what are the plans on clock DT support for the R8A777x/R8A779x SoCs?
-    I'm still hoping we can deal with the Ethernet DT support first and then 
-we'd add the clock property to the binding when it would become availble.
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 6b9faf3..4b696ce 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -162,10 +162,6 @@ static struct sh_mmcif_plat_data sh_mmcif_plat __initdata = {
+ 			  MMC_CAP_NEEDS_POLL,
+ };
+ 
+-static struct rcar_vin_platform_data vin_platform_data __initdata = {
+-	.flags	= RCAR_VIN_BT656,
+-};
+-
+ /* In the default configuration both decoders reside on I2C bus 0 */
+ #define BOCKW_CAMERA(idx)						\
+ static struct i2c_board_info camera##idx##_info = {			\
+@@ -181,6 +177,30 @@ static struct soc_camera_link iclink##idx##_ml86v7667 __initdata = {	\
+ BOCKW_CAMERA(0);
+ BOCKW_CAMERA(1);
+ 
++/* VIN */
++static struct rcar_vin_platform_data vin_platform_data __initdata = {
++	.flags	= RCAR_VIN_BT656,
++};
++
++#define R8A7778_VIN(idx)						\
++static struct resource vin##idx##_resources[] __initdata = {		\
++	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
++	DEFINE_RES_IRQ(gic_iid(0x5a)),					\
++};									\
++									\
++static struct platform_device_info vin##idx##_info __initdata = {	\
++	.parent		= &platform_bus,				\
++	.name		= "r8a7778-vin",				\
++	.id		= idx,						\
++	.res		= vin##idx##_resources,				\
++	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
++	.dma_mask	= DMA_BIT_MASK(32),				\
++	.data		= &vin_platform_data,				\
++	.size_data	= sizeof(vin_platform_data),			\
++}
++R8A7778_VIN(0);
++R8A7778_VIN(1);
++
+ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 	/* Ether */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("r8a777x-ether", "pfc-r8a7778",
+@@ -236,10 +256,10 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 	r8a7778_add_ether_device(&ether_platform_data);
+-	r8a7778_add_vin_device(0, &vin_platform_data);
++	platform_device_register_full(&vin0_info);
+ 	/* VIN1 has a pin conflict with Ether */
+ 	if (!IS_ENABLED(CONFIG_SH_ETH))
+-		r8a7778_add_vin_device(1, &vin_platform_data);
++		platform_device_register_full(&vin1_info);
+ 	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 0,
+ 				      &iclink0_ml86v7667,
+ 				      sizeof(iclink0_ml86v7667));
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index adfcf51..9838608 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -24,8 +24,6 @@
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+-extern void r8a7778_add_vin_device(int id,
+-				   struct rcar_vin_platform_data *pdata);
+ extern void r8a7778_add_dt_devices(void);
+ 
+ extern void r8a7778_init_late(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 6a2657e..604cf36 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -281,40 +281,6 @@ void __init r8a7778_register_hspi(int id)
+ 		hspi_resources + (2 * id), 2);
+ }
+ 
+-/* VIN */
+-#define R8A7778_VIN(idx)						\
+-static struct resource vin##idx##_resources[] __initdata = {		\
+-	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
+-	DEFINE_RES_IRQ(gic_iid(0x5a)),					\
+-};									\
+-									\
+-static struct platform_device_info vin##idx##_info __initdata = {	\
+-	.parent		= &platform_bus,				\
+-	.name		= "r8a7778-vin",				\
+-	.id		= idx,						\
+-	.res		= vin##idx##_resources,				\
+-	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
+-	.dma_mask	= DMA_BIT_MASK(32),				\
+-}
+-
+-R8A7778_VIN(0);
+-R8A7778_VIN(1);
+-
+-static struct platform_device_info *vin_info_table[] __initdata = {
+-	&vin0_info,
+-	&vin1_info,
+-};
+-
+-void __init r8a7778_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
+-{
+-	BUG_ON(id < 0 || id > 1);
+-
+-	vin_info_table[id]->data = pdata;
+-	vin_info_table[id]->size_data = sizeof(*pdata);
+-
+-	platform_device_register_full(vin_info_table[id]);
+-}
+-
+ void __init r8a7778_add_dt_devices(void)
+ {
+ 	int i;
+-- 
+1.8.4
 
