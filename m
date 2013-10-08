@@ -1,90 +1,67 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Oct 2013 01:25:51 +0000
-Subject: Re: [PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
-Message-Id: <20131008012549.GB11179@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 Oct 2013 03:40:08 +0000
+Subject: [PATCH 08/08] ARM: shmobile: Add Koelsch SW2 support
+Message-Id: <20131008034008.20455.77595.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131001103255.813.65710.sendpatchset@w520>
- <19181221.pjTBb56TDE@avalon> <20131004082541.GA9988@verge.net.au>
- <CANqRtoTr44CXaeMaScp_33Z9Tm7mCwt2EPtfaMu5oPWE8Vkb0Q@mail.gmail.com>
-In-Reply-To: <CANqRtoTr44CXaeMaScp_33Z9Tm7mCwt2EPtfaMu5oPWE8Vkb0Q@mail.gmail.com>
+References: <20131008033851.20455.68845.sendpatchset@w520>
+In-Reply-To: <20131008033851.20455.68845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Oct 04, 2013 at 05:55:47PM +0900, Magnus Damm wrote:
-> On Fri, Oct 4, 2013 at 5:25 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Fri, Oct 04, 2013 at 09:47:34AM +0200, Laurent Pinchart wrote:
-> >> Hi Magnus,
-> >>
-> >> Thank you for the patches.
-> >>
-> >> On Tuesday 01 October 2013 19:32:55 Magnus Damm wrote:
-> >> > ARM: shmobile: KZM9D Multiplatform update
-> >> >
-> >> > [PATCH 01/05] ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
-> >> > [PATCH 02/05] ARM: shmobile: Use KZM9D without reference for multiplatform
-> >> > [PATCH 03/05] ARM: shmobile: Remove non-multiplatform KZM9D reference
-> >> > support
-> >> > [PATCH 04/05] ARM: shmobile: Let KZM9D multiplatform boot with KZM9D DTB
-> >> > [PATCH 05/05] ARM: shmobile: Remove KDM9D reference DTS
-> >>
-> >> I've reviewed the patches and they look fine to me.
-> >>
-> >> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> >>
-> >> Does this call for the following patch on top of 05/05 ?
-> >>
-> >> >From b167bcd3182f0310b91e502672547e58addf17ef Mon Sep 17 00:00:00 2001
-> >> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> >> Date: Fri, 4 Oct 2013 09:44:34 +0200
-> >> Subject: [PATCH] ARM: shmobile: kzm9d-reference: Drop -reference compatible
-> >>  string
-> >>
-> >> The only system compatible string used for the KZM9D board is
-> >> "renesas,kzm9d". Drop support for the old "renesas,kzm9d-reference"
-> >> compatible string.
-> >>
-> >> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> >> ---
-> >>  arch/arm/mach-shmobile/board-kzm9d-reference.c | 1 -
-> >>  1 file changed, 1 deletion(-)
-> >>
-> >> diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> >> index 054d8d5..d2c6466 100644
-> >> --- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> >> +++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
-> >> @@ -34,7 +34,6 @@ static void __init kzm9d_add_standard_devices(void)
-> >>
-> >>  static const char *kzm9d_boards_compat_dt[] __initdata = {
-> >>       "renesas,kzm9d",
-> >> -     "renesas,kzm9d-reference",
-> >>       NULL,
-> >>  };
-> >
-> > In theory no because someone might be using a DTS with
-> > renesas,kzm9d-reference in the wild. In practice I don't think
-> > that is the case so I feel ok about this patch. Magnus, what
-> > do you think?
-> 
-> Hi Simon and Laurent,
-> 
-> Thanks for the patch and the comments. I agree with Laurent that this
-> patch series isn't complete without that patch, but at the same time I
-> agree with Simon about current state. =) So I propose that this patch
-> should be merged later on - in say half a year or so.
+From: Magnus Damm <damm@opensource.se>
 
-Sure. I will leave it hanging around in patchwork to try
-and remind us (me) to do something with it later.
+Enable Koelsch GPIO switch for GPIO input and IRQ testing purpose.
 
-> Perhaps we should aim that the kernel used for the LTSI after
-> LTSI-3.10 should include this fix?
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Sounds reasonable.
+ arch/arm/mach-shmobile/board-koelsch.c |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-> Another activity we need to deal with in the future is to depreciate
-> the non-multiplatform board support. It's probably good to hear from
-> the ARM SoC guys what kind of schedule they have in mind for the
-> common ARM architecture bits.
-
-Perhaps a discussion for another thread?
+--- 0012/arch/arm/mach-shmobile/board-koelsch.c
++++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-10-07 14:05:22.000000000 +0900
+@@ -19,6 +19,9 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/gpio.h>
++#include <linux/gpio_keys.h>
++#include <linux/input.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/platform_data/gpio-rcar.h>
+@@ -51,6 +54,22 @@ static const struct gpio_led_platform_da
+ 	.num_leds	= ARRAY_SIZE(koelsch_leds),
+ };
+ 
++/* GPIO KEY */
++#define GPIO_KEY(c, g, d, ...) \
++	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
++
++static struct gpio_keys_button gpio_buttons[] = {
++	GPIO_KEY(KEY_4,		RCAR_GP_PIN(5, 3),	"SW2-pin4"),
++	GPIO_KEY(KEY_3,		RCAR_GP_PIN(5, 2),	"SW2-pin3"),
++	GPIO_KEY(KEY_2,		RCAR_GP_PIN(5, 1),	"SW2-pin2"),
++	GPIO_KEY(KEY_1,		RCAR_GP_PIN(5, 0),	"SW2-pin1"),
++};
++
++static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
++	.buttons	= gpio_buttons,
++	.nbuttons	= ARRAY_SIZE(gpio_buttons),
++};
++
+ static void __init koelsch_add_standard_devices(void)
+ {
+ 	r8a7791_clock_init();
+@@ -59,6 +78,9 @@ static void __init koelsch_add_standard_
+ 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
+ 				      &koelsch_leds_pdata,
+ 				      sizeof(koelsch_leds_pdata));
++	platform_device_register_data(&platform_bus, "gpio-keys", -1,
++				      &koelsch_keys_pdata,
++				      sizeof(koelsch_keys_pdata));
+ }
+ 
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
