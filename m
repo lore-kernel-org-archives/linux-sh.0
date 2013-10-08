@@ -1,84 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:57 +0000
-Subject: [PATCH 09/14] ARM: shmobile: Remove non-multiplatform KZM9D reference support
-Message-Id: <df8ee58d73ae8590bc4c9ddbe19211e4485f9d17.1381299817.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 Oct 2013 03:38:51 +0000
+Subject: [PATCH 00/08] ARM: shmobile: r8a7791 and Koelsch GPIO/PFC support
+Message-Id: <20131008033851.20455.68845.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381299817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+ARM: shmobile: r8a7791 and Koelsch GPIO/PFC support
 
-Now when CCF is supported remove the legacy KZM9D reference
-Kconfig bits CONFIG_MACH_KZM9D_REFERENCE for the non-multiplatform
-case.
+[PATCH 01/08] ARM: shmobile: r8a7791 PFC device tree node
+[PATCH 02/08] ARM: shmobile: r8a7791 PFC platform device support
+[PATCH 03/08] ARM: shmobile: Select GPIO in case of the r8a7791 SoC
+[PATCH 04/08] ARM: shmobile: r8a7791 GPIO device tree node
+[PATCH 05/08] ARM: shmobile: r8a7791 GPIO platform device support
+[PATCH 06/08] ARM: shmobile: Enable PFC/GPIO on the Koelsch board
+[PATCH 07/08] ARM: shmobile: Add Koelsch LED6, LED7 and LED8 support
+[PATCH 08/08] ARM: shmobile: Add Koelsch SW2 support
 
-Starting from this commit KZM9D board support is always enabled
-via CONFIG_MACH_KZM9D, and CONFIG_ARCH_MULTIPLATFORM is used
-to select between board-kzm9d.c and board-kzm9d-reference.c
-
-The file board-kzm9d-reference.c can no longer be used together
-with the legacy sh-clk clock framework, instead CCF is used.
+This series includes PFC and GPIO support for the r8a7791 SoC and the
+Koelsch board. The GPIO portion can be tested through LEDs and GPIO
+switches on the Koelsch board. PFC tables will be submitted separately.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig       | 12 ------------
- arch/arm/mach-shmobile/Makefile      |  1 -
- arch/arm/mach-shmobile/Makefile.boot |  1 -
- 3 files changed, 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index c9c4f15..a4a4b75 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -237,18 +237,6 @@ config MACH_KZM9D
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select USE_OF
- 
--config MACH_KZM9D_REFERENCE
--	bool "KZM9D board - Reference Device Tree Implementation"
--	depends on ARCH_EMEV2
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
--	---help---
--	   Use reference implementation of KZM9D board support
--	   which makes a greater use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index b11466d..51db2bc 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -72,7 +72,6 @@ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
--obj-$(CONFIG_MACH_KZM9D_REFERENCE)	+= board-kzm9d-reference.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
- endif
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index c690b50..391d72a 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -9,7 +9,6 @@ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
- loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
- loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
--loadaddr-$(CONFIG_MACH_KZM9D_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
--- 
-1.8.4
+ Written against renesas.git tag renesas-devel-20131004
+
+ arch/arm/boot/dts/r8a7791.dtsi                |  102 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                |    1 
+ arch/arm/mach-shmobile/board-koelsch.c        |   50 ++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 
+ arch/arm/mach-shmobile/setup-r8a7791.c        |   53 ++++++++++++
+ 5 files changed, 207 insertions(+)
+
 
