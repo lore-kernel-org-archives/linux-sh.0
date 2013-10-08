@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 31 Oct 2013 03:24:36 +0000
-Subject: [PATCH] ARM: shmobile: Include all 4 GiB of memory on Lager DT Ref
-Message-Id: <20131031032436.16031.48305.sendpatchset@w520>
+Date: Tue, 08 Oct 2013 03:39:10 +0000
+Subject: [PATCH 02/08] ARM: shmobile: r8a7791 PFC platform device support
+Message-Id: <20131008033910.20455.63317.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131031032141.16014.78225.sendpatchset@w520>
-In-Reply-To: <20131031032141.16014.78225.sendpatchset@w520>
+References: <20131008033851.20455.68845.sendpatchset@w520>
+In-Reply-To: <20131008033851.20455.68845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,31 +12,44 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add 2GiB of DRAM at 0x1_8000_0000 to support the full 4GiB
-of Lager system memory in case of DT Reference.
+Add a platform device for the r8a7791 PFC device.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- For correct run time operation regardless of kernel configuration
- ARM patches 7863/1 and 7864/1 are needed.
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7791.c        |   13 +++++++++++++
+ 2 files changed, 14 insertions(+)
 
- Written on top of renesas-devel-v3.12-rc7-20131030
-
- arch/arm/boot/dts/r8a7790-lager-reference.dts |    5 +++++
- 1 file changed, 5 insertions(+)
-
---- 0001/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ work/arch/arm/boot/dts/r8a7790-lager-reference.dts	2013-10-31 11:51:18.000000000 +0900
-@@ -25,6 +25,11 @@
- 		reg = <0 0x40000000 0 0x80000000>;
- 	};
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7791.h	2013-10-04 18:31:02.000000000 +0900
+@@ -4,6 +4,7 @@
+ void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
++void r8a7791_pinmux_init(void);
+ void r8a7791_init_early(void);
+ extern struct smp_operations r8a7791_smp_ops;
  
-+	memory@180000000 {
-+		device_type = "memory";
-+		reg = <1 0x80000000 0 0x80000000>;
-+	};
+--- 0001/arch/arm/mach-shmobile/setup-r8a7791.c
++++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2013-10-04 18:31:02.000000000 +0900
+@@ -31,6 +31,19 @@
+ #include <mach/rcar-gen2.h>
+ #include <asm/mach/arch.h>
+ 
++static const struct resource pfc_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6060000, 0x250),
++};
 +
- 	lbsc {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
++#define r8a7791_register_pfc()						\
++	platform_device_register_simple("pfc-r8a7791", -1, pfc_resources, \
++					ARRAY_SIZE(pfc_resources))
++
++void __init r8a7791_pinmux_init(void)
++{
++	r8a7791_register_pfc();
++}
++
+ #define SCIF_COMMON(scif_type, baseaddr, irq)			\
+ 	.type		= scif_type,				\
+ 	.mapbase	= baseaddr,				\
