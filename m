@@ -1,61 +1,53 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Tue, 08 Oct 2013 05:30:40 +0000
-Subject: [PATCH v2 0/3] ARM: shmobile: kzm9d: migrate to common clock framework with DT
-Message-Id: <20131008143040.52f36df8edb7ab63224d8433@ops.dti.ne.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:16 +0000
+Subject: [PATCH 06/13] ARM: shmobile: r8a7791 IRQC device tree node
+Message-Id: <d77db73e260fe4b5cca4fa1e5253c21e2d755f58.1381298964.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381298964.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch series makes kzm9d to move to new clk implementation
- based on the common clock framework and device tree, when configured
- as a part of multi-platform.
+From: Magnus Damm <damm@opensource.se>
 
-These patches do not remove sh-clkfwk version, even on emev2.
-Non multi-platform configuration still uses sh-clkfwk.
+Enable a r8a7791 IRQC block by adding a device tree
+node for the IRQC hardware and pins IRQ0 to IRQ9.
 
-Should be applied and compiled on
- kernel/git/horms/renesas.git tag:renesas-devel-20131008
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-Confirmed for boot up to command prompt.
-- kzm9d board / multi-platform + kzm9d configuration
-- kzm9d board / kzm9d configuration for regression
-for compilation
-- ape6evm(non-multi-platform) configuration for regression.
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index bbed43b..b701417 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -38,4 +38,22 @@
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 0xf04>;
+ 	};
++
++	irqc0: interrupt-controller@e61c0000 {
++		compatible = "renesas,irqc";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0 0xe61c0000 0 0x200>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 0 4>,
++			      <0 1 4>,
++			      <0 2 4>,
++			      <0 3 4>,
++			      <0 12 4>,
++			      <0 13 4>,
++			      <0 14 4>,
++			      <0 15 4>,
++			      <0 16 4>,
++			      <0 17 4>;
++	};
+ };
+-- 
+1.8.4
 
-Changes since v1:
-
-Generally, simplified, depending on
- [PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
-series posted recently by Magnus.
-
-[PATCH 1/6] clocksource: em_sti: convert to clk_prepare/unprepare
-[PATCH 2/6] serial8250-em: convert to clk_prepare/unprepare
-Removed because the new base includes it.
-Thank you for your review, Daniel, Greg, Laurent, and Magnus.
-
-[PATCH 3/6] sh: clkfwk: Select sh-/common- clkfwk alternatively
-Removed because "KZM9D Multiplatform update" had made this not needed.
-
-[PATCH v2 1/3] clk: emev2: Add support for emev2 SMU clocks with DT
-[PATCH v2 2/3] ARM: shmobile: emev2: Add clock tree description in DT
-(was 3/6, 4/6)
-Add @unit-address to smu in dts.
-Reassemble patches to (.txt + .c) + .dts from .txt + (.c + .dts).
-Only used when multi-platform configuration.
-Extra blank line removed.
-
-[PATCH v2 3/3] ARM: shmobile: kzm9d: Use common clock framework
-(was 6/6)
-No Kconfig modification because of "KZM9D Multiplatform update".
-
-
-Takashi YOSHII (3):
-  clk: emev2: Add support for emev2 SMU clocks with DT
-  ARM: shmobile: emev2: Add clock tree description in DT
-  ARM: shmobile: kzm9d: Use common clock framework
-
- .../devicetree/bindings/clock/emev2-clock.txt      |  98 +++++++++++++++++++
- arch/arm/boot/dts/emev2.dtsi                       |  84 +++++++++++++++++
- arch/arm/mach-shmobile/board-kzm9d-reference.c     |   5 +-
