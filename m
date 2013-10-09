@@ -1,33 +1,79 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Oct 2013 05:59:06 +0000
-Subject: [PATCH 6/7] ARM: shmobile: sh73a0: don't use named resource for IPMMU
-Message-Id: <87y564wbfc.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:55 +0000
+Subject: [PATCH 07/14] ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
+Message-Id: <9e8b48b61aeb2eb9a02e81021bfb8d89ea4645a4.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-shmobile-ipmmu driver doesn't care resource name.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Copy the device nodes from KZM9D reference into the KZM9D
+device tree file. This will allow us to use a single DTS
+file regarless of kernel configuration. In case of legacy
+C board code the device nodes may or may not be used, but
+in the multiplatform case all the DT device nodes are used.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/emev2-kzm9d.dts | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index c515801..65151c4 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -722,7 +722,7 @@ static struct platform_device pmu_device = {
- 
- /* an IPMMU module for ICB */
- static struct resource ipmmu_resources[] = {
--	DEFINE_RES_MEM_NAMED(0xfe951000, 0x100, "IPMMU"),
-+	DEFINE_RES_MEM(0xfe951000, 0x100),
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index f92e812..861aa7d 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -1,7 +1,7 @@
+ /*
+  * Device Tree Source for the KZM9D board
+  *
+- * Copyright (C) 2012 Renesas Solutions Corp.
++ * Copyright (C) 2013 Renesas Solutions Corp.
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -23,4 +23,35 @@
+ 	chosen {
+ 		bootargs = "console=ttyS1,115200n81 ignore_loglevel root=/dev/nfs ip=dhcp";
+ 	};
++
++	reg_1p8v: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-1.8V";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	reg_3p3v: regulator@1 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	lan9220@20000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x20000000 0x10000>;
++		phy-mode = "mii";
++		interrupt-parent = <&gpio0>;
++		interrupts = <1 1>;	/* active high */
++		reg-io-width = <4>;
++		smsc,irq-active-high;
++		smsc,irq-push-pull;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
++	};
  };
- 
- static const char * const ipmmu_dev_names[] = {
 -- 
-1.7.9.5
+1.8.4
 
