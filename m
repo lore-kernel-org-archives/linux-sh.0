@@ -1,36 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 10 Oct 2013 07:16:30 +0000
-Subject: [PATCH 05/11] ARM: shmobile: bockw: Enable CONFIG_VFP in defconfig
-Message-Id: <1381389396-22000-6-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:26 +0000
+Subject: [PATCH 10/13] ARM: shmobile: bockw: add SMSC support on DTS
+Message-Id: <1e918e00ea2aa2d23a3e0552e907c1da104cdc39.1381298964.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1381298964.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-CONFIG_VFP is required to boot into a Debian armhf user-space.
-This change brings the bockw defconfig into line with
-other shmobile defconfigs.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+This patch enables INTC IRQ and SMSC on BockW board via DT.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/bockw_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 27 ++++++++++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 88bcb04..db7d792 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -27,6 +27,7 @@ CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
-+CONFIG_VFP=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- # CONFIG_SUSPEND is not set
- CONFIG_PM_RUNTIME=y
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 9bb903a..4425fd2 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -22,11 +22,36 @@
+ 	compatible = "renesas,bockw-reference", "renesas,r8a7778";
+ 
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel rw";
++		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 	};
+ 
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x60000000 0x10000000>;
+ 	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	lan0@18300000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18300000 0x1000>;
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin>;
++		interrupts = <0 0>; /* IRQ0: hwirq 0 on irqpin */
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++};
++
++&irqpin {
++	status = "okay";
+ };
 -- 
 1.8.4
 
