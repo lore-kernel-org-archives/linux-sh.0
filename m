@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:57 +0000
-Subject: [PATCH 13/14] ARM: shmobile: r8a7779: split r8a7779_init_irq_extpin() for DT
-Message-Id: <31e4e292f85189f01949124b04aabb3b50ba3e86.1381293239.git.horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:49:50 +0000
+Subject: [PATCH 09/14] ARM: shmobile: r8a7791 Arch timer workaround
+Message-Id: <cd8344f4ddfe58ef9ca1743eff3a121f00b75302.1381293239.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381293239.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
@@ -10,61 +10,50 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-r8a7779 INTC needs IRL pin mode settings to determine
-behavior of IRQ0 - IRQ3, and r8a7779_init_irq_extpin()
-is controlling it via irlm parameter.
-But this function registers renesas_intc_irqpin driver
-if irlm was set, and this value depends on platform.
-This is not good for DT.
-This patch splits r8a7779_init_irq_extpin() function
-into "mode settings" and "funtion register" parts
+Make use of the R-Car Gen2 arch timer workaround on r8a7791.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 1 +
- arch/arm/mach-shmobile/setup-r8a7779.c        | 6 +++++-
- 2 files changed, 6 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Makefile        | 2 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 31e87b9..17af34e 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -33,6 +33,7 @@ static inline struct r8a7779_pm_ch *to_r8a7779_ch(struct generic_pm_domain *d)
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 6b7a02e..3c37e82 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -16,7 +16,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
++obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
  
- extern void r8a7779_init_delay(void);
- extern void r8a7779_init_irq_extpin(int irlm);
-+extern void r8a7779_init_irq_extpin_dt(int irlm);
- extern void r8a7779_init_irq_dt(void);
- extern void r8a7779_map_io(void);
- extern void r8a7779_earlytimer_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index eacb2f7..13049e9 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -98,7 +98,7 @@ static struct resource irqpin0_resources[] __initdata = {
- 	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
- };
+ # Clock objects
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index ba4fa3e..cb3859b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -28,6 +28,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
++#include <mach/rcar-gen2.h>
+ #include <asm/mach/arch.h>
  
--void __init r8a7779_init_irq_extpin(int irlm)
-+void __init r8a7779_init_irq_extpin_dt(int irlm)
- {
- 	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
- 	u32 tmp;
-@@ -116,7 +116,11 @@ void __init r8a7779_init_irq_extpin(int irlm)
- 	tmp |= (1 << 21); /* LVLMODE = 1 */
- 	iowrite32(tmp, icr0);
- 	iounmap(icr0);
-+}
+ #define SCIF_COMMON(scif_type, baseaddr, irq)			\
+@@ -176,6 +177,7 @@ static const char *r8a7791_boards_compat_dt[] __initdata = {
  
-+void __init r8a7779_init_irq_extpin(int irlm)
-+{
-+	r8a7779_init_irq_extpin_dt(irlm);
- 	if (irlm)
- 		platform_device_register_resndata(
- 			&platform_bus, "renesas_intc_irqpin", -1,
+ DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
+ 	.init_early	= r8a7791_init_early,
++	.init_time	= rcar_gen2_timer_init,
+ 	.dt_compat	= r8a7791_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
 1.8.4
 
