@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Oct 2013 01:57:03 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 09 Oct 2013 02:09:36 +0000
 Subject: Re: [PATCH 0/3] Add USBHS support to Lager (take 2)
-Message-Id: <20131009015703.GA13925@verge.net.au>
+Message-Id: <874n8r9ov8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1381261407-12606-1-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1381261407-12606-1-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,7 +10,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Oct 08, 2013 at 11:43:24PM +0400, Valentine Barshak wrote:
+
+Hi
+
 > This patch set adds internal USB PHY support to RCAR Gen2 SoC, and
 > also enables USBHS for the Lager board. It has been updated, based
 > on the comments to the previous version.
@@ -33,15 +35,7 @@ On Tue, Oct 08, 2013 at 11:43:24PM +0400, Valentine Barshak wrote:
 > * usb_phy_init/shutdown called from usbhs_power_ctrl callback
 >   to allow renesas_usbhs driver disable USB PHY completely
 >   when it is not needed.
-
-Hi Morimoto-san,
-
-I could you review this revised series?
-
-My assumption is that in the current form the first patch will
-go through the USB tree while the latter patches will subsequently
-go through (my) renesas tree.
-
+> 
 > Valentine Barshak (3):
 >   usb: phy: Add RCAR Gen2 USB phy
 >   arm: shmobile: r8a7790: Add USBHS clock support
@@ -56,12 +50,14 @@ go through (my) renesas tree.
 >  6 files changed, 401 insertions(+)
 >  create mode 100644 drivers/usb/phy/phy-rcar-gen2-usb.c
 >  create mode 100644 include/linux/platform_data/usb-rcar-gen2-phy.h
-> 
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+For all patches
+
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+# I think we can implement usb_phy_xxx() method
+# in renesas_usbhs driver someday.
+
+Best regards
+---
+Kuninori Morimoto
