@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 09 Oct 2013 02:09:36 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 09 Oct 2013 03:47:37 +0000
 Subject: Re: [PATCH 0/3] Add USBHS support to Lager (take 2)
-Message-Id: <874n8r9ov8.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20131009034735.GP15065@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1381261407-12606-1-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1381261407-12606-1-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,54 +10,59 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-Hi
-
-> This patch set adds internal USB PHY support to RCAR Gen2 SoC, and
-> also enables USBHS for the Lager board. It has been updated, based
-> on the comments to the previous version.
+On Tue, Oct 08, 2013 at 07:09:36PM -0700, Kuninori Morimoto wrote:
 > 
-> The patches apply fine to the renesas-devel-20131008 tag of the renesas.git.
-> The first patch also applies fine to the usb.git at kernel.org.
-> It adds RCAR Gen2 phy driver which is used to configure the shared USB
-> channels 0/2 and to control USBHS internal PHY.
-> All the drivers that use the shared USB channels (USBHS/USBSS/PCI USB host)
-> should acquire the USB phy first to set proper channel configuration.
+> Hi
 > 
-> The other two patches add USBHS support to Lager board, which requires
-> RCAR Gen2 phy driver.
+> > This patch set adds internal USB PHY support to RCAR Gen2 SoC, and
+> > also enables USBHS for the Lager board. It has been updated, based
+> > on the comments to the previous version.
+> > 
+> > The patches apply fine to the renesas-devel-20131008 tag of the renesas.git.
+> > The first patch also applies fine to the usb.git at kernel.org.
+> > It adds RCAR Gen2 phy driver which is used to configure the shared USB
+> > channels 0/2 and to control USBHS internal PHY.
+> > All the drivers that use the shared USB channels (USBHS/USBSS/PCI USB host)
+> > should acquire the USB phy first to set proper channel configuration.
+> > 
+> > The other two patches add USBHS support to Lager board, which requires
+> > RCAR Gen2 phy driver.
+> > 
+> > Changes from previous version:
+> > * use-counting and clock handling done in the usb_phy_init/shutdown
+> >   callbacks only;
+> > * a minor typo in the comments fixed;
+> > * phy clean up moved to __rcar_gen2_usb_phy_shutdown function;
+> > * usb_phy_init/shutdown called from usbhs_power_ctrl callback
+> >   to allow renesas_usbhs driver disable USB PHY completely
+> >   when it is not needed.
+> > 
+> > Valentine Barshak (3):
+> >   usb: phy: Add RCAR Gen2 USB phy
+> >   arm: shmobile: r8a7790: Add USBHS clock support
+> >   arm: shmobile: lager: Add USBHS support
+> > 
+> >  arch/arm/mach-shmobile/board-lager.c            | 106 ++++++++++
+> >  arch/arm/mach-shmobile/clock-r8a7790.c          |   4 +
+> >  drivers/usb/phy/Kconfig                         |  13 ++
+> >  drivers/usb/phy/Makefile                        |   1 +
+> >  drivers/usb/phy/phy-rcar-gen2-usb.c             | 255 ++++++++++++++++++++++++
+> >  include/linux/platform_data/usb-rcar-gen2-phy.h |  22 ++
+> >  6 files changed, 401 insertions(+)
+> >  create mode 100644 drivers/usb/phy/phy-rcar-gen2-usb.c
+> >  create mode 100644 include/linux/platform_data/usb-rcar-gen2-phy.h
 > 
-> Changes from previous version:
-> * use-counting and clock handling done in the usb_phy_init/shutdown
->   callbacks only;
-> * a minor typo in the comments fixed;
-> * phy clean up moved to __rcar_gen2_usb_phy_shutdown function;
-> * usb_phy_init/shutdown called from usbhs_power_ctrl callback
->   to allow renesas_usbhs driver disable USB PHY completely
->   when it is not needed.
+> For all patches
 > 
-> Valentine Barshak (3):
->   usb: phy: Add RCAR Gen2 USB phy
->   arm: shmobile: r8a7790: Add USBHS clock support
->   arm: shmobile: lager: Add USBHS support
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 > 
->  arch/arm/mach-shmobile/board-lager.c            | 106 ++++++++++
->  arch/arm/mach-shmobile/clock-r8a7790.c          |   4 +
->  drivers/usb/phy/Kconfig                         |  13 ++
->  drivers/usb/phy/Makefile                        |   1 +
->  drivers/usb/phy/phy-rcar-gen2-usb.c             | 255 ++++++++++++++++++++++++
->  include/linux/platform_data/usb-rcar-gen2-phy.h |  22 ++
->  6 files changed, 401 insertions(+)
->  create mode 100644 drivers/usb/phy/phy-rcar-gen2-usb.c
->  create mode 100644 include/linux/platform_data/usb-rcar-gen2-phy.h
+> # I think we can implement usb_phy_xxx() method
+> # in renesas_usbhs driver someday.
 
-For all patches
+Hi Felipe,
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+could you consider taking the first patch of this series?
+And if so, could you provide a branch that I can use
+as a base for the other changes in the series?
 
-# I think we can implement usb_phy_xxx() method
-# in renesas_usbhs driver someday.
-
-Best regards
----
-Kuninori Morimoto
+Thanks
