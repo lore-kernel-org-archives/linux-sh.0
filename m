@@ -1,23 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 31 Oct 2013 05:23:24 +0000
-Subject: Re: [PATCH v2 2/2] clocksource: sh_mtu2: Add clk_prepare/unprepare support
-Message-Id: <20131031052324.GL1603@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 09 Oct 2013 22:45:45 +0000
+Subject: [PATCH] mmc: sh_mmcif: Get rid of MMC_BLOCK dependency
+Message-Id: <20131009224545.23119.45781.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383057045-22608-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383057045-22608-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383057045-22608-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, cjb@laptop.org, linux-mmc@vger.kernel.org, g.liakhovetski@gmail.com, horms@verge.net.au
 
-On Tue, Oct 29, 2013 at 03:30:45PM +0100, Laurent Pinchart wrote:
-> Prepare the clock at probe time, as there is no other appropriate place
-> in the driver where we're allowed to sleep.
-> 
-> Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up.
+It seems like sh_mmcif.c now is the only MMC driver depending on MMC_BLOCK,
+the hardware is not special in any way so rework the Kconfig dependency to
+be less special.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/mmc/host/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/drivers/mmc/host/Kconfig
++++ work/drivers/mmc/host/Kconfig	2013-10-08 18:03:17.000000000 +0900
+@@ -588,7 +588,7 @@ config MMC_DW_PCI
+ 
+ config MMC_SH_MMCIF
+ 	tristate "SuperH Internal MMCIF support"
+-	depends on MMC_BLOCK && (SUPERH || ARCH_SHMOBILE)
++	depends on SUPERH || ARCH_SHMOBILE
+ 	help
+ 	  This selects the MMC Host Interface controller (MMCIF).
+ 
