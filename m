@@ -1,39 +1,80 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 08 Oct 2013 09:05:42 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7778: r8a7778_register_hspi() become static
-Message-Id: <117378e58365a44b568655e5aa49b3f6daf900c4.1381222967.git.horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:49:49 +0000
+Subject: [PATCH 08/14] ARM: shmobile: r8a7791 IRQC platform device support
+Message-Id: <454d320c80fa07c30267711fea08da0d24f28224.1381293239.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
+References: <cover.1381293239.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-r8a7778_register_hspi() used only from setup-r8a7778.c
-it can be static
+Add a platform device for the r8a7791 IRQC hardware
+driving IRQ pins IRQ0 to IRQ9. The Linux interrupt
+number is statically assigned to allow board code
+written in C to make use of static interrupt numbers.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-r8a7791.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index f5e15c9..468ee65 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -258,7 +258,7 @@ static struct resource hspi_resources[] __initdata = {
- 	DEFINE_RES_IRQ(gic_iid(0x75)),
- };
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 350dfc4..ba4fa3e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -22,6 +22,7 @@
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/irq-renesas-irqc.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+@@ -109,6 +110,31 @@ static const struct resource cmt00_resources[] __initconst = {
+ 					  &cmt##idx##_platform_data,	\
+ 					  sizeof(struct sh_timer_config))
  
--void __init r8a7778_register_hspi(int id)
-+static void __init r8a7778_register_hspi(int id)
++static struct renesas_irqc_config irqc0_data = {
++	.irq_base = irq_pin(0), /* IRQ0 -> IRQ9 */
++};
++
++static struct resource irqc0_resources[] = {
++	DEFINE_RES_MEM(0xe61c0000, 0x200), /* IRQC Event Detector Block_0 */
++	DEFINE_RES_IRQ(gic_spi(0)), /* IRQ0 */
++	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ1 */
++	DEFINE_RES_IRQ(gic_spi(2)), /* IRQ2 */
++	DEFINE_RES_IRQ(gic_spi(3)), /* IRQ3 */
++	DEFINE_RES_IRQ(gic_spi(12)), /* IRQ4 */
++	DEFINE_RES_IRQ(gic_spi(13)), /* IRQ5 */
++	DEFINE_RES_IRQ(gic_spi(14)), /* IRQ6 */
++	DEFINE_RES_IRQ(gic_spi(15)), /* IRQ7 */
++	DEFINE_RES_IRQ(gic_spi(16)), /* IRQ8 */
++	DEFINE_RES_IRQ(gic_spi(17)), /* IRQ9 */
++};
++
++#define r8a7791_register_irqc(idx)					\
++	platform_device_register_resndata(&platform_bus, "renesas_irqc", \
++					  idx, irqc##idx##_resources,	\
++					  ARRAY_SIZE(irqc##idx##_resources), \
++					  &irqc##idx##_data,		\
++					  sizeof(struct renesas_irqc_config))
++
+ void __init r8a7791_add_dt_devices(void)
  {
- 	BUG_ON(id < 0 || id > 2);
+ 	r8a7791_register_scif(SCIFA0);
+@@ -132,6 +158,7 @@ void __init r8a7791_add_dt_devices(void)
+ void __init r8a7791_add_standard_devices(void)
+ {
+ 	r8a7791_add_dt_devices();
++	r8a7791_register_irqc(0);
+ }
  
+ void __init r8a7791_init_early(void)
 -- 
 1.8.4
 
