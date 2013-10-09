@@ -1,18 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Oct 2013 01:59:17 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: lager: add default PFC settings on DTS
-Message-Id: <20131009015915.GB13925@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 09 Oct 2013 09:18:24 +0000
+Subject: Re: [PATCH] sh-pfc: r8a7791 PFC support
+Message-Id: <CACRpkdaJGXAW4B3G4qbByvRc7fWjjYynPwk=T_52eFGCQYq_Sw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87eh7xbtaa.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87eh7xbtaa.wl%kuninori.morimoto.gx@renesas.com>
+References: <20131008040824.3480.69707.sendpatchset@w520>
+In-Reply-To: <20131008040824.3480.69707.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Oct 06, 2013 at 09:26:40PM -0700, Kuninori Morimoto wrote:
-> SCIF0/SCIF1 PFC setting is needed as default
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Oct 8, 2013 at 6:08 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
 
-Thanks, I have queue this up.
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>
+> Add PFC support for the r8a7791 SoC including pin groups for
+> on-chip devices such as MSIOF, SCIF, USB, MMC, VIN, SDHI, DU.
+>
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> Signed-off-by: Kunihito Higashiyama <kunihito.higashiyama.ur@renesas.com>
+> Signed-off-by: Yoshikazu Fujikawa <yoshikazu.fujikawa.ue@renesas.com>
+> Signed-off-by: Nobuyuki HIRAI <nobuyuki.hirai.xe@renesas.com>
+> Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+> [damm@opensource.se: Forward ported to upstream, reused existing sh-pfc macros]
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+
+Need Laurent to look at this, he also queues PCF patches nowadays,
+it was a lot of data but I guess life is like that in this controller...
+
+Yours,
+Linus Walleij
