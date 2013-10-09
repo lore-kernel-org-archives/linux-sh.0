@@ -1,39 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:46 +0000
-Subject: [PATCH 05/14] ARM: shmobile: r8a73a4: add a clock alias for the DMAC in DT mode
-Message-Id: <b9b28f5254d792d7ebe35f5314fe11a36174270d.1381293239.git.horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:53 +0000
+Subject: [PATCH 05/14] ARM: shmobile: Use r8a7791_add_standard_devices() on Koelsch
+Message-Id: <0749bead08db4e01588437a05a126bf4774dae23.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-Devices, initialised from the Device Tree and from platform code usually
-have different names. This patch adds a clock alias for DMAC on r8a73a4
-in DT mode.
+Use r8a7791_add_standard_devices() on Koelsch to let
+the C version of the board code add on-chip devices.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/board-koelsch.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 357b9bc..74841ed 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -580,6 +580,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
- 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]),
-+	CLKDEV_DEV_ID("e6700020.dma-controller", &mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index cc2d5e8..278f12e 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -29,7 +29,7 @@
+ static void __init koelsch_add_standard_devices(void)
+ {
+ 	r8a7791_clock_init();
+-	r8a7791_add_dt_devices();
++	r8a7791_add_standard_devices();
+ }
+ 
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
 -- 
 1.8.4
 
