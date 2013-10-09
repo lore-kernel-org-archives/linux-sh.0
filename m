@@ -1,59 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:50 +0000
-Subject: [PATCH 09/14] ARM: shmobile: r8a7791 Arch timer workaround
-Message-Id: <cd8344f4ddfe58ef9ca1743eff3a121f00b75302.1381293239.git.horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:48:32 +0000
+Subject: [GIT PULL] Renesas ARM based SoC clock updates for v3.13
+Message-Id: <1381301313-5938-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Mike,
 
-Make use of the R-Car Gen2 arch timer workaround on r8a7791.
+please consider these Renesas ARM based SoC clock updates for v3.13.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Makefile        | 2 +-
- arch/arm/mach-shmobile/setup-r8a7791.c | 2 ++
- 2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 6b7a02e..3c37e82 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -16,7 +16,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
--obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- 
- # Clock objects
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index ba4fa3e..cb3859b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -28,6 +28,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7791.h>
-+#include <mach/rcar-gen2.h>
- #include <asm/mach/arch.h>
- 
- #define SCIF_COMMON(scif_type, baseaddr, irq)			\
-@@ -176,6 +177,7 @@ static const char *r8a7791_boards_compat_dt[] __initdata = {
- 
- DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
- 	.init_early	= r8a7791_init_early,
-+	.init_time	= rcar_gen2_timer_init,
- 	.dt_compat	= r8a7791_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
--- 
-1.8.4
+The following changes since commit 272b98c6455f00884f0350f775c5342358ebb73f:
 
+  Linux 3.12-rc1 (2013-09-16 16:17:51 -0400)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-for-v3.13
+
+for you to fetch changes up to f00578d0f860ba63bf28e0261ef489cc9e01ab47:
+
+  clk: emev2: Add support for emev2 SMU clocks with DT (2013-10-09 15:39:08 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC clock updates for v3.13
+
+* Add support for emev2 SMU clocks with DT
+
+----------------------------------------------------------------
+Takashi Yoshii (1):
+      clk: emev2: Add support for emev2 SMU clocks with DT
+
+ .../devicetree/bindings/clock/emev2-clock.txt      |  98 +++++++++++++++++++
+ drivers/clk/Makefile                               |   1 +
+ drivers/clk/shmobile/Makefile                      |   3 +
+ drivers/clk/shmobile/clk-emev2.c                   | 104 +++++++++++++++++++++
+ 4 files changed, 206 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/emev2-clock.txt
+ create mode 100644 drivers/clk/shmobile/Makefile
+ create mode 100644 drivers/clk/shmobile/clk-emev2.c
