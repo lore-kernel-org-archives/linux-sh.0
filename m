@@ -1,84 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 10:29:55 +0000
-Subject: [PATCH 1/5] serial: sh-sci: Sort headers alphabetically
-Message-Id: <1383042599-25151-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:51:04 +0000
+Subject: [PATCH 12/14] ARM: shmobile: Use SMP on Koelsch
+Message-Id: <b6d5a1b1c3476225e897a2f706c0e7eca7b05984.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-This helps locating duplicates.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Enable r8a7791 SMP support code on the Koelsch board.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++++---------------------
- 1 file changed, 21 insertions(+), 21 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 5377502..280753f 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -23,35 +23,35 @@
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index ea5846e..ace1711 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -39,6 +39,7 @@ static const char * const koelsch_boards_compat_dt[] __initconst = {
+ };
  
- #undef DEBUG
- 
--#include <linux/module.h>
-+#include <linux/clk.h>
-+#include <linux/console.h>
-+#include <linux/ctype.h>
-+#include <linux/cpufreq.h>
-+#include <linux/delay.h>
-+#include <linux/dmaengine.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/err.h>
- #include <linux/errno.h>
--#include <linux/sh_dma.h>
--#include <linux/timer.h>
-+#include <linux/gpio.h>
-+#include <linux/init.h>
- #include <linux/interrupt.h>
--#include <linux/tty.h>
--#include <linux/tty_flip.h>
--#include <linux/serial.h>
--#include <linux/major.h>
--#include <linux/string.h>
--#include <linux/sysrq.h>
- #include <linux/ioport.h>
-+#include <linux/major.h>
-+#include <linux/module.h>
- #include <linux/mm.h>
--#include <linux/init.h>
--#include <linux/delay.h>
--#include <linux/console.h>
--#include <linux/platform_device.h>
--#include <linux/serial_sci.h>
- #include <linux/notifier.h>
-+#include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
--#include <linux/cpufreq.h>
--#include <linux/clk.h>
--#include <linux/ctype.h>
--#include <linux/err.h>
--#include <linux/dmaengine.h>
--#include <linux/dma-mapping.h>
- #include <linux/scatterlist.h>
-+#include <linux/serial.h>
-+#include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/slab.h>
--#include <linux/gpio.h>
-+#include <linux/string.h>
-+#include <linux/sysrq.h>
-+#include <linux/timer.h>
-+#include <linux/tty.h>
-+#include <linux/tty_flip.h>
- 
- #ifdef CONFIG_SUPERH
- #include <asm/sh_bios.h>
+ DT_MACHINE_START(KOELSCH_DT, "koelsch")
++	.smp		= smp_ops(r8a7791_smp_ops),
+ 	.init_early	= r8a7791_init_early,
+ 	.init_machine	= koelsch_add_standard_devices,
+ 	.init_time	= rcar_gen2_timer_init,
 -- 
-1.8.1.5
+1.8.4
 
