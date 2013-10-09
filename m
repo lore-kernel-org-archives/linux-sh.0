@@ -1,46 +1,135 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 04 Oct 2013 07:20:32 +0000
-Subject: [PATCH v3 3/3] ARM: shmobile: lager: add CPUFreq support
-Message-Id: <1380871232-31896-4-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:49:58 +0000
+Subject: [PATCH 14/14] ARM: shmobile: r8a7791 SMP support
+Message-Id: <687c27b07050c21a62c4c975777c89e698649a6b.1381293239.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381293239.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a cpufreq-cpu0 platform device on Lager to instantiate the cpufreq-cpu0
-CPUFreq driver for the CA15 boot-mode.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Tie in the APMU SMP code on r8a7791. When used together
+with the secondary CPU device node and smp_ops in the
+board specific code then this will allow use of the
+two Cortex-A15 cores in the r8a7791 SoC.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/Makefile               |  1 +
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7791.c        |  1 +
+ arch/arm/mach-shmobile/smp-r8a7791.c          | 62 +++++++++++++++++++++++++++
+ 4 files changed, 65 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/smp-r8a7791.c
 
-v3: board part of former patch 5/5
-
- arch/arm/mach-shmobile/board-lager-reference.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 1a1a4a8..2bc8bae 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -20,6 +20,7 @@
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 95e48d1..f2d40ed 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -40,6 +40,7 @@ smp-y				:= platsmp.o headsmp.o
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
++smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
  
- #include <linux/init.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_device.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
+ # IRQ objects
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 2a86a53..051ead3 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -5,5 +5,6 @@ void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_init_early(void);
++extern struct smp_operations r8a7791_smp_ops;
  
-@@ -29,7 +30,8 @@ static void __init lager_add_standard_devices(void)
- 	r8a7790_clock_init();
+ #endif /* __ASM_R8A7791_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index cb3859b..d9393d6 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -176,6 +176,7 @@ static const char *r8a7791_boards_compat_dt[] __initdata = {
+ };
  
- 	r8a7790_add_dt_devices();
--        of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
+ DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
++	.smp		= smp_ops(r8a7791_smp_ops),
+ 	.init_early	= r8a7791_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.dt_compat	= r8a7791_boards_compat_dt,
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+new file mode 100644
+index 0000000..2df5bd1
+--- /dev/null
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -0,0 +1,62 @@
++/*
++ * SMP support for r8a7791
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/smp.h>
++#include <linux/io.h>
++#include <asm/smp_plat.h>
++#include <mach/common.h>
++#include <mach/r8a7791.h>
++
++#define RST		0xe6160000
++#define CA15BAR		0x0020
++#define CA15RESCNT	0x0040
++#define RAM		0xe6300000
++
++static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
++{
++	void __iomem *p;
++	u32 bar;
++
++	/* let APMU code install data related to shmobile_boot_vector */
++	shmobile_smp_apmu_prepare_cpus(max_cpus);
++
++	/* RAM for jump stub, because BAR requires 256KB aligned address */
++	p = ioremap_nocache(RAM, shmobile_boot_size);
++	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
++	iounmap(p);
++
++	/* setup reset vectors */
++	p = ioremap_nocache(RST, 0x63);
++	bar = (RAM >> 8) & 0xfffffc00;
++	writel_relaxed(bar, p + CA15BAR);
++	writel_relaxed(bar | 0x10, p + CA15BAR);
++
++	/* enable clocks to all CPUs */
++	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
++		       p + CA15RESCNT);
++	iounmap(p);
++}
++
++struct smp_operations r8a7791_smp_ops __initdata = {
++	.smp_prepare_cpus	= r8a7791_smp_prepare_cpus,
++	.smp_boot_secondary	= shmobile_smp_apmu_boot_secondary,
++#ifdef CONFIG_HOTPLUG_CPU
++	.cpu_disable		= shmobile_smp_cpu_disable,
++	.cpu_die		= shmobile_smp_apmu_cpu_die,
++	.cpu_kill		= shmobile_smp_apmu_cpu_kill,
++#endif
++};
 -- 
-1.7.2.5
+1.8.4
 
