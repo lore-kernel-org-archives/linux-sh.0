@@ -1,32 +1,76 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Oct 2013 06:34:53 +0000
-Subject: [PATCH 02/10] ARM: shmobile: bockw: header cleanup
-Message-Id: <87iox41fjq.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:12 +0000
+Subject: [PATCH 02/13] ARM: shmobile: r8a7790: add I2C DT nodes
+Message-Id: <edd2b9f4e6ed39032ffe9793e262c8a4b62c2152.1381298964.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381298964.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-linux/pinctrl/machine.h is no longer needed
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add DT nodes for the four I2C interfacces on r8a7790.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c |    1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index 972f951..875cf3f 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -19,7 +19,6 @@
-  */
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a0cfb661..47bc1cb 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -176,6 +176,46 @@
+ 		interrupts = <0 0 4>, <0 1 4>, <0 2 4>,	<0 3 4>;
+ 	};
  
- #include <linux/of_platform.h>
--#include <linux/pinctrl/machine.h>
- #include <mach/common.h>
- #include <mach/r8a7778.h>
- #include <asm/mach/arch.h>
++	i2c0: i2c@e6508000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7790";
++		reg = <0 0xe6508000 0 0x40>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 287 0x4>;
++		status = "disabled";
++	};
++
++	i2c1: i2c@e6518000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7790";
++		reg = <0 0xe6518000 0 0x40>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 288 0x4>;
++		status = "disabled";
++	};
++
++	i2c2: i2c@e6530000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7790";
++		reg = <0 0xe6530000 0 0x40>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 286 0x4>;
++		status = "disabled";
++	};
++
++	i2c3: i2c@e6540000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7790";
++		reg = <0 0xe6540000 0 0x40>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 290 0x4>;
++		status = "disabled";
++	};
++
+ 	mmcif0: mmcif@ee200000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
 -- 
-1.7.9.5
+1.8.4
 
