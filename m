@@ -1,77 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 15:04:39 +0000
-Subject: [PATCH 07/10] ARM: shmobile: Remove non-multiplatform Lager reference support
-Message-Id: <1383059082-26315-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:49 +0000
+Subject: [PATCH 01/14] ARM: shmobile: ape6evm: add DMA support to MMCIF
+Message-Id: <7a2a7a371145e83ad60482313e8cd7501994df3a.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now that r8a7790 has CCF support remove the legacy Lager reference
-Kconfig bits CONFIG_MACH_LAGER_REFERENCE for the non-multiplatform
-case.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Starting from this commit Lager board support is always enabled via
-CONFIG_MACH_LAGER, and CONFIG_ARCH_MULTIPLATFORM is used to select
-between board-lager.c and board-lager-reference.c
+Add DMA support for MMCIF on APE6EVM, using the shdma dmaengine driver.
 
-The file board-lager-reference.c can no longer be used together with
-the legacy sh-clk clock framework, instead CCF is used.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig       | 11 -----------
- arch/arm/mach-shmobile/Makefile      |  1 -
- arch/arm/mach-shmobile/Makefile.boot |  1 -
- 3 files changed, 13 deletions(-)
+ arch/arm/mach-shmobile/board-ape6evm.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index b39f6b6..5254bbc 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -225,17 +225,6 @@ config MACH_LAGER
- 	depends on ARCH_R8A7790
- 	select USE_OF
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 7627385..2de4b09 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -162,6 +162,8 @@ static struct regulator_consumer_supply vcc_sdhi1_consumers[]  /* MMCIF */
+ static const struct sh_mmcif_plat_data mmcif0_pdata __initconst = {
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++	.slave_id_tx	= SHDMA_SLAVE_MMCIF0_TX,
++	.slave_id_rx	= SHDMA_SLAVE_MMCIF0_RX,
+ 	.ccs_unsupported = true,
+ };
  
--config MACH_LAGER_REFERENCE
--	bool "Lager board - Reference Device Tree Implementation"
--	depends on ARCH_R8A7790
--	select USE_OF
--	---help---
--	   Use reference implementation of Lager board support
--	   which makes use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- config MACH_KOELSCH
- 	bool "Koelsch board"
- 	depends on ARCH_R8A7791
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 32f3975..d94fc5e 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -68,7 +68,6 @@ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
--obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index ae6f9b7..b60d90d 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -13,7 +13,6 @@ loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
--loadaddr-$(CONFIG_MACH_LAGER_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
- loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
- loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
 -- 
-1.8.1.5
+1.8.4
 
