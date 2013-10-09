@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:27 +0000
-Subject: [GIT PULL] Second round of Renesas ARM based SoC updates for v3.13
-Message-Id: <cover.1381293239.git.horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:43 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM based SoC board updates for v3.13
+Message-Id: <cover.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -10,92 +10,82 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Kevin and Arnd,
+Hi Kevin, Olof and Arnd,
 
-please consider this second round of Renesas ARM based SoC updates for v3.13.
+please consider this second round of Renesas ARM based SoC board updates
+for v3.13.
 
-This pull-request is based on a merge of the following, each of which
-you have already pulled. The reason for the merge is to eliminate conflicts.
-* renesas-soc-for-v3.13
-* renesas-smp-for-v3.13
-* renesas-fixes4-for-v3.13
+This pull request is based on a merge of renesas-soc2-for-v3.13 into
+renesas-boards-for-v3.13. You have already pulled renesas-boards-for-v3.13
+and I am sending a pull request for renesas-soc2-for-v3.13 today. The
+reason for this merge is to supply SoC code that is needed by board code in
+this series. In particular the r7s72100 SoC code for the Genmai board.
 
-The following changes since commit 243b6db0588b1425cb020e764475e8e1c4eb40d9:
 
-  Merge tag 'renesas-fixes4-for-v3.12' into soc2-base (2013-10-08 09:44:08 +0900)
+The following changes since commit 661a7335c4e47726df1e7264580209847509569a:
+
+  Merge branch 'heads/soc2' into boards2-base (2013-10-08 10:01:47 +0900)
 
 are available in the git repository at:
 
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.13
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.13
 
-for you to fetch changes up to 687c27b07050c21a62c4c975777c89e698649a6b:
+for you to fetch changes up to 7d4bde88e1135c4a3106b79650d3b85335f35717:
 
-  ARM: shmobile: r8a7791 SMP support (2013-10-08 09:53:02 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM based SoC updates for v3.13
-
-* SMP support for r8a7791 SoC
-* r8a7779_init_irq_extpin() for DT for r8a7779 and r8a7778 SoCs
-* Add HPB-DMAC to r8a7779 and r8a7778 SoCs
-* Add r7s72100 SoC
-* Make use of ARCH timer workaround on r8a7791 SoC
-* Add IRQC platform device support to r8a7791 SoC
-* Add I2C clocks and aliases for the DT mode for r8a7790 SoC
-* Add MAC platform device to r8a73a4 SoC
+  ARM: shmobile: marzen: enable INTC IRQ (2013-10-08 10:02:22 +0900)
 
 ----------------------------------------------------------------
-Guennadi Liakhovetski (3):
-      ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
-      ARM: shmobile: r8a7790: add I2C clocks and aliases for the DT mode
-      ARM: shmobile: r8a73a4: add a clock alias for the DMAC in DT mode
+Second Round of Renesas ARM based SoC board updates for v3.13
+
+* Enable INTC IRQ on marzen board
+* Enable SMSC ethernet on reference board code for bockw
+* Enable DMA for SDHI0 on marzen and bockw boards
+* Enable DMA for MMCIF on ape6evm board
+* Enable SMP and arch timers on Koelsh board
+* Rework kzm9d make reference board code multiplatform
+* Use a common DTB for kzm9d reference and non-reference
+* Add Genmai board
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      ARM: shmobile: ape6evm: add DMA support to MMCIF
 
 Kuninori Morimoto (2):
-      ARM: shmobile: r8a7778: split r8a7778_init_irq_extpin() for DT
-      ARM: shmobile: r8a7779: split r8a7779_init_irq_extpin() for DT
+      ARM: shmobile: bockw: add SMSC support on reference
+      ARM: shmobile: marzen: enable INTC IRQ
 
-Magnus Damm (7):
-      ARM: shmobile: Break out R-Car Gen2 setup code
-      ARM: shmobile: Introduce r8a7791_add_standard_devices()
-      ARM: shmobile: r8a7791 IRQC platform device support
-      ARM: shmobile: r8a7791 Arch timer workaround
-      ARM: shmobile: Initial r7s72100 SoC support
-      ARM: shmobile: r7s72100 SCIF support
-      ARM: shmobile: r8a7791 SMP support
+Magnus Damm (9):
+      ARM: shmobile: Genmai support
+      ARM: shmobile: Use r8a7791_add_standard_devices() on Koelsch
+      ARM: shmobile: Use arch timer on Koelsch
+      ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
+      ARM: shmobile: Use KZM9D without reference for multiplatform
+      ARM: shmobile: Remove non-multiplatform KZM9D reference support
+      ARM: shmobile: Let KZM9D multiplatform boot with KZM9D DTB
+      ARM: shmobile: Remove KZM9D reference DTS
+      ARM: shmobile: Use SMP on Koelsch
 
 Max Filippov (2):
-      ARM: shmobile: r8a7778: add HPB-DMAC support
-      ARM: shmobile: r8a7779: add HPB-DMAC support
+      ARM: shmobile: bockw: enable DMA for SDHI0
+      ARM: shmobile: marzen: enable DMA for SDHI0
 
- arch/arm/boot/dts/r7s72100.dtsi                 |  36 +++++
- arch/arm/mach-shmobile/Kconfig                  |   6 +
- arch/arm/mach-shmobile/Makefile                 |   6 +-
- arch/arm/mach-shmobile/board-lager-reference.c  |   2 +-
- arch/arm/mach-shmobile/board-lager.c            |   2 +-
- arch/arm/mach-shmobile/clock-r7s72100.c         | 202 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a73a4.c          |   5 +-
- arch/arm/mach-shmobile/clock-r8a7790.c          |  12 +-
- arch/arm/mach-shmobile/include/mach/r7s72100.h  |   8 +
- arch/arm/mach-shmobile/include/mach/r8a73a4.h   |   9 ++
- arch/arm/mach-shmobile/include/mach/r8a7778.h   |   9 ++
- arch/arm/mach-shmobile/include/mach/r8a7779.h   |   8 +
- arch/arm/mach-shmobile/include/mach/r8a7790.h   |   6 +-
- arch/arm/mach-shmobile/include/mach/r8a7791.h   |   2 +
- arch/arm/mach-shmobile/include/mach/rcar-gen2.h |   8 +
- arch/arm/mach-shmobile/setup-r7s72100.c         |  88 +++++++++++
- arch/arm/mach-shmobile/setup-r8a73a4.c          |  91 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7778.c          |  91 ++++++++++-
- arch/arm/mach-shmobile/setup-r8a7779.c          | 160 ++++++++++++++++++-
- arch/arm/mach-shmobile/setup-r8a7790.c          |  68 +-------
- arch/arm/mach-shmobile/setup-r8a7791.c          |  35 ++++
- arch/arm/mach-shmobile/setup-rcar-gen2.c        |  91 +++++++++++
- arch/arm/mach-shmobile/smp-r8a7791.c            |  62 ++++++++
- 23 files changed, 929 insertions(+), 78 deletions(-)
- create mode 100644 arch/arm/boot/dts/r7s72100.dtsi
- create mode 100644 arch/arm/mach-shmobile/clock-r7s72100.c
- create mode 100644 arch/arm/mach-shmobile/include/mach/r7s72100.h
- create mode 100644 arch/arm/mach-shmobile/include/mach/rcar-gen2.h
- create mode 100644 arch/arm/mach-shmobile/setup-r7s72100.c
- create mode 100644 arch/arm/mach-shmobile/setup-rcar-gen2.c
- create mode 100644 arch/arm/mach-shmobile/smp-r8a7791.c
+ arch/arm/boot/dts/Makefile                      |  4 +-
+ arch/arm/boot/dts/emev2-kzm9d-reference.dts     | 57 -------------------------
+ arch/arm/boot/dts/emev2-kzm9d.dts               | 33 +++++++++++++-
+ arch/arm/boot/dts/r7s72100-genmai.dts           | 31 ++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                  | 27 +++---------
+ arch/arm/mach-shmobile/Makefile                 |  6 ++-
+ arch/arm/mach-shmobile/Makefile.boot            |  2 +-
+ arch/arm/mach-shmobile/board-ape6evm.c          |  2 +
+ arch/arm/mach-shmobile/board-bockw-reference.c  | 20 +++++++++
+ arch/arm/mach-shmobile/board-bockw.c            |  2 +
+ arch/arm/mach-shmobile/board-genmai.c           | 43 +++++++++++++++++++
+ arch/arm/mach-shmobile/board-koelsch.c          |  5 ++-
+ arch/arm/mach-shmobile/board-kzm9d-reference.c  |  1 +
+ arch/arm/mach-shmobile/board-marzen-reference.c |  1 +
+ arch/arm/mach-shmobile/board-marzen.c           |  2 +
+ 15 files changed, 153 insertions(+), 83 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/emev2-kzm9d-reference.dts
+ create mode 100644 arch/arm/boot/dts/r7s72100-genmai.dts
+ create mode 100644 arch/arm/mach-shmobile/board-genmai.c
