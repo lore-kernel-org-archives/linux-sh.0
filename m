@@ -1,40 +1,171 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Oct 2013 00:05:30 +0000
-Subject: [PATCH 2/3 v2] rcar-hpbdma: initialise plane information when halted
-Message-Id: <87eh7j1m0p.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:52 +0000
+Subject: [PATCH 04/14] ARM: shmobile: Genmai support
+Message-Id: <a4ed412ed5934127ba88ba007b9a00617ae47f75.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Plane information should be initialized when halted.
-It may restart from the wrong plane without this patch.
+From: Magnus Damm <damm@opensource.se>
 
-Reviewed-by: Max Filippov <max.filippov@cogentembedded.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Genmai base board support making use of 128 MiB of memory,
+the r7s7211 SoC with the SCIF2 serial port and CA9 core.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ arch/arm/boot/dts/Makefile            |  1 +
+ arch/arm/boot/dts/r7s72100-genmai.dts | 31 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig        |  5 ++++
+ arch/arm/mach-shmobile/Makefile       |  1 +
+ arch/arm/mach-shmobile/Makefile.boot  |  1 +
+ arch/arm/mach-shmobile/board-genmai.c | 43 +++++++++++++++++++++++++++++++++++
+ 6 files changed, 82 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r7s72100-genmai.dts
+ create mode 100644 arch/arm/mach-shmobile/board-genmai.c
 
- - no change
-
- drivers/dma/sh/rcar-hpbdma.c |    3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
-index 496180a..19af32d 100644
---- a/drivers/dma/sh/rcar-hpbdma.c
-+++ b/drivers/dma/sh/rcar-hpbdma.c
-@@ -286,6 +286,9 @@ static void hpb_dmae_halt(struct shdma_chan *schan)
- 
- 	ch_reg_write(chan, HPB_DMAE_DCMDR_DQEND, HPB_DMAE_DCMDR);
- 	ch_reg_write(chan, HPB_DMAE_DSTPR_DMSTP, HPB_DMAE_DSTPR);
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 3b1c462..295824d 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -196,6 +196,7 @@ dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
+ dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
+ 	emev2-kzm9d-reference.dtb \
++	r7s72100-genmai.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
+new file mode 100644
+index 0000000..1fb20f2
+--- /dev/null
++++ b/arch/arm/boot/dts/r7s72100-genmai.dts
+@@ -0,0 +1,31 @@
++/*
++ * Device Tree Source for the Genmai board
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
-+	chan->plane_idx = 0;
-+	chan->first_desc = true;
- }
++/dts-v1/;
++/include/ "r7s72100.dtsi"
++
++/ {
++	model = "Genmai";
++	compatible = "renesas,genmai", "renesas,r7s72100";
++
++	chosen {
++		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x08000000 0x08000000>;
++	};
++
++	lbsc {
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 6e7d0a9..6a684ff 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -191,6 +191,11 @@ config MACH_BOCKW_REFERENCE
  
- static const struct hpb_dmae_slave_config *
+ 	   This is intended to aid developers
+ 
++config MACH_GENMAI
++	bool "Genmai board"
++	depends on ARCH_R7S72100
++	select USE_OF
++
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 663f894..b3840ba 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -60,6 +60,7 @@ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
++obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 60e29e6..c690b50 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -6,6 +6,7 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
++loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
+ loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9D_REFERENCE) += 0x40008000
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+new file mode 100644
+index 0000000..3e92e3c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -0,0 +1,43 @@
++/*
++ * Genmai board support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <mach/common.h>
++#include <mach/r7s72100.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++static void __init genmai_add_standard_devices(void)
++{
++	r7s72100_clock_init();
++	r7s72100_add_dt_devices();
++}
++
++static const char * const genmai_boards_compat_dt[] __initconst = {
++	"renesas,genmai",
++	NULL,
++};
++
++DT_MACHINE_START(GENMAI_DT, "genmai")
++	.init_early	= r7s72100_init_early,
++	.init_machine	= genmai_add_standard_devices,
++	.dt_compat	= genmai_boards_compat_dt,
++MACHINE_END
 -- 
-1.7.9.5
+1.8.4
 
