@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:43 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM based SoC board updates for v3.13
-Message-Id: <cover.1381299817.git.horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:51:24 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM based SoC defconfig updates for v3.13
+Message-Id: <cover.1381300141.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -10,82 +10,33 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Kevin, Olof and Arnd,
+Hi Olof, Hi Arnd, Hi Kevin,
 
-please consider this second round of Renesas ARM based SoC board updates
-for v3.13.
-
-This pull request is based on a merge of renesas-soc2-for-v3.13 into
-renesas-boards-for-v3.13. You have already pulled renesas-boards-for-v3.13
-and I am sending a pull request for renesas-soc2-for-v3.13 today. The
-reason for this merge is to supply SoC code that is needed by board code in
-this series. In particular the r7s72100 SoC code for the Genmai board.
+please consider this second round of Renesas ARM based SoC defconfig
+updates for v3.13.
 
 
-The following changes since commit 661a7335c4e47726df1e7264580209847509569a:
+The following changes since commit 6bb2e347899b297eea26f2658eac8fdcd633fba5:
 
-  Merge branch 'heads/soc2' into boards2-base (2013-10-08 10:01:47 +0900)
+  ARM: shmobile: Add koelsch defconfig (2013-09-20 17:46:15 -0700)
 
 are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.13
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.13
+for you to fetch changes up to bb416e1d7416861bece0335f543c590d9af09c79:
 
-for you to fetch changes up to 7d4bde88e1135c4a3106b79650d3b85335f35717:
-
-  ARM: shmobile: marzen: enable INTC IRQ (2013-10-08 10:02:22 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM based SoC board updates for v3.13
-
-* Enable INTC IRQ on marzen board
-* Enable SMSC ethernet on reference board code for bockw
-* Enable DMA for SDHI0 on marzen and bockw boards
-* Enable DMA for MMCIF on ape6evm board
-* Enable SMP and arch timers on Koelsh board
-* Rework kzm9d make reference board code multiplatform
-* Use a common DTB for kzm9d reference and non-reference
-* Add Genmai board
+  ARM: shmobile: Genmai defconfig (2013-10-03 13:01:30 +0900)
 
 ----------------------------------------------------------------
-Guennadi Liakhovetski (1):
-      ARM: shmobile: ape6evm: add DMA support to MMCIF
+Second Round of Renesas ARM based SoC defconfig updates for v3.13
 
-Kuninori Morimoto (2):
-      ARM: shmobile: bockw: add SMSC support on reference
-      ARM: shmobile: marzen: enable INTC IRQ
+* Add defconfig for Genmai board
 
-Magnus Damm (9):
-      ARM: shmobile: Genmai support
-      ARM: shmobile: Use r8a7791_add_standard_devices() on Koelsch
-      ARM: shmobile: Use arch timer on Koelsch
-      ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
-      ARM: shmobile: Use KZM9D without reference for multiplatform
-      ARM: shmobile: Remove non-multiplatform KZM9D reference support
-      ARM: shmobile: Let KZM9D multiplatform boot with KZM9D DTB
-      ARM: shmobile: Remove KZM9D reference DTS
-      ARM: shmobile: Use SMP on Koelsch
+----------------------------------------------------------------
+Magnus Damm (1):
+      ARM: shmobile: Genmai defconfig
 
-Max Filippov (2):
-      ARM: shmobile: bockw: enable DMA for SDHI0
-      ARM: shmobile: marzen: enable DMA for SDHI0
-
- arch/arm/boot/dts/Makefile                      |  4 +-
- arch/arm/boot/dts/emev2-kzm9d-reference.dts     | 57 -------------------------
- arch/arm/boot/dts/emev2-kzm9d.dts               | 33 +++++++++++++-
- arch/arm/boot/dts/r7s72100-genmai.dts           | 31 ++++++++++++++
- arch/arm/mach-shmobile/Kconfig                  | 27 +++---------
- arch/arm/mach-shmobile/Makefile                 |  6 ++-
- arch/arm/mach-shmobile/Makefile.boot            |  2 +-
- arch/arm/mach-shmobile/board-ape6evm.c          |  2 +
- arch/arm/mach-shmobile/board-bockw-reference.c  | 20 +++++++++
- arch/arm/mach-shmobile/board-bockw.c            |  2 +
- arch/arm/mach-shmobile/board-genmai.c           | 43 +++++++++++++++++++
- arch/arm/mach-shmobile/board-koelsch.c          |  5 ++-
- arch/arm/mach-shmobile/board-kzm9d-reference.c  |  1 +
- arch/arm/mach-shmobile/board-marzen-reference.c |  1 +
- arch/arm/mach-shmobile/board-marzen.c           |  2 +
- 15 files changed, 153 insertions(+), 83 deletions(-)
- delete mode 100644 arch/arm/boot/dts/emev2-kzm9d-reference.dts
- create mode 100644 arch/arm/boot/dts/r7s72100-genmai.dts
- create mode 100644 arch/arm/mach-shmobile/board-genmai.c
+ arch/arm/configs/genmai_defconfig | 116 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 116 insertions(+)
+ create mode 100644 arch/arm/configs/genmai_defconfig
