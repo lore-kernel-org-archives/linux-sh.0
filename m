@@ -1,32 +1,21 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Oct 2013 03:39:49 +0000
-Subject: [PATCH 06/08] ARM: shmobile: Enable PFC/GPIO on the Koelsch board
-Message-Id: <20131008033949.20455.8834.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 09 Oct 2013 02:32:51 +0000
+Subject: Re: [PATCH 06/08] ARM: shmobile: Enable PFC/GPIO on the Koelsch board
+Message-Id: <20131009023249.GK15065@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131008033851.20455.68845.sendpatchset@w520>
-In-Reply-To: <20131008033851.20455.68845.sendpatchset@w520>
+ <20131008033949.20455.8834.sendpatchset@w520>
+In-Reply-To: <20131008033949.20455.8834.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Oct 08, 2013 at 12:39:49PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Enable r8a7791 PFC and GPIO on the Koelsch board.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Enable r8a7791 PFC and GPIO on the Koelsch board.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/board-koelsch.c |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0001/arch/arm/mach-shmobile/board-koelsch.c
-+++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-10-07 13:46:36.000000000 +0900
-@@ -30,6 +30,7 @@
- static void __init koelsch_add_standard_devices(void)
- {
- 	r8a7791_clock_init();
-+	r8a7791_pinmux_init();
- 	r8a7791_add_standard_devices();
- }
- 
+Thanks, I have queued this up.
