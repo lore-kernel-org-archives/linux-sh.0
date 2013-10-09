@@ -1,131 +1,169 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:37:01 +0000
-Subject: [PATCH 01/12] ARM: shmobile: marzen: Add Display Unit support
-Message-Id: <df83d907348b41f40da83b267242b5dca041d4ef.1380530519.git.horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:49:43 +0000
+Subject: [PATCH 02/14] ARM: shmobile: r8a7778: add HPB-DMAC support
+Message-Id: <338c4991ed350abd7c5b3cb807fe022cb712a8ba.1381293239.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380530519.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380530519.git.horms+renesas@verge.net.au>
+References: <cover.1381293239.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-Support the DU0 VGA and DU1 LVDS outputs. DU1 is connected to a
-Mitsubishi AA104XD12 panel (10.4" XGA).
+Add HPB-DMAC platform device on R8A7778 SoC along with its slave and channel
+configurations (only for SDHI0 so far).
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: moved *enum* declaring HPB-DMAC slave IDs from now removed <mach/dma.h>
+to <mach/r8a7778.h>, removed #include <mach/dma.h> from setup-r8a7778.c, removed
+SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[] and
+hpb_dmae_channels[], moved the comments after the element initializers of
+hpb_dmae_channels[].]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 72 +++++++++++++++++++++++++++++++++++
- 1 file changed, 72 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |  8 +++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 85 +++++++++++++++++++++++++++
+ 2 files changed, 93 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 3f5044f..434b213 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -30,6 +30,7 @@
- #include <linux/dma-mapping.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
-+#include <linux/platform_data/rcar-du.h>
- #include <linux/platform_data/usb-rcar-phy.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -169,6 +170,63 @@ static struct platform_device hspi_device = {
- 	.num_resources	= ARRAY_SIZE(hspi_resources),
- };
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index ea1dca6..1d6fe97 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2013  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -21,6 +22,13 @@
+ #include <linux/sh_eth.h>
+ #include <linux/platform_data/camera-rcar.h>
  
-+/*
-+ * DU
-+ *
-+ * The panel only specifies the [hv]display and [hv]total values. The position
-+ * and width of the sync pulses don't matter, they're copied from VESA timings.
-+ */
-+static struct rcar_du_encoder_data du_encoders[] = {
++/* HPB-DMA slave IDs */
++enum {
++	HPBDMA_SLAVE_DUMMY,
++	HPBDMA_SLAVE_SDHI0_TX,
++	HPBDMA_SLAVE_SDHI0_RX,
++};
++
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index e484d14..fa1b7e4 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -24,6 +24,7 @@
+ #include <linux/irqchip/arm-gic.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/dma-rcar-hpbdma.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ #include <linux/platform_device.h>
+@@ -356,6 +357,88 @@ void __init r8a7778_add_dt_devices(void)
+ 	r8a7778_register_tmu(1);
+ }
+ 
++/* HPB-DMA */
++
++/* Asynchronous mode register (ASYNCMDR) bits */
++#define HPB_DMAE_ASYNCMDR_ASMD22_MASK	BIT(2)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD22_SINGLE	BIT(2)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD22_MULTI	0	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD21_MASK	BIT(1)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
++#define HPB_DMAE_ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
++
++static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
 +	{
-+		.type = RCAR_DU_ENCODER_VGA,
-+		.output = RCAR_DU_OUTPUT_DPAD0,
++		.id	= HPBDMA_SLAVE_SDHI0_TX,
++		.addr	= 0xffe4c000 + 0x30,
++		.dcr	= HPB_DMAE_DCR_SPDS_16BIT |
++			  HPB_DMAE_DCR_DMDL |
++			  HPB_DMAE_DCR_DPDS_16BIT,
++		.rstr	= HPB_DMAE_ASYNCRSTR_ASRST21 |
++			  HPB_DMAE_ASYNCRSTR_ASRST22 |
++			  HPB_DMAE_ASYNCRSTR_ASRST23,
++		.mdr	= HPB_DMAE_ASYNCMDR_ASMD21_MULTI,
++		.mdm	= HPB_DMAE_ASYNCMDR_ASMD21_MASK,
++		.port	= 0x0D0C,
++		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
++		.dma_ch	= 21,
 +	}, {
-+		.type = RCAR_DU_ENCODER_LVDS,
-+		.output = RCAR_DU_OUTPUT_DPAD1,
-+		.connector.lvds.panel = {
-+			.width_mm = 210,
-+			.height_mm = 158,
-+			.mode = {
-+				.clock = 65000,
-+				.hdisplay = 1024,
-+				.hsync_start = 1048,
-+				.hsync_end = 1184,
-+				.htotal = 1344,
-+				.vdisplay = 768,
-+				.vsync_start = 771,
-+				.vsync_end = 777,
-+				.vtotal = 806,
-+				.flags = 0,
-+			},
-+		},
++		.id	= HPBDMA_SLAVE_SDHI0_RX,
++		.addr	= 0xffe4c000 + 0x30,
++		.dcr	= HPB_DMAE_DCR_SMDL |
++			  HPB_DMAE_DCR_SPDS_16BIT |
++			  HPB_DMAE_DCR_DPDS_16BIT,
++		.rstr	= HPB_DMAE_ASYNCRSTR_ASRST21 |
++			  HPB_DMAE_ASYNCRSTR_ASRST22 |
++			  HPB_DMAE_ASYNCRSTR_ASRST23,
++		.mdr	= HPB_DMAE_ASYNCMDR_ASMD22_MULTI,
++		.mdm	= HPB_DMAE_ASYNCMDR_ASMD22_MASK,
++		.port	= 0x0D0C,
++		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
++		.dma_ch	= 22,
 +	},
 +};
 +
-+static const struct rcar_du_platform_data du_pdata __initconst = {
-+	.encoders = du_encoders,
-+	.num_encoders = ARRAY_SIZE(du_encoders),
++static const struct hpb_dmae_channel hpb_dmae_channels[] = {
++	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
++	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
 +};
 +
-+static const struct resource du_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xfff80000, 0x40000),
-+	DEFINE_RES_IRQ(gic_iid(0x3f)),
++static struct hpb_dmae_pdata dma_platform_data __initdata = {
++	.slaves			= hpb_dmae_slaves,
++	.num_slaves		= ARRAY_SIZE(hpb_dmae_slaves),
++	.channels		= hpb_dmae_channels,
++	.num_channels		= ARRAY_SIZE(hpb_dmae_channels),
++	.ts_shift		= {
++		[XMIT_SZ_8BIT]	= 0,
++		[XMIT_SZ_16BIT]	= 1,
++		[XMIT_SZ_32BIT]	= 2,
++	},
++	.num_hw_channels	= 39,
 +};
 +
-+static void __init marzen_add_du_device(void)
++static struct resource hpb_dmae_resources[] __initdata = {
++	/* Channel registers */
++	DEFINE_RES_MEM(0xffc08000, 0x1000),
++	/* Common registers */
++	DEFINE_RES_MEM(0xffc09000, 0x170),
++	/* Asynchronous reset registers */
++	DEFINE_RES_MEM(0xffc00300, 4),
++	/* Asynchronous mode registers */
++	DEFINE_RES_MEM(0xffc00400, 4),
++	/* IRQ for DMA channels */
++	DEFINE_RES_NAMED(gic_iid(0x7b), 5, NULL, IORESOURCE_IRQ),
++};
++
++static void __init r8a7778_register_hpb_dmae(void)
 +{
-+	struct platform_device_info info = {
-+		.name = "rcar-du-r8a7779",
-+		.id = -1,
-+		.res = du_resources,
-+		.num_res = ARRAY_SIZE(du_resources),
-+		.data = &du_pdata,
-+		.size_data = sizeof(du_pdata),
-+		.dma_mask = DMA_BIT_MASK(32),
-+	};
-+
-+	platform_device_register_full(&info);
++	platform_device_register_resndata(&platform_bus, "hpb-dma-engine", -1,
++					  hpb_dmae_resources,
++					  ARRAY_SIZE(hpb_dmae_resources),
++					  &dma_platform_data,
++					  sizeof(dma_platform_data));
 +}
 +
- /* LEDS */
- static struct gpio_led marzen_leds[] = {
- 	{
-@@ -237,6 +295,19 @@ static struct platform_device *marzen_devices[] __initdata = {
- };
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-+	/* DU (CN10: ARGB0, CN13: LVDS) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
-+				  "du0_rgb888", "du0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
-+				  "du0_sync_1", "du0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
-+				  "du0_clk_out_0", "du0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
-+				  "du1_rgb666", "du1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
-+				  "du1_sync_1", "du1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
-+				  "du1_clk_out", "du1"),
- 	/* HSPI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7779",
- 				  "hspi0", "hspi0"),
-@@ -297,6 +368,7 @@ static void __init marzen_init(void)
- 	r8a7779_add_vin_device(1, &vin_platform_data);
- 	r8a7779_add_vin_device(3, &vin_platform_data);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
-+	marzen_add_du_device();
+ void __init r8a7778_add_standard_devices(void)
+ {
+ 	r8a7778_add_dt_devices();
+@@ -366,6 +449,8 @@ void __init r8a7778_add_standard_devices(void)
+ 	r8a7778_register_hspi(0);
+ 	r8a7778_register_hspi(1);
+ 	r8a7778_register_hspi(2);
++
++	r8a7778_register_hpb_dmae();
  }
  
- static const char *marzen_boards_compat_dt[] __initdata = {
+ void __init r8a7778_init_late(void)
 -- 
 1.8.4
 
