@@ -1,7 +1,7 @@
 From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 08 Oct 2013 19:43:26 +0000
+Date: Wed, 09 Oct 2013 22:14:46 +0000
 Subject: [PATCH 2/3] arm: shmobile: r8a7790: Add USBHS clock support
-Message-Id: <1381261407-12606-3-git-send-email-valentine.barshak@cogentembedded.com>
+Message-Id: <1381356887-15564-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1381188423-1867-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1381188423-1867-3-git-send-email-valentine.barshak@cogentembedded.com>
@@ -13,6 +13,7 @@ To: linux-sh@vger.kernel.org
 This adds USBHS clock support.
 
 Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
  arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
  1 file changed, 4 insertions(+)
