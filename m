@@ -1,99 +1,74 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Oct 2013 02:35:08 +0000
-Subject: [PATCH 01/12] ARM: shmobile: r8a7740: tidyup DT node naming
-Message-Id: <8761sqm3s6.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:56 +0000
+Subject: [PATCH 08/14] ARM: shmobile: Use KZM9D without reference for multiplatform
+Message-Id: <3ae970a688f8f8a74d1b489b8646733a830c904b.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-According to ePAPR spec,
-this patch tidies up DT node name and related clock.
+From: Magnus Damm <damm@opensource.se>
 
-This patch also adds missing SDHI2 entry
+Change the multiplatform kconfig bits for KZM9D from
+CONFIG_MACH_KZM9D_REFERENCE into CONFIG_MACH_KZM9D
+to match the non-multiplatform case.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi         |   18 +++++++++++++++---
- arch/arm/mach-shmobile/clock-r8a7740.c |    8 ++++----
- 2 files changed, 19 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/Kconfig  | 10 ++--------
+ arch/arm/mach-shmobile/Makefile |  4 ++++
+ 2 files changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index ae1e230..4cc945a 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -162,7 +162,7 @@
- 		#pwm-cells = <3>;
- 	};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 6a684ff..c9c4f15 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -22,16 +22,10 @@ config ARCH_EMEV2
  
--	mmcif0: mmcif@e6bd0000 {
-+	mmcif0: mmc@e6bd0000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0xe6bd0000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -171,7 +171,7 @@
- 		status = "disabled";
- 	};
+ comment "SH-Mobile Board Type"
  
--	sdhi0: sdhi@e6850000 {
-+	sdhi0: sd@e6850000 {
- 		compatible = "renesas,sdhi-r8a7740";
- 		reg = <0xe6850000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -183,7 +183,7 @@
- 		status = "disabled";
- 	};
+-config MACH_KZM9D_REFERENCE
+-	bool "KZM9D board - Reference Device Tree Implementation"
++config MACH_KZM9D
++	bool "KZM9D board"
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	---help---
+-	   Use reference implementation of KZM9D board support
+-	   which makes a greater use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
  
--	sdhi1: sdhi@e6860000 {
-+	sdhi1: sd@e6860000 {
- 		compatible = "renesas,sdhi-r8a7740";
- 		reg = <0xe6860000 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -194,4 +194,16 @@
- 		cap-sdio-irq;
- 		status = "disabled";
- 	};
-+
-+	sdhi2: sd@e6870000 {
-+		compatible = "renesas,sdhi-r8a7740";
-+		reg = <0xe6870000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 125 4
-+				0 126 4
-+				0 127 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index c826bca..6bfc879 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -589,18 +589,18 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6c20000.i2c",		&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
--	CLKDEV_DEV_ID("e6850000.sdhi",          &mstp_clks[MSTP314]),
-+	CLKDEV_DEV_ID("e6850000.sd",		&mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
--	CLKDEV_DEV_ID("e6860000.sdhi",          &mstp_clks[MSTP313]),
-+	CLKDEV_DEV_ID("e6860000.sd",		&mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
--	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
-+	CLKDEV_DEV_ID("e6bd0000.mmc",		&mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("r8a7740-gether",		&mstp_clks[MSTP309]),
- 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
- 	CLKDEV_DEV_ID("renesas-tpu-pwm",	&mstp_clks[MSTP304]),
- 	CLKDEV_DEV_ID("e6600000.pwm",		&mstp_clks[MSTP304]),
+ comment "SH-Mobile System Configuration"
+ endif
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index b3840ba..b11466d 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -55,6 +55,9 @@ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
  
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
--	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
-+	CLKDEV_DEV_ID("e6870000.sd",		&mstp_clks[MSTP415]),
+ # Board objects
++ifdef CONFIG_ARCH_SHMOBILE_MULTI
++obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
++else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+@@ -72,6 +75,7 @@ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
+ obj-$(CONFIG_MACH_KZM9D_REFERENCE)	+= board-kzm9d-reference.o
+ obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
+ obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
++endif
  
- 	/* ICK */
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
 -- 
-1.7.9.5
+1.8.4
 
