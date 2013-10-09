@@ -1,86 +1,32 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Oct 2013 02:13:26 +0000
+Date: Wed, 09 Oct 2013 02:32:31 +0000
 Subject: Re: [PATCH 07/08] ARM: shmobile: Add Koelsch LED6, LED7 and LED8 support
-Message-Id: <20131009021324.GH15065@verge.net.au>
+Message-Id: <20131009023230.GJ15065@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131008033851.20455.68845.sendpatchset@w520>
  <20131008033959.20455.18632.sendpatchset@w520>
-In-Reply-To: <20131008033959.20455.18632.sendpatchset@w520>
+ <20131009021324.GH15065@verge.net.au>
+In-Reply-To: <20131009021324.GH15065@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 08, 2013 at 12:39:59PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
+On Wed, Oct 09, 2013 at 11:13:26AM +0900, Simon Horman wrote:
+> On Tue, Oct 08, 2013 at 12:39:59PM +0900, Magnus Damm wrote:
+> > From: Magnus Damm <damm@opensource.se>
+> > 
+> > Enable Koelsch LEDs for GPIO output testing purpose.
+> > 
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
 > 
-> Enable Koelsch LEDs for GPIO output testing purpose.
+> Hi Magnus,
 > 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+> this patch does not seem to apply on top of renesas-devel-20131004.
+> Could you please rebase it and the following on top of
+> renesas-devel-20131004 or the latest devel tag?
 
-Hi Magnus,
+Scratch that, I see that my problem was that I was missing the previous
+patch.
 
-this patch does not seem to apply on top of renesas-devel-20131004.
-Could you please rebase it and the following on top of
-renesas-devel-20131004 or the latest devel tag?
-
-Thanks
-
-> ---
-> 
->  arch/arm/mach-shmobile/board-koelsch.c |   27 +++++++++++++++++++++++++++
->  1 file changed, 27 insertions(+)
-> 
-> --- 0009/arch/arm/mach-shmobile/board-koelsch.c
-> +++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-10-07 13:48:52.000000000 +0900
-> @@ -20,6 +20,8 @@
->   */
->  
->  #include <linux/kernel.h>
-> +#include <linux/leds.h>
-> +#include <linux/platform_data/gpio-rcar.h>
->  #include <linux/platform_device.h>
->  #include <mach/common.h>
->  #include <mach/r8a7791.h>
-> @@ -27,11 +29,36 @@
->  #include <asm/mach-types.h>
->  #include <asm/mach/arch.h>
->  
-> +/* LEDS */
-> +static struct gpio_led koelsch_leds[] = {
-> +	{
-> +		.name		= "led8",
-> +		.gpio		= RCAR_GP_PIN(2, 21),
-> +		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-> +	}, {
-> +		.name		= "led7",
-> +		.gpio		= RCAR_GP_PIN(2, 20),
-> +		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-> +	}, {
-> +		.name		= "led6",
-> +		.gpio		= RCAR_GP_PIN(2, 19),
-> +		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-> +	},
-> +};
-> +
-> +static const struct gpio_led_platform_data koelsch_leds_pdata __initconst = {
-> +	.leds		= koelsch_leds,
-> +	.num_leds	= ARRAY_SIZE(koelsch_leds),
-> +};
-> +
->  static void __init koelsch_add_standard_devices(void)
->  {
->  	r8a7791_clock_init();
->  	r8a7791_pinmux_init();
->  	r8a7791_add_standard_devices();
-> +	platform_device_register_data(&platform_bus, "leds-gpio", -1,
-> +				      &koelsch_leds_pdata,
-> +				      sizeof(koelsch_leds_pdata));
->  }
->  
->  static const char * const koelsch_boards_compat_dt[] __initconst = {
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I have now queued up this patch.
