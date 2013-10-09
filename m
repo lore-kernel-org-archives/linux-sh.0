@@ -1,27 +1,65 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Oct 2013 08:37:02 +0000
-Subject: Re: [PATCH 0/4 v2] ARM: shmobile: marzen: fixup SMSC IRQ
-Message-Id: <87bo38yspg.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:51:05 +0000
+Subject: [PATCH 13/14] ARM: shmobile: bockw: add SMSC support on reference
+Message-Id: <90357fcbf2fcb9e50899fd3b2a91a6dc3cfe5ea5.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-These patches are v2 of fixup Marzen board SMSC IRQ miss settings.
-These are based on renesas-devel-20131001 tag
+This patch enables INTC IRQ, and SMSC IRQ.
 
-Kuninori Morimoto (4):
-      ARM: shmobile: r8a7779: split r8a7779_init_irq_extpin() for DT
-      ARM: shmobile: r8a7779: add default status on irqpin
-      ARM: shmobile: marzen: enable INTC IRQ
-      ARM: shmobile: marzen: fixup SMSC IRQ number on DTS
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-bockw-reference.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  |    8 ++++++--
- arch/arm/boot/dts/r8a7779.dtsi                  |    1 +
- arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
- arch/arm/mach-shmobile/include/mach/r8a7779.h   |    1 +
- arch/arm/mach-shmobile/setup-r8a7779.c          |    6 +++++-
- 5 files changed, 14 insertions(+), 3 deletions(-)
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+index 1a7c893..ae88fda 100644
+--- a/arch/arm/mach-shmobile/board-bockw-reference.c
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -36,15 +36,35 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ 				  "scif0_ctrl", "scif0"),
+ };
+ 
++#define FPGA	0x18200000
++#define IRQ0MR	0x30
++#define COMCTLR	0x101c
+ static void __init bockw_init(void)
+ {
++	static void __iomem *fpga;
++
+ 	r8a7778_clock_init();
++	r8a7778_init_irq_extpin_dt(1);
+ 
+ 	pinctrl_register_mappings(bockw_pinctrl_map,
+ 				  ARRAY_SIZE(bockw_pinctrl_map));
+ 	r8a7778_pinmux_init();
+ 	r8a7778_add_dt_devices();
+ 
++	fpga = ioremap_nocache(FPGA, SZ_1M);
++	if (fpga) {
++		/*
++		 * CAUTION
++		 *
++		 * IRQ0/1 is cascaded interrupt from FPGA.
++		 * it should be cared in the future
++		 * Now, it is assuming IRQ0 was used only from SMSC.
++		 */
++		u16 val = ioread16(fpga + IRQ0MR);
++		val &= ~(1 << 4); /* enable SMSC911x */
++		iowrite16(val, fpga + IRQ0MR);
++	}
++
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-- 
+1.8.4
+
