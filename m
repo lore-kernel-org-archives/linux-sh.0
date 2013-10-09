@@ -1,50 +1,41 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Tue, 22 Oct 2013 02:21:11 +0000
-Subject: [PATCH 1/2 v4] ARM: shmobile: r8a7790: add QSPI support
-Message-Id: <1382408472-20315-2-git-send-email-cm-hiep@jinso.co.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Oct 2013 06:50:51 +0000
+Subject: [PATCH 03/14] ARM: shmobile: marzen: enable DMA for SDHI0
+Message-Id: <e6a8b11b82fdeaa78dad52552f945b772ee1a5c9.1381299817.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+From: Max Filippov <max.filippov@cogentembedded.com>
 
-Adds support for QSPI on the r8a7790.
+Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
+driver.
 
-Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
+[Sergei: removed #include <mach/dma.h>]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/board-marzen.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index a64f965..0ef7b54 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -183,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
- /* MSTP */
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928,
-+	MSTP917,
- 	MSTP813,
- 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
- 	MSTP717, MSTP716,
-@@ -198,6 +199,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
- 	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
- 	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
-+	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
-@@ -296,6 +298,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 434b213..da1352f 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -125,6 +125,8 @@ static struct resource sdhi0_resources[] = {
  };
  
- #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+ static struct sh_mobile_sdhi_info sdhi0_platform_data = {
++	.dma_slave_tx = HPBDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx = HPBDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
+ };
 -- 
-1.7.9.5
+1.8.4
 
