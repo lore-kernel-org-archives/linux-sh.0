@@ -1,82 +1,47 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:13 +0000
-Subject: [PATCH 03/13] ARM: shmobile: r8a73a4: add a DT node for the DMAC
-Message-Id: <734e2ce38c6aa3e88f0a339f001d272196f26dfa.1381298964.git.horms+renesas@verge.net.au>
+Date: Thu, 10 Oct 2013 05:51:15 +0000
+Subject: [GIT PULL] Renesas SH ethernet fix for v3.12
+Message-Id: <1381384276-8077-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381298964.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Nguyen Hong Ky <nh-ky@jinso.co.jp>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi Dave,
 
-Add a DT node for the only system DMAC instance on r8a73a4. The RT DMAC
-can be added later under the same multiplexer, because they can serve the
-same slaves and use the same MID-RID values. Configuration data is
-supplied to the driver, using a compatibility match string.
+please consider this fix for SH ethernet fix for v3.12.
+I am sending it as a pull-request rather than a stand-alone
+patch as it resolves the miss-application of a patch and I wanted
+to eliminate the chance of further miss-application.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a73a4.dtsi | 43 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 43 insertions(+)
+That said, I am happy for you to just apply the patch rather
+than do a git pull. But you may want to check that the result
+is the same as what is present in my tag.
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index a2c9456..8c81a0c 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -78,6 +78,49 @@
- 				<0 56 4>, <0 57 4>;
- 	};
- 
-+	dmac: dma-multiplexer@0 {
-+		compatible = "renesas,shdma-mux";
-+		#dma-cells = <1>;
-+		dma-channels = <20>;
-+		dma-requests = <256>;
-+		#address-cells = <2>;
-+		#size-cells = <2>;
-+		ranges;
-+
-+		dma0: dma-controller@e6700020 {
-+			compatible = "renesas,shdma-r8a73a4";
-+			reg = <0 0xe6700020 0 0x89e0>;
-+			interrupt-parent = <&gic>;
-+			interrupts = <0 220 4
-+					0 200 4
-+					0 201 4
-+					0 202 4
-+					0 203 4
-+					0 204 4
-+					0 205 4
-+					0 206 4
-+					0 207 4
-+					0 208 4
-+					0 209 4
-+					0 210 4
-+					0 211 4
-+					0 212 4
-+					0 213 4
-+					0 214 4
-+					0 215 4
-+					0 216 4
-+					0 217 4
-+					0 218 4
-+					0 219 4>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14", "ch15",
-+					"ch16", "ch17", "ch18", "ch19";
-+		};
-+	};
-+
- 	thermal@e61f0000 {
- 		compatible = "renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
--- 
-1.8.4
 
+The following changes since commit 5abbeea553c8260ed4e2ac4aae962aff800b6c6d:
+
+  can: at91-can: fix device to driver data mapping for platform devices (2013-10-09 23:04:31 +0200)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh_eth-fixes-for-v3.12
+
+for you to fetch changes up to 31c827b594a0eb7c996510a93338b6096e8565e6:
+
+  net: sh_eth: Correct fix for RX packet errors on R8A7740 (2013-10-10 14:42:15 +0900)
+
+----------------------------------------------------------------
+Renesas SH ethernet fix for v3.12
+
+* Revised fix from Nguyen Hong Ky for
+  RX packet errors on the R8A7740 SoC
+
+----------------------------------------------------------------
+Simon Horman (1):
+      net: sh_eth: Correct fix for RX packet errors on R8A7740
+
+ drivers/net/ethernet/renesas/sh_eth.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
