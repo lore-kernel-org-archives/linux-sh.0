@@ -1,39 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 28 Oct 2013 23:47:03 +0000
-Subject: [PATCH 15/19] sh: intc: Enable the driver on all ARM platforms
-Message-Id: <1383004027-25036-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 10 Oct 2013 07:16:26 +0000
+Subject: [PATCH 01/11] ARM: shmobile: bockw: Do not set command line in defconfig
+Message-Id: <1381389396-22000-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI and increase build testing coverage.
+As a set towards moving shmobile towards multi-platform
+the kernel command line should be set in the DTB rather than
+in the kernel config.
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+bockw already has the command line present in its DTS file
+but it was being overrirden by the kernel config.
+
+A side effect of this change is that "rw" is now present
+on the command line which allows a boot using nfs root to
+succeed in the case where userspace expects to be able
+to write to the root filesystem.
+
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/sh/intc/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/configs/bockw_defconfig | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
-index a305731..9546a7a 100644
---- a/drivers/sh/intc/Kconfig
-+++ b/drivers/sh/intc/Kconfig
-@@ -6,7 +6,7 @@ comment "Interrupt controller options"
- 
- config INTC_USERIMASK
- 	bool "Userspace interrupt masking support"
--	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
-+	depends on ARM || (SUPERH && CPU_SH4A)
- 	help
- 	  This enables support for hardware-assisted userspace hardirq
- 	  masking.
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index e7e9494..6c5421c 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -27,8 +27,6 @@ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
+-CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
+-CONFIG_CMDLINE_FORCE=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ # CONFIG_SUSPEND is not set
+ CONFIG_PM_RUNTIME=y
 -- 
-1.8.1.5
+1.8.4
 
