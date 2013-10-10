@@ -1,42 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:51:24 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM based SoC defconfig updates for v3.13
-Message-Id: <cover.1381300141.git.horms+renesas@verge.net.au>
+From: Kevin Hilman <khilman@linaro.org>
+Date: Thu, 10 Oct 2013 22:02:14 +0000
+Subject: Re: [GIT PULL] Second round of Renesas ARM based SoC cleanups for v3.13
+Message-Id: <87k3hkokd5.fsf@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
+ <20131009045354.GA8369@verge.net.au>
+In-Reply-To: <20131009045354.GA8369@verge.net.au> (Simon Horman's message of
+ "Wed, 9 Oct 2013 13:53:54 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd, Hi Kevin,
+Simon Horman <horms@verge.net.au> writes:
 
-please consider this second round of Renesas ARM based SoC defconfig
-updates for v3.13.
+> On Tue, Oct 08, 2013 at 06:05:24PM +0900, Simon Horman wrote:
+>> Hi Kevin, Olof and Arnd,
+>> 
+>> please consider this Second round of Renesas ARM based SoC cleanups for v3.13.
+>> It is based on renesas-cleanup-for-v3.13 which you have previously pulled.
+>
+> This pull-request causes some conflicts in
+> arch/arm/mach-shmobile/board-bockw.c. In general the resolution
+> strategy should be to take everything.
 
+Thanks for the heads up.  I assume you meant board-lager.c though,
+right?  That's where I saw the conflict.
 
-The following changes since commit 6bb2e347899b297eea26f2658eac8fdcd633fba5:
-
-  ARM: shmobile: Add koelsch defconfig (2013-09-20 17:46:15 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.13
-
-for you to fetch changes up to bb416e1d7416861bece0335f543c590d9af09c79:
-
-  ARM: shmobile: Genmai defconfig (2013-10-03 13:01:30 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM based SoC defconfig updates for v3.13
-
-* Add defconfig for Genmai board
-
-----------------------------------------------------------------
-Magnus Damm (1):
-      ARM: shmobile: Genmai defconfig
-
- arch/arm/configs/genmai_defconfig | 116 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 116 insertions(+)
- create mode 100644 arch/arm/configs/genmai_defconfig
+Kevin
