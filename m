@@ -1,63 +1,36 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:35:52 +0000
-Subject: [PATCH 13/14] ARM: shmobile: Extend APMU code to allow single cluster only
-Message-Id: <ee490bcc4f2d456c40df93236cf6a1bce2d5ddd0.1380532277.git.horms+renesas@verge.net.au>
+Date: Thu, 10 Oct 2013 07:16:31 +0000
+Subject: [PATCH 06/11] ARM: shmobile: marzen: Enable CONFIG_VFP in defconfig
+Message-Id: <1381389396-22000-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380532277.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
+References: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+CONFIG_VFP is required to boot into a Debian armhf user-space.
+This change brings the marzen defconfig into line with
+other shmobile defconfigs.
 
-Extend the APMU code with a check to only allow boot
-of CPU cores that sit in the same cluster as CPU0.
-
-This makes it possible for people to use the r8a790
-CA7 boot mode with CA7-cores only. The default CA15
-boot mode will enable CA15 cores only. This is an
-intentional software limitation to cope with lacking
-scheduler support.
-
-By removing this patch it is possible to run all 8 cores
-in parallel, but this is not recommended without out of tree
-scheduler modfications or custom user space code to control
-the CPU affinitiy.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/platsmp-apmu.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/configs/marzen_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index 34dc40d..caaaa35 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -94,8 +94,21 @@ static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit))
- 	u32 id;
- 	int k;
- 	int bit, index;
-+	bool is_allowed;
- 
- 	for (k = 0; k < ARRAY_SIZE(apmu_config); k++) {
-+		/* only enable the cluster that includes the boot CPU */
-+		is_allowed = false;
-+		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
-+			id = apmu_config[k].cpus[bit];
-+			if (id >= 0) {
-+				if (id = cpu_logical_map(0))
-+					is_allowed = true;
-+			}
-+		}
-+		if (!is_allowed)
-+			continue;
-+
- 		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
- 			id = apmu_config[k].cpus[bit];
- 			if (id >= 0) {
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 5d0fa5f..cafab6a 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -30,6 +30,7 @@ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
++CONFIG_VFP=y
+ CONFIG_KEXEC=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM_RUNTIME=y
 -- 
 1.8.4
 
