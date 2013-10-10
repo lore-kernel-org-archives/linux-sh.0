@@ -1,30 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 31 Oct 2013 20:50:52 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7791: add Ether clock
-Message-Id: <5272D0B6.3090604@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 10 Oct 2013 07:16:25 +0000
+Subject: [PATCH 00/11] Marzen and Bockw defconfig updates
+Message-Id: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201310310216.28673.sergei.shtylyov@cogentembedded.com>
- <201310310218.37578.sergei.shtylyov@cogentembedded.com>
- <20131031060649.GW1603@verge.net.au>
-In-Reply-To: <20131031060649.GW1603@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi,
 
-On 10/31/2013 09:06 AM, Simon Horman wrote:
+this series of defconfig updates aims to bring the bockw
+and marzen defconfigs more into line with the other shmobile
+defconfigs. It also allows the marzen and bockw boards
+to boot into a Debian armhf userspace, again in
+line with the defconfigs for other shmobile boards.
 
->> Add support for R8A7791 Ether clock.
+Simon Horman (11):
+  ARM: shmobile: bockw: Do not set command line in defconfig
+  ARM: shmobile: marzen: Do not set command line in defconfig
+  ARM: shmobile: bockw: Do not disable CONFIG_INOTIFY_USER in defconfig
+  ARM: shmobile: marzen: Do not disable CONFIG_INOTIFY_USER in defconfig
+  ARM: shmobile: bockw: Enable CONFIG_VFP in defconfig
+  ARM: shmobile: marzen: Enable CONFIG_VFP in defconfig
+  ARM: shmobile: bockw: Do not enable CONFIG_DEVTMPFS defconfig
+  ARM: shmobile: marzen: Do not enable CONFIG_DEVTMPFS defconfig
+  ARM: shmobile: bockw: Enable CONFIG_PACKET in defconfig
+  ARM: shmobile: marzen: Enable CONFIG_PACKET in defconfig
+  ARM: shmobile: marzen: Do not enable CONFIG_SMC911X in defconfig
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+ arch/arm/configs/bockw_defconfig  | 7 ++-----
+ arch/arm/configs/marzen_defconfig | 8 ++------
+ 2 files changed, 4 insertions(+), 11 deletions(-)
 
-> Thanks, I have queued this up.
-
-    Perhaps you were too quick, taking into account Magnus' mail about the 
-device name...
-
-WBR, Sergei
-
+-- 
+1.8.4
 
