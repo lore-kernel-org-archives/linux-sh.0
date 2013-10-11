@@ -1,36 +1,42 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 04 Oct 2013 06:43:15 +0000
-Subject: [PATCH 0/4] ARM: shmobile: r8a7778/r8a7779: add I2C support on DT
-Message-Id: <87k3htzgcf.wl%kuninori.morimoto.gx@renesas.com>
+Date: Fri, 11 Oct 2013 06:36:01 +0000
+Subject: [PATCH 07/10] ARM: shmobile: bockw: add SDHI support on DTS
+Message-Id: <87bo2w1fht.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-Hi Simon
-
-These patches add I2C support on r8a7778,
-and tidyup missing I2C on r8a7779
-These are based on
- 1) my previous DT patches.
- 2) git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git :: for-next branch
-
-These is no compile error without 2)..
-
-Kuninori Morimoto (4):
-      ARM: shmobile: r8a7778: add I2C clock for DT
-      ARM: shmobile: r8a7778: add I2C support on DTSI
-      ARM: shmobile: r8a7779: tidyup I2C driver name on DTSI
-      ARM: shmobile: r8a7779: add I2C clock for DT
-
- arch/arm/boot/dts/r8a7778.dtsi         |   40 ++++++++++++++++++++++++++++++++
- arch/arm/boot/dts/r8a7779.dtsi         |    8 +++----
- arch/arm/mach-shmobile/clock-r8a7778.c |    4 ++++
- arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++++
- 4 files changed, 52 insertions(+), 4 deletions(-)
-
-Best regards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |   15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 4d997f8..8b8208e 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -80,4 +80,19 @@
+ 		renesas,groups = "mmc_data8", "mmc_ctrl";
+ 		renesas,function = "mmc";
+ 	};
++
++	sdhi0_pins: sdhi0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
++				  "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++	};
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <4>;
++	status = "okay";
+ };
+-- 
+1.7.9.5
+
