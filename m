@@ -1,134 +1,67 @@
-From: Vineet Gupta <Vineet.Gupta1@synopsys.com>
-Date: Tue, 08 Oct 2013 07:58:27 +0000
-Subject: [PATCH v2 1/3] sh: Move fpu_counter into ARCH specific thread_struct
-Message-Id: <1381218389-16585-2-git-send-email-vgupta@synopsys.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 11 Oct 2013 06:36:22 +0000
+Subject: [PATCH 09/10] ARM: shmobile: r8a7779: add SDHI support on DTSI
+Message-Id: <878uy01fh9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381218389-16585-1-git-send-email-vgupta@synopsys.com>
-In-Reply-To: <1381218389-16585-1-git-send-email-vgupta@synopsys.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Andrew Morton <akpm@linux-foundation.org>, Paul Mundt <paul.mundt@gmail.com>
-Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, Vineet Gupta <Vineet.Gupta1@synopsys.com>Vineet Gupta <Vineet.Gupta1@synopsys.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Vineet Gupta <Vineet.Gupta1@synopsys.com>
-
-Only a couple of arches (sh/x86) use fpu_counter in task_struct so it
-can be moved out into ARCH specific thread_struct, reducing the size of
-task_struct for other arches.
-
-Compile tested sh defconfig + sh4-linux-gcc (4.6.3)
-
-Signed-off-by: Vineet Gupta <vgupta@synopsys.com>
-Cc: linux-sh@vger.kernel.org
-Cc: Paul Mundt <paul.mundt@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/include/asm/fpu.h          |  2 +-
- arch/sh/include/asm/processor_32.h | 10 ++++++++++
- arch/sh/include/asm/processor_64.h | 10 ++++++++++
- arch/sh/kernel/cpu/fpu.c           |  2 +-
- arch/sh/kernel/process_32.c        |  6 +++---
- 5 files changed, 25 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
-diff --git a/arch/sh/include/asm/fpu.h b/arch/sh/include/asm/fpu.h
-index 06c4281aab65..09fc2bc8a790 100644
---- a/arch/sh/include/asm/fpu.h
-+++ b/arch/sh/include/asm/fpu.h
-@@ -46,7 +46,7 @@ static inline void __unlazy_fpu(struct task_struct *tsk, struct pt_regs *regs)
- 		save_fpu(tsk);
- 		release_fpu(regs);
- 	} else
--		tsk->fpu_counter = 0;
-+		tsk->thread.fpu_counter = 0;
- }
- 
- static inline void unlazy_fpu(struct task_struct *tsk, struct pt_regs *regs)
-diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
-index e699a12cdcca..18e0377f72bb 100644
---- a/arch/sh/include/asm/processor_32.h
-+++ b/arch/sh/include/asm/processor_32.h
-@@ -111,6 +111,16 @@ struct thread_struct {
- 
- 	/* Extended processor state */
- 	union thread_xstate *xstate;
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index da61d27..be737ef 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -206,4 +206,44 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 100 0x4>;
+ 	};
 +
-+	/*
-+	 * fpu_counter contains the number of consecutive context switches
-+	 * that the FPU is used. If this is over a threshold, the lazy fpu
-+	 * saving becomes unlazy to save the trap. This is an unsigned char
-+	 * so that after 256 times the counter wraps and the behavior turns
-+	 * lazy again; this to deal with bursty apps that only use FPU for
-+	 * a short time
-+	 */
-+	unsigned char fpu_counter;
- };
- 
- #define INIT_THREAD  {						\
-diff --git a/arch/sh/include/asm/processor_64.h b/arch/sh/include/asm/processor_64.h
-index 1cc7d3197143..eedd4f625d07 100644
---- a/arch/sh/include/asm/processor_64.h
-+++ b/arch/sh/include/asm/processor_64.h
-@@ -126,6 +126,16 @@ struct thread_struct {
- 
- 	/* floating point info */
- 	union thread_xstate *xstate;
++	sdhi0: sdhi@ffe4c000 {
++		compatible = "renesas,sdhi-r8a7779";
++		reg = <0xffe4c000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 104 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
 +
-+	/*
-+	 * fpu_counter contains the number of consecutive context switches
-+	 * that the FPU is used. If this is over a threshold, the lazy fpu
-+	 * saving becomes unlazy to save the trap. This is an unsigned char
-+	 * so that after 256 times the counter wraps and the behavior turns
-+	 * lazy again; this to deal with bursty apps that only use FPU for
-+	 * a short time
-+	 */
-+	unsigned char fpu_counter;
++	sdhi1: sdhi@ffe4d000 {
++		compatible = "renesas,sdhi-r8a7779";
++		reg = <0xffe4d000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 105 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
++
++	sdhi2: sdhi@ffe4e000 {
++		compatible = "renesas,sdhi-r8a7779";
++		reg = <0xffe4e000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 107 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
++
++	sdhi3: sdhi@ffe4f000 {
++		compatible = "renesas,sdhi-r8a7779";
++		reg = <0xffe4f000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 106 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
  };
- 
- #define INIT_MMAP \
-diff --git a/arch/sh/kernel/cpu/fpu.c b/arch/sh/kernel/cpu/fpu.c
-index f8f7af51c128..4e332244ea75 100644
---- a/arch/sh/kernel/cpu/fpu.c
-+++ b/arch/sh/kernel/cpu/fpu.c
-@@ -44,7 +44,7 @@ void __fpu_state_restore(void)
- 	restore_fpu(tsk);
- 
- 	task_thread_info(tsk)->status |= TS_USEDFPU;
--	tsk->fpu_counter++;
-+	tsk->thread.fpu_counter++;
- }
- 
- void fpu_state_restore(struct pt_regs *regs)
-diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
-index ebd3933005b4..2885fc9d9dcd 100644
---- a/arch/sh/kernel/process_32.c
-+++ b/arch/sh/kernel/process_32.c
-@@ -156,7 +156,7 @@ int copy_thread(unsigned long clone_flags, unsigned long usp,
- #endif
- 		ti->addr_limit = KERNEL_DS;
- 		ti->status &= ~TS_USEDFPU;
--		p->fpu_counter = 0;
-+		p->thread.fpu_counter = 0;
- 		return 0;
- 	}
- 	*childregs = *current_pt_regs();
-@@ -189,7 +189,7 @@ __switch_to(struct task_struct *prev, struct task_struct *next)
- 	unlazy_fpu(prev, task_pt_regs(prev));
- 
- 	/* we're going to use this soon, after a few expensive things */
--	if (next->fpu_counter > 5)
-+	if (next->thread.fpu_counter > 5)
- 		prefetch(next_t->xstate);
- 
- #ifdef CONFIG_MMU
-@@ -207,7 +207,7 @@ __switch_to(struct task_struct *prev, struct task_struct *next)
- 	 * restore of the math state immediately to avoid the trap; the
- 	 * chances of needing FPU soon are obviously high now
- 	 */
--	if (next->fpu_counter > 5)
-+	if (next->thread.fpu_counter > 5)
- 		__fpu_state_restore();
- 
- 	return prev;
 -- 
-1.8.1.2
+1.7.9.5
 
