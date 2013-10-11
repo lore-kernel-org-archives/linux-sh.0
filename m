@@ -1,110 +1,80 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Fri, 11 Oct 2013 15:14:39 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 11 Oct 2013 19:25:35 +0000
 Subject: Re: [PATCH] ata: sata_rcar: Add RCAR Gen2 SATA PHY support
-Message-Id: <525815DF.4040707@cogentembedded.com>
+Message-Id: <52585E6F.40903@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381432083-3684-1-git-send-email-valentine.barshak@cogentembedded.com> <20131011010032.GA13809@verge.net.au> <20131011094156.GF3910@e106331-lin.cambridge.arm.com> <5257D8FC.3040405@cogentembedded.com> <20131011144741.GA16477@e106331-lin.cambridge.arm.com>
-In-Reply-To: <20131011144741.GA16477@e106331-lin.cambridge.arm.com>
+References: <1381432083-3684-1-git-send-email-valentine.barshak@cogentembedded.com> <20131011010032.GA13809@verge.net.au>
+In-Reply-To: <20131011010032.GA13809@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Rutland <mark.rutland@arm.com>
-Cc: Simon Horman <horms@verge.net.au>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-ide@vger.kernel.org" <linux-ide@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, devicetree@vger.kernel.org
 
-On 10/11/2013 06:47 PM, Mark Rutland wrote:
-> On Fri, Oct 11, 2013 at 11:54:52AM +0100, Valentine wrote:
->> On 10/11/2013 01:41 PM, Mark Rutland wrote:
->>> On Fri, Oct 11, 2013 at 02:00:35AM +0100, Simon Horman wrote:
->>>> [ CCed devicetree@vger.kernel.org as this involves DT compatibility strings ]
->>>
->>> Cheers!
->>>
+Hello.
+
+On 11-10-2013 3:00, Simon Horman wrote:
+
+> [ CCed devicetree@vger.kernel.org as this involves DT compatibility strings ]
+
+    Note that I did CC then-existing devicetree-discuss list when posting the 
+original driver but we got no feedback from there. That's why the binding 
+documentation is missing.
+
+>> RCAR Gen2 SoC has a different phy which is not compatible with
+
+    Hm, the SoCs family is called R-Car, is it so hard to remember? :-)
+
+>> the older H1/M1 versions. This adds OF/platform device table
+>> and PHY initialization callbacks for H2/M2 (Gen2) SoC.
+
+[...]
+
+>> PHY initialization method is chosen based on the device id.
+>> Default PHY settings are applied for Gen2 SoC, which should
+>> suit the available Gen2 boards.
+
+>> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+[skip overquoating, grr :-]
+>> @@ -770,8 +823,34 @@ static void sata_rcar_init_controller(struct ata_host *host)
+>>   	iowrite32(ATAPI_INT_ENABLE_SATAINT, base + ATAPI_INT_ENABLE_REG);
+>>   }
 >>
->> Hi Mark,
->>
->>>>
->>>> On Thu, Oct 10, 2013 at 11:08:03PM +0400, Valentine Barshak wrote:
->>>>> RCAR Gen2 SoC has a different phy which is not compatible with
->>>>> the older H1/M1 versions. This adds OF/platform device table
->>>>> and PHY initialization callbacks for H2/M2 (Gen2) SoC.
->>>
->>> Is the PHY combined with the rest of the controller, or are they
->>> logically separate components in the SoC? I note that the Calxeda
->>> Highbank SATA controller driver treats the phy and the controller as
->>> separate entities, and describes the way the two are attached (though
->>> the driver handles both). Would a similar approach work here?
->>>
->>
->> It seems to be described in the docs as a single entity with the rest of
->> the controller. The phy registers are in the same address space block.
->> We don't need to describe how the phy is attached to the SATA
->> controller. In the future we may need some phy-specific configuration in
->> the device tree. For example, to describe how clock generator is
->> connected to the controller. I think this could be done with optional
->> properties added to the SATA node if needed.
->
-> As they're tightly coupled and share the same register block, I guess
-> describing them together is ok. Is that clock example hypothetical, or
-> something we _will_ need in future?
+>> +static struct of_device_id sata_rcar_match[] = {
+>> +	{
+>> +		.compatible = "renesas,rcar-sata",
+>> +		.data = (void *)RCAR_SATA
+>> +	},
+>> +	{
+>> +		.compatible = "renesas,sata-r8a7790",
+>> +		.data = (void *)RCAR_GEN2_SATA
+>> +	},
+>> +	{
+>> +		.compatible = "renesas,sata-r8a7791",
+>> +		.data = (void *)RCAR_GEN2_SATA
+>> +	},
+>> +	{},
+>> +};
+>> +MODULE_DEVICE_TABLE(of, sata_rcar_match);
+>> +
+>> +static const struct platform_device_id sata_rcar_id_table[] = {
+>> +	{ "sata_rcar",		RCAR_SATA },
+>> +	{ "sata-r8a7790",	RCAR_GEN2_SATA },
+>> +	{ "sata-r8a7791",	RCAR_GEN2_SATA },
+>> +	{ },
+>> +};
+>> +MODULE_DEVICE_TABLE(platform, sata_rcat_id_table);
+>> +
 
-According to the manual there's some configuration possible,
-though it's not verbosely described:
-* SSCG (on/off)
-* Clock connection (AC/DC)
-* Termination Resistor (on/off)
+> I think it would be better to add sata-r8a7779 and
+> sata-r8a7778 to handle the GEN1 hardware and deprecate rcar-sata.
 
-AFAIU, this describes how the external clock generator is connected.
-All available Gen2 boards use the same generator type and
-the same "default" phy settings (SSCG off/DC/TR on).
+    R8A7778 doesn't have the SATA controller AFAIR.
 
-It is possible set spread spectrum with a switch on the board (it is 
-disabled by default)
+> Less importantly I think it would be better to name RCAR_SATA
+> as RCAR_GEN1_SATA.
 
-I don't know if we will need to change those settings in the future.
-Probably this could be done as a separate patch if needed.
+    Now that we have Gen2, yes.
 
->
->>
->>> [...]
->>>
->>>>> +static struct of_device_id sata_rcar_match[] = {
->>>>> +	{
->>>>> +		.compatible = "renesas,rcar-sata",
->>>>> +		.data = (void *)RCAR_SATA
->>>>> +	},
->>>>> +	{
->>>>> +		.compatible = "renesas,sata-r8a7790",
->>>>> +		.data = (void *)RCAR_GEN2_SATA
->>>>> +	},
->>>>> +	{
->>>>> +		.compatible = "renesas,sata-r8a7791",
->>>>> +		.data = (void *)RCAR_GEN2_SATA
->>>>> +	},
->>>>> +	{},
->>>
->>> These bindings will need documentation. A grep of any of these in
->>> mainline's Documentation/devicetree shows up nothing (not even the
->>> existing "renesas,rcar-sata" string used by the driver.
->>
->> Indeed.
->> Since we need to adjust rcar-sata bindings and add documentation for it,
->> which is not really related to Gen2 phy support, looks like it will be a
->> separate patch.
->
-> If you're adding strings, there should be documentation. While it may be
-> a separate patch, we should _not_ add compatible strings to the kernel
-> without documentation. I'd like to see the documentation patch first.
+WBR, Sergei
 
-Right. I meant that there should be a separate patch that adds 
-documentation for the already existing binding.
-I think I'll make a couple of patches then:
-* Adjust and document the existing bindings as Simon has suggested
-* Add Gen2 support and document Ge2 bindings.
-
->
-> Thanks,
-> Mark.
->
-
-Thanks,
-Val.
