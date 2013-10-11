@@ -1,41 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 22:37:36 +0000
-Subject: [PATCH v2 01/19] serial: sh-sci: Enable the driver on all ARM platforms
-Message-Id: <1383086274-11049-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 11 Oct 2013 06:35:46 +0000
+Subject: [PATCH 06/10] ARM: shmobile: r8a7778: add SDHI support on DTSI
+Message-Id: <87d2nc1fi8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
-COMPILE_TEST.
-
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: linux-serial@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/tty/serial/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7778.dtsi |   30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-index febd45c..9a5a8ef 100644
---- a/drivers/tty/serial/Kconfig
-+++ b/drivers/tty/serial/Kconfig
-@@ -709,7 +709,7 @@ config SERIAL_IP22_ZILOG_CONSOLE
- 
- config SERIAL_SH_SCI
- 	tristate "SuperH SCI(F) serial port support"
--	depends on HAVE_CLK && (SUPERH || ARCH_SHMOBILE)
-+	depends on HAVE_CLK && (SUPERH || ARM || COMPILE_TEST)
- 	select SERIAL_CORE
- 
- config SERIAL_SH_SCI_NR_UARTS
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 0ff38e6..873eeb9 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -164,4 +164,34 @@
+ 		interrupts = <0 61 4>;
+ 		status = "disabled";
+ 	};
++
++	sdhi0: sdhi@ffe4c000 {
++		compatible = "renesas,sdhi-r8a7778";
++		reg = <0xffe4c000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 87 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
++
++	sdhi1: sdhi@ffe4d000 {
++		compatible = "renesas,sdhi-r8a7778";
++		reg = <0xffe4d000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 88 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
++
++	sdhi2: sdhi@ffe4f000 {
++		compatible = "renesas,sdhi-r8a7778";
++		reg = <0xffe4f000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 86 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
+ };
 -- 
-1.8.1.5
+1.7.9.5
 
