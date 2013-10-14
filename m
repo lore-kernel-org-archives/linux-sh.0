@@ -1,99 +1,132 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Mon, 14 Oct 2013 16:13:54 +0000
+From: Valentine <valentine.barshak@cogentembedded.com>
+Date: Mon, 14 Oct 2013 17:19:37 +0000
 Subject: Re: [PATCH 1/2] sata_rcar: Adjust and document device tree bindings
-Message-Id: <20131014161353.GA19196@e106331-lin.cambridge.arm.com>
+Message-Id: <525C27A9.5010402@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
- <1381765354-28440-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1381765354-28440-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com> <1381765354-28440-2-git-send-email-valentine.barshak@cogentembedded.com> <20131014161353.GA19196@e106331-lin.cambridge.arm.com>
+In-Reply-To: <20131014161353.GA19196@e106331-lin.cambridge.arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Valentine Barshak <valentine.barshak@cogentembedded.com>
+To: Mark Rutland <mark.rutland@arm.com>
 Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-ide@vger.kernel.org" <linux-ide@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Tejun Heo <tj@kernel.org>
 
-On Mon, Oct 14, 2013 at 04:42:33PM +0100, Valentine Barshak wrote:
-> This converts the R-Car SATA DT compatibility string to
-> the <unit>-<soc> format which is the preferred one for
-> all SH-Mobile devices. The DT bindings are documented.
-> 
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> ---
->  Documentation/devicetree/bindings/ata/sata_rcar.txt | 16 ++++++++++++++++
->  arch/arm/boot/dts/r8a7779.dtsi                      |  2 +-
->  drivers/ata/sata_rcar.c                             |  2 +-
->  3 files changed, 18 insertions(+), 2 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
-> 
-> diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-> new file mode 100644
-> index 0000000..2465183
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-> @@ -0,0 +1,16 @@
-> +* Renesas R-Car SATA
-> +
-> +Required properties:
-> +- compatible		: must be "renesas,sata-r8a7779"
+Hi Mark,
+thanks for looking at this.
 
-s/must be/should include/
+On 10/14/2013 08:13 PM, Mark Rutland wrote:
+> On Mon, Oct 14, 2013 at 04:42:33PM +0100, Valentine Barshak wrote:
+>> This converts the R-Car SATA DT compatibility string to
+>> the <unit>-<soc> format which is the preferred one for
+>> all SH-Mobile devices. The DT bindings are documented.
+>>
+>> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+>> ---
+>>   Documentation/devicetree/bindings/ata/sata_rcar.txt | 16 ++++++++++++++++
+>>   arch/arm/boot/dts/r8a7779.dtsi                      |  2 +-
+>>   drivers/ata/sata_rcar.c                             |  2 +-
+>>   3 files changed, 18 insertions(+), 2 deletions(-)
+>>   create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
+>>
+>> diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+>> new file mode 100644
+>> index 0000000..2465183
+>> --- /dev/null
+>> +++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+>> @@ -0,0 +1,16 @@
+>> +* Renesas R-Car SATA
+>> +
+>> +Required properties:
+>> +- compatible		: must be "renesas,sata-r8a7779"
+>
+> s/must be/should include/
+>
 
-> +- reg			: address range of the SATA registers.
+OK, thanks.
 
-Also their size...
+>> +- reg			: address range of the SATA registers.
+>
+> Also their size...
 
-> +- interrupt-parent	: interrupt parent controller phandle
+Do you want me to rephrase it to "base address and size of the SATA 
+registers"?
 
-This isn't required as such, as the interrupt-controller can be
-inherited from the parent. As it's a standard auxiliary property I don't
-think it needs to be documented here.
+Looks like a lot of other bindings examples available in 
+Documentation/devicetree/bindings describe regs property
+as the "address range" which implies the address and size
+of the registers.
 
-> +- interrupts		: must consist of one interrupt specifier.
+>
+>> +- interrupt-parent	: interrupt parent controller phandle
+>
+> This isn't required as such, as the interrupt-controller can be
+> inherited from the parent. As it's a standard auxiliary property I don't
+> think it needs to be documented here.
 
-Is there only one interrupt generated by the device?
+OK, will drop it, thanks.
 
-> +
-> +Example:
-> +
-> +sata: sata@fc600000 {
-> +	compatible = "renesas,sata-r8a7779";
-> +	reg = <0xfc600000 0x2000>;
-> +	interrupt-parent = <&gic>;
-> +	interrupts = <0 100 0x4>;
-> +};
-> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> index da61d27..b1747f5 100644
-> --- a/arch/arm/boot/dts/r8a7779.dtsi
-> +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> @@ -201,7 +201,7 @@
->  	};
->  
->  	sata: sata@fc600000 {
-> -		compatible = "renesas,rcar-sata";
-> +		compatible = "renesas,sata-r8a7779";
->  		reg = <0xfc600000 0x2000>;
->  		interrupt-parent = <&gic>;
->  		interrupts = <0 100 0x4>;
-> diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
-> index c2d95e9..c4cd738 100644
-> --- a/drivers/ata/sata_rcar.c
-> +++ b/drivers/ata/sata_rcar.c
-> @@ -893,7 +893,7 @@ static const struct dev_pm_ops sata_rcar_pm_ops = {
->  #endif
->  
->  static struct of_device_id sata_rcar_match[] = {
-> -	{ .compatible = "renesas,rcar-sata", },
-> +	{ .compatible = "renesas,sata-r8a7779", },
->  	{},
->  };
+>
+>> +- interrupts		: must consist of one interrupt specifier.
+>
+> Is there only one interrupt generated by the device?
 
-Why is an existing compatible string being removed?
+Yes, there's just one IRQ.
 
-Please do not change existing strings, it will break any dts files that
-are already in use.
+>
+>> +
+>> +Example:
+>> +
+>> +sata: sata@fc600000 {
+>> +	compatible = "renesas,sata-r8a7779";
+>> +	reg = <0xfc600000 0x2000>;
+>> +	interrupt-parent = <&gic>;
+>> +	interrupts = <0 100 0x4>;
+>> +};
+>> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+>> index da61d27..b1747f5 100644
+>> --- a/arch/arm/boot/dts/r8a7779.dtsi
+>> +++ b/arch/arm/boot/dts/r8a7779.dtsi
+>> @@ -201,7 +201,7 @@
+>>   	};
+>>
+>>   	sata: sata@fc600000 {
+>> -		compatible = "renesas,rcar-sata";
+>> +		compatible = "renesas,sata-r8a7779";
+>>   		reg = <0xfc600000 0x2000>;
+>>   		interrupt-parent = <&gic>;
+>>   		interrupts = <0 100 0x4>;
+>> diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
+>> index c2d95e9..c4cd738 100644
+>> --- a/drivers/ata/sata_rcar.c
+>> +++ b/drivers/ata/sata_rcar.c
+>> @@ -893,7 +893,7 @@ static const struct dev_pm_ops sata_rcar_pm_ops = {
+>>   #endif
+>>
+>>   static struct of_device_id sata_rcar_match[] = {
+>> -	{ .compatible = "renesas,rcar-sata", },
+>> +	{ .compatible = "renesas,sata-r8a7779", },
+>>   	{},
+>>   };
+>
+> Why is an existing compatible string being removed?
+>
+> Please do not change existing strings, it will break any dts files that
+> are already in use.
 
-While the new compatible string may be preferred, the old string should
-be kept for compatibility.
+It won't break the dts files, since I'm changing the only dtsi file that 
+uses the SATA node as well. It will only break binary compatibility with 
+the older dtb files.
+
+>
+> While the new compatible string may be preferred, the old string should
+> be kept for compatibility.
+
+OK, I can keep the old string if it's needed.
+
+>
+> Thanks,
+> Mark.
+>
 
 Thanks,
-Mark.
+Val.
