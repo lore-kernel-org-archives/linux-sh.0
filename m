@@ -1,49 +1,76 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 28 Sep 2013 00:44:09 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7778: add CAN clock support
-Message-Id: <201309280444.09539.sergei.shtylyov@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Mon, 14 Oct 2013 15:42:33 +0000
+Subject: [PATCH 1/2] sata_rcar: Adjust and document device tree bindings
+Message-Id: <1381765354-28440-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309280441.52414.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201309280441.52414.sergei.shtylyov@cogentembedded.com>
+References: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Tejun Heo <tj@kernel.org>, Mark Rutland <mark.rutland@arm.com>
 
-Add support for R8A7778 CAN0/1 clocks.
+This converts the R-Car SATA DT compatibility string to
+the <unit>-<soc> format which is the preferred one for
+all SH-Mobile devices. The DT bindings are documented.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c |    5 +++++
- 1 file changed, 5 insertions(+)
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 16 ++++++++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi                      |  2 +-
+ drivers/ata/sata_rcar.c                             |  2 +-
+ 3 files changed, 18 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
 
-Index: renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ renesas/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -117,6 +117,7 @@ static struct clk *main_clks[] = {
- enum {
- 	MSTP331,
- 	MSTP323, MSTP322, MSTP321,
-+	MSTP316, MSTP315,
- 	MSTP311, MSTP310,
- 	MSTP309, MSTP308, MSTP307,
- 	MSTP114,
-@@ -133,6 +134,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
- 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 21, 0), /* SDHI2 */
-+	[MSTP316] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 16, 0), /* CAN0 */
-+	[MSTP315] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 15, 0), /* CAN1 */
- 	[MSTP311] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 11, 0), /* SSI4 */
- 	[MSTP310] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 10, 0), /* SSI5 */
- 	[MSTP309] = SH_CLK_MSTP32(&p_clk, MSTPCR3,  9, 0), /* SSI6 */
-@@ -176,6 +179,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
-+	CLKDEV_DEV_ID("rcar_can.0", &mstp_clks[MSTP316]), /* CAN0 */
-+	CLKDEV_DEV_ID("rcar_can.1", &mstp_clks[MSTP315]), /* CAN1 */
- 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
- 	CLKDEV_DEV_ID("r8a7778-vin.0", &mstp_clks[MSTP110]), /* VIN0 */
- 	CLKDEV_DEV_ID("r8a7778-vin.1", &mstp_clks[MSTP109]), /* VIN1 */
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+new file mode 100644
+index 0000000..2465183
+--- /dev/null
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -0,0 +1,16 @@
++* Renesas R-Car SATA
++
++Required properties:
++- compatible		: must be "renesas,sata-r8a7779"
++- reg			: address range of the SATA registers.
++- interrupt-parent	: interrupt parent controller phandle
++- interrupts		: must consist of one interrupt specifier.
++
++Example:
++
++sata: sata@fc600000 {
++	compatible = "renesas,sata-r8a7779";
++	reg = <0xfc600000 0x2000>;
++	interrupt-parent = <&gic>;
++	interrupts = <0 100 0x4>;
++};
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index da61d27..b1747f5 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -201,7 +201,7 @@
+ 	};
+ 
+ 	sata: sata@fc600000 {
+-		compatible = "renesas,rcar-sata";
++		compatible = "renesas,sata-r8a7779";
+ 		reg = <0xfc600000 0x2000>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 100 0x4>;
+diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
+index c2d95e9..c4cd738 100644
+--- a/drivers/ata/sata_rcar.c
++++ b/drivers/ata/sata_rcar.c
+@@ -893,7 +893,7 @@ static const struct dev_pm_ops sata_rcar_pm_ops = {
+ #endif
+ 
+ static struct of_device_id sata_rcar_match[] = {
+-	{ .compatible = "renesas,rcar-sata", },
++	{ .compatible = "renesas,sata-r8a7779", },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sata_rcar_match);
+-- 
+1.8.3.1
+
