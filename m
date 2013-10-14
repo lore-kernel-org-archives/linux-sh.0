@@ -1,11 +1,11 @@
 From: Kevin Hilman <khilman@linaro.org>
-Date: Thu, 10 Oct 2013 23:04:57 +0000
-Subject: Re: [GIT PULL] Second round of Renesas ARM based SoC updates for v3.13
-Message-Id: <87siw8n2w6.fsf@linaro.org>
+Date: Mon, 14 Oct 2013 22:02:44 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM based SoC board updates for v3.13
+Message-Id: <874n8j5x4r.fsf@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au> (Simon Horman's
- message of "Wed, 9 Oct 2013 15:49:27 +0900")
+References: <cover.1381299817.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au> (Simon Horman's
+ message of "Wed, 9 Oct 2013 15:50:43 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,43 +13,43 @@ To: linux-arm-kernel@lists.infradead.org
 
 Simon Horman <horms+renesas@verge.net.au> writes:
 
-> Hi Olof, Kevin and Arnd,
+> Hi Kevin, Olof and Arnd,
 >
-> please consider this second round of Renesas ARM based SoC updates for v3.13.
+> please consider this second round of Renesas ARM based SoC board updates
+> for v3.13.
 >
-> This pull-request is based on a merge of the following, each of which
-> you have already pulled. The reason for the merge is to eliminate conflicts.
-> * renesas-soc-for-v3.13
-> * renesas-smp-for-v3.13
-> * renesas-fixes4-for-v3.13
+> This pull request is based on a merge of renesas-soc2-for-v3.13 into
+> renesas-boards-for-v3.13. You have already pulled renesas-boards-for-v3.13
+> and I am sending a pull request for renesas-soc2-for-v3.13 today. The
+> reason for this merge is to supply SoC code that is needed by board code in
+> this series. In particular the r7s72100 SoC code for the Genmai board.
 >
-> The following changes since commit 243b6db0588b1425cb020e764475e8e1c4eb40d9:
 >
->   Merge tag 'renesas-fixes4-for-v3.12' into soc2-base (2013-10-08 09:44:08 +0900)
+> The following changes since commit 661a7335c4e47726df1e7264580209847509569a:
+>
+>   Merge branch 'heads/soc2' into boards2-base (2013-10-08 10:01:47 +0900)
 >
 > are available in the git repository at:
 >
 >
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.13
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.13
 >
-> for you to fetch changes up to 687c27b07050c21a62c4c975777c89e698649a6b:
+> for you to fetch changes up to 7d4bde88e1135c4a3106b79650d3b85335f35717:
 >
->   ARM: shmobile: r8a7791 SMP support (2013-10-08 09:53:02 +0900)
+>   ARM: shmobile: marzen: enable INTC IRQ (2013-10-08 10:02:22 +0900)
 >
 > ----------------------------------------------------------------
-> Second Round of Renesas ARM based SoC updates for v3.13
+> Second Round of Renesas ARM based SoC board updates for v3.13
 >
-> * SMP support for r8a7791 SoC
-> * r8a7779_init_irq_extpin() for DT for r8a7779 and r8a7778 SoCs
-> * Add HPB-DMAC to r8a7779 and r8a7778 SoCs
-> * Add r7s72100 SoC
-> * Make use of ARCH timer workaround on r8a7791 SoC
-> * Add IRQC platform device support to r8a7791 SoC
-> * Add I2C clocks and aliases for the DT mode for r8a7790 SoC
-> * Add MAC platform device to r8a73a4 SoC
+> * Enable INTC IRQ on marzen board
+> * Enable SMSC ethernet on reference board code for bockw
+> * Enable DMA for SDHI0 on marzen and bockw boards
+> * Enable DMA for MMCIF on ape6evm board
+> * Enable SMP and arch timers on Koelsh board
+> * Rework kzm9d make reference board code multiplatform
+> * Use a common DTB for kzm9d reference and non-reference
+> * Add Genmai board
 
-Pulled into next/soc,
-
-Thanks,
+Thanks, pulled into next/boards.
 
 Kevin
