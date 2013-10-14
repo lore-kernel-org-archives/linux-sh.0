@@ -1,32 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 15 Oct 2013 00:42:47 +0000
-Subject: Re: [PATCH 1/2] rcar-hpbdma: remove shdma_free_irq() calls
-Message-Id: <20131015004247.GK22321@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Mon, 14 Oct 2013 15:42:32 +0000
+Subject: [PATCH 0/2] sata_rcar: Adjust DT bindings and add R-Car Gen2 PHY support
+Message-Id: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309260228.37765.sergei.shtylyov@cogentembedded.com>
- <20131011015502.GD2954@intel.com>
-In-Reply-To: <20131011015502.GD2954@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, dan.j.williams@intel.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Tejun Heo <tj@kernel.org>, Mark Rutland <mark.rutland@arm.com>
 
-On Fri, Oct 11, 2013 at 07:25:02AM +0530, Vinod Koul wrote:
-> On Thu, Sep 26, 2013 at 02:28:37AM +0400, Sergei Shtylyov wrote:
-> > Commit c1c63a14f4f2419d093acd7164eccdff315baa86 (DMA: shdma: switch to managed
-> > resource allocation) got rid of shdma_free_irq() but  unfortunately got merged
-> > later than commit c4f6c41ba790bbbfcebb4c47a709ac8ff1fe1af9 (dma: add driver for
-> > R-Car HPB-DMAC), so that the HPB-DMAC driver retained the calls and got broken:
-> > 
-> > drivers/dma/sh/rcar-hpbdma.c: In function `hpb_dmae_alloc_chan_resources':
-> > drivers/dma/sh/rcar-hpbdma.c:435: error: implicit declaration of function
-> > `shdma_free_irq'
-> > 
-> > Fix this compilation error by removing the remaining shdma_free_irq() calls.
-> > 
-> > Reported-by: Simon Horman <horms@verge.net.au>
-> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Applied both, Thanks
+This modifies and documents R-Car SATA device tree (DT) bindings.
+The "sata-<SoC>" format is now used for the "compatible" property.
+Also, a platform device id table is introduced for non-DT support.
+The device id naming is consistent with the "compatible" DT
+property format.
 
-Thanks!
+R-Car Gen2 SATA PHY support is added. PHY initialization method
+is chosen, based on the device id.
+
+Valentine Barshak (2):
+  sata_rcar: Adjust and document device tree bindings
+  sata_rcar: Add R-Car Gen2 SATA support
+
+ .../devicetree/bindings/ata/sata_rcar.txt          |  19 ++++
+ arch/arm/boot/dts/r8a7779.dtsi                     |   2 +-
+ arch/arm/mach-shmobile/clock-r8a7779.c             |   2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c             |   2 +-
+ drivers/ata/sata_rcar.c                            | 112 ++++++++++++++++++---
+ 5 files changed, 118 insertions(+), 19 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
+
+-- 
+1.8.3.1
+
