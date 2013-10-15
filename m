@@ -1,33 +1,66 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Oct 2013 05:59:23 +0000
-Subject: [PATCH 7/7] ARM: shmobile: r8a73a4: don't use named irq for DMAEngine
-Message-Id: <87wqlowbf1.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Oct 2013 07:44:18 +0000
+Subject: [PATCH 02/17] ARM: shmobile: r8a73a4: fixup DT node naming for MMCIF
+Message-Id: <87fvs3dlm9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-sh-dma-engine driver doesn't care irq name.
+According to ePAPR spec,
+this patch exchanges MMCIF DT node from "mmcif" to "mmc".
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |    4 ++--
+ arch/arm/boot/dts/r8a73a4.dtsi                  |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index b0f2749..cc94b64 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -275,7 +275,7 @@ static const struct sh_dmae_pdata dma_pdata = {
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 27ce4ac..a59f8f6 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -93,7 +93,7 @@
+ 		renesas,function = "scifa0";
+ 	};
  
- static struct resource dma_resources[] = {
- 	DEFINE_RES_MEM(0xe6700020, 0x89e0),
--	DEFINE_RES_IRQ_NAMED(gic_spi(220), "error_irq"),
-+	DEFINE_RES_IRQ(gic_spi(220)),
- 	{
- 		/* IRQ for channels 0-19 */
- 		.start  = gic_spi(200),
+-	mmc0_pins: mmcif {
++	mmc0_pins: mmc0 {
+ 		renesas,groups = "mmc0_data8", "mmc0_ctrl";
+ 		renesas,function = "mmc0";
+ 	};
+@@ -109,7 +109,7 @@
+ 	};
+ };
+ 
+-&mmcif0 {
++&mmc0 {
+ 	vmmc-supply = <&vcc_mmc0>;
+ 	bus-width = <8>;
+ 	non-removable;
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 447c128..a720c22 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -219,7 +219,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	mmcif0: mmcif@ee200000 {
++	mmc0: mmc@ee200000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+@@ -228,7 +228,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	mmcif1: mmcif@ee220000 {
++	mmc1: mmc@ee220000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
 -- 
 1.7.9.5
 
