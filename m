@@ -1,193 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:42 +0000
-Subject: [PATCH 01/14] ARM: shmobile: r8a73a4: add a DMAC platform device and clock for it
-Message-Id: <9f754b4a68e53c71f55aaa9564579ae617a2ff11.1381293239.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Oct 2013 07:43:36 +0000
+Subject: [PATCH 00/17] ARM: shmobile: fixup DT node naming
+Message-Id: <87iowzdlnh.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Add a DMAC platform device and clock definitions for it on r8a73a4.
+Hi Simon
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+These patches cleanup DT node to use generic naming,
+and are focusing on SDHI/MMC/SCIF.
+These are based on renesas-devel-20131011 + my previous
+"ARM: shmobile: marzen/bockw: SDHI support on DT" patches.
+
+My previous patches are not applied yet at this point,
+but I send fixup patches for it here.
+
+Simon, please let me know if you want v2 patches instead
+of these fixup patches for my previous series
+
+Kuninori Morimoto (17):
+      ARM: shmobile: r8a73a4: fixup DT node naming for SDHI
+      ARM: shmobile: r8a73a4: fixup DT node naming for MMCIF
+      ARM: shmobile: r8a73a4: fixup DT node naming for SCIFA
+      ARM: shmobile: r8a7740: fixup DT node naming for SDHI
+      ARM: shmobile: r8a7740: fixup DT node naming for MMCIF
+      ARM: shmobile: r8a7740: fixup DT node naming for SCIFA
+      ARM: shmobile: sh73a0: fixup DT node naming for SDHI
+      ARM: shmobile: sh73a0: fixup DT node naming for MMCIF
+      ARM: shmobile: sh73a0: fixup DT node naming for SCIFA
+      ARM: shmobile: r8a7778: fixup DT node naming for SCIF
+      ARM: shmobile: r8a7778: fixup DT node naming for SDHI
+      ARM: shmobile: r8a7778: fixup DT node naming for MMCIF
+      ARM: shmobile: r8a7779: fixup DT node naming for SDHI
+      ARM: shmobile: r8a7779: fixup DT node naming for SCIF
+      ARM: shmobile: r8a7790: fixup DT node naming for SCIF
+      ARM: shmobile: r8a7790: fixup DT node naming for SDHI
+      ARM: shmobile: r8a7790: fixup DT node naming for MMCIF
+
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |   24 ++++++++--------
+ arch/arm/boot/dts/r8a73a4.dtsi                     |   10 +++----
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   22 +++++++-------
+ arch/arm/boot/dts/r8a7740.dtsi                     |    6 ++--
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts      |   12 ++++----
+ arch/arm/boot/dts/r8a7778.dtsi                     |    8 +++---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts     |   12 ++++----
+ arch/arm/boot/dts/r8a7779.dtsi                     |    8 +++---
+ arch/arm/boot/dts/r8a7790-lager-reference.dts      |    8 +++---
+ arch/arm/boot/dts/r8a7790.dtsi                     |   12 ++++----
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   30 ++++++++++----------
+ arch/arm/boot/dts/sh73a0.dtsi                      |    8 +++---
+ 12 files changed, 80 insertions(+), 80 deletions(-)
+
+
+Best regards
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c        |  4 +-
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |  9 +++
- arch/arm/mach-shmobile/setup-r8a73a4.c        | 91 +++++++++++++++++++++++++++
- 3 files changed, 103 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 8ea5ef6..357b9bc 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -504,7 +504,7 @@ static struct clk div6_clks[DIV6_NR] = {
- 
- /* MSTP */
- enum {
--	MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
-+	MSTP218, MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203,
- 	MSTP329, MSTP323, MSTP318, MSTP317, MSTP316,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP305, MSTP300,
- 	MSTP411, MSTP410, MSTP409,
-@@ -519,6 +519,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 7, 0), /* SCIFB1 */
- 	[MSTP216] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 16, 0), /* SCIFB2 */
- 	[MSTP217] = SH_CLK_MSTP32(&div6_clks[DIV6_MP],	SMSTPCR2, 17, 0), /* SCIFB3 */
-+	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR2, 18, 0), /* DMAC */
- 	[MSTP300] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 0, 0), /* IIC2 */
- 	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1],SMSTPCR3, 5, 0), /* MMCIF1 */
- 	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SDHI2],SMSTPCR3, 12, 0), /* SDHI2 */
-@@ -578,6 +579,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
-+	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a73a4.h b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-index 5214338..ce8bdd1 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-@@ -1,6 +1,15 @@
- #ifndef __ASM_R8A73A4_H__
- #define __ASM_R8A73A4_H__
- 
-+/* DMA slave IDs */
-+enum {
-+	SHDMA_SLAVE_INVALID,
-+	SHDMA_SLAVE_MMCIF0_TX,
-+	SHDMA_SLAVE_MMCIF0_RX,
-+	SHDMA_SLAVE_MMCIF1_TX,
-+	SHDMA_SLAVE_MMCIF1_RX,
-+};
-+
- void r8a73a4_add_standard_devices(void);
- void r8a73a4_add_dt_devices(void);
- void r8a73a4_clock_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 53a8962..b0f2749 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -22,8 +22,10 @@
- #include <linux/of_platform.h>
- #include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
- #include <mach/common.h>
-+#include <mach/dma-register.h>
- #include <mach/irqs.h>
- #include <mach/r8a73a4.h>
- #include <asm/mach/arch.h>
-@@ -199,12 +201,101 @@ void __init r8a73a4_add_dt_devices(void)
- 	r8a7790_register_cmt(10);
- }
- 
-+/* DMA */
-+static const struct sh_dmae_slave_config dma_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_MMCIF0_TX,
-+		.addr		= 0xee200034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF0_RX,
-+		.addr		= 0xee200034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xd2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF1_TX,
-+		.addr		= 0xee220034,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xe1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_MMCIF1_RX,
-+		.addr		= 0xee220034,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xe2,
-+	},
-+};
-+
-+#define DMAE_CHANNEL(a, b)				\
-+	{						\
-+		.offset         = (a) - 0x20,		\
-+		.dmars          = (a) - 0x20 + 0x40,	\
-+		.chclr_bit	= (b),			\
-+		.chclr_offset	= 0x80 - 0x20,		\
-+	}
-+
-+static const struct sh_dmae_channel dma_channels[] = {
-+	DMAE_CHANNEL(0x8000, 0),
-+	DMAE_CHANNEL(0x8080, 1),
-+	DMAE_CHANNEL(0x8100, 2),
-+	DMAE_CHANNEL(0x8180, 3),
-+	DMAE_CHANNEL(0x8200, 4),
-+	DMAE_CHANNEL(0x8280, 5),
-+	DMAE_CHANNEL(0x8300, 6),
-+	DMAE_CHANNEL(0x8380, 7),
-+	DMAE_CHANNEL(0x8400, 8),
-+	DMAE_CHANNEL(0x8480, 9),
-+	DMAE_CHANNEL(0x8500, 10),
-+	DMAE_CHANNEL(0x8580, 11),
-+	DMAE_CHANNEL(0x8600, 12),
-+	DMAE_CHANNEL(0x8680, 13),
-+	DMAE_CHANNEL(0x8700, 14),
-+	DMAE_CHANNEL(0x8780, 15),
-+	DMAE_CHANNEL(0x8800, 16),
-+	DMAE_CHANNEL(0x8880, 17),
-+	DMAE_CHANNEL(0x8900, 18),
-+	DMAE_CHANNEL(0x8980, 19),
-+};
-+
-+static const struct sh_dmae_pdata dma_pdata = {
-+	.slave		= dma_slaves,
-+	.slave_num	= ARRAY_SIZE(dma_slaves),
-+	.channel	= dma_channels,
-+	.channel_num	= ARRAY_SIZE(dma_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init     = DMAOR_DME,
-+	.chclr_present	= 1,
-+	.chclr_bitwise	= 1,
-+};
-+
-+static struct resource dma_resources[] = {
-+	DEFINE_RES_MEM(0xe6700020, 0x89e0),
-+	DEFINE_RES_IRQ_NAMED(gic_spi(220), "error_irq"),
-+	{
-+		/* IRQ for channels 0-19 */
-+		.start  = gic_spi(200),
-+		.end    = gic_spi(219),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+#define r8a73a4_register_dmac()							\
-+	platform_device_register_resndata(&platform_bus, "sh-dma-engine", 0,	\
-+				dma_resources, ARRAY_SIZE(dma_resources),	\
-+				&dma_pdata, sizeof(dma_pdata))
-+
- void __init r8a73a4_add_standard_devices(void)
- {
- 	r8a73a4_add_dt_devices();
- 	r8a73a4_register_irqc(0);
- 	r8a73a4_register_irqc(1);
- 	r8a73a4_register_thermal();
-+	r8a73a4_register_dmac();
- }
- 
- void __init r8a73a4_init_early(void)
--- 
-1.8.4
-
+Kuninori Morimoto
