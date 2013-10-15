@@ -1,8 +1,10 @@
 From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Mon, 14 Oct 2013 15:42:32 +0000
-Subject: [PATCH 0/2] sata_rcar: Adjust DT bindings and add R-Car Gen2 PHY support
-Message-Id: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
+Date: Tue, 15 Oct 2013 10:20:05 +0000
+Subject: [PATCH 0/2] sata_rcar: Adjust DT bindings and add R-Car Gen2 PHY support (take 2)
+Message-Id: <1381832407-22541-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1381765354-28440-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,6 +19,10 @@ property format.
 
 R-Car Gen2 SATA PHY support is added. PHY initialization method
 is chosen, based on the device id.
+
+Changes from the previous version:
+* Kept old DT bindings for compatibility
+* Amended DT bindings documentation
 
 Valentine Barshak (2):
   sata_rcar: Adjust and document device tree bindings
