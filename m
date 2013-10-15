@@ -1,51 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 15 Oct 2013 15:35:54 +0000
-Subject: [PATCH] v4l: vsp1: Replace ioread32/iowrite32 I/O accessors with readl/writel
-Message-Id: <1381851354-11925-1-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Tue, 15 Oct 2013 09:08:22 +0000
+Subject: [PATCH 0/2] ARM: shmobile: QSPI support to R8a7790
+Message-Id: <1381828104-31302-1-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The ioread32() and iowrite32() I/O accessors are not available on all
-architectures. Replace them with readl() and writel() to avoid
-compilation failures. Although VSP1 devices are only available on
-Renesas ARM platforms, allowing the driver to compile on all
-architectures is useful to catch compilation-time issues.
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- drivers/media/platform/vsp1/vsp1.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Hi Simon,
 
-This fix is a candidate for v3.12, as building the kernel with allyesconfig
-on architectures without ioread32/iowrite32 support currently fails on
-v3.12-rc5.
+These patchs add QSPI support to R8a7790 SOC. 
+This QSPI attaches to SPI Flash Memory (Spansion S25FL512SAGMFIG11 64Mb)
 
-I'll send a pull request to the media tree shortly along with another v3.12
-fix that has previously been posted to the linux-media mailing list.
+These patches was developed base on the  branch upstream linux-
+v3.12-rc1 and have tested on the Lager board.
 
-diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
-index d6c6ecd..7dab256 100644
---- a/drivers/media/platform/vsp1/vsp1.h
-+++ b/drivers/media/platform/vsp1/vsp1.h
-@@ -63,12 +63,12 @@ void vsp1_device_put(struct vsp1_device *vsp1);
- 
- static inline u32 vsp1_read(struct vsp1_device *vsp1, u32 reg)
- {
--	return ioread32(vsp1->mmio + reg);
-+	return readl(vsp1->mmio + reg);
- }
- 
- static inline void vsp1_write(struct vsp1_device *vsp1, u32 reg, u32 data)
- {
--	iowrite32(data, vsp1->mmio + reg);
-+	writel(data, vsp1->mmio + reg);
- }
- 
- #endif /* __VSP1_H__ */
+Best Regards!
+Hiep Cao Minh,
+
+Hiep Cao Minh (2):
+  ARM: shmobile: r8a7790: add QSPI support
+  ARM: shmobile: Lager: add SPI FLASH support
+
+ arch/arm/mach-shmobile/board-lager.c          |   55 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c        |    4 ++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    2 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   16 +++++++
+ 4 files changed, 77 insertions(+)
+
 -- 
-Laurent Pinchart
+1.7.9.5
 
