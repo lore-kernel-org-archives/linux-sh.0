@@ -1,36 +1,69 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Oct 2013 03:54:39 +0000
-Subject: Re: [PATCH 00/02] ARM: shmobile: r8a7791 Koelsch DT reference support V2
-Message-Id: <20131009035438.GQ15065@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 15 Oct 2013 22:29:58 +0000
+Subject: [PATCH] sh_eth: add/use RMCR.RNC bit
+Message-Id: <201310160229.58735.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131008063000.24789.7845.sendpatchset@w520>
-In-Reply-To: <20131008063000.24789.7845.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org, davem@davemloft.net, horms@verge.net.au
 
-On Tue, Oct 08, 2013 at 03:30:00PM +0900, Magnus Damm wrote:
-> ARM: shmobile: r8a7791 Koelsch DT reference support V2
-> 
-> [PATCH 01/02] ARM: shmobile: r8a7791 Koelsch DT reference DTS bits
-> [PATCH 02/02] ARM: shmobile: r8a7791 Koelsch DT reference C bits
-> 
-> This series is V2 of Koelsch DT reference support. At this point the
-> board file is separated from the legacy Koelsch board support, and in
-> the not so distant future this DT reference board file will be converted
-> into MULTIPLATFORM only. This can only happen after r8a7791 CCF support
-> has been added.
-> 
-> After CCF and MULTIPLATFORM are done for r8a7791 the board support code
-> will be converted into same style as EMEV2, for more details please
-> see the following series:
-> 
-> [PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
-> 
-> Changes since V1 are DT_MACHINE update to sync with legacy board
-> code and patch splitting to simplify merge dependencies.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Declare 'enum EMCR_BIT' containing the single member for the RMCR.RNC bit and
+replace bare numbers in the driver by  this mnemonic.
 
-Thanks, I have queued these up.
+Suggested-by: David Miller <davem@davemloft.net>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+This patch is against DaveM's 'net.git' repo but it intended for 'net-next.git'
+repo -- it's  because 'net-next.git' doesn't contain the required Simon Horman's
+patch yet.
+
+ drivers/net/ethernet/renesas/sh_eth.c |    6 +++---
+ drivers/net/ethernet/renesas/sh_eth.h |    3 +++
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -483,7 +483,7 @@ static struct sh_eth_cpu_data sh7757_dat
+ 	.register_type	= SH_ETH_REG_FAST_SH4,
+ 
+ 	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
+-	.rmcr_value	= 0x00000001,
++	.rmcr_value	= RMCR_RNC,
+ 
+ 	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
+ 	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RFE |
+@@ -561,7 +561,7 @@ static struct sh_eth_cpu_data sh7757_dat
+ 			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
+ 			  EESR_TDE | EESR_ECI,
+ 	.fdr_value	= 0x0000072f,
+-	.rmcr_value	= 0x00000001,
++	.rmcr_value	= RMCR_RNC,
+ 
+ 	.irq_flags	= IRQF_SHARED,
+ 	.apr		= 1,
+@@ -689,7 +689,7 @@ static struct sh_eth_cpu_data r8a7740_da
+ 			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
+ 			  EESR_TDE | EESR_ECI,
+ 	.fdr_value	= 0x0000070f,
+-	.rmcr_value	= 0x00000001,
++	.rmcr_value	= RMCR_RNC,
+ 
+ 	.apr		= 1,
+ 	.mpr		= 1,
+Index: net/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net/drivers/net/ethernet/renesas/sh_eth.h
+@@ -321,6 +321,9 @@ enum TD_STS_BIT {
+ #define TD_TFP	(TD_TFP1|TD_TFP0)
+ 
+ /* RMCR */
++enum RMCR_BIT {
++	RMCR_RNC = 0x00000001,
++};
+ #define DEFAULT_RMCR_VALUE	0x00000000
+ 
+ /* ECMR */
