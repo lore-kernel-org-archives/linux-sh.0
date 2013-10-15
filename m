@@ -1,40 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 22:37:50 +0000
-Subject: [PATCH v2 15/19] sh: intc: Enable the driver on all ARM platforms
-Message-Id: <1383086274-11049-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 15 Oct 2013 07:45:46 +0000
+Subject: [PATCH 11/17] ARM: shmobile: r8a7778: fixup DT node naming for SDHI
+Message-Id: <8738o3dljt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
-COMPILE_TEST.
+According to ePAPR spec,
+this patch exchanges SDHI DT node from "sdhi" to "sd".
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/sh/intc/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |    6 +++---
+ arch/arm/boot/dts/r8a7778.dtsi                |    6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
-index a305731..51e106f 100644
---- a/drivers/sh/intc/Kconfig
-+++ b/drivers/sh/intc/Kconfig
-@@ -6,7 +6,7 @@ comment "Interrupt controller options"
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 8146d26..b317a1dc6 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -81,15 +81,15 @@
+ 		renesas,function = "mmc";
+ 	};
  
- config INTC_USERIMASK
- 	bool "Userspace interrupt masking support"
--	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
-+	depends on ARM || (SUPERH && CPU_SH4A) || COMPILE_TEST
- 	help
- 	  This enables support for hardware-assisted userspace hardirq
- 	  masking.
+-	sdhi0_pins: sdhi0 {
++	sd0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+ 				  "sdhi0_cd", "sdhi0_wp";
+ 		renesas,function = "sdhi0";
+ 	};
+ };
+ 
+-&sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
++&sd0 {
++	pinctrl-0 = <&sd0_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	vmmc-supply = <&fixedregulator3v3>;
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 873eeb9..322b703 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -165,7 +165,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi0: sdhi@ffe4c000 {
++	sd0: sd@ffe4c000 {
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -175,7 +175,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi1: sdhi@ffe4d000 {
++	sd1: sd@ffe4d000 {
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -185,7 +185,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi2: sdhi@ffe4f000 {
++	sd2: sd@ffe4f000 {
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupt-parent = <&gic>;
 -- 
-1.8.1.5
+1.7.9.5
 
