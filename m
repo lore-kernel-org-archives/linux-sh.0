@@ -1,19 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Oct 2013 02:33:21 +0000
-Subject: Re: [PATCH 08/08] ARM: shmobile: Add Koelsch SW2 support
-Message-Id: <20131009023320.GL15065@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 16 Oct 2013 21:51:46 +0000
+Subject: [PATCH] ARM: shmobile: Add r8a7790_register_pfc() function
+Message-Id: <20131016215146.4038.57618.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131008033851.20455.68845.sendpatchset@w520>
- <20131008034008.20455.77595.sendpatchset@w520>
-In-Reply-To: <20131008034008.20455.77595.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 08, 2013 at 12:40:08PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Enable Koelsch GPIO switch for GPIO input and IRQ testing purpose.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up.
+Break out the r8a7790 PFC platform device creation code
+to increase readability and follow same style as r8a7791.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas-devel-20131016
+
+ arch/arm/mach-shmobile/setup-r8a7790.c |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2013-10-04 19:01:46.000000000 +0900
+@@ -34,6 +34,10 @@ static const struct resource pfc_resourc
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
+ };
+ 
++#define r8a7790_register_pfc()						\
++	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources, \
++					ARRAY_SIZE(pfc_resources))
++
+ #define R8A7790_GPIO(idx)						\
+ static const struct resource r8a7790_gpio##idx##_resources[] __initconst = { \
+ 	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
+@@ -65,8 +69,7 @@ R8A7790_GPIO(5);
+ 
+ void __init r8a7790_pinmux_init(void)
+ {
+-	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources,
+-					ARRAY_SIZE(pfc_resources));
++	r8a7790_register_pfc();
+ 	r8a7790_register_gpio(0);
+ 	r8a7790_register_gpio(1);
+ 	r8a7790_register_gpio(2);
