@@ -1,7 +1,7 @@
-From: =?UTF-8?B?44Kr44Kq44CA44Of44Oz44CA44OS44Kn44OD44OX?=  <cm-hiep@jinso.co.jp>
-Date: Thu, 17 Oct 2013 03:27:03 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Oct 2013 04:32:51 +0000
 Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790: add QSPI support
-Message-Id: <525F5907.5070505@jinso.co.jp>
+Message-Id: <87mwm81pqo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
@@ -10,43 +10,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san
 
-Thanks for your comment!
+Hi Hiep-san
 
-On 10/17/2013 09:13 AM, Kuninori Morimoto wrote:
-> Hi Hiep
->
-> I have one comment
->
->> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->>
->> Add platform device and clock for the r8a7790 QSPI.
->>
->> Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->> ---
-> (snip)
->> @@ -276,6 +279,7 @@ static struct clk_lookup lookups[] = {
->>   	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
->>   	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
->>   	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
->> +	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
->>   };
-> (snip)
->> +void __init r8a7790_add_qspi_device(struct rspi_plat_data *pdata)
->> +{
->> +	platform_device_register_resndata(
->> +		&platform_bus, "qspi", 0,
->> +		qspi_resources, ARRAY_SIZE(qspi_resources),
->> +		pdata, sizeof(*pdata));
->> +}
-> Please use -1 ID, and use just "qspi", instead of "qspi.0"
-I have tried to use -1 ID instead of 0, and then I saw that QSPI did not 
-contact to Flash Memory.
-I found that in QSPI driver, ID is assigned to bus number: 
-master->bus_num = pdev->id.
-So I wonder how to modify it.
+> >> +void __init r8a7790_add_qspi_device(struct rspi_plat_data *pdata)
+> >> +{
+> >> +	platform_device_register_resndata(
+> >> +		&platform_bus, "qspi", 0,
+> >> +		qspi_resources, ARRAY_SIZE(qspi_resources),
+> >> +		pdata, sizeof(*pdata));
+> >> +}
+> > Please use -1 ID, and use just "qspi", instead of "qspi.0"
+> I have tried to use -1 ID instead of 0, and then I saw that QSPI did not 
+> contact to Flash Memory.
+> I found that in QSPI driver, ID is assigned to bus number: 
+> master->bus_num = pdev->id.
+> So I wonder how to modify it.
 
-Best Regards!
+According to spi_register_master(), bus_num = -1 seems not problem.
+Did you exchanged clock name ?
 
-Hiep.
+Best regards
+---
+Kuninori Morimoto
