@@ -1,89 +1,272 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 29 Oct 2013 10:48:29 +0000
-Subject: Re: [PATCH 3/5] serial: sh-sci: Simplify baud rate calculation algorithms
-Message-Id: <2757642.fYyfNpyZ5s@avalon>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 17 Oct 2013 20:06:43 +0000
+Subject: [PATCH] pinctrl: sh-pfc: pfc-r8a7790: Add full VIN1/2/3 support
+Message-Id: <1382040403-19649-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1383042599-25151-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383042599-25151-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi Paul,
+This adds missing VIN1/2/3 pin configuration to pfc-r8a7790.
 
-On Tuesday 29 October 2013 11:29:57 Laurent Pinchart wrote:
-> Rewrite the baud rate register value calculations in easier to read
-> forms. The computed value isn't modified.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  drivers/tty/serial/sh-sci.c | 8 ++++----
->  include/linux/serial_sci.h  | 8 ++++----
->  2 files changed, 8 insertions(+), 8 deletions(-)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index 2fc1a0e..91ce9214b 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -1813,13 +1813,13 @@ static unsigned int sci_scbrr_calc(unsigned int
-> algo_id, unsigned int bps, {
->  	switch (algo_id) {
->  	case SCBRR_ALGO_1:
-> -		return ((freq + 16 * bps) / (16 * bps) - 1);
-> +		return freq / (16 * bps);
->  	case SCBRR_ALGO_2:
-> -		return ((freq + 16 * bps) / (32 * bps) - 1);
-> +		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
->  	case SCBRR_ALGO_3:
-> -		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
-> +		return freq / (8 * bps);
->  	case SCBRR_ALGO_4:
-> -		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
-> +		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
->  	}
-> 
->  	/* Warn, but use a safe default */
-> diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-> index 803068d..eb787d4 100644
-> --- a/include/linux/serial_sci.h
-> +++ b/include/linux/serial_sci.h
-> @@ -11,10 +11,10 @@
->  #define SCIx_NOT_SUPPORTED	(-1)
-> 
->  enum {
-> -	SCBRR_ALGO_1,		/* ((clk + 16 * bps) / (16 * bps) - 1) */
-> -	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
-> -	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
-> -	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
-> +	SCBRR_ALGO_1,		/* clk / (16 * bps) */
-> +	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
-> +	SCBRR_ALGO_3,		/* clk / (8 * bps) */
-> +	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
->  	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
->  };
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 202 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 198 insertions(+), 4 deletions(-)
 
-While touching this, I'd like to use it as an opportunity to clean things up. 
-It looks to me like algorithms 1 and 3 should use DIV_ROUND_CLOSEST() - 1 
-instead of rounding the value up as they currently do. I've checked the 
-documentation for various SuperH SoCs and they all confirm my hypothesis. As I 
-don't have access to any SuperH board I can't test this though.
-
-Given that you have touched the baudrate calculation code in the past, could 
-you give me an insight on why algorithms 1 and 3 are implemented without 
-rounding to the closest value and without the - 1 ?
-
-On the same subject, algorithm 3 is only used on sh7723 and sh7724 for the 
-SCIFA. I've only managed to find a user's manual for the sh7724 (the publicly 
-available sh7723 documentation just lists the IP cores and their features), 
-and the SCIFA documentation seems to imply that, when using the default 1/16 
-sampling rate, algorithm 4 should be used. Could you enlighten me on why the 
-sh-sci driver assume a sampling rate of 1/8 instead of 1/16 for baudrate 
-calculation for SCIFA on sh772[34] ?
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 64fcc006..9ab2f71 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2996,22 +2996,168 @@ static const unsigned int vin0_clk_mux[] = {
+ 	VI0_CLK_MARK,
+ };
+ /* - VIN1 ------------------------------------------------------------------- */
+-static const unsigned int vin1_data_pins[] = {
++static const unsigned int vin1_data_g_pins[] = {
++	RCAR_GP_PIN(1, 14), RCAR_GP_PIN(1, 15), RCAR_GP_PIN(1, 17),
++	RCAR_GP_PIN(1, 20), RCAR_GP_PIN(1, 22), RCAR_GP_PIN(1, 12),
++	RCAR_GP_PIN(1, 9), RCAR_GP_PIN(1, 7),
++};
++static const unsigned int vin1_data_g_mux[] = {
++	VI1_G0_MARK, VI1_G1_MARK, VI1_G2_MARK,
++	VI1_G3_MARK, VI1_G4_MARK, VI1_G5_MARK,
++	VI1_G6_MARK, VI1_G7_MARK,
++};
++static const unsigned int vin1_data_r_pins[] = {
++	RCAR_GP_PIN(0, 27), RCAR_GP_PIN(0, 28), RCAR_GP_PIN(0, 29),
++	RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
++	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 8),
++};
++static const unsigned int vin1_data_r_mux[] = {
++	VI1_R0_MARK, VI1_R1_MARK, VI1_R2_MARK,
++	VI1_R3_MARK, VI1_R4_MARK, VI1_R5_MARK,
++	VI1_R6_MARK, VI1_R7_MARK,
++};
++static const unsigned int vin1_data_b_pins[] = {
+ 	RCAR_GP_PIN(2, 10), RCAR_GP_PIN(2, 11), RCAR_GP_PIN(2, 12),
+ 	RCAR_GP_PIN(2, 13), RCAR_GP_PIN(2, 14), RCAR_GP_PIN(2, 15),
+ 	RCAR_GP_PIN(2, 16), RCAR_GP_PIN(2, 17),
+ };
+-static const unsigned int vin1_data_mux[] = {
++static const unsigned int vin1_data_b_mux[] = {
+ 	VI1_DATA0_VI1_B0_MARK, VI1_DATA1_VI1_B1_MARK, VI1_DATA2_VI1_B2_MARK,
+ 	VI1_DATA3_VI1_B3_MARK, VI1_DATA4_VI1_B4_MARK, VI1_DATA5_VI1_B5_MARK,
+ 	VI1_DATA6_VI1_B6_MARK, VI1_DATA7_VI1_B7_MARK,
+ };
++static const unsigned int vin1_hsync_signal_pins[] = {
++	RCAR_GP_PIN(1, 24),
++};
++static const unsigned int vin1_hsync_signal_mux[] = {
++	VI1_HSYNC_N_MARK,
++};
++static const unsigned int vin1_vsync_signal_pins[] = {
++	RCAR_GP_PIN(1, 25),
++};
++static const unsigned int vin1_vsync_signal_mux[] = {
++	VI1_VSYNC_N_MARK,
++};
++static const unsigned int vin1_field_signal_pins[] = {
++	RCAR_GP_PIN(1, 13),
++};
++static const unsigned int vin1_field_signal_mux[] = {
++	VI1_FIELD_MARK,
++};
++static const unsigned int vin1_data_enable_pins[] = {
++	RCAR_GP_PIN(1, 26),
++};
++static const unsigned int vin1_data_enable_mux[] = {
++	VI1_CLKENB_MARK,
++};
+ static const unsigned int vin1_clk_pins[] = {
+ 	RCAR_GP_PIN(2, 9),
+ };
+ static const unsigned int vin1_clk_mux[] = {
+ 	VI1_CLK_MARK,
+ };
++/* - VIN2 ----------------------------------------------------------------- */
++static const unsigned int vin2_data_g_pins[] = {
++	RCAR_GP_PIN(0, 27), RCAR_GP_PIN(0, 28), RCAR_GP_PIN(0, 29),
++	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5),
++	RCAR_GP_PIN(1, 6), RCAR_GP_PIN(1, 7),
++};
++static const unsigned int vin2_data_g_mux[] = {
++	VI2_G0_MARK, VI2_G1_MARK, VI2_G2_MARK,
++	VI2_G3_MARK, VI2_G4_MARK, VI2_G5_MARK,
++	VI2_G6_MARK, VI2_G7_MARK,
++};
++static const unsigned int vin2_data_r_pins[] = {
++	RCAR_GP_PIN(1, 12), RCAR_GP_PIN(1, 13), RCAR_GP_PIN(1, 14),
++	RCAR_GP_PIN(1, 15), RCAR_GP_PIN(1, 17), RCAR_GP_PIN(1, 20),
++	RCAR_GP_PIN(1, 22), RCAR_GP_PIN(1, 24),
++};
++static const unsigned int vin2_data_r_mux[] = {
++	VI2_R0_MARK, VI2_R1_MARK, VI2_R2_MARK,
++	VI2_R3_MARK, VI2_R4_MARK, VI2_R5_MARK,
++	VI2_R6_MARK, VI2_R7_MARK,
++};
++static const unsigned int vin2_data_b_pins[] = {
++	RCAR_GP_PIN(0, 8), RCAR_GP_PIN(0, 9), RCAR_GP_PIN(0, 10),
++	RCAR_GP_PIN(0, 11), RCAR_GP_PIN(0, 12), RCAR_GP_PIN(0, 13),
++	RCAR_GP_PIN(0, 14), RCAR_GP_PIN(0, 15),
++};
++static const unsigned int vin2_data_b_mux[] = {
++	VI2_DATA0_VI2_B0_MARK, VI2_DATA1_VI2_B1_MARK, VI2_DATA2_VI2_B2_MARK,
++	VI2_DATA3_VI2_B3_MARK, VI2_DATA4_VI2_B4_MARK, VI2_DATA5_VI2_B5_MARK,
++	VI2_DATA6_VI2_B6_MARK, VI2_DATA7_VI2_B7_MARK,
++};
++static const unsigned int vin2_hsync_signal_pins[] = {
++	RCAR_GP_PIN(1, 16),
++};
++static const unsigned int vin2_hsync_signal_mux[] = {
++	VI2_HSYNC_N_MARK,
++};
++static const unsigned int vin2_vsync_signal_pins[] = {
++	RCAR_GP_PIN(1, 21),
++};
++static const unsigned int vin2_vsync_signal_mux[] = {
++	VI2_VSYNC_N_MARK,
++};
++static const unsigned int vin2_field_signal_pins[] = {
++	RCAR_GP_PIN(1, 9),
++};
++static const unsigned int vin2_field_signal_mux[] = {
++	VI2_FIELD_MARK,
++};
++static const unsigned int vin2_data_enable_pins[] = {
++	RCAR_GP_PIN(1, 8),
++};
++static const unsigned int vin2_data_enable_mux[] = {
++	VI2_CLKENB_MARK,
++};
++static const unsigned int vin2_clk_pins[] = {
++	RCAR_GP_PIN(1, 11),
++};
++static const unsigned int vin2_clk_mux[] = {
++	VI2_CLK_MARK,
++};
++/* - VIN3 ----------------------------------------------------------------- */
++static const unsigned int vin3_data_pins[] = {
++	RCAR_GP_PIN(0, 0), RCAR_GP_PIN(0, 1), RCAR_GP_PIN(0, 2),
++	RCAR_GP_PIN(0, 3), RCAR_GP_PIN(0, 4), RCAR_GP_PIN(0, 5),
++	RCAR_GP_PIN(0, 6), RCAR_GP_PIN(0, 7),
++};
++static const unsigned int vin3_data_mux[] = {
++	VI3_DATA0_MARK, VI3_DATA1_MARK, VI3_DATA2_MARK,
++	VI3_DATA3_MARK, VI3_DATA4_MARK, VI3_DATA5_MARK,
++	VI3_DATA6_MARK, VI3_DATA7_MARK,
++};
++static const unsigned int vin3_hsync_signal_pins[] = {
++	RCAR_GP_PIN(1, 16),
++};
++static const unsigned int vin3_hsync_signal_mux[] = {
++	VI3_HSYNC_N_MARK,
++};
++static const unsigned int vin3_vsync_signal_pins[] = {
++	RCAR_GP_PIN(1, 17),
++};
++static const unsigned int vin3_vsync_signal_mux[] = {
++	VI2_VSYNC_N_MARK,
++};
++static const unsigned int vin3_field_signal_pins[] = {
++	RCAR_GP_PIN(1, 15),
++};
++static const unsigned int vin3_field_signal_mux[] = {
++	VI3_FIELD_MARK,
++};
++static const unsigned int vin3_data_enable_pins[] = {
++	RCAR_GP_PIN(1, 14),
++};
++static const unsigned int vin3_data_enable_mux[] = {
++	VI3_CLKENB_MARK,
++};
++static const unsigned int vin3_clk_pins[] = {
++	RCAR_GP_PIN(1, 23),
++};
++static const unsigned int vin3_clk_mux[] = {
++	VI3_CLK_MARK,
++};
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(du_rgb666),
+@@ -3185,8 +3331,28 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(vin0_field_signal),
+ 	SH_PFC_PIN_GROUP(vin0_data_enable),
+ 	SH_PFC_PIN_GROUP(vin0_clk),
+-	SH_PFC_PIN_GROUP(vin1_data),
++	SH_PFC_PIN_GROUP(vin1_data_g),
++	SH_PFC_PIN_GROUP(vin1_data_r),
++	SH_PFC_PIN_GROUP(vin1_data_b),
++	SH_PFC_PIN_GROUP(vin1_hsync_signal),
++	SH_PFC_PIN_GROUP(vin1_vsync_signal),
++	SH_PFC_PIN_GROUP(vin1_field_signal),
++	SH_PFC_PIN_GROUP(vin1_data_enable),
+ 	SH_PFC_PIN_GROUP(vin1_clk),
++	SH_PFC_PIN_GROUP(vin2_data_g),
++	SH_PFC_PIN_GROUP(vin2_data_r),
++	SH_PFC_PIN_GROUP(vin2_data_b),
++	SH_PFC_PIN_GROUP(vin2_hsync_signal),
++	SH_PFC_PIN_GROUP(vin2_vsync_signal),
++	SH_PFC_PIN_GROUP(vin2_field_signal),
++	SH_PFC_PIN_GROUP(vin2_data_enable),
++	SH_PFC_PIN_GROUP(vin2_clk),
++	SH_PFC_PIN_GROUP(vin3_data),
++	SH_PFC_PIN_GROUP(vin3_hsync_signal),
++	SH_PFC_PIN_GROUP(vin3_vsync_signal),
++	SH_PFC_PIN_GROUP(vin3_field_signal),
++	SH_PFC_PIN_GROUP(vin3_data_enable),
++	SH_PFC_PIN_GROUP(vin3_clk),
+ };
+ 
+ static const char * const du_groups[] = {
+@@ -3457,10 +3623,36 @@ static const char * const vin0_groups[] = {
+ };
+ 
+ static const char * const vin1_groups[] = {
+-	"vin1_data",
++	"vin1_data_g",
++	"vin1_data_r",
++	"vin1_data_b",
++	"vin1_hsync_signal",
++	"vin1_vsync_signal",
++	"vin1_field_signal",
++	"vin1_data_enable",
+ 	"vin1_clk",
+ };
+ 
++static const char * const vin2_groups[] = {
++	"vin2_data_g",
++	"vin2_data_r",
++	"vin2_data_b",
++	"vin2_hsync_signal",
++	"vin2_vsync_signal",
++	"vin2_field_signal",
++	"vin2_data_enable",
++	"vin2_clk",
++};
++
++static const char * const vin3_groups[] = {
++	"vin3_data",
++	"vin3_hsync_signal",
++	"vin3_vsync_signal",
++	"vin3_field_signal",
++	"vin3_data_enable",
++	"vin3_clk",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(du),
+ 	SH_PFC_FUNCTION(du0),
+@@ -3495,6 +3687,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(usb2),
+ 	SH_PFC_FUNCTION(vin0),
+ 	SH_PFC_FUNCTION(vin1),
++	SH_PFC_FUNCTION(vin2),
++	SH_PFC_FUNCTION(vin3),
+ };
+ 
+ static struct pinmux_cfg_reg pinmux_config_regs[] = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.1
 
