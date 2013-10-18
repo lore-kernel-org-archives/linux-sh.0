@@ -1,50 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 27 Oct 2013 15:47:20 +0000
-Subject: [GIT PULL FOR v3.13] SH Mobile PFC patches
-Message-Id: <1863828.HbOPaS1OIe@avalon>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Fri, 18 Oct 2013 05:33:02 +0000
+Subject: [PATCH 0/2 v2] ARM: shmobile: QSPI support for R8a7790
+Message-Id: <1382074384-24975-1-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Linus,
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Here are two patches that I would like to get merged in v3.13 if possible. 
-They first one adds CAN pin groups for the r8a7778 SoC, while the second one 
-adds support for the r8a7791 SoC to the sh-pfc driver. Despite the large size 
-of the diffstat there's nothing special to mention here.
+Hi Simon,
 
-The following changes since commit c6ce2b6bffe5740d572fdc5b5e690d5261abee51:
+Here's version number two(v2) of the patchs add QSPI support to R8a7790 SOC. 
+This QSPI attaches to SPI Flash Memory (Spansion S25FL512SAGMFIG11 64Mb)
 
-  gpio: add TB10x GPIO driver (2013-10-25 23:42:34 +0200)
+This time these patches are base on the branch renesas 
+"renesas-devel-v3.12-rc5-20131017" and have tested on the Lager board.
+Note: 
+"#define SMSTPCR9 0xe6150994" in clock setting is not needed in this verion.
 
-are available in the git repository at:
+Mark Brown told me that my qspi patch is on topic/rspi (5ce0ba8 and cb52c67) 
+in the SPI tree:
+git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git
 
-  git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pfc
+Best Regards,
 
-for you to fetch changes up to 5088451962389924b9f05e22e6956f5c1a515d1a:
+Hiep Cao Minh.
 
-  pinctrl: sh-pfc: r8a7791 PFC support (2013-10-27 16:40:52 +0100)
+Hiep Cao Minh (2):
+  ARM: shmobile: r8a7790: add QSPI support
+  ARM: shmobile: Lager:add SPI FLASH support on QSPI
 
-----------------------------------------------------------------
-Hisashi Nakamura (1):
-      pinctrl: sh-pfc: r8a7791 PFC support
-
-Sergei Shtylyov (1):
-      sh-pfc: r8a7778: Add CAN pin groups
-
- drivers/pinctrl/sh-pfc/Kconfig       |    5 +
- drivers/pinctrl/sh-pfc/Makefile      |    1 +
- drivers/pinctrl/sh-pfc/core.c        |    9 +
- drivers/pinctrl/sh-pfc/core.h        |    1 +
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   55 +
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 4214 +++++++++++++++++++++++++++++++++
- 6 files changed, 4285 insertions(+)
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+ arch/arm/mach-shmobile/board-lager.c   |   69 ++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c |    4 +-
+ 2 files changed, 72 insertions(+), 1 deletion(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
