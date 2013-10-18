@@ -1,87 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 08 Oct 2013 09:05:43 +0000
-Subject: [PATCH 4/4] ARM: shmobile: lager: Constify platform data and resources
-Message-Id: <27113d63daac0aacaa26b1fabfc23391de4284f4.1381222967.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Oct 2013 00:06:16 +0000
+Subject: [PATCH 3/3 v2] rcar-hpbdma: fixup channel busy check for double plane
+Message-Id: <87d2n31lze.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The device busy check method is different between
+single and double planes.
+It will always return "busy" without this patch
+if channel was used as double plane.
 
-Platform data and resources for Lager devices are kmemdup()ed when the
-corresponding devices are registered and can thus be declared as const.
-Do so.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reviewed-by: Max Filippov <max.filippov@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 4047fac..afd5137 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -55,7 +55,7 @@ static struct gpio_led lager_leds[] = {
- 	},
- };
+ - missing define was added
+
+ drivers/dma/sh/rcar-hpbdma.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
+index 19af32d..3083d90 100644
+--- a/drivers/dma/sh/rcar-hpbdma.c
++++ b/drivers/dma/sh/rcar-hpbdma.c
+@@ -60,6 +60,7 @@
+ #define HPB_DMAE_DSTPR_DMSTP	BIT(0)
  
--static __initdata struct gpio_led_platform_data lager_leds_pdata = {
-+static const struct gpio_led_platform_data lager_leds_pdata __initconst = {
- 	.leds		= lager_leds,
- 	.num_leds	= ARRAY_SIZE(lager_leds),
- };
-@@ -71,7 +71,7 @@ static struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_1,		RCAR_GP_PIN(1, 14),	"SW2-pin1"),
- };
+ /* DMA status register (DSTSR) bits */
++#define HPB_DMAE_DSTSR_DQSTS	BIT(2)
+ #define HPB_DMAE_DSTSR_DMSTS	BIT(0)
  
--static __initdata struct gpio_keys_platform_data lager_keys_pdata = {
-+static const struct gpio_keys_platform_data lager_keys_pdata __initconst = {
- 	.buttons	= gpio_buttons,
- 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
- };
-@@ -83,24 +83,24 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  };
+ /* DMA common registers */
+@@ -388,7 +389,10 @@ static bool hpb_dmae_channel_busy(struct shdma_chan *schan)
+ 	struct hpb_dmae_chan *chan = to_chan(schan);
+ 	u32 dstsr = ch_reg_read(chan, HPB_DMAE_DSTSR);
  
- /* MMCIF */
--static struct sh_mmcif_plat_data mmcif1_pdata __initdata = {
-+static const struct sh_mmcif_plat_data mmcif1_pdata __initconst = {
- 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
- };
- 
--static struct resource mmcif1_resources[] __initdata = {
-+static const struct resource mmcif1_resources[] __initconst = {
- 	DEFINE_RES_MEM_NAMED(0xee220000, 0x80, "MMCIF1"),
- 	DEFINE_RES_IRQ(gic_spi(170)),
- };
- 
- /* Ether */
--static struct sh_eth_plat_data ether_pdata __initdata = {
-+static const struct sh_eth_plat_data ether_pdata __initconst = {
- 	.phy			= 0x1,
- 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
- 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
- 	.ether_link_active_low	= 1,
- };
- 
--static struct resource ether_resources[] __initdata = {
-+static const struct resource ether_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xee700000, 0x400),
- 	DEFINE_RES_IRQ(gic_spi(162)),
- };
-@@ -155,7 +155,7 @@ static void __init lager_add_standard_devices(void)
- 					  &ether_pdata, sizeof(ether_pdata));
+-	return (dstsr & HPB_DMAE_DSTSR_DMSTS) = HPB_DMAE_DSTSR_DMSTS;
++	if (chan->xfer_mode = XFER_DOUBLE)
++		return dstsr & HPB_DMAE_DSTSR_DQSTS;
++	else
++		return dstsr & HPB_DMAE_DSTSR_DMSTS;
  }
  
--static const char *lager_boards_compat_dt[] __initdata = {
-+static const char * const lager_boards_compat_dt[] __initconst = {
- 	"renesas,lager",
- 	NULL,
- };
+ static int
 -- 
-1.8.4
+1.7.9.5
 
