@@ -1,7 +1,7 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 08 Oct 2013 08:40:20 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 18 Oct 2013 23:34:52 +0000
 Subject: Re: [PATCH] sh-pfc: r8a7778: add CAN pin groups
-Message-Id: <CACRpkdYd5QYc6y5VaNkLUp68vU5W9JxM9kCmj2Hcrq+bRCmWGg@mail.gmail.com>
+Message-Id: <5261C59C.2000404@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201309280307.22017.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201309280307.22017.sergei.shtylyov@cogentembedded.com>
@@ -10,19 +10,20 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Sep 30, 2013 at 1:44 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
+Hello.
 
-> On Saturday 28 September 2013 03:07:21 Sergei Shtylyov wrote:
+On 09/30/2013 03:44 PM, Laurent Pinchart wrote:
+
 >> Add CAN data and clock pin groups to R8A7778 PFC driver.
->>
+
 >> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
+
 > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->
+
 > I've applied the patch to my tree and will send a pull request for v3.13.
 
-OK I'll pick it from there then.
+    Now where is your tree, Laurent? :-)
+    Will you send a pull request directly to Linus?
 
-Yours,
-Linus Walleij
+WBR, Sergei
+
