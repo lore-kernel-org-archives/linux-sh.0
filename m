@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 18 Oct 2013 23:34:52 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 18 Oct 2013 23:50:58 +0000
 Subject: Re: [PATCH] sh-pfc: r8a7778: add CAN pin groups
-Message-Id: <5261C59C.2000404@cogentembedded.com>
+Message-Id: <2887914.ebJFyO9Ea4@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201309280307.22017.sergei.shtylyov@cogentembedded.com>
 In-Reply-To: <201309280307.22017.sergei.shtylyov@cogentembedded.com>
@@ -10,20 +10,33 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+Hi Sergei,
 
-On 09/30/2013 03:44 PM, Laurent Pinchart wrote:
+On Saturday 19 October 2013 03:34:52 Sergei Shtylyov wrote:
+> On 09/30/2013 03:44 PM, Laurent Pinchart wrote:
+> >> Add CAN data and clock pin groups to R8A7778 PFC driver.
+> >> 
+> >> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> > 
+> > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> > 
+> > I've applied the patch to my tree and will send a pull request for v3.13.
+> 
+> Now where is your tree, Laurent? :-)
 
->> Add CAN data and clock pin groups to R8A7778 PFC driver.
+git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pfc
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Will you send a pull request directly to Linus?
 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Yes I will. I was planning to do so over the weekend or early next week, after 
+receiving Magnus' reply to my comment on the "pinctrl: sh-pfc: r8a7791 PFC 
+support" patch.
 
-> I've applied the patch to my tree and will send a pull request for v3.13.
+Just to make sure I don't miss the merge window, Linus, you do accept patches 
+for kernel 3.x+1 between 3.x-rc6 and 3.x-rc7, right ?
 
-    Now where is your tree, Laurent? :-)
-    Will you send a pull request directly to Linus?
+-- 
+Regards,
 
-WBR, Sergei
+Laurent Pinchart
 
