@@ -1,152 +1,39 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Tue, 29 Oct 2013 19:51:05 +0000
-Subject: [PATCH v7 2/5] clk: Provide not locked variant of of_clk_get_from_provider()
-Message-Id: <1383076268-8984-3-git-send-email-s.nawrocki@samsung.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Oct 2013 00:05:05 +0000
+Subject: [PATCH 1/3 v2] rcar-hpbdma: add max transfer size
+Message-Id: <87fvrz1m1d.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
-In-Reply-To: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add helper functions for the of_clk_providers list locking and
-an unlocked variant of of_clk_get_from_provider().
-These functions are intended to be used in the clkdev to avoid
-race condition in the device tree based clock look up in clk_get().
+shdma_chan_probe() can set max transfer size,
+but it will be PAGE_SIZE with out this patch.
 
-Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
-Acked-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Reviewed-by: Max Filippov <max.filippov@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Changes since v6:
- - none.
+v1 -> v2
 
-Changes since v2:
- - fixed typo in clk.h.
+ - remove -1
 
-Changes since v1:
- - moved the function declaractions to a local header.
----
- drivers/clk/clk.c |   38 ++++++++++++++++++++++++++++++--------
- drivers/clk/clk.h |   16 ++++++++++++++++
- 2 files changed, 46 insertions(+), 8 deletions(-)
- create mode 100644 drivers/clk/clk.h
+ drivers/dma/sh/rcar-hpbdma.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index 2cf2ea6..6ab6781 100644
---- a/drivers/clk/clk.c
-+++ b/drivers/clk/clk.c
-@@ -21,6 +21,8 @@
- #include <linux/init.h>
- #include <linux/sched.h>
- 
-+#include "clk.h"
-+
- static DEFINE_SPINLOCK(enable_lock);
- static DEFINE_MUTEX(prepare_lock);
- 
-@@ -2110,7 +2112,18 @@ static const struct of_device_id __clk_of_table_sentinel
- 	__used __section(__clk_of_table_end);
- 
- static LIST_HEAD(of_clk_providers);
--static DEFINE_MUTEX(of_clk_lock);
-+static DEFINE_MUTEX(of_clk_mutex);
-+
-+/* of_clk_provider list locking helpers */
-+void of_clk_lock(void)
-+{
-+	mutex_lock(&of_clk_mutex);
-+}
-+
-+void of_clk_unlock(void)
-+{
-+	mutex_unlock(&of_clk_mutex);
-+}
- 
- struct clk *of_clk_src_simple_get(struct of_phandle_args *clkspec,
- 				     void *data)
-@@ -2154,9 +2167,9 @@ int of_clk_add_provider(struct device_node *np,
- 	cp->data = data;
- 	cp->get = clk_src_get;
- 
--	mutex_lock(&of_clk_lock);
-+	mutex_lock(&of_clk_mutex);
- 	list_add(&cp->link, &of_clk_providers);
--	mutex_unlock(&of_clk_lock);
-+	mutex_unlock(&of_clk_mutex);
- 	pr_debug("Added clock from %s\n", np->full_name);
- 
- 	return 0;
-@@ -2171,7 +2184,7 @@ void of_clk_del_provider(struct device_node *np)
- {
- 	struct of_clk_provider *cp;
- 
--	mutex_lock(&of_clk_lock);
-+	mutex_lock(&of_clk_mutex);
- 	list_for_each_entry(cp, &of_clk_providers, link) {
- 		if (cp->node = np) {
- 			list_del(&cp->link);
-@@ -2180,24 +2193,33 @@ void of_clk_del_provider(struct device_node *np)
- 			break;
- 		}
+diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
+index ebad845..496180a 100644
+--- a/drivers/dma/sh/rcar-hpbdma.c
++++ b/drivers/dma/sh/rcar-hpbdma.c
+@@ -510,6 +510,8 @@ static int hpb_dmae_chan_probe(struct hpb_dmae_device *hpbdev, int id)
  	}
--	mutex_unlock(&of_clk_lock);
-+	mutex_unlock(&of_clk_mutex);
- }
- EXPORT_SYMBOL_GPL(of_clk_del_provider);
  
--struct clk *of_clk_get_from_provider(struct of_phandle_args *clkspec)
-+struct clk *__of_clk_get_from_provider(struct of_phandle_args *clkspec)
- {
- 	struct of_clk_provider *provider;
- 	struct clk *clk = ERR_PTR(-ENOENT);
+ 	schan = &new_hpb_chan->shdma_chan;
++	schan->max_xfer_len = HPB_DMA_TCR_MAX;
++
+ 	shdma_chan_probe(sdev, schan, id);
  
- 	/* Check if we have such a provider in our array */
--	mutex_lock(&of_clk_lock);
- 	list_for_each_entry(provider, &of_clk_providers, link) {
- 		if (provider->node = clkspec->np)
- 			clk = provider->get(clkspec, provider->data);
- 		if (!IS_ERR(clk))
- 			break;
- 	}
--	mutex_unlock(&of_clk_lock);
-+
-+	return clk;
-+}
-+
-+struct clk *of_clk_get_from_provider(struct of_phandle_args *clkspec)
-+{
-+	struct clk *clk;
-+
-+	mutex_lock(&of_clk_mutex);
-+	clk = __of_clk_get_from_provider(clkspec);
-+	mutex_unlock(&of_clk_mutex);
- 
- 	return clk;
- }
-diff --git a/drivers/clk/clk.h b/drivers/clk/clk.h
-new file mode 100644
-index 0000000..795cc9f
---- /dev/null
-+++ b/drivers/clk/clk.h
-@@ -0,0 +1,16 @@
-+/*
-+ * linux/drivers/clk/clk.h
-+ *
-+ * Copyright (C) 2013 Samsung Electronics Co., Ltd.
-+ * Sylwester Nawrocki <s.nawrocki@samsung.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#if defined(CONFIG_OF) && defined(CONFIG_COMMON_CLK)
-+struct clk *__of_clk_get_from_provider(struct of_phandle_args *clkspec);
-+void of_clk_lock(void);
-+void of_clk_unlock(void);
-+#endif
+ 	if (pdev->id >= 0)
 -- 
 1.7.9.5
 
