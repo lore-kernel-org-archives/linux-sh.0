@@ -1,55 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 28 Oct 2013 23:46:59 +0000
-Subject: [PATCH 11/19] net: sh_eth: Set receive alignment correctly on all ARM platforms
-Message-Id: <1383004027-25036-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Fri, 18 Oct 2013 05:33:03 +0000
+Subject: [PATCH 1/2 v2] ARM: shmobile: r8a7790: add QSPI support
+Message-Id: <1382074384-24975-2-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Configure the
-receive alignement correctly on all ARM platforms to enable the driver
-on both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI.
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Adds clock support for QSPI on the r8a7790.
+
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 ---
- drivers/net/ethernet/renesas/sh_eth.c | 2 +-
- drivers/net/ethernet/renesas/sh_eth.h | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index b57c278..990fd5b 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -809,7 +809,7 @@ out:
- 	return ret;
- }
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a64f965..ba6f258 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -182,7 +182,7 @@ static struct clk div6_clks[DIV6_NR] = {
  
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- static void sh_eth_set_receive_align(struct sk_buff *skb)
- {
- 	int reserve;
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index a0db02c..41509f7 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -165,7 +165,7 @@ enum {
+ /* MSTP */
+ enum {
+-	MSTP931, MSTP930, MSTP929, MSTP928,
++	MSTP931, MSTP930, MSTP929, MSTP928, MSTP917,
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+@@ -198,6 +198,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
+ 	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
+ 	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
++	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+ 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
+@@ -296,6 +297,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
  };
  
- /* Driver's parameters */
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- #define SH4_SKB_RX_ALIGN	32
- #else
- #define SH2_SH3_SKB_RX_ALIGN	2
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
-1.8.1.5
+1.7.9.5
 
