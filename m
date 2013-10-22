@@ -1,74 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 22:37:37 +0000
-Subject: [PATCH v2 02/19] DMA: shdma: Enable the driver on all ARM platforms
-Message-Id: <1383086274-11049-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:38:04 +0000
+Subject: [PATCH 11/12] ARM: shmobile: marzen: tidyup DT node naming
+Message-Id: <87r4bekp2w.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
-COMPILE_TEST.
+According to ePAPR spec,
+this patch tidies up DT node name.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Vinod Koul <vinod.koul@intel.com>
-Cc: dmaengine@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/dma/sh/Kconfig  | 2 +-
- drivers/dma/sh/shdmac.c | 6 +++---
- 2 files changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
-index dadd9e01..ee0906d 100644
---- a/drivers/dma/sh/Kconfig
-+++ b/drivers/dma/sh/Kconfig
-@@ -4,7 +4,7 @@
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index f7578d5..ce3fe9e 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -82,17 +82,17 @@
+ 		};
+ 	};
  
- config SH_DMAE_BASE
- 	bool "Renesas SuperH DMA Engine support"
--	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
-+	depends on (SUPERH && SH_DMA) || ARM || COMPILE_TEST
- 	depends on !SH_DMA_API
- 	default y
- 	select DMA_ENGINE
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 1069e88..3625078 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -787,7 +787,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 	if (err)
- 		goto rst_err;
+-	scif2_pins: scif2 {
++	scif2_pins: serial2 {
+ 		renesas,groups = "scif2_data_c";
+ 		renesas,function = "scif2";
+ 	};
  
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- 	chanirq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
+-	scif4_pins: scif4 {
++	scif4_pins: serial4 {
+ 		renesas,groups = "scif4_data";
+ 		renesas,function = "scif4";
+ 	};
  
- 	if (!chanirq_res)
-@@ -812,7 +812,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 
- #else
- 	chanirq_res = errirq_res;
--#endif /* CONFIG_CPU_SH4 || CONFIG_ARCH_SHMOBILE */
-+#endif /* CONFIG_CPU_SH4 || CONFIG_ARM */
- 
- 	if (chanirq_res->start = chanirq_res->end &&
- 	    !platform_get_resource(pdev, IORESOURCE_IRQ, 1)) {
-@@ -879,7 +879,7 @@ edmadevreg:
- chan_probe_err:
- 	sh_dmae_chan_remove(shdev);
- 
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- eirq_err:
- #endif
- rst_err:
+-	sdhi0_pins: sdhi0 {
++	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
+ 				 "sdhi0_wp";
+ 		renesas,function = "sdhi0";
 -- 
-1.8.1.5
+1.7.9.5
 
