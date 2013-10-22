@@ -1,40 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 28 Oct 2013 23:47:02 +0000
-Subject: [PATCH 14/19] pwm: pwm-renesas-tpu: Enable the driver on all ARM platforms
-Message-Id: <1383004027-25036-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:37:26 +0000
+Subject: [PATCH 08/12] ARM: shmobile: ape6evm: tidyup DT node naming
+Message-Id: <87vc0qkp3w.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI and increase build testing coverage.
+According to ePAPR spec,
+this patch tidies up DT node name.
 
-Cc: Thierry Reding <thierry.reding@gmail.com>
-Cc: linux-pwm@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/pwm/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index 75840b5..d851fdb 100644
---- a/drivers/pwm/Kconfig
-+++ b/drivers/pwm/Kconfig
-@@ -130,7 +130,7 @@ config PWM_PXA
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 9443e93..25dbc1c 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -88,22 +88,22 @@
+ 	pinctrl-0 = <&scifa0_pins>;
+ 	pinctrl-names = "default";
  
- config PWM_RENESAS_TPU
- 	tristate "Renesas TPU PWM support"
--	depends on ARCH_SHMOBILE
-+	depends on ARM
- 	help
- 	  This driver exposes the Timer Pulse Unit (TPU) PWM controller found
- 	  in Renesas chips through the PWM API.
+-	scifa0_pins: scifa0 {
++	scifa0_pins: serial0 {
+ 		renesas,groups = "scifa0_data";
+ 		renesas,function = "scifa0";
+ 	};
+ 
+-	mmc0_pins: mmcif {
++	mmc0_pins: mmc {
+ 		renesas,groups = "mmc0_data8", "mmc0_ctrl";
+ 		renesas,function = "mmc0";
+ 	};
+ 
+-	sdhi0_pins: sdhi0 {
++	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
+ 		renesas,function = "sdhi0";
+ 	};
+ 
+-	sdhi1_pins: sdhi1 {
++	sdhi1_pins: sd1 {
+ 		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
+ 		renesas,function = "sdhi1";
+ 	};
 -- 
-1.8.1.5
+1.7.9.5
 
