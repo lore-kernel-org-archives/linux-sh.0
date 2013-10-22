@@ -1,35 +1,96 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Oct 2013 06:18:56 +0000
-Subject: [PATCH 0/2] ARM: shmobile: marzen: fixup SMSC IRQ
-Message-Id: <87siwkyz3n.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:35:31 +0000
+Subject: [PATCH 02/12] ARM: shmobile: r8a73a4: tidyup DT node naming
+Message-Id: <874n8am3rj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+According to ePAPR spec,
+this patch tidies up DT node name and related clock.
 
-Hi Simon
-
-These patches fixup Marzen board SMSC IRQ miss settings.
-Current SMSC on Marzen reference is using IRQ1 directly,
-but it should be use INTC IRQ.
-(Un)fortunately it works before, but doesn't work now,
-since current r8a7779.dtsi has INTC IRQ settings.
-(IRQ conflict occur)
-These patches fixup this issue.
-
-Kuninori Morimoto (2):
-      ARM: shmobile: r8a7779: split r8a7779_init_irq_extpin() for DT
-      ARM: shmobile: marzen: enable INTC IRQ and fixup SMSC IRQ number
-
- arch/arm/boot/dts/r8a7779-marzen-reference.dts  |    8 ++++++--
- arch/arm/boot/dts/r8a7779.dtsi                  |    1 +
- arch/arm/mach-shmobile/board-marzen-reference.c |    1 +
- arch/arm/mach-shmobile/include/mach/r8a7779.h   |    1 +
- arch/arm/mach-shmobile/setup-r8a7779.c          |    6 +++++-
- 5 files changed, 14 insertions(+), 3 deletions(-)
-
-Best regards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+ arch/arm/boot/dts/r8a73a4.dtsi         |   10 +++++-----
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   10 +++++-----
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 287e047..e079c99 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -219,7 +219,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	mmcif0: mmcif@ee200000 {
++	mmcif0: mmc@ee200000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+@@ -228,7 +228,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	mmcif1: mmcif@ee220000 {
++	mmcif1: mmc@ee220000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+@@ -244,7 +244,7 @@
+ 		#gpio-cells = <2>;
+ 	};
+ 
+-	sdhi0: sdhi@ee100000 {
++	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -253,7 +253,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi1: sdhi@ee120000 {
++	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -262,7 +262,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi2: sdhi@ee140000 {
++	sdhi2: sd@ee140000 {
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 571409b..7348d58 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -584,15 +584,15 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+-	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
++	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP312]),
++	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
+-	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]),
++	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+-	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
++	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+-	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
++	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("e6550000.i2c", &mstp_clks[MSTP316]),
+ 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
+ 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
+-- 
+1.7.9.5
+
