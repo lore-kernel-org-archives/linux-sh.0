@@ -1,49 +1,99 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 10:29:56 +0000
-Subject: [PATCH 2/5] serial: sh-sci: Remove baud rate calculation algorithm 5
-Message-Id: <1383042599-25151-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:35:08 +0000
+Subject: [PATCH 01/12] ARM: shmobile: r8a7740: tidyup DT node naming
+Message-Id: <8761sqm3s6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-The algorithm isn't used, remove it.
+According to ePAPR spec,
+this patch tidies up DT node name and related clock.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch also adds missing SDHI2 entry
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/tty/serial/sh-sci.c | 2 --
- include/linux/serial_sci.h  | 1 -
- 2 files changed, 3 deletions(-)
+ arch/arm/boot/dts/r8a7740.dtsi         |   18 +++++++++++++++---
+ arch/arm/mach-shmobile/clock-r8a7740.c |    8 ++++----
+ 2 files changed, 19 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 280753f..2fc1a0e 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1820,8 +1820,6 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
- 		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
- 	case SCBRR_ALGO_4:
- 		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
--	case SCBRR_ALGO_5:
--		return (((freq * 1000 / 32) / bps) - 1);
- 	}
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index ae1e230..4cc945a 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -162,7 +162,7 @@
+ 		#pwm-cells = <3>;
+ 	};
  
- 	/* Warn, but use a safe default */
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index d340497..803068d 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -15,7 +15,6 @@ enum {
- 	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
- 	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
- 	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
--	SCBRR_ALGO_5,		/* (((clk * 1000 / 32) / bps) - 1) */
- 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+-	mmcif0: mmcif@e6bd0000 {
++	mmcif0: mmc@e6bd0000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xe6bd0000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -171,7 +171,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi0: sdhi@e6850000 {
++	sdhi0: sd@e6850000 {
+ 		compatible = "renesas,sdhi-r8a7740";
+ 		reg = <0xe6850000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -183,7 +183,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi1: sdhi@e6860000 {
++	sdhi1: sd@e6860000 {
+ 		compatible = "renesas,sdhi-r8a7740";
+ 		reg = <0xe6860000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -194,4 +194,16 @@
+ 		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
++
++	sdhi2: sd@e6870000 {
++		compatible = "renesas,sdhi-r8a7740";
++		reg = <0xe6870000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 125 4
++				0 126 4
++				0 127 4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		status = "disabled";
++	};
  };
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index c826bca..6bfc879 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -589,18 +589,18 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6c20000.i2c",		&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
+-	CLKDEV_DEV_ID("e6850000.sdhi",          &mstp_clks[MSTP314]),
++	CLKDEV_DEV_ID("e6850000.sd",		&mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
+-	CLKDEV_DEV_ID("e6860000.sdhi",          &mstp_clks[MSTP313]),
++	CLKDEV_DEV_ID("e6860000.sd",		&mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
++	CLKDEV_DEV_ID("e6bd0000.mmc",		&mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("r8a7740-gether",		&mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("renesas-tpu-pwm",	&mstp_clks[MSTP304]),
+ 	CLKDEV_DEV_ID("e6600000.pwm",		&mstp_clks[MSTP304]),
  
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
+-	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
++	CLKDEV_DEV_ID("e6870000.sd",		&mstp_clks[MSTP415]),
+ 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
 -- 
-1.8.1.5
+1.7.9.5
 
