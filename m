@@ -1,54 +1,84 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 22:37:48 +0000
-Subject: [PATCH v2 13/19] pinctrl: sh-pfc: Enable the driver on all ARM platforms
-Message-Id: <1383086274-11049-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:36:22 +0000
+Subject: [PATCH 06/12] ARM: shmobile: sh73a0: tidyup DT node naming
+Message-Id: <87y55mkp5o.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-and ARCH_SHMOBILE_MULTI and increase build testing coverage.
+According to ePAPR spec,
+this patch tidies up DT node name and related clock.
 
-Cc: Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-kernel@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/pinctrl/Makefile       | 2 +-
- drivers/pinctrl/sh-pfc/Kconfig | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi         |    8 ++++----
+ arch/arm/mach-shmobile/clock-sh73a0.c |    8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
-index 496d9bf..bef5a9f 100644
---- a/drivers/pinctrl/Makefile
-+++ b/drivers/pinctrl/Makefile
-@@ -56,7 +56,7 @@ obj-$(CONFIG_PINCTRL_ST) 	+= pinctrl-st.o
- obj-$(CONFIG_PINCTRL_VF610)	+= pinctrl-vf610.o
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index fcf2688..78f7201a 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -190,7 +190,7 @@
+ 		status = "disabled";
+ 	};
  
- obj-$(CONFIG_PLAT_ORION)        += mvebu/
--obj-$(CONFIG_ARCH_SHMOBILE)	+= sh-pfc/
-+obj-$(CONFIG_ARM)		+= sh-pfc/
- obj-$(CONFIG_SUPERH)		+= sh-pfc/
- obj-$(CONFIG_PLAT_SPEAR)	+= spear/
- obj-$(CONFIG_ARCH_VT8500)	+= vt8500/
-diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-index 636a882..1d6182e 100644
---- a/drivers/pinctrl/sh-pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -2,7 +2,7 @@
- # Renesas SH and SH Mobile PINCTRL drivers
- #
+-	mmcif: mmcif@e6bd0000 {
++	mmcif: mmc@e6bd0000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xe6bd0000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -200,7 +200,7 @@
+ 		status = "disabled";
+ 	};
  
--if ARCH_SHMOBILE || SUPERH
-+if ARM || SUPERH
+-	sdhi0: sdhi@ee100000 {
++	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a7740";
+ 		reg = <0xee100000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -212,7 +212,7 @@
+ 	};
  
- config PINCTRL_SH_PFC
- 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
+ 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
+-	sdhi1: sdhi@ee120000 {
++	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a7740";
+ 		reg = <0xee120000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -223,7 +223,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi2: sdhi@ee140000 {
++	sdhi2: sd@ee140000 {
+ 		compatible = "renesas,sdhi-r8a7740";
+ 		reg = <0xee140000 0x100>;
+ 		interrupt-parent = <&gic>;
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index c92c023..96cc7da 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -663,13 +663,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+-	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
++	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+-	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
++	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
+-	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
++	CLKDEV_DEV_ID("e6bd0000.mmc", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
+-	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
++	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("renesas-tpu-pwm.0", &mstp_clks[MSTP304]), /* TPU0 */
+ 	CLKDEV_DEV_ID("renesas-tpu-pwm.1", &mstp_clks[MSTP303]), /* TPU1 */
+ 	CLKDEV_DEV_ID("renesas-tpu-pwm.2", &mstp_clks[MSTP302]), /* TPU2 */
 -- 
-1.8.1.5
+1.7.9.5
 
