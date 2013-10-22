@@ -1,381 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:54 +0000
-Subject: [PATCH 10/14] ARM: shmobile: Initial r7s72100 SoC support
-Message-Id: <e3da5b36d48a8e55d1549da016e4c38ff3c0d0fc.1381293239.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:36:02 +0000
+Subject: [PATCH 04/12] ARM: shmobile: r8a7779: tidyup DT node naming
+Message-Id: <871u3em3qo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+According to ePAPR spec,
+this patch tidies up DT node name and related clock.
 
-Add initial support for the r7272100 SoC including:
- - Single Cortex-A9 CPU Core
- - GIC
-
-No static virtual mappings are used, all the components
-make use of ioremap(). DT_MACHINE_START is still wrapped
-in CONFIG_USE_OF to match other mach-shmobile code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r7s72100.dtsi                |  36 +++++
- arch/arm/mach-shmobile/Kconfig                 |   6 +
- arch/arm/mach-shmobile/Makefile                |   2 +
- arch/arm/mach-shmobile/clock-r7s72100.c        | 194 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/r7s72100.h |   7 +
- arch/arm/mach-shmobile/setup-r7s72100.c        |  43 ++++++
- 6 files changed, 288 insertions(+)
- create mode 100644 arch/arm/boot/dts/r7s72100.dtsi
- create mode 100644 arch/arm/mach-shmobile/clock-r7s72100.c
- create mode 100644 arch/arm/mach-shmobile/include/mach/r7s72100.h
- create mode 100644 arch/arm/mach-shmobile/setup-r7s72100.c
+ arch/arm/boot/dts/r8a7779.dtsi         |    8 ++++----
+ arch/arm/mach-shmobile/clock-r8a7779.c |    8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-new file mode 100644
-index 0000000..46b82aa
---- /dev/null
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -0,0 +1,36 @@
-+/*
-+ * Device Tree Source for the r7s72100 SoC
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/ {
-+	compatible = "renesas,r7s72100";
-+	interrupt-parent = <&gic>;
-+	#address-cells = <1>;
-+	#size-cells = <1>;
-+
-+	cpus {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		cpu@0 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a9";
-+			reg = <0>;
-+		};
-+	};
-+
-+	gic: interrupt-controller@e8201000 {
-+		compatible = "arm,cortex-a9-gic";
-+		#interrupt-cells = <3>;
-+		#address-cells = <0>;
-+		interrupt-controller;
-+		reg = <0xe8201000 0x1000>,
-+			<0xe8202000 0x1000>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index b452405..5dd5f9f 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -113,6 +113,12 @@ config ARCH_EMEV2
- 	select ARM_GIC
- 	select CPU_V7
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index be737ef..05fd41c 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -207,7 +207,7 @@
+ 		interrupts = <0 100 0x4>;
+ 	};
  
-+config ARCH_R7S72100
-+	bool "RZ/A1H (R7S72100)"
-+	select ARM_GIC
-+	select CPU_V7
-+	select SH_CLK_CPG
-+
- comment "SH-Mobile Board Type"
+-	sdhi0: sdhi@ffe4c000 {
++	sdhi0: sd@ffe4c000 {
+ 		compatible = "renesas,sdhi-r8a7779";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -217,7 +217,7 @@
+ 		status = "disabled";
+ 	};
  
- config MACH_APE6EVM
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 3c37e82..95e48d1 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -18,6 +18,7 @@ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o setup-rcar-gen2.o
- obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o setup-rcar-gen2.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
-+obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+-	sdhi1: sdhi@ffe4d000 {
++	sdhi1: sd@ffe4d000 {
+ 		compatible = "renesas,sdhi-r8a7779";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -227,7 +227,7 @@
+ 		status = "disabled";
+ 	};
  
- # Clock objects
- ifndef CONFIG_COMMON_CLK
-@@ -31,6 +32,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= clock-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= clock-r8a7790.o
- obj-$(CONFIG_ARCH_R8A7791)	+= clock-r8a7791.o
- obj-$(CONFIG_ARCH_EMEV2)	+= clock-emev2.o
-+obj-$(CONFIG_ARCH_R7S72100)	+= clock-r7s72100.o
- endif
+-	sdhi2: sdhi@ffe4e000 {
++	sdhi2: sd@ffe4e000 {
+ 		compatible = "renesas,sdhi-r8a7779";
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -237,7 +237,7 @@
+ 		status = "disabled";
+ 	};
  
- # SMP objects
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-new file mode 100644
-index 0000000..1e71094
---- /dev/null
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -0,0 +1,194 @@
-+/*
-+ * r7a72100 clock framework support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2012  Phil Edworthy
-+ * Copyright (C) 2011  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/io.h>
-+#include <linux/sh_clk.h>
-+#include <linux/clkdev.h>
-+#include <mach/common.h>
-+#include <mach/r7s72100.h>
-+
-+/* registers */
-+#define FRQCR		0xfcfe0010
-+#define FRQCR2		0xfcfe0014
-+#define STBCR3		0xfcfe0420
-+#define STBCR4		0xfcfe0424
-+
-+#define PLL_RATE 30
-+
-+static struct clk_mapping cpg_mapping = {
-+	.phys	= 0xfcfe0000,
-+	.len	= 0x1000,
-+};
-+
-+/* Fixed 32 KHz root clock for RTC */
-+static struct clk r_clk = {
-+	.rate           = 32768,
-+};
-+
-+/*
-+ * Default rate for the root input clock, reset this with clk_set_rate()
-+ * from the platform code.
-+ */
-+static struct clk extal_clk = {
-+	.rate		= 13330000,
-+	.mapping	= &cpg_mapping,
-+};
-+
-+static unsigned long pll_recalc(struct clk *clk)
-+{
-+	return clk->parent->rate * PLL_RATE;
-+}
-+
-+static struct sh_clk_ops pll_clk_ops = {
-+	.recalc		= pll_recalc,
-+};
-+
-+static struct clk pll_clk = {
-+	.ops		= &pll_clk_ops,
-+	.parent		= &extal_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+static unsigned long bus_recalc(struct clk *clk)
-+{
-+	return clk->parent->rate * 2 / 3;
-+}
-+
-+static struct sh_clk_ops bus_clk_ops = {
-+	.recalc		= bus_recalc,
-+};
-+
-+static struct clk bus_clk = {
-+	.ops		= &bus_clk_ops,
-+	.parent		= &pll_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+static unsigned long peripheral0_recalc(struct clk *clk)
-+{
-+	return clk->parent->rate / 12;
-+}
-+
-+static struct sh_clk_ops peripheral0_clk_ops = {
-+	.recalc		= peripheral0_recalc,
-+};
-+
-+static struct clk peripheral0_clk = {
-+	.ops		= &peripheral0_clk_ops,
-+	.parent		= &pll_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+static unsigned long peripheral1_recalc(struct clk *clk)
-+{
-+	return clk->parent->rate / 6;
-+}
-+
-+static struct sh_clk_ops peripheral1_clk_ops = {
-+	.recalc		= peripheral1_recalc,
-+};
-+
-+static struct clk peripheral1_clk = {
-+	.ops		= &peripheral1_clk_ops,
-+	.parent		= &pll_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+struct clk *main_clks[] = {
-+	&r_clk,
-+	&extal_clk,
-+	&pll_clk,
-+	&bus_clk,
-+	&peripheral0_clk,
-+	&peripheral1_clk,
-+};
-+
-+static int div2[] = { 1, 3, 0, 3 }; /* 1, 2/3, reserve, 1/3 */
-+static int multipliers[] = { 1, 2, 1, 1 };
-+
-+static struct clk_div_mult_table div4_div_mult_table = {
-+	.divisors = div2,
-+	.nr_divisors = ARRAY_SIZE(div2),
-+	.multipliers = multipliers,
-+	.nr_multipliers = ARRAY_SIZE(multipliers),
-+};
-+
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
-+
-+enum { DIV4_I,
-+	DIV4_NR };
-+
-+#define DIV4(_reg, _bit, _mask, _flags) \
-+	SH_CLK_DIV4(&pll_clk, _reg, _bit, _mask, _flags)
-+
-+/* The mask field specifies the div2 entries that are valid */
-+struct clk div4_clks[DIV4_NR] = {
-+	[DIV4_I]  = DIV4(FRQCR, 8, 0xB, CLK_ENABLE_REG_16BIT
-+					| CLK_ENABLE_ON_INIT),
-+};
-+
-+enum { MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
-+	MSTP33,	MSTP_NR };
-+
-+static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
-+	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
-+	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
-+	[MSTP44] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 4, 0), /* SCIF3 */
-+	[MSTP43] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 3, 0), /* SCIF4 */
-+	[MSTP42] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 2, 0), /* SCIF5 */
-+	[MSTP41] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 1, 0), /* SCIF6 */
-+	[MSTP40] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 0, 0), /* SCIF7 */
-+	[MSTP33] = SH_CLK_MSTP8(&peripheral0_clk, STBCR3, 3, 0), /* MTU2 */
-+};
-+
-+static struct clk_lookup lookups[] = {
-+	/* main clocks */
-+	CLKDEV_CON_ID("rclk", &r_clk),
-+	CLKDEV_CON_ID("extal", &extal_clk),
-+	CLKDEV_CON_ID("pll_clk", &pll_clk),
-+	CLKDEV_CON_ID("peripheral_clk", &peripheral1_clk),
-+
-+	/* DIV4 clocks */
-+	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
-+
-+	/* MSTP clocks */
-+};
-+
-+void __init r7s72100_clock_init(void)
-+{
-+	int k, ret = 0;
-+
-+	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
-+		ret = clk_register(main_clks[k]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
-+	if (!ret)
-+		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
-+
-+	if (!ret)
-+		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
-+
-+	if (!ret)
-+		shmobile_clk_init();
-+	else
-+		panic("failed to setup rza1 clocks\n");
-+}
-diff --git a/arch/arm/mach-shmobile/include/mach/r7s72100.h b/arch/arm/mach-shmobile/include/mach/r7s72100.h
-new file mode 100644
-index 0000000..f78062e
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/r7s72100.h
-@@ -0,0 +1,7 @@
-+#ifndef __ASM_R7S72100_H__
-+#define __ASM_R7S72100_H__
-+
-+void r7s72100_clock_init(void);
-+void r7s72100_init_early(void);
-+
-+#endif /* __ASM_R7S72100_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-new file mode 100644
-index 0000000..c1aded0
---- /dev/null
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -0,0 +1,43 @@
-+/*
-+ * r7s72100 processor support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/irq.h>
-+#include <linux/kernel.h>
-+#include <linux/of_platform.h>
-+#include <mach/common.h>
-+#include <mach/r7s72100.h>
-+#include <asm/mach/arch.h>
-+
-+void __init r7s72100_init_early(void)
-+{
-+	shmobile_setup_delay(400, 1, 3); /* Cortex-A9 @ 400MHz */
-+}
-+
-+#ifdef CONFIG_USE_OF
-+static const char *r7s72100_boards_compat_dt[] __initdata = {
-+	"renesas,r7s72100",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(R7S72100_DT, "Generic R7S72100 (Flattened Device Tree)")
-+	.init_early	= r7s72100_init_early,
-+	.dt_compat	= r7s72100_boards_compat_dt,
-+MACHINE_END
-+#endif /* CONFIG_USE_OF */
+-	sdhi3: sdhi@ffe4f000 {
++	sdhi3: sd@ffe4f000 {
+ 		compatible = "renesas,sdhi-r8a7779";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupt-parent = <&gic>;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 5c83259..b7ce0e7 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -201,13 +201,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
+ 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+-	CLKDEV_DEV_ID("ffe4c000.sdhi", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("ffe4c000.sd", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+-	CLKDEV_DEV_ID("ffe4d000.sdhi", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("ffe4d000.sd", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+-	CLKDEV_DEV_ID("ffe4e000.sdhi", &mstp_clks[MSTP321]), /* SDHI2 */
++	CLKDEV_DEV_ID("ffe4e000.sd", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
+-	CLKDEV_DEV_ID("ffe4f000.sdhi", &mstp_clks[MSTP320]), /* SDHI3 */
++	CLKDEV_DEV_ID("ffe4f000.sd", &mstp_clks[MSTP320]), /* SDHI3 */
+ 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
+ };
+ 
 -- 
-1.8.4
+1.7.9.5
 
