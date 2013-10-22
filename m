@@ -1,56 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:49:48 +0000
-Subject: [PATCH 07/14] ARM: shmobile: Introduce r8a7791_add_standard_devices()
-Message-Id: <4275881fcacae2b1662d64e7989959ef3c33cf52.1381293239.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:37:48 +0000
+Subject: [PATCH 10/12] ARM: shmobile: bockw: tidyup DT node naming
+Message-Id: <87sivukp3a.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381293239.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+According to ePAPR spec,
+this patch tidies up DT node name.
 
-Introduce the function r8a7791_add_standard_devices() that
-follows the same style as other mach-shmobile SoC code and
-allows C version of board code to add on-chip devices.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7791.h | 1 +
- arch/arm/mach-shmobile/setup-r8a7791.c        | 5 +++++
- 2 files changed, 6 insertions(+)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 2e6d661..2a86a53 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -1,6 +1,7 @@
- #ifndef __ASM_R8A7791_H__
- #define __ASM_R8A7791_H__
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 8b8208e..9c8bd37 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -71,7 +71,7 @@
+ 	pinctrl-0 = <&scif0_pins>;
+ 	pinctrl-names = "default";
  
-+void r8a7791_add_standard_devices(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_init_early(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index b56399d..350dfc4 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -129,6 +129,11 @@ void __init r8a7791_add_dt_devices(void)
- 	r8a7791_register_cmt(00);
- }
+-	scif0_pins: scif0 {
++	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_a", "scif0_ctrl";
+ 		renesas,function = "scif0";
+ 	};
+@@ -81,7 +81,7 @@
+ 		renesas,function = "mmc";
+ 	};
  
-+void __init r8a7791_add_standard_devices(void)
-+{
-+	r8a7791_add_dt_devices();
-+}
-+
- void __init r8a7791_init_early(void)
- {
- #ifndef CONFIG_ARM_ARCH_TIMER
+-	sdhi0_pins: sdhi0 {
++	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+ 				  "sdhi0_cd", "sdhi0_wp";
+ 		renesas,function = "sdhi0";
 -- 
-1.8.4
+1.7.9.5
 
