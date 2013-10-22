@@ -1,153 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 08 Oct 2013 09:05:40 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7778: cleanup registration of vin
-Message-Id: <fd131d0d4024a39259c41290451e728515ed7300.1381222967.git.horms+renesas@verge.net.au>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Tue, 22 Oct 2013 02:21:11 +0000
+Subject: [PATCH 1/2 v4] ARM: shmobile: r8a7790: add QSPI support
+Message-Id: <1382408472-20315-2-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-vin driver which needs platform data at the time of
-registration is used from BockW only.
-Now, ARM/shmobile aims to support DT,
-and the C code base board support will be removed
-if DT support is completed.
-Current driver registration method which needs platform data
-and which is not shared complicates codes.
-This means legacy C code cleanup after DT supporting
-will be more complicated
-This patch registers it on board code as cleanup C code
+Adds support for QSPI on the r8a7790.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 ---
- arch/arm/mach-shmobile/board-bockw.c          | 32 ++++++++++++++++++++-----
- arch/arm/mach-shmobile/include/mach/r8a7778.h |  2 --
- arch/arm/mach-shmobile/setup-r8a7778.c        | 34 ---------------------------
- 3 files changed, 26 insertions(+), 42 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 6b9faf3..4b696ce 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -162,10 +162,6 @@ static struct sh_mmcif_plat_data sh_mmcif_plat __initdata = {
- 			  MMC_CAP_NEEDS_POLL,
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a64f965..0ef7b54 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -183,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ /* MSTP */
+ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928,
++	MSTP917,
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+@@ -198,6 +199,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
+ 	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
+ 	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
++	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+ 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
+@@ -296,6 +298,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
  };
  
--static struct rcar_vin_platform_data vin_platform_data __initdata = {
--	.flags	= RCAR_VIN_BT656,
--};
--
- /* In the default configuration both decoders reside on I2C bus 0 */
- #define BOCKW_CAMERA(idx)						\
- static struct i2c_board_info camera##idx##_info = {			\
-@@ -181,6 +177,30 @@ static struct soc_camera_link iclink##idx##_ml86v7667 __initdata = {	\
- BOCKW_CAMERA(0);
- BOCKW_CAMERA(1);
- 
-+/* VIN */
-+static struct rcar_vin_platform_data vin_platform_data __initdata = {
-+	.flags	= RCAR_VIN_BT656,
-+};
-+
-+#define R8A7778_VIN(idx)						\
-+static struct resource vin##idx##_resources[] __initdata = {		\
-+	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
-+	DEFINE_RES_IRQ(gic_iid(0x5a)),					\
-+};									\
-+									\
-+static struct platform_device_info vin##idx##_info __initdata = {	\
-+	.parent		= &platform_bus,				\
-+	.name		= "r8a7778-vin",				\
-+	.id		= idx,						\
-+	.res		= vin##idx##_resources,				\
-+	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
-+	.dma_mask	= DMA_BIT_MASK(32),				\
-+	.data		= &vin_platform_data,				\
-+	.size_data	= sizeof(vin_platform_data),			\
-+}
-+R8A7778_VIN(0);
-+R8A7778_VIN(1);
-+
- static const struct pinctrl_map bockw_pinctrl_map[] = {
- 	/* Ether */
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a777x-ether", "pfc-r8a7778",
-@@ -236,10 +256,10 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
- 	r8a7778_add_ether_device(&ether_platform_data);
--	r8a7778_add_vin_device(0, &vin_platform_data);
-+	platform_device_register_full(&vin0_info);
- 	/* VIN1 has a pin conflict with Ether */
- 	if (!IS_ENABLED(CONFIG_SH_ETH))
--		r8a7778_add_vin_device(1, &vin_platform_data);
-+		platform_device_register_full(&vin1_info);
- 	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 0,
- 				      &iclink0_ml86v7667,
- 				      sizeof(iclink0_ml86v7667));
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index adfcf51..9838608 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -24,8 +24,6 @@
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_add_standard_devices_dt(void);
- extern void r8a7778_add_ether_device(struct sh_eth_plat_data *pdata);
--extern void r8a7778_add_vin_device(int id,
--				   struct rcar_vin_platform_data *pdata);
- extern void r8a7778_add_dt_devices(void);
- 
- extern void r8a7778_init_late(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 6a2657e..604cf36 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -281,40 +281,6 @@ void __init r8a7778_register_hspi(int id)
- 		hspi_resources + (2 * id), 2);
- }
- 
--/* VIN */
--#define R8A7778_VIN(idx)						\
--static struct resource vin##idx##_resources[] __initdata = {		\
--	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
--	DEFINE_RES_IRQ(gic_iid(0x5a)),					\
--};									\
--									\
--static struct platform_device_info vin##idx##_info __initdata = {	\
--	.parent		= &platform_bus,				\
--	.name		= "r8a7778-vin",				\
--	.id		= idx,						\
--	.res		= vin##idx##_resources,				\
--	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
--	.dma_mask	= DMA_BIT_MASK(32),				\
--}
--
--R8A7778_VIN(0);
--R8A7778_VIN(1);
--
--static struct platform_device_info *vin_info_table[] __initdata = {
--	&vin0_info,
--	&vin1_info,
--};
--
--void __init r8a7778_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
--{
--	BUG_ON(id < 0 || id > 1);
--
--	vin_info_table[id]->data = pdata;
--	vin_info_table[id]->size_data = sizeof(*pdata);
--
--	platform_device_register_full(vin_info_table[id]);
--}
--
- void __init r8a7778_add_dt_devices(void)
- {
- 	int i;
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
-1.8.4
+1.7.9.5
 
