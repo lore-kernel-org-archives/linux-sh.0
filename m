@@ -1,39 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:53 +0000
-Subject: [PATCH 05/14] ARM: shmobile: Use r8a7791_add_standard_devices() on Koelsch
-Message-Id: <0749bead08db4e01588437a05a126bf4774dae23.1381299817.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:37:39 +0000
+Subject: [PATCH 09/12] ARM: shmobile: kzm9g: tidyup DT node naming
+Message-Id: <87txgakp3j.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381299817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+According to ePAPR spec,
+this patch tidies up DT node name.
 
-Use r8a7791_add_standard_devices() on Koelsch to let
-the C version of the board code add on-chip devices.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index cc2d5e8..278f12e 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -29,7 +29,7 @@
- static void __init koelsch_add_standard_devices(void)
- {
- 	r8a7791_clock_init();
--	r8a7791_add_dt_devices();
-+	r8a7791_add_standard_devices();
- }
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 8ee06dd..df75aea 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -205,7 +205,7 @@
+ 		renesas,function = "i2c3";
+ 	};
  
- static const char * const koelsch_boards_compat_dt[] __initconst = {
+-	mmcif_pins: mmcif {
++	mmcif_pins: mmc {
+ 		mux {
+ 			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
+ 			renesas,function = "mmc0";
+@@ -217,17 +217,17 @@
+ 		};
+ 	};
+ 
+-	scifa4_pins: scifa4 {
++	scifa4_pins: serial4 {
+ 		renesas,groups = "scifa4_data", "scifa4_ctrl";
+ 		renesas,function = "scifa4";
+ 	};
+ 
+-	sdhi0_pins: sdhi0 {
++	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
+ 		renesas,function = "sdhi0";
+ 	};
+ 
+-	sdhi2_pins: sdhi2 {
++	sdhi2_pins: sd2 {
+ 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+ 		renesas,function = "sdhi2";
+ 	};
 -- 
-1.8.4
+1.7.9.5
 
