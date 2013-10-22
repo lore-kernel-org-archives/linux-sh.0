@@ -1,64 +1,57 @@
-From: Mauro Carvalho Chehab <m.chehab@samsung.com>
-Date: Wed, 30 Oct 2013 12:26:23 +0000
-Subject: Re: [PATCH 07/19] v4l: sh_vou: Enable the driver on all ARM platforms
-Message-Id: <20131030102623.1d498c16@samsung.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 Oct 2013 02:32:57 +0000
+Subject: Re: [PATCH 00/12] ARM: shmobile: fixup DT node naming
+Message-Id: <877gd6m3vt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383004027-25036-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383004027-25036-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-Hi Laurent,
-
-Em Tue, 29 Oct 2013 00:46:55 +0100
-Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com> escreveu:
-
-> Renesas ARM platforms are transitioning from single-platform to
-> multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-> driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-> and ARCH_SHMOBILE_MULTI and increase build testing coverage.
-> 
-> Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
-> Cc: linux-media@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-I'm understanding that the plan is to commit it via an ARM tree, right?
-
-If so:
-	Acked-by: Mauro Carvalho Chehab <m.chehab@samsung.com>
-
-PS.: With regards to the discussions about this patch series,
-I'm ok on having this enabled for all archs or just for the
-archs that are known have this IP block, of course provided that
-not includes to march are there.
-
-The rationale is that, in the specific case of V4L, the platform 
-drivers are already on a separate Kconfig menu, with makes no sense
-to be enabled on any non SoC configuration.
-
-> ---
->  drivers/media/platform/Kconfig | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
-> index c7caf94..a726f86 100644
-> --- a/drivers/media/platform/Kconfig
-> +++ b/drivers/media/platform/Kconfig
-> @@ -36,7 +36,7 @@ source "drivers/media/platform/blackfin/Kconfig"
->  config VIDEO_SH_VOU
->  	tristate "SuperH VOU video output driver"
->  	depends on MEDIA_CAMERA_SUPPORT
-> -	depends on VIDEO_DEV && ARCH_SHMOBILE && I2C
-> +	depends on VIDEO_DEV && ARM && I2C
->  	select VIDEOBUF_DMA_CONTIG
->  	help
->  	  Support for the Video Output Unit (VOU) on SuperH SoCs.
+To: linux-sh@vger.kernel.org
 
 
--- 
+Hi Simon
 
-Cheers,
-Mauro
+These are v2 of cleanup DT node patches.
+#1 - #6 are for SoC,
+#7 - #12 are for board.
+
+#1 also added missing SDHI2 entry.
+SoC DT node cleanup patches are including clock cleanup.
+
+Kuninori Morimoto (12):
+       1) ARM: shmobile: r8a7740: tidyup DT node naming
+       2) ARM: shmobile: r8a73a4: tidyup DT node naming
+       3) ARM: shmobile: r8a7778: tidyup DT node naming
+       4) ARM: shmobile: r8a7779: tidyup DT node naming
+       5) ARM: shmobile: r8a7790: tidyup DT node naming
+       6) ARM: shmobile: sh73a0: tidyup DT node naming
+       7) ARM: shmobile: armadillo: tidyup DT node naming
+       8) ARM: shmobile: ape6evm: tidyup DT node naming
+       9) ARM: shmobile: kzm9g: tidyup DT node naming
+      10) ARM: shmobile: bockw: tidyup DT node naming
+      11) ARM: shmobile: marzen: tidyup DT node naming
+      12) ARM: shmobile: lager: tidyup DT node naming
+
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |    8 ++++----
+ arch/arm/boot/dts/r8a73a4.dtsi                     |   10 +++++-----
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |    8 ++++----
+ arch/arm/boot/dts/r8a7740.dtsi                     |   18 +++++++++++++++---
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts      |    4 ++--
+ arch/arm/boot/dts/r8a7778.dtsi                     |    8 ++++----
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts     |    6 +++---
+ arch/arm/boot/dts/r8a7779.dtsi                     |    8 ++++----
+ arch/arm/boot/dts/r8a7790-lager-reference.dts      |    4 ++--
+ arch/arm/boot/dts/r8a7790.dtsi                     |   10 +++++-----
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |    8 ++++----
+ arch/arm/boot/dts/sh73a0.dtsi                      |    8 ++++----
+ arch/arm/mach-shmobile/clock-r8a73a4.c             |   10 +++++-----
+ arch/arm/mach-shmobile/clock-r8a7740.c             |    8 ++++----
+ arch/arm/mach-shmobile/clock-r8a7778.c             |    8 ++++----
+ arch/arm/mach-shmobile/clock-r8a7779.c             |    8 ++++----
+ arch/arm/mach-shmobile/clock-r8a7790.c             |   12 ++++++------
+ arch/arm/mach-shmobile/clock-sh73a0.c              |    8 ++++----
+ 18 files changed, 83 insertions(+), 71 deletions(-)
+
+Best regards
+---
+Kuninori Morimoto
