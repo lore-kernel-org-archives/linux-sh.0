@@ -1,87 +1,112 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Fri, 04 Oct 2013 14:19:37 +0000
-Subject: Re: [PATCH 0/3] media: Add SH-Mobile RCAR-H2 Lager board support
-Message-Id: <524ECE79.1020109@cogentembedded.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Tue, 22 Oct 2013 02:21:12 +0000
+Subject: [PATCH 2/2 v4] ARM: shmobile: Lager:add SPI FLASH support on QSPI
+Message-Id: <1382408472-20315-3-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1380029916-10331-1-git-send-email-valentine.barshak@cogentembedded.com> <Pine.LNX.4.64.1309241812350.22197@axis700.grange> <524E94B0.1060607@xs4all.nl>
-In-Reply-To: <524E94B0.1060607@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil@xs4all.nl>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Linux Media Mailing List <linux-media@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Hans Verkuil <hans.verkuil@cisco.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-On 10/04/2013 02:13 PM, Hans Verkuil wrote:
-> On 09/24/2013 06:14 PM, Guennadi Liakhovetski wrote:
->> Hi Valentine,
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Hi,
+This patch enables Spansion S25FL512SAGMFIG11 chip on QSPI,
+Add support for the QSPI interface on Lager.
 
->>
->> Since patches 2 and 3 here are for soc-camera, I can offer to take all 3
->> via my tree after all comments to patch 1/3 are addressed and someone
->> (Laurent?) has acked it. Alternatively I can ack the two patches and let
->> all 3 go via another tree, or we can split this series too - no problem
->> with me either way.
->
-> I prefer to take these patches. 95% of the work is in the first patch adding
-> the new adv driver, and I'm responsible for video receivers/transmitters.
->
-> There is going to be a revision anyway, so let's wait for v2.
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+---
+ arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
 
-Patch 2 doesn't really depend on the other ones.
-So I think it can be added separately.
-I'll resubmit it in a bit.
-
-The ADV related stuff will be reworked/submitted later.
-
->
-> Regards,
->
-> 	Hans
-
-Thanks,
-Val.
->
->>
->> Thanks
->> Guennadi
->>
->> On Tue, 24 Sep 2013, Valentine Barshak wrote:
->>
->>> The following patches add ADV7611/ADV7612 HDMI receiver I2C driver
->>> and add RCAR H2 SOC support along with ADV761x output format support
->>> to rcar_vin soc_camera driver.
->>>
->>> These changes are needed for SH-Mobile R8A7790 Lager board
->>> video input support.
->>>
->>> Valentine Barshak (3):
->>>    media: i2c: Add ADV761X support
->>>    media: rcar_vin: Add preliminary r8a7790 H2 support
->>>    media: rcar_vin: Add RGB888_1X24 input format support
->>>
->>>   drivers/media/i2c/Kconfig                    |   11 +
->>>   drivers/media/i2c/Makefile                   |    1 +
->>>   drivers/media/i2c/adv761x.c                  | 1060 ++++++++++++++++++++++++++
->>>   drivers/media/platform/soc_camera/rcar_vin.c |   17 +-
->>>   include/media/adv761x.h                      |   28 +
->>>   5 files changed, 1114 insertions(+), 3 deletions(-)
->>>   create mode 100644 drivers/media/i2c/adv761x.c
->>>   create mode 100644 include/media/adv761x.h
->>>
->>> --
->>> 1.8.3.1
->>>
->>
->> ---
->> Guennadi Liakhovetski, Ph.D.
->> Freelance Open-Source Software Developer
->> http://www.open-technology.de/
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-media" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 78a31b6..9a601eb 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -39,6 +39,11 @@
+ #include <mach/r8a7790.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <linux/mtd/partitions.h>
++#include <linux/mtd/mtd.h>
++#include <linux/spi/flash.h>
++#include <linux/spi/rspi.h>
++#include <linux/spi/spi.h>
+ 
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+@@ -165,6 +170,59 @@ static const struct resource ether_resources[] __initconst = {
+ 	DEFINE_RES_IRQ(gic_spi(162)),
+ };
+ 
++/* SPI Flash memory (Spansion S25FL512SAGMFIG11 64Mb) */
++static struct mtd_partition spi_flash_part[] = {
++	/* Reserved for user loader program, read-only */
++	{
++		.name = "loader",
++		.offset = 0,
++		.size = SZ_256K,
++		.mask_flags = MTD_WRITEABLE,
++	},
++	/* Reserved for user program, read-only */
++	{
++		.name = "user",
++		.offset = MTDPART_OFS_APPEND,
++		.size = SZ_4M,
++		.mask_flags = MTD_WRITEABLE,
++	},
++	/* All else is writable (e.g. JFFS2) */
++	{
++		.name = "flash",
++		.offset = MTDPART_OFS_APPEND,
++		.size = MTDPART_SIZ_FULL,
++		.mask_flags = 0,
++	},
++};
++
++static struct flash_platform_data spi_flash_data = {
++	.name           = "m25p80",
++	.parts          = spi_flash_part,
++	.nr_parts       = ARRAY_SIZE(spi_flash_part),
++	.type           = "s25fl512s",
++};
++
++static const struct rspi_plat_data qspi_pdata __initconst = {
++	.num_chipselect	= 1,
++};
++
++static const struct spi_board_info spi_info[] __initconst = {
++	{
++		.modalias               = "m25p80",
++		.platform_data          = &spi_flash_data,
++		.mode                   = SPI_MODE_0,
++		.max_speed_hz           = 30000000,
++		.bus_num                = 0,
++		.chip_select            = 0,
++	},
++};
++
++/* QSPI resource */
++static const struct resource qspi_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6b10000, 0x1000),
++	DEFINE_RES_IRQ(gic_spi(184)),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -222,6 +280,12 @@ static void __init lager_add_standard_devices(void)
+ 					  &ether_pdata, sizeof(ether_pdata));
+ 
+ 	lager_add_du_device();
++
++	platform_device_register_resndata(&platform_bus, "qspi", 0,
++					  qspi_resources,
++					  ARRAY_SIZE(qspi_resources),
++					  &qspi_pdata, sizeof(qspi_pdata));
++	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+ }
+ 
+ /*
+-- 
+1.7.9.5
 
