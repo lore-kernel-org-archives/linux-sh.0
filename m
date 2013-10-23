@@ -1,7 +1,7 @@
 From: David Miller <davem@davemloft.net>
-Date: Tue, 22 Oct 2013 23:08:21 +0000
+Date: Wed, 23 Oct 2013 20:50:34 +0000
 Subject: Re: [PATCH] sh_eth: add/use RMCR.RNC bit
-Message-Id: <20131022.190821.1644728583015494563.davem@davemloft.net>
+Message-Id: <20131023.165034.537485764263918532.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201310160229.58735.sergei.shtylyov@cogentembedded.com>
 	<5266F94E.9030406@cogentembedded.com>
@@ -26,4 +26,4 @@ Date: Wed, 23 Oct 2013 02:16:46 +0400
 >    I resubmit or you can fix it while applying? Or simply not worth the
 >    trouble?
 
-I'll fix it when I apply it, thanks.
+Applied, with the typo fixed, thanks.
