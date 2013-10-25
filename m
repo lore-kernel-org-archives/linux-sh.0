@@ -1,80 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 11 Oct 2013 19:25:35 +0000
-Subject: Re: [PATCH] ata: sata_rcar: Add RCAR Gen2 SATA PHY support
-Message-Id: <52585E6F.40903@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 25 Oct 2013 17:07:12 +0000
+Subject: [PATCH] usb: phy: phy-rcar-gen2-usb: Fix phy initialization
+Message-Id: <1382720832-10267-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381432083-3684-1-git-send-email-valentine.barshak@cogentembedded.com> <20131011010032.GA13809@verge.net.au>
-In-Reply-To: <20131011010032.GA13809@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, devicetree@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Add missing USB UGCTRL2 register offset.
 
-On 11-10-2013 3:00, Simon Horman wrote:
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/usb/phy/phy-rcar-gen2-usb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> [ CCed devicetree@vger.kernel.org as this involves DT compatibility strings ]
-
-    Note that I did CC then-existing devicetree-discuss list when posting the 
-original driver but we got no feedback from there. That's why the binding 
-documentation is missing.
-
->> RCAR Gen2 SoC has a different phy which is not compatible with
-
-    Hm, the SoCs family is called R-Car, is it so hard to remember? :-)
-
->> the older H1/M1 versions. This adds OF/platform device table
->> and PHY initialization callbacks for H2/M2 (Gen2) SoC.
-
-[...]
-
->> PHY initialization method is chosen based on the device id.
->> Default PHY settings are applied for Gen2 SoC, which should
->> suit the available Gen2 boards.
-
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-[skip overquoating, grr :-]
->> @@ -770,8 +823,34 @@ static void sata_rcar_init_controller(struct ata_host *host)
->>   	iowrite32(ATAPI_INT_ENABLE_SATAINT, base + ATAPI_INT_ENABLE_REG);
->>   }
->>
->> +static struct of_device_id sata_rcar_match[] = {
->> +	{
->> +		.compatible = "renesas,rcar-sata",
->> +		.data = (void *)RCAR_SATA
->> +	},
->> +	{
->> +		.compatible = "renesas,sata-r8a7790",
->> +		.data = (void *)RCAR_GEN2_SATA
->> +	},
->> +	{
->> +		.compatible = "renesas,sata-r8a7791",
->> +		.data = (void *)RCAR_GEN2_SATA
->> +	},
->> +	{},
->> +};
->> +MODULE_DEVICE_TABLE(of, sata_rcar_match);
->> +
->> +static const struct platform_device_id sata_rcar_id_table[] = {
->> +	{ "sata_rcar",		RCAR_SATA },
->> +	{ "sata-r8a7790",	RCAR_GEN2_SATA },
->> +	{ "sata-r8a7791",	RCAR_GEN2_SATA },
->> +	{ },
->> +};
->> +MODULE_DEVICE_TABLE(platform, sata_rcat_id_table);
->> +
-
-> I think it would be better to add sata-r8a7779 and
-> sata-r8a7778 to handle the GEN1 hardware and deprecate rcar-sata.
-
-    R8A7778 doesn't have the SATA controller AFAIR.
-
-> Less importantly I think it would be better to name RCAR_SATA
-> as RCAR_GEN1_SATA.
-
-    Now that we have Gen2, yes.
-
-WBR, Sergei
+diff --git a/drivers/usb/phy/phy-rcar-gen2-usb.c b/drivers/usb/phy/phy-rcar-gen2-usb.c
+index a99a695..db3ab34 100644
+--- a/drivers/usb/phy/phy-rcar-gen2-usb.c
++++ b/drivers/usb/phy/phy-rcar-gen2-usb.c
+@@ -107,10 +107,10 @@ static void __rcar_gen2_usb_phy_init(struct rcar_gen2_usb_phy_priv *priv)
+ 	clk_prepare_enable(priv->clk);
+ 
+ 	/* Set USB channels in the USBHS UGCTRL2 register */
+-	val = ioread32(priv->base);
++	val = ioread32(priv->base + USBHS_UGCTRL2_REG);
+ 	val &= ~(USBHS_UGCTRL2_USB0_HS | USBHS_UGCTRL2_USB2_SS);
+ 	val |= priv->ugctrl2;
+-	iowrite32(val, priv->base);
++	iowrite32(val, priv->base + USBHS_UGCTRL2_REG);
+ }
+ 
+ /* Shutdown USB channels */
+-- 
+1.8.3.1
 
