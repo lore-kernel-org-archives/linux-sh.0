@@ -1,8 +1,10 @@
 From: "Mr. X" <jul217@juy793.onmicrosoft.com>
 Date: Sat, 26 Oct 2013 08:51:07 +0000
 Subject: my subject
-Message-Id: <67e3e83a-686b-427f-b2b2-caf15a367e71@HKNPR06MB067.apcprd06.prod.outlook.com>
+Message-Id: <1eb07249-eefb-4f74-bacb-7c8cb36b5ef8@SIXPR06MB079.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <67e3e83a-686b-427f-b2b2-caf15a367e71@HKNPR06MB067.apcprd06.prod.outlook.com>
+In-Reply-To: <67e3e83a-686b-427f-b2b2-caf15a367e71@HKNPR06MB067.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
