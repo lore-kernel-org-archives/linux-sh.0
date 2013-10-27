@@ -1,44 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:35:53 +0000
-Subject: [PATCH 14/14] ARM: shmobile: Include CA7 cores in APMU table
-Message-Id: <43651b15de94d6a5e188ea032311e9661ec708d2.1380532277.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 27 Oct 2013 15:47:20 +0000
+Subject: [GIT PULL FOR v3.13] SH Mobile PFC patches
+Message-Id: <1863828.HbOPaS1OIe@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380532277.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Linus,
 
-Add information to the shared APMU code regarding
-the APMU instance used to control the CA7 cores.
+Here are two patches that I would like to get merged in v3.13 if possible. 
+They first one adds CAN pin groups for the r8a7778 SoC, while the second one 
+adds support for the r8a7791 SoC to the sh-pfc driver. Despite the large size 
+of the diffstat there's nothing special to mention here.
 
-This can be used on r8a7790 and r8a73a4, but should
-most likely be converted to DT in the future.
+The following changes since commit c6ce2b6bffe5740d572fdc5b5e690d5261abee51:
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/platsmp-apmu.c | 4 ++++
- 1 file changed, 4 insertions(+)
+  gpio: add TB10x GPIO driver (2013-10-25 23:42:34 +0200)
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index caaaa35..1da5a72 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -86,6 +86,10 @@ static struct {
- 	{
- 		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
- 		.cpus = { 0, 1, 2, 3 },
-+	},
-+	{
-+		.iomem = DEFINE_RES_MEM(0xe6151000, 0x88),
-+		.cpus = { 0x100, 0x101, 0x102, 0x103 },
- 	}
- };
- 
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pfc
+
+for you to fetch changes up to 5088451962389924b9f05e22e6956f5c1a515d1a:
+
+  pinctrl: sh-pfc: r8a7791 PFC support (2013-10-27 16:40:52 +0100)
+
+----------------------------------------------------------------
+Hisashi Nakamura (1):
+      pinctrl: sh-pfc: r8a7791 PFC support
+
+Sergei Shtylyov (1):
+      sh-pfc: r8a7778: Add CAN pin groups
+
+ drivers/pinctrl/sh-pfc/Kconfig       |    5 +
+ drivers/pinctrl/sh-pfc/Makefile      |    1 +
+ drivers/pinctrl/sh-pfc/core.c        |    9 +
+ drivers/pinctrl/sh-pfc/core.h        |    1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |   55 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 4214 +++++++++++++++++++++++++++++++++
+ 6 files changed, 4285 insertions(+)
+ create mode 100644 drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
