@@ -1,44 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 29 Oct 2013 08:57:31 +0000
-Subject: [PATCH 2/2] ARM: shmobile: koelsch: set .debounce_interval
-Message-Id: <1383037051-21427-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 23:47:06 +0000
+Subject: [PATCH 18/19] thermal: rcar-thermal: Enable the driver on all ARM platforms
+Message-Id: <1383004027-25036-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383037051-21427-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1383037051-21427-1-git-send-email-horms+renesas@verge.net.au>
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In R-Car GPIO hardware block, 'chattering removal' feature can be
-enabled on GPIO-n-[3:0] pins, but it's not supported on rest of pins
-GPIO-n-[31:4].
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI and increase build testing coverage.
 
-Set an appropriate debounce interval, instead.  We could confirm that
-spurious/unnecessary GPIO interrupts are prevented by this settings.
-
-Based on work for the lager board by Shinya Kuribayashi.
-
-Cc: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Zhang Rui <rui.zhang@intel.com>
+Cc: Eduardo Valentin <eduardo.valentin@ti.com>
+Cc: linux-pm@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ drivers/thermal/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 59fa0b9..5b81a34 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -56,7 +56,8 @@ static const struct gpio_led_platform_data koelsch_leds_pdata __initconst = {
+diff --git a/drivers/thermal/Kconfig b/drivers/thermal/Kconfig
+index dbfc390..a243bc0 100644
+--- a/drivers/thermal/Kconfig
++++ b/drivers/thermal/Kconfig
+@@ -121,7 +121,7 @@ config SPEAR_THERMAL
  
- /* GPIO KEY */
- #define GPIO_KEY(c, g, d, ...) \
--	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
-+	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
-+	  .debounce_interval = 20 }
- 
- static struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(5, 3),	"SW2-pin4"),
+ config RCAR_THERMAL
+ 	tristate "Renesas R-Car thermal driver"
+-	depends on ARCH_SHMOBILE
++	depends on ARM
+ 	help
+ 	  Enable this to plug the R-Car thermal sensor driver into the Linux
+ 	  thermal framework
 -- 
-1.8.4
+1.8.1.5
 
