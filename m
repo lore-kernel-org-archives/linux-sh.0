@@ -1,56 +1,75 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 29 Oct 2013 05:16:35 +0000
-Subject: Re: [PATCH 01/17] ARM: shmobile: r8a73a4: fixup DT node naming for SDHI
-Message-Id: <20131029051635.GJ20432@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 22:49:21 +0000
+Subject: [PATCH 04/12] sata_rcar: Convert to clk_prepare/unprepare
+Message-Id: <1383000569-8916-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87hacjdlmi.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87hacjdlmi.wl%kuninori.morimoto.gx@renesas.com>
+References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 29, 2013 at 01:43:46PM +0900, Simon Horman wrote:
-> On Mon, Oct 21, 2013 at 05:09:46PM +0400, Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> > On 10/17/2013 06:49 AM, Kuninori Morimoto wrote:
-> > 
-> > >>>>-	sdhi0: sdhi@ee100000 {
-> > >>>>+	sd0: sd@ee100000 {
-> > 
-> > >>>    Having to change the node names doesn't mean you need to change
-> > >>>the labels too (and PFC-related node names too). In fact, I think
-> > >>>the existing labels are better.
-> > 
-> > >>My, this is tedious.
-> > 
-> > >>Looking at other dts files I see a lot of entries
-> > >>of the form "mmcX: mmc@...". And I think that Morimoto-san's patches
-> > >>are in keeping with that style.
-> > 
-> > >>On the other hand, I see your point that its much clearer
-> > >>to use sdhi0 as that is what the hw manuals refer to and
-> > >>it would allow differentiation with mmcif.
-> > 
-> > >>So I lean towards Sergei's suggestion being a bit nicer.
-> > 
-> > >>Morimoto-san, what is your feeling on this?
-> > 
-> > >I don't know.
-> > >Actually, I don't have any interesting about
-> > >this kind of non-technical patches.
-> > 
-> > >I don't want sending many patches in many times.
-> > >So, please show me your concretely favored style.
-> > >like this ?
-> > 
-> > >	sdhi0: sd@ee100000 {
-> > 
-> >    I thought you were asking Simon. Yes, this is the style I'd prefer.
-> 
-> That is fine by me.
-> 
-> Morimoto-san, would you care to refresh the series?
+Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+clk_disable_unprepare() to get ready for the migration to the common
+clock framework.
 
-I see that you already have.
+Cc: Tejun Heo <tj@kernel.org>
+Cc: linux-ide@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/ata/sata_rcar.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
+index c2d95e9..1dae9a9 100644
+--- a/drivers/ata/sata_rcar.c
++++ b/drivers/ata/sata_rcar.c
+@@ -792,7 +792,7 @@ static int sata_rcar_probe(struct platform_device *pdev)
+ 		dev_err(&pdev->dev, "failed to get access to sata clock\n");
+ 		return PTR_ERR(priv->clk);
+ 	}
+-	clk_enable(priv->clk);
++	clk_prepare_enable(priv->clk);
+ 
+ 	host = ata_host_alloc(&pdev->dev, 1);
+ 	if (!host) {
+@@ -822,7 +822,7 @@ static int sata_rcar_probe(struct platform_device *pdev)
+ 		return 0;
+ 
+ cleanup:
+-	clk_disable(priv->clk);
++	clk_disable_unprepare(priv->clk);
+ 
+ 	return ret;
+ }
+@@ -841,7 +841,7 @@ static int sata_rcar_remove(struct platform_device *pdev)
+ 	iowrite32(0, base + SATAINTSTAT_REG);
+ 	iowrite32(0x7ff, base + SATAINTMASK_REG);
+ 
+-	clk_disable(priv->clk);
++	clk_disable_unprepare(priv->clk);
+ 
+ 	return 0;
+ }
+@@ -861,7 +861,7 @@ static int sata_rcar_suspend(struct device *dev)
+ 		/* mask */
+ 		iowrite32(0x7ff, base + SATAINTMASK_REG);
+ 
+-		clk_disable(priv->clk);
++		clk_disable_unprepare(priv->clk);
+ 	}
+ 
+ 	return ret;
+@@ -873,7 +873,7 @@ static int sata_rcar_resume(struct device *dev)
+ 	struct sata_rcar_priv *priv = host->private_data;
+ 	void __iomem *base = priv->base;
+ 
+-	clk_enable(priv->clk);
++	clk_prepare_enable(priv->clk);
+ 
+ 	/* ack and mask */
+ 	iowrite32(0, base + SATAINTSTAT_REG);
+-- 
+1.8.1.5
+
