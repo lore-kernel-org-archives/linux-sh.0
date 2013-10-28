@@ -1,35 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 03:46:13 +0000
-Subject: Re: [PATCH 08/10] ARM: shmobile: r8a7791 SMP device tree node
-Message-Id: <20131003034612.GF28463@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 22:49:28 +0000
+Subject: [PATCH 11/12] fbdev: shmobile-hdmi: Convert to clk_prepare/unprepare
+Message-Id: <1383000569-8916-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131001081143.4136.46925.sendpatchset@w520>
- <20131001081307.4136.88788.sendpatchset@w520>
-In-Reply-To: <20131001081307.4136.88788.sendpatchset@w520>
+References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 01, 2013 at 05:13:07PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add a device node for the r8a7791 secondary CPU core.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/boot/dts/r8a7791.dtsi |    7 +++++++
->  1 file changed, 7 insertions(+)
+Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+clk_disable_unprepare() to get ready for the migration to the common
+clock framework.
 
-Thanks, I have queued this up in the dt3 branch.
-It should make it into v3.13 but if not I'll rename the branch
-dt after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
+Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
+Cc: linux-fbdev@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/video/sh_mobile_hdmi.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-The dt3 branch is a merge of other dt changes queued up for v3.13
-with renesas-soc-for-v3.13, which I sent a pull request for a few
-days ago. The reason for the merge is to provide the dts for the
-r8a7791 SoC which is changed by patches this patch.
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index bfe4728..190145e 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -1326,7 +1326,7 @@ static int __init sh_hdmi_probe(struct platform_device *pdev)
+ 		goto erate;
+ 	}
+ 
+-	ret = clk_enable(hdmi->hdmi_clk);
++	ret = clk_prepare_enable(hdmi->hdmi_clk);
+ 	if (ret < 0) {
+ 		dev_err(hdmi->dev, "Cannot enable clock: %d\n", ret);
+ 		goto erate;
+@@ -1404,7 +1404,7 @@ emap_htop1:
+ emap:
+ 	release_mem_region(res->start, resource_size(res));
+ ereqreg:
+-	clk_disable(hdmi->hdmi_clk);
++	clk_disable_unprepare(hdmi->hdmi_clk);
+ erate:
+ 	clk_put(hdmi->hdmi_clk);
+ egetclk:
+@@ -1427,7 +1427,7 @@ static int __exit sh_hdmi_remove(struct platform_device *pdev)
+ 	cancel_delayed_work_sync(&hdmi->edid_work);
+ 	pm_runtime_put(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+-	clk_disable(hdmi->hdmi_clk);
++	clk_disable_unprepare(hdmi->hdmi_clk);
+ 	clk_put(hdmi->hdmi_clk);
+ 	if (hdmi->htop1)
+ 		iounmap(hdmi->htop1);
+-- 
+1.8.1.5
 
-It might have been better to merge the dt for the r8a7791 SoC 
-in a separate patch in the dt branch. But it wasn't.
