@@ -1,171 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:52 +0000
-Subject: [PATCH 04/14] ARM: shmobile: Genmai support
-Message-Id: <a4ed412ed5934127ba88ba007b9a00617ae47f75.1381299817.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 23:46:52 +0000
+Subject: [PATCH 04/19] input: sh_keysc: Enable the driver on all ARM platforms
+Message-Id: <1383004027-25036-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381299817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI and increase build testing coverage.
 
-Genmai base board support making use of 128 MiB of memory,
-the r7s7211 SoC with the SCIF2 serial port and CA9 core.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: linux-input@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/Makefile            |  1 +
- arch/arm/boot/dts/r7s72100-genmai.dts | 31 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig        |  5 ++++
- arch/arm/mach-shmobile/Makefile       |  1 +
- arch/arm/mach-shmobile/Makefile.boot  |  1 +
- arch/arm/mach-shmobile/board-genmai.c | 43 +++++++++++++++++++++++++++++++++++
- 6 files changed, 82 insertions(+)
- create mode 100644 arch/arm/boot/dts/r7s72100-genmai.dts
- create mode 100644 arch/arm/mach-shmobile/board-genmai.c
+ drivers/input/keyboard/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 3b1c462..295824d 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -196,6 +196,7 @@ dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
- dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	emev2-kzm9d-reference.dtb \
-+	r7s72100-genmai.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
-diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
-new file mode 100644
-index 0000000..1fb20f2
---- /dev/null
-+++ b/arch/arm/boot/dts/r7s72100-genmai.dts
-@@ -0,0 +1,31 @@
-+/*
-+ * Device Tree Source for the Genmai board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r7s72100.dtsi"
-+
-+/ {
-+	model = "Genmai";
-+	compatible = "renesas,genmai", "renesas,r7s72100";
-+
-+	chosen {
-+		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+	};
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x08000000 0x08000000>;
-+	};
-+
-+	lbsc {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 6e7d0a9..6a684ff 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -191,6 +191,11 @@ config MACH_BOCKW_REFERENCE
+diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
+index c1edd39..7ac6a716e 100644
+--- a/drivers/input/keyboard/Kconfig
++++ b/drivers/input/keyboard/Kconfig
+@@ -525,7 +525,7 @@ config KEYBOARD_SUNKBD
  
- 	   This is intended to aid developers
- 
-+config MACH_GENMAI
-+	bool "Genmai board"
-+	depends on ARCH_R7S72100
-+	select USE_OF
-+
- config MACH_MARZEN
- 	bool "MARZEN board"
- 	depends on ARCH_R8A7779
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 663f894..b3840ba 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
-+obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 60e29e6..c690b50 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -6,6 +6,7 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
-+loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
- loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9D_REFERENCE) += 0x40008000
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-new file mode 100644
-index 0000000..3e92e3c
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -0,0 +1,43 @@
-+/*
-+ * Genmai board support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include <mach/common.h>
-+#include <mach/r7s72100.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+
-+static void __init genmai_add_standard_devices(void)
-+{
-+	r7s72100_clock_init();
-+	r7s72100_add_dt_devices();
-+}
-+
-+static const char * const genmai_boards_compat_dt[] __initconst = {
-+	"renesas,genmai",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(GENMAI_DT, "genmai")
-+	.init_early	= r7s72100_init_early,
-+	.init_machine	= genmai_add_standard_devices,
-+	.dt_compat	= genmai_boards_compat_dt,
-+MACHINE_END
+ config KEYBOARD_SH_KEYSC
+ 	tristate "SuperH KEYSC keypad support"
+-	depends on SUPERH || ARCH_SHMOBILE
++	depends on SUPERH || ARM
+ 	help
+ 	  Say Y here if you want to use a keypad attached to the KEYSC block
+ 	  on SuperH processors such as sh7722 and sh7343.
 -- 
-1.8.4
+1.8.1.5
 
