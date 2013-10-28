@@ -1,42 +1,40 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Thu, 03 Oct 2013 15:11:02 +0000
-Subject: [PATCH V2 Resend 68/92] cpufreq: sh: don't initialize part of policy that is set by core too
-Message-Id: <b7c0951e58cf6aa9895d23c496a7db2ca266b73a.1380783079.git.viresh.kumar@linaro.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 23:46:49 +0000
+Subject: [PATCH 01/19] serial: sh-sci: Enable the driver on all ARM platforms
+Message-Id: <1383004027-25036-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380783079.git.viresh.kumar@linaro.org>
-In-Reply-To: <cover.1380783079.git.viresh.kumar@linaro.org>
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rjw@sisk.pl
-Cc: cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, Viresh Kumar <viresh.kumar@linaro.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Many common initializations of struct policy are moved to core now and hence
-this driver doesn't need to do it. This patch removes such code.
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI and increase build testing coverage.
 
-Most recent of those changes is to call ->get() in the core after calling
-->init().
-
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-serial@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/cpufreq/sh-cpufreq.c | 2 --
- 1 file changed, 2 deletions(-)
+ drivers/tty/serial/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/cpufreq/sh-cpufreq.c b/drivers/cpufreq/sh-cpufreq.c
-index 91c6446..018348b 100644
---- a/drivers/cpufreq/sh-cpufreq.c
-+++ b/drivers/cpufreq/sh-cpufreq.c
-@@ -114,8 +114,6 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
- 		return PTR_ERR(cpuclk);
- 	}
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index febd45c..2976fa4 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -709,7 +709,7 @@ config SERIAL_IP22_ZILOG_CONSOLE
  
--	policy->cur = sh_cpufreq_get(cpu);
--
- 	freq_table = cpuclk->nr_freqs ? cpuclk->freq_table : NULL;
- 	if (freq_table) {
- 		int result;
+ config SERIAL_SH_SCI
+ 	tristate "SuperH SCI(F) serial port support"
+-	depends on HAVE_CLK && (SUPERH || ARCH_SHMOBILE)
++	depends on HAVE_CLK && (SUPERH || ARM)
+ 	select SERIAL_CORE
+ 
+ config SERIAL_SH_SCI_NR_UARTS
 -- 
-1.7.12.rc2.18.g61b472e
+1.8.1.5
 
