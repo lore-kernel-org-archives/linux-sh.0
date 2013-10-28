@@ -1,36 +1,40 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 15:04:36 +0000
-Subject: [PATCH 04/10] ARM: shmobile: lager: Specify external clock frequency in DT
-Message-Id: <1383059082-26315-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 23:46:58 +0000
+Subject: [PATCH 10/19] mtd: sh_flctl: Enable the driver on all ARM platforms
+Message-Id: <1383004027-25036-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The external crystal frequency is 20MHz on the Lager board. Specify it
-in the device tree.
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI and increase build testing coverage.
 
+Cc: David Woodhouse <dwmw2@infradead.org>
+Cc: linux-mtd@lists.infradead.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+ drivers/mtd/nand/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 310fa63..a923ab6 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -53,6 +53,10 @@
- 	};
- };
+diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
+index d885298..f491f5b 100644
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -486,7 +486,7 @@ config MTD_NAND_MXC
  
-+&extal_clk {
-+	clock-frequency = <20000000>;
-+};
-+
- &pfc {
- 	pinctrl-0 = <&scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
+ config MTD_NAND_SH_FLCTL
+ 	tristate "Support for NAND on Renesas SuperH FLCTL"
+-	depends on SUPERH || ARCH_SHMOBILE
++	depends on SUPERH || ARM
+ 	help
+ 	  Several Renesas SuperH CPU has FLCTL. This option enables support
+ 	  for NAND Flash using FLCTL.
 -- 
 1.8.1.5
 
