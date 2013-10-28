@@ -1,11 +1,11 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 28 Oct 2013 20:26:22 +0000
+Date: Mon, 28 Oct 2013 20:44:25 +0000
 Subject: Re: [PATCH v6 0/5] clk: clock deregistration support
-Message-Id: <1918100.pYljUktTbF@avalon>
+Message-Id: <13300609.Rh0Q97QhcX@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1377874402-2944-1-git-send-email-s.nawrocki@samsung.com>
- <3160771.O1gFkR91vK@avalon> <525D9FC1.2040204@gmail.com>
-In-Reply-To: <525D9FC1.2040204@gmail.com>
+ <3160771.O1gFkR91vK@avalon> <52434CBC.2070408@gmail.com>
+In-Reply-To: <52434CBC.2070408@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,21 +13,8 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Sylwester,
 
-On Tuesday 15 October 2013 22:04:17 Sylwester Nawrocki wrote:
-> Hi,
-> 
-> (adding linux-media mailing list at Cc)
-> 
+On Wednesday 25 September 2013 22:51:08 Sylwester Nawrocki wrote:
 > On 09/25/2013 11:47 AM, Laurent Pinchart wrote:
-> > On Tuesday 24 September 2013 23:38:44 Sylwester Nawrocki wrote:
-> [...]
-> 
-> >> The only issue I found might be at the omap3isp driver, which provides
-> >> clock to its sub-drivers and takes reference on the sub-driver modules.
-> >> When sub-driver calls clk_get() all modules would get locked in memory,
-> >> due to circular reference. One solution to that could be to pass NULL
-> >> struct device pointer, as in the below patch.
-> > 
 > > Doesn't that introduce race conditions ? If the sub-drivers require the
 > > clock, they want to be sure that the clock won't disappear beyond their
 > > backs. I agree that the circular dependency needs to be solved somehow,
@@ -35,21 +22,51 @@ On Tuesday 15 October 2013 22:04:17 Sylwester Nawrocki wrote:
 > > more widespread in the future with DT-based device instantiation in both
 > > V4L2 and KMS.
 > 
-> I'm wondering whether subsystems and drivers itself should be written so
-> they deal with such dependencies they are aware of.
+> It doesn't introduce any new race conditions AFAICT. I doubt all these
+> issues can be resolved in one single step. Currently the modular clock
+> providers are seriously broken, there is no reference tracking and the clock
+> consumers can easily get into a state where they have invalid references to
+> clocks supplied by already unregistered drivers.
 > 
-> There is similar situation in the regulator API, regulator_get() simply
-> takes a reference on a module providing the regulator object.
+> With this patch series the clock consumer drivers will not crash thanks
+> to the clock object reference counting. So the worst thing may happen is a
+> clock left in an unexpected state.
 > 
-> Before a "more generic solution" is available, what do you think about
-> keeping obtaining a reference on a clock provider module in clk_get() and
-> doing clk_get(), clk_prepare_enable(), ..., clk_unprepare_disable(),
-> clk_put() in sub-driver whenever a clock is actively used, to avoid
-> permanent circular reference ?
+> However there should be no problems with the v4l2-async API, the host driver
+> in its de-initialization routine unregisters its sub-drivers (they should
+> stop using the clock when notified of such an event), only then the host
+> would unregister the clock (subsequently the sub-drivers get re-attached and
+> put into deferred probing state).
 
-That's a workaround I can live with in the short term, as long as we work on a 
-generic solution to this problem. It will bite us back in the not too distant 
-future if we pretend to forget about it.
+That in itself is a workaround I believe. Unbinding/rebinding devices from/to 
+drivers isn't something the v4l core should do.
+
+> There may be issues when a sub-driver's file handle is opened while the host
+> is about to de-initialize. But I doubt resolution of such problems belongs
+> to the common clock framework. I have been trying to improve the situation
+> in small steps, rather than waiting forever for a perfect solution.
+> 
+> Do you perhaps have any ideas WRT to a "more generic solution" ? In general
+> I have been trying to avoid using v4l2-clk and add what's missing in the
+> common clock framework.
+> 
+> Perhaps we should leave only the kref part in the __clk_get(), __clk_put()
+> hooks and be taking reference to a clock in clk_prepare() and releasing it
+> in clk_unprepare() ? This way circular reference would exist only between
+> clk_prepare(), clk_unprepare() calls.
+> 
+> Assuming a driver prepares clock in device's open() and unprepares in device
+> close() handler perhaps it could all work better, without relying on the
+> host to ensure the resource reference tracking. I'm not sure if that is not
+> making too many assumptions for a generic API.
+
+This is indeed an architecture decision that goes beyond the boundaries of the 
+clock framework. The question boils down to how we want to acquire/release and 
+refcount resources. Should drivers acquire and release hotpluggable resources 
+at probe and remove time respectively, or only when they need them ? Or should 
+they acquire them at probe them and be notified when they should release them 
+? The first option adds an overhead but could help solving the circular 
+dependency problem in a simpler way.
 
 -- 
 Regards,
