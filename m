@@ -1,165 +1,57 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 15:23:12 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7790: Add serial ports to the device tree
-Message-Id: <1383060193-1505-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 22:49:26 +0000
+Subject: [PATCH 09/12] usb: gadget: r8a66597-udc: Convert to clk_prepare/unprepare
+Message-Id: <1383000569-8916-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The platform code serial port instantiation mechanism is kept for the
-non-DT platforms only.
+Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+clk_disable_unprepare() to get ready for the migration to the common
+clock framework.
 
+Cc: Felipe Balbi <balbi@ti.com>
+Cc: linux-usb@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi         | 100 +++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7790.c |  12 ++--
- 2 files changed, 106 insertions(+), 6 deletions(-)
+ drivers/usb/gadget/r8a66597-udc.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 94c8373..04a4992 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -287,6 +287,106 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
+index 68be48d..4728751 100644
+--- a/drivers/usb/gadget/r8a66597-udc.c
++++ b/drivers/usb/gadget/r8a66597-udc.c
+@@ -1833,7 +1833,7 @@ static int __exit r8a66597_remove(struct platform_device *pdev)
+ 	r8a66597_free_request(&r8a66597->ep[0].ep, r8a66597->ep0_req);
  
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		reg = <0 0xe6c40000 0 64>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c50000 0 64>;
-+		interrupts = <0 145 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa2: serial@e6c60000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c60000 0 64>;
-+		interrupts = <0 151 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb0: serial@e6c20000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c20000 0 64>;
-+		interrupts = <0 148 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb1: serial@e6c30000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c30000 0 64>;
-+		interrupts = <0 149 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb2: serial@e6ce0000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ce0000 0 64>;
-+		interrupts = <0 150 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif0: serial@e6e60000 {
-+		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e60000 0 64>;
-+		interrupts = <0 152 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@e6e68000 {
-+		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e68000 0 64>;
-+		interrupts = <0 153 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif0: serial@e62c0000 {
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c0000 0 96>;
-+		interrupts = <0 154 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif1: serial@e62c8000 {
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c8000 0 96>;
-+		interrupts = <0 155 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index c47bceb..8172a82 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -182,6 +182,12 @@ static const struct resource cmt00_resources[] __initconst = {
+ 	if (r8a66597->pdata->on_chip) {
+-		clk_disable(r8a66597->clk);
++		clk_disable_unprepare(r8a66597->clk);
+ 		clk_put(r8a66597->clk);
+ 	}
  
- void __init r8a7790_add_dt_devices(void)
- {
-+	r8a7790_register_cmt(00);
-+}
-+
-+void __init r8a7790_add_standard_devices(void)
-+{
-+	r8a7790_add_dt_devices();
- 	r8a7790_register_scif(SCIFA0);
- 	r8a7790_register_scif(SCIFA1);
- 	r8a7790_register_scif(SCIFB0);
-@@ -192,12 +198,6 @@ void __init r8a7790_add_dt_devices(void)
- 	r8a7790_register_scif(SCIF1);
- 	r8a7790_register_scif(HSCIF0);
- 	r8a7790_register_scif(HSCIF1);
--	r8a7790_register_cmt(00);
--}
--
--void __init r8a7790_add_standard_devices(void)
--{
--	r8a7790_add_dt_devices();
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
- }
+@@ -1931,7 +1931,7 @@ static int __init r8a66597_probe(struct platform_device *pdev)
+ 			ret = PTR_ERR(r8a66597->clk);
+ 			goto clean_up;
+ 		}
+-		clk_enable(r8a66597->clk);
++		clk_prepare_enable(r8a66597->clk);
+ 	}
+ 
+ 	if (r8a66597->pdata->sudmac) {
+@@ -1996,7 +1996,7 @@ clean_up3:
+ 	free_irq(irq, r8a66597);
+ clean_up2:
+ 	if (r8a66597->pdata->on_chip) {
+-		clk_disable(r8a66597->clk);
++		clk_disable_unprepare(r8a66597->clk);
+ 		clk_put(r8a66597->clk);
+ 	}
+ clean_up:
 -- 
 1.8.1.5
 
