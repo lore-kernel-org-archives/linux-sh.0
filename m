@@ -1,42 +1,43 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 29 Oct 2013 19:56:13 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: bockw: enable HPB-DMAC in defconfig
-Message-Id: <527020EB.5090203@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 23:46:54 +0000
+Subject: [PATCH 06/19] i2c: rcar: Enable the driver on all ARM platforms
+Message-Id: <1383004027-25036-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309290011.28982.sergei.shtylyov@cogentembedded.com>
- <20130930005033.GC30501@verge.net.au> <52559ACA.4050509@cogentembedded.com>
- <20131009235918.GA26091@verge.net.au> <52571745.6080307@cogentembedded.com>
- <20131011022302.GC32056@verge.net.au> <525864D7.8050403@cogentembedded.com>
-In-Reply-To: <525864D7.8050403@cogentembedded.com>
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI and increase build testing coverage.
 
-On 10/12/2013 12:51 AM, Sergei Shtylyov wrote:
+Remove the explicit I2C dependency as the configuration option is
+already unavailable when I2C support is disabled.
 
->>>>>>> Enable HPB-DMAC driver in 'bockw_defconfig'.
+Cc: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/i2c/busses/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->>>>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->>>>>> Thanks, I will queue this up for v3.13.
-
->>>>>     As I understand you're waiting for lazy Vinod to merge the driver
->>>>> fixes? :-)
-
->>>> I am holding off on sending a pull request for these defconfig updates
->>>> until Vinod takes the fixes. Could you ping him about them?
-
->>>     Already done yesterday.
-
->> Thanks
-
->     Vinod has taken them today.
-
-    Simon, I still don't see these 2 defconfig patches queued and it seems too 
-late for 3.13 now... :-(
-
-WBR, Sergei
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index 6adce91..468c28a 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -768,7 +768,7 @@ config I2C_XLR
+ 
+ config I2C_RCAR
+ 	tristate "Renesas R-Car I2C Controller"
+-	depends on ARCH_SHMOBILE && I2C
++	depends on ARM
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  R-Car I2C controller.
+-- 
+1.8.1.5
 
