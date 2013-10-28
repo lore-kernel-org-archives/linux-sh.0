@@ -1,177 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:37:07 +0000
-Subject: [PATCH 07/12] ARM: shmobile: Koelsch support
-Message-Id: <1f52c65975ba16cdba1830ba216776111197a3ee.1380530519.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 23:46:57 +0000
+Subject: [PATCH 09/19] mmc: sh_mmcif: Enable the driver on all ARM platforms
+Message-Id: <1383004027-25036-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380530519.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380530519.git.horms+renesas@verge.net.au>
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI and increase build testing coverage.
 
-Koelsch base board support making use of 2 GiB of memory,
-the r8a7791 SoC with the SCIF0 serial port and CA15 with
-CMT timer.
-
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-[damm@opensource.se: Forward ported to upstream, dropped not-yet-ready SMP/PFC]
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Chris Ball <cjb@laptop.org>
+Cc: linux-mmc@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/Makefile             |  1 +
- arch/arm/boot/dts/r8a7791-koelsch.dts  | 32 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig         |  5 ++++
- arch/arm/mach-shmobile/Makefile        |  1 +
- arch/arm/mach-shmobile/Makefile.boot   |  1 +
- arch/arm/mach-shmobile/board-koelsch.c | 44 ++++++++++++++++++++++++++++++++++
- 6 files changed, 84 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7791-koelsch.dts
- create mode 100644 arch/arm/mach-shmobile/board-koelsch.c
+ drivers/mmc/host/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index cc0f1fb..3b1c462 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -202,6 +202,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva-reference.dtb \
- 	r8a7779-marzen.dtb \
- 	r8a7779-marzen-reference.dtb \
-+	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb \
- 	r8a7790-lager-reference.dtb \
- 	sh73a0-kzm9g.dtb \
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-new file mode 100644
-index 0000000..1ce5250
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -0,0 +1,32 @@
-+/*
-+ * Device Tree Source for the Koelsch board
-+ *
-+ * Copyright (C) 2013 Renesas Electronics Corporation
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r8a7791.dtsi"
-+
-+/ {
-+	model = "Koelsch";
-+	compatible = "renesas,koelsch", "renesas,r8a7791";
-+
-+	chosen {
-+		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x80000000>;
-+	};
-+
-+	lbsc {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index d01e427..eda2857 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -221,6 +221,11 @@ config MACH_LAGER_REFERENCE
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index 51957d4..1f3a0c1 100644
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -588,7 +588,7 @@ config MMC_DW_PCI
  
- 	   This is intended to aid developers
+ config MMC_SH_MMCIF
+ 	tristate "SuperH Internal MMCIF support"
+-	depends on MMC_BLOCK && (SUPERH || ARCH_SHMOBILE)
++	depends on MMC_BLOCK && (SUPERH || ARM)
+ 	help
+ 	  This selects the MMC Host Interface controller (MMCIF).
  
-+config MACH_KOELSCH
-+	bool "Koelsch board"
-+	depends on ARCH_R8A7791
-+	select USE_OF
-+
- config MACH_KZM9D
- 	bool "KZM9D board"
- 	depends on ARCH_EMEV2
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 228193c..e552e84 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -61,6 +61,7 @@ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
-+obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- obj-$(CONFIG_MACH_KZM9D_REFERENCE)	+= board-kzm9d-reference.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 6a504fe..60e29e6 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -6,6 +6,7 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
- loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
-+loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9D_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-new file mode 100644
-index 0000000..cc2d5e8
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -0,0 +1,44 @@
-+/*
-+ * Koelsch board support
-+ *
-+ * Copyright (C) 2013  Renesas Electronics Corporation
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include <mach/common.h>
-+#include <mach/r8a7791.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+
-+static void __init koelsch_add_standard_devices(void)
-+{
-+	r8a7791_clock_init();
-+	r8a7791_add_dt_devices();
-+}
-+
-+static const char * const koelsch_boards_compat_dt[] __initconst = {
-+	"renesas,koelsch",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(KOELSCH_DT, "koelsch")
-+	.init_early	= r8a7791_init_early,
-+	.init_machine	= koelsch_add_standard_devices,
-+	.dt_compat	= koelsch_boards_compat_dt,
-+MACHINE_END
 -- 
-1.8.4
+1.8.1.5
 
