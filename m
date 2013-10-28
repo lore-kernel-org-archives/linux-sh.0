@@ -1,58 +1,40 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Wed, 02 Oct 2013 12:16:21 +0000
-Subject: Re: [PATCH 3/6] arm: shmobile: Add internal PCI support to RCAR Gen2
-Message-Id: <524C0E95.9020001@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 23:46:55 +0000
+Subject: [PATCH 07/19] v4l: sh_vou: Enable the driver on all ARM platforms
+Message-Id: <1383004027-25036-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1380652251-8143-4-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1380652251-8143-4-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 10/02/2013 04:13 AM, Kuninori Morimoto wrote:
->
-> Hi Valentine
->
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI and increase build testing coverage.
 
-Hi Morimoto-san,
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
+Cc: linux-media@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/platform/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->> This adds internal PCI controller support to RCAR Gen2 platform.
->> There are 3 PCI controllers available with only a EHCI/OHCI
->> device present on each one. The controllers do not support
->> I/O port space mapping and it is not needed here.
->>
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->> ---
->>
->>   arch/arm/mach-shmobile/Kconfig         |   1 +
->>   arch/arm/mach-shmobile/Makefile        |   4 +
->>   arch/arm/mach-shmobile/pci-rcar-gen2.c | 339 +++++++++++++++++++++++++++++++++
->>   3 files changed, 344 insertions(+)
-> (snip)
->> +static struct platform_driver rcar_pci_driver = {
->> +	.driver = {
->> +		.name = "pci-rcar-gen2",
->> +	},
->> +};
->> +
->> +static int __init rcar_pci_init(void)
->> +{
->> +	return platform_driver_probe(&rcar_pci_driver, rcar_pci_probe);
->> +}
->
-> driver should exist under ${LINUX}/driver, not ${LINUX}/arch/arm/
+diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
+index c7caf94..a726f86 100644
+--- a/drivers/media/platform/Kconfig
++++ b/drivers/media/platform/Kconfig
+@@ -36,7 +36,7 @@ source "drivers/media/platform/blackfin/Kconfig"
+ config VIDEO_SH_VOU
+ 	tristate "SuperH VOU video output driver"
+ 	depends on MEDIA_CAMERA_SUPPORT
+-	depends on VIDEO_DEV && ARCH_SHMOBILE && I2C
++	depends on VIDEO_DEV && ARM && I2C
+ 	select VIDEOBUF_DMA_CONTIG
+ 	help
+ 	  Support for the Video Output Unit (VOU) on SuperH SoCs.
+-- 
+1.8.1.5
 
-Thanks, I'll move it to drivers/pci/host.
-
-(was mislead by some PCI drivers still residing in arch/arm
-for other platforms.)
-
->
-> Best regards
-> ---
-> Kuninori Morimoto
->
-
-Thanks,
-Val.
