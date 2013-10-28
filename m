@@ -1,33 +1,49 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Oct 2013 00:08:48 +0000
-Subject: Re: [PATCH 1/6] arm: shmobile: r8a7790: Add USBHS clock support
-Message-Id: <87a9is1qm0.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 22:49:29 +0000
+Subject: [PATCH 12/12] fbdev: shmobile-lcdcfb: Convert to clk_prepare/unprepare
+Message-Id: <1383000569-8916-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1380652251-8143-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1380652251-8143-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+clk_disable_unprepare() to get ready for the migration to the common
+clock framework.
 
-Hi Valentine
-
-> This adds USBHS clock support.
-> 
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> ---
-(snip)
-> @@ -296,6 +298,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
->  	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
->  	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-> +	CLKDEV_CON_ID("hsusb", &mstp_clks[MSTP704]),
->  };
-
-you can use "renesas_usbhs" for MSTP704.
-and see [2/6] comment from me
-
-Best regards
+Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
+Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
+Cc: linux-fbdev@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
+ drivers/video/sh_mobile_lcdcfb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 0264704..eaeae0f 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -344,7 +344,7 @@ static void sh_mobile_lcdc_clk_on(struct sh_mobile_lcdc_priv *priv)
+ {
+ 	if (atomic_inc_and_test(&priv->hw_usecnt)) {
+ 		if (priv->dot_clk)
+-			clk_enable(priv->dot_clk);
++			clk_prepare_enable(priv->dot_clk);
+ 		pm_runtime_get_sync(priv->dev);
+ 		if (priv->meram_dev && priv->meram_dev->pdev)
+ 			pm_runtime_get_sync(&priv->meram_dev->pdev->dev);
+@@ -358,7 +358,7 @@ static void sh_mobile_lcdc_clk_off(struct sh_mobile_lcdc_priv *priv)
+ 			pm_runtime_put_sync(&priv->meram_dev->pdev->dev);
+ 		pm_runtime_put(priv->dev);
+ 		if (priv->dot_clk)
+-			clk_disable(priv->dot_clk);
++			clk_disable_unprepare(priv->dot_clk);
+ 	}
+ }
+ 
+-- 
+1.8.1.5
+
