@@ -1,49 +1,85 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Fri, 04 Oct 2013 05:44:43 +0000
-Subject: Re: [PATCH 5/6] clk: emev2: Add support for emev2 SMU clocks with DT
-Message-Id: <20131004144443.a7590dd81b8901ef264e488f@ops.dti.ne.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 22:49:18 +0000
+Subject: [PATCH 01/12] clocksource: sh_cmt: Add clk_prepare/unprepare support
+Message-Id: <1383000569-8916-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52410F86.4040301@renesas.com>
-	<20130924131542.f865fad4dec98e024c0d4676@ops.dti.ne.jp>
-	<CANqRtoRD35Ei31PK8a_TOp=2uiYPCoaJuDb6tyZtQL8s0PavNw@mail.gmail.com>
-In-Reply-To: <CANqRtoRD35Ei31PK8a_TOp=2uiYPCoaJuDb6tyZtQL8s0PavNw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, Shinya Kuribayashi <shinya.kuribayashi.px-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>, Mike Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
-Thank you for your commnets.
+Prepare the clock at probe time, as there is no other appropriate place
+in the driver where we're allowed to sleep.
 
-> > +obj-$(CONFIG_ARCH_SHMOBILE)    += shmobile/
-> > +obj-$(CONFIG_ARCH_SHMOBILE_MULTI)      += shmobile/
-> 
-> Here I believe it is enough that you only use
-> CONFIG_ARCH_SHMOBILE_MULTI. ...
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/clocksource/sh_cmt.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
 
-That is because it supports three configuration,
-1. MULTI + KZM9D_REFERENCE + COMMON_CLK
-2. KZM9D_REFERENCE + COMMON_CLK
-3. KZM9D
-but,
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 0965e98..940341a 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -634,12 +634,18 @@ static int sh_cmt_clock_event_next(unsigned long delta,
+ 
+ static void sh_cmt_clock_event_suspend(struct clock_event_device *ced)
+ {
+-	pm_genpd_syscore_poweroff(&ced_to_sh_cmt(ced)->pdev->dev);
++	struct sh_cmt_priv *p = ced_to_sh_cmt(ced);
++
++	pm_genpd_syscore_poweroff(&p->pdev->dev);
++	clk_unprepare(p->clk);
+ }
+ 
+ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
+ {
+-	pm_genpd_syscore_poweron(&ced_to_sh_cmt(ced)->pdev->dev);
++	struct sh_cmt_priv *p = ced_to_sh_cmt(ced);
++
++	clk_prepare(p->clk);
++	pm_genpd_syscore_poweron(&p->pdev->dev);
+ }
+ 
+ static void sh_cmt_register_clockevent(struct sh_cmt_priv *p,
+@@ -737,6 +743,10 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 		goto err2;
+ 	}
+ 
++	ret = clk_prepare(p->clk);
++	if (ret < 0)
++		goto err3;
++
+ 	if (res2 && (resource_size(res2) = 4)) {
+ 		/* assume both CMSTR and CMCSR to be 32-bit */
+ 		p->read_control = sh_cmt_read32;
+@@ -773,19 +783,21 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 			      cfg->clocksource_rating);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "registration failed\n");
+-		goto err3;
++		goto err4;
+ 	}
+ 	p->cs_enabled = false;
+ 
+ 	ret = setup_irq(irq, &p->irqaction);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
+-		goto err3;
++		goto err4;
+ 	}
+ 
+ 	platform_set_drvdata(pdev, p);
+ 
+ 	return 0;
++err4:
++	clk_unprepare(p->clk);
+ err3:
+ 	clk_put(p->clk);
+ err2:
+-- 
+1.8.1.5
 
-> ... Building common clocks to coexist with the
-> old legacy board code does not make any sense IMO. ...
-I think so, too.
-And from the view of testing, having smaller variants is better.
-# easier :)
-
-> > +ifeq ($(CONFIG_COMMON_CLK), y)
-> > +obj-$(CONFIG_ARCH_EMEV2)       += clk-emev2.o
-> > +endif
-> 
-> I don't think you would need the above ifeq/endif wrapper if you only
-> used CONFIG_ARCH_SHMOBILE_MULTI above.
-Right.
-
-Anyway, because you have make kzm9d-reference things simpler,
-now we don't need to worry about it.
-
-Thanks,
-/yoshii
