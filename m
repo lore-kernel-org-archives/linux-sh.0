@@ -1,59 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 30 Oct 2013 10:20:54 +0000
-Subject: Re: gpio-rcar: DT and IRQ_TYPE_EDGE_BOTH
-Message-Id: <13973433.boY4bClOZK@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 22:49:24 +0000
+Subject: [PATCH 07/12] mmc: sh_mmcif: Convert to clk_prepare/unprepare
+Message-Id: <1383000569-8916-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131029085258.GE15731@verge.net.au> <CANqRtoR+_HvbemVcWBszrCXRJ21wMrPHM4vKhBnq11VgfGBamw@mail.gmail.com> <20131030082608.GB1603@verge.net.au>
-In-Reply-To: <20131030082608.GB1603@verge.net.au>
+References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>, SH-Linux <linux-sh@vger.kernel.org>, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus and Simon,
+Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+clk_disable_unprepare() to get ready for the migration to the common
+clock framework.
 
-On Wednesday 30 October 2013 17:26:10 Simon Horman wrote:
-> On Wed, Oct 30, 2013 at 07:04:46AM +0000, Magnus Damm wrote:
-> > On Tue, Oct 29, 2013 at 8:52 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > Hi Laurent,
-> > > 
-> > > In 7e1092b5a264c4 ("gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH")
-> > > I added a 'has_both_edge_trigger' field to struct gpio_rcar_config.
-> > > Setting this adds support IRQ_TYPE_EDGE_BOTH. The motivation for
-> > > this was to allow use of the gpio-keys driver on the lager board.
-> > > 
-> > > I am now looking at enabling gpio-keys via DT for koelsch and lager
-> > > and find myself needing to set has_both_edge_trigger somehow.
-> > > I am wondering if you have any ideas on how best to do this.
-> > > 
-> > > So far I have two ideas:
-> > > 
-> > > 1. Expose has_both_edge_trigger as a binding.
-> > > 
-> > > 2. Set has_both_edge_trigger in the driver if the
-> > >    compat string is renesas,gpio-r8a7791 or renesas,gpio-r8a7790
-> > >    but not for other supported compat strings (as is currently the
-> > >    case).
-> > 
-> > I think which to pick depends on the type of feature. In the case of
-> > enabling both edge support for this GPIO driver, I believe going with
-> > 2) is the best way forward. The reason for this is that all GPIO
-> > instances within a particular SoC seem to either have or not have
-> > support for dual edges. At least that is the case on r8a7790 and
-> > r8a7791.
-> > 
-> > There may be other properties in the future like per-GPIO hardware
-> > debounce, and I suspect that those may be more suitable for 1) since
-> > they are only supported on a certain set of GPIO pins. So from my POV
-> > this is a case by case thing.
-> 
-> Thanks, that sounds reasonable from my POV.
+Cc: Chris Ball <cjb@laptop.org>
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: linux-mmc@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/mmc/host/sh_mmcif.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-I agree, let's put have property in the driver.
-
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 36629a0..37a6c57 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -964,7 +964,7 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 
+ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
+ {
+-	int ret = clk_enable(host->hclk);
++	int ret = clk_prepare_enable(host->hclk);
+ 
+ 	if (!ret) {
+ 		host->clk = clk_get_rate(host->hclk);
+@@ -1018,7 +1018,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		if (host->power) {
+ 			pm_runtime_put_sync(&host->pd->dev);
+-			clk_disable(host->hclk);
++			clk_disable_unprepare(host->hclk);
+ 			host->power = false;
+ 			if (ios->power_mode = MMC_POWER_OFF)
+ 				sh_mmcif_set_power(host, ios);
+@@ -1466,7 +1466,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 
+ 	mutex_init(&host->thread_lock);
+ 
+-	clk_disable(host->hclk);
++	clk_disable_unprepare(host->hclk);
+ 	ret = mmc_add_host(mmc);
+ 	if (ret < 0)
+ 		goto emmcaddh;
+@@ -1487,7 +1487,7 @@ ereqirq1:
+ ereqirq0:
+ 	pm_runtime_suspend(&pdev->dev);
+ eresume:
+-	clk_disable(host->hclk);
++	clk_disable_unprepare(host->hclk);
+ eclkupdate:
+ 	clk_put(host->hclk);
+ eclkget:
+@@ -1505,7 +1505,7 @@ static int sh_mmcif_remove(struct platform_device *pdev)
+ 	int irq[2];
+ 
+ 	host->dying = true;
+-	clk_enable(host->hclk);
++	clk_prepare_enable(host->hclk);
+ 	pm_runtime_get_sync(&pdev->dev);
+ 
+ 	dev_pm_qos_hide_latency_limit(&pdev->dev);
+@@ -1530,7 +1530,7 @@ static int sh_mmcif_remove(struct platform_device *pdev)
+ 	if (irq[1] >= 0)
+ 		free_irq(irq[1], host);
+ 
+-	clk_disable(host->hclk);
++	clk_disable_unprepare(host->hclk);
+ 	mmc_free_host(host->mmc);
+ 	pm_runtime_put_sync(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.1.5
 
