@@ -1,43 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 23:56:05 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: bockw: add SMSC support on DT
-Message-Id: <20131003235602.GB29457@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 28 Oct 2013 23:46:51 +0000
+Subject: [PATCH 03/19] i2c: sh_mobile: Enable the driver on all ARM platforms
+Message-Id: <1383004027-25036-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87txh0yzbj.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87txh0yzbj.wl%kuninori.morimoto.gx@renesas.com>
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Oct 04, 2013 at 12:21:08AM +0200, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 02-10-2013 8:14, Kuninori Morimoto wrote:
-> 
-> >This patch enables SMSC on BockW board via DT.
-> >SMSC interrupt is connected to FPGA, and is connected
-> >to IRQ0 on BockW.
-> >This patch enabled INTC IRQ too
-> 
-> >Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >---
-> >  arch/arm/boot/dts/r8a7778-bockw-reference.dts  |   27 +++++++++++++++++++++++-
-> >  arch/arm/mach-shmobile/board-bockw-reference.c |   20 ++++++++++++++++++
-> >  2 files changed, 46 insertions(+), 1 deletion(-)
-> 
-> >diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> >index 9bb903a..4425fd2 100644
-> >--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> >+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> >@@ -22,11 +22,36 @@
-> [...]
-> >+	lan0@18300000 {
-> 
->    According to the ePAPR spec, the node name should be "ethernet", not "lan0".
-> 
-> WBR, Sergei
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI and increase build testing coverage.
 
-Morimoto-san, Sergei,
+Cc: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/i2c/busses/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-could one of you send a follow-up patch to fix this?
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index cdcbd83..6adce91 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -665,7 +665,7 @@ config I2C_SH7760
+ 
+ config I2C_SH_MOBILE
+ 	tristate "SuperH Mobile I2C Controller"
+-	depends on SUPERH || ARCH_SHMOBILE
++	depends on SUPERH || ARM
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  built-in I2C interface on the Renesas SH-Mobile processor.
+-- 
+1.8.1.5
+
