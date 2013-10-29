@@ -1,76 +1,142 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Wed, 30 Oct 2013 17:07:57 +0000
-Subject: Re: [PATCH 2/2] sata_rcar: Add R-Car Gen2 SATA PHY support
-Message-Id: <52713CED.6080708@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 15:04:35 +0000
+Subject: [PATCH 03/10] ARM: shmobile: r8a7790: Reference clocks
+Message-Id: <1383059082-26315-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381925161-16729-1-git-send-email-valentine.barshak@cogentembedded.com> <1381925161-16729-3-git-send-email-valentine.barshak@cogentembedded.com> <20131029045943.GE20432@verge.net.au> <B6798662-4DEC-499A-A96E-EB995A482C1B@codeaurora.org> <20131029084444.GC15731@verge.net.au> <82E941A8-D062-4E90-B661-511881F51F9B@codeaurora.org> <20131030002847.GL21262@verge.net.au> <C014C8E4-6305-42D0-8D12-7B2532896433@codeaurora.org>
-In-Reply-To: <C014C8E4-6305-42D0-8D12-7B2532896433@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kumar Gala <galak@codeaurora.org>, Simon Horman <horms@verge.net.au>
-Cc: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Tejun Heo <tj@kernel.org>, Mark Rutland <mark.rutland@arm.com>
+To: linux-sh@vger.kernel.org
 
-On 10/30/2013 11:05 AM, Kumar Gala wrote:
->
-> On Oct 29, 2013, at 7:28 PM, Simon Horman wrote:
->
->> On Tue, Oct 29, 2013 at 12:19:08PM -0500, Kumar Gala wrote:
->>>
->>> On Oct 29, 2013, at 3:44 AM, Simon Horman wrote:
->>>
->>>> On Tue, Oct 29, 2013 at 03:24:16AM -0500, Kumar Gala wrote:
->>>>>
->>>>> On Oct 28, 2013, at 11:59 PM, Simon Horman wrote:
->>>>>
->>>>>> On Wed, Oct 16, 2013 at 04:06:01PM +0400, Valentine Barshak wrote:
->>>>>>> R-Car Gen2 SoCs have a different PHY which is not compatible
->>>>>>> with the older R-Car H1 (R8A7779) version.
->>>>>>> This adds OF/platform device id tables and PHY initialization
->>>>>>> callbacks for the following Gen2 SoCs:
->>>>>>> * R-Car H2: R8A7790;
->>>>>>> * R-Car M2: R8A7791.
->>>>>>>
->>>>>>> PHY initialization method is chosen based on the device id.
->>>>>>> Default PHY settings are applied for Gen2 SoCs, which should
->>>>>>> suit the Gen2 boards available.
->>>>>>>
->>>>>>> The R8A7779 platform code is modified to use "sata-r8a7779"
->>>>>>> device name.
->>>>>>>
->>>>>>> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->>>>>>> ---
->>>>>>> .../devicetree/bindings/ata/sata_rcar.txt          |   5 +-
->>>>>>> arch/arm/mach-shmobile/clock-r8a7779.c             |   2 +-
->>>>>>> arch/arm/mach-shmobile/setup-r8a7779.c             |   2 +-
->>>>>>> drivers/ata/sata_rcar.c                            | 118 ++++++++++++++++++---
->>>>>>
->>>>>> Hi Mark, Hi Device-Tree Folks,
->>>>>>
->>>>>> I'm wondering if you have had a chance to look over the bindings
->>>>>> aspect of this and the other patch in the series. I believe that
->>>>>> this series addresses all previous review in that regards.
->>>>>
->>>>> What tree is this binding in?
->>>>
->>>> sata_car.txt is added by the previous patch in this series
->>>> "[PATCH 1/2] sata_rcar: Adjust and document device tree bindings"
->>>
->>> Why not just have all the binding in one patch.  There isn't a reason this should be split.
->>
->> I think that the motivation was that the first patch documents the
->> existing implementation while the second documents a change to it.
->> With that in mind would you still like a single patch for the binding?
->
-> Yes, I see no reason to split this up as you know both right now.
->
-> - k
->
+Reference clocks using a "clocks" property in all nodes corresponding to
+devices that require a clock.
 
-I'll resend the sata_rcar part as a separate patch in a bit.
-I'll keep the old-style compatibility string and device id table entry
-for compatibility with existing Marzen (r8a7779) platform code/dts.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790-lager-reference.dts |  2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts           |  2 +-
+ arch/arm/boot/dts/r8a7790.dtsi                | 12 ++++++++++++
+ 3 files changed, 14 insertions(+), 2 deletions(-)
 
-Once it is accepted, the bindings documentation will be sent as a separate patch.
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index 75730f5..68711ce 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7790.dtsi"
++#include "r8a7790.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 65ffd87..310fa63 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7790.dtsi"
++#include "r8a7790.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 423500d..94c8373 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -8,6 +8,8 @@
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/clock/r8a7790-clock.h>
++
+ / {
+ 	compatible = "renesas,r8a7790";
+ 	interrupt-parent = <&gic>;
+@@ -183,6 +185,7 @@
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 287 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -193,6 +196,7 @@
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 288 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -203,6 +207,7 @@
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 286 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -213,6 +218,7 @@
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 290 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -221,6 +227,7 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 169 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -230,6 +237,7 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 170 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -244,6 +252,7 @@
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 165 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -253,6 +262,7 @@
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 166 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -262,6 +272,7 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 167 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -271,6 +282,7 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 168 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+-- 
+1.8.1.5
 
-Thanks.
