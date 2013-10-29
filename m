@@ -1,16 +1,45 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 11 Oct 2013 12:17:38 +0000
-Subject: 3.4-ltsi kernel support
-Message-Id: <5257EC62.7090508@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:41 +0000
+Subject: [PATCH v2 06/19] i2c: rcar: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Is this the correct list to ask questions about the 3.4 LTSI kernel
-for the Renesas devices?
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
+Remove the explicit I2C dependency as the configuration option is
+already unavailable when I2C support is disabled.
+
+Cc: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa@the-dreams.de>
+---
+ drivers/i2c/busses/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index c50f092..7c4bb071 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -768,7 +768,7 @@ config I2C_XLR
+ 
+ config I2C_RCAR
+ 	tristate "Renesas R-Car I2C Controller"
+-	depends on ARCH_SHMOBILE && I2C
++	depends on ARM || COMPILE_TEST
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  R-Car I2C controller.
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.1.5
+
