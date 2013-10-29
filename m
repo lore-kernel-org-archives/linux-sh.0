@@ -1,137 +1,47 @@
-From: Kumar Gala <galak@codeaurora.org>
-Date: Thu, 31 Oct 2013 15:00:36 +0000
-Subject: Re: [PATCH 5/5] serial: sh-sci: Add device tree bindings documentation
-Message-Id: <B021E9B4-2795-4A84-9AD1-690EA119EF18@codeaurora.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 14:30:44 +0000
+Subject: [PATCH v2 1/2] clocksource: sh_mtu2: Release clock when sh_mtu2_register() fails
+Message-Id: <1383057045-22608-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1383042599-25151-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <9B7DF883-D119-47F5-BD71-11E30BE3DB88@codeaurora.org> <1975664.tS0XZnqC8i@avalon>
-In-Reply-To: <1975664.tS0XZnqC8i@avalon>
+References: <1383000569-8916-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383000569-8916-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bastian Hecht <hechtb+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
+Fix the probe error path to release the clock resource when the
+sh_mtu2_register() call fails.
 
-On Oct 31, 2013, at 9:55 AM, Laurent Pinchart wrote:
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/clocksource/sh_mtu2.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
-> Hi Kumar,
-> 
-> Thank you for the review.
-> 
-> On Thursday 31 October 2013 09:42:48 Kumar Gala wrote:
->> On Oct 29, 2013, at 5:29 AM, Laurent Pinchart wrote:
->>> Document the device tree bindings for the sci serial port devices.
->>> 
->>> Cc: devicetree@vger.kernel.org
->>> Signed-off-by: Laurent Pinchart
->>> <laurent.pinchart+renesas@ideasonboard.com>
->>> ---
->>> .../bindings/serial/renesas,sci-serial.txt         | 51 ++++++++++++++++++
->>> 1 file changed, 51 insertions(+)
->>> create mode 100644
->>> Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->>> 
->>> diff --git
->>> a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->>> b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt new
->>> file mode 100644
->>> index 0000000..5658b4f
->>> --- /dev/null
->>> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->>> @@ -0,0 +1,51 @@
->>> +* Renesas SH-Mobile Serial Communication Interface
->>> +
->>> +Required properties:
->>> +
->>> +  - compatible: should be one of the following.
->> 
->> Being pedantic, but how about saying 'one of the following types (scif,
->> scifa, scifb, or hscif)
-> 
-> Sounds good to me.
-> 
->>> +
->>> +    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
->>> +    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible
->>> UART.
->>> +    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible
->>> UART.
->>> +    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible
->>> UART.
->>> +    - "renesas,scif-generic" for generic SCIF compatible UART.
->>> +    - "renesas,scifa-generic" for generic SCIFA compatible UART.
->>> +    - "renesas,scifb-generic" for generic SCIFB compatible UART.
->>> +    - "renesas,hscif-generic" for generic HSCIF compatible UART.
->>> +
->>> +    When compatible with the generic version, nodes must also list the
->>> +    SoC-specific version corresponding to the platform.
->>> +
->>> +  - reg: Base address and length of the memory resource used by the UART.
->>> +
->>> +  - interrupt-parent: Reference to the parent interrupt controller.
->>> +  - interrupts: Interrupt number(s). Depending on the SoC SCIx UARTs are
->>> tied
->>> +    to one or multiple interrupt lines. When using multiple interrupt
->>> lines,
->>> +    specify the interrupt names as described below.
->>> +
->>> +  - clocks: Reference to the SCIx UART interface clock.
->>> +  - clock-names: Should be "sci_ick".
->>> +
->>> +Optional properties:
->>> +
->>> +  - interrupt-names: When using multiple interrupts, report the interrupt
->>> +    names as "eri" (receive error), "rxi" (receive), "txi" (transmit) and
->>> +    "bri" (break). When using a single interrupt this property should not
->>> be +    present.
->> 
->> Hmm, is there a reason not to just have the 4 interrupts always present and
->> in the case they are all wired to the same interrupt, just have the
->> interrupts all be the same?
->> 
->> example:
->> 
->> interrupts = <0 144 4>, <0 144 4>, <0 144 4>, <0 144 4>;
-> 
-> The multiple interrupts case is the exception, I thought it would be easier to 
-> specify a single interrupt in the general case and have a more complex binding 
-> for the exceptions.
-> 
->>> +
->>> +Note: Each enabled SCIx UART should have an alias correctly numbered in
->>> the +"aliases" node.
->>> +
->>> +Example:
->>> +	aliases {
->>> +		serial0 = &scifa0;
->>> +	};
->>> +
->>> +	scifa0: serial@e6c40000 {
->>> +		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
->>> +		reg = <0 0xe6c40000 0 64>;
->>> +		interrupt-parent = <&gic>;
->>> +		interrupts = <0 144 4>;
->>> +		clocks = <&mstp2_clks 4>;
->>> +		clock-names = "sci_ick";
->>> +	};
->> 
->> might be nice to have an example with the 4 interrupts.
-> 
-> The example would be pretty theoretical, as the r8a7790 uses a single 
-> interrupt in all cases. What about adding such an example when adding an SoC 
-> that uses multiple interrupts to the DT bindings documentation ?
-
-I'm fine with that if we strip the multiple interrupt bits out of the binding until a device/compatible exists that needs it.
-
-- k
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 4aac9ee..e6cfb32 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -313,8 +313,15 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
+ 		goto err1;
+ 	}
+ 
+-	return sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
+-				cfg->clockevent_rating);
++	ret = sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
++			       cfg->clockevent_rating);
++	if (ret < 0)
++		goto err2;
++
++	return 0;
++
++ err2:
++	clk_put(p->clk);
+  err1:
+ 	iounmap(p->mapbase);
+  err0:
 -- 
-Employee of Qualcomm Innovation Center, Inc.
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum, hosted by The Linux Foundation
+1.8.1.5
 
