@@ -1,48 +1,71 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Oct 2013 07:44:51 +0000
-Subject: [PATCH 05/17] ARM: shmobile: r8a7740: fixup DT node naming for MMCIF
-Message-Id: <87bo2rdllb.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:43 +0000
+Subject: [PATCH v2 08/19] mmc: sdhi: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-According to ePAPR spec,
-this patch exchanges MMCIF DT node from "mmcif" to "mmc".
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Whether the CTL_DMA_ENABLE register is part of the standard TMIO
+controller or is Renesas-specific is unknown and impossible to test as
+we have no current or planned TMIO DMA users other than SUPERH and
+ARCH_SHMOBILE. Writing to the register is thus conditionally compiled
+for SUPERH and ARCH_SHMOBILE only. Adding ARCH_SHMOBILE_MULTI to the
+list would extend this to multiarch kernels, but would break the driver
+for non-shmobile platforms if the register is Renesas-specific. We can
+thus get rid of the conditional compilation completely without
+introducing any further issue, and let future non-Renesas users deal
+with the situation if it turns out to be a the problem.
+
+Cc: Chris Ball <cjb@laptop.org>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Ian Molton <ian@mnementh.co.uk>
+Cc: linux-mmc@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |    2 +-
- arch/arm/boot/dts/r8a7740.dtsi                     |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ drivers/mmc/host/Kconfig        | 2 +-
+ drivers/mmc/host/tmio_mmc_dma.c | 4 +---
+ 2 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 5b6578d..c10cf85 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -135,7 +135,7 @@
- 	status = "okay";
- };
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index 7fc5099..d57effb 100644
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -479,7 +479,7 @@ config MMC_TMIO
  
--&mmcif0 {
-+&mmc0 {
- 	pinctrl-0 = <&mmc0_pins>;
- 	pinctrl-names = "default";
+ config MMC_SDHI
+ 	tristate "SH-Mobile SDHI SD/SDIO controller support"
+-	depends on SUPERH || ARCH_SHMOBILE
++	depends on SUPERH || ARM || COMPILE_TEST
+ 	select MMC_TMIO_CORE
+ 	help
+ 	  This provides support for the SDHI SD/SDIO controller found in
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 65edb4a..8a4fd2d 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -28,10 +28,8 @@ void tmio_mmc_enable_dma(struct tmio_mmc_host *host, bool enable)
+ 	if (!host->chan_tx || !host->chan_rx)
+ 		return;
  
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index d384fd8..44508df 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -162,7 +162,7 @@
- 		#pwm-cells = <3>;
- 	};
+-#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE)
+-	/* Switch DMA mode on or off - SuperH specific? */
++	/* Switch DMA mode on or off. This might be Renesas-specific. */
+ 	sd_ctrl_write16(host, CTL_DMA_ENABLE, enable ? 2 : 0);
+-#endif
+ }
  
--	mmcif0: mmcif@e6bd0000 {
-+	mmc0: mmc@e6bd0000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0xe6bd0000 0x100>;
- 		interrupt-parent = <&gic>;
+ void tmio_mmc_abort_dma(struct tmio_mmc_host *host)
 -- 
-1.7.9.5
+1.8.1.5
 
