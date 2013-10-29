@@ -1,53 +1,165 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 29 Oct 2013 04:23:50 +0000
-Subject: Re: [PATCH 2/3] arm: shmobile: r8a7790: Add USBHS clock support
-Message-Id: <20131029042350.GA20432@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 15:23:12 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7790: Add serial ports to the device tree
+Message-Id: <1383060193-1505-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381188423-1867-3-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1381188423-1867-3-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 10, 2013 at 02:14:46AM +0400, Valentine Barshak wrote:
-> This adds USBHS clock support.
-> 
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-> index a64f965..161d44e 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-> @@ -186,6 +186,7 @@ enum {
->  	MSTP813,
->  	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
->  	MSTP717, MSTP716,
-> +	MSTP704,
->  	MSTP522,
->  	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
->  	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
-> @@ -208,6 +209,7 @@ static struct clk mstp_clks[MSTP_NR] = {
->  	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
->  	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
->  	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
-> +	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
->  	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
->  	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
->  	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
-> @@ -296,6 +298,8 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
->  	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
->  	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-> +	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-> +	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
->  };
->  
->  #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+The platform code serial port instantiation mechanism is kept for the
+non-DT platforms only.
 
-Thanks, I have queued this up.
-It should appear in the next push of the devel branch of the renesas tree.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi         | 100 +++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7790.c |  12 ++--
+ 2 files changed, 106 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 94c8373..04a4992 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -287,6 +287,106 @@
+ 		status = "disabled";
+ 	};
+ 
++	scifa0: serial@e6c40000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		reg = <0 0xe6c40000 0 64>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 4>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifa1: serial@e6c50000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c50000 0 64>;
++		interrupts = <0 145 4>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifa2: serial@e6c60000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c60000 0 64>;
++		interrupts = <0 151 4>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb0: serial@e6c20000 {
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c20000 0 64>;
++		interrupts = <0 148 4>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb1: serial@e6c30000 {
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c30000 0 64>;
++		interrupts = <0 149 4>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb2: serial@e6ce0000 {
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6ce0000 0 64>;
++		interrupts = <0 150 4>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif0: serial@e6e60000 {
++		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6e60000 0 64>;
++		interrupts = <0 152 4>;
++		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif1: serial@e6e68000 {
++		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6e68000 0 64>;
++		interrupts = <0 153 4>;
++		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	hscif0: serial@e62c0000 {
++		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe62c0000 0 96>;
++		interrupts = <0 154 4>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	hscif1: serial@e62c8000 {
++		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe62c8000 0 96>;
++		interrupts = <0 155 4>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index c47bceb..8172a82 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -182,6 +182,12 @@ static const struct resource cmt00_resources[] __initconst = {
+ 
+ void __init r8a7790_add_dt_devices(void)
+ {
++	r8a7790_register_cmt(00);
++}
++
++void __init r8a7790_add_standard_devices(void)
++{
++	r8a7790_add_dt_devices();
+ 	r8a7790_register_scif(SCIFA0);
+ 	r8a7790_register_scif(SCIFA1);
+ 	r8a7790_register_scif(SCIFB0);
+@@ -192,12 +198,6 @@ void __init r8a7790_add_dt_devices(void)
+ 	r8a7790_register_scif(SCIF1);
+ 	r8a7790_register_scif(HSCIF0);
+ 	r8a7790_register_scif(HSCIF1);
+-	r8a7790_register_cmt(00);
+-}
+-
+-void __init r8a7790_add_standard_devices(void)
+-{
+-	r8a7790_add_dt_devices();
+ 	r8a7790_register_irqc(0);
+ 	r8a7790_register_thermal();
+ }
+-- 
+1.8.1.5
+
