@@ -1,61 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 15 Oct 2013 07:43:36 +0000
-Subject: [PATCH 00/17] ARM: shmobile: fixup DT node naming
-Message-Id: <87iowzdlnh.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:50 +0000
+Subject: [PATCH v2 15/19] sh: intc: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-Hi Simon
-
-These patches cleanup DT node to use generic naming,
-and are focusing on SDHI/MMC/SCIF.
-These are based on renesas-devel-20131011 + my previous
-"ARM: shmobile: marzen/bockw: SDHI support on DT" patches.
-
-My previous patches are not applied yet at this point,
-but I send fixup patches for it here.
-
-Simon, please let me know if you want v2 patches instead
-of these fixup patches for my previous series
-
-Kuninori Morimoto (17):
-      ARM: shmobile: r8a73a4: fixup DT node naming for SDHI
-      ARM: shmobile: r8a73a4: fixup DT node naming for MMCIF
-      ARM: shmobile: r8a73a4: fixup DT node naming for SCIFA
-      ARM: shmobile: r8a7740: fixup DT node naming for SDHI
-      ARM: shmobile: r8a7740: fixup DT node naming for MMCIF
-      ARM: shmobile: r8a7740: fixup DT node naming for SCIFA
-      ARM: shmobile: sh73a0: fixup DT node naming for SDHI
-      ARM: shmobile: sh73a0: fixup DT node naming for MMCIF
-      ARM: shmobile: sh73a0: fixup DT node naming for SCIFA
-      ARM: shmobile: r8a7778: fixup DT node naming for SCIF
-      ARM: shmobile: r8a7778: fixup DT node naming for SDHI
-      ARM: shmobile: r8a7778: fixup DT node naming for MMCIF
-      ARM: shmobile: r8a7779: fixup DT node naming for SDHI
-      ARM: shmobile: r8a7779: fixup DT node naming for SCIF
-      ARM: shmobile: r8a7790: fixup DT node naming for SCIF
-      ARM: shmobile: r8a7790: fixup DT node naming for SDHI
-      ARM: shmobile: r8a7790: fixup DT node naming for MMCIF
-
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |   24 ++++++++--------
- arch/arm/boot/dts/r8a73a4.dtsi                     |   10 +++----
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   22 +++++++-------
- arch/arm/boot/dts/r8a7740.dtsi                     |    6 ++--
- arch/arm/boot/dts/r8a7778-bockw-reference.dts      |   12 ++++----
- arch/arm/boot/dts/r8a7778.dtsi                     |    8 +++---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts     |   12 ++++----
- arch/arm/boot/dts/r8a7779.dtsi                     |    8 +++---
- arch/arm/boot/dts/r8a7790-lager-reference.dts      |    8 +++---
- arch/arm/boot/dts/r8a7790.dtsi                     |   12 ++++----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   30 ++++++++++----------
- arch/arm/boot/dts/sh73a0.dtsi                      |    8 +++---
- 12 files changed, 80 insertions(+), 80 deletions(-)
-
-
-Best regards
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
+ drivers/sh/intc/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+index a305731..51e106f 100644
+--- a/drivers/sh/intc/Kconfig
++++ b/drivers/sh/intc/Kconfig
+@@ -6,7 +6,7 @@ comment "Interrupt controller options"
+ 
+ config INTC_USERIMASK
+ 	bool "Userspace interrupt masking support"
+-	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
++	depends on ARM || (SUPERH && CPU_SH4A) || COMPILE_TEST
+ 	help
+ 	  This enables support for hardware-assisted userspace hardirq
+ 	  masking.
+-- 
+1.8.1.5
+
