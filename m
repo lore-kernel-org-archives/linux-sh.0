@@ -1,45 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 10 Oct 2013 07:16:26 +0000
-Subject: [PATCH 01/11] ARM: shmobile: bockw: Do not set command line in defconfig
-Message-Id: <1381389396-22000-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 10:29:55 +0000
+Subject: [PATCH 1/5] serial: sh-sci: Sort headers alphabetically
+Message-Id: <1383042599-25151-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
+References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-As a set towards moving shmobile towards multi-platform
-the kernel command line should be set in the DTB rather than
-in the kernel config.
+This helps locating duplicates.
 
-bockw already has the command line present in its DTS file
-but it was being overrirden by the kernel config.
-
-A side effect of this change is that "rw" is now present
-on the command line which allows a boot using nfs root to
-succeed in the case where userspace expects to be able
-to write to the root filesystem.
-
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/bockw_defconfig | 2 --
- 1 file changed, 2 deletions(-)
+ drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++++---------------------
+ 1 file changed, 21 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index e7e9494..6c5421c 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -27,8 +27,6 @@ CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
--CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
--CONFIG_CMDLINE_FORCE=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- # CONFIG_SUSPEND is not set
- CONFIG_PM_RUNTIME=y
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5377502..280753f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -23,35 +23,35 @@
+ 
+ #undef DEBUG
+ 
+-#include <linux/module.h>
++#include <linux/clk.h>
++#include <linux/console.h>
++#include <linux/ctype.h>
++#include <linux/cpufreq.h>
++#include <linux/delay.h>
++#include <linux/dmaengine.h>
++#include <linux/dma-mapping.h>
++#include <linux/err.h>
+ #include <linux/errno.h>
+-#include <linux/sh_dma.h>
+-#include <linux/timer.h>
++#include <linux/gpio.h>
++#include <linux/init.h>
+ #include <linux/interrupt.h>
+-#include <linux/tty.h>
+-#include <linux/tty_flip.h>
+-#include <linux/serial.h>
+-#include <linux/major.h>
+-#include <linux/string.h>
+-#include <linux/sysrq.h>
+ #include <linux/ioport.h>
++#include <linux/major.h>
++#include <linux/module.h>
+ #include <linux/mm.h>
+-#include <linux/init.h>
+-#include <linux/delay.h>
+-#include <linux/console.h>
+-#include <linux/platform_device.h>
+-#include <linux/serial_sci.h>
+ #include <linux/notifier.h>
++#include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+-#include <linux/cpufreq.h>
+-#include <linux/clk.h>
+-#include <linux/ctype.h>
+-#include <linux/err.h>
+-#include <linux/dmaengine.h>
+-#include <linux/dma-mapping.h>
+ #include <linux/scatterlist.h>
++#include <linux/serial.h>
++#include <linux/serial_sci.h>
++#include <linux/sh_dma.h>
+ #include <linux/slab.h>
+-#include <linux/gpio.h>
++#include <linux/string.h>
++#include <linux/sysrq.h>
++#include <linux/timer.h>
++#include <linux/tty.h>
++#include <linux/tty_flip.h>
+ 
+ #ifdef CONFIG_SUPERH
+ #include <asm/sh_bios.h>
 -- 
-1.8.4
+1.8.1.5
 
