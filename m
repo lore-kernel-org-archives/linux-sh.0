@@ -1,34 +1,101 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 07 Oct 2013 18:33:03 +0000
-Subject: Re: [GIT PULL 00/14] Renesas ARM based SoC SMP updates for v3.13
-Message-Id: <20131007183303.GF17592@quad.lixom.net>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Tue, 29 Oct 2013 19:51:04 +0000
+Subject: [PATCH v7 1/5] omap3isp: Modify clocks registration to avoid circular references
+Message-Id: <1383076268-8984-2-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380532277.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
+References: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 01, 2013 at 11:35:35AM +0900, Simon Horman wrote:
-> Hi Kevin, Olof and Arnd,
-> 
-> please consider these Renesas ARM based SoC SMP updates for v3.13.
-> 
-> This pull-request is based on renesas-cleanups-v3.13 which
-> I has also sent a pull-request for today. The reason for choosing
-> that base is to reduce conflicts.
-> 
-> 
-> The following changes since commit cde214a890f81797a5eee94fffc89c1de21ed991:
-> 
->   ARM: shmobile: r8a7790: Constify platform data and resources (2013-09-19 14:33:44 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-smp-for-v3.13
+The clock core code is going to be modified so clk_get() takes
+reference on the clock provider module. Until the potential circular
+reference issue is properly addressed, we pass NULL as as the first
+argument to clk_register(), in order to disallow sub-devices taking
+a reference on the ISP module back trough clk_get(). This should
+prevent locking the modules in memory.
 
-Thanks, merged.
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+---
+This patch has been "compile tested" only.
 
+---
+ drivers/media/platform/omap3isp/isp.c |   22 ++++++++++++++++------
+ drivers/media/platform/omap3isp/isp.h |    1 +
+ 2 files changed, 17 insertions(+), 6 deletions(-)
 
--Olof
+diff --git a/drivers/media/platform/omap3isp/isp.c b/drivers/media/platform/omap3isp/isp.c
+index df3a0ec..286027a 100644
+--- a/drivers/media/platform/omap3isp/isp.c
++++ b/drivers/media/platform/omap3isp/isp.c
+@@ -290,9 +290,11 @@ static int isp_xclk_init(struct isp_device *isp)
+ 	struct clk_init_data init;
+ 	unsigned int i;
+
++	for (i = 0; i < ARRAY_SIZE(isp->xclks); ++i)
++		isp->xclks[i].clk = ERR_PTR(-EINVAL);
++
+ 	for (i = 0; i < ARRAY_SIZE(isp->xclks); ++i) {
+ 		struct isp_xclk *xclk = &isp->xclks[i];
+-		struct clk *clk;
+
+ 		xclk->isp = isp;
+ 		xclk->id = i = 0 ? ISP_XCLK_A : ISP_XCLK_B;
+@@ -305,10 +307,15 @@ static int isp_xclk_init(struct isp_device *isp)
+ 		init.num_parents = 1;
+
+ 		xclk->hw.init = &init;
+-
+-		clk = devm_clk_register(isp->dev, &xclk->hw);
+-		if (IS_ERR(clk))
+-			return PTR_ERR(clk);
++		/*
++		 * The first argument is NULL in order to avoid circular
++		 * reference, as this driver takes reference on the
++		 * sensor subdevice modules and the sensors would take
++		 * reference on this module through clk_get().
++		 */
++		xclk->clk = clk_register(NULL, &xclk->hw);
++		if (IS_ERR(xclk->clk))
++			return PTR_ERR(xclk->clk);
+
+ 		if (pdata->xclks[i].con_id = NULL &&
+ 		    pdata->xclks[i].dev_id = NULL)
+@@ -320,7 +327,7 @@ static int isp_xclk_init(struct isp_device *isp)
+
+ 		xclk->lookup->con_id = pdata->xclks[i].con_id;
+ 		xclk->lookup->dev_id = pdata->xclks[i].dev_id;
+-		xclk->lookup->clk = clk;
++		xclk->lookup->clk = xclk->clk;
+
+ 		clkdev_add(xclk->lookup);
+ 	}
+@@ -335,6 +342,9 @@ static void isp_xclk_cleanup(struct isp_device *isp)
+ 	for (i = 0; i < ARRAY_SIZE(isp->xclks); ++i) {
+ 		struct isp_xclk *xclk = &isp->xclks[i];
+
++		if (!IS_ERR(xclk->clk))
++			clk_unregister(xclk->clk);
++
+ 		if (xclk->lookup)
+ 			clkdev_drop(xclk->lookup);
+ 	}
+diff --git a/drivers/media/platform/omap3isp/isp.h b/drivers/media/platform/omap3isp/isp.h
+index cd3eff4..1498f2b 100644
+--- a/drivers/media/platform/omap3isp/isp.h
++++ b/drivers/media/platform/omap3isp/isp.h
+@@ -135,6 +135,7 @@ struct isp_xclk {
+ 	struct isp_device *isp;
+ 	struct clk_hw hw;
+ 	struct clk_lookup *lookup;
++	struct clk *clk;
+ 	enum isp_xclk_id id;
+
+ 	spinlock_t lock;	/* Protects enabled and divider */
+--
+1.7.9.5
+
