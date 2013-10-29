@@ -1,51 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 29 Oct 2013 05:12:33 +0000
-Subject: Re: [PATCH 0/3] rcar-hpbdma: fixup patches for double plane
-Message-Id: <20131029051231.GA339@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 29 Oct 2013 06:51:28 +0000
+Subject: [PATCH 0/3] rcar-hpbdma: fixup patches for double plane
+Message-Id: <87eh747eoj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87k3hc189h.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87k3hc189h.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "Koul, Vinod" <vinod.koul@intel.com>
+Cc: Simon <horms@verge.net.au>, Max Filippov <max.filippov@cogentembedded.com>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-kernel@vger.kernel.org
 
-Ooops, I responded on-list.
 
-On Tue, Oct 29, 2013 at 02:11:22PM +0900, Simon Horman wrote:
-> Hi Morimoto-san,
-> 
-> as these are dma patches shouldn't they go through (lazy) Vinod?
-> If so, I'll Ack them ask you to repost them on the ML.
-> 
-> If not, I guess I can set up a branch and see if I can get
-> them accepted through the arm-soc tree or elsewhere.
-> 
-> On Thu, Oct 17, 2013 at 05:03:54PM -0700, Kuninori Morimoto wrote:
-> > 
-> > Hi Simon
-> > 
-> > These are v2 of R-Car HBPDMA fixup patches
-> > for double plane.
-> > 
-> > Kuninori Morimoto (3):
-> >       rcar-hpbdma: add max transfer size
-> >       rcar-hpbdma: initialise plane information when halted
-> >       rcar-hpbdma: fixup channel busy check for double plane
-> > 
-> >  drivers/dma/sh/rcar-hpbdma.c |   10 +++++++++-
-> >  1 file changed, 9 insertions(+), 1 deletion(-)
-> > 
-> > Best regards
-> > ---
-> > Kuninori Morimoto
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Hi Vinod
+Cc: Simon, Max
+
+These patches fixup R-Car HBPDMA driver
+for double plane.
+
+I tested these patches on my R-Car sound driver in local environment.
+It doesn't work without these patches.
+
+Kuninori Morimoto (3):
+      rcar-hpbdma: add max transfer size
+      rcar-hpbdma: initialise plane information when halted
+      rcar-hpbdma: fixup channel busy check for double plane
+
+ drivers/dma/sh/rcar-hpbdma.c |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+
+Best regards
+---
+Kuninori Morimoto
