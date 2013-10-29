@@ -1,41 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:51 +0000
-Subject: [PATCH 03/14] ARM: shmobile: marzen: enable DMA for SDHI0
-Message-Id: <e6a8b11b82fdeaa78dad52552f945b772ee1a5c9.1381299817.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 15:04:42 +0000
+Subject: [PATCH 10/10] ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
+Message-Id: <1383059082-26315-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381299817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Max Filippov <max.filippov@cogentembedded.com>
+Now that the r8a7790 DT platforms use the common clock framework,
+there's no need to manually create clock aliases for devices
+instantiated through DT, as those devices will reference their clocks
+directly in the device tree. Remove those aliases.
 
-Pass HPB-DMA slave IDs in the SDHI0 platform data to enable DMA in the SDHI
-driver.
-
-Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-[Sergei: removed #include <mach/dma.h>]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 10 ----------
+ 1 file changed, 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 434b213..da1352f 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -125,6 +125,8 @@ static struct resource sdhi0_resources[] = {
- };
- 
- static struct sh_mobile_sdhi_info sdhi0_platform_data = {
-+	.dma_slave_tx = HPBDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx = HPBDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
- 	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a64f965..d20f511 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -277,23 +277,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+-	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
+-	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
+-	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+-	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+-	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+-	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+-	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
+-	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("ee160000.sdhi", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
+-	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
  };
 -- 
-1.8.4
+1.8.1.5
 
