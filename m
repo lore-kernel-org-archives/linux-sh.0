@@ -1,44 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 16 Oct 2013 07:08:10 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: cleanup registration of VIN
-Message-Id: <20131016070809.GK15425@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:54 +0000
+Subject: [PATCH v2 19/19] fbdev: sh-mobile-lcdcfb: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ob6rdzg3.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ob6rdzg3.wl%kuninori.morimoto.gx@renesas.com>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 15, 2013 at 12:12:05PM +0900, Magnus Damm wrote:
-> Hi Morimoto-san,
-> 
-> On Tue, Oct 15, 2013 at 11:45 AM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> > VIN driver which needs platform data at the time of
-> > registration is used from Marzen only.
-> > Now, ARM/shmobile aims to support DT,
-> > and the C code base board support will be removed
-> > if DT support is completed.
-> > Current driver registration method which needs platform data
-> > and which is not shared complicates codes.
-> > This means legacy C code cleanup after DT supporting
-> > will be more complicated
-> > This patch registers it on board code as cleanup C code
-> >
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> > This patch is based on renesas-devel-20131011 tag
-> >
-> >  arch/arm/mach-shmobile/board-marzen.c         |   24 ++++++++++++++--
-> >  arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 --
-> >  arch/arm/mach-shmobile/setup-r8a7779.c        |   37 -------------------------
-> >  3 files changed, 22 insertions(+), 41 deletions(-)
-> 
-> Thanks for cleaning up the code, Morimoto-san. Fewer lines and also
-> device registration in same style as other mach-shmobile SoCs and
-> boards, I like that.
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-Thanks, I have queued this up.
+Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
+Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
+Cc: linux-fbdev@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/video/Kconfig | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index 84b685f..32b5c86 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -10,7 +10,7 @@ config HAVE_FB_ATMEL
+ 
+ config SH_MIPI_DSI
+ 	tristate
+-	depends on (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
++	depends on (SUPERH || ARM || COMPILE_TEST) && HAVE_CLK
+ 
+ config SH_LCD_MIPI_DSI
+ 	bool
+@@ -1995,7 +1995,7 @@ config FB_W100
+ 
+ config FB_SH_MOBILE_LCDC
+ 	tristate "SuperH Mobile LCDC framebuffer support"
+-	depends on FB && (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
++	depends on FB && (SUPERH || ARM || COMPILE_TEST) && HAVE_CLK
+ 	select FB_SYS_FILLRECT
+ 	select FB_SYS_COPYAREA
+ 	select FB_SYS_IMAGEBLIT
+@@ -2482,7 +2482,7 @@ endif
+ 
+ config FB_SH_MOBILE_MERAM
+ 	tristate "SuperH Mobile MERAM read ahead support"
+-	depends on (SUPERH || ARCH_SHMOBILE)
++	depends on (SUPERH || ARM || COMPILE_TEST)
+ 	select GENERIC_ALLOCATOR
+ 	---help---
+ 	  Enable MERAM support for the SuperH controller.
+-- 
+1.8.1.5
+
