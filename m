@@ -1,32 +1,82 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Fri, 04 Oct 2013 05:25:17 +0000
-Subject: Re: [PATCH 3/6] sh: clkfwk: Select sh-/common- clkfwk alternatively
-Message-Id: <20131004142517.590a96bcb63330313ceb5298@ops.dti.ne.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 10:29:59 +0000
+Subject: [PATCH 5/5] serial: sh-sci: Add device tree bindings documentation
+Message-Id: <1383042599-25151-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52410F86.4040301@renesas.com>
-	<20130924131206.d57d07f5faa5cb0773fc328c@ops.dti.ne.jp>
-	<1663688.MHxO4ng5PY@avalon>
-In-Reply-To: <1663688.MHxO4ng5PY@avalon>
+References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org, Shinya Kuribayashi <shinya.kuribayashi.px-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>, Mike Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org
 
-Hi Laurent,
+Document the device tree bindings for the sci serial port devices.
 
-> While I agree with this patch, I believe the use of the HAVE_MACH_CLKDEV 
-> configuration option to select whether to compile core.o in is a bit of an 
-> abuse. <snip>
-Well, yes, indeed. It does not mean having include/mach/clkdev.h,
-but means somewhat such like !COMMON_CLK.
-# I think there is similar usage in arch/mips, though they define but not use.
-# ... is an execution.
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../bindings/serial/renesas,sci-serial.txt         | 51 ++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
 
-> However, as all ARCH_SHMOBILE platforms should be converted to the common 
-> clock framework, this is only temporary and could be revisited later, so I'm 
-> fine with keeping the patch as-is.
-Sure.
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+new file mode 100644
+index 0000000..5658b4f
+--- /dev/null
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -0,0 +1,51 @@
++* Renesas SH-Mobile Serial Communication Interface
++
++Required properties:
++
++  - compatible: should be one of the following.
++
++    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
++    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
++    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
++    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
++    - "renesas,scif-generic" for generic SCIF compatible UART.
++    - "renesas,scifa-generic" for generic SCIFA compatible UART.
++    - "renesas,scifb-generic" for generic SCIFB compatible UART.
++    - "renesas,hscif-generic" for generic HSCIF compatible UART.
++
++    When compatible with the generic version, nodes must also list the
++    SoC-specific version corresponding to the platform.
++
++  - reg: Base address and length of the memory resource used by the UART.
++
++  - interrupt-parent: Reference to the parent interrupt controller.
++  - interrupts: Interrupt number(s). Depending on the SoC SCIx UARTs are tied
++    to one or multiple interrupt lines. When using multiple interrupt lines,
++    specify the interrupt names as described below.
++
++  - clocks: Reference to the SCIx UART interface clock.
++  - clock-names: Should be "sci_ick".
++
++Optional properties:
++
++  - interrupt-names: When using multiple interrupts, report the interrupt
++    names as "eri" (receive error), "rxi" (receive), "txi" (transmit) and
++    "bri" (break). When using a single interrupt this property should not be
++    present.
++
++Note: Each enabled SCIx UART should have an alias correctly numbered in the
++"aliases" node.
++
++Example:
++	aliases {
++		serial0 = &scifa0;
++	};
++
++	scifa0: serial@e6c40000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		reg = <0 0xe6c40000 0 64>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 4>;
++		clocks = <&mstp2_clks 4>;
++		clock-names = "sci_ick";
++	};
+-- 
+1.8.1.5
 
-Thank you for your review.
-/yoshii
