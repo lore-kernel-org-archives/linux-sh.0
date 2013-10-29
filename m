@@ -1,91 +1,126 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:28:22 +0000
-Subject: [PATCH 2/3] ARM: shmobile: Rename to r8a7790_init_early()
-Message-Id: <0efd7faa6c611dab4ab8105473d2ffde7918cb69.1380523393.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 15:04:41 +0000
+Subject: [PATCH 09/10] ARM: shmobile: Remove Lager reference DTS
+Message-Id: <1383059082-26315-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380523393.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380523393.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Now that the DTS file r8a7790-lager.dts can be used with board-lager.c
+and board-lager-reference.c, proceed with removing
+r8a7790-lager-reference.dts.
 
-Rename r8a7790_init_delay() into r8a7790_init_early()
-to make the function name show that more than just
-delay setup may happen in the future.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 2 +-
- arch/arm/mach-shmobile/board-lager.c           | 2 +-
- arch/arm/mach-shmobile/include/mach/r8a7790.h  | 2 +-
- arch/arm/mach-shmobile/setup-r8a7790.c         | 4 ++--
- 4 files changed, 5 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/Makefile                    |  1 -
+ arch/arm/boot/dts/r8a7790-lager-reference.dts | 84 ---------------------------
+ 2 files changed, 85 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 9c316a1..2856f51 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -38,7 +38,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(LAGER_DT, "lager")
--	.init_early	= r8a7790_init_delay,
-+	.init_early	= r8a7790_init_early,
- 	.init_machine	= lager_add_standard_devices,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= lager_boards_compat_dt,
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index ffb6f0a..4047fac 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -161,7 +161,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(LAGER_DT, "lager")
--	.init_early	= r8a7790_init_delay,
-+	.init_early	= r8a7790_init_early,
- 	.init_time	= r8a7790_timer_init,
- 	.init_machine	= lager_add_standard_devices,
- 	.dt_compat	= lager_boards_compat_dt,
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 788d559..177a837 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -5,7 +5,7 @@ void r8a7790_add_standard_devices(void);
- void r8a7790_add_dt_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
--void r8a7790_init_delay(void);
-+void r8a7790_init_early(void);
- void r8a7790_timer_init(void);
- 
- #define MD(nr) BIT(nr)
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index d0f5c9f..a42d1f6 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -267,7 +267,7 @@ void __init r8a7790_timer_init(void)
- 	clocksource_of_init();
- }
- 
--void __init r8a7790_init_delay(void)
-+void __init r8a7790_init_early(void)
- {
- #ifndef CONFIG_ARM_ARCH_TIMER
- 	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
-@@ -282,7 +282,7 @@ static const char *r8a7790_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
--	.init_early	= r8a7790_init_delay,
-+	.init_early	= r8a7790_init_early,
- 	.init_time	= r8a7790_timer_init,
- 	.dt_compat	= r8a7790_boards_compat_dt,
- MACHINE_END
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 891b724..5a768bc 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -208,7 +208,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7791-koelsch-reference.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7790-lager-reference.dtb \
+ 	sh73a0-kzm9g.dtb \
+ 	sh73a0-kzm9g-reference.dtb \
+ 	r8a73a4-ape6evm.dtb \
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+deleted file mode 100644
+index 68711ce..0000000
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ /dev/null
+@@ -1,84 +0,0 @@
+-/*
+- * Device Tree Source for the Lager board
+- *
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7790.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Lager";
+-	compatible = "renesas,lager-reference", "renesas,r8a7790";
+-
+-	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
+-
+-	lbsc {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led6 {
+-			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
+-		};
+-		led7 {
+-			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
+-		};
+-		led8 {
+-			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-
+-	fixedregulator3v3: fixedregulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-3.3V";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+-	scif0_pins: scif0 {
+-		renesas,groups = "scif0_data";
+-		renesas,function = "scif0";
+-	};
+-
+-	scif1_pins: scif1 {
+-		renesas,groups = "scif1_data";
+-		renesas,function = "scif1";
+-	};
+-
+-	mmc1_pins: mmc1 {
+-		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+-		renesas,function = "mmc1";
+-	};
+-};
+-
+-&mmcif1 {
+-	pinctrl-0 = <&mmc1_pins>;
+-	pinctrl-names = "default";
+-
+-	vmmc-supply = <&fixedregulator3v3>;
+-	bus-width = <8>;
+-	non-removable;
+-	status = "okay";
+-};
 -- 
-1.8.4
+1.8.1.5
 
