@@ -1,38 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Oct 2013 03:38:51 +0000
-Subject: [PATCH 00/08] ARM: shmobile: r8a7791 and Koelsch GPIO/PFC support
-Message-Id: <20131008033851.20455.68845.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 15:04:38 +0000
+Subject: [PATCH 06/10] ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
+Message-Id: <1383059082-26315-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-ARM: shmobile: r8a7791 and Koelsch GPIO/PFC support
+Now that the common clock framework is supported, the clock lookup
+entries in clock-r8a7790.c are not registered anymore. Devices must
+instead reference their clocks in the device tree. However, SCIF and CMT
+devices are still instantiated through platform code, and thus need a
+clock lookup entry.
 
-[PATCH 01/08] ARM: shmobile: r8a7791 PFC device tree node
-[PATCH 02/08] ARM: shmobile: r8a7791 PFC platform device support
-[PATCH 03/08] ARM: shmobile: Select GPIO in case of the r8a7791 SoC
-[PATCH 04/08] ARM: shmobile: r8a7791 GPIO device tree node
-[PATCH 05/08] ARM: shmobile: r8a7791 GPIO platform device support
-[PATCH 06/08] ARM: shmobile: Enable PFC/GPIO on the Koelsch board
-[PATCH 07/08] ARM: shmobile: Add Koelsch LED6, LED7 and LED8 support
-[PATCH 08/08] ARM: shmobile: Add Koelsch SW2 support
+Retrieve the SCIF and CMT clock entries by name and register clkdevs for
+the corresponding devices. This will be removed when the SCIF and CMT
+devices will be instantiated from the device tree.
 
-This series includes PFC and GPIO support for the r8a7791 SoC and the
-Koelsch board. The GPIO portion can be tested through LEDs and GPIO
-switches on the Koelsch board. PFC tables will be submitted separately.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/board-lager-reference.c | 28 ++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
- Written against renesas.git tag renesas-devel-20131004
-
- arch/arm/boot/dts/r8a7791.dtsi                |  102 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                |    1 
- arch/arm/mach-shmobile/board-koelsch.c        |   50 ++++++++++++
- arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 
- arch/arm/mach-shmobile/setup-r8a7791.c        |   53 ++++++++++++
- 5 files changed, 207 insertions(+)
-
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index e436d06..4d11c0a 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -18,6 +18,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk.h>
++#include <linux/clkdev.h>
+ #include <linux/clk/shmobile.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+@@ -33,6 +35,32 @@ static void __init lager_init_time(void)
+ 
+ static void __init lager_add_standard_devices(void)
+ {
++	/*
++	 * This is a really crude hack to provide clkdev support to the SCIF
++	 * and CMT devices until they get moved to DT.
++	 */
++	static const char * const scif_names[] = {
++		"scifa0", "scifa1", "scifb0", "scifb1",
++		"scifb2", "scifa2", "scif0", "scif1",
++		"hscif0", "hscif1",
++	};
++	struct clk *clk;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
++		clk = clk_get(NULL, scif_names[i]);
++		if (clk) {
++			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
++			clk_put(clk);
++		}
++	}
++
++	clk = clk_get(NULL, "cmt0");
++	if (clk) {
++		clk_register_clkdev(clk, NULL, "sh_cmt.0");
++		clk_put(clk);
++	}
++
+ 	r8a7790_add_dt_devices();
+         of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+-- 
+1.8.1.5
 
