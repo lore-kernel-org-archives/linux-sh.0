@@ -1,50 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:35:34 +0000
-Subject: [PATCH 02/14] ARM: shmobile: Use shmobile_smp_cpu_disable() on sh73a0
-Message-Id: <a3b142a1a08af543473ae726e5d96a969c5b02b5.1380532277.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:49 +0000
+Subject: [PATCH v2 14/19] pwm: pwm-renesas-tpu: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380532277.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380532277.git.horms+renesas@verge.net.au>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-Use shmobile_smp_cpu_disable() on sh73a0 since it
-allows CPU Hotplug of any CPU.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Thierry Reding <thierry.reding@gmail.com>
+Cc: linux-pwm@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/smp-sh73a0.c | 9 +--------
- 1 file changed, 1 insertion(+), 8 deletions(-)
+ drivers/pwm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 0baa244..9a30a3f 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -71,18 +71,11 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- 	shmobile_smp_scu_prepare_cpus(max_cpus);
- }
+diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
+index 75840b5..56a4f2f 100644
+--- a/drivers/pwm/Kconfig
++++ b/drivers/pwm/Kconfig
+@@ -130,7 +130,7 @@ config PWM_PXA
  
--#ifdef CONFIG_HOTPLUG_CPU
--static int sh73a0_cpu_disable(unsigned int cpu)
--{
--	return 0; /* CPU0 and CPU1 supported */
--}
--#endif /* CONFIG_HOTPLUG_CPU */
--
- struct smp_operations sh73a0_smp_ops __initdata = {
- 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
- 	.smp_boot_secondary	= sh73a0_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
--	.cpu_disable		= sh73a0_cpu_disable,
-+	.cpu_disable		= shmobile_smp_cpu_disable,
- 	.cpu_die		= shmobile_smp_scu_cpu_die,
- 	.cpu_kill		= shmobile_smp_scu_cpu_kill,
- #endif
+ config PWM_RENESAS_TPU
+ 	tristate "Renesas TPU PWM support"
+-	depends on ARCH_SHMOBILE
++	depends on ARM || COMPILE_TEST
+ 	help
+ 	  This driver exposes the Timer Pulse Unit (TPU) PWM controller found
+ 	  in Renesas chips through the PWM API.
 -- 
-1.8.4
+1.8.1.5
 
