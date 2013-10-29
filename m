@@ -1,16 +1,101 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Oct 2013 01:29:46 +0000
-Subject: Re: [PATCH 6/7] ARM: shmobile: r8a7778: add MMCIF support on DTSI
-Message-Id: <20131011012944.GE17597@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 15:04:37 +0000
+Subject: [PATCH 05/10] ARM: shmobile: lager-reference: Switch to multiplaform
+Message-Id: <1383059082-26315-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vc1dzuqk.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vc1dzuqk.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Oct 03, 2013 at 06:32:22PM -0700, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Move the Lager reference board to multiplaform ARM architecture. As
+multiplatform requires usage of the common clock framework, switch from
+legacy clocks to CCF by replacing the legacy clock framework
+initialization code in the machine init handler with a common clock
+framework initialization call in the time init handler.
 
-Thanks, I have queued this up.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/Kconfig                 |  7 +++++++
+ arch/arm/mach-shmobile/Makefile                |  1 +
+ arch/arm/mach-shmobile/board-lager-reference.c | 13 +++++++++----
+ 3 files changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4bb548f..b39f6b6 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -20,6 +20,9 @@ comment "SH-Mobile System Type"
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+ 
++config ARCH_R8A7790
++	bool "R-Car H2 (R8A77900)"
++
+ comment "SH-Mobile Board Type"
+ 
+ config MACH_KZM9D
+@@ -27,6 +30,10 @@ config MACH_KZM9D
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
++config MACH_LAGER
++	bool "Lager board"
++	depends on ARCH_R8A7790
++
+ comment "SH-Mobile System Configuration"
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index cc48f14..32f3975 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -57,6 +57,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
++obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 1a1a4a8..e436d06 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -18,16 +18,21 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk/shmobile.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
+-static void __init lager_add_standard_devices(void)
++static void __init lager_init_time(void)
+ {
+-	/* clocks are setup late during boot in the case of DT */
+-	r8a7790_clock_init();
++	r8a7790_clocks_init(rcar_gen2_read_mode_pins());
++
++	rcar_gen2_timer_init();
++}
+ 
++static void __init lager_add_standard_devices(void)
++{
+ 	r8a7790_add_dt_devices();
+         of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+@@ -40,7 +45,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
+ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= r8a7790_init_early,
+-	.init_time	= rcar_gen2_timer_init,
++	.init_time	= lager_init_time,
+ 	.init_machine	= lager_add_standard_devices,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
+-- 
+1.8.1.5
+
