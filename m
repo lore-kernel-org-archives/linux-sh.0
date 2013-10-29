@@ -1,65 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:14 +0000
-Subject: [PATCH 04/13] ARM: shmobile: armadillo-reference: Add PWM backlight node to DT
-Message-Id: <87b73d88723601636646a69445f89c0e498fff71.1381298964.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:42 +0000
+Subject: [PATCH v2 07/19] v4l: sh_vou: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381298964.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
+Cc: linux-media@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts    | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ drivers/media/platform/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 9fcffc1..8b2aab5 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -11,6 +11,7 @@
- /dts-v1/;
- /include/ "r8a7740.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/pwm/pwm.h>
- 
- / {
- 	model = "armadillo 800 eva reference";
-@@ -49,6 +50,15 @@
- 			gpios = <&pfc 177 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	backlight {
-+		compatible = "pwm-backlight";
-+		pwms = <&tpu 2 33333 PWM_POLARITY_INVERTED>;
-+		brightness-levels = <0 1 2 4 8 16 32 64 128 255>;
-+		default-brightness-level = <9>;
-+		pinctrl-0 = <&backlight_pins>;
-+		pinctrl-names = "default";
-+	};
- };
- 
- &i2c0 {
-@@ -77,4 +87,13 @@
- 		renesas,groups = "intc_irq10";
- 		renesas,function = "intc";
- 	};
-+
-+	backlight_pins: backlight {
-+		renesas,groups = "tpu0_to2_1";
-+		renesas,function = "tpu0";
-+	};
-+};
-+
-+&tpu {
-+	status = "okay";
- };
+diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
+index c7caf94..399ef1c 100644
+--- a/drivers/media/platform/Kconfig
++++ b/drivers/media/platform/Kconfig
+@@ -36,7 +36,7 @@ source "drivers/media/platform/blackfin/Kconfig"
+ config VIDEO_SH_VOU
+ 	tristate "SuperH VOU video output driver"
+ 	depends on MEDIA_CAMERA_SUPPORT
+-	depends on VIDEO_DEV && ARCH_SHMOBILE && I2C
++	depends on VIDEO_DEV && (ARM || COMPILE_TEST) && I2C
+ 	select VIDEOBUF_DMA_CONTIG
+ 	help
+ 	  Support for the Video Output Unit (VOU) on SuperH SoCs.
 -- 
-1.8.4
+1.8.1.5
 
