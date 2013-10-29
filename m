@@ -1,26 +1,103 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 29 Oct 2013 04:32:16 +0000
-Subject: Re: [PATCH 3/3] arm: shmobile: lager: Add USBHS support
-Message-Id: <20131029043216.GB20432@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 15:23:13 +0000
+Subject: [PATCH 3/3] ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
+Message-Id: <1383060193-1505-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381188423-1867-4-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1381188423-1867-4-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 10, 2013 at 02:14:47AM +0400, Valentine Barshak wrote:
-> This adds USBHS PHY and registers USBHS device if the driver is enabled.
-> 
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+SCIF0 and SCIF1 are used as debug serial ports. Enable them and
+configure pinmuxing appropriately. We can now remove the clkdev
+registration hack for SCIF devices from the Lager reference board file.
 
-Thanks,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts            | 24 ++++++++++++++++++++----
+ arch/arm/mach-shmobile/board-lager-reference.c | 18 ++----------------
+ 2 files changed, 22 insertions(+), 20 deletions(-)
 
-I notice that Felipe Balbi's has merged the first patch of this series and
-that it is present in linux-next though not in v3.12-rc7. My assumption is
-that means it will appear in v3.13-rc1 but not v3.12.
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index a923ab6..9830c87 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -16,8 +16,13 @@
+ 	model = "Lager";
+ 	compatible = "renesas,lager", "renesas,r8a7790";
+ 
++	aliases {
++		serial0 = &scif0;
++		serial1 = &scif1;
++	};
++
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "console=ttySC0,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+ 
+ 	memory@40000000 {
+@@ -58,9 +63,6 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+ 	scif0_pins: scif0 {
+ 		renesas,groups = "scif0_data";
+ 		renesas,function = "scif0";
+@@ -86,3 +88,17 @@
+ 	non-removable;
+ 	status = "okay";
+ };
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index bc3d0d2..1f5d6e2 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -36,24 +36,10 @@ static void __init lager_init_time(void)
+ static void __init lager_add_standard_devices(void)
+ {
+ 	/*
+-	 * This is a really crude hack to provide clkdev support to the SCIF
+-	 * and CMT devices until they get moved to DT.
++	 * This is a really crude hack to provide clkdev support to the CMT
++	 * CMT device until it gets moved to DT.
+ 	 */
+-	static const char * const scif_names[] = {
+-		"scifa0", "scifa1", "scifb0", "scifb1",
+-		"scifb2", "scifa2", "scif0", "scif1",
+-		"hscif0", "hscif1",
+-	};
+ 	struct clk *clk;
+-	unsigned int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
+-		clk = clk_get(NULL, scif_names[i]);
+-		if (clk) {
+-			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
+-			clk_put(clk);
+-		}
+-	}
+ 
+ 	clk = clk_get(NULL, "cmt0");
+ 	if (clk) {
+-- 
+1.8.1.5
 
-With this in mind my current plan is to wait for v3.13-rc1, rebase my
-branches, and then queue-up this patch for v3.14.
