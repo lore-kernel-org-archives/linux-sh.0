@@ -1,150 +1,243 @@
-From: Vineet Gupta <Vineet.Gupta1@synopsys.com>
-Date: Tue, 01 Oct 2013 10:45:33 +0000
-Subject: Re: [RFC PATCH REBASED 1/3] sh: Move fpu_counter into ARCH specific thread_struct
-Message-Id: <524AA4FD.6070001@synopsys.com>
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Tue, 29 Oct 2013 19:51:08 +0000
+Subject: [PATCH v7 5/5] clk: Implement clk_unregister()
+Message-Id: <1383076268-8984-6-git-send-email-s.nawrocki@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1379398639-27403-1-git-send-email-vgupta@synopsys.com> <1379398639-27403-2-git-send-email-vgupta@synopsys.com>
-In-Reply-To: <1379398639-27403-2-git-send-email-vgupta@synopsys.com>
+References: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
+In-Reply-To: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
-Cc: Ingo Molnar <mingo@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Andrew Morton <akpm@linux-foundation.org>, linux-arch@vger.kernel.org, lkml <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Paul/SH folks.
+clk_unregister() is currently not implemented and it is required when
+a clock provider module needs to be unloaded.
 
-Would appreciate your ACK/NAK on this.
+Normally the clock supplier module is prevented to be unloaded by
+taking reference on the module in clk_get().
 
-Thx,
--Vineet
+For cases when the clock supplier module deinitializes despite the
+consumers of its clocks holding a reference on the module, e.g. when
+the driver is unbound through "unbind" sysfs attribute, there are
+empty clock ops added. These ops are assigned temporarily to struct
+clk and used until all consumers release the clock, to avoid invoking
+callbacks from the module which just got removed.
 
-On 09/17/2013 11:47 AM, Vineet Gupta wrote:
-> Only a couple of arches (sh/x86) use fpu_counter in task_struct so it
-> can be moved out into ARCH specific thread_struct, reducing the size of
-> task_struct for other arches.
-> 
-> Compile tested sh defconfig + sh4-linux-gcc (4.6.3)
-> 
-> Signed-off-by: Vineet Gupta <vgupta@synopsys.com>
-> Cc: Paul Mundt <lethal@linux-sh.org>
-> Cc: Michel Lespinasse <walken@google.com>
-> Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Cc: Al Viro <viro@zeniv.linux.org.uk>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Jesper Nilsson <jesper.nilsson@axis.com>
-> Cc: Chris Metcalf <cmetcalf@tilera.com>
-> Cc: "David S. Miller" <davem@davemloft.net>
-> Cc: linux-kernel@vger.kernel.org
-> Cc: linux-arch@vger.kernel.org
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Peter Zijlstra <peterz@infradead.org>
-> Cc: linux-sh@vger.kernel.org
-> ---
->  arch/sh/include/asm/fpu.h          |  2 +-
->  arch/sh/include/asm/processor_32.h | 10 ++++++++++
->  arch/sh/include/asm/processor_64.h | 10 ++++++++++
->  arch/sh/kernel/cpu/fpu.c           |  2 +-
->  arch/sh/kernel/process_32.c        |  6 +++---
->  5 files changed, 25 insertions(+), 5 deletions(-)
-> 
-> diff --git a/arch/sh/include/asm/fpu.h b/arch/sh/include/asm/fpu.h
-> index 06c4281..09fc2bc 100644
-> --- a/arch/sh/include/asm/fpu.h
-> +++ b/arch/sh/include/asm/fpu.h
-> @@ -46,7 +46,7 @@ static inline void __unlazy_fpu(struct task_struct *tsk, struct pt_regs *regs)
->  		save_fpu(tsk);
->  		release_fpu(regs);
->  	} else
-> -		tsk->fpu_counter = 0;
-> +		tsk->thread.fpu_counter = 0;
->  }
->  
->  static inline void unlazy_fpu(struct task_struct *tsk, struct pt_regs *regs)
-> diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
-> index e699a12..18e0377 100644
-> --- a/arch/sh/include/asm/processor_32.h
-> +++ b/arch/sh/include/asm/processor_32.h
-> @@ -111,6 +111,16 @@ struct thread_struct {
->  
->  	/* Extended processor state */
->  	union thread_xstate *xstate;
-> +
-> +	/*
-> +	 * fpu_counter contains the number of consecutive context switches
-> +	 * that the FPU is used. If this is over a threshold, the lazy fpu
-> +	 * saving becomes unlazy to save the trap. This is an unsigned char
-> +	 * so that after 256 times the counter wraps and the behavior turns
-> +	 * lazy again; this to deal with bursty apps that only use FPU for
-> +	 * a short time
-> +	 */
-> +	unsigned char fpu_counter;
->  };
->  
->  #define INIT_THREAD  {						\
-> diff --git a/arch/sh/include/asm/processor_64.h b/arch/sh/include/asm/processor_64.h
-> index 1cc7d31..eedd4f6 100644
-> --- a/arch/sh/include/asm/processor_64.h
-> +++ b/arch/sh/include/asm/processor_64.h
-> @@ -126,6 +126,16 @@ struct thread_struct {
->  
->  	/* floating point info */
->  	union thread_xstate *xstate;
-> +
-> +	/*
-> +	 * fpu_counter contains the number of consecutive context switches
-> +	 * that the FPU is used. If this is over a threshold, the lazy fpu
-> +	 * saving becomes unlazy to save the trap. This is an unsigned char
-> +	 * so that after 256 times the counter wraps and the behavior turns
-> +	 * lazy again; this to deal with bursty apps that only use FPU for
-> +	 * a short time
-> +	 */
-> +	unsigned char fpu_counter;
->  };
->  
->  #define INIT_MMAP \
-> diff --git a/arch/sh/kernel/cpu/fpu.c b/arch/sh/kernel/cpu/fpu.c
-> index f8f7af5..4e33224 100644
-> --- a/arch/sh/kernel/cpu/fpu.c
-> +++ b/arch/sh/kernel/cpu/fpu.c
-> @@ -44,7 +44,7 @@ void __fpu_state_restore(void)
->  	restore_fpu(tsk);
->  
->  	task_thread_info(tsk)->status |= TS_USEDFPU;
-> -	tsk->fpu_counter++;
-> +	tsk->thread.fpu_counter++;
->  }
->  
->  void fpu_state_restore(struct pt_regs *regs)
-> diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
-> index ebd3933..2885fc9 100644
-> --- a/arch/sh/kernel/process_32.c
-> +++ b/arch/sh/kernel/process_32.c
-> @@ -156,7 +156,7 @@ int copy_thread(unsigned long clone_flags, unsigned long usp,
->  #endif
->  		ti->addr_limit = KERNEL_DS;
->  		ti->status &= ~TS_USEDFPU;
-> -		p->fpu_counter = 0;
-> +		p->thread.fpu_counter = 0;
->  		return 0;
->  	}
->  	*childregs = *current_pt_regs();
-> @@ -189,7 +189,7 @@ __switch_to(struct task_struct *prev, struct task_struct *next)
->  	unlazy_fpu(prev, task_pt_regs(prev));
->  
->  	/* we're going to use this soon, after a few expensive things */
-> -	if (next->fpu_counter > 5)
-> +	if (next->thread.fpu_counter > 5)
->  		prefetch(next_t->xstate);
->  
->  #ifdef CONFIG_MMU
-> @@ -207,7 +207,7 @@ __switch_to(struct task_struct *prev, struct task_struct *next)
->  	 * restore of the math state immediately to avoid the trap; the
->  	 * chances of needing FPU soon are obviously high now
->  	 */
-> -	if (next->fpu_counter > 5)
-> +	if (next->thread.fpu_counter > 5)
->  		__fpu_state_restore();
->  
->  	return prev;
-> 
+Signed-off-by: Jiada Wang <jiada_wang@mentor.com>
+Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+---
+Changes since v6:
+ - fixed NULL clk handling and replaced pr_err() with WARN_ON_ONCE().
+
+Changes since v4:
+ - none.
+
+Changes since v3:
+ - Use WARN_ON_ONCE() rather than WARN_ON() in clk_nodrv_disable_unprepare()
+   callback.
+
+Changes since v2:
+ - none.
+
+Changes since RFC v1:
+ - renamed clk_dummy_* to clk_nodrv_*.
+---
+ drivers/clk/clk.c           |  121 +++++++++++++++++++++++++++++++++++++++++--
+ include/linux/clk-private.h |    2 +
+ 2 files changed, 120 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 25b249c..7a33961 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -344,6 +344,21 @@ out:
+ 	return ret;
+ }
+ 
++ /**
++ * clk_debug_unregister - remove a clk node from the debugfs clk tree
++ * @clk: the clk being removed from the debugfs clk tree
++ *
++ * Dynamically removes a clk and all it's children clk nodes from the
++ * debugfs clk tree if clk->dentry points to debugfs created by
++ * clk_debug_register in __clk_init.
++ *
++ * Caller must hold prepare_lock.
++ */
++static void clk_debug_unregister(struct clk *clk)
++{
++	debugfs_remove_recursive(clk->dentry);
++}
++
+ /**
+  * clk_debug_reparent - reparent clk node in the debugfs clk tree
+  * @clk: the clk being reparented
+@@ -434,6 +449,9 @@ static inline int clk_debug_register(struct clk *clk) { return 0; }
+ static inline void clk_debug_reparent(struct clk *clk, struct clk *new_parent)
+ {
+ }
++static inline void clk_debug_unregister(struct clk *clk)
++{
++}
+ #endif
+ 
+ /* caller must hold prepare_lock */
+@@ -1777,6 +1795,7 @@ int __clk_init(struct device *dev, struct clk *clk)
+ 
+ 	clk_debug_register(clk);
+ 
++	kref_init(&clk->ref);
+ out:
+ 	clk_prepare_unlock();
+ 
+@@ -1912,13 +1931,104 @@ fail_out:
+ }
+ EXPORT_SYMBOL_GPL(clk_register);
+ 
++/*
++ * Free memory allocated for a clock.
++ * Caller must hold prepare_lock.
++ */
++static void __clk_release(struct kref *ref)
++{
++	struct clk *clk = container_of(ref, struct clk, ref);
++	int i = clk->num_parents;
++
++	kfree(clk->parents);
++	while (--i >= 0)
++		kfree(clk->parent_names[i]);
++
++	kfree(clk->parent_names);
++	kfree(clk->name);
++	kfree(clk);
++}
++
++/*
++ * Empty clk_ops for unregistered clocks. These are used temporarily
++ * after clk_unregister() was called on a clock and until last clock
++ * consumer calls clk_put() and the struct clk object is freed.
++ */
++static int clk_nodrv_prepare_enable(struct clk_hw *hw)
++{
++	return -ENXIO;
++}
++
++static void clk_nodrv_disable_unprepare(struct clk_hw *hw)
++{
++	WARN_ON_ONCE(1);
++}
++
++static int clk_nodrv_set_rate(struct clk_hw *hw, unsigned long rate,
++					unsigned long parent_rate)
++{
++	return -ENXIO;
++}
++
++static int clk_nodrv_set_parent(struct clk_hw *hw, u8 index)
++{
++	return -ENXIO;
++}
++
++static const struct clk_ops clk_nodrv_ops = {
++	.enable		= clk_nodrv_prepare_enable,
++	.disable	= clk_nodrv_disable_unprepare,
++	.prepare	= clk_nodrv_prepare_enable,
++	.unprepare	= clk_nodrv_disable_unprepare,
++	.set_rate	= clk_nodrv_set_rate,
++	.set_parent	= clk_nodrv_set_parent,
++};
++
+ /**
+  * clk_unregister - unregister a currently registered clock
+  * @clk: clock to unregister
+- *
+- * Currently unimplemented.
+  */
+-void clk_unregister(struct clk *clk) {}
++void clk_unregister(struct clk *clk)
++{
++	unsigned long flags;
++
++       if (!clk || WARN_ON_ONCE(IS_ERR(clk)))
++               return;
++
++	clk_prepare_lock();
++
++	if (clk->ops = &clk_nodrv_ops) {
++		pr_err("%s: unregistered clock: %s\n", __func__, clk->name);
++		goto out;
++	}
++	/*
++	 * Assign empty clock ops for consumers that might still hold
++	 * a reference to this clock.
++	 */
++	flags = clk_enable_lock();
++	clk->ops = &clk_nodrv_ops;
++	clk_enable_unlock(flags);
++
++	if (!hlist_empty(&clk->children)) {
++		struct clk *child;
++
++		/* Reparent all children to the orphan list. */
++		hlist_for_each_entry(child, &clk->children, child_node)
++			clk_set_parent(child, NULL);
++	}
++
++	clk_debug_unregister(clk);
++
++	hlist_del_init(&clk->child_node);
++
++	if (clk->prepare_count)
++		pr_warn("%s: unregistering prepared clock: %s\n",
++					__func__, clk->name);
++
++	kref_put(&clk->ref, __clk_release);
++out:
++	clk_prepare_unlock();
++}
+ EXPORT_SYMBOL_GPL(clk_unregister);
+ 
+ static void devm_clk_release(struct device *dev, void *res)
+@@ -1986,6 +2096,7 @@ int __clk_get(struct clk *clk)
+ 	if (clk && !try_module_get(clk->owner))
+ 		return 0;
+ 
++	kref_get(&clk->ref);
+ 	return 1;
+ }
+ 
+@@ -1994,6 +2105,10 @@ void __clk_put(struct clk *clk)
+ 	if (WARN_ON_ONCE(IS_ERR(clk)))
+ 		return;
+ 
++	clk_prepare_lock();
++	kref_put(&clk->ref, __clk_release);
++	clk_prepare_unlock();
++
+ 	if (clk)
+ 		module_put(clk->owner);
+ }
+diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
+index 8cb1865..72c65e0 100644
+--- a/include/linux/clk-private.h
++++ b/include/linux/clk-private.h
+@@ -12,6 +12,7 @@
+ #define __LINUX_CLK_PRIVATE_H
+ 
+ #include <linux/clk-provider.h>
++#include <linux/kref.h>
+ #include <linux/list.h>
+ 
+ /*
+@@ -50,6 +51,7 @@ struct clk {
+ #ifdef CONFIG_COMMON_CLK_DEBUG
+ 	struct dentry		*dentry;
+ #endif
++	struct kref		ref;
+ };
+ 
+ /*
+-- 
+1.7.9.5
 
