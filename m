@@ -1,46 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 04:20:29 +0000
-Subject: Re: [PATCH 02/10] ARM: shmobile: Use r8a7791_add_standard_devices() on Koelsch
-Message-Id: <20131003042028.GK7925@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 10:29:54 +0000
+Subject: [PATCH 0/5] Add OF support to the sh-sci serial port driver
+Message-Id: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131001081143.4136.46925.sendpatchset@w520>
- <20131001081202.4136.63858.sendpatchset@w520>
-In-Reply-To: <20131001081202.4136.63858.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org
 
-On Tue, Oct 01, 2013 at 05:12:02PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Use r8a7791_add_standard_devices() on Koelsch to let
-> the C version of the board code add on-chip devices.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/board-koelsch.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/board-koelsch.c
-> +++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-10-01 16:25:46.000000000 +0900
-> @@ -29,7 +29,7 @@
->  static void __init koelsch_add_standard_devices(void)
->  {
->  	r8a7791_clock_init();
-> -	r8a7791_add_dt_devices();
-> +	r8a7791_add_standard_devices();
->  }
->  
->  static const char * const koelsch_boards_compat_dt[] __initconst = {
-> 
+Hello,
 
-Thanks, I have queued this up in the boards3 branch.
-It should make it into v3.13 but if not I'll rename the branch
-soc after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+This patch set adds device tree bindings for the sh sci serial port devices
+and adds OF parsing to the sh-sci driver.
 
-The boards3 branch includes boards code previously queued up for v3.13
-and a merge with soc changes previously queued up for v3.13. The reason
-for the merge is to provide various build and run-time dependencies
-including the r8a7791 SoC code which this board code uses.
+The bindings are based on Bastian Hecht's proposal (see
+http://www.spinics.net/lists/arm-kernel/msg228129.html). The approach taken
+here is more minimalistic: instead of describing all hardware characteristics
+that vary between the SCI device revisions in DT (such as registers layout),
+that information is stored in the driver and selected based on the compatible
+property value. Only SCI revisions used on ARM devices are supported through
+DT, as DT support for SuperH is nowhere down the line.
+
+The first three patches clean up the sh-sci driver. They're not strictly
+required for OF support but make sense nonetheless. The last two patches add
+OF parsing to the sh-sci driver and create DT bindings documentation.
+
+The patches have been test on a Lager board (r8a7790-based). Support for other
+SoCs will be added as needed. Note that all current Renesas ARM SoCs seem to
+be compatible with the generic (H)SCI(F)(AB) devices, but the plan is for
+their DT bindings to list the SoC-specific version in case incompatibilities
+are found later.
+
+Cc: devicetree@vger.kernel.org
+
+Bastian Hecht (1):
+  serial: sh-sci: Add OF support
+
+Laurent Pinchart (4):
+  serial: sh-sci: Sort headers alphabetically
+  serial: sh-sci: Remove baud rate calculation algorithm 5
+  serial: sh-sci: Simplify baud rate calculation algorithms
+  serial: sh-sci: Add device tree bindings documentation
+
+ .../bindings/serial/renesas,sci-serial.txt         |  51 ++++++
+ drivers/tty/serial/sh-sci.c                        | 192 +++++++++++++++++----
+ include/linux/serial_sci.h                         |   9 +-
+ 3 files changed, 217 insertions(+), 35 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+
+-- 
+Regards,
+
+Laurent Pinchart
+
