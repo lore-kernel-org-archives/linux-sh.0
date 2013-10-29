@@ -1,30 +1,42 @@
-From: David Miller <davem@davemloft.net>
-Date: Fri, 11 Oct 2013 18:58:06 +0000
-Subject: Re: [PATCH] net: sh_eth: Correct fix for RX packet errors on R8A7740
-Message-Id: <20131011.145806.1452315588217742239.davem@davemloft.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 15:23:10 +0000
+Subject: [PATCH 0/3] ARM: shmobile: Lager reference serial port support
+Message-Id: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381384276-8077-1-git-send-email-horms+renesas@verge.net.au>
-	<1381384276-8077-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1381384276-8077-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms+renesas@verge.net.au
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, sergei.shtylyov@cogentembedded.com, nh-ky@jinso.co.jp
+To: linux-arm-kernel@lists.infradead.org
 
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 10 Oct 2013 14:51:16 +0900
+Hello,
 
-> Nguyen Hong Ky posted a patch to correct RX packet errors on R8A7740 which
-> was applied as 2c6221e4a5aab417 ("net: sh_eth: Fix RX packets errors on
-> R8A7740"). Unfortunately sh_eth.c contains many similar instances
-> of struct sh_eth_cpu_data and the patch was miss-applied, updating
-> sh7734_data instead of r8a7740_data.
-> 
-> This patch corrects this problem by.
-> 1. Reverting the change to sh7734_data and;
-> 2. Applying the change to r8a7740_data.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This patch set implements serial port support for the Lager reference board,
+and adds early debugging support for the r8a7790 SoC.
 
-Applied, thanks Somon.
+The code is available in my git tree at
+
+        git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial-lager
+
+The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
+multiarch drivers, clk-prepare, r8a7790 CCF and sh-sci OF patches I've posted
+earlier today.
+
+Laurent Pinchart (3):
+  ARM: shmobile: r8a7790: Add early debugging support
+  ARM: shmobile: r8a7790: Add serial ports to the device tree
+  ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
+
+ arch/arm/Kconfig.debug                         |   8 ++
+ arch/arm/boot/dts/r8a7790-lager.dts            |  24 +++++-
+ arch/arm/boot/dts/r8a7790.dtsi                 | 100 +++++++++++++++++++++++++
+ arch/arm/include/debug/r8a7790.S               |  43 +++++++++++
+ arch/arm/mach-shmobile/board-lager-reference.c |  18 +----
+ arch/arm/mach-shmobile/setup-r8a7790.c         |  12 +--
+ 6 files changed, 179 insertions(+), 26 deletions(-)
+ create mode 100644 arch/arm/include/debug/r8a7790.S
+
+-- 
+Regards,
+
+Laurent Pinchart
+
