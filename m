@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 29 Oct 2013 05:03:15 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 29 Oct 2013 18:10:31 +0000
 Subject: Re: [PATCH] pinctrl: sh-pfc: pfc-r8a7790: Add full VIN1/2/3 support
-Message-Id: <20131029050315.GF20432@verge.net.au>
+Message-Id: <2535670.b3cxeR9bAs@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1382040403-19649-1-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1382040403-19649-1-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,27 +10,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Oct 18, 2013 at 12:06:43AM +0400, Valentine Barshak wrote:
+Hi Valentine,
+
+Thanks you for the patch.
+
+On Friday 18 October 2013 00:06:43 Valentine Barshak wrote:
 > This adds missing VIN1/2/3 pin configuration to pfc-r8a7790.
 > 
 > Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-
-Hi Laurent,
-
-could you consider taking this change?
-
 > ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 202 ++++++++++++++++++++++++++++++++++-
+>  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 202 +++++++++++++++++++++++++++++++-
 >  1 file changed, 198 insertions(+), 4 deletions(-)
 > 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> index 64fcc006..9ab2f71 100644
+> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+> b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c index 64fcc006..9ab2f71 100644
 > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
 > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
 > @@ -2996,22 +2996,168 @@ static const unsigned int vin0_clk_mux[] = {
 >  	VI0_CLK_MARK,
 >  };
->  /* - VIN1 ------------------------------------------------------------------- */
+>  /* - VIN1 -------------------------------------------------------------- */
 > -static const unsigned int vin1_data_pins[] = {
 > +static const unsigned int vin1_data_g_pins[] = {
 > +	RCAR_GP_PIN(1, 14), RCAR_GP_PIN(1, 15), RCAR_GP_PIN(1, 17),
@@ -63,7 +62,28 @@ could you consider taking this change?
 >  	VI1_DATA3_VI1_B3_MARK, VI1_DATA4_VI1_B4_MARK, VI1_DATA5_VI1_B5_MARK,
 >  	VI1_DATA6_VI1_B6_MARK, VI1_DATA7_VI1_B7_MARK,
 >  };
+
+Given the wide variety of ways the VIN data pins can be used, I see two ways 
+to group them:
+
+- List all possible combinations of data pins with a single group per 
+configuration. There are 11 combinations, but due to overlap in the pins used 
+the number can be reduced to 8.
+
+- List groups individually and combine them to create a valid configuration. 
+We would have at least 8 groups in this case as well.
+
+Given that the number of groups would be identical, my preference would go for 
+the first solution. The RGB data pin group would contain all 24 RGB pins in 
+that case, and additional overlapping groups would be defined for other input 
+configurations. Would you be fine with that ? VIN1 would be handled 
+identically, and VIN2 would need 5 groups only. VIN3 is already defined 
+correctly, as it supports a single configuration only.
+
 > +static const unsigned int vin1_hsync_signal_pins[] = {
+
+I think you can drop _signal here and below.
+
 > +	RCAR_GP_PIN(1, 24),
 > +};
 > +static const unsigned int vin1_hsync_signal_mux[] = {
@@ -75,6 +95,10 @@ could you consider taking this change?
 > +static const unsigned int vin1_vsync_signal_mux[] = {
 > +	VI1_VSYNC_N_MARK,
 > +};
+
+If I'm not mistaken the hsync and vsync signals can't be used independently, 
+so they should be grouped together.
+
 > +static const unsigned int vin1_field_signal_pins[] = {
 > +	RCAR_GP_PIN(1, 13),
 > +};
@@ -93,8 +117,8 @@ could you consider taking this change?
 >  static const unsigned int vin1_clk_mux[] = {
 >  	VI1_CLK_MARK,
 >  };
-> +/* - VIN2 ----------------------------------------------------------------- */
-> +static const unsigned int vin2_data_g_pins[] = {
+> +/* - VIN2 -----------------------------------------------------------------
+> */ +static const unsigned int vin2_data_g_pins[] = {
 > +	RCAR_GP_PIN(0, 27), RCAR_GP_PIN(0, 28), RCAR_GP_PIN(0, 29),
 > +	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5),
 > +	RCAR_GP_PIN(1, 6), RCAR_GP_PIN(1, 7),
@@ -154,8 +178,8 @@ could you consider taking this change?
 > +static const unsigned int vin2_clk_mux[] = {
 > +	VI2_CLK_MARK,
 > +};
-> +/* - VIN3 ----------------------------------------------------------------- */
-> +static const unsigned int vin3_data_pins[] = {
+> +/* - VIN3 -----------------------------------------------------------------
+> */ +static const unsigned int vin3_data_pins[] = {
 > +	RCAR_GP_PIN(0, 0), RCAR_GP_PIN(0, 1), RCAR_GP_PIN(0, 2),
 > +	RCAR_GP_PIN(0, 3), RCAR_GP_PIN(0, 4), RCAR_GP_PIN(0, 5),
 > +	RCAR_GP_PIN(0, 6), RCAR_GP_PIN(0, 7),
@@ -195,11 +219,11 @@ could you consider taking this change?
 > +static const unsigned int vin3_clk_mux[] = {
 > +	VI3_CLK_MARK,
 > +};
->  
+> 
 >  static const struct sh_pfc_pin_group pinmux_groups[] = {
 >  	SH_PFC_PIN_GROUP(du_rgb666),
-> @@ -3185,8 +3331,28 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
->  	SH_PFC_PIN_GROUP(vin0_field_signal),
+> @@ -3185,8 +3331,28 @@ static const struct sh_pfc_pin_group pinmux_groups[]
+> = { SH_PFC_PIN_GROUP(vin0_field_signal),
 >  	SH_PFC_PIN_GROUP(vin0_data_enable),
 >  	SH_PFC_PIN_GROUP(vin0_clk),
 > -	SH_PFC_PIN_GROUP(vin1_data),
@@ -226,11 +250,11 @@ could you consider taking this change?
 > +	SH_PFC_PIN_GROUP(vin3_data_enable),
 > +	SH_PFC_PIN_GROUP(vin3_clk),
 >  };
->  
+> 
 >  static const char * const du_groups[] = {
 > @@ -3457,10 +3623,36 @@ static const char * const vin0_groups[] = {
 >  };
->  
+> 
 >  static const char * const vin1_groups[] = {
 > -	"vin1_data",
 > +	"vin1_data_g",
@@ -242,7 +266,7 @@ could you consider taking this change?
 > +	"vin1_data_enable",
 >  	"vin1_clk",
 >  };
->  
+> 
 > +static const char * const vin2_groups[] = {
 > +	"vin2_data_g",
 > +	"vin2_data_r",
@@ -266,15 +290,17 @@ could you consider taking this change?
 >  static const struct sh_pfc_function pinmux_functions[] = {
 >  	SH_PFC_FUNCTION(du),
 >  	SH_PFC_FUNCTION(du0),
-> @@ -3495,6 +3687,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
->  	SH_PFC_FUNCTION(usb2),
+> @@ -3495,6 +3687,8 @@ static const struct sh_pfc_function pinmux_functions[]
+> = { SH_PFC_FUNCTION(usb2),
 >  	SH_PFC_FUNCTION(vin0),
 >  	SH_PFC_FUNCTION(vin1),
 > +	SH_PFC_FUNCTION(vin2),
 > +	SH_PFC_FUNCTION(vin3),
 >  };
->  
->  static struct pinmux_cfg_reg pinmux_config_regs[] = {
-> -- 
-> 1.8.3.1
 > 
+>  static struct pinmux_cfg_reg pinmux_config_regs[] = {
+-- 
+Regards,
+
+Laurent Pinchart
+
