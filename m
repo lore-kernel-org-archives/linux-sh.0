@@ -1,28 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 04:14:30 +0000
-Subject: Re: [PATCH 4/4 v2] ARM: shmobile: bockw: add SMSC support on DTS
-Message-Id: <20131003041428.GG7925@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 10:29:56 +0000
+Subject: [PATCH 2/5] serial: sh-sci: Remove baud rate calculation algorithm 5
+Message-Id: <1383042599-25151-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r4f7uoxx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r4f7uoxx.wl%kuninori.morimoto.gx@renesas.com>
+References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-On Wed, Oct 02, 2013 at 01:34:07AM -0700, Kuninori Morimoto wrote:
-> This patch enables INTC IRQ and SMSC on BockW board via DT.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
-> 
->  - patch was splited, only dts
-> 
->  arch/arm/boot/dts/r8a7778-bockw-reference.dts |   27 ++++++++++++++++++++++++-
->  1 file changed, 26 insertions(+), 1 deletion(-)
+The algorithm isn't used, remove it.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/tty/serial/sh-sci.c | 2 --
+ include/linux/serial_sci.h  | 1 -
+ 2 files changed, 3 deletions(-)
 
-Thanks, I have queued this up in the dt3 branch.
-It should make it into v3.13 but if not I'll rename the branch
-dt after rebasing it on v3.13-rcX which will then be targeted at v3.14.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 280753f..2fc1a0e 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1820,8 +1820,6 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
+ 		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
+ 	case SCBRR_ALGO_4:
+ 		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
+-	case SCBRR_ALGO_5:
+-		return (((freq * 1000 / 32) / bps) - 1);
+ 	}
+ 
+ 	/* Warn, but use a safe default */
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index d340497..803068d 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -15,7 +15,6 @@ enum {
+ 	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
+ 	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
+ 	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
+-	SCBRR_ALGO_5,		/* (((clk * 1000 / 32) / bps) - 1) */
+ 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+ };
+ 
+-- 
+1.8.1.5
+
