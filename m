@@ -1,60 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Oct 2013 02:37:14 +0000
-Subject: [PATCH 07/12] ARM: shmobile: armadillo: tidyup DT node naming
-Message-Id: <87wql6kp48.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:52 +0000
+Subject: [PATCH v2 17/19] spi: sh_hspi: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-According to ePAPR spec,
-this patch tidies up DT node name.
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI.
 
-This patch removed un-used "touchscreen" label
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/spi/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 1c56c5e..6a54219 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -90,7 +90,7 @@
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 70f5aa3..43e0a4a 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -426,7 +426,7 @@ config SPI_SH_SCI
  
- &i2c0 {
- 	status = "okay";
--	touchscreen: st1232@55 {
-+	touchscreen@55 {
- 		compatible = "sitronix,st1232";
- 		reg = <0x55>;
- 		interrupt-parent = <&irqpin1>;
-@@ -105,12 +105,12 @@
- 	pinctrl-0 = <&scifa1_pins>;
- 	pinctrl-names = "default";
+ config SPI_SH_HSPI
+ 	tristate "SuperH HSPI controller"
+-	depends on ARCH_SHMOBILE || COMPILE_TEST
++	depends on ARM || COMPILE_TEST
+ 	help
+ 	  SPI driver for SuperH HSPI blocks.
  
--	scifa1_pins: scifa1 {
-+	scifa1_pins: serial1 {
- 		renesas,groups = "scifa1_data";
- 		renesas,function = "scifa1";
- 	};
- 
--	st1232_pins: st1232 {
-+	st1232_pins: touchscreen {
- 		renesas,groups = "intc_irq10";
- 		renesas,function = "intc";
- 	};
-@@ -125,7 +125,7 @@
- 		renesas,function = "mmc0";
- 	};
- 
--	sdhi0_pins: sdhi0 {
-+	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_wp";
- 		renesas,function = "sdhi0";
- 	};
 -- 
-1.7.9.5
+1.8.1.5
 
