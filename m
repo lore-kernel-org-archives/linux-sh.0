@@ -1,55 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 Oct 2013 02:37:39 +0000
-Subject: [PATCH 09/12] ARM: shmobile: kzm9g: tidyup DT node naming
-Message-Id: <87txgakp3j.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:47 +0000
+Subject: [PATCH v2 12/19] irda: sh_irda: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-According to ePAPR spec,
-this patch tidies up DT node name.
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Samuel Ortiz <samuel@sortiz.org>
+Cc: netdev@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/net/irda/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 8ee06dd..df75aea 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -205,7 +205,7 @@
- 		renesas,function = "i2c3";
- 	};
+diff --git a/drivers/net/irda/Kconfig b/drivers/net/irda/Kconfig
+index 2a30193..e04b907 100644
+--- a/drivers/net/irda/Kconfig
++++ b/drivers/net/irda/Kconfig
+@@ -403,7 +403,7 @@ config MCS_FIR
  
--	mmcif_pins: mmcif {
-+	mmcif_pins: mmc {
- 		mux {
- 			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
- 			renesas,function = "mmc0";
-@@ -217,17 +217,17 @@
- 		};
- 	};
+ config SH_IRDA
+ 	tristate "SuperH IrDA driver"
+-	depends on IRDA && ARCH_SHMOBILE
++	depends on IRDA && (ARM || COMPILE_TEST)
+ 	help
+ 	  Say Y here if your want to enable SuperH IrDA devices.
  
--	scifa4_pins: scifa4 {
-+	scifa4_pins: serial4 {
- 		renesas,groups = "scifa4_data", "scifa4_ctrl";
- 		renesas,function = "scifa4";
- 	};
- 
--	sdhi0_pins: sdhi0 {
-+	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
- 		renesas,function = "sdhi0";
- 	};
- 
--	sdhi2_pins: sdhi2 {
-+	sdhi2_pins: sd2 {
- 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
- 		renesas,function = "sdhi2";
- 	};
 -- 
-1.7.9.5
+1.8.1.5
 
