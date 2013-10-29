@@ -1,21 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Oct 2013 02:01:12 +0000
-Subject: Re: [PATCH] ARM: shmobile: Select IRQC in case of the r8a7791 SoC
-Message-Id: <20131009020111.GA15065@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 29 Oct 2013 16:21:06 +0000
+Subject: [PATCH] usb: phy: Move R-Car Gen2 driver registration to postcore_inictall
+Message-Id: <1383063666-4291-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131008031608.10122.53864.sendpatchset@w520>
-In-Reply-To: <20131008031608.10122.53864.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Oct 08, 2013 at 12:16:08PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> The r8a7791 contains IRQC hardware so make sure
-> the driver gets built by selecting RENESAS_IRQC.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+USB phy controls USB channels 0 and 2 which are shared between
+PCI USB host controllers and USBHS/USBSS respectively.
 
-Thanks, I have queued this up.
+This Initializes USB phy driver earlier because we need it
+before PCI USB host controllers are initialized.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/usb/phy/phy-rcar-gen2-usb.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/phy/phy-rcar-gen2-usb.c b/drivers/usb/phy/phy-rcar-gen2-usb.c
+index db3ab34..32c8847 100644
+--- a/drivers/usb/phy/phy-rcar-gen2-usb.c
++++ b/drivers/usb/phy/phy-rcar-gen2-usb.c
+@@ -241,7 +241,17 @@ static struct platform_driver rcar_gen2_usb_phy_driver = {
+ 	.remove = rcar_gen2_usb_phy_remove,
+ };
+ 
+-module_platform_driver(rcar_gen2_usb_phy_driver);
++static int __init rcar_gen2_usb_phy_mod_init(void)
++{
++	return platform_driver_register(&rcar_gen2_usb_phy_driver);
++}
++postcore_initcall(rcar_gen2_usb_phy_mod_init);
++
++static void __exit rcar_gen2_usb_phy_mod_exit(void)
++{
++	platform_driver_unregister(&rcar_gen2_usb_phy_driver);
++}
++module_exit(rcar_gen2_usb_phy_mod_exit);
+ 
+ MODULE_LICENSE("GPL v2");
+ MODULE_DESCRIPTION("Renesas R-Car Gen2 USB phy");
+-- 
+1.8.3.1
+
