@@ -1,70 +1,124 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 29 Oct 2013 23:55:06 +0000
+From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Date: Tue, 29 Oct 2013 23:57:52 +0000
 Subject: Re: [PATCH v7 1/5] omap3isp: Modify clocks registration to avoid circular references
-Message-Id: <15201376.PVPE5NrGdO@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart24267327.NWieDcb5ZA"
+Message-Id: <52704B80.2040507@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383076268-8984-1-git-send-email-s.nawrocki@samsung.com>
- <16467881.81yEf9zq68@avalon> <20131029232837.GB2266@earth.universe>
-In-Reply-To: <20131029232837.GB2266@earth.universe>
+ <1383076268-8984-2-git-send-email-s.nawrocki@samsung.com>
+ <16467881.81yEf9zq68@avalon>
+In-Reply-To: <16467881.81yEf9zq68@avalon>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Laurent,
 
---nextPart24267327.NWieDcb5ZA
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+(adding Mauro and LMML at Cc)
 
-Hi Sebastian,
+On 10/29/2013 11:28 PM, Laurent Pinchart wrote:
+> Hi Sylwester,
+>
+> Thank you for the patch.
+>
+> On Tuesday 29 October 2013 20:51:04 Sylwester Nawrocki wrote:
+>> The clock core code is going to be modified so clk_get() takes
+>> reference on the clock provider module. Until the potential circular
+>> reference issue is properly addressed, we pass NULL as as the first
+>> argument to clk_register(), in order to disallow sub-devices taking
+>> a reference on the ISP module back trough clk_get(). This should
+>> prevent locking the modules in memory.
+>>
+>> Cc: Laurent Pinchart<laurent.pinchart@ideasonboard.com>
+>> Signed-off-by: Sylwester Nawrocki<s.nawrocki@samsung.com>
+>> Signed-off-by: Kyungmin Park<kyungmin.park@samsung.com>
+>
+> Acked-by: Laurent Pinchart<laurent.pinchart@ideasonboard.com>
+>
+> Do you plan to push this to mainline as part of this patch series ? I don't
+> have pending patches for the omap3isp that would conflict with this patch, so
+> that would be fine with me.
 
-On Wednesday 30 October 2013 00:28:39 Sebastian Reichel wrote:
-> On Tue, Oct 29, 2013 at 11:28:37PM +0100, Laurent Pinchart wrote:
-> > On Tuesday 29 October 2013 20:51:04 Sylwester Nawrocki wrote:
-> > > The clock core code is going to be modified so clk_get() takes
-> > > reference on the clock provider module. Until the potential circular
-> > > reference issue is properly addressed, we pass NULL as as the first
-> > > argument to clk_register(), in order to disallow sub-devices taking
-> > > a reference on the ISP module back trough clk_get(). This should
-> > > prevent locking the modules in memory.
-> > > 
-> > > Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > > Signed-off-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-> > > Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
-> > 
-> > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > 
-> > Do you plan to push this to mainline as part of this patch series ? I
-> > don't have pending patches for the omap3isp that would conflict with this
-> > patch, so that would be fine with me.
-> 
-> I plan to add support for DT to omap3isp + ADP1653 shortly. I have
-> not yet started to work on this, but expect to send some first RFC
-> patches in November.
+Thanks, yes I thought this patch might be merged together through the clk
+tree, if Mike is willing to take it and we get yours and Mauro's Ack on it.
 
-That's very nice to hear ! And thanks for the heads up, I would have started 
-working on it shortly.
+>> ---
+>> This patch has been "compile tested" only.
+>>
+>> ---
+>>   drivers/media/platform/omap3isp/isp.c |   22 ++++++++++++++++------
+>>   drivers/media/platform/omap3isp/isp.h |    1 +
+>>   2 files changed, 17 insertions(+), 6 deletions(-)
+>>
+>> diff --git a/drivers/media/platform/omap3isp/isp.c
+>> b/drivers/media/platform/omap3isp/isp.c index df3a0ec..286027a 100644
+>> --- a/drivers/media/platform/omap3isp/isp.c
+>> +++ b/drivers/media/platform/omap3isp/isp.c
+>> @@ -290,9 +290,11 @@ static int isp_xclk_init(struct isp_device *isp)
+>>   	struct clk_init_data init;
+>>   	unsigned int i;
+>>
+>> +	for (i = 0; i<  ARRAY_SIZE(isp->xclks); ++i)
+>> +		isp->xclks[i].clk = ERR_PTR(-EINVAL);
+>> +
+>>   	for (i = 0; i<  ARRAY_SIZE(isp->xclks); ++i) {
+>>   		struct isp_xclk *xclk =&isp->xclks[i];
+>> -		struct clk *clk;
+>>
+>>   		xclk->isp = isp;
+>>   		xclk->id = i = 0 ? ISP_XCLK_A : ISP_XCLK_B;
+>> @@ -305,10 +307,15 @@ static int isp_xclk_init(struct isp_device *isp)
+>>   		init.num_parents = 1;
+>>
+>>   		xclk->hw.init =&init;
+>> -
+>> -		clk = devm_clk_register(isp->dev,&xclk->hw);
+>> -		if (IS_ERR(clk))
+>> -			return PTR_ERR(clk);
+>> +		/*
+>> +		 * The first argument is NULL in order to avoid circular
+>> +		 * reference, as this driver takes reference on the
+>> +		 * sensor subdevice modules and the sensors would take
+>> +		 * reference on this module through clk_get().
+>> +		 */
+>> +		xclk->clk = clk_register(NULL,&xclk->hw);
+>> +		if (IS_ERR(xclk->clk))
+>> +			return PTR_ERR(xclk->clk);
+>>
+>>   		if (pdata->xclks[i].con_id = NULL&&
+>>   		pdata->xclks[i].dev_id = NULL)
+>> @@ -320,7 +327,7 @@ static int isp_xclk_init(struct isp_device *isp)
+>>
+>>   		xclk->lookup->con_id = pdata->xclks[i].con_id;
+>>   		xclk->lookup->dev_id = pdata->xclks[i].dev_id;
+>> -		xclk->lookup->clk = clk;
+>> +		xclk->lookup->clk = xclk->clk;
+>>
+>>   		clkdev_add(xclk->lookup);
+>>   	}
+>> @@ -335,6 +342,9 @@ static void isp_xclk_cleanup(struct isp_device *isp)
+>>   	for (i = 0; i<  ARRAY_SIZE(isp->xclks); ++i) {
+>>   		struct isp_xclk *xclk =&isp->xclks[i];
+>>
+>> +		if (!IS_ERR(xclk->clk))
+>> +			clk_unregister(xclk->clk);
+>> +
+>>   		if (xclk->lookup)
+>>   			clkdev_drop(xclk->lookup);
+>>   	}
+>> diff --git a/drivers/media/platform/omap3isp/isp.h
+>> b/drivers/media/platform/omap3isp/isp.h index cd3eff4..1498f2b 100644
+>> --- a/drivers/media/platform/omap3isp/isp.h
+>> +++ b/drivers/media/platform/omap3isp/isp.h
+>> @@ -135,6 +135,7 @@ struct isp_xclk {
+>>   	struct isp_device *isp;
+>>   	struct clk_hw hw;
+>>   	struct clk_lookup *lookup;
+>> +	struct clk *clk;
+>>   	enum isp_xclk_id id;
+>>
+>>   	spinlock_t lock;	/* Protects enabled and divider */
 
--- 
+--
 Regards,
-
-Laurent Pinchart
-
---nextPart24267327.NWieDcb5ZA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJScErfAAoJEIkPb2GL7hl1IekH/0CY1YWUNcUAQpUr0aeJoBOl
-1zcvSIjk2nF0jgf+ayjndSr16epbblODJh5aFcYz+VCweP/aA+xArg5p6tmDO4f9
-Ijk76QN6GjdsiEMvRYnARqysDJEFPvepurpQDrN3YNFmH56tsFytCzBGSzA4qIQy
-4+ouLUFz6q8lOkSZ39F51NYOOw8XyX66y2XfV99psUEnUlaOyizyxocDmmRxUg2s
-9gq6I7TFNTgipo9zbGKxCCwGbxacUPnc2cEg7SuGQuHitwkPSL9yTbNoScKDwoeb
-tTUtPKN9JZzeGmbtvHPPt8GILQsejskvW3Iaj5lp8Tvr8hoOqd8AaesTfha6P6U=
-=dhkA
------END PGP SIGNATURE-----
-
---nextPart24267327.NWieDcb5ZA--
-
+Sylwester
