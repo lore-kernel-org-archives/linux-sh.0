@@ -1,56 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Oct 2013 06:35:34 +0000
-Subject: [PATCH 05/10] ARM: shmobile: bockw: add pin pull-up setting for SDHI
-Message-Id: <87eh7s1fik.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:44 +0000
+Subject: [PATCH v2 09/19] mmc: sh_mmcif: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-SDHI CD/WP pin needs pull-up
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Chris Ball <cjb@laptop.org>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c |   15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ drivers/mmc/host/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index fac95a4..027373f 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -30,9 +30,13 @@
- #define FPGA	0x18200000
- #define IRQ0MR	0x30
- #define COMCTLR	0x101c
-+
-+#define PFC	0xfffc0000
-+#define PUPR4	0x110
- static void __init bockw_init(void)
- {
- 	void __iomem *fpga;
-+	void __iomem *pfc;
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index d57effb..dcceeae 100644
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -588,7 +588,7 @@ config MMC_DW_PCI
  
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin_dt(1);
-@@ -54,6 +58,17 @@ static void __init bockw_init(void)
- 		iounmap(fpga);
- 	}
- 
-+	pfc = ioremap_nocache(PFC, 0x200);
-+	if (pfc) {
-+		/*
-+		 * FIXME
-+		 *
-+		 * SDHI CD/WP pin needs pull-up
-+		 */
-+		iowrite32(ioread32(pfc + PUPR4) | (3 << 26), pfc + PUPR4);
-+		iounmap(pfc);
-+	}
-+
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ config MMC_SH_MMCIF
+ 	tristate "SuperH Internal MMCIF support"
+-	depends on MMC_BLOCK && (SUPERH || ARCH_SHMOBILE)
++	depends on MMC_BLOCK && (SUPERH || ARM || COMPILE_TEST)
+ 	help
+ 	  This selects the MMC Host Interface controller (MMCIF).
  
 -- 
-1.7.9.5
+1.8.1.5
 
