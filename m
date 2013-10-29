@@ -1,42 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 08 Oct 2013 05:58:20 +0000
-Subject: [PATCH 2/7] ARM: shmobile: ape6evm: don't use named resource for SDHI
-Message-Id: <874n8sxq13.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 29 Oct 2013 08:57:30 +0000
+Subject: [PATCH 1/2] ARM: shmobile: lager: set .debounce_interval
+Message-Id: <1383037051-21427-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383037051-21427-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1383037051-21427-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-sh_mobile_sdhi driver doesn't care resource name.
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+In R-Car GPIO hardware block, 'chattering removal' feature can be
+enabled on GPIO-n-[3:0] pins, but it's not supported on rest of pins
+GPIO-n-[31:4].
+
+Set an appropriate debounce interval, instead.  We could confirm that
+spurious/unnecessary GPIO interrupts are prevented by this settings.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 94adf61..fe071a91 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -179,7 +179,7 @@ static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
- };
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 78a31b6..fcf06fd 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -120,7 +120,8 @@ static const struct gpio_led_platform_data lager_leds_pdata __initconst = {
  
- static const struct resource sdhi0_resources[] __initconst = {
--	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
-+	DEFINE_RES_MEM(0xee100000, 0x100),
- 	DEFINE_RES_IRQ(gic_spi(165)),
- };
+ /* GPIO KEY */
+ #define GPIO_KEY(c, g, d, ...) \
+-	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
++	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
++	  .debounce_interval = 20 }
  
-@@ -191,7 +191,7 @@ static const struct sh_mobile_sdhi_info sdhi1_pdata __initconst = {
- };
- 
- static const struct resource sdhi1_resources[] __initconst = {
--	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
-+	DEFINE_RES_MEM(0xee120000, 0x100),
- 	DEFINE_RES_IRQ(gic_spi(166)),
- };
- 
+ static struct gpio_keys_button gpio_buttons[] = {
+ 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
 -- 
-1.7.9.5
+1.8.4
 
