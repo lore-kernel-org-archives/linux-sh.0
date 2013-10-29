@@ -1,56 +1,65 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 29 Oct 2013 11:15:09 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 29 Oct 2013 13:24:57 +0000
 Subject: Re: [PATCH 02/12] clocksource: sh_mtu2: Add clk_prepare/unprepare support
-Message-Id: <526F98BD.9000904@cogentembedded.com>
+Message-Id: <12808622.W4bQC68mNI@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1383000569-8916-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383000569-8916-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <526F98BD.9000904@cogentembedded.com>
+In-Reply-To: <526F98BD.9000904@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Sergei,
 
-On 29-10-2013 2:49, Laurent Pinchart wrote:
+On Tuesday 29 October 2013 15:15:09 Sergei Shtylyov wrote:
+> On 29-10-2013 2:49, Laurent Pinchart wrote:
+> > Prepare the clock at probe time, as there is no other appropriate place
+> > in the driver where we're allowed to sleep.
+> > 
+> > Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+> > Cc: linux-kernel@vger.kernel.org
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > ---
+> > 
+> >   drivers/clocksource/sh_mtu2.c | 16 ++++++++++++++--
+> >   1 file changed, 14 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+> > index 4aac9ee..3cf1283 100644
+> > --- a/drivers/clocksource/sh_mtu2.c
+> > +++ b/drivers/clocksource/sh_mtu2.c
+> > @@ -313,8 +313,20 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p,
+> > struct platform_device *pdev)> 
+> >   		goto err1;
+> >   	}
+> > 
+> > -	return sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
+> > -				cfg->clockevent_rating);
+> > +	ret = clk_prepare(p->clk);
+> > +	if (ret < 0)
+> > +		goto err2;
+> > +
+> > +	ret = sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
+> > +			       cfg->clockevent_rating);
+> > +	if (ret < 0)
+> > +		goto err3;
+> > +
+> > +	return 0;
+> > + err3:
+> > +	clk_unprepare(p->clk);
+> > + err2:
+> > +	clk_put(p->clk);
+> 
+>     This one seems to be a fix and so needs to be in a separate patch...
 
-> Prepare the clock at probe time, as there is no other appropriate place
-> in the driver where we're allowed to sleep.
+I'll split the patch and repost (same for 03/12)
 
-> Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->   drivers/clocksource/sh_mtu2.c | 16 ++++++++++++++--
->   1 file changed, 14 insertions(+), 2 deletions(-)
+-- 
+Regards,
 
-> diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-> index 4aac9ee..3cf1283 100644
-> --- a/drivers/clocksource/sh_mtu2.c
-> +++ b/drivers/clocksource/sh_mtu2.c
-> @@ -313,8 +313,20 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
->   		goto err1;
->   	}
->
-> -	return sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
-> -				cfg->clockevent_rating);
-> +	ret = clk_prepare(p->clk);
-> +	if (ret < 0)
-> +		goto err2;
-> +
-> +	ret = sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
-> +			       cfg->clockevent_rating);
-> +	if (ret < 0)
-> +		goto err3;
-> +
-> +	return 0;
-> + err3:
-> +	clk_unprepare(p->clk);
-> + err2:
-> +	clk_put(p->clk);
-
-    This one seems to be a fix and so needs to be in a separate patch...
-
-WBR, Sergei
+Laurent Pinchart
 
