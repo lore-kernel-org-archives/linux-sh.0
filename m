@@ -1,65 +1,74 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:51:05 +0000
-Subject: [PATCH 13/14] ARM: shmobile: bockw: add SMSC support on reference
-Message-Id: <90357fcbf2fcb9e50899fd3b2a91a6dc3cfe5ea5.1381299817.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:37 +0000
+Subject: [PATCH v2 02/19] DMA: shdma: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381299817.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381299817.git.horms+renesas@verge.net.au>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-This patch enables INTC IRQ, and SMSC IRQ.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: Vinod Koul <vinod.koul@intel.com>
+Cc: dmaengine@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ drivers/dma/sh/Kconfig  | 2 +-
+ drivers/dma/sh/shdmac.c | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index 1a7c893..ae88fda 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -36,15 +36,35 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
- 				  "scif0_ctrl", "scif0"),
- };
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+index dadd9e01..ee0906d 100644
+--- a/drivers/dma/sh/Kconfig
++++ b/drivers/dma/sh/Kconfig
+@@ -4,7 +4,7 @@
  
-+#define FPGA	0x18200000
-+#define IRQ0MR	0x30
-+#define COMCTLR	0x101c
- static void __init bockw_init(void)
- {
-+	static void __iomem *fpga;
-+
- 	r8a7778_clock_init();
-+	r8a7778_init_irq_extpin_dt(1);
+ config SH_DMAE_BASE
+ 	bool "Renesas SuperH DMA Engine support"
+-	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
++	depends on (SUPERH && SH_DMA) || ARM || COMPILE_TEST
+ 	depends on !SH_DMA_API
+ 	default y
+ 	select DMA_ENGINE
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index 1069e88..3625078 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -787,7 +787,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
+ 	if (err)
+ 		goto rst_err;
  
- 	pinctrl_register_mappings(bockw_pinctrl_map,
- 				  ARRAY_SIZE(bockw_pinctrl_map));
- 	r8a7778_pinmux_init();
- 	r8a7778_add_dt_devices();
+-#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
++#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
+ 	chanirq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
  
-+	fpga = ioremap_nocache(FPGA, SZ_1M);
-+	if (fpga) {
-+		/*
-+		 * CAUTION
-+		 *
-+		 * IRQ0/1 is cascaded interrupt from FPGA.
-+		 * it should be cared in the future
-+		 * Now, it is assuming IRQ0 was used only from SMSC.
-+		 */
-+		u16 val = ioread16(fpga + IRQ0MR);
-+		val &= ~(1 << 4); /* enable SMSC911x */
-+		iowrite16(val, fpga + IRQ0MR);
-+	}
-+
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ 	if (!chanirq_res)
+@@ -812,7 +812,7 @@ static int sh_dmae_probe(struct platform_device *pdev)
  
+ #else
+ 	chanirq_res = errirq_res;
+-#endif /* CONFIG_CPU_SH4 || CONFIG_ARCH_SHMOBILE */
++#endif /* CONFIG_CPU_SH4 || CONFIG_ARM */
+ 
+ 	if (chanirq_res->start = chanirq_res->end &&
+ 	    !platform_get_resource(pdev, IORESOURCE_IRQ, 1)) {
+@@ -879,7 +879,7 @@ edmadevreg:
+ chan_probe_err:
+ 	sh_dmae_chan_remove(shdev);
+ 
+-#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
++#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
+ eirq_err:
+ #endif
+ rst_err:
 -- 
-1.8.4
+1.8.1.5
 
