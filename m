@@ -1,59 +1,41 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Wed, 09 Oct 2013 22:14:44 +0000
-Subject: [PATCH 0/3] Add USBHS support to Lager (take 3)
-Message-Id: <1381356887-15564-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:39 +0000
+Subject: [PATCH v2 04/19] input: sh_keysc: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381261407-12606-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1381261407-12606-1-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch set adds internal USB PHY support to RCAR Gen2 SoC, and
-also enables USBHS for the Lager board. It has been updated, based
-on the comments to the previous version.
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-The patches apply fine to the renesas-devel-20131009v2 tag of the renesas.git.
-The first patch also applies fine to the usb.git at kernel.org.
-It adds RCAR Gen2 phy driver which is used to configure the shared USB
-channels 0/2 and to control USBHS internal PHY.
-All the drivers that use the shared USB channels (USBHS/USBSS/PCI USB host)
-should acquire the USB phy first to set proper channel configuration.
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: linux-input@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/input/keyboard/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-The other two patches add USBHS support to Lager board, which requires
-RCAR Gen2 phy driver.
-
-Changes from version 2:
-* added COMPILE_TEST support to phy-rcar-gen2-usb;
-* sorted phy-rcar-gen2-usb.c includes in the alphabetical order;
-* dropped unnecessary checks and error messages
-  in the phy-rcar-gen2 probe callback.
-
-Changes from version 1:
-* use-counting and clock handling done in the usb_phy_init/shutdown
-  callbacks only;
-* a minor typo in the comments fixed;
-* phy clean up moved to __rcar_gen2_usb_phy_shutdown function;
-* usb_phy_init/shutdown called from usbhs_power_ctrl callback
-  to allow renesas_usbhs driver disable USB PHY completely
-  when it is not needed.
-
-Valentine Barshak (3):
-  usb: phy: Add RCAR Gen2 USB phy
-  arm: shmobile: r8a7790: Add USBHS clock support
-  arm: shmobile: lager: Add USBHS support
-
- arch/arm/mach-shmobile/board-lager.c            | 106 ++++++++++
- arch/arm/mach-shmobile/clock-r8a7790.c          |   4 +
- drivers/usb/phy/Kconfig                         |  13 ++
- drivers/usb/phy/Makefile                        |   1 +
- drivers/usb/phy/phy-rcar-gen2-usb.c             | 255 ++++++++++++++++++++++++
- include/linux/platform_data/usb-rcar-gen2-phy.h |  22 ++
- 6 files changed, 401 insertions(+)
- create mode 100644 drivers/usb/phy/phy-rcar-gen2-usb.c
- create mode 100644 include/linux/platform_data/usb-rcar-gen2-phy.h
-
+diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
+index c1edd39..28d75c7 100644
+--- a/drivers/input/keyboard/Kconfig
++++ b/drivers/input/keyboard/Kconfig
+@@ -525,7 +525,7 @@ config KEYBOARD_SUNKBD
+ 
+ config KEYBOARD_SH_KEYSC
+ 	tristate "SuperH KEYSC keypad support"
+-	depends on SUPERH || ARCH_SHMOBILE
++	depends on SUPERH || ARM || COMPILE_TEST
+ 	help
+ 	  Say Y here if you want to use a keypad attached to the KEYSC block
+ 	  on SuperH processors such as sh7722 and sh7343.
 -- 
-1.8.3.1
+1.8.1.5
 
