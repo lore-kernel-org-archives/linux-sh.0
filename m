@@ -1,39 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 03 Oct 2013 23:57:33 +0000
-Subject: Re: [PATCH 01/05] ARM: shmobile: Sync KZM9D DTS with KZM9D reference DTS
-Message-Id: <20131003235733.GC29457@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 14:31:37 +0000
+Subject: [PATCH v2 2/2] clocksource: sh_tmu: Add clk_prepare/unprepare support
+Message-Id: <1383057097-22689-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131001103255.813.65710.sendpatchset@w520>
- <20131001103305.813.70296.sendpatchset@w520>
- <20131003034947.GH28463@verge.net.au> <2066391.GX4ZAHlWrz@avalon>
-In-Reply-To: <2066391.GX4ZAHlWrz@avalon>
+References: <1383000569-8916-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1383057097-22689-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383057097-22689-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 03, 2013 at 11:56:40AM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 03 October 2013 12:49:48 Simon Horman wrote:
-> > On Tue, Oct 01, 2013 at 07:33:05PM +0900, Magnus Damm wrote:
-> > > From: Magnus Damm <damm@opensource.se>
-> > > 
-> > > Copy the device nodes from KZM9D reference into the KZM9D
-> > > device tree file. This will allow us to use a single DTS
-> > > file regarless of kernel configuration. In case of legacy
-> > > C board code the device nodes may or may not be used, but
-> > > in the multiplatform case all the DT device nodes are used.
-> > > 
-> > > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > > ---
-> > > 
-> > >  arch/arm/boot/dts/emev2-kzm9d.dts |   33 +++++++++++++++++++++++++++++++-
-> > >  1 file changed, 32 insertions(+), 1 deletion(-)
-> > 
-> > Thanks, I have queued this up in the dt3 branch.
-> 
-> Splitting the series across two branches would result in bisection breakages 
-> I'm afraid. Would it be an issue to queue all patches to a single branch ?
+Prepare the clock at probe time, as there is no other appropriate place
+in the driver where we're allowed to sleep.
 
-Sure, I will re-arrange things accordingly.
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/clocksource/sh_tmu.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 1597837..63557cd 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -472,6 +472,11 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ 		ret = PTR_ERR(p->clk);
+ 		goto err1;
+ 	}
++
++	ret = clk_prepare(p->clk);
++	if (ret < 0)
++		goto err2;
++
+ 	p->cs_enabled = false;
+ 	p->enable_count = 0;
+ 
+@@ -479,10 +484,12 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ 			      cfg->clockevent_rating,
+ 			      cfg->clocksource_rating);
+ 	if (ret < 0)
+-		goto err2;
++		goto err3;
+ 
+ 	return 0;
+ 
++ err3:
++	clk_unprepare(p->clk);
+  err2:
+ 	clk_put(p->clk);
+  err1:
+-- 
+1.8.1.5
+
