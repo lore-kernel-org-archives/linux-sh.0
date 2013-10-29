@@ -1,53 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Oct 2013 06:50:16 +0000
-Subject: [PATCH 06/13] ARM: shmobile: r8a7791 IRQC device tree node
-Message-Id: <d77db73e260fe4b5cca4fa1e5253c21e2d755f58.1381298964.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:53 +0000
+Subject: [PATCH v2 18/19] thermal: rcar-thermal: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381298964.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381298964.git.horms+renesas@verge.net.au>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Renesas ARM platforms are transitioning from single-platform to
+multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+COMPILE_TEST.
 
-Enable a r8a7791 IRQC block by adding a device tree
-node for the IRQC hardware and pins IRQ0 to IRQ9.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Zhang Rui <rui.zhang@intel.com>
+Cc: Eduardo Valentin <eduardo.valentin@ti.com>
+Cc: linux-pm@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ drivers/thermal/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index bbed43b..b701417 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -38,4 +38,22 @@
- 			<0 0xf1006000 0 0x2000>;
- 		interrupts = <1 9 0xf04>;
- 	};
-+
-+	irqc0: interrupt-controller@e61c0000 {
-+		compatible = "renesas,irqc";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0 0xe61c0000 0 0x200>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 0 4>,
-+			      <0 1 4>,
-+			      <0 2 4>,
-+			      <0 3 4>,
-+			      <0 12 4>,
-+			      <0 13 4>,
-+			      <0 14 4>,
-+			      <0 15 4>,
-+			      <0 16 4>,
-+			      <0 17 4>;
-+	};
- };
+diff --git a/drivers/thermal/Kconfig b/drivers/thermal/Kconfig
+index dbfc390..bd905ac 100644
+--- a/drivers/thermal/Kconfig
++++ b/drivers/thermal/Kconfig
+@@ -121,7 +121,7 @@ config SPEAR_THERMAL
+ 
+ config RCAR_THERMAL
+ 	tristate "Renesas R-Car thermal driver"
+-	depends on ARCH_SHMOBILE
++	depends on ARM || COMPILE_TEST
+ 	help
+ 	  Enable this to plug the R-Car thermal sensor driver into the Linux
+ 	  thermal framework
 -- 
-1.8.4
+1.8.1.5
 
