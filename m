@@ -1,11 +1,10 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 30 Oct 2013 11:34:53 +0000
-Subject: [PATCH v3 3/3] mmc: sh_mmcif: Enable the driver on all ARM platforms
-Message-Id: <1383132893-27008-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 29 Oct 2013 22:37:40 +0000
+Subject: [PATCH v2 05/19] iommu: shmobile: Enable the driver on all ARM platforms
+Message-Id: <1383086274-11049-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383132893-27008-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383132893-27008-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,27 +16,26 @@ driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
 and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
 COMPILE_TEST.
 
-Cc: Chris Ball <cjb@laptop.org>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org
+Cc: Joerg Roedel <joro@8bytes.org>
+Cc: iommu@lists.linux-foundation.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/Kconfig | 2 +-
+ drivers/iommu/Kconfig | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 51957d4..4ba225f 100644
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
-@@ -588,7 +588,7 @@ config MMC_DW_PCI
- 
- config MMC_SH_MMCIF
- 	tristate "SuperH Internal MMCIF support"
--	depends on MMC_BLOCK && (SUPERH || ARCH_SHMOBILE)
-+	depends on MMC_BLOCK && (SUPERH || ARM || COMPILE_TEST)
- 	help
- 	  This selects the MMC Host Interface controller (MMCIF).
- 
+diff --git a/drivers/iommu/Kconfig b/drivers/iommu/Kconfig
+index c880eba..9fd51e5 100644
+--- a/drivers/iommu/Kconfig
++++ b/drivers/iommu/Kconfig
+@@ -206,7 +206,7 @@ config SHMOBILE_IPMMU_TLB
+ config SHMOBILE_IOMMU
+ 	bool "IOMMU for Renesas IPMMU/IPMMUI"
+ 	default n
+-	depends on (ARM && ARCH_SHMOBILE)
++	depends on ARM || COMPILE_TEST
+ 	select IOMMU_API
+ 	select ARM_DMA_USE_IOMMU
+ 	select SHMOBILE_IPMMU
 -- 
 1.8.1.5
 
