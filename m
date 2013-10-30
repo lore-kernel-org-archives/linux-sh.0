@@ -1,38 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 01 Oct 2013 02:37:15 +0000
-Subject: [PATCH 10/12] ARM: shmobile: armadillo800eva: disable MMCIF Command Completion Signal
-Message-Id: <fbf3264c046a6cce4cefec6e069fc86c0175f7d3.1380530519.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 30 Oct 2013 11:34:52 +0000
+Subject: [PATCH v3 2/3] mmc: sh_mmcif: Fix compilation warning on 64-bit platforms
+Message-Id: <1383132893-27008-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380530519.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380530519.git.horms+renesas@verge.net.au>
+References: <1383086274-11049-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1383132893-27008-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383132893-27008-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-MMCIF on r8a7740 doesn't support Command Completion Signal, a platform
-parameter has to be added to disable it on armadillo800eva.
+Casting an integer to a void * generates a "cast to pointer from integer
+of different size" warning. Cast the integer to an unsigned long first
+to fix it.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/mmc/host/sh_mmcif.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 5bd1479..fc8f9f8 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -823,6 +823,7 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
- 			  MMC_CAP_NONREMOVABLE,
-+	.ccs_unsupported = true,
- 	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
- 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
- };
+I've kept this change separate from 1/3 to show why 1/3 and 2/3 are required
+to fix a compilation warning before applying 3/3. Feel free to squash 1/3 and
+2/3 if preferred.
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 92b9273..1f1438f 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -403,7 +403,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 		slave_id = 0;
+ 
+ 	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-				(void *)slave_id, &host->pd->dev,
++				(void *)(unsigned long)slave_id, &host->pd->dev,
+ 				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
+ 
+ 	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
 -- 
-1.8.4
+1.8.1.5
 
