@@ -1,30 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 29 Oct 2013 08:52:59 +0000
-Subject: gpio-rcar: DT and IRQ_TYPE_EDGE_BOTH
-Message-Id: <20131029085258.GE15731@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 30 Oct 2013 07:04:46 +0000
+Subject: Re: gpio-rcar: DT and IRQ_TYPE_EDGE_BOTH
+Message-Id: <CANqRtoR+_HvbemVcWBszrCXRJ21wMrPHM4vKhBnq11VgfGBamw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20131029085258.GE15731@verge.net.au>
+In-Reply-To: <20131029085258.GE15731@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, devicetree@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: Simon Horman <horms@verge.net.au>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, SH-Linux <linux-sh@vger.kernel.org>, devicetree@vger.kernel.org
 
-Hi Laurent,
+Hi Simon,
 
-In 7e1092b5a264c4 ("gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH")
-I added a 'has_both_edge_trigger' field to struct gpio_rcar_config.
-Setting this adds support IRQ_TYPE_EDGE_BOTH. The motivation for
-this was to allow use of the gpio-keys driver on the lager board.
+On Tue, Oct 29, 2013 at 8:52 AM, Simon Horman <horms@verge.net.au> wrote:
+> Hi Laurent,
+>
+> In 7e1092b5a264c4 ("gpio-rcar: Add support for IRQ_TYPE_EDGE_BOTH")
+> I added a 'has_both_edge_trigger' field to struct gpio_rcar_config.
+> Setting this adds support IRQ_TYPE_EDGE_BOTH. The motivation for
+> this was to allow use of the gpio-keys driver on the lager board.
+>
+> I am now looking at enabling gpio-keys via DT for koelsch and lager
+> and find myself needing to set has_both_edge_trigger somehow.
+> I am wondering if you have any ideas on how best to do this.
+>
+> So far I have two ideas:
+>
+> 1. Expose has_both_edge_trigger as a binding.
+>
+> 2. Set has_both_edge_trigger in the driver if the
+>    compat string is renesas,gpio-r8a7791 or renesas,gpio-r8a7790
+>    but not for other supported compat strings (as is currently the case).
 
-I am now looking at enabling gpio-keys via DT for koelsch and lager
-and find myself needing to set has_both_edge_trigger somehow.
-I am wondering if you have any ideas on how best to do this.
+I think which to pick depends on the type of feature. In the case of
+enabling both edge support for this GPIO driver, I believe going with
+2) is the best way forward. The reason for this is that all GPIO
+instances within a particular SoC seem to either have or not have
+support for dual edges. At least that is the case on r8a7790 and
+r8a7791.
 
-So far I have two ideas:
+There may be other properties in the future like per-GPIO hardware
+debounce, and I suspect that those may be more suitable for 1) since
+they are only supported on a certain set of GPIO pins. So from my POV
+this is a case by case thing.
 
-1. Expose has_both_edge_trigger as a binding.
+Cheers,
 
-2. Set has_both_edge_trigger in the driver if the
-   compat string is renesas,gpio-r8a7791 or renesas,gpio-r8a7790
-   but not for other supported compat strings (as is currently the case).
-
+/ magnus
