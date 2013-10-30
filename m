@@ -1,36 +1,21 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 10 Oct 2013 07:16:34 +0000
-Subject: [PATCH 09/11] ARM: shmobile: bockw: Enable CONFIG_PACKET in defconfig
-Message-Id: <1381389396-22000-10-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 30 Oct 2013 22:16:34 +0000
+Subject: [PATCH 0/2] Add Ether support for R8A7791/Koelsch board
+Message-Id: <201310310216.28673.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1381389396-22000-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-CONFIG_PACKET is required for the ISC dhcpd daemon function.
-This change brings the bockw defconfig into line with
-other shmobile defconfigs.
+Hello.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/configs/bockw_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-v3.12-rc7-20131030' tag. Here we add the Ether support to the
+R8A7791/Koelsch board. The patchset requires the R8A7791 PFC support posted
+earlier in order to work.
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 03fef6d..225cb8e 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -32,6 +32,7 @@ CONFIG_VFP=y
- # CONFIG_SUSPEND is not set
- CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
-+CONFIG_PACKET=y
- CONFIG_UNIX=y
- CONFIG_INET=y
- CONFIG_IP_PNP=y
--- 
-1.8.4
+[1/2] ARM: shmobile: r8a7791: add Ether clock
+[2/2] ARM: shmobile: Koelsch: add Ether support
 
+WBR, Sergei
