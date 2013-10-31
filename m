@@ -1,47 +1,62 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 30 Oct 2013 19:30:29 +0000
-Subject: [PATCH v3] sh_eth: check platform data pointer
-Message-Id: <201310302330.19491.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 31 Oct 2013 06:05:27 +0000
+Subject: Re: [PATCH v3] sh_eth: check platform data pointer
+Message-Id: <20131031060527.GV1603@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201310302330.19491.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201310302330.19491.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org, 'David Miller' <davem@davemloft.net>
 
-Check the platform data pointer before dereferencing it and error out of the
-probe() method if it's NULL.
+[ Cc Dave Miller ]
 
-This has additional effect of preventing kernel oops with outdated platform data
-containing zero PHY address instead (such as on SolutionEngine7710).
+On Wed, Oct 30, 2013 at 11:30:19PM +0300, Sergei Shtylyov wrote:
+> Check the platform data pointer before dereferencing it and error out of the
+> probe() method if it's NULL.
+> 
+> This has additional effect of preventing kernel oops with outdated platform data
+> containing zero PHY address instead (such as on SolutionEngine7710).
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
----
-This patch is against David Miller's 'net-next.git' repo.
+Dave, is it too late to for this to be considered for net-next?
 
-Changes in version 3:
-- refreshed the patch.
-
-Changes in version 2:
-- refreshed the patch.
-
- drivers/net/ethernet/renesas/sh_eth.c |    6 ++++++
- 1 file changed, 6 insertions(+)
-
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2663,6 +2663,12 @@ static int sh_eth_drv_probe(struct platf
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_resume(&pdev->dev);
- 
-+	if (!pd) {
-+		dev_err(&pdev->dev, "no platform data\n");
-+		ret = -EINVAL;
-+		goto out_release;
-+	}
-+
- 	/* get PHY ID */
- 	mdp->phy_id = pd->phy;
- 	mdp->phy_interface = pd->phy_interface;
+> 
+> ---
+> This patch is against David Miller's 'net-next.git' repo.
+> 
+> Changes in version 3:
+> - refreshed the patch.
+> 
+> Changes in version 2:
+> - refreshed the patch.
+> 
+>  drivers/net/ethernet/renesas/sh_eth.c |    6 ++++++
+>  1 file changed, 6 insertions(+)
+> 
+> Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+> =================================> --- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
+> +++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+> @@ -2663,6 +2663,12 @@ static int sh_eth_drv_probe(struct platf
+>  	pm_runtime_enable(&pdev->dev);
+>  	pm_runtime_resume(&pdev->dev);
+>  
+> +	if (!pd) {
+> +		dev_err(&pdev->dev, "no platform data\n");
+> +		ret = -EINVAL;
+> +		goto out_release;
+> +	}
+> +
+>  	/* get PHY ID */
+>  	mdp->phy_id = pd->phy;
+>  	mdp->phy_interface = pd->phy_interface;
+> --
+> To unsubscribe from this list: send the line "unsubscribe netdev" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
