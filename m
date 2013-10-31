@@ -1,11 +1,12 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 31 Oct 2013 18:47:02 +0000
+Date: Thu, 31 Oct 2013 20:25:03 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: Koelsch: add Ether support
-Message-Id: <5272B3B1.8090503@cogentembedded.com>
+Message-Id: <5272CAA8.8070407@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201310310216.28673.sergei.shtylyov@cogentembedded.com>	<201310310219.58963.sergei.shtylyov@cogentembedded.com>
- <CANqRtoTNJAnqavonOwtqe5_HDdPwK1-JAixNuz5z7ttQw-T64Q@mail.gmail.com>
-In-Reply-To: <CANqRtoTNJAnqavonOwtqe5_HDdPwK1-JAixNuz5z7ttQw-T64Q@mail.gmail.com>
+References: <201310310216.28673.sergei.shtylyov@cogentembedded.com>
+ <201310310219.58963.sergei.shtylyov@cogentembedded.com>
+ <20131031050215.GH1603@verge.net.au>
+In-Reply-To: <20131031050215.GH1603@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,56 +14,83 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hello.
 
-On 10/31/2013 11:10 AM, Magnus Damm wrote:
+On 10/31/2013 08:02 AM, Simon Horman wrote:
 
 >> Register Ether platform device and pin data on  the  Koelsch board.
 >> Register platform fixup for Micrel KSZ8041 PHY, just like on the Lager board.
 
 >> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+> Thanks, I have been able to use this to successfully boot a Koelsch board
+> using nfsroot.  However, I believe there is a minor build problem which I
+> have commented on below.
+
+    Yes, there is. Unfortunately, I haven't tested the build with 
+koelsch_defconfig...
+
 >> ---
 >>   arch/arm/mach-shmobile/board-koelsch.c |   61 ++++++++++++++++++++++++++++++++-
 >>   1 file changed, 60 insertions(+), 1 deletion(-)
->>
+
 >> Index: renesas/arch/arm/mach-shmobile/board-koelsch.c
 >> =================================>> --- renesas.orig/arch/arm/mach-shmobile/board-koelsch.c
 >> +++ renesas/arch/arm/mach-shmobile/board-koelsch.c
-
->> @@ -70,11 +87,29 @@ static const struct gpio_keys_platform_d
->>          .nbuttons       = ARRAY_SIZE(gpio_buttons),
->>   };
+[...]
+>> @@ -83,6 +118,30 @@ static void __init koelsch_add_standard_
+>>   				      sizeof(koelsch_keys_pdata));
+>>   }
 >>
->> +static const struct pinctrl_map koelsch_pinctrl_map[] = {
->> +       /* Ether */
->> +       PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7791",
->> +                                 "eth_link", "eth"),
->> +       PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7791",
->> +                                 "eth_mdio", "eth"),
->> +       PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7791",
->> +                                 "eth_rmii", "eth"),
->> +};
+>> +/*
+>> + * Ether LEDs on the Koelsch board are named LINK and ACTIVE which corresponds
+>> + * to non-default 01 setting of the Micrel KSZ8041 PHY control register 1 bits
+>> + * 14-15. We have to set them back to 01 from the default 00 value each time
+>> + * the PHY is reset. It's also important because the PHY's LED0 signal is
+>> + * connected to SoC's ETH_LINK signal and in the PHY's default mode it will
+>> + * bounce on and off after each packet, which we apparently want to avoid.
+>> + */
+>> +static int koelsch_ksz8041_fixup(struct phy_device *phydev)
+>> +{
+>> +	u16 phyctrl1 = phy_read(phydev, 0x1e);
+>> +
+>> +	phyctrl1 &= ~0xc000;
+>> +	phyctrl1 |= 0x4000;
+>> +	return phy_write(phydev, 0x1e, phyctrl1);
+>> +}
+>> +
+>> +static void __init koelsch_init(void)
+>> +{
+>> +	koelsch_add_standard_devices();
+>> +
+>> +	phy_register_fixup_for_id("r8a7790-ether-ff:01", koelsch_ksz8041_fixup);
 
-> Once again we seem to be using r8a7790 when the actual SoC is r8a7791.
+> It seems to me that this code requires CONFIG_PHYLIB in order to compile.
 
-    Note that the last time it was in the DT context which is not quite the 
-same as platfrom device context.
+    Not really -- only in order to link.
 
-> If you're going to go down the route of using the SoC name then please
+> So I propose the following enhancement to this patch which replaces
+> the line immediately above.
 
-    I don't have much choice here. Though we could have used used R-Car 
-gen1/gen2 terminology (at least in the hindsight)...
+> 	if (IS_ENABLED(CONFIG_PHYLIB))
+> 		phy_register_fixup_for_id("r8a7790-ether-ff:01",
+> 					  koelsch_ksz8041_fixup);
 
-> use the correct one at least.
+    Strictly speaking, this is not enough. I'm getting:
 
-    It wasn't me who used "r8a7790-ether" name in the first place, it was 
-Simon. And as these 2 SoCs are indistinguishable at least from the 'sh_eth' 
-driver's point of view, I wouldn't want to introduce another platform device 
-ID, especially as it hasn't been done for R8A777[89] SoCs. What I can offer is 
-renaming "r8a7790-ether" to "r8a779x-ether" if you really want.
+arch/arm/mach-shmobile/built-in.o: In function `koelsch_ksz8041_fixup':
+platsmp-apmu.c:(.text+0xb8): undefined reference to `mdiobus_read'
+platsmp-apmu.c:(.text+0xd0): undefined reference to `mdiobus_write'
+arch/arm/mach-shmobile/built-in.o: In function `koelsch_init':
+platsmp-apmu.c:(.init.text+0xa90): undefined reference to 
+`phy_register_fixup_for_id'
 
-> Cheers,
+So I guess the fixup function should be enclosed into #ifdef CONFIG_PHYLIB 
+too. However, in practice this change seems enough (gcc probably drops unused 
+static functions?)...
 
-> / magnus
+> I believe a similar enhancement is also needed for board-lager.c
+> which I just realised does not compile if CONFIG_PHYLIB is not set.
+
+    I believe you meant to say it doesn't link too.
 
 WBR, Sergei
 
