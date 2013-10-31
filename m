@@ -1,53 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 31 Oct 2013 06:06:49 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 31 Oct 2013 20:50:52 +0000
 Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7791: add Ether clock
-Message-Id: <20131031060649.GW1603@verge.net.au>
+Message-Id: <5272D0B6.3090604@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201310310216.28673.sergei.shtylyov@cogentembedded.com>
  <201310310218.37578.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201310310218.37578.sergei.shtylyov@cogentembedded.com>
+ <20131031060649.GW1603@verge.net.au>
+In-Reply-To: <20131031060649.GW1603@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 31, 2013 at 02:18:37AM +0300, Sergei Shtylyov wrote:
-> Add support for R8A7791 Ether clock.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Hello.
 
-Thanks, I have queued this up.
+On 10/31/2013 09:06 AM, Simon Horman wrote:
 
-> 
-> ---
->  arch/arm/mach-shmobile/clock-r8a7791.c |    3 +++
->  1 file changed, 3 insertions(+)
-> 
-> Index: renesas/arch/arm/mach-shmobile/clock-r8a7791.c
-> =================================> --- renesas.orig/arch/arm/mach-shmobile/clock-r8a7791.c
-> +++ renesas/arch/arm/mach-shmobile/clock-r8a7791.c
-> @@ -120,6 +120,7 @@ static struct clk *main_clks[] = {
->  
->  /* MSTP */
->  enum {
-> +	MSTP813,
->  	MSTP721, MSTP720,
->  	MSTP719, MSTP718, MSTP715, MSTP714,
->  	MSTP216, MSTP207, MSTP206,
-> @@ -129,6 +130,7 @@ enum {
->  };
->  
->  static struct clk mstp_clks[MSTP_NR] = {
-> +	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
->  	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
->  	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
->  	[MSTP719] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 19, 0), /* SCIF2 */
-> @@ -180,6 +182,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
->  	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
->  	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-> +	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]), /* Ether */
->  };
->  
->  #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
-> 
+>> Add support for R8A7791 Ether clock.
+
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+> Thanks, I have queued this up.
+
+    Perhaps you were too quick, taking into account Magnus' mail about the 
+device name...
+
+WBR, Sergei
+
+
