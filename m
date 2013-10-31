@@ -1,51 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 31 Oct 2013 08:10:03 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 31 Oct 2013 18:03:45 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: Koelsch: add Ether support
-Message-Id: <CANqRtoTNJAnqavonOwtqe5_HDdPwK1-JAixNuz5z7ttQw-T64Q@mail.gmail.com>
+Message-Id: <5272A98B.3030705@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201310310216.28673.sergei.shtylyov@cogentembedded.com>
- <201310310219.58963.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201310310219.58963.sergei.shtylyov@cogentembedded.com>
+References: <201310310216.28673.sergei.shtylyov@cogentembedded.com>	<201310310219.58963.sergei.shtylyov@cogentembedded.com>
+ <CANqRtoTa6-UP88146KPy9zNXNTRynBVqWZYb1k=0MK03NMJqhw@mail.gmail.com>
+In-Reply-To: <CANqRtoTa6-UP88146KPy9zNXNTRynBVqWZYb1k=0MK03NMJqhw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Hello.
 
-On Thu, Oct 31, 2013 at 8:19 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Register Ether platform device and pin data on  the  Koelsch board.
-> Register platform fixup for Micrel KSZ8041 PHY, just like on the Lager board.
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
-> ---
->  arch/arm/mach-shmobile/board-koelsch.c |   61 ++++++++++++++++++++++++++++++++-
->  1 file changed, 60 insertions(+), 1 deletion(-)
->
-> Index: renesas/arch/arm/mach-shmobile/board-koelsch.c
-> =================================> --- renesas.orig/arch/arm/mach-shmobile/board-koelsch.c
-> +++ renesas/arch/arm/mach-shmobile/board-koelsch.c
+On 10/31/2013 11:06 AM, Magnus Damm wrote:
 
-> @@ -70,11 +87,29 @@ static const struct gpio_keys_platform_d
->         .nbuttons       = ARRAY_SIZE(gpio_buttons),
->  };
->
-> +static const struct pinctrl_map koelsch_pinctrl_map[] = {
-> +       /* Ether */
-> +       PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7791",
-> +                                 "eth_link", "eth"),
-> +       PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7791",
-> +                                 "eth_mdio", "eth"),
-> +       PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7791",
-> +                                 "eth_rmii", "eth"),
-> +};
+>> Register Ether platform device and pin data on  the  Koelsch board.
+>> Register platform fixup for Micrel KSZ8041 PHY, just like on the Lager board.
 
-Once again we seem to be using r8a7790 when the actual SoC is r8a7791.
-If you're going to go down the route of using the SoC name then please
-use the correct one at least.
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Cheers,
+> Thanks for your patch. Just like on the Lager board we also need to
+> tie in the PHY IRQ pin.
 
-/ magnus
+    Not only on the Lager board, BOCK-W also I think.
+
+> Polling is not good enough when the hardware
+> can do better. Can you please share your PHY IRQ plans with us?
+
+    It's on my agenda now -- will start after I do away with the CAN driver 
+and the current Koelsch Ether support.
+
+> Best,
+
+> / magnus
+
+WBR, Sergei
+
