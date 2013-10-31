@@ -1,49 +1,40 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Thu, 31 Oct 2013 07:54:53 +0000
-Subject: Re: [PATCH v2 04/19] input: sh_keysc: Enable the driver on all ARM platforms
-Message-Id: <20131031075453.GB2098@core.coreip.homeip.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 31 Oct 2013 03:21:41 +0000
+Subject: [PATCH] ARM: shmobile: Include all 4 GiB of memory on Lager
+Message-Id: <20131031032141.16014.78225.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383086274-11049-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 29, 2013 at 11:37:39PM +0100, Laurent Pinchart wrote:
-> Renesas ARM platforms are transitioning from single-platform to
-> multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-> driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
-> and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
-> COMPILE_TEST.
-> 
-> Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-> Cc: linux-input@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Applied, thank you.
+Add 2GiB of DRAM at 0x1_8000_0000 to support the full 4GiB
+of Lager system memory.
 
-> ---
->  drivers/input/keyboard/Kconfig | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
-> index c1edd39..28d75c7 100644
-> --- a/drivers/input/keyboard/Kconfig
-> +++ b/drivers/input/keyboard/Kconfig
-> @@ -525,7 +525,7 @@ config KEYBOARD_SUNKBD
->  
->  config KEYBOARD_SH_KEYSC
->  	tristate "SuperH KEYSC keypad support"
-> -	depends on SUPERH || ARCH_SHMOBILE
-> +	depends on SUPERH || ARM || COMPILE_TEST
->  	help
->  	  Say Y here if you want to use a keypad attached to the KEYSC block
->  	  on SuperH processors such as sh7722 and sh7343.
-> -- 
-> 1.8.1.5
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
--- 
-Dmitry
+ For correct run time operation regardless of kernel configuration
+ ARM patches 7863/1 and 7864/1 are needed.
+
+ Written on top of renesas-devel-v3.12-rc7-20131030
+
+ arch/arm/boot/dts/r8a7790-lager.dts |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7790-lager.dts
++++ work/arch/arm/boot/dts/r8a7790-lager.dts	2013-10-31 11:49:43.000000000 +0900
+@@ -24,6 +24,11 @@
+ 		reg = <0 0x40000000 0 0x80000000>;
+ 	};
+ 
++	memory@180000000 {
++		device_type = "memory";
++		reg = <1 0x80000000 0 0x80000000>;
++	};
++
+ 	lbsc {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
