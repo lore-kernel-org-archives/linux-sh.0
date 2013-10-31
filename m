@@ -1,50 +1,45 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Oct 2013 06:13:51 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7778: add renesas_intc_irqpin support on DT
-Message-Id: <87vc1gyzc4.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 31 Oct 2013 08:46:24 +0000
+Subject: Question about r8a7779 ether
+Message-Id: <87fvrhq143.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1365142324-7286-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1365142324-7286-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7778.dtsi |   19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 3577aba..a6308a3 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -33,6 +33,25 @@
- 		      <0xfe430000 0x100>;
- 	};
- 
-+	/* irqpin: IRQ0 - IRQ3 */
-+	irqpin: irqpin@fe78001c {
-+		compatible = "renesas,intc-irqpin";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		status = "disabled"; /* default off */
-+		reg =	<0xfe78001c 4>,
-+			<0xfe780010 4>,
-+			<0xfe780024 4>,
-+			<0xfe780044 4>,
-+			<0xfe780064 4>;
-+		interrupt-parent = <&gic>;
-+		interrupts =   <0 27 0x4
-+				0 28 0x4
-+				0 29 0x4
-+				0 30 0x4>;
-+		sense-bitfield-width = <2>;
-+	};
-+
- 	gpio0: gpio@ffc40000 {
- 		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
- 		reg = <0xffc40000 0x2c>;
--- 
-1.7.9.5
+Hi
 
+You know, we are removing r8a7779_add_xxx_device()
+from setup-r8a7779.
+When I cleaned these functions from setup-r8a7779,
+if my memory was correct, Sergei requested not to clean up
+r8a7779_add_ether_device(), since he sends patch for marzen.
+
+But current marzen still doesn't use it.
+I'm checking renesas-devel-v3.12-rc7-20131030 tag.
+According to git log, r8a7779_add_ether_device() was added Apr 2013,
+and today, Nov 2013.
+
+Does Marzen need it ?
+If yes, who has this patch ? or what is current status of it ?
+
+No one is using it in this 6 month.
+(and normal marzen board doesn't have sh_eth implement).
+Can I remove it anyway ?
+
+r8a7779_add_ether_device() was added by this commit
+
+dace48d04dee46a3409d5e13cd98031522e46377
+Author: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date:   Thu Apr 4 18:53:50 2013 +0000
+
+    ARM: shmobile: R8A7779: add Ether support
+    
+    Add Ether clock and platform device for R8A7779 SoC; add a function to register
+    this device with board-specific platform data.
+    
+    Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+    Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+    Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
