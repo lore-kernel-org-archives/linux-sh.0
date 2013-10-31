@@ -1,42 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Oct 2013 06:31:38 +0000
-Subject: [PATCH] RM: shmobile: lager: phy fixup needs CONFIG_PHYLIB
-Message-Id: <1383201098-4258-1-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 31 Oct 2013 20:31:09 +0000
+Subject: Re: [PATCH] RM: shmobile: lager: phy fixup needs CONFIG_PHYLIB
+Message-Id: <5272CC16.3020700@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383201098-4258-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1383201098-4258-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Do not build the phy fixup unless CONFIG_PHYLIB is enabled.
-Other than not being useful it is also not possible to compile
-the code under this condition as phy_register_fixup_for_id()
-is not defined.
+On 10/31/2013 09:31 AM, Simon Horman wrote:
 
-This problem was introduced by 48c8b96f21817aad
-("ARM: shmobile: Lager: add Micrel KSZ8041 PHY fixup")
+> Do not build the phy fixup unless CONFIG_PHYLIB is enabled.
+> Other than not being useful it is also not possible to compile
 
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-lager.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+    s/compile/link/.
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 78a31b6..d1a8ddd 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -245,7 +245,9 @@ static void __init lager_init(void)
- {
- 	lager_add_standard_devices();
- 
--	phy_register_fixup_for_id("r8a7790-ether-ff:01", lager_ksz8041_fixup);
-+	if (IS_ENABLED(CONFIG_PHYLIB))
-+		phy_register_fixup_for_id("r8a7790-ether-ff:01",
-+					  lager_ksz8041_fixup);
- }
- 
- static const char * const lager_boards_compat_dt[] __initconst = {
--- 
-1.8.4
+> the code under this condition as phy_register_fixup_for_id()
+> is not defined.
+
+    Not only this function is absent...
+
+> This problem was introduced by 48c8b96f21817aad
+> ("ARM: shmobile: Lager: add Micrel KSZ8041 PHY fixup")
+
+> Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>   arch/arm/mach-shmobile/board-lager.c | 4 +++-
+>   1 file changed, 3 insertions(+), 1 deletion(-)
+
+> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+> index 78a31b6..d1a8ddd 100644
+> --- a/arch/arm/mach-shmobile/board-lager.c
+> +++ b/arch/arm/mach-shmobile/board-lager.c
+> @@ -245,7 +245,9 @@ static void __init lager_init(void)
+>   {
+>   	lager_add_standard_devices();
+>
+> -	phy_register_fixup_for_id("r8a7790-ether-ff:01", lager_ksz8041_fixup);
+> +	if (IS_ENABLED(CONFIG_PHYLIB))
+> +		phy_register_fixup_for_id("r8a7790-ether-ff:01",
+> +					  lager_ksz8041_fixup);
+
+    Perhaps you would consider enclosing the fixup function itself into #ifdef 
+as it causes link errors as well?  Doesn't seem necessary as gcc probably 
+drops it anyway but for completeness' sake...
+
+WBR, Sergei
 
