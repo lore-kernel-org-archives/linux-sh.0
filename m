@@ -1,106 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 17 Oct 2013 06:07:06 +0000
-Subject: Re: [PATCH v2 4/4] ARM: shmobile: BOCK-W reference: add Ether PFC settings
-Message-Id: <20131017060706.GD9034@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 31 Oct 2013 11:03:14 +0000
+Subject: [PATCH 2/2] dt: Document sata_rcar bindings
+Message-Id: <1383217394-18582-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309070431.35908.sergei.shtylyov@cogentembedded.com>
- <CANqRtoRKFoS9tehteDGaTUYJ8fSBqAYJJDiLxZmoNB9W0N+Mpg@mail.gmail.com>
- <52305EA4.1060902@cogentembedded.com>
- <20130925044720.GB24243@verge.net.au>
- <5243073C.8070402@cogentembedded.com>
- <20130926015142.GB18396@verge.net.au>
- <52449CA2.8040509@cogentembedded.com>
- <20130927043836.GB16541@verge.net.au>
- <525F0B8A.7040703@cogentembedded.com>
- <20131017060611.GC9034@verge.net.au>
-In-Reply-To: <20131017060611.GC9034@verge.net.au>
+References: <1383217394-18582-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1383217394-18582-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
 
-On Thu, Oct 17, 2013 at 03:06:12PM +0900, Simon Horman wrote:
-> On Thu, Oct 17, 2013 at 01:56:26AM +0400, Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> > On 09/27/2013 08:38 AM, Simon Horman wrote:
-> > 
-> >    Sorry for the very late reply: I was busy with other stuff and
-> > then had ~2 weeks of vacations...
-> > 
-> > >>>>>>>>Add the Ether pin group to bockw_pinctrl_map[].
-> > 
-> > >>>>>>>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> > 
-> > >>>>>>>>---
-> > >>>>>>>>  arch/arm/mach-shmobile/board-bockw-reference.c |    3 +++
-> > >>>>>>>>  1 file changed, 3 insertions(+)
-> > 
-> > >>>>>>>>Index: renesas/arch/arm/mach-shmobile/board-bockw-reference.c
-> > >>>>>>>>=================================> > >>>>>>>>--- renesas.orig/arch/arm/mach-shmobile/board-bockw-reference.c
-> > >>>>>>>>+++ renesas/arch/arm/mach-shmobile/board-bockw-reference.c
-> > >>>>>>>>@@ -29,6 +29,9 @@
-> > >>>>>>>>   */
-> > >>>>>>>>
-> > >>>>>>>>  static const struct pinctrl_map bockw_pinctrl_map[] = {
-> > >>>>>>>>+       /* Ether */
-> > >>>>>>>>+       PIN_MAP_MUX_GROUP_DEFAULT("fde00000.ethernet", "pfc-r8a7778",
-> > >>>>>>>>+                                 "ether_rmii", "ether"),
-> > >>>>>>>>         /* SCIF0 */
-> > >>>>>>>>         PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
-> > >>>>>>>>                                   "scif0_data_a", "scif0"),
-> > 
-> > >>>>>>>Hi Sergei,
-> > 
-> > >>>>>>>Thanks for your patches. In general I think your series looks fine. I
-> > >>>>>>>have a single comment, and that's about the pinctrl-related hunk
-> > >>>>>>>above. I can see that this patch is for DT reference for Bock-W, so I
-> > >>>>>>>expect the code to be in DT. Do you have any plans to use DT to
-> > >>>>>>>describe the pinmux bits? Perhaps you have some incremental patch
-> > >>>>>>>planned?
-> > 
-> > >>>>>>    No, I just repeated what I saw mechanically. Now I'm seeing some
-> > >>>>>>evidence that PFC driver supports the device tree, so I probably
-> > >>>>>>need to redo the patchset... let me study this question better.
-> > 
-> > >>>>>Ping.
-> > 
-> > >>>>    Sorry, I got distracted by other work and didn't advance much here.
-> > >>>>Will try to respin the patchset before my vacation (next Monday).
-> > >>>>Although the driver DT support patch have seemingly stalemated due
-> > >>>>to the most recent comments...
-> > 
-> > >>>Thanks for the update.
-> > 
-> > >>>I guess the key is to move forward on the driver side, somehow.
-> > 
-> > >>    Do you mean we should grant Stephen's requests concerning clock
-> > >>DT support before we add the DT support to the driver?
-> > 
-> > >That seems like the most logical way forwards to me.
-> > 
-> >    Why? Why R-Car I2C driver device tree support was accepted
-> > without this, although the driver uses clocks directly? Why such
-> > discrimination is applied only to the Ethernet driver?
-> 
-> That is a good point. Have you made it to Stephen.
+These bindings can be used to register SATA devices found on R-Car SoC.
 
-I see in the next email in my inbox that you now have.
-Thanks.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
 
-> 
-> My point was to point out where I feel the path of least resistance is
-> and thus a possible avenue for you to pursue. The exact path you take
-> to reach your goal isn't of particular interest to me. What is of interest
-> to me is that you get there somehow :)
-> 
-> > >Is the main issue that the clocks aren't accessible via DT at this time?
-> > 
-> >    In the eyes of Stephen, yes.
-> 
-> Thanks, to be honest I was not entirely clear about this.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+new file mode 100644
+index 0000000..d6b20a6
+--- /dev/null
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -0,0 +1,18 @@
++* Renesas R-Car SATA
++
++Required properties:
++- compatible		: should contain one of the following:
++			  - "renesas,sata-r8a7779" for R-Car H1
++			  - "renesas,sata-r8a7790" for R-Car H2
++			  - "renesas,sata-r8a7791" for R-Car M2
++- reg			: offset and length of the SATA registers;
++- interrupts		: must consist of one interrupt specifier.
++
++Example:
++
++sata: sata@fc600000 {
++	compatible = "renesas,sata-r8a7779";
++	reg = <0xfc600000 0x2000>;
++	interrupt-parent = <&gic>;
++	interrupts = <0 100 0x4>;
++};
+-- 
+1.8.3.1
+
