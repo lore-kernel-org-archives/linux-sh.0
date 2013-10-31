@@ -1,42 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 15:23:10 +0000
-Subject: [PATCH 0/3] ARM: shmobile: Lager reference serial port support
-Message-Id: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 31 Oct 2013 05:31:44 +0000
+Subject: Re: [PATCH 0/3] ARM: shmobile: Lager reference serial port support
+Message-Id: <20131031053144.GP1603@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+On Tue, Oct 29, 2013 at 04:23:10PM +0100, Laurent Pinchart wrote:
+> Hello,
+> 
+> This patch set implements serial port support for the Lager reference board,
+> and adds early debugging support for the r8a7790 SoC.
+> 
+> The code is available in my git tree at
+> 
+>         git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial-lager
+> 
+> The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
+> multiarch drivers, clk-prepare, r8a7790 CCF and sh-sci OF patches I've posted
+> earlier today.
+> 
+> Laurent Pinchart (3):
+>   ARM: shmobile: r8a7790: Add early debugging support
 
-This patch set implements serial port support for the Lager reference board,
-and adds early debugging support for the r8a7790 SoC.
+The patch above could be applied now, right?
+If so, Magnus, could you review it?
 
-The code is available in my git tree at
+>   ARM: shmobile: r8a7790: Add serial ports to the device tree
+>   ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
 
-        git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial-lager
-
-The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
-multiarch drivers, clk-prepare, r8a7790 CCF and sh-sci OF patches I've posted
-earlier today.
-
-Laurent Pinchart (3):
-  ARM: shmobile: r8a7790: Add early debugging support
-  ARM: shmobile: r8a7790: Add serial ports to the device tree
-  ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
-
- arch/arm/Kconfig.debug                         |   8 ++
- arch/arm/boot/dts/r8a7790-lager.dts            |  24 +++++-
- arch/arm/boot/dts/r8a7790.dtsi                 | 100 +++++++++++++++++++++++++
- arch/arm/include/debug/r8a7790.S               |  43 +++++++++++
- arch/arm/mach-shmobile/board-lager-reference.c |  18 +----
- arch/arm/mach-shmobile/setup-r8a7790.c         |  12 +--
- 6 files changed, 179 insertions(+), 26 deletions(-)
- create mode 100644 arch/arm/include/debug/r8a7790.S
-
--- 
-Regards,
-
-Laurent Pinchart
-
+I would like to ask you to repost these patches once their
+pre-requisites have been merged.
