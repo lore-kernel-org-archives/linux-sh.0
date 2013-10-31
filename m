@@ -1,55 +1,25 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 22:37:46 +0000
-Subject: [PATCH v2 11/19] net: sh_eth: Set receive alignment correctly on all ARM platforms
-Message-Id: <1383086274-11049-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 31 Oct 2013 11:03:12 +0000
+Subject: [PATCH 0/2] sata_rcar: Add Gen2 PHY support and document existing DT bindings
+Message-Id: <1383217394-18582-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
 
-Renesas ARM platforms are transitioning from single-platform to
-multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Configure the
-receive alignement correctly on all ARM platforms to enable the driver
-on both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI.
+This adds SATA R-Car Gen2 PHY support and documents existing DT bindings.
 
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/net/ethernet/renesas/sh_eth.c | 2 +-
- drivers/net/ethernet/renesas/sh_eth.h | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Valentine Barshak (2):
+  sata_rcar: Add R-Car Gen2 SATA PHY support
+  dt: Document sata_rcar bindings
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index b57c278..990fd5b 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -809,7 +809,7 @@ out:
- 	return ret;
- }
- 
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- static void sh_eth_set_receive_align(struct sk_buff *skb)
- {
- 	int reserve;
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index a0db02c..41509f7 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -165,7 +165,7 @@ enum {
- };
- 
- /* Driver's parameters */
--#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARCH_SHMOBILE)
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- #define SH4_SKB_RX_ALIGN	32
- #else
- #define SH2_SH3_SKB_RX_ALIGN	2
+ .../devicetree/bindings/ata/sata_rcar.txt          |  18 ++++
+ drivers/ata/sata_rcar.c                            | 118 ++++++++++++++++++---
+ 2 files changed, 120 insertions(+), 16 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
+
 -- 
-1.8.1.5
+1.8.3.1
 
