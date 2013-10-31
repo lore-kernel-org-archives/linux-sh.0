@@ -1,58 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 29 Oct 2013 15:04:32 +0000
-Subject: [PATCH 00/10] Lager multiplatform support
-Message-Id: <1383059082-26315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 31 Oct 2013 05:27:47 +0000
+Subject: Re: [PATCH 00/10] Lager multiplatform support
+Message-Id: <20131031052747.GO1603@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383059082-26315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383059082-26315-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+On Tue, Oct 29, 2013 at 04:04:32PM +0100, Laurent Pinchart wrote:
+> Hello,
+> 
+> This patch set moves the lager-reference board over to multiplatform kernel.
+> It starts by syncing the Lager DTS with the Lager reference DTS (01/10),
+> instantiates clocks in DT using the R8A7790 CCF drivers previously posted
+> (02/10 to 04/10), switches lager-reference over to multiplatform (05/10 to
+> 06/10) and cleans up unneeded leftovers (07/10 to 10/10).
+> 
+> The net result is a multiplatform-only lager-reference board with a single DTS
+> shared by the lager and lager-reference boards.
+> 
+> The code is available in my git tree at
+> 
+>         git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/lager
+> 
+> The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
+> multiarch drivers, clk-prepare and r8a7790 CCF patches I've posted earlier
+> today.
 
-This patch set moves the lager-reference board over to multiplatform kernel.
-It starts by syncing the Lager DTS with the Lager reference DTS (01/10),
-instantiates clocks in DT using the R8A7790 CCF drivers previously posted
-(02/10 to 04/10), switches lager-reference over to multiplatform (05/10 to
-06/10) and cleans up unneeded leftovers (07/10 to 10/10).
+Thanks Laurent.
 
-The net result is a multiplatform-only lager-reference board with a single DTS
-shared by the lager and lager-reference boards.
+I would like to ask you to re-post these patches once the required
+dependencies have been merged. I will also need a stable branch
+or branches on which to base any application of these changes.
 
-The code is available in my git tree at
+If there are patches in this series which you would like me to apply
+now please let me know, I am more than happy to do so.
 
-        git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/lager
-
-The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
-multiarch drivers, clk-prepare and r8a7790 CCF patches I've posted earlier
-today.
-
-Laurent Pinchart (10):
-  ARM: shmobile: Sync Lager DTS with Lager reference DTS
-  ARM: shmobile: r8a7790: Add clocks
-  ARM: shmobile: r8a7790: Reference clocks
-  ARM: shmobile: lager: Specify external clock frequency in DT
-  ARM: shmobile: lager-reference: Switch to multiplaform
-  ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
-  ARM: shmobile: Remove non-multiplatform Lager reference support
-  ARM: shmobile: Let Lager multiplatform boot with Lager DTB
-  ARM: shmobile: Remove Lager reference DTS
-  ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
-
- arch/arm/boot/dts/Makefile                     |   1 -
- arch/arm/boot/dts/r8a7790-lager-reference.dts  |  84 -------
- arch/arm/boot/dts/r8a7790-lager.dts            |  59 ++++-
- arch/arm/boot/dts/r8a7790.dtsi                 | 309 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                 |  18 +-
- arch/arm/mach-shmobile/Makefile                |   2 +-
- arch/arm/mach-shmobile/Makefile.boot           |   1 -
- arch/arm/mach-shmobile/board-lager-reference.c |  40 +++-
- arch/arm/mach-shmobile/clock-r8a7790.c         |  10 -
- 9 files changed, 412 insertions(+), 112 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
-
--- 
-Regards,
-
-Laurent Pinchart
-
+> 
+> Laurent Pinchart (10):
+>   ARM: shmobile: Sync Lager DTS with Lager reference DTS
+>   ARM: shmobile: r8a7790: Add clocks
+>   ARM: shmobile: r8a7790: Reference clocks
+>   ARM: shmobile: lager: Specify external clock frequency in DT
+>   ARM: shmobile: lager-reference: Switch to multiplaform
+>   ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
+>   ARM: shmobile: Remove non-multiplatform Lager reference support
+>   ARM: shmobile: Let Lager multiplatform boot with Lager DTB
+>   ARM: shmobile: Remove Lager reference DTS
+>   ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
+> 
+>  arch/arm/boot/dts/Makefile                     |   1 -
+>  arch/arm/boot/dts/r8a7790-lager-reference.dts  |  84 -------
+>  arch/arm/boot/dts/r8a7790-lager.dts            |  59 ++++-
+>  arch/arm/boot/dts/r8a7790.dtsi                 | 309 +++++++++++++++++++++++++
+>  arch/arm/mach-shmobile/Kconfig                 |  18 +-
+>  arch/arm/mach-shmobile/Makefile                |   2 +-
+>  arch/arm/mach-shmobile/Makefile.boot           |   1 -
+>  arch/arm/mach-shmobile/board-lager-reference.c |  40 +++-
+>  arch/arm/mach-shmobile/clock-r8a7790.c         |  10 -
+>  9 files changed, 412 insertions(+), 112 deletions(-)
+>  delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
+> 
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
