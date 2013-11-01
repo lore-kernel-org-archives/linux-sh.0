@@ -1,59 +1,46 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 05 Nov 2013 20:25:41 +0000
-Subject: Re: [PATCH] RM: shmobile: lager: phy fixup needs CONFIG_PHYLIB
-Message-Id: <5279624F.1030903@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 01 Nov 2013 01:00:03 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7779: camera-rcar header cleanup
+Message-Id: <8761sdym0f.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383201098-4258-1-git-send-email-horms+renesas@verge.net.au>
- <5272CC16.3020700@cogentembedded.com>
-In-Reply-To: <5272CC16.3020700@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+<linux/platform_data/camera-rcar.h> is needed on Marzen,
+not setup-r8a7779.c
 
-On 11/01/2013 12:31 AM, Sergei Shtylyov wrote:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-marzen.c         |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
 
->> Do not build the phy fixup unless CONFIG_PHYLIB is enabled.
->> Other than not being useful it is also not possible to compile
-
->     s/compile/link/.
-
->> the code under this condition as phy_register_fixup_for_id()
->> is not defined.
-
->     Not only this function is absent...
-
->> This problem was introduced by 48c8b96f21817aad
->> ("ARM: shmobile: Lager: add Micrel KSZ8041 PHY fixup")
-
->> Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->> ---
->>   arch/arm/mach-shmobile/board-lager.c | 4 +++-
->>   1 file changed, 3 insertions(+), 1 deletion(-)
-
->> diff --git a/arch/arm/mach-shmobile/board-lager.c
->> b/arch/arm/mach-shmobile/board-lager.c
->> index 78a31b6..d1a8ddd 100644
->> --- a/arch/arm/mach-shmobile/board-lager.c
->> +++ b/arch/arm/mach-shmobile/board-lager.c
->> @@ -245,7 +245,9 @@ static void __init lager_init(void)
->>   {
->>       lager_add_standard_devices();
->>
->> -    phy_register_fixup_for_id("r8a7790-ether-ff:01", lager_ksz8041_fixup);
->> +    if (IS_ENABLED(CONFIG_PHYLIB))
->> +        phy_register_fixup_for_id("r8a7790-ether-ff:01",
->> +                      lager_ksz8041_fixup);
-
->     Perhaps you would consider enclosing the fixup function itself into #ifdef
-> as it causes link errors as well?  Doesn't seem necessary as gcc probably
-> drops it anyway but for completeness' sake...
-
-    It's not necessary and it won't even work (causes compilation failure) as 
-my testing has shown, so sorry for wasting your time on this suggestion.
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index fa102f7..4f9e3ec 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -29,6 +29,7 @@
+ #include <linux/leds.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_data/usb-rcar-phy.h>
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 905420a..1cab247 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -4,7 +4,6 @@
+ #include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
+ #include <linux/sh_eth.h>
+-#include <linux/platform_data/camera-rcar.h>
+ 
+ /* HPB-DMA slave IDs */
+ enum {
+-- 
+1.7.9.5
 
