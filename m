@@ -1,63 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 07:43:29 +0000
-Subject: Re: [PATCH] ARM: shmobile: mackerel: clk_round_rate() can return a zero to indicate an error
-Message-Id: <20131128074329.GG24146@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 01 Nov 2013 01:22:39 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7778: add HSPI clock support for DT
+Message-Id: <87zjpoykyr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.02.1311261647550.11450@tamien>
-In-Reply-To: <alpine.DEB.2.02.1311261647550.11450@tamien>
+References: <1365142324-7286-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1365142324-7286-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Nov 26, 2013 at 04:49:38PM -0800, Paul Walmsley wrote:
-> 
-> Treat both negative and zero return values from clk_round_rate() as
-> errors.  This is needed since subsequent patches will convert
-> clk_round_rate()'s return value to be an unsigned type, rather than a
-> signed type, since some clock sources can generate rates higher than
-> (2^31)-1 Hz.
-> 
-> Eventually, when calling clk_round_rate(), only a return value of zero
-> will be considered a error.  All other values will be considered valid
-> rates.  The comparison against values less than 0 is kept to preserve
-> the correct behavior in the meantime.
-> 
-> Signed-off-by: Paul Walmsley <pwalmsley@nvidia.com>
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Cc: Simon Horman <horms@verge.net.au>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> ---
-> Applies on v3.13-rc1.  See also:
-> 
->     http://marc.info/?l=linux-arm-kernel&m8542591313620&w=2
-> 
->  arch/arm/mach-shmobile/board-mackerel.c |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-Thanks Paul,
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 3c25282..4b601bf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -203,8 +203,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
+ 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("fffc8000.spi", &mstp_clks[MSTP007]), /* HSPI1 */
+ 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
++	CLKDEV_DEV_ID("fffc6000.spi", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("rcar_sound", &mstp_clks[MSTP008]), /* SRU */
+ 
+ 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP012]),
+-- 
+1.7.9.5
 
-I have queued this up.
-
-> 
-> diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-> index af06753eb809..d90d2f11071b 100644
-> --- a/arch/arm/mach-shmobile/board-mackerel.c
-> +++ b/arch/arm/mach-shmobile/board-mackerel.c
-> @@ -548,9 +548,9 @@ static void __init hdmi_init_pm_clock(void)
->  		 clk_get_rate(&sh7372_pllc2_clk));
-> 
->  	rate = clk_round_rate(&sh7372_pllc2_clk, 594000000);
-> -	if (rate < 0) {
-> +	if (rate <= 0) {
->  		pr_err("Cannot get suitable rate: %ld\n", rate);
-> -		ret = rate;
-> +		ret = -EINVAL;
->  		goto out;
->  	}
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
