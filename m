@@ -1,63 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 27 Nov 2013 11:16:45 +0000
-Subject: Re: [PATCH 02/04] ARM: shmobile: Genmai LED1 and LED2 support
-Message-Id: <1698428.WpE2zkcoKU@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Nov 2013 00:39:30 +0000
+Subject: Re: [PATCH v3] iommu: shmobile: Enable the driver on all ARM platforms
+Message-Id: <20131101003930.GJ6818@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131127082736.20015.21303.sendpatchset@w520>
- <20131127082755.20015.95975.sendpatchset@w520>
-In-Reply-To: <20131127082755.20015.95975.sendpatchset@w520>
+References: <1383132043-5190-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131030112625.GZ16735@n2100.arm.linux.org.uk>
+ <1652955.Gs3XDiEUHO@avalon> <20131030162854.GB2493@sirena.org.uk>
+ <20131031060305.GU1603@verge.net.au>
+ <20131031174945.GI2493@sirena.org.uk>
+In-Reply-To: <20131031174945.GI2493@sirena.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
-
-Thank you for the patch.
-
-On Wednesday 27 November 2013 17:27:55 Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
+On Thu, Oct 31, 2013 at 10:49:45AM -0700, Mark Brown wrote:
+> On Thu, Oct 31, 2013 at 03:03:05PM +0900, Simon Horman wrote:
+> > On Wed, Oct 30, 2013 at 09:28:54AM -0700, Mark Brown wrote:
+> > > On Wed, Oct 30, 2013 at 12:40:12PM +0100, Laurent Pinchart wrote:
 > 
-> Add support for Genmai board LED1 and LED2 via gpio-leds.
+> > > > > For similar reasons as x86, can we please think about using:
+> > > 
+> > > > > 	depends on ARM
+> > > > > 	depends on ARCH_SHMOBILE || ARCH_SHMOBILE_MULTI || COMPILE_TEST
 > 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+> > > I'd read the above as saying the code needs ARM to build at all and that
+> > > the hardware will only ever appear on SHMOBILE.
+> 
+> > I am curious to know the value of "depends ARM".
+> > Is it to aid the reading that you spelt out?
+> 
+> That's a function of the compile time dependencies, if ARM is required
+> to build then it needs to be an unconditional dependency.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> 
->  arch/arm/boot/dts/r7s72100-genmai-reference.dts |   13 ++++++++++++-
->  1 file changed, 12 insertions(+), 1 deletion(-)
-> 
-> --- 0001/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> +++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27
-> 15:49:27.000000000 +0900 @@ -9,7 +9,8 @@
->   */
-> 
->  /dts-v1/;
-> -/include/ "r7s72100.dtsi"
-> +#include "r7s72100.dtsi"
-> +#include <dt-bindings/gpio/gpio.h>
-> 
->  / {
->  	model = "Genmai";
-> @@ -28,4 +29,14 @@
->  		#address-cells = <1>;
->  		#size-cells = <1>;
->  	};
-> +
-> +	leds {
-> +		compatible = "gpio-leds";
-> +		led1 {
-> +			gpios = <&port4 10 GPIO_ACTIVE_LOW>;
-> +		};
-> +		led2 {
-> +			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
-> +		};
-> +	};
->  };
--- 
-Regards,
-
-Laurent Pinchart
-
+Thanks, sorry for missing the obvious.
