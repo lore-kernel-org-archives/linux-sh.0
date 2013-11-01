@@ -1,7 +1,7 @@
-From: Greg KH <greg@kroah.com>
-Date: Fri, 01 Nov 2013 14:32:23 +0000
+From: Valentine <valentine.barshak@cogentembedded.com>
+Date: Fri, 01 Nov 2013 15:04:00 +0000
 Subject: Re: [PATCH] usb: phy: Move R-Car Gen2 driver registration to postcore_inictall
-Message-Id: <20131101143223.GA17660@kroah.com>
+Message-Id: <5273C2E0.6080305@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383063666-4291-1-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1383063666-4291-1-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,17 +10,86 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Nov 01, 2013 at 05:59:40PM +0400, Valentine wrote:
-> I'm not sure how this problem should be addressed using USB HCD PCI deferred probing.
-> However, at the same time I see that six usb phy drivers use subsys_initcall and one
-> uses postcore_initcall to adjust the initialization order.
+On 11/01/2013 06:17 PM, Alan Stern wrote:
+> On Fri, 1 Nov 2013, Valentine wrote:
+>
+>>> You need to tell usb_hcd_pci_probe() to wait for the PHY.  That seems
+>>> to be the proper solution to your problem.
+>>>
+>>> The difficulty is that you have a discoverable device (the PCI EHCI
+>>> controller) which needs to wait for a platform device (the PHY).  The
+>>> kernel doesn't have a good way to describe such a constraint between
+>>> two different kinds of device like that, as far as I know.
+>>
+>> Thanks, unfortunately this doesn't help.
+>> I'm not sure how this problem should be addressed using USB HCD PCI deferred probing.
+>
+> I'm not sure either.  It requires further discussion, and it is an
+> important problem.  Not a trivial one, as you seem to think.
+>
+>> However, at the same time I see that six usb phy drivers use subsys_initcall and one
+>> uses postcore_initcall to adjust the initialization order.
+>>
+>> The same approach is used with other drivers quite often. Take I2C, for example.
+>> I'm not sure why we can't use it here with the R-Car Gen2 phy.
+>
+> The fact that other drivers do it doesn't mean it is the right thing to
+> do.  (Besides, I2C is different from PCI because it isn't discoverable,
+> right?)
+>
 
-Then they are all wrong and should be fixed.  Again, this is _why_ we
-created the deferred probing logic, and it should be used for this type
-of thing, as trying to juggle init call levels is madness and you will
-loose in the end (think multi-system kernel images, how is that going to
-work?)
+I'm not using postcore_init with PCI. I'm doing it for a platform USB phy driver.
+Anyway why can't we use postcore_initcall to register a driver for a discoverable device?
 
-thanks,
+> Greg KH can explain further, if you ask him.
 
-greg k-h
+Yes, I'd like to hear from Greg as well.
+Explanaitions and suggestions are greatly appreciated.
+
+>
+>> This driver is used only with R-Car SoC and the approach is trivial and  working fine.
+>>
+>> Why can't we use it instead of trying to create a bigger mess in the USB HCD PCI driver,
+>> which is used on quite a number of platforms, to workaround the PHY initialization order
+>> that is only relevant to R-Car Gen2 SoC?
+>
+> Because other platforms are likely to experience the same problem in
+> the future.  And as you pointed out, other platforms already _are_
+> experiencing this problem (although perhaps for other drivers).
+>
+> We should implement a proper solution.  One that can be used
+> everywhere, not an initcall-order hack.
+
+That would be great, but I don't think we can implement a universal solution for all of those drivers.
+The solution that may suit R-Car may not be good for other USB phy drivers since most likely they have
+their init order fixed-up for other reasons not related to PCI USB hosts.
+
+Fixing all the drivers so that they all can use deferred probing is, in my opinion, a bit out of scope
+here.
+
+The USB HDC PCI deferred probing could be used on R-Car. But I'm not sure how to make a particular
+PCI USB HDC device attached to a particular PCI host controller on a particular SoC defer its probing
+while waiting for the USB phy. At the same time other identical PCI USB HCD devices (with the same PCI id)
+on the same SoC should be probed as usual.
+
+We can't use PCI ids here to distinguish between PCI USB HCD devices. Neither can we use PCI busses
+to distinguish between PCI host controllers, since bus numbers are assigned dynamically.
+
+It looks that it's quite hard to do that without bigger hacks in the PCI USB HCD driver that are
+most likely not to be used on any other platforms except for R-Car.
+
+I just can't see why changing init order is considered such a bad hack in this case,
+while it is being used fine with other USB phy drivers.
+
+Can't we use it for R-Car until a universal solution to the deferred probing is found?
+
+Probably, moving the whole phy subsystem to the earlier initialization stage would be a good-enough
+solution since that many PHY drivers have already been using it?
+You know, just like the PCI host drivers are initialized at subsys_initcall, or is it considered wrong?
+
+>
+> Alan Stern
+>
+
+Thanks,
+Val.
