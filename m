@@ -1,61 +1,62 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Nov 2013 11:05:27 +0000
-Subject: [PATCH v2 02/03] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
-Message-Id: <20131106110527.6806.40247.sendpatchset@w520>
+From: Cody P Schafer <cody@linux.vnet.ibm.com>
+Date: Fri, 01 Nov 2013 22:38:52 +0000
+Subject: [PATCH 8/8] sh/dwarf: use rbtree postorder iteration helper instead of solution using repeated rb_er
+Message-Id: <1383345566-25087-8-git-send-email-cody@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131106110508.6806.48070.sendpatchset@w520>
-In-Reply-To: <20131106110508.6806.48070.sendpatchset@w520>
+References: <1383345566-25087-1-git-send-email-cody@linux.vnet.ibm.com>
+In-Reply-To: <1383345566-25087-1-git-send-email-cody@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: Cody P Schafer <cody@linux.vnet.ibm.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-From: Magnus Damm <damm@opensource.se>
+Use rbtree_postorder_for_each_entry_safe() to destroy the rbtree instead
+of using repeated rb_erase() calls
 
-Now when drivers/clocksource/Kconfig has been
-updated with entires for CMT, TMU and STI
-it is safe to remove these from mach-shmobile.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Cody P Schafer <cody@linux.vnet.ibm.com>
 ---
+ arch/sh/kernel/dwarf.c | 18 ++++--------------
+ 1 file changed, 4 insertions(+), 14 deletions(-)
 
- arch/arm/mach-shmobile/Kconfig |   21 ---------------------
- 1 file changed, 21 deletions(-)
+diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
+index 49c09c7..67a049e 100644
+--- a/arch/sh/kernel/dwarf.c
++++ b/arch/sh/kernel/dwarf.c
+@@ -995,29 +995,19 @@ static struct unwinder dwarf_unwinder = {
+ 
+ static void dwarf_unwinder_cleanup(void)
+ {
+-	struct rb_node **fde_rb_node = &fde_root.rb_node;
+-	struct rb_node **cie_rb_node = &cie_root.rb_node;
++	struct dwarf_fde *fde, *next_fde;
++	struct dwarf_cie *cie, *next_cie;
+ 
+ 	/*
+ 	 * Deallocate all the memory allocated for the DWARF unwinder.
+ 	 * Traverse all the FDE/CIE lists and remove and free all the
+ 	 * memory associated with those data structures.
+ 	 */
+-	while (*fde_rb_node) {
+-		struct dwarf_fde *fde;
+-
+-		fde = rb_entry(*fde_rb_node, struct dwarf_fde, node);
+-		rb_erase(*fde_rb_node, &fde_root);
++	rbtree_postorder_for_each_entry_safe(fde, next_fde, &fde_root, node)
+ 		kfree(fde);
+-	}
+ 
+-	while (*cie_rb_node) {
+-		struct dwarf_cie *cie;
+-
+-		cie = rb_entry(*cie_rb_node, struct dwarf_cie, node);
+-		rb_erase(*cie_rb_node, &cie_root);
++	rbtree_postorder_for_each_entry_safe(cie, next_cie, &cie_root, node)
+ 		kfree(cie);
+-	}
+ 
+ 	kmem_cache_destroy(dwarf_reg_cachep);
+ 	kmem_cache_destroy(dwarf_frame_cachep);
+-- 
+1.8.4.2
 
---- 0004/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-11-05 19:55:01.000000000 +0900
-@@ -283,7 +283,6 @@ source "drivers/sh/Kconfig"
- endif
- 
- if ARCH_SHMOBILE || ARCH_SHMOBILE_MULTI
--
- menu "Timer and clock configuration"
- 
- config SHMOBILE_TIMER_HZ
-@@ -297,25 +296,5 @@ config SHMOBILE_TIMER_HZ
- 	  SH-Mobile systems using a 32768 Hz RCLK for clock events may want
- 	  to select a HZ value such as 128 that can evenly divide RCLK.
- 	  A HZ value that does not divide evenly may cause timer drift.
--
--config SH_TIMER_CMT
--	bool "CMT timer driver"
--	default y
--	help
--	  This enables build of the CMT timer driver.
--
--config SH_TIMER_TMU
--	bool "TMU timer driver"
--	default y
--	help
--	  This enables build of the TMU timer driver.
--
--config EM_TIMER_STI
--	bool "STI timer driver"
--	default y
--	help
--	  This enables build of the STI timer driver.
--
- endmenu
--
- endif
