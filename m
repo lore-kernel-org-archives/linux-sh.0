@@ -1,133 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 14:49:53 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: Add serial ports to the device tree
-Message-Id: <1384094994-5115-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Valentine <valentine.barshak@cogentembedded.com>
+Date: Fri, 01 Nov 2013 13:59:40 +0000
+Subject: Re: [PATCH] usb: phy: Move R-Car Gen2 driver registration to postcore_inictall
+Message-Id: <5273B3CC.8080008@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384094994-5115-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384094994-5115-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1383063666-4291-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1383063666-4291-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add all serial ports marked as disabled.
+On 10/31/2013 08:54 PM, Alan Stern wrote:
+> On Thu, 31 Oct 2013, Valentine wrote:
+>
+>>> Do you mean to change usb_hcd_pci_probe() to return -EPROBE_DEFER if the phy is not ready?
+>>> Or should I defer the whole PCI subsystem initialization (pci_common_int)?
+>>
+>> Greg,
+>> the reason I ask is that it doesn't seem that simple to me.
+>>
+>> Here's some details:
+>> The h/w is an ARM SoC that has 3 internal PCI controllers with a single EHCI/OHCI on each one.
+>> This gives us 3 USB channels as this is called in the h/w manual.
+>> Channel 0 is shared with USBHS (USB function) device.
+>> Channel 2 is shared with USBSS (USB3.0 host).
+>> Both channels are configured by a single USB phy.
+>> USB PHY is a platform device, while EHCI/OCHI are located on the PCI busses.
+>>
+>> If PCI USB host is probed before USB phy, the EHCI/OHCI device is
+>> detected, but nothing works.
+>>
+>> We could change the USB HDC PCI driver and make usb_hcd_pci_probe() return -EPROBE_DEFER,
+>> but I'm not sure how the condition for that should be phrased.
+>
+> You need to tell usb_hcd_pci_probe() to wait for the PHY.  That seems
+> to be the proper solution to your problem.
+>
+> The difficulty is that you have a discoverable device (the PCI EHCI
+> controller) which needs to wait for a platform device (the PHY).  The
+> kernel doesn't have a good way to describe such a constraint between
+> two different kinds of device like that, as far as I know.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790.dtsi | 100 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 100 insertions(+)
+Thanks, unfortunately this doesn't help.
+I'm not sure how this problem should be addressed using USB HCD PCI deferred probing.
+However, at the same time I see that six usb phy drivers use subsys_initcall and one
+uses postcore_initcall to adjust the initialization order.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 098b2d6..df9e858 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -287,6 +287,106 @@
- 		status = "disabled";
- 	};
- 
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		reg = <0 0xe6c40000 0 64>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c50000 0 64>;
-+		interrupts = <0 145 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa2: serial@e6c60000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c60000 0 64>;
-+		interrupts = <0 151 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb0: serial@e6c20000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c20000 0 64>;
-+		interrupts = <0 148 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb1: serial@e6c30000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c30000 0 64>;
-+		interrupts = <0 149 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb2: serial@e6ce0000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ce0000 0 64>;
-+		interrupts = <0 150 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif0: serial@e6e60000 {
-+		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e60000 0 64>;
-+		interrupts = <0 152 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@e6e68000 {
-+		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e68000 0 64>;
-+		interrupts = <0 153 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif0: serial@e62c0000 {
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c0000 0 96>;
-+		interrupts = <0 154 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif1: serial@e62c8000 {
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c8000 0 96>;
-+		interrupts = <0 155 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
--- 
-1.8.1.5
+The same approach is used with other drivers quite often. Take I2C, for example.
+I'm not sure why we can't use it here with the R-Car Gen2 phy.
+This driver is used only with R-Car SoC and the approach is trivial and  working fine.
 
+Why can't we use it instead of trying to create a bigger mess in the USB HCD PCI driver,
+which is used on quite a number of platforms, to workaround the PHY initialization order
+that is only relevant to R-Car Gen2 SoC?
+
+>
+> This is similar to the problems facing Runtime Interpreted Power
+> Sequences, although not quite the same.
+>
+> Alan Stern
+>
+
+Thanks,
+Val.
