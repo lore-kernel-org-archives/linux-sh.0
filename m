@@ -1,142 +1,64 @@
-From: stephen.lawrence@renesas.com
-Date: Thu, 14 Nov 2013 12:04:50 +0000
-Subject: Re: [PATCH/RFC] ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY
-Message-Id: <OF1AB74A75.9F2F7861-ON80257C23.003FCFCD-80257C23.00425C85@eu.necel.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 01 Nov 2013 01:22:21 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7778: add HSPI suppport on DTSI
+Message-Id: <871u30zzjp.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383782061-7111-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383782061-7111-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-linux-sh-owner@vger.kernel.org wrote on 12/11/2013 02:30:22:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi |   30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-Hi Guys,
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 698809f..819b194 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -25,6 +25,12 @@
+ 		};
+ 	};
+ 
++	aliases {
++		spi0 = &hspi0;
++		spi1 = &hspi1;
++		spi2 = &hspi2;
++	};
++
+ 	gic: interrupt-controller@fe438000 {
+ 		compatible = "arm,cortex-a9-gic";
+ 		#interrupt-cells = <3>;
+@@ -234,4 +240,28 @@
+ 		interrupts = <0 77 0x4>;
+ 		status = "disabled";
+ 	};
++
++	hspi0: spi@fffc7000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc7000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 63 4>;
++		status = "disabled";
++	};
++
++	hspi1: spi@fffc8000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc8000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 84 4>;
++		status = "disabled";
++	};
++
++	hspi2: spi@fffc6000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc6000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 85 4>;
++		status = "disabled";
++	};
+ };
+-- 
+1.7.9.5
 
-> From: Simon Horman <horms@verge.net.au>
-> To: phil.edworthy@renesas.com, 
-> Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, SH-Linux 
-<linux-
-> sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, 
-stephen.lawrence@renesas.com
-> Date: 12/11/2013 02:30
-> Subject: Re: [PATCH/RFC] ARM: Rename ARCH_SHMOBILE to 
-ARCH_SHMOBILE_LEGACY
-> Sent by: linux-sh-owner@vger.kernel.org
-> 
-> On Mon, Nov 11, 2013 at 09:45:12AM +0000, phil.edworthy@renesas.com 
-wrote:
-> > Hi Laurent,
-> > 
-> > > On Friday 08 November 2013 14:57:29 stephen.lawrence@renesas.com 
-wrote:
-> > > > linux-sh-owner@vger.kernel.org wrote on 08/11/2013 06:08:05:
-> > > > > On Thu, Nov 07, 2013 at 03:04:57PM +0900, Magnus Damm wrote:
-> > > > > > On Thu, Nov 7, 2013 at 8:54 AM, Laurent Pinchart wrote:
-> > > > > > > SH-Mobile platforms are transitioning from non-multiplatform 
-to
-> > > > > > > multiplatform kernel. A new ARCH_SHMOBILE_MULTI 
-configuration 
-> > symbol
-> > > > > > > has been created to group all multiplatform-enabled 
-SH-Mobile 
-> > SoCs.
-> > > > > > > The existing ARCH_SHMOBILE configuration symbol groups SoCs
-> > > > > > > that haven't been converted yet.
-> > > > 
-> > > > I'm sure there are reasons for keeping it but looking forward I 
-can't 
-> > help
-> > > > but wonder if this wouldn't be a good time to lose the SHMOBILE 
-tag 
-> > for
-> > > > new platforms? It doesn't seem to be a great match to our business 
-or 
-> > the
-> > > > architectures.
-> > > > 
-> > > > I know from conversations I've had in the last year or so that 
-> > external
-> > > > engineers working on R-Car sometimes do not find your good work 
-> > upstream
-> > > > as the combination of sh-mobile and using the product number 
-proved
-> > > > an effective method of concealment. Although of course they could
-> > > > find it 
-> > by
-> > > > searching the right files.
-> > > 
-> > > It's not a bad idea, but I'm not sure how we could proceed. 
-SH-Mobile, 
-> > R-
-> > > Mobile and R-Car chipsets are all supported by a single code base, 
-for 
-> > which 
-> > > we need a name. Splitting the code base wouldn't make much sense 
-from a
-> > > technical point of view.
-> > 
-> > True, but it would be helpful to have Renesas in the device name
-> > somewhere. Maybe include Renesas in the mach-shmobile/Kconfig 
-description
-> > for the devices, and also update the description in arm/Kconfig to
-> > include R-Car.
-> 
-> Hi,
-> 
-> I have been involved in several discussions relating to moving away from
-> the shmobile name.
-> 
-> Prior to this thread the most recent discussion I was involved in was 
-with
-> Olof Johansson, ARM-SoC co-maintainer, and Magnus. Due to the amount of
-> churn involved in changing the name of the mach-shmobile directory or
-> somehow splitting the code between multiple mach- directories, which was
-> the variant of the topic under discussion, the consensus was that moving
-> things around was not on the cards at this time.  There is also, as 
-Laurent
-> mentioned, the technical issue that splitting the code doesn't make a 
-whole
-> lot of sense from an implementation point of view.
-> 
-> From my point of view changing the SHMOBILE potion of ARCH_SHMOBILE_*
-> only really makes sense if the name of mach-shmobile directory is 
-changed
-> in a similar way, which as I mentioned above that seems to be off the 
-cards
-> at this time. The reason I think this is that if the ARCH_XXX name 
-doesn't
-> match the directory we will add confusion rather than removing it.
-> 
-> With the above in mind I think that Phil's proposal to enhance
-> the descriptions in mach-shmobile/Kconfig and arm/Kconfig is
-> an excellent one given the hand of cards we have available to play.
-
-Thanks for the responses and sorry for the delay in replying its been a 
-very heavy week.
-
-Unfortunately this is one of those cases where someone raises an issue 
-without suggesting a good solution. I certainly don't think that having 
-say a ARCH_RCAR with associated mach directory would be the answer. That 
-series name could change in the future and would just lead to an over 
-growing list, without the other considerations such as code sharing 
-Laurent raised. I can't think of a good top level name that would cover 
-all eventuality. Ultimately it was just a casual remark on my part that 
-going forward SH and mobile was kind of a double negative, but of course 
-the mobile side will be around for a while.
-
-Personally I think someone can find R-Car fairly easily by searching the 
-configs, but it was interesting a couple of engineers had asked me about 
-it. I suspect this was just the result of a first quick look on their part 
-and then they had come across me at some show so asked.
-
-It's plain you've been discussing it, so if the current setup is the best 
-compromise I'm happy with that. I would need to check but I'm pretty sure 
-R-Car appears in the shmobile Kconfig, but perhaps not the arm one. If 
-true I agree adding R-Car to the latter would help discovery I think. 
-Thanks to Laurent for raising his hand on that one :)
-
-Cheers,
-
-Steve
