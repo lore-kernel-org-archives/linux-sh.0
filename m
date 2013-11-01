@@ -1,57 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 19 Nov 2013 12:52:27 +0000
-Subject: Re: [PATCH 7/7] ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
-Message-Id: <4182325.G3k8SsHnK4@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Nov 2013 00:16:22 +0000
+Subject: Re: [PATCH 0/3] ARM: shmobile: Lager reference serial port support
+Message-Id: <20131101001621.GC6818@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383999839-3339-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131119025629.GA14794@verge.net.au>
-In-Reply-To: <20131119025629.GA14794@verge.net.au>
+References: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131031053144.GP1603@verge.net.au> <3965826.mx1T873Bg9@avalon>
+In-Reply-To: <3965826.mx1T873Bg9@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+[ CC Magnus ]
 
-On Tuesday 19 November 2013 11:56:29 Simon Horman wrote:
-> On Sat, Nov 09, 2013 at 01:23:59PM +0100, Laurent Pinchart wrote:
-> > The device is configured to generate an active-low interrupt signal that
-> > needs to be acknowledged by the host. Configure the IRQ to trigger on
-> > low level.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> > b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts index
-> > aef425f..04e9d49 100644
-> > --- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> > +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> > @@ -95,7 +95,7 @@
-> >  		compatible = "sitronix,st1232";
-> >  		reg = <0x55>;
-> >  		interrupt-parent = <&irqpin1>;
-> > -		interrupts = <2 IRQ_TYPE_NONE>; /* IRQ10: hwirq 2 on irqpin1 */
-> > +		interrupts = <2 IRQ_TYPE_LOW_LEVEL>;
+On Thu, Oct 31, 2013 at 01:21:23PM +0100, Laurent Pinchart wrote:
+> Hi Simon,
 > 
-> I believe this should be IRQ_TYPE_LEVEL_LOW.
+> On Thursday 31 October 2013 14:31:44 Simon Horman wrote:
+> > On Tue, Oct 29, 2013 at 04:23:10PM +0100, Laurent Pinchart wrote:
+> > > Hello,
+> > > 
+> > > This patch set implements serial port support for the Lager reference
+> > > board, and adds early debugging support for the r8a7790 SoC.
+> > > 
+> > > The code is available in my git tree at
+> > > 
+> > >         git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial-lager
+> > > 
+> > > The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
+> > > multiarch drivers, clk-prepare, r8a7790 CCF and sh-sci OF patches I've
+> > > posted earlier today.
+> > > 
+> > > Laurent Pinchart (3):
+> > >   ARM: shmobile: r8a7790: Add early debugging support
+> > 
+> > The patch above could be applied now, right?
 > 
-> I have dequeued this patch for now.
+> That's correct. It will be useless though, as DEBUG_LL can only be used on 
+> multiarch.
 
-My bad, I've tested level low trigger first, then falling edge trigger, and 
-switched back to low level without recompiling the patch. Sorry about that, 
-I'll resend now.
+I will wait, especially in the light of the point you raise below.
 
-> >  		pinctrl-0 = <&st1232_pins>;
-> >  		pinctrl-names = "default";
-> >  		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
--- 
-Regards,
+> Given that the SCIF/SCIFA/SCIFB port operate similarly, I wonder whether it 
+> wouldn't make more sense to add a generic DEBUG_SHMOBILE_SCIF implementation 
+> instead. We could then have sub-options to select the exact SoC type and port 
+> number, and compute the base address from that.
 
-Laurent Pinchart
+That makes a lot of sense to me.
+Perhaps Magnus has an opinion?
 
+> > If so, Magnus, could you review it?
+> > 
+> > >   ARM: shmobile: r8a7790: Add serial ports to the device tree
+> > >   ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
+> > 
+> > I would like to ask you to repost these patches once their
+> > pre-requisites have been merged.
+> 
+> Sure, no problem.
+> 
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
