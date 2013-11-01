@@ -1,36 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 01:03:40 +0000
-Subject: [PATCH v3 03/15] ARM: shmobile: lager: Specify external clock frequency in DT
-Message-Id: <1385600632-5181-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 01 Nov 2013 01:21:36 +0000
+Subject: [PATCH 0/3] ARM: shmobile: r8a7778: HSPI support on DT
+Message-Id: <8738ngzzky.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The external crystal frequency is 20MHz on the Lager board. Specify it
-in the device tree.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi Simon
+
+These are HSPI support for r8a7778 on DT.
+HSPI driver DT support exist on this branch
+
+git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git :: topic/hspi
+
+But there is no boot issue without it.
+I'm using renesas-devel-v3.12-rc7-20131030.
+
+# BTW, renesas-devel-v3.12-rc7-20131030 has double I2C support
+# on ${LINUX}/arch/arm/boot/dts/r8a7778.dtsi
+# the commits are
+# 3c13daa1ef375122c327b1e959187da0dd4d6a7b
+# 7cab820da7a496fba63d5355152c781344465408
+
+Kuninori Morimoto (3):
+      ARM: shmobile: r8a7778: add HSPI suppport on DTSI
+      ARM: shmobile: r8a7778: add HSPI clock support for DT
+      ARM: shmobile: bockw: enable HSPI0 on DTS
+
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |   11 +++++++++
+ arch/arm/boot/dts/r8a7778.dtsi                |   30 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7778.c        |    3 +++
+ 3 files changed, 44 insertions(+)
+
+
+
+Best regards
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 3c697e2..2da3312 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -53,6 +53,10 @@
- 	};
- };
- 
-+&extal_clk {
-+	clock-frequency = <20000000>;
-+};
-+
- &pfc {
- 	pinctrl-0 = <&scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
--- 
-1.8.3.2
-
+Kuninori Morimoto
