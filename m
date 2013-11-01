@@ -1,60 +1,46 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Nov 2013 08:48:53 +0000
-Subject: Re: [PATCH 0/16] ARM: shmobile: SDHI support for r8a7790
-Message-Id: <20131121084851.GB16004@verge.net.au>
+Date: Fri, 01 Nov 2013 06:25:16 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: bockw: enable HPB-DMAC in defconfig
+Message-Id: <20131101062515.GA22183@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
- <87txffxofc.wl%kuninori.morimoto.gx@renesas.com>
- <87a9h6o2gi.wl%kuninori.morimoto.gx@renesas.com>
- <20131118072111.GG27935@verge.net.au>
- <878uwm6tru.wl%kuninori.morimoto.gx@renesas.com>
- <20131121035351.GA5429@verge.net.au>
- <87li0ixreh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87li0ixreh.wl%kuninori.morimoto.gx@renesas.com>
+References: <201309290011.28982.sergei.shtylyov@cogentembedded.com>
+ <20130930005033.GC30501@verge.net.au>
+ <52559ACA.4050509@cogentembedded.com>
+ <20131009235918.GA26091@verge.net.au>
+ <52571745.6080307@cogentembedded.com>
+ <20131011022302.GC32056@verge.net.au>
+ <525864D7.8050403@cogentembedded.com>
+ <527020EB.5090203@cogentembedded.com>
+In-Reply-To: <527020EB.5090203@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Laurent <laurent.pinchart@ideasonboard.com>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 20, 2013 at 09:20:10PM -0800, Kuninori Morimoto wrote:
+On Tue, Oct 29, 2013 at 11:56:11PM +0300, Sergei Shtylyov wrote:
+> Hello.
 > 
-> Hi Simon
+> On 10/12/2013 12:51 AM, Sergei Shtylyov wrote:
 > 
-> > > > > These are v2 of SDHI support for r8a7790.
-> > > > > 
-> > > > > Kuninori Morimoto (2):
-> > > > >       ARM: shmobile: lager: add gpio/fixed regulator for SDHI
-> > > > >       ARM: shmobile: lager: add SDHI0/2 support
-> > > > > 
-> > > > >  arch/arm/mach-shmobile/board-lager.c |  149 +++++++++++++++++++++++++++++++++-
-> > > > 
-> > > > Hi Morimoto-san,
-> > > > 
-> > > > I assume that these two patches depend on at least
-> > > > some of the first 14 patches. Is that correct?
-> > > 
-> > > Compile itself is not depend on first 14 patches,
-> > > but, it doesn't work correctly without these patches.
-> > > So, yes, it depend on 14 patches.
-> > 
-> > What is the run-time effect of these 2 patches without the other 14.
-> > Is it
-> > 
-> > a) Things get worse and will only get better with the other 14 patches or;
-> > b) Things stay the same and will  get better with the other 14 patches?
-> > 
-> > In the case of b I am inclined to queue these patches up once/if
-> > Chris has indicated that the other 14 patches are ok.
-> > 
-> > In the case of a I would like to wait and queue up these patches
-> > on top of the other 14 patches once/if they are available in a
-> > stable branch.
+> >>>>>>>Enable HPB-DMAC driver in 'bockw_defconfig'.
 > 
-> Thank you. I think b)
-> But, my current plan is that I will re-send these patches
-> again in good-timing (when I can indicate the necessary branch).
-> I guess it doesn't have complex relationship.
-> What do you think ?
+> >>>>>>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> >>>>>>Thanks, I will queue this up for v3.13.
+> 
+> >>>>>    As I understand you're waiting for lazy Vinod to merge the driver
+> >>>>>fixes? :-)
+> 
+> >>>>I am holding off on sending a pull request for these defconfig updates
+> >>>>until Vinod takes the fixes. Could you ping him about them?
+> 
+> >>>    Already done yesterday.
+> 
+> >>Thanks
+> 
+> >    Vinod has taken them today.
+> 
+>    Simon, I still don't see these 2 defconfig patches queued and it
+> seems too late for 3.13 now... :-(
 
-Sure, that is fine for me.
+Indeed it is. But they are queued as of yesterday.
