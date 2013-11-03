@@ -1,44 +1,134 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 14 Nov 2013 13:38:34 +0000
-Subject: Re: [PATCH 07/17] ARM: shmobile: marzen: remove SDHI0 WP pin setting
-Message-Id: <1660455.74jWjFXb4g@avalon>
+Date: Sun, 03 Nov 2013 17:09:58 +0000
+Subject: Re: [PATCH 5/5] serial: sh-sci: Add device tree bindings documentation
+Message-Id: <2043069.5eESUL0Rq2@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com> <87bo1nz3c9.wl%kuninori.morimoto.gx@renesas.com> <878uwrz3an.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878uwrz3an.wl%kuninori.morimoto.gx@renesas.com>
+References: <1383042599-25151-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1975664.tS0XZnqC8i@avalon> <B021E9B4-2795-4A84-9AD1-690EA119EF18@codeaurora.org>
+In-Reply-To: <B021E9B4-2795-4A84-9AD1-690EA119EF18@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: Kumar Gala <galak@codeaurora.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org
 
-Hi Morimoto-san,
+Hi Kumar,
 
-Thank you for the patch.
-
-On Thursday 14 November 2013 02:27:32 Kuninori Morimoto wrote:
-> WP pin is not implemented on Marzen
+On Thursday 31 October 2013 10:00:36 Kumar Gala wrote:
+> On Oct 31, 2013, at 9:55 AM, Laurent Pinchart wrote:
+> > On Thursday 31 October 2013 09:42:48 Kumar Gala wrote:
+> >> On Oct 29, 2013, at 5:29 AM, Laurent Pinchart wrote:
+> >>> Document the device tree bindings for the sci serial port devices.
+> >>> 
+> >>> Cc: devicetree@vger.kernel.org
+> >>> Signed-off-by: Laurent Pinchart
+> >>> <laurent.pinchart+renesas@ideasonboard.com>
+> >>> ---
+> >>> .../bindings/serial/renesas,sci-serial.txt         | 51 ++++++++++++++++
+> >>> 1 file changed, 51 insertions(+)
+> >>> create mode 100644
+> >>> Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+> >>> 
+> >>> diff --git
+> >>> a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+> >>> b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt new
+> >>> file mode 100644
+> >>> index 0000000..5658b4f
+> >>> --- /dev/null
+> >>> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+> >>> @@ -0,0 +1,51 @@
+> >>> +* Renesas SH-Mobile Serial Communication Interface
+> >>> +
+> >>> +Required properties:
+> >>> +
+> >>> +  - compatible: should be one of the following.
+> >> 
+> >> Being pedantic, but how about saying 'one of the following types (scif,
+> >> scifa, scifb, or hscif)
+> > 
+> > Sounds good to me.
+> > 
+> >>> +
+> >>> +    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible
+> >>> UART.
+> >>> +    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible
+> >>> UART.
+> >>> +    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible
+> >>> UART.
+> >>> +    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible
+> >>> UART.
+> >>> +    - "renesas,scif-generic" for generic SCIF compatible UART.
+> >>> +    - "renesas,scifa-generic" for generic SCIFA compatible UART.
+> >>> +    - "renesas,scifb-generic" for generic SCIFB compatible UART.
+> >>> +    - "renesas,hscif-generic" for generic HSCIF compatible UART.
+> >>> +
+> >>> +    When compatible with the generic version, nodes must also list the
+> >>> +    SoC-specific version corresponding to the platform.
+> >>> +
+> >>> +  - reg: Base address and length of the memory resource used by the
+> >>> UART.
+> >>> +
+> >>> +  - interrupt-parent: Reference to the parent interrupt controller.
+> >>> +  - interrupts: Interrupt number(s). Depending on the SoC SCIx UARTs
+> >>> are
+> >>> tied
+> >>> +    to one or multiple interrupt lines. When using multiple interrupt
+> >>> lines,
+> >>> +    specify the interrupt names as described below.
+> >>> +
+> >>> +  - clocks: Reference to the SCIx UART interface clock.
+> >>> +  - clock-names: Should be "sci_ick".
+> >>> +
+> >>> +Optional properties:
+> >>> +
+> >>> +  - interrupt-names: When using multiple interrupts, report the
+> >>> interrupt
+> >>> +    names as "eri" (receive error), "rxi" (receive), "txi" (transmit)
+> >>> and
+> >>> +    "bri" (break). When using a single interrupt this property should
+> >>> not
+> >>> be +    present.
+> >> 
+> >> Hmm, is there a reason not to just have the 4 interrupts always present
+> >> and in the case they are all wired to the same interrupt, just have the
+> >> interrupts all be the same?
+> >> 
+> >> example:
+> >> 
+> >> interrupts = <0 144 4>, <0 144 4>, <0 144 4>, <0 144 4>;
+> > 
+> > The multiple interrupts case is the exception, I thought it would be
+> > easier to specify a single interrupt in the general case and have a more
+> > complex binding for the exceptions.
+> > 
+> >>> +
+> >>> +Note: Each enabled SCIx UART should have an alias correctly numbered in
+> >>> the +"aliases" node.
+> >>> +
+> >>> +Example:
+> >>> +	aliases {
+> >>> +		serial0 = &scifa0;
+> >>> +	};
+> >>> +
+> >>> +	scifa0: serial@e6c40000 {
+> >>> +		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
+> >>> +		reg = <0 0xe6c40000 0 64>;
+> >>> +		interrupt-parent = <&gic>;
+> >>> +		interrupts = <0 144 4>;
+> >>> +		clocks = <&mstp2_clks 4>;
+> >>> +		clock-names = "sci_ick";
+> >>> +	};
+> >> 
+> >> might be nice to have an example with the 4 interrupts.
+> > 
+> > The example would be pretty theoretical, as the r8a7790 uses a single
+> > interrupt in all cases. What about adding such an example when adding an
+> > SoC that uses multiple interrupts to the DT bindings documentation ?
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> I'm fine with that if we strip the multiple interrupt bits out of the
+> binding until a device/compatible exists that needs it.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+I'll do that and repost.
 
-> ---
->  arch/arm/mach-shmobile/board-marzen.c |    2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-marzen.c
-> b/arch/arm/mach-shmobile/board-marzen.c index fa102f7..2288dc2 100644
-> --- a/arch/arm/mach-shmobile/board-marzen.c
-> +++ b/arch/arm/mach-shmobile/board-marzen.c
-> @@ -346,8 +346,6 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
-> "sdhi0_ctrl", "sdhi0"),
->  	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
->  				  "sdhi0_cd", "sdhi0"),
-> -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-> -				  "sdhi0_wp", "sdhi0"),
->  	/* SMSC */
->  	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
->  				  "intc_irq1_b", "intc"),
 -- 
 Regards,
 
