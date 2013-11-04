@@ -1,37 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 20 Nov 2013 08:18:45 +0000
-Subject: Re: [PATCH 00/05] ARM: shmobile: r8a7790 and r8a7791 thermal update
-Message-Id: <87li0j8p0d.wl%kuninori.morimoto.gx@renesas.com>
+From: David Miller <davem@davemloft.net>
+Date: Mon, 04 Nov 2013 20:49:49 +0000
+Subject: Re: [PATCH v3] sh_eth: check platform data pointer
+Message-Id: <20131104.154949.7139336717561192.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120075921.23557.23231.sendpatchset@w520>
-In-Reply-To: <20131120075921.23557.23231.sendpatchset@w520>
+References: <201310302330.19491.sergei.shtylyov@cogentembedded.com>
+	<20131031060527.GV1603@verge.net.au>
+In-Reply-To: <20131031060527.GV1603@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, horms@verge.net.au, linux-sh@vger.kernel.org
+To: horms@verge.net.au
+Cc: sergei.shtylyov@cogentembedded.com, netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
 
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 31 Oct 2013 15:05:27 +0900
 
-Hi
-
-> ARM: shmobile: r8a7790 and r8a7791 thermal update
+> [ Cc Dave Miller ]
 > 
-> [PATCH 01/05] ARM: shmobile: Add r8a7790 thermal device node to DTS
-> [PATCH 02/05] ARM: shmobile: Add r8a7790 clocks for thermal devices
-> [PATCH 03/05] ARM: shmobile: Add r8a7791 thermal device node to DTS
-> [PATCH 04/05] ARM: shmobile: Add r8a7791 thermal platform device
-> [PATCH 05/05] ARM: shmobile: Add r8a7791 clocks for thermal devices
+> On Wed, Oct 30, 2013 at 11:30:19PM +0300, Sergei Shtylyov wrote:
+>> Check the platform data pointer before dereferencing it and error out of the
+>> probe() method if it's NULL.
+>> 
+>> This has additional effect of preventing kernel oops with outdated platform data
+>> containing zero PHY address instead (such as on SolutionEngine7710).
+>> 
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 > 
-> Update the thermal support for the r8a7790 and the r8a7791 SoCs. As
-> usual the code is split between the DT reference code and the legacy
-> case. The DT reference code is written to be multiplatform aware and
-> is used to point out the future direction. Hardware support may however
-> be limited there due to lacking DT bindings.
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> Dave, is it too late to for this to be considered for net-next?
 
-For all patches
-
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Best regards
----
-Kuninori Morimoto
+Applied, thanks.
