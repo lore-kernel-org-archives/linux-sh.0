@@ -1,69 +1,49 @@
-From: Wolfgang Grandegger <wg@grandegger.com>
-Date: Sun, 03 Nov 2013 19:38:38 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 05 Nov 2013 21:59:36 +0000
 Subject: Re: [PATCH v2] can: add Renesas R-Car CAN driver
-Message-Id: <5276A63E.3070505@grandegger.com>
+Message-Id: <5279784E.1010205@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201310250303.00695.sergei.shtylyov@cogentembedded.com> <526AC65B.5020203@grandegger.com> <52742A0F.7040707@cogentembedded.com>
-In-Reply-To: <52742A0F.7040707@cogentembedded.com>
+References: <201310250303.00695.sergei.shtylyov@cogentembedded.com> <526AC65B.5020203@grandegger.com> <52742A0F.7040707@cogentembedded.com> <5276A63E.3070505@grandegger.com>
+In-Reply-To: <5276A63E.3070505@grandegger.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, mkl@pengutronix.de, linux-can@vger.kernel.org
+To: Wolfgang Grandegger <wg@grandegger.com>, netdev@vger.kernel.org, mkl@pengutronix.de, linux-can@vger.kernel.org
 Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
 
-On 11/01/2013 11:24 PM, Sergei Shtylyov wrote:
-> On 10/25/2013 11:28 PM, Wolfgang Grandegger wrote:
-> 
->>> Add support for the CAN controller found in Renesas R-Car SoCs.
-> 
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> [...]
-> 
->>> Index: linux-can-next/drivers/net/can/rcar_can.c
->>> =================================>>> --- /dev/null
->>> +++ linux-can-next/drivers/net/can/rcar_can.c
->>> @@ -0,0 +1,920 @@
-> [...]
->>> +static bool autorecovery;
->>> +module_param(autorecovery, bool, 0644);
->>> +MODULE_PARM_DESC(autorecovery, "Automatic hardware recovery from
->>> bus-off");
-> 
->> Software recovery is the preferred solution. No need to support
->> automatic recovery by the hardware.
-> 
->    OK, removed it.
-> 
->>> +/* Mailbox registers structure */
->>> +struct rcar_can_mbox_regs {
->>> +    u32 id;        /* IDE and RTR bits, SID and EID */
->>> +    u8 stub;    /* Not used */
->>> +    u8 dlc;        /* Data Length Code - bits [0..3] */
->>> +    u8 data[8];    /* Data Bytes */
->>> +    u8 tsh;        /* Time Stamp Higher Byte */
->>> +    u8 tsl;        /* Time Stamp Lower Byte */
-> 
->> I would add padding bytes here to ensure alignment.
-> 
->    What padding? This is how the hardware registers are laid out. I
-> think I should rather add __packed after }.
+Hello.
 
-OK, I was confused that data does not start on a 4 byte boundary.
+On 11/03/2013 10:38 PM, Wolfgang Grandegger wrote:
 
+>>>> Add support for the CAN controller found in Renesas R-Car SoCs.
 
->>> +            rcar_can_writeb(priv, RCAR_CAN_ECSR, (u8)~ECSR_ADEF);
-> 
->> Please avoid casts here and below.
-> 
->    These casts help avoid compiler warnings.
+>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Well instead of using casts the declaration of ECSR_ADEF and otheres
-should be fixed. I think the problem is that BIT is declared as shown below:
+>> [...]
 
- #define BIT(nr)                 (1UL << (nr))
+>>>> Index: linux-can-next/drivers/net/can/rcar_can.c
+>>>> =================================>>>> --- /dev/null
+>>>> +++ linux-can-next/drivers/net/can/rcar_can.c
+>>>> @@ -0,0 +1,920 @@
+>> [...]
 
-Using BIT seems not appropriate here.
+>>>> +            rcar_can_writeb(priv, RCAR_CAN_ECSR, (u8)~ECSR_ADEF);
 
-Wolfgang,
+>>> Please avoid casts here and below.
+
+>>     These casts help avoid compiler warnings.
+
+> Well instead of using casts the declaration of ECSR_ADEF and otheres
+> should be fixed. I think the problem is that BIT is declared as shown below:
+
+>   #define BIT(nr)                 (1UL << (nr))
+
+> Using BIT seems not appropriate here.
+
+    Well, I thought it was designed to replace explicit (1 << (nr)) #define's. 
+Hopefully those are good for you then...
+
+> Wolfgang,
+
+WBR, Sergei
 
