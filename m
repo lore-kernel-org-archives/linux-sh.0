@@ -1,93 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 01:03:38 +0000
-Subject: [PATCH v3 01/15] ARM: shmobile: Sync Lager DTS with Lager reference DTS
-Message-Id: <1385600632-5181-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 05 Nov 2013 20:33:25 +0000
+Subject: [RFC PATCH 0/2] Defer HCD init until the external PHY, bound to the HCD is ready
+Message-Id: <1383683607-28119-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Copy the device nodes from Lager reference into the Lager device tree
-file. This will allow us to use a single DTS file regarless of kernel
-configuration. In case of legacy C board code the device nodes may or
-may not be used, but in the multiplatform case all the DT device nodes
-are used.
+This adds remove_phy flag to the HCD structure. If the flag is
+set and if hcd->phy is valid, the phy is shutdown and released
+whenever usb_add_hcd fails or usb_hcd_remove is called.
+This also adds CONFIG_USB_HCD_EXTERNAL_PHY option that allows
+the HCD driver to search for a USB phy, bound to the HCD,
+when the HC is being added.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 53 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 53 insertions(+)
+If the USB PHY is found, it is initialized and the remove_phy flag
+is set. In case PHY is not ready, the usb_add_hcd function returns
+the -EPROBE_DEFER error code which defers HCD probing till the PHY
+becomes ready.
+If no PHY is bound to the HCD, or it has been initialized by
+the low-level driver before calling usb_add_hcd(), the HCD is
+added as usual.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 8799dfb..3c697e2 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -10,6 +10,7 @@
- 
- /dts-v1/;
- #include "r8a7790.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "Lager";
-@@ -28,4 +29,56 @@
- 		#address-cells = <1>;
- 		#size-cells = <1>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led6 {
-+			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
-+		};
-+		led7 {
-+			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
-+		};
-+		led8 {
-+			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+};
-+
-+&pfc {
-+	pinctrl-0 = <&scif0_pins &scif1_pins>;
-+	pinctrl-names = "default";
-+
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data";
-+		renesas,function = "scif0";
-+	};
-+
-+	scif1_pins: serial1 {
-+		renesas,groups = "scif1_data";
-+		renesas,function = "scif1";
-+	};
-+
-+	mmc1_pins: mmc1 {
-+		renesas,groups = "mmc1_data8", "mmc1_ctrl";
-+		renesas,function = "mmc1";
-+	};
-+};
-+
-+&mmcif1 {
-+	pinctrl-0 = <&mmc1_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <8>;
-+	non-removable;
-+	status = "okay";
- };
+This approach can be used to initialize the external PHY for
+the R-Car PCI USB hosts, that share USB ports with USBHS/USBSS devices.
+All we need to do is to make R-Car Gen2 platform code bind the
+Gen2 USB phy device to the PCI HC devices, and make the phy-rcar-gen2-usb
+driver register USB phy with usb_add_phy_dev() AOT usb_add_phy() callback.
+
+Valentine Barshak (2):
+  usb: hcd: Remove USB phy if needed
+  usb: hcd: Introduce CONFIG_USB_HCD_EXTERNAL_PHY option
+
+ drivers/usb/core/hcd.c   | 34 +++++++++++++++++++++++++++++++++-
+ drivers/usb/host/Kconfig | 11 +++++++++++
+ include/linux/usb/hcd.h  |  1 +
+ 3 files changed, 45 insertions(+), 1 deletion(-)
+
 -- 
-1.8.3.2
+1.8.3.1
 
