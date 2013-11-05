@@ -1,55 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 07 Nov 2013 08:52:57 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: Remove unused clock constants
-Message-Id: <20131107085253.GE17384@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 05 Nov 2013 20:33:27 +0000
+Subject: [RFC PATCH 2/2] usb: hcd: Introduce CONFIG_USB_HCD_EXTERNAL_PHY option
+Message-Id: <1383683607-28119-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383720523-9645-1-git-send-email-horms+renesas@verge.net.au>
- <1395939.NimcadHhnk@avalon>
-In-Reply-To: <1395939.NimcadHhnk@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Nov 06, 2013 at 01:59:20PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thank you for the patch.
-> 
-> On Wednesday 06 November 2013 15:48:43 Simon Horman wrote:
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/mach-shmobile/clock-r8a7779.c | 8 --------
-> >  1 file changed, 8 deletions(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c
-> > b/arch/arm/mach-shmobile/clock-r8a7779.c index b7ce0e7..3083c70 100644
-> > --- a/arch/arm/mach-shmobile/clock-r8a7779.c
-> > +++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-> > @@ -47,17 +47,9 @@
-> > 
-> >  #define MD(nr)	BIT(nr)
-> > 
-> > -#define FRQMR		IOMEM(0xffc80014)
-> >  #define MSTPCR0		IOMEM(0xffc80030)
-> >  #define MSTPCR1		IOMEM(0xffc80034)
-> >  #define MSTPCR3		IOMEM(0xffc8003c)
-> > -#define MSTPSR1		IOMEM(0xffc80044)
-> > -#define MSTPSR4		IOMEM(0xffc80048)
-> > -#define MSTPSR6		IOMEM(0xffc8004c)
-> > -#define MSTPCR4		IOMEM(0xffc80050)
-> > -#define MSTPCR5		IOMEM(0xffc80054)
-> > -#define MSTPCR6		IOMEM(0xffc80058)
-> > -#define MSTPCR7		IOMEM(0xffc80040)
-> 
-> It has been pointed out to me that the CPG requires waiting for clocks to be 
-> enabled on all R-Mobile and R-Car SoCs. I've send a patch series to implement 
-> this for r8a7790 ("[PATCH 0/2] ARM: shmobile: r8a7790: Wait for status on all 
-> MSTP clocks"). Should we expand that to the other SoCs as well ? In that case 
-> the constants would be needed.
+This adds external USB phy support to USB HCD driver that
+allows to find and initialize external USB phy, bound to
+the HCD when the HCD is added.
+The usb_add_hcd function returns -EPROBE_DEFER if the USB
+phy, bound to the HCD, is not ready.
+If no USB phy is bound, the HCD is initialized as usual.
 
-That is a good question.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/usb/core/hcd.c   | 20 ++++++++++++++++++++
+ drivers/usb/host/Kconfig | 11 +++++++++++
+ 2 files changed, 31 insertions(+)
 
-I am unsure if waiting is only required for Gen2 R-Car SoCs or
-Gen1 as well. If it is requried for Gen1 then it would
-make sense to extend the coverage of your series to H1 (r8a7779).
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index d939521..da9c4ba 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -2597,6 +2597,26 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	int retval;
+ 	struct usb_device *rhdev;
+ 
++#ifdef CONFIG_USB_HCD_EXTERNAL_PHY
++	if (!hcd->phy) {
++		struct usb_phy *phy = usb_get_phy_dev(hcd->self.controller, 0);
++
++		if (IS_ERR(phy)) {
++			retval = PTR_ERR(phy);
++			if (retval = -EPROBE_DEFER)
++				return retval;
++		} else {
++			retval = usb_phy_init(phy);
++			if (retval) {
++				usb_put_phy(phy);
++				return retval;
++			}
++			hcd->phy = phy;
++			hcd->remove_phy = 1;
++		}
++	}
++#endif
++
+ 	dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
+ 
+ 	/* Keep old behaviour if authorized_default is not in [0, 1]. */
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index b3f20d7..2e1f2b0 100644
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -706,3 +706,14 @@ config USB_HCD_TEST_MODE
+ 	  This option is of interest only to developers who need to validate
+ 	  their USB hardware designs.  It is not needed for normal use.  If
+ 	  unsure, say N.
++
++config USB_HCD_EXTERNAL_PHY
++	bool "Set up external USB phy bound to the USB HCD"
++	select USB_PHY
++	---help---
++	  Some USB host controllers require an external USB phy.
++	  This adds generic USB phy support to the USB HCD driver.
++	  When the HCD is being initialized, the HC driver searches
++	  for a USB phy, bound to the HCD. If no USB phy is bound
++	  to the HCD, the HCD is initialized as usual.
++	  If unsure, say N.
+-- 
+1.8.3.1
+
