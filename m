@@ -1,29 +1,78 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Nov 2013 02:40:32 +0000
-Subject: Re: [PATCH v2 2/7] ARM: shmobile: Use interrupt macros in SoC DT files
-Message-Id: <20131119024032.GM17628@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Nov 2013 10:43:32 +0000
+Subject: [PATCH] ARM: shmobile: Enable MTU2 on r7s72100
+Message-Id: <20131106104332.6327.73303.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383999839-3339-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1384827505-25015-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384827505-25015-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 19, 2013 at 03:18:25AM +0100, Laurent Pinchart wrote:
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/boot/dts/r8a73a4.dtsi | 108 ++++++++++++++++++++++++----------
->  arch/arm/boot/dts/r8a7740.dtsi | 106 +++++++++++++++++-----------------
->  arch/arm/boot/dts/r8a7778.dtsi |  44 +++++++-------
->  arch/arm/boot/dts/r8a7779.dtsi |  42 +++++++-------
->  arch/arm/boot/dts/r8a7790.dtsi |  50 +++++++++-------
->  arch/arm/boot/dts/r8a7791.dtsi |  49 ++++++++--------
->  arch/arm/boot/dts/sh73a0.dtsi  | 128 +++++++++++++++++++++--------------------
->  7 files changed, 295 insertions(+), 232 deletions(-)
-> 
-> Rebased on top of Simon's dt3 branch.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, this one applied cleanly.
-I have queued it up in place of v1.
+Add MTU2 as r7s72100 system timer.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Built on top of "renesas-devel-v3.12-rc7-20131101"
+
+ arch/arm/mach-shmobile/clock-r7s72100.c |    1 +
+ arch/arm/mach-shmobile/setup-r7s72100.c |   22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/clock-r7s72100.c
++++ work/arch/arm/mach-shmobile/clock-r7s72100.c	2013-11-05 21:07:13.000000000 +0900
+@@ -178,6 +178,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
++	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ };
+ 
+ void __init r7s72100_clock_init(void)
+--- 0001/arch/arm/mach-shmobile/setup-r7s72100.c
++++ work/arch/arm/mach-shmobile/setup-r7s72100.c	2013-11-05 21:07:13.000000000 +0900
+@@ -22,6 +22,7 @@
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
++#include <linux/sh_timer.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+@@ -58,6 +59,26 @@ static inline void r7s72100_register_sci
+ 				      sizeof(struct plat_sci_port));
+ }
+ 
++
++static struct sh_timer_config mtu2_0_platform_data __initdata = {
++	.name = "MTU2_0",
++	.timer_bit = 0,
++	.channel_offset = -0x80,
++	.clockevent_rating = 200,
++};
++
++static struct resource mtu2_0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xfcff0300, 0x27),
++	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
++};
++
++#define r7s72100_register_mtu2(idx)					\
++	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
++					  idx, mtu2_##idx##_resources,	\
++					  ARRAY_SIZE(mtu2_##idx##_resources), \
++					  &mtu2_##idx##_platform_data,	\
++					  sizeof(struct sh_timer_config))
++
+ void __init r7s72100_add_dt_devices(void)
+ {
+ 	r7s72100_register_scif(SCIF0);
+@@ -68,6 +89,7 @@ void __init r7s72100_add_dt_devices(void
+ 	r7s72100_register_scif(SCIF5);
+ 	r7s72100_register_scif(SCIF6);
+ 	r7s72100_register_scif(SCIF7);
++	r7s72100_register_mtu2(0);
+ }
+ 
+ void __init r7s72100_init_early(void)
