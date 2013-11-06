@@ -1,29 +1,34 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 20 Nov 2013 13:39:28 +0000
-Subject: Re: [PATCH 04/05 v2] gpio: em: Use lazy disable
-Message-Id: <CACRpkdaePTGShd+rt=Jecd6T+f1Cq_rp_hhL9AejgEh446Js-w@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 06 Nov 2013 05:01:38 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: Correct typo in clocks
+Message-Id: <1383714098-28770-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120002259.27342.35575.sendpatchset@w520>
-	<20131120002335.27342.16796.sendpatchset@w520>
-In-Reply-To: <20131120002335.27342.16796.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 20, 2013 at 1:23 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+This is the r8a7790 SoC not the r8a77a4 SoC and
+clocks are updated in r8a7790_clock_init.  not r8a73a4_clock_init.
 
-> From: Magnus Damm <damm@opensource.se>
->
-> Set the ->irq_enable() and ->irq_disable() methods to NULL
-> to enable lazy disable of interrupts. This by itself provides
-> some level of optimization, but is mainly enabled as ground
-> work for future Suspend-to-RAM wake up support.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Patch applied.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 9fa39d1..6107571 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -77,7 +77,7 @@ static struct sh_clk_ops followparent_clk_ops = {
+ };
+ 
+ static struct clk main_clk = {
+-	/* .parent will be set r8a73a4_clock_init */
++	/* .parent will be set r8a7790_clock_init */
+ 	.ops	= &followparent_clk_ops,
+ };
+ 
+-- 
+1.8.4
 
-Yours,
-Linus Walleij
