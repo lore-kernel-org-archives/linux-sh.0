@@ -1,102 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 19 Nov 2013 14:02:13 +0000
-Subject: [PATCH v3 12/29] ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
-Message-Id: <1384869751-9786-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Nov 2013 23:30:32 +0000
+Subject: [PATCH 00/03] ARM: shmobile: r7s72100 Genmai DT reference and multiplatform
+Message-Id: <20131106233032.8117.71968.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-The SCIF driver is transitioning to platform resources. Board code will
-thus need to define an array of resources for each SCIF device. This is
-incompatible with the macro-based SCIF platform data definition as an
-array. Rework the macro to define platform data as individual
-structures.
+ARM: shmobile: r7s72100 Genmai DT reference and multiplatform
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[PATCH 01/03] ARM: shmobile: r7s72100 Genmai DT reference DTS bits
+[PATCH 02/03] ARM: shmobile: r7s72100 Genmai DT reference C bits
+[PATCH 03/03] ARM: shmobile: r7s72100 Genmai Multiplatform
+
+Add r7s72100 Genmai DT reference support and add it to SHMOBILE_MULTI. To
+use multiplatform support CCF is also needed, so at this point Genmai
+multiplatform is build-only until CCF makes it possible to boot the board.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/setup-r7s72100.c | 49 +++++++++++++++------------------
- 1 file changed, 22 insertions(+), 27 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 55f0b9c..6ae7e32 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -28,8 +28,8 @@
- #include <mach/r7s72100.h>
- #include <asm/mach/arch.h>
- 
--#define SCIF_DATA(index, baseaddr, irq)					\
--[index] = {								\
-+#define R7S72100_SCIF(index, baseaddr, irq)				\
-+static const struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= PORT_SCIF,					\
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
-@@ -40,24 +40,19 @@
- 	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
- }
- 
--enum { SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7 };
-+R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
-+R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
-+R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
-+R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
-+R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
-+R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
-+R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
-+R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
- 
--static const struct plat_sci_port scif[] __initconst = {
--	SCIF_DATA(SCIF0, 0xe8007000, gic_iid(221)), /* SCIF0 */
--	SCIF_DATA(SCIF1, 0xe8007800, gic_iid(225)), /* SCIF1 */
--	SCIF_DATA(SCIF2, 0xe8008000, gic_iid(229)), /* SCIF2 */
--	SCIF_DATA(SCIF3, 0xe8008800, gic_iid(233)), /* SCIF3 */
--	SCIF_DATA(SCIF4, 0xe8009000, gic_iid(237)), /* SCIF4 */
--	SCIF_DATA(SCIF5, 0xe8009800, gic_iid(241)), /* SCIF5 */
--	SCIF_DATA(SCIF6, 0xe800a000, gic_iid(245)), /* SCIF6 */
--	SCIF_DATA(SCIF7, 0xe800a800, gic_iid(249)), /* SCIF7 */
--};
--
--static inline void r7s72100_register_scif(int idx)
--{
--	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
--				      sizeof(struct plat_sci_port));
--}
-+#define r7s72100_register_scif(index)					       \
-+	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
-+				      &scif##index##_platform_data,	       \
-+				      sizeof(scif##index##_platform_data))
- 
- 
- static struct sh_timer_config mtu2_0_platform_data __initdata = {
-@@ -81,14 +76,14 @@ static struct resource mtu2_0_resources[] __initdata = {
- 
- void __init r7s72100_add_dt_devices(void)
- {
--	r7s72100_register_scif(SCIF0);
--	r7s72100_register_scif(SCIF1);
--	r7s72100_register_scif(SCIF2);
--	r7s72100_register_scif(SCIF3);
--	r7s72100_register_scif(SCIF4);
--	r7s72100_register_scif(SCIF5);
--	r7s72100_register_scif(SCIF6);
--	r7s72100_register_scif(SCIF7);
-+	r7s72100_register_scif(0);
-+	r7s72100_register_scif(1);
-+	r7s72100_register_scif(2);
-+	r7s72100_register_scif(3);
-+	r7s72100_register_scif(4);
-+	r7s72100_register_scif(5);
-+	r7s72100_register_scif(6);
-+	r7s72100_register_scif(7);
- 	r7s72100_register_mtu2(0);
- }
- 
--- 
-1.8.3.2
+ Written against renesas.git tag renesas-devel-v3.12-rc7-20131101 and
+ [PATCH] ARM: shmobile: Initial r8a7791 and Koelsch multiplatform support 
 
+ arch/arm/boot/dts/Makefile                      |    2 
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |   31 ++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                  |   18 ++++++++
+ arch/arm/mach-shmobile/Makefile                 |    2 
+ arch/arm/mach-shmobile/Makefile.boot            |    3 -
+ arch/arm/mach-shmobile/board-genmai-reference.c |   49 +++++++++++++++++++++++
+ 6 files changed, 104 insertions(+), 1 deletion(-)
