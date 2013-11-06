@@ -1,36 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Nov 2013 01:18:17 +0000
-Subject: [RFC 02/17] clk: shmobile: r8a7779: Add MSTP clock support
-Message-Id: <1385342312-1967-3-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Nov 2013 23:21:20 +0000
+Subject: [PATCH 02/04] ARM: shmobile: Use ->init_late() in shared EMEV2 case
+Message-Id: <20131106232120.8081.76012.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20131106232102.8081.20523.sendpatchset@w520>
+In-Reply-To: <20131106232102.8081.20523.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add MSTP clock support for the r8a7779 SoC
+From: Magnus Damm <damm@opensource.se>
 
-The only change required appears to be to note a new
-compatibility string in the bindings.
+Hook up shmobile_init_late() to enable various
+code such as suspend-to-RAM and CPUIdle.
 
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+
+ arch/arm/mach-shmobile/setup-emev2.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index 126b17e..f0a4b83 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -12,6 +12,7 @@ Required Properties:
-   - compatible: Must be one of the following
-     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-+    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
-     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
-   - reg: Base address and length of the memory resource used by the MSTP
-     clocks
--- 
-1.8.4
-
+--- 0004/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-11-05 15:58:30.000000000 +0900
+@@ -79,6 +79,7 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma
+ 	.map_io		= emev2_map_io,
+ 	.init_early	= emev2_init_delay,
+ 	.init_machine	= emev2_add_standard_devices_dt,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
+ 
