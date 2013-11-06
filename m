@@ -1,68 +1,95 @@
-From: Tomi Valkeinen <tomi.valkeinen@ti.com>
-Date: Mon, 11 Nov 2013 13:34:02 +0000
-Subject: Re: [PATCH 11/12] fbdev: shmobile-hdmi: Convert to clk_prepare/unprepare
-Message-Id: <5280DCCA.7060106@ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="doBwv2X0FHqhreMPgtNoaVkpBHOvc1fFc"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Nov 2013 23:39:52 +0000
+Subject: [PATCH/RFC] clk: shmobile: DT property SoC <-> CCF interface prototype
+Message-Id: <20131106233952.8558.85734.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383000569-8916-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131031104809.GB18477@ns203013.ovh.net> <1388008.xjh7MrPrF3@avalon>
-In-Reply-To: <1388008.xjh7MrPrF3@avalon>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
---doBwv2X0FHqhreMPgtNoaVkpBHOvc1fFc
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+From: Magnus Damm <damm@opensource.se>
 
-On 2013-11-09 16:13, Laurent Pinchart wrote:
-> Hi Jean-Christophe,
->=20
-> On Thursday 31 October 2013 11:48:09 Jean-Christophe PLAGNIOL-VILLARD w=
-rote:
->> On 23:49 Mon 28 Oct     , Laurent Pinchart wrote:
->>> Turn clk_enable() and clk_disable() calls into clk_prepare_enable() a=
-nd
->>> clk_disable_unprepare() to get ready for the migration to the common
->>> clock framework.
->>>
->>> Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
->>> Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
->>
->> Acked-by: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
->=20
-> Thank you. Could you please pick patches 11/12 and 12/12 up for v3.13 o=
-r v3.14=20
-> ?
+Prototype patch to use a DT property to pass "CPG mode"
+(clock device boot time hardware configuration) from
+SoC code in arch/arm/ to CCF bits in drivers/clk/
 
-Thanks, picked both for 3.13.
+Applies on top of the r8a7790 CCF code by Laurent.
+Mainly written to show how a property can be used
+instead of introducing a custom symbol dependency.
 
- Tomi
+The SoC specific code needs to use of_update_property()
+to setup this DT property after reading out the boot
+mode from hardware during boot.
 
+Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
+ drivers/clk/shmobile/clk-r8a7790.c |   15 ++++++---------
+ include/linux/clk/shmobile.h       |   19 -------------------
+ 2 files changed, 6 insertions(+), 28 deletions(-)
 
---doBwv2X0FHqhreMPgtNoaVkpBHOvc1fFc
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJSgNzKAAoJEPo9qoy8lh711XwQAIgNPHWL4HvT3/aT0SU8SdEu
-LPeNFfeHEOHJ9tb9BbXfibczuIKcwCD82+5aXEXs3aXMCRnJbvaLXm5fQ63/wREK
-ohNy2jjOGi4GctZA3DsKYJJNOaZ978aTGKIqd8lglJYqfjnnUN65PM4CmTdgvLgB
-sVPWfso0M6JP6XBVDyoBBxCsmuQUOom7Rkw15zFJ0GS15EQWxPezkOv5o5dlQ9NV
-pCHGQOL9lsOedL41Qj8UfR1C5V5neeKqODazN1P1ZO31LkAPorE/dL/ONzbT5lzE
-ucOThne+MdqpY/N4P31KWtAJikC/ZHRLAZegHYtANehg+B4xvFq7kPUFIEIfWw9K
-XqUAH+WlTABflzV6BqppCkZQ9jYhopfb+FOkqmbUtB4VU0ZFQUKc9cFql8ob+33U
-D52g7RnWRrBjL79Q4WV2kvqaSyNC8dtIk5c/uZhSVti/SOTUfuiJonodD6Ug8NIk
-ojCNYBZtvfGSaJ+9wpBc79753A2sE3KItqfjVtno7reYVh2pu2ywva1AKowEUbqS
-9eXhRM45CCj/OMC9+NePiQ0bBJcl9PRodN+2h2oUSVhACf3wwcQYHVYhm1KniJiL
-IUiNWyKb7arZzFIW4RO0dnd3noTddAZXX+F574njok8EsL2jLHX+7vnvZmwoC53F
-Vu9HrudrRG+T/fJBiPS7
-=qPzb
------END PGP SIGNATURE-----
-
---doBwv2X0FHqhreMPgtNoaVkpBHOvc1fFc--
+--- 0018/drivers/clk/shmobile/clk-r8a7790.c
++++ work/drivers/clk/shmobile/clk-r8a7790.c	2013-11-06 17:28:36.000000000 +0900
+@@ -12,7 +12,6 @@
+ 
+ #include <linux/clk-provider.h>
+ #include <linux/clkdev.h>
+-#include <linux/clk/shmobile.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/of.h>
+@@ -70,8 +69,6 @@ static const struct clk_div_table cpg_sd
+ 	{ 10, 36 }, { 11, 48 }, { 12, 10 }, {  0,  0 },
+ };
+ 
+-static u32 cpg_mode __initdata;
+-
+ #define CPG_SDCKCR			0x00000074
+ 
+ static void __init r8a7790_cpg_clocks_init(struct device_node *np)
+@@ -80,6 +77,12 @@ static void __init r8a7790_cpg_clocks_in
+ 	struct r8a7790_cpg *cpg;
+ 	struct clk **clks;
+ 	unsigned int i;
++	u32 cpg_mode;
++
++	if (of_property_read_u32(np, "cpg-mode", &cpg_mode)) {
++		pr_err("%s: failed to determine CPG mode\n", __func__);
++		return;
++	}
+ 
+ 	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
+ 	clks = kzalloc(CPG_NUM_CLOCKS * sizeof(*clks), GFP_KERNEL);
+@@ -168,9 +171,3 @@ static void __init r8a7790_cpg_clocks_in
+ CLK_OF_DECLARE(r8a7790_cpg_clks, "renesas,r8a7790-cpg-clocks",
+ 	       r8a7790_cpg_clocks_init);
+ 
+-void __init r8a7790_clocks_init(u32 mode)
+-{
+-	cpg_mode = mode;
+-
+-	of_clk_init(NULL);
+-}
+--- 0018/include/linux/clk/shmobile.h
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,19 +0,0 @@
+-/*
+- * Copyright 2013 Ideas On Board SPRL
+- *
+- * Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- */
+-
+-#ifndef __LINUX_CLK_SHMOBILE_H_
+-#define __LINUX_CLK_SHMOBILE_H_
+-
+-#include <linux/types.h>
+-
+-void r8a7790_clocks_init(u32 mode);
+-
+-#endif
