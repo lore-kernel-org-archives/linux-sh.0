@@ -1,59 +1,78 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Nov 2013 21:57:29 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: Remove non-existent LOCAL_TIMERS
-Message-Id: <CANqRtoT8CmxKtT0x1REg3VnhkuuZZvRzxLHiQpBFWsgXZx8xcA@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 06 Nov 2013 01:48:03 +0000
+Subject: Re: [PATCH] ARM: shmobile: Include all 2 GiB of memory on APE6EVM
+Message-Id: <20131106014801.GD22183@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383768243-11466-1-git-send-email-shc_work@mail.ru>
-In-Reply-To: <1383768243-11466-1-git-send-email-shc_work@mail.ru>
+References: <20131031031549.15985.23547.sendpatchset@w520>
+ <20131031042035.GG1603@verge.net.au>
+ <CANqRtoSW6jFX3pa94ZBgrKkvx5YNKqgxVSsYkSxMP_btcxFh7A@mail.gmail.com>
+In-Reply-To: <CANqRtoSW6jFX3pa94ZBgrKkvx5YNKqgxVSsYkSxMP_btcxFh7A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Alex,
+On Thu, Oct 31, 2013 at 05:02:13PM +0900, Magnus Damm wrote:
+> Hi Simon,
+> 
+> On Thu, Oct 31, 2013 at 1:20 PM, Simon Horman <horms@verge.net.au> wrote:
+> > On Thu, Oct 31, 2013 at 12:15:49PM +0900, Magnus Damm wrote:
+> >> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+> >>
+> >> Add 1GiB of DRAM at 0x2_0000_0000 to support the full 2GiB
+> >> of APE6EVM system memory.
+> >>
+> >> Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+> >> Signed-off-by: Magnus Damm <damm@opensource.se>
+> >> ---
+> >>
+> >>  For correct run time operation regardless of kernel configuration
+> >>  ARM patches 7863/1 and 7864/1 are needed.
+> >
+> > I take it that I should wait for those patches before applying this one.
+> 
+> That's probably a good idea. RMK has applied them to "git-curr", so I
+> suppose they are queued up for something at least:
+> 
+> http://www.arm.linux.org.uk/developer/patches/viewpatch.php?idx63/1
 
-On Thu, Nov 7, 2013 at 5:04 AM, Alexander Shiyan <shc_work@mail.ru> wrote:
->
-> Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
-> ---
->  arch/arm/mach-shmobile/Kconfig | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index a4a4b75..2de4fb8 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -4,7 +4,7 @@ config ARCH_SHMOBILE_MULTI
->         select CPU_V7
->         select GENERIC_CLOCKEVENTS
->         select HAVE_ARM_SCU if SMP
-> -       select HAVE_ARM_TWD if LOCAL_TIMERS
-> +       select HAVE_ARM_TWD if SMP
->         select HAVE_SMP
->         select ARM_GIC
->         select MIGHT_HAVE_CACHE_L2X0
+I have also sighted them in linux-next.
+So I expect they will show up in v3.13-rc1 or thereabouts.
 
-Thanks for your patch. I'm not sure if I 100% agree with the change
-above, but it may be correct depending on what is expected of the TWD
-driver.
+> > With those two patches and this one applied on top of
+> > renesas-devel-v3.12-rc7-20131030 I was able to successfully
+> > boot an ape6evm board. But /proc/meminfo still indicates only 1Gb of
+> > memory. What am I missing.
+> 
+> You probably need to enable HIGHMEM and LPAE to be able to access to
+> all memory. Same thing on Lager, to get the full 4GiB you need to
+> select those in your kernel configuration too.
 
-In mach-shmobile we have a couple of Cortex-A9 SoCs with one or more
-CPU cores. What I can tell by the Linux TWD driver only SMP operation
-is supported. This seems different from the Cortex-A15/A7 architected
-timer that also supports UP mode.
+Thanks, I have been able to successfully test all 4 patches in this
+series with those settings enabled.
 
-We use our Renesas-specific timers for single core and multi core
-operation and opt-in with local timers when those are enabled by the
-kernel configuration and DT and/or C support code. TWD is used in
-SMP-mode only today. If possible I'd also like to use the TWD for UP
-operation on the Cortex-A9 single core SoCs, but the above change is
-not really aligned with that. Perhaps my expectation is too high, I'm
-not sure.
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 
-Has anyone use TWD with single core Cortex-A9 or multi-core Cortex-A9
-in UP mode? Is there a software or hardware limitation why it can't be
-used with a single mode?
+> Please note that having memory located on 64-bit addresses may break
+> some drivers doing bus mastering or using the DMAC. These drivers need
+> to be fixed both with short term DMA zone workarounds and proper
+> 64-bit address support whenever possible.
+> 
+> So if I could suggest a policy then having LPAE=n in defconfig for the
+> C board code for default stable operation. This together with LPAE=y
+> in the case of DT reference and/or Multiplatform where we can be a bit
+> more experimental. I don't care enough to send defconfig patches, but
+> if some issue comes up then perhaps adjusting the defconfig to disable
+> LPAE may work well as a workaround.
 
-Cheers,
+Thanks.
 
-/ magnus
+As it stands the defconfig for both APE6EVM and Lager lead to a
+configuration with LPAE disabled, although neither explicitly disable LPAE.
+I think it is best to leave things as-is in this regards and explicitly
+disable LPAE in the defconfigs if the need arises.
+
+While looking over this I noticed that the APE6EVM defconfig selects
+HIGHMEM while the Lager defconfig does not and it is not selected in the
+resulting config. Would it be worth updating the Lager defconfig to enable
+HIGHMEM? If so, I'll make a patch.
