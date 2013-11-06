@@ -1,85 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:11 +0000
-Subject: [PATCH v4 01/29] serial: sh-sci: Sort headers alphabetically
-Message-Id: <1385594319-5758-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 06 Nov 2013 00:41:09 +0000
+Subject: [PATCH v2] ARM: shmobile: lager: phy fixup needs CONFIG_PHYLIB
+Message-Id: <1383698469-15239-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-This helps locating duplicates.
+Do not build the phy fixup unless CONFIG_PHYLIB is enabled.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Other than not being useful it is also not possible to link
+the code under this condition as phy_register_fixup_for_id(),
+mdiobus_read() and mdiobus_write() are absent.
+
+arch/arm/mach-shmobile/built-in.o: In function `lager_ksz8041_fixup':
+board-lager.c:(.text+0xb8): undefined reference to `mdiobus_read'
+board-lager.c:(.text+0xd4): undefined reference to `mdiobus_write'
+arch/arm/mach-shmobile/built-in.o: In function `lager_init':
+board-lager.c:(.init.text+0xafc): undefined reference to `phy_register_fixup_for_id'
+
+This problem was introduced by 48c8b96f21817aad
+("ARM: shmobile: Lager: add Micrel KSZ8041 PHY fixup")
+
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++++---------------------
- 1 file changed, 21 insertions(+), 21 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 7d8103c..10c98b1 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -23,35 +23,35 @@
+v2
+* Correct and enhance changelog as suggested by Sergei Shtylyov.
+---
+ arch/arm/mach-shmobile/board-lager.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 78a31b6..d1a8ddd 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -245,7 +245,9 @@ static void __init lager_init(void)
+ {
+ 	lager_add_standard_devices();
  
- #undef DEBUG
+-	phy_register_fixup_for_id("r8a7790-ether-ff:01", lager_ksz8041_fixup);
++	if (IS_ENABLED(CONFIG_PHYLIB))
++		phy_register_fixup_for_id("r8a7790-ether-ff:01",
++					  lager_ksz8041_fixup);
+ }
  
--#include <linux/module.h>
-+#include <linux/clk.h>
-+#include <linux/console.h>
-+#include <linux/ctype.h>
-+#include <linux/cpufreq.h>
-+#include <linux/delay.h>
-+#include <linux/dmaengine.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/err.h>
- #include <linux/errno.h>
--#include <linux/sh_dma.h>
--#include <linux/timer.h>
-+#include <linux/gpio.h>
-+#include <linux/init.h>
- #include <linux/interrupt.h>
--#include <linux/tty.h>
--#include <linux/tty_flip.h>
--#include <linux/serial.h>
--#include <linux/major.h>
--#include <linux/string.h>
--#include <linux/sysrq.h>
- #include <linux/ioport.h>
-+#include <linux/major.h>
-+#include <linux/module.h>
- #include <linux/mm.h>
--#include <linux/init.h>
--#include <linux/delay.h>
--#include <linux/console.h>
--#include <linux/platform_device.h>
--#include <linux/serial_sci.h>
- #include <linux/notifier.h>
-+#include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
--#include <linux/cpufreq.h>
--#include <linux/clk.h>
--#include <linux/ctype.h>
--#include <linux/err.h>
--#include <linux/dmaengine.h>
--#include <linux/dma-mapping.h>
- #include <linux/scatterlist.h>
-+#include <linux/serial.h>
-+#include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/slab.h>
--#include <linux/gpio.h>
-+#include <linux/string.h>
-+#include <linux/sysrq.h>
-+#include <linux/timer.h>
-+#include <linux/tty.h>
-+#include <linux/tty_flip.h>
- 
- #ifdef CONFIG_SUPERH
- #include <asm/sh_bios.h>
+ static const char * const lager_boards_compat_dt[] __initconst = {
 -- 
-1.8.3.2
+1.8.4
 
