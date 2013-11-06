@@ -1,113 +1,108 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 06 Nov 2013 23:56:25 +0000
-Subject: Re: [PATCH/RFC] clk: shmobile: DT property SoC <-> CCF interface prototype
-Message-Id: <461263883.GeF0HFra2n@avalon>
+Date: Wed, 06 Nov 2013 00:27:30 +0000
+Subject: Re: [PATCH v2 19/19] fbdev: sh-mobile-lcdcfb: Enable the driver on all ARM platforms
+Message-Id: <1671829.6znfm3IPYO@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131106233952.8558.85734.sendpatchset@w520>
-In-Reply-To: <20131106233952.8558.85734.sendpatchset@w520>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1383086274-11049-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <alpine.DEB.2.02.1310312039330.13521@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.02.1310312039330.13521@ayla.of.borg>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Hi Geert,
 
 Thank you for the patch.
 
-On Thursday 07 November 2013 08:39:52 Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
+On Thursday 31 October 2013 20:42:52 Geert Uytterhoeven wrote:
+> On Tue, 29 Oct 2013, Laurent Pinchart wrote:
+> > Renesas ARM platforms are transitioning from single-platform to
+> > multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+> > driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+> > and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+> > COMPILE_TEST.
+> > 
+> > diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+> > index 84b685f..32b5c86 100644
+> > --- a/drivers/video/Kconfig
+> > +++ b/drivers/video/Kconfig
+> > @@ -2482,7 +2482,7 @@ endif
+> > 
+> >  config FB_SH_MOBILE_MERAM
+> >  
+> >  	tristate "SuperH Mobile MERAM read ahead support"
+> > 
+> > -	depends on (SUPERH || ARCH_SHMOBILE)
+> > +	depends on (SUPERH || ARM || COMPILE_TEST)
+> > 
+> >  	select GENERIC_ALLOCATOR
+> >  	---help---
+> >  	
+> >  	  Enable MERAM support for the SuperH controller.
 > 
-> Prototype patch to use a DT property to pass "CPG mode"
-> (clock device boot time hardware configuration) from
-> SoC code in arch/arm/ to CCF bits in drivers/clk/
+> While the below compiler warnings have been seen with sh-randconfig
+> before, they're more likely to happen with COMPILE_TEST=y.
+> I now see them with e.g. m68k-allmodconfig, so I created a patch.
 > 
-> Applies on top of the r8a7790 CCF code by Laurent.
-> Mainly written to show how a property can be used
-> instead of introducing a custom symbol dependency.
+> From 15eb69172457c675cde177a6f742b6f1dabdeb18 Mon Sep 17 00:00:00 2001
+> From: Geert Uytterhoeven <geert@linux-m68k.org>
+> Date: Thu, 31 Oct 2013 20:35:14 +0100
+> Subject: [PATCH] fbdev: sh_mobile_meram: Fix defined but not used compiler
+>  warnings
+> MIME-Version: 1.0
+> Content-Type: text/plain; charset=UTF-8
+> Content-Transfer-Encoding: 8bit
 > 
-> The SoC specific code needs to use of_update_property()
-> to setup this DT property after reading out the boot
-> mode from hardware during boot.
-
-The interesting part would be the SoC specific code :-)
-
-As I mentioned in my previous e-mail this feels like a bit of a DT abuse to 
-me, but let's hear what Grant and Mike think about it.
-
-(To help the reader, the reference e-mail thread can be found at 
-http://www.spinics.net/lists/arm-kernel/msg284629.html)
-
-> Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+> If CONFIG_PM_SLEEP resp. CONFIG_PM_RUNTIME are not set:
+> 
+> drivers/video/sh_mobile_meram.c:573: warning: ‘sh_mobile_meram_suspend’
+> defined but not used drivers/video/sh_mobile_meram.c:597: warning:
+> ‘sh_mobile_meram_resume’ defined but not used
+> 
+> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 > ---
+>  drivers/video/sh_mobile_meram.c |    4 ++++
+>  1 file changed, 4 insertions(+)
 > 
->  drivers/clk/shmobile/clk-r8a7790.c |   15 ++++++---------
->  include/linux/clk/shmobile.h       |   19 -------------------
->  2 files changed, 6 insertions(+), 28 deletions(-)
+> diff --git a/drivers/video/sh_mobile_meram.c
+> b/drivers/video/sh_mobile_meram.c index e0f098562a74..56a8e47ffceb 100644
+> --- a/drivers/video/sh_mobile_meram.c
+> +++ b/drivers/video/sh_mobile_meram.c
+> @@ -569,6 +569,7 @@ EXPORT_SYMBOL_GPL(sh_mobile_meram_cache_update);
+>   * Power management
+>   */
 > 
-> --- 0018/drivers/clk/shmobile/clk-r8a7790.c
-> +++ work/drivers/clk/shmobile/clk-r8a7790.c	2013-11-06 17:28:36.000000000
-> +0900 @@ -12,7 +12,6 @@
+> +#ifdef CONFIG_PM_SLEEP
+>  static int sh_mobile_meram_suspend(struct device *dev)
+>  {
+>  	struct platform_device *pdev = to_platform_device(dev);
+> @@ -592,7 +593,9 @@ static int sh_mobile_meram_suspend(struct device *dev)
+>  	}
+>  	return 0;
+>  }
+> +#endif
 > 
->  #include <linux/clk-provider.h>
->  #include <linux/clkdev.h>
-> -#include <linux/clk/shmobile.h>
->  #include <linux/init.h>
->  #include <linux/kernel.h>
->  #include <linux/of.h>
-> @@ -70,8 +69,6 @@ static const struct clk_div_table cpg_sd
->  	{ 10, 36 }, { 11, 48 }, { 12, 10 }, {  0,  0 },
->  };
+> +#ifdef CONFIG_PM_RUNTIME
+>  static int sh_mobile_meram_resume(struct device *dev)
+>  {
+>  	struct platform_device *pdev = to_platform_device(dev);
+> @@ -611,6 +614,7 @@ static int sh_mobile_meram_resume(struct device *dev)
+>  		meram_write_reg(priv->base, common_regs[i], priv->regs[i]);
+>  	return 0;
+>  }
+> +#endif
 > 
-> -static u32 cpg_mode __initdata;
-> -
->  #define CPG_SDCKCR			0x00000074
-> 
->  static void __init r8a7790_cpg_clocks_init(struct device_node *np)
-> @@ -80,6 +77,12 @@ static void __init r8a7790_cpg_clocks_in
->  	struct r8a7790_cpg *cpg;
->  	struct clk **clks;
->  	unsigned int i;
-> +	u32 cpg_mode;
-> +
-> +	if (of_property_read_u32(np, "cpg-mode", &cpg_mode)) {
-> +		pr_err("%s: failed to determine CPG mode\n", __func__);
-> +		return;
-> +	}
-> 
->  	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
->  	clks = kzalloc(CPG_NUM_CLOCKS * sizeof(*clks), GFP_KERNEL);
-> @@ -168,9 +171,3 @@ static void __init r8a7790_cpg_clocks_in
->  CLK_OF_DECLARE(r8a7790_cpg_clks, "renesas,r8a7790-cpg-clocks",
->  	       r8a7790_cpg_clocks_init);
-> 
-> -void __init r8a7790_clocks_init(u32 mode)
-> -{
-> -	cpg_mode = mode;
-> -
-> -	of_clk_init(NULL);
-> -}
-> --- 0018/include/linux/clk/shmobile.h
-> +++ /dev/null	2013-06-03 21:41:10.638032047 +0900
-> @@ -1,19 +0,0 @@
-> -/*
-> - * Copyright 2013 Ideas On Board SPRL
-> - *
-> - * Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> - *
-> - * This program is free software; you can redistribute it and/or modify
-> - * it under the terms of the GNU General Public License as published by
-> - * the Free Software Foundation; either version 2 of the License, or
-> - * (at your option) any later version.
-> - */
-> -
-> -#ifndef __LINUX_CLK_SHMOBILE_H_
-> -#define __LINUX_CLK_SHMOBILE_H_
-> -
-> -#include <linux/types.h>
-> -
-> -void r8a7790_clocks_init(u32 mode);
-> -
-> -#endif
+>  static UNIVERSAL_DEV_PM_OPS(sh_mobile_meram_dev_pm_ops,
+>  			    sh_mobile_meram_suspend,
+
+I'm a bit surprised, looking at the definition of UNIVERSAL_DEV_PM_OPS, I 
+would have thought that both functions would be used when either 
+CONFIG_PM_SLEEP or CONFIG_PM_RUNTIME is defined. I would thus have guarded 
+both functions with #if defined(CONFIG_PM_SLEEP) || 
+defined(CONFIG_PM_RUNTIME).
+
 -- 
 Regards,
 
