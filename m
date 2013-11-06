@@ -1,65 +1,89 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Nov 2013 03:59:40 +0000
-Subject: Re: [PATCH] ARM: shmobile: Use ->init_late() on Koelsch
-Message-Id: <20131121035938.GD31130@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Nov 2013 23:31:25 +0000
+Subject: [PATCH 03/03] ARM: shmobile: r7s72100 Genmai Multiplatform
+Message-Id: <20131106233125.8117.70912.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120035434.30035.69827.sendpatchset@w520>
-In-Reply-To: <20131120035434.30035.69827.sendpatchset@w520>
+References: <20131106233032.8117.71968.sendpatchset@w520>
+In-Reply-To: <20131106233032.8117.71968.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 20, 2013 at 12:54:34PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Hook in shmobile_init_late() on Koelsch. This enables some PM
-> related things like CPUIdle and Suspend-to-RAM.
-> 
-> With this patch applied it is possible to use Suspend-to-RAM:
-> # echo enabled > /sys/class/tty/ttySC6/power/wakeup
-> # echo mem > /sys/power/state 
-> (wake by sending a character on the serial console)
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I will queue this up.
-Assuming all goes will I plan to push this and other updates
-today or tomorrow.
+Add r7s72100 Genmai to SHMOBILE_MULTI.
 
-> ---
-> 
->  arch/arm/mach-shmobile/board-koelsch-reference.c |    2 ++
->  arch/arm/mach-shmobile/board-koelsch.c           |    3 ++-
->  2 files changed, 4 insertions(+), 1 deletion(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
-> +++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2013-11-20 12:26:30.000000000 +0900
-> @@ -22,6 +22,7 @@
->  #include <linux/clk-provider.h>
->  #include <linux/kernel.h>
->  #include <linux/of_platform.h>
-> +#include <mach/common.h>
->  #include <mach/rcar-gen2.h>
->  #include <mach/r8a7791.h>
->  #include <asm/mach/arch.h>
-> @@ -47,5 +48,6 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
->  	.init_early	= r8a7791_init_early,
->  	.init_time	= rcar_gen2_timer_init,
->  	.init_machine	= koelsch_add_standard_devices,
-> +	.init_late	= shmobile_init_late,
->  	.dt_compat	= koelsch_boards_compat_dt,
->  MACHINE_END
-> --- 0001/arch/arm/mach-shmobile/board-koelsch.c
-> +++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-11-20 12:26:24.000000000 +0900
-> @@ -92,7 +92,8 @@ static const char * const koelsch_boards
->  DT_MACHINE_START(KOELSCH_DT, "koelsch")
->  	.smp		= smp_ops(r8a7791_smp_ops),
->  	.init_early	= r8a7791_init_early,
-> -	.init_machine	= koelsch_add_standard_devices,
->  	.init_time	= rcar_gen2_timer_init,
-> +	.init_machine	= koelsch_add_standard_devices,
-> +	.init_late	= shmobile_init_late,
->  	.dt_compat	= koelsch_boards_compat_dt,
->  MACHINE_END
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/Makefile                      |    1 +
+ arch/arm/mach-shmobile/Kconfig                  |    7 +++++++
+ arch/arm/mach-shmobile/Makefile                 |    1 +
+ arch/arm/mach-shmobile/board-genmai-reference.c |    5 +++++
+ 4 files changed, 14 insertions(+)
+
+--- 0015/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2013-11-06 19:18:41.000000000 +0900
+@@ -216,6 +216,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm
+ 	r8a73a4-ape6evm-reference.dtb \
+ 	sh7372-mackerel.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
++	r7s72100-genmai-reference.dtb \
+ 	r8a7791-koelsch-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
+ 	socfpga_vt.dtb
+--- 0016/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-11-06 19:20:36.000000000 +0900
+@@ -20,12 +20,19 @@ comment "SH-Mobile System Type"
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+ 
++config ARCH_R7S72100
++	bool "RZ/A1H (R7S72100)"
++
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+ 	select RENESAS_IRQC
+ 
+ comment "SH-Mobile Board Type"
+ 
++config MACH_GENMAI
++	bool "Genmai board"
++	depends on ARCH_R7S72100
++
+ config MACH_KOELSCH
+ 	bool "Koelsch board"
+ 	depends on ARCH_R8A7791
+--- 0016/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-11-06 19:20:59.000000000 +0900
+@@ -56,6 +56,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779
+ 
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
++obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
+ else
+--- 0016/arch/arm/mach-shmobile/board-genmai-reference.c
++++ work/arch/arm/mach-shmobile/board-genmai-reference.c	2013-11-06 19:19:53.000000000 +0900
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk-provider.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <mach/common.h>
+@@ -27,7 +28,11 @@
+ 
+ static void __init genmai_add_standard_devices(void)
+ {
++#ifdef CONFIG_COMMON_CLK
++	of_clk_init(NULL);
++#else
+ 	r7s72100_clock_init();
++#endif
+ 	r7s72100_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
