@@ -1,48 +1,82 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 27 Nov 2013 16:31:59 +0000
-Subject: Re: [PATCH 1/3] spi: rcar: Fix uninitialized variable warning
-Message-Id: <20131127163159.GG14725@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="D5hdKamO53XmQjsc"
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 06 Nov 2013 00:57:35 +0000
+Subject: Re: [PATCH 07/19] v4l: sh_vou: Enable the driver on all ARM platforms
+Message-Id: <2618401.AsTUKxu6fa@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-sh@vger.kernel.org, linux-spi@vger.kernel.org
+References: <1383004027-25036-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1383004027-25036-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131030102623.1d498c16@samsung.com>
+In-Reply-To: <20131030102623.1d498c16@samsung.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Hi Mauro,
 
---D5hdKamO53XmQjsc
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Wednesday 30 October 2013 10:26:23 Mauro Carvalho Chehab wrote:
+> Em Tue, 29 Oct 2013 00:46:55 +0100 Laurent Pinchart escreveu:
+> > Renesas ARM platforms are transitioning from single-platform to
+> > multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+> > driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+> > and ARCH_SHMOBILE_MULTI and increase build testing coverage.
+> > 
+> > Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
+> > Cc: linux-media@vger.kernel.org
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> 
+> I'm understanding that the plan is to commit it via an ARM tree, right?
 
-On Wed, Nov 27, 2013 at 01:41:44AM +0100, Laurent Pinchart wrote:
-> The transfer data length variable is set based on the desired access
-> size, without a default case. This results in a compiler warning, even
-> though the access size is always set to a supported value. Create a
-> default case to silence the warning.
+Actually the plan is to get this upstream through you tree :-) However, I'm 
+trying a different approach to the problem, so I'll post a new version of the 
+patch set in the near future.
 
-Applied all, thanks.
+> If so:
+> 	Acked-by: Mauro Carvalho Chehab <m.chehab@samsung.com>
+> 
+> PS.: With regards to the discussions about this patch series, I'm ok on
+> having this enabled for all archs or just for the archs that are known have
+> this IP block, of course provided that not includes to march are there.
+> 
+> The rationale is that, in the specific case of V4L, the platform drivers are
+> already on a separate Kconfig menu, with makes no sense to be enabled on any
+> non SoC configuration.
 
---D5hdKamO53XmQjsc
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+We will likely split dependencies on two lines in Kconfig, one for the build-
+time dependencies and one for the runtime dependencies. A driver that compiles 
+on ARM only and supports hardware that is present on ARCH_SHMOBILE SoCs only 
+would thus have
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+	depends on ARM
+	depends on ARCH_SHMOBILE || COMPILE_TEST
 
-iQIcBAEBAgAGBQJSlh58AAoJELSic+t+oim90z8P/10fVcWIERKDhEgfrRcaTAqW
-IwpwSqY/A2bW36fB77i63rUiiQZDJ2haxtQuWbWGivkufHg3C2ACaUeBJIelCV9T
-velhw8jF3MWA8NaahFzdTpLDg/slBfZedXlsiGb2TTeltR9xbxsZ9TGAB9cZ/Z2+
-Gv+ggiryqeyc4Nkn6G3Ez74Aqu5YOutaTJIuptd3eyWnliJNsWjpTA0SDEfTHguH
-m+oI2/mVUS+SZlep6aVtTMw3sR/MDKwUWjw0bDLn5ToiBEYJhpDsvvlFRDJ+8fww
-Ceh45yetT0jhN97aCrlShOrTi2NGAVMekdKSAPqUA6ictX2J/9AAX2lJr3QFCBdV
-PKLK4omNgxKBGyHfMLCqAFaVWNRhKxRK61Of6uErpxNlZ2Wf5YqxgTDsx7aVtMPN
-JtRpsjmxEIDkfJJHg8s63uJhoPHUfcOrNxFe3am/6RgOfza04AO1iArhJ2vpQvP0
-QrTK2jr4MjXsCn2HBX1vncLmcs/rKI89X7ESoI870hnnWUq2zsk1XlCqOINRpS1q
-B07ZPjxB/ps5wjPQRV4jsMGYpJSW/bSs8+z55eiHc/8tY9DH8QKWzarKpLOE4B+F
-i+emDKc/JTxJCGYTIeQslCCW1EtXHQv/aH8bBFKjRdC/wEpeOn+EPZ2uRQkuhpSP
-lxmEwItnrPwKLR8Trc7l
-=xwn9
------END PGP SIGNATURE-----
+Build-time dependencies on other software components (I2C for instance) would 
+be listed on the first line. The code below would become
 
---D5hdKamO53XmQjsc--
+	depends on VIDEO_DEV && I2C
+	depends on ARCH_SHMOBILE || COMPILE_TEST
+
+> > ---
+> > 
+> >  drivers/media/platform/Kconfig | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > diff --git a/drivers/media/platform/Kconfig
+> > b/drivers/media/platform/Kconfig index c7caf94..a726f86 100644
+> > --- a/drivers/media/platform/Kconfig
+> > +++ b/drivers/media/platform/Kconfig
+> > @@ -36,7 +36,7 @@ source "drivers/media/platform/blackfin/Kconfig"
+> >  config VIDEO_SH_VOU
+> >  	tristate "SuperH VOU video output driver"
+> >  	depends on MEDIA_CAMERA_SUPPORT
+> > -	depends on VIDEO_DEV && ARCH_SHMOBILE && I2C
+> > +	depends on VIDEO_DEV && ARM && I2C
+> >  	select VIDEOBUF_DMA_CONTIG
+> >  	help
+> >  	  Support for the Video Output Unit (VOU) on SuperH SoCs.
+-- 
+Regards,
+
+Laurent Pinchart
+
