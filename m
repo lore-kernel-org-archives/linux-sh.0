@@ -1,66 +1,62 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Fri, 08 Nov 2013 10:10:23 +0000
-Subject: Re: [PATCH v2 2/2] clocksource: sh_mtu2: Add clk_prepare/unprepare support
-Message-Id: <527CB88F.1060107@linaro.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Nov 2013 11:05:18 +0000
+Subject: [PATCH v2 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
+Message-Id: <20131106110518.6806.79333.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383057045-22608-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383057045-22608-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383057045-22608-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20131106110508.6806.48070.sendpatchset@w520>
+In-Reply-To: <20131106110508.6806.48070.sendpatchset@w520>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On 10/29/2013 03:30 PM, Laurent Pinchart wrote:
-> Prepare the clock at probe time, as there is no other appropriate place
-> in the driver where we're allowed to sleep.
->
-> Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
-m>
+From: Magnus Damm <damm@opensource.se>
 
-Applied in my tree as 3.13 fixes
+Add Kconfig entries for CMT, MTU2, TMU and STI to
+drivers/clocksource/Kconfig. This will allow us to
+get rid of duplicated entires in architecture code
+such as arch/sh and arch/arm/mach-shmobile.
 
-> ---
->   drivers/clocksource/sh_mtu2.c | 9 +++++++--
->   1 file changed, 7 insertions(+), 2 deletions(-)
->
-> diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-> index e6cfb32..3cf1283 100644
-> --- a/drivers/clocksource/sh_mtu2.c
-> +++ b/drivers/clocksource/sh_mtu2.c
-> @@ -313,13 +313,18 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, st=
-ruct platform_device *pdev)
->   		goto err1;
->   	}
->
-> +	ret =3D clk_prepare(p->clk);
-> +	if (ret < 0)
-> +		goto err2;
-> +
->   	ret =3D sh_mtu2_register(p, (char *)dev_name(&p->pdev->dev),
->   			       cfg->clockevent_rating);
->   	if (ret < 0)
-> -		goto err2;
-> +		goto err3;
->
->   	return 0;
-> -
-> + err3:
-> +	clk_unprepare(p->clk);
->    err2:
->   	clk_put(p->clk);
->    err1:
->
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
+ drivers/clocksource/Kconfig |   30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
-
+--- 0001/drivers/clocksource/Kconfig
++++ work/drivers/clocksource/Kconfig	2013-11-05 19:49:47.000000000 +0900
+@@ -110,3 +110,33 @@ config VF_PIT_TIMER
+ 	bool
+ 	help
+ 	  Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
++
++if COMPILE_TEST || ARM || SUPERH
++menu "Timer drivers"
++
++config SH_TIMER_CMT
++	bool "CMT timer driver"
++	default y if ARM || (SUPERH && SYS_SUPPORTS_CMT)
++	help
++	  This enables build of the CMT timer driver.
++
++config SH_TIMER_MTU2
++	bool "MTU2 timer driver"
++	default y if ARM || (SUPERH && SYS_SUPPORTS_MTU2)
++	help
++	  This enables build of the MTU2 timer driver.
++
++config SH_TIMER_TMU
++	bool "TMU timer driver"
++	default y if ARM || (SUPERH && SYS_SUPPORTS_TMU)
++	help
++	  This enables build of the TMU timer driver.
++
++config EM_TIMER_STI
++	bool "STI timer driver"
++	default y if ARM
++	help
++	  This enables build of the STI timer driver.
++
++endmenu
++endif
