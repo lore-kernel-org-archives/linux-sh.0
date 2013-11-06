@@ -1,45 +1,61 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sat, 23 Nov 2013 08:55:20 +0000
-Subject: [PATCH] V4L2: remove myself as a maintainer of two drivers
-Message-Id: <Pine.LNX.4.64.1311230954410.9194@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Nov 2013 11:05:27 +0000
+Subject: [PATCH v2 02/03] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
+Message-Id: <20131106110527.6806.40247.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20131106110508.6806.48070.sendpatchset@w520>
+In-Reply-To: <20131106110508.6806.48070.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Since I'm currently unable to dedicate sufficient time to the maintainership
-of these two drivers update their status to "orphan" until new maintainers
-appear.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Now when drivers/clocksource/Kconfig has been
+updated with entires for CMT, TMU and STI
+it is safe to remove these from mach-shmobile.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- MAINTAINERS |    6 ++----
- 1 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index e37e8c0..f7d6b05 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -7654,15 +7654,13 @@ F:	drivers/media/usb/siano/
- F:	drivers/media/mmc/siano/
- 
- SH_VEU V4L2 MEM2MEM DRIVER
--M:	Guennadi Liakhovetski <g.liakhovetski@gmx.de>
- L:	linux-media@vger.kernel.org
--S:	Maintained
-+S:	Orphan
- F:	drivers/media/platform/sh_veu.c
- 
- SH_VOU V4L2 OUTPUT DRIVER
--M:	Guennadi Liakhovetski <g.liakhovetski@gmx.de>
- L:	linux-media@vger.kernel.org
--S:	Odd Fixes
-+S:	Orphan
- F:	drivers/media/platform/sh_vou.c
- F:	include/media/sh_vou.h
- 
--- 
-1.7.2.5
+ arch/arm/mach-shmobile/Kconfig |   21 ---------------------
+ 1 file changed, 21 deletions(-)
 
+--- 0004/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-11-05 19:55:01.000000000 +0900
+@@ -283,7 +283,6 @@ source "drivers/sh/Kconfig"
+ endif
+ 
+ if ARCH_SHMOBILE || ARCH_SHMOBILE_MULTI
+-
+ menu "Timer and clock configuration"
+ 
+ config SHMOBILE_TIMER_HZ
+@@ -297,25 +296,5 @@ config SHMOBILE_TIMER_HZ
+ 	  SH-Mobile systems using a 32768 Hz RCLK for clock events may want
+ 	  to select a HZ value such as 128 that can evenly divide RCLK.
+ 	  A HZ value that does not divide evenly may cause timer drift.
+-
+-config SH_TIMER_CMT
+-	bool "CMT timer driver"
+-	default y
+-	help
+-	  This enables build of the CMT timer driver.
+-
+-config SH_TIMER_TMU
+-	bool "TMU timer driver"
+-	default y
+-	help
+-	  This enables build of the TMU timer driver.
+-
+-config EM_TIMER_STI
+-	bool "STI timer driver"
+-	default y
+-	help
+-	  This enables build of the STI timer driver.
+-
+ endmenu
+-
+ endif
