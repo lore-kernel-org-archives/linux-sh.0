@@ -1,62 +1,114 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 06 Nov 2013 22:20:25 +0000
-Subject: Re: [PATCH v2 00/03] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
-Message-Id: <6099086.0MXoMDIj69@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Nov 2013 23:31:16 +0000
+Subject: [PATCH 02/03] ARM: shmobile: r7s72100 Genmai DT reference C bits
+Message-Id: <20131106233116.8117.76183.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131106110508.6806.48070.sendpatchset@w520>
-In-Reply-To: <20131106110508.6806.48070.sendpatchset@w520>
+References: <20131106233032.8117.71968.sendpatchset@w520>
+In-Reply-To: <20131106233032.8117.71968.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, olof@lixom.net, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Magnus Damm <damm@opensource.se>
 
-Thanks for the patches.
+Add C code support for r7s72100 Genmai DT reference.
 
-On Wednesday 06 November 2013 20:05:08 Magnus Damm wrote:
-> clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits (v2)
-> 
-> [PATCH v2 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
-> [PATCH v2 02/03] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
-> [PATCH v2 03/03] sh: Remove Kconfig entries for TMU, CMT and MTU2
-> 
-> This is V2 of the SH and ARM mach-shmobile clocksource Kconfig
-> consolidation series.
-> 
-> By sharing Kconfig entires in drivers/clocksource/Kconfig we
-> can get rid of duplicated bits that do not belong under arch/.
-> 
-> With this series applied it is possible to build the timer
-> drivers for CMT, MTU2, TMU and STI in case of SH or ARM
-> or when COMPILE_TEST is selected.
-> 
-> Since last time this has been broken out into 3 separate patches,
-> where [PATCH v2 01/03] needs to go first, and the other patches
-> can be merged any time after without any build or configuration
-> issues.
-> 
-> Thanks to Olof and Simon for feedback! If I interpreted your
-> ideas wrong please let me know and I will update.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-I like this approach.
+ arch/arm/mach-shmobile/Kconfig                  |   11 +++++
+ arch/arm/mach-shmobile/Makefile                 |    1 
+ arch/arm/mach-shmobile/Makefile.boot            |    3 +
+ arch/arm/mach-shmobile/board-genmai-reference.c |   44 +++++++++++++++++++++++
+ 4 files changed, 58 insertions(+), 1 deletion(-)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> 
->  Written against renesas.git tag renesas-devel-v3.12-rc7-20131101
-> 
->  arch/arm/mach-shmobile/Kconfig |   21 ---------------------
->  arch/sh/Kconfig                |   21 ---------------------
->  drivers/clocksource/Kconfig    |   30 ++++++++++++++++++++++++++++++
->  3 files changed, 30 insertions(+), 42 deletions(-)
-
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0013/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-11-06 19:14:25.000000000 +0900
+@@ -201,6 +201,17 @@ config MACH_GENMAI
+ 	depends on ARCH_R7S72100
+ 	select USE_OF
+ 
++config MACH_GENMAI_REFERENCE
++	bool "Genmai board - Reference Device Tree Implementation"
++	depends on ARCH_R7S72100
++	select USE_OF
++	---help---
++	   Use reference implementation of Genmai board support
++	   which makes use of device tree at the expense
++	   of not supporting a number of devices.
++
++	   This is intended to aid developers
++
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
+--- 0013/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-11-06 19:14:25.000000000 +0900
+@@ -65,6 +65,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mac
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
++obj-$(CONFIG_MACH_GENMAI_REFERENCE)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+--- 0004/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2013-11-06 19:14:25.000000000 +0900
+@@ -6,7 +6,8 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA)
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+-loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
++loadaddr-$(CONFIG_MACH_GENMAI) += 0x08008000
++loadaddr-$(CONFIG_MACH_GENMAI_REFERENCE) += 0x08008000
+ loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KOELSCH_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+--- /dev/null
++++ work/arch/arm/mach-shmobile/board-genmai-reference.c	2013-11-06 19:14:26.000000000 +0900
+@@ -0,0 +1,44 @@
++/*
++ * Genmai board support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/of_platform.h>
++#include <mach/common.h>
++#include <mach/r7s72100.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++static void __init genmai_add_standard_devices(void)
++{
++	r7s72100_clock_init();
++	r7s72100_add_dt_devices();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
++
++static const char * const genmai_boards_compat_dt[] __initconst = {
++	"renesas,genmai-reference",
++	NULL,
++};
++
++DT_MACHINE_START(GENMAI_DT, "genmai")
++	.init_early	= r7s72100_init_early,
++	.init_machine	= genmai_add_standard_devices,
++	.dt_compat	= genmai_boards_compat_dt,
++MACHINE_END
