@@ -1,83 +1,92 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 06 Nov 2013 00:54:31 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 06 Nov 2013 01:00:28 +0000
 Subject: Re: [PATCH 3/3] clk: shmobile: Add R8A7790 clocks support
-Message-Id: <874n7q1ha3.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <2775658.fxp7sbhy9u@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383058511-26046-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383058511-26046-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <87r4avnsc6.wl%kuninori.morimoto.gx@renesas.com>
- <2199055.1gOuVSSAtq@avalon>
-In-Reply-To: <2199055.1gOuVSSAtq@avalon>
+ <2199055.1gOuVSSAtq@avalon> <874n7q1ha3.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <874n7q1ha3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Morimoto-san,
 
-Hi Laurent
-
-> > > +	for (i = 0; i < CPG_NUM_CLOCKS; ++i) {
-> > > +		const struct clk_div_table *table = NULL;
-> > > +		const char *parent_name = "main";
-> > > +		const char *name;
-> > > +		unsigned int shift;
-> > > +		unsigned int mult = 1;
-> > > +		unsigned int div = 1;
-> > > +		struct clk *clk;
-> > > +
-> > > +		of_property_read_string_index(np, "clock-output-names", i,
-> > > +					      &name);
-> > > +
-> > > +		switch (i) {
-> > > +		case R8A7790_CLK_MAIN:
-> > > +			parent_name = of_clk_get_parent_name(np, 0);
-> > > +			div = config->extal_div;
-> > > +			break;
-> > > +		case R8A7790_CLK_PLL1:
-> > > +			mult = config->pll1_mult / 2;
-> > > +			break;
-> > > +		case R8A7790_CLK_PLL3:
-> > > +			mult = config->pll3_mult;
-> > > +			break;
-> > > +		case R8A7790_CLK_LB:
-> > > +			div = cpg_mode & BIT(18) ? 36 : 24;
-> > > +			break;
-> > > +		case R8A7790_CLK_QSPI:
-> > > +			div = (cpg_mode & (BIT(3) | BIT(2) | BIT(1))) = BIT(2)
-> > > +			    ? 16 : 20;
-> > > +			break;
-> > > +		case R8A7790_CLK_SDH:
-> > > +			table = cpg_sdh_div_table;
-> > > +			shift = 8;
-> > > +			break;
-> > > +		case R8A7790_CLK_SD0:
-> > > +			table = cpg_sd01_div_table;
-> > > +			shift = 4;
-> > > +			break;
-> > > +		case R8A7790_CLK_SD1:
-> > > +			table = cpg_sd01_div_table;
-> > > +			shift = 0;
-> > > +			break;
-> > > +		}
-> > 
-> > Is this clock-output-names realy "Required" property ?
-> > The "name" and "order" seem fixed, then,
-> > I guess it can simply use "name array" ?
+On Tuesday 05 November 2013 16:54:31 Kuninori Morimoto wrote:
+> Hi Laurent
 > 
-> The clock-output-names property is required by the of_clk_get_parent_name() 
-> function. The property is mandatory for all clocks that need to be referenced 
-> by name, which is the case of all non-leaf clocks on our platforms. We thus 
-> need it.
+> > > > +	for (i = 0; i < CPG_NUM_CLOCKS; ++i) {
+> > > > +		const struct clk_div_table *table = NULL;
+> > > > +		const char *parent_name = "main";
+> > > > +		const char *name;
+> > > > +		unsigned int shift;
+> > > > +		unsigned int mult = 1;
+> > > > +		unsigned int div = 1;
+> > > > +		struct clk *clk;
+> > > > +
+> > > > +		of_property_read_string_index(np, "clock-output-names", i,
+> > > > +					      &name);
+> > > > +
+> > > > +		switch (i) {
+> > > > +		case R8A7790_CLK_MAIN:
+> > > > +			parent_name = of_clk_get_parent_name(np, 0);
+> > > > +			div = config->extal_div;
+> > > > +			break;
+> > > > +		case R8A7790_CLK_PLL1:
+> > > > +			mult = config->pll1_mult / 2;
+> > > > +			break;
+> > > > +		case R8A7790_CLK_PLL3:
+> > > > +			mult = config->pll3_mult;
+> > > > +			break;
+> > > > +		case R8A7790_CLK_LB:
+> > > > +			div = cpg_mode & BIT(18) ? 36 : 24;
+> > > > +			break;
+> > > > +		case R8A7790_CLK_QSPI:
+> > > > +			div = (cpg_mode & (BIT(3) | BIT(2) | BIT(1))) = BIT(2)
+> > > > +			    ? 16 : 20;
+> > > > +			break;
+> > > > +		case R8A7790_CLK_SDH:
+> > > > +			table = cpg_sdh_div_table;
+> > > > +			shift = 8;
+> > > > +			break;
+> > > > +		case R8A7790_CLK_SD0:
+> > > > +			table = cpg_sd01_div_table;
+> > > > +			shift = 4;
+> > > > +			break;
+> > > > +		case R8A7790_CLK_SD1:
+> > > > +			table = cpg_sd01_div_table;
+> > > > +			shift = 0;
+> > > > +			break;
+> > > > +		}
+> > > 
+> > > Is this clock-output-names realy "Required" property ?
+> > > The "name" and "order" seem fixed, then,
+> > > I guess it can simply use "name array" ?
+> > 
+> > The clock-output-names property is required by the
+> > of_clk_get_parent_name()
+> > function. The property is mandatory for all clocks that need to be
+> > referenced by name, which is the case of all non-leaf clocks on our
+> > platforms. We thus need it.
+> 
+> Please correct me if my understanding was wrong.
+> Does your "of_clk_get_parent_name()" means "case R8A7790_CLK_MAIN"'s one ?
+> If Yes, it is needed on "parent" clock side, not here ?
+> If No,  who need/call of_clk_get_parent_name() for this ?
+> does "qspi", "sdh", "sd0", "sd1" can be parent clock for some device ??
 
-Please correct me if my understanding was wrong.
-Does your "of_clk_get_parent_name()" means "case R8A7790_CLK_MAIN"'s one ?
-If Yes, it is needed on "parent" clock side, not here ?
-If No,  who need/call of_clk_get_parent_name() for this ?
-does "qspi", "sdh", "sd0", "sd1" can be parent clock for some device ??
+All those clocks are parents of other clocks (DIV6, MSTP or fixed-factor 
+clocks). The DIV6, MSTP and fixed-factor clock drivers call 
+of_clk_get_parent_name() to get the name of their parent clock, which is 
+required to register the clocks with CCF. See of_fixed_factor_clk_setup() for 
+instance.
 
-And, parent of main clock is fixed by MD pin settings.
-SW can't exchange it.
+> And, parent of main clock is fixed by MD pin settings.
+> SW can't exchange it.
 
-Best regards
----
-Kuninori Morimoto
+-- 
+Regards,
+
+Laurent Pinchart
+
