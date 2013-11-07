@@ -1,51 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:40 +0000
-Subject: [PATCH 10/16] ARM: shmobile: Add r8a7790_register_pfc() function
-Message-Id: <8d0b3bf79bfa1dc7d3e2a9dc2b6f2ceea353687f.1385628709.git.horms+renesas@verge.net.au>
+From: Cody P Schafer <cody@linux.vnet.ibm.com>
+Date: Thu, 07 Nov 2013 01:42:40 +0000
+Subject: [PATCH v2 11/11] sh/dwarf: use rbtree postorder iteration helper instead of solution using repeated
+Message-Id: <1383788572-25938-12-git-send-email-cody@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
+References: <1383788572-25938-1-git-send-email-cody@linux.vnet.ibm.com>
+In-Reply-To: <1383788572-25938-1-git-send-email-cody@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>, EXT4 <linux-ext4@vger.kernel.org>, Jan Kara <jack@suse.cz>, rostedt@goodmis.org, Cody P Schafer <cody@linux.vnet.ibm.com>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-From: Magnus Damm <damm@opensource.se>
+Use rbtree_postorder_for_each_entry_safe() to destroy the rbtree instead
+of using repeated rb_erase() calls
 
-Break out the r8a7790 PFC platform device creation code
-to increase readability and follow same style as r8a7791.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Cody P Schafer <cody@linux.vnet.ibm.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ arch/sh/kernel/dwarf.c | 18 ++++--------------
+ 1 file changed, 4 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index c47bceb..3543c3b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -34,6 +34,10 @@ static const struct resource pfc_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6060000, 0x250),
- };
+diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
+index 49c09c7..67a049e 100644
+--- a/arch/sh/kernel/dwarf.c
++++ b/arch/sh/kernel/dwarf.c
+@@ -995,29 +995,19 @@ static struct unwinder dwarf_unwinder = {
  
-+#define r8a7790_register_pfc()						\
-+	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources, \
-+					ARRAY_SIZE(pfc_resources))
-+
- #define R8A7790_GPIO(idx)						\
- static const struct resource r8a7790_gpio##idx##_resources[] __initconst = { \
- 	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
-@@ -65,8 +69,7 @@ R8A7790_GPIO(5);
- 
- void __init r8a7790_pinmux_init(void)
+ static void dwarf_unwinder_cleanup(void)
  {
--	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources,
--					ARRAY_SIZE(pfc_resources));
-+	r8a7790_register_pfc();
- 	r8a7790_register_gpio(0);
- 	r8a7790_register_gpio(1);
- 	r8a7790_register_gpio(2);
+-	struct rb_node **fde_rb_node = &fde_root.rb_node;
+-	struct rb_node **cie_rb_node = &cie_root.rb_node;
++	struct dwarf_fde *fde, *next_fde;
++	struct dwarf_cie *cie, *next_cie;
+ 
+ 	/*
+ 	 * Deallocate all the memory allocated for the DWARF unwinder.
+ 	 * Traverse all the FDE/CIE lists and remove and free all the
+ 	 * memory associated with those data structures.
+ 	 */
+-	while (*fde_rb_node) {
+-		struct dwarf_fde *fde;
+-
+-		fde = rb_entry(*fde_rb_node, struct dwarf_fde, node);
+-		rb_erase(*fde_rb_node, &fde_root);
++	rbtree_postorder_for_each_entry_safe(fde, next_fde, &fde_root, node)
+ 		kfree(fde);
+-	}
+ 
+-	while (*cie_rb_node) {
+-		struct dwarf_cie *cie;
+-
+-		cie = rb_entry(*cie_rb_node, struct dwarf_cie, node);
+-		rb_erase(*cie_rb_node, &cie_root);
++	rbtree_postorder_for_each_entry_safe(cie, next_cie, &cie_root, node)
+ 		kfree(cie);
+-	}
+ 
+ 	kmem_cache_destroy(dwarf_reg_cachep);
+ 	kmem_cache_destroy(dwarf_frame_cachep);
 -- 
-1.8.4
+1.8.4.2
 
