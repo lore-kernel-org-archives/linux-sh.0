@@ -1,47 +1,83 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 07:56:43 +0000
-Subject: Re: [PATCH] ARM: shmobile: Include all 4 GiB of memory on Lager DT Ref
-Message-Id: <20131128075641.GP24146@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 07 Nov 2013 11:14:28 +0000
+Subject: [RFC V2 PATCH 1/2] usb: hcd: Remove USB phy if needed
+Message-Id: <1383822869-20283-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131031032436.16031.48305.sendpatchset@w520>
-In-Reply-To: <20131031032436.16031.48305.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Oct 31, 2013 at 12:24:36PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add 2GiB of DRAM at 0x1_8000_0000 to support the full 4GiB
-> of Lager system memory in case of DT Reference.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+This adds remove_phy flag to the HCD structure. If the flag is
+set and if hcd->phy is valid, the phy is shutdown and released
+whenever usb_add_hcd fails or usb_hcd_remove is called.
+This can be used by the HCD drivers to auto-remove
+the external USB phy when it is no longer needed.
 
-Thanks, I have queued this up.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/usb/core/hcd.c  | 14 +++++++++++++-
+ include/linux/usb/hcd.h |  1 +
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
-> ---
-> 
->  For correct run time operation regardless of kernel configuration
->  ARM patches 7863/1 and 7864/1 are needed.
-> 
->  Written on top of renesas-devel-v3.12-rc7-20131030
-> 
->  arch/arm/boot/dts/r8a7790-lager-reference.dts |    5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> --- 0001/arch/arm/boot/dts/r8a7790-lager-reference.dts
-> +++ work/arch/arm/boot/dts/r8a7790-lager-reference.dts	2013-10-31 11:51:18.000000000 +0900
-> @@ -25,6 +25,11 @@
->  		reg = <0 0x40000000 0 0x80000000>;
->  	};
->  
-> +	memory@180000000 {
-> +		device_type = "memory";
-> +		reg = <1 0x80000000 0 0x80000000>;
-> +	};
-> +
->  	lbsc {
->  		#address-cells = <1>;
->  		#size-cells = <1>;
-> 
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index d6a8d23..d939521 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -43,6 +43,7 @@
+ 
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
++#include <linux/usb/phy.h>
+ 
+ #include "usb.h"
+ 
+@@ -2611,7 +2612,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	 */
+ 	if ((retval = hcd_buffer_create(hcd)) != 0) {
+ 		dev_dbg(hcd->self.controller, "pool alloc failed\n");
+-		return retval;
++		goto err_remove_phy;
+ 	}
+ 
+ 	if ((retval = usb_register_bus(&hcd->self)) < 0)
+@@ -2742,6 +2743,12 @@ err_allocate_root_hub:
+ 	usb_deregister_bus(&hcd->self);
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
++err_remove_phy:
++	if (hcd->remove_phy && hcd->phy) {
++		usb_phy_shutdown(hcd->phy);
++		usb_put_phy(hcd->phy);
++		hcd->phy = NULL;
++	}
+ 	return retval;
+ } 
+ EXPORT_SYMBOL_GPL(usb_add_hcd);
+@@ -2814,6 +2821,11 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+ 	usb_put_dev(hcd->self.root_hub);
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
++	if (hcd->remove_phy && hcd->phy) {
++		usb_phy_shutdown(hcd->phy);
++		usb_put_phy(hcd->phy);
++		hcd->phy = NULL;
++	}
+ }
+ EXPORT_SYMBOL_GPL(usb_remove_hcd);
+ 
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index 75efc45..9c2907b 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -133,6 +133,7 @@ struct usb_hcd {
+ 	unsigned		rh_registered:1;/* is root hub registered? */
+ 	unsigned		rh_pollable:1;	/* may we poll the root hub? */
+ 	unsigned		msix_enabled:1;	/* driver has MSI-X enabled? */
++	unsigned		remove_phy:1;	/* auto-remove USB phy */
+ 
+ 	/* The next flag is a stopgap, to be removed when all the HCDs
+ 	 * support the new root-hub polling mechanism. */
+-- 
+1.8.3.1
+
