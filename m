@@ -1,7 +1,7 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 07 Nov 2013 14:50:37 +0000
+From: Alan Stern <stern@rowland.harvard.edu>
+Date: Thu, 07 Nov 2013 15:18:35 +0000
 Subject: Re: [RFC V2 PATCH 2/2] usb: hcd: Initialize USB phy if needed
-Message-Id: <527BA8BD.8080504@cogentembedded.com>
+Message-Id: <Pine.LNX.4.44L0.1311071018260.1401-100000@iolanthe.rowland.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383822869-20283-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1383822869-20283-3-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,41 +10,16 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 11/07/2013 05:06 PM, Peter Chen wrote:
->
->
->>
->> +#ifdef CONFIG_USB_PHY
->> +	if (!hcd->phy) {
->> +		struct usb_phy *phy = usb_get_phy_dev(hcd->self.controller,
->> 0);
->> +
->> +		if (IS_ERR(phy)) {
->> +			retval = PTR_ERR(phy);
->> +			if (retval = -EPROBE_DEFER)
->> +				return retval;
->> +		} else {
->> +			retval = usb_phy_init(phy);
->> +			if (retval) {
->> +				usb_put_phy(phy);
->> +				return retval;
->> +			}
->> +			hcd->phy = phy;
->> +			hcd->remove_phy = 1;
->> +		}
->> +	}
->> +#endif
->> +
->
-> If the platform doesn't has phy driver, and with CONFIG_USB_PHY enabled, it
-> will have problem for above code.
->
+On Thu, 7 Nov 2013, Valentine Barshak wrote:
 
-It shouldn't have any problems since there's no phy bound to the HCD in this case.
-Thus, usb_get_phy_dev returns -ENODEV and the HCD will be added as usual.
+> This adds external USB phy support to USB HCD driver that
+> allows to find and initialize external USB phy, bound to
+> the HCD, when the HCD is added.
+> The usb_add_hcd function returns -EPROBE_DEFER if the USB
+> phy, bound to the HCD, is not ready.
+> If no USB phy is bound, the HCD is initialized as usual.
+> 
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-> Peter
-
-Thanks,
-Val.
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
 
