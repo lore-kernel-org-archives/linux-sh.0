@@ -1,55 +1,39 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 07 Nov 2013 03:22:16 +0000
+Date: Thu, 07 Nov 2013 07:20:32 +0000
 Subject: Re: [PATCH 3/3] clk: shmobile: Add R8A7790 clocks support
-Message-Id: <87zjpggalc.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <871u2s65kz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383058511-26046-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <2775658.fxp7sbhy9u@avalon>
  <8738na1csg.wl%kuninori.morimoto.gx@renesas.com>
  <1550251.naXFpxhfMk@avalon>
-In-Reply-To: <1550251.naXFpxhfMk@avalon>
+ <87zjpggalc.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zjpggalc.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
 
-Hi Laurent
+Hi Laurent again
 
-> > Now, your [1/3] patch (= for MSTP) added renesas special property
-> > as "renesas,clock-indices".
-> > Is it impossible to add renesas special property like
-> > "renesas,clock-custom-divider" which can specify custom divider values in
-> > generic cpg driver ?
-> > If we can have it, all Renesas SoC can use generic driver ?
+> In my SuperH experience, CPG clock divier has same pattern.
+> In H2's SDCKCR register, SDHFC and SD0FC looks different.
+> But, the real different is only enabled bit area,
+> the value is same.
+> You can find same pattern on FRQCRB register too,
+> and, you can find same pattern on M2.
 > 
-> The clocks supported by the SoC CPG driver are special in the sense that 
-> they're not really standardized. Most of them are fixed-factor clocks with a 
-> factor that depends on boot mode pins. The others are DIV4 clocks that vary 
-> widely from SoC to SoC. Expressing all that information in DT would be much 
-> more complex than expressing it in C code, which is why I've decided to go for 
-> a per-SoC CPG driver, especially given that the amount of code isn't that 
-> large.
+> I guess FRQCRB/SDHFC can share code if it has mask.
+> This idea was used on R-Mobile series on div4.
+> (ex clock-sh73a0.c :: div4_clks)
 
-In my SuperH experience, CPG clock divier has same pattern.
-In H2's SDCKCR register, SDHFC and SD0FC looks different.
-But, the real different is only enabled bit area,
-the value is same.
-You can find same pattern on FRQCRB register too,
-and, you can find same pattern on M2.
+I talked it with Magnus, and I understand your headache.
+I can agree about your approach now.
 
-I guess FRQCRB/SDHFC can share code if it has mask.
-This idea was used on R-Mobile series on div4.
-(ex clock-sh73a0.c :: div4_clks)
-
-Do you think we can use this idea on DT?
-like this ?
-
-	div4_sdh {
-                compatible = "renesas,cpg-clocks-1/x";
-                renesas,clock-divider-mask = 0xdff;
-                ...
-	}
+But, I guess H2 and M2 are very similar SoC.
+and I don't want too many clock-${SoC} files.
+Is it possible to share code like clk-gen2.c ?
 
 Best regards
 ---
