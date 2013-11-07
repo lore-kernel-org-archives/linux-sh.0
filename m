@@ -1,48 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Nov 2013 00:13:40 +0000
-Subject: Re: [PATCH V4] sata_rcar: Add R-Car Gen2 SATA PHY support
-Message-Id: <20131101001340.GB6818@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 07 Nov 2013 20:04:02 +0000
+Subject: [PATCH V2 2/2] dt: Document sata_rcar bindings
+Message-Id: <1383854642-21660-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383153261-17383-1-git-send-email-valentine.barshak@cogentembedded.com>
- <20131031060141.GT1603@verge.net.au>
- <5272326B.3050500@cogentembedded.com>
-In-Reply-To: <5272326B.3050500@cogentembedded.com>
+References: <1383854642-21660-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1383854642-21660-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Valentine <valentine.barshak@cogentembedded.com>
-Cc: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
+To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
 
-On Thu, Oct 31, 2013 at 02:35:23PM +0400, Valentine wrote:
-> On 10/31/2013 10:01 AM, Simon Horman wrote:
-> >On Wed, Oct 30, 2013 at 09:14:21PM +0400, Valentine Barshak wrote:
-> >>R-Car Gen2 SoCs have a different PHY which is not compatible
-> >>with the older R-Car H1 (R8A7779) version.
-> >>This adds OF/platform device id tables and PHY initialization
-> >>callbacks for the following Gen2 SoCs:
-> >>   * R-Car H2: R8A7790;
-> >>   * R-Car M2: R8A7791.
-> >>
-> >>PHY initialization method is chosen based on the device id.
-> >>Default PHY settings are applied for Gen2 SoCs, which should
-> >>suit the Gen2 boards available.
-> >>
-> >>While at it, this also adds "sata-r8a7779" compatibility string
-> >>for R-Car H1 SATA, while keeping the old one for compatibility.
-> >>
-> >>Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> >
-> >I know we are going around and around in circles regarding the bindings.
-> >But I think you need to submit that patch which documents the bindings
-> >that exist after this patch in order for the bindings, as they are
-> >used here, to be reviewed by the device tree people.
-> 
-> OK, I'll resend.
-> 
-> >
-> >Also, I think I found a typo which I have noted below.
-> 
-> There's no typo. I'm using "sata_rcar" device name for compatibility with the current r8a7779 code
-> that uses the driver and registers "sata_rcar" device.
+These bindings can be used to register SATA devices found on R-Car SoC.
 
-Thanks, sorry for the noise.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Kumar Gala <galak@codeaurora.org>
+---
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
+
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+new file mode 100644
+index 0000000..d6b20a6
+--- /dev/null
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -0,0 +1,18 @@
++* Renesas R-Car SATA
++
++Required properties:
++- compatible		: should contain one of the following:
++			  - "renesas,sata-r8a7779" for R-Car H1
++			  - "renesas,sata-r8a7790" for R-Car H2
++			  - "renesas,sata-r8a7791" for R-Car M2
++- reg			: offset and length of the SATA registers;
++- interrupts		: must consist of one interrupt specifier.
++
++Example:
++
++sata: sata@fc600000 {
++	compatible = "renesas,sata-r8a7779";
++	reg = <0xfc600000 0x2000>;
++	interrupt-parent = <&gic>;
++	interrupts = <0 100 0x4>;
++};
+-- 
+1.8.3.1
+
