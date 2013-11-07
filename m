@@ -1,44 +1,56 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Tue, 12 Nov 2013 05:03:05 +0000
-Subject: Re: [PATCH 0/3] rcar-hpbdma: fixup patches for double plane
-Message-Id: <20131112045105.GG8834@intel.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 07 Nov 2013 11:14:29 +0000
+Subject: [RFC V2 PATCH 2/2] usb: hcd: Initialize USB phy if needed
+Message-Id: <1383822869-20283-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87k3hc189h.wl%kuninori.morimoto.gx@renesas.com>
- <87eh747eoj.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87eh747eoj.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Max Filippov <max.filippov@cogentembedded.com>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Oct 28, 2013 at 11:51:28PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Vinod
-> Cc: Simon, Max
-> 
-> These patches fixup R-Car HBPDMA driver
-> for double plane.
-> 
-> I tested these patches on my R-Car sound driver in local environment.
-> It doesn't work without these patches.
-Applied, thanks
+This adds external USB phy support to USB HCD driver that
+allows to find and initialize external USB phy, bound to
+the HCD, when the HCD is added.
+The usb_add_hcd function returns -EPROBE_DEFER if the USB
+phy, bound to the HCD, is not ready.
+If no USB phy is bound, the HCD is initialized as usual.
 
---
-~Vinod
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/usb/core/hcd.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-> 
-> Kuninori Morimoto (3):
->       rcar-hpbdma: add max transfer size
->       rcar-hpbdma: initialise plane information when halted
->       rcar-hpbdma: fixup channel busy check for double plane
-> 
->  drivers/dma/sh/rcar-hpbdma.c |   10 +++++++++-
->  1 file changed, 9 insertions(+), 1 deletion(-)
-> 
-> 
-> Best regards
-> ---
-> Kuninori Morimoto
-
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index d939521..fd09ec6 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -2597,6 +2597,26 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	int retval;
+ 	struct usb_device *rhdev;
+ 
++#ifdef CONFIG_USB_PHY
++	if (!hcd->phy) {
++		struct usb_phy *phy = usb_get_phy_dev(hcd->self.controller, 0);
++
++		if (IS_ERR(phy)) {
++			retval = PTR_ERR(phy);
++			if (retval = -EPROBE_DEFER)
++				return retval;
++		} else {
++			retval = usb_phy_init(phy);
++			if (retval) {
++				usb_put_phy(phy);
++				return retval;
++			}
++			hcd->phy = phy;
++			hcd->remove_phy = 1;
++		}
++	}
++#endif
++
+ 	dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
+ 
+ 	/* Keep old behaviour if authorized_default is not in [0, 1]. */
 -- 
+1.8.3.1
+
