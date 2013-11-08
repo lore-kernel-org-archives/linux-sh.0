@@ -1,129 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:09:34 +0000
-Subject: [PATCH v2 4/7] ARM: shmobile: r8a7790: Add clock index macros for DT sources
-Message-Id: <1384052977-30616-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 08 Nov 2013 12:09:28 +0000
+Subject: [PATCH V3 0/2] sata_rcar: Add Gen2 PHY support and document existing DT bindings
+Message-Id: <1383912570-8393-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
 
-Add macros usable by device tree sources to reference r8a7790 clocks by
-index.
+This adds SATA R-Car Gen2 PHY support and documents existing DT bindings.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- include/dt-bindings/clock/r8a7790-clock.h | 99 +++++++++++++++++++++++++++++++
- 1 file changed, 99 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a7790-clock.h
+Changes in version 2:
+* Minor whitespace clean-up to make both array terminators "{ },".
 
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-new file mode 100644
-index 0000000..e96ded4
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -0,0 +1,99 @@
-+/*
-+ * Copyright 2013 Ideas On Board SPRL
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R8A7790_H__
-+#define __DT_BINDINGS_CLOCK_R8A7790_H__
-+
-+/* CPG */
-+#define R8A7790_CLK_MAIN		0
-+#define R8A7790_CLK_PLL0		1
-+#define R8A7790_CLK_PLL1		2
-+#define R8A7790_CLK_PLL3		3
-+#define R8A7790_CLK_LB			4
-+#define R8A7790_CLK_QSPI		5
-+#define R8A7790_CLK_SDH			6
-+#define R8A7790_CLK_SD0			7
-+#define R8A7790_CLK_SD1			8
-+
-+/* MSTP1 */
-+#define R8A7790_CLK_TMU1		11
-+#define R8A7790_CLK_TMU3		21
-+#define R8A7790_CLK_TMU2		22
-+#define R8A7790_CLK_CMT0		24
-+#define R8A7790_CLK_TMU0		25
-+#define R8A7790_CLK_VSP1_DU1		27
-+#define R8A7790_CLK_VSP1_DU0		28
-+#define R8A7790_CLK_VSP1_RT		30
-+#define R8A7790_CLK_VSP1_SY		31
-+
-+/* MSTP2 */
-+#define R8A7790_CLK_SCIFA2		2
-+#define R8A7790_CLK_SCIFA1		3
-+#define R8A7790_CLK_SCIFA0		4
-+#define R8A7790_CLK_SCIFB0		6
-+#define R8A7790_CLK_SCIFB1		7
-+#define R8A7790_CLK_SCIFB2		16
-+#define R8A7790_CLK_SYS_DMAC0		18
-+#define R8A7790_CLK_SYS_DMAC1		19
-+
-+/* MSTP3 */
-+#define R8A7790_CLK_TPU0		4
-+#define R8A7790_CLK_MMCIF1		5
-+#define R8A7790_CLK_SDHI3		11
-+#define R8A7790_CLK_SDHI2		12
-+#define R8A7790_CLK_SDHI1		13
-+#define R8A7790_CLK_SDHI0		14
-+#define R8A7790_CLK_MMCIF0		15
-+#define R8A7790_CLK_SSUSB		28
-+#define R8A7790_CLK_CMT1		29
-+#define R8A7790_CLK_USBDMAC0		30
-+#define R8A7790_CLK_USBDMAC1		31
-+
-+/* MSTP5 */
-+#define R8A7790_CLK_THERMAL		22
-+#define R8A7790_CLK_PWM			23
-+
-+/* MSTP7 */
-+#define R8A7790_CLK_EHCI		3
-+#define R8A7790_CLK_HSUSB		4
-+#define R8A7790_CLK_HSCIF1		16
-+#define R8A7790_CLK_HSCIF0		17
-+#define R8A7790_CLK_SCIF1		20
-+#define R8A7790_CLK_SCIF0		21
-+#define R8A7790_CLK_DU2			22
-+#define R8A7790_CLK_DU1			23
-+#define R8A7790_CLK_DU0			24
-+#define R8A7790_CLK_LVDS1		25
-+#define R8A7790_CLK_LVDS0		26
-+
-+/* MSTP8 */
-+#define R8A7790_CLK_VIN3		8
-+#define R8A7790_CLK_VIN2		9
-+#define R8A7790_CLK_VIN1		10
-+#define R8A7790_CLK_VIN0		11
-+#define R8A7790_CLK_ETHER		13
-+#define R8A7790_CLK_SATA1		14
-+#define R8A7790_CLK_SATA0		15
-+
-+/* MSTP9 */
-+#define R8A7790_CLK_GPIO5		7
-+#define R8A7790_CLK_GPIO4		8
-+#define R8A7790_CLK_GPIO3		9
-+#define R8A7790_CLK_GPIO2		10
-+#define R8A7790_CLK_GPIO1		11
-+#define R8A7790_CLK_GPIO0		12
-+#define R8A7790_CLK_RCAN1		15
-+#define R8A7790_CLK_RCAN0		16
-+#define R8A7790_CLK_IICDVFS		26
-+#define R8A7790_CLK_I2C3		28
-+#define R8A7790_CLK_I2C2		29
-+#define R8A7790_CLK_I2C1		30
-+#define R8A7790_CLK_I2C0		31
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A7790_H__ */
+Changes in version 3:
+* Used "address" instead of "offset" in DT bindings documentation
+* Used "IRQ_TYPE_LEVEL_HIGH" instead of "0x4" in DT bindings documentation
+
+Valentine Barshak (2):
+  sata_rcar: Add R-Car Gen2 SATA PHY support
+  dt: Document sata_rcar bindings
+
+ .../devicetree/bindings/ata/sata_rcar.txt          |  18 ++++
+ drivers/ata/sata_rcar.c                            | 118 ++++++++++++++++++---
+ 2 files changed, 120 insertions(+), 16 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
+
 -- 
-1.8.1.5
+1.8.3.1
 
