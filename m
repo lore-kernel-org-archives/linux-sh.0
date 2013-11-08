@@ -1,84 +1,60 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Thu, 07 Nov 2013 11:27:07 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 08 Nov 2013 08:23:31 +0000
 Subject: Re: [PATCH v2 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
-Message-Id: <527B790B.4040200@linaro.org>
+Message-Id: <CANqRtoSn7=NeY2bSpacCXn6tKatn1S+CP3r-+mka91b0neJ4kw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131106110508.6806.48070.sendpatchset@w520> <20131106110518.6806.79333.sendpatchset@w520>
-In-Reply-To: <20131106110518.6806.79333.sendpatchset@w520>
+References: <20131106110508.6806.48070.sendpatchset@w520>
+	<20131106110518.6806.79333.sendpatchset@w520>
+	<527B790B.4040200@linaro.org>
+In-Reply-To: <527B790B.4040200@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org
-Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, horms@verge.net.au, olof@lixom.net, tglx@linutronix.de, John Stultz <john.stultz@linaro.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: linux-kernel <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@linaro.org>, Arnd Bergmann <arnd@arndb.de>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Olof Johansson <olof@lixom.net>, Thomas Gleixner <tglx@linutronix.de>, John Stultz <john.stultz@linaro.org>
 
-On 11/06/2013 12:05 PM, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
+On Thu, Nov 7, 2013 at 8:27 PM, Daniel Lezcano
+<daniel.lezcano@linaro.org> wrote:
+> On 11/06/2013 12:05 PM, Magnus Damm wrote:
+>>
+>> From: Magnus Damm <damm@opensource.se>
+>>
+>> Add Kconfig entries for CMT, MTU2, TMU and STI to
+>> drivers/clocksource/Kconfig. This will allow us to
+>> get rid of duplicated entires in architecture code
+>> such as arch/sh and arch/arm/mach-shmobile.
+>>
+>> Signed-off-by: Magnus Damm <damm@opensource.se>
 >
-> Add Kconfig entries for CMT, MTU2, TMU and STI to
-> drivers/clocksource/Kconfig. This will allow us to
-> get rid of duplicated entires in architecture code
-> such as arch/sh and arch/arm/mach-shmobile.
 >
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-
-Hi Magnus,
-
-we are preventing to have selectable timer from this Kconfig.
-
-You should select the timers from the arch Kconfig option.
-
-Regards
-   -- Daniel
-
-> ---
+> Hi Magnus,
 >
->   drivers/clocksource/Kconfig |   30 ++++++++++++++++++++++++++++++
->   1 file changed, 30 insertions(+)
+> we are preventing to have selectable timer from this Kconfig.
 >
-> --- 0001/drivers/clocksource/Kconfig
-> +++ work/drivers/clocksource/Kconfig	2013-11-05 19:49:47.000000000 +0900
-> @@ -110,3 +110,33 @@ config VF_PIT_TIMER
->   	bool
->   	help
->   	  Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
-> +
-> +if COMPILE_TEST || ARM || SUPERH
-> +menu "Timer drivers"
-> +
-> +config SH_TIMER_CMT
-> +	bool "CMT timer driver"
-> +	default y if ARM || (SUPERH && SYS_SUPPORTS_CMT)
-> +	help
-> +	  This enables build of the CMT timer driver.
-> +
-> +config SH_TIMER_MTU2
-> +	bool "MTU2 timer driver"
-> +	default y if ARM || (SUPERH && SYS_SUPPORTS_MTU2)
-> +	help
-> +	  This enables build of the MTU2 timer driver.
-> +
-> +config SH_TIMER_TMU
-> +	bool "TMU timer driver"
-> +	default y if ARM || (SUPERH && SYS_SUPPORTS_TMU)
-> +	help
-> +	  This enables build of the TMU timer driver.
-> +
-> +config EM_TIMER_STI
-> +	bool "STI timer driver"
-> +	default y if ARM
-> +	help
-> +	  This enables build of the STI timer driver.
-> +
-> +endmenu
-> +endif
->
+> You should select the timers from the arch Kconfig option.
 
+Thanks for your reply. In the case of ARM multiplatform this sounds
+like a good match, but I wonder what to do in the case of single
+platform ARM and the SH architecture. It would be nice to share the
+same Kconfig entries for both SH and all ARM variants.
 
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
+As you can see, in this series the Kconfig is shared between SH and
+ARM mach-shmobile. Actually, on those platforms we don't treat the
+timers any differently than any other device driver and traditionally
+we have been allowing the user to select which timer to use as system
+timer via the kernel configuration. What is the reason behind your
+suggestion with the arch Kconfig selection? It seems to me that timers
+are being treated differently than any other device driver, but I'm
+not sure why that is the case.
 
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+Changing SH and ARM single/multi to select via the architecture
+Kconfig seems like a functional regression for single platforms to me.
+It is also not really in line with TWD and architected timers that are
+today selectable via the ARM Kconfig. Say that I would like to develop
+code for a certain timer on a SoC with multiple timers, how can I make
+sure the right timer is used? Perhaps you propose relying on the
+clocksource and clockevent ratings?
 
+Cheers,
+
+/ magnus
