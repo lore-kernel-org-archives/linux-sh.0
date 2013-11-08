@@ -1,41 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 08 Nov 2013 08:49:00 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 08 Nov 2013 10:03:22 +0000
 Subject: Re: [PATCH 03/04] ARM: shmobile: Remove legacy KZM9D board code
-Message-Id: <20131108084859.GA5213@verge.net.au>
+Message-Id: <CANqRtoQdgUqDC6LCkC91G6TD=cgK2ya-M4miPGdhdEPVmc_efQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131106232102.8081.20523.sendpatchset@w520>
  <20131106232129.8081.77546.sendpatchset@w520>
-In-Reply-To: <20131106232129.8081.77546.sendpatchset@w520>
+ <20131108084859.GA5213@verge.net.au>
+In-Reply-To: <20131108084859.GA5213@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 07, 2013 at 08:21:29AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Remove the C and platform device version of KZM9D.
-> 
-> The DT version of KZM9D board support can now instead
-> directly be used with SoC specific code in setup-emev2.c.
+On Fri, Nov 8, 2013 at 5:49 PM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Nov 07, 2013 at 08:21:29AM +0900, Magnus Damm wrote:
+>> From: Magnus Damm <damm@opensource.se>
+>>
+>> Remove the C and platform device version of KZM9D.
+>>
+>> The DT version of KZM9D board support can now instead
+>> directly be used with SoC specific code in setup-emev2.c.
+>
+> Am I right in thinking that with this change in place we need the following
+> change to the defconfig in order for it to compile.
+>
+> diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
+> index 6c37f4a..002488a 100644
+> --- a/arch/arm/configs/kzm9d_defconfig
+> +++ b/arch/arm/configs/kzm9d_defconfig
+> @@ -13,7 +13,7 @@ CONFIG_SLAB=y
+>  # CONFIG_BLK_DEV_BSG is not set
+>  # CONFIG_IOSCHED_DEADLINE is not set
+>  # CONFIG_IOSCHED_CFQ is not set
+> -CONFIG_ARCH_SHMOBILE=y
+> +CONFIG_ARCH_SHMOBILE_MULTI=y
+>  CONFIG_ARCH_EMEV2=y
+>  CONFIG_MACH_KZM9D=y
+>  CONFIG_MEMORY_START=0x40000000
+>
+>
+> I am holding off on pushing the patches I queued up today until
+> this can be resolved one way or another.
 
-Am I right in thinking that with this change in place we need the following
-change to the defconfig in order for it to compile.
+Oh, right, I guess it doesn't know the link address now when the C
+bits are gone. Sorry about that, I totally forgot about the defconfig.
 
-diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-index 6c37f4a..002488a 100644
---- a/arch/arm/configs/kzm9d_defconfig
-+++ b/arch/arm/configs/kzm9d_defconfig
-@@ -13,7 +13,7 @@ CONFIG_SLAB=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_MULTI=y
- CONFIG_ARCH_EMEV2=y
- CONFIG_MACH_KZM9D=y
- CONFIG_MEMORY_START=0x40000000
+At this point I think we should fix up the defconfig to build for
+kzm9d with single platform. So instead of enabling MULTI in the
+kzmd_defconfig, how about this?
 
+CONFIG_AUTO_ZRELADDR=y
 
-I am holding off on pushing the patches I queued up today until
-this can be resolved one way or another.
+Also, it seems that the "select USE_OF" went away with the board code
+Kconfig bits. I will send a patch for that right away.
+
+Cheers,
+
+/ magnus
