@@ -1,78 +1,52 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 07 Nov 2013 15:47:20 +0000
-Subject: Re: RCar-H2: boot from SD card request
-Message-Id: <527BB608.2080303@codethink.co.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 08 Nov 2013 10:09:34 +0000
+Subject: [PATCH] ARM: shmobile: Select USE_OF on EMEV2
+Message-Id: <20131108100934.24755.56317.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <527A828F.4060305@codethink.co.uk>
-In-Reply-To: <527A828F.4060305@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 07/11/13 07:10, Magnus Damm wrote:
-> Hi Ben,
->
-> Unfortunately it seems to me that the upstream SDHI driver is lacking
-> in some aspects. This means that it won't work on r8a7790 and r8a7791
-> until it gets updated. We will do our best to cook up some code, would
-> it be possible for you guys to test on your side?
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, at the moment booting from SD card is much better for us than
-assuming we have a network available.
+Now when the legacy KZM9D board code is gone, make sure
+USE_OF is selected in case of the EMEV2 SoC.
 
-I should have some time for testing in the near future.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> Cheers,
->
-> / magnus
->
-> On Thu, Nov 7, 2013 at 2:55 AM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> I am trying to boot an lager board from SD, using SDHI0 channel with
->> the development branches from Simon.
->>
->> Has anyone got this to work? I have a working 3.4-ltsi kernel that
->> can boot
->>
->> I've tried the next, master and devel branches from
->>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
->>
->> My current diffs to the source are:
->>
->>> git diff
->>> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
->>> b/arch/arm/boot/dts/r8a7790-lager.dts
->>> index 203bd08..d2b33eb 100644
->>> --- a/arch/arm/boot/dts/r8a7790-lager.dts
->>> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
->>> @@ -16,7 +16,7 @@
->>>          compatible = "renesas,lager", "renesas,r8a7790";
->>>
->>>          chosen {
->>> -               bootargs = "console=ttySC6,115200 ignore_loglevel rw
->>> root=/dev/nfs ip=dhcp";
->>> +               bootargs = "console=ttySC6,38400 ignore_loglevel rw
->>> root=/dev/mmcblk0p1 rootwait";
->>>          };
->>>
->>>          memory@40000000 {
->>> @@ -29,3 +29,5 @@
->>>                  #size-cells = <1>;
->>>          };
->>>   };
->>> +
->>> +&sdhi0 { status = "ok"; };
->>
->>
->> --
->> Ben Dooks                               http://www.codethink.co.uk/
->> Senior Engineer                         Codethink - Providing Genius
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ Built on top of "renesas-devel-v3.12-rc7-20131101" and
+ [PATCH 00/04] ARM: shmobile: KZM9D legacy board code removal
 
+ arch/arm/mach-shmobile/Kconfig       |    1 +
+ arch/arm/mach-shmobile/setup-emev2.c |    4 ----
+ 2 files changed, 1 insertion(+), 4 deletions(-)
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+--- 0017/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-11-08 19:04:48.000000000 +0900
+@@ -123,6 +123,7 @@ config ARCH_EMEV2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
++	select USE_OF
+ 
+ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+--- 0005/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-11-08 19:05:00.000000000 +0900
+@@ -48,8 +48,6 @@ void __init emev2_init_delay(void)
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+ }
+ 
+-#ifdef CONFIG_USE_OF
+-
+ static void __init emev2_add_standard_devices_dt(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+@@ -73,5 +71,3 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
+-
+-#endif /* CONFIG_USE_OF */
