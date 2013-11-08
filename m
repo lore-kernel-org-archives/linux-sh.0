@@ -1,37 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 08 Nov 2013 05:22:22 +0000
+From: Daniel Lezcano <daniel.lezcano@linaro.org>
+Date: Fri, 08 Nov 2013 10:10:47 +0000
 Subject: Re: [PATCH v2 2/2] clocksource: sh_tmu: Add clk_prepare/unprepare support
-Message-Id: <20131108052222.GA9828@verge.net.au>
+Message-Id: <527CB8A7.5080502@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383000569-8916-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1383057097-22689-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1383057097-22689-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131031052406.GN1603@verge.net.au> <527B9861.1020606@linaro.org>
-In-Reply-To: <527B9861.1020606@linaro.org>
+In-Reply-To: <1383057097-22689-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 07, 2013 at 02:40:49PM +0100, Daniel Lezcano wrote:
-> On 10/31/2013 06:24 AM, Simon Horman wrote:
-> >On Tue, Oct 29, 2013 at 03:31:37PM +0100, Laurent Pinchart wrote:
-> >>Prepare the clock at probe time, as there is no other appropriate place
-> >>in the driver where we're allowed to sleep.
-> >>
-> >>Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
-> >>Cc: linux-kernel@vger.kernel.org
-> >>Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> >
-> >Thanks, I have queued this up.
-> 
-> Ok, so those patches go through your tree, right ?
-> 
-> I have been out for the Linaro connect but I saw you picked them. In
-> the future, I would prefer to take them in my tree as they fall
-> under the drivers/clocksource maintainer's umbrella.
+On 10/29/2013 03:31 PM, Laurent Pinchart wrote:
+> Prepare the clock at probe time, as there is no other appropriate place
+> in the driver where we're allowed to sleep.
+>
+> Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+> Cc: linux-kernel@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
+m>
 
-I was planning to send a pull request to you.
-But if you would rather just pick them up directly that is quite fine by me.
+Applied in my tree as 3.13 fixes
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Thanks Laurent.
+
+   -- Daniel
+
+> ---
+>   drivers/clocksource/sh_tmu.c | 9 ++++++++-
+>   1 file changed, 8 insertions(+), 1 deletion(-)
+>
+> diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+> index 1597837..63557cd 100644
+> --- a/drivers/clocksource/sh_tmu.c
+> +++ b/drivers/clocksource/sh_tmu.c
+> @@ -472,6 +472,11 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struc=
+t platform_device *pdev)
+>   		ret =3D PTR_ERR(p->clk);
+>   		goto err1;
+>   	}
+> +
+> +	ret =3D clk_prepare(p->clk);
+> +	if (ret < 0)
+> +		goto err2;
+> +
+>   	p->cs_enabled =3D false;
+>   	p->enable_count =3D 0;
+>
+> @@ -479,10 +484,12 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, stru=
+ct platform_device *pdev)
+>   			      cfg->clockevent_rating,
+>   			      cfg->clocksource_rating);
+>   	if (ret < 0)
+> -		goto err2;
+> +		goto err3;
+>
+>   	return 0;
+>
+> + err3:
+> +	clk_unprepare(p->clk);
+>    err2:
+>   	clk_put(p->clk);
+>    err1:
+>
+
+
+--=20
+  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
+M SoCs
+
+Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
+<http://twitter.com/#!/linaroorg> Twitter |
+<http://www.linaro.org/linaro-blog/> Blog
+
