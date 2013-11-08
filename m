@@ -1,52 +1,48 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 18 Nov 2013 11:35:35 +0000
-Subject: Re: [PATCH] gpio: Renesas RZ GPIO driver
-Message-Id: <201311181235.35403.arnd@arndb.de>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 08 Nov 2013 12:09:30 +0000
+Subject: [PATCH V3 2/2] dt: Document sata_rcar bindings
+Message-Id: <1383912570-8393-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131106234737.8971.37405.sendpatchset@w520> <CANqRtoQA0dXPs8+sNS-8WBPLpzvbSuwj0J3967He0rm=QwNCMQ@mail.gmail.com> <CACRpkdaMj6jnnVCSdezFH7p=S5zUFrKnjN9dSr7_+2k7dbq9ZA@mail.gmail.com>
-In-Reply-To: <CACRpkdaMj6jnnVCSdezFH7p=S5zUFrKnjN9dSr7_+2k7dbq9ZA@mail.gmail.com>
+References: <1383912570-8393-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1383912570-8393-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Alexandre Courbot <acourbot@nvidia.com>
+To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
 
-On Monday 18 November 2013, Linus Walleij wrote:
-> On Wed, Nov 13, 2013 at 7:19 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > On Wed, Nov 13, 2013 at 4:59 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> >> On Thu, Nov 7, 2013 at 12:47 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >>
-> >> Is it so that arch/sh is more soft on this for example...?
-> >> Can some arch maintainer like SH/Paul ACK this approach?
-> >>
-> >> Read: SH is not moving to device tree...?
-> >
-> > From what I can tell this GPIO block is not used with SH, so I don't
-> > think SH is related, but regarding DT on SH, do you know when it was
-> > decided that other architectures also were supposed to move DT?
-> 
-> I don't think these is any such decision, I'm just asking. I know
-> that we only want to see DT on new archs and old hairy board code
-> should be ridded using DT ... So I just want to know what the
-> situation is like wrt Super-H.
+These bindings can be used to register SATA devices found on R-Car SoC.
 
-I think Paul as the arch/sh maintainer has made it very clear in the
-past that he is not interested in converting the architecture.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
 
-IMHO that makes sense because the current code is working well and
-there won't be new SoCs that need to get added to it. While there is
-a set of drivers that are shared with arm/shmobile, that set is known
-and we can handle each driver individually. In some cases we actually
-end up having two completely different drivers for the same peripheral
-(e.g. some interrupt controllers), something we normally try very
-hard to avoid but that seems appropriate here. Let's just not make it
-a common theme for other drivers that are not in this situation.
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+new file mode 100644
+index 0000000..1e61113
+--- /dev/null
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -0,0 +1,18 @@
++* Renesas R-Car SATA
++
++Required properties:
++- compatible		: should contain one of the following:
++			  - "renesas,sata-r8a7779" for R-Car H1
++			  - "renesas,sata-r8a7790" for R-Car H2
++			  - "renesas,sata-r8a7791" for R-Car M2
++- reg			: address and length of the SATA registers;
++- interrupts		: must consist of one interrupt specifier.
++
++Example:
++
++sata: sata@fc600000 {
++	compatible = "renesas,sata-r8a7779";
++	reg = <0xfc600000 0x2000>;
++	interrupt-parent = <&gic>;
++	interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
++};
+-- 
+1.8.3.1
 
-One thing that makes arch/sh and traditionally mach-shmobile different
-from everything else is a very sophisticated way for describing
-platforms in an abstract way using C data structures. It's not
-necessarily bad, but it's inconsistent with other drivers we have
-on ARM, and it's to a large degree incompatible to how we use DT
-to describe the same hardware.
-
-	Arnd
