@@ -1,47 +1,85 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 14 Nov 2013 13:36:32 +0000
-Subject: Re: [PATCH 05/17] mmc: tmio: don't overwrite caps2
-Message-Id: <10903520.3arDgICZF8@avalon>
+Date: Sat, 09 Nov 2013 14:13:28 +0000
+Subject: Re: [PATCH 11/12] fbdev: shmobile-hdmi: Convert to clk_prepare/unprepare
+Message-Id: <1388008.xjh7MrPrF3@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com> <87habfz3kd.wl%kuninori.morimoto.gx@renesas.com> <87d2m3z3ex.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d2m3z3ex.wl%kuninori.morimoto.gx@renesas.com>
+References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1383000569-8916-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131031104809.GB18477@ns203013.ovh.net>
+In-Reply-To: <20131031104809.GB18477@ns203013.ovh.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+Hi Jean-Christophe,
 
-Thank you for the patch.
-
-On Thursday 14 November 2013 02:24:58 Kuninori Morimoto wrote:
-> 02cb3221d5bb351ad9f7469453dcca7594a0fabf
-> (mmc: tmio: support caps2 flags) added caps2 support
-> on tmio, but it overwrites mmc_of_parse() settings.
-> This patch fixes it up
+On Thursday 31 October 2013 11:48:09 Jean-Christophe PLAGNIOL-VILLARD wrote:
+> On 23:49 Mon 28 Oct     , Laurent Pinchart wrote:
+> > Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+> > clk_disable_unprepare() to get ready for the migration to the common
+> > clock framework.
+> > 
+> > Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
+> > Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Acked-by: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Thank you. Could you please pick patches 11/12 and 12/12 up for v3.13 or v3.14 
+?
 
-> ---
->  drivers/mmc/host/tmio_mmc_pio.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c
-> b/drivers/mmc/host/tmio_mmc_pio.c index 99f6d29..1f5f2ba 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -1021,7 +1021,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
-> 
->  	mmc->ops = &tmio_mmc_ops;
->  	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
-> -	mmc->caps2 = pdata->capabilities2;
-> +	mmc->caps2 |= pdata->capabilities2;
->  	mmc->max_segs = 32;
->  	mmc->max_blk_size = 512;
->  	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
+> > Cc: linux-fbdev@vger.kernel.org
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > ---
+> > 
+> >  drivers/video/sh_mobile_hdmi.c | 6 +++---
+> >  1 file changed, 3 insertions(+), 3 deletions(-)
+> > 
+> > diff --git a/drivers/video/sh_mobile_hdmi.c
+> > b/drivers/video/sh_mobile_hdmi.c index bfe4728..190145e 100644
+> > --- a/drivers/video/sh_mobile_hdmi.c
+> > +++ b/drivers/video/sh_mobile_hdmi.c
+> > @@ -1326,7 +1326,7 @@ static int __init sh_hdmi_probe(struct
+> > platform_device *pdev)> 
+> >  		goto erate;
+> >  	
+> >  	}
+> > 
+> > -	ret = clk_enable(hdmi->hdmi_clk);
+> > +	ret = clk_prepare_enable(hdmi->hdmi_clk);
+> > 
+> >  	if (ret < 0) {
+> >  	
+> >  		dev_err(hdmi->dev, "Cannot enable clock: %d\n", ret);
+> >  		goto erate;
+> > 
+> > @@ -1404,7 +1404,7 @@ emap_htop1:
+> >  emap:
+> >  	release_mem_region(res->start, resource_size(res));
+> >  
+> >  ereqreg:
+> > -	clk_disable(hdmi->hdmi_clk);
+> > +	clk_disable_unprepare(hdmi->hdmi_clk);
+> > 
+> >  erate:
+> >  	clk_put(hdmi->hdmi_clk);
+> >  
+> >  egetclk:
+> > @@ -1427,7 +1427,7 @@ static int __exit sh_hdmi_remove(struct
+> > platform_device *pdev)> 
+> >  	cancel_delayed_work_sync(&hdmi->edid_work);
+> >  	pm_runtime_put(&pdev->dev);
+> >  	pm_runtime_disable(&pdev->dev);
+> > 
+> > -	clk_disable(hdmi->hdmi_clk);
+> > +	clk_disable_unprepare(hdmi->hdmi_clk);
+> > 
+> >  	clk_put(hdmi->hdmi_clk);
+> >  	if (hdmi->htop1)
+> >  	
+> >  		iounmap(hdmi->htop1);
+
 -- 
 Regards,
 
