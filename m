@@ -1,51 +1,59 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 15 Nov 2013 00:16:44 +0000
-Subject: Re: [PATCH 11/17] mmc: SDHI: add SoC specific workaround via HW version
-Message-Id: <87habeo6xp.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 09 Nov 2013 12:23:52 +0000
+Subject: [PATCH 0/7] ARM: shmobile: Use interrupt macros in DT files
+Message-Id: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
-	<8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
-	<871u2jz33t.wl%kuninori.morimoto.gx@renesas.com>
-	<5284D846.60404@cogentembedded.com>
-In-Reply-To: <5284D846.60404@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Chris Ball <cjb@laptop.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Hello,
 
-Hi
+This patch series replaces all numerical IRQ types by the corresponding
+IRQ_TYPE_* macros in device tree sources. It starts by switching from
+/include/ to #include (1/7), replacing numerical types by macros in SoC DT
+files (2/7) and board DT files (3/7), and fixing several boards that use a
+defined IRQ type instead of IRQ_TYPE_NONE.
 
-> > One of Renesas SDHI chip needs workaround to use it,
-> > and, we can judge it based on chip version.
-> > This patch adds very quick-hack workaround method,
-> > since we still don't know how many chips
-> > need workaround in the future.
-> 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >   drivers/mmc/host/sh_mobile_sdhi.c |   11 +++++++++++
-> >   include/linux/mmc/tmio.h          |    1 +
-> >   2 files changed, 12 insertions(+)
-> >
-> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> > index f1e35a7..d241d86 100644
-> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> > @@ -33,6 +33,8 @@
-> >
-> >   #include "tmio_mmc.h"
-> >
-> > +#define EXT_ACC           0xe4
-> > +
-> 
->     Why not #define it in the tmio.h? It already contains SDHI specific 
-> register, CTL_DMA_ENABLE...
+The changes have been tested on the armadillo and marzen boards.
 
-I'm not sure which approach is correct.
-I will follow Maintainer's decision
+Laurent Pinchart (7):
+  ARM: shmobile: Use #include in device tree sources
+  ARM: shmobile: Use interrupt macros in SoC DT files
+  ARM: shmobile: Use interrupt macros in board DT files
+  ARM: shmobile: marzen-reference: Use falling edge IRQ for LAN9221
+  ARM: shmobile: bockw-reference: Use falling edge IRQ for LAN9221
+  ARM: shmobile: kzm9g-reference: Use falling edge IRQ for LAN9221
+  ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
 
-Best regards
----
-Kuninori Morimoto
+ arch/arm/boot/dts/r7s72100-genmai.dts              |   2 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |   2 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts              |   5 +-
+ arch/arm/boot/dts/r8a73a4.dtsi                     | 108 ++++++++++++-----
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   5 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |   2 +-
+ arch/arm/boot/dts/r8a7740.dtsi                     | 106 ++++++++---------
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts      |   5 +-
+ arch/arm/boot/dts/r8a7778-bockw.dts                |   2 +-
+ arch/arm/boot/dts/r8a7778.dtsi                     |  44 +++----
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts     |   5 +-
+ arch/arm/boot/dts/r8a7779-marzen.dts               |   2 +-
+ arch/arm/boot/dts/r8a7779.dtsi                     |  42 +++----
+ arch/arm/boot/dts/r8a7790-lager-reference.dts      |   2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts                |   2 +-
+ arch/arm/boot/dts/r8a7790.dtsi                     |  58 +++++-----
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts    |   2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |   2 +-
+ arch/arm/boot/dts/r8a7791.dtsi                     |  49 ++++----
+ arch/arm/boot/dts/sh7372-mackerel.dts              |   2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   5 +-
+ arch/arm/boot/dts/sh73a0-kzm9g.dts                 |   2 +-
+ arch/arm/boot/dts/sh73a0.dtsi                      | 128 +++++++++++----------
+ 23 files changed, 325 insertions(+), 257 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
