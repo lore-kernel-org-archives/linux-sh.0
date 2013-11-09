@@ -1,68 +1,129 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 Nov 2013 10:31:56 +0000
-Subject: [PATCH 12/17] mmc: SDHI: tidyup sh_mobile_sdhi_of_match position
-Message-Id: <87zjp7xoiv.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 09 Nov 2013 12:23:55 +0000
+Subject: [PATCH 3/7] ARM: shmobile: Use interrupt macros in board DT files
+Message-Id: <1383999839-3339-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
-	<8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
+References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-it is easy to read if sh_mobile_sdhi_of_cfg and
-sh_mobile_sdhi_of_match are closer
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   26 +++++++++++++-------------
- 1 file changed, 13 insertions(+), 13 deletions(-)
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts                   | 3 ++-
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 3 ++-
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts           | 3 ++-
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts          | 3 ++-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts            | 3 ++-
+ 5 files changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index d241d86..1a3bd0b 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -45,6 +45,19 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
- 	},
- };
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 7db8d79..e84d1a7 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -10,6 +10,7 @@
  
-+static const struct of_device_id sh_mobile_sdhi_of_match[] = {
-+	{ .compatible = "renesas,sdhi-shmobile" },
-+	{ .compatible = "renesas,sdhi-sh7372" },
-+	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
-+
- struct sh_mobile_sdhi {
- 	struct clk *clk;
- 	struct tmio_mmc_data mmc_data;
-@@ -114,19 +127,6 @@ static const struct sh_mobile_sdhi_ops sdhi_ops = {
- 	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
- };
+ /dts-v1/;
+ #include "r8a73a4.dtsi"
++#include <dt-bindings/interrupt-controller/irq.h>
  
--static const struct of_device_id sh_mobile_sdhi_of_match[] = {
--	{ .compatible = "renesas,sdhi-shmobile" },
--	{ .compatible = "renesas,sdhi-sh7372" },
--	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{},
--};
--MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
--
- static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- {
- 	const struct of_device_id *of_id -- 
-1.7.9.5
+ / {
+ 	model = "APE6EVM";
+@@ -40,7 +41,7 @@
+ 			compatible = "smsc,lan9118", "smsc,lan9115";
+ 			reg = <0x08000000 0x1000>;
+ 			interrupt-parent = <&irqc1>;
+-			interrupts = <8 0x4>;
++			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+ 			phy-mode = "mii";
+ 			reg-io-width = <4>;
+ 			smsc,irq-active-high;
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index c7c5bcb..aef425f 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -11,6 +11,7 @@
+ /dts-v1/;
+ #include "r8a7740.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/pwm/pwm.h>
+ 
+ / {
+@@ -94,7 +95,7 @@
+ 		compatible = "sitronix,st1232";
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+-		interrupts = <2 0>; /* IRQ10: hwirq 2 on irqpin1 */
++		interrupts = <2 IRQ_TYPE_NONE>; /* IRQ10: hwirq 2 on irqpin1 */
+ 		pinctrl-0 = <&st1232_pins>;
+ 		pinctrl-names = "default";
+ 		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index e7751ee..f887dc1 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -16,6 +16,7 @@
+ 
+ /dts-v1/;
+ #include "r8a7778.dtsi"
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+ 	model = "bockw";
+@@ -45,7 +46,7 @@
+ 
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&irqpin>;
+-		interrupts = <0 0>; /* IRQ0: hwirq 0 on irqpin */
++		interrupts = <0 IRQ_TYPE_NONE>; /* IRQ0: hwirq 0 on irqpin */
+ 		reg-io-width = <4>;
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 08b9ee37..0f5c614 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -12,6 +12,7 @@
+ /dts-v1/;
+ #include "r8a7779.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+ 	model = "marzen";
+@@ -43,7 +44,7 @@
+ 
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&irqpin0>;
+-		interrupts = <1 0>; /* IRQ1: hwirq 1 on irqpin0 */
++		interrupts = <1 IRQ_TYPE_NONE>; /* IRQ1: hwirq 1 on irqpin0 */
+ 		reg-io-width = <4>;
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index d5a6d74..605f6c6 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -14,6 +14,7 @@
+ /dts-v1/;
+ #include "sh73a0.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+ 	model = "KZM-A9-GT";
+@@ -82,7 +83,7 @@
+ 		reg = <0x10000000 0x100>;
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&irqpin0>;
+-		interrupts = <3 0>;	/* active low */
++		interrupts = <3 IRQ_TYPE_NONE>;	/* active low */
+ 		reg-io-width = <4>;
+ 		smsc,irq-push-pull;
+ 		smsc,save-mac-address;
+-- 
+1.8.1.5
 
