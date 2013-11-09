@@ -1,86 +1,75 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 07:52:36 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: kzm9g-reference: Add GPIO keys to DT
-Message-Id: <20131128075236.GK24146@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 09 Nov 2013 12:56:40 +0000
+Subject: Re: [PATCH 08/12] mmc: sh_mobile_sdhi: Convert to clk_prepare/unprepare
+Message-Id: <3901213.QOEV1AdNoe@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385428879-26849-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385428879-26849-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1383000569-8916-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <Pine.LNX.4.64.1310290907520.8404@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1310290907520.8404@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 26, 2013 at 02:21:19AM +0100, Laurent Pinchart wrote:
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 46 ++++++++++++++++++++++++++++
->  1 file changed, 46 insertions(+)
+Hi Chris,
 
-Thanks, I have queued this up.
+Could you please pick this patch up ?
 
+On Tuesday 29 October 2013 09:09:37 Guennadi Liakhovetski wrote:
+> On Mon, 28 Oct 2013, Laurent Pinchart wrote:
+> > Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+> > clk_disable_unprepare() to get ready for the migration to the common
+> > clock framework.
+> > 
+> > Cc: Chris Ball <cjb@laptop.org>
+> > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> > Cc: linux-mmc@vger.kernel.org
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
 > 
-> diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> index d58877d..5bb593d 100644
-> --- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> +++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> @@ -106,6 +106,52 @@
->  			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
->  		};
->  	};
-> +
-> +	gpio-keys {
-> +		compatible = "gpio-keys";
-> +
-> +		back-key {
-> +			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
-> +			linux,code = <158>;
-> +			label = "SW3";
-> +		};
-> +
-> +		right-key {
-> +			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
-> +			linux,code = <106>;
-> +			label = "SW2-R";
-> +		};
-> +
-> +		left-key {
-> +			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
-> +			linux,code = <105>;
-> +			label = "SW2-L";
-> +		};
-> +
-> +		enter-key {
-> +			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
-> +			linux,code = <28>;
-> +			label = "SW2-P";
-> +		};
-> +
-> +		up-key {
-> +			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
-> +			linux,code = <103>;
-> +			label = "SW2-U";
-> +		};
-> +
-> +		down-key {
-> +			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
-> +			linux,code = <108>;
-> +			label = "SW2-D";
-> +		};
-> +
-> +		home-key {
-> +			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
-> +			linux,code = <102>;
-> +			label = "SW1";
-> +		};
-> +	};
->  };
->  
->  &i2c0 {
-> -- 
-> 1.8.3.2
+> Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Thanks
+> Guennadi
 > 
+> > ---
+> > 
+> >  drivers/mmc/host/sh_mobile_sdhi.c | 4 ++--
+> >  1 file changed, 2 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c
+> > b/drivers/mmc/host/sh_mobile_sdhi.c index f344659..ed1718a 100644
+> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
+> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
+> > @@ -54,7 +54,7 @@ static int sh_mobile_sdhi_clk_enable(struct
+> > platform_device *pdev, unsigned int> 
+> >  	struct mmc_host *mmc = platform_get_drvdata(pdev);
+> >  	struct tmio_mmc_host *host = mmc_priv(mmc);
+> >  	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct
+> >  	sh_mobile_sdhi, mmc_data);> 
+> > -	int ret = clk_enable(priv->clk);
+> > +	int ret = clk_prepare_enable(priv->clk);
+> > 
+> >  	if (ret < 0)
+> >  	
+> >  		return ret;
+> > 
+> > @@ -67,7 +67,7 @@ static void sh_mobile_sdhi_clk_disable(struct
+> > platform_device *pdev)> 
+> >  	struct mmc_host *mmc = platform_get_drvdata(pdev);
+> >  	struct tmio_mmc_host *host = mmc_priv(mmc);
+> >  	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct
+> >  	sh_mobile_sdhi, mmc_data);> 
+> > -	clk_disable(priv->clk);
+> > +	clk_disable_unprepare(priv->clk);
+> > 
+> >  }
+> >  
+> >  static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
