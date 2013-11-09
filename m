@@ -1,54 +1,75 @@
-From: stephen.lawrence@renesas.com
-Date: Fri, 08 Nov 2013 14:57:29 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 09 Nov 2013 12:34:31 +0000
 Subject: Re: [PATCH/RFC] ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY
-Message-Id: <OF17E16328.5264A205-ON80257C1D.00509463-80257C1D.00522B18@eu.necel.com>
+Message-Id: <9547447.Oq0RhNMWv3@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383782061-7111-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383782061-7111-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <CANqRtoRDo6_VYhaq9KkSCo2TnhmwW-vFK99HuBS=umrC1_fD_g@mail.gmail.com>
+ <20131108060803.GF9828@verge.net.au>
+In-Reply-To: <20131108060803.GF9828@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-linux-sh-owner@vger.kernel.org wrote on 08/11/2013 06:08:05:
+Hi Simon,
 
-Hi Guys,
-
-> From: Simon Horman <horms@verge.net.au>
-> To: Magnus Damm <magnus.damm@gmail.com>, 
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, 
-SH-Linux <linux-
-> sh@vger.kernel.org>, "linux-arm-kernel@lists.infradead.org" 
-<linux-arm-kernel@lists.infradead.org>
-> Date: 08/11/2013 06:07
-> Subject: Re: [PATCH/RFC] ARM: Rename ARCH_SHMOBILE to 
-ARCH_SHMOBILE_LEGACY
-> Sent by: linux-sh-owner@vger.kernel.org
-> 
+On Friday 08 November 2013 15:08:05 Simon Horman wrote:
 > On Thu, Nov 07, 2013 at 03:04:57PM +0900, Magnus Damm wrote:
-> > Hi Laurent,
-> > 
-> > On Thu, Nov 7, 2013 at 8:54 AM, Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com> wrote:
+> > On Thu, Nov 7, 2013 at 8:54 AM, Laurent Pinchart wrote:
 > > > SH-Mobile platforms are transitioning from non-multiplatform to
-> > > multiplatform kernel. A new ARCH_SHMOBILE_MULTI configuration symbol 
-has
+> > > multiplatform kernel. A new ARCH_SHMOBILE_MULTI configuration symbol has
 > > > been created to group all multiplatform-enabled SH-Mobile SoCs. The
 > > > existing ARCH_SHMOBILE configuration symbol groups SoCs that haven't
 > > > been converted yet.
-> > >
+> > > 
+> > > This arrangement works fine for the arch/ code, but lots of drivers
+> > > needed on both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI depend on
+> > > ARCH_SHMOBILE only. In order to avoid changing them, rename
+> > > ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY, and create a new boolean
+> > > ARCH_SHMOBILE configuration symbol that is selected by both
+> > > ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI.
+> > > 
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > 
+> > Thanks, this looks good to me.
+> > 
+> > Acked-by: Magnus Damm <damm@opensource.se>
+> 
+> This seems reasonable to me.
+> I would pick it up now but it is marked as "RFC".
+> Please let me know if you wish me to pick it up.
 
-I'm sure there are reasons for keeping it but looking forward I can't help 
-but wonder if this wouldn't be a good time to lose the SHMOBILE tag for 
-new platforms? It doesn't seem to be a great match to our business or the 
-architectures.
+I've sent a non-RFC series, please pick that one up.
 
-I know from conversations I've had in the last year or so that external 
-engineers working on R-Car sometimes do not find your good work upstream 
-as the combination of sh-mobile and using the product number proved an 
-effective method of concealment. Although of course they could find it by 
-searching the right files.
+> > I have one semi-related question below:
+> > > @@ -1619,7 +1621,7 @@ config HZ_FIXED
+> > > 
+> > >         default 200 if ARCH_EBSA110 || ARCH_S3C24XX || ARCH_S5P64X0 || \
+> > >         
+> > >                 ARCH_S5PV210 || ARCH_EXYNOS4
+> > >         
+> > >         default AT91_TIMER_HZ if ARCH_AT91
+> > > 
+> > > -       default SHMOBILE_TIMER_HZ if ARCH_SHMOBILE
+> > > +       default SHMOBILE_TIMER_HZ if ARCH_SHMOBILE_LEGACY
+> > > 
+> > >         default 0
+> > >  
+> > >  choice
+> > 
+> > For the hunk above, it makes sense that we cannot HZ in the
+> > multiplatform case, so I think your patch is right.
+> > 
+> > I do however wonder what's the plan with multiplatform and the HZ
+> > value, how do we handle hardware platforms that use 32768 Hz as clock?
+> > Historically those platforms work best with a
+> > even-divide-by-a-power-of-two HZ value, so with a HZ0 value things
+> > may drift slowly...
 
-Have a good weekend,
+-- 
+Regards,
 
-Steve
+Laurent Pinchart
+
