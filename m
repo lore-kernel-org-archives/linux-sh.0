@@ -1,26 +1,38 @@
-From: WEBMAIL UPGRADE <234@vvyr.onmicrosoft.com>
-Date: Thu, 14 Nov 2013 06:28:05 +0000
-Subject: Dear Account Owner..
-Message-Id: <14def7de-b77a-4bae-9aed-871331b56ca5@SINPR02MB075.apcprd02.prod.outlook.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 09 Nov 2013 12:23:56 +0000
+Subject: [PATCH 4/7] ARM: shmobile: marzen-reference: Use falling edge IRQ for LAN9221
+Message-Id: <1383999839-3339-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Recipients <234@vvyr.onmicrosoft.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Dear Web-master Email Account Owner,
+The device is configured to generate an active-low interrupt signal that
+is automatically deasserted without requiring any action from the host.
+Use falling edge trigger as that is the configuration currently used on
+the board.
 
-   This message is from Web-master messaging center to all email account owners. We are currently upgrading our data base and e-mail account center. We are deleting all unused email account to create more space for new accounts. To prevent your account from closing you will have to update it below so that we will know that it's a present used account.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Failure to do this will immediately render your email address deactivated from our database. To complete your Web-mail account, you must reply to this email immediately and enter your
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 0f5c614..13fa8be 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -44,7 +44,7 @@
+ 
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&irqpin0>;
+-		interrupts = <1 IRQ_TYPE_NONE>; /* IRQ1: hwirq 1 on irqpin0 */
++		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
+ 		reg-io-width = <4>;
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+-- 
+1.8.1.5
 
-User-name: (           )
-password: (           )
-Confim Password: (            )
-
-Warning!!! Account owner that refuses to update his or her account within Seven days of receiving this warning will lose his or her account permanently.
-
-Warning Code:VX2G99AAJ
-Welcome to Web-master Web-mail
-upgrade@undelservices.com
-Web-mail Support
