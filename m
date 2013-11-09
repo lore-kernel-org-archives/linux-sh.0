@@ -1,45 +1,37 @@
-From: Dan Carpenter <dan.carpenter@oracle.com>
-Date: Wed, 06 Nov 2013 16:14:40 +0000
-Subject: re: sh: add clk_round_parent() to optimize parent clock rate
-Message-Id: <20131106161440.GF15603@elgon.mountain>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 09 Nov 2013 12:23:57 +0000
+Subject: [PATCH 5/7] ARM: shmobile: bockw-reference: Use falling edge IRQ for LAN9221
+Message-Id: <1383999839-3339-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello Guennadi Liakhovetski,
+The device is configured to generate an active-low interrupt signal that
+is automatically deasserted without requiring any action from the host.
+Configure the IRQ to trigger on falling edge.
 
-This is a semi-automatic email about new static checker warnings.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-The patch 6af26c6c99f0: "sh: add clk_round_parent() to optimize 
-parent clock rate" from Nov 2, 2010, leads to the following Smatch 
-complaint:
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index f887dc1..4e2bcee 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -46,7 +46,7 @@
+ 
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&irqpin>;
+-		interrupts = <0 IRQ_TYPE_NONE>; /* IRQ0: hwirq 0 on irqpin */
++		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+ 		reg-io-width = <4>;
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+-- 
+1.8.1.5
 
-drivers/sh/clk/core.c:641 clk_round_parent()
-	 error: we previously assumed 'best_freq' could be null (see line 630)
-
-drivers/sh/clk/core.c
-   629				best = freq;
-   630				if (best_freq)
-   631					*best_freq = freq_high;
-   632			}
-   633	
-   634			if (target - freq_low < error) {
-   635				error = target - freq_low;
-   636				best = freq;
-   637				if (best_freq)
-                                    ^^^^^^^^^
-Check.
-
-   638					*best_freq = freq_low;
-   639			}
-   640	
-   641			pr_debug("%u / %lu = %lu, / %lu = %lu, best %lu, parent %u\n",
-   642				 freq->frequency, div, freq_high, div + 1, freq_low,
-   643				 *best_freq, best->frequency);
-                                 ^^^^^^^^^^
-Unchecked dereference.
-
-regards,
-dan carpenter
