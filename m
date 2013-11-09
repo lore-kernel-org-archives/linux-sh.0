@@ -1,75 +1,49 @@
-From: Tomi Valkeinen <tomi.valkeinen@ti.com>
-Date: Tue, 26 Nov 2013 15:00:31 +0000
-Subject: Re: [PATCH -v2] fbdev: sh_mobile_meram: Fix defined but not used compiler warnings
-Message-Id: <5294B78F.3010903@ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="uQHhBUuOkU0hBrOdoQwoRB0WclOWEUA28"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 09 Nov 2013 12:12:28 +0000
+Subject: [PATCH] regulator: gpio-regulator: Don't oops on missing regulator-type property
+Message-Id: <1383999148-2516-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383728247-19294-1-git-send-email-geert@linux-m68k.org>
- <5204468.CmggZzW3kO@avalon> <5294B3B9.3090104@ti.com>
- <1510041.WqZSiK0jXs@avalon>
-In-Reply-To: <1510041.WqZSiK0jXs@avalon>
-To: linux-arm-kernel@lists.infradead.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
---uQHhBUuOkU0hBrOdoQwoRB0WclOWEUA28
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Catch missing regulator-type property in DT and return an error
+gracefully instead of deferencing a NULL pointer and crashing.
 
-On 2013-11-26 16:58, Laurent Pinchart wrote:
-> Hi Tomi,
->=20
-> On Tuesday 26 November 2013 16:44:09 Tomi Valkeinen wrote:
->> On 2013-11-06 13:57, Laurent Pinchart wrote:
->>> On Wednesday 06 November 2013 09:57:27 Geert Uytterhoeven wrote:
->>>> If both CONFIG_PM_SLEEP and CONFIG_PM_RUNTIME are not set:
->>>>
->>>> drivers/video/sh_mobile_meram.c:573: warning: =E2=80=98sh_mobile_mer=
-am_suspend=E2=80=99
->>>> defined but not used drivers/video/sh_mobile_meram.c:597: warning:
->>>> =E2=80=98sh_mobile_meram_resume=E2=80=99 defined but not used
->>>>
->>>> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
->>>
->>> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->>>
->>> and applied to my tree.
->>
->> What does that mean? Are you collecting sh_mobile video patches?
->>
->> Or to rephrase, shall I apply this to fbdev fixes tree?
->=20
-> I was planning to send you a pull request for that, but if you can pick=
- it up=20
-> that's even easier, thanks.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/regulator/gpio-regulator.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-Ok. Applied, then, to fbdev =3D).
+diff --git a/drivers/regulator/gpio-regulator.c b/drivers/regulator/gpio-regulator.c
+index 98a98ff..bcd827c 100644
+--- a/drivers/regulator/gpio-regulator.c
++++ b/drivers/regulator/gpio-regulator.c
+@@ -139,6 +139,7 @@ of_get_gpio_regulator_config(struct device *dev, struct device_node *np)
+ 	struct property *prop;
+ 	const char *regtype;
+ 	int proplen, gpio, i;
++	int ret;
+ 
+ 	config = devm_kzalloc(dev,
+ 			sizeof(struct gpio_regulator_config),
+@@ -202,7 +203,11 @@ of_get_gpio_regulator_config(struct device *dev, struct device_node *np)
+ 	}
+ 	config->nr_states = i;
+ 
+-	of_property_read_string(np, "regulator-type", &regtype);
++	ret = of_property_read_string(np, "regulator-type", &regtype);
++	if (ret < 0) {
++		dev_err(dev, "Missing 'regulator-type' property\n");
++		return ERR_PTR(-EINVAL);
++	}
+ 
+ 	if (!strncmp("voltage", regtype, 7))
+ 		config->type = REGULATOR_VOLTAGE;
+-- 
+Regards,
 
- Tomi
+Laurent Pinchart
 
-
-
---uQHhBUuOkU0hBrOdoQwoRB0WclOWEUA28
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJSlLePAAoJEPo9qoy8lh71iCYP/3WKjqSnxJsE1CMjUGJHrWld
-WxXDU30JV21SGNWr5oe7KNbJRI60JpSRAiSb0J+uCGo/iuB5YH8IJ5B5z59nLIPe
-TgPzZgr7D/8NPcSZP3nfBO2V/yVTCRHQjL87biLoKokxetJyywCvUy+O7vi3Tqtg
-9VD8g6GzOoZ2u5Gb4uc4JuQ8Xj2rvu0XVp7gQ16P8Dfu/CTVAkay/AbqCCSt6T8w
-HiZ2cO+3MVptyGu6DNz8w4GzFjfQvezmNZxR56mEABv1EOwiauDpvYgm1MtEv6fA
-2uojfChy6Oq9lnuk3o7AbgrzAkpiWpSISO8VnS9cHRwhc39jq+Avxq4WOOw3c3Ta
-/8jkRMf65060kquVb5dt6XzdICldKi+9px12nGEP18/YHXeFEJv3Wn4gzxMfH8kj
-m5D5NsY3nHJRSWsEX6gebOH5BBrGRsoMK8k4+IhTsf0DRd1pMCnS5YfcsYX+HBUv
-SFNJJUmdF+sU1MVa+Y4X71TIukuoRoFbiXPaULBuMnqzeSSuGPxcfxzL59wbO7Nx
-WRnof+tU20wo8Y0fLN+HpgsAKEiXwglNBE4bW5/PmmbQ6GJ/2rsqFUAqK/BHC/MP
-LHQiWOD1KvVPYV1ka2tbZzoWuVfcgtir4F0qE2BFJnDyXNpmQuxafJJ/fvYP82tb
-dKd2NnamF61AKB+lXvh2
-=7zX7
------END PGP SIGNATURE-----
-
---uQHhBUuOkU0hBrOdoQwoRB0WclOWEUA28--
