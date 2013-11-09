@@ -1,39 +1,36 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:14 +0000
-Subject: [PATCH v4 04/29] serial: sh-sci: Remove duplicate interrupt check in verify port op
-Message-Id: <1385594319-5758-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 09 Nov 2013 12:33:49 +0000
+Subject: [PATCH 2/2] ASoC: sh: rcar: Depend on ARCH_SHMOBILE_LEGACY
+Message-Id: <1384000429-3590-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1384000429-3590-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384000429-3590-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+Cc: linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org
 
-The driver checks if the interrupt number is greater than nr_irqs and
-returns an error in that case. The same check is already performed by
-the caller, remove it.
+The driver doesn't compile on multiplatform kernels as it requires
+<mach/clock.h>.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ sound/soc/sh/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index feb1a6a..d1d779f 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2115,7 +2115,7 @@ static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
- {
- 	struct sci_port *s = to_sci_port(port);
+diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+index 56d8ff6..ce7cfd6 100644
+--- a/sound/soc/sh/Kconfig
++++ b/sound/soc/sh/Kconfig
+@@ -36,6 +36,7 @@ config SND_SOC_SH4_SIU
  
--	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ] || ser->irq > nr_irqs)
-+	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
- 		return -EINVAL;
- 	if (ser->baud_base < 2400)
- 		/* No paper tape reader for Mitch.. */
+ config SND_SOC_RCAR
+ 	tristate "R-Car series SRU/SCU/SSIU/SSI support"
++	depends on ARCH_SHMOBILE_LEGACY
+ 	select SND_SIMPLE_CARD
+ 	select RCAR_CLK_ADG
+ 	help
 -- 
-1.8.3.2
+1.8.1.5
 
