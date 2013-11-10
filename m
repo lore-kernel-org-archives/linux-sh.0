@@ -1,109 +1,74 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Nov 2013 05:17:20 +0000
-Subject: Re: [PATCH RFC v2 05/17] ARM: shmobile: r8a7779: Reference clocks
-Message-Id: <20131127051719.GH27704@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:33:40 +0000
+Subject: [PATCH v2 28/29] serial: sh-sci: Add device tree bindings documentation
+Message-Id: <1384054421-13357-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
- <1385451139-29686-6-git-send-email-horms+renesas@verge.net.au>
- <1531673.6AgJX0AzD4@avalon>
-In-Reply-To: <1531673.6AgJX0AzD4@avalon>
+References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org
 
-On Tue, Nov 26, 2013 at 03:50:16PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thank you for the patch.
-> 
-> On Tuesday 26 November 2013 16:32:07 Simon Horman wrote:
-> > Reference clocks using a "clocks" property in all nodes corresponding to
-> > devices that require a clock.
-> 
-> There's a sata node in your latest devel branch that you're missing.
+Document the device tree bindings for the sci serial port devices.
 
-Thanks, I must have made this patch using an older version
-of the devel branch. I'll fix this up.
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ .../bindings/serial/renesas,sci-serial.txt         | 42 ++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
 
-> > Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoCs.
-> > 
-> > Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/boot/dts/r8a7779.dtsi | 8 ++++++++
-> >  1 file changed, 8 insertions(+)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> > index d524b3f..623dd39 100644
-> > --- a/arch/arm/boot/dts/r8a7779.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> > @@ -160,6 +160,7 @@
-> >  		reg = <0xffc70000 0x1000>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp0_clks R8A7779_CLK_I2C0>;
-> >  		status = "disabled";
-> >  	};
-> > 
-> > @@ -170,6 +171,7 @@
-> >  		reg = <0xffc71000 0x1000>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 82 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp0_clks R8A7779_CLK_I2C1>;
-> >  		status = "disabled";
-> >  	};
-> > 
-> > @@ -180,6 +182,7 @@
-> >  		reg = <0xffc72000 0x1000>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp0_clks R8A7779_CLK_I2C2>;
-> >  		status = "disabled";
-> >  	};
-> > 
-> > @@ -190,6 +193,7 @@
-> >  		reg = <0xffc73000 0x1000>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 81 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp0_clks R8A7779_CLK_I2C3>;
-> >  		status = "disabled";
-> >  	};
-> > 
-> > @@ -215,6 +219,7 @@
-> >  		reg = <0xffe4c000 0x100>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
-> >  		cap-sd-highspeed;
-> >  		cap-sdio-irq;
-> >  		status = "disabled";
-> > @@ -225,6 +230,7 @@
-> >  		reg = <0xffe4d000 0x100>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
-> >  		cap-sd-highspeed;
-> >  		cap-sdio-irq;
-> >  		status = "disabled";
-> > @@ -235,6 +241,7 @@
-> >  		reg = <0xffe4e000 0x100>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
-> >  		cap-sd-highspeed;
-> >  		cap-sdio-irq;
-> >  		status = "disabled";
-> > @@ -245,6 +252,7 @@
-> >  		reg = <0xffe4f000 0x100>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
-> >  		cap-sd-highspeed;
-> >  		cap-sdio-irq;
-> >  		status = "disabled";
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+new file mode 100644
+index 0000000..66d3bca
+--- /dev/null
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -0,0 +1,42 @@
++* Renesas SH-Mobile Serial Communication Interface
++
++Required properties:
++
++  - compatible: one of the following types (scif, scifa, scifb, hscif).
++
++    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
++    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
++    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
++    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
++    - "renesas,scif-generic" for generic SCIF compatible UART.
++    - "renesas,scifa-generic" for generic SCIFA compatible UART.
++    - "renesas,scifb-generic" for generic SCIFB compatible UART.
++    - "renesas,hscif-generic" for generic HSCIF compatible UART.
++
++    When compatible with the generic version, nodes must also list the
++    SoC-specific version corresponding to the platform.
++
++  - reg: Base address and length of the memory resource used by the UART.
++
++  - interrupt-parent: Reference to the parent interrupt controller.
++  - interrupts: Interrupt number.
++
++  - clocks: Reference to the SCIx UART interface clock.
++  - clock-names: Should be "sci_ick".
++
++Note: Each enabled SCIx UART should have an alias correctly numbered in the
++"aliases" node.
++
++Example:
++	aliases {
++		serial0 = &scifa0;
++	};
++
++	scifa0: serial@e6c40000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		reg = <0 0xe6c40000 0 64>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 4>;
++		clocks = <&mstp2_clks 4>;
++		clock-names = "sci_ick";
++	};
+-- 
+1.8.1.5
+
