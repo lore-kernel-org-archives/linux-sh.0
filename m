@@ -1,267 +1,192 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:09:32 +0000
-Subject: [PATCH v2 2/7] clk: shmobile: Add DIV6 clock support
-Message-Id: <1384052977-30616-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:33:20 +0000
+Subject: [PATCH v2 08/29] ARM: shmobile: sh7372: Use macros to declare SCIF devices
+Message-Id: <1384054421-13357-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-DIV6 clocks are divider gate clocks controlled through a single
-register. The divider is expressed on 6 bits, hence the name, and can
-take values from 1/1 to 1/64.
+Replace copy-n-paste SCIF platform data and device declaration with a
+macro. This reduces the amount of code and improves readability.
 
-Those clocks are found on Renesas ARM SoCs.
-
-Cc: devicetree@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |  27 +++
- drivers/clk/shmobile/Makefile                      |   1 +
- drivers/clk/shmobile/clk-div6.c                    | 185 +++++++++++++++++++++
- 3 files changed, 213 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
- create mode 100644 drivers/clk/shmobile/clk-div6.c
+ arch/arm/mach-shmobile/setup-sh7372.c | 156 ++++++----------------------------
+ 1 file changed, 25 insertions(+), 131 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-new file mode 100644
-index 0000000..316d745
---- /dev/null
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-@@ -0,0 +1,27 @@
-+* Renesas CPG DIV6 Clock
-+
-+The CPG DIV6 clocks are variable factor clocks provided by the Clock Pulse
-+Generator (CPG). They clock input is divided by a configurable factor from 1
-+to 64.
-+
-+Required Properties:
-+
-+  - compatible: Must be one of the following
-+    - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
-+    - "renesas,cpg-div6-clock" for generic DIV6 clocks
-+  - reg: Base address and length of the memory resource used by the DIV6 clock
-+  - clocks: Reference to the parent clock
-+  - #clock-cells: Must be 0
-+  - clock-output-names: The name of the clock as a free-form string
-+
-+
-+Example
-+-------
-+
-+	sd2_clk: sd2_clk@e6150078 {
-+		compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
-+		reg = <0 0xe6150078 0 4>;
-+		clocks = <&pll1_div2_clk>;
-+		#clock-cells = <0>;
-+		clock-output-names = "sd2";
-+	};
-diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-index 40d88e6..eded163 100644
---- a/drivers/clk/shmobile/Makefile
-+++ b/drivers/clk/shmobile/Makefile
-@@ -1,6 +1,7 @@
- obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
- obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
- obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
-+obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 3118783..77627dd 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -86,138 +86,32 @@ void __init sh7372_pinmux_init(void)
+ 	platform_device_register(&sh7372_pfc_device);
+ }
  
- # for emply built-in.o
- obj-n	:= dummy
-diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
-new file mode 100644
-index 0000000..aac4756
---- /dev/null
-+++ b/drivers/clk/shmobile/clk-div6.c
-@@ -0,0 +1,185 @@
-+/*
-+ * r8a7790 Common Clock Framework support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ *
-+ * Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ */
-+
-+#include <linux/clk-provider.h>
-+#include <linux/clkdev.h>
-+#include <linux/init.h>
-+#include <linux/io.h>
-+#include <linux/kernel.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+
-+#define CPG_DIV6_CKSTP		BIT(8)
-+#define CPG_DIV6_DIV(d)		((d) & 0x3f)
-+#define CPG_DIV6_DIV_MASK	0x3f
-+
-+/**
-+ * struct div6_clock - MSTP gating clock
-+ * @hw: handle between common and hardware-specific interfaces
-+ * @reg: IO-remapped register
-+ * @div: divisor value (1-64)
-+ */
-+struct div6_clock {
-+	struct clk_hw hw;
-+	void __iomem *reg;
-+	unsigned int div;
-+};
-+
-+#define to_div6_clock(_hw) container_of(_hw, struct div6_clock, hw)
-+
-+static int cpg_div6_clock_enable(struct clk_hw *hw)
-+{
-+	struct div6_clock *clock = to_div6_clock(hw);
-+
-+	clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
-+
-+	return 0;
+-/* SCIFA0 */
+-static struct plat_sci_port scif0_platform_data = {
+-	.mapbase	= 0xe6c40000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0c00), evt2irq(0x0c00),
+-			    evt2irq(0x0c00), evt2irq(0x0c00) },
+-};
+-
+-static struct platform_device scif0_device = {
+-	.name		= "sh-sci",
+-	.id		= 0,
+-	.dev		= {
+-		.platform_data	= &scif0_platform_data,
+-	},
+-};
+-
+-/* SCIFA1 */
+-static struct plat_sci_port scif1_platform_data = {
+-	.mapbase	= 0xe6c50000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0c20), evt2irq(0x0c20),
+-			    evt2irq(0x0c20), evt2irq(0x0c20) },
+-};
+-
+-static struct platform_device scif1_device = {
+-	.name		= "sh-sci",
+-	.id		= 1,
+-	.dev		= {
+-		.platform_data	= &scif1_platform_data,
+-	},
+-};
+-
+-/* SCIFA2 */
+-static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xe6c60000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0c40), evt2irq(0x0c40),
+-			    evt2irq(0x0c40), evt2irq(0x0c40) },
+-};
+-
+-static struct platform_device scif2_device = {
+-	.name		= "sh-sci",
+-	.id		= 2,
+-	.dev		= {
+-		.platform_data	= &scif2_platform_data,
+-	},
+-};
+-
+-/* SCIFA3 */
+-static struct plat_sci_port scif3_platform_data = {
+-	.mapbase	= 0xe6c70000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0c60), evt2irq(0x0c60),
+-			    evt2irq(0x0c60), evt2irq(0x0c60) },
+-};
+-
+-static struct platform_device scif3_device = {
+-	.name		= "sh-sci",
+-	.id		= 3,
+-	.dev		= {
+-		.platform_data	= &scif3_platform_data,
+-	},
+-};
+-
+-/* SCIFA4 */
+-static struct plat_sci_port scif4_platform_data = {
+-	.mapbase	= 0xe6c80000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0d20), evt2irq(0x0d20),
+-			    evt2irq(0x0d20), evt2irq(0x0d20) },
+-};
+-
+-static struct platform_device scif4_device = {
+-	.name		= "sh-sci",
+-	.id		= 4,
+-	.dev		= {
+-		.platform_data	= &scif4_platform_data,
+-	},
+-};
+-
+-/* SCIFA5 */
+-static struct plat_sci_port scif5_platform_data = {
+-	.mapbase	= 0xe6cb0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0d40), evt2irq(0x0d40),
+-			    evt2irq(0x0d40), evt2irq(0x0d40) },
+-};
+-
+-static struct platform_device scif5_device = {
+-	.name		= "sh-sci",
+-	.id		= 5,
+-	.dev		= {
+-		.platform_data	= &scif5_platform_data,
+-	},
+-};
+-
+-/* SCIFB */
+-static struct plat_sci_port scif6_platform_data = {
+-	.mapbase	= 0xe6c30000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFB,
+-	.irqs		= { evt2irq(0x0d60), evt2irq(0x0d60),
+-			    evt2irq(0x0d60), evt2irq(0x0d60) },
+-};
++/* SCIF */
++#define SH7372_SCIF(scif_type, index, baseaddr, irq)		\
++static struct plat_sci_port scif##index##_platform_data = {	\
++	.type		= scif_type,				\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF,			\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
++	.scbrr_algo_id	= SCBRR_ALGO_4,				\
++	.scscr		= SCSCR_RE | SCSCR_TE,			\
++};								\
++								\
++static struct platform_device scif##index##_device = {		\
++	.name		= "sh-sci",				\
++	.id		= index,				\
++	.dev		= {					\
++		.platform_data	= &scif##index##_platform_data,	\
++	},							\
 +}
-+
-+static void cpg_div6_clock_disable(struct clk_hw *hw)
-+{
-+	struct div6_clock *clock = to_div6_clock(hw);
-+
-+	/* DIV6 clocks require the divisor field to be non-zero when stopping
-+	 * the clock.
-+	 */
-+	clk_writel(CPG_DIV6_CKSTP | CPG_DIV6_DIV(CPG_DIV6_DIV_MASK),
-+		   clock->reg);
-+}
-+
-+static int cpg_div6_clock_is_enabled(struct clk_hw *hw)
-+{
-+	struct div6_clock *clock = to_div6_clock(hw);
-+
-+	return !(clk_readl(clock->reg) & CPG_DIV6_CKSTP);
-+}
-+
-+static unsigned long cpg_div6_clock_recalc_rate(struct clk_hw *hw,
-+						unsigned long parent_rate)
-+{
-+	struct div6_clock *clock = to_div6_clock(hw);
-+	unsigned int div = (clk_readl(clock->reg) & CPG_DIV6_DIV_MASK) + 1;
-+
-+	return parent_rate / div;
-+}
-+
-+static unsigned int cpg_div6_clock_calc_div(unsigned long rate,
-+					    unsigned long parent_rate)
-+{
-+	unsigned int div;
-+
-+	div = DIV_ROUND_CLOSEST(parent_rate, rate);
-+	return clamp_t(unsigned int, div, 1, 64);
-+}
-+
-+static long cpg_div6_clock_round_rate(struct clk_hw *hw, unsigned long rate,
-+				      unsigned long *parent_rate)
-+{
-+	unsigned int div = cpg_div6_clock_calc_div(rate, *parent_rate);
-+
-+	return *parent_rate / div;
-+}
-+
-+static int cpg_div6_clock_set_rate(struct clk_hw *hw, unsigned long rate,
-+				   unsigned long parent_rate)
-+{
-+	struct div6_clock *clock = to_div6_clock(hw);
-+	unsigned int div = cpg_div6_clock_calc_div(rate, parent_rate);
-+
-+	clock->div = div;
-+
-+	/* Only program the new divisor if the clock isn't stopped. */
-+	if (!(clk_readl(clock->reg) & CPG_DIV6_CKSTP))
-+		clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
-+
-+	return 0;
-+}
-+
-+static const struct clk_ops cpg_div6_clock_ops = {
-+	.enable = cpg_div6_clock_enable,
-+	.disable = cpg_div6_clock_disable,
-+	.is_enabled = cpg_div6_clock_is_enabled,
-+	.recalc_rate = cpg_div6_clock_recalc_rate,
-+	.round_rate = cpg_div6_clock_round_rate,
-+	.set_rate = cpg_div6_clock_set_rate,
-+};
-+
-+static void __init cpg_div6_clock_init(struct device_node *np)
-+{
-+	struct clk_init_data init;
-+	struct div6_clock *clock;
-+	const char *parent_name;
-+	const char *name;
-+	struct clk *clk;
-+	int ret;
-+
-+	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
-+	if (!clock) {
-+		pr_err("%s: failed to allocate %s DIV6 clock\n",
-+		       __func__, np->name);
-+		return;
-+	}
-+
-+	/* Remap the clock register and read the divisor. Disabling the
-+	 * clock overwrites the divisor, so we need to cache its value for the
-+	 * enable operation.
-+	 */
-+	clock->reg = of_iomap(np, 0);
-+	if (clock->reg = NULL) {
-+		pr_err("%s: failed to map %s DIV6 clock register\n",
-+		       __func__, np->name);
-+		goto error;
-+	}
-+
-+	clock->div = (clk_readl(clock->reg) & CPG_DIV6_DIV_MASK) + 1;
-+
-+	/* Parse the DT properties. */
-+	ret = of_property_read_string(np, "clock-output-names", &name);
-+	if (ret < 0) {
-+		pr_err("%s: failed to get %s DIV6 clock output name\n",
-+		       __func__, np->name);
-+		goto error;
-+	}
-+
-+	parent_name = of_clk_get_parent_name(np, 0);
-+	if (parent_name = NULL) {
-+		pr_err("%s: failed to get %s DIV6 clock parent name\n",
-+		       __func__, np->name);
-+		goto error;
-+	}
-+
-+	/* Register the clock. */
-+	init.name = name;
-+	init.ops = &cpg_div6_clock_ops;
-+	init.flags = CLK_IS_BASIC;
-+	init.parent_names = &parent_name;
-+	init.num_parents = 1;
-+
-+	clock->hw.init = &init;
-+
-+	clk = clk_register(NULL, &clock->hw);
-+	if (IS_ERR(clk)) {
-+		pr_err("%s: failed to register %s DIV6 clock (%ld)\n",
-+		       __func__, np->name, PTR_ERR(clk));
-+		goto error;
-+	}
-+
-+	of_clk_add_provider(np, of_clk_src_simple_get, clk);
-+
-+	return;
-+
-+error:
-+	if (clock->reg)
-+		iounmap(clock->reg);
-+	kfree(clock);
-+}
-+CLK_OF_DECLARE(cpg_div6_clk, "renesas,cpg-div6-clock", cpg_div6_clock_init);
+ 
+-static struct platform_device scif6_device = {
+-	.name		= "sh-sci",
+-	.id		= 6,
+-	.dev		= {
+-		.platform_data	= &scif6_platform_data,
+-	},
+-};
++SH7372_SCIF(PORT_SCIFA, 0, 0xe6c40000, evt2irq(0x0c00));
++SH7372_SCIF(PORT_SCIFA, 1, 0xe6c50000, evt2irq(0x0c20));
++SH7372_SCIF(PORT_SCIFA, 2, 0xe6c60000, evt2irq(0x0c40));
++SH7372_SCIF(PORT_SCIFA, 3, 0xe6c70000, evt2irq(0x0c60));
++SH7372_SCIF(PORT_SCIFA, 4, 0xe6c80000, evt2irq(0x0d20));
++SH7372_SCIF(PORT_SCIFA, 5, 0xe6cb0000, evt2irq(0x0d40));
++SH7372_SCIF(PORT_SCIFB, 6, 0xe6c30000, evt2irq(0x0d60));
+ 
+ /* CMT */
+ static struct sh_timer_config cmt2_platform_data = {
 -- 
 1.8.1.5
 
