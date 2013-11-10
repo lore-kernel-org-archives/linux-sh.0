@@ -1,160 +1,54 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:33:23 +0000
-Subject: [PATCH v2 11/29] ARM: shmobile: r8a7779: Use macros to declare SCIF devices
-Message-Id: <1384054421-13357-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:15:47 +0000
+Subject: [PATCH v2 0/8] Lager multiplatform support
+Message-Id: <1384053355-30703-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Replace copy-n-paste SCIF platform data and device declaration with a
-macro. This reduces the amount of code and improves readability.
+Hello,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/setup-r8a7779.c | 124 +++++++--------------------------
- 1 file changed, 24 insertions(+), 100 deletions(-)
+This is the second version of the patch set that moves the lager-reference
+board over to multiplatform kernel. It starts by syncing the Lager DTS with
+the Lager reference DTS (1/8), set the external clock frequency in DT (2/8),
+switches lager-reference over to multiplatform (3/8 to 4/8) and cleans up
+unneeded leftovers (5/8 to 8/8).
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 51a43c5..79cdb8a 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -188,107 +188,31 @@ void __init r8a7779_pinmux_init(void)
- 			    ARRAY_SIZE(r8a7779_pinctrl_devices));
- }
- 
--static struct plat_sci_port scif0_platform_data = {
--	.mapbase	= 0xffe40000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
--};
--
--static struct platform_device scif0_device = {
--	.name		= "sh-sci",
--	.id		= 0,
--	.dev		= {
--		.platform_data	= &scif0_platform_data,
--	},
--};
--
--static struct plat_sci_port scif1_platform_data = {
--	.mapbase	= 0xffe41000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
--};
--
--static struct platform_device scif1_device = {
--	.name		= "sh-sci",
--	.id		= 1,
--	.dev		= {
--		.platform_data	= &scif1_platform_data,
--	},
--};
--
--static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xffe42000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
--};
--
--static struct platform_device scif2_device = {
--	.name		= "sh-sci",
--	.id		= 2,
--	.dev		= {
--		.platform_data	= &scif2_platform_data,
--	},
--};
--
--static struct plat_sci_port scif3_platform_data = {
--	.mapbase	= 0xffe43000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
--};
--
--static struct platform_device scif3_device = {
--	.name		= "sh-sci",
--	.id		= 3,
--	.dev		= {
--		.platform_data	= &scif3_platform_data,
--	},
--};
--
--static struct plat_sci_port scif4_platform_data = {
--	.mapbase	= 0xffe44000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
--};
--
--static struct platform_device scif4_device = {
--	.name		= "sh-sci",
--	.id		= 4,
--	.dev		= {
--		.platform_data	= &scif4_platform_data,
--	},
--};
--
--static struct plat_sci_port scif5_platform_data = {
--	.mapbase	= 0xffe45000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
--};
-+/* SCIF */
-+#define R8A7779_SCIF(index, baseaddr, irq)			\
-+static struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= PORT_SCIF,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+	.scbrr_algo_id	= SCBRR_ALGO_2,				\
-+	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+};								\
-+								\
-+static struct platform_device scif##index##_device = {		\
-+	.name		= "sh-sci",				\
-+	.id		= index,				\
-+	.dev		= {					\
-+		.platform_data	= &scif##index##_platform_data,	\
-+	},							\
-+}
- 
--static struct platform_device scif5_device = {
--	.name		= "sh-sci",
--	.id		= 5,
--	.dev		= {
--		.platform_data	= &scif5_platform_data,
--	},
--};
-+R8A7779_SCIF(0, 0xffe40000, gic_iid(0x78));
-+R8A7779_SCIF(1, 0xffe41000, gic_iid(0x79));
-+R8A7779_SCIF(2, 0xffe42000, gic_iid(0x7a));
-+R8A7779_SCIF(3, 0xffe43000, gic_iid(0x7b));
-+R8A7779_SCIF(4, 0xffe44000, gic_iid(0x7c));
-+R8A7779_SCIF(5, 0xffe45000, gic_iid(0x7d));
- 
- /* TMU */
- static struct sh_timer_config tmu00_platform_data = {
+The net result is a multiplatform-only lager-reference board with a single DTS
+shared by the lager and lager-reference boards.
+
+The code is available in my git tree at
+
+        git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/lager
+
+Compared to v1, the patches have been rebased on top of the second version of
+the r8a7790 CCF patches that I've just posted.
+
+Laurent Pinchart (8):
+  ARM: shmobile: Sync Lager DTS with Lager reference DTS
+  ARM: shmobile: lager: Specify external clock frequency in DT
+  ARM: shmobile: lager-reference: Switch to multiplaform
+  ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
+  ARM: shmobile: Remove non-multiplatform Lager reference support
+  ARM: shmobile: Let Lager multiplatform boot with Lager DTB
+  ARM: shmobile: Remove Lager reference DTS
+  ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
+
+ arch/arm/boot/dts/Makefile                     |  4 +-
+ arch/arm/boot/dts/r8a7790-lager-reference.dts  | 84 --------------------------
+ arch/arm/boot/dts/r8a7790-lager.dts            | 57 +++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                 | 18 +++---
+ arch/arm/mach-shmobile/Makefile                |  2 +-
+ arch/arm/mach-shmobile/Makefile.boot           |  1 -
+ arch/arm/mach-shmobile/board-lager-reference.c | 40 +++++++++++-
+ arch/arm/mach-shmobile/clock-r8a7790.c         | 10 ---
+ 8 files changed, 105 insertions(+), 111 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
+
 -- 
-1.8.1.5
+Regards,
+
+Laurent Pinchart
 
