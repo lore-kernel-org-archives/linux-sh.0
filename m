@@ -1,101 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 26 Nov 2013 07:32:10 +0000
-Subject: [PATCH RFC v2 08/17] ARM: shmobile: r8a7779: Add helper to read mode pins
-Message-Id: <1385451139-29686-9-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:15:55 +0000
+Subject: [PATCH v2 8/8] ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
+Message-Id: <1384053355-30703-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add and use helper to read mode pins.
-This will be re-used when moving marzen-reference to
-the common clock framework.
+Now that the r8a7790 DT platforms use the common clock framework,
+there's no need to manually create clock aliases for devices
+instantiated through DT, as those devices will reference their clocks
+directly in the device tree. Remove those aliases.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7779.c        | 14 ++++++++++++++
- 3 files changed, 17 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 10 ----------
+ 1 file changed, 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index b7ce0e7..decf122 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -25,6 +25,7 @@
- #include <linux/clkdev.h>
- #include <mach/clock.h>
- #include <mach/common.h>
-+#include <mach/r8a7779.h>
- 
- /*
-  *		MD1 = 1			MD1 = 0
-@@ -59,9 +60,6 @@
- #define MSTPCR6		IOMEM(0xffc80058)
- #define MSTPCR7		IOMEM(0xffc80040)
- 
--#define MODEMR		0xffcc0020
--
--
- /* ioremap() through clock mapping mandatory to avoid
-  * collision with ARM coherent DMA virtual memory range.
-  */
-@@ -213,14 +211,9 @@ static struct clk_lookup lookups[] = {
- 
- void __init r8a7779_clock_init(void)
- {
--	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
--	u32 mode;
-+	u32 mode = r8a7779_read_mode_pins();
- 	int k, ret = 0;
- 
--	BUG_ON(!modemr);
--	mode = ioread32(modemr);
--	iounmap(modemr);
--
- 	if (mode & MD(1)) {
- 		plla_clk.rate = 1500000000;
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 5014145..bd66cd82 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -39,6 +39,7 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_init_late(void);
-+extern u32 r8a7779_read_mode_pins(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 8f94531..4e3fbfb 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -874,6 +874,20 @@ void __init r8a7779_add_standard_devices_dt(void)
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-+#define MODEMR		0xffcc0020
-+
-+u32 __init r8a7779_read_mode_pins(void)
-+{
-+	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
-+	u32 mode;
-+
-+	BUG_ON(!modemr);
-+	mode = ioread32(modemr);
-+	iounmap(modemr);
-+
-+	return mode;
-+}
-+
- static const char *r8a7779_compat_dt[] __initdata = {
- 	"renesas,r8a7779",
- 	NULL,
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 9fa39d1..12770cf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -281,23 +281,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+-	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
+-	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
+-	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+-	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+-	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+-	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+-	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
+-	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("ee160000.sd", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
+-	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
 -- 
-1.8.4
+1.8.1.5
 
