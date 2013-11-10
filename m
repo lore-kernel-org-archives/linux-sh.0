@@ -1,241 +1,113 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:33:22 +0000
-Subject: [PATCH v2 10/29] ARM: shmobile: r8a7740: Use macros to declare SCIF devices
-Message-Id: <1384054421-13357-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:15:54 +0000
+Subject: [PATCH v2 7/8] ARM: shmobile: Remove Lager reference DTS
+Message-Id: <1384053355-30703-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Replace copy-n-paste SCIF platform data and device declaration with a
-macro. This reduces the amount of code and improves readability.
+Now that the DTS file r8a7790-lager.dts can be used with board-lager.c
+and board-lager-reference.c, proceed with removing
+r8a7790-lager-reference.dts.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 191 +++++----------------------------
- 1 file changed, 29 insertions(+), 162 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager-reference.dts | 84 ---------------------------
+ 1 file changed, 84 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index b7d4b2c..8778b57 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -203,167 +203,34 @@ static struct platform_device irqpin3_device = {
- 	},
- };
- 
--/* SCIFA0 */
--static struct plat_sci_port scif0_platform_data = {
--	.mapbase	= 0xe6c40000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(100)),
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+deleted file mode 100644
+index cce7dbf..0000000
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ /dev/null
+@@ -1,84 +0,0 @@
+-/*
+- * Device Tree Source for the Lager board
+- *
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7790.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Lager";
+-	compatible = "renesas,lager-reference", "renesas,r8a7790";
+-
+-	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
+-
+-	lbsc {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led6 {
+-			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
+-		};
+-		led7 {
+-			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
+-		};
+-		led8 {
+-			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-
+-	fixedregulator3v3: fixedregulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-3.3V";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
 -};
 -
--static struct platform_device scif0_device = {
--	.name		= "sh-sci",
--	.id		= 0,
--	.dev		= {
--		.platform_data	= &scif0_platform_data,
--	},
+-&pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+-	scif0_pins: serial0 {
+-		renesas,groups = "scif0_data";
+-		renesas,function = "scif0";
+-	};
+-
+-	scif1_pins: serial1 {
+-		renesas,groups = "scif1_data";
+-		renesas,function = "scif1";
+-	};
+-
+-	mmc1_pins: mmc1 {
+-		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+-		renesas,function = "mmc1";
+-	};
 -};
 -
--/* SCIFA1 */
--static struct plat_sci_port scif1_platform_data = {
--	.mapbase	= 0xe6c50000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(101)),
--};
+-&mmcif1 {
+-	pinctrl-0 = <&mmc1_pins>;
+-	pinctrl-names = "default";
 -
--static struct platform_device scif1_device = {
--	.name		= "sh-sci",
--	.id		= 1,
--	.dev		= {
--		.platform_data	= &scif1_platform_data,
--	},
+-	vmmc-supply = <&fixedregulator3v3>;
+-	bus-width = <8>;
+-	non-removable;
+-	status = "okay";
 -};
--
--/* SCIFA2 */
--static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xe6c60000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(102)),
--};
--
--static struct platform_device scif2_device = {
--	.name		= "sh-sci",
--	.id		= 2,
--	.dev		= {
--		.platform_data	= &scif2_platform_data,
--	},
--};
--
--/* SCIFA3 */
--static struct plat_sci_port scif3_platform_data = {
--	.mapbase	= 0xe6c70000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(103)),
--};
--
--static struct platform_device scif3_device = {
--	.name		= "sh-sci",
--	.id		= 3,
--	.dev		= {
--		.platform_data	= &scif3_platform_data,
--	},
--};
--
--/* SCIFA4 */
--static struct plat_sci_port scif4_platform_data = {
--	.mapbase	= 0xe6c80000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(104)),
--};
--
--static struct platform_device scif4_device = {
--	.name		= "sh-sci",
--	.id		= 4,
--	.dev		= {
--		.platform_data	= &scif4_platform_data,
--	},
--};
--
--/* SCIFA5 */
--static struct plat_sci_port scif5_platform_data = {
--	.mapbase	= 0xe6cb0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(105)),
--};
--
--static struct platform_device scif5_device = {
--	.name		= "sh-sci",
--	.id		= 5,
--	.dev		= {
--		.platform_data	= &scif5_platform_data,
--	},
--};
--
--/* SCIFA6 */
--static struct plat_sci_port scif6_platform_data = {
--	.mapbase	= 0xe6cc0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(106)),
--};
--
--static struct platform_device scif6_device = {
--	.name		= "sh-sci",
--	.id		= 6,
--	.dev		= {
--		.platform_data	= &scif6_platform_data,
--	},
--};
--
--/* SCIFA7 */
--static struct plat_sci_port scif7_platform_data = {
--	.mapbase	= 0xe6cd0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(107)),
--};
--
--static struct platform_device scif7_device = {
--	.name		= "sh-sci",
--	.id		= 7,
--	.dev		= {
--		.platform_data	= &scif7_platform_data,
--	},
--};
--
--/* SCIFB */
--static struct plat_sci_port scifb_platform_data = {
--	.mapbase	= 0xe6c30000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFB,
--	.irqs		= SCIx_IRQ_MUXED(gic_spi(108)),
--};
-+/* SCIF */
-+#define R8A7740_SCIF(scif_type, index, baseaddr, irq)		\
-+static struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= scif_type,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF,			\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,				\
-+	.scscr		= SCSCR_RE | SCSCR_TE,			\
-+};								\
-+								\
-+static struct platform_device scif##index##_device = {		\
-+	.name		= "sh-sci",				\
-+	.id		= index,				\
-+	.dev		= {					\
-+		.platform_data	= &scif##index##_platform_data,	\
-+	},							\
-+}
- 
--static struct platform_device scifb_device = {
--	.name		= "sh-sci",
--	.id		= 8,
--	.dev		= {
--		.platform_data	= &scifb_platform_data,
--	},
--};
-+R8A7740_SCIF(PORT_SCIFA, 0, 0xe6c40000, gic_spi(100));
-+R8A7740_SCIF(PORT_SCIFA, 1, 0xe6c50000, gic_spi(101));
-+R8A7740_SCIF(PORT_SCIFA, 2, 0xe6c60000, gic_spi(102));
-+R8A7740_SCIF(PORT_SCIFA, 3, 0xe6c70000, gic_spi(103));
-+R8A7740_SCIF(PORT_SCIFA, 4, 0xe6c80000, gic_spi(104));
-+R8A7740_SCIF(PORT_SCIFA, 5, 0xe6cb0000, gic_spi(105));
-+R8A7740_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(106));
-+R8A7740_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(107));
-+R8A7740_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(108));
- 
- /* CMT */
- static struct sh_timer_config cmt10_platform_data = {
-@@ -528,7 +395,7 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
- 	&scif5_device,
- 	&scif6_device,
- 	&scif7_device,
--	&scifb_device,
-+	&scif8_device,
- 	&cmt10_device,
- };
- 
-@@ -981,7 +848,7 @@ void __init r8a7740_add_standard_devices(void)
- 	rmobile_add_device_to_domain("A3SP",	&scif5_device);
- 	rmobile_add_device_to_domain("A3SP",	&scif6_device);
- 	rmobile_add_device_to_domain("A3SP",	&scif7_device);
--	rmobile_add_device_to_domain("A3SP",	&scifb_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif8_device);
- 	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
- }
- 
 -- 
 1.8.1.5
 
