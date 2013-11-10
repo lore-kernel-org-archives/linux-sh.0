@@ -1,47 +1,40 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 01:03:48 +0000
-Subject: [PATCH v3 11/15] ARM: shmobile: Let Lager multiplatform boot with Lager DTB
-Message-Id: <1385600632-5181-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:33:18 +0000
+Subject: [PATCH v2 06/29] serial: sh-sci: Don't check IRQ in verify port operation
+Message-Id: <1384054421-13357-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Let the multiplatform Lager support boot with the legacy DTS for Lager
-as well as the Lager reference DTS.
+The IRQ number can't be modified by the user as the port is fixed.
+There's no need to check the new IRQ number as it will be ignored by the
+core.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/Makefile                     | 2 +-
- arch/arm/mach-shmobile/board-lager-reference.c | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 37aefa2..f28b4ef 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -234,7 +234,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
--	r8a7790-lager-reference.dtb \
-+	r8a7790-lager.dtb \
- 	r8a7791-koelsch-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 85a744b..0723a68 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -68,6 +68,7 @@ static void __init lager_add_standard_devices(void)
- }
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 47b0ee6..b0c9d24 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2113,10 +2113,6 @@ static void sci_config_port(struct uart_port *port, int flags)
  
- static const char *lager_boards_compat_dt[] __initdata = {
-+	"renesas,lager",
- 	"renesas,lager-reference",
- 	NULL,
- };
+ static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
+ {
+-	struct sci_port *s = to_sci_port(port);
+-
+-	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
+-		return -EINVAL;
+ 	if (ser->baud_base < 2400)
+ 		/* No paper tape reader for Mitch.. */
+ 		return -EINVAL;
 -- 
-1.8.3.2
+1.8.1.5
 
