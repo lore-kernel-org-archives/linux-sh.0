@@ -1,117 +1,107 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Nov 2013 01:18:21 +0000
-Subject: [RFC 06/17] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
-Message-Id: <1385342312-1967-7-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:09:37 +0000
+Subject: [PATCH v2 7/7] ARM: shmobile: r8a7790: Reference clocks
+Message-Id: <1384052977-30616-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Copy the device nodes from Marzen reference into the Marzen device tree
-file. This will allow us to use a single DTS file regarless of kernel
-configuration. In case of legacy C board code the device nodes may or
-may not be used, but in the multiplatform case all the DT device nodes
-are used.
+Reference clocks using a "clocks" property in all nodes corresponding to
+devices that require a clock.
 
-Based on a similar change for the Lager board by Laurent Pinchart.
-
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 81 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 81 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index ee3fb60..4e1a871 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -25,4 +25,85 @@
- 		device_type = "memory";
- 		reg = <0x60000000 0x40000000>;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 5d8c8c7..098b2d6 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -185,6 +185,7 @@
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 287 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
+ 		status = "disabled";
  	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+
-+	lan0@18000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x18000000 0x100>;
-+		pinctrl-0 = <&lan0_pins>;
-+		pinctrl-names = "default";
-+
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		vddvario-supply = <&fixedregulator3v3>;
-+		vdd33a-supply = <&fixedregulator3v3>;
-+	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led2 {
-+			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-+		};
-+		led3 {
-+			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-+		};
-+		led4 {
-+			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+};
-+
-+&irqpin0 {
-+	status = "okay";
-+};
-+
-+&pfc {
-+	pinctrl-0 = <&scif2_pins &scif4_pins>;
-+	pinctrl-names = "default";
-+
-+	lan0_pins: lan0 {
-+		intc {
-+			renesas,groups = "intc_irq1_b";
-+			renesas,function = "intc";
-+		};
-+		lbsc {
-+			renesas,groups = "lbsc_ex_cs0";
-+			renesas,function = "lbsc";
-+		};
-+	};
-+
-+	scif2_pins: serial2 {
-+		renesas,groups = "scif2_data_c";
-+		renesas,function = "scif2";
-+	};
-+
-+	scif4_pins: serial4 {
-+		renesas,groups = "scif4_data";
-+		renesas,function = "scif4";
-+	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
-+				 "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+};
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <4>;
-+	status = "okay";
- };
+ 
+@@ -195,6 +196,7 @@
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 288 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -205,6 +207,7 @@
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 286 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -215,6 +218,7 @@
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 290 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -223,6 +227,7 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 169 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -232,6 +237,7 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 170 0x4>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -246,6 +252,7 @@
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 165 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -255,6 +262,7 @@
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 166 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -264,6 +272,7 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 167 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -273,6 +282,7 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 168 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
 -- 
-1.8.4
+1.8.1.5
 
