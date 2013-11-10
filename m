@@ -1,134 +1,223 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:09:35 +0000
-Subject: [PATCH v2 5/7] ARM: shmobile: r8a7791: Add clock index macros for DT sources
-Message-Id: <1384052977-30616-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:33:21 +0000
+Subject: [PATCH v2 09/29] ARM: shmobile: sh73a0: Use macros to declare SCIF devices
+Message-Id: <1384054421-13357-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Add macros usable by device tree sources to reference r8a7791 clocks by
-index.
+Replace copy-n-paste SCIF platform data and device declaration with a
+macro. This reduces the amount of code and improves readability.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- include/dt-bindings/clock/r8a7791-clock.h | 104 ++++++++++++++++++++++++++++++
- 1 file changed, 104 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
+ arch/arm/mach-shmobile/setup-sh73a0.c | 187 +++++-----------------------------
+ 1 file changed, 27 insertions(+), 160 deletions(-)
 
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-new file mode 100644
-index 0000000..5a4482a
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -0,0 +1,104 @@
-+/*
-+ * Copyright 2013 Ideas On Board SPRL
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R8A7791_H__
-+#define __DT_BINDINGS_CLOCK_R8A7791_H__
-+
-+/* CPG */
-+#define R8A7791_CLK_MAIN		0
-+#define R8A7791_CLK_PLL0		1
-+#define R8A7791_CLK_PLL1		2
-+#define R8A7791_CLK_PLL3		3
-+#define R8A7791_CLK_LB			4
-+#define R8A7791_CLK_QSPI		5
-+#define R8A7791_CLK_SDH			6
-+#define R8A7791_CLK_SD0			7
-+
-+/* MSTP1 */
-+#define R8A7791_CLK_TMU1		11
-+#define R8A7791_CLK_TMU3		21
-+#define R8A7791_CLK_TMU2		22
-+#define R8A7791_CLK_CMT0		24
-+#define R8A7791_CLK_TMU0		25
-+#define R8A7791_CLK_VSP1_DU1		27
-+#define R8A7791_CLK_VSP1_DU0		28
-+#define R8A7791_CLK_VSP1_SY		31
-+
-+/* MSTP2 */
-+#define R8A7791_CLK_SCIFA2		2
-+#define R8A7791_CLK_SCIFA1		3
-+#define R8A7791_CLK_SCIFA0		4
-+#define R8A7791_CLK_SCIFB0		6
-+#define R8A7791_CLK_SCIFB1		7
-+#define R8A7791_CLK_SCIFB2		16
-+#define R8A7791_CLK_DMAC		18
-+
-+/* MSTP3 */
-+#define R8A7791_CLK_TPU0		4
-+#define R8A7791_CLK_SDHI2		11
-+#define R8A7791_CLK_SDHI1		12
-+#define R8A7791_CLK_SDHI0		14
-+#define R8A7791_CLK_MMCIF0		15
-+#define R8A7791_CLK_SSUSB		28
-+#define R8A7791_CLK_CMT1		29
-+#define R8A7791_CLK_USBDMAC0		30
-+#define R8A7791_CLK_USBDMAC1		31
-+
-+/* MSTP5 */
-+#define R8A7791_CLK_THERMAL		22
-+#define R8A7791_CLK_PWM			23
-+
-+/* MSTP7 */
-+#define R8A7791_CLK_HSUSB		4
-+#define R8A7791_CLK_HSCIF2		13
-+#define R8A7791_CLK_SCIF5		14
-+#define R8A7791_CLK_SCIF4		15
-+#define R8A7791_CLK_HSCIF1		16
-+#define R8A7791_CLK_HSCIF0		17
-+#define R8A7791_CLK_SCIF3		18
-+#define R8A7791_CLK_SCIF2		19
-+#define R8A7791_CLK_SCIF1		20
-+#define R8A7791_CLK_SCIF0		21
-+#define R8A7791_CLK_DU1			23
-+#define R8A7791_CLK_DU0			24
-+#define R8A7791_CLK_LVDS0		26
-+
-+/* MSTP8 */
-+#define R8A7791_CLK_VIN2		9
-+#define R8A7791_CLK_VIN1		10
-+#define R8A7791_CLK_VIN0		11
-+#define R8A7791_CLK_ETHER		13
-+#define R8A7791_CLK_SATA1		14
-+#define R8A7791_CLK_SATA0		15
-+
-+/* MSTP9 */
-+#define R8A7791_CLK_GPIO7		4
-+#define R8A7791_CLK_GPIO6		5
-+#define R8A7791_CLK_GPIO5		7
-+#define R8A7791_CLK_GPIO4		8
-+#define R8A7791_CLK_GPIO3		9
-+#define R8A7791_CLK_GPIO2		10
-+#define R8A7791_CLK_GPIO1		11
-+#define R8A7791_CLK_GPIO0		12
-+#define R8A7791_CLK_RCAN1		15
-+#define R8A7791_CLK_RCAN0		16
-+#define R8A7791_CLK_I2C5		25
-+#define R8A7791_CLK_IICDVFS		26
-+#define R8A7791_CLK_I2C4		27
-+#define R8A7791_CLK_I2C3		28
-+#define R8A7791_CLK_I2C2		29
-+#define R8A7791_CLK_I2C1		30
-+#define R8A7791_CLK_I2C0		31
-+
-+/* MSTP11 */
-+#define R8A7791_CLK_SCIF23		6
-+#define R8A7791_CLK_SCIF24		7
-+#define R8A7791_CLK_SCIF25		8
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A7791_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 65151c4..9c94f34 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -71,167 +71,34 @@ void __init sh73a0_pinmux_init(void)
+ 					ARRAY_SIZE(pfc_resources));
+ }
+ 
+-static struct plat_sci_port scif0_platform_data = {
+-	.mapbase	= 0xe6c40000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(72), gic_spi(72),
+-			    gic_spi(72), gic_spi(72) },
+-};
+-
+-static struct platform_device scif0_device = {
+-	.name		= "sh-sci",
+-	.id		= 0,
+-	.dev		= {
+-		.platform_data	= &scif0_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif1_platform_data = {
+-	.mapbase	= 0xe6c50000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(73), gic_spi(73),
+-			    gic_spi(73), gic_spi(73) },
+-};
+-
+-static struct platform_device scif1_device = {
+-	.name		= "sh-sci",
+-	.id		= 1,
+-	.dev		= {
+-		.platform_data	= &scif1_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xe6c60000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(74), gic_spi(74),
+-			    gic_spi(74), gic_spi(74) },
+-};
+-
+-static struct platform_device scif2_device = {
+-	.name		= "sh-sci",
+-	.id		= 2,
+-	.dev		= {
+-		.platform_data	= &scif2_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif3_platform_data = {
+-	.mapbase	= 0xe6c70000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(75), gic_spi(75),
+-			    gic_spi(75), gic_spi(75) },
+-};
+-
+-static struct platform_device scif3_device = {
+-	.name		= "sh-sci",
+-	.id		= 3,
+-	.dev		= {
+-		.platform_data	= &scif3_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif4_platform_data = {
+-	.mapbase	= 0xe6c80000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(78), gic_spi(78),
+-			    gic_spi(78), gic_spi(78) },
+-};
+-
+-static struct platform_device scif4_device = {
+-	.name		= "sh-sci",
+-	.id		= 4,
+-	.dev		= {
+-		.platform_data	= &scif4_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif5_platform_data = {
+-	.mapbase	= 0xe6cb0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(79), gic_spi(79),
+-			    gic_spi(79), gic_spi(79) },
+-};
+-
+-static struct platform_device scif5_device = {
+-	.name		= "sh-sci",
+-	.id		= 5,
+-	.dev		= {
+-		.platform_data	= &scif5_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif6_platform_data = {
+-	.mapbase	= 0xe6cc0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(156), gic_spi(156),
+-			    gic_spi(156), gic_spi(156) },
+-};
+-
+-static struct platform_device scif6_device = {
+-	.name		= "sh-sci",
+-	.id		= 6,
+-	.dev		= {
+-		.platform_data	= &scif6_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif7_platform_data = {
+-	.mapbase	= 0xe6cd0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(143), gic_spi(143),
+-			    gic_spi(143), gic_spi(143) },
+-};
+-
+-static struct platform_device scif7_device = {
+-	.name		= "sh-sci",
+-	.id		= 7,
+-	.dev		= {
+-		.platform_data	= &scif7_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif8_platform_data = {
+-	.mapbase	= 0xe6c30000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFB,
+-	.irqs		= { gic_spi(80), gic_spi(80),
+-			    gic_spi(80), gic_spi(80) },
+-};
++/* SCIF */
++#define SH73A0_SCIF(scif_type, index, baseaddr, irq)		\
++static struct plat_sci_port scif##index##_platform_data = {	\
++	.type		= scif_type,				\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF,			\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
++	.scbrr_algo_id	= SCBRR_ALGO_4,				\
++	.scscr		= SCSCR_RE | SCSCR_TE,			\
++};								\
++								\
++static struct platform_device scif##index##_device = {		\
++	.name		= "sh-sci",				\
++	.id		= index,				\
++	.dev		= {					\
++		.platform_data	= &scif##index##_platform_data,	\
++	},							\
++}
+ 
+-static struct platform_device scif8_device = {
+-	.name		= "sh-sci",
+-	.id		= 8,
+-	.dev		= {
+-		.platform_data	= &scif8_platform_data,
+-	},
+-};
++SH73A0_SCIF(PORT_SCIFA, 0, 0xe6c40000, gic_spi(72));
++SH73A0_SCIF(PORT_SCIFA, 1, 0xe6c50000, gic_spi(73));
++SH73A0_SCIF(PORT_SCIFA, 2, 0xe6c60000, gic_spi(74));
++SH73A0_SCIF(PORT_SCIFA, 3, 0xe6c70000, gic_spi(75));
++SH73A0_SCIF(PORT_SCIFA, 4, 0xe6c80000, gic_spi(78));
++SH73A0_SCIF(PORT_SCIFA, 5, 0xe6cb0000, gic_spi(79));
++SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(156));
++SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
++SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
+ 
+ static struct sh_timer_config cmt10_platform_data = {
+ 	.name = "CMT10",
 -- 
 1.8.1.5
 
