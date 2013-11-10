@@ -1,189 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 Nov 2013 10:30:32 +0000
-Subject: [PATCH 09/17] mmc: tmio: bus_shift become tmio_mmc_data member
-Message-Id: <874n7fz35n.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:33:34 +0000
+Subject: [PATCH v2 22/29] ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as resources
+Message-Id: <1384054421-13357-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
-	<8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
+References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-.bus_shift is used to 16/32bit register access
-offset calculation on tmio driver.
-tmio_mmc_xxx is used from Toshiba/Renesas now,
-but this bus_shift value depends on HW IP.
-This patch moves .bus_shift to tmio_mmc_data member
-and set it on each driver.
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    8 ++++++++
- drivers/mmc/host/tmio_mmc.c       |    8 ++++++++
- drivers/mmc/host/tmio_mmc.h       |   17 ++++++++---------
- drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
- drivers/mmc/host/tmio_mmc_pio.c   |    3 ---
- include/linux/mfd/tmio.h          |    1 +
- 6 files changed, 26 insertions(+), 13 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index f344659..f1e35a7 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -133,10 +133,15 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	struct tmio_mmc_data *mmc_data;
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	struct tmio_mmc_host *host;
-+	struct resource *res;
- 	int irq, ret, i = 0;
- 	bool multiplexed_isr = true;
- 	struct tmio_mmc_dma *dma_priv;
- 
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (!res)
-+		return -EINVAL;
-+
- 	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
- 	if (priv = NULL) {
- 		dev_err(&pdev->dev, "kzalloc failed\n");
-@@ -206,6 +211,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->flags |= of_data->tmio_flags;
- 	}
- 
-+	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
-+	mmc_data->bus_shift = resource_size(res) >> 9;
-+
- 	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
- 	if (ret < 0)
- 		goto eprobe;
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 8860d4d..6cfb2d5 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -62,6 +62,7 @@ static int tmio_mmc_probe(struct platform_device *pdev)
- 	const struct mfd_cell *cell = mfd_get_cell(pdev);
- 	struct tmio_mmc_data *pdata;
- 	struct tmio_mmc_host *host;
-+	struct resource *res;
- 	int ret = -EINVAL, irq;
- 
- 	if (pdev->num_resources != 2)
-@@ -84,6 +85,13 @@ static int tmio_mmc_probe(struct platform_device *pdev)
- 			goto out;
- 	}
- 
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (!res)
-+		return -EINVAL;
-+
-+	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
-+	pdata->bus_shift = resource_size(res_ctl) >> 10;
-+
- 	ret = tmio_mmc_host_probe(&host, pdev, pdata);
- 	if (ret)
- 		goto cell_disable;
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 86fd21e..aaa9c7e 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -58,7 +58,6 @@ enum tmio_mmc_power {
- 
- struct tmio_mmc_host {
- 	void __iomem *ctl;
--	unsigned long bus_shift;
- 	struct mmc_command      *cmd;
- 	struct mmc_request      *mrq;
- 	struct mmc_data         *data;
-@@ -176,19 +175,19 @@ int tmio_mmc_host_runtime_resume(struct device *dev);
- 
- static inline u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
- {
--	return readw(host->ctl + (addr << host->bus_shift));
-+	return readw(host->ctl + (addr << host->pdata->bus_shift));
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 37ce2df..d492c2c 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -46,12 +46,15 @@
+ /* SCIF */
+ #define R8A7778_SCIF(index, baseaddr, irq)			\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+-	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,				\
+ 	.type		= PORT_SCIF,				\
+-	.irqs		= SCIx_IRQ_MUXED(irq),			\
++};								\
++								\
++static struct resource scif##index##_resources[] = {		\
++	DEFINE_RES_MEM(baseaddr, 0x100),			\
++	DEFINE_RES_IRQ(irq),					\
  }
  
- static inline void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int addr,
- 		u16 *buf, int count)
- {
--	readsw(host->ctl + (addr << host->bus_shift), buf, count);
-+	readsw(host->ctl + (addr << host->pdata->bus_shift), buf, count);
- }
+ R8A7778_SCIF(0, 0xffe40000, gic_iid(0x66));
+@@ -62,9 +65,11 @@ R8A7778_SCIF(4, 0xffe44000, gic_iid(0x6a));
+ R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
  
- static inline u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
- {
--	return readw(host->ctl + (addr << host->bus_shift)) |
--	       readw(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
-+	return readw(host->ctl + (addr << host->pdata->bus_shift)) |
-+	       readw(host->ctl + ((addr + 2) << host->pdata->bus_shift)) << 16;
- }
+ #define r8a7778_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
  
- static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val)
-@@ -198,19 +197,19 @@ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val
- 	 */
- 	if (host->pdata->write16_hook && host->pdata->write16_hook(host, addr))
- 		return;
--	writew(val, host->ctl + (addr << host->bus_shift));
-+	writew(val, host->ctl + (addr << host->pdata->bus_shift));
- }
- 
- static inline void sd_ctrl_write16_rep(struct tmio_mmc_host *host, int addr,
- 		u16 *buf, int count)
- {
--	writesw(host->ctl + (addr << host->bus_shift), buf, count);
-+	writesw(host->ctl + (addr << host->pdata->bus_shift), buf, count);
- }
- 
- static inline void sd_ctrl_write32(struct tmio_mmc_host *host, int addr, u32 val)
- {
--	writew(val, host->ctl + (addr << host->bus_shift));
--	writew(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
-+	writew(val, host->ctl + (addr << host->pdata->bus_shift));
-+	writew(val >> 16, host->ctl + ((addr + 2) << host->pdata->bus_shift));
- }
- 
- 
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index 65edb4a..03e7b28 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -293,7 +293,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 		if (pdata->dma->chan_priv_tx)
- 			cfg.slave_id = pdata->dma->slave_id_tx;
- 		cfg.direction = DMA_MEM_TO_DEV;
--		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
-+		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->pdata->bus_shift);
- 		cfg.src_addr = 0;
- 		ret = dmaengine_slave_config(host->chan_tx, &cfg);
- 		if (ret < 0)
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 1f5f2ba..ed8fd5a 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1010,9 +1010,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	_host->set_pwr = pdata->set_pwr;
- 	_host->set_clk_div = pdata->set_clk_div;
- 
--	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
--	_host->bus_shift = resource_size(res_ctl) >> 10;
--
- 	_host->ctl = ioremap(res_ctl->start, resource_size(res_ctl));
- 	if (!_host->ctl) {
- 		ret = -ENOMEM;
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index b22883d..92f72cf 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -102,6 +102,7 @@ struct tmio_mmc_data {
- 	unsigned long			capabilities;
- 	unsigned long			capabilities2;
- 	unsigned long			flags;
-+	unsigned long			bus_shift;
- 	u32				ocr_mask;	/* available voltages */
- 	struct tmio_mmc_dma		*dma;
- 	struct device			*dev;
+ /* TMU */
+ static struct resource sh_tmu0_resources[] __initdata = {
 -- 
-1.7.9.5
+1.8.1.5
 
