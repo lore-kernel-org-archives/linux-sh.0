@@ -1,60 +1,134 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 19 Nov 2013 14:02:25 +0000
-Subject: [PATCH v3 24/29] ARM: shmobile: r8a7790: Declare SCIF register base and IRQ as resources
-Message-Id: <1384869751-9786-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:09:35 +0000
+Subject: [PATCH v2 5/7] ARM: shmobile: r8a7791: Add clock index macros for DT sources
+Message-Id: <1384052977-30616-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+Add macros usable by device tree sources to reference r8a7791 clocks by
+index.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ include/dt-bindings/clock/r8a7791-clock.h | 104 ++++++++++++++++++++++++++++++
+ 1 file changed, 104 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 8344743..70bb553 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -81,11 +81,14 @@ void __init r8a7790_pinmux_init(void)
- #define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
--	.mapbase	= baseaddr,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
- 	.scbrr_algo_id	= algo,						\
- 	.scscr		= _scscr,					\
--	.irqs		= SCIx_IRQ_MUXED(irq),				\
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq),						\
- }
- 
- #define R8A7790_SCIF(index, baseaddr, irq)				\
-@@ -116,9 +119,11 @@ R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
- R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
- 
- #define r8a7790_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
- 
- static const struct renesas_irqc_config irqc0_data __initconst = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+new file mode 100644
+index 0000000..5a4482a
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -0,0 +1,104 @@
++/*
++ * Copyright 2013 Ideas On Board SPRL
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A7791_H__
++#define __DT_BINDINGS_CLOCK_R8A7791_H__
++
++/* CPG */
++#define R8A7791_CLK_MAIN		0
++#define R8A7791_CLK_PLL0		1
++#define R8A7791_CLK_PLL1		2
++#define R8A7791_CLK_PLL3		3
++#define R8A7791_CLK_LB			4
++#define R8A7791_CLK_QSPI		5
++#define R8A7791_CLK_SDH			6
++#define R8A7791_CLK_SD0			7
++
++/* MSTP1 */
++#define R8A7791_CLK_TMU1		11
++#define R8A7791_CLK_TMU3		21
++#define R8A7791_CLK_TMU2		22
++#define R8A7791_CLK_CMT0		24
++#define R8A7791_CLK_TMU0		25
++#define R8A7791_CLK_VSP1_DU1		27
++#define R8A7791_CLK_VSP1_DU0		28
++#define R8A7791_CLK_VSP1_SY		31
++
++/* MSTP2 */
++#define R8A7791_CLK_SCIFA2		2
++#define R8A7791_CLK_SCIFA1		3
++#define R8A7791_CLK_SCIFA0		4
++#define R8A7791_CLK_SCIFB0		6
++#define R8A7791_CLK_SCIFB1		7
++#define R8A7791_CLK_SCIFB2		16
++#define R8A7791_CLK_DMAC		18
++
++/* MSTP3 */
++#define R8A7791_CLK_TPU0		4
++#define R8A7791_CLK_SDHI2		11
++#define R8A7791_CLK_SDHI1		12
++#define R8A7791_CLK_SDHI0		14
++#define R8A7791_CLK_MMCIF0		15
++#define R8A7791_CLK_SSUSB		28
++#define R8A7791_CLK_CMT1		29
++#define R8A7791_CLK_USBDMAC0		30
++#define R8A7791_CLK_USBDMAC1		31
++
++/* MSTP5 */
++#define R8A7791_CLK_THERMAL		22
++#define R8A7791_CLK_PWM			23
++
++/* MSTP7 */
++#define R8A7791_CLK_HSUSB		4
++#define R8A7791_CLK_HSCIF2		13
++#define R8A7791_CLK_SCIF5		14
++#define R8A7791_CLK_SCIF4		15
++#define R8A7791_CLK_HSCIF1		16
++#define R8A7791_CLK_HSCIF0		17
++#define R8A7791_CLK_SCIF3		18
++#define R8A7791_CLK_SCIF2		19
++#define R8A7791_CLK_SCIF1		20
++#define R8A7791_CLK_SCIF0		21
++#define R8A7791_CLK_DU1			23
++#define R8A7791_CLK_DU0			24
++#define R8A7791_CLK_LVDS0		26
++
++/* MSTP8 */
++#define R8A7791_CLK_VIN2		9
++#define R8A7791_CLK_VIN1		10
++#define R8A7791_CLK_VIN0		11
++#define R8A7791_CLK_ETHER		13
++#define R8A7791_CLK_SATA1		14
++#define R8A7791_CLK_SATA0		15
++
++/* MSTP9 */
++#define R8A7791_CLK_GPIO7		4
++#define R8A7791_CLK_GPIO6		5
++#define R8A7791_CLK_GPIO5		7
++#define R8A7791_CLK_GPIO4		8
++#define R8A7791_CLK_GPIO3		9
++#define R8A7791_CLK_GPIO2		10
++#define R8A7791_CLK_GPIO1		11
++#define R8A7791_CLK_GPIO0		12
++#define R8A7791_CLK_RCAN1		15
++#define R8A7791_CLK_RCAN0		16
++#define R8A7791_CLK_I2C5		25
++#define R8A7791_CLK_IICDVFS		26
++#define R8A7791_CLK_I2C4		27
++#define R8A7791_CLK_I2C3		28
++#define R8A7791_CLK_I2C2		29
++#define R8A7791_CLK_I2C1		30
++#define R8A7791_CLK_I2C0		31
++
++/* MSTP11 */
++#define R8A7791_CLK_SCIF23		6
++#define R8A7791_CLK_SCIF24		7
++#define R8A7791_CLK_SCIF25		8
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7791_H__ */
 -- 
-1.8.3.2
+1.8.1.5
 
