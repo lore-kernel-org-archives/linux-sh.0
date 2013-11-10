@@ -1,74 +1,98 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 14 Nov 2013 13:22:51 +0000
-Subject: Re: [PATCH] ARM: shmobile: r7s72100 GPIO DT nodes for GPIO RZ
-Message-Id: <4074316.z3ls6AxRyh@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:33:24 +0000
+Subject: [PATCH v2 12/29] ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
+Message-Id: <1384054421-13357-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131113233927.1559.99212.sendpatchset@w520>
- <5286379.6UUfAggTmV@avalon>
- <CANqRtoTr3fepq3+UF3715Ece+LqWzNLF6aLWA1w_yRu0nO1nNA@mail.gmail.com>
-In-Reply-To: <CANqRtoTr3fepq3+UF3715Ece+LqWzNLF6aLWA1w_yRu0nO1nNA@mail.gmail.com>
+References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Hi Magnus,
+The SCIF driver is transitioning to platform resources. Board code will
+thus need to define an array of resources for each SCIF device. This is
+incompatible with the macro-based SCIF platform data definition as an
+array. Rework the macro to define platform data as individual
+structures.
 
-On Thursday 14 November 2013 17:39:08 Magnus Damm wrote:
-> On Thu, Nov 14, 2013 at 8:57 AM, Laurent Pinchart wrote:
-> > On Thursday 14 November 2013 08:39:27 Magnus Damm wrote:
-> >> From: Magnus Damm <damm@opensource.se>
-> >> 
-> >> Add a total of 13 GPIO DT device nodes for r7s72100.
-> >> 
-> >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> ---
-> >> 
-> >>  arch/arm/boot/dts/r7s72100.dtsi |  131 +++++++++++++++++++++++++++++++++
-> >>  1 file changed, 131 insertions(+)
-> >> 
-> >> --- 0001/arch/arm/boot/dts/r7s72100.dtsi
-> >> +++ work/arch/arm/boot/dts/r7s72100.dtsi      2013-11-13
-> >> 22:33:56.000000000 +0900
-> >> @@ -14,6 +14,22 @@
-> >>       #address-cells = <1>;
-> >>       #size-cells = <1>;
-> >> 
-> >> +     aliases {
-> >> +             gpio0 = &p0;
-> >> +             gpio1 = &p1;
-> >> +             gpio2 = &p2;
-> >> +             gpio3 = &p3;
-> >> +             gpio4 = &p4;
-> >> +             gpio5 = &p5;
-> >> +             gpio6 = &p6;
-> >> +             gpio7 = &p7;
-> >> +             gpio8 = &p8;
-> >> +             gpio9 = &p9;
-> >> +             gpio10 = &p10;
-> >> +             gpio11 = &p11;
-> > 
-> > I would have called the phandles gpio[0-9]* instead of p[0-9]*. Shorter
-> > names may clash with something else later.
-> 
-> I see. In this case the p0-p11 names match with the datasheet. Would
-> you prefer "port0" to match "Port 0" in the data sheet instead?
-> 
-> >> +             gpio12 = &jp0;
-> > 
-> > What is this special GPIO controller instance ?
-> 
-> It is called  "jp0" or "JTAG Port 0" in the data sheet. It's a
-> read-only port for some pins associated with the JTAG connector.
-> 
-> Of course, it is possible to use gpio0 -> gpio12 but that is IMO more
-> difficult to use since those won't match with the data sheet or
-> schematics.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/setup-r7s72100.c | 49 +++++++++++++++------------------
+ 1 file changed, 22 insertions(+), 27 deletions(-)
 
-Would port0 -> port 11 and jtag-port be fine ?
-
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index d4eb509..dbcbb81 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -27,8 +27,8 @@
+ #include <mach/r7s72100.h>
+ #include <asm/mach/arch.h>
+ 
+-#define SCIF_DATA(index, baseaddr, irq)					\
+-[index] = {								\
++#define R7S72100_SCIF(index, baseaddr, irq)				\
++static const struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= PORT_SCIF,					\
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+@@ -39,35 +39,30 @@
+ 	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
+ }
+ 
+-enum { SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7 };
++R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
++R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
++R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
++R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
++R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
++R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
++R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
++R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
+ 
+-static const struct plat_sci_port scif[] __initconst = {
+-	SCIF_DATA(SCIF0, 0xe8007000, gic_iid(221)), /* SCIF0 */
+-	SCIF_DATA(SCIF1, 0xe8007800, gic_iid(225)), /* SCIF1 */
+-	SCIF_DATA(SCIF2, 0xe8008000, gic_iid(229)), /* SCIF2 */
+-	SCIF_DATA(SCIF3, 0xe8008800, gic_iid(233)), /* SCIF3 */
+-	SCIF_DATA(SCIF4, 0xe8009000, gic_iid(237)), /* SCIF4 */
+-	SCIF_DATA(SCIF5, 0xe8009800, gic_iid(241)), /* SCIF5 */
+-	SCIF_DATA(SCIF6, 0xe800a000, gic_iid(245)), /* SCIF6 */
+-	SCIF_DATA(SCIF7, 0xe800a800, gic_iid(249)), /* SCIF7 */
+-};
+-
+-static inline void r7s72100_register_scif(int idx)
+-{
+-	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
+-				      sizeof(struct plat_sci_port));
+-}
++#define r7s72100_register_scif(index)					       \
++	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
+ 
+ void __init r7s72100_add_dt_devices(void)
+ {
+-	r7s72100_register_scif(SCIF0);
+-	r7s72100_register_scif(SCIF1);
+-	r7s72100_register_scif(SCIF2);
+-	r7s72100_register_scif(SCIF3);
+-	r7s72100_register_scif(SCIF4);
+-	r7s72100_register_scif(SCIF5);
+-	r7s72100_register_scif(SCIF6);
+-	r7s72100_register_scif(SCIF7);
++	r7s72100_register_scif(0);
++	r7s72100_register_scif(1);
++	r7s72100_register_scif(2);
++	r7s72100_register_scif(3);
++	r7s72100_register_scif(4);
++	r7s72100_register_scif(5);
++	r7s72100_register_scif(6);
++	r7s72100_register_scif(7);
+ }
+ 
+ void __init r7s72100_init_early(void)
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.1.5
 
