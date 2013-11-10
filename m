@@ -1,48 +1,93 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:26 +0000
-Subject: [PATCH 02/16] ARM: shmobile: ape6evm: don't use named resource for SDHI
-Message-Id: <e33e6968ccffc50e788a7a98613985410262332f.1385628709.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Nov 2013 03:15:48 +0000
+Subject: [PATCH v2 1/8] ARM: shmobile: Sync Lager DTS with Lager reference DTS
+Message-Id: <1384053355-30703-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Copy the device nodes from Lager reference into the Lager device tree
+file. This will allow us to use a single DTS file regarless of kernel
+configuration. In case of legacy C board code the device nodes may or
+may not be used, but in the multiplatform case all the DT device nodes
+are used.
 
-sh_mobile_sdhi driver doesn't care resource name.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ape6evm.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 53 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 94adf61..fe071a9 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -179,7 +179,7 @@ static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
- };
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 8799dfb..3c697e2 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -10,6 +10,7 @@
  
- static const struct resource sdhi0_resources[] __initconst = {
--	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
-+	DEFINE_RES_MEM(0xee100000, 0x100),
- 	DEFINE_RES_IRQ(gic_spi(165)),
- };
+ /dts-v1/;
+ #include "r8a7790.dtsi"
++#include <dt-bindings/gpio/gpio.h>
  
-@@ -191,7 +191,7 @@ static const struct sh_mobile_sdhi_info sdhi1_pdata __initconst = {
+ / {
+ 	model = "Lager";
+@@ -28,4 +29,56 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
++		};
++		led7 {
++			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
++		};
++		led8 {
++			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&pfc {
++	pinctrl-0 = <&scif0_pins &scif1_pins>;
++	pinctrl-names = "default";
++
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data";
++		renesas,function = "scif0";
++	};
++
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data";
++		renesas,function = "scif1";
++	};
++
++	mmc1_pins: mmc1 {
++		renesas,groups = "mmc1_data8", "mmc1_ctrl";
++		renesas,function = "mmc1";
++	};
++};
++
++&mmcif1 {
++	pinctrl-0 = <&mmc1_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
  };
- 
- static const struct resource sdhi1_resources[] __initconst = {
--	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
-+	DEFINE_RES_MEM(0xee120000, 0x100),
- 	DEFINE_RES_IRQ(gic_spi(166)),
- };
- 
 -- 
-1.8.4
+1.8.1.5
 
