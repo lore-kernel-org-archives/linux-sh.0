@@ -1,116 +1,123 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 11 Nov 2013 02:39:39 +0000
+From: Mark Rutland <mark.rutland@arm.com>
+Date: Mon, 11 Nov 2013 09:40:39 +0000
 Subject: Re: [PATCH v2 28/29] serial: sh-sci: Add device tree bindings documentation
-Message-Id: <9548219.n0XCC97cG3@avalon>
+Message-Id: <20131111094039.GA21201@e106331-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1384054421-13357-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <527FCB54.404@cogentembedded.com>
-In-Reply-To: <527FCB54.404@cogentembedded.com>
+References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1384054421-13357-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384054421-13357-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Sergei,
+Hi Laurent,
 
-On Sunday 10 November 2013 22:07:16 Sergei Shtylyov wrote:
-> On 10-11-2013 7:33, Laurent Pinchart wrote:
-> > Document the device tree bindings for the sci serial port devices.
-> > 
-> > Cc: devicetree@vger.kernel.org
+I have a few comments.
+
+On Sun, Nov 10, 2013 at 03:33:40AM +0000, Laurent Pinchart wrote:
+> Document the device tree bindings for the sci serial port devices.
 > 
-> Hm, why are you not CCing a bunch of people responsible for the DT bindings
-> maintenance that scripts/get_maintainer.pl should yield?
-
-Because they're subscribed to the devicetree list, and they're already 
-overwhelmed with e-mails.
-
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> > 
-> >   .../bindings/serial/renesas,sci-serial.txt         | 42 ++++++++++++++++
-> >   1 file changed, 42 insertions(+)
-> >   create mode 100644
-> >   Documentation/devicetree/bindings/serial/renesas,sci-serial.txt> 
-> > diff --git
-> > a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> > b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt new
-> > file mode 100644
-> > index 0000000..66d3bca
-> > --- /dev/null
-> > +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> > @@ -0,0 +1,42 @@
-> > +* Renesas SH-Mobile Serial Communication Interface
-> > +
-> > +Required properties:
-> > +
-> > +  - compatible: one of the following types (scif, scifa, scifb, hscif).
-> > +
-> > +    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
-> > +    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible
-> > UART.
-> > +    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible
-> > UART.
-> > +    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible
-> > UART.
-> > +    - "renesas,scif-generic" for generic SCIF compatible UART.
-> > +    - "renesas,scifa-generic" for generic SCIFA compatible UART.
-> > +    - "renesas,scifb-generic" for generic SCIFB compatible UART.
-> > +    - "renesas,hscif-generic" for generic HSCIF compatible UART.
-> > +
-> > +    When compatible with the generic version, nodes must also list the
-> > +    SoC-specific version corresponding to the platform.
+> Cc: devicetree@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  .../bindings/serial/renesas,sci-serial.txt         | 42 ++++++++++++++++++++++
+>  1 file changed, 42 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
 > 
-> Which are not all specified here?
+> diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+> new file mode 100644
+> index 0000000..66d3bca
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+> @@ -0,0 +1,42 @@
+> +* Renesas SH-Mobile Serial Communication Interface
+> +
+> +Required properties:
+> +
+> +  - compatible: one of the following types (scif, scifa, scifb, hscif).
 
-The r8a7790-specific versions are. Other SoCs will be added later when ported 
-to SCIF DT.
+Minor nit, but would be nice to have "Should contain one of the
+following:". We might have future variants whereby the compatible string
+will actually be a string list.
 
-> > +
-> > +  - reg: Base address and length of the memory resource used by the UART.
-> > +
-> > +  - interrupt-parent: Reference to the parent interrupt controller.
-> 
->     This is not a required property. It can be specified in the parent node.
+> +
+> +    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
+> +    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
+> +    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
+> +    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
+> +    - "renesas,scif-generic" for generic SCIF compatible UART.
+> +    - "renesas,scifa-generic" for generic SCIFA compatible UART.
+> +    - "renesas,scifb-generic" for generic SCIFB compatible UART.
+> +    - "renesas,hscif-generic" for generic HSCIF compatible UART.
 
-But in practice it isn't for the SCIF devices.
+Is the "-generic" suffix necessary? Why not just "renesas,scif" etc?
 
-Given that we'll soon get a new way to specify interrupts, I think I'll just 
-reference the corresponding DT bindings document when it will be updated 
-instead of documenting all possibilities here.
+> +
+> +    When compatible with the generic version, nodes must also list the
+> +    SoC-specific version corresponding to the platform.
 
-> > +  - interrupts: Interrupt number.
-> 
->     s/number/specifier/
+Presumably the SoC-specific version should come first; it would be nice
+to note that.
 
-I'll fix that.
+> +
+> +  - reg: Base address and length of the memory resource used by the UART.
 
-> 
-> > +
-> > +  - clocks: Reference to the SCIx UART interface clock.
-> > +  - clock-names: Should be "sci_ick".
-> > +
-> > +Note: Each enabled SCIx UART should have an alias correctly numbered in
-> > the +"aliases" node.
-> > +
-> > +Example:
-> > +	aliases {
-> > +		serial0 = &scifa0;
-> > +	};
-> > +
-> > +	scifa0: serial@e6c40000 {
-> > +		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-> > +		reg = <0 0xe6c40000 0 64>;
-> > +		interrupt-parent = <&gic>;
-> > +		interrupts = <0 144 4>;
-> > +		clocks = <&mstp2_clks 4>;
-> > +		clock-names = "sci_ick";
-> > +	};
+I assume by memory resource you mean the memory-mapped registers?
+Resource sounds like Linux-internal nomenclature leaking.
 
--- 
-Regards,
+> +
+> +  - interrupt-parent: Reference to the parent interrupt controller.
 
-Laurent Pinchart
+I don't think this is strictly necessary. It's implicit by default and
+can be added optionally when a system is wired in a complex way. As it's
+a completely standard optional property I'm not even sure it needs to be
+documented.
 
+> +  - interrupts: Interrupt number.
+
+Minor nit: "Should contain an interrupt-specifier for ..."
+
+I saw the cover mentioned multiple interrupts. Which logical interrupt
+output of the device are you expecting here?
+
+> +
+> +  - clocks: Reference to the SCIx UART interface clock.
+
+Minor nit: s/Reference to/A phandle + clock-specifier pair for/
+
+> +  - clock-names: Should be "sci_ick".
+
+As we're using clock-names, it would be nicer still to define clocks in
+terms of clock-names so as to make it easier to update the document in
+future and make the expected use of clock-names clearer:
+
+- clocks: Should contain a phandle + clock-specifier pair for each entry
+  in clock-names.
+
+- clock-names: Should contain "sci_ick".
+
+> +
+> +Note: Each enabled SCIx UART should have an alias correctly numbered in the
+> +"aliases" node.
+> +
+> +Example:
+> +	aliases {
+> +		serial0 = &scifa0;
+> +	};
+> +
+> +	scifa0: serial@e6c40000 {
+> +		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
+> +		reg = <0 0xe6c40000 0 64>;
+> +		interrupt-parent = <&gic>;
+> +		interrupts = <0 144 4>;
+> +		clocks = <&mstp2_clks 4>;
+> +		clock-names = "sci_ick";
+> +	};
+
+Otherwise this looks good to me.
+
+Thanks,
+Mark.
