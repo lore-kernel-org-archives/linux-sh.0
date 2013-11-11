@@ -1,50 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Nov 2013 04:00:59 +0000
-Subject: Re: [PATCH] ARM: shmobile: Hook up SW30-SW36 on Koelsch
-Message-Id: <20131121040057.GF31130@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 11 Nov 2013 23:42:16 +0000
+Subject: Re: [PATCH 0/3] media: Add SH-Mobile RCAR-H2 Lager board support
+Message-Id: <2610202.KZTyX0lZUJ@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120040010.30077.40904.sendpatchset@w520>
-In-Reply-To: <20131120040010.30077.40904.sendpatchset@w520>
+References: <1380029916-10331-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1380029916-10331-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Cc: linux-media@vger.kernel.org, Simon Horman <horms@verge.net.au>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Hans Verkuil <hans.verkuil@cisco.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Wed, Nov 20, 2013 at 01:00:10PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add support for Koelsch SW30-SW36 using GPIO keys.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Hi Valentine,
 
+On Tuesday 24 September 2013 17:38:33 Valentine Barshak wrote:
+> The following patches add ADV7611/ADV7612 HDMI receiver I2C driver
+> and add RCAR H2 SOC support along with ADV761x output format support
+> to rcar_vin soc_camera driver.
+> 
+> These changes are needed for SH-Mobile R8A7790 Lager board
+> video input support.
 
-Thanks, I will queue this up.
-Assuming all goes will I plan to push this and other updates
-today or tomorrow.
+Do you plan to submit a v2 ? I need the ADV761x driver pretty soon and I'd 
+like to avoid submitting a competing patch :-)
 
-> ---
+> Valentine Barshak (3):
+>   media: i2c: Add ADV761X support
+>   media: rcar_vin: Add preliminary r8a7790 H2 support
+>   media: rcar_vin: Add RGB888_1X24 input format support
 > 
->  arch/arm/mach-shmobile/board-koelsch.c |    7 +++++++
->  1 file changed, 7 insertions(+)
-> 
-> --- 0016/arch/arm/mach-shmobile/board-koelsch.c
-> +++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-11-20 12:49:32.000000000 +0900
-> @@ -64,6 +64,13 @@ static struct gpio_keys_button gpio_butt
->  	GPIO_KEY(KEY_3,		RCAR_GP_PIN(5, 2),	"SW2-pin3"),
->  	GPIO_KEY(KEY_2,		RCAR_GP_PIN(5, 1),	"SW2-pin2"),
->  	GPIO_KEY(KEY_1,		RCAR_GP_PIN(5, 0),	"SW2-pin1"),
-> +	GPIO_KEY(KEY_G,		RCAR_GP_PIN(7, 6),	"SW36"),
-> +	GPIO_KEY(KEY_F,		RCAR_GP_PIN(7, 5),	"SW35"),
-> +	GPIO_KEY(KEY_E,		RCAR_GP_PIN(7, 4),	"SW34"),
-> +	GPIO_KEY(KEY_D,		RCAR_GP_PIN(7, 3),	"SW33"),
-> +	GPIO_KEY(KEY_C,		RCAR_GP_PIN(7, 2),	"SW32"),
-> +	GPIO_KEY(KEY_B,		RCAR_GP_PIN(7, 1),	"SW31"),
-> +	GPIO_KEY(KEY_A,		RCAR_GP_PIN(7, 0),	"SW30"),
->  };
->  
->  static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+>  drivers/media/i2c/Kconfig                    |   11 +
+>  drivers/media/i2c/Makefile                   |    1 +
+>  drivers/media/i2c/adv761x.c                  | 1060 +++++++++++++++++++++++
+>  drivers/media/platform/soc_camera/rcar_vin.c |   17 +-
+>  include/media/adv761x.h                      |   28 +
+>  5 files changed, 1114 insertions(+), 3 deletions(-)
+>  create mode 100644 drivers/media/i2c/adv761x.c
+>  create mode 100644 include/media/adv761x.h
+-- 
+Regards,
+
+Laurent Pinchart
+
