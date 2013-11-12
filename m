@@ -1,58 +1,92 @@
-From: Wolfgang Grandegger <wg@grandegger.com>
-Date: Wed, 06 Nov 2013 08:08:20 +0000
-Subject: Re: [PATCH v2] can: add Renesas R-Car CAN driver
-Message-Id: <1a1ef40a4f59b71daf33f958d8cc5b2e@grandegger.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 12 Nov 2013 04:23:36 +0000
+Subject: [PATCH 2/2 v2] ARM: shmobile: r8a7779: cleanup registration of sh_eth
+Message-Id: <87habint8a.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201310250303.00695.sergei.shtylyov@cogentembedded.com>
- <526AC65B.5020203@grandegger.com> <52742A0F.7040707@cogentembedded.com>
- <5276A63E.3070505@grandegger.com> <5279784E.1010205@cogentembedded.com>
-In-Reply-To: <5279784E.1010205@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, mkl@pengutronix.de, linux-can@vger.kernel.org, linux-sh@vger.kernel.org, vksavl@gmail.com
+To: linux-sh@vger.kernel.org
 
-On Wed, 06 Nov 2013 01:59:26 +0300, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Hello.
-> 
-> On 11/03/2013 10:38 PM, Wolfgang Grandegger wrote:
-> 
->>>>> Add support for the CAN controller found in Renesas R-Car SoCs.
-> 
->>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
->>> [...]
-> 
->>>>> Index: linux-can-next/drivers/net/can/rcar_can.c
->>>>> =================================>>>>> --- /dev/null
->>>>> +++ linux-can-next/drivers/net/can/rcar_can.c
->>>>> @@ -0,0 +1,920 @@
->>> [...]
-> 
->>>>> +            rcar_can_writeb(priv, RCAR_CAN_ECSR, (u8)~ECSR_ADEF);
-> 
->>>> Please avoid casts here and below.
-> 
->>>     These casts help avoid compiler warnings.
-> 
->> Well instead of using casts the declaration of ECSR_ADEF and otheres
->> should be fixed. I think the problem is that BIT is declared as shown
->> below:
-> 
->>   #define BIT(nr)                 (1UL << (nr))
-> 
->> Using BIT seems not appropriate here.
-> 
->     Well, I thought it was designed to replace explicit (1 << (nr))
->     #define's.
+sh_eth driver which needs platform data at the time of
+registration is not used.
+Now, ARM/shmobile aims to support DT,
+and the C code base board support will be removed
+if DT support is completed.
+Current driver registration method which needs platform data
+and which is not shared complicates codes.
+This means legacy C code cleanup after DT supporting
+will be more complicated
+This patch removes r8a7779_add_ether_device()
 
-Me too.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-> Hopefully those are good for you then...
+ - fixup git log
 
-Yes, of course.
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 --
+ arch/arm/mach-shmobile/setup-r8a7779.c        |   20 --------------------
+ 2 files changed, 22 deletions(-)
 
-Wolfgang.
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 1cab247..5014145 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -3,7 +3,6 @@
+ 
+ #include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
+-#include <linux/sh_eth.h>
+ 
+ /* HPB-DMA slave IDs */
+ enum {
+@@ -39,7 +38,6 @@ extern void r8a7779_earlytimer_init(void);
+ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+-extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7779_init_late(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 51a43c5..8f94531 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -598,18 +598,6 @@ static struct platform_device ohci1_device = {
+ 	.resource	= ohci1_resources,
+ };
+ 
+-/* Ether */
+-static struct resource ether_resources[] __initdata = {
+-	{
+-		.start	= 0xfde00000,
+-		.end	= 0xfde003ff,
+-		.flags	= IORESOURCE_MEM,
+-	}, {
+-		.start	= gic_iid(0xb4),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+ /* HPB-DMA */
+ 
+ /* Asynchronous mode register bits */
+@@ -798,14 +786,6 @@ void __init r8a7779_add_standard_devices(void)
+ 	r8a7779_register_hpb_dmae();
+ }
+ 
+-void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
+-{
+-	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  pdata, sizeof(*pdata));
+-}
+-
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
+-- 
+1.7.9.5
 
