@@ -1,29 +1,27 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Thu, 21 Nov 2013 10:36:26 +0000
-Subject: Re: [PATCH 0/9] USB 2.0 host on Lager
-Message-Id: <CAO3366yCn3Bh-wDqsJSECSynncOsF_nxZSSOTUOT6oDKnUL87w@mail.gmail.com>
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Tue, 12 Nov 2013 23:10:20 +0000
+Subject: Re: [PATCH v2 10/19] mtd: sh_flctl: Enable the driver on all ARM platforms
+Message-Id: <20131112231020.GA9468@ld-irv-0074.broadcom.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384969086-8920-1-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1384969086-8920-1-git-send-email-ulrich.hecht@gmail.com>
+References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1383086274-11049-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383086274-11049-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 20, 2013 at 10:07 PM, Valentine
-<valentine.barshak@cogentembedded.com> wrote:
-> On 11/20/2013 09:37 PM, Ulrich Hecht wrote:
->> I chose to do incremental patches on top of Valentine's stuff because his
->> patches are already in various states of upstream acceptance;
->
-> Why re-post them then?
+On Tue, Oct 29, 2013 at 11:37:45PM +0100, Laurent Pinchart wrote:
+> Renesas ARM platforms are transitioning from single-platform to
+> multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
+> driver available on all ARM platforms to enable it on both ARCH_SHMOBILE
+> and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
+> COMPILE_TEST.
+> 
+> Cc: David Woodhouse <dwmw2@infradead.org>
+> Cc: linux-mtd@lists.infradead.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Because I am not entirely sure about the status of all of them.
+Applied to l2-mtd.git, branch 'next' (for 3.14). Thanks.
 
-> In fact I was going to add USB Host support once USBHS support is commited.
-
-I was not aware of your intention to do so (could I have been?), and I
-have a deadline on the 29th.
-
-CU
-Uli
+Brian
