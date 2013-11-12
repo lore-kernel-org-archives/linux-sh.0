@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 12 Nov 2013 05:08:40 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 12 Nov 2013 05:44:13 +0000
 Subject: Re: [PATCH] irqchip: renesas-intc-irqpin: Fix register bitfield shift calculation
-Message-Id: <20131112050840.GA28649@verge.net.au>
+Message-Id: <CANqRtoSa9w5yi6aXsWS6w85wdygRv7EvoAC8ozo-eVLzWo=DOg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383999481-2742-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1383999481-2742-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,55 +10,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sat, Nov 09, 2013 at 01:18:01PM +0100, Laurent Pinchart wrote:
-> The SENSE register bitfield position is incorrectly computed for SoCs
-> that use 2-bit IRQ sense fields. Fix it.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
 Hi Laurent,
 
-your change seems correct to me but I am wondering if it should
-be considered as a bug-fix?
+On Sat, Nov 9, 2013 at 9:18 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> The SENSE register bitfield position is incorrectly computed for SoCs
+> that use 2-bit IRQ sense fields. Fix it.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-> ---
->  drivers/irqchip/irq-renesas-intc-irqpin.c | 8 +++++---
->  1 file changed, 5 insertions(+), 3 deletions(-)
-> 
-> diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-> index 82cec63..3ee78f0 100644
-> --- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-> +++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-> @@ -149,8 +149,9 @@ static void intc_irqpin_read_modify_write(struct intc_irqpin_priv *p,
->  static void intc_irqpin_mask_unmask_prio(struct intc_irqpin_priv *p,
->  					 int irq, int do_mask)
->  {
-> -	int bitfield_width = 4; /* PRIO assumed to have fixed bitfield width */
-> -	int shift = (7 - irq) * bitfield_width; /* PRIO assumed to be 32-bit */
-> +	/* The PRIO register is assumed to be 32-bit with fixed 4-bit fields. */
-> +	int bitfield_width = 4;
-> +	int shift = 32 - (irq + 1) * bitfield_width;
->  
->  	intc_irqpin_read_modify_write(p, INTC_IRQPIN_REG_PRIO,
->  				      shift, bitfield_width,
-> @@ -159,8 +160,9 @@ static void intc_irqpin_mask_unmask_prio(struct intc_irqpin_priv *p,
->  
->  static int intc_irqpin_set_sense(struct intc_irqpin_priv *p, int irq, int value)
->  {
-> +	/* The SENSE register is assumed to be 32-bit. */
->  	int bitfield_width = p->config.sense_bitfield_width;
-> -	int shift = (7 - irq) * bitfield_width; /* SENSE assumed to be 32-bit */
-> +	int shift = 32 - (irq + 1) * bitfield_width;
->  
->  	dev_dbg(&p->pdev->dev, "sense irq = %d, mode = %d\n", irq, value);
->  
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I checked this against the sh73a0 data sheet which is using 4-bit IRQ
+sense and it looks correct to me.
+
+It would nice nice if someone could test this on r8a7778 or r8a7779
+which I believe use 2-bit IRQ sense.
+
+Also, in the future, since the INTC hardware is kind of diverse,
+please consider including SoC information in the commit message.
+
+Acked-by: Magnus Damm <damm@opensource.se>
+
+Cheers,
+
+/ magnus
