@@ -1,89 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 00:28:38 +0000
-Subject: [PATCH] serial: sh-sci: Fix warnings due to improper casts and printk formats
-Message-Id: <1385512118-10219-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Mark Salter <msalter@redhat.com>
+Date: Tue, 12 Nov 2013 13:22:23 +0000
+Subject: [PATCH 09/11] sh: use generic fixmap.h
+Message-Id: <1384262545-20875-10-git-send-email-msalter@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384262545-20875-1-git-send-email-msalter@redhat.com>
+In-Reply-To: <1384262545-20875-1-git-send-email-msalter@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-serial@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Mark Salter <msalter@redhat.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-Use the %zu printk specifier to print size_t variables, and cast
-pointers to unsigned long instead of unsigned int where applicable. This
-fixes warnings on platforms where pointers and/or dma_addr_t have a
-different size than int.
-
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: linux-serial@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Mark Salter <msalter@redhat.com>
+CC: Paul Mundt <lethal@linux-sh.org>
+CC: linux-sh@vger.kernel.org
 ---
- drivers/tty/serial/sh-sci.c | 19 ++++++++++---------
- 1 file changed, 10 insertions(+), 9 deletions(-)
+ arch/sh/include/asm/fixmap.h | 39 ++-------------------------------------
+ 1 file changed, 2 insertions(+), 37 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 7d8103c..25b7f67 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -557,7 +557,7 @@ static inline int sci_rxd_in(struct uart_port *port)
- 		return 1;
+diff --git a/arch/sh/include/asm/fixmap.h b/arch/sh/include/asm/fixmap.h
+index cbe0186..4daf91c 100644
+--- a/arch/sh/include/asm/fixmap.h
++++ b/arch/sh/include/asm/fixmap.h
+@@ -79,13 +79,6 @@ extern void __set_fixmap(enum fixed_addresses idx,
+ 			 unsigned long phys, pgprot_t flags);
+ extern void __clear_fixmap(enum fixed_addresses idx, pgprot_t flags);
  
- 	/* Cast for ARM damage */
--	return !!__raw_readb((void __iomem *)s->cfg->port_reg);
-+	return !!__raw_readb((void __iomem *)(unsigned long)s->cfg->port_reg);
- }
+-#define set_fixmap(idx, phys) \
+-		__set_fixmap(idx, phys, PAGE_KERNEL)
+-/*
+- * Some hardware wants to get fixmapped without caching.
+- */
+-#define set_fixmap_nocache(idx, phys) \
+-		__set_fixmap(idx, phys, PAGE_KERNEL_NOCACHE)
+ /*
+  * used by vmalloc.c.
+  *
+@@ -101,36 +94,8 @@ extern void __clear_fixmap(enum fixed_addresses idx, pgprot_t flags);
+ #define FIXADDR_SIZE	(__end_of_fixed_addresses << PAGE_SHIFT)
+ #define FIXADDR_START	(FIXADDR_TOP - FIXADDR_SIZE)
  
- /* ********************************************************************** *
-@@ -1309,7 +1309,7 @@ static int sci_dma_rx_push(struct sci_port *s, size_t count)
- 	}
+-#define __fix_to_virt(x)	(FIXADDR_TOP - ((x) << PAGE_SHIFT))
+-#define __virt_to_fix(x)	((FIXADDR_TOP - ((x)&PAGE_MASK)) >> PAGE_SHIFT)
+-
+-extern void __this_fixmap_does_not_exist(void);
+-
+-/*
+- * 'index to address' translation. If anyone tries to use the idx
+- * directly without tranlation, we catch the bug with a NULL-deference
+- * kernel oops. Illegal ranges of incoming indices are caught too.
+- */
+-static inline unsigned long fix_to_virt(const unsigned int idx)
+-{
+-	/*
+-	 * this branch gets completely eliminated after inlining,
+-	 * except when someone tries to use fixaddr indices in an
+-	 * illegal way. (such as mixing up address types or using
+-	 * out-of-range indices).
+-	 *
+-	 * If it doesn't get removed, the linker will complain
+-	 * loudly with a reasonably clear error message..
+-	 */
+-	if (idx >= __end_of_fixed_addresses)
+-		__this_fixmap_does_not_exist();
++#define FIXMAP_PAGE_NOCACHE PAGE_KERNEL_NOCACHE
  
- 	if (room < count)
--		dev_warn(port->dev, "Rx overrun: dropping %u bytes\n",
-+		dev_warn(port->dev, "Rx overrun: dropping %zu bytes\n",
- 			 count - room);
- 	if (!room)
- 		return room;
-@@ -1442,7 +1442,7 @@ static void work_fn_rx(struct work_struct *work)
- 		int count;
+-        return __fix_to_virt(idx);
+-}
++#include <asm-generic/fixmap.h>
  
- 		chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
--		dev_dbg(port->dev, "Read %u bytes with cookie %d\n",
-+		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
- 			sh_desc->partial, sh_desc->cookie);
- 
- 		spin_lock_irqsave(&port->lock, flags);
-@@ -1691,16 +1691,17 @@ static void sci_request_dma(struct uart_port *port)
- 		s->chan_tx = chan;
- 		sg_init_table(&s->sg_tx, 1);
- 		/* UART circular tx buffer is an aligned page. */
--		BUG_ON((int)port->state->xmit.buf & ~PAGE_MASK);
-+		BUG_ON((unsigned long)port->state->xmit.buf & ~PAGE_MASK);
- 		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
--			    UART_XMIT_SIZE, (int)port->state->xmit.buf & ~PAGE_MASK);
-+			    UART_XMIT_SIZE,
-+			    (unsigned long)port->state->xmit.buf & ~PAGE_MASK);
- 		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
- 		if (!nent)
- 			sci_tx_dma_release(s, false);
- 		else
--			dev_dbg(port->dev, "%s: mapped %d@%p to %x\n", __func__,
--				sg_dma_len(&s->sg_tx),
--				port->state->xmit.buf, sg_dma_address(&s->sg_tx));
-+			dev_dbg(port->dev, "%s: mapped %d@%p to %lx\n", __func__,
-+				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
-+				(unsigned long)sg_dma_address(&s->sg_tx));
- 
- 		s->sg_len_tx = nent;
- 
-@@ -1740,7 +1741,7 @@ static void sci_request_dma(struct uart_port *port)
- 
- 			sg_init_table(sg, 1);
- 			sg_set_page(sg, virt_to_page(buf[i]), s->buf_len_rx,
--				    (int)buf[i] & ~PAGE_MASK);
-+				    (unsigned long)buf[i] & ~PAGE_MASK);
- 			sg_dma_address(sg) = dma[i];
- 		}
- 
+-static inline unsigned long virt_to_fix(const unsigned long vaddr)
+-{
+-	BUG_ON(vaddr >= FIXADDR_TOP || vaddr < FIXADDR_START);
+-	return __virt_to_fix(vaddr);
+-}
+ #endif
 -- 
-1.8.3.2
+1.8.3.1
 
