@@ -1,151 +1,162 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:32 +0000
-Subject: [PATCH 08/16] ARM: shmobile: r8a7779: cleanup registration of VIN
-Message-Id: <4bd4c5b32b851b07d81209e1dc0c8b20b283f2e2.1385628709.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 12 Nov 2013 13:29:45 +0000
+Subject: [PATCH 3/2] ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY in defconfig
+Message-Id: <1384262985-2880-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
+References: <1384000429-3590-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384000429-3590-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The ARCH_SHMOBILE configuration option has been renamed to
+ARCH_SHMOBILE_LEGACY. Update the defconfigs accordingly.
 
-VIN driver which needs platform data at the time of
-registration is used from Marzen only.
-Now, ARM/shmobile aims to support DT,
-and the C code base board support will be removed
-if DT support is completed.
-Current driver registration method which needs platform data
-and which is not shared complicates codes.
-This means legacy C code cleanup after DT supporting
-will be more complicated
-This patch registers it on board code as cleanup C code
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c         | 24 +++++++++++++++--
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 --
- arch/arm/mach-shmobile/setup-r8a7779.c        | 37 ---------------------------
- 3 files changed, 22 insertions(+), 41 deletions(-)
+ arch/arm/configs/ape6evm_defconfig         | 2 +-
+ arch/arm/configs/armadillo800eva_defconfig | 2 +-
+ arch/arm/configs/bockw_defconfig           | 2 +-
+ arch/arm/configs/genmai_defconfig          | 2 +-
+ arch/arm/configs/koelsch_defconfig         | 2 +-
+ arch/arm/configs/kzm9d_defconfig           | 2 +-
+ arch/arm/configs/kzm9g_defconfig           | 2 +-
+ arch/arm/configs/lager_defconfig           | 2 +-
+ arch/arm/configs/mackerel_defconfig        | 2 +-
+ arch/arm/configs/marzen_defconfig          | 2 +-
+ 10 files changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index da1352f..fa102f7 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -259,10 +259,30 @@ static struct platform_device leds_device = {
- 	},
- };
- 
-+/* VIN */
- static struct rcar_vin_platform_data vin_platform_data __initdata = {
- 	.flags	= RCAR_VIN_BT656,
- };
- 
-+#define MARZEN_VIN(idx)						\
-+static struct resource vin##idx##_resources[] __initdata = {	\
-+	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),	\
-+	DEFINE_RES_IRQ(gic_iid(0x5f + (idx))),			\
-+};								\
-+								\
-+static struct platform_device_info vin##idx##_info __initdata = { \
-+	.parent		= &platform_bus,			\
-+	.name		= "r8a7779-vin",			\
-+	.id		= idx,					\
-+	.res		= vin##idx##_resources,			\
-+	.num_res	= ARRAY_SIZE(vin##idx##_resources),	\
-+	.dma_mask	= DMA_BIT_MASK(32),			\
-+	.data		= &vin_platform_data,			\
-+	.size_data	= sizeof(vin_platform_data),		\
-+}
-+MARZEN_VIN(1);
-+MARZEN_VIN(3);
-+
- #define MARZEN_CAMERA(idx)					\
- static struct i2c_board_info camera##idx##_info = {		\
- 	I2C_BOARD_INFO("adv7180", 0x20 + (idx)),		\
-@@ -367,8 +387,8 @@ static void __init marzen_init(void)
- 	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
- 
- 	r8a7779_add_standard_devices();
--	r8a7779_add_vin_device(1, &vin_platform_data);
--	r8a7779_add_vin_device(3, &vin_platform_data);
-+	platform_device_register_full(&vin1_info);
-+	platform_device_register_full(&vin3_info);
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- 	marzen_add_du_device();
- }
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 17af34e..905420a 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -41,8 +41,6 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
--extern void r8a7779_add_vin_device(int idx,
--				   struct rcar_vin_platform_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 13049e9..51a43c5 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -610,33 +610,6 @@ static struct resource ether_resources[] __initdata = {
- 	},
- };
- 
--#define R8A7779_VIN(idx) \
--static struct resource vin##idx##_resources[] __initdata = {		\
--	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),		\
--	DEFINE_RES_IRQ(gic_iid(0x5f + (idx))),				\
--};									\
--									\
--static struct platform_device_info vin##idx##_info __initdata = {	\
--	.parent		= &platform_bus,				\
--	.name		= "r8a7779-vin",				\
--	.id		= idx,						\
--	.res		= vin##idx##_resources,				\
--	.num_res	= ARRAY_SIZE(vin##idx##_resources),		\
--	.dma_mask	= DMA_BIT_MASK(32),				\
--}
--
--R8A7779_VIN(0);
--R8A7779_VIN(1);
--R8A7779_VIN(2);
--R8A7779_VIN(3);
--
--static struct platform_device_info *vin_info_table[] __initdata = {
--	&vin0_info,
--	&vin1_info,
--	&vin2_info,
--	&vin3_info,
--};
--
- /* HPB-DMA */
- 
- /* Asynchronous mode register bits */
-@@ -833,16 +806,6 @@ void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
- 					  pdata, sizeof(*pdata));
- }
- 
--void __init r8a7779_add_vin_device(int id, struct rcar_vin_platform_data *pdata)
--{
--	BUG_ON(id < 0 || id > 3);
--
--	vin_info_table[id]->data = pdata;
--	vin_info_table[id]->size_data = sizeof(*pdata);
--
--	platform_device_register_full(vin_info_table[id]);
--}
--
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
- 
+diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
+index 1ce3994..cb26c62 100644
+--- a/arch/arm/configs/ape6evm_defconfig
++++ b/arch/arm/configs/ape6evm_defconfig
+@@ -13,7 +13,7 @@ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ # CONFIG_BLOCK is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A73A4=y
+ CONFIG_MACH_APE6EVM=y
+ # CONFIG_ARM_THUMB is not set
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index fae939d..5abf1a2 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -15,7 +15,7 @@ CONFIG_MODULE_FORCE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A7740=y
+ CONFIG_MACH_ARMADILLO800EVA=y
+ # CONFIG_SH_TIMER_TMU is not set
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index 8110d8a..80cff50 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -8,7 +8,7 @@ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_SLAB=y
+ # CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A7778=y
+ CONFIG_MACH_BOCKW=y
+ CONFIG_MEMORY_START=0x60000000
+diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+index 69b1531..aa0b704 100644
+--- a/arch/arm/configs/genmai_defconfig
++++ b/arch/arm/configs/genmai_defconfig
+@@ -12,7 +12,7 @@ CONFIG_SLAB=y
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R7S72100=y
+ CONFIG_MACH_GENMAI=y
+ # CONFIG_SH_TIMER_CMT is not set
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 825c16d..7fd65a0 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -9,7 +9,7 @@ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ # CONFIG_BLOCK is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_MACH_KOELSCH=y
+ # CONFIG_SWP_EMULATE is not set
+diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
+index 6c37f4a..217f1dd 100644
+--- a/arch/arm/configs/kzm9d_defconfig
++++ b/arch/arm/configs/kzm9d_defconfig
+@@ -13,7 +13,7 @@ CONFIG_SLAB=y
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_EMEV2=y
+ CONFIG_MACH_KZM9D=y
+ CONFIG_MEMORY_START=0x40000000
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 1ad0280..9934dbc2 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -22,7 +22,7 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_KZM9G=y
+ CONFIG_MEMORY_START=0x41000000
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 35bff5e..35dc8b2 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -12,7 +12,7 @@ CONFIG_SLAB=y
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_MACH_LAGER=y
+ # CONFIG_SH_TIMER_TMU is not set
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 9fb1189..a61e165 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -14,7 +14,7 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_SH7372=y
+ CONFIG_MACH_MACKEREL=y
+ CONFIG_MEMORY_SIZE=0x10000000
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index dd4aced..f21bd40 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -9,7 +9,7 @@ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_SLAB=y
+ # CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_MACH_MARZEN=y
+ CONFIG_MEMORY_START=0x60000000
 -- 
-1.8.4
+1.8.1.5
 
