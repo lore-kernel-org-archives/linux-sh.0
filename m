@@ -1,47 +1,80 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 12 Nov 2013 02:30:44 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 13 Nov 2013 02:50:10 +0000
 Subject: Re: [PATCH/RFC] ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY
-Message-Id: <20131112023043.GF9863@verge.net.au>
+Message-Id: <1586355.IPva4G58Xv@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383782061-7111-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CANqRtoRDo6_VYhaq9KkSCo2TnhmwW-vFK99HuBS=umrC1_fD_g@mail.gmail.com>
- <20131108060803.GF9828@verge.net.au> <9547447.Oq0RhNMWv3@avalon>
-In-Reply-To: <9547447.Oq0RhNMWv3@avalon>
+In-Reply-To: <1383782061-7111-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Nov 09, 2013 at 01:34:31PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Friday 08 November 2013 15:08:05 Simon Horman wrote:
-> > On Thu, Nov 07, 2013 at 03:04:57PM +0900, Magnus Damm wrote:
-> > > On Thu, Nov 7, 2013 at 8:54 AM, Laurent Pinchart wrote:
-> > > > SH-Mobile platforms are transitioning from non-multiplatform to
-> > > > multiplatform kernel. A new ARCH_SHMOBILE_MULTI configuration symbol has
-> > > > been created to group all multiplatform-enabled SH-Mobile SoCs. The
-> > > > existing ARCH_SHMOBILE configuration symbol groups SoCs that haven't
-> > > > been converted yet.
+Hi,
+
+On Tuesday 12 November 2013 11:30:22 Simon Horman wrote:
+> On Mon, Nov 11, 2013 at 09:45:12AM +0000, phil.edworthy@renesas.com wrote:
+> > > On Friday 08 November 2013 14:57:29 stephen.lawrence@renesas.com wrote:
+> > > > linux-sh-owner@vger.kernel.org wrote on 08/11/2013 06:08:05:
+> > > > > On Thu, Nov 07, 2013 at 03:04:57PM +0900, Magnus Damm wrote:
+> > > > > > On Thu, Nov 7, 2013 at 8:54 AM, Laurent Pinchart wrote:
+> > > > > > > SH-Mobile platforms are transitioning from non-multiplatform to
+> > > > > > > multiplatform kernel. A new ARCH_SHMOBILE_MULTI configuration
+> > > > > > > symbol has been created to group all multiplatform-enabled SH-
+> > > > > > > Mobile SoCs.
+> > > > > > >
+> > > > > > > The existing ARCH_SHMOBILE configuration symbol groups SoCs
+> > > > > > > that haven't been converted yet.
 > > > > 
-> > > > This arrangement works fine for the arch/ code, but lots of drivers
-> > > > needed on both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI depend on
-> > > > ARCH_SHMOBILE only. In order to avoid changing them, rename
-> > > > ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY, and create a new boolean
-> > > > ARCH_SHMOBILE configuration symbol that is selected by both
-> > > > ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI.
+> > > > I'm sure there are reasons for keeping it but looking forward I can't
+> > > > help but wonder if this wouldn't be a good time to lose the SHMOBILE
+> > > > tag for new platforms? It doesn't seem to be a great match to our
+> > > > business or the architectures.
 > > > > 
-> > > > Signed-off-by: Laurent Pinchart
-> > > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > > I know from conversations I've had in the last year or so that
+> > > > external engineers working on R-Car sometimes do not find your good
+> > > > work upstream as the combination of sh-mobile and using the product
+> > > > number proved an effective method of concealment. Although of course
+> > > > they could find it by searching the right files.
 > > > 
-> > > Thanks, this looks good to me.
-> > > 
-> > > Acked-by: Magnus Damm <damm@opensource.se>
+> > > It's not a bad idea, but I'm not sure how we could proceed. SH-Mobile,
+> > > R-Mobile and R-Car chipsets are all supported by a single code base, for
+> > > which we need a name. Splitting the code base wouldn't make much sense
+> > > from a technical point of view.
 > > 
-> > This seems reasonable to me.
-> > I would pick it up now but it is marked as "RFC".
-> > Please let me know if you wish me to pick it up.
+> > True, but it would be helpful to have Renesas in the device name
+> > somewhere. Maybe include Renesas in the mach-shmobile/Kconfig description
+> > for the devices, and also update the description in arm/Kconfig to
+> > include R-Car.
 > 
-> I've sent a non-RFC series, please pick that one up.
+> Hi,
+> 
+> I have been involved in several discussions relating to moving away from
+> the shmobile name.
+> 
+> Prior to this thread the most recent discussion I was involved in was with
+> Olof Johansson, ARM-SoC co-maintainer, and Magnus. Due to the amount of
+> churn involved in changing the name of the mach-shmobile directory or
+> somehow splitting the code between multiple mach- directories, which was
+> the variant of the topic under discussion, the consensus was that moving
+> things around was not on the cards at this time.  There is also, as Laurent
+> mentioned, the technical issue that splitting the code doesn't make a whole
+> lot of sense from an implementation point of view.
+> 
+> From my point of view changing the SHMOBILE potion of ARCH_SHMOBILE_*
+> only really makes sense if the name of mach-shmobile directory is changed
+> in a similar way, which as I mentioned above that seems to be off the cards
+> at this time. The reason I think this is that if the ARCH_XXX name doesn't
+> match the directory we will add confusion rather than removing it.
+> 
+> With the above in mind I think that Phil's proposal to enhance the
+> descriptions in mach-shmobile/Kconfig and arm/Kconfig is an excellent one
+> given the hand of cards we have available to play.
 
-Thanks, will do.
+Is someone going to submit a patch or should I do it ?
+
+-- 
+Regards,
+
+Laurent Pinchart
+
